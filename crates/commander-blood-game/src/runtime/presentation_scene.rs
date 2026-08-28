@@ -103,6 +103,11 @@ impl RuntimePresentationScene {
         &self.presentation_palette
     }
 
+    /// Synchronize the scene colors that alias the native live palette.
+    pub fn set_scene_palette(&mut self, palette: IndexedGamePalette) {
+        self.scene_palette = palette;
+    }
+
     /// Synchronize the scene palette and its 128-through-191 presentation window.
     pub fn stage_navigation_palette(&mut self, palette: &IndexedGamePalette) {
         self.scene_palette = *palette;

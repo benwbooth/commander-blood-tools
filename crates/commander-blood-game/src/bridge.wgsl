@@ -3,19 +3,16 @@ const LOGICAL_HEIGHT: f32 = 200.0;
 const FULLSCREEN_TRIANGLE_SCALE: f32 = 2.0;
 
 @group(0) @binding(0)
-var panorama: texture_2d<u32>;
-
-@group(0) @binding(1)
-var palette: texture_2d<f32>;
+var panorama: texture_2d<f32>;
 
 struct StarVertexInput {
     @location(0) screen: vec2<f32>,
-    @location(1) palette_index: u32,
+    @location(1) color: vec4<f32>,
 };
 
-struct IndexedVertexOutput {
+struct ColorVertexOutput {
     @builtin(position) position: vec4<f32>,
-    @location(0) @interpolate(flat) palette_index: u32,
+    @location(0) @interpolate(flat) color: vec4<f32>,
 };
 
 struct PanoramaVertexOutput {
@@ -31,16 +28,16 @@ fn logical_to_clip(screen: vec2<f32>) -> vec2<f32> {
 }
 
 @vertex
-fn vs_star(input: StarVertexInput) -> IndexedVertexOutput {
-    var output: IndexedVertexOutput;
+fn vs_star(input: StarVertexInput) -> ColorVertexOutput {
+    var output: ColorVertexOutput;
     output.position = vec4<f32>(logical_to_clip(input.screen), 0.0, 1.0);
-    output.palette_index = input.palette_index;
+    output.color = input.color;
     return output;
 }
 
 @fragment
-fn fs_indexed(input: IndexedVertexOutput) -> @location(0) vec4<f32> {
-    return textureLoad(palette, vec2<i32>(i32(input.palette_index), 0), 0);
+fn fs_color(input: ColorVertexOutput) -> @location(0) vec4<f32> {
+    return input.color;
 }
 
 @vertex
@@ -61,9 +58,9 @@ fn vs_panorama(@builtin(vertex_index) vertex_index: u32) -> PanoramaVertexOutput
 @fragment
 fn fs_panorama(input: PanoramaVertexOutput) -> @location(0) vec4<f32> {
     let pixel = vec2<i32>(input.texture_coordinates * vec2<f32>(LOGICAL_WIDTH, LOGICAL_HEIGHT));
-    let palette_index = textureLoad(panorama, pixel, 0).r;
-    if palette_index == 0u {
+    let color = textureLoad(panorama, pixel, 0);
+    if color.a == 0.0 {
         discard;
     }
-    return textureLoad(palette, vec2<i32>(i32(palette_index), 0), 0);
+    return color;
 }

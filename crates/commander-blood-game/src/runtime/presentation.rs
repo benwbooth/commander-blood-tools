@@ -45,7 +45,7 @@ impl<'window> RuntimePresentationHost<'window> {
     pub fn new_startup(window: &'window Window, runtime: &OriginalGameRuntime) -> Result<Self> {
         let initial_frame =
             runtime_original_frame(runtime.front_buffer().pixels(), runtime.live_palette())?;
-        let renderer = Renderer::new(window, &initial_frame, None, None, None)
+        let renderer = Renderer::new(window, &initial_frame, None, None, None, None)
             .context("initializing startup wgpu presentation")?;
         Ok(Self {
             window,
@@ -199,8 +199,9 @@ fn main_game_renderer<'window>(
         window,
         &initial_frame,
         runtime.manu3(),
+        Some(runtime.data().default_vga_palette()),
         None,
-        Some(runtime.live_palette()),
+        Some(runtime.data().default_vga_palette()),
     )
     .context("initializing main-game wgpu presentation")
 }

@@ -18,9 +18,9 @@ const MIP_LEVEL_COUNT: u32 = 1;
 const SINGLE_SAMPLE_COUNT: u32 = 1;
 const SINGLE_TEXTURE_LAYER: u32 = 1;
 const PANORAMA_TEXTURE_BINDING: u32 = 0;
-const PALETTE_TEXTURE_BINDING: u32 = 1;
 const RGBA_COMPONENT_COUNT: usize = 4;
 const OPAQUE_ALPHA: u8 = u8::MAX;
+const TRANSPARENT_ALPHA: u8 = u8::MIN;
 const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
 const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
 const STAR_VERTEX_COUNT: usize = 6;
@@ -35,11 +35,11 @@ const Y_AXIS: usize = 1;
 #[derive(Clone, Copy, Pod, Zeroable)]
 struct BridgeStarGpuVertex {
     screen: [f32; 2],
-    palette_index: u32,
+    color: [u8; RGBA_COMPONENT_COUNT],
 }
 
 const STAR_VERTEX_ATTRIBUTES: [wgpu::VertexAttribute; 2] =
-    wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32];
+    wgpu::vertex_attr_array![0 => Float32x2, 1 => Unorm8x4];
 
 /// GPU resources for one live bridge panorama and procedural starfield.
 pub(crate) struct BridgeRenderer {
@@ -49,15 +49,17 @@ pub(crate) struct BridgeRenderer {
     object_sprite_bind_group: wgpu::BindGroup,
     panorama_texture: wgpu::Texture,
     object_sprite_texture: wgpu::Texture,
+    colors: [[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+    panorama_rgba: Vec<u8>,
+    object_sprite_rgba: Vec<u8>,
     star_vertices: wgpu::Buffer,
     maximum_star_vertices: usize,
 }
 
 impl BridgeRenderer {
-    /// Upload the immutable game palette and allocate dynamic bridge resources.
+    /// Resolve authored colors and allocate dynamic true-color bridge resources.
     pub(crate) fn new(
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
         surface_format: wgpu::TextureFormat,
         palette: &IndexedGamePalette,
     ) -> Result<Self> {
@@ -67,33 +69,8 @@ impl BridgeRenderer {
             depth_or_array_layers: SINGLE_TEXTURE_LAYER,
         };
         let panorama_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("bridge indexed panorama"),
+            label: Some("bridge RGBA panorama"),
             size: panorama_size,
-            mip_level_count: MIP_LEVEL_COUNT,
-            sample_count: SINGLE_SAMPLE_COUNT,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R8Uint,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        let object_sprite_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("bridge indexed object sprites"),
-            size: panorama_size,
-            mip_level_count: MIP_LEVEL_COUNT,
-            sample_count: SINGLE_SAMPLE_COUNT,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R8Uint,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        let palette_size = wgpu::Extent3d {
-            width: PALETTE_ENTRY_COUNT as u32,
-            height: SINGLE_TEXTURE_LAYER,
-            depth_or_array_layers: SINGLE_TEXTURE_LAYER,
-        };
-        let palette_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("bridge game palette"),
-            size: palette_size,
             mip_level_count: MIP_LEVEL_COUNT,
             sample_count: SINGLE_SAMPLE_COUNT,
             dimension: wgpu::TextureDimension::D2,
@@ -101,85 +78,53 @@ impl BridgeRenderer {
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         });
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &palette_texture,
-                mip_level: BASE_MIP_LEVEL,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &palette_rgba(palette)?,
-            wgpu::TexelCopyBufferLayout {
-                offset: u64::MIN,
-                bytes_per_row: Some(PALETTE_ENTRY_COUNT as u32 * RGBA_COMPONENT_COUNT as u32),
-                rows_per_image: Some(SINGLE_TEXTURE_LAYER),
-            },
-            palette_size,
-        );
+        let object_sprite_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("bridge RGBA object sprites"),
+            size: panorama_size,
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let colors = palette_rgba(palette)?;
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("bridge indexed layers layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: PANORAMA_TEXTURE_BINDING,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Uint,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
+            label: Some("bridge RGBA layer layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: PANORAMA_TEXTURE_BINDING,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
                 },
-                wgpu::BindGroupLayoutEntry {
-                    binding: PALETTE_TEXTURE_BINDING,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-            ],
+                count: None,
+            }],
         });
         let panorama_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("bridge panorama bind group"),
             layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: PANORAMA_TEXTURE_BINDING,
-                    resource: wgpu::BindingResource::TextureView(
-                        &panorama_texture.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: PALETTE_TEXTURE_BINDING,
-                    resource: wgpu::BindingResource::TextureView(
-                        &palette_texture.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
+            entries: &[wgpu::BindGroupEntry {
+                binding: PANORAMA_TEXTURE_BINDING,
+                resource: wgpu::BindingResource::TextureView(
+                    &panorama_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                ),
+            }],
         });
         let object_sprite_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("bridge object sprite bind group"),
             layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: PANORAMA_TEXTURE_BINDING,
-                    resource: wgpu::BindingResource::TextureView(
-                        &object_sprite_texture.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: PALETTE_TEXTURE_BINDING,
-                    resource: wgpu::BindingResource::TextureView(
-                        &palette_texture.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
+            entries: &[wgpu::BindGroupEntry {
+                binding: PANORAMA_TEXTURE_BINDING,
+                resource: wgpu::BindingResource::TextureView(
+                    &object_sprite_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                ),
+            }],
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("bridge indexed compositor shader"),
+            label: Some("bridge true-color compositor shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("bridge.wgsl"))),
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -202,7 +147,7 @@ impl BridgeRenderer {
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: Some("fs_indexed"),
+                entry_point: Some("fs_color"),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: surface_format,
                     blend: None,
@@ -264,6 +209,9 @@ impl BridgeRenderer {
             object_sprite_bind_group,
             panorama_texture,
             object_sprite_texture,
+            colors,
+            panorama_rgba: vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT * RGBA_COMPONENT_COUNT],
+            object_sprite_rgba: vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT * RGBA_COMPONENT_COUNT],
             star_vertices,
             maximum_star_vertices,
         })
@@ -271,7 +219,7 @@ impl BridgeRenderer {
 
     /// Upload and encode one bridge frame in original compositing order.
     pub(crate) fn encode(
-        &self,
+        &mut self,
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
@@ -341,7 +289,7 @@ impl BridgeRenderer {
         Ok(())
     }
 
-    fn upload(&self, queue: &wgpu::Queue, frame: &BridgeSceneFrame) -> Result<u32> {
+    fn upload(&mut self, queue: &wgpu::Queue, frame: &BridgeSceneFrame) -> Result<u32> {
         if frame.panorama_pixels.len() != PANORAMA_FRAME_PIXEL_COUNT {
             anyhow::bail!(
                 "bridge panorama contains {} pixels, expected {}",
@@ -356,6 +304,18 @@ impl BridgeRenderer {
                 PANORAMA_FRAME_PIXEL_COUNT
             );
         }
+        expand_indexed_rgba_into(
+            &frame.panorama_pixels,
+            &self.colors,
+            true,
+            &mut self.panorama_rgba,
+        );
+        expand_indexed_rgba_into(
+            &frame.object_sprite_pixels,
+            &self.colors,
+            true,
+            &mut self.object_sprite_rgba,
+        );
         queue.write_texture(
             wgpu::TexelCopyTextureInfo {
                 texture: &self.panorama_texture,
@@ -363,10 +323,10 @@ impl BridgeRenderer {
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            &frame.panorama_pixels,
+            &self.panorama_rgba,
             wgpu::TexelCopyBufferLayout {
                 offset: u64::MIN,
-                bytes_per_row: Some(PANORAMA_FRAME_WIDTH as u32),
+                bytes_per_row: Some(PANORAMA_FRAME_WIDTH as u32 * RGBA_COMPONENT_COUNT as u32),
                 rows_per_image: Some(PANORAMA_FRAME_HEIGHT as u32),
             },
             wgpu::Extent3d {
@@ -382,10 +342,10 @@ impl BridgeRenderer {
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            &frame.object_sprite_pixels,
+            &self.object_sprite_rgba,
             wgpu::TexelCopyBufferLayout {
                 offset: u64::MIN,
-                bytes_per_row: Some(PANORAMA_FRAME_WIDTH as u32),
+                bytes_per_row: Some(PANORAMA_FRAME_WIDTH as u32 * RGBA_COMPONENT_COUNT as u32),
                 rows_per_image: Some(PANORAMA_FRAME_HEIGHT as u32),
             },
             wgpu::Extent3d {
@@ -399,7 +359,7 @@ impl BridgeRenderer {
             .starfield
             .plotted
             .iter()
-            .flat_map(star_quad)
+            .flat_map(|star| star_quad(star, &self.colors))
             .collect::<Vec<_>>();
         if vertices.len() > self.maximum_star_vertices {
             anyhow::bail!(
@@ -419,30 +379,55 @@ impl BridgeRenderer {
     }
 }
 
-fn palette_rgba(palette: &IndexedGamePalette) -> Result<Vec<u8>> {
-    let mut rgba = Vec::with_capacity(PALETTE_ENTRY_COUNT * RGBA_COMPONENT_COUNT);
-    for color in palette {
+fn palette_rgba(
+    palette: &IndexedGamePalette,
+) -> Result<[[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT]> {
+    let mut rgba = [[u8::MIN; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+    for (target, color) in rgba.iter_mut().zip(palette) {
         for component in &color[..RGB_COMPONENT_COUNT] {
             if u16::from(*component) > VGA_DAC_CHANNEL_MAXIMUM {
                 anyhow::bail!("bridge palette component exceeds the six-bit VGA DAC range");
             }
-            rgba.push(
-                (u16::from(*component) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8,
-            );
         }
-        rgba.push(OPAQUE_ALPHA);
+        for (target_component, component) in target[..RGB_COMPONENT_COUNT]
+            .iter_mut()
+            .zip(&color[..RGB_COMPONENT_COUNT])
+        {
+            *target_component =
+                (u16::from(*component) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8;
+        }
+        target[RGB_COMPONENT_COUNT] = OPAQUE_ALPHA;
     }
     Ok(rgba)
 }
 
-fn star_quad(star: &ShipPlottedPoint) -> [BridgeStarGpuVertex; STAR_VERTEX_COUNT] {
+fn expand_indexed_rgba_into(
+    pixels: &[u8],
+    colors: &[[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+    transparent_zero: bool,
+    rgba: &mut [u8],
+) {
+    debug_assert_eq!(rgba.len(), pixels.len() * RGBA_COMPONENT_COUNT);
+    for (target, palette_index) in rgba.chunks_exact_mut(RGBA_COMPONENT_COUNT).zip(pixels) {
+        let mut color = colors[usize::from(*palette_index)];
+        if transparent_zero && *palette_index == u8::MIN {
+            color[RGB_COMPONENT_COUNT] = TRANSPARENT_ALPHA;
+        }
+        target.copy_from_slice(&color);
+    }
+}
+
+fn star_quad(
+    star: &ShipPlottedPoint,
+    colors: &[[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+) -> [BridgeStarGpuVertex; STAR_VERTEX_COUNT] {
     let left = f32::from(star.projection.screen[X_AXIS]);
     let top = f32::from(star.projection.screen[Y_AXIS]);
     let right = left + STAR_PIXEL_SIZE;
     let bottom = top + STAR_PIXEL_SIZE;
     let vertex = |screen| BridgeStarGpuVertex {
         screen,
-        palette_index: u32::from(star.palette_index),
+        color: colors[usize::from(star.palette_index)],
     };
     [
         vertex([left, top]),
@@ -657,7 +642,7 @@ mod tests {
         width: u32,
         height: u32,
     ) -> Vec<u8> {
-        let renderer = BridgeRenderer::new(device, queue, OFFSCREEN_FORMAT, palette).unwrap();
+        let mut renderer = BridgeRenderer::new(device, OFFSCREEN_FORMAT, palette).unwrap();
         let output = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("bridge offscreen color target"),
             size: wgpu::Extent3d {

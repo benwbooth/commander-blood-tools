@@ -118,6 +118,14 @@ impl RuntimePresentationScreen {
         self.scene.stage_navigation_palette(palette);
     }
 
+    /// Synchronize colors changed through a native global-palette alias.
+    pub(super) fn synchronize_scene_palette(
+        &mut self,
+        palette: crate::native::bloodprg::IndexedGamePalette,
+    ) {
+        self.scene.set_scene_palette(palette);
+    }
+
     /// Dispatch the ship coordinator's current line through the shared scene owner.
     pub fn dispatch_ship_scene<'window>(
         &mut self,

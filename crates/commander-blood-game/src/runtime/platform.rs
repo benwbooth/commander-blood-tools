@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, Result, bail};
 use sdl3::EventPump;
 use sdl3::event::{Event, WindowEvent};
-use sdl3::mouse::{MouseButton, MouseState, MouseUtil};
+use sdl3::mouse::{MouseButton, MouseUtil};
 use sdl3::video::Window;
 
 use crate::native::bloodprg::{
@@ -90,7 +90,6 @@ impl<'window> RuntimePlatformHost<'window> {
     /// scoped to the synchronous alien overlay, whose recovered driver consumes
     /// unbounded motion rather than a window position.
     pub fn new(window: &'window Window, mouse: MouseUtil, events: EventPump) -> Self {
-        let pointer_buttons = pointer_buttons(&events.mouse_state());
         mouse.set_relative_mouse_mode(window, false);
         Self {
             window,
@@ -98,7 +97,7 @@ impl<'window> RuntimePlatformHost<'window> {
             events,
             frame_clock: GameFrameClock::default(),
             bridge_horizontal_delta: 0.0,
-            pointer_buttons,
+            pointer_buttons: PointerButtons::NONE,
             logical_pointer: INITIAL_LOGICAL_POINTER.map(f32::from),
             pointer_inside_window: false,
             alien_pointer: None,
@@ -185,6 +184,7 @@ impl<'window> RuntimePlatformHost<'window> {
                     ..
                 } if event_window_id == window_id => {
                     self.pointer_inside_window = false;
+                    self.pointer_buttons = PointerButtons::NONE;
                     self.mouse.set_relative_mouse_mode(self.window, false);
                 }
                 Event::Window {
@@ -208,6 +208,7 @@ impl<'window> RuntimePlatformHost<'window> {
                     ..
                 } if event_window_id == window_id => {
                     self.pointer_inside_window = false;
+                    self.pointer_buttons = PointerButtons::NONE;
                 }
                 Event::MouseMotion {
                     window_id: event_window_id,
@@ -236,6 +237,7 @@ impl<'window> RuntimePlatformHost<'window> {
                     mouse_btn,
                     ..
                 } if event_window_id == window_id => {
+                    self.pointer_inside_window = true;
                     set_pointer_button(&mut self.pointer_buttons, mouse_btn, true);
                 }
                 Event::MouseButtonUp {
@@ -267,7 +269,9 @@ impl<'window> RuntimePlatformHost<'window> {
 
     /// Publish the window-relative host pointer into the recovered input sampler.
     pub fn poll_pointer(&mut self, services: &mut ModernGameServices<'window>) -> PointerSample {
-        services.publish_lifecycle_logical_pointer(self.logical_pointer(), self.pointer_buttons)
+        let buttons =
+            pointer_buttons_inside_window(self.pointer_inside_window, self.pointer_buttons);
+        services.publish_lifecycle_logical_pointer(self.logical_pointer(), buttons)
     }
 
     /// Current flat logical pointer mapped through the aspect-correct viewport.
@@ -358,15 +362,15 @@ impl GameFrameClock {
     }
 }
 
-fn pointer_buttons(mouse: &MouseState) -> PointerButtons {
-    let mut buttons = PointerButtons::NONE.bits();
-    if mouse.is_mouse_button_pressed(MouseButton::Left) {
-        buttons |= PointerButton::Primary as u16;
+fn pointer_buttons_inside_window(
+    pointer_inside_window: bool,
+    buttons: PointerButtons,
+) -> PointerButtons {
+    if pointer_inside_window {
+        buttons
+    } else {
+        PointerButtons::NONE
     }
-    if mouse.is_mouse_button_pressed(MouseButton::Right) {
-        buttons |= PointerButton::Secondary as u16;
-    }
-    PointerButtons::from_bits(buttons)
 }
 
 fn set_pointer_button(buttons: &mut PointerButtons, button: MouseButton, pressed: bool) {
@@ -583,6 +587,17 @@ mod tests {
         assert_eq!(buttons.bits(), PointerButton::Secondary as u16);
         set_pointer_button(&mut buttons, MouseButton::Right, false);
         assert_eq!(buttons, PointerButtons::NONE);
+    }
+
+    #[test]
+    fn desktop_button_state_cannot_activate_the_game_outside_its_window() {
+        let pressed = PointerButtons::from_bits(PointerButton::Primary as u16);
+
+        assert_eq!(
+            pointer_buttons_inside_window(false, pressed),
+            PointerButtons::NONE
+        );
+        assert_eq!(pointer_buttons_inside_window(true, pressed), pressed);
     }
 
     #[test]

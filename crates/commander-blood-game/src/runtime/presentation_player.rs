@@ -4,8 +4,9 @@ use anyhow::{Context, Result, bail};
 use commander_blood_formats::bloodprg::BloodprgPresentationCatalog;
 
 use crate::native::bloodprg::{
-    DescriptPresentationAssets, IndexedGamePalette, PresentationPresentPolicy,
-    PresentationResourceId, PresentationResourceSequenceOutcome,
+    DescriptPresentationAssets, IndexedGamePalette, InputCancellationBackend,
+    PresentationPresentPolicy, PresentationResourceCursor, PresentationResourceId,
+    PresentationResourceSequenceOutcome,
 };
 
 use super::{
@@ -127,9 +128,35 @@ impl RuntimePresentationPlayer {
         self.active_stream.take()
     }
 
+    /// Snapshot the active stream cursor used by the native Escape handler.
+    pub(crate) fn cancellation_cursor(&self) -> Option<PresentationResourceCursor> {
+        self.active_stream
+            .as_ref()
+            .and_then(RuntimePresentationStream::cancellation_cursor)
+    }
+
+    /// Apply the cursor rewritten by the native Escape handler.
+    pub(crate) fn apply_cancellation_cursor(
+        &mut self,
+        cursor: PresentationResourceCursor,
+    ) -> Result<()> {
+        self.active_stream
+            .as_mut()
+            .context("presentation cancellation has no active stream")?
+            .apply_cancellation_cursor(cursor)
+    }
+
     /// Borrow the mutable presentation-line catalog for recovered coordinators.
     pub const fn catalog(&self) -> &RuntimePresentationCatalog {
         &self.catalog
+    }
+}
+
+impl InputCancellationBackend for RuntimePresentationPlayer {
+    fn reset_presentation_queue(&mut self) {
+        if let Some(stream) = &mut self.active_stream {
+            stream.reset_presentation_queue();
+        }
     }
 }
 
@@ -137,6 +164,9 @@ impl RuntimePresentationPlayer {
 mod tests {
     use std::path::{Path, PathBuf};
 
+    use crate::native::bloodprg::{
+        InputCancellationOutcome, InputCancellationState, InputDispatchState, cancel_input_action,
+    };
     use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
 
     use super::*;
@@ -209,6 +239,52 @@ mod tests {
                 )
                 .is_err()
         );
+    }
+
+    #[test]
+    fn cancelled_real_stream_rewinds_and_resumes_without_stalling() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationPresentPolicy::default(),
+                u16::MIN,
+                false,
+            )
+            .unwrap();
+        player
+            .service_frame(&mut runtime, u16::MIN, 1, false)
+            .unwrap();
+
+        let mut cancellation = InputCancellationState {
+            presentation_active: true,
+            dialogue_ready: false,
+            ship_active: false,
+            active_line: 2,
+            resources: player.cancellation_cursor().unwrap(),
+            scene_palette: *runtime.live_palette(),
+            palette_dirty: false,
+        };
+        let rewind = cancellation.resources.rewind_position;
+        let mut dispatch = InputDispatchState::default();
+
+        assert_eq!(
+            cancel_input_action(&mut dispatch, &mut cancellation, &mut player, 27),
+            InputCancellationOutcome::CancelledPresentation
+        );
+        player
+            .apply_cancellation_cursor(cancellation.resources)
+            .unwrap();
+        assert_eq!(player.cancellation_cursor().unwrap().read_position, rewind);
+        player
+            .service_frame(&mut runtime, u16::MIN, 2, false)
+            .unwrap();
+        assert!(player.has_stream());
     }
 
     fn original_data() -> Option<OriginalGameData> {

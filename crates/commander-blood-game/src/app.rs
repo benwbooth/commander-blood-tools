@@ -281,6 +281,18 @@ pub fn run() -> Result<()> {
     } else {
         None
     };
+    let manu3_palette = if manu3.is_some() {
+        Some(
+            decode_bloodprg_default_vga_palette(
+                executable
+                    .as_deref()
+                    .context("MANU3 rendering requires BLOODPRG.EXE")?,
+            )
+            .context("decoding native MANU3 palette from BLOODPRG.EXE")?,
+        )
+    } else {
+        None
+    };
 
     let sdl = sdl3::init().map_err(anyhow::Error::msg)?;
     let video = sdl.video().map_err(anyhow::Error::msg)?;
@@ -300,6 +312,7 @@ pub fn run() -> Result<()> {
         &window,
         &image,
         manu3.as_ref(),
+        manu3_palette.as_ref(),
         alien.as_ref().map(AlienScene::asset),
         bridge_palette.as_ref(),
     )?;

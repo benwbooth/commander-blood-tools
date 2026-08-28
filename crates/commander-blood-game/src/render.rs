@@ -37,8 +37,8 @@ const CENTERING_DIVISOR: f32 = 2.0;
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: u32 = 4;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: u32 = 3;
 const MANU3_TEXTURE_BINDING: u32 = 0;
-const MANU3_PALETTE_BINDING: u32 = 1;
 const MANU3_VERTEX_COUNT_PER_FACE: usize = 3;
+#[cfg(test)]
 const PALETTE_ENTRY_COUNT: u32 = 256;
 const DEPTH_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 const CLEAR_DEPTH: f32 = 1.0;
@@ -100,6 +100,7 @@ impl<'window> Renderer<'window> {
         window: &'window Window,
         image: &OriginalFrame,
         manu3_model: Option<&Manu3Model>,
+        manu3_palette: Option<&IndexedGamePalette>,
         alien_asset: Option<&AlienAsset>,
         bridge_palette: Option<&IndexedGamePalette>,
     ) -> Result<Self> {
@@ -252,23 +253,26 @@ impl<'window> Renderer<'window> {
             "indexed artwork overlay pipeline",
             Some(wgpu::BlendState::ALPHA_BLENDING),
         );
-        let manu3 = manu3_model.map(|model| {
-            Manu3Renderer::new(
-                &device,
-                &queue,
-                format,
-                config.width,
-                config.height,
-                image,
-                model.texture(),
-                model.faces().len(),
-            )
-        });
+        let manu3 = manu3_model
+            .map(|model| {
+                let palette = manu3_palette.context("MANU3 rendering requires authored colors")?;
+                Manu3Renderer::new(
+                    &device,
+                    &queue,
+                    format,
+                    config.width,
+                    config.height,
+                    model.texture(),
+                    palette,
+                    model.faces().len(),
+                )
+            })
+            .transpose()?;
         let alien = alien_asset.map(|asset| {
             AlienRenderer::new(&device, &queue, format, config.width, config.height, asset)
         });
         let bridge = bridge_palette
-            .map(|palette| BridgeRenderer::new(&device, &queue, format, palette))
+            .map(|palette| BridgeRenderer::new(&device, format, palette))
             .transpose()?;
 
         Ok(Self {
@@ -469,7 +473,7 @@ impl<'window> Renderer<'window> {
         if let Some(alien_frame) = alien_frame {
             let alien = self
                 .alien
-                .as_ref()
+                .as_mut()
                 .context("alien frame supplied without alien GPU resources")?;
             alien.encode(
                 &self.queue,
@@ -481,7 +485,7 @@ impl<'window> Renderer<'window> {
         } else if let Some(bridge_frame) = bridge_frame {
             let bridge = self
                 .bridge
-                .as_ref()
+                .as_mut()
                 .context("bridge frame supplied without bridge GPU resources")?;
             bridge.encode(
                 &self.queue,
@@ -685,22 +689,24 @@ impl Manu3Renderer {
         surface_format: wgpu::TextureFormat,
         surface_width: u32,
         surface_height: u32,
-        frame: &OriginalFrame,
         texture: &IndexedTexture,
+        palette: &IndexedGamePalette,
         maximum_triangle_count: usize,
-    ) -> Self {
+    ) -> Result<Self> {
+        let texture_rgba = expand_indexed_rgba(&texture.pixels, palette, false)
+            .context("converting the authored MANU3 texture to RGBA")?;
         let texture_size = wgpu::Extent3d {
             width: texture.width as u32,
             height: texture.height as u32,
             depth_or_array_layers: SINGLE_TEXTURE_LAYER,
         };
         let texture_image = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("MANU3 indexed hand texture"),
+            label: Some("MANU3 RGBA hand texture"),
             size: texture_size,
             mip_level_count: MIP_LEVEL_COUNT,
             sample_count: SINGLE_SAMPLE_COUNT,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R8Uint,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         });
@@ -711,91 +717,40 @@ impl Manu3Renderer {
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            &texture.pixels,
+            &texture_rgba,
             wgpu::TexelCopyBufferLayout {
                 offset: u64::MIN,
-                bytes_per_row: Some(texture.width as u32),
+                bytes_per_row: Some(texture.width as u32 * RGBA_BYTES_PER_PIXEL),
                 rows_per_image: Some(texture.height as u32),
             },
             texture_size,
         );
 
-        let palette_size = wgpu::Extent3d {
-            width: PALETTE_ENTRY_COUNT,
-            height: SINGLE_TEXTURE_LAYER,
-            depth_or_array_layers: SINGLE_TEXTURE_LAYER,
-        };
-        let palette_image = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("MANU3 scene palette"),
-            size: palette_size,
-            mip_level_count: MIP_LEVEL_COUNT,
-            sample_count: SINGLE_SAMPLE_COUNT,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &palette_image,
-                mip_level: BASE_MIP_LEVEL,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &frame.palette_rgba,
-            wgpu::TexelCopyBufferLayout {
-                offset: u64::MIN,
-                bytes_per_row: Some(PALETTE_ENTRY_COUNT * RGBA_BYTES_PER_PIXEL),
-                rows_per_image: Some(SINGLE_TEXTURE_LAYER),
-            },
-            palette_size,
-        );
-
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("MANU3 texture and palette layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: MANU3_TEXTURE_BINDING,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Uint,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
+            label: Some("MANU3 RGBA texture layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: MANU3_TEXTURE_BINDING,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
                 },
-                wgpu::BindGroupLayoutEntry {
-                    binding: MANU3_PALETTE_BINDING,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-            ],
+                count: None,
+            }],
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("MANU3 texture and palette bind group"),
+            label: Some("MANU3 RGBA texture bind group"),
             layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: MANU3_TEXTURE_BINDING,
-                    resource: wgpu::BindingResource::TextureView(
-                        &texture_image.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: MANU3_PALETTE_BINDING,
-                    resource: wgpu::BindingResource::TextureView(
-                        &palette_image.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
+            entries: &[wgpu::BindGroupEntry {
+                binding: MANU3_TEXTURE_BINDING,
+                resource: wgpu::BindingResource::TextureView(
+                    &texture_image.create_view(&wgpu::TextureViewDescriptor::default()),
+                ),
+            }],
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("MANU3 indexed triangle shader"),
+            label: Some("MANU3 RGBA triangle shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("manu3.wgsl"))),
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -850,13 +805,13 @@ impl Manu3Renderer {
             mapped_at_creation: false,
         });
 
-        Self {
+        Ok(Self {
             pipeline,
             bind_group,
             vertex_buffer,
             maximum_vertex_count,
             depth_view: create_depth_view(device, surface_width, surface_height),
-        }
+        })
     }
 
     fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
@@ -983,9 +938,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use commander_blood_formats::manu3::decode_manu3;
-    use commander_blood_formats::palette::{
-        MANU3_PALETTE_END, MANU3_PALETTE_START, decode_bloodprg_default_palette,
-    };
+    use commander_blood_formats::palette::decode_bloodprg_default_vga_palette;
 
     use super::*;
     use crate::native::manu3::animation::CursorPosition;
@@ -1092,12 +1045,6 @@ mod tests {
 
     #[test]
     fn original_manu3_renders_nonblank_inside_wide_and_portrait_viewports() {
-        let Some(image_path) = original_file(&[
-            "output/_tmp_dat/fd/pterra1f.lbm",
-            "../../output/_tmp_dat/fd/pterra1f.lbm",
-        ]) else {
-            return;
-        };
         let Some(executable_path) = original_file(&[
             "output/_tmp_iso/BLOODPRG.EXE",
             "../../output/_tmp_iso/BLOODPRG.EXE",
@@ -1110,10 +1057,8 @@ mod tests {
         ]) else {
             return;
         };
-        let mut frame = OriginalFrame::load_lbm(&image_path).unwrap();
         let palette =
-            decode_bloodprg_default_palette(&std::fs::read(executable_path).unwrap()).unwrap();
-        frame.install_palette_range(&palette, MANU3_PALETTE_START..=MANU3_PALETTE_END);
+            decode_bloodprg_default_vga_palette(&std::fs::read(executable_path).unwrap()).unwrap();
         let asset = decode_manu3(&std::fs::read(xdb_path).unwrap()).unwrap();
         let mut model = Manu3Model::from_asset(asset).unwrap();
         model
@@ -1146,14 +1091,14 @@ mod tests {
         .unwrap();
 
         for (width, height) in OFFSCREEN_VIEWPORTS {
-            assert_offscreen_hand_pixels(&device, &queue, &frame, &model, width, height);
+            assert_offscreen_hand_pixels(&device, &queue, &palette, &model, width, height);
         }
     }
 
     fn assert_offscreen_hand_pixels(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        frame: &OriginalFrame,
+        palette: &IndexedGamePalette,
         model: &Manu3Model,
         width: u32,
         height: u32,
@@ -1164,10 +1109,11 @@ mod tests {
             OFFSCREEN_FORMAT,
             width,
             height,
-            frame,
             model.texture(),
+            palette,
             model.faces().len(),
-        );
+        )
+        .unwrap();
         let vertex_count = renderer.upload(queue, model.render_triangles()).unwrap();
         let output = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("MANU3 offscreen color target"),
@@ -1303,8 +1249,8 @@ mod tests {
                     )
                 },
             );
-        let nonblack_palette_entries = frame
-            .palette_rgba
+        let palette_rgba = indexed_palette_rgba(palette).unwrap();
+        let nonblack_palette_entries = palette_rgba
             .chunks_exact(RGBA_BYTES_PER_PIXEL as usize)
             .filter(|entry| entry[..3] != [u8::MIN; 3])
             .count();
@@ -1318,7 +1264,7 @@ mod tests {
             .iter()
             .filter(|index| {
                 let start = usize::from(**index) * RGBA_BYTES_PER_PIXEL as usize;
-                frame.palette_rgba[start..start + 3] != [u8::MIN; 3]
+                palette_rgba[start..start + 3] != [u8::MIN; 3]
             })
             .count();
         assert!(

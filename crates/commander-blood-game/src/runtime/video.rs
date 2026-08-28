@@ -5,13 +5,13 @@ use commander_blood_formats::archive::BloodResourceName;
 
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
-    FlatPresentationEntryPresenter, IndexedGamePalette, PresentationActiveEntryState,
-    PresentationEntryPolicy, PresentationPaletteState, PresentationPresentPolicy,
-    PresentationQueueClock, PresentationQueueClockGates, PresentationQueueLinkCursor,
-    PresentationQueueRefillOutcome, PresentationQueueServiceContext,
-    PresentationQueueServiceOutcome, PresentationQueueState, PresentationResourceDescriptor,
-    PresentationResourceId, PresentationResourceSequenceContext,
-    PresentationResourceSequenceOutcome, PresentationResourceStreamState,
+    FlatPresentationEntryPresenter, IndexedGamePalette, InputCancellationBackend,
+    PresentationActiveEntryState, PresentationEntryPolicy, PresentationPaletteState,
+    PresentationPresentPolicy, PresentationQueueClock, PresentationQueueClockGates,
+    PresentationQueueLinkCursor, PresentationQueueRefillOutcome, PresentationQueueServiceContext,
+    PresentationQueueServiceOutcome, PresentationQueueState, PresentationResourceCursor,
+    PresentationResourceDescriptor, PresentationResourceId, PresentationResourceSequenceContext,
+    PresentationResourceSequenceOutcome, PresentationResourceStreamState, PresentationSourceRange,
     load_presentation_resource_sequence, service_presentation_queue,
 };
 
@@ -269,6 +269,40 @@ impl RuntimePresentationStream {
                 .context("presentation entry metric exceeds the native word range")?,
             read_wrap_index: self.queue.read_wrap_index,
         })
+    }
+
+    /// Snapshot the native resource cursor and its authored cancellation rewind point.
+    pub(crate) fn cancellation_cursor(&self) -> Option<PresentationResourceCursor> {
+        let source = self.stream.source.as_ref()?;
+        let rewind = self.stream.index_range?;
+        Some(PresentationResourceCursor {
+            read_position: source.position(),
+            remaining: self.stream.source_remaining()?,
+            rewind_position: rewind.position,
+            rewind_remaining: rewind.remaining,
+        })
+    }
+
+    /// Restore the validated range selected by the recovered cancellation routine.
+    pub(crate) fn apply_cancellation_cursor(
+        &mut self,
+        cursor: PresentationResourceCursor,
+    ) -> Result<()> {
+        self.stream
+            .select_range(PresentationSourceRange {
+                position: cursor.read_position,
+                remaining: cursor.remaining,
+            })
+            .context("rewinding the cancelled presentation resource")?;
+        self.active_entry = PresentationActiveEntryState::default();
+        self.finished = false;
+        Ok(())
+    }
+}
+
+impl InputCancellationBackend for RuntimePresentationStream {
+    fn reset_presentation_queue(&mut self) {
+        self.queue.reset(self.queue_buffer.len());
     }
 }
 

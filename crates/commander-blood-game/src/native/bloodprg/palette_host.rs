@@ -9,7 +9,7 @@ pub trait IndexedPalettePublisher {
     /// Renderer publication failure.
     type Error;
 
-    /// Upload all authored DAC components to the current wgpu palette texture.
+    /// Publish all authored DAC components to modern presentation state.
     fn publish_palette(&mut self, palette: &IndexedGamePalette) -> Result<(), Self::Error>;
 }
 

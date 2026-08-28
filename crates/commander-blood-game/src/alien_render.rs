@@ -14,8 +14,7 @@ const MIP_LEVEL_COUNT: u32 = 1;
 const SINGLE_SAMPLE_COUNT: u32 = 1;
 const SINGLE_TEXTURE_LAYER: u32 = 1;
 const TEXTURE_BINDING: u32 = 0;
-const PALETTE_BINDING: u32 = 1;
-const PALETTE_ENTRY_COUNT: u32 = 256;
+const PALETTE_ENTRY_COUNT: usize = 256;
 const RGB_COMPONENT_COUNT: usize = 3;
 const RGBA_COMPONENT_COUNT: usize = 4;
 const ALPHA_COMPONENT: u8 = u8::MAX;
@@ -41,13 +40,13 @@ struct AlienGpuVertex {
 #[derive(Clone, Copy, Pod, Zeroable)]
 struct AlienStarGpuVertex {
     screen: [f32; 2],
-    palette_index: u32,
+    color: [u8; RGBA_COMPONENT_COUNT],
 }
 
 const ALIEN_VERTEX_ATTRIBUTES: [wgpu::VertexAttribute; 3] =
     wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x2, 2 => Float32];
 const STAR_VERTEX_ATTRIBUTES: [wgpu::VertexAttribute; 2] =
-    wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32];
+    wgpu::vertex_attr_array![0 => Float32x2, 1 => Unorm8x4];
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct AlienDrawRanges {
@@ -62,8 +61,10 @@ pub(crate) struct AlienRenderer {
     textured_pipeline: wgpu::RenderPipeline,
     star_pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
-    indexed_texture: wgpu::Texture,
-    indexed_texture_size: wgpu::Extent3d,
+    texture: wgpu::Texture,
+    texture_size: wgpu::Extent3d,
+    colors: [[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+    texture_rgba: Vec<u8>,
     triangle_vertices: wgpu::Buffer,
     star_vertices: wgpu::Buffer,
     maximum_triangle_vertices: usize,
@@ -87,40 +88,8 @@ impl AlienRenderer {
             depth_or_array_layers: SINGLE_TEXTURE_LAYER,
         };
         let texture_image = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("alien indexed texture atlas"),
+            label: Some("alien RGBA texture atlas"),
             size: texture_size,
-            mip_level_count: MIP_LEVEL_COUNT,
-            sample_count: SINGLE_SAMPLE_COUNT,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R8Uint,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &texture_image,
-                mip_level: BASE_MIP_LEVEL,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &asset.texture.pixels,
-            wgpu::TexelCopyBufferLayout {
-                offset: u64::MIN,
-                bytes_per_row: Some(asset.texture.width as u32),
-                rows_per_image: Some(asset.texture.height as u32),
-            },
-            texture_size,
-        );
-
-        let palette_rgba = palette_rgba(asset);
-        let palette_size = wgpu::Extent3d {
-            width: PALETTE_ENTRY_COUNT,
-            height: SINGLE_TEXTURE_LAYER,
-            depth_or_array_layers: SINGLE_TEXTURE_LAYER,
-        };
-        let palette_image = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("alien display palette"),
-            size: palette_size,
             mip_level_count: MIP_LEVEL_COUNT,
             sample_count: SINGLE_SAMPLE_COUNT,
             dimension: wgpu::TextureDimension::D2,
@@ -128,67 +97,50 @@ impl AlienRenderer {
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
         });
+        let colors = palette_rgba(asset);
+        let mut texture_rgba = vec![u8::MIN; asset.texture.pixels.len() * RGBA_COMPONENT_COUNT];
+        expand_indexed_rgba_into(&asset.texture.pixels, &colors, &mut texture_rgba);
         queue.write_texture(
             wgpu::TexelCopyTextureInfo {
-                texture: &palette_image,
+                texture: &texture_image,
                 mip_level: BASE_MIP_LEVEL,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            &palette_rgba,
+            &texture_rgba,
             wgpu::TexelCopyBufferLayout {
                 offset: u64::MIN,
-                bytes_per_row: Some(PALETTE_ENTRY_COUNT * RGBA_COMPONENT_COUNT as u32),
-                rows_per_image: Some(SINGLE_TEXTURE_LAYER),
+                bytes_per_row: Some(asset.texture.width as u32 * RGBA_COMPONENT_COUNT as u32),
+                rows_per_image: Some(asset.texture.height as u32),
             },
-            palette_size,
+            texture_size,
         );
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("alien texture and palette layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: TEXTURE_BINDING,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Uint,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
+            label: Some("alien RGBA texture layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: TEXTURE_BINDING,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
                 },
-                wgpu::BindGroupLayoutEntry {
-                    binding: PALETTE_BINDING,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-            ],
+                count: None,
+            }],
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("alien texture and palette bind group"),
+            label: Some("alien RGBA texture bind group"),
             layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: TEXTURE_BINDING,
-                    resource: wgpu::BindingResource::TextureView(
-                        &texture_image.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: PALETTE_BINDING,
-                    resource: wgpu::BindingResource::TextureView(
-                        &palette_image.create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
+            entries: &[wgpu::BindGroupEntry {
+                binding: TEXTURE_BINDING,
+                resource: wgpu::BindingResource::TextureView(
+                    &texture_image.create_view(&wgpu::TextureViewDescriptor::default()),
+                ),
+            }],
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("alien indexed geometry shader"),
+            label: Some("alien true-color geometry shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("alien.wgsl"))),
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -294,8 +246,10 @@ impl AlienRenderer {
             textured_pipeline,
             star_pipeline,
             bind_group,
-            indexed_texture: texture_image,
-            indexed_texture_size: texture_size,
+            texture: texture_image,
+            texture_size,
+            colors,
+            texture_rgba,
             triangle_vertices,
             star_vertices,
             maximum_triangle_vertices,
@@ -310,10 +264,9 @@ impl AlienRenderer {
     }
 
     /// Upload one recovered scene frame into the dynamic GPU buffers.
-    fn upload(&self, queue: &wgpu::Queue, frame: &AlienSceneFrame) -> Result<AlienDrawRanges> {
+    fn upload(&mut self, queue: &wgpu::Queue, frame: &AlienSceneFrame) -> Result<AlienDrawRanges> {
         if let Some(pixels) = &frame.texture_update {
-            let expected = self.indexed_texture_size.width as usize
-                * self.indexed_texture_size.height as usize;
+            let expected = self.texture_size.width as usize * self.texture_size.height as usize;
             if pixels.len() != expected {
                 anyhow::bail!(
                     "alien texture update contains {} bytes, expected {}",
@@ -321,20 +274,21 @@ impl AlienRenderer {
                     expected
                 );
             }
+            expand_indexed_rgba_into(pixels, &self.colors, &mut self.texture_rgba);
             queue.write_texture(
                 wgpu::TexelCopyTextureInfo {
-                    texture: &self.indexed_texture,
+                    texture: &self.texture,
                     mip_level: BASE_MIP_LEVEL,
                     origin: wgpu::Origin3d::ZERO,
                     aspect: wgpu::TextureAspect::All,
                 },
-                pixels,
+                &self.texture_rgba,
                 wgpu::TexelCopyBufferLayout {
                     offset: u64::MIN,
-                    bytes_per_row: Some(self.indexed_texture_size.width),
-                    rows_per_image: Some(self.indexed_texture_size.height),
+                    bytes_per_row: Some(self.texture_size.width * RGBA_COMPONENT_COUNT as u32),
+                    rows_per_image: Some(self.texture_size.height),
                 },
-                self.indexed_texture_size,
+                self.texture_size,
             );
         }
         let mut triangle_vertices = Vec::new();
@@ -360,7 +314,7 @@ impl AlienRenderer {
             .starfield
             .stars
             .iter()
-            .flat_map(star_quad)
+            .flat_map(|star| star_quad(star, &self.colors))
             .collect::<Vec<_>>();
         if star_vertices.len() > self.maximum_star_vertices {
             anyhow::bail!(
@@ -387,7 +341,7 @@ impl AlienRenderer {
 
     /// Encode primary geometry, stars, and model geometry in native frame order.
     pub(crate) fn encode(
-        &self,
+        &mut self,
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         target: &wgpu::TextureView,
@@ -487,13 +441,24 @@ impl AlienRenderer {
     }
 }
 
-fn palette_rgba(asset: &AlienAsset) -> Vec<u8> {
-    let mut rgba = Vec::with_capacity(asset.palette.len() * RGBA_COMPONENT_COUNT);
-    for color in asset.palette {
-        rgba.extend_from_slice(&color[..RGB_COMPONENT_COUNT]);
-        rgba.push(ALPHA_COMPONENT);
+fn palette_rgba(asset: &AlienAsset) -> [[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT] {
+    let mut rgba = [[u8::MIN; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+    for (target, color) in rgba.iter_mut().zip(asset.palette) {
+        target[..RGB_COMPONENT_COUNT].copy_from_slice(&color[..RGB_COMPONENT_COUNT]);
+        target[RGB_COMPONENT_COUNT] = ALPHA_COMPONENT;
     }
     rgba
+}
+
+fn expand_indexed_rgba_into(
+    pixels: &[u8],
+    colors: &[[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+    rgba: &mut [u8],
+) {
+    debug_assert_eq!(rgba.len(), pixels.len() * RGBA_COMPONENT_COUNT);
+    for (target, palette_index) in rgba.chunks_exact_mut(RGBA_COMPONENT_COUNT).zip(pixels) {
+        target.copy_from_slice(&colors[usize::from(*palette_index)]);
+    }
 }
 
 fn append_triangle_layer(output: &mut Vec<AlienGpuVertex>, triangles: &[AlienRenderTriangle]) {
@@ -524,14 +489,17 @@ fn append_triangle_layer(output: &mut Vec<AlienGpuVertex>, triangles: &[AlienRen
     );
 }
 
-fn star_quad(star: &AlienStar) -> [AlienStarGpuVertex; STAR_VERTEX_COUNT] {
+fn star_quad(
+    star: &AlienStar,
+    colors: &[[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+) -> [AlienStarGpuVertex; STAR_VERTEX_COUNT] {
     let left = f32::from(star.screen[0]);
     let top = f32::from(star.screen[1]);
     let right = left + STAR_PIXEL_SIZE;
     let bottom = top + STAR_PIXEL_SIZE;
     let vertex = |screen| AlienStarGpuVertex {
         screen,
-        palette_index: u32::from(star.palette_index),
+        color: colors[usize::from(star.palette_index)],
     };
     [
         vertex([left, top]),
@@ -573,8 +541,8 @@ fn create_depth_view(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Te
         .create_view(&wgpu::TextureViewDescriptor::default())
 }
 
-const _: () = assert!(TEXTURE_WIDTH == PALETTE_ENTRY_COUNT as usize);
-const _: () = assert!(TEXTURE_HEIGHT == PALETTE_ENTRY_COUNT as usize * 2);
+const _: () = assert!(TEXTURE_WIDTH == PALETTE_ENTRY_COUNT);
+const _: () = assert!(TEXTURE_HEIGHT == PALETTE_ENTRY_COUNT * 2);
 
 #[cfg(test)]
 mod tests {
@@ -659,7 +627,7 @@ mod tests {
         width: u32,
         height: u32,
     ) {
-        let renderer = AlienRenderer::new(
+        let mut renderer = AlienRenderer::new(
             device,
             queue,
             OFFSCREEN_FORMAT,

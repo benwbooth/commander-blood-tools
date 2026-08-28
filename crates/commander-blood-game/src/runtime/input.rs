@@ -5,9 +5,10 @@ use std::collections::VecDeque;
 use sdl3::keyboard::Keycode;
 
 use crate::native::bloodprg::{
-    GameLifecycleState, HostInputKey, InputAction, InputArrowKey, InputDispatchState,
-    InputFunctionKey, PointerButtonEdges, PointerButtonState, PointerButtons, PointerSample,
-    PointerSampleState, dispatch_input_key, latch_input_text_byte, request_input_shutdown,
+    GameLifecycleState, HostInputKey, InputAction, InputArrowKey, InputCancellationBackend,
+    InputCancellationOutcome, InputCancellationState, InputDispatchState, InputFunctionKey,
+    PointerButtonEdges, PointerButtonState, PointerButtons, PointerSample, PointerSampleState,
+    cancel_input_action, dispatch_input_key, latch_input_text_byte, request_input_shutdown,
     toggle_input_pause, translate_input_key, update_pointer_button_edges, update_pointer_sample,
 };
 
@@ -124,6 +125,15 @@ impl RuntimeInputHost {
         state.pause_hud_active = self.dispatch.paused;
         state.exit_requested |= self.dispatch.shutdown_requested;
         action
+    }
+
+    /// Apply Escape through the recovered presentation-cancellation handler.
+    pub fn cancel_presentation<Backend: InputCancellationBackend>(
+        &mut self,
+        cancellation: &mut InputCancellationState,
+        backend: &mut Backend,
+    ) -> InputCancellationOutcome {
+        cancel_input_action(&mut self.dispatch, cancellation, backend, ASCII_ESCAPE)
     }
 
     /// Drain queued host keys as the BIOS words consumed by an alien XDB loop.

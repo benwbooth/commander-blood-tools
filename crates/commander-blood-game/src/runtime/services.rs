@@ -26,21 +26,21 @@ use crate::native::bloodprg::{
     DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
     FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
     IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
-    LoadedSoundBank, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
-    NameAreaEffectOutcome, NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame,
-    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationBridgeMode,
-    PresentationChoiceNumber, PresentationHitAreas, PresentationHitRectangle,
-    PresentationHitSelection, PresentationHoverOutcome, PresentationHoverState,
-    PresentationPresentPolicy, PresentationQueueServiceOutcome, PresentationResourceId,
-    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
-    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState,
-    ScriptActionState, ScriptClock, ScriptFrameOutcome, ScriptPresentationEntity,
-    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptShipNavigationMode, ScriptTravelActionPhase, ShipDepthTransitionOutcome,
-    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
-    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage,
-    StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
+    InputCancellationOutcome, InputCancellationState, LoadedSoundBank, Manu3HandFrameContext,
+    Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NameAreaEffectOutcome, NavActorSlot,
+    NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
+    PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
+    PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
+    PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
+    PresentationQueueServiceOutcome, PresentationResourceId, PresentationResourceSequenceOutcome,
+    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
+    PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
+    SHIP_CAMERA_RESET, SceneTransitionState, ScriptActionState, ScriptClock, ScriptFrameOutcome,
+    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
+    ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
+    SoundBankUsage, StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
     deactivate_nav_actor_slots, draw_planar_dialogue_text, fill_display_band,
     increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, objects_at_arche_position, play_cd_audio_track_two, prepare_cd_audio,
@@ -107,6 +107,7 @@ const DISABLED_PRESENTATION_HIT_RECT: PresentationHitRectangle =
 const BRIDGE_ACTOR_PALETTE_COLOR_COUNT: usize = 192;
 const CAMERA_PAGE_SHIP_ACTIVE_RESULT: u16 = 21;
 const CAMERA_PAGE_TOGGLE_BIT: u16 = 2;
+const INPUT_CANCEL_SHIP_BLOCK: u16 = 4;
 
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
@@ -1856,18 +1857,43 @@ impl<'window> ModernGameServices<'window> {
             .state())
     }
 
-    /// Latch Escape directly in the active bridge presentation panel.
-    pub fn request_presentation_cancel(&mut self) -> Result<bool> {
-        let screen = self
-            .presentation_screen
-            .as_mut()
-            .context("presentation screen is already being updated")?
-            .state_mut();
-        if !screen.active() {
-            return Ok(false);
+    /// Apply Escape through the recovered presentation-resource cancellation path.
+    pub fn cancel_lifecycle_presentation(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<InputCancellationOutcome> {
+        let cursor = self.presentation_player.cancellation_cursor();
+        let mut cancellation = InputCancellationState {
+            presentation_active: lifecycle.presentation.c2_presentation_gate && cursor.is_some(),
+            dialogue_ready: self.ship_presentation.dialogue_phase_ready & 1 != u8::MIN,
+            ship_active: self.ship_presentation.flags & INPUT_CANCEL_SHIP_BLOCK != u16::MIN,
+            active_line: usize::from(
+                lifecycle
+                    .presentation
+                    .active_line
+                    .unwrap_or(self.ship_presentation.active_line),
+            ),
+            resources: cursor.unwrap_or_default(),
+            scene_palette: *self.runtime.live_palette(),
+            palette_dirty: false,
+        };
+        let outcome = self
+            .input
+            .cancel_presentation(&mut cancellation, &mut self.presentation_player);
+        lifecycle.pause_hud_active = self.input.dispatch_state().paused;
+
+        if outcome == InputCancellationOutcome::CancelledPresentation {
+            self.presentation_player
+                .apply_cancellation_cursor(cancellation.resources)?;
+            self.ship_presentation.dialogue_phase_ready = u8::from(cancellation.dialogue_ready);
+            *self.runtime.live_palette_mut() = cancellation.scene_palette;
+            self.presentation_screen
+                .as_mut()
+                .context("presentation screen is already being updated")?
+                .synchronize_scene_palette(cancellation.scene_palette);
+            self.palette_transition.request_visual_color_update();
         }
-        screen.request_cancel();
-        Ok(true)
+        Ok(outcome)
     }
 
     /// Advance the bridge presentation panel from live script and pointer state.

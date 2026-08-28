@@ -17,16 +17,15 @@ struct TexturedOutput {
 
 struct StarInput {
     @location(0) screen: vec2<f32>,
-    @location(1) palette_index: u32,
+    @location(1) color: vec4<f32>,
 };
 
 struct StarOutput {
     @builtin(position) position: vec4<f32>,
-    @location(0) @interpolate(flat) palette_index: u32,
+    @location(0) @interpolate(flat) color: vec4<f32>,
 };
 
-@group(0) @binding(0) var alien_texture: texture_2d<u32>;
-@group(0) @binding(1) var alien_palette: texture_2d<f32>;
+@group(0) @binding(0) var alien_texture: texture_2d<f32>;
 
 fn screen_position(screen: vec2<f32>, depth: f32) -> vec4<f32> {
     let x = NDC_LEFT + screen.x * NDC_EXTENT / ORIGINAL_WIDTH;
@@ -50,19 +49,18 @@ fn fs_textured(input: TexturedOutput) -> @location(0) vec4<f32> {
         vec2<i32>(0),
         vec2<i32>(texture_size) - vec2<i32>(1),
     );
-    let palette_index = textureLoad(alien_texture, texel, 0).r;
-    return textureLoad(alien_palette, vec2<i32>(i32(palette_index), 0), 0);
+    return textureLoad(alien_texture, texel, 0);
 }
 
 @vertex
 fn vs_star(input: StarInput) -> StarOutput {
     var output: StarOutput;
     output.position = screen_position(input.screen, 0.0);
-    output.palette_index = input.palette_index;
+    output.color = input.color;
     return output;
 }
 
 @fragment
 fn fs_star(input: StarOutput) -> @location(0) vec4<f32> {
-    return textureLoad(alien_palette, vec2<i32>(i32(input.palette_index), 0), 0);
+    return input.color;
 }

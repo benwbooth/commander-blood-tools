@@ -78,6 +78,19 @@ const FORBIDDEN_RUNTIME_CAPTURE_MARKERS: [&str; 4] = [
     "manu3_seg2_1b76.bin",
     "manu3_seg4_1c94.bin",
 ];
+const PRODUCTION_WGPU_SOURCES: [&str; 6] = [
+    "src/render.rs",
+    "src/bridge_render.rs",
+    "src/alien_render.rs",
+    "src/manu3.wgsl",
+    "src/bridge.wgsl",
+    "src/alien.wgsl",
+];
+const FORBIDDEN_INDEXED_GPU_MARKERS: [&str; 3] = [
+    "TextureFormat::R8Uint",
+    "texture_2d<u32>",
+    "palette_texture",
+];
 
 fn rust_sources(directory: &Path, output: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(directory).unwrap() {
@@ -204,6 +217,23 @@ fn production_game_does_not_spawn_external_programs() {
             assert!(
                 !source.contains(forbidden),
                 "{} invokes external program through {forbidden}",
+                source_path.display()
+            );
+        }
+    }
+}
+
+#[test]
+fn production_wgpu_paths_use_true_color_resources() {
+    let game_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+
+    for relative_path in PRODUCTION_WGPU_SOURCES {
+        let source_path = game_root.join(relative_path);
+        let source = std::fs::read_to_string(&source_path).unwrap();
+        for forbidden in FORBIDDEN_INDEXED_GPU_MARKERS {
+            assert!(
+                !source.contains(forbidden),
+                "{} contains indexed GPU marker {forbidden}",
                 source_path.display()
             );
         }

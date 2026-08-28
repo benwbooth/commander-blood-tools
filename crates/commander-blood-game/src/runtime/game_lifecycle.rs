@@ -8,8 +8,8 @@ use sdl3::AudioSubsystem;
 use crate::native::bloodprg::{
     BridgeSceneInput, BridgeSteeringInteraction, CdAudioPreparationOutcome, ConfirmDialogOutcome,
     GameLifecycleHost, GameLifecycleState, GameProfileLoadStatus, GameSceneLink, GameTimerContext,
-    GameTimerState, GameVmRunStatus, InputAction, PresentationResourceId, ScriptProfileId,
-    ScriptRuntime, advance_game_timer_tick,
+    GameTimerState, GameVmRunStatus, InputAction, InputCancellationOutcome, PresentationResourceId,
+    ScriptProfileId, ScriptRuntime, advance_game_timer_tick,
 };
 
 use super::bridge_frame::run_runtime_bridge_frame;
@@ -279,8 +279,12 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         }
         self.advance_frame_timers(state)?;
         if let Some(action) = self.platform.dispatch_events(&mut self.services, state) {
-            let presentation_cancelled = matches!(action, InputAction::Cancel)
-                && self.services.request_presentation_cancel()?;
+            let presentation_cancelled = if matches!(action, InputAction::Cancel) {
+                self.services.cancel_lifecycle_presentation(state)?
+                    == InputCancellationOutcome::CancelledPresentation
+            } else {
+                false
+            };
             if !presentation_cancelled {
                 self.services.queue_save_load_input(action)?;
             }

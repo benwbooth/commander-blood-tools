@@ -14,6 +14,7 @@ const INITIAL_TRANSITION_PERCENT: u16 = 100;
 const INITIAL_TRANSITION_INCREMENT: u16 = u16::MIN;
 const INITIAL_TRANSITION_COLOR: u8 = u8::MIN;
 const INITIAL_DIRTY_FLAGS: u8 = u8::MIN;
+const PALETTE_UPLOAD_REQUESTED: u8 = 1;
 const EMPTY_PALETTE: IndexedGamePalette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
 
 /// Complete typed inputs for one recovered zero-to-100 palette transition.
@@ -84,6 +85,11 @@ impl RuntimePaletteTransition {
     pub fn synchronize_presentation_source(&mut self, palette: &IndexedGamePalette) {
         self.source[..PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT]
             .copy_from_slice(&palette[..PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT]);
+    }
+
+    /// Request the frame-tail side effects associated with a recovered color update.
+    pub fn request_visual_color_update(&mut self) {
+        self.state.dirty_flags = PALETTE_UPLOAD_REQUESTED;
     }
 
     /// Replace all transition inputs after validating the typed color interval.

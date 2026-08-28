@@ -15,8 +15,7 @@ struct VertexOutput {
     @location(0) texture_coordinates: vec2<f32>,
 };
 
-@group(0) @binding(0) var hand_texture: texture_2d<u32>;
-@group(0) @binding(1) var scene_palette: texture_2d<f32>;
+@group(0) @binding(0) var hand_texture: texture_2d<f32>;
 
 @vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
@@ -36,6 +35,5 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
         vec2<i32>(0),
         vec2<i32>(texture_size) - vec2<i32>(1),
     );
-    let palette_index = textureLoad(hand_texture, texel, 0).r;
-    return textureLoad(scene_palette, vec2<i32>(i32(palette_index), 0), 0);
+    return textureLoad(hand_texture, texel, 0);
 }
