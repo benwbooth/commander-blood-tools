@@ -15,7 +15,6 @@ use crate::native::bloodprg::{
 use super::{ModernGameServices, RuntimePaletteTransitionConfig, RuntimePlatformHost};
 
 const SCENE_TRANSITION_IMAGE_RESOURCE: &[u8] = b"FRIGO.FD";
-const BASE_MANU3_ANIMATION: u16 = u16::MIN;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct RuntimeSceneRecord {
@@ -153,9 +152,15 @@ impl RuntimeSceneTransition {
                     .expect("active scene transition retains its deferred record")
                     .object,
             );
-            services.request_manu3_animation(BASE_MANU3_ANIMATION);
-        } else if outcome == SceneTransitionOutcome::CleanedUp {
-            services.request_manu3_animation(BASE_MANU3_ANIMATION);
+        }
+        if matches!(
+            outcome,
+            SceneTransitionOutcome::ImageLoaded
+                | SceneTransitionOutcome::DeferredRecordArmed
+                | SceneTransitionOutcome::CleanedUp
+        ) && let Some(selector) = self.state.manu3_animation
+        {
+            services.request_manu3_animation(selector);
         }
         lifecycle.presentation.active_line = self.state.active_line.map(|line| line.number());
         lifecycle.presentation.scene_gate_active = self.state.scene_gate_active;

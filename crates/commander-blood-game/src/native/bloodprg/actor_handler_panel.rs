@@ -41,6 +41,9 @@ pub struct PanelCloseActorState {
 
 /// Line, queue, and entity services used by the panel-close actor.
 pub trait PanelCloseActorBackend: PresentationLineStepper {
+    /// Request the panel-close hand animation through the shared selector.
+    fn request_panel_close_hand_animation(&mut self);
+
     /// Finalize the currently queued scene presentation.
     fn finalize_scene_presentation(&mut self);
 
@@ -80,6 +83,7 @@ pub fn update_panel_close_actor<Backend: PanelCloseActorBackend>(
     line.flags.present = true;
     let outcome = if line.flags.ready {
         state.presentation = PanelCloseActorPresentation::Presenting;
+        backend.request_panel_close_hand_animation();
         if state.panel_active && state.zoom_counter < PANEL_CLOSE_ZOOM_THRESHOLD {
             state.zoom_counter = PANEL_CLOSE_START;
             if state.scene_queued {
@@ -154,6 +158,7 @@ mod tests {
         completed: bool,
         finalizer_called: bool,
         entity_called: bool,
+        hand_animation_requested: bool,
     }
 
     impl PresentationLineStepper for OracleBackend {
@@ -174,6 +179,10 @@ mod tests {
     }
 
     impl PanelCloseActorBackend for OracleBackend {
+        fn request_panel_close_hand_animation(&mut self) {
+            self.hand_animation_requested = true;
+        }
+
         fn finalize_scene_presentation(&mut self) {
             self.finalizer_called = true;
         }
@@ -226,6 +235,11 @@ mod tests {
 
             assert_eq!(
                 backend.line_called, vector.line_helper_called,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                backend.hand_animation_requested, vector.line_helper_called,
                 "{}",
                 vector.name
             );

@@ -3,9 +3,9 @@
 use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
-    CameraApproachContext, CameraApproachHost, CameraApproachOutcome, GameLifecycleState,
-    GameSceneLink, ShipViewEntityId, decode_active_presentation_line,
-    encode_active_presentation_line, update_camera_approach,
+    CameraApproachContext, CameraApproachHost, CameraApproachOutcome, CameraApproachPresentation,
+    GameLifecycleState, GameSceneLink, Manu3AnimationSelector, ShipViewEntityId,
+    decode_active_presentation_line, encode_active_presentation_line, update_camera_approach,
 };
 
 use super::ModernGameServices;
@@ -110,6 +110,19 @@ impl RuntimeCameraApproachHost<'_, '_> {
 
 impl CameraApproachHost<GameSceneLink> for RuntimeCameraApproachHost<'_, '_> {
     type Error = anyhow::Error;
+
+    fn publish_actor_presentation(&mut self, presentation: CameraApproachPresentation) {
+        let selector = match presentation {
+            CameraApproachPresentation::Inactive => Manu3AnimationSelector::Neutral,
+            CameraApproachPresentation::Active => Manu3AnimationSelector::BridgeActive,
+            CameraApproachPresentation::Suppressed => Manu3AnimationSelector::Disabled,
+            CameraApproachPresentation::Other(value) => {
+                debug_assert!(false, "camera approach published unknown selector {value}");
+                return;
+            }
+        };
+        self.services.request_manu3_animation(selector);
+    }
 
     fn initialize_screen_flags(&mut self) {
         let result = self.services.initialize_camera_transition_screen();

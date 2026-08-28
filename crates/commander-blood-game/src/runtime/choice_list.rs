@@ -3,10 +3,10 @@
 use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
-    ChoiceListRect, ChoiceListRowKind, ChoiceListState, FontPoint, FontVerticalBand, GameFontFace,
-    PaletteRemapTable, RasterPoint, build_banked_tint_table, draw_square_caps_text,
-    measure_game_text_width, remap_framebuffer_rect, update_choice_list,
+    BridgeSpriteRect, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListHandRequest,
+    ChoiceListPointer, ChoiceListRect, ChoiceListRowKind, ChoiceListState, FontPoint,
+    FontVerticalBand, GameFontFace, PaletteRemapTable, RasterPoint, build_banked_tint_table,
+    draw_square_caps_text, measure_game_text_width, remap_framebuffer_rect, update_choice_list,
 };
 
 use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime};
@@ -56,16 +56,19 @@ pub(super) fn prepare_choice_list_frame(
     config: ChoiceListConfig<'_>,
     state: &mut ChoiceListState,
     pointer: ChoiceListPointer,
-) -> Result<ChoiceListFrame> {
+    current_hand_animation: u16,
+) -> Result<(ChoiceListFrame, Vec<ChoiceListHandRequest>)> {
     let fonts = runtime.data().font_resources().clone();
     let mut tint = [u8::MIN; 256];
     build_banked_tint_table(runtime.live_palette(), &mut tint, BRIDGE_CONSOLE_TINT_FIRST)
         .context("building the bridge choice-list tint table")?;
 
-    let mut backend = RuntimeChoiceListBackend::new(runtime, &fonts, &tint, pointer);
+    let mut backend =
+        RuntimeChoiceListBackend::new(runtime, &fonts, &tint, pointer, current_hand_animation);
     let frame = update_choice_list(labels, config, state, &mut backend);
     backend.finish()?;
-    Ok(frame)
+    let hand_requests = backend.take_hand_requests();
+    Ok((frame, hand_requests))
 }
 
 pub(super) struct RuntimeChoiceListBackend<'runtime> {
@@ -73,6 +76,8 @@ pub(super) struct RuntimeChoiceListBackend<'runtime> {
     fonts: &'runtime commander_blood_formats::bloodprg::BloodprgFontResources,
     tint: &'runtime PaletteRemapTable,
     pointer: ChoiceListPointer,
+    current_hand_animation: u16,
+    hand_requests: Vec<ChoiceListHandRequest>,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -82,12 +87,15 @@ impl RuntimeChoiceListBackend<'_> {
         fonts: &'runtime commander_blood_formats::bloodprg::BloodprgFontResources,
         tint: &'runtime PaletteRemapTable,
         pointer: ChoiceListPointer,
+        current_hand_animation: u16,
     ) -> RuntimeChoiceListBackend<'runtime> {
         RuntimeChoiceListBackend {
             runtime,
             fonts,
             tint,
             pointer,
+            current_hand_animation,
+            hand_requests: Vec::new(),
             deferred_error: None,
         }
     }
@@ -109,6 +117,10 @@ impl RuntimeChoiceListBackend<'_> {
 
     pub(super) fn runtime_mut(&mut self) -> &mut OriginalGameRuntime {
         self.runtime
+    }
+
+    pub(super) fn take_hand_requests(&mut self) -> Vec<ChoiceListHandRequest> {
+        std::mem::take(&mut self.hand_requests)
     }
 
     pub(super) fn remap_region(&mut self, origin: RasterPoint, width: u16, height: u16) {
@@ -160,6 +172,17 @@ impl ChoiceListBackend for RuntimeChoiceListBackend<'_> {
 
     fn pointer(&mut self) -> ChoiceListPointer {
         self.pointer
+    }
+
+    fn current_hand_animation(&self) -> u16 {
+        self.current_hand_animation
+    }
+
+    fn request_hand_animation(&mut self, request: ChoiceListHandRequest) {
+        if request.restart_current {
+            self.current_hand_animation = u16::MIN;
+        }
+        self.hand_requests.push(request);
     }
 }
 
@@ -238,7 +261,7 @@ mod tests {
         let mut runtime = OriginalGameRuntime::new(data);
         let labels: [&[u8]; 2] = [b"ARK", b"PTERRA"];
         let mut state = ChoiceListState::default();
-        let layout = prepare_choice_list_frame(
+        let (layout, _) = prepare_choice_list_frame(
             &mut runtime,
             &labels,
             ChoiceListConfig {
@@ -249,6 +272,7 @@ mod tests {
             },
             &mut state,
             ChoiceListPointer::default(),
+            u16::MIN,
         )
         .unwrap();
 
@@ -262,7 +286,7 @@ mod tests {
             cancel_label: None,
             layout_only: false,
         };
-        let frame = prepare_choice_list_frame(
+        let (frame, _) = prepare_choice_list_frame(
             &mut runtime,
             &labels,
             config,
@@ -274,6 +298,7 @@ mod tests {
                 ],
                 primary_pressed: true,
             },
+            u16::MIN,
         )
         .unwrap();
         assert_eq!(frame.selected_item, Some(usize::MIN));

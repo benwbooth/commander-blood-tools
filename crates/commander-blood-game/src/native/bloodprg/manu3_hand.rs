@@ -6,6 +6,58 @@ use crate::native::manu3::model::Manu3FrameRequest;
 const PRESENTATION_DELAY_FRAME_COUNT: u8 = 2;
 const DISABLED_SELECTOR_BOUNDARY: i16 = 0;
 
+/// Recovered values written to the shared MANU3 animation-selector word.
+///
+/// The original executable aliases this word with several subsystem-specific
+/// names at `DS:0x0A32`. Keeping one typed selector prevents the modern port
+/// from silently splitting those observable writes into unrelated state.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u16)]
+pub enum Manu3AnimationSelector {
+    /// Render the neutral hand pose.
+    #[default]
+    Neutral = 0,
+    /// Rebuild or reactivate the ordinary bridge presentation state.
+    BridgeActive = 1,
+    /// Steering changed with the pointer on the right half of the bridge.
+    SteeringRight = 2,
+    /// Steering changed with the pointer on the left half of the bridge.
+    SteeringLeft = 3,
+    /// Flick the radio orb while answering or ending a call.
+    RadioOrb = 4,
+    /// Activate one bridge-console destination row.
+    NavigationChoice = 5,
+    /// Hover one row in a bridge choice list.
+    ChoiceListHover = 6,
+    /// Activate one row in a bridge choice list.
+    ChoiceListActive = 7,
+    /// Hover the active bridge presentation panel.
+    PresentationHover = 9,
+    /// Camera-view or hyperjump actor presentation.
+    CameraOrHyperjump = 10,
+    /// Black-hole actor, negative confirmation, or left chart click.
+    BlackHoleOrLeftChart = 11,
+    /// Camera destination or right chart click.
+    CameraDestinationOrRightChart = 12,
+    /// Close the bridge presentation panel.
+    PanelClose = 13,
+    /// Cycle the selected bridge presentation.
+    PresentationChoice = 14,
+    /// Presentation panel owns the bridge.
+    PresentationPanel = 15,
+    /// Activate the ship-palette presentation actor.
+    ShipPalette = 16,
+    /// Suppress MANU3 while a non-presentation scene transition owns the frame.
+    Disabled = u16::MAX,
+}
+
+impl Manu3AnimationSelector {
+    /// Return the exact selector consumed by the recovered MANU3 dispatcher.
+    pub const fn value(self) -> u16 {
+        self as u16
+    }
+}
+
 /// Mutable selector and delay state retained between hand frames.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Manu3HandFrameState {
@@ -15,6 +67,19 @@ pub struct Manu3HandFrameState {
     pub current_animation: u16,
     /// Frames still suppressed after a presentation request.
     pub presentation_delay: u8,
+}
+
+impl Manu3HandFrameState {
+    /// Replace the one-shot selector exactly as a native `DS:0x0A32` write did.
+    pub fn request(&mut self, selector: Manu3AnimationSelector) {
+        self.requested_animation = selector.value();
+    }
+
+    /// Clear `DS:0x0A34` before requesting an animation that must restart.
+    pub fn restart(&mut self, selector: Manu3AnimationSelector) {
+        self.current_animation = Manu3AnimationSelector::Neutral.value();
+        self.request(selector);
+    }
 }
 
 /// Game state read while deciding whether to render the hand this frame.

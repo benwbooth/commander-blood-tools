@@ -4,11 +4,12 @@ use anyhow::{Context, Result, bail};
 use commander_blood_formats::instruction::ScriptTextWord;
 
 use crate::native::bloodprg::{
-    ChoiceListBackend, ChoiceListPointer, ChoiceListRect, FramebufferTransitionState,
-    GameLifecycleState, PaletteRemapTable, PresentationWordChoice, PresentationWordChoiceBackend,
-    PresentationWordChoiceContext, PresentationWordChoiceOutcome, PresentationWordChoicePhase,
-    PresentationWordChoiceState, RasterPoint, TransitionRect, WORD_CHOICE_TRANSITION_STEPS,
-    advance_framebuffer_rect_transition, build_banked_tint_table, update_presentation_word_choice,
+    ChoiceListBackend, ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect,
+    FramebufferTransitionState, GameLifecycleState, PaletteRemapTable, PresentationWordChoice,
+    PresentationWordChoiceBackend, PresentationWordChoiceContext, PresentationWordChoiceOutcome,
+    PresentationWordChoicePhase, PresentationWordChoiceState, RasterPoint, TransitionRect,
+    WORD_CHOICE_TRANSITION_STEPS, advance_framebuffer_rect_transition, build_banked_tint_table,
+    update_presentation_word_choice,
 };
 
 use super::ModernGameServices;
@@ -64,6 +65,7 @@ impl RuntimePresentationWordChoice {
         )
         .context("building the dialogue choice-list tint table")?;
         let pointer = services.input().pointer_sample().position;
+        let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeWordChoiceBackend {
             list: RuntimeChoiceListBackend::new(
                 services.runtime_mut(),
@@ -73,6 +75,7 @@ impl RuntimePresentationWordChoice {
                     position: pointer,
                     primary_pressed: lifecycle.primary_pointer_pressed,
                 },
+                current_hand_animation,
             ),
             transition: &mut self.transition,
         };
@@ -92,7 +95,9 @@ impl RuntimePresentationWordChoice {
             &mut backend,
         );
         backend.list.finish()?;
+        let hand_requests = backend.list.take_hand_requests();
         drop(backend);
+        services.apply_choice_list_hand_requests(hand_requests);
         if phase_before_update == PresentationWordChoicePhase::Closed
             && self.state.phase != PresentationWordChoicePhase::Closed
         {
@@ -202,6 +207,14 @@ impl ChoiceListBackend for RuntimeWordChoiceBackend<'_, '_> {
 
     fn pointer(&mut self) -> ChoiceListPointer {
         self.list.pointer()
+    }
+
+    fn current_hand_animation(&self) -> u16 {
+        self.list.current_hand_animation()
+    }
+
+    fn request_hand_animation(&mut self, request: ChoiceListHandRequest) {
+        self.list.request_hand_animation(request);
     }
 }
 

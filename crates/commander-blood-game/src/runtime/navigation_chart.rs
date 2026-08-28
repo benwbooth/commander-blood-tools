@@ -11,16 +11,17 @@ use crate::native::bloodprg::{
     LocationInfoPanelContext, LocationInfoPanelHost, LocationInfoPanelState, LocationPanelArtwork,
     LocationPanelInterpolation, LocationPanelLocation, LocationPanelRect, LocationPanelRects,
     LocationPanelSource, LocationPanelSpriteRange, LocationPanelTextDraw,
-    LocationPanelTransitionProgress, NavigationCameraContext, NavigationCameraHost,
-    NavigationCameraOutcome, NavigationCameraState, NavigationChartArche, NavigationChartCopySpan,
-    NavigationChartEntityDraw, NavigationChartEntityState, NavigationChartHand,
-    NavigationChartMarkerEndpoint, NavigationChartObject, NavigationChartObjectKind,
-    NavigationChartPickObject, NavigationChartPickOutcome, NavigationChartPickState,
-    NavigationStatusLabels, NavigationStatusLocationKind, RasterPoint, RasterRectOutcome,
-    ResourceId, ScriptFieldSelector, ScriptObjectFlag, build_navigation_wipe_spans,
-    copy_work_surface_span, navigation_chart_objects, navigation_source_objects, object_has_flag,
-    pick_navigation_chart_object, resolve_navigation_position, script_field_offset,
-    update_location_info_panel, update_location_panel_geometry, update_navigation_camera,
+    LocationPanelTransitionProgress, Manu3AnimationSelector, NavigationCameraContext,
+    NavigationCameraHost, NavigationCameraOutcome, NavigationCameraState, NavigationChartArche,
+    NavigationChartCopySpan, NavigationChartEntityDraw, NavigationChartEntityState,
+    NavigationChartHand, NavigationChartMarkerEndpoint, NavigationChartObject,
+    NavigationChartObjectKind, NavigationChartPickObject, NavigationChartPickOutcome,
+    NavigationChartPickState, NavigationStatusLabels, NavigationStatusLocationKind, RasterPoint,
+    RasterRectOutcome, ResourceId, ScriptFieldSelector, ScriptObjectFlag,
+    build_navigation_wipe_spans, copy_work_surface_span, navigation_chart_objects,
+    navigation_source_objects, object_has_flag, pick_navigation_chart_object,
+    resolve_navigation_position, script_field_offset, update_location_info_panel,
+    update_location_panel_geometry, update_navigation_camera,
 };
 
 use super::{LOGICAL_FRAMEBUFFER_PIXEL_COUNT, ModernGameServices, OriginalGameRuntime};
@@ -32,9 +33,6 @@ const AFTER_CHART_PRIMARY_ENTITY: u16 = 1;
 const LOCATION_PANEL_ENTITY: usize = 0;
 const AFTER_LOCATION_PANEL_ENTITY: u16 = 1;
 const AFTER_LOCATION_PANEL_TRANSITION_ENTITY: u16 = 2;
-const NEUTRAL_HAND_SELECTOR: u16 = 0;
-const LEFT_HAND_SELECTOR: u16 = 11;
-const RIGHT_HAND_SELECTOR: u16 = 12;
 const LOCATION_PANEL_TARGET_RECT: LocationPanelRect = LocationPanelRect {
     x: 110,
     y: 25,
@@ -150,8 +148,8 @@ impl RuntimeNavigationChart {
         publish_navigation_ui_activation(lifecycle, self.state.ui_active);
         if self.state.hand != hand_before {
             let hand = services.manu3_hand_state_mut();
-            hand.current_animation = hand_selector(self.state.hand.current);
-            hand.requested_animation = hand_selector(self.state.hand.requested);
+            hand.current_animation = hand_selector(self.state.hand.current).value();
+            hand.request(self.state.hand.requested.into());
         }
         Ok(outcome)
     }
@@ -1076,11 +1074,17 @@ fn read_position(state: &ScriptState, field: ScriptStateWordPair) -> Result<[u16
         .context("navigation position pair is unreadable")
 }
 
-const fn hand_selector(hand: NavigationChartHand) -> u16 {
+const fn hand_selector(hand: NavigationChartHand) -> Manu3AnimationSelector {
     match hand {
-        NavigationChartHand::Neutral => NEUTRAL_HAND_SELECTOR,
-        NavigationChartHand::Left => LEFT_HAND_SELECTOR,
-        NavigationChartHand::Right => RIGHT_HAND_SELECTOR,
+        NavigationChartHand::Neutral => Manu3AnimationSelector::Neutral,
+        NavigationChartHand::Left => Manu3AnimationSelector::BlackHoleOrLeftChart,
+        NavigationChartHand::Right => Manu3AnimationSelector::CameraDestinationOrRightChart,
+    }
+}
+
+impl From<NavigationChartHand> for Manu3AnimationSelector {
+    fn from(hand: NavigationChartHand) -> Self {
+        hand_selector(hand)
     }
 }
 

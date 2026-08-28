@@ -57,6 +57,42 @@ pub trait ChoiceListBackend {
 
     /// Read the pointer after background preparation has completed.
     fn pointer(&mut self) -> ChoiceListPointer;
+
+    /// Return the live selector aliased with `nav_target_presentation_state`.
+    fn current_hand_animation(&self) -> u16 {
+        u16::MIN
+    }
+
+    /// Publish the selector writes produced by this list interaction.
+    fn request_hand_animation(&mut self, _request: ChoiceListHandRequest) {}
+}
+
+/// MANU3 selectors owned by the recovered shared list widget.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u16)]
+pub enum ChoiceListHandAnimation {
+    /// Pointer is outside the list.
+    Idle = 1,
+    /// Pointer is over one row.
+    Hover = 6,
+    /// Primary pointer button is down over one row.
+    Active = 7,
+}
+
+impl ChoiceListHandAnimation {
+    /// Return the exact selector stored by the executable.
+    pub const fn value(self) -> u16 {
+        self as u16
+    }
+}
+
+/// Ordered shared-selector update emitted by one list interaction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ChoiceListHandRequest {
+    /// Selector written to `DS:0x0A32`.
+    pub animation: ChoiceListHandAnimation,
+    /// Whether `DS:0x0A34` is cleared before the request write.
+    pub restart_current: bool,
 }
 
 /// Semantic presentation state for the currently active list.
@@ -179,6 +215,7 @@ pub fn update_choice_list<Backend: ChoiceListBackend>(
         Some(_) if pointer.primary_pressed => ChoiceListPresentation::Active,
         Some(_) => ChoiceListPresentation::Hover,
     };
+    publish_hand_animation(state.presentation, backend);
 
     let selected_row = pointer
         .primary_pressed
@@ -227,6 +264,38 @@ pub fn update_choice_list<Backend: ChoiceListBackend>(
     }
 }
 
+fn publish_hand_animation<Backend: ChoiceListBackend>(
+    presentation: ChoiceListPresentation,
+    backend: &mut Backend,
+) {
+    let animation = match presentation {
+        ChoiceListPresentation::Idle => ChoiceListHandAnimation::Idle,
+        ChoiceListPresentation::Hover => ChoiceListHandAnimation::Hover,
+        ChoiceListPresentation::Active => ChoiceListHandAnimation::Active,
+    };
+    let restart_current = match presentation {
+        ChoiceListPresentation::Active => {
+            if backend.current_hand_animation() != ChoiceListHandAnimation::Hover.value() {
+                backend.request_hand_animation(ChoiceListHandRequest {
+                    animation: ChoiceListHandAnimation::Hover,
+                    restart_current: true,
+                });
+            }
+            false
+        }
+        ChoiceListPresentation::Idle | ChoiceListPresentation::Hover => {
+            backend.current_hand_animation() != animation.value()
+        }
+    };
+
+    if presentation == ChoiceListPresentation::Active || restart_current {
+        backend.request_hand_animation(ChoiceListHandRequest {
+            animation,
+            restart_current,
+        });
+    }
+}
+
 fn hovered_row(rect: ChoiceListRect, pointer: [i16; 2]) -> Option<usize> {
     let right = rect.origin[0].wrapping_add(rect.size[0] as i16);
     if pointer[0] < rect.origin[0] || pointer[0] > right {
@@ -257,6 +326,7 @@ mod tests {
 
     const ORACLE_VECTOR_COUNT: usize = 15;
     const CANCEL_LABEL: &[u8] = b"CANCEL";
+    const SEEDED_REQUEST_SELECTOR: u16 = 0x3344;
 
     #[derive(Deserialize)]
     struct ListOracle {
@@ -265,6 +335,7 @@ mod tests {
         rect: [i16; 4],
         calls: Vec<serde_json::Value>,
         return_value: i16,
+        presentation_states: [u16; 2],
         split_game_stack_segments: bool,
     }
 
@@ -274,6 +345,9 @@ mod tests {
         pointer: ChoiceListPointer,
         pointer_after_prepare: Option<ChoiceListPointer>,
         prepared: Vec<ChoiceListRect>,
+        current_hand_animation: u16,
+        requested_hand_animation: u16,
+        hand_requests: Vec<ChoiceListHandRequest>,
     }
 
     impl ChoiceListBackend for OracleBackend {
@@ -293,6 +367,18 @@ mod tests {
         fn pointer(&mut self) -> ChoiceListPointer {
             self.pointer
         }
+
+        fn current_hand_animation(&self) -> u16 {
+            self.current_hand_animation
+        }
+
+        fn request_hand_animation(&mut self, request: ChoiceListHandRequest) {
+            if request.restart_current {
+                self.current_hand_animation = u16::MIN;
+            }
+            self.requested_hand_animation = request.animation.value();
+            self.hand_requests.push(request);
+        }
     }
 
     #[test]
@@ -310,7 +396,7 @@ mod tests {
                 .take_while(|item| **item != u16::MIN && **item != u16::MAX)
                 .count();
             let labels = vec![b"LABEL".as_slice(); label_count];
-            let mut backend = backend_for(&vector.name, label_count);
+            let mut backend = backend_for(&vector.name, label_count, vector.presentation_states[0]);
             let config = config_for(&vector.name);
             let mut state = ChoiceListState::default();
             let frame = update_choice_list(&labels, config, &mut state, &mut backend);
@@ -367,6 +453,22 @@ mod tests {
                     vector.name
                 );
             }
+            assert_eq!(
+                backend.current_hand_animation, vector.presentation_states[0],
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                backend.requested_hand_animation, vector.presentation_states[1],
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                backend.hand_requests,
+                expected_hand_requests(&vector.name),
+                "{}",
+                vector.name
+            );
         }
     }
 
@@ -396,7 +498,7 @@ mod tests {
         }
     }
 
-    fn backend_for(name: &str, label_count: usize) -> OracleBackend {
+    fn backend_for(name: &str, label_count: usize, current_hand_animation: u16) -> OracleBackend {
         let widths = match name {
             "width_floor_double_fill" => vec![20, 30],
             "per_label_widths_preserved" => vec![20, 140, 80],
@@ -426,6 +528,34 @@ mod tests {
             pointer,
             pointer_after_prepare,
             prepared: Vec::new(),
+            current_hand_animation,
+            requested_hand_animation: SEEDED_REQUEST_SELECTOR,
+            hand_requests: Vec::new(),
+        }
+    }
+
+    fn expected_hand_requests(name: &str) -> Vec<ChoiceListHandRequest> {
+        let request = |animation, restart_current| ChoiceListHandRequest {
+            animation,
+            restart_current,
+        };
+        match name {
+            "outside_left_requests_idle" | "below_click_band_is_outside" => {
+                vec![request(ChoiceListHandAnimation::Idle, true)]
+            }
+            "left_top_boundary_hover"
+            | "second_row_hover"
+            | "remap_mutates_mouse_before_hittest" => {
+                vec![request(ChoiceListHandAnimation::Hover, true)]
+            }
+            "second_row_click_active" => {
+                vec![request(ChoiceListHandAnimation::Active, false)]
+            }
+            "split_ds_es_gs_ss_ownership" => vec![
+                request(ChoiceListHandAnimation::Hover, true),
+                request(ChoiceListHandAnimation::Active, false),
+            ],
+            _ => Vec::new(),
         }
     }
 

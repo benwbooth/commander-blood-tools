@@ -10,16 +10,16 @@ use crate::native::bloodprg::{
     CameraPresentationActorOutcome, CameraPresentationActorState, CameraPresentationBlockers,
     CameraViewAnimation, GameLifecycleState, HyperjumpLocationPanelState,
     HyperjumpPresentationActorBackend, HyperjumpPresentationActorOutcome,
-    HyperjumpPresentationActorState, NAV_ACTOR_SLOT_COUNT, NavActorBusyState, NavActorHandler,
-    NavActorMouseState, NavActorSeekState, NavActorSlot, NavActorSlotBackend,
-    NavActorSlotUpdateOutcome, PanelCloseActorBackend, PanelCloseActorState,
+    HyperjumpPresentationActorState, Manu3AnimationSelector, NAV_ACTOR_SLOT_COUNT,
+    NavActorBusyState, NavActorHandler, NavActorMouseState, NavActorSeekState, NavActorSlot,
+    NavActorSlotBackend, NavActorSlotUpdateOutcome, PanelCloseActorBackend, PanelCloseActorState,
     PresentationBridgeMode, PresentationLine, PresentationLineOutcome, PresentationLinePlayback,
-    PresentationLineStepper, PrimaryPointerSample, RADIO_HAND_ANIMATION_SELECTOR,
-    RadioActorBackend, RadioActorOutcome, RadioActorState, ShipPaletteActorBackend,
-    ShipPaletteActorOutcome, ShipPaletteActorState, ShipViewEntityId, latch_primary_pointer_hit,
-    update_black_hole_presentation_actor, update_camera_presentation_actor,
-    update_hyperjump_presentation_actor, update_nav_actor_slots, update_panel_close_actor,
-    update_presentation_line, update_radio_actor, update_ship_palette_actor,
+    PresentationLineStepper, PrimaryPointerSample, RadioActorBackend, RadioActorOutcome,
+    RadioActorState, ShipPaletteActorBackend, ShipPaletteActorOutcome, ShipPaletteActorState,
+    ShipViewEntityId, latch_primary_pointer_hit, update_black_hole_presentation_actor,
+    update_camera_presentation_actor, update_hyperjump_presentation_actor, update_nav_actor_slots,
+    update_panel_close_actor, update_presentation_line, update_radio_actor,
+    update_ship_palette_actor,
 };
 
 use super::ModernGameServices;
@@ -494,6 +494,11 @@ impl NavActorSlotBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl CameraPresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn request_camera_hand_animation(&mut self) {
+        self.services
+            .request_manu3_animation(Manu3AnimationSelector::CameraOrHyperjump);
+    }
+
     fn mark_location_panel_entity_dirty(&mut self) {
         let result = self
             .services
@@ -533,7 +538,7 @@ impl CameraPresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
 impl RadioActorBackend for RuntimeBridgeActorBackend<'_, '_> {
     fn request_radio_hand_animation(&mut self) {
         self.services
-            .request_manu3_animation(RADIO_HAND_ANIMATION_SELECTOR);
+            .request_manu3_animation(Manu3AnimationSelector::RadioOrb);
     }
 
     fn play_radio_completion_clip(&mut self) {
@@ -558,6 +563,11 @@ impl RadioActorBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl PanelCloseActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn request_panel_close_hand_animation(&mut self) {
+        self.services
+            .request_manu3_animation(Manu3AnimationSelector::PanelClose);
+    }
+
     fn finalize_scene_presentation(&mut self) {
         self.services
             .finish_bridge_actor_scene_presentation(self.lifecycle);
@@ -573,6 +583,11 @@ impl PanelCloseActorBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl ShipPaletteActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn request_ship_palette_hand_animation(&mut self) {
+        self.services
+            .request_manu3_animation(Manu3AnimationSelector::ShipPalette);
+    }
+
     fn play_ship_activation_clip(&mut self) {
         let result = self
             .services
@@ -582,6 +597,11 @@ impl ShipPaletteActorBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl BlackHolePresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn restart_black_hole_hand_animation(&mut self) {
+        self.services
+            .restart_manu3_animation(Manu3AnimationSelector::BlackHoleOrLeftChart);
+    }
+
     fn presentation_blockers(&self) -> BlackHolePresentationBlockers {
         BlackHolePresentationBlockers {
             location_panel_active: self.location_panel.active,
@@ -606,6 +626,11 @@ impl BlackHolePresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl HyperjumpPresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn restart_hyperjump_hand_animation(&mut self) {
+        self.services
+            .restart_manu3_animation(Manu3AnimationSelector::CameraOrHyperjump);
+    }
+
     fn location_panel_state(&self) -> HyperjumpLocationPanelState {
         *self.location_panel
     }

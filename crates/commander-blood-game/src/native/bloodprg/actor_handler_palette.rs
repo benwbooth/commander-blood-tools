@@ -62,6 +62,9 @@ impl ShipPaletteActorState {
 
 /// Line playback and audio services used by the ship-palette actor.
 pub trait ShipPaletteActorBackend: PresentationLineStepper {
+    /// Request the ship-palette hand animation through the shared selector.
+    fn request_ship_palette_hand_animation(&mut self);
+
     /// Play the ship-activation completion clip.
     fn play_ship_activation_clip(&mut self);
 }
@@ -102,6 +105,7 @@ pub fn update_ship_palette_actor<Backend: ShipPaletteActorBackend>(
     }
 
     state.presentation = ShipPaletteActorPresentation::Presenting;
+    backend.request_ship_palette_hand_animation();
     if backend.update_line(line, line_playback)? != PresentationLineOutcome::Completed {
         return Ok(ShipPaletteActorOutcome::Presenting);
     }
@@ -147,6 +151,7 @@ mod tests {
         line_called: bool,
         completed: bool,
         sound_called: bool,
+        hand_animation_requested: bool,
     }
 
     impl PresentationLineStepper for OracleBackend {
@@ -167,6 +172,10 @@ mod tests {
     }
 
     impl ShipPaletteActorBackend for OracleBackend {
+        fn request_ship_palette_hand_animation(&mut self) {
+            self.hand_animation_requested = true;
+        }
+
         fn play_ship_activation_clip(&mut self) {
             self.sound_called = true;
         }
@@ -200,6 +209,7 @@ mod tests {
                 line_called: false,
                 completed: vector.helper_completed,
                 sound_called: false,
+                hand_animation_requested: false,
             };
 
             let outcome = update_ship_palette_actor(
@@ -213,6 +223,11 @@ mod tests {
             .unwrap();
 
             assert_eq!(backend.line_called, vector.helper_called, "{}", vector.name);
+            assert_eq!(
+                backend.hand_animation_requested, vector.helper_called,
+                "{}",
+                vector.name
+            );
             assert_eq!(
                 backend.sound_called,
                 vector.sound_clip == Some(5),

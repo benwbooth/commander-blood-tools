@@ -9,14 +9,14 @@ use crate::native::bloodprg::{
     BridgeConsolePalettePlan, BridgeConsoleState, BridgeDeferredActionKind, BridgeDeferredState,
     BridgeRecordChoice, BridgeRecordChoiceContext, BridgeRecordChoiceOutcome,
     BridgeRecordChoiceState, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame,
-    ChoiceListPointer, ChoiceListRect, ChoiceListState, FramebufferTransitionState,
-    GameLifecycleState, ImmediateBridgeChoiceOutcome, MusicOptionLabel, OptionMenuChoice,
-    OptionMenuOutcome, OptionMenuState, PresentationChoiceItem, PresentationChoiceOutcome,
-    PresentationChoiceState, RasterPoint, TransitionRect, activate_horn_choice,
-    activate_radio_choice, advance_framebuffer_rect_transition, build_banked_tint_table,
-    navigation_actor_targets, update_bridge_console_dispatch, update_choice_list,
-    update_contact_choice, update_navigation_target_choice, update_option_menu,
-    update_presentation_choice,
+    ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect, ChoiceListState,
+    FramebufferTransitionState, GameLifecycleState, ImmediateBridgeChoiceOutcome,
+    Manu3AnimationSelector, MusicOptionLabel, OptionMenuChoice, OptionMenuOutcome, OptionMenuState,
+    PresentationChoiceItem, PresentationChoiceOutcome, PresentationChoiceState, RasterPoint,
+    TransitionRect, activate_horn_choice, activate_radio_choice,
+    advance_framebuffer_rect_transition, build_banked_tint_table, navigation_actor_targets,
+    update_bridge_console_dispatch, update_choice_list, update_contact_choice,
+    update_navigation_target_choice, update_option_menu, update_presentation_choice,
 };
 
 use super::choice_list::{RuntimeChoiceListBackend, draw_choice_list_rows};
@@ -103,6 +103,7 @@ impl RuntimeBridgeConsole {
                 ..
             } => {
                 apply_console_palette(services.runtime_mut(), palette);
+                services.request_manu3_animation(Manu3AnimationSelector::NavigationChoice);
                 self.transition = FramebufferTransitionState::default();
                 services.request_bridge_seek(self.console.hold_ticks)?;
                 if play_selection_clip {
@@ -165,11 +166,13 @@ impl RuntimeBridgeConsole {
         let fonts = services.runtime().data().font_resources().clone();
         let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services);
+        let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeBridgeChoiceBackend::new(
             services.runtime_mut(),
             &fonts,
             &tint,
             pointer,
+            current_hand_animation,
             &mut self.transition,
         );
         let outcome = update_navigation_target_choice(
@@ -181,8 +184,10 @@ impl RuntimeBridgeConsole {
             &mut backend,
         );
         let effects = backend.effects();
+        let hand_requests = backend.take_hand_requests();
         backend.finish()?;
         drop(backend);
+        services.apply_choice_list_hand_requests(hand_requests);
 
         if let BridgeRecordChoiceOutcome::Interactive(frame) = &outcome {
             let labels = self
@@ -211,11 +216,13 @@ impl RuntimeBridgeConsole {
         let fonts = services.runtime().data().font_resources().clone();
         let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services);
+        let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeBridgeChoiceBackend::new(
             services.runtime_mut(),
             &fonts,
             &tint,
             pointer,
+            current_hand_animation,
             &mut self.transition,
         );
         let outcome = update_contact_choice(
@@ -227,8 +234,10 @@ impl RuntimeBridgeConsole {
             &mut backend,
         );
         let effects = backend.effects();
+        let hand_requests = backend.take_hand_requests();
         backend.finish()?;
         drop(backend);
+        services.apply_choice_list_hand_requests(hand_requests);
 
         if let BridgeRecordChoiceOutcome::Interactive(frame) = &outcome {
             let labels = self
@@ -247,17 +256,22 @@ impl RuntimeBridgeConsole {
         let fonts = services.runtime().data().font_resources().clone();
         let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services);
+        let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeBridgeChoiceBackend::new(
             services.runtime_mut(),
             &fonts,
             &tint,
             pointer,
+            current_hand_animation,
             &mut self.transition,
         );
         let outcome =
             activate_radio_choice(record, &mut self.console, &mut self.deferred, &mut backend);
         let effects = backend.effects();
+        let hand_requests = backend.take_hand_requests();
         backend.finish()?;
+        drop(backend);
+        services.apply_choice_list_hand_requests(hand_requests);
         debug_assert_eq!(outcome, ImmediateBridgeChoiceOutcome::Activated);
         apply_backend_effects(services, effects)
     }
@@ -280,11 +294,13 @@ impl RuntimeBridgeConsole {
         let fonts = services.runtime().data().font_resources().clone();
         let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services);
+        let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeBridgeChoiceBackend::new(
             services.runtime_mut(),
             &fonts,
             &tint,
             pointer,
+            current_hand_animation,
             &mut self.transition,
         );
         let outcome = update_option_menu(
@@ -295,8 +311,10 @@ impl RuntimeBridgeConsole {
             &mut backend,
         );
         let effects = backend.effects();
+        let hand_requests = backend.take_hand_requests();
         backend.finish()?;
         drop(backend);
+        services.apply_choice_list_hand_requests(hand_requests);
 
         if let OptionMenuOutcome::Interactive(frame) = &outcome {
             draw_runtime_choice_rows(services, &label_refs, None, frame)?;
@@ -342,8 +360,14 @@ impl RuntimeBridgeConsole {
         let fonts = services.runtime().data().font_resources().clone();
         let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services);
-        let mut backend =
-            RuntimeChoiceListBackend::new(services.runtime_mut(), &fonts, &tint, pointer);
+        let current_hand_animation = services.manu3_hand_state().current_animation;
+        let mut backend = RuntimeChoiceListBackend::new(
+            services.runtime_mut(),
+            &fonts,
+            &tint,
+            pointer,
+            current_hand_animation,
+        );
 
         let layout_pending = self.text_speed.state.phase & PRESENTATION_CHOICE_LAYOUT_PHASE != 0;
         if layout_pending {
@@ -386,8 +410,10 @@ impl RuntimeBridgeConsole {
                 region.height,
             );
         }
+        let hand_requests = backend.take_hand_requests();
         backend.finish()?;
         drop(backend);
+        services.apply_choice_list_hand_requests(hand_requests);
 
         if let Some(frame) = &frame {
             draw_runtime_choice_rows(services, &label_refs, None, frame)?;
@@ -478,10 +504,17 @@ impl RuntimeBridgeChoiceBackend<'_> {
         fonts: &'runtime commander_blood_formats::bloodprg::BloodprgFontResources,
         tint: &'runtime [u8; PALETTE_ENTRY_COUNT],
         pointer: ChoiceListPointer,
+        current_hand_animation: u16,
         transition: &'runtime mut FramebufferTransitionState,
     ) -> RuntimeBridgeChoiceBackend<'runtime> {
         RuntimeBridgeChoiceBackend {
-            list: RuntimeChoiceListBackend::new(runtime, fonts, tint, pointer),
+            list: RuntimeChoiceListBackend::new(
+                runtime,
+                fonts,
+                tint,
+                pointer,
+                current_hand_animation,
+            ),
             transition,
             effects: RuntimeBridgeBackendEffects::default(),
         }
@@ -493,6 +526,10 @@ impl RuntimeBridgeChoiceBackend<'_> {
 
     fn finish(&mut self) -> Result<()> {
         self.list.finish()
+    }
+
+    fn take_hand_requests(&mut self) -> Vec<ChoiceListHandRequest> {
+        self.list.take_hand_requests()
     }
 }
 
@@ -507,6 +544,14 @@ impl ChoiceListBackend for RuntimeBridgeChoiceBackend<'_> {
 
     fn pointer(&mut self) -> ChoiceListPointer {
         self.list.pointer()
+    }
+
+    fn current_hand_animation(&self) -> u16 {
+        self.list.current_hand_animation()
+    }
+
+    fn request_hand_animation(&mut self, request: ChoiceListHandRequest) {
+        self.list.request_hand_animation(request);
     }
 }
 

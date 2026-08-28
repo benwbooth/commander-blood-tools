@@ -6,10 +6,10 @@ use commander_blood_formats::script::{
 };
 
 use crate::native::bloodprg::{
-    ChoiceListConfig, ChoiceListFrame, ChoiceListPointer, ChoiceListRect, ChoiceListState,
-    FramebufferTransitionState, PaletteRemapTable, RasterPoint, ScriptFieldSelector,
-    ShipTargetListPass, ShipTargetListSelection, ShipTargetListSource, ShipTargetSelectionHost,
-    ShipTargetSelectionOutcome, ShipTargetSelectionState, TransitionRect,
+    ChoiceListConfig, ChoiceListFrame, ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect,
+    ChoiceListState, FramebufferTransitionState, PaletteRemapTable, RasterPoint,
+    ScriptFieldSelector, ShipTargetListPass, ShipTargetListSelection, ShipTargetListSource,
+    ShipTargetSelectionHost, ShipTargetSelectionOutcome, ShipTargetSelectionState, TransitionRect,
     advance_framebuffer_rect_transition, build_banked_tint_table, script_field_offset,
     select_ship_target,
 };
@@ -73,6 +73,7 @@ pub struct RuntimeShipTargetSelector {
     choice_list: ChoiceListState,
     current_rect: ChoiceListRect,
     last_frame: Option<ChoiceListFrame>,
+    hand_requests: Vec<ChoiceListHandRequest>,
 }
 
 impl RuntimeShipTargetSelector {
@@ -86,11 +87,17 @@ impl RuntimeShipTargetSelector {
         self.last_frame.as_ref()
     }
 
+    /// Drain ordered MANU3 selector writes emitted by the shared list widget.
+    pub(super) fn take_hand_requests(&mut self) -> Vec<ChoiceListHandRequest> {
+        std::mem::take(&mut self.hand_requests)
+    }
+
     /// Advance `ship_3d_target_record_select` using real profile names and pixels.
     pub fn update(
         &mut self,
         runtime: &mut OriginalGameRuntime,
         pointer: ChoiceListPointer,
+        current_hand_animation: u16,
         state: &mut ShipTargetSelectionState<ScriptObjectId>,
         presentable_targets: &[ScriptObjectId],
     ) -> Result<RuntimeShipTargetSelection> {
@@ -103,7 +110,13 @@ impl RuntimeShipTargetSelector {
         build_banked_tint_table(runtime.live_palette(), &mut tint, BRIDGE_CONSOLE_TINT_FIRST)
             .context("building the ship target-list tint table")?;
         let mut backend = RuntimeShipTargetBackend {
-            list: RuntimeChoiceListBackend::new(runtime, &fonts, &tint, pointer),
+            list: RuntimeChoiceListBackend::new(
+                runtime,
+                &fonts,
+                &tint,
+                pointer,
+                current_hand_animation,
+            ),
             fonts: &fonts,
             labels: &labels,
             choice_list: &mut self.choice_list,
@@ -119,6 +132,7 @@ impl RuntimeShipTargetSelector {
         )
         .map_err(|error| anyhow::anyhow!("invalid ship target selection: {error:?}"))?;
         backend.list.finish()?;
+        self.hand_requests.extend(backend.list.take_hand_requests());
         Ok(RuntimeShipTargetSelection {
             outcome,
             selection_sound_requested: backend.selection_sound_requested,
@@ -311,6 +325,7 @@ mod tests {
             .update(
                 &mut runtime,
                 ChoiceListPointer::default(),
+                u16::MIN,
                 &mut state,
                 &[arche],
             )
@@ -325,6 +340,7 @@ mod tests {
             .update(
                 &mut runtime,
                 ChoiceListPointer::default(),
+                u16::MIN,
                 &mut state,
                 &[arche],
             )
@@ -341,6 +357,7 @@ mod tests {
             .update(
                 &mut runtime,
                 pressed_pointer(item_position),
+                u16::MIN,
                 &mut state,
                 &[arche],
             )
@@ -362,6 +379,7 @@ mod tests {
             .update(
                 &mut runtime,
                 pressed_pointer(cancel_position),
+                u16::MIN,
                 &mut state,
                 &[arche],
             )
@@ -396,7 +414,13 @@ mod tests {
             depth_step: u8::MIN,
         };
         let idle = selector
-            .update(&mut runtime, ChoiceListPointer::default(), &mut state, &[])
+            .update(
+                &mut runtime,
+                ChoiceListPointer::default(),
+                u16::MIN,
+                &mut state,
+                &[],
+            )
             .unwrap();
         assert_eq!(idle.outcome, ShipTargetSelectionOutcome::NoSelection);
         assert!(state.fallback_active);
@@ -411,6 +435,7 @@ mod tests {
             .update(
                 &mut runtime,
                 pressed_pointer(item_position),
+                u16::MIN,
                 &mut state,
                 &[],
             )

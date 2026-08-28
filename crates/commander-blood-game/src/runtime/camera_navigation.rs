@@ -6,9 +6,10 @@ use commander_blood_formats::script::ScriptObjectKind;
 
 use crate::native::bloodprg::{
     CameraNavigationLocation, CameraNavigationOutcome, CameraNavigationRegionPoll,
-    CameraNavigationSlot, CameraNavigationState, GameLifecycleState, NavActorSlot, PointerButton,
-    PresentationHitRectangle, PrimaryPointerSample, STATUS_REGION_POLL_ATTEMPTS,
-    StatusRegionPollBackend, poll_status_region, update_camera_navigation,
+    CameraNavigationSlot, CameraNavigationState, GameLifecycleState, Manu3AnimationSelector,
+    NavActorSlot, PointerButton, PresentationHitRectangle, PrimaryPointerSample,
+    STATUS_REGION_POLL_ATTEMPTS, StatusRegionPollBackend, poll_status_region,
+    update_camera_navigation,
 };
 
 use super::{ModernGameServices, RuntimePaletteTransitionConfig};
@@ -83,6 +84,14 @@ impl RuntimeCameraNavigation {
             &mut poll,
         );
         actor_slot.flags.auto_seek = slot.ready;
+
+        if matches!(
+            outcome,
+            CameraNavigationOutcome::DestinationUnavailable
+                | CameraNavigationOutcome::TransitionStarted
+        ) {
+            services.request_manu3_animation(Manu3AnimationSelector::CameraDestinationOrRightChart);
+        }
 
         match outcome {
             CameraNavigationOutcome::DestinationUnavailable => {

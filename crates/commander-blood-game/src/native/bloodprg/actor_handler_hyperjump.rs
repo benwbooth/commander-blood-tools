@@ -74,6 +74,9 @@ impl<RecordLink> Default for HyperjumpPresentationActorState<RecordLink> {
 
 /// Dynamic panel, camera, line, entity, and audio services used by this actor.
 pub trait HyperjumpPresentationActorBackend: PresentationLineStepper {
+    /// Clear the current selector and request the hyperjump hand animation.
+    fn restart_hyperjump_hand_animation(&mut self);
+
     /// Return the current location-panel ownership and playback gates.
     fn location_panel_state(&self) -> HyperjumpLocationPanelState;
 
@@ -150,6 +153,7 @@ pub fn update_hyperjump_presentation_actor<
         if original_flags.ready {
             state.target_presentation_cleared = true;
             state.presentation = HyperjumpActorPresentation::Entry;
+            backend.restart_hyperjump_hand_animation();
             backend.mark_location_panel_entity_dirty();
             backend.mark_presentation_entity_dirty();
             let _first_pass_outcome = backend.update_line(line, line_playback)?;
@@ -266,6 +270,7 @@ mod tests {
         helper_index: usize,
         panel: HyperjumpLocationPanelState,
         camera_steps_remaining: Option<u8>,
+        hand_animation_restarted: bool,
         calls: Vec<String>,
     }
 
@@ -306,6 +311,10 @@ mod tests {
     }
 
     impl HyperjumpPresentationActorBackend for OracleBackend {
+        fn restart_hyperjump_hand_animation(&mut self) {
+            self.hand_animation_restarted = true;
+        }
+
         fn location_panel_state(&self) -> HyperjumpLocationPanelState {
             self.panel
         }
@@ -373,6 +382,7 @@ mod tests {
                 helper_index: usize::MIN,
                 panel: setup.panel,
                 camera_steps_remaining: setup.camera_steps_remaining,
+                hand_animation_restarted: false,
                 calls: Vec::new(),
             };
 
@@ -385,6 +395,13 @@ mod tests {
                 &mut backend,
             )
             .unwrap();
+
+            assert_eq!(
+                backend.hand_animation_restarted,
+                state.presentation == HyperjumpActorPresentation::Entry,
+                "{}",
+                vector.name
+            );
 
             assert_eq!(backend.calls, vector.call_sequence, "{}", vector.name);
             assert_eq!(

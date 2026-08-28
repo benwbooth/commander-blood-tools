@@ -5,13 +5,6 @@ use super::{
     PresentationLineStepper,
 };
 
-/// MANU3 hand animation selected while the radio orb is being answered.
-///
-/// The executable stores this selector and `nav_actor_presentation_state` in
-/// the same word at `DS:0x0A32`; actor handler 4 therefore animates the hand
-/// when it publishes its presentation state.
-pub const RADIO_HAND_ANIMATION_SELECTOR: u16 = 4;
-
 /// Deferred action selected after the radio line completes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RadioActorDeferredAction {

@@ -111,6 +111,9 @@ pub struct BlackHolePresentationActorContext<'a, RecordLink> {
 
 /// Dynamic bridge state and presentation services used by the black-hole actor.
 pub trait BlackHolePresentationActorBackend: PresentationLineStepper {
+    /// Clear the current selector and request the black-hole hand animation.
+    fn restart_black_hole_hand_animation(&mut self);
+
     /// Read the live blockers, including changes made by the previous line step.
     fn presentation_blockers(&self) -> BlackHolePresentationBlockers;
 
@@ -173,6 +176,7 @@ pub fn update_black_hole_presentation_actor<
         if original_flags.ready {
             state.target_presentation_cleared = true;
             state.presentation = BlackHoleActorPresentation::Entry;
+            backend.restart_black_hole_hand_animation();
             if backend.update_line(line, line_playback)? == PresentationLineOutcome::Completed {
                 state.deferred_record = state.target_record.clone();
                 state.deferred_action = BlackHoleDeferredAction::Travel;
@@ -300,6 +304,7 @@ mod tests {
         helper_results: Vec<bool>,
         helper_index: usize,
         blockers: BlackHolePresentationBlockers,
+        hand_animation_restarted: bool,
         calls: Vec<String>,
     }
 
@@ -331,6 +336,10 @@ mod tests {
     }
 
     impl BlackHolePresentationActorBackend for OracleBackend {
+        fn restart_black_hole_hand_animation(&mut self) {
+            self.hand_animation_restarted = true;
+        }
+
         fn presentation_blockers(&self) -> BlackHolePresentationBlockers {
             self.blockers
         }
@@ -403,6 +412,7 @@ mod tests {
                 helper_results: vector.helper_results.clone(),
                 helper_index: usize::MIN,
                 blockers: setup.blockers,
+                hand_animation_restarted: false,
                 calls: Vec::new(),
             };
 
@@ -419,6 +429,13 @@ mod tests {
                 &mut backend,
             )
             .unwrap();
+
+            assert_eq!(
+                backend.hand_animation_restarted,
+                state.presentation == BlackHoleActorPresentation::Entry,
+                "{}",
+                vector.name
+            );
 
             assert_eq!(backend.calls, vector.call_sequence, "{}", vector.name);
             assert_eq!(

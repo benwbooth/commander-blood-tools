@@ -158,8 +158,8 @@ pub use actor_handler_panel::{
     PanelCloseActorState, update_panel_close_actor,
 };
 pub use actor_handler_radio::{
-    RADIO_HAND_ANIMATION_SELECTOR, RadioActorBackend, RadioActorDeferredAction, RadioActorOutcome,
-    RadioActorPresentation, RadioActorState, update_radio_actor,
+    RadioActorBackend, RadioActorDeferredAction, RadioActorOutcome, RadioActorPresentation,
+    RadioActorState, update_radio_actor,
 };
 pub use actor_position_state::{
     ActorPositionStateContext, ActorPositionStateError, ActorPositionStateOutcome,
@@ -248,8 +248,9 @@ pub use cd_audio::{
 };
 pub use choice_list::{
     CHOICE_LIST_ROW_PITCH, CHOICE_LIST_WIDTH_PADDING, ChoiceListBackend, ChoiceListConfig,
-    ChoiceListFrame, ChoiceListPointer, ChoiceListPresentation, ChoiceListRect, ChoiceListRow,
-    ChoiceListRowKind, ChoiceListState, update_choice_list,
+    ChoiceListFrame, ChoiceListHandAnimation, ChoiceListHandRequest, ChoiceListPointer,
+    ChoiceListPresentation, ChoiceListRect, ChoiceListRow, ChoiceListRowKind, ChoiceListState,
+    update_choice_list,
 };
 pub use clock::{ScriptClockDate, decode_script_clock_date, decode_script_clock_hour};
 pub use confirm_dialog::{
@@ -333,7 +334,9 @@ pub use location_panel_geometry::{
     LocationPanelGeometry, LocationPanelGeometryHost, LocationPanelGeometryState,
     LocationPanelLayout, update_location_panel_geometry,
 };
-pub use manu3_hand::{Manu3HandFrameContext, Manu3HandFrameState, update_manu3_hand_frame};
+pub use manu3_hand::{
+    Manu3AnimationSelector, Manu3HandFrameContext, Manu3HandFrameState, update_manu3_hand_frame,
+};
 pub use menu_reveal::{
     InlineMenuRevealError, InlineMenuRevealFrame, InlineMenuRevealGate, InlineMenuRevealOutcome,
     InlineMenuTextMetrics, InlineMenuWordPlacement, reveal_inline_menu_step,
@@ -541,10 +544,10 @@ pub use save_load_menu::{
     SaveProfileBackend, SavedProfileLifecycle, update_save_load_menu,
 };
 pub use scene_transition::{
-    SceneImageBand, SceneImageLoadOptions, SceneManu3Animation, ScenePaletteTransition,
-    SceneTransitionError, SceneTransitionHost, SceneTransitionLine, SceneTransitionOutcome,
-    SceneTransitionPalettes, SceneTransitionPhase, SceneTransitionRecordKind,
-    SceneTransitionRecordSource, SceneTransitionState, update_scene_transition,
+    SceneImageBand, SceneImageLoadOptions, ScenePaletteTransition, SceneTransitionError,
+    SceneTransitionHost, SceneTransitionLine, SceneTransitionOutcome, SceneTransitionPalettes,
+    SceneTransitionPhase, SceneTransitionRecordKind, SceneTransitionRecordSource,
+    SceneTransitionState, update_scene_transition,
 };
 pub use screen_presentation::{
     PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,

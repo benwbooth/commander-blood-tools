@@ -6,10 +6,10 @@ use anyhow::{Context, Result};
 use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
-    IndexedGamePalette, PaletteRemapTable, ShipHudCoordinatorHost, ShipHudCoordinatorOutcome,
-    ShipHudCoordinatorState, ShipHudInitializationContext, ShipHudPaletteTransition,
-    ShipHudTargetListState, ShipTargetSelectionOutcome, ShipTargetSelectionState,
-    build_palette_blend_remap_table, decode_active_presentation_line,
+    IndexedGamePalette, Manu3AnimationSelector, PaletteRemapTable, ShipHudCoordinatorHost,
+    ShipHudCoordinatorOutcome, ShipHudCoordinatorState, ShipHudInitializationContext,
+    ShipHudPaletteTransition, ShipHudTargetListState, ShipTargetSelectionOutcome,
+    ShipTargetSelectionState, build_palette_blend_remap_table, decode_active_presentation_line,
     encode_active_presentation_line, update_ship_hud,
 };
 
@@ -20,7 +20,6 @@ const SHIP_PRESENTATION_ACTIVE_FLAG: u16 = 1;
 const INITIAL_TARGET_LIST_PHASE: u8 = 1;
 const TARGET_LIST_TRANSITION_STEPS: u16 = 10;
 const SHIP_HUD_ACTIVE_LINE: u16 = 3;
-const MANU3_TARGET_SELECTOR_ANIMATION: u16 = 1;
 const HUD_DARKEN_PERCENT: u8 = 50;
 const BLACK_BLEND_TARGET: [u8; 3] = [u8::MIN; 3];
 
@@ -132,7 +131,7 @@ impl RuntimeShipHud {
                 .configure_ship_hud_palette_transition()
                 .context("staging the recovered ship HUD palette")?;
             if state.manu3_animation_requested {
-                services.request_manu3_animation(MANU3_TARGET_SELECTOR_ANIMATION);
+                services.request_manu3_animation(Manu3AnimationSelector::BridgeActive);
             }
         }
         services.synchronize_ship_hud_palette_progress(

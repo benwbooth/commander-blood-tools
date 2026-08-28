@@ -6,17 +6,17 @@ use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
     BridgeSpriteRect, CenteredSequenceSubtitleLine, DescriptMusicSelectionOutcome, FontPoint,
-    GameSceneLink, PaletteRemapTable, PresentationChoiceNumber, PresentationDescriptPlan,
-    PresentationMusicChange, PresentationPanelPhase, PresentationRenderRegion,
-    PresentationRenderTarget, PresentationResourceId, PresentationSceneContext,
-    PresentationSceneDispatchOutcome, PresentationSceneDispatchState, PresentationSceneStatus,
-    PresentationScreenBackend, PresentationScreenOutcome, PresentationScreenState, RasterNoiseMode,
-    RasterPoint, RasterSpanPaint, SceneTransitionLine, SceneTransitionPhase, SceneTransitionState,
-    ScriptPresentationScanState, SequenceSubtitlePlayback, SequenceSubtitleRenderer,
-    ShipPresentationState, build_banked_tint_table, decode_active_presentation_line,
-    draw_framebuffer_noise_rect, draw_rect_outline, encode_active_presentation_line,
-    fill_framebuffer_rect, present_sequence_subtitle, remap_framebuffer_rect,
-    update_presentation_screen,
+    GameSceneLink, Manu3AnimationSelector, PaletteRemapTable, PresentationChoiceNumber,
+    PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,
+    PresentationRenderRegion, PresentationRenderTarget, PresentationResourceId,
+    PresentationSceneContext, PresentationSceneDispatchOutcome, PresentationSceneDispatchState,
+    PresentationSceneStatus, PresentationScreenBackend, PresentationScreenOutcome,
+    PresentationScreenState, RasterNoiseMode, RasterPoint, RasterSpanPaint, SceneTransitionLine,
+    SceneTransitionPhase, SceneTransitionState, ScriptPresentationScanState,
+    SequenceSubtitlePlayback, SequenceSubtitleRenderer, ShipPresentationState,
+    build_banked_tint_table, decode_active_presentation_line, draw_framebuffer_noise_rect,
+    draw_rect_outline, encode_active_presentation_line, fill_framebuffer_rect,
+    present_sequence_subtitle, remap_framebuffer_rect, update_presentation_screen,
 };
 
 use super::{ModernGameServices, OriginalGameRuntime, RuntimePresentationScene};
@@ -33,7 +33,6 @@ const PRESENTATION_ACTIVE_GATE: u8 = 1;
 const PRESENTATION_REQUEST_GATE: u8 = 2;
 const SHIP_DEPTH_TRANSITION_ACTIVE: u8 = 1;
 const PRESENTATION_PANEL_SOUND_CLIP: u8 = 1;
-const PRESENTATION_SELECTION_ANIMATION: u16 = 14;
 const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
 const NOISE_RANDOM_MODULUS: u16 = u16::MAX;
 
@@ -541,7 +540,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
 
     fn prepare_choice_audio(&mut self) {
         self.services
-            .request_manu3_animation(PRESENTATION_SELECTION_ANIMATION);
+            .restart_manu3_animation(Manu3AnimationSelector::PresentationChoice);
         let result = self.services.stop_audio();
         self.record_error(result);
     }

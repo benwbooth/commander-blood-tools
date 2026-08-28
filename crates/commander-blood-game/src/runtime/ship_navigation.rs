@@ -8,14 +8,15 @@ use commander_blood_formats::script::{
 };
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer,
-    ChoiceListRect, ChoiceListState, FramebufferTransitionState, GameFontFace, GameLifecycleState,
-    PaletteRemapTable, PresentationRequestFlags, RasterPoint, ScriptFieldSelector,
-    ShipNavigationAccessCounter, ShipNavigationCandidate, ShipNavigationContext,
-    ShipNavigationHost, ShipNavigationOutcome, ShipNavigationRelation, ShipNavigationState,
-    TransitionRect, advance_framebuffer_rect_transition, build_palette_blend_remap_table,
-    encode_active_presentation_line, measure_game_text_width, navigation_candidates,
-    remap_framebuffer_rect, script_field_offset, update_choice_list, update_ship_navigation,
+    BridgeSpriteRect, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListHandRequest,
+    ChoiceListPointer, ChoiceListRect, ChoiceListState, FramebufferTransitionState, GameFontFace,
+    GameLifecycleState, PaletteRemapTable, PresentationRequestFlags, RasterPoint,
+    ScriptFieldSelector, ShipNavigationAccessCounter, ShipNavigationCandidate,
+    ShipNavigationContext, ShipNavigationHost, ShipNavigationOutcome, ShipNavigationRelation,
+    ShipNavigationState, TransitionRect, advance_framebuffer_rect_transition,
+    build_palette_blend_remap_table, encode_active_presentation_line, measure_game_text_width,
+    navigation_candidates, remap_framebuffer_rect, script_field_offset, update_choice_list,
+    update_ship_navigation,
 };
 
 use super::choice_list::{RuntimeChoiceListStyle, draw_choice_list_rows};
@@ -110,6 +111,10 @@ impl RuntimeShipNavigation {
         };
         self.target_rect = state.choice_target_rect;
         let trigger_before_update = state.trigger_requested;
+        state.previous_presentation_actor_state = services.previous_manu3_animation().value();
+        if trigger_before_update {
+            services.restore_previous_manu3_animation();
+        }
         let list_style = services.choice_list_style();
         let primary_pointer_pressed = lifecycle.primary_pointer_pressed;
 
@@ -297,8 +302,8 @@ fn initial_state(
         presentation_active: lifecycle.presentation.active,
         current_target,
         access_counter,
-        presentation_actor_state: u16::MIN,
-        previous_presentation_actor_state: u16::MIN,
+        presentation_actor_state: services.manu3_hand_state().requested_animation,
+        previous_presentation_actor_state: services.previous_manu3_animation().value(),
         deferred_navigation_record: None,
         ui_state: ship.ui_state,
         transition_step: u16::MIN,
@@ -473,6 +478,7 @@ impl RuntimeShipNavigationBackend<'_, '_, '_, '_> {
     fn update_trigger_list(&mut self, layout_only: bool) -> Result<ChoiceListFrame> {
         let fonts = self.services.runtime().data().font_resources().clone();
         let pointer = self.services.input().pointer_sample().position;
+        let current_hand_animation = self.services.manu3_hand_state().current_animation;
         let mut backend = RuntimeNavigationListBackend {
             runtime: self.services.runtime_mut(),
             fonts: &fonts,
@@ -481,6 +487,8 @@ impl RuntimeShipNavigationBackend<'_, '_, '_, '_> {
                 position: pointer,
                 primary_pressed: self.primary_pointer_pressed,
             },
+            current_hand_animation,
+            hand_requests: Vec::new(),
             deferred_error: None,
         };
         let labels: [&[u8]; 0] = [];
@@ -499,7 +507,9 @@ impl RuntimeShipNavigationBackend<'_, '_, '_, '_> {
             draw_choice_list_rows(&mut *backend.runtime, &fonts, &labels, cancel_label, &frame)?;
         }
         backend.finish()?;
+        let hand_requests = backend.take_hand_requests();
         drop(backend);
+        self.services.apply_choice_list_hand_requests(hand_requests);
         if !layout_only && (frame.cancelled || frame.selected_item.is_some()) {
             self.services
                 .play_loaded_sound_bank_clip(NAVIGATION_SELECTION_SOUND_CLIP)?;
@@ -724,6 +734,8 @@ struct RuntimeNavigationListBackend<'runtime> {
     fonts: &'runtime commander_blood_formats::bloodprg::BloodprgFontResources,
     remap_table: &'runtime PaletteRemapTable,
     pointer: ChoiceListPointer,
+    current_hand_animation: u16,
+    hand_requests: Vec<ChoiceListHandRequest>,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -741,6 +753,10 @@ impl RuntimeNavigationListBackend<'_> {
         {
             self.deferred_error = Some(error);
         }
+    }
+
+    fn take_hand_requests(&mut self) -> Vec<ChoiceListHandRequest> {
+        std::mem::take(&mut self.hand_requests)
     }
 }
 
@@ -778,6 +794,17 @@ impl ChoiceListBackend for RuntimeNavigationListBackend<'_> {
 
     fn pointer(&mut self) -> ChoiceListPointer {
         self.pointer
+    }
+
+    fn current_hand_animation(&self) -> u16 {
+        self.current_hand_animation
+    }
+
+    fn request_hand_animation(&mut self, request: ChoiceListHandRequest) {
+        if request.restart_current {
+            self.current_hand_animation = u16::MIN;
+        }
+        self.hand_requests.push(request);
     }
 }
 

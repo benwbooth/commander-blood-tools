@@ -3,9 +3,9 @@
 use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
-    BridgeFrameBackend, BridgeFrameOutcome, BridgeSceneContext, BridgeSceneInput,
-    BridgeSpriteExtent, BridgeSpriteRange, GameLifecycleState, GameSceneLink,
-    render_bridge_frame as coordinate_bridge_frame,
+    BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeSceneContext,
+    BridgeSceneInput, BridgeSpriteExtent, BridgeSpriteRange, GameLifecycleState, GameSceneLink,
+    Manu3AnimationSelector, render_bridge_frame as coordinate_bridge_frame,
 };
 
 use super::ModernGameServices;
@@ -91,6 +91,10 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
         &mut self,
         state: &mut crate::native::bloodprg::BridgeFrameState,
     ) -> Result<()> {
+        self.services
+            .request_manu3_animation(Manu3AnimationSelector::BridgeActive);
+        self.services
+            .set_previous_manu3_animation(Manu3AnimationSelector::BridgeActive);
         self.services.initialize_bridge_screen_with_transition(
             self.lifecycle.presentation_mode,
             self.lifecycle.presentation.ship_active,
@@ -119,7 +123,13 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
             .view_changed)
     }
 
-    fn flip_page(&mut self, _state: &mut crate::native::bloodprg::BridgeFrameState) -> Result<()> {
+    fn flip_page(&mut self, state: &mut crate::native::bloodprg::BridgeFrameState) -> Result<()> {
+        let selector = match state.actor_presentation() {
+            BridgeActorPresentationState::SteeringRight => Manu3AnimationSelector::SteeringRight,
+            BridgeActorPresentationState::SteeringLeft => Manu3AnimationSelector::SteeringLeft,
+            other => unreachable!("page flip requested for non-steering state {other:?}"),
+        };
+        self.services.request_manu3_animation(selector);
         self.services
             .flip_bridge_camera_page(self.lifecycle.presentation.ship_active)?;
         Ok(())

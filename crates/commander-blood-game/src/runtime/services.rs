@@ -22,11 +22,12 @@ use crate::native::bloodprg::{
     BridgeScreenInitializationBackend, BridgeScreenInitializationState, BridgeSpriteCommitOutcome,
     BridgeSpriteRasterOutcome, BridgeSteeringInteraction, BridgeSteeringOutcome,
     CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
-    ChoiceListFrame, ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
-    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
-    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
-    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
-    InputCancellationOutcome, InputCancellationState, LoadedSoundBank, Manu3HandFrameContext,
+    ChoiceListFrame, ChoiceListHandAnimation, ChoiceListHandRequest, ChoiceListPointer,
+    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
+    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
+    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
+    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, InputCancellationOutcome,
+    InputCancellationState, LoadedSoundBank, Manu3AnimationSelector, Manu3HandFrameContext,
     Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NameAreaEffectOutcome, NavActorSlot,
     NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
     PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
@@ -96,7 +97,6 @@ const SHIP_PRESENTATION_HUD_FLAG: u16 = 8;
 const BRIDGE_REDRAW_REQUESTED: u8 = 1;
 const SHIP_NAVIGATION_STATUS_LINE: u16 = 3;
 const NAVIGATION_PALETTE_TRANSITION_INCREMENT: u16 = 10;
-const PRESENTATION_CHOICE_MANU3_ANIMATION: u16 = 14;
 const FIRST_SHIP_PROJECTION_ENTITY: u16 = 21;
 const AFTER_LAST_SHIP_PROJECTION_ENTITY: u16 = BRIDGE_SPRITE_ENTITY_COUNT as u16;
 const RECOVERED_PRESENTATION_MODE_BLOCKED: bool = false;
@@ -149,6 +149,7 @@ pub struct ModernGameServices<'window> {
     bridge_palette: IndexedGamePalette,
     confirm_dialog: RuntimeConfirmDialog,
     manu3_hand: Manu3HandFrameState,
+    manu3_previous_animation: Manu3AnimationSelector,
     ship_presentation: ShipPresentationState,
     random: BloodPrng,
     scripts: RuntimeScriptSystem,
@@ -237,6 +238,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_palette,
             confirm_dialog,
             manu3_hand: Manu3HandFrameState::default(),
+            manu3_previous_animation: Manu3AnimationSelector::Neutral,
             ship_presentation: ShipPresentationState::default(),
             random: BloodPrng::default(),
             scripts,
@@ -1079,6 +1081,7 @@ impl<'window> ModernGameServices<'window> {
         presentable_targets: &[ScriptObjectId],
     ) -> Result<RuntimeShipTargetSelection> {
         let pointer = self.input.pointer_sample();
+        let current_hand_animation = self.manu3_hand.current_animation;
         let mut selector = self
             .ship_target_selector
             .take()
@@ -1091,10 +1094,13 @@ impl<'window> ModernGameServices<'window> {
                     .buttons
                     .contains(crate::native::bloodprg::PointerButton::Primary),
             },
+            current_hand_animation,
             state,
             presentable_targets,
         );
+        let hand_requests = selector.take_hand_requests();
         self.ship_target_selector = Some(selector);
+        self.apply_choice_list_hand_requests(hand_requests);
         let outcome = outcome?;
         if outcome.selection_sound_requested {
             self.play_loaded_sound_bank_clip(CHOICE_LIST_SELECTION_SOUND_CLIP)?;
@@ -1662,7 +1668,8 @@ impl<'window> ModernGameServices<'window> {
         primary_pointer_pressed: bool,
     ) -> Result<ChoiceListFrame> {
         let pointer = self.input.pointer_sample().position;
-        let frame = prepare_choice_list_frame(
+        let current_hand_animation = self.manu3_hand.current_animation;
+        let (frame, hand_requests) = prepare_choice_list_frame(
             &mut self.runtime,
             labels,
             config,
@@ -1671,7 +1678,9 @@ impl<'window> ModernGameServices<'window> {
                 position: pointer,
                 primary_pressed: primary_pointer_pressed,
             },
+            current_hand_animation,
         )?;
+        self.apply_choice_list_hand_requests(hand_requests);
         if frame.selected_item.is_some() || frame.cancelled {
             self.play_loaded_sound_bank_clip(CHOICE_LIST_SELECTION_SOUND_CLIP)?;
         }
@@ -1684,6 +1693,25 @@ impl<'window> ModernGameServices<'window> {
             &frame,
         )?;
         Ok(frame)
+    }
+
+    /// Apply ordered selector writes emitted by the shared list widget.
+    pub(super) fn apply_choice_list_hand_requests(
+        &mut self,
+        requests: impl IntoIterator<Item = ChoiceListHandRequest>,
+    ) {
+        for request in requests {
+            let selector = match request.animation {
+                ChoiceListHandAnimation::Idle => Manu3AnimationSelector::BridgeActive,
+                ChoiceListHandAnimation::Hover => Manu3AnimationSelector::ChoiceListHover,
+                ChoiceListHandAnimation::Active => Manu3AnimationSelector::ChoiceListActive,
+            };
+            if request.restart_current {
+                self.restart_manu3_animation(selector);
+            } else {
+                self.request_manu3_animation(selector);
+            }
+        }
     }
 
     /// Advance the BloodScript dialogue choice gate and publish its concept.
@@ -1921,6 +1949,11 @@ impl<'window> ModernGameServices<'window> {
             scruter_jo_record,
         );
         self.presentation_screen = Some(screen);
+        if matches!(&outcome, Ok(PresentationScreenOutcome::Initialized)) {
+            self.set_previous_manu3_animation(Manu3AnimationSelector::PresentationPanel);
+            self.presentation_hover
+                .set_previous_actor_state(BridgeActorPresentationState::PresentationPanel);
+        }
         outcome
     }
 
@@ -1942,7 +1975,8 @@ impl<'window> ModernGameServices<'window> {
         state.navigation_rebuild_pending |= screen_rebuild_pending;
         state.presentation.completion_audio_pending |= completion_audio_pending;
         if choice_animation_requested {
-            self.manu3_hand.requested_animation = PRESENTATION_CHOICE_MANU3_ANIMATION;
+            self.manu3_hand
+                .restart(Manu3AnimationSelector::PresentationChoice);
         }
         if startup_mode_completed {
             state.presentation_mode = false;
@@ -1974,8 +2008,28 @@ impl<'window> ModernGameServices<'window> {
     }
 
     /// Queue one recovered MANU3 animation selector for the frame-tail dispatcher.
-    pub fn request_manu3_animation(&mut self, selector: u16) {
-        self.manu3_hand.requested_animation = selector;
+    pub fn request_manu3_animation(&mut self, selector: Manu3AnimationSelector) {
+        self.manu3_hand.request(selector);
+    }
+
+    /// Restart one recovered MANU3 animation by clearing the aliased current selector first.
+    pub fn restart_manu3_animation(&mut self, selector: Manu3AnimationSelector) {
+        self.manu3_hand.restart(selector);
+    }
+
+    /// Replace the selector restored when bridge hover or ship navigation ends.
+    pub fn set_previous_manu3_animation(&mut self, selector: Manu3AnimationSelector) {
+        self.manu3_previous_animation = selector;
+    }
+
+    /// Return the selector corresponding to native `presentation_mode_previous_state`.
+    pub const fn previous_manu3_animation(&self) -> Manu3AnimationSelector {
+        self.manu3_previous_animation
+    }
+
+    /// Restore the previous bridge selector through the shared request word.
+    pub fn restore_previous_manu3_animation(&mut self) {
+        self.manu3_hand.request(self.manu3_previous_animation);
     }
 
     /// Advance the recovered hand dispatcher and render its requested 3D frame.
@@ -2225,6 +2279,7 @@ impl<'window> ModernGameServices<'window> {
     /// Execute one translated script frame and apply every ordered host command it emitted.
     pub fn execute_and_apply_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         let outcome = self.execute_script_frame(enabled)?;
+        self.publish_script_presentation_status_change();
         self.synchronize_script_ship_state();
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
@@ -2240,10 +2295,23 @@ impl<'window> ModernGameServices<'window> {
         let outcome =
             self.scripts
                 .execute_lifecycle_frame(&mut self.runtime, state, execution_enabled)?;
+        self.publish_script_presentation_status_change();
         self.synchronize_script_ship_state();
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
+    }
+
+    fn publish_script_presentation_status_change(&mut self) {
+        let changed = self
+            .scripts
+            .last_presentation_outcome()
+            .is_some_and(|outcome| {
+                outcome.presentation_started.is_some() || outcome.presentation_ended
+            });
+        if changed {
+            self.request_manu3_animation(Manu3AnimationSelector::BridgeActive);
+        }
     }
 
     /// Publish one-frame BloodScript target changes into the canonical ship FSM state.
@@ -2530,8 +2598,19 @@ impl<'window> ModernGameServices<'window> {
         state: &mut GameLifecycleState,
     ) -> Result<ConfirmDialogOutcome> {
         let pointer_position = self.input.pointer_sample().position;
-        self.confirm_dialog
-            .update(&mut self.runtime, state, pointer_position)
+        let outcome = self
+            .confirm_dialog
+            .update(&mut self.runtime, state, pointer_position)?;
+        match outcome {
+            ConfirmDialogOutcome::Inactive => {}
+            ConfirmDialogOutcome::Cancelled(_) => {
+                self.request_manu3_animation(Manu3AnimationSelector::BlackHoleOrLeftChart)
+            }
+            ConfirmDialogOutcome::AwaitingChoice(_) | ConfirmDialogOutcome::Confirmed(_) => {
+                self.request_manu3_animation(Manu3AnimationSelector::BridgeActive);
+            }
+        }
+        Ok(outcome)
     }
 
     /// Borrow navigation state shared with the confirmation-dialog coordinator.
@@ -2665,13 +2744,23 @@ impl<'window> ModernGameServices<'window> {
         let secondary = self.nav_actor_slots[SECONDARY_PRESENTATION_ACTOR_SLOT]
             .hit_region
             .unwrap_or(DISABLED_PRESENTATION_HIT_RECT);
-        update_presentation_hover(
+        let outcome = update_presentation_hover(
             selection,
             PresentationHitAreas::new(primary, secondary),
             self.input.pointer_sample().position,
             BridgeActorPresentationState::PresentationHover,
             &mut self.presentation_hover,
-        )
+        );
+        match outcome {
+            PresentationHoverOutcome::Activated => {
+                self.request_manu3_animation(Manu3AnimationSelector::PresentationHover);
+            }
+            PresentationHoverOutcome::Deactivated => self.restore_previous_manu3_animation(),
+            PresentationHoverOutcome::Disabled
+            | PresentationHoverOutcome::RemainedInside
+            | PresentationHoverOutcome::RemainedOutside => {}
+        }
+        outcome
     }
 
     /// Advance all six executable-authored bridge actor slots in native order.
@@ -4100,13 +4189,13 @@ mod tests {
         );
         assert_eq!(
             services.manu3_hand_state().requested_animation,
-            crate::native::bloodprg::RADIO_HAND_ANIMATION_SELECTOR,
+            Manu3AnimationSelector::RadioOrb.value(),
             "answering the radio must preserve the DS:0x0A32 hand-animation alias"
         );
         assert!(services.update_lifecycle_manu3(&lifecycle).unwrap());
         assert_eq!(
             services.manu3_hand_state().current_animation,
-            crate::native::bloodprg::RADIO_HAND_ANIMATION_SELECTOR
+            Manu3AnimationSelector::RadioOrb.value()
         );
         for _ in usize::MIN..RADIO_COMPLETION_FRAME_LIMIT {
             services

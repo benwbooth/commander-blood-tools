@@ -16,6 +16,8 @@ pub enum BridgeActorPresentationState {
     SteeringLeft,
     /// Pointer hover owns one authored presentation orb.
     PresentationHover,
+    /// The expanding presentation panel owns the bridge.
+    PresentationPanel,
 }
 
 /// Typed sprite groups committed or redrawn by the bridge coordinator.

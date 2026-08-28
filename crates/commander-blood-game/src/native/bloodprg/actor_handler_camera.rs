@@ -99,6 +99,9 @@ impl<RecordLink> Default for CameraPresentationActorState<RecordLink> {
 
 /// Line, page, audio, entity, and ship services used by the camera actor.
 pub trait CameraPresentationActorBackend: PresentationLineStepper {
+    /// Publish selector 10 through the shared MANU3 request word.
+    fn request_camera_hand_animation(&mut self);
+
     /// Mark the location-panel entity for a state transition.
     fn mark_location_panel_entity_dirty(&mut self);
 
@@ -171,6 +174,7 @@ pub fn update_camera_presentation_actor<RecordLink, Backend: CameraPresentationA
     backend.mark_location_panel_entity_dirty();
     state.selected_location = None;
     state.presentation = CameraActorPresentation::CameraView;
+    backend.request_camera_hand_animation();
     state.mouse_primary_pressed = false;
 
     let mut transition_requested = false;
@@ -286,6 +290,7 @@ mod tests {
         frame_after_helper: u16,
         helper_completed: bool,
         page_flip_outcome: CameraPageFlipOutcome,
+        hand_animation_requested: bool,
         events: Vec<BackendEvent>,
     }
 
@@ -308,6 +313,10 @@ mod tests {
     }
 
     impl CameraPresentationActorBackend for OracleBackend {
+        fn request_camera_hand_animation(&mut self) {
+            self.hand_animation_requested = true;
+        }
+
         fn mark_location_panel_entity_dirty(&mut self) {
             self.events.push(BackendEvent::LocationPanelEntity);
         }
@@ -363,6 +372,7 @@ mod tests {
                 frame_after_helper: vector.frame_after_helper,
                 helper_completed: vector.line_helper_completed,
                 page_flip_outcome: decode_page_flip(vector.page_flip_result),
+                hand_animation_requested: false,
                 events: Vec::new(),
             };
 
@@ -404,6 +414,11 @@ mod tests {
             assert_eq!(
                 backend.events.contains(&BackendEvent::LinePlayback),
                 vector.line_helper_called,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                backend.hand_animation_requested, vector.line_helper_called,
                 "{}",
                 vector.name
             );

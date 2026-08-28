@@ -6,8 +6,8 @@ use std::fmt;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 
 use super::{
-    BridgeSpriteEntity, BridgeSpriteEntityError, IndexedGamePalette, ScriptPresentationScanState,
-    TextPresentationState, advance_bridge_sprite_state,
+    BridgeSpriteEntity, BridgeSpriteEntityError, IndexedGamePalette, Manu3AnimationSelector,
+    ScriptPresentationScanState, TextPresentationState, advance_bridge_sprite_state,
 };
 
 const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
@@ -113,13 +113,6 @@ impl SceneTransitionLine {
     }
 }
 
-/// MANU3 animation selected by this coordinator.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SceneManu3Animation {
-    /// Selector zero, the base hand animation.
-    Base,
-}
-
 /// Inclusive logical rows cleared on the non-presentation image path.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SceneImageBand {
@@ -202,8 +195,8 @@ pub struct SceneTransitionState {
     pub pbm_palette_refresh: bool,
     /// PBM transparent-zero option retained between image loads.
     pub pbm_transparent_zero: bool,
-    /// MANU3 request published by deferred and cleanup phases.
-    pub manu3_animation: Option<SceneManu3Animation>,
+    /// Exact MANU3 request published by image, deferred, and cleanup phases.
+    pub manu3_animation: Option<Manu3AnimationSelector>,
     /// Native C4 deferred-record kind has been armed.
     pub deferred_actor_record_armed: bool,
     /// Bridge artwork must redraw after cleanup.
@@ -366,7 +359,7 @@ pub fn update_scene_transition<Host: SceneTransitionHost>(
             }
             load_transition_image(state, palettes, host)?;
             if host.scene_record_kind(state.record_source) == SceneTransitionRecordKind::Other {
-                state.manu3_animation = None;
+                state.manu3_animation = Some(Manu3AnimationSelector::Disabled);
                 host.clear_scene_image_band(SceneImageBand {
                     first_row: SCENE_IMAGE_FIRST_ROW,
                     last_row: SCENE_IMAGE_LAST_ROW,
@@ -390,7 +383,7 @@ pub fn update_scene_transition<Host: SceneTransitionHost>(
             state.phase = SceneTransitionPhase::Bridge;
             state.bridge_blocked = true;
             state.bridge_reload_requested = false;
-            state.manu3_animation = Some(SceneManu3Animation::Base);
+            state.manu3_animation = Some(Manu3AnimationSelector::Neutral);
             Ok(SceneTransitionOutcome::DeferredRecordArmed)
         }
         SceneTransitionPhase::Bridge => {
@@ -442,7 +435,7 @@ pub fn update_scene_transition<Host: SceneTransitionHost>(
             if presentation.c2_gate_active {
                 return Ok(SceneTransitionOutcome::Waiting);
             }
-            state.manu3_animation = Some(SceneManu3Animation::Base);
+            state.manu3_animation = Some(Manu3AnimationSelector::Neutral);
             state.phase = SceneTransitionPhase::Inactive;
             state.bridge_blocked = false;
             state.bridge_reload_requested = false;
@@ -840,6 +833,12 @@ mod tests {
                 "{}",
                 vector.name
             );
+            if vector.name == "load_nonpresentation" {
+                assert_eq!(
+                    state.manu3_animation,
+                    Some(Manu3AnimationSelector::Disabled)
+                );
+            }
 
             let expected_entity_flags = if vector.name == "active_initializes_record" {
                 ORIGINAL_ACTIVE_FLAG | ORIGINAL_DIRTY_FLAG
@@ -861,7 +860,7 @@ mod tests {
             if vector.name == "cleanup_resets_presentation" {
                 assert!(state.ui_enabled);
                 assert!(state.redraw_pending);
-                assert_eq!(state.manu3_animation, Some(SceneManu3Animation::Base));
+                assert_eq!(state.manu3_animation, Some(Manu3AnimationSelector::Neutral));
                 assert!(!presentation.ui_busy);
                 assert!(!presentation.start_locked);
                 assert!(!presentation.hold_ready);
@@ -923,7 +922,7 @@ mod tests {
             pbm_palette_refresh: seeded_game_byte(ORIGINAL_PALETTE_REFRESH_OFFSET, case_index) & 1
                 != 0,
             pbm_transparent_zero: ORIGINAL_TRANSPARENT_ZERO & 1 != 0,
-            manu3_animation: Some(SceneManu3Animation::Base),
+            manu3_animation: Some(Manu3AnimationSelector::Neutral),
             deferred_actor_record_armed: false,
             redraw_pending: false,
         }
