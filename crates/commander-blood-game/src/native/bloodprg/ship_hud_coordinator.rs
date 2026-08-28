@@ -2,10 +2,9 @@
 
 use std::ops::Range;
 
-use super::ShipTargetSelectionOutcome;
+use super::{INITIAL_BRIDGE_VIEW_FRAME, ShipTargetSelectionOutcome};
 
 const SHIP_HUD_UI_FLAG: u16 = 8;
-const INITIAL_BRIDGE_VIEW_FRAME: u16 = 179;
 const TARGET_LIST_INITIAL_PHASE: u8 = 1;
 const TARGET_LIST_CENTER_X: i16 = 80;
 const TARGET_LIST_TRANSITION_STEPS: u16 = 10;

@@ -24,8 +24,8 @@ use super::{
     randomize_ship_point_cloud, update_bridge_steering,
 };
 
-/// Authored golden-console rest frame used when entering the bridge hub.
-pub const INITIAL_BRIDGE_VIEW_FRAME: u16 = 45;
+/// Authored forward-window rest frame written by `ship_3d_hud_init`.
+pub const INITIAL_BRIDGE_VIEW_FRAME: u16 = 179;
 
 const INITIAL_PRESENTATION_LINK: u16 = INITIAL_BRIDGE_VIEW_FRAME * BRIDGE_ARC_UNITS_PER_VIEW_FRAME;
 
@@ -507,7 +507,7 @@ mod tests {
             centered.panorama_frame,
             usize::from(INITIAL_BRIDGE_VIEW_FRAME)
         );
-        assert_eq!(centered.metadata.station, BridgeStation::Console);
+        assert_eq!(centered.metadata.station, BridgeStation::Helm);
         assert_eq!(
             centered.station_orb_boxes[centered.metadata.station.index()],
             centered.metadata.orb_box

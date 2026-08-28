@@ -3488,7 +3488,10 @@ mod tests {
     const PTERRA_BACKGROUND_NAME: &[u8] = b"pterra1f.lbm";
     const ALTERNATE_SCRIPT_PROFILE_VALUE: u8 = 1;
     const TARGET_SELECTOR_SETTLE_FRAME_LIMIT: usize = 16;
+    const PHONE_BRIDGE_TARGET_ARC: u16 = 90;
+    const PHONE_BRIDGE_VIEW_FRAME: i16 = 45;
     const AUTHORED_RADIO_TERMINAL_FRAME: u16 = 11;
+    const RADIO_COMPLETION_FRAME_LIMIT: usize = AUTHORED_RADIO_TERMINAL_FRAME as usize + 2;
     const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
     const AUTHORED_ACTOR_TRANSITION_RESOURCES: [Option<u16>; NAV_ACTOR_SLOT_COUNT] =
         [None, None, None, None, Some(21), Some(20)];
@@ -3581,6 +3584,10 @@ mod tests {
         services.initialize_audio(&audio).unwrap();
         services.load_initial_cartography_resource().unwrap();
         services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
+        assert_eq!(
+            services.bridge_view_frame().unwrap(),
+            crate::native::bloodprg::INITIAL_BRIDGE_VIEW_FRAME as i16
+        );
         assert_eq!(
             services
                 .nav_actor_slots
@@ -3701,6 +3708,25 @@ mod tests {
             .horn
             .unwrap();
         let mut lifecycle = GameLifecycleState::default();
+        services
+            .request_bridge_seek(PHONE_BRIDGE_TARGET_ARC)
+            .unwrap();
+        for _ in usize::MIN..MAXIMUM_CAMERA_TRANSITION_FRAMES {
+            services
+                .render_bridge_frame(BridgeSceneInput {
+                    interaction: BridgeSteeringInteraction::MenuEngaged,
+                    ..BridgeSceneInput::default()
+                })
+                .unwrap();
+            if !services.bridge_seek_requested().unwrap() {
+                break;
+            }
+        }
+        assert!(!services.bridge_seek_requested().unwrap());
+        assert_eq!(
+            services.bridge_view_frame().unwrap(),
+            PHONE_BRIDGE_VIEW_FRAME
+        );
         let (station_index, station_orb, plotted_star_count) = {
             let bridge_frame = services
                 .render_bridge_frame(BridgeSceneInput::default())
@@ -4050,6 +4076,22 @@ mod tests {
             services.nav_actor_slots[station_index].line.frame,
             FIRST_ADVANCED_PRESENTATION_FRAME
         );
+        for _ in usize::MIN..RADIO_COMPLETION_FRAME_LIMIT {
+            services
+                .update_runtime_bridge_actors(&mut lifecycle)
+                .unwrap();
+            if services.pending_ship_presentation_owner().is_none() {
+                break;
+            }
+        }
+        assert!(services.pending_ship_presentation_owner().is_none());
+        assert_eq!(
+            services.presentation_scan_state().deferred,
+            crate::native::bloodprg::ScriptDeferredRecord::Complete {
+                record: crate::native::bloodprg::ScriptActionRecord::ActorPresentation(horn),
+                actionable: false,
+            }
+        );
         services.clear_pending_ship_presentation_owner();
         services.input_mut().poll_pointer(
             [320.0, 200.0],
@@ -4076,8 +4118,8 @@ mod tests {
         assert_eq!(
             services.presentation_scan_state().deferred,
             crate::native::bloodprg::ScriptDeferredRecord::Complete {
-                record: crate::native::bloodprg::ScriptActionRecord::ActorPresentation(horn),
-                actionable: false,
+                record: crate::native::bloodprg::ScriptActionRecord::PresentationQueue(horn),
+                actionable: true,
             }
         );
         services.submit_indexed_frame().unwrap();
