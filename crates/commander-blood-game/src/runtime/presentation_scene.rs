@@ -20,7 +20,6 @@ use crate::native::bloodprg::{
 
 use super::{ModernGameServices, RuntimePresentationBackground};
 
-const TIMER_TICK_INCREMENT: u16 = 1;
 const PRESENTATION_PALETTE_FIRST_COLOR: usize = 128;
 
 /// Palette and timing state retained by every presentation-scene caller.
@@ -28,7 +27,6 @@ pub struct RuntimePresentationScene {
     scene_palette: IndexedGamePalette,
     presentation_palette: ShipHudPaletteSnapshot,
     blend_remap: PaletteRemapTable,
-    timer_tick: u16,
 }
 
 impl RuntimePresentationScene {
@@ -41,7 +39,6 @@ impl RuntimePresentationScene {
             blend_remap: std::array::from_fn(|index| {
                 u8::try_from(index).expect("the palette has exactly 256 entries")
             }),
-            timer_tick: u16::MIN,
         }
     }
 
@@ -74,7 +71,6 @@ impl RuntimePresentationScene {
             };
             let mut host = RuntimePresentationSceneHost {
                 services,
-                timer_tick: &mut self.timer_tick,
                 remap_request: &mut remap_request,
                 render_snapshot_suppressed,
             };
@@ -119,7 +115,6 @@ impl RuntimePresentationScene {
 
 struct RuntimePresentationSceneHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
-    timer_tick: &'services mut u16,
     remap_request: &'services mut Option<(u8, [u8; RGB_COMPONENT_COUNT])>,
     render_snapshot_suppressed: bool,
 }
@@ -181,7 +176,7 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
         let outcome = self.services.load_presentation_sequence(
             resource,
             policy,
-            *self.timer_tick,
+            self.services.game_timer_tick(),
             self.render_snapshot_suppressed,
         )?;
         Ok(outcome.initial_present.frame_presented)
@@ -200,14 +195,13 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
         &mut self,
         _policy: PresentationPresentPolicy,
     ) -> Result<PresentationSceneQueueService> {
-        *self.timer_tick = self.timer_tick.wrapping_add(TIMER_TICK_INCREMENT);
         let audio_position = self
             .services
             .foreground_audio_position()?
             .unwrap_or(u64::MIN) as u16;
         let outcome = self.services.service_presentation_sequence(
             audio_position,
-            *self.timer_tick,
+            self.services.game_timer_tick(),
             self.render_snapshot_suppressed,
         )?;
         Ok(PresentationSceneQueueService {

@@ -92,6 +92,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         self.timer.dialogue_delay = dialogue_delay;
         self.timer.dialogue_hold_countdown = state.presentation.dialogue_hold_countdown;
         self.timer.clip_playback_state = state.completion_audio_reset_frames.unwrap_or(u16::MIN);
+        self.services.export_game_timer_state(&mut self.timer)?;
         let context = GameTimerContext {
             paused: state.pause_hud_active,
             navigation_link_pending: state.navigation_transition_pending,
@@ -108,6 +109,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         state.presentation.dialogue_hold_countdown = self.timer.dialogue_hold_countdown;
         state.completion_audio_reset_frames =
             (self.timer.clip_playback_state != u16::MIN).then_some(self.timer.clip_playback_state);
+        self.services.import_game_timer_state(&self.timer)?;
         self.services
             .synchronize_audio_event_timers(self.timer.chatter_cooldown, self.timer.dialogue_delay)
     }
@@ -260,6 +262,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             Self::scene_link_target(link),
             &mut self.services,
             &mut self.platform,
+            &mut self.timer,
+            &mut self.startup_timer_runtime,
         )
         .map(|_| ())
     }
@@ -491,6 +495,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             Self::scene_link_target(link),
             &mut self.services,
             &mut self.platform,
+            &mut self.timer,
+            &mut self.startup_timer_runtime,
         )
         .map(|_| ())
     }

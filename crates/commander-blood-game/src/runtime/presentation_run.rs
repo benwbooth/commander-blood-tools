@@ -3,9 +3,10 @@
 use anyhow::{Context, Result, bail};
 
 use crate::native::bloodprg::{
-    CREDITS_VOICE_RESOURCE_PATH, GameLifecycleState, InputAction, PresentationPresentPolicy,
-    PresentationResourceId, PresentationRunExit, PresentationRunHost, PresentationRunState,
-    run_presentation_line_one_stream, run_presentation_line_zero,
+    CREDITS_VOICE_RESOURCE_PATH, GameLifecycleState, GameTimerContext, GameTimerState, InputAction,
+    PresentationPresentPolicy, PresentationResourceId, PresentationRunExit, PresentationRunHost,
+    PresentationRunState, ScriptRuntime, advance_game_timer_tick, run_presentation_line_one_stream,
+    run_presentation_line_zero,
 };
 
 use super::{ModernGameServices, RuntimePlatformHost};
@@ -13,7 +14,7 @@ use super::{ModernGameServices, RuntimePlatformHost};
 const OPENING_PRESENTATION_LINE: u16 = 0;
 const CREDITS_PRESENTATION_LINE: u16 = 1;
 const PRESENTATION_GATE_ACTIVE: u8 = 1;
-const TIMER_TICK_INCREMENT: u16 = 1;
+const GAME_TIMER_TICKS_PER_FRAME: usize = 8;
 
 /// Terminal state returned by one recovered blocking presentation loop.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -30,12 +31,15 @@ pub fn run_runtime_presentation<'window>(
     link_target: u16,
     services: &mut ModernGameServices<'window>,
     platform: &mut RuntimePlatformHost<'window>,
+    timer: &mut GameTimerState,
+    startup_timer_runtime: &mut ScriptRuntime,
 ) -> Result<RuntimePresentationRunOutcome> {
     let mut host = RuntimePresentationRunHost {
         services,
         platform,
         input_state: GameLifecycleState::default(),
-        timer_tick: u16::MIN,
+        timer,
+        startup_timer_runtime,
         active_policy: None,
     };
     let mut state = PresentationRunState {
@@ -64,14 +68,32 @@ struct RuntimePresentationRunHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
     platform: &'services mut RuntimePlatformHost<'window>,
     input_state: GameLifecycleState,
-    timer_tick: u16,
+    timer: &'services mut GameTimerState,
+    startup_timer_runtime: &'services mut ScriptRuntime,
     active_policy: Option<PresentationPresentPolicy>,
 }
 
 impl RuntimePresentationRunHost<'_, '_> {
-    fn advance_timer(&mut self) -> u16 {
-        self.timer_tick = self.timer_tick.wrapping_add(TIMER_TICK_INCREMENT);
-        self.timer_tick
+    fn advance_timer(&mut self) -> Result<()> {
+        self.services.export_game_timer_state(self.timer)?;
+        if let Some(profile) = self.services.runtime_mut().current_profile_mut() {
+            for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
+                advance_game_timer_tick(
+                    self.timer,
+                    profile.runtime_mut(),
+                    GameTimerContext::default(),
+                );
+            }
+        } else {
+            for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
+                advance_game_timer_tick(
+                    self.timer,
+                    self.startup_timer_runtime,
+                    GameTimerContext::default(),
+                );
+            }
+        }
+        self.services.import_game_timer_state(self.timer)
     }
 
     fn audio_position(&self) -> Result<u16> {
@@ -102,6 +124,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
     }
 
     fn dispatch_input(&mut self, state: &mut PresentationRunState) -> Result<()> {
+        self.advance_timer()?;
         let action = self
             .platform
             .dispatch_events(self.services, &mut self.input_state);
@@ -135,13 +158,13 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
             self.services.load_presentation_sequence(
                 PresentationResourceId::new(line),
                 policy,
-                self.timer_tick,
+                self.services.game_timer_tick(),
                 false,
             )?;
             self.active_policy = Some(policy);
         } else {
             let audio_position = self.audio_position()?;
-            let timer_tick = self.advance_timer();
+            let timer_tick = self.services.game_timer_tick();
             self.services
                 .service_presentation_sequence(audio_position, timer_tick, false)?;
         }

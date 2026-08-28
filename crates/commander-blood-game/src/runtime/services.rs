@@ -71,11 +71,11 @@ use super::{
     RuntimeConfirmDialog, RuntimeInputHost, RuntimePaletteTransition,
     RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome, RuntimePcmClip,
     RuntimePlatformHost, RuntimePresentationCatalog, RuntimePresentationHost,
-    RuntimePresentationPlayer, RuntimePresentationScreen, RuntimePresentationStepOutcome,
-    RuntimePresentationWordChoice, RuntimeSaveLoad, RuntimeSceneTransition, RuntimeScriptBackend,
-    RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation,
-    RuntimeShipTargetSelection, RuntimeShipTargetSelector, RuntimeSubtitleReveal,
-    VGA_BIOS_FONT_8X8, initialize_and_restore_original_save_game,
+    RuntimePresentationPlayer, RuntimePresentationQueueMetrics, RuntimePresentationScreen,
+    RuntimePresentationStepOutcome, RuntimePresentationWordChoice, RuntimeSaveLoad,
+    RuntimeSceneTransition, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
+    RuntimeShipHud, RuntimeShipNavigation, RuntimeShipTargetSelection, RuntimeShipTargetSelector,
+    RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8, initialize_and_restore_original_save_game,
 };
 
 const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
@@ -152,6 +152,7 @@ pub struct ModernGameServices<'window> {
     manu3_previous_animation: Manu3AnimationSelector,
     ship_presentation: ShipPresentationState,
     random: BloodPrng,
+    game_timer_tick: u16,
     scripts: RuntimeScriptSystem,
     cd_audio: CdAudioState,
     main_viewport_configured: bool,
@@ -241,6 +242,7 @@ impl<'window> ModernGameServices<'window> {
             manu3_previous_animation: Manu3AnimationSelector::Neutral,
             ship_presentation: ShipPresentationState::default(),
             random: BloodPrng::default(),
+            game_timer_tick: u16::MIN,
             scripts,
             cd_audio: CdAudioState::default(),
             main_viewport_configured: false,
@@ -1570,6 +1572,36 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
+    /// Export countdowns written by frame systems into the canonical game timer.
+    pub fn export_game_timer_state(
+        &self,
+        timer: &mut crate::native::bloodprg::GameTimerState,
+    ) -> Result<()> {
+        self.subtitle_reveal
+            .as_ref()
+            .context("subtitle reveal is already being updated")?
+            .export_timer_state(timer);
+        Ok(())
+    }
+
+    /// Publish the canonical timer word and countdowns after one frame of ticks.
+    pub fn import_game_timer_state(
+        &mut self,
+        timer: &crate::native::bloodprg::GameTimerState,
+    ) -> Result<()> {
+        self.game_timer_tick = timer.tick;
+        self.subtitle_reveal
+            .as_mut()
+            .context("subtitle reveal is already being updated")?
+            .import_timer_state(timer);
+        Ok(())
+    }
+
+    /// Read the wrapping low timer word formerly shared at native address `0x0B29`.
+    pub const fn game_timer_tick(&self) -> u16 {
+        self.game_timer_tick
+    }
+
     /// Mark the script-side ship interface inactive after full navigation teardown.
     pub fn finish_ship_navigation_reset(&mut self) {
         let action = self.scripts.action_state_mut();
@@ -2446,6 +2478,11 @@ impl<'window> ModernGameServices<'window> {
     /// Return whether a presentation stream is retained and still draining.
     pub fn presentation_stream_active(&self) -> bool {
         self.presentation_player.has_stream() && !self.presentation_player.is_finished()
+    }
+
+    /// Return the active presentation queue counters shared with subtitle cues.
+    pub fn presentation_queue_metrics(&self) -> Result<Option<RuntimePresentationQueueMetrics>> {
+        self.presentation_player.queue_metrics()
     }
 
     /// Number of HNM frames retired by the currently selected presentation stream.

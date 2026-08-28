@@ -130,6 +130,14 @@ impl RuntimePresentationPlayer {
             .map(|stream| *stream.render_palette_snapshot())
     }
 
+    /// Snapshot the queue counters shared with scene and subtitle dispatch.
+    pub fn queue_metrics(&self) -> Result<Option<super::RuntimePresentationQueueMetrics>> {
+        self.active_stream
+            .as_ref()
+            .map(RuntimePresentationStream::queue_metrics)
+            .transpose()
+    }
+
     /// Release the active stream after completion or explicit cancellation.
     pub fn finish(&mut self) -> Option<RuntimePresentationStream> {
         self.active_stream.take()

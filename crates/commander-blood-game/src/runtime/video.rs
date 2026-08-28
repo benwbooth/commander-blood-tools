@@ -84,6 +84,8 @@ pub struct RuntimePresentationQueueMetrics {
     pub entry_metric: u16,
     /// One-based index of the entry currently being consumed.
     pub read_wrap_index: u16,
+    /// Monotonic authored entry sequence consumed by DESCRIPT subtitle cues.
+    pub sequence_index: u16,
 }
 
 /// Persistent flat ownership for one streamed HNM resource.
@@ -268,6 +270,7 @@ impl RuntimePresentationStream {
             entry_metric: u16::try_from(self.stream.entry_metric)
                 .context("presentation entry metric exceeds the native word range")?,
             read_wrap_index: self.queue.read_wrap_index,
+            sequence_index: self.queue.sequence_index,
         })
     }
 
@@ -387,6 +390,7 @@ mod tests {
     const MAXIMUM_TEST_SERVICE_CALLS: usize = 10_000;
     const MINIMUM_EXPECTED_FRAME_COUNT: u64 = 2;
     const TEST_PALETTE_INDEX: usize = 17;
+    const TEST_SEQUENCE_INDEX: u16 = 37;
     const EXTERNAL_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [3, 5, 7];
     const VIDEO_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [11, 13, 17];
     const MIND_ORACLE_FRAME_INDEX: u16 = 30;
@@ -433,6 +437,11 @@ mod tests {
             RuntimePresentationRequest::new(BloodResourceName::new(TEST_VIDEO_RESOURCE).unwrap());
         let (mut stream, initial) =
             RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+        stream.queue.sequence_index = TEST_SEQUENCE_INDEX;
+        assert_eq!(
+            stream.queue_metrics().unwrap().sequence_index,
+            TEST_SEQUENCE_INDEX
+        );
 
         assert!(initial.initial_entry_accepted);
         assert!(initial.initial_present.frame_presented);

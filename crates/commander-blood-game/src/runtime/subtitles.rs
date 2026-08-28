@@ -3,7 +3,7 @@
 use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, FontPoint, PaletteRemapTable, RasterPoint, RasterSpanPaint,
+    BridgeSpriteRect, FontPoint, GameTimerState, PaletteRemapTable, RasterPoint, RasterSpanPaint,
     SubtitleFrameDraw, SubtitleFramePrimitive, SubtitleFramePrimitiveKind, SubtitleRevealLine,
     SubtitleRevealOutcome, SubtitleRevealRenderer, SubtitleRevealState, TextPresentationState,
     build_palette_blend_remap_table, draw_planar_horizontal_span, draw_planar_vertical_span,
@@ -15,7 +15,6 @@ use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameR
 const SUBTITLE_TEXT_ORIGIN: [u16; 2] = [10, 8];
 const DARK_FRAME_REMAP_PERCENT: u8 = 50;
 const BLACK_BLEND_TARGET: [u8; 3] = [u8::MIN; 3];
-const GAME_TIMER_TICKS_PER_FRAME: u16 = 8;
 const SECONDARY_FRAME_FIRST_PRIMITIVE: usize = 8;
 const CARRIAGE_RETURN: u8 = b'\r';
 const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
@@ -92,13 +91,12 @@ impl RuntimeSubtitleReveal {
         self.state.text_speed_step = step;
     }
 
-    /// Advance one game-frame worth of timer interrupts, then draw the subtitle.
+    /// Draw one subtitle frame using countdowns advanced by the canonical game timer.
     pub fn update(
         &mut self,
         runtime: &mut OriginalGameRuntime,
         presentation: &mut TextPresentationState,
     ) -> Result<SubtitleRevealOutcome> {
-        self.advance_frame_timers();
         self.refresh_remap_table(runtime)?;
         let fonts = runtime.data().font_resources().clone();
         let mut renderer = RuntimeSubtitleRenderer {
@@ -130,12 +128,16 @@ impl RuntimeSubtitleReveal {
         self.state.ship_hud_active = ship_hud_active;
     }
 
-    fn advance_frame_timers(&mut self) {
-        self.state.opening_frame_pulse = false;
-        self.state.reveal_delay = self
-            .state
-            .reveal_delay
-            .saturating_sub(GAME_TIMER_TICKS_PER_FRAME);
+    /// Publish subtitle-owned countdown values before the canonical timer advances.
+    pub(super) fn export_timer_state(&self, timer: &mut GameTimerState) {
+        timer.subtitle_reveal_delay = self.state.reveal_delay;
+        timer.subtitle_opening_frame_pulse = u16::from(self.state.opening_frame_pulse);
+    }
+
+    /// Import countdown values after the canonical timer has advanced one game frame.
+    pub(super) fn import_timer_state(&mut self, timer: &GameTimerState) {
+        self.state.reveal_delay = timer.subtitle_reveal_delay;
+        self.state.opening_frame_pulse = timer.subtitle_opening_frame_pulse != u16::MIN;
     }
 
     fn refresh_remap_table(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
@@ -261,6 +263,8 @@ mod tests {
     const SUBTITLE_FRAME_KIND_TERMINATOR: u16 = u16::MAX;
     const TEST_BACKGROUND_INDEX: u8 = 16;
     const REVEALED_SUBTITLE_COLOR: u8 = u8::MAX - 2;
+    const FIRST_FRAME_TIMER_TICKS: usize = 8;
+    const REMAINING_OPENING_PULSE_TICKS: usize = 24;
 
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -338,6 +342,40 @@ mod tests {
             read_executable_word(&executable, terminator),
             SUBTITLE_FRAME_KIND_TERMINATOR
         );
+    }
+
+    #[test]
+    fn subtitle_countdowns_round_trip_through_the_canonical_timer_cadence() {
+        let mut subtitle = RuntimeSubtitleReveal::new(8);
+        subtitle.state.reveal_delay = 2;
+        subtitle.state.opening_frame_pulse = true;
+        let mut timer = GameTimerState::default();
+        timer.start();
+        let mut script = crate::native::bloodprg::ScriptRuntime::default();
+
+        subtitle.export_timer_state(&mut timer);
+        for _ in usize::MIN..FIRST_FRAME_TIMER_TICKS {
+            crate::native::bloodprg::advance_game_timer_tick(
+                &mut timer,
+                &mut script,
+                crate::native::bloodprg::GameTimerContext::default(),
+            );
+        }
+        subtitle.import_timer_state(&timer);
+
+        assert_eq!(subtitle.state.reveal_delay, u16::MIN);
+        assert!(subtitle.state.opening_frame_pulse);
+
+        for _ in usize::MIN..REMAINING_OPENING_PULSE_TICKS {
+            crate::native::bloodprg::advance_game_timer_tick(
+                &mut timer,
+                &mut script,
+                crate::native::bloodprg::GameTimerContext::default(),
+            );
+        }
+        subtitle.import_timer_state(&timer);
+
+        assert!(!subtitle.state.opening_frame_pulse);
     }
 
     #[test]

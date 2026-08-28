@@ -510,7 +510,16 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
             .assets()
             .sequence_subtitles()
             .to_vec();
-        let visible_frame = self.services.presentation_decoded_frame_count() as u16;
+        let visible_frame = match self.services.presentation_queue_metrics() {
+            Ok(Some(metrics)) => metrics.sequence_index,
+            Ok(None) => u16::MIN,
+            Err(error) => {
+                self.record_error(Err(
+                    error.context("reading the presentation subtitle sequence")
+                ));
+                return;
+            }
+        };
         let mut renderer = RuntimeSequenceSubtitleRenderer {
             runtime: self.services.runtime_mut(),
             visible_frame,
