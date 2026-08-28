@@ -8,11 +8,11 @@ use commander_blood_formats::script::ScriptObjectId;
 use super::text_scan::activate_profile_object_text;
 use super::{
     ActorPositionStateContext, ActorPositionStateError, ScriptAboardRecordContext,
-    ScriptActionContext, ScriptActionError, ScriptActionHost, ScriptActionRuntimeState,
-    ScriptActionState, ScriptBasDispatchError, ScriptBasDispatchHost, ScriptBasDispatchState,
-    ScriptClock, ScriptControlFlowError, ScriptDialogueControlDispatchContext,
-    ScriptDialogueExecutionContext, ScriptDispatchHost, ScriptDispatchState,
-    ScriptEnvironmentActivity, ScriptPostScanContext, ScriptPreFrameContext,
+    ScriptActionContext, ScriptActionDescription, ScriptActionError, ScriptActionHost,
+    ScriptActionRuntimeState, ScriptActionState, ScriptBasDispatchError, ScriptBasDispatchHost,
+    ScriptBasDispatchState, ScriptClock, ScriptControlFlowError,
+    ScriptDialogueControlDispatchContext, ScriptDialogueExecutionContext, ScriptDispatchHost,
+    ScriptDispatchState, ScriptEnvironmentActivity, ScriptPostScanContext, ScriptPreFrameContext,
     ScriptPresentationEntity, ScriptPresentationScanContext, ScriptPresentationScanError,
     ScriptPresentationScanHost, ScriptPresentationScanOutcome, ScriptPresentationScanState,
     ScriptRecordActionDispatchContext, ScriptRecordStateNavigationContext,
@@ -80,7 +80,7 @@ pub trait ScriptExecutionBackend {
         object: ScriptObjectId,
         name: &[u8],
         text: &mut TextPresentationState,
-    ) -> Result<bool, Self::Error>;
+    ) -> Result<ScriptActionDescription, Self::Error>;
 
     /// Restart navigation music after a descriptor-backed target change.
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error>;
@@ -535,7 +535,7 @@ impl<Backend: ScriptExecutionBackend> ScriptActionHost for ActionExternalHost<'_
         &mut self,
         object: ScriptObjectId,
         text: &mut TextPresentationState,
-    ) -> Result<bool, Self::Error> {
+    ) -> Result<ScriptActionDescription, Self::Error> {
         let name = self
             .directory
             .object(object)
@@ -660,6 +660,7 @@ mod tests {
                 camera_approach_phase: 4,
                 camera_view_transition_steps: u8::MIN,
                 ship_navigation_active: true,
+                loaded_scene_vertical_offset: u16::MIN,
             }
         }
 
@@ -713,9 +714,13 @@ mod tests {
             object: ScriptObjectId,
             _name: &[u8],
             _text: &mut TextPresentationState,
-        ) -> Result<bool, Self::Error> {
+        ) -> Result<ScriptActionDescription, Self::Error> {
             self.events.push(BackendEvent::DescriptionProbe(object));
-            Ok(true)
+            Ok(ScriptActionDescription {
+                available: true,
+                music_changed: false,
+                scene_vertical_offset: None,
+            })
         }
 
         fn restart_navigation_music(&mut self) -> Result<(), Self::Error> {

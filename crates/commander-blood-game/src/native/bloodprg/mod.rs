@@ -561,9 +561,9 @@ pub use script::{
     ScriptRuntime, ScriptRuntimeError,
 };
 pub use script_action::{
-    ScriptActionContext, ScriptActionError, ScriptActionHost, ScriptActionPresentationLine,
-    ScriptActionRuntimeState, ScriptActionState, ScriptShipNavigationMode, ScriptTravelActionPhase,
-    dispatch_script_action,
+    ScriptActionContext, ScriptActionDescription, ScriptActionError, ScriptActionHost,
+    ScriptActionPresentationLine, ScriptActionRuntimeState, ScriptActionState,
+    ScriptShipNavigationMode, ScriptTravelActionPhase, dispatch_script_action,
 };
 pub use script_bas_dispatch::{
     ScriptBasDispatchError, ScriptBasDispatchHost, ScriptBasDispatchState,

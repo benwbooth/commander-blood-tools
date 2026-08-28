@@ -13,18 +13,18 @@ use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
     DescriptApplicationContext, DescriptBackgroundCache, DescriptBackgroundSource,
-    DescriptIdleClipSource, DescriptPresentationAssets, DescriptRecordApplication,
-    DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, LoadedSoundBank,
-    OriginalSaveGame, ScriptAboardRecordContext, ScriptActionRecord, ScriptActionRuntimeState,
-    ScriptActionState, ScriptClock, ScriptDeferredRecord, ScriptDispatchState,
-    ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptExecutionService, ScriptFieldSelector,
-    ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanOutcome,
-    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptRecordStateNavigationContext, ScriptShipNavigationMode, ScriptTransferContext,
-    SequencePresentationState, SequenceRequestContext, ShipPresentationState, SoundBankUsage,
-    TextPresentationState, deferred_navigation_record, execute_loaded_script_frame,
-    load_sound_bank, lookup_and_apply_descript_record, original_save_state_block_byte_count,
-    script_field_offset,
+    DescriptIdleClipSource, DescriptMusicSelectionOutcome, DescriptPresentationAssets,
+    DescriptRecordApplication, DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile,
+    LoadedSoundBank, OriginalSaveGame, ScriptAboardRecordContext, ScriptActionDescription,
+    ScriptActionRecord, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
+    ScriptDeferredRecord, ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend,
+    ScriptExecutionService, ScriptFieldSelector, ScriptFrameOutcome, ScriptPresentationEntity,
+    ScriptPresentationScanOutcome, ScriptPresentationScanState, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptShipNavigationMode,
+    ScriptTransferContext, SequencePresentationState, SequenceRequestContext,
+    ShipPresentationState, SoundBankUsage, TextPresentationState, deferred_navigation_record,
+    execute_loaded_script_frame, load_sound_bank, lookup_and_apply_descript_record,
+    original_save_state_block_byte_count, script_field_offset,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -84,6 +84,17 @@ pub enum RuntimeScriptCommand {
     },
     /// Rebuild the ship HUD and reset its 3D camera state.
     ResetShipHud,
+}
+
+/// One-frame semantic outputs transferred from C1-C6 actions to runtime owners.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeScriptActionEffects {
+    /// Reinitialize the canonical ship HUD on the next HUD update.
+    pub ship_hud_refresh_requested: bool,
+    /// Select the authored presentation line associated with the completed action.
+    pub presentation_line: Option<crate::native::bloodprg::ScriptActionPresentationLine>,
+    /// Rebuild the ordinary navigation screen after the action transition.
+    pub screen_rebuild_requested: bool,
 }
 
 /// Complete profile-independent state surrounding translated BloodScript execution.
@@ -445,6 +456,17 @@ impl RuntimeScriptSystem {
         action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         action.current_ship_target
     }
+
+    /// Consume C1-C6 outputs exactly once when their canonical owners are available.
+    pub fn take_action_effects(&mut self, lifecycle_available: bool) -> RuntimeScriptActionEffects {
+        let action = self.service.action_state_mut();
+        RuntimeScriptActionEffects {
+            ship_hud_refresh_requested: std::mem::take(&mut action.ship_hud_refresh_requested),
+            presentation_line: action.active_line.take(),
+            screen_rebuild_requested: lifecycle_available
+                && std::mem::take(&mut action.screen_rebuild_requested),
+        }
+    }
 }
 
 fn import_ship_presentation_state(
@@ -762,11 +784,22 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
         object: ScriptObjectId,
         name: &[u8],
         text: &mut TextPresentationState,
-    ) -> Result<bool> {
+    ) -> Result<ScriptActionDescription> {
         self.validate_object_name(object, name)?;
         let application = self.apply_description(name, true, text)?;
         self.active_description_object = application.map(|_| object);
-        Ok(application.is_some())
+        Ok(
+            application.map_or_else(ScriptActionDescription::default, |application| {
+                ScriptActionDescription {
+                    available: true,
+                    music_changed: matches!(
+                        application.music_selection(),
+                        Some(DescriptMusicSelectionOutcome::Changed)
+                    ),
+                    scene_vertical_offset: self.assets.location_scene_top_row(),
+                }
+            }),
+        )
     }
 
     fn restart_navigation_music(&mut self) -> Result<()> {
@@ -931,8 +964,8 @@ mod tests {
     };
 
     use crate::native::bloodprg::{
-        GameTimerContext, GameTimerState, ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptFrameEnd,
-        ScriptProfileId, advance_game_timer_tick,
+        GameTimerContext, GameTimerState, ORIGINAL_SCRIPT_PROFILE_COUNT,
+        ScriptActionPresentationLine, ScriptFrameEnd, ScriptProfileId, advance_game_timer_tick,
     };
 
     use super::super::OriginalGameDataPaths;
@@ -1085,7 +1118,8 @@ mod tests {
                     .backend_mut()
                     .apply_action_description(object, &name, &mut text)
                     .unwrap();
-                if applied && scripts.backend().assets().location_scene_video().is_some() {
+                if applied.available && scripts.backend().assets().location_scene_video().is_some()
+                {
                     assert_eq!(scripts.backend().active_description_object(), Some(object));
                     return;
                 }
@@ -1418,6 +1452,38 @@ mod tests {
             ]
         );
         assert!(backend.pending_commands().is_empty());
+    }
+
+    #[test]
+    fn action_outputs_are_consumed_exactly_once() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let action = scripts.action_state_mut();
+        action.ship_hud_refresh_requested = true;
+        action.active_line = Some(ScriptActionPresentationLine::NavigationTarget);
+        action.screen_rebuild_requested = true;
+
+        let effects = scripts.take_action_effects(false);
+        assert!(effects.ship_hud_refresh_requested);
+        assert_eq!(
+            effects.presentation_line,
+            Some(ScriptActionPresentationLine::NavigationTarget)
+        );
+        assert!(!effects.screen_rebuild_requested);
+        assert!(scripts.action_state().screen_rebuild_requested);
+
+        let effects = scripts.take_action_effects(true);
+        assert!(!effects.ship_hud_refresh_requested);
+        assert_eq!(effects.presentation_line, None);
+        assert!(effects.screen_rebuild_requested);
+        assert_eq!(
+            scripts.take_action_effects(true),
+            RuntimeScriptActionEffects::default()
+        );
     }
 
     #[test]

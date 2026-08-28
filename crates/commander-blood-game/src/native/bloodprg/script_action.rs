@@ -53,6 +53,19 @@ pub struct ScriptActionRuntimeState {
     pub camera_view_transition_steps: u8,
     /// Whether the canonical ship presentation flags currently enable navigation.
     pub ship_navigation_active: bool,
+    /// Current DESCRIPT-authored scene row formerly shared by resource globals.
+    pub loaded_scene_vertical_offset: u16,
+}
+
+/// Typed outputs produced while applying one C1-selected DESCRIPT record.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ScriptActionDescription {
+    /// Whether the selected object has an authored DESCRIPT record.
+    pub available: bool,
+    /// Whether applying the record selected a different music source.
+    pub music_changed: bool,
+    /// Scene row selected by the applied location record, when present.
+    pub scene_vertical_offset: Option<u16>,
 }
 
 /// Authored presentation line selected by an action transition.
@@ -68,6 +81,18 @@ pub enum ScriptActionPresentationLine {
     TravelReady,
 }
 
+impl ScriptActionPresentationLine {
+    /// Return the exact native presentation-line number.
+    pub const fn number(self) -> u16 {
+        match self {
+            Self::NavigationTarget => 3,
+            Self::CharacterAboard => 39,
+            Self::InventoryAboard => 43,
+            Self::TravelReady => 44,
+        }
+    }
+}
+
 /// Mutable semantic state shared by the five modeled action-record arms.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptActionState {
@@ -75,16 +100,8 @@ pub struct ScriptActionState {
     pub ship_navigation_mode: ScriptShipNavigationMode,
     /// Object currently selected by the 3D navigation interface.
     pub current_ship_target: Option<ScriptObjectId>,
-    /// A changed descriptor selected a new music path.
-    pub navigation_music_changed: bool,
-    /// First pending presentation word has not yet been cleared.
-    pub presentation_words_pending: bool,
     /// The ship HUD must be initialized on the next frame.
     pub ship_hud_refresh_requested: bool,
-    /// The ordinary bridge frame still needs rebuilding.
-    pub bridge_redraw_pending: bool,
-    /// Vertical scene offset loaded by the latest resource parse.
-    pub loaded_scene_vertical_offset: u16,
     /// Vertical scene offset committed for rendering.
     pub scene_vertical_offset: u16,
     /// Most recent presentation line selected by this dispatcher.
@@ -150,12 +167,12 @@ pub trait ScriptActionHost {
     /// Callback failure.
     type Error;
 
-    /// Apply an object's DESCRIPT record and report whether it exists.
+    /// Apply an object's DESCRIPT record and return its consumed C1 outputs.
     fn apply_description(
         &mut self,
         object: ScriptObjectId,
         text: &mut TextPresentationState,
-    ) -> Result<bool, Self::Error>;
+    ) -> Result<ScriptActionDescription, Self::Error>;
 
     /// Copy the ship band and restart streaming from the selected music path.
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error>;
@@ -312,31 +329,35 @@ fn dispatch_navigation<Host: ScriptActionHost>(
         ScriptObjectKind::NavigationEntity | ScriptObjectKind::WorldState
     );
     let mut preserve_native_music_restart_bug = false;
+    let mut scene_vertical_offset = runtime.loaded_scene_vertical_offset;
     if owner_kind == ScriptObjectKind::WorldState && runtime.ship_navigation_active {
         let reset_interface = if action.current_ship_target == Some(related) {
             true
         } else {
-            let available = host
+            let description = host
                 .apply_description(related, text)
                 .map_err(ScriptActionError::Host)?;
-            if available && action.navigation_music_changed {
+            scene_vertical_offset = description
+                .scene_vertical_offset
+                .unwrap_or(scene_vertical_offset);
+            if description.available && description.music_changed {
                 host.restart_navigation_music()
                     .map_err(ScriptActionError::Host)?;
                 preserve_native_music_restart_bug = true;
             }
-            available
+            description.available
         };
         if reset_interface {
             clear_primary_actor_pair(state, records, player)?;
             action.current_ship_target = Some(related);
             action.ship_navigation_mode = ScriptShipNavigationMode::TargetSelected;
-            action.presentation_words_pending = false;
+            text.menu_words = Box::default();
+            text.menu_word_count = usize::MIN;
             presentation.word_choice_active = false;
             text.request_flags = PresentationRequestFlags::default();
             presentation.c2_gate_active = false;
             action.ship_hud_refresh_requested = true;
-            action.bridge_redraw_pending = false;
-            action.scene_vertical_offset = action.loaded_scene_vertical_offset;
+            action.scene_vertical_offset = scene_vertical_offset;
             action.active_line = Some(ScriptActionPresentationLine::NavigationTarget);
         }
     } else if owner_kind != ScriptObjectKind::NavigationEntity
@@ -414,6 +435,7 @@ fn dispatch_aboard_request<Host: ScriptActionHost>(
             && host
                 .apply_description(related, text)
                 .map_err(ScriptActionError::Host)?
+                .available
         {
             presentation.c2_gate_active = false;
             text.request_flags.request_secondary();
@@ -768,6 +790,8 @@ mod tests {
     #[derive(Default)]
     struct MockHost {
         description_available: bool,
+        description_music_changed: bool,
+        description_scene_vertical_offset: Option<u16>,
         calls: Vec<HostCall>,
     }
 
@@ -778,9 +802,13 @@ mod tests {
             &mut self,
             object: ScriptObjectId,
             _text: &mut TextPresentationState,
-        ) -> Result<bool, Self::Error> {
+        ) -> Result<ScriptActionDescription, Self::Error> {
             self.calls.push(HostCall::Description(object));
-            Ok(self.description_available)
+            Ok(ScriptActionDescription {
+                available: self.description_available,
+                music_changed: self.description_music_changed,
+                scene_vertical_offset: self.description_scene_vertical_offset,
+            })
         }
 
         fn restart_navigation_music(&mut self) -> Result<(), Self::Error> {
@@ -1087,8 +1115,8 @@ mod tests {
         fixture.runtime.ship_navigation_active = true;
         fixture.action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         fixture.action.current_ship_target = Some(fixture.objects[LOCATION_INDEX]);
-        fixture.action.loaded_scene_vertical_offset = 55;
-        fixture.action.presentation_words_pending = true;
+        fixture.runtime.loaded_scene_vertical_offset = 55;
+        fixture.text.menu_word_count = 1;
         fixture.presentation.word_choice_active = true;
         fixture.presentation.c2_gate_active = true;
         fixture.text.request_flags = PresentationRequestFlags::decode(3);
@@ -1116,13 +1144,14 @@ mod tests {
         fixture.runtime.ship_navigation_active = true;
         fixture.action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         fixture.action.current_ship_target = Some(fixture.objects[LOCATION_INDEX]);
-        fixture.action.loaded_scene_vertical_offset = 55;
-        fixture.action.presentation_words_pending = true;
+        fixture.runtime.loaded_scene_vertical_offset = 55;
+        fixture.text.menu_word_count = 1;
         fixture.presentation.word_choice_active = true;
         fixture.presentation.c2_gate_active = true;
         fixture.text.request_flags = PresentationRequestFlags::decode(3);
         let mut host = MockHost {
             description_available: true,
+            description_scene_vertical_offset: Some(55),
             ..MockHost::default()
         };
         fixture
@@ -1137,7 +1166,8 @@ mod tests {
             fixture.action.ship_navigation_mode,
             ScriptShipNavigationMode::TargetSelected
         );
-        assert!(!fixture.action.presentation_words_pending);
+        assert_eq!(fixture.text.menu_word_count, usize::MIN);
+        assert!(fixture.text.menu_words.is_empty());
         assert!(!fixture.presentation.word_choice_active);
         assert!(!fixture.presentation.c2_gate_active);
         assert_eq!(fixture.text.request_flags.bits(), u8::MIN);
@@ -1154,9 +1184,9 @@ mod tests {
         let mut fixture = Fixture::new();
         fixture.runtime.ship_navigation_active = true;
         fixture.action.ship_navigation_mode = ScriptShipNavigationMode::Active;
-        fixture.action.navigation_music_changed = true;
         let mut host = MockHost {
             description_available: true,
+            description_music_changed: true,
             ..MockHost::default()
         };
         let target = fixture.objects[ANCHOR_INDEX];

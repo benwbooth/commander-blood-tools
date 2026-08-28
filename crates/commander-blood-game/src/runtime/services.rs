@@ -170,7 +170,6 @@ fn synchronize_selected_ship_target(
 
     action.current_ship_target = Some(target);
     action.ship_navigation_mode = ScriptShipNavigationMode::Active;
-    action.bridge_redraw_pending = false;
     ship.flags = SHIP_NAVIGATION_ACTIVE_FLAGS;
     ship.bridge_redraw_pending = u8::MIN;
     ship.active_line = SHIP_NAVIGATION_STATUS_LINE;
@@ -1595,7 +1594,6 @@ impl<'window> ModernGameServices<'window> {
     pub fn finish_ship_navigation_reset(&mut self) {
         let action = self.scripts.action_state_mut();
         action.ship_navigation_mode = ScriptShipNavigationMode::Inactive;
-        action.bridge_redraw_pending = false;
     }
 
     /// Clear the retained ship-HUD setup surface.
@@ -2318,7 +2316,7 @@ impl<'window> ModernGameServices<'window> {
     pub fn execute_and_apply_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         let outcome = self.execute_script_frame(enabled)?;
         self.publish_script_presentation_status_change()?;
-        self.synchronize_script_ship_state();
+        self.synchronize_script_ship_state(None);
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
@@ -2339,7 +2337,7 @@ impl<'window> ModernGameServices<'window> {
         self.scripts
             .finish_ship_presentation_state(&mut self.ship_presentation);
         self.publish_script_presentation_status_change()?;
-        self.synchronize_script_ship_state();
+        self.synchronize_script_ship_state(Some(state));
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
@@ -2353,6 +2351,12 @@ impl<'window> ModernGameServices<'window> {
             .as_ref()
             .context("bridge actor state is already being updated")?
             .camera_transition_step();
+        let loaded_scene_vertical_offset = self
+            .scripts
+            .backend()
+            .assets()
+            .location_scene_top_row()
+            .unwrap_or(u16::MIN);
         self.scripts.action_state_mut().ship_navigation_mode = if ship_navigation_active {
             ScriptShipNavigationMode::Active
         } else {
@@ -2364,6 +2368,7 @@ impl<'window> ModernGameServices<'window> {
                 camera_approach_phase: self.runtime.camera_approach().phase,
                 camera_view_transition_steps,
                 ship_navigation_active,
+                loaded_scene_vertical_offset,
             });
         Ok(())
     }
@@ -2400,14 +2405,31 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
-    /// Publish one-frame BloodScript target changes into the canonical ship FSM state.
-    pub fn synchronize_script_ship_state(&mut self) {
+    /// Publish one-frame BloodScript action effects into canonical ship and lifecycle state.
+    fn synchronize_script_ship_state(&mut self, mut lifecycle: Option<&mut GameLifecycleState>) {
         let selected_target = self.scripts.take_selected_ship_target();
         synchronize_selected_ship_target(
             selected_target,
             self.scripts.action_state_mut(),
             &mut self.ship_presentation,
         );
+        let effects = self.scripts.take_action_effects(lifecycle.is_some());
+        if effects.ship_hud_refresh_requested {
+            self.ship_presentation.hud_initialization_pending = 1;
+        }
+        if let Some(line) = effects.presentation_line {
+            let number = line.number();
+            self.ship_presentation.active_line = number;
+            if let Some(state) = lifecycle.as_deref_mut() {
+                state.presentation.active_line = Some(number);
+            }
+        }
+        if effects.screen_rebuild_requested {
+            lifecycle
+                .as_deref_mut()
+                .expect("action effects retain screen rebuilds without a lifecycle")
+                .navigation_rebuild_pending = true;
+        }
     }
 
     /// Copy DESCRIPT and A8 name selections into the flat presentation catalog.
@@ -3578,8 +3600,9 @@ mod tests {
 
     use super::*;
     use crate::native::bloodprg::{
-        ChoiceListRowKind, GameTimerContext, GameTimerState, PointerButton, ScriptDeferredRecord,
-        advance_game_timer_tick, update_game_presentation_ownership,
+        ChoiceListRowKind, GameTimerContext, GameTimerState, PointerButton,
+        ScriptActionPresentationLine, ScriptDeferredRecord, advance_game_timer_tick,
+        update_game_presentation_ownership,
     };
     use crate::runtime::OriginalGameDataPaths;
     use crate::runtime::camera_approach::update_runtime_camera_approach;
@@ -3626,10 +3649,7 @@ mod tests {
 
     #[test]
     fn missing_c1_target_does_not_activate_navigation_or_line_three() {
-        let mut action = ScriptActionState {
-            bridge_redraw_pending: true,
-            ..ScriptActionState::default()
-        };
+        let mut action = ScriptActionState::default();
         let mut ship = ShipPresentationState {
             flags: 1,
             bridge_redraw_pending: 1,
@@ -4591,8 +4611,51 @@ mod tests {
                 .iter()
                 .any(|pixel| *pixel != u8::MIN)
         );
+        exercise_script_action_effect_bridge(&mut services);
         exercise_pterra_hud_transition(&mut services);
         assert!(services.close_bridge_scene());
+    }
+
+    fn exercise_script_action_effect_bridge(services: &mut ModernGameServices<'_>) {
+        let original_action = services.scripts.action_state().clone();
+        let original_ship = services.ship_presentation;
+        {
+            let action = services.scripts.action_state_mut();
+            action.ship_navigation_mode = ScriptShipNavigationMode::Active;
+            action.ship_hud_refresh_requested = true;
+            action.active_line = Some(ScriptActionPresentationLine::NavigationTarget);
+            action.screen_rebuild_requested = true;
+        }
+        let mut lifecycle = GameLifecycleState::default();
+
+        services.synchronize_script_ship_state(Some(&mut lifecycle));
+
+        assert_eq!(services.ship_presentation.hud_initialization_pending, 1);
+        assert_eq!(
+            services.ship_presentation.active_line,
+            ScriptActionPresentationLine::NavigationTarget.number()
+        );
+        assert_eq!(
+            lifecycle.presentation.active_line,
+            Some(ScriptActionPresentationLine::NavigationTarget.number())
+        );
+        assert!(lifecycle.navigation_rebuild_pending);
+
+        services.ship_presentation.hud_initialization_pending = u8::MIN;
+        services.ship_presentation.active_line = u16::MIN;
+        lifecycle.presentation.active_line = None;
+        lifecycle.navigation_rebuild_pending = false;
+        services.synchronize_script_ship_state(Some(&mut lifecycle));
+
+        assert_eq!(
+            services.ship_presentation.hud_initialization_pending,
+            u8::MIN
+        );
+        assert_eq!(services.ship_presentation.active_line, u16::MIN);
+        assert_eq!(lifecycle.presentation.active_line, None);
+        assert!(!lifecycle.navigation_rebuild_pending);
+        *services.scripts.action_state_mut() = original_action;
+        services.ship_presentation = original_ship;
     }
 
     fn exercise_pterra_hud_transition(services: &mut ModernGameServices<'_>) {

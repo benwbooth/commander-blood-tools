@@ -60,8 +60,8 @@ pub use presentation_screen::RuntimePresentationScreen;
 pub use save_load::RuntimeSaveLoad;
 pub use scene_transition::RuntimeSceneTransition;
 pub use script_backend::{
-    LoadedRuntimeResource, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
-    initialize_and_restore_original_save_game,
+    LoadedRuntimeResource, RuntimeScriptActionEffects, RuntimeScriptBackend, RuntimeScriptCommand,
+    RuntimeScriptSystem, initialize_and_restore_original_save_game,
 };
 pub use services::ModernGameServices;
 pub use ship_hud::RuntimeShipHud;
