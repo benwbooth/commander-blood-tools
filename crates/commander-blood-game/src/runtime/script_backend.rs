@@ -171,6 +171,7 @@ impl RuntimeScriptSystem {
             presentation.start_locked = source.start_locked;
             presentation.hold_ready = source.hold_ready;
             presentation.dialogue_hold_complete = source.dialogue_hold_complete;
+            presentation.ui_busy = lifecycle.modal_ui_busy();
             presentation.name_lookup_enabled = lifecycle.presentation_interface_active();
             self.dispatch.import_presentation_scan_state(presentation);
         }
@@ -1223,6 +1224,7 @@ mod tests {
         lifecycle.presentation.text_menu_pending = true;
         lifecycle.presentation.dialogue_hold_countdown = 12;
         lifecycle.set_presentation_interface_active(true);
+        lifecycle.set_modal_ui_busy(true);
 
         scripts.prepare_lifecycle_frame(&lifecycle);
 
@@ -1233,6 +1235,7 @@ mod tests {
         assert!(presentation.start_locked);
         assert!(presentation.hold_ready);
         assert!(presentation.dialogue_hold_complete);
+        assert!(presentation.ui_busy);
         assert!(scripts.dispatch.sequence_presentation.presentation_active);
         assert!(
             scripts

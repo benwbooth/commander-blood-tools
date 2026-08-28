@@ -109,7 +109,7 @@ impl RuntimeBridgeActors {
             requested: seek_requested_before,
         };
         self.playback.busy = seek_requested_before;
-        self.playback.redraw_requested = services.presentation_screen_state()?.redraw_requested();
+        self.playback.redraw_requested = lifecycle.modal_ui_busy();
 
         let busy = NavActorBusyState {
             presentation_active: lifecycle.presentation.active,
@@ -157,6 +157,8 @@ impl RuntimeBridgeActors {
             services.request_bridge_seek(seek.target_arc)?;
         }
         services.set_bridge_actor_redraw_requested(self.playback.redraw_requested)?;
+        // Native UI bit 2 is both the actor redraw latch and the bridge menu clamp.
+        lifecycle.set_modal_ui_busy(self.playback.redraw_requested);
         services.set_ship_travel_actor_ready(
             slots[BLACK_HOLE_ACTOR_SLOT].flags.executable_flags() == ACTIVE_ONLY_SLOT_FLAGS,
         );

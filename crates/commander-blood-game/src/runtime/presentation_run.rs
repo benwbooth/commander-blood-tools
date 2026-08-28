@@ -137,7 +137,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
         self.advance_timer()?;
         let action = self
             .platform
-            .dispatch_events(self.services, &mut self.input_state);
+            .dispatch_events(self.services, &mut self.input_state)?;
         let cancelled = action == Some(InputAction::Cancel);
         if cancelled {
             self.services.finish_presentation_sequence();

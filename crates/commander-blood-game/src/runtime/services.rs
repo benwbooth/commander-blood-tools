@@ -3331,6 +3331,156 @@ impl<'window> ModernGameServices<'window> {
         self.bridge_scene.take().is_some()
     }
 
+    /// Current authored frame in the 180-frame bridge panorama ring.
+    pub(super) fn current_bridge_view_frame(&self) -> Option<u16> {
+        self.bridge_scene
+            .as_ref()
+            .map(|scene| scene.steering().view_frame)
+    }
+
+    /// Capture action-aligned flat runtime state for original-game comparison.
+    pub(super) fn semantic_trace_snapshot(
+        &self,
+        lifecycle: &GameLifecycleState,
+    ) -> Result<serde_json::Value> {
+        let profile = self.runtime.current_profile();
+        let profile_id = profile.map(|profile| u16::from(profile.id().value()));
+        let state_array_hash = profile
+            .map(|profile| {
+                profile
+                    .synchronized_state()
+                    .map(|state| fnv1a64(&state.encode()))
+                    .map_err(|error| anyhow::anyhow!("synchronizing trace state: {error:?}"))
+            })
+            .transpose()?;
+        let character_slots_hash =
+            profile.map(|profile| fnv1a64(&profile.sequence_slots().encode_save_block()));
+        let assets = profile
+            .map(|profile| {
+                profile
+                    .resources()
+                    .all()
+                    .into_iter()
+                    .filter_map(|resource| self.runtime.data().resource_catalog().name(resource))
+                    .map(|name| String::from_utf8_lossy(name.as_bytes()).into_owned())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let text = self.text_presentation();
+        let subtitle_end = text
+            .subtitle_reveal_cursor
+            .unwrap_or(text.subtitle_text.len())
+            .min(text.subtitle_text.len());
+        let subtitle = String::from_utf8_lossy(&text.subtitle_text[..subtitle_end])
+            .replace('\r', " ")
+            .trim()
+            .to_owned();
+        let pointer = self.input.pointer_sample();
+        let pointer_edges = self.input.pointer_button_edges();
+        let previous_buttons = self.input.previous_pointer_buttons();
+        let current_bridge_frame = self.current_bridge_view_frame().unwrap_or(u16::MIN);
+        let bridge_seek_requested = self.bridge_seek_requested().unwrap_or(false);
+        let bridge_seek_target = self.bridge_seek_target_arc().unwrap_or(u16::MIN);
+        let radio_slot = &self.nav_actor_slots[1];
+        let presentation_screen_active = self
+            .presentation_screen
+            .as_ref()
+            .is_some_and(|screen| screen.state().active());
+        let waiting_for_input = lifecycle.presentation.word_choice_active
+            && !lifecycle.primary_pointer_pressed
+            && lifecycle.pointer_press_pending == u8::MIN
+            && !lifecycle.navigation_target_selected;
+        let screen_hash = fnv1a64(self.runtime.front_buffer().pixels());
+        let palette_bytes: Vec<_> = self
+            .runtime
+            .live_palette()
+            .iter()
+            .flatten()
+            .copied()
+            .collect();
+        let bridge_layers = self.bridge_frame.as_ref().map(|frame| {
+            serde_json::json!({
+                "panorama_hash": fnv1a64(&frame.panorama_pixels),
+                "sprite_hash": fnv1a64(&frame.object_sprite_pixels),
+            })
+        });
+
+        Ok(serde_json::json!({
+            "vm": {
+                "resource_profile": profile_id,
+                "profile_request": lifecycle.pending_profile.map(|profile| i16::from(profile.value())).unwrap_or(-1),
+                "execution_enabled": u8::from(lifecycle.vm_execution_enabled),
+                "resource_handles": assets,
+                "active_line": lifecycle.presentation.active_line,
+                "displayed_line": self.ship_presentation.active_line,
+            },
+            "presentation": {
+                "ui_flags": lifecycle.low_ui_state_word(),
+                "actor_transition": u8::from(lifecycle.profile_change_blockers.navigation_actor_transition_active),
+                "bridge_frame": current_bridge_frame as i16,
+                "bridge_seek_requested": bridge_seek_requested,
+                "bridge_seek_target": bridge_seek_target,
+                "ship_flags": self.ship_presentation.flags,
+                "ship_ui_state": self.ship_presentation.ui_state,
+                "mode": u8::from(lifecycle.presentation_mode),
+                "box_mode": u8::MIN,
+                "word_choice_active": u8::from(lifecycle.presentation.word_choice_active),
+                "nav_target_selection": u8::from(lifecycle.navigation_target_selected),
+                "active": u8::from(lifecycle.presentation.active),
+                "defer": u8::from(lifecycle.presentation.menu_deferred),
+                "text_wait": u8::from(lifecycle.presentation.word_choice_active) * 2,
+                "text_display_active": u8::from(lifecycle.presentation.subtitle_display_active),
+                "request_flags": lifecycle.presentation.request_flags.bits(),
+                "screen_active": presentation_screen_active,
+                "manu3_requested": self.manu3_hand.requested_animation,
+                "manu3_current": self.manu3_hand.current_animation,
+                "radio_slot": {
+                    "active": radio_slot.flags.active,
+                    "auto_seek": radio_slot.flags.auto_seek,
+                    "locked": radio_slot.flags.locked,
+                    "present": radio_slot.flags.active,
+                    "ready": radio_slot.flags.auto_seek,
+                    "loaded": radio_slot.flags.clear_mouse_before_hit,
+                    "frame": radio_slot.line.frame,
+                    "terminal_frame": radio_slot.line.terminal_frame,
+                },
+                "waiting_for_input": waiting_for_input,
+            },
+            "input": {
+                "mouse_x": pointer.position[0],
+                "mouse_y": pointer.position[1],
+                "buttons": pointer.buttons.bits(),
+                "previous_buttons": previous_buttons.bits(),
+                "primary_pressed": u8::from(pointer_edges.primary_pressed || lifecycle.primary_pointer_pressed),
+                "press_pending": lifecycle.pointer_press_pending,
+            },
+            "audio": {
+                "driver_pending": u8::from(self.audio.is_none()),
+                "stream_mode": u8::from(self.presentation_stream_active()),
+                "stream_channel": u8::MIN,
+                "dialogue_delay": self.audio_events.dialogue_delay,
+                "dialogue_hold": lifecycle.presentation.dialogue_hold_countdown,
+                "clip_playback_state": lifecycle.clip_playback_state,
+                "last_clip": self.audio_events.last_clip,
+                "streamed_clip_count": u16::MIN,
+                "events": [],
+            },
+            "subtitle": subtitle,
+            "persistent": {
+                "state_array_hash": state_array_hash,
+                "character_slots_hash": character_slots_hash,
+                "record_block": null,
+                "record_hash": state_array_hash,
+            },
+            "assets": assets,
+            "video": {
+                "screen_hash": screen_hash,
+                "palette_hash": fnv1a64(&palette_bytes),
+                "bridge_layers": bridge_layers,
+            },
+        }))
+    }
+
     /// Core owned game state used by translated script and scene systems.
     pub const fn runtime(&self) -> &OriginalGameRuntime {
         &self.runtime
@@ -3374,6 +3524,15 @@ impl<'window> ModernGameServices<'window> {
             .as_mut()
             .context("runtime audio has not been initialized")
     }
+}
+
+fn fnv1a64(bytes: &[u8]) -> String {
+    let mut hash = 0xcbf29ce484222325u64;
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    format!("{hash:016x}")
 }
 
 fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
@@ -4461,6 +4620,14 @@ mod tests {
             services.nav_actor_slots[station_index].line.frame,
             FIRST_ADVANCED_PRESENTATION_FRAME
         );
+        assert!(
+            lifecycle.modal_ui_busy(),
+            "answering the radio must publish native UI bit 2 in the same actor frame (screen redraw: {})",
+            services
+                .presentation_screen_state()
+                .unwrap()
+                .redraw_requested()
+        );
         assert_eq!(
             services.manu3_hand_state().requested_animation,
             Manu3AnimationSelector::RadioOrb.value(),
@@ -4626,6 +4793,7 @@ mod tests {
         assert!(!services.presentation_stream_active());
         services.finish_bridge_actor_scene_presentation(&mut phone_lifecycle);
         services.clear_pending_ship_presentation_owner();
+        lifecycle.set_modal_ui_busy(false);
         services.input_mut().poll_pointer(
             [320.0, 200.0],
             [200.0, 80.0],

@@ -2,7 +2,7 @@
 # startup telephone call from a clean boot.
 wait 50
 wait 50
-wait 50
+wait 55
 click 160 170
 wait 25
 park 316 45

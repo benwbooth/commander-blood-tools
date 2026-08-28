@@ -27,10 +27,6 @@ pub(super) fn run_runtime_bridge_frame(
     navigation_animation_phase: u8,
 ) -> Result<BridgeFrameOutcome> {
     let presentation_primary_pressed = lifecycle.primary_pointer_pressed;
-    let presentation_owns_bridge = lifecycle.presentation.c2_presentation_gate
-        || services.presentation_stream_active()
-        || services.presentation_screen_state()?.active();
-    let input = bridge_input_for_presentation_ownership(input, presentation_owns_bridge);
     let scene_dispatch_pending = services.bridge_scene_dispatch_pending();
     let transition_pending = services.runtime().camera_approach().transition_pending;
     let primary_camera_view = services.bridge_actor_camera_transition_step()? == u8::MIN;
@@ -284,21 +280,6 @@ const fn entity_range(range: BridgeSpriteRange) -> std::ops::Range<u16> {
     }
 }
 
-const fn bridge_input_for_presentation_ownership(
-    input: BridgeSceneInput,
-    presentation_owns_bridge: bool,
-) -> BridgeSceneInput {
-    if presentation_owns_bridge {
-        BridgeSceneInput {
-            horizontal_delta: 0,
-            pointer_buttons: 0,
-            interaction: crate::native::bloodprg::BridgeSteeringInteraction::MenuEngaged,
-        }
-    } else {
-        input
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -308,24 +289,5 @@ mod tests {
         assert_eq!(entity_range(BridgeSpriteRange::All), 0..32);
         assert_eq!(entity_range(BridgeSpriteRange::Transition), 20..32);
         assert_eq!(entity_range(BridgeSpriteRange::Actors), 1..20);
-    }
-
-    #[test]
-    fn presentation_ownership_neutralizes_player_motion_without_skipping_steering() {
-        let input = BridgeSceneInput {
-            horizontal_delta: 37,
-            pointer_buttons: 3,
-            interaction: crate::native::bloodprg::BridgeSteeringInteraction::Free,
-        };
-
-        assert_eq!(bridge_input_for_presentation_ownership(input, false), input);
-        assert_eq!(
-            bridge_input_for_presentation_ownership(input, true),
-            BridgeSceneInput {
-                horizontal_delta: 0,
-                pointer_buttons: 0,
-                interaction: crate::native::bloodprg::BridgeSteeringInteraction::MenuEngaged,
-            }
-        );
     }
 }

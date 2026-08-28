@@ -248,6 +248,10 @@ impl Manu3Animation {
         self.phase = u16::MIN;
         self.current_script = script.clone();
         self.next_specification = usize::MIN;
+        // xdb_manu3_anim_select passes the beginning of the active-slot table
+        // to the constructor. A new selector replaces the prior active set;
+        // retaining its end cursor would leak records across animations.
+        self.active_count = usize::MIN;
         self.construct_tweens()?;
         Ok(selected_index)
     }
@@ -469,6 +473,34 @@ mod tests {
                 .select_animation(vector.selector, &library)
                 .unwrap();
             assert_eq!(selected, vector.masked_selector);
+        }
+    }
+
+    #[test]
+    fn selecting_an_animation_replaces_the_prior_active_tween_set() {
+        let sequences = std::array::from_fn(|index| {
+            let specifications = if index == 0 {
+                vec![
+                    TweenSpecification::new(10, 0, 0, 100),
+                    TweenSpecification::new(10, 0, 1, 200),
+                    TweenSpecification::end(),
+                ]
+            } else {
+                vec![
+                    TweenSpecification::new(10, 0, 0, -100),
+                    TweenSpecification::end(),
+                ]
+            };
+            TweenScript::new(specifications)
+        });
+        let library = AnimationLibrary::new(sequences);
+        let mut animation = Manu3Animation::new(2, vec![0, 0]);
+
+        animation.select_animation(0, &library).unwrap();
+        assert_eq!(animation.active_tween_count(), 2);
+        for _ in 0..200 {
+            animation.select_animation(1, &library).unwrap();
+            assert_eq!(animation.active_tween_count(), 1);
         }
     }
 

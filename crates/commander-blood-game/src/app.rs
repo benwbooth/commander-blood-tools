@@ -62,6 +62,8 @@ struct Options {
     bridge: bool,
     panorama: Option<PathBuf>,
     frame_limit: Option<u64>,
+    scenario: Option<PathBuf>,
+    trace: Option<PathBuf>,
 }
 
 enum ParseOutcome {
@@ -105,6 +107,16 @@ impl Options {
                     let value = arguments.next().context("--frames requires a count")?;
                     options.frame_limit = Some(value.parse().context("invalid --frames count")?);
                 }
+                "--scenario" => {
+                    options.scenario = Some(PathBuf::from(
+                        arguments.next().context("--scenario requires a TSV path")?,
+                    ));
+                }
+                "--trace" => {
+                    options.trace = Some(PathBuf::from(
+                        arguments.next().context("--trace requires a JSONL path")?,
+                    ));
+                }
                 "--bloodprg" => {
                     options.bloodprg = Some(PathBuf::from(
                         arguments
@@ -132,13 +144,18 @@ impl Options {
                 _ => bail!("unknown option: {argument}"),
             }
         }
+        match (&options.scenario, &options.trace) {
+            (Some(_), None) => bail!("--scenario requires --trace"),
+            (None, Some(_)) => bail!("--trace requires --scenario"),
+            _ => {}
+        }
         Ok(ParseOutcome::Run(options))
     }
 }
 
 fn print_usage() {
     println!(
-        "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT]\n\
+        "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT] [--scenario ACTIONS.TSV --trace TRACE.JSONL]\n\
          \n\
          CBLOOD_DATA may point to the original game-data directory.\n\
          CBLOOD_ASSET_CACHE may select the versioned imported loose-asset directory.\n\
@@ -444,7 +461,12 @@ fn run_production_game(options: &Options) -> Result<()> {
     video.text_input().start(&window);
 
     let services = ModernGameServices::new(&window, data, clock.script)?;
-    let platform = RuntimePlatformHost::new(&window, sdl.mouse(), events);
+    let platform = match (&options.scenario, &options.trace) {
+        (Some(scenario), Some(trace)) => {
+            RuntimePlatformHost::new_scripted(&window, sdl.mouse(), events, scenario, trace)?
+        }
+        _ => RuntimePlatformHost::new(&window, sdl.mouse(), events),
+    };
     let mut host = RuntimeGameLifecycleHost::new(
         services,
         platform,

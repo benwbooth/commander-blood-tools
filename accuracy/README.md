@@ -148,6 +148,32 @@ normal comparison for the best match under `<out-dir>/best/`. A high best
 `mean_abs` after scanning means the DOS capture is probably a different scene or
 presentation state, not merely a frame-offset problem.
 
+## Compare Original And Rust Runtime State
+
+The production Rust executable accepts the same action language as the semantic
+DOS oracle. It injects logical input without moving or capturing the desktop
+pointer and writes one JSONL state record at each action boundary:
+
+```sh
+DISPLAY=:99 nix develop --command cargo run --quiet \
+  -p commander-blood-game --bin commander-blood -- \
+  --scenario accuracy/scenarios/startup_phone.tsv \
+  --trace output/rust-startup-phone.jsonl
+```
+
+Compare the action-aligned original and modern traces with:
+
+```sh
+python3 -P re/tools/compare_port_runtime_traces.py \
+  output/startup-phone-current/original/semantic-trace.jsonl \
+  output/rust-startup-phone.jsonl \
+  --start-action 5 --report-only
+```
+
+The comparator checks recovered VM, presentation, subtitle, and bridge-frame
+state. True-color Rust render hashes are reported only as temporal-stasis
+signals because they are intentionally not byte-comparable with DOS VGA pages.
+
 For generated dialogue-run videos with timeline sidecars, rank candidates at
 their own event boundaries instead of a uniform time grid:
 

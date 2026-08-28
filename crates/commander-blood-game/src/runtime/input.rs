@@ -224,6 +224,16 @@ impl RuntimeInputHost {
         self.pointer_sample.current
     }
 
+    /// Button sample retained from the preceding recovered edge update.
+    pub const fn previous_pointer_buttons(&self) -> PointerButtons {
+        self.pointer_buttons.previous
+    }
+
+    /// Press edges currently retained for an owning bridge interaction.
+    pub const fn pointer_button_edges(&self) -> PointerButtonEdges {
+        self.pointer_buttons.edges
+    }
+
     /// Frames or ticks retained since the latest logical pointer movement.
     pub const fn motion_idle_counter(&self) -> u16 {
         self.motion_idle_counter

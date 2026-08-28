@@ -90,6 +90,12 @@ impl RuntimeShipPresentationBackend<'_, '_, '_, '_> {
     fn export_state(&self, state: &mut ShipPresentationState) {
         *state = *self.services.ship_presentation_state();
     }
+
+    fn merge_lifecycle_ui_into_native_state(&mut self) {
+        let lifecycle_ui = self.lifecycle.low_ui_state_word();
+        let native_state = self.services.ship_presentation_state_mut();
+        native_state.ui_state = (native_state.ui_state & !LOW_UI_STATE_MASK) | lifecycle_ui;
+    }
 }
 
 impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
@@ -129,6 +135,7 @@ impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
             .services
             .update_runtime_ship_hud(self.lifecycle)
             .map(|_| ());
+        self.merge_lifecycle_ui_into_native_state();
         self.export_state(state);
         self.record(result, ());
     }
@@ -143,6 +150,7 @@ impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
             .services
             .update_runtime_ship_navigation(self.lifecycle, self.platform)
             .map(|_| ());
+        self.merge_lifecycle_ui_into_native_state();
         self.export_state(state);
         self.record(result, ());
     }

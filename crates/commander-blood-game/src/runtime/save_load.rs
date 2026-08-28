@@ -20,6 +20,7 @@ use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, ModernGameSer
 const SAVE_SLOT_DIRECTORY_NAME: &[u8] = b"BLOOD.SAV";
 const SAVE_LIST_CANCEL_LABEL: &[u8] = b"CANCEL";
 const SAVE_EDITOR_ENTER_KEY: u8 = b'\r';
+const MODAL_UI_FLAG: u8 = 1 << 2;
 const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
 const SAVE_LIST_TRANSITION_TARGET: ChoiceListRect = ChoiceListRect {
     origin: [100, 0],
@@ -99,6 +100,11 @@ impl RuntimeSaveLoad {
         services: &mut ModernGameServices<'_>,
         lifecycle: &mut GameLifecycleState,
     ) -> Result<SaveLoadMenuOutcome> {
+        self.state.ui_flags = if lifecycle.modal_ui_busy() {
+            self.state.ui_flags | MODAL_UI_FLAG
+        } else {
+            self.state.ui_flags & !MODAL_UI_FLAG
+        };
         let editor_key = self.apply_pending_input(services)?;
         let mut directory = services
             .runtime()
@@ -140,7 +146,7 @@ impl RuntimeSaveLoad {
 
         lifecycle.profile_change_blockers.save_active = self.state.requests.save;
         lifecycle.profile_change_blockers.load_active = self.state.requests.load;
-        lifecycle.set_modal_ui_busy(self.state.requests.save || self.state.requests.load);
+        lifecycle.set_modal_ui_busy(self.state.ui_flags & MODAL_UI_FLAG != u8::MIN);
         let effects = self.take_frame_effects();
         if effects.redraw_requested {
             lifecycle.navigation_rebuild_pending = true;

@@ -23,6 +23,7 @@ mod presentation_run;
 mod presentation_scene;
 mod presentation_screen;
 mod save_load;
+mod scenario;
 mod scene_transition;
 mod script_backend;
 mod services;

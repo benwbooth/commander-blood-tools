@@ -303,7 +303,10 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             return Ok(());
         }
         self.advance_frame_timers(state)?;
-        if let Some(action) = self.platform.dispatch_events(&mut self.services, state) {
+        if let Some(action) = self
+            .platform
+            .dispatch_game_events(&mut self.services, state)?
+        {
             let presentation_cancelled = if matches!(action, InputAction::Cancel) {
                 self.services.cancel_lifecycle_presentation(state)?
                     == InputCancellationOutcome::CancelledPresentation
@@ -478,7 +481,9 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         self.indexed_bridge_ui_active = Self::indexed_bridge_ui_active(state);
         self.services
             .update_lifecycle_palette_transition(state)
-            .map(|_| ())
+            .map(|_| ())?;
+        self.platform
+            .record_scenario_frame_boundary(&mut self.services, state)
     }
 
     fn pace_frame(&mut self) -> Result<()> {

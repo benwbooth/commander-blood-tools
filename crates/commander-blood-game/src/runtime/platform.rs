@@ -1,5 +1,6 @@
 //! SDL event handling and recovered game-clock pacing for the modern runtime.
 
+use std::path::Path;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -14,6 +15,7 @@ use crate::native::bloodprg::{
 };
 
 use super::input::{INITIAL_LOGICAL_POINTER, map_host_pointer_to_logical};
+use super::scenario::{RuntimeScenarioDriver, RuntimeScenarioKey};
 use super::{ModernGameServices, RuntimeAlienOverlayFrameInput};
 
 /// Input frequency of the IBM PC programmable interval timer.
@@ -81,6 +83,7 @@ pub struct RuntimePlatformHost<'window> {
     logical_pointer: [f32; 2],
     pointer_inside_window: bool,
     alien_pointer: Option<[f32; 2]>,
+    scenario: Option<RuntimeScenarioDriver>,
 }
 
 impl<'window> RuntimePlatformHost<'window> {
@@ -101,7 +104,22 @@ impl<'window> RuntimePlatformHost<'window> {
             logical_pointer: INITIAL_LOGICAL_POINTER.map(f32::from),
             pointer_inside_window: false,
             alien_pointer: None,
+            scenario: None,
         }
+    }
+
+    /// Bind SDL for a deterministic, uncaptured original-oracle scenario.
+    pub fn new_scripted(
+        window: &'window Window,
+        mouse: MouseUtil,
+        events: EventPump,
+        scenario_path: &Path,
+        trace_path: &Path,
+    ) -> Result<Self> {
+        let mut platform = Self::new(window, mouse, events);
+        platform.pointer_inside_window = true;
+        platform.scenario = Some(RuntimeScenarioDriver::load(scenario_path, trace_path)?);
+        Ok(platform)
     }
 
     /// Pump pending SDL events and dispatch one translated input action.
@@ -113,10 +131,84 @@ impl<'window> RuntimePlatformHost<'window> {
         &mut self,
         services: &mut ModernGameServices<'window>,
         state: &mut GameLifecycleState,
-    ) -> Option<InputAction> {
+    ) -> Result<Option<InputAction>> {
+        self.dispatch_events_with_boundary(services, state, true)
+    }
+
+    /// Pump one ordinary game frame, whose action boundary is recorded at frame end.
+    pub fn dispatch_game_events(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        state: &mut GameLifecycleState,
+    ) -> Result<Option<InputAction>> {
+        self.dispatch_events_with_boundary(services, state, false)
+    }
+
+    fn dispatch_events_with_boundary(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        state: &mut GameLifecycleState,
+        record_completed_boundary: bool,
+    ) -> Result<Option<InputAction>> {
         self.frame_clock.begin_frame(Instant::now());
         self.pump_events(services);
-        services.dispatch_lifecycle_input(state)
+        if self.scenario.is_some() {
+            let semantic = services.semantic_trace_snapshot(state)?;
+            let scenario = self
+                .scenario
+                .as_mut()
+                .expect("scenario presence was checked");
+            let finished = if record_completed_boundary {
+                scenario.record_due_boundaries(&semantic)?
+            } else {
+                scenario.record_initial_boundary(&semantic)?;
+                false
+            };
+            if finished {
+                self.pointer_buttons = PointerButtons::NONE;
+                services.input_mut().request_shutdown();
+            } else {
+                let bridge_frame = services.current_bridge_view_frame();
+                let input = self
+                    .scenario
+                    .as_mut()
+                    .expect("scenario presence was checked")
+                    .advance(bridge_frame)?;
+                if let Some(position) = input.pointer_position {
+                    self.logical_pointer = position.map(f32::from);
+                    self.pointer_inside_window = true;
+                }
+                self.pointer_buttons = if input.primary_pressed {
+                    PointerButtons::from_bits(PointerButton::Primary as u16)
+                } else {
+                    PointerButtons::NONE
+                };
+                if let Some(key) = input.key {
+                    queue_scenario_key(services, key);
+                }
+                if input.request_shutdown {
+                    services.input_mut().request_shutdown();
+                }
+            }
+        }
+        Ok(services.dispatch_lifecycle_input(state))
+    }
+
+    /// Record a completed scripted action after the ordinary frame tail.
+    pub fn record_scenario_frame_boundary(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        state: &mut GameLifecycleState,
+    ) -> Result<()> {
+        let Some(scenario) = self.scenario.as_mut() else {
+            return Ok(());
+        };
+        let semantic = services.semantic_trace_snapshot(state)?;
+        if scenario.record_due_boundaries(&semantic)? {
+            self.pointer_buttons = PointerButtons::NONE;
+            services.input_mut().request_shutdown();
+        }
+        Ok(())
     }
 
     /// Pump one synchronous alien-overlay frame without dispatching ordinary UI actions.
@@ -145,14 +237,16 @@ impl<'window> RuntimePlatformHost<'window> {
             bail!("alien-overlay input is already active");
         }
         self.alien_pointer = Some(ALIEN_DRIVER_CENTER);
-        self.mouse.set_relative_mouse_mode(self.window, true);
+        if self.scenario.is_none() {
+            self.mouse.set_relative_mouse_mode(self.window, true);
+        }
         Ok(())
     }
 
     /// Release the temporary virtual pointer after the XDB loop exits.
     pub fn finish_alien_overlay_input(&mut self) -> bool {
         let released = self.alien_pointer.take().is_some();
-        if released {
+        if released && self.scenario.is_none() {
             self.mouse.set_relative_mouse_mode(self.window, false);
         }
         released
@@ -307,6 +401,10 @@ impl<'window> RuntimePlatformHost<'window> {
         &mut self,
         services: &mut ModernGameServices<'window>,
     ) -> Result<bool> {
+        if self.scenario.is_some() {
+            self.frame_clock.finish_frame();
+            return Ok(false);
+        }
         let remaining = self
             .frame_clock
             .remaining(Instant::now(), GAME_FRAME_DURATION)
@@ -324,6 +422,10 @@ impl<'window> RuntimePlatformHost<'window> {
     }
 
     fn pace_frame_for(&mut self, duration: Duration) -> Result<()> {
+        if self.scenario.is_some() {
+            self.frame_clock.finish_frame();
+            return Ok(());
+        }
         let remaining = self
             .frame_clock
             .remaining(Instant::now(), duration)
@@ -333,6 +435,59 @@ impl<'window> RuntimePlatformHost<'window> {
         }
         self.frame_clock.finish_frame();
         Ok(())
+    }
+}
+
+fn queue_scenario_key(services: &mut ModernGameServices<'_>, key: RuntimeScenarioKey) {
+    match key {
+        RuntimeScenarioKey::Character(character) => {
+            services.input_mut().queue_text(&character.to_string());
+        }
+        RuntimeScenarioKey::Enter => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Return);
+        }
+        RuntimeScenarioKey::Escape => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Escape);
+        }
+        RuntimeScenarioKey::Backspace => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Backspace);
+        }
+        RuntimeScenarioKey::Space => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Space);
+        }
+        RuntimeScenarioKey::Delete => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Delete);
+        }
+        RuntimeScenarioKey::ArrowUp => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Up);
+        }
+        RuntimeScenarioKey::ArrowDown => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Down);
+        }
+        RuntimeScenarioKey::ArrowLeft => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Left);
+        }
+        RuntimeScenarioKey::ArrowRight => {
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::Right);
+        }
     }
 }
 

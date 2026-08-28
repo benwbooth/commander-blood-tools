@@ -92,7 +92,9 @@ pub fn update_panel_close_actor<Backend: PanelCloseActorBackend>(
 
         state.mouse_primary_pressed = false;
         state.mouse_press_pending = false;
-        if backend.update_line(line, line_playback)? == PresentationLineOutcome::Completed {
+        let line_outcome = backend.update_line(line, line_playback)?;
+        state.redraw_requested = line_playback.redraw_requested;
+        if line_outcome == PresentationLineOutcome::Completed {
             backend.reset_presentation_entity();
             line.flags = present_only();
             if !state.panel_active {

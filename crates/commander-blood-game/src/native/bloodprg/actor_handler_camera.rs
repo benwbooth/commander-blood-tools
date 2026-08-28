@@ -179,6 +179,7 @@ pub fn update_camera_presentation_actor<RecordLink, Backend: CameraPresentationA
 
     let mut transition_requested = false;
     let line_outcome = backend.update_line(line, line_playback)?;
+    state.redraw_requested = line_playback.redraw_requested;
     if line.frame == CAMERA_TRANSITION_FRAME {
         if !state.camera_view_active {
             transition_requested =

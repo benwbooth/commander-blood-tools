@@ -157,7 +157,9 @@ pub fn update_radio_actor<RecordLink: Clone, Backend: RadioActorBackend>(
 
     state.presentation = RadioActorPresentation::Presenting;
     backend.request_radio_hand_animation();
-    if backend.update_line(line, line_playback)? != PresentationLineOutcome::Completed {
+    let line_outcome = backend.update_line(line, line_playback)?;
+    state.redraw_requested = line_playback.redraw_requested;
+    if line_outcome != PresentationLineOutcome::Completed {
         return Ok(RadioActorOutcome::Presenting);
     }
 
