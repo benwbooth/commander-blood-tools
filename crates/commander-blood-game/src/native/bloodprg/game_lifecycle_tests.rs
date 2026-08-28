@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use super::*;
 
-const ORACLE_VECTOR_COUNT: usize = 13;
+const ORACLE_VECTOR_COUNT: usize = 14;
 const LOGICAL_VIEWPORT: [u64; 6] = [0, 1, 4, 320, 200, 0];
 const INITIAL_SCENE_LINK_OFFSET: u16 = 16;
 const SUBTITLE_OWNER_OFFSET: u16 = 24_164;
@@ -61,6 +61,7 @@ struct Scenario {
     dialogue_hold_countdown: u16,
     secondary_pointer_pressed: bool,
     pointer_press_pending: u8,
+    pause_hud_active: bool,
 }
 
 impl Default for Scenario {
@@ -87,6 +88,7 @@ impl Default for Scenario {
             dialogue_hold_countdown: u16::MIN,
             secondary_pointer_pressed: false,
             pointer_press_pending: u8::MIN,
+            pause_hud_active: false,
         }
     }
 }
@@ -325,8 +327,13 @@ fn lifecycle_matches_all_original_control_flow_vectors() {
             "{}",
             vector.name
         );
+        let expected_rendered_frames = if scenario.pause_hud_active {
+            u64::MIN
+        } else {
+            scenario.frames as u64
+        };
         assert_eq!(
-            outcome.rendered_frames, scenario.frames as u64,
+            outcome.rendered_frames, expected_rendered_frames,
             "{}",
             vector.name
         );
@@ -372,7 +379,7 @@ fn runtime_errors_clean_up_without_playing_the_credits() {
 
 fn apply_scenario(state: &mut GameLifecycleState, scenario: Scenario) {
     state.exit_requested = false;
-    state.pause_hud_active = false;
+    state.pause_hud_active = scenario.pause_hud_active;
     state.pointer_position_locked = false;
     state.pointer_press_pending = scenario.pointer_press_pending;
     state.secondary_pointer_pressed = scenario.secondary_pointer_pressed;
@@ -485,6 +492,11 @@ fn scenario_for(name: &str) -> Scenario {
             list_read_wrap_index: 1,
             owner: Some(GamePresentationOwner::Subtitle),
             dialogue_hold_countdown: COUNTDOWN_WITH_ZERO_LOW_BYTE,
+            ..Scenario::default()
+        },
+        "paused_frame_skips_gameplay_tail" => Scenario {
+            frames: 1,
+            pause_hud_active: true,
             ..Scenario::default()
         },
         other => panic!("unknown main-loop oracle {other}"),
@@ -637,6 +649,10 @@ fn assert_case_state(name: &str, state: &GameLifecycleState) {
                 state.presentation.active_line,
                 Some(DEFAULT_PRESENTATION_LINE)
             );
+        }
+        "paused_frame_skips_gameplay_tail" => {
+            assert!(state.pause_hud_active);
+            assert!(!state.frame_presented);
         }
         "zero_owner_selects_menu_word_buffer" => {
             assert_eq!(

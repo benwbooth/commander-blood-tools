@@ -15,9 +15,9 @@ coverage test rejects missing, duplicate, or unsupported mappings.
 Routine counts alone do not prove cross-routine state fidelity. The recovered
 BLOODPRG headers currently expose 71 semantically distinct address-alias
 families after mechanical DS/GS views are collapsed. `shared-global-aliases.tsv`
-is the checked review queue for those families. Sixty-nine rows name a verified
+is the checked review queue for those families. Seventy rows name a verified
 canonical Rust owner or document why the native storage overlap can be split
-after moving to flat typed state. The two rows still marked `pending_review`
+after moving to flat typed state. The remaining row marked `pending_review`
 are not claims of behavioral parity.
 
 The real-data acceptance suite restores an authentic save, reloads every script

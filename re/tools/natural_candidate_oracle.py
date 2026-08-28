@@ -718,6 +718,8 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
          "presentation_active": 1, "scene_gate": 1,
          "active_line": 7, "entry_metric": 5, "wrap_index": 1,
          "owner_offset": 0x5E64, "dialogue_countdown": 0x0100},
+        {"name": "paused_frame_skips_gameplay_tail", "frames": 1,
+         "pause_active": 1},
     )
     vectors = []
 
@@ -793,7 +795,8 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
 
         def inject_frame_state(machine: Uc) -> None:
             game_write_u8(machine, 0x0B13, 0)
-            game_write_u8(machine, 0x0ADF, 0)
+            game_write_u8(machine, 0x0ADF,
+                          int(case.get("pause_active", 0)))
             game_write_u16(machine, 0x2793, 1)
             game_write_u16(machine, 0x6780,
                            int(case.get("profile_request", -1)))
@@ -1005,38 +1008,44 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
         expected_names = list(initialization_names)
         if open_ok:
             expected_names.extend(successful_initialization_tail)
-            expected_names.extend([
-                "input_action_dispatch",
-                "poll_mouse",
-            ])
-            if name != "input_exit_and_complete_cleanup":
+            expected_names.append("input_action_dispatch")
+            if int(case.get("pause_active", 0)) != 0:
                 expected_names.extend([
+                    "mouse_position_set",
                     "main_loop_hud_refresh",
-                    "mouse_button_edges_update",
-                ])
-            if "vm_result" in case:
-                expected_names.append("vm_run_wrapper")
-            elif "profile_request" in case:
-                expected_names.append("vm_resource_profile_select")
-                if int(case.get("profile_result", 0)) >= 0:
-                    expected_names.extend([
-                        "vm_run_wrapper",
-                        "vm_record_state_proc",
-                        "object_heap_access",
-                        "ship_3d_hud_palette_snapshot_and_camera_reset",
-                    ])
-            if int(case.get("frames", 0)) != 0:
-                if int(case.get("audio_pending", 0)) != 0:
-                    expected_names.extend([
-                        "snd_driver_call",
-                        "snd_stream_source_load",
-                        "snd_stream_start",
-                    ])
-                expected_names.extend(common_frame_tail)
-                expected_names.extend([
                     "input_action_dispatch",
-                    "poll_mouse",
+                    "mouse_position_set",
                 ])
+            else:
+                expected_names.append("poll_mouse")
+                if name != "input_exit_and_complete_cleanup":
+                    expected_names.extend([
+                        "main_loop_hud_refresh",
+                        "mouse_button_edges_update",
+                    ])
+                if "vm_result" in case:
+                    expected_names.append("vm_run_wrapper")
+                elif "profile_request" in case:
+                    expected_names.append("vm_resource_profile_select")
+                    if int(case.get("profile_result", 0)) >= 0:
+                        expected_names.extend([
+                            "vm_run_wrapper",
+                            "vm_record_state_proc",
+                            "object_heap_access",
+                            "ship_3d_hud_palette_snapshot_and_camera_reset",
+                        ])
+                if int(case.get("frames", 0)) != 0:
+                    if int(case.get("audio_pending", 0)) != 0:
+                        expected_names.extend([
+                            "snd_driver_call",
+                            "snd_stream_source_load",
+                            "snd_stream_start",
+                        ])
+                    expected_names.extend(common_frame_tail)
+                    expected_names.extend([
+                        "input_action_dispatch",
+                        "poll_mouse",
+                    ])
         expected_names.extend(shutdown_names if open_ok else [
             "presentation_update_1fb2",
             "snd_driver_call",
@@ -1150,6 +1159,8 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
         if name == "dialogue_gate_uses_countdown_low_byte":
             if data_after[0x5E64] != 1 or game_read_u16(machine, 0x6788) != 8:
                 raise AssertionError(f"0x0EB0 {name}: high countdown byte gated presentation")
+        if name == "paused_frame_skips_gameplay_tail" and data_after[0x0ADF] != 1:
+            raise AssertionError(f"0x0EB0 {name}: pause bit changed")
 
         expected_handles = [0x1111, 0x2222, 0x3333, 0x4444] if open_ok else []
         closed_handles = [

@@ -5879,5 +5879,390 @@
       "mus.snd",
       "dir.dat"
     ]
+  },
+  {
+    "name": "paused_frame_skips_gameplay_tail",
+    "allocations": [
+      [
+        8,
+        65536
+      ],
+      [
+        10,
+        65536
+      ],
+      [
+        11,
+        65552
+      ],
+      [
+        12,
+        65536
+      ],
+      [
+        9,
+        65536
+      ],
+      [
+        100,
+        65552
+      ]
+    ],
+    "arena_pointers": {
+      "overlay": [
+        0,
+        12288
+      ],
+      "display": [
+        0,
+        12544
+      ],
+      "back": [
+        0,
+        12801
+      ],
+      "viewport": [
+        0,
+        12800
+      ],
+      "resource": [
+        0,
+        17152
+      ],
+      "presentation": [
+        0,
+        18752
+      ],
+      "work": [
+        0,
+        17408
+      ],
+      "snd_bank": [
+        0,
+        17664
+      ],
+      "snd_stream": [
+        0,
+        19712
+      ]
+    },
+    "viewport": [
+      0,
+      1,
+      4,
+      320,
+      200,
+      0
+    ],
+    "events": [
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3775,
+          0
+        ],
+        "handle": 8,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3794,
+          0
+        ],
+        "handle": 10,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3814,
+          0
+        ],
+        "handle": 11,
+        "bytes": 65552
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3840,
+          0
+        ],
+        "handle": 12,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3863,
+          0
+        ],
+        "handle": 9,
+        "bytes": 65536
+      },
+      {
+        "event": "resource_allocate",
+        "return_frame": [
+          3881,
+          0
+        ],
+        "handle": 100,
+        "bytes": 65552
+      },
+      {
+        "event": "startup_loading_screen_and_write_directory_prepare",
+        "return_frame": [
+          3899
+        ]
+      },
+      {
+        "event": "resource_archive_index_backing_initialize",
+        "return_frame": [
+          3902
+        ]
+      },
+      {
+        "event": "cdrom_audio_prepare",
+        "return_frame": [
+          3905
+        ]
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3917,
+          0
+        ],
+        "path": "manu3.xdb",
+        "destination": [
+          12288,
+          0
+        ]
+      },
+      {
+        "event": "resource_source_select",
+        "return_frame": [
+          3952,
+          0
+        ],
+        "path": "tb.big"
+      },
+      {
+        "event": "dos_open",
+        "path": "tb.big"
+      },
+      {
+        "event": "resource_file_load",
+        "return_frame": [
+          3979,
+          0
+        ],
+        "path": "blood.sav",
+        "destination": [
+          6144,
+          9709
+        ]
+      },
+      {
+        "event": "resource_load_by_id",
+        "return_frame": [
+          3989,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "resource_handle_resolve",
+        "return_frame": [
+          4006,
+          0
+        ],
+        "resource_id": 2
+      },
+      {
+        "event": "audio_param_init_cd5",
+        "return_frame": [
+          4021,
+          0
+        ],
+        "driver_segment": 20976,
+        "storage": [
+          19712,
+          0
+        ]
+      },
+      {
+        "event": "resource_named_file_load",
+        "return_frame": [
+          4030,
+          0
+        ],
+        "resource_id": 44
+      },
+      {
+        "event": "ship_3d_point_cloud_randomize",
+        "return_frame": [
+          4056,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_zero_run",
+        "return_frame": [
+          4059
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_bank_loader",
+        "return_frame": [
+          4076,
+          0
+        ],
+        "mode": 0,
+        "path": "sn\\tb.snd"
+      },
+      {
+        "event": "back_buffer_init",
+        "return_frame": [
+          4080,
+          0
+        ]
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          720,
+          150
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 1
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "event": "main_loop_hud_refresh",
+        "return_frame": [
+          4210
+        ]
+      },
+      {
+        "event": "input_action_dispatch",
+        "return_frame": [
+          4113,
+          0
+        ],
+        "frame": 2
+      },
+      {
+        "event": "mouse_position_set",
+        "function": 4,
+        "position": [
+          0,
+          0
+        ]
+      },
+      {
+        "event": "presentation_update_1fb2",
+        "return_frame": [
+          4832,
+          0
+        ]
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4837,
+          0
+        ]
+      },
+      {
+        "event": "presentation_line_one_stream_run",
+        "return_frame": [
+          4840
+        ],
+        "scene_link_target": 16
+      },
+      {
+        "event": "snd_driver_call",
+        "return_frame": [
+          4845,
+          0
+        ]
+      },
+      {
+        "event": "startup_write_directory_enter",
+        "return_frame": [
+          4850,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 4369
+      },
+      {
+        "event": "dos_delete",
+        "path": "son.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 8738
+      },
+      {
+        "event": "dos_delete",
+        "path": "mus.snd"
+      },
+      {
+        "event": "dos_close",
+        "handle": 13107
+      },
+      {
+        "event": "dos_delete",
+        "path": "dir.dat"
+      },
+      {
+        "event": "startup_transient_files_delete",
+        "return_frame": [
+          4914
+        ]
+      },
+      {
+        "event": "startup_original_directory_restore",
+        "return_frame": [
+          4919,
+          0
+        ]
+      },
+      {
+        "event": "dos_close",
+        "handle": 17476
+      }
+    ],
+    "final_scene_link_target": 16,
+    "closed_handles": [
+      4369,
+      8738,
+      13107,
+      17476
+    ],
+    "deleted_paths": [
+      "son.snd",
+      "mus.snd",
+      "dir.dat"
+    ]
   }
 ]
