@@ -290,8 +290,8 @@ fn console_choice_at(frame: i16, pointer: [i16; 2]) -> Option<BridgeConsoleChoic
 /// Semantic kind of deferred bridge record.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BridgeDeferredActionKind {
-    /// Execute a presentation record selected by the bridge.
-    Presentation,
+    /// Execute the actionable C3 presentation-queue record selected by the bridge.
+    PresentationQueue,
 }
 
 /// One typed deferred record selected by a bridge command.
@@ -372,7 +372,7 @@ fn activate_immediate_record<RecordId>(
     }
     deferred.record = Some(BridgeDeferredRecord {
         record,
-        action: BridgeDeferredActionKind::Presentation,
+        action: BridgeDeferredActionKind::PresentationQueue,
     });
     close_console(console);
     ImmediateBridgeChoiceOutcome::Activated
@@ -557,7 +557,7 @@ fn update_record_choice_panel<RecordId: Clone, Backend: BridgeChoiceBackend>(
     };
     deferred.record = Some(BridgeDeferredRecord {
         record: choice.record.clone(),
-        action: BridgeDeferredActionKind::Presentation,
+        action: BridgeDeferredActionKind::PresentationQueue,
     });
     close_console(console);
     BridgeRecordChoiceOutcome::Selected
@@ -896,7 +896,7 @@ mod tests {
                 let mut deferred = BridgeDeferredState {
                     record: Some(BridgeDeferredRecord {
                         record: vector.deferred_link_before,
-                        action: BridgeDeferredActionKind::Presentation,
+                        action: BridgeDeferredActionKind::PresentationQueue,
                     }),
                     redraw_requested: false,
                 };
@@ -923,6 +923,14 @@ mod tests {
                     "{}",
                     vector.name
                 );
+                if vector.phase_before & 1 != 0 {
+                    assert_eq!(
+                        deferred.record.as_ref().unwrap().action,
+                        BridgeDeferredActionKind::PresentationQueue,
+                        "{}",
+                        vector.name
+                    );
+                }
                 assert_eq!(backend.reloads > 0, vector.loader_called, "{}", vector.name);
             }
         }

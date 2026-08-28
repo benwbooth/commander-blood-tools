@@ -318,6 +318,14 @@ impl RuntimeScriptSystem {
         self.service.presentation_state_mut().deferred = deferred_navigation_record(target, true);
     }
 
+    /// Queue the actionable C3 record emitted by bridge horn, target, and radio commands.
+    pub fn defer_presentation_queue(&mut self, target: ScriptObjectId) {
+        self.service.presentation_state_mut().deferred = ScriptDeferredRecord::Complete {
+            record: ScriptActionRecord::PresentationQueue(target),
+            actionable: true,
+        };
+    }
+
     /// Write the C1 emitted by `ship_3d_hud_init` directly to `orxx`'s action slot.
     pub fn queue_ship_hud_navigation_target(
         &mut self,
@@ -1205,6 +1213,77 @@ mod tests {
             ]
         );
         assert!(backend.pending_commands().is_empty());
+    }
+
+    #[test]
+    fn bridge_c3_queue_promotes_to_an_actionable_c4_and_starts_honk() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut runtime = super::super::OriginalGameRuntime::new(data);
+        scripts
+            .load_profile(&mut runtime, ScriptProfileId::INITIAL)
+            .unwrap();
+        let (player, honk, player_slot) = {
+            let profile = runtime.current_profile().unwrap();
+            let builtins = profile.builtins();
+            let player = builtins.player.unwrap();
+            let honk = builtins.horn.unwrap();
+            let player_kind = profile.state().object(player).unwrap().kind;
+            let action_offset =
+                script_field_offset(player_kind, ScriptFieldSelector::ACTION).unwrap();
+            let player_slot = profile
+                .state()
+                .object_word_triple(player, action_offset / size_of::<u16>())
+                .unwrap();
+            (player, honk, player_slot)
+        };
+
+        scripts.defer_presentation_queue(honk);
+        assert_eq!(
+            scripts.presentation_scan_state().deferred,
+            ScriptDeferredRecord::Complete {
+                record: ScriptActionRecord::PresentationQueue(honk),
+                actionable: true,
+            }
+        );
+
+        scripts.execute_frame(&mut runtime, true).unwrap();
+        let first_scan = scripts.last_presentation_outcome().unwrap();
+        assert_eq!(first_scan.deferred_destination, Some(player_slot));
+        assert!(first_scan.actions.iter().any(|action| {
+            action.owner == player && action.record == ScriptActionRecord::PresentationQueue(honk)
+        }));
+        let first_records = &runtime
+            .current_profile()
+            .unwrap()
+            .record_state()
+            .action_records;
+        assert_eq!(
+            first_records.record(player_slot),
+            ScriptActionRecord::ActorPresentation(honk)
+        );
+        assert!(first_records.is_actionable(player_slot));
+
+        scripts.execute_frame(&mut runtime, true).unwrap();
+        let second_scan = scripts.last_presentation_outcome().unwrap();
+        assert_eq!(second_scan.presentation_started, Some(honk));
+        assert!(second_scan.actions.iter().any(|action| {
+            action.owner == player && action.record == ScriptActionRecord::ActorPresentation(honk)
+        }));
+        assert!(scripts.presentation_scan_state().active);
+        assert!(scripts.action_state().post_update_object == Some(honk));
+        assert!(
+            !runtime
+                .current_profile()
+                .unwrap()
+                .record_state()
+                .action_records
+                .is_actionable(player_slot)
+        );
     }
 
     #[test]

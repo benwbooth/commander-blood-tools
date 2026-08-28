@@ -6,15 +6,16 @@ use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
     BridgeChoiceBackend, BridgeConsoleChoice, BridgeConsoleContext, BridgeConsoleDispatchOutcome,
-    BridgeConsolePalettePlan, BridgeConsoleState, BridgeDeferredState, BridgeRecordChoice,
-    BridgeRecordChoiceContext, BridgeRecordChoiceOutcome, BridgeRecordChoiceState,
-    ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListPointer, ChoiceListRect,
-    ChoiceListState, FramebufferTransitionState, GameLifecycleState, ImmediateBridgeChoiceOutcome,
-    MusicOptionLabel, OptionMenuChoice, OptionMenuOutcome, OptionMenuState, PresentationChoiceItem,
-    PresentationChoiceOutcome, PresentationChoiceState, RasterPoint, TransitionRect,
-    activate_horn_choice, activate_radio_choice, advance_framebuffer_rect_transition,
-    build_banked_tint_table, navigation_actor_targets, update_bridge_console_dispatch,
-    update_choice_list, update_contact_choice, update_navigation_target_choice, update_option_menu,
+    BridgeConsolePalettePlan, BridgeConsoleState, BridgeDeferredActionKind, BridgeDeferredState,
+    BridgeRecordChoice, BridgeRecordChoiceContext, BridgeRecordChoiceOutcome,
+    BridgeRecordChoiceState, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame,
+    ChoiceListPointer, ChoiceListRect, ChoiceListState, FramebufferTransitionState,
+    GameLifecycleState, ImmediateBridgeChoiceOutcome, MusicOptionLabel, OptionMenuChoice,
+    OptionMenuOutcome, OptionMenuState, PresentationChoiceItem, PresentationChoiceOutcome,
+    PresentationChoiceState, RasterPoint, TransitionRect, activate_horn_choice,
+    activate_radio_choice, advance_framebuffer_rect_transition, build_banked_tint_table,
+    navigation_actor_targets, update_bridge_console_dispatch, update_choice_list,
+    update_contact_choice, update_navigation_target_choice, update_option_menu,
     update_presentation_choice,
 };
 
@@ -410,7 +411,11 @@ impl RuntimeBridgeConsole {
             self.deferred.redraw_requested = false;
             services.request_scene_transition(deferred.record)
         } else {
-            services.defer_ship_actor_presentation(deferred.record);
+            match deferred.action {
+                BridgeDeferredActionKind::PresentationQueue => {
+                    services.defer_ship_presentation_queue(deferred.record);
+                }
+            }
             Ok(())
         }
     }

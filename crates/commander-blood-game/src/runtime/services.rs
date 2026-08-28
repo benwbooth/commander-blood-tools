@@ -1194,6 +1194,11 @@ impl<'window> ModernGameServices<'window> {
             .queue_ship_hud_navigation_target(&mut self.runtime, target)
     }
 
+    /// Publish the actionable C3 record emitted by a bridge-console command.
+    pub fn defer_ship_presentation_queue(&mut self, target: ScriptObjectId) {
+        self.scripts.defer_presentation_queue(target);
+    }
+
     /// Publish the complete non-actionable C4 record emitted by navigation presentation.
     pub fn defer_ship_actor_presentation(&mut self, target: ScriptObjectId) {
         self.scripts.defer_actor_presentation(target);
