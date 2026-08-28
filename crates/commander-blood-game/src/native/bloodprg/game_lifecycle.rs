@@ -507,7 +507,7 @@ pub fn run_game_lifecycle<Host: GameLifecycleHost>(
 ) -> Result<GameLifecycleOutcome, GameLifecycleError<Host::Error>> {
     let mut session = GameSession::default();
     let runtime = run_game_runtime(state, host, &mut session);
-    let shutdown = shutdown_game(host, session);
+    let shutdown = shutdown_game(host, session, runtime.is_ok());
 
     match (runtime, shutdown) {
         (Ok(exit), Ok(())) => Ok(GameLifecycleOutcome {
@@ -756,10 +756,13 @@ fn run_frame_tail<Host: GameLifecycleHost>(
 fn shutdown_game<Host: GameLifecycleHost>(
     host: &mut Host,
     session: GameSession,
+    run_final_presentation: bool,
 ) -> Result<(), Host::Error> {
     host.finish_presentations()?;
     host.stop_audio()?;
-    host.run_final_presentation(session.scene_link)?;
+    if run_final_presentation {
+        host.run_final_presentation(session.scene_link)?;
+    }
     host.stop_audio()?;
     if session.panorama_opened {
         host.remove_transient_voice()?;

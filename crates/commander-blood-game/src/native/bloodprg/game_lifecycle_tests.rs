@@ -1,5 +1,3 @@
-use std::convert::Infallible;
-
 use serde::Deserialize;
 
 use super::*;
@@ -73,6 +71,7 @@ struct OracleHost {
     input_dispatches: usize,
     pending_profiles_at_input: Vec<Option<ScriptProfileId>>,
     calls: Vec<&'static str>,
+    fail_bridge_render: bool,
 }
 
 impl OracleHost {
@@ -100,7 +99,7 @@ macro_rules! state_host_call {
 }
 
 impl GameLifecycleHost for OracleHost {
-    type Error = Infallible;
+    type Error = &'static str;
 
     plain_host_call!(initialize_runtime_storage, "initialize_runtime_storage");
     plain_host_call!(
@@ -186,7 +185,11 @@ impl GameLifecycleHost for OracleHost {
         _state: &mut GameLifecycleState,
     ) -> Result<(), Self::Error> {
         self.call("bridge_render_frame");
-        Ok(())
+        if self.fail_bridge_render {
+            Err("injected bridge render failure")
+        } else {
+            Ok(())
+        }
     }
 
     state_host_call!(update_confirm_dialog, "confirm_dialog_step");
@@ -280,6 +283,7 @@ fn lifecycle_matches_all_original_control_flow_vectors() {
             input_dispatches: usize::MIN,
             pending_profiles_at_input: Vec::new(),
             calls: Vec::new(),
+            fail_bridge_render: false,
         };
         let mut state = GameLifecycleState::default();
         let outcome = run_game_lifecycle(&mut state, &mut host).unwrap();
@@ -314,6 +318,31 @@ fn lifecycle_matches_all_original_control_flow_vectors() {
             assert!(host.pending_profiles_at_input.is_empty(), "{}", vector.name);
         }
     }
+}
+
+#[test]
+fn runtime_errors_clean_up_without_playing_the_credits() {
+    let mut host = OracleHost {
+        scenario: Scenario {
+            frames: 1,
+            ..Scenario::default()
+        },
+        input_dispatches: usize::MIN,
+        pending_profiles_at_input: Vec::new(),
+        calls: Vec::new(),
+        fail_bridge_render: true,
+    };
+    let mut state = GameLifecycleState::default();
+
+    let error = run_game_lifecycle(&mut state, &mut host).unwrap_err();
+
+    assert!(matches!(
+        error,
+        GameLifecycleError::Runtime("injected bridge render failure")
+    ));
+    assert!(!host.calls.contains(&"presentation_line_one_stream_run"));
+    assert!(host.calls.contains(&"presentation_update_1fb2"));
+    assert!(host.calls.contains(&"close_bridge_panorama"));
 }
 
 fn apply_scenario(state: &mut GameLifecycleState, scenario: Scenario) {

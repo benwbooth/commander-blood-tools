@@ -34,7 +34,7 @@ use crate::native::bloodprg::{
     PresentationPresentPolicy, PresentationResourceId, PresentationResourceSequenceOutcome,
     PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
     PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
-    SHIP_CAMERA_RESET, SceneTransitionState, ScriptClock, ScriptFrameOutcome,
+    SHIP_CAMERA_RESET, SceneTransitionState, ScriptActionState, ScriptClock, ScriptFrameOutcome,
     ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
@@ -152,6 +152,23 @@ pub struct ModernGameServices<'window> {
     scripts: RuntimeScriptSystem,
     cd_audio: CdAudioState,
     main_viewport_configured: bool,
+}
+
+fn synchronize_selected_ship_target(
+    selected_target: Option<ScriptObjectId>,
+    action: &mut ScriptActionState,
+    ship: &mut ShipPresentationState,
+) {
+    let Some(target) = selected_target else {
+        return;
+    };
+
+    action.current_ship_target = Some(target);
+    action.ship_navigation_mode = ScriptShipNavigationMode::Active;
+    action.bridge_redraw_pending = false;
+    ship.flags = SHIP_NAVIGATION_ACTIVE_FLAGS;
+    ship.bridge_redraw_pending = u8::MIN;
+    ship.active_line = SHIP_NAVIGATION_STATUS_LINE;
 }
 
 impl<'window> ModernGameServices<'window> {
@@ -2199,24 +2216,12 @@ impl<'window> ModernGameServices<'window> {
 
     /// Publish one-frame BloodScript target changes into the canonical ship FSM state.
     pub fn synchronize_script_ship_state(&mut self) {
-        let presentation_target = self
-            .scripts
-            .last_presentation_outcome()
-            .and_then(|outcome| outcome.presentation_started);
         let selected_target = self.scripts.take_selected_ship_target();
-        let Some(target) = selected_target.or(presentation_target) else {
-            return;
-        };
-
-        let action = self.scripts.action_state_mut();
-        action.current_ship_target = Some(target);
-        action.ship_navigation_mode = ScriptShipNavigationMode::Active;
-        action.bridge_redraw_pending = false;
-        self.ship_presentation.flags = SHIP_NAVIGATION_ACTIVE_FLAGS;
-        self.ship_presentation.bridge_redraw_pending = u8::MIN;
-        if selected_target.is_some() {
-            self.ship_presentation.active_line = SHIP_NAVIGATION_STATUS_LINE;
-        }
+        synchronize_selected_ship_target(
+            selected_target,
+            self.scripts.action_state_mut(),
+            &mut self.ship_presentation,
+        );
     }
 
     /// Copy DESCRIPT and A8 name selections into the flat presentation catalog.
@@ -3364,6 +3369,28 @@ mod tests {
             RuntimeBridgeComposition::BridgeScene
         );
     }
+
+    #[test]
+    fn missing_c1_target_does_not_activate_navigation_or_line_three() {
+        let mut action = ScriptActionState {
+            bridge_redraw_pending: true,
+            ..ScriptActionState::default()
+        };
+        let mut ship = ShipPresentationState {
+            flags: 1,
+            bridge_redraw_pending: 1,
+            active_line: 4,
+            ..ShipPresentationState::default()
+        };
+        let expected_action = action.clone();
+        let expected_ship = ship;
+
+        synchronize_selected_ship_target(None, &mut action, &mut ship);
+
+        assert_eq!(action, expected_action);
+        assert_eq!(ship, expected_ship);
+    }
+
     const MAXIMUM_CAMERA_TRANSITION_FRAMES: usize = 2_048;
     const TEST_OUTPUT_SIZE: [f32; 2] = [640.0, 480.0];
     const LOGICAL_TEST_OUTPUT_SIZE: [f32; 2] = [320.0, 200.0];
