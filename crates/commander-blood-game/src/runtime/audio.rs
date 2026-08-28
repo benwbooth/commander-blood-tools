@@ -176,19 +176,20 @@ impl RuntimeMusicStream {
         }
     }
 
-    fn load(&mut self, encoded_voc: &[u8], source_rate_hz: u32) -> Result<()> {
+    fn load(&mut self, encoded_voc: &[u8], source_rate_hz: u32) -> Result<Option<&'static [u8]>> {
         let outcome = load_audio_stream_source(&mut self.playback, &mut self.stream, encoded_voc)
             .map_err(anyhow::Error::new)
             .context("loading recovered navigation-audio stream state")?;
-        if outcome == AudioStreamLoadOutcome::Inactive {
-            return Ok(());
-        }
+        let wait_prompt = match outcome {
+            AudioStreamLoadOutcome::Inactive => return Ok(None),
+            AudioStreamLoadOutcome::Loaded { wait_prompt } => wait_prompt,
+        };
         self.source_rate_hz = Some(source_rate_hz);
         self.cursor = None;
         for buffer in &mut self.playback.stream_buffers {
             buffer.status = AudioStreamBufferStatus::Free;
         }
-        Ok(())
+        Ok(Some(wait_prompt))
     }
 
     fn load_pcm(
@@ -196,7 +197,7 @@ impl RuntimeMusicStream {
         samples: &[u8],
         source_rate_hz: u32,
         sample_rate_code: u8,
-    ) -> Result<()> {
+    ) -> Result<Option<&'static [u8]>> {
         let outcome = load_audio_pcm_stream_source(
             &mut self.playback,
             &mut self.stream,
@@ -205,15 +206,16 @@ impl RuntimeMusicStream {
         )
         .map_err(anyhow::Error::new)
         .context("loading normalized navigation-audio stream state")?;
-        if outcome == AudioStreamLoadOutcome::Inactive {
-            return Ok(());
-        }
+        let wait_prompt = match outcome {
+            AudioStreamLoadOutcome::Inactive => return Ok(None),
+            AudioStreamLoadOutcome::Loaded { wait_prompt } => wait_prompt,
+        };
         self.source_rate_hz = Some(source_rate_hz);
         self.cursor = None;
         for buffer in &mut self.playback.stream_buffers {
             buffer.status = AudioStreamBufferStatus::Free;
         }
-        Ok(())
+        Ok(Some(wait_prompt))
     }
 
     fn start(&mut self) -> Result<()> {
@@ -600,15 +602,19 @@ impl RuntimeAudioHost {
         &mut self,
         encoded_voc: &[u8],
         source_rate_hz: u32,
-    ) -> Result<()> {
+    ) -> Result<Option<&'static [u8]>> {
         self.check_callback()?;
         let mut shared = lock_shared(&self.shared);
         shared.mixer.stop_background();
-        shared.music_stream.load(encoded_voc, source_rate_hz)?;
+        let wait_prompt = shared.music_stream.load(encoded_voc, source_rate_hz)?;
+        if wait_prompt.is_none() {
+            return Ok(None);
+        }
         drop(shared);
         self.stream
             .clear()
-            .map_err(|error| anyhow!("clearing replaced SDL3 music stream: {error}"))
+            .map_err(|error| anyhow!("clearing replaced SDL3 music stream: {error}"))?;
+        Ok(wait_prompt)
     }
 
     /// Load normalized unsigned 8-bit PCM into the recovered flat stream lifecycle.
@@ -617,17 +623,22 @@ impl RuntimeAudioHost {
         samples: &[u8],
         source_rate_hz: u32,
         sample_rate_code: u8,
-    ) -> Result<()> {
+    ) -> Result<Option<&'static [u8]>> {
         self.check_callback()?;
         let mut shared = lock_shared(&self.shared);
         shared.mixer.stop_background();
-        shared
-            .music_stream
-            .load_pcm(samples, source_rate_hz, sample_rate_code)?;
+        let wait_prompt =
+            shared
+                .music_stream
+                .load_pcm(samples, source_rate_hz, sample_rate_code)?;
+        if wait_prompt.is_none() {
+            return Ok(None);
+        }
         drop(shared);
         self.stream
             .clear()
-            .map_err(|error| anyhow!("clearing replaced SDL3 music stream: {error}"))
+            .map_err(|error| anyhow!("clearing replaced SDL3 music stream: {error}"))?;
+        Ok(wait_prompt)
     }
 
     /// Start the VOC retained by [`Self::load_background_stream`].
@@ -854,7 +865,7 @@ mod tests {
         let mut stream = RuntimeMusicStream::new(TEST_STREAM_RATE_HZ);
 
         stream.set_channel_active(false);
-        stream.load(&encoded, TEST_STREAM_RATE_HZ).unwrap();
+        assert_eq!(stream.load(&encoded, TEST_STREAM_RATE_HZ).unwrap(), None);
         stream.start().unwrap();
         assert!(!stream.channel_active());
         assert!(stream.stream.source.is_none());
@@ -863,7 +874,10 @@ mod tests {
         stream.stop();
         assert!(!stream.channel_active());
         stream.set_channel_active(true);
-        stream.load(&encoded, TEST_STREAM_RATE_HZ).unwrap();
+        assert_eq!(
+            stream.load(&encoded, TEST_STREAM_RATE_HZ).unwrap(),
+            Some(crate::native::bloodprg::AUDIO_STREAM_WAIT_PROMPT)
+        );
         stream.start().unwrap();
         assert!(stream.channel_active());
         assert!(stream.cursor.is_some());

@@ -91,6 +91,28 @@ impl RuntimeSubtitleReveal {
         self.state.text_speed_step = step;
     }
 
+    /// Draw the synchronous loading caption emitted by the native VOC source loader.
+    pub fn draw_stream_wait_prompt(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        presentation: &mut TextPresentationState,
+        prompt: &[u8],
+    ) -> Result<SubtitleRevealOutcome> {
+        let reveal_cursor = prompt
+            .iter()
+            .position(|byte| *byte == CARRIAGE_RETURN)
+            .context("stream wait prompt has no carriage-return terminator")?;
+        presentation.subtitle_text = Box::from(prompt);
+        presentation.subtitle_reveal_cursor = Some(reveal_cursor);
+        presentation.hold_ready = false;
+        presentation.menu_deferred = false;
+        self.state.phase = crate::native::bloodprg::SubtitleRevealPhase::Text;
+        self.state.display_mode = true;
+        let outcome = self.update(runtime, presentation);
+        self.state.display_mode = false;
+        outcome
+    }
+
     /// Draw one subtitle frame using countdowns advanced by the canonical game timer.
     pub fn update(
         &mut self,
@@ -407,6 +429,56 @@ mod tests {
         subtitle.state.phase = crate::native::bloodprg::SubtitleRevealPhase::Text;
         presentation.subtitle_reveal_cursor = Some(presentation.subtitle_text.len());
         subtitle.update(&mut runtime, &mut presentation).unwrap();
+        assert!(
+            runtime
+                .front_buffer()
+                .pixels()
+                .contains(&REVEALED_SUBTITLE_COLOR)
+        );
+    }
+
+    #[test]
+    fn stream_wait_prompt_uses_the_shared_text_buffer_and_reveal_cursor() {
+        let Ok(paths) = OriginalGameDataPaths::discover(None) else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let initial_text_speed_step = data.bridge_menu_text().initial_text_speed_step();
+        let mut runtime = OriginalGameRuntime::new(data);
+        runtime
+            .front_buffer_mut()
+            .pixels_mut()
+            .fill(TEST_BACKGROUND_INDEX);
+        let mut presentation = TextPresentationState {
+            menu_deferred: true,
+            hold_ready: true,
+            subtitle_text: Box::from(b"prior\r".as_slice()),
+            ..TextPresentationState::default()
+        };
+        let mut subtitle = RuntimeSubtitleReveal::new(initial_text_speed_step);
+
+        let outcome = subtitle
+            .draw_stream_wait_prompt(
+                &mut runtime,
+                &mut presentation,
+                crate::native::bloodprg::AUDIO_STREAM_WAIT_PROMPT,
+            )
+            .unwrap();
+
+        assert!(matches!(outcome, SubtitleRevealOutcome::TextFrame { .. }));
+        assert_eq!(
+            presentation.subtitle_text.as_ref(),
+            crate::native::bloodprg::AUDIO_STREAM_WAIT_PROMPT
+        );
+        assert_eq!(
+            presentation.subtitle_reveal_cursor,
+            Some(crate::native::bloodprg::AUDIO_STREAM_WAIT_PROMPT.len())
+        );
+        assert!(!presentation.subtitle_display_active);
+        assert!(!presentation.menu_deferred);
+        assert!(!presentation.hold_ready);
+        assert!(!subtitle.state.display_mode);
         assert!(
             runtime
                 .front_buffer()

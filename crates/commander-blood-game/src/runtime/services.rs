@@ -521,13 +521,18 @@ impl<'window> ModernGameServices<'window> {
                     String::from_utf8_lossy(resource_name.as_bytes())
                 )
             })?;
-        self.audio_mut()?
+        let wait_prompt = self
+            .audio_mut()?
             .load_background_pcm_stream(
                 &normalized.samples,
                 normalized.sample_rate_hz,
                 normalized.sample_rate_code,
             )
-            .context("staging normalized navigation music stream")
+            .context("staging normalized navigation music stream")?;
+        if let Some(wait_prompt) = wait_prompt {
+            self.draw_audio_stream_wait_prompt(wait_prompt)?;
+        }
+        Ok(())
     }
 
     /// Start the retained navigation music as a looping background source.
@@ -557,6 +562,20 @@ impl<'window> ModernGameServices<'window> {
     /// Enable or disable every native VOC stream gate without conflating it with playback state.
     pub fn set_navigation_music_enabled(&mut self, enabled: bool) -> Result<()> {
         self.audio_mut()?.set_background_channel_active(enabled)
+    }
+
+    fn draw_audio_stream_wait_prompt(&mut self, prompt: &[u8]) -> Result<()> {
+        let mut subtitle = self
+            .subtitle_reveal
+            .take()
+            .context("subtitle reveal is already being updated")?;
+        let outcome = subtitle.draw_stream_wait_prompt(
+            &mut self.runtime,
+            self.scripts.text_presentation_mut(),
+            prompt,
+        );
+        self.subtitle_reveal = Some(subtitle);
+        outcome.map(|_| ())
     }
 
     /// Start retained music, or keep the current navigation stream running.
