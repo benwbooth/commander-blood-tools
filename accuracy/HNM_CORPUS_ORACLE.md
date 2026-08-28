@@ -11,6 +11,7 @@ The loose resource corpus currently contains:
 - 2,740 AB-compressed payloads
 - 36,320 AD-compressed payloads
 - 21,721 AD payloads eligible for deferred transparent-rectangle presentation
+- 1,007 bootstrap and effective per-frame palette records
 
 Build the Rust side of the gate:
 
@@ -31,17 +32,25 @@ Compare transparent rectangle staging and complete seeded framebuffer state:
 nix develop -c python re/tools/compare_hnm_decoder_corpus.py output/_tmp_dat --rect
 ```
 
+Compare every bootstrap palette and effective per-frame palette record:
+
+```sh
+nix develop -c python re/tools/compare_hnm_decoder_corpus.py output/_tmp_dat --palette
+```
+
 The comparison repeats ordinary payload decoding with zeroed and patterned
 destination memory. This detects authored streams whose output depends on
 reusable 64 KiB destination history.
 
 ## Certified boundary
 
-As of 2026-08-27, every AB payload, every AD payload, and every eligible
-transparent rectangle matches the original executable. No shipped payload is
-destination-history-sensitive under the two deterministic seeds.
+As of 2026-08-27, every AB payload, every AD payload, every eligible transparent
+rectangle, and every effective palette record matches the original executable.
+No shipped payload is destination-history-sensitive under the two deterministic
+seeds.
 
-This gate certifies decompression and isolated transparent rectangle
-composition. It does **not** certify runtime HNM selection, queue ordering,
-palette state at frame presentation, other overlays, timing, or final RGB
-output. Those layers require a synchronized runtime frame oracle.
+This gate certifies decompression, isolated transparent rectangle composition,
+and palette-block execution from identical seeded state. It does **not** certify
+runtime HNM selection, queue ordering, the palette supplied before a record is
+applied, other overlays, timing, or final RGB output. Those layers require a
+synchronized runtime frame oracle.

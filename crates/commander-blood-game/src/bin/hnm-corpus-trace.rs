@@ -6,8 +6,9 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_game::native::bloodprg::{
-    PresentationPayload, PresentationPayloadKind, decode_presentation_payload,
-    decode_presentation_rect, presentation_payload_kind,
+    IndexedGamePalette, PresentationPaletteState, PresentationPayload, PresentationPayloadKind,
+    apply_presentation_palette_blocks, decode_presentation_payload, decode_presentation_rect,
+    presentation_payload_kind,
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -34,6 +35,11 @@ const STAGING_PATTERN_SEED: usize = 31;
 const FRAMEBUFFER_PATTERN_STEP: usize = 37;
 const FRAMEBUFFER_PATTERN_PAGE_STEP: usize = 13;
 const FRAMEBUFFER_PATTERN_SEED: usize = 19;
+const LIVE_PALETTE_PATTERN_STEP: usize = 29;
+const LIVE_PALETTE_PATTERN_SEED: usize = 7;
+const SNAPSHOT_PALETTE_PATTERN_STEP: usize = 43;
+const SNAPSHOT_PALETTE_PATTERN_SEED: usize = 17;
+const NONZERO_READ_WRAP_INDEX: u16 = 1;
 
 #[derive(Serialize)]
 struct DecodeTrace {
@@ -51,6 +57,20 @@ struct DecodeTrace {
     staging_sha256: Option<String>,
 }
 
+#[derive(Serialize)]
+struct PaletteTrace {
+    resource: String,
+    frame_index: Option<usize>,
+    record_kind: &'static str,
+    codec: &'static str,
+    payload_offset: usize,
+    payload_length: usize,
+    consumed_bytes: usize,
+    live_sha256: String,
+    render_snapshot_sha256: String,
+    dirty: bool,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum CodecFilter {
     Any,
@@ -62,6 +82,7 @@ enum CodecFilter {
 enum TraceMode {
     Payload,
     TransparentRectangle,
+    Palette,
 }
 
 fn main() -> Result<()> {
@@ -75,6 +96,10 @@ fn main() -> Result<()> {
     while let Some(argument) = arguments.next() {
         if argument == "--rect" {
             trace_mode = TraceMode::TransparentRectangle;
+            continue;
+        }
+        if argument == "--palette" {
+            trace_mode = TraceMode::Palette;
             continue;
         }
         if argument != "--codec" {
@@ -178,6 +203,18 @@ fn trace_resource(
     let resource = relative
         .to_string_lossy()
         .replace(std::path::MAIN_SEPARATOR, "/");
+    if trace_mode == TraceMode::Palette {
+        trace_palette_record(
+            &source,
+            path,
+            &resource,
+            None,
+            "bootstrap",
+            HNM_HEADER_EXTENT_BYTE_COUNT,
+            metadata_position,
+            output,
+        )?;
+    }
     for (frame_index, frame_offsets) in offsets.windows(2).enumerate() {
         trace_frame(
             &source,
@@ -239,10 +276,28 @@ fn trace_frame(
         marker_start = cursor;
         layout = read_word(source, cursor, path)?;
     }
+    let mut final_palette_payload = None;
     while layout == PALETTE_RECORD_MARKER {
-        cursor = side_record_end(source, marker_start, entry_end, path, frame_index)?;
+        let record_end = side_record_end(source, marker_start, entry_end, path, frame_index)?;
+        final_palette_payload = Some((marker_start + SIDE_RECORD_HEADER_BYTE_COUNT, record_end));
+        cursor = record_end;
         marker_start = cursor;
         layout = read_word(source, cursor, path)?;
+    }
+    if trace_mode == TraceMode::Palette {
+        if let Some((payload_start, payload_end)) = final_palette_payload {
+            trace_palette_record(
+                source,
+                path,
+                resource,
+                Some(frame_index),
+                "frame",
+                payload_start,
+                payload_end,
+                output,
+            )?;
+        }
+        return Ok(());
     }
     if layout == LINK_RECORD_MARKER {
         return Ok(());
@@ -353,6 +408,63 @@ fn trace_frame(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
+fn trace_palette_record(
+    source: &[u8],
+    path: &Path,
+    resource: &str,
+    frame_index: Option<usize>,
+    record_kind: &'static str,
+    payload_start: usize,
+    payload_end: usize,
+    output: &mut impl Write,
+) -> Result<()> {
+    let payload = source.get(payload_start..payload_end).with_context(|| {
+        format!(
+            "{}: {record_kind} palette payload {payload_start}..{payload_end} is truncated",
+            path.display()
+        )
+    })?;
+    let mut palette = PresentationPaletteState {
+        live: patterned_palette(LIVE_PALETTE_PATTERN_STEP, LIVE_PALETTE_PATTERN_SEED),
+        render_snapshot: patterned_palette(
+            SNAPSHOT_PALETTE_PATTERN_STEP,
+            SNAPSHOT_PALETTE_PATTERN_SEED,
+        ),
+        dirty: false,
+    };
+    let mut entry_metric = usize::MIN;
+    let outcome = apply_presentation_palette_blocks(
+        payload,
+        &mut palette,
+        u8::MIN,
+        NONZERO_READ_WRAP_INDEX,
+        &mut entry_metric,
+    )
+    .with_context(|| {
+        format!(
+            "{}: Rust rejected {record_kind} palette record for frame {frame_index:?}",
+            path.display()
+        )
+    })?;
+    let record = PaletteTrace {
+        resource: resource.to_owned(),
+        frame_index,
+        record_kind,
+        codec: "palette",
+        payload_offset: payload_start,
+        payload_length: payload.len(),
+        consumed_bytes: outcome.consumed_bytes,
+        live_sha256: palette_sha256(&palette.live),
+        render_snapshot_sha256: palette_sha256(&palette.render_snapshot),
+        dirty: palette.dirty,
+    };
+    serde_json::to_writer(&mut *output, &record)
+        .with_context(|| format!("encoding palette trace for {}", path.display()))?;
+    output.write_all(b"\n").context("writing trace newline")?;
+    Ok(())
+}
+
 fn write_trace(
     output: &mut impl Write,
     path: &Path,
@@ -369,6 +481,18 @@ fn patterned_segment(step: usize, page_step: usize, seed: usize) -> Vec<u8> {
     (usize::MIN..SEGMENT_BYTE_COUNT)
         .map(|offset| (offset * step + (offset >> u8::BITS) * page_step + seed) as u8)
         .collect()
+}
+
+fn patterned_palette(step: usize, seed: usize) -> IndexedGamePalette {
+    let mut palette = [[u8::MIN; RGB_COMPONENT_COUNT]; COMPLETE_PALETTE_COLOR_COUNT];
+    for (offset, component) in palette.iter_mut().flatten().enumerate() {
+        *component = (offset * step + seed) as u8;
+    }
+    palette
+}
+
+fn palette_sha256(palette: &IndexedGamePalette) -> String {
+    format!("{:x}", Sha256::digest(palette.as_flattened()))
 }
 
 fn palette_metadata_position(source: &[u8], header_extent: usize, path: &Path) -> Result<usize> {

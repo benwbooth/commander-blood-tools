@@ -53,6 +53,7 @@ DEFAULT_RUST_TRACE = REPO_ROOT / "target/debug/hnm-corpus-trace"
 AB_ENTRY = 0xA867
 AD_ENTRY = 0xA914
 RECT_AD_ENTRY = 0xAB25
+PALETTE_ENTRY = 0xA0C3
 AD_HELPER_ENTRY = 0xAABC
 AD_LITERAL_BIAS_SITE_ONE = 0xAAED
 AD_LITERAL_BIAS_SITE_TWO = 0xAB1D
@@ -77,6 +78,16 @@ GAME_RECT_RAW_WIDTH_OFFSET = 0x0DA4
 GAME_RECT_RAW_ROWS_OFFSET = 0x0DA6
 GAME_RECT_VERTICAL_OFFSET = 0x1FA7
 GAME_RECT_FRAMEBUFFER_SEGMENT_OFFSET = 0x5223
+GAME_PRESENTATION_FLAGS_OFFSET = 0x2751
+GAME_ENTRY_METRIC_MODE_OFFSET = 0x0D60
+GAME_LIVE_PALETTE_OFFSET = 0x5251
+GAME_RENDER_PALETTE_SNAPSHOT_OFFSET = 0x5851
+GAME_PALETTE_DIRTY_OFFSET = 0x5B55
+PALETTE_BYTE_COUNT = 256 * 3
+LIVE_PALETTE_PATTERN_STEP = 29
+LIVE_PALETTE_PATTERN_SEED = 7
+SNAPSHOT_PALETTE_PATTERN_STEP = 43
+SNAPSHOT_PALETTE_PATTERN_SEED = 17
 PROGRESS_INTERVAL = 1_000
 DEFAULT_MAXIMUM_MISMATCHES = 20
 DEFAULT_BATCH_SIZE = 256
@@ -90,6 +101,14 @@ PATTERNED_DESTINATION = bytes(
 PATTERNED_FRAMEBUFFER = bytes(
     (offset * 37 + (offset >> 8) * 13 + 19) & 0xFF
     for offset in range(SEGMENT_BYTE_COUNT)
+)
+PATTERNED_LIVE_PALETTE = bytes(
+    (offset * LIVE_PALETTE_PATTERN_STEP + LIVE_PALETTE_PATTERN_SEED) & 0xFF
+    for offset in range(PALETTE_BYTE_COUNT)
+)
+PATTERNED_RENDER_PALETTE_SNAPSHOT = bytes(
+    (offset * SNAPSHOT_PALETTE_PATTERN_STEP + SNAPSHOT_PALETTE_PATTERN_SEED) & 0xFF
+    for offset in range(PALETTE_BYTE_COUNT)
 )
 
 
@@ -293,6 +312,89 @@ class OriginalPresentationDecoder:
         )
         return staging, framebuffer, consumed
 
+    def apply_palette(self, payload: bytes) -> tuple[bytes, bytes, int, bool]:
+        if len(payload) > SEGMENT_BYTE_COUNT:
+            raise RuntimeError(f"palette payload has {len(payload)} bytes")
+        self.active_codec = "palette"
+        self.returned = False
+        source_address = SOURCE_SEGMENT * 16
+        game_address = GAME_SEGMENT * 16
+        stack_address = STACK_SEGMENT * 16 + STACK_OFFSET
+        self.machine.mem_write(source_address, ZERO_SEGMENT)
+        self.machine.mem_write(source_address, payload)
+        self.machine.mem_write(game_address, ZERO_SEGMENT)
+        self.machine.mem_write(
+            game_address + GAME_LIVE_PALETTE_OFFSET, PATTERNED_LIVE_PALETTE
+        )
+        self.machine.mem_write(
+            game_address + GAME_RENDER_PALETTE_SNAPSHOT_OFFSET,
+            PATTERNED_RENDER_PALETTE_SNAPSHOT,
+        )
+        self.machine.mem_write(
+            game_address + GAME_PRESENTATION_FLAGS_OFFSET, b"\x00"
+        )
+        self.machine.mem_write(
+            game_address + GAME_ENTRY_METRIC_MODE_OFFSET, b"\x01\x00"
+        )
+        self.machine.mem_write(
+            game_address + GAME_PALETTE_DIRTY_OFFSET, b"\x00"
+        )
+        self.machine.mem_write(stack_address, struct.pack("<H", RETURN_ADDRESS))
+
+        registers = {
+            UC_X86_REG_EAX: 0xA1A11234,
+            UC_X86_REG_EBX: 0xB2B20000,
+            UC_X86_REG_ECX: 0xC3C33456,
+            UC_X86_REG_EDX: 0xD4D44567,
+            UC_X86_REG_ESI: 0xE5E50000,
+            UC_X86_REG_EDI: 0xF6F60000,
+            UC_X86_REG_EBP: 0x97972468,
+            UC_X86_REG_SP: STACK_OFFSET,
+            UC_X86_REG_CS: 0,
+            UC_X86_REG_DS: GAME_SEGMENT,
+            UC_X86_REG_ES: SOURCE_SEGMENT,
+            UC_X86_REG_FS: 0x1800,
+            UC_X86_REG_GS: GAME_SEGMENT,
+            UC_X86_REG_SS: STACK_SEGMENT,
+            UC_X86_REG_EFLAGS: 0x0202,
+        }
+        for register, value in registers.items():
+            self.machine.reg_write(register, value)
+        try:
+            self.machine.emu_start(
+                PALETTE_ENTRY,
+                MACHINE_BYTE_COUNT - 16,
+                count=MAXIMUM_INSTRUCTION_COUNT,
+            )
+        except UcError as error:
+            raise RuntimeError(
+                "palette execution failed at "
+                f"{self.machine.reg_read(UC_X86_REG_CS):#x}:"
+                f"{self.machine.reg_read(UC_X86_REG_IP):#x}"
+            ) from error
+        if not self.returned:
+            raise RuntimeError(
+                "palette did not return; stopped at "
+                f"{self.machine.reg_read(UC_X86_REG_CS):#x}:"
+                f"{self.machine.reg_read(UC_X86_REG_IP):#x}"
+            )
+        consumed = self.machine.reg_read(UC_X86_REG_SI)
+        live = bytes(
+            self.machine.mem_read(
+                game_address + GAME_LIVE_PALETTE_OFFSET, PALETTE_BYTE_COUNT
+            )
+        )
+        snapshot = bytes(
+            self.machine.mem_read(
+                game_address + GAME_RENDER_PALETTE_SNAPSHOT_OFFSET,
+                PALETTE_BYTE_COUNT,
+            )
+        )
+        dirty = bool(
+            self.machine.mem_read(game_address + GAME_PALETTE_DIRTY_OFFSET, 1)[0]
+        )
+        return live, snapshot, consumed, dirty
+
 
 _WORKER_DECODER: OriginalPresentationDecoder | None = None
 
@@ -317,9 +419,17 @@ def compare_trace_in_worker(
         raise RuntimeError(
             f"{resource_path}: payload at {payload_offset} is truncated"
         )
-    decoded_length = int(trace["decoded_length"])
     codec = str(trace["codec"])
     try:
+        if codec == "palette":
+            live, snapshot, consumed, dirty = _WORKER_DECODER.apply_palette(payload)
+            return {
+                "live_sha256": hashlib.sha256(live).hexdigest(),
+                "render_snapshot_sha256": hashlib.sha256(snapshot).hexdigest(),
+                "consumed_bytes": consumed,
+                "dirty": dirty,
+            }
+        decoded_length = int(trace["decoded_length"])
         if codec == "rect_ad":
             staging, original_zero, consumed = _WORKER_DECODER.decode_rectangle(
                 payload, int(trace["layout"]), int(trace["row_mode"])
@@ -364,7 +474,7 @@ def comparison_record(
     return {
         "resource": trace["resource"],
         "frame_index": trace["frame_index"],
-        "codec": trace["codec"],
+        "codec": trace.get("codec", "palette"),
         "payload_offset": trace["payload_offset"],
         "reason": reason,
     }
@@ -417,6 +527,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="compare deferred transparent AD rectangle composition",
     )
+    parser.add_argument(
+        "--palette",
+        action="store_true",
+        help="compare bootstrap and effective per-frame palette records",
+    )
     return parser.parse_args()
 
 
@@ -428,8 +543,9 @@ def main() -> int:
         raise SystemExit("--max-frames must be at least one")
     if args.max_mismatches < 1:
         raise SystemExit("--max-mismatches must be at least one")
-    if args.rect and args.codec is not None:
-        raise SystemExit("--rect and --codec cannot be combined")
+    selected_modes = int(args.rect) + int(args.palette) + int(args.codec is not None)
+    if selected_modes > 1:
+        raise SystemExit("--rect, --palette, and --codec cannot be combined")
     input_path = args.input.resolve()
     trace_executable = args.rust_trace.resolve()
     if not input_path.exists():
@@ -445,6 +561,8 @@ def main() -> int:
         trace_command.extend(("--codec", args.codec))
     if args.rect:
         trace_command.append("--rect")
+    if args.palette:
+        trace_command.append("--palette")
     process = subprocess.Popen(
         trace_command,
         stdout=subprocess.PIPE,
@@ -482,6 +600,32 @@ def main() -> int:
                 print(json.dumps(mismatch, sort_keys=True))
                 continue
             consumed = int(outcome["consumed_bytes"])
+            if args.palette:
+                reason_parts = []
+                if str(outcome["live_sha256"]) != str(trace["live_sha256"]):
+                    reason_parts.append("live palette differs")
+                if str(outcome["render_snapshot_sha256"]) != str(
+                    trace["render_snapshot_sha256"]
+                ):
+                    reason_parts.append("render palette snapshot differs")
+                if consumed != int(trace["consumed_bytes"]):
+                    reason_parts.append(
+                        f"source progress differs: Rust {trace['consumed_bytes']}, original {consumed}"
+                    )
+                if bool(outcome["dirty"]) != bool(trace["dirty"]):
+                    reason_parts.append("palette dirty state differs")
+                if reason_parts:
+                    mismatch = comparison_record(trace, "; ".join(reason_parts))
+                    mismatch["record_kind"] = trace["record_kind"]
+                    mismatches.append(mismatch)
+                    print(json.dumps(mismatch, sort_keys=True))
+                if frames % PROGRESS_INTERVAL == 0:
+                    print(
+                        f"checked {frames} palette records; mismatches={len(mismatches)}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                continue
             patterned_consumed = int(outcome["patterned_consumed_bytes"])
             if patterned_consumed != consumed:
                 raise RuntimeError("destination history changed compressed-source progress")
@@ -563,11 +707,12 @@ def main() -> int:
         raise RuntimeError(f"Rust trace process exited with status {return_code}")
 
     summary = {
-        "compressed_frames_checked": frames,
-        "destination_history_sensitive_frames": history_sensitive,
+        "palette_records_checked" if args.palette else "compressed_frames_checked": frames,
         "mismatches": len(mismatches),
         "complete": not stopped_early,
     }
+    if not args.palette:
+        summary["destination_history_sensitive_frames"] = history_sensitive
     print(json.dumps(summary, sort_keys=True))
     return int(bool(mismatches))
 
