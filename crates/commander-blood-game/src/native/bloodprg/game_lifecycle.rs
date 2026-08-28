@@ -163,8 +163,6 @@ pub struct GamePresentationScheduler {
     pub dialogue_hold_complete: bool,
     /// Remaining frames in the dialogue hold.
     pub dialogue_hold_countdown: u16,
-    /// The secondary pointer press latch is active.
-    pub secondary_pointer_pressed: bool,
     /// Text and sequence requests published by BloodScript.
     pub request_flags: PresentationRequestFlags,
     /// A scene resource is currently active.
@@ -208,7 +206,6 @@ impl Default for GamePresentationScheduler {
             word_choice_active: false,
             dialogue_hold_complete: false,
             dialogue_hold_countdown: u16::MIN,
-            secondary_pointer_pressed: false,
             request_flags: PresentationRequestFlags::default(),
             scene_gate_active: false,
             sequence_active: false,
@@ -669,6 +666,7 @@ pub fn update_game_presentation_ownership(
     state: &mut GameLifecycleState,
     scene_link: &mut GameSceneLink,
 ) {
+    let secondary_pointer_pressed = state.secondary_pointer_pressed;
     let presentation = &mut state.presentation;
     let mut active_hold_path = false;
 
@@ -698,9 +696,7 @@ pub fn update_game_presentation_ownership(
         if presentation.word_buffer_nonempty {
             presentation.word_choice_active = presentation.active;
         }
-        if presentation.dialogue_hold_countdown == u16::MIN
-            || presentation.secondary_pointer_pressed
-        {
+        if presentation.dialogue_hold_countdown == u16::MIN || secondary_pointer_pressed {
             presentation.dialogue_hold_complete = false;
             presentation.hold_ready = presentation.active;
             if !presentation.hold_ready {
@@ -724,7 +720,7 @@ pub fn update_game_presentation_ownership(
         && !presentation.request_flags.secondary_request_pending()
     {
         let request_or_countdown = presentation.request_flags.any_request_pending()
-            || presentation.dialogue_hold_countdown != u16::MIN;
+            || presentation.dialogue_hold_countdown as u8 != u8::MIN;
         if request_or_countdown {
             if presentation.text_menu_pending {
                 presentation.text_menu_pending = false;

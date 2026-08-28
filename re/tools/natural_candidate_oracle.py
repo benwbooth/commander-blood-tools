@@ -711,6 +711,13 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
         {"name": "dialogue_countdown_holds_completion", "frames": 1,
          "hold_complete": 1, "word_choice": 0x1234,
          "dialogue_countdown": 1},
+        {"name": "secondary_click_releases_dialogue_hold", "frames": 1,
+         "hold_complete": 1, "word_choice": 0x1234,
+         "dialogue_countdown": 1, "secondary_pressed": 1},
+        {"name": "dialogue_gate_uses_countdown_low_byte", "frames": 1,
+         "presentation_active": 1, "scene_gate": 1,
+         "active_line": 7, "entry_metric": 5, "wrap_index": 1,
+         "owner_offset": 0x5E64, "dialogue_countdown": 0x0100},
     )
     vectors = []
 
@@ -822,7 +829,8 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
                            int(case.get("word_choice", 0)))
             game_write_u16(machine, 0x0B35,
                            int(case.get("dialogue_countdown", 0)))
-            game_write_u8(machine, 0x0A3F, 0)
+            game_write_u8(machine, 0x0A3F,
+                          int(case.get("secondary_pressed", 0)))
             game_write_u8(machine, 0x1FB3, 0)
             game_write_u8(machine, 0x27EB,
                           int(case.get("audio_pending", 0)))
@@ -831,7 +839,9 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
             game_write_u8(machine, 0x0CFB,
                           int(case.get("voice_mode", 0)))
             game_write_u8(machine, 0x0DB8, 0)
-            game_write_u8(machine, 0x0A40, 0)
+            game_write_u8(machine, 0x0A40,
+                          int(case.get("press_pending", 1
+                              if case.get("secondary_pressed", 0) else 0)))
             game_write_u8(machine, 0x27E0,
                           int(case.get("presentation_mode", 1)))
 
@@ -1134,6 +1144,12 @@ def bloodprg_main_vectors() -> list[dict[str, object]]:
         if name == "dialogue_countdown_holds_completion":
             if data_after[0x67BB] != 1 or data_after[0x27D7] != 0:
                 raise AssertionError(f"0x0EB0 {name}: hold state changed")
+        if name == "secondary_click_releases_dialogue_hold":
+            if data_after[0x67BB] != 0 or data_after[0x27D7] != 0:
+                raise AssertionError(f"0x0EB0 {name}: hold was not released")
+        if name == "dialogue_gate_uses_countdown_low_byte":
+            if data_after[0x5E64] != 1 or game_read_u16(machine, 0x6788) != 8:
+                raise AssertionError(f"0x0EB0 {name}: high countdown byte gated presentation")
 
         expected_handles = [0x1111, 0x2222, 0x3333, 0x4444] if open_ok else []
         closed_handles = [

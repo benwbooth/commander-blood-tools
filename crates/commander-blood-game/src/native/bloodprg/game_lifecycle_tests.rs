@@ -2,11 +2,13 @@ use serde::Deserialize;
 
 use super::*;
 
-const ORACLE_VECTOR_COUNT: usize = 11;
+const ORACLE_VECTOR_COUNT: usize = 13;
 const LOGICAL_VIEWPORT: [u64; 6] = [0, 1, 4, 320, 200, 0];
 const INITIAL_SCENE_LINK_OFFSET: u16 = 16;
 const SUBTITLE_OWNER_OFFSET: u16 = 24_164;
 const MENU_WORDS_OFFSET: u16 = 0;
+const ONE_FRAME_POINTER_PRESS_LATCH: u8 = 1;
+const COUNTDOWN_WITH_ZERO_LOW_BYTE: u16 = 256;
 
 #[test]
 fn text_only_selector_selects_character_idle_line() {
@@ -57,6 +59,8 @@ struct Scenario {
     dialogue_hold_complete: bool,
     word_buffer_nonempty: bool,
     dialogue_hold_countdown: u16,
+    secondary_pointer_pressed: bool,
+    pointer_press_pending: u8,
 }
 
 impl Default for Scenario {
@@ -81,6 +85,8 @@ impl Default for Scenario {
             dialogue_hold_complete: false,
             word_buffer_nonempty: false,
             dialogue_hold_countdown: u16::MIN,
+            secondary_pointer_pressed: false,
+            pointer_press_pending: u8::MIN,
         }
     }
 }
@@ -368,7 +374,8 @@ fn apply_scenario(state: &mut GameLifecycleState, scenario: Scenario) {
     state.exit_requested = false;
     state.pause_hud_active = false;
     state.pointer_position_locked = false;
-    state.pointer_press_pending = u8::MIN;
+    state.pointer_press_pending = scenario.pointer_press_pending;
+    state.secondary_pointer_pressed = scenario.secondary_pointer_pressed;
     state.set_modal_ui_busy(false);
     state.set_navigation_ui_busy(false);
     state.pending_profile = scenario.pending_profile;
@@ -458,6 +465,26 @@ fn scenario_for(name: &str) -> Scenario {
             dialogue_hold_complete: true,
             word_buffer_nonempty: true,
             dialogue_hold_countdown: 1,
+            ..Scenario::default()
+        },
+        "secondary_click_releases_dialogue_hold" => Scenario {
+            frames: 1,
+            dialogue_hold_complete: true,
+            word_buffer_nonempty: true,
+            dialogue_hold_countdown: 1,
+            secondary_pointer_pressed: true,
+            pointer_press_pending: ONE_FRAME_POINTER_PRESS_LATCH,
+            ..Scenario::default()
+        },
+        "dialogue_gate_uses_countdown_low_byte" => Scenario {
+            frames: 1,
+            presentation_active: true,
+            scene_gate_active: true,
+            active_line: Some(7),
+            list_entry_metric: 5,
+            list_read_wrap_index: 1,
+            owner: Some(GamePresentationOwner::Subtitle),
+            dialogue_hold_countdown: COUNTDOWN_WITH_ZERO_LOW_BYTE,
             ..Scenario::default()
         },
         other => panic!("unknown main-loop oracle {other}"),
@@ -599,6 +626,17 @@ fn assert_case_state(name: &str, state: &GameLifecycleState) {
         "dialogue_countdown_holds_completion" => {
             assert!(state.presentation.dialogue_hold_complete);
             assert!(!state.presentation.word_choice_active);
+        }
+        "secondary_click_releases_dialogue_hold" => {
+            assert!(!state.presentation.dialogue_hold_complete);
+            assert!(!state.presentation.word_choice_active);
+        }
+        "dialogue_gate_uses_countdown_low_byte" => {
+            assert!(state.presentation.subtitle_display_active);
+            assert_eq!(
+                state.presentation.active_line,
+                Some(DEFAULT_PRESENTATION_LINE)
+            );
         }
         "zero_owner_selects_menu_word_buffer" => {
             assert_eq!(
