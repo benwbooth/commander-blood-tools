@@ -13,7 +13,8 @@ use crate::native::bloodprg::{
     PresentationScreenBackend, PresentationScreenOutcome, PresentationScreenState, RasterNoiseMode,
     RasterPoint, RasterSpanPaint, SceneTransitionLine, SceneTransitionPhase, SceneTransitionState,
     ScriptPresentationScanState, SequenceSubtitlePlayback, SequenceSubtitleRenderer,
-    ShipPresentationState, build_banked_tint_table, draw_framebuffer_noise_rect, draw_rect_outline,
+    ShipPresentationState, build_banked_tint_table, decode_active_presentation_line,
+    draw_framebuffer_noise_rect, draw_rect_outline, encode_active_presentation_line,
     fill_framebuffer_rect, present_sequence_subtitle, remap_framebuffer_rect,
     update_presentation_screen,
 };
@@ -244,7 +245,7 @@ fn import_ship_scene_state(
     ship: &ShipPresentationState,
     scene: &mut PresentationSceneDispatchState<DescriptBackgroundSlot>,
 ) {
-    scene.presentation.active_line = (ship.active_line != u16::MIN).then_some(ship.active_line);
+    scene.presentation.active_line = decode_active_presentation_line(ship.active_line);
     scene.presentation.gate_flags = (scene.presentation.gate_flags & !PRESENTATION_ACTIVE_GATE)
         | u8::from(ship.presentation_gate & u16::from(PRESENTATION_ACTIVE_GATE) != u16::MIN);
     scene.presentation.bridge_redraw_pending = ship.bridge_redraw_pending;
@@ -259,7 +260,7 @@ fn export_ship_scene_state(
     scene: &PresentationSceneDispatchState<DescriptBackgroundSlot>,
     ship: &mut ShipPresentationState,
 ) {
-    ship.active_line = scene.presentation.active_line.unwrap_or(u16::MIN);
+    ship.active_line = encode_active_presentation_line(scene.presentation.active_line);
     ship.presentation_gate = (ship.presentation_gate & !u16::from(PRESENTATION_ACTIVE_GATE))
         | u16::from(scene.presentation.gate_flags & PRESENTATION_ACTIVE_GATE);
     ship.bridge_redraw_pending = scene.presentation.bridge_redraw_pending;
@@ -652,7 +653,10 @@ mod tests {
         scene.presentation.bridge_redraw_pending = u8::MIN;
         export_ship_scene_state(&scene, &mut ship);
 
-        assert_eq!(ship.active_line, u16::MIN);
+        assert_eq!(
+            ship.active_line,
+            crate::native::bloodprg::NO_PRESENTATION_LINE
+        );
         assert_eq!(ship.presentation_gate, EXPORTED_PRESENTATION_GATE);
         assert!(!ship.scene_dispatch_blocked);
         assert_eq!(ship.flags, EXPORTED_SHIP_FLAGS);

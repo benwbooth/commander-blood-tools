@@ -158,8 +158,8 @@ pub use actor_handler_panel::{
     PanelCloseActorState, update_panel_close_actor,
 };
 pub use actor_handler_radio::{
-    RadioActorBackend, RadioActorDeferredAction, RadioActorOutcome, RadioActorPresentation,
-    RadioActorState, update_radio_actor,
+    RADIO_HAND_ANIMATION_SELECTOR, RadioActorBackend, RadioActorDeferredAction, RadioActorOutcome,
+    RadioActorPresentation, RadioActorState, update_radio_actor,
 };
 pub use actor_position_state::{
     ActorPositionStateContext, ActorPositionStateError, ActorPositionStateOutcome,
@@ -299,7 +299,7 @@ pub use game_lifecycle::{
     GameLifecycleError, GameLifecycleExit, GameLifecycleHost, GameLifecycleOutcome,
     GameLifecycleState, GameMenuWordSource, GamePresentationOwner, GamePresentationScheduler,
     GameProfileChangeBlockers, GameProfileLoadStatus, GameSceneLink, GameVmRunStatus,
-    run_game_lifecycle,
+    run_game_lifecycle, update_game_presentation_ownership,
 };
 pub use hud_refresh::{
     PAUSE_HUD_PALETTE_INDEX, PauseHudRectangle, PauseHudRefresh, build_pause_hud_refresh,
@@ -420,8 +420,9 @@ pub use presentation_hover::{
     PresentationHoverOutcome, PresentationHoverState, update_presentation_hover,
 };
 pub use presentation_line::{
-    PresentationLine, PresentationLineBackend, PresentationLineFlags, PresentationLineOutcome,
-    PresentationLinePlayback, PresentationLineStepper, PresentationResourceId,
+    NO_PRESENTATION_LINE, PresentationLine, PresentationLineBackend, PresentationLineFlags,
+    PresentationLineOutcome, PresentationLinePlayback, PresentationLineStepper,
+    PresentationResourceId, decode_active_presentation_line, encode_active_presentation_line,
     update_presentation_line,
 };
 pub use presentation_mode::{PresentationBridgeMode, update_presentation_bridge_mode};

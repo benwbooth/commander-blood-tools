@@ -134,14 +134,18 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
         image: &DescriptBackgroundSlot,
         scene_palette: &mut IndexedGamePalette,
     ) -> Result<()> {
-        let encoded = self
-            .services
-            .script_backend()
-            .backgrounds()
-            .get(*image)
-            .with_context(|| format!("DESCRIPT background slot {image:?} is not loaded"))?
-            .encoded_image()
-            .to_vec();
+        let Some(background) = self.services.script_backend().backgrounds().get(*image) else {
+            // The executable initializes all four FD path slots with placeholder
+            // names. Its scene dispatcher ignores PBM load failure, retaining the
+            // existing back buffer for character video over the bridge.
+            return Ok(());
+        };
+        let encoded = background.encoded_image().to_vec();
+        if encoded.is_empty() {
+            // Missing authored FD resources follow the same ignored PBM failure
+            // path as the executable and leave both pixels and palette intact.
+            return Ok(());
+        }
         let (_front, back) = self.services.runtime_mut().presentation_buffers_mut();
         decode_pbm_image(
             &encoded,

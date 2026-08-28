@@ -152,6 +152,7 @@ impl RuntimeScriptSystem {
         text.subtitle_word_list_mode = source.subtitle_word_list_mode;
         text.subtitle_voice_trigger = source.subtitle_voice_trigger;
         text.menu_pending = source.text_menu_pending;
+        text.selected_line = source.text_selector;
         text.dialogue_hold_countdown = source.dialogue_hold_countdown;
         self.dispatch.record_clear_presentation.sequence_active = source.sequence_active;
 
@@ -191,6 +192,7 @@ impl RuntimeScriptSystem {
         target.subtitle_word_list_mode = text.subtitle_word_list_mode;
         target.subtitle_voice_trigger = text.subtitle_voice_trigger;
         target.text_menu_pending = text.menu_pending;
+        target.text_selector = text.selected_line;
         target.word_buffer_nonempty = text.menu_word_count != usize::MIN;
         target.dialogue_hold_countdown = text.dialogue_hold_countdown;
         target.sequence_active = self.dispatch.record_clear_presentation.sequence_active;
@@ -878,9 +880,14 @@ mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
     use commander_blood_formats::code::decode_script_code;
-    use commander_blood_formats::instruction::{ScriptTextWord, decode_script_profile_request};
+    use commander_blood_formats::instruction::{
+        ScriptTextWord, ScriptTimerSlot, decode_script_profile_request,
+    };
 
-    use crate::native::bloodprg::{ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptFrameEnd, ScriptProfileId};
+    use crate::native::bloodprg::{
+        GameTimerContext, GameTimerState, ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptFrameEnd,
+        ScriptProfileId, advance_game_timer_tick,
+    };
 
     use super::super::OriginalGameDataPaths;
     use super::*;
@@ -897,6 +904,14 @@ mod tests {
     const SCRIPT_END_OPCODE: u8 = 0xFF;
     const REQUESTED_PROFILE_NUMBER: u8 = 3;
     const ALL_PRESENTATION_REQUESTS: u8 = 3;
+    const STARTUP_PHONE_TIMER_SLOT: u8 = 22;
+    const STARTUP_PHONE_TIMER_VALUE: u16 = 5;
+    const TIMER_TICKS_PER_GAME_FRAME: usize = 8;
+    const STARTUP_PHONE_FRAME_LIMIT: usize = 160;
+    const IZWALITO_NAME: &[u8] = b"Izwalito";
+    const IZWALITO_IDLE_VIDEO: &[u8] = b"aaisw.hnm";
+    const TEXT_ONLY_PRESENTATION_SELECTOR: i8 = -1;
+    const IZWALITO_FIRST_WORD: &[u8] = b"You";
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(std::path::PathBuf);
@@ -1150,7 +1165,7 @@ mod tests {
     }
 
     #[test]
-    fn completed_phone_actor_handoff_reaches_honk_dialogue() {
+    fn startup_phone_timer_queues_and_answers_izwalito_through_authored_script() {
         let Some(paths) = original_data_paths() else {
             return;
         };
@@ -1161,28 +1176,95 @@ mod tests {
         scripts
             .load_profile(&mut runtime, ScriptProfileId::INITIAL)
             .unwrap();
-        let honk = runtime.current_profile().unwrap().builtins().horn.unwrap();
+        let izwalito = runtime
+            .current_profile()
+            .unwrap()
+            .directory()
+            .find_active_object(IZWALITO_NAME)
+            .unwrap();
+        let timer_slot = ScriptTimerSlot::decode(STARTUP_PHONE_TIMER_SLOT).unwrap();
         let mut lifecycle = GameLifecycleState::default();
         lifecycle.vm_execution_enabled = true;
+        lifecycle.presentation.scene_gate_active = true;
         lifecycle.set_presentation_interface_active(true);
-        scripts.defer_actor_presentation(honk);
 
-        let promotion = scripts
+        scripts
             .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
             .unwrap();
-        assert_eq!(promotion.presentation_yields, usize::MIN);
+        assert_eq!(
+            runtime
+                .current_profile()
+                .unwrap()
+                .runtime()
+                .timer(timer_slot),
+            STARTUP_PHONE_TIMER_VALUE
+        );
+
+        let mut timer = GameTimerState::default();
+        timer.start();
+        for _ in usize::MIN..STARTUP_PHONE_FRAME_LIMIT {
+            for _ in usize::MIN..TIMER_TICKS_PER_GAME_FRAME {
+                advance_game_timer_tick(
+                    &mut timer,
+                    runtime.current_profile_mut().unwrap().runtime_mut(),
+                    GameTimerContext::default(),
+                );
+            }
+            scripts
+                .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
+                .unwrap();
+            if scripts.action_state().pending_presentation_owner == Some(izwalito) {
+                break;
+            }
+        }
+
+        assert_eq!(
+            scripts.action_state().pending_presentation_owner,
+            Some(izwalito),
+            "SCRIPT1 never queued the startup Izwalito phone presentation"
+        );
+        assert!(!lifecycle.presentation.active);
+
+        scripts.action_state_mut().pending_presentation_owner = None;
+        scripts.defer_actor_presentation(izwalito);
+        scripts
+            .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
+            .unwrap();
 
         let dialogue = scripts
             .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
             .unwrap();
         assert!(lifecycle.presentation.active);
-        assert_ne!(dialogue.presentation_yields, usize::MIN);
-        assert!(scripts.text_presentation().subtitle_display_active);
-        assert!(
+        assert_eq!(
+            scripts.backend().active_description_object(),
+            Some(izwalito)
+        );
+        assert_eq!(
             scripts
-                .text_presentation()
-                .subtitle_text
-                .starts_with(b"Welcome aboard")
+                .backend()
+                .assets()
+                .idle_clip()
+                .unwrap()
+                .video()
+                .as_bytes(),
+            IZWALITO_IDLE_VIDEO
+        );
+        assert_ne!(dialogue.presentation_yields, usize::MIN);
+        let text = scripts.text_presentation();
+        assert!(!text.subtitle_display_active);
+        assert!(text.menu_deferred);
+        assert_eq!(text.selected_line, Some(TEXT_ONLY_PRESENTATION_SELECTOR));
+        let first_word = match text.menu_words.first() {
+            Some(ScriptTextWord::Dictionary(word)) => *word,
+            other => panic!("unexpected first Izwalito word: {other:?}"),
+        };
+        assert_eq!(
+            runtime
+                .current_profile()
+                .unwrap()
+                .dictionary()
+                .word(first_word),
+            Some(IZWALITO_FIRST_WORD)
         );
     }
 

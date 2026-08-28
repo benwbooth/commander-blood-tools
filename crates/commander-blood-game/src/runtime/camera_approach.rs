@@ -4,7 +4,8 @@ use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
     CameraApproachContext, CameraApproachHost, CameraApproachOutcome, GameLifecycleState,
-    GameSceneLink, ShipViewEntityId, update_camera_approach,
+    GameSceneLink, ShipViewEntityId, decode_active_presentation_line,
+    encode_active_presentation_line, update_camera_approach,
 };
 
 use super::ModernGameServices;
@@ -28,11 +29,8 @@ pub(super) fn update_runtime_camera_approach<'window>(
         .sequence_names()
         .clone();
     let mut state = services.runtime_mut().take_camera_approach();
-    {
-        let ship = services.ship_presentation_state();
-        state.active_line = ship.active_line;
-        state.presentation_pending = ship.presentation_gate & PRESENTATION_GATE_ACTIVE != u16::MIN;
-    }
+    state.active_line = encode_active_presentation_line(lifecycle.presentation.active_line);
+    state.presentation_pending = lifecycle.presentation.c2_presentation_gate;
 
     let native_result;
     let deferred_error;
@@ -82,8 +80,7 @@ pub(super) fn update_runtime_camera_approach<'window>(
         ship.presentation_gate = (ship.presentation_gate & !PRESENTATION_GATE_ACTIVE)
             | u16::from(state.presentation_pending);
     }
-    lifecycle.presentation.active_line =
-        (state.active_line != u16::MIN).then_some(state.active_line);
+    lifecycle.presentation.active_line = decode_active_presentation_line(state.active_line);
     lifecycle.presentation.c2_presentation_gate = state.presentation_pending;
     lifecycle.set_modal_ui_busy(state.ui_active);
     lifecycle

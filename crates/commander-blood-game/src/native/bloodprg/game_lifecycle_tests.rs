@@ -8,6 +8,25 @@ const INITIAL_SCENE_LINK_OFFSET: u16 = 16;
 const SUBTITLE_OWNER_OFFSET: u16 = 24_164;
 const MENU_WORDS_OFFSET: u16 = 0;
 
+#[test]
+fn text_only_selector_selects_character_idle_line() {
+    let mut state = GameLifecycleState::default();
+    state.presentation.active = true;
+    state.presentation.scene_gate_active = true;
+    state.presentation.request_flags = PresentationRequestFlags::decode(1);
+    state.presentation.text_menu_pending = true;
+    state.presentation.text_selector = Some(-1);
+    let mut scene_link = GameSceneLink::Initial;
+
+    update_game_presentation_ownership(&mut state, &mut scene_link);
+
+    assert_eq!(
+        state.presentation.active_line,
+        Some(DEFAULT_PRESENTATION_LINE)
+    );
+    assert!(!state.presentation.c2_presentation_gate);
+}
+
 #[derive(Deserialize)]
 struct MainOracle {
     name: String,

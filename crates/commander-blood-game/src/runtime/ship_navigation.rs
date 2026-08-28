@@ -14,8 +14,8 @@ use crate::native::bloodprg::{
     ShipNavigationAccessCounter, ShipNavigationCandidate, ShipNavigationContext,
     ShipNavigationHost, ShipNavigationOutcome, ShipNavigationRelation, ShipNavigationState,
     TransitionRect, advance_framebuffer_rect_transition, build_palette_blend_remap_table,
-    measure_game_text_width, navigation_candidates, remap_framebuffer_rect, script_field_offset,
-    update_choice_list, update_ship_navigation,
+    encode_active_presentation_line, measure_game_text_width, navigation_candidates,
+    remap_framebuffer_rect, script_field_offset, update_choice_list, update_ship_navigation,
 };
 
 use super::choice_list::{RuntimeChoiceListStyle, draw_choice_list_rows};
@@ -390,7 +390,7 @@ fn export_live_state(
         ship.depth_band_enabled = state.depth_band_enabled;
         ship.presentation_gate = state.presentation_gate;
         ship.bridge_redraw_pending = u8::from(state.trigger_requested);
-        ship.active_line = state.active_line.unwrap_or(u16::MIN);
+        ship.active_line = encode_active_presentation_line(state.active_line);
     }
     {
         let text = services.text_presentation_mut();

@@ -14,12 +14,12 @@ use crate::native::bloodprg::{
     NavActorMouseState, NavActorSeekState, NavActorSlot, NavActorSlotBackend,
     NavActorSlotUpdateOutcome, PanelCloseActorBackend, PanelCloseActorState,
     PresentationBridgeMode, PresentationLine, PresentationLineOutcome, PresentationLinePlayback,
-    PresentationLineStepper, PrimaryPointerSample, RadioActorBackend, RadioActorOutcome,
-    RadioActorState, ShipPaletteActorBackend, ShipPaletteActorOutcome, ShipPaletteActorState,
-    ShipViewEntityId, latch_primary_pointer_hit, update_black_hole_presentation_actor,
-    update_camera_presentation_actor, update_hyperjump_presentation_actor, update_nav_actor_slots,
-    update_panel_close_actor, update_presentation_line, update_radio_actor,
-    update_ship_palette_actor,
+    PresentationLineStepper, PrimaryPointerSample, RADIO_HAND_ANIMATION_SELECTOR,
+    RadioActorBackend, RadioActorOutcome, RadioActorState, ShipPaletteActorBackend,
+    ShipPaletteActorOutcome, ShipPaletteActorState, ShipViewEntityId, latch_primary_pointer_hit,
+    update_black_hole_presentation_actor, update_camera_presentation_actor,
+    update_hyperjump_presentation_actor, update_nav_actor_slots, update_panel_close_actor,
+    update_presentation_line, update_radio_actor, update_ship_palette_actor,
 };
 
 use super::ModernGameServices;
@@ -531,6 +531,11 @@ impl CameraPresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl RadioActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn request_radio_hand_animation(&mut self) {
+        self.services
+            .request_manu3_animation(RADIO_HAND_ANIMATION_SELECTOR);
+    }
+
     fn play_radio_completion_clip(&mut self) {
         let result = self
             .services

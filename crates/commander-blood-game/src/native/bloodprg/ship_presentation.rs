@@ -1,10 +1,10 @@
 //! Top-level ship presentation phase coordinator.
 
-use super::ShipViewEntityId;
 use super::ship_depth::{
     ShipDepthBandLayout, ShipDepthTransition, ShipDepthTransitionOutcome, advance_ship_depth,
     prepare_ship_depth_band,
 };
+use super::{NO_PRESENTATION_LINE, ShipViewEntityId};
 
 const PRESENTATION_ACTIVE: u16 = 1;
 const DIALOGUE_PHASE: u16 = 2;
@@ -26,7 +26,7 @@ const DIALOGUE_ENTITY: ShipViewEntityId = ShipViewEntityId::new(4);
 const SHIP_VIEW_TRANSITION_ENTITY: ShipViewEntityId = ShipViewEntityId::new(31);
 
 /// Mutable state read and written by the ship presentation FSM.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ShipPresentationState {
     /// Active and phase bits. Unknown high bits remain intact during setup.
     pub flags: u16,
@@ -60,6 +60,29 @@ pub struct ShipPresentationState {
     pub bridge_redraw_pending: u8,
     /// Script line requested by the current presentation phase.
     pub active_line: u16,
+}
+
+impl Default for ShipPresentationState {
+    fn default() -> Self {
+        Self {
+            flags: u16::MIN,
+            clip_snapshot_ready: false,
+            ui_state: u16::MIN,
+            dialogue_cycle_line: u16::MIN,
+            scene_dispatch_blocked: false,
+            depth_offset: u16::MIN,
+            depth_opening_flags: u8::MIN,
+            depth_closing_flags: u8::MIN,
+            depth_step: u8::MIN,
+            depth_band_enabled: false,
+            dialogue_phase_ready: u8::MIN,
+            presentation_gate: u16::MIN,
+            hud_initialization_pending: u8::MIN,
+            transition_percent: u16::MIN,
+            bridge_redraw_pending: u8::MIN,
+            active_line: NO_PRESENTATION_LINE,
+        }
+    }
 }
 
 impl ShipPresentationState {

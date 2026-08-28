@@ -3393,7 +3393,9 @@ mod tests {
     use commander_blood_formats::script::decode_script_dictionary;
 
     use super::*;
-    use crate::native::bloodprg::{ChoiceListRowKind, PointerButton, ScriptDeferredRecord};
+    use crate::native::bloodprg::{
+        ChoiceListRowKind, PointerButton, ScriptDeferredRecord, update_game_presentation_ownership,
+    };
     use crate::runtime::OriginalGameDataPaths;
     use crate::runtime::camera_approach::update_runtime_camera_approach;
 
@@ -3490,6 +3492,9 @@ mod tests {
     const TARGET_SELECTOR_SETTLE_FRAME_LIMIT: usize = 16;
     const PHONE_BRIDGE_TARGET_ARC: u16 = 90;
     const PHONE_BRIDGE_VIEW_FRAME: i16 = 45;
+    const IZWALITO_NAME: &[u8] = b"Izwalito";
+    const IZWALITO_IDLE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(8);
+    const IZWALITO_IDLE_VIDEO: &[u8] = b"PE\\aaisw.hnm";
     const AUTHORED_RADIO_TERMINAL_FRAME: u16 = 11;
     const RADIO_COMPLETION_FRAME_LIMIT: usize = AUTHORED_RADIO_TERMINAL_FRAME as usize + 2;
     const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
@@ -3565,6 +3570,8 @@ mod tests {
         let writable_root = TemporaryRoot::create();
         let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
         let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        let mut platform =
+            RuntimePlatformHost::new(&window, sdl.mouse(), sdl.event_pump().unwrap());
 
         let startup = services.prepare_startup_resources().unwrap();
         assert!(startup.write_directory_created);
@@ -3707,6 +3714,13 @@ mod tests {
             .builtins()
             .horn
             .unwrap();
+        let izwalito = services
+            .runtime()
+            .current_profile()
+            .unwrap()
+            .directory()
+            .find_active_object(IZWALITO_NAME)
+            .expect("SCRIPT1 must contain Izwalito");
         let mut lifecycle = GameLifecycleState::default();
         services
             .request_bridge_seek(PHONE_BRIDGE_TARGET_ARC)
@@ -4025,7 +4039,7 @@ mod tests {
         services
             .scripts
             .action_state_mut()
-            .pending_presentation_owner = Some(horn);
+            .pending_presentation_owner = Some(izwalito);
         let actor_pointer = services.input_mut().poll_pointer(
             TEST_OUTPUT_SIZE,
             [
@@ -4073,8 +4087,26 @@ mod tests {
             AUTHORED_RADIO_TERMINAL_FRAME
         );
         assert_eq!(
+            services.nav_actor_slots[station_index].line.resource.get(),
+            AUTHORED_ACTOR_RESOURCES[station_index]
+        );
+        assert_eq!(
+            services.nav_actor_slots[station_index].line.position,
+            AUTHORED_ACTOR_DRAW_POSITIONS[station_index]
+        );
+        assert_eq!(
             services.nav_actor_slots[station_index].line.frame,
             FIRST_ADVANCED_PRESENTATION_FRAME
+        );
+        assert_eq!(
+            services.manu3_hand_state().requested_animation,
+            crate::native::bloodprg::RADIO_HAND_ANIMATION_SELECTOR,
+            "answering the radio must preserve the DS:0x0A32 hand-animation alias"
+        );
+        assert!(services.update_lifecycle_manu3(&lifecycle).unwrap());
+        assert_eq!(
+            services.manu3_hand_state().current_animation,
+            crate::native::bloodprg::RADIO_HAND_ANIMATION_SELECTOR
         );
         for _ in usize::MIN..RADIO_COMPLETION_FRAME_LIMIT {
             services
@@ -4088,10 +4120,103 @@ mod tests {
         assert_eq!(
             services.presentation_scan_state().deferred,
             crate::native::bloodprg::ScriptDeferredRecord::Complete {
-                record: crate::native::bloodprg::ScriptActionRecord::ActorPresentation(horn),
+                record: crate::native::bloodprg::ScriptActionRecord::ActorPresentation(izwalito),
                 actionable: true,
             }
         );
+        let mut phone_lifecycle = lifecycle.clone();
+        phone_lifecycle.vm_execution_enabled = true;
+        phone_lifecycle.presentation.scene_gate_active = true;
+        phone_lifecycle.set_presentation_interface_active(true);
+        services
+            .execute_and_apply_lifecycle_script_frame(&mut phone_lifecycle)
+            .unwrap();
+        services
+            .execute_and_apply_lifecycle_script_frame(&mut phone_lifecycle)
+            .unwrap();
+        let mut phone_scene_link = GameSceneLink::Initial;
+        update_game_presentation_ownership(&mut phone_lifecycle, &mut phone_scene_link);
+        assert_eq!(
+            services.script_backend().active_description_object(),
+            Some(izwalito)
+        );
+        assert_eq!(
+            services
+                .presentation_catalog()
+                .resource_name(IZWALITO_IDLE_PRESENTATION_LINE)
+                .expect("Izwalito DESCRIPT must select an idle video")
+                .as_bytes(),
+            IZWALITO_IDLE_VIDEO
+        );
+        assert_eq!(
+            phone_lifecycle.presentation.active_line,
+            Some(IZWALITO_IDLE_PRESENTATION_LINE.get())
+        );
+        let bridge_before_phone_video = services.runtime().front_buffer().pixels().to_vec();
+        services.ship_presentation_state_mut().flags = 1;
+        assert_eq!(
+            services
+                .update_runtime_ship_presentation(
+                    phone_scene_link,
+                    &mut phone_lifecycle,
+                    &mut platform,
+                )
+                .unwrap(),
+            ShipPresentationOutcome::Initialized
+        );
+        assert_eq!(
+            phone_lifecycle.presentation.active_line,
+            Some(IZWALITO_IDLE_PRESENTATION_LINE.get())
+        );
+        assert_eq!(
+            services
+                .update_runtime_ship_presentation(
+                    phone_scene_link,
+                    &mut phone_lifecycle,
+                    &mut platform,
+                )
+                .unwrap(),
+            ShipPresentationOutcome::DialogueBlocked
+        );
+        assert!(phone_lifecycle.presentation.c2_presentation_gate);
+        assert!(services.presentation_stream_active());
+        assert_ne!(services.presentation_decoded_frame_count(), u64::MIN);
+        services
+            .set_presentation_screen_active(phone_lifecycle.presentation_interface_active())
+            .unwrap();
+        assert!(services.presentation_screen_state().unwrap().active());
+        assert_eq!(
+            select_bridge_composition(
+                services.presentation_stream_active(),
+                services.presentation_screen_state().unwrap().active(),
+                false,
+                false,
+            ),
+            RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel,
+            "the bridge must remain visible behind the authored phone-video panel"
+        );
+        let phone_video_frame = services.runtime().front_buffer().pixels();
+        let phone_video_start = 320 * 10;
+        let phone_video_end = 320 * 140;
+        assert_ne!(
+            &phone_video_frame[phone_video_start..phone_video_end],
+            &bridge_before_phone_video[phone_video_start..phone_video_end],
+            "Izwalito video did not update the authored bridge panel"
+        );
+        assert_eq!(
+            services
+                .cancel_lifecycle_presentation(&mut phone_lifecycle)
+                .unwrap(),
+            InputCancellationOutcome::ForwardedToText,
+            "the native Escape handler reserves character lines 8 through 40 for dialogue input"
+        );
+        assert!(services.presentation_stream_active());
+        services.finish_bridge_actor_scene_presentation(&mut phone_lifecycle);
+        services
+            .update_runtime_ship_presentation(phone_scene_link, &mut phone_lifecycle, &mut platform)
+            .unwrap();
+        assert!(!phone_lifecycle.presentation.c2_presentation_gate);
+        assert!(!services.presentation_stream_active());
         services.clear_pending_ship_presentation_owner();
         services.input_mut().poll_pointer(
             [320.0, 200.0],

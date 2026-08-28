@@ -140,6 +140,8 @@ pub struct GamePresentationScheduler {
     pub sequence_active: bool,
     /// A menu selection must replace the current presentation line.
     pub text_menu_pending: bool,
+    /// Signed A6 presentation selector added to line-table base nine.
+    pub text_selector: Option<i8>,
     /// C2 presentation work owns the current line.
     pub c2_presentation_gate: bool,
     /// Current authored presentation line, if any.
@@ -178,6 +180,7 @@ impl Default for GamePresentationScheduler {
             scene_gate_active: false,
             sequence_active: false,
             text_menu_pending: false,
+            text_selector: None,
             c2_presentation_gate: false,
             active_line: None,
             list_entry_metric: u16::MIN,
@@ -593,7 +596,7 @@ fn run_game_runtime<Host: GameLifecycleHost>(
         if !state.presentation.c2_presentation_gate {
             state.frame_presented = true;
         }
-        update_presentation_ownership(state, &mut session.scene_link);
+        update_game_presentation_ownership(state, &mut session.scene_link);
         play_completion_audio_if_pending(state, host)?;
         run_frame_tail(state, session.scene_link, host)?;
         session.rendered_frames = session.rendered_frames.wrapping_add(1);
@@ -612,7 +615,14 @@ fn consume_pointer_press_state(state: &mut GameLifecycleState) {
     }
 }
 
-fn update_presentation_ownership(state: &mut GameLifecycleState, scene_link: &mut GameSceneLink) {
+/// Apply the presentation-ownership section of the recovered main loop.
+///
+/// This is public so concrete runtime tests can exercise the same ownership
+/// transfer between BloodScript and scene dispatch without duplicating it.
+pub fn update_game_presentation_ownership(
+    state: &mut GameLifecycleState,
+    scene_link: &mut GameSceneLink,
+) {
     let presentation = &mut state.presentation;
     let mut active_hold_path = false;
 
@@ -673,7 +683,10 @@ fn update_presentation_ownership(state: &mut GameLifecycleState, scene_link: &mu
             if presentation.text_menu_pending {
                 presentation.text_menu_pending = false;
                 presentation.c2_presentation_gate = false;
-                presentation.active_line = Some(presentation.list_read_wrap_index.wrapping_add(9));
+                presentation.active_line = Some(presentation.text_selector.map_or(
+                    DEFAULT_PRESENTATION_LINE,
+                    presentation_line_for_text_selector,
+                ));
             } else if !presentation.c2_presentation_gate {
                 presentation.subtitle_word_list_mode = false;
                 presentation.active_line = Some(DEFAULT_PRESENTATION_LINE);
@@ -711,6 +724,10 @@ fn update_presentation_ownership(state: &mut GameLifecycleState, scene_link: &mu
         presentation.subtitle_word_list_mode = false;
         presentation.subtitle_voice_trigger = false;
     }
+}
+
+const fn presentation_line_for_text_selector(selector: i8) -> u16 {
+    9u16.wrapping_add_signed(selector as i16)
 }
 
 fn play_completion_audio_if_pending<Host: GameLifecycleHost>(

@@ -9,7 +9,8 @@ use crate::native::bloodprg::{
     IndexedGamePalette, PaletteRemapTable, ShipHudCoordinatorHost, ShipHudCoordinatorOutcome,
     ShipHudCoordinatorState, ShipHudInitializationContext, ShipHudPaletteTransition,
     ShipHudTargetListState, ShipTargetSelectionOutcome, ShipTargetSelectionState,
-    build_palette_blend_remap_table, update_ship_hud,
+    build_palette_blend_remap_table, decode_active_presentation_line,
+    encode_active_presentation_line, update_ship_hud,
 };
 
 use super::ModernGameServices;
@@ -168,7 +169,7 @@ fn initial_coordinator_state(
         presentable_targets: Vec::new(),
         current_target: context.arche,
         scene_dispatch_blocked: ship.scene_dispatch_blocked,
-        active_line: nonzero_line(ship.active_line),
+        active_line: decode_active_presentation_line(ship.active_line),
         depth_band_enabled: ship.depth_band_enabled,
         resource_vertical_offset: context.scene_top_row,
         presentation_gate: ship.presentation_gate,
@@ -206,7 +207,7 @@ fn import_live_state(
     state.subtitle_display_mode = text.subtitle_word_list_mode;
     state.ui_state = ship.ui_state;
     state.scene_dispatch_blocked = ship.scene_dispatch_blocked;
-    state.active_line = nonzero_line(ship.active_line);
+    state.active_line = decode_active_presentation_line(ship.active_line);
     state.depth_band_enabled = ship.depth_band_enabled;
     state.presentation_gate = ship.presentation_gate;
     state.palette_transition.percent = palette.percent;
@@ -244,7 +245,7 @@ fn export_live_state(
         ship.hud_initialization_pending = u8::from(state.initialization_pending);
         ship.transition_percent = state.palette_transition.percent;
         ship.bridge_redraw_pending = u8::from(state.bridge_redraw_pending);
-        ship.active_line = state.active_line.unwrap_or(u16::MIN);
+        ship.active_line = encode_active_presentation_line(state.active_line);
     }
     {
         let text = services.text_presentation_mut();
@@ -280,10 +281,6 @@ const fn flag_is_active(flags: u8) -> bool {
 
 const fn replace_active_flag(flags: u8, active: bool) -> u8 {
     (flags & !ACTIVE_FLAG) | active as u8
-}
-
-const fn nonzero_line(line: u16) -> Option<u16> {
-    if line == u16::MIN { None } else { Some(line) }
 }
 
 struct RuntimeShipHudBackend<'services, 'window> {

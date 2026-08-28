@@ -1,5 +1,25 @@
 //! Resource-backed bridge presentation-line playback.
 
+/// Raw sentinel used by BLOODPRG when no presentation resource is selected.
+pub const NO_PRESENTATION_LINE: u16 = u16::MAX;
+
+/// Decode the shared presentation-line word without treating line zero as absent.
+pub const fn decode_active_presentation_line(line: u16) -> Option<u16> {
+    if line == NO_PRESENTATION_LINE {
+        None
+    } else {
+        Some(line)
+    }
+}
+
+/// Encode an optional presentation line into the shared native word representation.
+pub const fn encode_active_presentation_line(line: Option<u16>) -> u16 {
+    match line {
+        Some(line) => line,
+        None => NO_PRESENTATION_LINE,
+    }
+}
+
 /// Typed identity of one presentation animation resource.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PresentationResourceId(u16);

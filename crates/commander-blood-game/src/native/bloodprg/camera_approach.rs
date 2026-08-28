@@ -1,5 +1,7 @@
 //! Ship-camera approach and hyperspace transition coordinator.
 
+use super::NO_PRESENTATION_LINE;
+
 const PHASE_MASK: u8 = 7;
 const CAMERA_X_LIMIT: i16 = 9_000;
 const CAMERA_X_STEP: i16 = 100;
@@ -97,7 +99,7 @@ impl Default for CameraApproachState {
             projection_angle: u16::MIN,
             hyperspace_sequence_index: u16::MIN,
             hyperspace_resource: Box::default(),
-            active_line: u16::MIN,
+            active_line: NO_PRESENTATION_LINE,
             presentation_pending: false,
         }
     }

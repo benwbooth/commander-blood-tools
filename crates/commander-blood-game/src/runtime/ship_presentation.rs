@@ -4,7 +4,8 @@ use anyhow::Result;
 
 use crate::native::bloodprg::{
     GameLifecycleState, GameSceneLink, ShipPresentationHost, ShipPresentationOutcome,
-    ShipPresentationState, ShipViewEntityId, update_ship_presentation,
+    ShipPresentationState, ShipViewEntityId, decode_active_presentation_line,
+    encode_active_presentation_line, update_ship_presentation,
 };
 
 use super::{ModernGameServices, RuntimePlatformHost};
@@ -19,6 +20,7 @@ pub(super) fn update_runtime_ship_presentation<'window>(
     platform: &mut RuntimePlatformHost<'window>,
 ) -> Result<ShipPresentationOutcome> {
     let mut state = std::mem::take(services.ship_presentation_state_mut());
+    import_lifecycle_presentation_state(&mut state, lifecycle);
     let outcome;
     let deferred_error;
     {
@@ -32,14 +34,30 @@ pub(super) fn update_runtime_ship_presentation<'window>(
         deferred_error = backend.deferred_error.take();
     }
     *services.ship_presentation_state_mut() = state;
-    lifecycle.presentation.ship_active = state.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN;
-    lifecycle.presentation.active_line =
-        (state.active_line != u16::MIN).then_some(state.active_line);
-    lifecycle.presentation.c2_presentation_gate = state.presentation_gate != u16::MIN;
+    export_lifecycle_presentation_state(&state, lifecycle);
     if let Some(error) = deferred_error {
         return Err(error);
     }
     Ok(outcome)
+}
+
+fn import_lifecycle_presentation_state(
+    state: &mut ShipPresentationState,
+    lifecycle: &GameLifecycleState,
+) {
+    state.active_line = encode_active_presentation_line(lifecycle.presentation.active_line);
+    state.presentation_gate = (state.presentation_gate & !SHIP_PRESENTATION_ACTIVE_FLAG)
+        | u16::from(lifecycle.presentation.c2_presentation_gate);
+}
+
+fn export_lifecycle_presentation_state(
+    state: &ShipPresentationState,
+    lifecycle: &mut GameLifecycleState,
+) {
+    lifecycle.presentation.ship_active = state.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN;
+    lifecycle.presentation.active_line = decode_active_presentation_line(state.active_line);
+    lifecycle.presentation.c2_presentation_gate =
+        state.presentation_gate & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN;
 }
 
 struct RuntimeShipPresentationBackend<'services, 'window, 'lifecycle, 'platform> {
@@ -124,5 +142,49 @@ impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
             .map(|_| ());
         self.export_state(state);
         self.record(result, ());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const UNOWNED_PRESENTATION_GATE_BITS: u16 = 0x1200;
+    const IZWALITO_IDLE_LINE: u16 = 8;
+
+    #[test]
+    fn lifecycle_line_and_gate_are_imported_without_losing_valid_line_zero() {
+        let mut state = ShipPresentationState {
+            presentation_gate: UNOWNED_PRESENTATION_GATE_BITS,
+            ..ShipPresentationState::default()
+        };
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.active_line = Some(IZWALITO_IDLE_LINE);
+        lifecycle.presentation.c2_presentation_gate = true;
+
+        import_lifecycle_presentation_state(&mut state, &lifecycle);
+
+        assert_eq!(state.active_line, IZWALITO_IDLE_LINE);
+        assert_eq!(
+            state.presentation_gate,
+            UNOWNED_PRESENTATION_GATE_BITS | SHIP_PRESENTATION_ACTIVE_FLAG
+        );
+
+        state.active_line = u16::MIN;
+        state.presentation_gate &= !SHIP_PRESENTATION_ACTIVE_FLAG;
+        export_lifecycle_presentation_state(&state, &mut lifecycle);
+
+        assert_eq!(lifecycle.presentation.active_line, Some(u16::MIN));
+        assert!(!lifecycle.presentation.c2_presentation_gate);
+    }
+
+    #[test]
+    fn default_ship_state_uses_the_native_no_line_sentinel() {
+        let mut lifecycle = GameLifecycleState::default();
+        let state = ShipPresentationState::default();
+
+        export_lifecycle_presentation_state(&state, &mut lifecycle);
+
+        assert_eq!(lifecycle.presentation.active_line, None);
     }
 }

@@ -5,6 +5,13 @@ use super::{
     PresentationLineStepper,
 };
 
+/// MANU3 hand animation selected while the radio orb is being answered.
+///
+/// The executable stores this selector and `nav_actor_presentation_state` in
+/// the same word at `DS:0x0A32`; actor handler 4 therefore animates the hand
+/// when it publishes its presentation state.
+pub const RADIO_HAND_ANIMATION_SELECTOR: u16 = 4;
+
 /// Deferred action selected after the radio line completes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RadioActorDeferredAction {
@@ -100,6 +107,9 @@ impl<RecordLink> RadioActorState<RecordLink> {
 
 /// Line, audio, entity, and sound-bank services used by the radio actor.
 pub trait RadioActorBackend: PresentationLineStepper {
+    /// Publish the radio hand animation through the shared MANU3 selector.
+    fn request_radio_hand_animation(&mut self);
+
     /// Play the radio-line completion clip.
     fn play_radio_completion_clip(&mut self);
 
@@ -153,6 +163,7 @@ pub fn update_radio_actor<RecordLink: Clone, Backend: RadioActorBackend>(
     }
 
     state.presentation = RadioActorPresentation::Presenting;
+    backend.request_radio_hand_animation();
     if backend.update_line(line, line_playback)? != PresentationLineOutcome::Completed {
         return Ok(RadioActorOutcome::Presenting);
     }
@@ -209,6 +220,7 @@ mod tests {
     struct OracleBackend {
         line_called: bool,
         completed: bool,
+        hand_animation_requested: bool,
         clip_called: bool,
         entity_called: bool,
         bank_called: bool,
@@ -232,6 +244,10 @@ mod tests {
     }
 
     impl RadioActorBackend for OracleBackend {
+        fn request_radio_hand_animation(&mut self) {
+            self.hand_animation_requested = true;
+        }
+
         fn play_radio_completion_clip(&mut self) {
             self.clip_called = true;
         }
@@ -283,6 +299,11 @@ mod tests {
 
             assert_eq!(
                 backend.line_called, vector.line_helper_called,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                backend.hand_animation_requested, vector.line_helper_called,
                 "{}",
                 vector.name
             );
