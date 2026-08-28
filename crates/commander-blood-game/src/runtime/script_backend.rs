@@ -95,6 +95,8 @@ pub struct RuntimeScriptActionEffects {
     pub presentation_line: Option<crate::native::bloodprg::ScriptActionPresentationLine>,
     /// Rebuild the ordinary navigation screen after the action transition.
     pub screen_rebuild_requested: bool,
+    /// Reload the canonical clip playback countdown after C3 starts radio clip 6.
+    pub clip_playback_state_reload: Option<u16>,
 }
 
 /// Complete profile-independent state surrounding translated BloodScript execution.
@@ -465,6 +467,9 @@ impl RuntimeScriptSystem {
             presentation_line: action.active_line.take(),
             screen_rebuild_requested: lifecycle_available
                 && std::mem::take(&mut action.screen_rebuild_requested),
+            clip_playback_state_reload: lifecycle_available
+                .then(|| action.clip_playback_state_reload.take())
+                .flatten(),
         }
     }
 }
@@ -808,7 +813,8 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
         Ok(())
     }
 
-    fn play_radio_clip(&mut self) -> Result<()> {
+    fn play_radio_clip(&mut self, playback_countdown: u16) -> Result<()> {
+        self.action_runtime_state.clip_playback_state = playback_countdown;
         self.commands.push(RuntimeScriptCommand::PlayRadioClip {
             clip_index: RADIO_CLIP_INDEX,
         });
@@ -993,6 +999,7 @@ mod tests {
     const IZWALITO_FIRST_WORD: &[u8] = b"You";
     const IMPORTED_SHIP_DEPTH_STEP: u8 = 41;
     const SCRIPT_UPDATED_SHIP_DEPTH_STEP: u8 = 6;
+    const RADIO_CLIP_PLAYBACK_COUNTDOWN: u16 = 2;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(std::path::PathBuf);
@@ -1432,7 +1439,13 @@ mod tests {
         let mut backend = RuntimeScriptBackend::new(&data, TEST_CLOCK);
 
         backend.restart_name_area_effect().unwrap();
-        backend.play_radio_clip().unwrap();
+        backend
+            .play_radio_clip(RADIO_CLIP_PLAYBACK_COUNTDOWN)
+            .unwrap();
+        assert_eq!(
+            backend.action_runtime_state.clip_playback_state,
+            RADIO_CLIP_PLAYBACK_COUNTDOWN
+        );
         backend
             .start_camera_transition(crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS)
             .unwrap();
@@ -1466,6 +1479,7 @@ mod tests {
         action.ship_hud_refresh_requested = true;
         action.active_line = Some(ScriptActionPresentationLine::NavigationTarget);
         action.screen_rebuild_requested = true;
+        action.clip_playback_state_reload = Some(RADIO_CLIP_PLAYBACK_COUNTDOWN);
 
         let effects = scripts.take_action_effects(false);
         assert!(effects.ship_hud_refresh_requested);
@@ -1474,12 +1488,21 @@ mod tests {
             Some(ScriptActionPresentationLine::NavigationTarget)
         );
         assert!(!effects.screen_rebuild_requested);
+        assert_eq!(effects.clip_playback_state_reload, None);
         assert!(scripts.action_state().screen_rebuild_requested);
+        assert_eq!(
+            scripts.action_state().clip_playback_state_reload,
+            Some(RADIO_CLIP_PLAYBACK_COUNTDOWN)
+        );
 
         let effects = scripts.take_action_effects(true);
         assert!(!effects.ship_hud_refresh_requested);
         assert_eq!(effects.presentation_line, None);
         assert!(effects.screen_rebuild_requested);
+        assert_eq!(
+            effects.clip_playback_state_reload,
+            Some(RADIO_CLIP_PLAYBACK_COUNTDOWN)
+        );
         assert_eq!(
             scripts.take_action_effects(true),
             RuntimeScriptActionEffects::default()

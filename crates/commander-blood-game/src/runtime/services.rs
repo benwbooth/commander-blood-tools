@@ -2303,7 +2303,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Execute one complete translated COD/BAS/presentation frame.
     pub fn execute_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
-        self.synchronize_script_action_runtime_state()?;
+        self.synchronize_script_action_runtime_state(u16::MIN)?;
         self.scripts
             .prepare_ship_presentation_state(&self.ship_presentation);
         let outcome = self.scripts.execute_frame(&mut self.runtime, enabled)?;
@@ -2316,7 +2316,7 @@ impl<'window> ModernGameServices<'window> {
     pub fn execute_and_apply_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         let outcome = self.execute_script_frame(enabled)?;
         self.publish_script_presentation_status_change()?;
-        self.synchronize_script_ship_state(None);
+        self.synchronize_script_action_effects(None);
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
@@ -2328,7 +2328,7 @@ impl<'window> ModernGameServices<'window> {
         state: &mut GameLifecycleState,
     ) -> Result<ScriptFrameOutcome> {
         let execution_enabled = state.vm_execution_enabled;
-        self.synchronize_script_action_runtime_state()?;
+        self.synchronize_script_action_runtime_state(state.clip_playback_state)?;
         self.scripts
             .prepare_ship_presentation_state(&self.ship_presentation);
         let outcome =
@@ -2337,13 +2337,13 @@ impl<'window> ModernGameServices<'window> {
         self.scripts
             .finish_ship_presentation_state(&mut self.ship_presentation);
         self.publish_script_presentation_status_change()?;
-        self.synchronize_script_ship_state(Some(state));
+        self.synchronize_script_action_effects(Some(state));
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
     }
 
-    fn synchronize_script_action_runtime_state(&mut self) -> Result<()> {
+    fn synchronize_script_action_runtime_state(&mut self, clip_playback_state: u16) -> Result<()> {
         let ship_navigation_active =
             self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN;
         let camera_view_transition_steps = self
@@ -2369,6 +2369,7 @@ impl<'window> ModernGameServices<'window> {
                 camera_view_transition_steps,
                 ship_navigation_active,
                 loaded_scene_vertical_offset,
+                clip_playback_state,
             });
         Ok(())
     }
@@ -2406,7 +2407,10 @@ impl<'window> ModernGameServices<'window> {
     }
 
     /// Publish one-frame BloodScript action effects into canonical ship and lifecycle state.
-    fn synchronize_script_ship_state(&mut self, mut lifecycle: Option<&mut GameLifecycleState>) {
+    fn synchronize_script_action_effects(
+        &mut self,
+        mut lifecycle: Option<&mut GameLifecycleState>,
+    ) {
         let selected_target = self.scripts.take_selected_ship_target();
         synchronize_selected_ship_target(
             selected_target,
@@ -2429,6 +2433,12 @@ impl<'window> ModernGameServices<'window> {
                 .as_deref_mut()
                 .expect("action effects retain screen rebuilds without a lifecycle")
                 .navigation_rebuild_pending = true;
+        }
+        if let Some(playback_state) = effects.clip_playback_state_reload {
+            lifecycle
+                .as_deref_mut()
+                .expect("action effects retain clip playback reloads without a lifecycle")
+                .clip_playback_state = playback_state;
         }
     }
 
@@ -3614,6 +3624,7 @@ mod tests {
         month: 1,
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
+    const SCRIPT_RADIO_CLIP_COUNTDOWN: u16 = 2;
 
     #[test]
     fn bridge_composition_never_duplicates_owned_or_moving_indexed_backgrounds() {
@@ -4625,10 +4636,11 @@ mod tests {
             action.ship_hud_refresh_requested = true;
             action.active_line = Some(ScriptActionPresentationLine::NavigationTarget);
             action.screen_rebuild_requested = true;
+            action.clip_playback_state_reload = Some(SCRIPT_RADIO_CLIP_COUNTDOWN);
         }
         let mut lifecycle = GameLifecycleState::default();
 
-        services.synchronize_script_ship_state(Some(&mut lifecycle));
+        services.synchronize_script_action_effects(Some(&mut lifecycle));
 
         assert_eq!(services.ship_presentation.hud_initialization_pending, 1);
         assert_eq!(
@@ -4640,12 +4652,14 @@ mod tests {
             Some(ScriptActionPresentationLine::NavigationTarget.number())
         );
         assert!(lifecycle.navigation_rebuild_pending);
+        assert_eq!(lifecycle.clip_playback_state, SCRIPT_RADIO_CLIP_COUNTDOWN);
 
         services.ship_presentation.hud_initialization_pending = u8::MIN;
         services.ship_presentation.active_line = u16::MIN;
         lifecycle.presentation.active_line = None;
         lifecycle.navigation_rebuild_pending = false;
-        services.synchronize_script_ship_state(Some(&mut lifecycle));
+        lifecycle.clip_playback_state = u16::MIN;
+        services.synchronize_script_action_effects(Some(&mut lifecycle));
 
         assert_eq!(
             services.ship_presentation.hud_initialization_pending,
@@ -4654,6 +4668,7 @@ mod tests {
         assert_eq!(services.ship_presentation.active_line, u16::MIN);
         assert_eq!(lifecycle.presentation.active_line, None);
         assert!(!lifecycle.navigation_rebuild_pending);
+        assert_eq!(lifecycle.clip_playback_state, u16::MIN);
         *services.scripts.action_state_mut() = original_action;
         services.ship_presentation = original_ship;
     }

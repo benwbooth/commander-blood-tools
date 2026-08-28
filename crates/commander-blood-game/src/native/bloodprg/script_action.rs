@@ -19,6 +19,7 @@ use super::{
 };
 
 const SERIALIZED_WORD_SIZE: usize = size_of::<u16>();
+const RADIO_CLIP_PLAYBACK_COUNTDOWN: u16 = 2;
 
 /// Ship-navigation mode observed by the C1 action path.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -55,6 +56,8 @@ pub struct ScriptActionRuntimeState {
     pub ship_navigation_active: bool,
     /// Current DESCRIPT-authored scene row formerly shared by resource globals.
     pub loaded_scene_vertical_offset: u16,
+    /// Timer-owned clip playback countdown formerly stored at `GS:0x0B39`.
+    pub clip_playback_state: u16,
 }
 
 /// Typed outputs produced while applying one C1-selected DESCRIPT record.
@@ -108,12 +111,8 @@ pub struct ScriptActionState {
     pub active_line: Option<ScriptActionPresentationLine>,
     /// Navigation owner claimed by a wildcard C3 record.
     pub pending_presentation_owner: Option<ScriptObjectId>,
-    /// Whether VOC playback is already enabled.
-    pub voc_playback_enabled: bool,
-    /// Whether C3 requested the disabled VOC path to be enabled.
-    pub radio_clip_enable_requested: bool,
-    /// Whether the fixed radio clip is already playing.
-    pub radio_clip_playing: bool,
+    /// C3's one-frame reload of the timer-owned clip playback countdown.
+    pub clip_playback_state_reload: Option<u16>,
     /// Current C6 travel phase.
     pub travel_phase: ScriptTravelActionPhase,
     /// Whether the travel presentation actor is still busy.
@@ -184,8 +183,8 @@ pub trait ScriptActionHost {
         object: ScriptObjectId,
     ) -> Result<(), Self::Error>;
 
-    /// Start native radio clip 6.
-    fn play_radio_clip(&mut self) -> Result<(), Self::Error>;
+    /// Start native radio clip 6 and publish its timer countdown immediately.
+    fn play_radio_clip(&mut self, playback_countdown: u16) -> Result<(), Self::Error>;
 
     /// Start the fixed camera entity transition used by C6.
     fn start_camera_transition(&mut self, steps: u8) -> Result<(), Self::Error>;
@@ -457,6 +456,7 @@ fn dispatch_presentation_queue<Host: ScriptActionHost>(
         owner,
         slot,
         player,
+        runtime,
         ..
     } = context;
     if related != player {
@@ -465,14 +465,10 @@ fn dispatch_presentation_queue<Host: ScriptActionHost>(
     }
 
     action.pending_presentation_owner = Some(owner);
-    if presentation.name_lookup_enabled {
-        if !action.voc_playback_enabled {
-            action.radio_clip_enable_requested = true;
-        }
-        if !action.radio_clip_playing {
-            host.play_radio_clip().map_err(ScriptActionError::Host)?;
-            action.radio_clip_playing = true;
-        }
+    if presentation.name_lookup_enabled && runtime.clip_playback_state == u16::MIN {
+        host.play_radio_clip(RADIO_CLIP_PLAYBACK_COUNTDOWN)
+            .map_err(ScriptActionError::Host)?;
+        action.clip_playback_state_reload = Some(RADIO_CLIP_PLAYBACK_COUNTDOWN);
     }
     Ok(ScriptActionDispatch::default())
 }
@@ -825,7 +821,8 @@ mod tests {
             Ok(())
         }
 
-        fn play_radio_clip(&mut self) -> Result<(), Self::Error> {
+        fn play_radio_clip(&mut self, playback_countdown: u16) -> Result<(), Self::Error> {
+            assert_eq!(playback_countdown, RADIO_CLIP_PLAYBACK_COUNTDOWN);
             self.calls.push(HostCall::PlayRadio);
             Ok(())
         }
@@ -1336,7 +1333,6 @@ mod tests {
 
         let player = fixture.objects[PLAYER_INDEX];
         fixture.presentation.name_lookup_enabled = true;
-        fixture.action.voc_playback_enabled = false;
         fixture
             .dispatch(
                 ACTOR_INDEX,
@@ -1345,9 +1341,12 @@ mod tests {
             )
             .unwrap();
         assert_eq!(fixture.action.pending_presentation_owner, Some(actor));
-        assert!(fixture.action.radio_clip_enable_requested);
-        assert!(fixture.action.radio_clip_playing);
+        assert_eq!(
+            fixture.action.clip_playback_state_reload,
+            Some(RADIO_CLIP_PLAYBACK_COUNTDOWN)
+        );
         assert_eq!(host.calls, [HostCall::PlayRadio]);
+        fixture.runtime.clip_playback_state = RADIO_CLIP_PLAYBACK_COUNTDOWN;
         fixture
             .dispatch(
                 ACTOR_INDEX,
@@ -1356,6 +1355,21 @@ mod tests {
             )
             .unwrap();
         assert_eq!(host.calls, [HostCall::PlayRadio]);
+
+        fixture.runtime.clip_playback_state = u16::MIN;
+        fixture.action.clip_playback_state_reload = None;
+        fixture
+            .dispatch(
+                ACTOR_INDEX,
+                ScriptActionRecord::PresentationQueue(player),
+                &mut host,
+            )
+            .unwrap();
+        assert_eq!(host.calls, [HostCall::PlayRadio, HostCall::PlayRadio]);
+        assert_eq!(
+            fixture.action.clip_playback_state_reload,
+            Some(RADIO_CLIP_PLAYBACK_COUNTDOWN)
+        );
     }
 
     #[test]

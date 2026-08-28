@@ -590,10 +590,7 @@ fn assert_case_state(name: &str, state: &GameLifecycleState) {
         "request_bit_zero_preserves_text_modes_and_plays_audio" => {
             assert!(state.presentation.subtitle_word_list_mode);
             assert!(state.presentation.subtitle_voice_trigger);
-            assert_eq!(
-                state.completion_audio_reset_frames,
-                Some(COMPLETION_AUDIO_RESET_FRAMES)
-            );
+            assert_eq!(state.clip_playback_state, COMPLETION_AUDIO_RESET_FRAMES);
         }
         "request_bit_one_clears_text_modes" => {
             assert!(!state.presentation.subtitle_word_list_mode);

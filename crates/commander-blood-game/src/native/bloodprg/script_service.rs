@@ -85,8 +85,8 @@ pub trait ScriptExecutionBackend {
     /// Restart navigation music after a descriptor-backed target change.
     fn restart_navigation_music(&mut self) -> Result<(), Self::Error>;
 
-    /// Start the fixed radio clip selected by a presentation action.
-    fn play_radio_clip(&mut self) -> Result<(), Self::Error>;
+    /// Start the fixed radio clip and publish its timer countdown immediately.
+    fn play_radio_clip(&mut self, playback_countdown: u16) -> Result<(), Self::Error>;
 
     /// Start the camera transition used by black-hole travel.
     fn start_camera_transition(&mut self, steps: u8) -> Result<(), Self::Error>;
@@ -571,9 +571,9 @@ impl<Backend: ScriptExecutionBackend> ScriptActionHost for ActionExternalHost<'_
         Ok(())
     }
 
-    fn play_radio_clip(&mut self) -> Result<(), Self::Error> {
+    fn play_radio_clip(&mut self, playback_countdown: u16) -> Result<(), Self::Error> {
         self.backend
-            .play_radio_clip()
+            .play_radio_clip(playback_countdown)
             .map_err(ScriptActionCallbackError::Backend)
     }
 
@@ -603,6 +603,8 @@ mod tests {
         execute_loaded_script_frame,
     };
     use super::*;
+
+    const RADIO_CLIP_PLAYBACK_COUNTDOWN: u16 = 2;
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     enum BackendEvent {
@@ -661,6 +663,7 @@ mod tests {
                 camera_view_transition_steps: u8::MIN,
                 ship_navigation_active: true,
                 loaded_scene_vertical_offset: u16::MIN,
+                clip_playback_state: u16::MIN,
             }
         }
 
@@ -728,7 +731,8 @@ mod tests {
             Ok(())
         }
 
-        fn play_radio_clip(&mut self) -> Result<(), Self::Error> {
+        fn play_radio_clip(&mut self, playback_countdown: u16) -> Result<(), Self::Error> {
+            assert_eq!(playback_countdown, RADIO_CLIP_PLAYBACK_COUNTDOWN);
             self.events.push(BackendEvent::RadioClip);
             Ok(())
         }

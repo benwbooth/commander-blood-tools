@@ -229,8 +229,8 @@ pub struct GameLifecycleState {
     pub navigation_transition_pending: bool,
     /// The current scene produced a frame ready for final presentation.
     pub frame_presented: bool,
-    /// Frames loaded into the completion-audio reset gate.
-    pub completion_audio_reset_frames: Option<u16>,
+    /// Timer-owned clip playback countdown shared by scripted and completion audio.
+    pub clip_playback_state: u16,
 }
 
 impl GameLifecycleState {
@@ -737,7 +737,7 @@ fn play_completion_audio_if_pending<Host: GameLifecycleHost>(
     if state.presentation.completion_audio_pending {
         state.presentation.completion_audio_pending = false;
         host.stop_completion_audio()?;
-        state.completion_audio_reset_frames = Some(COMPLETION_AUDIO_RESET_FRAMES);
+        state.clip_playback_state = COMPLETION_AUDIO_RESET_FRAMES;
         host.load_completion_audio()?;
         host.start_completion_audio()?;
     }

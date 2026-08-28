@@ -91,7 +91,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         self.timer.chatter_cooldown = chatter_cooldown;
         self.timer.dialogue_delay = dialogue_delay;
         self.timer.dialogue_hold_countdown = state.presentation.dialogue_hold_countdown;
-        self.timer.clip_playback_state = state.completion_audio_reset_frames.unwrap_or(u16::MIN);
+        self.timer.clip_playback_state = state.clip_playback_state;
         self.services.export_game_timer_state(&mut self.timer)?;
         let context = GameTimerContext {
             paused: state.pause_hud_active,
@@ -107,8 +107,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
             }
         }
         state.presentation.dialogue_hold_countdown = self.timer.dialogue_hold_countdown;
-        state.completion_audio_reset_frames =
-            (self.timer.clip_playback_state != u16::MIN).then_some(self.timer.clip_playback_state);
+        state.clip_playback_state = self.timer.clip_playback_state;
         self.services.import_game_timer_state(&self.timer)?;
         self.services
             .synchronize_audio_event_timers(self.timer.chatter_cooldown, self.timer.dialogue_delay)
