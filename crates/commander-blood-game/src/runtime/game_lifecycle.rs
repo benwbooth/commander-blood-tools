@@ -1,7 +1,5 @@
 //! Production SDL3 and wgpu host for the recovered top-level game lifecycle.
 
-use std::path::PathBuf;
-
 use anyhow::{Context, Result, bail};
 use sdl3::AudioSubsystem;
 
@@ -60,7 +58,6 @@ pub struct RuntimeGameLifecycleHost<'window, 'audio> {
     runtime_storage_initialized: bool,
     archive_index_initialized: bool,
     audio_startup_stage: RuntimeAudioStartupStage,
-    startup_transient_paths: Vec<PathBuf>,
 }
 
 impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
@@ -89,7 +86,6 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
             runtime_storage_initialized: false,
             archive_index_initialized: false,
             audio_startup_stage: RuntimeAudioStartupStage::Pending,
-            startup_transient_paths: Vec::new(),
         }
     }
 
@@ -548,16 +544,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn delete_startup_transients(&mut self) -> Result<()> {
-        for path in self.startup_transient_paths.drain(..) {
-            match std::fs::remove_file(&path) {
-                Ok(()) => {}
-                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                Err(error) => {
-                    return Err(error)
-                        .with_context(|| format!("removing runtime transient {}", path.display()));
-                }
-            }
-        }
+        self.services.script_backend_mut().clear_background_cache();
         Ok(())
     }
 

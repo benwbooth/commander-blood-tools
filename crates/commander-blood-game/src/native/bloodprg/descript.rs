@@ -46,6 +46,11 @@ impl DescriptBackgroundCache {
     pub fn get(&self, slot: DescriptBackgroundSlot) -> Option<&CachedDescriptBackground> {
         self.slots[slot.index()].as_ref()
     }
+
+    /// Release every background retained by the native four-slot cache.
+    pub fn clear(&mut self) {
+        self.slots.fill(None);
+    }
 }
 
 /// Resource boundary used to load one LBM directly into owned memory.
@@ -816,6 +821,34 @@ mod tests {
                     vector.name
                 );
             }
+        }
+    }
+
+    #[test]
+    fn background_cache_clear_releases_every_owned_slot() {
+        let mut cache = DescriptBackgroundCache::default();
+        let mut source = RecordingBackgroundSource {
+            payload: Box::from(*b"encoded"),
+            ..RecordingBackgroundSource::default()
+        };
+
+        for encoded_slot in 1..=DescriptBackgroundSlot::COUNT as u8 {
+            let slot = DescriptBackgroundSlot::decode(encoded_slot).unwrap();
+            let name = format!("slot{encoded_slot}.lbm");
+            cache_background_image(
+                &background_command(slot, name.as_bytes()),
+                &mut cache,
+                &mut source,
+            )
+            .unwrap();
+            assert!(cache.get(slot).is_some());
+        }
+
+        cache.clear();
+
+        for encoded_slot in 1..=DescriptBackgroundSlot::COUNT as u8 {
+            let slot = DescriptBackgroundSlot::decode(encoded_slot).unwrap();
+            assert!(cache.get(slot).is_none());
         }
     }
 

@@ -670,6 +670,11 @@ impl RuntimeScriptBackend {
         &self.backgrounds
     }
 
+    /// Release every DESCRIPT background retained by the original four-slot cache.
+    pub fn clear_background_cache(&mut self) {
+        self.backgrounds.clear();
+    }
+
     /// Borrow authored background paths that the original data set cannot resolve.
     pub fn missing_background_resources(&self) -> &[Box<[u8]>] {
         &self.background_source.missing_resources
