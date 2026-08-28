@@ -136,7 +136,6 @@ impl DescriptPresentationAssets {
         self.character_left_scene_video = None;
         self.sound_bank = None;
         self.talk_clips.clear();
-        self.location_scene_top_row = None;
         self.idle_clip = None;
         self.encoded_idle_video = None;
         self.sequence_videos.clear();

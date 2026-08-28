@@ -1211,6 +1211,7 @@ mod tests {
         let player = fixture.objects[PLAYER_INDEX];
         let actor = fixture.objects[ACTOR_INDEX];
         fixture.runtime.ship_navigation_active = true;
+        fixture.runtime.loaded_scene_vertical_offset = 35;
         fixture.action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         fixture.action.current_ship_target = Some(target);
         let player_slot = action_slot(&fixture.state, player).unwrap();
@@ -1244,6 +1245,7 @@ mod tests {
             fixture.action.ship_navigation_mode,
             ScriptShipNavigationMode::TargetSelected
         );
+        assert_eq!(fixture.action.scene_vertical_offset, 35);
     }
 
     #[test]

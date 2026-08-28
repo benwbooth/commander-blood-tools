@@ -358,7 +358,7 @@ mod tests {
     }
 
     #[test]
-    fn shipped_location_application_preserves_cache_and_music_lifetimes() {
+    fn shipped_record_application_preserves_location_cache_music_and_layout_lifetimes() {
         let database = database();
         let mut assets = DescriptPresentationAssets::default();
         let mut text = TextPresentationState::default();
@@ -429,6 +429,23 @@ mod tests {
             background_source.loaded_names.len(),
             ONDOYA_BACKGROUND_COUNT
         );
+
+        let character = {
+            let mut context = DescriptApplicationContext::new(
+                false,
+                &mut assets,
+                &mut text,
+                &mut backgrounds,
+                &mut background_source,
+                &mut sound_loader,
+                &mut idle_source,
+            );
+            lookup_and_apply_descript_record(&database, b"Scruter_Jo", &mut context)
+                .unwrap()
+                .unwrap()
+        };
+        assert_eq!(character.record_kind(), DescriptRecordKind::Character);
+        assert_eq!(assets.location_scene_top_row(), Some(35));
     }
 
     #[test]
@@ -498,7 +515,7 @@ mod tests {
     }
 
     #[test]
-    fn missing_lookup_clears_per_record_assets_but_preserves_current_music() {
+    fn missing_lookup_clears_per_record_assets_but_preserves_location_globals() {
         let database = database();
         let mut assets = DescriptPresentationAssets::default();
         let mut text = TextPresentationState::default();
@@ -517,7 +534,7 @@ mod tests {
                 &mut sound_loader,
                 &mut idle_source,
             );
-            lookup_and_apply_descript_record(&database, b"present", &mut context)
+            lookup_and_apply_descript_record(&database, b"Ondoya", &mut context)
                 .unwrap()
                 .unwrap();
         }
@@ -536,8 +553,8 @@ mod tests {
         };
 
         assert!(missing.is_none());
-        assert!(assets.sequence_videos().is_empty());
-        assert!(assets.sequence_subtitles().is_empty());
+        assert!(assets.location_scene_video().is_none());
+        assert_eq!(assets.location_scene_top_row(), Some(35));
         assert_eq!(assets.music(), Some(&current_music));
     }
 }
