@@ -506,11 +506,35 @@ fn scan_text_token(data: &[u8], source_offset: ScriptCodeOffset) -> Result<usize
 mod tests {
     use std::path::{Path, PathBuf};
 
+    use serde::Deserialize;
+
     use super::*;
 
     const PROFILE_COUNT: usize = 5;
     const EXPECTED_TOKEN_COUNTS: [usize; PROFILE_COUNT] = [214, 3_271, 3_281, 1_714, 1_869];
     const ORIGINAL_DESCRIPTOR_FILE_OFFSET: usize = 0x14338;
+    const PAYLOAD_SCAN_ORACLE_VECTOR_COUNT: usize = 9;
+    const TOKEN_ADVANCE_ORACLE_VECTOR_COUNT: usize = 17;
+
+    #[derive(Deserialize)]
+    struct PayloadScanOracleVector {
+        name: String,
+        scan_byte_count: usize,
+        extra_byte_consumed: bool,
+        start_offset: u16,
+        final_offset: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct TokenAdvanceOracleVector {
+        name: String,
+        opcode: u8,
+        start_offset: u16,
+        query_mode_before: u8,
+        block_scan_flags: u8,
+        query_mode_after: u8,
+        final_offset: u16,
+    }
 
     fn original_asset(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -600,6 +624,73 @@ mod tests {
     }
 
     #[test]
+    fn terminated_payload_scanning_matches_every_natural_native_vector() {
+        let vectors: Vec<PayloadScanOracleVector> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_6293_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), PAYLOAD_SCAN_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut encoded = vec![u8::MAX; vector.scan_byte_count];
+            encoded.extend_from_slice(&[u8::MIN, u8::MIN]);
+            encoded.push(if vector.extra_byte_consumed {
+                u8::MIN
+            } else {
+                u8::MAX
+            });
+            let end = scan_zero_terminated_payload(&encoded, ScriptCodeOffset::new(0)).unwrap();
+            let expected_length = vector.final_offset.wrapping_sub(vector.start_offset) as usize;
+            assert_eq!(end.index(), expected_length, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn token_advance_matches_every_natural_native_vector() {
+        let vectors: Vec<TokenAdvanceOracleVector> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_62b6_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), TOKEN_ADVANCE_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut decoder = ScriptTokenDecoder {
+                mode: decoding_mode(vector.query_mode_before),
+                scan_variable_blocks: vector.block_scan_flags != u8::MIN,
+            };
+            let encoded = token_advance_fixture(&vector.name);
+            let result = decode_script_token(encoded, ScriptCodeOffset::new(0), &mut decoder);
+
+            if vector.name == "ff_length_sign_extends_after_decrement" {
+                assert!(matches!(
+                    result,
+                    Err(ScriptCodeError::BackwardDescriptorLength {
+                        length: u8::MAX,
+                        ..
+                    })
+                ));
+                continue;
+            }
+
+            let token = result.unwrap_or_else(|error| panic!("{}: {error}", vector.name));
+            let expected_length = vector.final_offset.wrapping_sub(vector.start_offset) as usize;
+            assert_eq!(token.opcode().byte(), vector.opcode, "{}", vector.name);
+            assert_eq!(
+                token.encoded_bytes().len(),
+                expected_length,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                decoder.mode(),
+                decoding_mode(vector.query_mode_after),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
     fn malformed_code_images_are_rejected_without_cursor_emulation() {
         assert_eq!(
             decode_script_code(&[]).unwrap_err(),
@@ -640,5 +731,35 @@ mod tests {
                 length: u8::MAX,
             }
         );
+    }
+
+    fn decoding_mode(value: u8) -> ScriptDecodingMode {
+        match value {
+            0 => ScriptDecodingMode::Normal,
+            1 => ScriptDecodingMode::Query,
+            _ => panic!("invalid oracle decoding mode {value}"),
+        }
+    }
+
+    fn token_advance_fixture(name: &str) -> &'static [u8] {
+        match name {
+            "mode_zero_fixed_length" | "fixed_length_wraps_at_segment_end" => &[0xA2, 0x11, 0x22],
+            "mode_one_selects_second_length" => &[0xA5, 0x11, 0x22, 0x33],
+            "a0_sentinel_sets_mode" => &[0xA0, 0x11, 0x22],
+            "a1_sentinel_clears_mode" => &[0xA1],
+            "fd_sentinel_without_prefix" => &[0xAE, 0x22, 0x33, 0x44, 0x55],
+            "fd_sentinel_consumes_a1_prefix" => &[0xAE, 0xA1, 0x22, 0x33, 0x44, 0x55],
+            "fb_sentinel_without_prefix" => &[0xA3, 0x22, 0x33],
+            "fb_sentinel_consumes_a1_prefix" => &[0xA3, 0xA1, 0x22, 0x33],
+            "fb_sentinel_scans_when_block_flag_is_set" => &[0xA3, 0x12, 0x34, 0, 0, 0x7E],
+            "zero_length_token_stops_after_zero_word" => &[0xA8, 0, 0, 0x7E],
+            "zero_length_token_consumes_optional_zero" => &[0xAC, 0, 0, 0, 0x7E],
+            "a6_uses_header_and_word_list_layout" => &[0xA6, 1, 2, 3, 4, 5, 0, 0],
+            "a6_word_list_wraps_at_segment_end" => &[0xA6, 1, 2, 3, 4, 5, 0x34, 0x12, 0, 0],
+            "mode_one_out_of_table_tail_zero_length" => &[0xDD, 0x44, 0, 0, 0x7E],
+            "e4_reads_zero_descriptor_past_real_entries" => &[0xE4, 0, 0, 0x7E],
+            "ff_length_sign_extends_after_decrement" => &[0xE8],
+            unknown => panic!("unmapped token-advance oracle vector {unknown}"),
+        }
     }
 }

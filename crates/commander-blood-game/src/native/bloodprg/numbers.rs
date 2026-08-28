@@ -81,6 +81,7 @@ mod tests {
 
     const BCD_ORACLE_VECTOR_COUNT: usize = 256;
     const DECIMAL_ORACLE_VECTOR_COUNT: usize = 8;
+    const STARTUP_AUDIO_GENERIC_VECTOR_COUNT: usize = 200;
 
     #[derive(Deserialize)]
     struct BcdOracleVector {
@@ -92,6 +93,17 @@ mod tests {
     struct DecimalOracleVector {
         value: i64,
         output_bytes: Vec<u8>,
+    }
+
+    #[derive(Deserialize)]
+    struct GenericRegistersOut {
+        eax: u32,
+    }
+
+    #[derive(Deserialize)]
+    struct StartupAudioGenericVector {
+        mem_in: Vec<(usize, u8)>,
+        regs_out: GenericRegistersOut,
     }
 
     #[test]
@@ -160,6 +172,26 @@ mod tests {
 
         for (input, expected) in cases {
             assert_eq!(parse_startup_audio_number(input), *expected);
+        }
+    }
+
+    #[test]
+    fn startup_audio_parser_matches_every_generic_native_vector() {
+        let vectors: Vec<StartupAudioGenericVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_2612_generic.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), STARTUP_AUDIO_GENERIC_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut input = [u8::MIN; STARTUP_AUDIO_NUMBER_LENGTH];
+            if let Some((_, first_byte)) = vector.mem_in.first() {
+                input[0] = *first_byte;
+            }
+            assert_eq!(
+                u32::from(parse_startup_audio_number(&input) as u16),
+                vector.regs_out.eax & u32::from(u16::MAX)
+            );
         }
     }
 
