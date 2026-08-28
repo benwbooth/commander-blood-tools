@@ -381,6 +381,7 @@ mod tests {
 
     const TEST_VIDEO_RESOURCE: &[u8] = b"SQ\\LOGO01.HNM";
     const OPENING_VIDEO_RESOURCE: &[u8] = b"SQ\\MIND.HNM";
+    const CLIPTOOT_VIDEO_RESOURCE: &[u8] = b"SQ\\CLIPTOOT.HNM";
     const HNM_FILENAME_SUFFIX: &[u8] = b".HNM";
     const SHIPPED_HNM_RESOURCE_COUNT: usize = 701;
     const MAXIMUM_TEST_SERVICE_CALLS: usize = 10_000;
@@ -390,6 +391,7 @@ mod tests {
     const VIDEO_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [11, 13, 17];
     const MIND_ORACLE_FRAME_INDEX: u16 = 30;
     const MIND_ORACLE_READ_WRAP_INDEX: u16 = MIND_ORACLE_FRAME_INDEX + 1;
+    const MIND_EXPECTED_FRAME_COUNT: u64 = 263;
     const MIND_ORACLE_LIVE_PALETTE_SHA256: &str =
         "37278e27614ceaf4300b9e16d6704cba054fe4cd63b675630e8a6bd4d3186df2";
     const MIND_ORACLE_FRONT_BUFFER_SHA256: &str =
@@ -397,6 +399,11 @@ mod tests {
     const MIND_ORACLE_BACK_BUFFER_SHA256: &str =
         "4f7988030a00d082fe445e00a2ac5dab502300ff1b80e8592dd569867b60ef74";
     const PRESENTATION_PALETTE_COLOR_COUNT: usize = 128;
+    const LOGICAL_FRAMEBUFFER_WIDTH: usize = 320;
+    const CONTENT_PANEL_TOP: usize = 10;
+    const CONTENT_PANEL_ROW_COUNT: usize = 130;
+    const CLIPTOOT_BOTTOM_ROW_ORACLE_FRAME: u16 = 856;
+    const CLIPTOOT_BOTTOM_ROW_ORACLE_PIXELS: &[(usize, u8)] = &[(25, 18), (26, 6)];
 
     #[test]
     fn stream_palette_only_publishes_when_a_palette_record_was_applied() {
@@ -502,6 +509,70 @@ mod tests {
                 .iter()
                 .flatten()
                 .all(|component| *component == u8::MIN)
+        );
+    }
+
+    #[test]
+    fn opening_stream_reaches_its_authored_terminal_frame() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let request = RuntimePresentationRequest::new(
+            BloodResourceName::new(OPENING_VIDEO_RESOURCE).unwrap(),
+        );
+        let (mut stream, initial) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+        assert!(initial.initial_present.frame_presented);
+
+        for timer_tick in 1..=MAXIMUM_TEST_SERVICE_CALLS {
+            stream
+                .service_frame(&mut runtime, u16::MIN, timer_tick as u16, false)
+                .unwrap();
+            if stream.is_finished() {
+                break;
+            }
+        }
+
+        assert!(stream.is_finished());
+        assert_eq!(stream.presented_frame_count(), MIND_EXPECTED_FRAME_COUNT);
+    }
+
+    #[test]
+    fn cliptoot_bottom_row_matches_authored_image_payload() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut request = RuntimePresentationRequest::new(
+            BloodResourceName::new(CLIPTOOT_VIDEO_RESOURCE).unwrap(),
+        );
+        request.entry_policy.draw_via_back_buffer = true;
+        request.present_policy.draw_via_back_buffer = true;
+        request.present_policy.vertical_offset = CONTENT_PANEL_TOP;
+        let (mut stream, initial) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+        assert!(initial.initial_present.frame_presented);
+
+        let bottom_row = CONTENT_PANEL_TOP + CONTENT_PANEL_ROW_COUNT - 1;
+        let row_start = bottom_row * LOGICAL_FRAMEBUFFER_WIDTH;
+        let row_end = row_start + LOGICAL_FRAMEBUFFER_WIDTH;
+        for timer_tick in 1..=CLIPTOOT_BOTTOM_ROW_ORACLE_FRAME {
+            stream
+                .service_frame(&mut runtime, u16::MIN, timer_tick, false)
+                .unwrap();
+        }
+
+        let nonzero_pixels = runtime.front_buffer().pixels()[row_start..row_end]
+            .iter()
+            .enumerate()
+            .filter_map(|(x, pixel)| (*pixel != u8::MIN).then_some((x, *pixel)))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            nonzero_pixels, CLIPTOOT_BOTTOM_ROW_ORACLE_PIXELS,
+            "CLIPTOOT row 129 is decoded image data, not a reserved metadata row"
         );
     }
 

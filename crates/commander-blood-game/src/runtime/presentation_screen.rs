@@ -162,8 +162,7 @@ impl RuntimePresentationScreen {
         } = context;
         let scene = &mut self.scene_state;
         scene.presentation.active_line = transition.active_line.map(SceneTransitionLine::number);
-        scene.presentation.gate_flags = (scene.presentation.gate_flags & !PRESENTATION_ACTIVE_GATE)
-            | u8::from(presentation.active);
+        import_scene_transition_queue_gate(&mut scene.presentation, presentation);
         scene.presentation.bridge_redraw_pending = u8::from(transition.redraw_pending);
         scene.presentation.request_flags = lifecycle.presentation.request_flags.bits();
         scene.sequence_active = lifecycle.presentation.sequence_active;
@@ -187,7 +186,7 @@ impl RuntimePresentationScreen {
             .map(SceneTransitionLine::from_number);
         transition.redraw_pending = scene.presentation.bridge_redraw_pending != u8::MIN;
         transition.bridge_blocked = scene.dispatch_blocked;
-        presentation.active = scene.presentation.gate_flags & PRESENTATION_ACTIVE_GATE != u8::MIN;
+        export_scene_transition_queue_gate(&scene.presentation, presentation);
         lifecycle.presentation.request_flags =
             crate::native::bloodprg::PresentationRequestFlags::decode(
                 scene.presentation.request_flags,
@@ -270,6 +269,21 @@ fn export_ship_scene_state(
     ship.depth_opening_flags =
         (ship.depth_opening_flags & !SHIP_DEPTH_TRANSITION_ACTIVE) | u8::from(scene.depth_opening);
     ship.depth_step = scene.depth_step;
+}
+
+fn import_scene_transition_queue_gate(
+    scene: &mut crate::native::bloodprg::PresentationUpdateState,
+    presentation: &ScriptPresentationScanState,
+) {
+    scene.gate_flags =
+        (scene.gate_flags & !PRESENTATION_ACTIVE_GATE) | u8::from(presentation.c2_gate_active);
+}
+
+fn export_scene_transition_queue_gate(
+    scene: &crate::native::bloodprg::PresentationUpdateState,
+    presentation: &mut ScriptPresentationScanState,
+) {
+    presentation.c2_gate_active = scene.gate_flags & PRESENTATION_ACTIVE_GATE != u8::MIN;
 }
 
 struct RuntimePresentationScreenBackend<'services, 'window> {
@@ -646,5 +660,35 @@ mod tests {
         assert_eq!(ship.depth_opening_flags, EXPORTED_DEPTH_FLAGS);
         assert_eq!(ship.depth_step, EXPORTED_DEPTH_STEP);
         assert_eq!(ship.bridge_redraw_pending, u8::MIN);
+    }
+
+    #[test]
+    fn scene_transition_queue_gate_does_not_alias_dialogue_activity() {
+        const UNOWNED_GATE_BITS: u8 = 0b1010_0000;
+
+        let mut scene = crate::native::bloodprg::PresentationUpdateState {
+            gate_flags: UNOWNED_GATE_BITS,
+            ..crate::native::bloodprg::PresentationUpdateState::default()
+        };
+        let mut presentation = ScriptPresentationScanState {
+            active: true,
+            c2_gate_active: false,
+            ..ScriptPresentationScanState::default()
+        };
+
+        import_scene_transition_queue_gate(&mut scene, &presentation);
+        assert_eq!(scene.gate_flags, UNOWNED_GATE_BITS);
+
+        presentation.c2_gate_active = true;
+        import_scene_transition_queue_gate(&mut scene, &presentation);
+        assert_eq!(
+            scene.gate_flags,
+            UNOWNED_GATE_BITS | PRESENTATION_ACTIVE_GATE
+        );
+
+        scene.gate_flags &= !PRESENTATION_ACTIVE_GATE;
+        export_scene_transition_queue_gate(&scene, &mut presentation);
+        assert!(!presentation.c2_gate_active);
+        assert!(presentation.active);
     }
 }

@@ -1,6 +1,6 @@
 //! Runtime ownership for presentation-line resolution and HNM queue playback.
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use commander_blood_formats::bloodprg::BloodprgPresentationCatalog;
 
 use crate::native::bloodprg::{
@@ -58,9 +58,9 @@ impl RuntimePresentationPlayer {
         timer_tick: u16,
         render_snapshot_suppressed: bool,
     ) -> Result<PresentationResourceSequenceOutcome> {
-        if self.active_stream.is_some() {
-            bail!("a presentation stream is already active");
-        }
+        // The DOS resource switch closes the current queue file before opening
+        // every newly requested line, even when the prior line has not drained.
+        self.active_stream = None;
         let mut request = self
             .catalog
             .request(line)
@@ -116,6 +116,13 @@ impl RuntimePresentationPlayer {
             .map_or(u64::MIN, RuntimePresentationStream::presented_frame_count)
     }
 
+    #[cfg(test)]
+    fn active_resource_name(&self) -> Option<&commander_blood_formats::archive::BloodResourceName> {
+        self.active_stream
+            .as_ref()
+            .map(RuntimePresentationStream::resource_name)
+    }
+
     /// Copy the transition-source snapshot retained by the active stream.
     pub fn render_palette_snapshot(&self) -> Option<IndexedGamePalette> {
         self.active_stream
@@ -165,13 +172,17 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use crate::native::bloodprg::{
-        InputCancellationOutcome, InputCancellationState, InputDispatchState, cancel_input_action,
+        InputCancellationOutcome, InputCancellationState, InputDispatchState, ScriptClock,
+        TextPresentationState, cancel_input_action,
     };
-    use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
+    use crate::runtime::{OriginalGameData, OriginalGameDataPaths, RuntimeScriptBackend};
 
     use super::*;
 
     const OPENING_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(u16::MIN);
+    const SCENE_DESCRIPTION_PRESENTATION_LINE: PresentationResourceId =
+        PresentationResourceId::new(41);
+    const SCENE_FADE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(39);
     const INITIAL_DECODED_FRAME_COUNT: u64 = 1;
 
     #[test]
@@ -212,33 +223,50 @@ mod tests {
     }
 
     #[test]
-    fn active_stream_must_be_finished_before_another_line_is_loaded() {
+    fn loading_another_line_replaces_the_active_stream() {
         let Some(data) = original_data() else {
             return;
         };
+        let mut backend = RuntimeScriptBackend::new(
+            &data,
+            ScriptClock {
+                hour: 12,
+                day: 1,
+                month: 1,
+            },
+        );
+        backend
+            .apply_description(b"Bob_Morlock", true, &mut TextPresentationState::default())
+            .unwrap()
+            .unwrap();
         let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        player.apply_descript_assets(backend.assets()).unwrap();
         let mut runtime = OriginalGameRuntime::new(data);
         player
             .load(
                 &mut runtime,
-                OPENING_PRESENTATION_LINE,
+                SCENE_DESCRIPTION_PRESENTATION_LINE,
+                PresentationPresentPolicy::default(),
+                u16::MIN,
+                false,
+            )
+            .unwrap();
+        let description_resource = player.active_resource_name().unwrap().clone();
+        assert_eq!(player.decoded_frame_count(), INITIAL_DECODED_FRAME_COUNT);
+
+        player
+            .load(
+                &mut runtime,
+                SCENE_FADE_PRESENTATION_LINE,
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
             )
             .unwrap();
 
-        assert!(
-            player
-                .load(
-                    &mut runtime,
-                    OPENING_PRESENTATION_LINE,
-                    PresentationPresentPolicy::default(),
-                    u16::MIN,
-                    false,
-                )
-                .is_err()
-        );
+        assert!(player.has_stream());
+        assert_eq!(player.decoded_frame_count(), INITIAL_DECODED_FRAME_COUNT);
+        assert_ne!(player.active_resource_name(), Some(&description_resource));
     }
 
     #[test]
