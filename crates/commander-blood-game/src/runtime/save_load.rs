@@ -45,6 +45,12 @@ pub struct RuntimeSaveLoad {
     pending_input: Option<InputAction>,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct SaveLoadFrameEffects {
+    redraw_requested: bool,
+    palette_upload_requested: bool,
+}
+
 impl Default for RuntimeSaveLoad {
     fn default() -> Self {
         Self {
@@ -131,13 +137,23 @@ impl RuntimeSaveLoad {
         lifecycle.profile_change_blockers.save_active = self.state.requests.save;
         lifecycle.profile_change_blockers.load_active = self.state.requests.load;
         lifecycle.set_modal_ui_busy(self.state.requests.save || self.state.requests.load);
-        if self.state.redraw_pending {
+        let effects = self.take_frame_effects();
+        if effects.redraw_requested {
             lifecycle.navigation_rebuild_pending = true;
         }
-        if self.state.palette_dirty {
-            lifecycle.frame_presented = true;
+        if effects.palette_upload_requested {
+            services
+                .palette_transition_mut()
+                .request_visual_color_update();
         }
         Ok(outcome)
+    }
+
+    fn take_frame_effects(&mut self) -> SaveLoadFrameEffects {
+        SaveLoadFrameEffects {
+            redraw_requested: std::mem::take(&mut self.state.redraw_pending),
+            palette_upload_requested: std::mem::take(&mut self.state.palette_dirty),
+        }
     }
 
     fn apply_pending_input(&mut self, services: &ModernGameServices<'_>) -> Result<Option<u8>> {
@@ -436,7 +452,10 @@ fn transition_rect(rect: ChoiceListRect) -> TransitionRect {
 
 #[cfg(test)]
 mod tests {
+    use commander_blood_formats::lbm::RGB_COMPONENT_COUNT;
+
     use crate::native::bloodprg::SaveLoadMenuPhase;
+    use crate::runtime::RuntimePaletteTransition;
 
     use super::*;
 
@@ -461,5 +480,38 @@ mod tests {
             transition_rect(SAVE_LIST_TRANSITION_TARGET),
             TransitionRect::new(100, 0, 0, 120)
         );
+    }
+
+    #[test]
+    fn completed_save_load_effects_are_published_once() {
+        let mut runtime = RuntimeSaveLoad::default();
+        runtime.state.redraw_pending = true;
+        runtime.state.palette_dirty = true;
+        let mut lifecycle = GameLifecycleState::default();
+        let mut palette_transition = RuntimePaletteTransition::default();
+
+        let effects = runtime.take_frame_effects();
+        lifecycle.navigation_rebuild_pending |= effects.redraw_requested;
+        if effects.palette_upload_requested {
+            palette_transition.request_visual_color_update();
+        }
+
+        assert!(lifecycle.navigation_rebuild_pending);
+        assert_ne!(palette_transition.state().dirty_flags, u8::MIN);
+        let mut live_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        palette_transition
+            .update(&mut live_palette, &mut lifecycle)
+            .unwrap();
+        lifecycle.navigation_rebuild_pending = false;
+
+        let effects = runtime.take_frame_effects();
+        lifecycle.navigation_rebuild_pending |= effects.redraw_requested;
+        if effects.palette_upload_requested {
+            palette_transition.request_visual_color_update();
+        }
+
+        assert_eq!(effects, SaveLoadFrameEffects::default());
+        assert!(!lifecycle.navigation_rebuild_pending);
+        assert_eq!(palette_transition.state().dirty_flags, u8::MIN);
     }
 }

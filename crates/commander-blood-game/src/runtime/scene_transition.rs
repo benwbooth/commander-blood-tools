@@ -167,7 +167,7 @@ impl RuntimeSceneTransition {
         }
         lifecycle.presentation.active_line = self.state.active_line.map(|line| line.number());
         lifecycle.presentation.scene_gate_active = self.state.scene_gate_active;
-        lifecycle.navigation_rebuild_pending |= self.state.redraw_pending;
+        lifecycle.navigation_rebuild_pending |= self.take_redraw_request();
         lifecycle.set_presentation_interface_active(self.state.ui_enabled);
         lifecycle.profile_change_blockers.render_update_active =
             self.state.phase != SceneTransitionPhase::Inactive;
@@ -177,6 +177,10 @@ impl RuntimeSceneTransition {
             self.deferred_record = None;
         }
         Ok(outcome)
+    }
+
+    fn take_redraw_request(&mut self) -> bool {
+        std::mem::take(&mut self.state.redraw_pending)
     }
 
     fn install_palette_transition(
@@ -426,6 +430,15 @@ mod tests {
                 .iter()
                 .all(|color| *color == [UNCHANGED_CONSOLE_COMPONENT; RGB_COMPONENT_COUNT])
         );
+    }
+
+    #[test]
+    fn completed_scene_redraw_is_published_once() {
+        let mut transition = RuntimeSceneTransition::default();
+        transition.state.redraw_pending = true;
+
+        assert!(transition.take_redraw_request());
+        assert!(!transition.take_redraw_request());
     }
 
     fn loaded_initial_profile() -> Option<OriginalGameRuntime> {
