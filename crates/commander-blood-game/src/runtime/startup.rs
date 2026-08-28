@@ -14,6 +14,7 @@ use super::{IndexedFramebuffer, OriginalGameRuntime};
 struct RuntimeStartupHost<'runtime, PresentLoadingFrame> {
     runtime: &'runtime mut OriginalGameRuntime,
     bios_font: &'runtime BiosFont8x8,
+    loading_palette: IndexedGamePalette,
     present_loading_frame: PresentLoadingFrame,
 }
 
@@ -24,7 +25,7 @@ where
     type Error = anyhow::Error;
 
     fn publish_loading_palette(&mut self, palette: &IndexedGamePalette) -> Result<()> {
-        *self.runtime.live_palette_mut() = *palette;
+        self.loading_palette = *palette;
         Ok(())
     }
 
@@ -52,7 +53,7 @@ where
     }
 
     fn present_loading_frame(&mut self) -> Result<()> {
-        (self.present_loading_frame)(self.runtime.front_buffer(), self.runtime.live_palette())
+        (self.present_loading_frame)(self.runtime.front_buffer(), &self.loading_palette)
     }
 
     fn ensure_write_directory(&mut self) -> Result<bool> {
@@ -104,10 +105,11 @@ impl OriginalGameRuntime {
         PresentLoadingFrame: FnMut(&IndexedFramebuffer, &IndexedGamePalette) -> Result<()>,
     {
         let catalog = self.data().writable_resource_catalog().clone();
-        let loading_palette = *self.live_palette();
+        let loading_palette = *self.data().default_vga_palette();
         let mut host = RuntimeStartupHost {
             runtime: self,
             bios_font,
+            loading_palette,
             present_loading_frame,
         };
         prepare_startup_writable_resources(&catalog, &loading_palette, &mut host)
@@ -163,6 +165,13 @@ mod tests {
             .map(|(_resource, name)| name.clone())
             .collect();
         let mut runtime = OriginalGameRuntime::new(data);
+        assert!(
+            runtime
+                .live_palette()
+                .iter()
+                .flatten()
+                .all(|component| *component == u8::MIN)
+        );
         let mut presented_loading_frame = None;
         let writable_path = writable_root.0.clone();
 
@@ -183,6 +192,13 @@ mod tests {
         let (loading_frame, loading_palette) = presented_loading_frame.unwrap();
         assert_eq!(loading_palette, *runtime.data().default_vga_palette());
         assert!(loading_frame.pixels().contains(&LOADING_TEXT_PALETTE_INDEX));
+        assert!(
+            runtime
+                .live_palette()
+                .iter()
+                .flatten()
+                .all(|component| *component == u8::MIN)
+        );
 
         for name in unique_names {
             assert!(

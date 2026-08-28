@@ -184,9 +184,10 @@ impl<'window> ModernGameServices<'window> {
         let bridge_console = RuntimeBridgeConsole::new(initial_text_speed_step);
         let scripts = RuntimeScriptSystem::new(&data, script_clock);
         let presentation_player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let startup_palette = *data.default_vga_palette();
         let runtime = OriginalGameRuntime::new(data);
-        let bridge_palette = *runtime.live_palette();
-        let presentation_screen = RuntimePresentationScreen::new(*runtime.live_palette())?;
+        let bridge_palette = startup_palette;
+        let presentation_screen = RuntimePresentationScreen::new(startup_palette)?;
         let presentation = RuntimePresentationHost::new_startup(window, &runtime)?;
         Ok(Self {
             runtime,
@@ -280,7 +281,6 @@ impl<'window> ModernGameServices<'window> {
         if self.bridge_scene.is_some() {
             bail!("bridge scene is already initialized");
         }
-        self.bridge_palette = *self.runtime.live_palette();
         self.runtime
             .rebuild_bridge_sprite_remap_tables()
             .context("building bridge sprite remap tables")?;

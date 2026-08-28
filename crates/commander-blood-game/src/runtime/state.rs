@@ -173,7 +173,7 @@ impl OriginalGameRuntime {
     /// Allocate the flat runtime around one validated original data set.
     pub fn new(data: OriginalGameData) -> Self {
         let profiles = ScriptProfileManager::new(data.script_profile_catalog().clone());
-        let live_palette = *data.default_vga_palette();
+        let live_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
         let world_artwork_layout = data.world_artwork_layout().to_vec().into_boxed_slice();
         Self {
             data,

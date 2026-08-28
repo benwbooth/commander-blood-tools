@@ -340,11 +340,13 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
+    use sha2::{Digest, Sha256};
 
     use super::super::{OriginalGameData, OriginalGameDataPaths};
     use super::*;
 
     const TEST_VIDEO_RESOURCE: &[u8] = b"SQ\\LOGO01.HNM";
+    const OPENING_VIDEO_RESOURCE: &[u8] = b"SQ\\MIND.HNM";
     const HNM_FILENAME_SUFFIX: &[u8] = b".HNM";
     const SHIPPED_HNM_RESOURCE_COUNT: usize = 701;
     const MAXIMUM_TEST_SERVICE_CALLS: usize = 10_000;
@@ -352,6 +354,15 @@ mod tests {
     const TEST_PALETTE_INDEX: usize = 17;
     const EXTERNAL_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [3, 5, 7];
     const VIDEO_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [11, 13, 17];
+    const MIND_ORACLE_FRAME_INDEX: u16 = 30;
+    const MIND_ORACLE_READ_WRAP_INDEX: u16 = MIND_ORACLE_FRAME_INDEX + 1;
+    const MIND_ORACLE_LIVE_PALETTE_SHA256: &str =
+        "37278e27614ceaf4300b9e16d6704cba054fe4cd63b675630e8a6bd4d3186df2";
+    const MIND_ORACLE_FRONT_BUFFER_SHA256: &str =
+        "d147b06b531c26aa2e57565f57c286df48658b2116472855a0067fd0fe786d97";
+    const MIND_ORACLE_BACK_BUFFER_SHA256: &str =
+        "4f7988030a00d082fe445e00a2ac5dab502300ff1b80e8592dd569867b60ef74";
+    const PRESENTATION_PALETTE_COLOR_COUNT: usize = 128;
 
     #[test]
     fn stream_palette_only_publishes_when_a_palette_record_was_applied() {
@@ -407,6 +418,57 @@ mod tests {
         assert!(stream.is_finished());
         assert!(stream.presented_frame_count() >= MINIMUM_EXPECTED_FRAME_COUNT);
         assert!(saw_visible_pixels);
+    }
+
+    #[test]
+    fn opening_frame_30_matches_the_original_live_palette_boundary() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut request = RuntimePresentationRequest::new(
+            BloodResourceName::new(OPENING_VIDEO_RESOURCE).unwrap(),
+        );
+        request.entry_policy.skip_back_buffer_present = true;
+        request.present_policy.skip_back_buffer_present = true;
+        request.present_policy.unclamped_rows = true;
+        let (mut stream, initial) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+        assert!(initial.initial_present.frame_presented);
+
+        for clock in 1..=MIND_ORACLE_FRAME_INDEX {
+            let step = stream
+                .service_frame(&mut runtime, clock, clock, false)
+                .unwrap();
+            assert!(queue_presented_frame(&step.queue), "clock {clock}");
+        }
+
+        assert_eq!(
+            stream.queue_metrics().unwrap().read_wrap_index,
+            MIND_ORACLE_READ_WRAP_INDEX
+        );
+        assert_eq!(
+            format!(
+                "{:x}",
+                Sha256::digest(runtime.live_palette().as_flattened())
+            ),
+            MIND_ORACLE_LIVE_PALETTE_SHA256
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(runtime.front_buffer().pixels())),
+            MIND_ORACLE_FRONT_BUFFER_SHA256
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(runtime.back_buffer().pixels())),
+            MIND_ORACLE_BACK_BUFFER_SHA256
+        );
+        assert!(
+            runtime.live_palette()[PRESENTATION_PALETTE_COLOR_COUNT..]
+                .iter()
+                .flatten()
+                .all(|component| *component == u8::MIN)
+        );
     }
 
     #[test]
