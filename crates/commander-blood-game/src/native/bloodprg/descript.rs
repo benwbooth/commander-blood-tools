@@ -326,7 +326,6 @@ pub fn load_descript_idle_clip<Source: DescriptIdleClipSource>(
     source: &mut Source,
 ) -> Result<bool, Source::Error> {
     assets.idle_clip = Some(clip.clone());
-    assets.encoded_idle_video = None;
     if presentation_active {
         return Ok(false);
     }
@@ -1120,6 +1119,30 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn ui_active_idle_lookup_preserves_the_existing_banked_payload() {
+        let (first, _) =
+            decode_idle_clip(&[1, b'f', b'i', b'r', b's', b't', b'.', b'h', b'n', b'm', 0])
+                .unwrap();
+        let (second, _) = decode_idle_clip(&[
+            2, b's', b'e', b'c', b'o', b'n', b'd', b'.', b'h', b'n', b'm', 0,
+        ])
+        .unwrap();
+        let retained_payload: Box<[u8]> = Box::from(*b"retained idle video");
+        let mut assets = DescriptPresentationAssets::default();
+        let mut source = RecordingIdleClipSource {
+            payload: retained_payload.clone(),
+            ..RecordingIdleClipSource::default()
+        };
+
+        assert!(load_descript_idle_clip(&first, false, &mut assets, &mut source).unwrap());
+        assert!(!load_descript_idle_clip(&second, true, &mut assets, &mut source).unwrap());
+
+        assert_eq!(assets.idle_clip(), Some(&second));
+        assert_eq!(assets.encoded_idle_video(), Some(retained_payload.as_ref()));
+        assert_eq!(source.loaded_names.len(), 1);
     }
 
     #[test]

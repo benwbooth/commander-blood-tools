@@ -27,11 +27,11 @@ use crate::native::bloodprg::{
     advance_bridge_sprite_state, build_banked_tint_table, build_palette_blend_remap_table,
     build_pause_hud_refresh, commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display,
     copy_work_surface_span, decode_chart_back_buffer, decode_orx_back_buffer, decode_pbm_image,
-    draw_main_font_text, draw_presentation_choice_number, draw_small_font_text, fill_display_band,
-    fill_framebuffer_rect, mark_bridge_sprite_range_dirty, measure_game_text_width,
-    populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range, remap_framebuffer_rect,
-    select_ship_view_artwork, update_bridge_sprite_extent, update_bridge_sprite_position,
-    update_name_area_effect,
+    draw_main_font_text, draw_planar_square_caps_text, draw_presentation_choice_number,
+    draw_small_font_text, fill_display_band, fill_framebuffer_rect, mark_bridge_sprite_range_dirty,
+    measure_game_text_width, populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range,
+    remap_framebuffer_rect, select_ship_view_artwork, update_bridge_sprite_extent,
+    update_bridge_sprite_position, update_name_area_effect,
 };
 use crate::native::manu3::model::Manu3Model;
 
@@ -1068,7 +1068,7 @@ impl OriginalGameRuntime {
         Ok(())
     }
 
-    /// Draw the exact pause clear rectangle and compact-font label into the front buffer.
+    /// Draw the exact pause clear rectangle and 10-row square-caps label.
     pub fn draw_pause_hud(&mut self, active: bool) -> Result<Option<PauseHudRefresh>> {
         let Some(refresh) = build_pause_hud_refresh(u8::from(active)) else {
             return Ok(None);
@@ -1097,7 +1097,7 @@ impl OriginalGameRuntime {
         if clear_outcome == RasterRectOutcome::Rejected {
             bail!("authored pause HUD rectangle was rejected by the logical display clip");
         }
-        draw_small_font_text(
+        draw_planar_square_caps_text(
             self.front_buffer.pixels_mut(),
             self.data.font_resources(),
             refresh.text,
@@ -1105,6 +1105,7 @@ impl OriginalGameRuntime {
                 x: i32::from(refresh.text_position[0]),
                 y: i32::from(refresh.text_position[1]),
             },
+            FULL_LOGICAL_FONT_BAND,
             refresh.text_palette_index,
         )
         .context("drawing the translated pause HUD label")?;
@@ -1313,7 +1314,7 @@ mod tests {
     use super::*;
 
     const TEST_BACKGROUND_COLOR: u8 = 73;
-    const EXPECTED_PAUSE_LABEL_PIXEL_COUNT: usize = 46;
+    const EXPECTED_PAUSE_LABEL_PIXEL_COUNT: usize = 130;
     const TEST_SAVE_FILENAME: &[u8] = b"game9.sav";
     const MISSING_SAVE_FILENAME: &[u8] = b"game8.sav";
     const TEST_SAVE_BYTES: &[u8] = b"flat save storage";
