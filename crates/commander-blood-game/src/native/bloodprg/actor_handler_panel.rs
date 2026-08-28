@@ -5,9 +5,6 @@ use super::{
     PresentationLineStepper,
 };
 
-const PANEL_CLOSE_ZOOM_THRESHOLD: i16 = 100;
-const PANEL_CLOSE_START: i16 = 106;
-
 /// Actor-presentation state published while the panel-close line plays.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum PanelCloseActorPresentation {
@@ -23,8 +20,6 @@ pub enum PanelCloseActorPresentation {
 pub struct PanelCloseActorState {
     /// The presentation panel currently owns the bridge.
     pub panel_active: bool,
-    /// Signed panel zoom/close counter.
-    pub zoom_counter: i16,
     /// A scene presentation remains queued.
     pub scene_queued: bool,
     /// Primary-button edge latch.
@@ -43,6 +38,10 @@ pub struct PanelCloseActorState {
 pub trait PanelCloseActorBackend: PresentationLineStepper {
     /// Request the panel-close hand animation through the shared selector.
     fn request_panel_close_hand_animation(&mut self);
+
+    /// Move the shared presentation phase to the first closing frame when it is
+    /// still in a pre-close phase.
+    fn begin_panel_close_if_open(&mut self) -> bool;
 
     /// Finalize the currently queued scene presentation.
     fn finalize_scene_presentation(&mut self);
@@ -84,8 +83,7 @@ pub fn update_panel_close_actor<Backend: PanelCloseActorBackend>(
     let outcome = if line.flags.ready {
         state.presentation = PanelCloseActorPresentation::Presenting;
         backend.request_panel_close_hand_animation();
-        if state.panel_active && state.zoom_counter < PANEL_CLOSE_ZOOM_THRESHOLD {
-            state.zoom_counter = PANEL_CLOSE_START;
+        if state.panel_active && backend.begin_panel_close_if_open() {
             if state.scene_queued {
                 backend.finalize_scene_presentation();
                 state.scene_queued = false;
@@ -159,6 +157,7 @@ mod tests {
         finalizer_called: bool,
         entity_called: bool,
         hand_animation_requested: bool,
+        panel_phase: i16,
     }
 
     impl PresentationLineStepper for OracleBackend {
@@ -181,6 +180,14 @@ mod tests {
     impl PanelCloseActorBackend for OracleBackend {
         fn request_panel_close_hand_animation(&mut self) {
             self.hand_animation_requested = true;
+        }
+
+        fn begin_panel_close_if_open(&mut self) -> bool {
+            if self.panel_phase >= 100 {
+                return false;
+            }
+            self.panel_phase = 106;
+            true
         }
 
         fn finalize_scene_presentation(&mut self) {
@@ -211,7 +218,6 @@ mod tests {
             let mut playback = PresentationLinePlayback::default();
             let mut state = PanelCloseActorState {
                 panel_active: vector.mode_before & 1 != u8::MIN,
-                zoom_counter: vector.zoom_before as i16,
                 scene_queued: vector.presentation_finalizer_called,
                 mouse_primary_pressed: true,
                 mouse_press_pending: true,
@@ -221,6 +227,7 @@ mod tests {
             };
             let mut backend = OracleBackend {
                 completed: vector.line_helper_completed,
+                panel_phase: vector.zoom_before as i16,
                 ..OracleBackend::default()
             };
 
@@ -261,7 +268,7 @@ mod tests {
                 vector.name
             );
             assert_eq!(
-                state.zoom_counter as u16, vector.zoom_after,
+                backend.panel_phase as u16, vector.zoom_after,
                 "{}",
                 vector.name
             );

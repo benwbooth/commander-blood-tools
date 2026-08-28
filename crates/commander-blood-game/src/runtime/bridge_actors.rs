@@ -568,6 +568,16 @@ impl PanelCloseActorBackend for RuntimeBridgeActorBackend<'_, '_> {
             .request_manu3_animation(Manu3AnimationSelector::PanelClose);
     }
 
+    fn begin_panel_close_if_open(&mut self) -> bool {
+        match self.services.begin_presentation_panel_close_if_open() {
+            Ok(started) => started,
+            Err(error) => {
+                self.record_callback::<()>(Err(error));
+                false
+            }
+        }
+    }
+
     fn finalize_scene_presentation(&mut self) {
         self.services
             .finish_bridge_actor_scene_presentation(self.lifecycle);

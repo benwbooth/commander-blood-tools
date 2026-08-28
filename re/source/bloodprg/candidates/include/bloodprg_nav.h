@@ -136,9 +136,9 @@ extern volatile cb_u16 nav_pending_record_link; /* DS:0x675A */
 extern volatile cb_u16 CB_GAME_DATA
         nav_pending_record_link_gs; /* explicit GS:0x675A alias */
 /* SS:0x2B13 in the binary; runtime SS=DS makes this ordinary near data. */
-extern volatile cb_u16 nav_kind2_target_offsets[];
+extern volatile cb_u16 nav_kind2_target_offsets[]; /* SS:0x2B13 */
 /* DS:0x6D3E alias used as a zero-skipping, sentinel-terminated contact list. */
-extern volatile cb_u16 nav_contact_slot_words[];
+extern volatile cb_u16 nav_contact_slot_words[]; /* DS:0x6D3E */
 extern volatile cb_u16 nav_deferred_record_type; /* DS:0x6768 */
 extern volatile cb_u16 nav_deferred_record_link; /* DS:0x676A */
 extern volatile char nav_radio_snd_path[];    /* DS:0x0D16 */

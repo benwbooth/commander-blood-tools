@@ -293,7 +293,11 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn poll_pointer(&mut self, _state: &mut GameLifecycleState) -> Result<()> {
+        let previous = self.services.input().pointer_sample().position;
         self.platform.poll_pointer(&mut self.services);
+        if self.services.input().pointer_sample().position != previous {
+            self.timer.reset_mouse_idle_counter();
+        }
         Ok(())
     }
 
@@ -310,6 +314,9 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     fn run_vm(&mut self, state: &mut GameLifecycleState) -> Result<GameVmRunStatus> {
         self.services
             .execute_and_apply_lifecycle_script_frame(state)?;
+        if self.services.take_script_mouse_idle_reset_request() {
+            self.timer.reset_mouse_idle_counter();
+        }
         Ok(GameVmRunStatus::Continue)
     }
 

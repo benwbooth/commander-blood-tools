@@ -280,6 +280,8 @@ pub struct ScriptPresentationScanOutcome {
     pub presentation_started: Option<ScriptObjectId>,
     /// Whether an existing player presentation ended.
     pub presentation_ended: bool,
+    /// A fresh presentation cleared the bridge-console selection alias at `0x2A19`.
+    pub bridge_console_selection_cleared: bool,
     /// Slot receiving a complete deferred record.
     pub deferred_destination: Option<ScriptStateWordTriple>,
 }
@@ -530,6 +532,7 @@ where
             presentation.dialogue_hold_complete = false;
             presentation.owner = None;
             presentation.start_locked = true;
+            outcome.bridge_console_selection_cleared = true;
             selector.clear_presentation_branches();
             if !set_object_flag(state, related, ScriptObjectFlag::PresentationBlocked, true) {
                 return Err(ScriptPresentationScanError::ObjectFlagUpdate { object: related });
@@ -1075,6 +1078,12 @@ mod tests {
             assert_eq!(
                 fixture.presentation.active,
                 vector.presentation_active_after != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.bridge_console_selection_cleared,
+                outcome.presentation_started.is_some(),
                 "{}",
                 vector.name
             );

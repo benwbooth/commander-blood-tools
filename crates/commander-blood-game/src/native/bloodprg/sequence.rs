@@ -33,6 +33,15 @@ pub struct SequencePresentationState {
     pub loaded_scene_image_valid: bool,
     /// Dialogue dispatch is waiting on its current gate.
     pub dialogue_gate_active: bool,
+    /// A successful A8 request must clear the low byte of the aliased mouse-idle timer.
+    pub mouse_idle_reset_pending: bool,
+}
+
+impl SequencePresentationState {
+    /// Drain the one-shot write to native data address `0x0B3B`.
+    pub fn take_mouse_idle_reset_request(&mut self) -> bool {
+        std::mem::take(&mut self.mouse_idle_reset_pending)
+    }
 }
 
 /// Activity gates consulted after A8 has loaded its owned basename.
@@ -80,6 +89,7 @@ pub fn load_sequence_request(
     state.presentation_gate_active = false;
     state.loaded_scene_image_valid = false;
     state.dialogue_gate_active = false;
+    state.mouse_idle_reset_pending = true;
     true
 }
 
@@ -232,6 +242,14 @@ mod tests {
             assert_eq!(state.presentation_gate_active, !raised, "{}", vector.name);
             assert_eq!(state.loaded_scene_image_valid, !raised, "{}", vector.name);
             assert_eq!(state.dialogue_gate_active, !raised, "{}", vector.name);
+            assert_eq!(state.mouse_idle_reset_pending, raised, "{}", vector.name);
+            assert_eq!(
+                state.take_mouse_idle_reset_request(),
+                raised,
+                "{}",
+                vector.name
+            );
+            assert!(!state.take_mouse_idle_reset_request(), "{}", vector.name);
         }
     }
 

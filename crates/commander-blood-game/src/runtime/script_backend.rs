@@ -238,6 +238,13 @@ impl RuntimeScriptSystem {
         &self.dispatch.sequence_presentation
     }
 
+    /// Drain A8's write to the mouse-idle timer alias at native address `0x0B3B`.
+    pub fn take_mouse_idle_reset_request(&mut self) -> bool {
+        self.dispatch
+            .sequence_presentation
+            .take_mouse_idle_reset_request()
+    }
+
     /// Borrow subtitle and inline-menu state produced by translated A6 handlers.
     pub const fn text_presentation(&self) -> &TextPresentationState {
         &self.dispatch.text_presentation

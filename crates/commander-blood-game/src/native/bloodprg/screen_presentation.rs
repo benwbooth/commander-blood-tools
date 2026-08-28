@@ -276,6 +276,19 @@ impl PresentationScreenState {
         self.phase
     }
 
+    /// Start the actor-driven close at native phase 106 when the panel has not
+    /// already entered its closing or finalizing phases.
+    pub fn begin_actor_close_if_open(&mut self) -> bool {
+        if matches!(
+            self.phase,
+            PresentationPanelPhase::Closing(_) | PresentationPanelPhase::Finalizing
+        ) {
+            return false;
+        }
+        self.phase = PresentationPanelPhase::Closing(PresentationPanelStep::Six);
+        true
+    }
+
     /// Select one of the six authored presentation records.
     pub fn set_selected_choice(&mut self, choice: PresentationChoiceNumber) {
         self.selected_choice = choice;
@@ -917,6 +930,39 @@ mod tests {
         assert!(!state.redraw_requested());
         assert!(state.screen_rebuild_pending());
         assert!(state.completion_audio_pending());
+    }
+
+    #[test]
+    fn actor_close_updates_the_canonical_native_phase_alias() {
+        let pre_close = [
+            PresentationPanelPhase::Begin,
+            PresentationPanelPhase::Opening(PresentationPanelStep::Three),
+            PresentationPanelPhase::Transition(PresentationTransitionFrame::Two),
+            PresentationPanelPhase::Active,
+        ];
+        for phase in pre_close {
+            let mut state = PresentationScreenState {
+                phase,
+                ..PresentationScreenState::default()
+            };
+            assert!(state.begin_actor_close_if_open());
+            assert_eq!(
+                state.phase(),
+                PresentationPanelPhase::Closing(PresentationPanelStep::Six)
+            );
+        }
+
+        for phase in [
+            PresentationPanelPhase::Closing(PresentationPanelStep::Four),
+            PresentationPanelPhase::Finalizing,
+        ] {
+            let mut state = PresentationScreenState {
+                phase,
+                ..PresentationScreenState::default()
+            };
+            assert!(!state.begin_actor_close_if_open());
+            assert_eq!(state.phase(), phase);
+        }
     }
 
     fn oracle_state(vector: &ScreenOracle) -> PresentationScreenState {

@@ -1778,6 +1778,16 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
+    /// Apply the panel actor's write to the presentation renderer's shared phase.
+    pub(super) fn begin_presentation_panel_close_if_open(&mut self) -> Result<bool> {
+        Ok(self
+            .presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .state_mut()
+            .begin_actor_close_if_open())
+    }
+
     /// Synchronize the shared bridge-actor redraw bit with the panel owner.
     pub(super) fn set_bridge_actor_redraw_requested(&mut self, requested: bool) -> Result<()> {
         self.presentation_screen
@@ -2302,13 +2312,28 @@ impl<'window> ModernGameServices<'window> {
         Ok(outcome)
     }
 
+    /// Drain a script request to clear the native mouse-idle timer alias.
+    pub fn take_script_mouse_idle_reset_request(&mut self) -> bool {
+        self.scripts.take_mouse_idle_reset_request()
+    }
+
     fn publish_script_presentation_status_change(&mut self) {
-        let changed = self
+        let (changed, clear_bridge_console) = self
             .scripts
             .last_presentation_outcome()
-            .is_some_and(|outcome| {
-                outcome.presentation_started.is_some() || outcome.presentation_ended
-            });
+            .map(|outcome| {
+                (
+                    outcome.presentation_started.is_some() || outcome.presentation_ended,
+                    outcome.bridge_console_selection_cleared,
+                )
+            })
+            .unwrap_or_default();
+        if clear_bridge_console {
+            self.bridge_console
+                .as_mut()
+                .expect("bridge console update is not reentrant")
+                .clear_selected_item_alias();
+        }
         if changed {
             self.request_manu3_animation(Manu3AnimationSelector::BridgeActive);
         }

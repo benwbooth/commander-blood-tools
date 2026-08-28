@@ -63,6 +63,10 @@ impl RuntimeBridgeConsole {
         self.console.selected.is_some()
     }
 
+    pub(super) fn clear_selected_item_alias(&mut self) {
+        self.console.selected = None;
+    }
+
     pub(super) fn update(
         &mut self,
         services: &mut ModernGameServices<'_>,

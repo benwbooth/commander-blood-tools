@@ -106,6 +106,11 @@ impl Default for GameTimerState {
 }
 
 impl GameTimerState {
+    /// Clear the idle counter exactly as mouse motion and A8 sequence requests do.
+    pub fn reset_mouse_idle_counter(&mut self) {
+        self.mouse_motion_idle_counter = u16::MIN;
+    }
+
     /// Start modern timer delivery and restore the native slow-update period.
     ///
     /// This is the gameplay-state replacement for `install_timer_isr_hook` at
