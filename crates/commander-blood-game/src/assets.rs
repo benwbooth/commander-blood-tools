@@ -502,6 +502,10 @@ mod tests {
     const FILE_POSITION_FIELD_SIZE: usize = 4;
     const FORCE_LOOSE_BIT: u8 = 1;
     const TEST_PAYLOAD_BYTE: u8 = 73;
+    const FILE_COPY_ORACLE_VECTOR_COUNT: usize = 8;
+    const RESOURCE_LENGTH_ORACLE_VECTOR_COUNT: usize = 8;
+    const RESOURCE_LOAD_ORACLE_VECTOR_COUNT: usize = 8;
+    const FILE_WRITE_ORACLE_VECTOR_COUNT: usize = 8;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     #[derive(Deserialize)]
@@ -511,6 +515,39 @@ mod tests {
         allowlist_entries: Vec<String>,
         route: String,
         archive_hit: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct FileCopyOracle {
+        name: String,
+        byte_count: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct ResourceLengthOracle {
+        name: String,
+        embedded_flag: u8,
+        archive_size: u64,
+        find_success: Option<bool>,
+        file_size: Option<u64>,
+        returned_size: u64,
+    }
+
+    #[derive(Deserialize)]
+    struct ResourceLoadOracle {
+        name: String,
+        embedded_flag: u8,
+        byte_count: usize,
+        open_success: Option<bool>,
+        returned_size: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct FileWriteOracle {
+        name: String,
+        byte_count: usize,
+        create_success: bool,
+        returned_size: usize,
     }
 
     struct TemporaryResourceRoot(PathBuf);
@@ -558,6 +595,12 @@ mod tests {
 
     fn resource_name(name: impl AsRef<[u8]>) -> BloodResourceName {
         BloodResourceName::new(name).unwrap()
+    }
+
+    fn oracle_payload(byte_count: usize) -> Vec<u8> {
+        (0..byte_count)
+            .map(|index| (index.wrapping_mul(37).wrapping_add(11) & usize::from(u8::MAX)) as u8)
+            .collect()
     }
 
     #[test]
@@ -736,6 +779,197 @@ mod tests {
             usize::MIN
         );
         assert!(std::fs::read(root.0.join("COPIED.DAT")).unwrap().is_empty());
+    }
+
+    #[test]
+    fn startup_copy_matches_every_native_semantic_vector() {
+        let vectors: Vec<FileCopyOracle> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_280f_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), FILE_COPY_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let root = TemporaryResourceRoot::create();
+            let source_name = resource_name("SOURCE.DAT");
+            let destination_name = resource_name("COPIED.DAT");
+            if vector.name == "source_open_failure" {
+                let store = OriginalResourceStore::new(root.0.clone(), None, [], false);
+                assert!(
+                    store
+                        .copy_to_loose(&source_name, &destination_name)
+                        .is_err(),
+                    "{}",
+                    vector.name
+                );
+                continue;
+            }
+
+            let payload = oracle_payload(vector.byte_count);
+            let archive =
+                BloodArchive::decode(archive_bytes(&[(source_name.clone(), payload.as_slice())]))
+                    .unwrap();
+            if vector.name == "destination_create_failure_leaks_source" {
+                let blocked_root = root.0.join("blocked-root");
+                std::fs::write(&blocked_root, b"not a directory").unwrap();
+                let store = OriginalResourceStore::with_writable_root(
+                    root.0.clone(),
+                    blocked_root,
+                    Some(archive),
+                    [],
+                    false,
+                );
+                assert!(
+                    store
+                        .copy_to_loose(&source_name, &destination_name)
+                        .is_err(),
+                    "{}",
+                    vector.name
+                );
+                continue;
+            }
+
+            let store = OriginalResourceStore::new(root.0.clone(), Some(archive), [], false);
+            let copied = store
+                .copy_to_loose(&source_name, &destination_name)
+                .unwrap();
+            assert_eq!(copied, !payload.is_empty(), "{}", vector.name);
+            if copied {
+                assert_eq!(
+                    std::fs::read(root.0.join("COPIED.DAT")).unwrap(),
+                    payload,
+                    "{}",
+                    vector.name
+                );
+            } else {
+                assert!(!root.0.join("COPIED.DAT").exists(), "{}", vector.name);
+            }
+        }
+    }
+
+    #[test]
+    fn resource_length_maps_every_native_vector_to_typed_storage() {
+        let vectors: Vec<ResourceLengthOracle> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_28ca_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RESOURCE_LENGTH_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let root = TemporaryResourceRoot::create();
+            let name = resource_name("RESOURCE.DAT");
+            if vector.embedded_flag & FORCE_LOOSE_BIT != u8::MIN {
+                assert_eq!(vector.returned_size, vector.archive_size, "{}", vector.name);
+                let payload = oracle_payload((vector.returned_size as usize % 251) + 1);
+                let archive =
+                    BloodArchive::decode(archive_bytes(&[(name.clone(), payload.as_slice())]))
+                        .unwrap();
+                let store = OriginalResourceStore::new(root.0.clone(), Some(archive), [], false);
+                assert_eq!(store.source(&name), OriginalResourceSource::EmbeddedArchive);
+                assert_eq!(
+                    store.resource_len(&name).unwrap(),
+                    payload.len(),
+                    "{}",
+                    vector.name
+                );
+                continue;
+            }
+
+            let store = OriginalResourceStore::new(root.0.clone(), None, [name.clone()], false);
+            if vector.find_success == Some(false) {
+                assert!(store.resource_len(&name).is_err(), "{}", vector.name);
+                continue;
+            }
+            let file_size = vector.file_size.unwrap();
+            let file = std::fs::File::create(root.0.join("RESOURCE.DAT")).unwrap();
+            file.set_len(file_size).unwrap();
+            assert_eq!(vector.returned_size, file_size, "{}", vector.name);
+            assert_eq!(
+                store.resource_len(&name).unwrap() as u64,
+                file_size,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn resource_load_matches_every_native_semantic_vector() {
+        let vectors: Vec<ResourceLoadOracle> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_2abb_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RESOURCE_LOAD_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let root = TemporaryResourceRoot::create();
+            let name = resource_name("RESOURCE.DAT");
+            if vector.open_success == Some(false) {
+                let store = OriginalResourceStore::new(root.0.clone(), None, [name.clone()], false);
+                assert!(store.load(&name).is_err(), "{}", vector.name);
+                continue;
+            }
+
+            let payload = oracle_payload(vector.byte_count);
+            let store = if vector.embedded_flag & FORCE_LOOSE_BIT != u8::MIN {
+                let archive =
+                    BloodArchive::decode(archive_bytes(&[(name.clone(), payload.as_slice())]))
+                        .unwrap();
+                OriginalResourceStore::new(root.0.clone(), Some(archive), [], false)
+            } else {
+                std::fs::write(root.0.join("RESOURCE.DAT"), &payload).unwrap();
+                OriginalResourceStore::new(root.0.clone(), None, [name.clone()], false)
+            };
+            assert_eq!(vector.returned_size, payload.len(), "{}", vector.name);
+            assert_eq!(&*store.load(&name).unwrap(), payload, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn file_write_matches_every_native_semantic_vector() {
+        let vectors: Vec<FileWriteOracle> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_2b6b_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), FILE_WRITE_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let root = TemporaryResourceRoot::create();
+            let name = resource_name("OUTPUT.DAT");
+            let payload = oracle_payload(vector.byte_count);
+            if !vector.create_success {
+                let blocked_root = root.0.join("blocked-root");
+                std::fs::write(&blocked_root, b"not a directory").unwrap();
+                let store = OriginalResourceStore::with_writable_root(
+                    root.0.clone(),
+                    blocked_root,
+                    None,
+                    [],
+                    true,
+                );
+                assert!(
+                    store.write_loose(&name, &payload).is_err(),
+                    "{}",
+                    vector.name
+                );
+                continue;
+            }
+
+            let store = OriginalResourceStore::new(root.0.clone(), None, [], true);
+            assert_eq!(vector.returned_size, payload.len(), "{}", vector.name);
+            assert_eq!(
+                store.write_loose(&name, &payload).unwrap(),
+                payload.len(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                &*store.load_writable(&name).unwrap(),
+                payload,
+                "{}",
+                vector.name
+            );
+        }
     }
 
     #[test]

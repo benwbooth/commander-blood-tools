@@ -474,6 +474,7 @@ mod tests {
 
     use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
     use serde::Deserialize;
+    use sha2::{Digest, Sha256};
 
     use super::*;
 
@@ -497,7 +498,14 @@ mod tests {
     const NAMED_RESOURCE_ORACLE_VECTOR_COUNT: usize = 8;
     const NAMED_RESOURCE_ORACLE_SUCCESS_COUNT: usize = 6;
     const NAMED_RESOURCE_ORACLE_HOST_FAILURE_COUNT: usize = 2;
+    const LOAD_BY_ID_ORACLE_VECTOR_COUNT: usize = 8;
+    const PALETTE_BLOCK_ORACLE_VECTOR_COUNT: usize = 6;
+    const RELEASE_ORACLE_VECTOR_COUNT: usize = 6;
+    const RESOLVE_ORACLE_VECTOR_COUNT: usize = 6;
+    const ALLOCATION_FIELD_ORACLE_VECTOR_COUNT: usize = 8;
     const ORIGINAL_DIRECT_RESOURCE_FLAG: u16 = 0x8000;
+    const ORIGINAL_RESOURCE_LOADED_FLAG_MASK: u16 = 3;
+    const ORIGINAL_PALETTE_STORAGE_BYTE_COUNT: usize = 0x900;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     #[derive(Deserialize)]
@@ -512,6 +520,61 @@ mod tests {
         palette_before_hex: String,
         palette_after_hex: String,
         processed_resource_hex: String,
+    }
+
+    #[derive(Deserialize)]
+    struct LoadByIdOracle {
+        name: String,
+        resource_id: u16,
+        byte_count: u64,
+        allocation_status: Option<i16>,
+        file_result: Option<u64>,
+        success: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct PaletteBlockOracle {
+        name: String,
+        blocks: Vec<PaletteBlockOracleEntry>,
+        dos_read_count: usize,
+        payload_bytes: usize,
+        remaining_before: u32,
+        remaining_after: u32,
+        palette_sha256: String,
+    }
+
+    #[derive(Deserialize)]
+    struct PaletteBlockOracleEntry {
+        start: u8,
+        count: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct ReleaseOracle {
+        name: String,
+        handle: u16,
+        entry_flags: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ResolveOracle {
+        name: String,
+        handle: u16,
+        entry_flags: u16,
+        result: ResolveOracleResult,
+    }
+
+    #[derive(Deserialize)]
+    struct ResolveOracleResult {
+        loaded: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct AllocationFieldOracle {
+        name: String,
+        handle: u16,
+        field_04: u32,
+        eax: u32,
     }
 
     struct TemporaryResourceRoot(PathBuf);
@@ -594,6 +657,16 @@ mod tests {
         source.extend_from_slice(&PALETTE_TEST_BLOCK_TERMINATOR.to_le_bytes());
         source.extend_from_slice(PALETTE_TEST_PAYLOAD);
         source.into_boxed_slice()
+    }
+
+    fn cached_resource(
+        bytes: impl Into<Box<[u8]>>,
+        allocation_byte_count: usize,
+    ) -> CachedResource {
+        CachedResource {
+            bytes: bytes.into(),
+            allocation_byte_count,
+        }
     }
 
     #[test]
@@ -745,6 +818,243 @@ mod tests {
         assert!(cache.release(CACHE_TEST_RESOURCE_ID));
         assert!(!cache.release(CACHE_TEST_RESOURCE_ID));
         assert_eq!(cache.resolve(CACHE_TEST_RESOURCE_ID), None);
+    }
+
+    #[test]
+    fn load_by_id_maps_every_native_vector_to_owned_cache_state() {
+        let vectors: Vec<LoadByIdOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_287b_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), LOAD_BY_ID_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let root = TemporaryResourceRoot::create();
+            let store = loose_store(&root);
+            let resource = ResourceId::new(vector.resource_id);
+            let name = resource_name("RESOURCE.DAT");
+
+            if vector.name == "resource_name_index_wraps_to_sixteen_bits" {
+                let catalog = test_catalog();
+                assert!(matches!(
+                    OriginalResourceCache::new().load_by_id(&store, &catalog, resource),
+                    Err(ResourceCacheError::UnknownResource(actual)) if actual == resource
+                ));
+                continue;
+            }
+
+            let catalog = catalog_with_resource(resource, &name);
+            if vector.byte_count == u64::MIN {
+                std::fs::write(root.0.join("RESOURCE.DAT"), []).unwrap();
+                assert!(matches!(
+                    OriginalResourceCache::new().load_by_id(&store, &catalog, resource),
+                    Err(ResourceCacheError::EmptyResource(actual)) if actual == resource
+                ));
+                assert!(!vector.success, "{}", vector.name);
+                continue;
+            }
+
+            if vector.allocation_status == Some(-1) {
+                assert!(!vector.success, "{}", vector.name);
+                assert!(rounded_allocation_byte_count(vector.byte_count as usize).is_ok());
+                continue;
+            }
+
+            if vector.file_result == Some(u64::MIN) {
+                assert!(
+                    OriginalResourceCache::new()
+                        .load_by_id(&store, &catalog, resource)
+                        .is_err(),
+                    "{}",
+                    vector.name
+                );
+                assert!(!vector.success, "{}", vector.name);
+                continue;
+            }
+
+            let payload_len = usize::try_from(vector.byte_count.min(65_537)).unwrap();
+            let payload = vec![vector.resource_id as u8; payload_len];
+            std::fs::write(root.0.join("RESOURCE.DAT"), &payload).unwrap();
+            let mut cache = OriginalResourceCache::new();
+            if vector.allocation_status.is_some_and(|status| status > 0) {
+                cache
+                    .insert(resource, payload.clone().into_boxed_slice())
+                    .unwrap();
+            }
+            let expected = if vector.allocation_status.is_some_and(|status| status > 0) {
+                ResourceLoadStatus::AlreadyLoaded
+            } else {
+                ResourceLoadStatus::LoadedNow
+            };
+            assert_eq!(
+                cache.load_by_id(&store, &catalog, resource).unwrap(),
+                expected,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                cache.resolve(resource),
+                Some(payload.as_slice()),
+                "{}",
+                vector.name
+            );
+            assert!(vector.success, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn palette_blocks_match_every_native_palette_hash() {
+        let vectors: Vec<PaletteBlockOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_4086_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), PALETTE_BLOCK_ORACLE_VECTOR_COUNT);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let mut original_storage = (0..ORIGINAL_PALETTE_STORAGE_BYTE_COUNT)
+                .map(|index| {
+                    (index
+                        .wrapping_mul(17)
+                        .wrapping_add(case_index.wrapping_mul(29))
+                        .wrapping_add(0x43)
+                        & usize::from(u8::MAX)) as u8
+                })
+                .collect::<Vec<_>>();
+            let mut live_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+            for (destination, source) in live_palette
+                .iter_mut()
+                .zip(original_storage.chunks_exact(RGB_COMPONENT_COUNT))
+            {
+                destination.copy_from_slice(source);
+            }
+
+            let mut source = RESOURCE_PALETTE_PREAMBLE_FLAG.to_le_bytes().to_vec();
+            let mut payload_byte_count = usize::MIN;
+            for (block_index, block) in vector.blocks.iter().enumerate() {
+                let header = u16::from(block.start) | (u16::from(block.count) << u8::BITS);
+                source.extend_from_slice(&header.to_le_bytes());
+                let component_byte_count = usize::from(block.count) * RGB_COMPONENT_COUNT;
+                payload_byte_count += component_byte_count;
+                source.extend((0..component_byte_count).map(|index| {
+                    (index
+                        .wrapping_mul(31)
+                        .wrapping_add(block_index.wrapping_mul(47))
+                        .wrapping_add(case_index.wrapping_mul(53))
+                        .wrapping_add(5)
+                        & usize::from(u8::MAX)) as u8
+                }));
+            }
+            source.extend_from_slice(&PALETTE_TEST_BLOCK_TERMINATOR.to_le_bytes());
+
+            let (processed, palette, changed) =
+                decode_palette_resource(PALETTE_TEST_RESOURCE_ID, &source, &live_palette).unwrap();
+            assert!(changed, "{}", vector.name);
+            assert_eq!(
+                &*processed,
+                RESOURCE_PALETTE_PREAMBLE_FLAG.to_le_bytes(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(payload_byte_count, vector.payload_bytes, "{}", vector.name);
+            assert_eq!(
+                vector.dos_read_count,
+                vector.blocks.len() * 2 + 1,
+                "{}",
+                vector.name
+            );
+            let consumed = vector.blocks.len() * RESOURCE_FILE_HEADER_SIZE
+                + vector.payload_bytes
+                + RESOURCE_FILE_HEADER_SIZE;
+            assert_eq!(
+                vector.remaining_before.wrapping_sub(consumed as u32),
+                vector.remaining_after,
+                "{}",
+                vector.name
+            );
+
+            for (destination, color) in original_storage
+                .chunks_exact_mut(RGB_COMPONENT_COUNT)
+                .zip(palette)
+            {
+                destination.copy_from_slice(&color);
+            }
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&original_storage)),
+                vector.palette_sha256,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn release_matches_every_native_loaded_flag_vector_without_handle_aliasing() {
+        let vectors: Vec<ReleaseOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_5288_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RELEASE_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let resource = ResourceId::new(vector.handle);
+            let loaded = vector.entry_flags & ORIGINAL_RESOURCE_LOADED_FLAG_MASK != u16::MIN;
+            let mut cache = OriginalResourceCache::new();
+            if loaded {
+                cache.entries.insert(resource, cached_resource([0x5A], 16));
+            }
+            assert_eq!(cache.release(resource), loaded, "{}", vector.name);
+            assert!(!cache.is_loaded(resource), "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn resolve_matches_every_native_loaded_flag_vector_without_segment_state() {
+        let vectors: Vec<ResolveOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_5320_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), RESOLVE_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let resource = ResourceId::new(vector.handle);
+            let loaded = vector.entry_flags & ORIGINAL_RESOURCE_LOADED_FLAG_MASK != u16::MIN;
+            assert_eq!(loaded, vector.result.loaded, "{}", vector.name);
+            let mut cache = OriginalResourceCache::new();
+            if loaded {
+                cache.entries.insert(resource, cached_resource([0xA5], 16));
+            }
+            assert_eq!(
+                cache.resolve(resource),
+                loaded.then_some(&[0xA5][..]),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn allocation_metadata_matches_every_native_field_vector_without_pool_wrapping() {
+        let vectors: Vec<AllocationFieldOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_533c_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), ALLOCATION_FIELD_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let resource = ResourceId::new(vector.handle);
+            let mut cache = OriginalResourceCache::new();
+            cache.entries.insert(
+                resource,
+                cached_resource(Box::<[u8]>::default(), vector.field_04 as usize),
+            );
+            assert_eq!(vector.eax, vector.field_04, "{}", vector.name);
+            assert_eq!(
+                cache.allocation_byte_count(resource),
+                Some(vector.eax as usize),
+                "{}",
+                vector.name
+            );
+        }
     }
 
     #[test]
