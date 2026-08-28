@@ -1161,6 +1161,11 @@ impl<'window> ModernGameServices<'window> {
         self.choice_list_style
     }
 
+    /// Publish the shared width-mode write performed by save/load initialization.
+    pub(super) fn set_choice_list_preserve_individual_widths(&mut self, preserve: bool) {
+        self.choice_list_style.preserve_individual_widths = preserve;
+    }
+
     /// Publish the values written by first-time ship HUD initialization.
     pub(super) fn activate_ship_target_list_style(&mut self) {
         self.choice_list_style = RuntimeChoiceListStyle::SHIP_TARGET;

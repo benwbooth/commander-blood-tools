@@ -7,8 +7,8 @@ use crate::native::bloodprg::{
     BridgeSpriteRect, ChoiceListConfig, ChoiceListRect, ChoiceListState, FontPoint,
     FontVerticalBand, FramebufferTransitionState, GameLifecycleState, InputAction,
     OriginalSaveGame, OriginalSaveSlotDirectory, RasterPoint, SaveLoadHost, SaveLoadListPass,
-    SaveLoadMenuOutcome, SaveLoadMenuState, SaveLoadSelection, SaveMenuState, SaveProfileBackend,
-    SaveSlotEditorLayout, SaveSlotEditorOutcome, SaveSlotName, TransitionRect,
+    SaveLoadMenuOutcome, SaveLoadMenuPhase, SaveLoadMenuState, SaveLoadSelection, SaveMenuState,
+    SaveProfileBackend, SaveSlotEditorLayout, SaveSlotEditorOutcome, SaveSlotName, TransitionRect,
     advance_framebuffer_rect_transition, build_banked_tint_table, draw_square_caps_text,
     fill_framebuffer_rect, move_input_selection_next, move_input_selection_previous,
     remap_framebuffer_rect, update_save_load_menu, update_save_slot_editor,
@@ -107,6 +107,7 @@ impl RuntimeSaveLoad {
             .context("save/load update requires the loaded BLOOD.SAV directory")?;
         let profile_snapshot = services.runtime().current_profile().cloned();
         let style = services.choice_list_style();
+        let publish_choice_list_width = self.import_initial_choice_list_width(style);
         let mut profiles = DeferredSaveProfileBackend {
             profile_snapshot,
             restore_data: None,
@@ -125,6 +126,9 @@ impl RuntimeSaveLoad {
             update_save_load_menu(&mut self.state, &mut directory, &mut backend, &mut profiles)
                 .map_err(anyhow::Error::new)?
         };
+        if publish_choice_list_width {
+            services.set_choice_list_preserve_individual_widths(self.state.preserve_layout_widths);
+        }
 
         *services
             .runtime_mut()
@@ -147,6 +151,15 @@ impl RuntimeSaveLoad {
                 .request_visual_color_update();
         }
         Ok(outcome)
+    }
+
+    fn import_initial_choice_list_width(&mut self, style: RuntimeChoiceListStyle) -> bool {
+        let initial_ordinary_layout = self.state.phase == SaveLoadMenuPhase::LayoutPending
+            && (self.state.requests.save || self.state.requests.load);
+        if initial_ordinary_layout {
+            self.state.preserve_layout_widths = style.preserve_individual_widths;
+        }
+        initial_ordinary_layout
     }
 
     fn take_frame_effects(&mut self) -> SaveLoadFrameEffects {
@@ -513,5 +526,38 @@ mod tests {
         assert_eq!(effects, SaveLoadFrameEffects::default());
         assert!(!lifecycle.navigation_rebuild_pending);
         assert_eq!(palette_transition.state().dirty_flags, u8::MIN);
+    }
+
+    #[test]
+    fn save_menu_publishes_the_native_width_reset_after_inheriting_ship_style() {
+        let mut runtime = RuntimeSaveLoad::default();
+        runtime.request_save();
+        let mut shared_style = RuntimeChoiceListStyle::SHIP_TARGET;
+
+        assert!(runtime.import_initial_choice_list_width(shared_style));
+        assert!(runtime.state.preserve_layout_widths);
+
+        // `save_load_menu_step` clears DATA:0x0ADC after its initial measure pass.
+        runtime.state.preserve_layout_widths = false;
+        runtime.state.phase = SaveLoadMenuPhase::Transitioning;
+        shared_style.preserve_individual_widths = runtime.state.preserve_layout_widths;
+
+        assert_eq!(
+            shared_style.center_x,
+            RuntimeChoiceListStyle::SHIP_TARGET.center_x
+        );
+        assert!(shared_style.extra_cancel_entry);
+        assert!(!shared_style.preserve_individual_widths);
+        assert!(!runtime.import_initial_choice_list_width(shared_style));
+        assert!(!runtime.state.preserve_layout_widths);
+    }
+
+    #[test]
+    fn quick_save_does_not_overwrite_the_shared_choice_list_width() {
+        let mut runtime = RuntimeSaveLoad::default();
+        runtime.request_quick_save();
+
+        assert!(!runtime.import_initial_choice_list_width(RuntimeChoiceListStyle::SHIP_TARGET));
+        assert!(!runtime.state.preserve_layout_widths);
     }
 }
