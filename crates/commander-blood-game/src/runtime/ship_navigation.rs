@@ -176,6 +176,9 @@ impl RuntimeShipNavigation {
             services.reset_navigation_word_choice()?;
             services.finish_ship_navigation_reset();
         }
+        if take_navigation_snapshot_request(&mut state.navigation_snapshot_pending) {
+            services.request_quick_save()?;
+        }
         export_live_state(&state, services, lifecycle);
         self.state = Some(state);
         Ok(native_outcome)
@@ -424,6 +427,10 @@ fn export_live_state(
     lifecycle.presentation.text_menu_pending = state.text_menu_pending;
     lifecycle.frame_presented = state.frame_presented;
     lifecycle.navigation_rebuild_pending = state.navigation_screen_rebuild_pending;
+}
+
+fn take_navigation_snapshot_request(pending: &mut bool) -> bool {
+    std::mem::take(pending)
 }
 
 fn import_description_text_state(
@@ -831,6 +838,14 @@ mod tests {
     const EXPECTED_PTERRA_CANDIDATE_NAMES: [&[&[u8]]; 5] =
         [&[b"Scruter_K"], &[b"Scruter_Jo"], &[], &[b"Scruter_K"], &[]];
     const EXPECTED_NAVIGATION_CANDIDATE_OCCURRENCES: [usize; 5] = [60, 62, 70, 81, 60];
+
+    #[test]
+    fn navigation_snapshot_alias_is_consumed_once_for_quick_save() {
+        let mut pending = true;
+
+        assert!(take_navigation_snapshot_request(&mut pending));
+        assert!(!take_navigation_snapshot_request(&mut pending));
+    }
 
     #[test]
     fn every_profile_resolves_pterra_navigation_candidates_through_flat_state() {

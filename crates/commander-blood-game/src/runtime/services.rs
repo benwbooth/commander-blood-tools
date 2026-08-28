@@ -1860,6 +1860,7 @@ impl<'window> ModernGameServices<'window> {
                 &mut backend,
             )
         };
+        self.ship_presentation.depth_offset = screen_state.ship_depth_offset;
         self.bridge_screen = screen_state;
         self.bridge_palette = panorama_palette;
         *self.runtime.live_palette_mut() = live_palette;
@@ -2283,7 +2284,12 @@ impl<'window> ModernGameServices<'window> {
 
     /// Execute one complete translated COD/BAS/presentation frame.
     pub fn execute_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
-        self.scripts.execute_frame(&mut self.runtime, enabled)
+        self.scripts
+            .prepare_ship_presentation_state(&self.ship_presentation);
+        let outcome = self.scripts.execute_frame(&mut self.runtime, enabled)?;
+        self.scripts
+            .finish_ship_presentation_state(&mut self.ship_presentation);
+        Ok(outcome)
     }
 
     /// Execute one translated script frame and apply every ordered host command it emitted.
@@ -2302,9 +2308,13 @@ impl<'window> ModernGameServices<'window> {
         state: &mut GameLifecycleState,
     ) -> Result<ScriptFrameOutcome> {
         let execution_enabled = state.vm_execution_enabled;
+        self.scripts
+            .prepare_ship_presentation_state(&self.ship_presentation);
         let outcome =
             self.scripts
                 .execute_lifecycle_frame(&mut self.runtime, state, execution_enabled)?;
+        self.scripts
+            .finish_ship_presentation_state(&mut self.ship_presentation);
         self.publish_script_presentation_status_change();
         self.synchronize_script_ship_state();
         self.synchronize_script_presentations()?;
@@ -3616,6 +3626,7 @@ mod tests {
     const IZWALITO_IDLE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(8);
     const IZWALITO_IDLE_VIDEO: &[u8] = b"PE\\aaisw.hnm";
     const AUTHORED_RADIO_TERMINAL_FRAME: u16 = 11;
+    const NONZERO_SHIP_DEPTH_OFFSET: u16 = 73;
     const RADIO_COMPLETION_FRAME_LIMIT: usize = AUTHORED_RADIO_TERMINAL_FRAME as usize + 2;
     const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
     const AUTHORED_ACTOR_TRANSITION_RESOURCES: [Option<u16>; NAV_ACTOR_SLOT_COUNT] =
@@ -3776,7 +3787,9 @@ mod tests {
             "the production hand did not follow logical pointer motion"
         );
 
+        services.ship_presentation_state_mut().depth_offset = NONZERO_SHIP_DEPTH_OFFSET;
         services.initialize_bridge_screen(false, false).unwrap();
+        assert_eq!(services.ship_presentation_state().depth_offset, u16::MIN);
         assert!(!services.bridge_screen_state().screen_rebuild_pending);
         assert!(!services.bridge_screen_state().palette_refresh_in_progress);
         assert!(services.bridge_screen_state().palette_dirty);

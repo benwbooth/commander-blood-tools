@@ -21,9 +21,9 @@ use crate::native::bloodprg::{
     ScriptPresentationEntity, ScriptPresentationScanOutcome, ScriptPresentationScanState,
     ScriptProfileId, ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext,
     ScriptShipNavigationMode, ScriptTransferContext, SequencePresentationState,
-    SequenceRequestContext, SoundBankUsage, TextPresentationState, deferred_navigation_record,
-    execute_loaded_script_frame, load_sound_bank, lookup_and_apply_descript_record,
-    original_save_state_block_byte_count, script_field_offset,
+    SequenceRequestContext, ShipPresentationState, SoundBankUsage, TextPresentationState,
+    deferred_navigation_record, execute_loaded_script_frame, load_sound_bank,
+    lookup_and_apply_descript_record, original_save_state_block_byte_count, script_field_offset,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -129,6 +129,16 @@ impl RuntimeScriptSystem {
             &mut self.service,
         )
         .map_err(|error| anyhow!("executing BloodScript frame: {error:?}"))
+    }
+
+    /// Import the ship-owned half of globals aliased into BloodScript state.
+    pub fn prepare_ship_presentation_state(&mut self, ship: &ShipPresentationState) {
+        import_ship_presentation_state(&mut self.dispatch, ship);
+    }
+
+    /// Publish BloodScript writes to globals canonically owned by the ship FSM.
+    pub fn finish_ship_presentation_state(&self, ship: &mut ShipPresentationState) {
+        export_ship_presentation_state(&self.dispatch, ship);
     }
 
     /// Import globals owned by the recovered main loop before one VM pass.
@@ -431,6 +441,20 @@ impl RuntimeScriptSystem {
         action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         action.current_ship_target
     }
+}
+
+fn import_ship_presentation_state(
+    dispatch: &mut ScriptDispatchState,
+    ship: &ShipPresentationState,
+) {
+    dispatch.record_clear_presentation.ship_3d_depth_step = ship.depth_step;
+}
+
+fn export_ship_presentation_state(
+    dispatch: &ScriptDispatchState,
+    ship: &mut ShipPresentationState,
+) {
+    ship.depth_step = dispatch.record_clear_presentation.ship_3d_depth_step;
 }
 
 /// Initialize an already selected profile, then transactionally restore one original save image.
@@ -919,6 +943,8 @@ mod tests {
     const IZWALITO_IDLE_VIDEO: &[u8] = b"aaisw.hnm";
     const TEXT_ONLY_PRESENTATION_SELECTOR: i8 = -1;
     const IZWALITO_FIRST_WORD: &[u8] = b"You";
+    const IMPORTED_SHIP_DEPTH_STEP: u8 = 41;
+    const SCRIPT_UPDATED_SHIP_DEPTH_STEP: u8 = 6;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(std::path::PathBuf);
@@ -939,6 +965,25 @@ mod tests {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
         }
+    }
+
+    #[test]
+    fn ship_depth_step_alias_round_trips_through_script_dispatch_state() {
+        let mut dispatch = ScriptDispatchState::default();
+        let mut ship = ShipPresentationState {
+            depth_step: IMPORTED_SHIP_DEPTH_STEP,
+            ..ShipPresentationState::default()
+        };
+
+        import_ship_presentation_state(&mut dispatch, &ship);
+        assert_eq!(
+            dispatch.record_clear_presentation.ship_3d_depth_step,
+            IMPORTED_SHIP_DEPTH_STEP
+        );
+
+        dispatch.record_clear_presentation.ship_3d_depth_step = SCRIPT_UPDATED_SHIP_DEPTH_STEP;
+        export_ship_presentation_state(&dispatch, &mut ship);
+        assert_eq!(ship.depth_step, SCRIPT_UPDATED_SHIP_DEPTH_STEP);
     }
 
     #[test]

@@ -436,6 +436,8 @@ fn transition_rect(rect: ChoiceListRect) -> TransitionRect {
 
 #[cfg(test)]
 mod tests {
+    use crate::native::bloodprg::SaveLoadMenuPhase;
+
     use super::*;
 
     #[test]
@@ -443,9 +445,14 @@ mod tests {
         let mut runtime = RuntimeSaveLoad::default();
         runtime.request_save();
         assert!(runtime.state().requests.save);
+        assert_eq!(runtime.state().phase, SaveLoadMenuPhase::LayoutPending);
         assert!(runtime.queue_input(InputAction::Cancel));
         runtime.state.cancel();
         assert!(!runtime.state().is_active());
+
+        runtime.request_load();
+        assert!(runtime.state().requests.load);
+        assert_eq!(runtime.state().phase, SaveLoadMenuPhase::LayoutPending);
     }
 
     #[test]
