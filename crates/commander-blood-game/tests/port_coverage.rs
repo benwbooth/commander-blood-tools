@@ -9,7 +9,7 @@ const RECOVERED_NATIVE_ROUTINE_COUNT: usize =
 const CURRENT_PORTED_ROUTINE_COUNT: usize = 470;
 const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 50;
 const RECOVERED_BLOODPRG_SEMANTIC_ALIAS_COUNT: usize = 71;
-const CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT: usize = 66;
+const CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT: usize = 67;
 
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")

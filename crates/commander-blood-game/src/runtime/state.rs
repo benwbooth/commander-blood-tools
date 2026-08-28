@@ -1598,6 +1598,16 @@ mod tests {
             usize::from(selection.transitioned_entity.value()),
             SHIP_VIEW_TRANSITION_ENTITY_INDEX
         );
+        let selected_layout = selection
+            .selected_layout
+            .expect("destination must select one world-artwork row");
+        let mutable_layout = &runtime.world_artwork_layout[selected_layout];
+        let immutable_layout = &runtime.data().world_artwork_layout()[selected_layout];
+        assert!(mutable_layout.active);
+        assert!(!immutable_layout.active);
+        assert_eq!(mutable_layout.name(), immutable_layout.name());
+        assert_eq!(mutable_layout.resource_id, immutable_layout.resource_id);
+        assert_eq!(mutable_layout.entity_id, immutable_layout.entity_id);
         let placement = selection
             .entity_placement
             .expect("destination must select world artwork");
