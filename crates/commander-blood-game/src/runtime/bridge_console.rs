@@ -285,10 +285,10 @@ impl RuntimeBridgeConsole {
         services: &mut ModernGameServices<'_>,
         lifecycle: &mut GameLifecycleState,
     ) -> Result<()> {
-        let music_active = services.navigation_music_position()?.is_some();
+        let music_enabled = services.navigation_music_enabled()?;
         self.options.music_supported = services.audio_is_initialized();
-        self.options.music_active = music_active;
-        self.options.music_label = if music_active {
+        self.options.music_active = music_enabled;
+        self.options.music_label = if music_enabled {
             MusicOptionLabel::MusicOff
         } else {
             MusicOptionLabel::MusicOn
@@ -323,8 +323,8 @@ impl RuntimeBridgeConsole {
         if let OptionMenuOutcome::Interactive(frame) = &outcome {
             draw_runtime_choice_rows(services, &label_refs, None, frame)?;
         }
-        if music_active && !self.options.music_active {
-            services.stop_navigation_music()?;
+        if music_enabled != self.options.music_active {
+            services.set_navigation_music_enabled(self.options.music_active)?;
         }
         apply_backend_effects(services, effects)?;
 

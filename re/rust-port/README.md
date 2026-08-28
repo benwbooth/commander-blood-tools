@@ -13,12 +13,12 @@ hardware, or authored no-operation adapters have documented eliminations. The
 coverage test rejects missing, duplicate, or unsupported mappings.
 
 Routine counts alone do not prove cross-routine state fidelity. The recovered
-BLOODPRG headers currently expose 65 semantically distinct address-alias
+BLOODPRG headers currently expose 71 semantically distinct address-alias
 families after mechanical DS/GS views are collapsed. `shared-global-aliases.tsv`
-is the checked review queue for those families. Each row must ultimately name a
-single canonical Rust owner or document why the native storage overlap can be
-split after moving to flat typed state. Rows marked `pending_review` are not
-claims of behavioral parity.
+is the checked review queue for those families. Sixty-three rows name a verified
+canonical Rust owner or document why the native storage overlap can be split
+after moving to flat typed state. The eight rows still marked `pending_review`
+are not claims of behavioral parity.
 
 The real-data acceptance suite restores an authentic save, reloads every script
 profile and companion resource set, enters and completes an authored path for

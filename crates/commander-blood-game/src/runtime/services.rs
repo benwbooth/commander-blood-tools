@@ -499,6 +499,9 @@ impl<'window> ModernGameServices<'window> {
 
     /// Decode and retain navigation music selected by the active DESCRIPT record.
     pub fn load_navigation_music(&mut self) -> Result<()> {
+        if !self.navigation_music_enabled()? {
+            return self.check_audio();
+        }
         let music_name = self
             .scripts
             .backend()
@@ -534,6 +537,9 @@ impl<'window> ModernGameServices<'window> {
 
     /// Decode and start the navigation music selected by the active DESCRIPT record.
     pub fn restart_navigation_music(&mut self) -> Result<()> {
+        if !self.navigation_music_enabled()? {
+            return self.check_audio();
+        }
         self.load_navigation_music()?;
         self.start_loaded_navigation_music()
     }
@@ -543,8 +549,21 @@ impl<'window> ModernGameServices<'window> {
         self.audio_mut()?.stop_background()
     }
 
+    /// Return the persistent streamed-audio enable latch selected by the options menu.
+    pub fn navigation_music_enabled(&self) -> Result<bool> {
+        Ok(self.audio_ref()?.background_channel_active())
+    }
+
+    /// Enable or disable every native VOC stream gate without conflating it with playback state.
+    pub fn set_navigation_music_enabled(&mut self, enabled: bool) -> Result<()> {
+        self.audio_mut()?.set_background_channel_active(enabled)
+    }
+
     /// Start retained music, or keep the current navigation stream running.
     pub fn ensure_navigation_music(&mut self) -> Result<()> {
+        if !self.navigation_music_enabled()? {
+            return self.check_audio();
+        }
         if self.navigation_music_position()?.is_some() {
             return self.check_audio();
         }
@@ -587,6 +606,10 @@ impl<'window> ModernGameServices<'window> {
 
     /// Decode and retain one authored Creative Voice resource for a later start call.
     pub fn load_voice_resource(&mut self, path: &[u8]) -> Result<()> {
+        if !self.navigation_music_enabled()? {
+            self.loaded_voice = None;
+            return self.check_audio();
+        }
         let resource_name =
             BloodResourceName::new(path).context("validating voice resource path")?;
         let normalized = self
@@ -609,6 +632,10 @@ impl<'window> ModernGameServices<'window> {
 
     /// Start the previously decoded voice clip over any active background music.
     pub fn start_loaded_voice(&mut self) -> Result<()> {
+        if !self.navigation_music_enabled()? {
+            self.loaded_voice = None;
+            return self.check_audio();
+        }
         let clip = self
             .loaded_voice
             .take()

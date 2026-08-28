@@ -13,10 +13,11 @@ use sdl3::audio::{
 
 use crate::native::bloodprg::{
     AudioDriverRequests, AudioPlaybackBanks, AudioPlaybackOutcome, AudioPlaybackState,
-    AudioStreamBuffer, AudioStreamBufferStatus, AudioStreamPlaybackPosition,
-    AudioStreamRefillOutcome, AudioStreamStartOutcome, AudioStreamState, AudioStreamSubmission,
-    AudioStreamSubmissionKind, load_audio_pcm_stream_source, load_audio_stream_source,
-    refill_audio_stream, start_audio_stream, update_audio_playback,
+    AudioStreamBuffer, AudioStreamBufferStatus, AudioStreamLoadOutcome,
+    AudioStreamPlaybackPosition, AudioStreamRefillOutcome, AudioStreamStartOutcome,
+    AudioStreamState, AudioStreamSubmission, AudioStreamSubmissionKind,
+    load_audio_pcm_stream_source, load_audio_stream_source, refill_audio_stream,
+    start_audio_stream, update_audio_playback,
 };
 
 const RUNTIME_AUDIO_OUTPUT_RATE_HZ: u32 = 48_000;
@@ -176,9 +177,12 @@ impl RuntimeMusicStream {
     }
 
     fn load(&mut self, encoded_voc: &[u8], source_rate_hz: u32) -> Result<()> {
-        load_audio_stream_source(&mut self.playback, &mut self.stream, encoded_voc)
+        let outcome = load_audio_stream_source(&mut self.playback, &mut self.stream, encoded_voc)
             .map_err(anyhow::Error::new)
             .context("loading recovered navigation-audio stream state")?;
+        if outcome == AudioStreamLoadOutcome::Inactive {
+            return Ok(());
+        }
         self.source_rate_hz = Some(source_rate_hz);
         self.cursor = None;
         for buffer in &mut self.playback.stream_buffers {
@@ -193,7 +197,7 @@ impl RuntimeMusicStream {
         source_rate_hz: u32,
         sample_rate_code: u8,
     ) -> Result<()> {
-        load_audio_pcm_stream_source(
+        let outcome = load_audio_pcm_stream_source(
             &mut self.playback,
             &mut self.stream,
             samples,
@@ -201,6 +205,9 @@ impl RuntimeMusicStream {
         )
         .map_err(anyhow::Error::new)
         .context("loading normalized navigation-audio stream state")?;
+        if outcome == AudioStreamLoadOutcome::Inactive {
+            return Ok(());
+        }
         self.source_rate_hz = Some(source_rate_hz);
         self.cursor = None;
         for buffer in &mut self.playback.stream_buffers {
@@ -214,9 +221,7 @@ impl RuntimeMusicStream {
             .map_err(anyhow::Error::new)
             .context("starting recovered navigation-audio stream")?;
         match outcome {
-            AudioStreamStartOutcome::Inactive => {
-                bail!("navigation-audio stream start was rejected by its recovered gates")
-            }
+            AudioStreamStartOutcome::Inactive => Ok(()),
             AudioStreamStartOutcome::Started(submission) => {
                 self.submit(submission);
                 Ok(())
@@ -277,6 +282,20 @@ impl RuntimeMusicStream {
         for buffer in &mut self.playback.stream_buffers {
             buffer.status = AudioStreamBufferStatus::Free;
         }
+    }
+
+    fn set_channel_active(&mut self, active: bool) {
+        if self.stream.channel_active == active {
+            return;
+        }
+        self.stop();
+        self.stream.channel_active = active;
+        self.stream.source = None;
+        self.source_rate_hz = None;
+    }
+
+    const fn channel_active(&self) -> bool {
+        self.stream.channel_active
     }
 
     fn discard_pending(&mut self) -> bool {
@@ -617,6 +636,28 @@ impl RuntimeAudioHost {
         lock_shared(&self.shared).music_stream.start()
     }
 
+    /// Return the persistent recovered streamed-audio enable latch.
+    pub fn background_channel_active(&self) -> bool {
+        lock_shared(&self.shared).music_stream.channel_active()
+    }
+
+    /// Change the recovered streamed-audio enable latch used by every VOC gate.
+    pub fn set_background_channel_active(&mut self, active: bool) -> Result<()> {
+        self.check_callback()?;
+        let mut shared = lock_shared(&self.shared);
+        shared.music_stream.set_channel_active(active);
+        if !active {
+            shared.mixer.stop_background();
+        }
+        drop(shared);
+        if !active {
+            self.stream
+                .clear()
+                .map_err(|error| anyhow!("clearing disabled SDL3 music stream: {error}"))?;
+        }
+        self.check_callback()
+    }
+
     /// Queue at most one recovered 16 KiB stream page.
     pub fn refill_background_stream(&mut self) -> Result<AudioStreamRefillOutcome> {
         self.check_callback()?;
@@ -804,6 +845,31 @@ mod tests {
 
         assert_eq!(output, [9, 8]);
         assert_eq!(mixer.background_position(), None);
+    }
+
+    #[test]
+    fn recovered_stream_channel_latch_gates_load_start_and_survives_driver_stops() {
+        let payload = generated_stream_payload(AUDIO_STREAM_PAGE_BYTE_COUNT);
+        let encoded = encoded_voc_stream(&payload);
+        let mut stream = RuntimeMusicStream::new(TEST_STREAM_RATE_HZ);
+
+        stream.set_channel_active(false);
+        stream.load(&encoded, TEST_STREAM_RATE_HZ).unwrap();
+        stream.start().unwrap();
+        assert!(!stream.channel_active());
+        assert!(stream.stream.source.is_none());
+        assert!(stream.cursor.is_none());
+
+        stream.stop();
+        assert!(!stream.channel_active());
+        stream.set_channel_active(true);
+        stream.load(&encoded, TEST_STREAM_RATE_HZ).unwrap();
+        stream.start().unwrap();
+        assert!(stream.channel_active());
+        assert!(stream.cursor.is_some());
+
+        stream.stop();
+        assert!(stream.channel_active());
     }
 
     #[test]
