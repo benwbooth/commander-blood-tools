@@ -466,14 +466,15 @@ impl OriginalGameRuntime {
     }
 
     /// Advance one frame of the executable-authored character-name palette effect.
-    pub fn advance_name_area_effect(
+    pub fn advance_name_area_effect_on(
         &mut self,
+        framebuffer: &mut [u8],
         random_index: &mut impl FnMut(usize) -> usize,
     ) -> Result<NameAreaEffectOutcome> {
         update_name_area_effect(
             self.data.name_area_effect_sequences(),
             &mut self.name_area_effect,
-            self.front_buffer.pixels_mut(),
+            framebuffer,
             random_index,
         )
         .context("updating the bridge name-area palette effect")
@@ -1670,6 +1671,40 @@ mod tests {
                 ..crate::native::bloodprg::SHIP_HUD_PALETTE_FIRST
                     + crate::native::bloodprg::SHIP_HUD_PALETTE_COLOR_COUNT]
         );
+    }
+
+    #[test]
+    fn name_area_effect_updates_the_modern_bridge_sprite_layer() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        runtime.load_name_area_sprite(b"izwalito.spr").unwrap();
+        runtime.restart_name_area_effect();
+        runtime
+            .commit_ship_entity_geometry(
+                NAME_AREA_EFFECT_ENTITY_INDEX as u16..NAME_AREA_EFFECT_ENTITY_INDEX as u16 + 1,
+            )
+            .unwrap();
+        let mut sprite_layer = IndexedFramebuffer::new();
+        runtime
+            .rasterize_ship_entity_range(
+                NAME_AREA_EFFECT_ENTITY_INDEX as u16..NAME_AREA_EFFECT_ENTITY_INDEX as u16 + 1,
+                sprite_layer.pixels_mut(),
+            )
+            .unwrap();
+        let sprite_before = sprite_layer.pixels().to_vec();
+        let front_before = runtime.front_buffer().pixels().to_vec();
+
+        assert!(matches!(
+            runtime
+                .advance_name_area_effect_on(sprite_layer.pixels_mut(), &mut |_| usize::MIN)
+                .unwrap(),
+            NameAreaEffectOutcome::Rendered { .. }
+        ));
+
+        assert_ne!(sprite_layer.pixels(), sprite_before);
+        assert_eq!(runtime.front_buffer().pixels(), front_before);
     }
 
     fn original_game_data() -> Option<OriginalGameData> {

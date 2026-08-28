@@ -3106,9 +3106,16 @@ impl<'window> ModernGameServices<'window> {
     /// Advance the executable-authored character-name palette noise.
     pub(super) fn advance_bridge_name_area_effect(&mut self) -> Result<NameAreaEffectOutcome> {
         let Self {
-            runtime, random, ..
+            runtime,
+            random,
+            bridge_frame,
+            ..
         } = self;
-        runtime.advance_name_area_effect(&mut |modulus| {
+        let sprite_layer = &mut bridge_frame
+            .as_mut()
+            .context("name-area effect requires a rendered bridge frame")?
+            .object_sprite_pixels;
+        runtime.advance_name_area_effect_on(sprite_layer, &mut |modulus| {
             let modulus = u16::try_from(modulus).unwrap_or(u16::MAX);
             usize::from(random.next(modulus))
         })
@@ -4567,6 +4574,27 @@ mod tests {
         services
             .rasterize_bridge_frame_sprite_range(FIRST_ACTOR_ENTITY..AFTER_LAST_ACTOR_ENTITY)
             .unwrap();
+        let phone_portrait_before_effect = services
+            .bridge_frame
+            .as_ref()
+            .unwrap()
+            .object_sprite_pixels
+            .clone();
+        assert!(matches!(
+            services.advance_bridge_name_area_effect().unwrap(),
+            NameAreaEffectOutcome::Rendered { .. }
+        ));
+        assert!(
+            services
+                .bridge_frame
+                .as_ref()
+                .unwrap()
+                .object_sprite_pixels
+                .iter()
+                .zip(&phone_portrait_before_effect)
+                .any(|(after, before)| after != before),
+            "Izwalito portrait did not advance the native name-area animation"
+        );
         assert!(
             services
                 .bridge_frame
