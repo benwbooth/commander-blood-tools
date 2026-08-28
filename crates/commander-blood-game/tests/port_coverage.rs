@@ -35,6 +35,7 @@ fn tab_separated_rows(path: &Path) -> Vec<BTreeMap<String, String>> {
 #[test]
 fn coverage_ledger_only_accepts_documented_authoritative_routines() {
     let root = workspace_root();
+    let rust_source_corpus = rust_source_corpus(&root.join("crates"));
     let bloodprg = tab_separated_rows(&root.join("re/source/bloodprg/candidates/manifest.tsv"));
     let xdb = tab_separated_rows(&root.join("re/source/xdb/candidates/manifest.tsv"));
     assert_eq!(bloodprg.len(), RECOVERED_BLOODPRG_ROUTINE_COUNT);
@@ -87,6 +88,15 @@ fn coverage_ledger_only_accepts_documented_authoritative_routines() {
         let (evidence_path, vector_count) = row["evidence"].rsplit_once(':').unwrap();
         assert!(root.join(evidence_path).is_file());
         assert!(vector_count.parse::<usize>().unwrap() > usize::MIN);
+        let evidence_name = Path::new(evidence_path)
+            .file_name()
+            .unwrap()
+            .to_string_lossy();
+        assert!(
+            rust_source_corpus.contains(evidence_name.as_ref()),
+            "{} claims unconsumed verification evidence {evidence_path}",
+            row["rust_symbol"]
+        );
     }
     assert_eq!(ported.len(), CURRENT_PORTED_ROUTINE_COUNT);
 
@@ -137,6 +147,22 @@ fn coverage_ledger_only_accepts_documented_authoritative_routines() {
             .count(),
         RECOVERED_MANU3_ROUTINE_COUNT
     );
+}
+
+fn rust_source_corpus(root: &Path) -> String {
+    let mut corpus = String::new();
+    let mut pending = vec![root.to_owned()];
+    while let Some(path) = pending.pop() {
+        for entry in std::fs::read_dir(path).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                pending.push(path);
+            } else if path.extension().and_then(|extension| extension.to_str()) == Some("rs") {
+                corpus.push_str(&std::fs::read_to_string(path).unwrap());
+            }
+        }
+    }
+    corpus
 }
 
 #[test]

@@ -729,10 +729,12 @@ fn loaded_resource(
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     use commander_blood_formats::instruction::{
         ScriptTimerSlot, decode_script_sequence_slot_assignment,
     };
+    use serde::Deserialize;
 
     use super::*;
 
@@ -742,6 +744,38 @@ mod tests {
     const SECOND_PROFILE_RESOURCES: [u16; SCRIPT_PROFILE_RESOURCE_COUNT] = [37, 38, 39, 40, 41];
     const FINAL_PROFILE_RESOURCES: [u16; SCRIPT_PROFILE_RESOURCE_COUNT] = [86, 87, 88, 89, 90];
     const SEQUENCE_SLOT_ASSIGNMENT_OPCODE: u8 = 0xCC;
+    const PROFILE_SELECT_ORACLE_VECTOR_COUNT: usize = 6;
+    static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
+
+    #[derive(Deserialize)]
+    struct ProfileSelectOracle {
+        name: String,
+        profile: u32,
+        current_profile: u32,
+        failure_index: Option<usize>,
+        split_data: bool,
+        return_value: i16,
+    }
+
+    struct TemporaryProfileRoot(PathBuf);
+
+    impl TemporaryProfileRoot {
+        fn create() -> Self {
+            let sequence = TEMPORARY_ROOT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+            let path = std::env::temp_dir().join(format!(
+                "commander-blood-profile-test-{}-{sequence}",
+                std::process::id()
+            ));
+            std::fs::create_dir_all(&path).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for TemporaryProfileRoot {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
 
     fn original_data_root() -> Option<PathBuf> {
         [
@@ -765,6 +799,10 @@ mod tests {
         resources: ScriptProfileResources,
     ) -> [u16; SCRIPT_PROFILE_RESOURCE_COUNT] {
         resources.all().map(ResourceId::value)
+    }
+
+    fn profile_id(value: u32) -> Option<ScriptProfileId> {
+        u8::try_from(value).ok().and_then(ScriptProfileId::new)
     }
 
     #[test]
@@ -884,6 +922,86 @@ mod tests {
                 assert!(cache.is_loaded(resource));
             }
             previous_resources = Some(loaded.resources());
+        }
+    }
+
+    #[test]
+    fn profile_selection_accounts_for_every_native_lifecycle_vector() {
+        let vectors: Vec<ProfileSelectOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_53a0_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), PROFILE_SELECT_ORACLE_VECTOR_COUNT);
+        let Some(original_root) = original_data_root() else {
+            return;
+        };
+        let original_store = OriginalResourceStore::new(original_root, None, [], true);
+        let resources = original_resource_catalog();
+        let profile_catalog = OriginalScriptProfileCatalog::decode_bloodprg(include_bytes!(
+            "../../../../../re/bin/BLOODPRG.EXE"
+        ))
+        .unwrap();
+
+        for vector in vectors {
+            let Some(target) = profile_id(vector.profile) else {
+                assert_eq!(vector.name, "profile_multiply_wraps_to_sixteen_bits");
+                assert!(u8::try_from(vector.profile).is_err());
+                assert_eq!(vector.return_value, 0);
+                continue;
+            };
+            let current = profile_id(vector.current_profile).unwrap();
+            let mut manager = ScriptProfileManager::new(profile_catalog.clone());
+            let mut cache = OriginalResourceCache::new();
+            manager
+                .select(current, &mut cache, &original_store, &resources)
+                .unwrap();
+
+            if let Some(failure_index) = vector.failure_index {
+                let temporary = TemporaryProfileRoot::create();
+                let incomplete_store =
+                    OriginalResourceStore::new(temporary.0.clone(), None, [], true);
+                for resource in profile_catalog
+                    .profile(target)
+                    .all()
+                    .into_iter()
+                    .take(failure_index)
+                {
+                    let name = resources.name(resource).unwrap();
+                    let bytes = original_store.load(name).unwrap();
+                    incomplete_store.write_loose(name, &bytes).unwrap();
+                }
+                assert!(
+                    manager
+                        .select(target, &mut cache, &incomplete_store, &resources)
+                        .is_err(),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(vector.return_value, -1, "{}", vector.name);
+                assert_eq!(
+                    manager.current().map(LoadedScriptProfile::id),
+                    (current == target).then_some(current),
+                    "{}",
+                    vector.name
+                );
+                continue;
+            }
+
+            let outcome = manager
+                .select(target, &mut cache, &original_store, &resources)
+                .unwrap();
+            assert_eq!(vector.return_value, 0, "{}", vector.name);
+            assert_eq!(
+                outcome.profile_changed,
+                current != target,
+                "{}",
+                vector.name
+            );
+            assert_eq!(manager.current().unwrap().id(), target, "{}", vector.name);
+            if vector.split_data {
+                assert_eq!(vector.name, "split_ds_gs_proves_profile_and_state_owners");
+                assert!(manager.current().unwrap().builtins().world.is_some());
+            }
         }
     }
 

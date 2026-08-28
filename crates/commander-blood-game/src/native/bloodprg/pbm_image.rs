@@ -282,6 +282,7 @@ mod tests {
     const BLOODPRG_DATA_FILE_OFFSET: usize = 0x0000_D420;
     const ORX_PATH_DATA_OFFSET: usize = 227;
     const CHART_PATH_DATA_OFFSET: usize = 234;
+    const BACK_BUFFER_WRAPPER_ORACLE_VECTOR_COUNT: usize = 6;
 
     #[derive(Deserialize)]
     struct PbmOracle {
@@ -298,6 +299,27 @@ mod tests {
         return_eax: u32,
         output_sha256: String,
         palette_sha256: String,
+    }
+
+    #[derive(Deserialize)]
+    struct BackBufferWrapperOracle {
+        name: String,
+        image_path_offset: usize,
+        back_buffer: BackBufferOraclePointer,
+        pbm_result: u16,
+        calls: Vec<BackBufferOracleCall>,
+    }
+
+    #[derive(Debug, Deserialize, PartialEq, Eq)]
+    struct BackBufferOraclePointer {
+        offset: u16,
+        segment: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct BackBufferOracleCall {
+        callee: String,
+        ax: Option<u16>,
     }
 
     fn decode_hex(encoded: &str) -> Vec<u8> {
@@ -375,6 +397,62 @@ mod tests {
             ),
             CHART_BACK_BUFFER_RESOURCE_PATH.as_bytes()
         );
+    }
+
+    #[test]
+    fn back_buffer_wrappers_account_for_every_native_control_flow_vector() {
+        let chart_vectors: Vec<BackBufferWrapperOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_17d9_natural.json"
+        ))
+        .unwrap();
+        let orx_vectors: Vec<BackBufferWrapperOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1817_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(chart_vectors.len(), BACK_BUFFER_WRAPPER_ORACLE_VECTOR_COUNT);
+        assert_eq!(orx_vectors.len(), BACK_BUFFER_WRAPPER_ORACLE_VECTOR_COUNT);
+
+        for (chart, orx) in chart_vectors.iter().zip(&orx_vectors) {
+            assert_eq!(chart.name, orx.name);
+            assert_eq!(
+                chart.image_path_offset, CHART_PATH_DATA_OFFSET,
+                "{}",
+                chart.name
+            );
+            assert_eq!(orx.image_path_offset, ORX_PATH_DATA_OFFSET, "{}", orx.name);
+            assert_eq!(chart.back_buffer, orx.back_buffer, "{}", chart.name);
+            assert_eq!(chart.pbm_result, orx.pbm_result, "{}", chart.name);
+            for vector in [chart, orx] {
+                assert_eq!(vector.calls.len(), 2, "{}", vector.name);
+                assert_eq!(
+                    vector.calls[0].callee, "pbm_image_load_and_decode",
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    vector.calls[1].callee, "chunky_to_planar_framebuffer",
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    vector.calls[1].ax,
+                    Some(vector.pbm_result),
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+
+        let mut palette = [[0x2A; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        let palette_before = palette;
+        let mut framebuffer = vec![0x5A; PANORAMA_FRAME_PIXEL_COUNT];
+        let framebuffer_before = framebuffer.clone();
+        assert!(decode_chart_back_buffer(&[], &mut framebuffer, &mut palette).is_err());
+        assert_eq!(framebuffer, framebuffer_before);
+        assert_eq!(palette, palette_before);
+        assert!(decode_orx_back_buffer(&[], &mut framebuffer, &mut palette).is_err());
+        assert_eq!(framebuffer, framebuffer_before);
+        assert_eq!(palette, palette_before);
     }
 
     fn c_string_at(bytes: &[u8], start: usize) -> &[u8] {
