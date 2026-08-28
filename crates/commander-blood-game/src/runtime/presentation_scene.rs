@@ -52,6 +52,7 @@ impl RuntimePresentationScene {
         state: &mut PresentationSceneDispatchState<DescriptBackgroundSlot>,
         active_record_related: Option<ScriptObjectId>,
         scruter_jo_record: Option<ScriptObjectId>,
+        render_snapshot_suppressed: bool,
     ) -> Result<PresentationSceneDispatchOutcome> {
         let scenes = resolved_scene_descriptors(services);
         let unclamped_line_ids = *services.presentation_catalog().unclamped_line_ids();
@@ -75,6 +76,7 @@ impl RuntimePresentationScene {
                 services,
                 timer_tick: &mut self.timer_tick,
                 remap_request: &mut remap_request,
+                render_snapshot_suppressed,
             };
             dispatch_presentation_scene(state, &mut context, &mut host)
                 .map_err(|error| anyhow::anyhow!("{error}"))?
@@ -114,6 +116,7 @@ struct RuntimePresentationSceneHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
     timer_tick: &'services mut u16,
     remap_request: &'services mut Option<(u8, [u8; RGB_COMPONENT_COUNT])>,
+    render_snapshot_suppressed: bool,
 }
 
 impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
@@ -160,9 +163,12 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
         _source: PresentationSceneSource,
         policy: PresentationPresentPolicy,
     ) -> Result<bool> {
-        let outcome =
-            self.services
-                .load_presentation_sequence(resource, policy, *self.timer_tick)?;
+        let outcome = self.services.load_presentation_sequence(
+            resource,
+            policy,
+            *self.timer_tick,
+            self.render_snapshot_suppressed,
+        )?;
         Ok(outcome.initial_present.frame_presented)
     }
 
@@ -184,9 +190,11 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
             .services
             .foreground_audio_position()?
             .unwrap_or(u64::MIN) as u16;
-        let outcome = self
-            .services
-            .service_presentation_sequence(audio_position, *self.timer_tick)?;
+        let outcome = self.services.service_presentation_sequence(
+            audio_position,
+            *self.timer_tick,
+            self.render_snapshot_suppressed,
+        )?;
         Ok(PresentationSceneQueueService {
             frame_presented: queue_presented_frame(&outcome.queue),
             entry_metric: outcome.queue_metrics.entry_metric,

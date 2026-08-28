@@ -5,9 +5,9 @@ use std::ops::RangeInclusive;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 
 use crate::native::bloodprg::{
-    GameLifecycleState, IndexedGamePalette, PaletteInterpolationRequest, PalettePipelineError,
-    PaletteTransitionState, PaletteUploadState, advance_palette_transition,
-    interpolate_palette_range, take_palette_upload_request,
+    GameLifecycleState, IndexedGamePalette, PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT,
+    PaletteInterpolationRequest, PalettePipelineError, PaletteTransitionState, PaletteUploadState,
+    advance_palette_transition, interpolate_palette_range, take_palette_upload_request,
 };
 
 const INITIAL_TRANSITION_PERCENT: u16 = 100;
@@ -78,6 +78,12 @@ impl RuntimePaletteTransition {
     /// Synchronize an increment changed by another recovered presentation owner.
     pub fn set_increment(&mut self, increment: u16) {
         self.state.increment = increment;
+    }
+
+    /// Mirror C's presentation palette copy into the shared transition source.
+    pub fn synchronize_presentation_source(&mut self, palette: &IndexedGamePalette) {
+        self.source[..PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT]
+            .copy_from_slice(&palette[..PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT]);
     }
 
     /// Replace all transition inputs after validating the typed color interval.
@@ -158,6 +164,29 @@ mod tests {
     const TEST_TARGET_COLOR: [u8; RGB_COMPONENT_COUNT] = [20, 4, 0];
     const TEST_INTERPOLATED_COLOR: [u8; RGB_COMPONENT_COUNT] = [30, 8, 1];
     const TEST_PENDING_PRESS_COUNT: u8 = 3;
+    const PRESENTATION_SOURCE_LAST_INDEX: usize = PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT - 1;
+    const PRESERVED_SOURCE_INDEX: usize = PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT;
+    const PRESENTATION_SOURCE_COLOR: [u8; RGB_COMPONENT_COUNT] = [2, 4, 6];
+    const PRESERVED_SOURCE_COLOR: [u8; RGB_COMPONENT_COUNT] = [8, 10, 12];
+
+    #[test]
+    fn presentation_palette_refreshes_only_the_native_transition_source_prefix() {
+        let mut transition = RuntimePaletteTransition::default();
+        transition.source[PRESERVED_SOURCE_INDEX] = PRESERVED_SOURCE_COLOR;
+        let mut palette = EMPTY_PALETTE;
+        palette[PRESENTATION_SOURCE_LAST_INDEX] = PRESENTATION_SOURCE_COLOR;
+
+        transition.synchronize_presentation_source(&palette);
+
+        assert_eq!(
+            transition.source[PRESENTATION_SOURCE_LAST_INDEX],
+            PRESENTATION_SOURCE_COLOR
+        );
+        assert_eq!(
+            transition.source[PRESERVED_SOURCE_INDEX],
+            PRESERVED_SOURCE_COLOR
+        );
+    }
 
     #[test]
     fn default_state_matches_the_executable_globals() {

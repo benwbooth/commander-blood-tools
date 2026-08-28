@@ -5,11 +5,12 @@ use commander_blood_formats::archive::BloodResourceName;
 
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
-    FlatPresentationEntryPresenter, PresentationActiveEntryState, PresentationEntryPolicy,
-    PresentationPaletteState, PresentationPresentPolicy, PresentationQueueClock,
-    PresentationQueueClockGates, PresentationQueueLinkCursor, PresentationQueueRefillOutcome,
-    PresentationQueueServiceContext, PresentationQueueServiceOutcome, PresentationQueueState,
-    PresentationResourceDescriptor, PresentationResourceId, PresentationResourceSequenceContext,
+    FlatPresentationEntryPresenter, IndexedGamePalette, PresentationActiveEntryState,
+    PresentationEntryPolicy, PresentationPaletteState, PresentationPresentPolicy,
+    PresentationQueueClock, PresentationQueueClockGates, PresentationQueueLinkCursor,
+    PresentationQueueRefillOutcome, PresentationQueueServiceContext,
+    PresentationQueueServiceOutcome, PresentationQueueState, PresentationResourceDescriptor,
+    PresentationResourceId, PresentationResourceSequenceContext,
     PresentationResourceSequenceOutcome, PresentationResourceStreamState,
     load_presentation_resource_sequence, service_presentation_queue,
 };
@@ -19,7 +20,6 @@ use super::OriginalGameRuntime;
 const RUNTIME_PRESENTATION_RESOURCE_ID: PresentationResourceId =
     PresentationResourceId::new(u16::MIN);
 const PRESENTATION_BUFFER_BYTE_COUNT: usize = u16::MAX as usize + 1;
-const PRESENTATION_RENDER_UPDATE_FLAGS: u8 = u8::MIN;
 const PRESENTED_FRAME_INCREMENT: u64 = 1;
 
 /// Authored descriptor and runtime gates for one HNM presentation stream.
@@ -111,6 +111,7 @@ impl RuntimePresentationStream {
         runtime: &mut OriginalGameRuntime,
         request: RuntimePresentationRequest,
         timer_tick: u16,
+        render_snapshot_suppressed: bool,
     ) -> Result<(Self, PresentationResourceSequenceOutcome)> {
         let descriptor = PresentationResourceDescriptor {
             flags: request.descriptor_flags,
@@ -155,7 +156,7 @@ impl RuntimePresentationStream {
                 queue: &mut player.queue,
                 queue_buffer: &mut player.queue_buffer,
                 palette: &mut palette,
-                render_update_flags: PRESENTATION_RENDER_UPDATE_FLAGS,
+                render_update_flags: u8::from(render_snapshot_suppressed),
                 provider: &mut player.provider,
                 entry_policy: player.entry_policy,
                 active_entry: &mut player.active_entry,
@@ -188,7 +189,9 @@ impl RuntimePresentationStream {
         runtime: &mut OriginalGameRuntime,
         audio_position: u16,
         timer_tick: u16,
+        render_snapshot_suppressed: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
+        import_shared_live_palette(runtime.live_palette(), &mut self.palette);
         let (display_buffer, back_buffer) = runtime.presentation_buffers_mut();
         let mut presenter = FlatPresentationEntryPresenter {
             display_buffer,
@@ -208,7 +211,7 @@ impl RuntimePresentationStream {
                 present_policy: self.present_policy,
                 host: &mut presenter,
                 palette: &mut self.palette,
-                render_update_flags: PRESENTATION_RENDER_UPDATE_FLAGS,
+                render_update_flags: u8::from(render_snapshot_suppressed),
                 clock: &mut self.clock,
                 clock_gates: self.clock_gates,
                 audio_position: &mut read_audio_position,
@@ -228,7 +231,11 @@ impl RuntimePresentationStream {
                 .wrapping_add(PRESENTED_FRAME_INCREMENT);
         }
         self.finished |= queue_finished(&queue);
-        *runtime.live_palette_mut() = self.palette.live;
+        publish_shared_live_palette(
+            queue_applied_palette(&queue),
+            &self.palette,
+            runtime.live_palette_mut(),
+        );
         Ok(RuntimePresentationStepOutcome {
             queue,
             stream_finished: self.finished,
@@ -249,6 +256,11 @@ impl RuntimePresentationStream {
     /// Exact authored resource currently supplying the stream.
     pub fn resource_name(&self) -> &BloodResourceName {
         &self.descriptors[usize::MIN].filename
+    }
+
+    /// Palette snapshot mirrored by the recovered low-128-color copy gate.
+    pub const fn render_palette_snapshot(&self) -> &IndexedGamePalette {
+        &self.palette.render_snapshot
     }
 
     pub(crate) fn queue_metrics(&self) -> Result<RuntimePresentationQueueMetrics> {
@@ -272,6 +284,30 @@ fn queue_presented_frame(outcome: &PresentationQueueServiceOutcome) -> bool {
             ..
         } if present.frame_presented
     )
+}
+
+fn queue_applied_palette(outcome: &PresentationQueueServiceOutcome) -> bool {
+    matches!(
+        outcome,
+        PresentationQueueServiceOutcome::Active {
+            palette: Some(_),
+            ..
+        }
+    )
+}
+
+fn import_shared_live_palette(shared: &IndexedGamePalette, stream: &mut PresentationPaletteState) {
+    stream.live = *shared;
+}
+
+fn publish_shared_live_palette(
+    palette_applied: bool,
+    stream: &PresentationPaletteState,
+    shared: &mut IndexedGamePalette,
+) {
+    if palette_applied {
+        *shared = stream.live;
+    }
 }
 
 fn refill_finished(refill: &PresentationQueueRefillOutcome) -> bool {
@@ -303,6 +339,8 @@ mod tests {
     use std::collections::BTreeSet;
     use std::path::{Path, PathBuf};
 
+    use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
+
     use super::super::{OriginalGameData, OriginalGameDataPaths};
     use super::*;
 
@@ -311,6 +349,26 @@ mod tests {
     const SHIPPED_HNM_RESOURCE_COUNT: usize = 701;
     const MAXIMUM_TEST_SERVICE_CALLS: usize = 10_000;
     const MINIMUM_EXPECTED_FRAME_COUNT: u64 = 2;
+    const TEST_PALETTE_INDEX: usize = 17;
+    const EXTERNAL_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [3, 5, 7];
+    const VIDEO_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [11, 13, 17];
+
+    #[test]
+    fn stream_palette_only_publishes_when_a_palette_record_was_applied() {
+        let mut shared = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        shared[TEST_PALETTE_INDEX] = EXTERNAL_PALETTE_COLOR;
+        let mut stream = PresentationPaletteState::default();
+
+        import_shared_live_palette(&shared, &mut stream);
+        assert_eq!(stream.live[TEST_PALETTE_INDEX], EXTERNAL_PALETTE_COLOR);
+
+        stream.live[TEST_PALETTE_INDEX] = VIDEO_PALETTE_COLOR;
+        publish_shared_live_palette(false, &stream, &mut shared);
+        assert_eq!(shared[TEST_PALETTE_INDEX], EXTERNAL_PALETTE_COLOR);
+
+        publish_shared_live_palette(true, &stream, &mut shared);
+        assert_eq!(shared[TEST_PALETTE_INDEX], VIDEO_PALETTE_COLOR);
+    }
 
     #[test]
     fn real_hnm_stream_decodes_to_completion_through_the_flat_queue() {
@@ -322,7 +380,7 @@ mod tests {
         let request =
             RuntimePresentationRequest::new(BloodResourceName::new(TEST_VIDEO_RESOURCE).unwrap());
         let (mut stream, initial) =
-            RuntimePresentationStream::load(&mut runtime, request, u16::MIN).unwrap();
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
 
         assert!(initial.initial_entry_accepted);
         assert!(initial.initial_present.frame_presented);
@@ -334,7 +392,7 @@ mod tests {
         for timer_tick in 1..=MAXIMUM_TEST_SERVICE_CALLS {
             let timer_tick = timer_tick as u16;
             stream
-                .service_frame(&mut runtime, u16::MIN, timer_tick)
+                .service_frame(&mut runtime, u16::MIN, timer_tick, false)
                 .unwrap_or_else(|error| panic!("frame {timer_tick} failed: {error:#}"));
             saw_visible_pixels |= runtime
                 .front_buffer()
@@ -383,7 +441,7 @@ mod tests {
             request.entry_policy.draw_via_back_buffer = true;
             request.present_policy.draw_via_back_buffer = true;
             let (_stream, outcome) =
-                RuntimePresentationStream::load(&mut runtime, request, u16::MIN)
+                RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false)
                     .unwrap_or_else(|error| panic!("{display_name}: {error:#}"));
             assert!(outcome.initial_entry_accepted, "{display_name}");
             assert!(outcome.initial_present.frame_presented, "{display_name}");

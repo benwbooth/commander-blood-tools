@@ -136,13 +136,14 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
                 PresentationResourceId::new(line),
                 policy,
                 self.timer_tick,
+                false,
             )?;
             self.active_policy = Some(policy);
         } else {
             let audio_position = self.audio_position()?;
             let timer_tick = self.advance_timer();
             self.services
-                .service_presentation_sequence(audio_position, timer_tick)?;
+                .service_presentation_sequence(audio_position, timer_tick, false)?;
         }
 
         if self.services.presentation_stream_active() {

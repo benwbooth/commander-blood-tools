@@ -8,10 +8,10 @@ use commander_blood_formats::archive::BloodResourceName;
 use crate::assets::{OriginalResourceSource, OriginalResourceStore};
 
 use super::{
-    PresentationByteSource, PresentationPaletteError, PresentationPaletteState,
-    PresentationQueueState, PresentationResourceId, PresentationSourceError,
-    PresentationSourceLease, apply_presentation_palette_blocks, close_owned_presentation_source,
-    presentation_resource_descriptor,
+    PresentationByteSource, PresentationPaletteError, PresentationPaletteOutcome,
+    PresentationPaletteState, PresentationQueueState, PresentationResourceId,
+    PresentationSourceError, PresentationSourceLease, apply_presentation_palette_blocks,
+    close_owned_presentation_source, presentation_resource_descriptor,
 };
 
 const ENTRY_HEADER_BYTE_COUNT: usize = size_of::<u16>();
@@ -226,6 +226,8 @@ pub struct PresentationResourceSwitchOutcome {
     pub entry_extent: usize,
     /// First byte of selected range metadata in the owned source.
     pub metadata_position: usize,
+    /// Bootstrap palette work completed before range selection.
+    pub palette: PresentationPaletteOutcome,
 }
 
 /// Invalid descriptor, source, palette, or range metadata.
@@ -481,6 +483,7 @@ pub fn switch_presentation_resource<Provider: PresentationResourceProvider>(
     Ok(PresentationResourceSwitchOutcome {
         entry_extent,
         metadata_position,
+        palette: palette_outcome,
     })
 }
 

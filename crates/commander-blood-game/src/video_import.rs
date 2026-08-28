@@ -406,7 +406,7 @@ fn decode_trace(
     request.entry_policy.draw_via_back_buffer = true;
     request.present_policy.draw_via_back_buffer = true;
     request.present_policy.unclamped_rows = true;
-    let (mut stream, initial) = RuntimePresentationStream::load(runtime, request, u16::MIN)
+    let (mut stream, initial) = RuntimePresentationStream::load(runtime, request, u16::MIN, false)
         .with_context(|| format!("opening HNM trace {}", display_resource_name(resource_name)))?;
     if !initial.initial_entry_accepted || !initial.initial_present.frame_presented {
         bail!(
@@ -423,7 +423,7 @@ fn decode_trace(
     for service_call in 1..=MAXIMUM_TRACE_SERVICE_CALLS {
         let clock = service_call as u16;
         let step = stream
-            .service_frame(runtime, clock, clock)
+            .service_frame(runtime, clock, clock, false)
             .with_context(|| {
                 format!(
                     "decoding HNM {} at service call {service_call}",

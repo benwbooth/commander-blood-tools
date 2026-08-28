@@ -31,15 +31,16 @@ use crate::native::bloodprg::{
     PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationBridgeMode,
     PresentationChoiceNumber, PresentationHitAreas, PresentationHitRectangle,
     PresentationHitSelection, PresentationHoverOutcome, PresentationHoverState,
-    PresentationPresentPolicy, PresentationResourceId, PresentationResourceSequenceOutcome,
-    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
-    PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
-    SHIP_CAMERA_RESET, SceneTransitionState, ScriptActionState, ScriptClock, ScriptFrameOutcome,
-    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
-    ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
-    ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
-    SoundBankUsage, StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
+    PresentationPresentPolicy, PresentationQueueServiceOutcome, PresentationResourceId,
+    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
+    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState,
+    ScriptActionState, ScriptClock, ScriptFrameOutcome, ScriptPresentationEntity,
+    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
+    ScriptShipNavigationMode, ScriptTravelActionPhase, ShipDepthTransitionOutcome,
+    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
+    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage,
+    StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
     deactivate_nav_actor_slots, draw_planar_dialogue_text, fill_display_band,
     increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, objects_at_arche_position, play_cd_audio_track_two, prepare_cd_audio,
@@ -2258,9 +2259,19 @@ impl<'window> ModernGameServices<'window> {
         line: PresentationResourceId,
         policy: PresentationPresentPolicy,
         timer_tick: u16,
+        render_snapshot_suppressed: bool,
     ) -> Result<PresentationResourceSequenceOutcome> {
-        self.presentation_player
-            .load(&mut self.runtime, line, policy, timer_tick)
+        let outcome = self.presentation_player.load(
+            &mut self.runtime,
+            line,
+            policy,
+            timer_tick,
+            render_snapshot_suppressed,
+        )?;
+        if outcome.resource_switch.palette.copied_render_snapshot {
+            self.synchronize_presentation_transition_source()?;
+        }
+        Ok(outcome)
     }
 
     /// Advance the active presentation queue with explicit clock samples.
@@ -2268,9 +2279,34 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         audio_position: u16,
         timer_tick: u16,
+        render_snapshot_suppressed: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
-        self.presentation_player
-            .service_frame(&mut self.runtime, audio_position, timer_tick)
+        let outcome = self.presentation_player.service_frame(
+            &mut self.runtime,
+            audio_position,
+            timer_tick,
+            render_snapshot_suppressed,
+        )?;
+        if matches!(
+            &outcome.queue,
+            PresentationQueueServiceOutcome::Active {
+                palette: Some(palette),
+                ..
+            } if palette.copied_render_snapshot
+        ) {
+            self.synchronize_presentation_transition_source()?;
+        }
+        Ok(outcome)
+    }
+
+    fn synchronize_presentation_transition_source(&mut self) -> Result<()> {
+        let palette = self
+            .presentation_player
+            .render_palette_snapshot()
+            .context("presentation palette update has no active stream")?;
+        self.palette_transition
+            .synchronize_presentation_source(&palette);
+        Ok(())
     }
 
     /// Return whether a presentation stream is retained and still draining.

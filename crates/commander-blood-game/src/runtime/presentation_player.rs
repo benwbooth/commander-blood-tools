@@ -4,8 +4,8 @@ use anyhow::{Context, Result, bail};
 use commander_blood_formats::bloodprg::BloodprgPresentationCatalog;
 
 use crate::native::bloodprg::{
-    DescriptPresentationAssets, PresentationPresentPolicy, PresentationResourceId,
-    PresentationResourceSequenceOutcome,
+    DescriptPresentationAssets, IndexedGamePalette, PresentationPresentPolicy,
+    PresentationResourceId, PresentationResourceSequenceOutcome,
 };
 
 use super::{
@@ -55,6 +55,7 @@ impl RuntimePresentationPlayer {
         line: PresentationResourceId,
         policy: PresentationPresentPolicy,
         timer_tick: u16,
+        render_snapshot_suppressed: bool,
     ) -> Result<PresentationResourceSequenceOutcome> {
         if self.active_stream.is_some() {
             bail!("a presentation stream is already active");
@@ -66,7 +67,12 @@ impl RuntimePresentationPlayer {
         request.present_policy = policy;
         request.entry_policy.draw_via_back_buffer = policy.draw_via_back_buffer;
         request.entry_policy.skip_back_buffer_present = policy.skip_back_buffer_present;
-        let (stream, outcome) = RuntimePresentationStream::load(runtime, request, timer_tick)?;
+        let (stream, outcome) = RuntimePresentationStream::load(
+            runtime,
+            request,
+            timer_tick,
+            render_snapshot_suppressed,
+        )?;
         self.active_stream = Some(stream);
         Ok(outcome)
     }
@@ -77,11 +83,17 @@ impl RuntimePresentationPlayer {
         runtime: &mut OriginalGameRuntime,
         audio_position: u16,
         timer_tick: u16,
+        render_snapshot_suppressed: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
         self.active_stream
             .as_mut()
             .context("no presentation stream is active")?
-            .service_frame(runtime, audio_position, timer_tick)
+            .service_frame(
+                runtime,
+                audio_position,
+                timer_tick,
+                render_snapshot_suppressed,
+            )
     }
 
     /// Return whether a stream remains owned, including its final drained state.
@@ -101,6 +113,13 @@ impl RuntimePresentationPlayer {
         self.active_stream
             .as_ref()
             .map_or(u64::MIN, RuntimePresentationStream::presented_frame_count)
+    }
+
+    /// Copy the transition-source snapshot retained by the active stream.
+    pub fn render_palette_snapshot(&self) -> Option<IndexedGamePalette> {
+        self.active_stream
+            .as_ref()
+            .map(|stream| *stream.render_palette_snapshot())
     }
 
     /// Release the active stream after completion or explicit cancellation.
@@ -139,7 +158,13 @@ mod tests {
         };
 
         let initial = player
-            .load(&mut runtime, OPENING_PRESENTATION_LINE, policy, u16::MIN)
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                policy,
+                u16::MIN,
+                false,
+            )
             .unwrap();
         assert!(initial.initial_present.frame_presented);
         assert!(player.has_stream());
@@ -169,6 +194,7 @@ mod tests {
                 OPENING_PRESENTATION_LINE,
                 PresentationPresentPolicy::default(),
                 u16::MIN,
+                false,
             )
             .unwrap();
 
@@ -179,6 +205,7 @@ mod tests {
                     OPENING_PRESENTATION_LINE,
                     PresentationPresentPolicy::default(),
                     u16::MIN,
+                    false,
                 )
                 .is_err()
         );

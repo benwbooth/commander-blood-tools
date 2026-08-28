@@ -11,7 +11,7 @@ use crate::native::bloodprg::{
     PresentationRenderTarget, PresentationResourceId, PresentationSceneContext,
     PresentationSceneDispatchOutcome, PresentationSceneDispatchState, PresentationSceneStatus,
     PresentationScreenBackend, PresentationScreenOutcome, PresentationScreenState, RasterNoiseMode,
-    RasterPoint, RasterSpanPaint, SceneTransitionLine, SceneTransitionState,
+    RasterPoint, RasterSpanPaint, SceneTransitionLine, SceneTransitionPhase, SceneTransitionState,
     ScriptPresentationScanState, SequenceSubtitlePlayback, SequenceSubtitleRenderer,
     ShipPresentationState, build_banked_tint_table, draw_framebuffer_noise_rect, draw_rect_outline,
     fill_framebuffer_rect, present_sequence_subtitle, remap_framebuffer_rect,
@@ -132,6 +132,7 @@ impl RuntimePresentationScreen {
             &mut self.scene_state,
             active_record_related,
             scruter_jo_record,
+            false,
         );
         export_ship_scene_state(&self.scene_state, ship);
         outcome
@@ -162,12 +163,14 @@ impl RuntimePresentationScreen {
         scene.dispatch_blocked = transition.bridge_blocked;
         scene.present_policy.vertical_offset = usize::from(transition.image_vertical_offset);
         scene.palette_transition_percent = *palette_transition_percent;
+        let render_snapshot_suppressed = transition.phase != SceneTransitionPhase::Inactive;
 
         let outcome = self.scene.dispatch(
             services,
             scene,
             Some(active_record_related),
             scruter_jo_record,
+            render_snapshot_suppressed,
         );
 
         transition.active_line = scene
@@ -469,6 +472,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
             self.scene_state,
             self.active_record_related,
             self.scruter_jo_record,
+            false,
         )?;
         Ok(PresentationSceneStatus {
             queued: self.scene_state.presentation.active_line.is_some()
