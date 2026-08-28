@@ -715,7 +715,10 @@ impl<'window> ModernGameServices<'window> {
     }
 
     /// Select and play the original deterministic dialogue and chatter events.
-    pub fn process_runtime_audio_events(&mut self) -> Result<Box<[AudioClipRequest]>> {
+    pub fn process_runtime_audio_events(
+        &mut self,
+        dialogue_suppressed: bool,
+    ) -> Result<Box<[AudioClipRequest]>> {
         self.check_audio()?;
 
         let (menu_words_pending, dialogue_armed, voice_reaction_requested, menu_tokens) = {
@@ -759,7 +762,7 @@ impl<'window> ModernGameServices<'window> {
             process_audio_events(
                 audio_events,
                 AudioEventContext {
-                    dialogue_suppressed: false,
+                    dialogue_suppressed,
                     menu_words: &menu_words,
                     streamed_dialogue_clip_count: clip_count,
                     dialogue_delay_base: delay_base,
@@ -1053,10 +1056,8 @@ impl<'window> ModernGameServices<'window> {
             .object(target)
             .with_context(|| format!("scene-transition target {target:?} is absent"))?
             .kind;
-        let current = self
-            .scripts
-            .backend()
-            .active_description_object()
+        let current = profile
+            .active_actor_presentation_related()
             .and_then(|object| {
                 profile
                     .state()
@@ -2017,7 +2018,10 @@ impl<'window> ModernGameServices<'window> {
         queued_scene_link: &GameSceneLink,
         primary_pointer_pressed: bool,
     ) -> Result<PresentationScreenOutcome> {
-        let active_record_related = self.scripts.backend().active_description_object();
+        let active_record_related = self
+            .runtime
+            .current_profile()
+            .and_then(|profile| profile.active_actor_presentation_related());
         let scruter_jo_record = self
             .runtime
             .current_profile()
@@ -2212,7 +2216,10 @@ impl<'window> ModernGameServices<'window> {
 
     /// Dispatch the ship's active authored line through the shared scene player.
     pub fn dispatch_ship_scene(&mut self) -> Result<PresentationSceneDispatchOutcome> {
-        let active_record_related = self.scripts.backend().active_description_object();
+        let active_record_related = self
+            .runtime
+            .current_profile()
+            .and_then(|profile| profile.active_actor_presentation_related());
         let scruter_jo_record = self
             .runtime
             .current_profile()
@@ -4190,8 +4197,20 @@ mod tests {
             text.subtitle_voice_trigger = false;
             text.menu_words = Box::new([ScriptTextWord::Dictionary(dictionary_word)]);
         }
-        assert!(services.process_runtime_audio_events().unwrap().is_empty());
-        let dialogue_requests = services.process_runtime_audio_events().unwrap();
+        assert!(
+            services
+                .process_runtime_audio_events(true)
+                .unwrap()
+                .is_empty()
+        );
+        assert!(services.audio_events.menu_words_pending);
+        assert!(
+            services
+                .process_runtime_audio_events(false)
+                .unwrap()
+                .is_empty()
+        );
+        let dialogue_requests = services.process_runtime_audio_events(false).unwrap();
         assert!(matches!(
             dialogue_requests.as_ref(),
             [AudioClipRequest::StreamedDialogue { .. }]
@@ -4700,6 +4719,14 @@ mod tests {
         update_game_presentation_ownership(&mut phone_lifecycle, &mut phone_scene_link);
         assert_eq!(
             services.script_backend().active_description_object(),
+            Some(izwalito)
+        );
+        assert_eq!(
+            services
+                .runtime()
+                .current_profile()
+                .unwrap()
+                .active_actor_presentation_related(),
             Some(izwalito)
         );
         assert_eq!(

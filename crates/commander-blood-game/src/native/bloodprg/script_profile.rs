@@ -4,6 +4,7 @@ mod record_state;
 
 use std::error::Error;
 use std::fmt;
+use std::mem::size_of;
 
 use commander_blood_formats::bas::{ScriptBas, ScriptBasError, decode_script_bas};
 use commander_blood_formats::code::{
@@ -25,8 +26,9 @@ use super::script_frame::{
 };
 use super::{
     OriginalResourceCache, OriginalResourceCatalog, ResourceCacheError, ResourceId,
-    ResourceLoadStatus, ScriptProcedureStateError, ScriptProcedureStates, ScriptRuntime,
-    ScriptSelectorState, ScriptSequenceSlots,
+    ResourceLoadStatus, ScriptActionRecord, ScriptFieldSelector, ScriptProcedureStateError,
+    ScriptProcedureStates, ScriptRuntime, ScriptSelectorState, ScriptSequenceSlots,
+    script_field_offset,
 };
 
 pub use record_state::{ScriptProfileRecordState, ScriptProfileRecordStateError};
@@ -336,6 +338,24 @@ impl LoadedScriptProfile {
     /// Borrow the canonical typed record stores recovered from this profile's VAR image.
     pub const fn record_state(&self) -> &ScriptProfileRecordState {
         &self.record_state
+    }
+
+    /// Return the related object in `blood`'s live C4 presentation record.
+    ///
+    /// The native scene coordinators read this action slot directly every frame;
+    /// it is independent of whichever DESCRIPT lookup most recently populated
+    /// persistent presentation assets.
+    pub fn active_actor_presentation_related(&self) -> Option<ScriptObjectId> {
+        let player = self.builtins.player?;
+        let player_kind = self.state.object(player)?.kind;
+        let action_offset = script_field_offset(player_kind, ScriptFieldSelector::ACTION)?;
+        let slot = self
+            .state
+            .object_word_triple(player, action_offset / size_of::<u16>())?;
+        match self.record_state.action_records.record(slot) {
+            ScriptActionRecord::ActorPresentation(related) => Some(related),
+            _ => None,
+        }
     }
 
     /// Borrow the profile's mutable procedure-gate state.

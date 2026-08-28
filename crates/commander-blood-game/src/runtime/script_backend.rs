@@ -1471,6 +1471,39 @@ mod tests {
                 .word(first_word),
             Some(IZWALITO_FIRST_WORD)
         );
+        assert_eq!(
+            runtime
+                .current_profile()
+                .unwrap()
+                .active_actor_presentation_related(),
+            Some(izwalito)
+        );
+
+        let unrelated = scripts
+            .backend()
+            .object_names
+            .keys()
+            .copied()
+            .find(|object| {
+                *object != izwalito && scripts.backend().object_has_description(*object).unwrap()
+            })
+            .expect("SCRIPT1 must contain another DESCRIPT-backed object");
+        scripts
+            .apply_object_description(unrelated)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            scripts.backend().active_description_object(),
+            Some(unrelated)
+        );
+        assert_eq!(
+            runtime
+                .current_profile()
+                .unwrap()
+                .active_actor_presentation_related(),
+            Some(izwalito),
+            "a later DESCRIPT lookup must not replace blood's live C4 owner"
+        );
     }
 
     #[test]

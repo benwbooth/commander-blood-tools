@@ -419,8 +419,10 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         self.services.refill_navigation_music()
     }
 
-    fn process_audio(&mut self, _state: &mut GameLifecycleState) -> Result<()> {
-        self.services.process_runtime_audio_events().map(|_| ())
+    fn process_audio(&mut self, state: &mut GameLifecycleState) -> Result<()> {
+        self.services
+            .process_runtime_audio_events(state.pause_hud_active)
+            .map(|_| ())
     }
 
     fn update_ship_presentation(
