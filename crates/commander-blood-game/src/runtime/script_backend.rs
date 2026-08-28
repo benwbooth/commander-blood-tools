@@ -163,6 +163,13 @@ impl RuntimeScriptSystem {
             });
         self.service
             .backend_mut()
+            .set_environment_activity(ScriptEnvironmentActivity {
+                bridge_active: lifecycle.presentation_interface_active(),
+                travel_active: source.sequence_active,
+                contact_active: source.scene_gate_active,
+            });
+        self.service
+            .backend_mut()
             .set_ship_interface_active(lifecycle.presentation_interface_active());
     }
 
@@ -366,11 +373,11 @@ impl RuntimeScriptSystem {
         Ok(())
     }
 
-    /// Queue the non-actionable C4 record emitted by the ship navigation coordinator.
+    /// Queue the zero-valued, immediately actionable C4 emitted by bridge actors.
     pub fn defer_actor_presentation(&mut self, target: ScriptObjectId) {
         self.service.presentation_state_mut().deferred = ScriptDeferredRecord::Complete {
             record: ScriptActionRecord::ActorPresentation(target),
-            actionable: false,
+            actionable: true,
         };
     }
 
@@ -1085,6 +1092,14 @@ mod tests {
             }
         );
         assert!(scripts.service.presentation_state().name_lookup_enabled);
+        assert_eq!(
+            scripts.backend().environment_activity(),
+            ScriptEnvironmentActivity {
+                bridge_active: true,
+                travel_active: true,
+                contact_active: true,
+            }
+        );
 
         let presentation = scripts.service.presentation_state_mut();
         presentation.active = false;
@@ -1132,6 +1147,43 @@ mod tests {
         assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 4);
         assert!(lifecycle.profile_ui_blocked());
         assert_eq!(lifecycle.pending_profile, ScriptProfileId::new(2));
+    }
+
+    #[test]
+    fn completed_phone_actor_handoff_reaches_honk_dialogue() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut runtime = super::super::OriginalGameRuntime::new(data);
+        scripts
+            .load_profile(&mut runtime, ScriptProfileId::INITIAL)
+            .unwrap();
+        let honk = runtime.current_profile().unwrap().builtins().horn.unwrap();
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.vm_execution_enabled = true;
+        lifecycle.set_presentation_interface_active(true);
+        scripts.defer_actor_presentation(honk);
+
+        let promotion = scripts
+            .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
+            .unwrap();
+        assert_eq!(promotion.presentation_yields, usize::MIN);
+
+        let dialogue = scripts
+            .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
+            .unwrap();
+        assert!(lifecycle.presentation.active);
+        assert_ne!(dialogue.presentation_yields, usize::MIN);
+        assert!(scripts.text_presentation().subtitle_display_active);
+        assert!(
+            scripts
+                .text_presentation()
+                .subtitle_text
+                .starts_with(b"Welcome aboard")
+        );
     }
 
     #[test]

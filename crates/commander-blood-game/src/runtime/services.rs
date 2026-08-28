@@ -4089,7 +4089,7 @@ mod tests {
             services.presentation_scan_state().deferred,
             crate::native::bloodprg::ScriptDeferredRecord::Complete {
                 record: crate::native::bloodprg::ScriptActionRecord::ActorPresentation(horn),
-                actionable: false,
+                actionable: true,
             }
         );
         services.clear_pending_ship_presentation_owner();
