@@ -3504,11 +3504,13 @@ mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
     use commander_blood_formats::bloodprg::decode_bloodprg_font_resources;
+    use commander_blood_formats::instruction::ScriptTimerSlot;
     use commander_blood_formats::script::decode_script_dictionary;
 
     use super::*;
     use crate::native::bloodprg::{
-        ChoiceListRowKind, PointerButton, ScriptDeferredRecord, update_game_presentation_ownership,
+        ChoiceListRowKind, GameTimerContext, GameTimerState, PointerButton, ScriptDeferredRecord,
+        advance_game_timer_tick, update_game_presentation_ownership,
     };
     use crate::runtime::OriginalGameDataPaths;
     use crate::runtime::camera_approach::update_runtime_camera_approach;
@@ -3606,6 +3608,10 @@ mod tests {
     const TARGET_SELECTOR_SETTLE_FRAME_LIMIT: usize = 16;
     const PHONE_BRIDGE_TARGET_ARC: u16 = 90;
     const PHONE_BRIDGE_VIEW_FRAME: i16 = 45;
+    const STARTUP_PHONE_TIMER_SLOT: u8 = 22;
+    const STARTUP_PHONE_TIMER_VALUE: u16 = 5;
+    const TIMER_TICKS_PER_GAME_FRAME: usize = 8;
+    const STARTUP_PHONE_FRAME_LIMIT: usize = 160;
     const IZWALITO_NAME: &[u8] = b"Izwalito";
     const IZWALITO_IDLE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(8);
     const IZWALITO_IDLE_VIDEO: &[u8] = b"PE\\aaisw.hnm";
@@ -4150,10 +4156,45 @@ mod tests {
         let actor_hit_region = services.nav_actor_slots[station_index]
             .hit_region
             .expect("the initial bridge station must have an actor hit region");
-        services
-            .scripts
-            .action_state_mut()
-            .pending_presentation_owner = Some(izwalito);
+        let phone_timer = ScriptTimerSlot::decode(STARTUP_PHONE_TIMER_SLOT).unwrap();
+        assert_eq!(
+            services
+                .runtime()
+                .current_profile()
+                .unwrap()
+                .runtime()
+                .timer(phone_timer),
+            STARTUP_PHONE_TIMER_VALUE
+        );
+        lifecycle.vm_execution_enabled = true;
+        lifecycle.presentation.scene_gate_active = true;
+        lifecycle.set_presentation_interface_active(true);
+        let mut timer = GameTimerState::default();
+        timer.start();
+        for _ in usize::MIN..STARTUP_PHONE_FRAME_LIMIT {
+            for _ in usize::MIN..TIMER_TICKS_PER_GAME_FRAME {
+                advance_game_timer_tick(
+                    &mut timer,
+                    services
+                        .runtime_mut()
+                        .current_profile_mut()
+                        .unwrap()
+                        .runtime_mut(),
+                    GameTimerContext::default(),
+                );
+            }
+            services
+                .execute_and_apply_lifecycle_script_frame(&mut lifecycle)
+                .unwrap();
+            if services.pending_ship_presentation_owner() == Some(izwalito) {
+                break;
+            }
+        }
+        assert_eq!(
+            services.pending_ship_presentation_owner(),
+            Some(izwalito),
+            "SCRIPT1 never queued the startup Izwalito phone presentation"
+        );
         let actor_pointer = services.input_mut().poll_pointer(
             TEST_OUTPUT_SIZE,
             [
