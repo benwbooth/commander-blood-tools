@@ -251,6 +251,35 @@ impl PresentationWordChoiceBackend for RuntimeWordChoiceBackend<'_, '_> {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reset_clears_every_persistent_word_choice_owner() {
+        let mut word_choice = RuntimePresentationWordChoice::default();
+        word_choice.state.active = true;
+        word_choice.state.phase = PresentationWordChoicePhase::Selecting;
+        word_choice.state.interface_active = true;
+        word_choice.state.presentation_deferred = true;
+        word_choice.state.text_display_active = true;
+        word_choice.state.dialogue_hold_complete = true;
+        word_choice.state.request_pending = true;
+        word_choice.transition = FramebufferTransitionState {
+            total_steps: 9,
+            current_step: 4,
+        };
+
+        word_choice.reset();
+
+        assert_eq!(word_choice.state, PresentationWordChoiceState::default());
+        assert_eq!(
+            word_choice.transition,
+            FramebufferTransitionState::default()
+        );
+    }
+}
+
 fn transition_rect(rect: ChoiceListRect) -> TransitionRect {
     TransitionRect::new(
         rect.origin[0],

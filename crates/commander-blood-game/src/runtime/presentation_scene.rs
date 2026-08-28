@@ -146,17 +146,23 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
             // path as the executable and leave both pixels and palette intact.
             return Ok(());
         }
-        let (_front, back) = self.services.runtime_mut().presentation_buffers_mut();
-        decode_pbm_image(
-            &encoded,
-            back,
+        {
+            let (_front, back) = self.services.runtime_mut().presentation_buffers_mut();
+            decode_pbm_image(
+                &encoded,
+                back,
+                scene_palette,
+                PbmDecodeOptions {
+                    palette_update: PbmPaletteUpdate::SceneColors,
+                    transparency: PbmTransparency::TransparentZero,
+                },
+            )
+            .context("decoding a DESCRIPT presentation background")?;
+        }
+        publish_loaded_scene_palette(
             scene_palette,
-            PbmDecodeOptions {
-                palette_update: PbmPaletteUpdate::SceneColors,
-                transparency: PbmTransparency::TransparentZero,
-            },
-        )
-        .context("decoding a DESCRIPT presentation background")?;
+            self.services.runtime_mut().live_palette_mut(),
+        );
         Ok(())
     }
 
@@ -255,6 +261,13 @@ fn queue_presented_frame(outcome: &PresentationQueueServiceOutcome) -> bool {
     )
 }
 
+fn publish_loaded_scene_palette(
+    scene_palette: &IndexedGamePalette,
+    shared_live_palette: &mut IndexedGamePalette,
+) {
+    *shared_live_palette = *scene_palette;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,5 +279,16 @@ mod tests {
         for (index, mapped) in scene.blend_remap().iter().copied().enumerate() {
             assert_eq!(usize::from(mapped), index);
         }
+    }
+
+    #[test]
+    fn loaded_scene_palette_publishes_through_the_native_live_palette_alias() {
+        let scene_palette =
+            std::array::from_fn(|index| [index as u8, (index / 2) as u8, (index / 3) as u8]);
+        let mut shared_live_palette = [[63; RGB_COMPONENT_COUNT]; 256];
+
+        publish_loaded_scene_palette(&scene_palette, &mut shared_live_palette);
+
+        assert_eq!(shared_live_palette, scene_palette);
     }
 }

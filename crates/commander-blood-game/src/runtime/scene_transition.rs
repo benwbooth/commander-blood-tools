@@ -153,6 +153,9 @@ impl RuntimeSceneTransition {
                     .object,
             );
         }
+        if outcome == SceneTransitionOutcome::CleanedUp {
+            services.reset_presentation_word_choice()?;
+        }
         if matches!(
             outcome,
             SceneTransitionOutcome::ImageLoaded

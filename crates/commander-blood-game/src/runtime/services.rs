@@ -1561,8 +1561,8 @@ impl<'window> ModernGameServices<'window> {
             .context("configuring the navigation bridge palette transition")
     }
 
-    /// Reset the dialogue word-choice owner when navigation returns to the bridge.
-    pub fn reset_navigation_word_choice(&mut self) -> Result<()> {
+    /// Reset the dialogue word-choice owner at a recovered shared-state boundary.
+    pub fn reset_presentation_word_choice(&mut self) -> Result<()> {
         self.presentation_word_choice
             .as_mut()
             .context("presentation word choice is already being updated")?
@@ -2295,7 +2295,7 @@ impl<'window> ModernGameServices<'window> {
     /// Execute one translated script frame and apply every ordered host command it emitted.
     pub fn execute_and_apply_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         let outcome = self.execute_script_frame(enabled)?;
-        self.publish_script_presentation_status_change();
+        self.publish_script_presentation_status_change()?;
         self.synchronize_script_ship_state();
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
@@ -2315,7 +2315,7 @@ impl<'window> ModernGameServices<'window> {
                 .execute_lifecycle_frame(&mut self.runtime, state, execution_enabled)?;
         self.scripts
             .finish_ship_presentation_state(&mut self.ship_presentation);
-        self.publish_script_presentation_status_change();
+        self.publish_script_presentation_status_change()?;
         self.synchronize_script_ship_state();
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
@@ -2327,17 +2327,21 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.take_mouse_idle_reset_request()
     }
 
-    fn publish_script_presentation_status_change(&mut self) {
-        let (changed, clear_bridge_console) = self
+    fn publish_script_presentation_status_change(&mut self) -> Result<()> {
+        let (presentation_started, changed, clear_bridge_console) = self
             .scripts
             .last_presentation_outcome()
             .map(|outcome| {
                 (
+                    outcome.presentation_started.is_some(),
                     outcome.presentation_started.is_some() || outcome.presentation_ended,
                     outcome.bridge_console_selection_cleared,
                 )
             })
             .unwrap_or_default();
+        if presentation_started {
+            self.reset_presentation_word_choice()?;
+        }
         if clear_bridge_console {
             self.bridge_console
                 .as_mut()
@@ -2347,6 +2351,7 @@ impl<'window> ModernGameServices<'window> {
         if changed {
             self.request_manu3_animation(Manu3AnimationSelector::BridgeActive);
         }
+        Ok(())
     }
 
     /// Publish one-frame BloodScript target changes into the canonical ship FSM state.

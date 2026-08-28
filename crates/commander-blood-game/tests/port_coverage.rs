@@ -8,8 +8,8 @@ const RECOVERED_NATIVE_ROUTINE_COUNT: usize =
     RECOVERED_BLOODPRG_ROUTINE_COUNT + RECOVERED_XDB_ROUTINE_COUNT;
 const CURRENT_PORTED_ROUTINE_COUNT: usize = 470;
 const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 50;
-const RECOVERED_BLOODPRG_SEMANTIC_ALIAS_COUNT: usize = 65;
-const CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT: usize = 15;
+const RECOVERED_BLOODPRG_SEMANTIC_ALIAS_COUNT: usize = 71;
+const CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT: usize = 58;
 
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -190,9 +190,11 @@ fn recovered_bloodprg_aliases(root: &Path) -> BTreeMap<(String, String), BTreeSe
         }
         let source = std::fs::read_to_string(path).unwrap();
         let mut statement = String::new();
+        let mut preceding_address = None;
         for line in source.lines() {
             let trimmed = line.trim_start();
             if statement.is_empty() && !trimmed.starts_with("extern ") {
+                preceding_address = declaration_address(trimmed);
                 continue;
             }
             if !statement.is_empty() {
@@ -202,7 +204,9 @@ fn recovered_bloodprg_aliases(root: &Path) -> BTreeMap<(String, String), BTreeSe
             if !trimmed.contains(';') {
                 continue;
             }
-            if let Some((segment, offset)) = declaration_address(&statement) {
+            if let Some((segment, offset)) =
+                declaration_address(&statement).or_else(|| preceding_address.take())
+            {
                 let declaration = statement.split_once(';').unwrap().0;
                 let before_array = declaration.split('[').next().unwrap();
                 let symbol = before_array
@@ -217,6 +221,7 @@ fn recovered_bloodprg_aliases(root: &Path) -> BTreeMap<(String, String), BTreeSe
                     .insert(symbol);
             }
             statement.clear();
+            preceding_address = None;
         }
     }
 
@@ -231,7 +236,7 @@ fn recovered_bloodprg_aliases(root: &Path) -> BTreeMap<(String, String), BTreeSe
 }
 
 fn declaration_address(statement: &str) -> Option<(&'static str, String)> {
-    const SEGMENT_MARKERS: [(&str, &str); 10] = [
+    const SEGMENT_MARKERS: [(&str, &str); 11] = [
         ("SS=DS:0x", "DATA"),
         ("SS/DS:0x", "DATA"),
         ("DS=GS:0x", "DATA"),
@@ -242,6 +247,7 @@ fn declaration_address(statement: &str) -> Option<(&'static str, String)> {
         ("ES:0x", "DATA"),
         ("FS:0x", "FS"),
         ("CS:0x", "CS"),
+        ("game data:0x", "DATA"),
     ];
     for (marker, segment) in SEGMENT_MARKERS {
         let Some(marker_start) = statement.find(marker) else {

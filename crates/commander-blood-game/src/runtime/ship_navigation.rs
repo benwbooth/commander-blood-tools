@@ -173,7 +173,7 @@ impl RuntimeShipNavigation {
         }
         if native_outcome == ShipNavigationOutcome::ResetToBridge {
             services.request_ship_hud_reinitialization()?;
-            services.reset_navigation_word_choice()?;
+            services.reset_presentation_word_choice()?;
             services.finish_ship_navigation_reset();
         }
         if take_navigation_snapshot_request(&mut state.navigation_snapshot_pending) {
