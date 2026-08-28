@@ -2073,10 +2073,11 @@ impl<'window> ModernGameServices<'window> {
     pub(super) fn apply_scene_transition_description(
         &mut self,
         object: ScriptObjectId,
+        presentation_interface_active: bool,
         text: &mut TextPresentationState,
     ) -> Result<()> {
         self.scripts
-            .apply_object_description_to_text(object, text)?
+            .apply_object_description_to_text(object, presentation_interface_active, text)?
             .with_context(|| {
                 format!("scene-transition object {object:?} has no DESCRIPT record")
             })?;
@@ -2676,9 +2677,22 @@ impl<'window> ModernGameServices<'window> {
         for command in commands {
             match command {
                 RuntimeScriptCommand::RestartNameAreaEffect => {
+                    let sprite_name = self
+                        .scripts
+                        .backend()
+                        .assets()
+                        .character_sprite()
+                        .context("name-area restart has no DESCRIPT character sprite")?
+                        .as_bytes()
+                        .to_vec();
+                    self.runtime.load_name_area_sprite(&sprite_name)?;
                     self.runtime.restart_name_area_effect();
+                    self.bridge_screen.palette_dirty = true;
                 }
                 RuntimeScriptCommand::TransitionPresentationEntity(entity) => {
+                    if entity == ScriptPresentationEntity::NameAreaEffect {
+                        self.runtime.stop_name_area_effect();
+                    }
                     self.runtime.transition_presentation_entity(entity)?;
                 }
                 RuntimeScriptCommand::RestartNavigationMusic => {
@@ -3661,9 +3675,9 @@ mod tests {
 
     use super::*;
     use crate::native::bloodprg::{
-        ChoiceListRowKind, GameTimerContext, GameTimerState, PointerButton,
-        ScriptActionPresentationLine, ScriptDeferredRecord, advance_game_timer_tick,
-        update_game_presentation_ownership,
+        BridgeSpriteFrameSource, ChoiceListRowKind, GameTimerContext, GameTimerState,
+        PointerButton, ResourceId, ScriptActionPresentationLine, ScriptDeferredRecord,
+        advance_game_timer_tick, update_game_presentation_ownership,
     };
     use crate::runtime::OriginalGameDataPaths;
     use crate::runtime::camera_approach::update_runtime_camera_approach;
@@ -3764,9 +3778,17 @@ mod tests {
     const TIMER_TICKS_PER_GAME_FRAME: usize = 8;
     const STARTUP_PHONE_FRAME_LIMIT: usize = 160;
     const IZWALITO_NAME: &[u8] = b"Izwalito";
+    const IZWALITO_SPRITE: &[u8] = b"izwalito.spr";
     const IZWALITO_IDLE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(8);
     const IZWALITO_IDLE_VIDEO: &[u8] = b"PE\\aaisw.hnm";
     const AUTHORED_RADIO_TERMINAL_FRAME: u16 = 11;
+    const FIRST_BRIDGE_ENTITY: u16 = 0;
+    const AFTER_LAST_BRIDGE_ENTITY: u16 = BRIDGE_SPRITE_ENTITY_COUNT as u16;
+    const FIRST_ACTOR_ENTITY: u16 = 1;
+    const AFTER_LAST_ACTOR_ENTITY: u16 = 20;
+    const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
+    const NAME_AREA_EFFECT_RESOURCE: ResourceId = ResourceId::new(7);
+    const NAME_AREA_EFFECT_POSITION: [u16; 2] = [16, 74];
     const NONZERO_SHIP_DEPTH_OFFSET: u16 = 73;
     const RADIO_COMPLETION_FRAME_LIMIT: usize = AUTHORED_RADIO_TERMINAL_FRAME as usize + 2;
     const AUTHORED_ACTOR_RESOURCES: [u16; NAV_ACTOR_SLOT_COUNT] = [17, 13, 15, 16, 19, 18];
@@ -3842,8 +3864,6 @@ mod tests {
         let writable_root = TemporaryRoot::create();
         let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
         let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
-        let mut platform =
-            RuntimePlatformHost::new(&window, sdl.mouse(), sdl.event_pump().unwrap());
 
         let startup = services.prepare_startup_resources().unwrap();
         assert!(startup.write_directory_created);
@@ -3902,12 +3922,26 @@ mod tests {
         );
         services.load_default_sound_bank().unwrap();
         services.initialize_back_buffer().unwrap();
-
-        let ordinary_gameplay = GameLifecycleState::default();
+        services
+            .load_script_profile(ScriptProfileId::new(u8::MIN).unwrap())
+            .unwrap();
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.vm_execution_enabled = true;
+        lifecycle.set_presentation_interface_active(true);
+        let script = services
+            .execute_and_apply_lifecycle_script_frame(&mut lifecycle)
+            .unwrap();
+        assert_ne!(
+            script.end,
+            crate::native::bloodprg::ScriptFrameEnd::ExecutionDisabled
+        );
+        services.rebuild_script_record_state().unwrap();
+        services.refresh_object_access_counters().unwrap();
+        services.reset_ship_hud().unwrap();
         services
             .input_mut()
             .poll_pointer([320.0, 200.0], [160.0, 100.0], PointerButtons::NONE);
-        assert!(services.update_lifecycle_manu3(&ordinary_gameplay).unwrap());
+        assert!(services.update_lifecycle_manu3(&lifecycle).unwrap());
         let centered_hand = services.runtime().manu3().unwrap().projection_center();
         assert!(
             !services
@@ -3921,7 +3955,7 @@ mod tests {
         services
             .input_mut()
             .poll_pointer([320.0, 200.0], [240.0, 100.0], PointerButtons::NONE);
-        assert!(services.update_lifecycle_manu3(&ordinary_gameplay).unwrap());
+        assert!(services.update_lifecycle_manu3(&lifecycle).unwrap());
         assert_ne!(
             services.runtime().manu3().unwrap().projection_center(),
             centered_hand,
@@ -3935,14 +3969,6 @@ mod tests {
         assert!(!services.bridge_screen_state().palette_refresh_in_progress);
         assert!(services.bridge_screen_state().palette_dirty);
         assert!(services.bridge_screen_state().clip_snapshot_ready);
-        services
-            .load_script_profile(ScriptProfileId::new(u8::MIN).unwrap())
-            .unwrap();
-        let script = services.execute_script_frame(true).unwrap();
-        assert_ne!(
-            script.end,
-            crate::native::bloodprg::ScriptFrameEnd::ExecutionDisabled
-        );
         let resident_bank = services.resident_sound_bank().unwrap().clone();
         services
             .script_backend_mut()
@@ -3995,7 +4021,6 @@ mod tests {
             .directory()
             .find_active_object(IZWALITO_NAME)
             .expect("SCRIPT1 must contain Izwalito");
-        let mut lifecycle = GameLifecycleState::default();
         services
             .request_bridge_seek(PHONE_BRIDGE_TARGET_ARC)
             .unwrap();
@@ -4326,7 +4351,6 @@ mod tests {
             STARTUP_PHONE_TIMER_VALUE
         );
         lifecycle.vm_execution_enabled = true;
-        lifecycle.presentation.scene_gate_active = true;
         lifecycle.set_presentation_interface_active(true);
         let mut timer = GameTimerState::default();
         timer.start();
@@ -4440,8 +4464,14 @@ mod tests {
         );
         let mut phone_lifecycle = lifecycle.clone();
         phone_lifecycle.vm_execution_enabled = true;
-        phone_lifecycle.presentation.scene_gate_active = true;
         phone_lifecycle.set_presentation_interface_active(true);
+        let active_line_before_phone = phone_lifecycle.presentation.active_line;
+        let bridge_before_phone = services
+            .bridge_frame
+            .as_ref()
+            .unwrap()
+            .object_sprite_pixels
+            .clone();
         services
             .execute_and_apply_lifecycle_script_frame(&mut phone_lifecycle)
             .unwrap();
@@ -4463,59 +4493,82 @@ mod tests {
             IZWALITO_IDLE_VIDEO
         );
         assert_eq!(
-            phone_lifecycle.presentation.active_line,
-            Some(IZWALITO_IDLE_PRESENTATION_LINE.get())
-        );
-        let bridge_before_phone_video = services.runtime().front_buffer().pixels().to_vec();
-        services.ship_presentation_state_mut().flags = 1;
-        assert_eq!(
             services
-                .update_runtime_ship_presentation(
-                    phone_scene_link,
-                    &mut phone_lifecycle,
-                    &mut platform,
-                )
-                .unwrap(),
-            ShipPresentationOutcome::Initialized
+                .script_backend()
+                .assets()
+                .character_sprite()
+                .expect("Izwalito DESCRIPT must select its portrait sprite")
+                .as_bytes(),
+            IZWALITO_SPRITE
         );
-        assert_eq!(
-            phone_lifecycle.presentation.active_line,
-            Some(IZWALITO_IDLE_PRESENTATION_LINE.get())
-        );
-        assert_eq!(
+        assert!(
             services
-                .update_runtime_ship_presentation(
-                    phone_scene_link,
-                    &mut phone_lifecycle,
-                    &mut platform,
-                )
-                .unwrap(),
-            ShipPresentationOutcome::DialogueBlocked
+                .script_backend()
+                .assets()
+                .encoded_idle_video()
+                .is_none(),
+            "text-only bridge dialogue must not load the idle HNM"
         );
-        assert!(phone_lifecycle.presentation.c2_presentation_gate);
-        assert!(services.presentation_stream_active());
-        assert_ne!(services.presentation_decoded_frame_count(), u64::MIN);
+        assert_eq!(
+            phone_lifecycle.presentation.active_line, active_line_before_phone,
+            "text-only bridge dialogue must preserve the existing presentation line"
+        );
+        assert!(phone_lifecycle.presentation.active);
+        assert!(!phone_lifecycle.presentation.scene_gate_active);
+        assert!(!phone_lifecycle.presentation.ship_active);
+        assert_eq!(
+            services.ship_presentation_state().flags & SHIP_PRESENTATION_ACTIVE_FLAG,
+            u16::MIN
+        );
+        assert!(!services.presentation_stream_active());
+        assert!(!services.presentation_screen_state().unwrap().active());
+        let portrait = services.runtime().bridge_sprite_entities()[NAME_AREA_EFFECT_ENTITY_INDEX];
+        assert_eq!(
+            portrait.draw_position,
+            crate::native::bloodprg::BridgeSpritePosition {
+                x: NAME_AREA_EFFECT_POSITION[0],
+                y: NAME_AREA_EFFECT_POSITION[1],
+            }
+        );
+        assert!(matches!(
+            portrait.frame.map(|frame| frame.source),
+            Some(BridgeSpriteFrameSource::CachedResource {
+                resource: NAME_AREA_EFFECT_RESOURCE,
+                ..
+            })
+        ));
         services
-            .set_presentation_screen_active(phone_lifecycle.presentation_interface_active())
+            .commit_ship_entities(FIRST_BRIDGE_ENTITY..AFTER_LAST_BRIDGE_ENTITY)
             .unwrap();
-        assert!(services.presentation_screen_state().unwrap().active());
+        services
+            .render_bridge_frame(BridgeSceneInput {
+                interaction: BridgeSteeringInteraction::MenuEngaged,
+                ..BridgeSceneInput::default()
+            })
+            .unwrap();
+        services
+            .rasterize_bridge_frame_sprite_range(FIRST_ACTOR_ENTITY..AFTER_LAST_ACTOR_ENTITY)
+            .unwrap();
+        assert!(
+            services
+                .bridge_frame
+                .as_ref()
+                .unwrap()
+                .object_sprite_pixels
+                .iter()
+                .zip(&bridge_before_phone)
+                .any(|(after, before)| after != before),
+            "Izwalito portrait did not update the bridge sprite layer"
+        );
         assert_eq!(
             select_bridge_composition(
                 services.presentation_stream_active(),
                 services.presentation_screen_state().unwrap().active(),
-                false,
+                phone_lifecycle.presentation.active,
                 false,
             ),
-            RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel,
-            "the bridge must remain visible behind the authored phone-video panel"
-        );
-        let phone_video_frame = services.runtime().front_buffer().pixels();
-        let phone_video_start = 320 * 10;
-        let phone_video_end = 320 * 140;
-        assert_ne!(
-            &phone_video_frame[phone_video_start..phone_video_end],
-            &bridge_before_phone_video[phone_video_start..phone_video_end],
-            "Izwalito video did not update the authored bridge panel"
+            RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay,
+            "text-only dialogue must overlay indexed subtitles on the bridge portrait"
         );
         assert_eq!(
             services
@@ -4524,13 +4577,8 @@ mod tests {
             InputCancellationOutcome::ForwardedToText,
             "the native Escape handler reserves character lines 8 through 40 for dialogue input"
         );
-        assert!(services.presentation_stream_active());
-        services.finish_bridge_actor_scene_presentation(&mut phone_lifecycle);
-        services
-            .update_runtime_ship_presentation(phone_scene_link, &mut phone_lifecycle, &mut platform)
-            .unwrap();
-        assert!(!phone_lifecycle.presentation.c2_presentation_gate);
         assert!(!services.presentation_stream_active());
+        services.finish_bridge_actor_scene_presentation(&mut phone_lifecycle);
         services.clear_pending_ship_presentation_owner();
         services.input_mut().poll_pointer(
             [320.0, 200.0],

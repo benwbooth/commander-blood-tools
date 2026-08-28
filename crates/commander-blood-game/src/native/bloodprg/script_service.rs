@@ -63,7 +63,7 @@ pub trait ScriptExecutionBackend {
         related: ScriptObjectId,
         name: &[u8],
         text: &mut TextPresentationState,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<bool, Self::Error>;
 
     /// Restart the name-area visual after new assets are staged.
     fn restart_name_area_effect(&mut self) -> Result<(), Self::Error>;
@@ -425,7 +425,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
     fn lookup_presentation_description(
         &mut self,
         related: ScriptObjectId,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<bool, Self::Error> {
         let name = self
             .directory
             .object(related)
@@ -694,9 +694,9 @@ mod tests {
             related: ScriptObjectId,
             _name: &[u8],
             _text: &mut TextPresentationState,
-        ) -> Result<(), Self::Error> {
+        ) -> Result<bool, Self::Error> {
             self.events.push(BackendEvent::DescriptionLookup(related));
-            Ok(())
+            Ok(false)
         }
 
         fn restart_name_area_effect(&mut self) -> Result<(), Self::Error> {

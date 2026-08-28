@@ -198,7 +198,7 @@ impl RuntimeScriptSystem {
             });
         self.service
             .backend_mut()
-            .set_ship_interface_active(lifecycle.presentation_interface_active());
+            .set_presentation_interface_active(lifecycle.presentation_interface_active());
     }
 
     /// Publish BloodScript writes to the recovered main-loop globals after a VM pass.
@@ -320,9 +320,12 @@ impl RuntimeScriptSystem {
         name: &[u8],
     ) -> Result<Option<DescriptRecordApplication>> {
         let Self { dispatch, service } = self;
-        service
-            .backend_mut()
-            .apply_description(name, true, &mut dispatch.text_presentation)
+        let interface_active = service.backend().presentation_interface_active;
+        service.backend_mut().apply_description(
+            name,
+            interface_active,
+            &mut dispatch.text_presentation,
+        )
     }
 
     /// Apply a DESCRIPT record by stable profile object identity.
@@ -332,9 +335,10 @@ impl RuntimeScriptSystem {
     ) -> Result<Option<DescriptRecordApplication>> {
         let Self { dispatch, service } = self;
         let name = service.backend().object_name(object)?.to_vec();
+        let interface_active = service.backend().presentation_interface_active;
         let application = service.backend_mut().apply_description(
             &name,
-            true,
+            interface_active,
             &mut dispatch.text_presentation,
         )?;
         service.backend_mut().active_description_object = application.map(|_| object);
@@ -345,13 +349,18 @@ impl RuntimeScriptSystem {
     pub fn apply_object_description_to_text(
         &mut self,
         object: ScriptObjectId,
+        presentation_interface_active: bool,
         text: &mut TextPresentationState,
     ) -> Result<Option<DescriptRecordApplication>> {
         let name = self.service.backend().object_name(object)?.to_vec();
-        let application = self
-            .service
+        self.service
             .backend_mut()
-            .apply_description(&name, true, text)?;
+            .set_presentation_interface_active(presentation_interface_active);
+        let application = self.service.backend_mut().apply_description(
+            &name,
+            presentation_interface_active,
+            text,
+        )?;
         self.service.backend_mut().active_description_object = application.map(|_| object);
         Ok(application)
     }
@@ -549,7 +558,7 @@ pub struct RuntimeScriptBackend {
     sequence_context: SequenceRequestContext,
     navigation_context: Option<ScriptRecordStateNavigationContext>,
     action_runtime_state: ScriptActionRuntimeState,
-    ship_interface_active: bool,
+    presentation_interface_active: bool,
     active_description_object: Option<ScriptObjectId>,
     last_descript_application: Option<DescriptRecordApplication>,
     commands: Vec<RuntimeScriptCommand>,
@@ -572,7 +581,7 @@ impl RuntimeScriptBackend {
             sequence_context: SequenceRequestContext::default(),
             navigation_context: None,
             action_runtime_state: ScriptActionRuntimeState::default(),
-            ship_interface_active: false,
+            presentation_interface_active: false,
             active_description_object: None,
             last_descript_application: None,
             commands: Vec::new(),
@@ -642,9 +651,9 @@ impl RuntimeScriptBackend {
         self.action_runtime_state = state;
     }
 
-    /// Update whether the ship interface suppresses new transfer presentations.
-    pub fn set_ship_interface_active(&mut self, active: bool) {
-        self.ship_interface_active = active;
+    /// Update the canonical low UI bit shared by DESCRIPT and transfer paths.
+    pub fn set_presentation_interface_active(&mut self, active: bool) {
+        self.presentation_interface_active = active;
     }
 
     /// Borrow the current DESCRIPT-selected presentation assets.
@@ -748,14 +757,14 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
 
     fn aboard_context(&mut self, related: ScriptObjectId) -> Result<ScriptAboardRecordContext> {
         Ok(ScriptAboardRecordContext {
-            ship_interface_active: self.ship_interface_active,
+            ship_interface_active: self.presentation_interface_active,
             descriptor_available: self.object_has_description(related)?,
         })
     }
 
     fn transfer_context(&mut self, item: ScriptObjectId) -> Result<ScriptTransferContext> {
         Ok(ScriptTransferContext {
-            ship_interface_active: self.ship_interface_active,
+            ship_interface_active: self.presentation_interface_active,
             descriptor_available: self.object_has_description(item)?,
         })
     }
@@ -765,11 +774,11 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
         related: ScriptObjectId,
         name: &[u8],
         text: &mut TextPresentationState,
-    ) -> Result<()> {
+    ) -> Result<bool> {
         self.validate_object_name(related, name)?;
-        let application = self.apply_description(name, true, text)?;
+        let application = self.apply_description(name, self.presentation_interface_active, text)?;
         self.active_description_object = application.map(|_| related);
-        Ok(())
+        Ok(self.assets.character_sprite().is_some())
     }
 
     fn restart_name_area_effect(&mut self) -> Result<()> {
@@ -791,7 +800,7 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
         text: &mut TextPresentationState,
     ) -> Result<ScriptActionDescription> {
         self.validate_object_name(object, name)?;
-        let application = self.apply_description(name, true, text)?;
+        let application = self.apply_description(name, self.presentation_interface_active, text)?;
         self.active_description_object = application.map(|_| object);
         Ok(
             application.map_or_else(ScriptActionDescription::default, |application| {
@@ -1289,6 +1298,47 @@ mod tests {
         assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 4);
         assert!(lifecycle.profile_ui_blocked());
         assert_eq!(lifecycle.pending_profile, ScriptProfileId::new(2));
+    }
+
+    #[test]
+    fn canonical_ui_bit_controls_descript_audio_and_idle_loading() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_presentation_interface_active(true);
+        scripts.prepare_lifecycle_frame(&lifecycle);
+
+        scripts
+            .apply_presentation_description(IZWALITO_NAME)
+            .unwrap()
+            .expect("Izwalito must have an authored DESCRIPT record");
+
+        assert!(scripts.backend().assets().encoded_idle_video().is_none());
+        assert!(
+            scripts
+                .backend()
+                .loaded_streamed_sound_bank_resource()
+                .is_none()
+        );
+
+        lifecycle.set_presentation_interface_active(false);
+        scripts.prepare_lifecycle_frame(&lifecycle);
+        scripts
+            .apply_presentation_description(IZWALITO_NAME)
+            .unwrap()
+            .expect("Izwalito must remain available outside the bridge UI");
+
+        assert!(scripts.backend().assets().encoded_idle_video().is_some());
+        assert!(
+            scripts
+                .backend()
+                .loaded_streamed_sound_bank_resource()
+                .is_some()
+        );
     }
 
     #[test]

@@ -10,6 +10,10 @@ const POINTER_PRESS_STATE_MASK: u8 = 3;
 const SECONDARY_POINTER_PRESS_STATE: u8 = 2;
 const DEFAULT_PRESENTATION_LINE: u16 = 8;
 const COMPLETION_AUDIO_RESET_FRAMES: u16 = 120;
+const PRESENTATION_INTERFACE_UI_BIT: u16 = 1;
+const RESERVED_PROFILE_BLOCKER_UI_BIT: u16 = 2;
+const MODAL_BUSY_UI_BIT: u16 = 4;
+const NAVIGATION_BUSY_UI_BIT: u16 = 8;
 
 /// Recovered low UI bits shared by presentation, modal, and navigation systems.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -25,6 +29,35 @@ struct GameUiState {
 }
 
 impl GameUiState {
+    const fn decode_low(word: u16) -> Self {
+        Self {
+            presentation_interface_active: word & PRESENTATION_INTERFACE_UI_BIT != u16::MIN,
+            reserved_profile_blocker: word & RESERVED_PROFILE_BLOCKER_UI_BIT != u16::MIN,
+            modal_busy: word & MODAL_BUSY_UI_BIT != u16::MIN,
+            navigation_busy: word & NAVIGATION_BUSY_UI_BIT != u16::MIN,
+        }
+    }
+
+    const fn encode_low(self) -> u16 {
+        (if self.presentation_interface_active {
+            PRESENTATION_INTERFACE_UI_BIT
+        } else {
+            u16::MIN
+        }) | (if self.reserved_profile_blocker {
+            RESERVED_PROFILE_BLOCKER_UI_BIT
+        } else {
+            u16::MIN
+        }) | (if self.modal_busy {
+            MODAL_BUSY_UI_BIT
+        } else {
+            u16::MIN
+        }) | (if self.navigation_busy {
+            NAVIGATION_BUSY_UI_BIT
+        } else {
+            u16::MIN
+        })
+    }
+
     const fn profile_change_blocked(self) -> bool {
         self.reserved_profile_blocker || self.modal_busy || self.navigation_busy
     }
@@ -234,6 +267,19 @@ pub struct GameLifecycleState {
 }
 
 impl GameLifecycleState {
+    /// Return bits zero through three of the recovered shared UI word.
+    pub(crate) const fn low_ui_state_word(&self) -> u16 {
+        self.ui_state.encode_low()
+    }
+
+    /// Replace the recovered low UI bits from one canonical native word write.
+    ///
+    /// The panorama-dependent mode in bits four through seven has a separate
+    /// typed owner in the modern bridge services.
+    pub(crate) fn set_low_ui_state_word(&mut self, word: u16) {
+        self.ui_state = GameUiState::decode_low(word);
+    }
+
     /// Return whether the presentation interface and DESCRIPT name path are active.
     pub const fn presentation_interface_active(&self) -> bool {
         self.ui_state.presentation_interface_active

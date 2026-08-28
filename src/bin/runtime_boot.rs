@@ -1586,6 +1586,13 @@ fn main() {
         // against the game's own font bitmaps to read the live line, then click
         // the named target. Deterministic — no buffers or heuristics.
         if std::env::var("TUTORIAL4").is_ok() {
+            let tutorial_watch_offset = std::env::var("TUTORIAL4_WATCH_DS")
+                .ok()
+                .and_then(|value| u32::from_str_radix(value.trim_start_matches("0x"), 16).ok());
+            if let Some(offset) = tutorial_watch_offset {
+                rt.m.watch_addr = Some(usize::from(g) * 16 + offset as usize);
+                println!("TUTORIAL4: watching DS:{offset:#06x}");
+            }
             // OCR the live subtitle rows with the game's OWN in-memory font
             // (glyphs gs:0x71AA, ascii map gs:0x70FA — monospace 8px advance;
             // calibrated offline against textband dumps: rows 8/18, text
@@ -2364,6 +2371,15 @@ fn main() {
                 "TUTORIAL4 done, reached_script2={reached2} @ {} steps",
                 rt.cpu.steps
             );
+            if let Some(offset) = tutorial_watch_offset {
+                println!("TUTORIAL4: writes to DS:{offset:#06x}:");
+                let mut seen = std::collections::HashSet::new();
+                for &(value, cs, ip) in &rt.m.addr_hits {
+                    if seen.insert((value, cs, ip)) {
+                        println!("  value={value:#04x} at {cs:04x}:{ip:04x}");
+                    }
+                }
+            }
             return;
         }
 

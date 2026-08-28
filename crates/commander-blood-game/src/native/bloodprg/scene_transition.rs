@@ -252,6 +252,7 @@ pub trait SceneTransitionHost {
     fn lookup_scene_description(
         &mut self,
         source: SceneTransitionRecordSource,
+        presentation_interface_active: bool,
         text: &mut TextPresentationState,
     ) -> Result<(), Self::Error>;
 
@@ -344,7 +345,7 @@ pub fn update_scene_transition<Host: SceneTransitionHost>(
         state.phase = SceneTransitionPhase::LoadImage;
         state.record_source = SceneTransitionRecordSource::Deferred;
         state.active_line = Some(SceneTransitionLine::DescriptionLookup);
-        host.lookup_scene_description(state.record_source, text)
+        host.lookup_scene_description(state.record_source, state.ui_enabled, text)
             .map_err(SceneTransitionError::Host)?;
         return Ok(SceneTransitionOutcome::Initialized);
     }
@@ -632,6 +633,7 @@ mod tests {
         fn lookup_scene_description(
             &mut self,
             _source: SceneTransitionRecordSource,
+            _presentation_interface_active: bool,
             _text: &mut TextPresentationState,
         ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::Lookup);

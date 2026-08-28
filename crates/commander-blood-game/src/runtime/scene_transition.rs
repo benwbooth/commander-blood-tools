@@ -243,11 +243,14 @@ impl SceneTransitionHost for RuntimeSceneTransitionHost<'_, '_, '_, '_> {
     fn lookup_scene_description(
         &mut self,
         source: SceneTransitionRecordSource,
+        presentation_interface_active: bool,
         text: &mut crate::native::bloodprg::TextPresentationState,
     ) -> Result<()> {
         let record = self.record(source);
+        self.lifecycle
+            .set_presentation_interface_active(presentation_interface_active);
         self.services
-            .apply_scene_transition_description(record.object, text)
+            .apply_scene_transition_description(record.object, presentation_interface_active, text)
             .context("applying the selected contact DESCRIPT record")
     }
 

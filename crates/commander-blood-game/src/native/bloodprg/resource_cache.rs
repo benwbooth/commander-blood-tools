@@ -232,6 +232,28 @@ impl OriginalResourceCache {
         })
     }
 
+    /// Replace one cache slot from already loaded palette-prefixed bytes.
+    ///
+    /// The native DESCRIPT path rewrites resource-name slot 7, loads that
+    /// mutable name into a shared buffer, and points bridge entity 2 at the
+    /// buffer. Replacing one typed cache entry gives the flat runtime the same
+    /// lifetime and last-write-wins behavior without retaining a raw pointer.
+    pub fn replace_cached_palette_resource(
+        &mut self,
+        resource: ResourceId,
+        source: &[u8],
+        live_palette: &mut IndexedGamePalette,
+    ) -> Result<PaletteResourceLoadOutcome, ResourceCacheError> {
+        let (bytes, updated_palette, palette_changed) =
+            decode_palette_resource(resource, source, live_palette)?;
+        self.insert(resource, bytes)?;
+        *live_palette = updated_palette;
+        Ok(PaletteResourceLoadOutcome {
+            storage: PaletteResourceStorage::Cached(ResourceLoadStatus::LoadedNow),
+            palette_changed,
+        })
+    }
+
     /// Release a loaded identifier and return whether an entry existed.
     ///
     /// This is the flat-data behavior of `resource_release` at BLOODPRG file
@@ -466,8 +488,12 @@ mod tests {
     const PALETTE_TEST_FIRST_COLOR: usize = 2;
     const PALETTE_TEST_COLOR_COUNT: usize = 2;
     const PALETTE_TEST_HEADER: u16 = 0x5372;
+    const PALETTE_TEST_BLOCK_HEADER_SIZE: usize = 2;
     const PALETTE_TEST_BLOCK_TERMINATOR: u16 = u16::MAX;
     const PALETTE_TEST_PAYLOAD: &[u8] = b"sprite-body";
+    const MUTABLE_RESOURCE_ID: ResourceId = ResourceId::new(7);
+    const MUTABLE_RESOURCE_INITIAL_PAYLOAD: &[u8] = b"first-sprite";
+    const TRUNCATED_PALETTE_COMPONENT_COUNT: usize = 3;
     const NAMED_RESOURCE_ORACLE_VECTOR_COUNT: usize = 8;
     const NAMED_RESOURCE_ORACLE_SUCCESS_COUNT: usize = 6;
     const NAMED_RESOURCE_ORACLE_HOST_FAILURE_COUNT: usize = 2;
@@ -820,5 +846,54 @@ mod tests {
         );
         assert_eq!(palette, before);
         assert!(!cache.is_loaded(PALETTE_TEST_RESOURCE_ID));
+    }
+
+    #[test]
+    fn mutable_palette_slot_replaces_bytes_and_is_transactional() {
+        let mut cache = OriginalResourceCache::new();
+        let mut palette = [[0x2A; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        let mut initial = u16::MIN.to_le_bytes().to_vec();
+        initial.extend_from_slice(MUTABLE_RESOURCE_INITIAL_PAYLOAD);
+        cache
+            .replace_cached_palette_resource(MUTABLE_RESOURCE_ID, &initial, &mut palette)
+            .unwrap();
+
+        let block_colors = [1, 2, 3, 4, 5, 6];
+        let replacement = palette_resource(&block_colors);
+        let outcome = cache
+            .replace_cached_palette_resource(MUTABLE_RESOURCE_ID, &replacement, &mut palette)
+            .unwrap();
+
+        assert_eq!(
+            outcome.storage,
+            PaletteResourceStorage::Cached(ResourceLoadStatus::LoadedNow)
+        );
+        let mut expected = PALETTE_TEST_HEADER.to_le_bytes().to_vec();
+        expected.extend_from_slice(PALETTE_TEST_PAYLOAD);
+        assert_eq!(cache.resolve(MUTABLE_RESOURCE_ID), Some(&expected[..]));
+        assert_eq!(
+            &palette[PALETTE_TEST_FIRST_COLOR..PALETTE_TEST_FIRST_COLOR + PALETTE_TEST_COLOR_COUNT],
+            &[[1, 2, 3], [4, 5, 6]]
+        );
+
+        let cache_before_error = cache.resolve(MUTABLE_RESOURCE_ID).unwrap().to_vec();
+        let palette_before_error = palette;
+        let malformed_end = RESOURCE_FILE_HEADER_SIZE
+            + PALETTE_TEST_BLOCK_HEADER_SIZE
+            + TRUNCATED_PALETTE_COMPONENT_COUNT;
+        assert!(
+            cache
+                .replace_cached_palette_resource(
+                    MUTABLE_RESOURCE_ID,
+                    &replacement[..malformed_end],
+                    &mut palette,
+                )
+                .is_err()
+        );
+        assert_eq!(
+            cache.resolve(MUTABLE_RESOURCE_ID),
+            Some(cache_before_error.as_slice())
+        );
+        assert_eq!(palette, palette_before_error);
     }
 }

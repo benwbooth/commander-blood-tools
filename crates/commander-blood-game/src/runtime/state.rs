@@ -55,6 +55,8 @@ const STARTUP_CARTOGRAPHY_RESOURCE_NAME: &[u8] = b"carte.spr";
 const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
 const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
+const NAME_AREA_EFFECT_RESOURCE: ResourceId = ResourceId::new(7);
+const NAME_AREA_EFFECT_POSITION: BridgeSpritePosition = BridgeSpritePosition { x: 16, y: 74 };
 const SHIP_VIEW_TRANSITION_ENTITY_INDEX: usize = 31;
 const PRESENTATION_PANEL_ENTITY_INDEX: usize = 31;
 const RETAINED_BRIDGE_BACKGROUND_ENTITY_INDEX: usize = 20;
@@ -380,6 +382,51 @@ impl OriginalGameRuntime {
     pub fn restart_name_area_effect(&mut self) {
         self.name_area_effect.active = true;
         self.name_area_effect.restart_requested = true;
+    }
+
+    /// Stop the character-name palette effect when its presentation closes.
+    pub fn stop_name_area_effect(&mut self) {
+        self.name_area_effect.active = false;
+        self.name_area_effect.restart_requested = false;
+    }
+
+    /// Load and bind the DESCRIPT-selected character portrait sprite.
+    ///
+    /// This is the flat-memory form of the native mutable resource-name slot 7,
+    /// direct resource buffer, and `entity_record_setter(2, ..., 16, 74, 0)`.
+    pub fn load_name_area_sprite(&mut self, sprite_name: &[u8]) -> Result<()> {
+        let name = BloodResourceName::new(sprite_name)
+            .context("validating DESCRIPT character portrait sprite name")?;
+        let source = self.data.resource_store().load(&name).with_context(|| {
+            format!(
+                "loading DESCRIPT character portrait sprite {}",
+                String::from_utf8_lossy(name.as_bytes())
+            )
+        })?;
+        let loaded = self
+            .resource_cache
+            .replace_cached_palette_resource(
+                NAME_AREA_EFFECT_RESOURCE,
+                &source,
+                &mut self.live_palette,
+            )
+            .context("decoding DESCRIPT character portrait sprite")?;
+        if !matches!(loaded.storage, PaletteResourceStorage::Cached(_)) {
+            bail!("DESCRIPT character portrait sprite was not retained");
+        }
+        let activated = populate_bridge_sprite_from_cache(
+            &self.resource_cache,
+            &mut self.bridge_sprite_entities,
+            NAME_AREA_EFFECT_ENTITY_INDEX,
+            NAME_AREA_EFFECT_RESOURCE,
+            NAME_AREA_EFFECT_POSITION,
+            usize::MIN,
+        )
+        .context("binding DESCRIPT character portrait to bridge entity 2")?;
+        if !activated {
+            bail!("DESCRIPT character portrait has no authored first frame");
+        }
+        self.rebuild_bridge_sprite_remap_tables()
     }
 
     /// Advance one fixed bridge presentation entity emitted by BloodScript.

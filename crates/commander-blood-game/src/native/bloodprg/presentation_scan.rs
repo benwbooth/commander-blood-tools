@@ -200,7 +200,7 @@ pub trait ScriptPresentationScanHost<Records = ScriptActionRecords> {
     fn lookup_presentation_description(
         &mut self,
         related: ScriptObjectId,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<bool, Self::Error>;
 
     /// Load and place the name-area restart effect.
     fn restart_name_area_effect(&mut self) -> Result<(), Self::Error>;
@@ -538,7 +538,8 @@ where
                 return Err(ScriptPresentationScanError::ObjectFlagUpdate { object: related });
             }
             if presentation.name_lookup_enabled {
-                host.lookup_presentation_description(related)
+                presentation.name_area_effect_active = host
+                    .lookup_presentation_description(related)
                     .map_err(ScriptPresentationScanError::Host)?;
                 if presentation.name_area_effect_active {
                     presentation.name_area_effect_restart_requested = true;
@@ -699,6 +700,7 @@ mod tests {
     struct RecordingHost {
         events: Vec<&'static str>,
         selector_roots: Vec<ScriptCodeOffset>,
+        name_area_effect_active: bool,
     }
 
     impl ScriptPresentationScanHost for RecordingHost {
@@ -716,9 +718,9 @@ mod tests {
         fn lookup_presentation_description(
             &mut self,
             _related: ScriptObjectId,
-        ) -> Result<(), Self::Error> {
+        ) -> Result<bool, Self::Error> {
             self.events.push("lookup");
-            Ok(())
+            Ok(self.name_area_effect_active)
         }
 
         fn restart_name_area_effect(&mut self) -> Result<(), Self::Error> {
@@ -1053,7 +1055,10 @@ mod tests {
             assert!(!vector.processed_entries.is_empty());
             let mut fixture = fixture();
             configure_vector(&vector.name, &mut fixture);
-            let mut host = RecordingHost::default();
+            let mut host = RecordingHost {
+                name_area_effect_active: fixture.presentation.name_area_effect_active,
+                ..RecordingHost::default()
+            };
             let outcome = scan_script_presentations(
                 ScriptPresentationScanContext {
                     state: &mut fixture.state,
