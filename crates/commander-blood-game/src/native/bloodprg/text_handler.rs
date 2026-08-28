@@ -201,6 +201,13 @@ impl Default for TextPresentationState {
     }
 }
 
+impl TextPresentationState {
+    /// Clear the A3/A5 presentation condition-word buffer without touching menu text.
+    pub(super) fn clear_condition_presentation_words(&mut self) {
+        self.condition_presentation_words = Box::new([]);
+    }
+}
+
 /// Already-resolved data used by optional A6 conditions.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TextConditionInputs<'a> {

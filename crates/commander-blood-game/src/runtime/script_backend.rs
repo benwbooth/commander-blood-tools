@@ -304,6 +304,11 @@ impl RuntimeScriptSystem {
         self.service.presentation_state_mut()
     }
 
+    /// Drain the palette upload alias written by a fresh presentation scan.
+    pub fn take_presentation_palette_dirty(&mut self) -> bool {
+        std::mem::take(&mut self.service.presentation_state_mut().palette_dirty)
+    }
+
     /// Publish one completed dialogue choice to the VM and clear its text owner.
     pub fn complete_word_choice(
         &mut self,
@@ -1519,6 +1524,20 @@ mod tests {
         assert_eq!(text.request_flags.bits(), u8::MIN);
         assert!(text.menu_words.is_empty());
         assert_eq!(text.menu_word_count, usize::MIN);
+    }
+
+    #[test]
+    fn presentation_palette_dirty_is_a_one_shot_runtime_alias() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        scripts.presentation_scan_state_mut().palette_dirty = true;
+
+        assert!(scripts.take_presentation_palette_dirty());
+        assert!(!scripts.take_presentation_palette_dirty());
     }
 
     #[test]

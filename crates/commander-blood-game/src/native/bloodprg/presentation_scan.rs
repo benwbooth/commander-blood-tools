@@ -211,6 +211,9 @@ pub trait ScriptPresentationScanHost<Records = ScriptActionRecords> {
         entity: ScriptPresentationEntity,
     ) -> Result<(), Self::Error>;
 
+    /// Clear the shared presentation word buffer and optionally request bits zero and one.
+    fn reset_presentation_text(&mut self, clear_primary_requests: bool);
+
     /// Dispatch one actionable C1-through-C8 record through the 5B38 ladder.
     fn dispatch_record_action(
         &mut self,
@@ -532,6 +535,7 @@ where
             presentation.dialogue_hold_complete = false;
             presentation.owner = None;
             presentation.start_locked = true;
+            host.reset_presentation_text(false);
             outcome.bridge_console_selection_cleared = true;
             selector.clear_presentation_branches();
             if !set_object_flag(state, related, ScriptObjectFlag::PresentationBlocked, true) {
@@ -557,6 +561,7 @@ where
         presentation.word_choice_active = false;
         presentation.name_area_effect_active = false;
         presentation.owner = None;
+        host.reset_presentation_text(true);
         runtime.clear_alternate_resume_state();
         selector.clear_presentation_branches();
         selector.clear_concept_history();
@@ -701,6 +706,7 @@ mod tests {
         events: Vec<&'static str>,
         selector_roots: Vec<ScriptCodeOffset>,
         name_area_effect_active: bool,
+        text_resets: Vec<bool>,
     }
 
     impl ScriptPresentationScanHost for RecordingHost {
@@ -737,6 +743,10 @@ mod tests {
                 ScriptPresentationEntity::NameAreaEffect => "effect_transition",
             });
             Ok(())
+        }
+
+        fn reset_presentation_text(&mut self, clear_primary_requests: bool) {
+            self.text_resets.push(clear_primary_requests);
         }
 
         fn dispatch_record_action(
@@ -1089,6 +1099,18 @@ mod tests {
             assert_eq!(
                 outcome.bridge_console_selection_cleared,
                 outcome.presentation_started.is_some(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                host.text_resets,
+                if outcome.presentation_started.is_some() {
+                    vec![false]
+                } else if outcome.presentation_ended {
+                    vec![true]
+                } else {
+                    Vec::new()
+                },
                 "{}",
                 vector.name
             );

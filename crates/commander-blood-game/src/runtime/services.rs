@@ -2447,6 +2447,9 @@ impl<'window> ModernGameServices<'window> {
     }
 
     fn publish_script_presentation_status_change(&mut self) -> Result<()> {
+        if self.scripts.take_presentation_palette_dirty() {
+            self.palette_transition.request_visual_color_update();
+        }
         let (presentation_started, changed, clear_bridge_console) = self
             .scripts
             .last_presentation_outcome()

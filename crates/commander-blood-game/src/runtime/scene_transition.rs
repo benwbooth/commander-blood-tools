@@ -144,7 +144,7 @@ impl RuntimeSceneTransition {
         self.install_palette_transition(services, outcome)?;
         *services.runtime_mut().live_palette_mut() = self.palettes.live;
 
-        text.request_flags = lifecycle.presentation.request_flags;
+        reconcile_scene_request_flags(&mut text, lifecycle, scene_dispatched, outcome);
         services.commit_scene_transition_presentation(presentation, text, lifecycle)?;
         if outcome == SceneTransitionOutcome::DeferredRecordArmed {
             services.defer_ship_actor_presentation(
@@ -168,7 +168,7 @@ impl RuntimeSceneTransition {
         lifecycle.presentation.active_line = self.state.active_line.map(|line| line.number());
         lifecycle.presentation.scene_gate_active = self.state.scene_gate_active;
         lifecycle.navigation_rebuild_pending |= self.take_redraw_request();
-        lifecycle.set_presentation_interface_active(self.state.ui_enabled);
+        publish_scene_transition_ui(lifecycle, outcome);
         lifecycle.profile_change_blockers.render_update_active =
             self.state.phase != SceneTransitionPhase::Inactive;
 
@@ -210,6 +210,28 @@ impl RuntimeSceneTransition {
                 colors: first..=last,
             })
             .context("configuring the contact scene palette transition")
+    }
+}
+
+fn reconcile_scene_request_flags(
+    text: &mut crate::native::bloodprg::TextPresentationState,
+    lifecycle: &GameLifecycleState,
+    scene_dispatched: bool,
+    outcome: SceneTransitionOutcome,
+) {
+    if scene_dispatched && outcome != SceneTransitionOutcome::CleanedUp {
+        text.request_flags = lifecycle.presentation.request_flags;
+    }
+}
+
+fn publish_scene_transition_ui(
+    lifecycle: &mut GameLifecycleState,
+    outcome: SceneTransitionOutcome,
+) {
+    match outcome {
+        SceneTransitionOutcome::Initialized => lifecycle.set_low_ui_state_word(u16::MIN),
+        SceneTransitionOutcome::CleanedUp => lifecycle.set_low_ui_state_word(1),
+        _ => {}
     }
 }
 
@@ -355,7 +377,7 @@ mod tests {
     use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 
     use super::*;
-    use crate::native::bloodprg::{IndexedGamePalette, ScriptProfileId};
+    use crate::native::bloodprg::{IndexedGamePalette, PresentationRequestFlags, ScriptProfileId};
     use crate::runtime::{OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime};
 
     const UNCHANGED_CONSOLE_COMPONENT: u8 = 17;
@@ -442,6 +464,38 @@ mod tests {
 
         assert!(transition.take_redraw_request());
         assert!(!transition.take_redraw_request());
+    }
+
+    #[test]
+    fn scene_transition_applies_native_full_ui_word_assignments() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_low_ui_state_word(15);
+
+        publish_scene_transition_ui(&mut lifecycle, SceneTransitionOutcome::Initialized);
+        assert_eq!(lifecycle.low_ui_state_word(), u16::MIN);
+
+        lifecycle.set_low_ui_state_word(15);
+        publish_scene_transition_ui(&mut lifecycle, SceneTransitionOutcome::CleanedUp);
+        assert_eq!(lifecycle.low_ui_state_word(), 1);
+    }
+
+    #[test]
+    fn scene_cleanup_keeps_the_native_request_bit_clear() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.request_flags = PresentationRequestFlags::decode(11);
+        let mut text = crate::native::bloodprg::TextPresentationState {
+            request_flags: PresentationRequestFlags::decode(8),
+            ..crate::native::bloodprg::TextPresentationState::default()
+        };
+
+        reconcile_scene_request_flags(
+            &mut text,
+            &lifecycle,
+            true,
+            SceneTransitionOutcome::CleanedUp,
+        );
+
+        assert_eq!(text.request_flags.bits(), 8);
     }
 
     fn loaded_initial_profile() -> Option<OriginalGameRuntime> {

@@ -451,6 +451,14 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
             .map_err(ScriptPresentationCallbackError::Backend)
     }
 
+    fn reset_presentation_text(&mut self, clear_primary_requests: bool) {
+        let text = &mut self.dispatch.text_presentation;
+        if clear_primary_requests {
+            text.request_flags.clear_primary_requests();
+        }
+        text.clear_condition_presentation_words();
+    }
+
     fn dispatch_record_action(
         &mut self,
         context: ScriptRecordActionDispatchContext<'_, super::ScriptProfileRecordState>,
