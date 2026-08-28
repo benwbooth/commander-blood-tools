@@ -261,6 +261,8 @@ pub struct GameLifecycleState {
     pub frame_presented: bool,
     /// Timer-owned clip playback countdown shared by scripted and completion audio.
     pub clip_playback_state: u16,
+    /// One-shot request to arm the no-VOC PC-speaker pulse in the canonical timer.
+    pub speaker_pulse_requested: bool,
 }
 
 impl GameLifecycleState {

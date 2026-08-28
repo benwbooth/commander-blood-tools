@@ -41,9 +41,9 @@ use crate::native::bloodprg::{
     ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
-    SoundBankUsage, StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
-    deactivate_nav_actor_slots, draw_planar_dialogue_text, fill_display_band,
-    increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
+    SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TextPresentationState,
+    clear_scene_palette_entries, deactivate_nav_actor_slots, draw_planar_dialogue_text,
+    fill_display_band, increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, objects_at_arche_position, play_cd_audio_track_two, prepare_cd_audio,
     presentable_navigation_objects, process_audio_events, render_bridge_page,
     reveal_inline_menu_step, stop_cd_audio, update_manu3_hand_frame,
@@ -853,6 +853,11 @@ impl<'window> ModernGameServices<'window> {
     /// Report whether SDL audio has completed startup initialization.
     pub const fn audio_is_initialized(&self) -> bool {
         self.audio.is_some()
+    }
+
+    /// Apply a PC-speaker gate transition through the SDL square-wave replacement.
+    pub fn apply_speaker_gate(&mut self, action: SpeakerGateAction) -> Result<()> {
+        self.audio_mut()?.apply_speaker_gate(action)
     }
 
     /// Current source-sample position of the foreground voice or effect.
@@ -2419,6 +2424,7 @@ impl<'window> ModernGameServices<'window> {
         } else {
             ScriptShipNavigationMode::Inactive
         };
+        let voc_playback_enabled = self.audio_is_initialized();
         self.scripts
             .backend_mut()
             .set_action_runtime_state(ScriptActionRuntimeState {
@@ -2427,6 +2433,7 @@ impl<'window> ModernGameServices<'window> {
                 ship_navigation_active,
                 loaded_scene_vertical_offset,
                 clip_playback_state,
+                voc_playback_enabled,
             });
         Ok(())
     }
@@ -2496,6 +2503,12 @@ impl<'window> ModernGameServices<'window> {
                 .as_deref_mut()
                 .expect("action effects retain clip playback reloads without a lifecycle")
                 .clip_playback_state = playback_state;
+        }
+        if effects.speaker_pulse_requested {
+            lifecycle
+                .as_deref_mut()
+                .expect("action effects retain speaker pulses without a lifecycle")
+                .speaker_pulse_requested = true;
         }
     }
 
@@ -4741,6 +4754,7 @@ mod tests {
             action.active_line = Some(ScriptActionPresentationLine::NavigationTarget);
             action.screen_rebuild_requested = true;
             action.clip_playback_state_reload = Some(SCRIPT_RADIO_CLIP_COUNTDOWN);
+            action.speaker_pulse_requested = true;
         }
         let mut lifecycle = GameLifecycleState::default();
 
@@ -4757,12 +4771,14 @@ mod tests {
         );
         assert!(lifecycle.navigation_rebuild_pending);
         assert_eq!(lifecycle.clip_playback_state, SCRIPT_RADIO_CLIP_COUNTDOWN);
+        assert!(lifecycle.speaker_pulse_requested);
 
         services.ship_presentation.hud_initialization_pending = u8::MIN;
         services.ship_presentation.active_line = u16::MIN;
         lifecycle.presentation.active_line = None;
         lifecycle.navigation_rebuild_pending = false;
         lifecycle.clip_playback_state = u16::MIN;
+        lifecycle.speaker_pulse_requested = false;
         services.synchronize_script_action_effects(Some(&mut lifecycle));
 
         assert_eq!(
@@ -4773,6 +4789,7 @@ mod tests {
         assert_eq!(lifecycle.presentation.active_line, None);
         assert!(!lifecycle.navigation_rebuild_pending);
         assert_eq!(lifecycle.clip_playback_state, u16::MIN);
+        assert!(!lifecycle.speaker_pulse_requested);
         *services.scripts.action_state_mut() = original_action;
         services.ship_presentation = original_ship;
     }

@@ -664,6 +664,7 @@ mod tests {
                 ship_navigation_active: true,
                 loaded_scene_vertical_offset: u16::MIN,
                 clip_playback_state: u16::MIN,
+                voc_playback_enabled: true,
             }
         }
 

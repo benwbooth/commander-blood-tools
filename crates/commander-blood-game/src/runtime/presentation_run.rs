@@ -9,6 +9,7 @@ use crate::native::bloodprg::{
     run_presentation_line_zero,
 };
 
+use super::game_lifecycle::arm_requested_speaker_pulse;
 use super::{ModernGameServices, RuntimePlatformHost};
 
 const OPENING_PRESENTATION_LINE: u16 = 0;
@@ -75,23 +76,32 @@ struct RuntimePresentationRunHost<'services, 'window> {
 
 impl RuntimePresentationRunHost<'_, '_> {
     fn advance_timer(&mut self) -> Result<()> {
+        arm_requested_speaker_pulse(&mut self.input_state, self.timer);
         self.services.export_game_timer_state(self.timer)?;
+        let mut speaker_gate = None;
         if let Some(profile) = self.services.runtime_mut().current_profile_mut() {
             for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
-                advance_game_timer_tick(
+                speaker_gate = advance_game_timer_tick(
                     self.timer,
                     profile.runtime_mut(),
                     GameTimerContext::default(),
-                );
+                )
+                .speaker_gate
+                .or(speaker_gate);
             }
         } else {
             for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
-                advance_game_timer_tick(
+                speaker_gate = advance_game_timer_tick(
                     self.timer,
                     self.startup_timer_runtime,
                     GameTimerContext::default(),
-                );
+                )
+                .speaker_gate
+                .or(speaker_gate);
             }
+        }
+        if let Some(action) = speaker_gate {
+            self.services.apply_speaker_gate(action)?;
         }
         self.services.import_game_timer_state(self.timer)
     }

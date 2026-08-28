@@ -58,6 +58,8 @@ pub struct ScriptActionRuntimeState {
     pub loaded_scene_vertical_offset: u16,
     /// Timer-owned clip playback countdown formerly stored at `GS:0x0B39`.
     pub clip_playback_state: u16,
+    /// Whether the selected startup audio driver supports Creative Voice playback.
+    pub voc_playback_enabled: bool,
 }
 
 /// Typed outputs produced while applying one C1-selected DESCRIPT record.
@@ -113,6 +115,8 @@ pub struct ScriptActionState {
     pub pending_presentation_owner: Option<ScriptObjectId>,
     /// C3's one-frame reload of the timer-owned clip playback countdown.
     pub clip_playback_state_reload: Option<u16>,
+    /// C3 requested the no-VOC PC-speaker fallback pulse.
+    pub speaker_pulse_requested: bool,
     /// Current C6 travel phase.
     pub travel_phase: ScriptTravelActionPhase,
     /// Whether the travel presentation actor is still busy.
@@ -465,10 +469,15 @@ fn dispatch_presentation_queue<Host: ScriptActionHost>(
     }
 
     action.pending_presentation_owner = Some(owner);
-    if presentation.name_lookup_enabled && runtime.clip_playback_state == u16::MIN {
-        host.play_radio_clip(RADIO_CLIP_PLAYBACK_COUNTDOWN)
-            .map_err(ScriptActionError::Host)?;
-        action.clip_playback_state_reload = Some(RADIO_CLIP_PLAYBACK_COUNTDOWN);
+    if presentation.name_lookup_enabled {
+        if !runtime.voc_playback_enabled {
+            action.speaker_pulse_requested = true;
+        }
+        if runtime.clip_playback_state == u16::MIN {
+            host.play_radio_clip(RADIO_CLIP_PLAYBACK_COUNTDOWN)
+                .map_err(ScriptActionError::Host)?;
+            action.clip_playback_state_reload = Some(RADIO_CLIP_PLAYBACK_COUNTDOWN);
+        }
     }
     Ok(ScriptActionDispatch::default())
 }
@@ -1335,6 +1344,7 @@ mod tests {
 
         let player = fixture.objects[PLAYER_INDEX];
         fixture.presentation.name_lookup_enabled = true;
+        fixture.runtime.voc_playback_enabled = true;
         fixture
             .dispatch(
                 ACTOR_INDEX,
@@ -1347,6 +1357,7 @@ mod tests {
             fixture.action.clip_playback_state_reload,
             Some(RADIO_CLIP_PLAYBACK_COUNTDOWN)
         );
+        assert!(!fixture.action.speaker_pulse_requested);
         assert_eq!(host.calls, [HostCall::PlayRadio]);
         fixture.runtime.clip_playback_state = RADIO_CLIP_PLAYBACK_COUNTDOWN;
         fixture
@@ -1372,6 +1383,28 @@ mod tests {
             fixture.action.clip_playback_state_reload,
             Some(RADIO_CLIP_PLAYBACK_COUNTDOWN)
         );
+    }
+
+    #[test]
+    fn presentation_queue_requests_speaker_fallback_without_voc_playback() {
+        let mut fixture = Fixture::new();
+        let player = fixture.objects[PLAYER_INDEX];
+        fixture.presentation.name_lookup_enabled = true;
+        fixture.runtime.voc_playback_enabled = false;
+        fixture.runtime.clip_playback_state = RADIO_CLIP_PLAYBACK_COUNTDOWN;
+        let mut host = MockHost::default();
+
+        fixture
+            .dispatch(
+                ACTOR_INDEX,
+                ScriptActionRecord::PresentationQueue(player),
+                &mut host,
+            )
+            .unwrap();
+
+        assert!(fixture.action.speaker_pulse_requested);
+        assert!(host.calls.is_empty());
+        assert_eq!(fixture.action.clip_playback_state_reload, None);
     }
 
     #[test]

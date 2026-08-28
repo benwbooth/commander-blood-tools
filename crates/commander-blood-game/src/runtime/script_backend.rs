@@ -97,6 +97,8 @@ pub struct RuntimeScriptActionEffects {
     pub screen_rebuild_requested: bool,
     /// Reload the canonical clip playback countdown after C3 starts radio clip 6.
     pub clip_playback_state_reload: Option<u16>,
+    /// Arm the timer-owned no-VOC speaker pulse requested by C3.
+    pub speaker_pulse_requested: bool,
 }
 
 /// Complete profile-independent state surrounding translated BloodScript execution.
@@ -479,6 +481,8 @@ impl RuntimeScriptSystem {
             clip_playback_state_reload: lifecycle_available
                 .then(|| action.clip_playback_state_reload.take())
                 .flatten(),
+            speaker_pulse_requested: lifecycle_available
+                && std::mem::take(&mut action.speaker_pulse_requested),
         }
     }
 }
@@ -824,9 +828,11 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
 
     fn play_radio_clip(&mut self, playback_countdown: u16) -> Result<()> {
         self.action_runtime_state.clip_playback_state = playback_countdown;
-        self.commands.push(RuntimeScriptCommand::PlayRadioClip {
-            clip_index: RADIO_CLIP_INDEX,
-        });
+        if self.action_runtime_state.voc_playback_enabled {
+            self.commands.push(RuntimeScriptCommand::PlayRadioClip {
+                clip_index: RADIO_CLIP_INDEX,
+            });
+        }
         Ok(())
     }
 
@@ -1506,6 +1512,7 @@ mod tests {
         let writable_root = TemporaryRoot::create();
         let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
         let mut backend = RuntimeScriptBackend::new(&data, TEST_CLOCK);
+        backend.action_runtime_state.voc_playback_enabled = true;
 
         backend.restart_name_area_effect().unwrap();
         backend
@@ -1549,6 +1556,7 @@ mod tests {
         action.active_line = Some(ScriptActionPresentationLine::NavigationTarget);
         action.screen_rebuild_requested = true;
         action.clip_playback_state_reload = Some(RADIO_CLIP_PLAYBACK_COUNTDOWN);
+        action.speaker_pulse_requested = true;
 
         let effects = scripts.take_action_effects(false);
         assert!(effects.ship_hud_refresh_requested);
@@ -1558,11 +1566,13 @@ mod tests {
         );
         assert!(!effects.screen_rebuild_requested);
         assert_eq!(effects.clip_playback_state_reload, None);
+        assert!(!effects.speaker_pulse_requested);
         assert!(scripts.action_state().screen_rebuild_requested);
         assert_eq!(
             scripts.action_state().clip_playback_state_reload,
             Some(RADIO_CLIP_PLAYBACK_COUNTDOWN)
         );
+        assert!(scripts.action_state().speaker_pulse_requested);
 
         let effects = scripts.take_action_effects(true);
         assert!(!effects.ship_hud_refresh_requested);
@@ -1572,6 +1582,7 @@ mod tests {
             effects.clip_playback_state_reload,
             Some(RADIO_CLIP_PLAYBACK_COUNTDOWN)
         );
+        assert!(effects.speaker_pulse_requested);
         assert_eq!(
             scripts.take_action_effects(true),
             RuntimeScriptActionEffects::default()

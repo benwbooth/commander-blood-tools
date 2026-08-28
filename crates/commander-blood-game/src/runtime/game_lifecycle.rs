@@ -26,6 +26,15 @@ const PRESENTATION_MENU_BUFFER_LINK_TARGET: u16 = u16::MIN;
 const GAME_TIMER_TICKS_PER_FRAME: usize = 8;
 const COMPLETION_VOICE_RESOURCE: &[u8] = b"mu\\tablo2.voc";
 
+pub(super) fn arm_requested_speaker_pulse(
+    state: &mut GameLifecycleState,
+    timer: &mut GameTimerState,
+) {
+    if std::mem::take(&mut state.speaker_pulse_requested) {
+        timer.speaker_pulse.request();
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum RuntimeAudioStartupStage {
     #[default]
@@ -90,6 +99,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
     }
 
     fn advance_frame_timers(&mut self, state: &mut GameLifecycleState) -> Result<()> {
+        arm_requested_speaker_pulse(state, &mut self.timer);
         let (chatter_cooldown, dialogue_delay) = self.services.audio_event_timer_counters();
         self.timer.chatter_cooldown = chatter_cooldown;
         self.timer.dialogue_delay = dialogue_delay;
@@ -100,14 +110,27 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
             paused: state.pause_hud_active,
             navigation_link_pending: state.navigation_transition_pending,
         };
+        let mut speaker_gate = None;
         if let Some(profile) = self.services.runtime_mut().current_profile_mut() {
             for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
-                advance_game_timer_tick(&mut self.timer, profile.runtime_mut(), context);
+                speaker_gate =
+                    advance_game_timer_tick(&mut self.timer, profile.runtime_mut(), context)
+                        .speaker_gate
+                        .or(speaker_gate);
             }
         } else {
             for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
-                advance_game_timer_tick(&mut self.timer, &mut self.startup_timer_runtime, context);
+                speaker_gate = advance_game_timer_tick(
+                    &mut self.timer,
+                    &mut self.startup_timer_runtime,
+                    context,
+                )
+                .speaker_gate
+                .or(speaker_gate);
             }
+        }
+        if let Some(action) = speaker_gate {
+            self.services.apply_speaker_gate(action)?;
         }
         state.presentation.dialogue_hold_countdown = self.timer.dialogue_hold_countdown;
         state.clip_playback_state = self.timer.clip_playback_state;
@@ -549,7 +572,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::native::bloodprg::GameMenuWordSource;
+    use crate::native::bloodprg::{GameMenuWordSource, SpeakerGateAction};
 
     #[test]
     fn scene_links_preserve_the_recovered_owner_offsets() {
@@ -591,5 +614,35 @@ mod tests {
     fn idle_bridge_does_not_claim_an_indexed_overlay() {
         let state = GameLifecycleState::default();
         assert!(!RuntimeGameLifecycleHost::indexed_bridge_ui_active(&state));
+    }
+
+    #[test]
+    fn lifecycle_speaker_request_reaches_the_native_enable_disable_cadence() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.speaker_pulse_requested = true;
+        let mut timer = GameTimerState::default();
+        timer.start();
+        timer.tick = 31;
+        let mut script = ScriptRuntime::default();
+
+        arm_requested_speaker_pulse(&mut lifecycle, &mut timer);
+        assert!(!lifecycle.speaker_pulse_requested);
+        assert_eq!(
+            advance_game_timer_tick(&mut timer, &mut script, GameTimerContext::default())
+                .speaker_gate,
+            Some(SpeakerGateAction::Enable)
+        );
+        for _ in 0..31 {
+            assert_eq!(
+                advance_game_timer_tick(&mut timer, &mut script, GameTimerContext::default())
+                    .speaker_gate,
+                None
+            );
+        }
+        assert_eq!(
+            advance_game_timer_tick(&mut timer, &mut script, GameTimerContext::default())
+                .speaker_gate,
+            Some(SpeakerGateAction::Disable)
+        );
     }
 }

@@ -15,7 +15,7 @@ use crate::native::bloodprg::{
     AudioDriverRequests, AudioPlaybackBanks, AudioPlaybackOutcome, AudioPlaybackState,
     AudioStreamBuffer, AudioStreamBufferStatus, AudioStreamLoadOutcome,
     AudioStreamPlaybackPosition, AudioStreamRefillOutcome, AudioStreamStartOutcome,
-    AudioStreamState, AudioStreamSubmission, AudioStreamSubmissionKind,
+    AudioStreamState, AudioStreamSubmission, AudioStreamSubmissionKind, SpeakerGateAction,
     load_audio_pcm_stream_source, load_audio_stream_source, refill_audio_stream,
     start_audio_stream, update_audio_playback,
 };
@@ -27,6 +27,10 @@ const UNSIGNED_PCM_SILENCE: u8 = 128;
 const UNSIGNED_PCM_SCALE: f32 = 128.0;
 const SND_CLIP_RATE_CODE_INDEX: usize = 4;
 const LAST_STREAM_BUFFER_INDEX: usize = 1;
+const PC_SPEAKER_PIT_CLOCK_HZ: u32 = 1_193_182;
+const PC_SPEAKER_PIT_DIVISOR: usize = 0x2E9C;
+const PC_SPEAKER_LOW_SAMPLE: u8 = u8::MIN;
+const PC_SPEAKER_HIGH_SAMPLE: u8 = u8::MAX;
 
 /// Validated owned unsigned 8-bit mono PCM ready for runtime playback.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -390,6 +394,7 @@ pub struct RuntimePcmMixer {
     output_rate_hz: u32,
     background: Option<PcmCursor>,
     foreground: Option<PcmCursor>,
+    speaker: Option<PcmCursor>,
 }
 
 impl RuntimePcmMixer {
@@ -402,6 +407,7 @@ impl RuntimePcmMixer {
             output_rate_hz,
             background: None,
             foreground: None,
+            speaker: None,
         })
     }
 
@@ -415,6 +421,16 @@ impl RuntimePcmMixer {
         self.foreground = Some(PcmCursor::new(clip, self.output_rate_hz, false));
     }
 
+    /// Start the looped replacement for the PIT channel-two PC-speaker tone.
+    pub fn enable_speaker(&mut self, clip: RuntimePcmClip) {
+        self.speaker = Some(PcmCursor::new(clip, self.output_rate_hz, true));
+    }
+
+    /// Stop the PC-speaker replacement without disturbing digital audio.
+    pub fn disable_speaker(&mut self) {
+        self.speaker = None;
+    }
+
     /// Stop all prior sound and start one exclusive one-shot clip.
     pub fn play_exclusive(&mut self, clip: RuntimePcmClip) {
         self.background = None;
@@ -425,6 +441,7 @@ impl RuntimePcmMixer {
     pub fn stop_all(&mut self) {
         self.background = None;
         self.foreground = None;
+        self.speaker = None;
     }
 
     /// Stop looping background music without interrupting foreground speech.
@@ -447,13 +464,10 @@ impl RuntimePcmMixer {
         for destination in output {
             let background = self.background.as_mut().and_then(PcmCursor::next_sample);
             let foreground = self.foreground.as_mut().and_then(PcmCursor::next_sample);
-            *destination = match (background, foreground) {
-                (Some(background), Some(foreground)) => {
-                    average_unsigned_pcm(foreground, background)
-                }
-                (Some(sample), None) | (None, Some(sample)) => sample,
-                (None, None) => UNSIGNED_PCM_SILENCE,
-            };
+            let speaker = self.speaker.as_mut().and_then(PcmCursor::next_sample);
+            let foreground_and_speaker = mix_optional_unsigned_pcm(foreground, speaker);
+            *destination = mix_optional_unsigned_pcm(background, foreground_and_speaker)
+                .unwrap_or(UNSIGNED_PCM_SILENCE);
         }
         if self
             .foreground
@@ -464,14 +478,13 @@ impl RuntimePcmMixer {
         }
     }
 
-    fn render_foreground_unsigned(&mut self, output: &mut [u8]) -> bool {
-        let was_active = self.foreground.is_some();
+    fn render_auxiliary_unsigned(&mut self, output: &mut [u8]) -> bool {
+        let was_active = self.foreground.is_some() || self.speaker.is_some();
         for destination in output {
-            *destination = self
-                .foreground
-                .as_mut()
-                .and_then(PcmCursor::next_sample)
-                .unwrap_or(UNSIGNED_PCM_SILENCE);
+            let foreground = self.foreground.as_mut().and_then(PcmCursor::next_sample);
+            let speaker = self.speaker.as_mut().and_then(PcmCursor::next_sample);
+            *destination =
+                mix_optional_unsigned_pcm(foreground, speaker).unwrap_or(UNSIGNED_PCM_SILENCE);
         }
         if self
             .foreground
@@ -531,7 +544,7 @@ impl AudioCallback<f32> for RuntimeAudioCallback {
             {
                 let foreground_active = shared
                     .mixer
-                    .render_foreground_unsigned(&mut self.foreground_samples);
+                    .render_auxiliary_unsigned(&mut self.foreground_samples);
                 if foreground_active {
                     for (destination, foreground) in self
                         .unsigned_samples
@@ -720,6 +733,17 @@ impl RuntimeAudioHost {
         Ok(())
     }
 
+    /// Apply one exact enable/disable transition from the recovered speaker gate.
+    pub fn apply_speaker_gate(&mut self, action: SpeakerGateAction) -> Result<()> {
+        self.check_callback()?;
+        let mut shared = lock_shared(&self.shared);
+        match action {
+            SpeakerGateAction::Enable => shared.mixer.enable_speaker(pc_speaker_tone_clip()?),
+            SpeakerGateAction::Disable => shared.mixer.disable_speaker(),
+        }
+        Ok(())
+    }
+
     /// Stop prior sound and start one exclusive clip.
     pub fn play_exclusive(&mut self, clip: RuntimePcmClip) -> Result<()> {
         self.check_callback()?;
@@ -791,6 +815,21 @@ fn average_unsigned_pcm(source: u8, destination: u8) -> u8 {
     ((u16::from(source) + u16::from(destination)) / 2) as u8
 }
 
+fn mix_optional_unsigned_pcm(first: Option<u8>, second: Option<u8>) -> Option<u8> {
+    match (first, second) {
+        (Some(first), Some(second)) => Some(average_unsigned_pcm(first, second)),
+        (Some(sample), None) | (None, Some(sample)) => Some(sample),
+        (None, None) => None,
+    }
+}
+
+fn pc_speaker_tone_clip() -> Result<RuntimePcmClip> {
+    let half_period = PC_SPEAKER_PIT_DIVISOR / 2;
+    let mut samples = vec![PC_SPEAKER_LOW_SAMPLE; PC_SPEAKER_PIT_DIVISOR];
+    samples[half_period..].fill(PC_SPEAKER_HIGH_SAMPLE);
+    RuntimePcmClip::new(PC_SPEAKER_PIT_CLOCK_HZ, samples)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -856,6 +895,34 @@ mod tests {
 
         assert_eq!(output, [9, 8]);
         assert_eq!(mixer.background_position(), None);
+    }
+
+    #[test]
+    fn recovered_pc_speaker_gate_starts_and_stops_the_programmed_square_wave() {
+        let tone = pc_speaker_tone_clip().unwrap();
+        assert_eq!(tone.sample_rate_hz(), PC_SPEAKER_PIT_CLOCK_HZ);
+        assert_eq!(tone.samples().len(), PC_SPEAKER_PIT_DIVISOR);
+        assert!(
+            tone.samples()[..PC_SPEAKER_PIT_DIVISOR / 2]
+                .iter()
+                .all(|sample| *sample == PC_SPEAKER_LOW_SAMPLE)
+        );
+        assert!(
+            tone.samples()[PC_SPEAKER_PIT_DIVISOR / 2..]
+                .iter()
+                .all(|sample| *sample == PC_SPEAKER_HIGH_SAMPLE)
+        );
+
+        let mut mixer = RuntimePcmMixer::new(PC_SPEAKER_PIT_CLOCK_HZ).unwrap();
+        mixer.enable_speaker(tone);
+        let mut enabled = [UNSIGNED_PCM_SILENCE; 2];
+        mixer.render_unsigned(&mut enabled);
+        assert_eq!(enabled, [PC_SPEAKER_LOW_SAMPLE; 2]);
+
+        mixer.disable_speaker();
+        let mut disabled = [u8::MIN; 2];
+        mixer.render_unsigned(&mut disabled);
+        assert_eq!(disabled, [UNSIGNED_PCM_SILENCE; 2]);
     }
 
     #[test]
