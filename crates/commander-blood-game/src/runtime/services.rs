@@ -36,9 +36,9 @@ use crate::native::bloodprg::{
     PresentationQueueServiceOutcome, PresentationResourceId, PresentationResourceSequenceOutcome,
     PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
     PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
-    SHIP_CAMERA_RESET, SceneTransitionState, ScriptActionState, ScriptClock, ScriptFrameOutcome,
-    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    SHIP_CAMERA_RESET, SceneTransitionState, ScriptActionRuntimeState, ScriptActionState,
+    ScriptClock, ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState,
+    ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
     SoundBankUsage, StartupPreparationOutcome, TextPresentationState, clear_scene_palette_entries,
@@ -93,6 +93,7 @@ const NO_BRIDGE_HORIZONTAL_MOTION: i32 = 0;
 const SHIP_HUD_PALETTE_TRANSITION_INCREMENT: u16 = 10;
 const NAVIGATION_BACKGROUND_SLOT: u8 = 1;
 const SHIP_NAVIGATION_ACTIVE_FLAGS: u16 = 9;
+const SHIP_PRESENTATION_ACTIVE_FLAG: u16 = 1;
 const SHIP_PRESENTATION_HUD_FLAG: u16 = 8;
 const BRIDGE_REDRAW_REQUESTED: u8 = 1;
 const SHIP_NAVIGATION_STATUS_LINE: u16 = 3;
@@ -1200,6 +1201,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Write the selected ship-HUD target to the native `orxx` C1 action slot.
     pub fn queue_ship_hud_navigation_target(&mut self, target: ScriptObjectId) -> Result<()> {
+        self.scripts.action_state_mut().current_ship_target = Some(target);
         self.scripts
             .queue_ship_hud_navigation_target(&mut self.runtime, target)
     }
@@ -1246,19 +1248,6 @@ impl<'window> ModernGameServices<'window> {
         action.travel_actor_clear_requested = false;
     }
 
-    /// Return whether the shared camera transition still owns bridge frames.
-    pub(super) const fn bridge_camera_transition_active(&self) -> bool {
-        self.scripts.action_state().camera_transition_in_progress
-    }
-
-    /// Arm the concrete camera approach used by actor 0 or actor 5.
-    pub(super) fn start_bridge_camera_transition(&mut self) {
-        self.scripts
-            .action_state_mut()
-            .camera_transition_in_progress = true;
-        self.runtime.start_camera_transition();
-    }
-
     /// Return whether the camera page currently replaces the ordinary bridge.
     pub(super) const fn bridge_camera_view_active(&self) -> bool {
         self.scripts.action_state().camera_view_active
@@ -1292,16 +1281,16 @@ impl<'window> ModernGameServices<'window> {
 
     /// Return the current typed ship target selected by script or HUD state.
     pub fn current_ship_navigation_target(&self) -> Result<ScriptObjectId> {
-        self.scripts
-            .action_state()
-            .current_ship_target
-            .or_else(|| {
-                self.ship_hud
-                    .as_ref()
-                    .and_then(RuntimeShipHud::coordinator)
-                    .map(|state| state.current_target)
-            })
-            .context("ship navigation has no current target")
+        if let Some(target) = self.scripts.action_state().current_ship_target.or_else(|| {
+            self.ship_hud
+                .as_ref()
+                .and_then(RuntimeShipHud::coordinator)
+                .map(|state| state.current_target)
+        }) {
+            return Ok(target);
+        }
+        self.current_arche_navigation_target()
+            .map(|(target, _kind)| target)
     }
 
     /// Return the scene row currently committed by the C1 action dispatcher.
@@ -2316,6 +2305,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Execute one complete translated COD/BAS/presentation frame.
     pub fn execute_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
+        self.synchronize_script_action_runtime_state()?;
         self.scripts
             .prepare_ship_presentation_state(&self.ship_presentation);
         let outcome = self.scripts.execute_frame(&mut self.runtime, enabled)?;
@@ -2340,6 +2330,7 @@ impl<'window> ModernGameServices<'window> {
         state: &mut GameLifecycleState,
     ) -> Result<ScriptFrameOutcome> {
         let execution_enabled = state.vm_execution_enabled;
+        self.synchronize_script_action_runtime_state()?;
         self.scripts
             .prepare_ship_presentation_state(&self.ship_presentation);
         let outcome =
@@ -2352,6 +2343,29 @@ impl<'window> ModernGameServices<'window> {
         self.synchronize_script_presentations()?;
         self.process_script_commands()?;
         Ok(outcome)
+    }
+
+    fn synchronize_script_action_runtime_state(&mut self) -> Result<()> {
+        let ship_navigation_active =
+            self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN;
+        let camera_view_transition_steps = self
+            .bridge_actors
+            .as_ref()
+            .context("bridge actor state is already being updated")?
+            .camera_transition_step();
+        self.scripts.action_state_mut().ship_navigation_mode = if ship_navigation_active {
+            ScriptShipNavigationMode::Active
+        } else {
+            ScriptShipNavigationMode::Inactive
+        };
+        self.scripts
+            .backend_mut()
+            .set_action_runtime_state(ScriptActionRuntimeState {
+                camera_approach_phase: self.runtime.camera_approach().phase,
+                camera_view_transition_steps,
+                ship_navigation_active,
+            });
+        Ok(())
     }
 
     /// Drain a script request to clear the native mouse-idle timer alias.
@@ -2590,8 +2604,11 @@ impl<'window> ModernGameServices<'window> {
                 RuntimeScriptCommand::PlayRadioClip { clip_index } => {
                     self.play_loaded_sound_bank_clip(clip_index)?;
                 }
-                RuntimeScriptCommand::StartCameraTransition => {
-                    self.runtime.start_camera_transition();
+                RuntimeScriptCommand::StartCameraTransition { steps } => {
+                    self.bridge_actors
+                        .as_mut()
+                        .context("bridge actor state is already being updated")?
+                        .set_camera_transition_step(steps);
                 }
                 RuntimeScriptCommand::ResetShipHud => {
                     self.reset_ship_hud()?;
@@ -3978,11 +3995,16 @@ mod tests {
                 assert!(state.set_byte(counter, VISITED_DESTINATION_COUNT));
             }
         }
-        services
-            .bridge_actors
-            .as_mut()
-            .unwrap()
-            .set_camera_transition_step(crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS);
+        crate::native::bloodprg::ScriptExecutionBackend::start_camera_transition(
+            services.scripts.backend_mut(),
+            crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS,
+        )
+        .unwrap();
+        assert_eq!(services.process_script_commands().unwrap(), 1);
+        assert_eq!(
+            services.bridge_actor_camera_transition_step().unwrap(),
+            crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS
+        );
         for _ in usize::MIN..usize::from(crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS) {
             assert!(matches!(
                 services
@@ -4580,7 +4602,10 @@ mod tests {
         services
             .load_script_profile(ScriptProfileId::INITIAL)
             .unwrap();
-        services.ship_presentation = ShipPresentationState::default();
+        services.ship_presentation = ShipPresentationState {
+            flags: SHIP_NAVIGATION_ACTIVE_FLAGS,
+            ..ShipPresentationState::default()
+        };
         let (arche, ark, pterra) = {
             let profile = services.runtime().current_profile().unwrap();
             (
@@ -4589,15 +4614,17 @@ mod tests {
                 profile.directory().find_active_object(PTERRA_NAME).unwrap(),
             )
         };
-        {
-            let action = services.scripts.action_state_mut();
-            action.ship_navigation_mode = ScriptShipNavigationMode::Active;
-            action.current_ship_target = Some(pterra);
-            action.navigation_approach_complete = true;
-        }
-
         let mut lifecycle = GameLifecycleState::default();
         lifecycle.vm_execution_enabled = true;
+        services.runtime_mut().start_camera_transition();
+        for _ in usize::MIN..MAXIMUM_CAMERA_TRANSITION_FRAMES {
+            update_runtime_camera_approach(services, GameSceneLink::Initial, &mut lifecycle)
+                .unwrap();
+            if services.runtime().camera_approach().phase >= 4 {
+                break;
+            }
+        }
+        assert_eq!(services.runtime().camera_approach().phase, 4);
         services.defer_ship_navigation_target(pterra);
         services
             .execute_and_apply_lifecycle_script_frame(&mut lifecycle)

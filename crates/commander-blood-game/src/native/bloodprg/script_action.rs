@@ -11,11 +11,11 @@ use commander_blood_formats::script::{
 
 use super::record_state::action_slot;
 use super::{
-    AboardObjectRoster, PresentationRequestFlags, ScriptActionDispatch, ScriptActionDisposition,
-    ScriptActionRecord, ScriptActionRecords, ScriptFieldSelector, ScriptNavigationError,
-    ScriptObjectFlag, ScriptPresentationScanState, ScriptRecordStateNavigationContext,
-    TextPresentationState, insert_aboard_object, resolve_navigation_position, script_field_offset,
-    set_object_flag,
+    AboardObjectRoster, CAMERA_VIEW_TRANSITION_STEPS, PresentationRequestFlags,
+    ScriptActionDispatch, ScriptActionDisposition, ScriptActionRecord, ScriptActionRecords,
+    ScriptFieldSelector, ScriptNavigationError, ScriptObjectFlag, ScriptPresentationScanState,
+    ScriptRecordStateNavigationContext, TextPresentationState, insert_aboard_object,
+    resolve_navigation_position, script_field_offset, set_object_flag,
 };
 
 const SERIALIZED_WORD_SIZE: usize = size_of::<u16>();
@@ -32,12 +32,6 @@ pub enum ScriptShipNavigationMode {
     TargetSelected,
 }
 
-impl ScriptShipNavigationMode {
-    const fn is_active(self) -> bool {
-        !matches!(self, Self::Inactive)
-    }
-}
-
 /// Multi-frame phase of a C6 black-hole travel action.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ScriptTravelActionPhase {
@@ -48,6 +42,17 @@ pub enum ScriptTravelActionPhase {
     WaitingForCamera,
     /// Wait for presentation work before committing the destination relation.
     WaitingForPresentation,
+}
+
+/// Canonical ship and camera state sampled immediately before one action scan.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ScriptActionRuntimeState {
+    /// Current phase of the ship-camera approach FSM formerly stored at `0x27DF`.
+    pub camera_approach_phase: u8,
+    /// Remaining navigation-chart wipe steps formerly stored at `0x278B`.
+    pub camera_view_transition_steps: u8,
+    /// Whether the canonical ship presentation flags currently enable navigation.
+    pub ship_navigation_active: bool,
 }
 
 /// Authored presentation line selected by an action transition.
@@ -66,8 +71,6 @@ pub enum ScriptActionPresentationLine {
 /// Mutable semantic state shared by the five modeled action-record arms.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptActionState {
-    /// Whether Arche has completed the four-stage camera approach.
-    pub navigation_approach_complete: bool,
     /// Current 3D ship-navigation mode.
     pub ship_navigation_mode: ScriptShipNavigationMode,
     /// Object currently selected by the 3D navigation interface.
@@ -100,8 +103,6 @@ pub struct ScriptActionState {
     pub travel_actor_busy: bool,
     /// C6 cleared the aliased bridge actor-slot flag after camera completion.
     pub travel_actor_clear_requested: bool,
-    /// Whether a camera transition still has frames to execute.
-    pub camera_transition_in_progress: bool,
     /// Whether the camera view currently owns presentation input.
     pub camera_view_active: bool,
     /// Whether the bridge scene must be rebuilt after travel.
@@ -130,6 +131,8 @@ pub struct ScriptActionContext<'a> {
     pub presentation: &'a mut ScriptPresentationScanState,
     /// Action-specific ship, radio, and travel state.
     pub action: &'a mut ScriptActionState,
+    /// Canonical camera and ship state sampled for this action scan.
+    pub runtime: ScriptActionRuntimeState,
     /// Object owning the dispatched action slot.
     pub owner: ScriptObjectId,
     /// Typed slot supplied by the presentation scan.
@@ -168,7 +171,7 @@ pub trait ScriptActionHost {
     fn play_radio_clip(&mut self) -> Result<(), Self::Error>;
 
     /// Start the fixed camera entity transition used by C6.
-    fn start_camera_transition(&mut self) -> Result<(), Self::Error>;
+    fn start_camera_transition(&mut self, steps: u8) -> Result<(), Self::Error>;
 
     /// Draw and capture the ship HUD, then reset the 3D camera.
     fn reset_ship_hud(&mut self) -> Result<(), Self::Error>;
@@ -281,9 +284,10 @@ fn dispatch_navigation<Host: ScriptActionHost>(
         player,
         arche,
         navigation,
+        runtime,
         ..
     } = context;
-    if owner == arche && !action.navigation_approach_complete {
+    if owner == arche && runtime.camera_approach_phase < 4 {
         return Ok(ScriptActionDispatch::default());
     }
 
@@ -308,7 +312,7 @@ fn dispatch_navigation<Host: ScriptActionHost>(
         ScriptObjectKind::NavigationEntity | ScriptObjectKind::WorldState
     );
     let mut preserve_native_music_restart_bug = false;
-    if owner_kind == ScriptObjectKind::WorldState && action.ship_navigation_mode.is_active() {
+    if owner_kind == ScriptObjectKind::WorldState && runtime.ship_navigation_active {
         let reset_interface = if action.current_ship_target == Some(related) {
             true
         } else {
@@ -518,6 +522,7 @@ fn dispatch_travel<Host: ScriptActionHost>(
         state,
         presentation,
         action,
+        runtime,
         owner,
         ..
     } = context;
@@ -527,13 +532,12 @@ fn dispatch_travel<Host: ScriptActionHost>(
                 return Ok(ScriptActionDispatch::default());
             }
             action.travel_phase = ScriptTravelActionPhase::WaitingForCamera;
-            action.camera_transition_in_progress = true;
-            host.start_camera_transition()
+            host.start_camera_transition(CAMERA_VIEW_TRANSITION_STEPS)
                 .map_err(ScriptActionError::Host)?;
             return Ok(ScriptActionDispatch::default());
         }
         ScriptTravelActionPhase::WaitingForCamera => {
-            if action.camera_transition_in_progress {
+            if runtime.camera_view_transition_steps != u8::MIN {
                 return Ok(ScriptActionDispatch::default());
             }
             action.travel_phase = ScriptTravelActionPhase::WaitingForPresentation;
@@ -798,7 +802,8 @@ mod tests {
             Ok(())
         }
 
-        fn start_camera_transition(&mut self) -> Result<(), Self::Error> {
+        fn start_camera_transition(&mut self, steps: u8) -> Result<(), Self::Error> {
+            assert_eq!(steps, CAMERA_VIEW_TRANSITION_STEPS);
             self.calls.push(HostCall::StartCamera);
             Ok(())
         }
@@ -816,6 +821,7 @@ mod tests {
         text: TextPresentationState,
         presentation: ScriptPresentationScanState,
         action: ScriptActionState,
+        runtime: ScriptActionRuntimeState,
         objects: Vec<ScriptObjectId>,
     }
 
@@ -937,6 +943,7 @@ mod tests {
                 text: TextPresentationState::default(),
                 presentation: ScriptPresentationScanState::default(),
                 action: ScriptActionState::default(),
+                runtime: ScriptActionRuntimeState::default(),
                 objects,
             }
         }
@@ -972,6 +979,7 @@ mod tests {
                     text: &mut self.text,
                     presentation: &mut self.presentation,
                     action: &mut self.action,
+                    runtime: self.runtime,
                     owner,
                     slot,
                     player: self.objects[PLAYER_INDEX],
@@ -1027,7 +1035,7 @@ mod tests {
             [100, 200]
         );
 
-        fixture.action.navigation_approach_complete = true;
+        fixture.runtime.camera_approach_phase = 4;
         fixture.action.active_navigation_link = Some(fixture.objects[LOCATION_INDEX]);
         let completed = fixture
             .dispatch(
@@ -1076,6 +1084,7 @@ mod tests {
     #[test]
     fn world_navigation_gates_interface_reset_on_description_lookup() {
         let mut fixture = Fixture::new();
+        fixture.runtime.ship_navigation_active = true;
         fixture.action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         fixture.action.current_ship_target = Some(fixture.objects[LOCATION_INDEX]);
         fixture.action.loaded_scene_vertical_offset = 55;
@@ -1104,6 +1113,7 @@ mod tests {
         );
 
         let mut fixture = Fixture::new();
+        fixture.runtime.ship_navigation_active = true;
         fixture.action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         fixture.action.current_ship_target = Some(fixture.objects[LOCATION_INDEX]);
         fixture.action.loaded_scene_vertical_offset = 55;
@@ -1142,6 +1152,7 @@ mod tests {
     #[test]
     fn navigation_music_restart_preserves_the_original_position_copy_quirk() {
         let mut fixture = Fixture::new();
+        fixture.runtime.ship_navigation_active = true;
         fixture.action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         fixture.action.navigation_music_changed = true;
         let mut host = MockHost {
@@ -1172,6 +1183,7 @@ mod tests {
         let target = fixture.objects[ANCHOR_INDEX];
         let player = fixture.objects[PLAYER_INDEX];
         let actor = fixture.objects[ACTOR_INDEX];
+        fixture.runtime.ship_navigation_active = true;
         fixture.action.ship_navigation_mode = ScriptShipNavigationMode::Active;
         fixture.action.current_ship_target = Some(target);
         let player_slot = action_slot(&fixture.state, player).unwrap();
@@ -1415,10 +1427,18 @@ mod tests {
             fixture.action.travel_phase,
             ScriptTravelActionPhase::WaitingForCamera
         );
-        assert!(fixture.action.camera_transition_in_progress);
         assert_eq!(host.calls, [HostCall::StartCamera]);
 
-        fixture.action.camera_transition_in_progress = false;
+        fixture.runtime.camera_view_transition_steps = CAMERA_VIEW_TRANSITION_STEPS;
+        assert_eq!(
+            fixture.dispatch(ARCHE_INDEX, record, &mut host).unwrap(),
+            ScriptActionDispatch::default()
+        );
+        assert_eq!(
+            fixture.action.travel_phase,
+            ScriptTravelActionPhase::WaitingForCamera
+        );
+        fixture.runtime.camera_view_transition_steps = u8::MIN;
         fixture.dispatch(ARCHE_INDEX, record, &mut host).unwrap();
         assert_eq!(
             fixture.action.travel_phase,

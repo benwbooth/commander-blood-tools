@@ -15,15 +15,16 @@ use crate::native::bloodprg::{
     DescriptApplicationContext, DescriptBackgroundCache, DescriptBackgroundSource,
     DescriptIdleClipSource, DescriptPresentationAssets, DescriptRecordApplication,
     DescriptSoundBankLoader, GameLifecycleState, LoadedScriptProfile, LoadedSoundBank,
-    OriginalSaveGame, ScriptAboardRecordContext, ScriptActionRecord, ScriptActionState,
-    ScriptClock, ScriptDeferredRecord, ScriptDispatchState, ScriptEnvironmentActivity,
-    ScriptExecutionBackend, ScriptExecutionService, ScriptFieldSelector, ScriptFrameOutcome,
-    ScriptPresentationEntity, ScriptPresentationScanOutcome, ScriptPresentationScanState,
-    ScriptProfileId, ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext,
-    ScriptShipNavigationMode, ScriptTransferContext, SequencePresentationState,
-    SequenceRequestContext, ShipPresentationState, SoundBankUsage, TextPresentationState,
-    deferred_navigation_record, execute_loaded_script_frame, load_sound_bank,
-    lookup_and_apply_descript_record, original_save_state_block_byte_count, script_field_offset,
+    OriginalSaveGame, ScriptAboardRecordContext, ScriptActionRecord, ScriptActionRuntimeState,
+    ScriptActionState, ScriptClock, ScriptDeferredRecord, ScriptDispatchState,
+    ScriptEnvironmentActivity, ScriptExecutionBackend, ScriptExecutionService, ScriptFieldSelector,
+    ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanOutcome,
+    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
+    ScriptRecordStateNavigationContext, ScriptShipNavigationMode, ScriptTransferContext,
+    SequencePresentationState, SequenceRequestContext, ShipPresentationState, SoundBankUsage,
+    TextPresentationState, deferred_navigation_record, execute_loaded_script_frame,
+    load_sound_bank, lookup_and_apply_descript_record, original_save_state_block_byte_count,
+    script_field_offset,
 };
 
 use super::{OriginalGameData, OriginalGameRuntime};
@@ -76,8 +77,11 @@ pub enum RuntimeScriptCommand {
         /// Zero-based clip selected by the native C3 action.
         clip_index: u8,
     },
-    /// Start the black-hole camera transition.
-    StartCameraTransition,
+    /// Start the black-hole navigation-chart transition.
+    StartCameraTransition {
+        /// Exact shared countdown written by native C6.
+        steps: u8,
+    },
     /// Rebuild the ship HUD and reset its 3D camera state.
     ResetShipHud,
 }
@@ -517,6 +521,7 @@ pub struct RuntimeScriptBackend {
     clock: ScriptClock,
     sequence_context: SequenceRequestContext,
     navigation_context: Option<ScriptRecordStateNavigationContext>,
+    action_runtime_state: ScriptActionRuntimeState,
     ship_interface_active: bool,
     active_description_object: Option<ScriptObjectId>,
     last_descript_application: Option<DescriptRecordApplication>,
@@ -539,6 +544,7 @@ impl RuntimeScriptBackend {
             clock,
             sequence_context: SequenceRequestContext::default(),
             navigation_context: None,
+            action_runtime_state: ScriptActionRuntimeState::default(),
             ship_interface_active: false,
             active_description_object: None,
             last_descript_application: None,
@@ -602,6 +608,11 @@ impl RuntimeScriptBackend {
     /// Bind the dynamic C1 navigation operands for the current bridge frame.
     pub fn set_navigation_context(&mut self, context: Option<ScriptRecordStateNavigationContext>) {
         self.navigation_context = context;
+    }
+
+    /// Publish canonical ship and camera state for the next post-frame action scan.
+    pub fn set_action_runtime_state(&mut self, state: ScriptActionRuntimeState) {
+        self.action_runtime_state = state;
     }
 
     /// Update whether the ship interface suppresses new transfer presentations.
@@ -704,6 +715,10 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
         self.navigation_context
     }
 
+    fn action_runtime_state(&self) -> ScriptActionRuntimeState {
+        self.action_runtime_state
+    }
+
     fn aboard_context(&mut self, related: ScriptObjectId) -> Result<ScriptAboardRecordContext> {
         Ok(ScriptAboardRecordContext {
             ship_interface_active: self.ship_interface_active,
@@ -767,9 +782,9 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
         Ok(())
     }
 
-    fn start_camera_transition(&mut self) -> Result<()> {
+    fn start_camera_transition(&mut self, steps: u8) -> Result<()> {
         self.commands
-            .push(RuntimeScriptCommand::StartCameraTransition);
+            .push(RuntimeScriptCommand::StartCameraTransition { steps });
         Ok(())
     }
 
@@ -1384,7 +1399,9 @@ mod tests {
 
         backend.restart_name_area_effect().unwrap();
         backend.play_radio_clip().unwrap();
-        backend.start_camera_transition().unwrap();
+        backend
+            .start_camera_transition(crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS)
+            .unwrap();
         backend.reset_ship_hud().unwrap();
 
         assert_eq!(
@@ -1394,7 +1411,9 @@ mod tests {
                 RuntimeScriptCommand::PlayRadioClip {
                     clip_index: RADIO_CLIP_INDEX,
                 },
-                RuntimeScriptCommand::StartCameraTransition,
+                RuntimeScriptCommand::StartCameraTransition {
+                    steps: crate::native::bloodprg::CAMERA_VIEW_TRANSITION_STEPS,
+                },
                 RuntimeScriptCommand::ResetShipHud,
             ]
         );

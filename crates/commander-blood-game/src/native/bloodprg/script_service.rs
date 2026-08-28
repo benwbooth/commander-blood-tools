@@ -8,16 +8,17 @@ use commander_blood_formats::script::ScriptObjectId;
 use super::text_scan::activate_profile_object_text;
 use super::{
     ActorPositionStateContext, ActorPositionStateError, ScriptAboardRecordContext,
-    ScriptActionContext, ScriptActionError, ScriptActionHost, ScriptActionState,
-    ScriptBasDispatchError, ScriptBasDispatchHost, ScriptBasDispatchState, ScriptClock,
-    ScriptControlFlowError, ScriptDialogueControlDispatchContext, ScriptDialogueExecutionContext,
-    ScriptDispatchHost, ScriptDispatchState, ScriptEnvironmentActivity, ScriptPostScanContext,
-    ScriptPreFrameContext, ScriptPresentationEntity, ScriptPresentationScanContext,
-    ScriptPresentationScanError, ScriptPresentationScanHost, ScriptPresentationScanOutcome,
-    ScriptPresentationScanState, ScriptRecordActionDispatchContext,
-    ScriptRecordStateNavigationContext, ScriptTextActivationError, ScriptTransferContext,
-    SequenceRequestContext, TextPresentationState, dispatch_script_action,
-    execute_script_dialogue_control, scan_script_presentations, update_actor_position_states,
+    ScriptActionContext, ScriptActionError, ScriptActionHost, ScriptActionRuntimeState,
+    ScriptActionState, ScriptBasDispatchError, ScriptBasDispatchHost, ScriptBasDispatchState,
+    ScriptClock, ScriptControlFlowError, ScriptDialogueControlDispatchContext,
+    ScriptDialogueExecutionContext, ScriptDispatchHost, ScriptDispatchState,
+    ScriptEnvironmentActivity, ScriptPostScanContext, ScriptPreFrameContext,
+    ScriptPresentationEntity, ScriptPresentationScanContext, ScriptPresentationScanError,
+    ScriptPresentationScanHost, ScriptPresentationScanOutcome, ScriptPresentationScanState,
+    ScriptRecordActionDispatchContext, ScriptRecordStateNavigationContext,
+    ScriptTextActivationError, ScriptTransferContext, SequenceRequestContext,
+    TextPresentationState, dispatch_script_action, execute_script_dialogue_control,
+    scan_script_presentations, update_actor_position_states,
 };
 
 /// Runtime facts and external effects required by translated BloodScript logic.
@@ -40,6 +41,9 @@ pub trait ScriptExecutionBackend {
 
     /// Resolve the dynamic navigation operands and active archetype.
     fn navigation_context(&self) -> Option<ScriptRecordStateNavigationContext>;
+
+    /// Sample canonical ship and camera owners for post-frame action dispatch.
+    fn action_runtime_state(&self) -> ScriptActionRuntimeState;
 
     /// Resolve descriptor and interface gates for an aboard operation.
     fn aboard_context(
@@ -85,7 +89,7 @@ pub trait ScriptExecutionBackend {
     fn play_radio_clip(&mut self) -> Result<(), Self::Error>;
 
     /// Start the camera transition used by black-hole travel.
-    fn start_camera_transition(&mut self) -> Result<(), Self::Error>;
+    fn start_camera_transition(&mut self, steps: u8) -> Result<(), Self::Error>;
 
     /// Rebuild the ship HUD and reset the modern 3D camera.
     fn reset_ship_hud(&mut self) -> Result<(), Self::Error>;
@@ -456,6 +460,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
             .player
             .expect("service validates the player binding before scanning");
         let navigation = self.backend.navigation_context();
+        let action_runtime = self.backend.action_runtime_state();
         let action_records = &mut context.records.action_records;
         let aboard_objects = context.records.record_runtime.aboard_objects_mut();
         let cod_text_states = &mut self.dispatch.text_instructions;
@@ -476,6 +481,7 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
                 text: &mut self.dispatch.text_presentation,
                 presentation: context.presentation,
                 action: self.action,
+                runtime: action_runtime,
                 owner: context.owner,
                 slot: context.slot,
                 player,
@@ -571,9 +577,9 @@ impl<Backend: ScriptExecutionBackend> ScriptActionHost for ActionExternalHost<'_
             .map_err(ScriptActionCallbackError::Backend)
     }
 
-    fn start_camera_transition(&mut self) -> Result<(), Self::Error> {
+    fn start_camera_transition(&mut self, steps: u8) -> Result<(), Self::Error> {
         self.backend
-            .start_camera_transition()
+            .start_camera_transition(steps)
             .map_err(ScriptActionCallbackError::Backend)
     }
 
@@ -649,6 +655,14 @@ mod tests {
             })
         }
 
+        fn action_runtime_state(&self) -> ScriptActionRuntimeState {
+            ScriptActionRuntimeState {
+                camera_approach_phase: 4,
+                camera_view_transition_steps: u8::MIN,
+                ship_navigation_active: true,
+            }
+        }
+
         fn aboard_context(
             &mut self,
             related: ScriptObjectId,
@@ -714,7 +728,8 @@ mod tests {
             Ok(())
         }
 
-        fn start_camera_transition(&mut self) -> Result<(), Self::Error> {
+        fn start_camera_transition(&mut self, steps: u8) -> Result<(), Self::Error> {
+            assert_eq!(steps, super::super::CAMERA_VIEW_TRANSITION_STEPS);
             self.events.push(BackendEvent::CameraTransition);
             Ok(())
         }

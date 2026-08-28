@@ -210,7 +210,6 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         state.camera_view_active = self.services.bridge_camera_view_active();
         state.location_panel_active = self.location_panel.active;
         state.redraw_requested = playback.redraw_requested;
-        let previous_animation = state.camera_animation;
         let result = update_camera_presentation_actor(
             self.mode == Some(PresentationBridgeMode::Outer),
             CameraPresentationBlockers {
@@ -236,14 +235,6 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         }
         self.services
             .set_bridge_camera_view_active(state.camera_view_active);
-        if previous_animation != state.camera_animation
-            && matches!(
-                state.camera_animation,
-                CameraViewAnimation::Transitioning { .. }
-            )
-        {
-            self.services.start_bridge_camera_transition();
-        }
         if state.screen_rebuild_pending {
             self.lifecycle.navigation_rebuild_pending = true;
             state.screen_rebuild_pending = false;
@@ -646,11 +637,13 @@ impl HyperjumpPresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
     }
 
     fn camera_transition_active(&self) -> bool {
-        self.services.bridge_camera_transition_active()
+        !matches!(self.camera.camera_animation, CameraViewAnimation::Unchanged)
     }
 
-    fn start_camera_transition(&mut self, _steps: u8) {
-        self.services.start_bridge_camera_transition();
+    fn start_camera_transition(&mut self, steps: u8) {
+        self.camera.camera_animation = CameraViewAnimation::Transitioning {
+            steps_remaining: steps,
+        };
     }
 
     fn close_location_panel(&mut self) {
