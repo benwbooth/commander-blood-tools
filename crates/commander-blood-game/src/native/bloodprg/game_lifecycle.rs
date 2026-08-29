@@ -9,6 +9,7 @@ const PRIMARY_TEXT_REQUEST_PENDING: u8 = 1;
 const POINTER_PRESS_STATE_MASK: u8 = 3;
 const SECONDARY_POINTER_PRESS_STATE: u8 = 2;
 const DEFAULT_PRESENTATION_LINE: u16 = 8;
+const TEXT_PRESENTATION_LINE_BASE: u16 = 9;
 const COMPLETION_AUDIO_RESET_FRAMES: u16 = 120;
 const PRESENTATION_INTERFACE_UI_BIT: u16 = 1;
 const RESERVED_PROFILE_BLOCKER_UI_BIT: u16 = 2;
@@ -776,8 +777,13 @@ pub fn update_game_presentation_ownership(
     }
 }
 
-const fn presentation_line_for_text_selector(selector: i8) -> u16 {
-    9u16.wrapping_add_signed(selector as i16)
+/// Convert BloodScript's signed voice selector to the shared native presentation line.
+///
+/// Selector `-1` intentionally wraps back to the default line eight. The recovered
+/// main loop performs this conversion before every scene coordinator consumes the
+/// single shared `vm_active_line` global.
+pub const fn presentation_line_for_text_selector(selector: i8) -> u16 {
+    TEXT_PRESENTATION_LINE_BASE.wrapping_add_signed(selector as i16)
 }
 
 fn play_completion_audio_if_pending<Host: GameLifecycleHost>(

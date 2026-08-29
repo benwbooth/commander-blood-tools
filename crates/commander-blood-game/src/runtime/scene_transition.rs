@@ -6,10 +6,10 @@ use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind};
 use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeSceneInput, BridgeSpriteEntity, BridgeSteeringInteraction,
     GameLifecycleState, GameSceneLink, PbmDecodeOptions, PbmPaletteUpdate, PbmTransparency,
-    SceneImageBand, SceneImageLoadOptions, SceneTransitionHost, SceneTransitionOutcome,
-    SceneTransitionPalettes, SceneTransitionPhase, SceneTransitionRecordKind,
-    SceneTransitionRecordSource, SceneTransitionState, ScriptPresentationScanState,
-    decode_pbm_image, fill_back_buffer_band, update_scene_transition,
+    SceneImageBand, SceneImageLoadOptions, SceneTransitionHost, SceneTransitionLine,
+    SceneTransitionOutcome, SceneTransitionPalettes, SceneTransitionPhase,
+    SceneTransitionRecordKind, SceneTransitionRecordSource, SceneTransitionState,
+    ScriptPresentationScanState, decode_pbm_image, fill_back_buffer_band, update_scene_transition,
 };
 
 use super::{ModernGameServices, RuntimePaletteTransitionConfig, RuntimePlatformHost};
@@ -82,6 +82,8 @@ impl RuntimeSceneTransition {
             lifecycle.profile_change_blockers.render_update_active = false;
             return Ok(SceneTransitionOutcome::Inactive);
         }
+
+        import_shared_scene_state(&mut self.state, lifecycle);
 
         if self.state.bridge_blocked
             && services.latest_presentation_started()
@@ -165,8 +167,7 @@ impl RuntimeSceneTransition {
         {
             services.request_manu3_animation(selector);
         }
-        lifecycle.presentation.active_line = self.state.active_line.map(|line| line.number());
-        lifecycle.presentation.scene_gate_active = self.state.scene_gate_active;
+        export_shared_scene_state(&self.state, lifecycle);
         lifecycle.navigation_rebuild_pending |= self.take_redraw_request();
         publish_scene_transition_ui(lifecycle, outcome);
         lifecycle.profile_change_blockers.render_update_active =
@@ -211,6 +212,19 @@ impl RuntimeSceneTransition {
             })
             .context("configuring the contact scene palette transition")
     }
+}
+
+fn import_shared_scene_state(state: &mut SceneTransitionState, lifecycle: &GameLifecycleState) {
+    state.active_line = lifecycle
+        .presentation
+        .active_line
+        .map(SceneTransitionLine::from_number);
+    state.scene_gate_active = lifecycle.presentation.scene_gate_active;
+}
+
+fn export_shared_scene_state(state: &SceneTransitionState, lifecycle: &mut GameLifecycleState) {
+    lifecycle.presentation.active_line = state.active_line.map(SceneTransitionLine::number);
+    lifecycle.presentation.scene_gate_active = state.scene_gate_active;
 }
 
 fn reconcile_scene_request_flags(
@@ -464,6 +478,40 @@ mod tests {
 
         assert!(transition.take_redraw_request());
         assert!(!transition.take_redraw_request());
+    }
+
+    #[test]
+    fn scene_transition_imports_and_exports_the_shared_dialogue_line() {
+        const SCRUTER_JO_VOICE_SELECTOR: i8 = 20;
+
+        let dialogue_line =
+            crate::native::bloodprg::presentation_line_for_text_selector(SCRUTER_JO_VOICE_SELECTOR);
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.active_line = Some(dialogue_line);
+        lifecycle.presentation.scene_gate_active = true;
+        let mut state = SceneTransitionState {
+            active_line: Some(SceneTransitionLine::Complete),
+            scene_gate_active: false,
+            ..SceneTransitionState::default()
+        };
+
+        import_shared_scene_state(&mut state, &lifecycle);
+
+        assert_eq!(
+            state.active_line,
+            Some(SceneTransitionLine::Other(dialogue_line))
+        );
+        assert!(state.scene_gate_active);
+
+        state.active_line = Some(SceneTransitionLine::AlienOverlayEntry);
+        state.scene_gate_active = false;
+        export_shared_scene_state(&state, &mut lifecycle);
+
+        assert_eq!(
+            lifecycle.presentation.active_line,
+            Some(SceneTransitionLine::AlienOverlayEntry.number())
+        );
+        assert!(!lifecycle.presentation.scene_gate_active);
     }
 
     #[test]

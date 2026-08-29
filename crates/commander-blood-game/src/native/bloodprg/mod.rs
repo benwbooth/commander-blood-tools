@@ -300,7 +300,7 @@ pub use game_lifecycle::{
     GameLifecycleError, GameLifecycleExit, GameLifecycleHost, GameLifecycleOutcome,
     GameLifecycleState, GameMenuWordSource, GamePresentationOwner, GamePresentationScheduler,
     GameProfileChangeBlockers, GameProfileLoadStatus, GameSceneLink, GameVmRunStatus,
-    run_game_lifecycle, update_game_presentation_ownership,
+    presentation_line_for_text_selector, run_game_lifecycle, update_game_presentation_ownership,
 };
 pub use hud_refresh::{
     PAUSE_HUD_PALETTE_INDEX, PauseHudRectangle, PauseHudRefresh, build_pause_hud_refresh,

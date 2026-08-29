@@ -1,16 +1,26 @@
+use std::convert::Infallible;
+use std::ops::Range;
+
 use commander_blood_formats::bas::ScriptBasInstruction;
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::instruction::{
     DecodedScriptInstruction, ScriptInstruction, ScriptRecordValue, ScriptStateOperand,
     ScriptStateOperator, ScriptTextWord, ScriptTimerSlot,
 };
+use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{ScriptObjectId, ScriptProcedureId};
 use commander_blood_game::native::bloodprg::{
-    GameLifecycleState, GameTimerContext, GameTimerState, LoadedScriptProfile, OriginalSaveGame,
-    ResourceLoadStatus, SCRIPT_PROFILE_RESOURCE_COUNT, ScriptActionRecord, ScriptClock,
-    ScriptEnvironmentActivity, ScriptFieldSelector, ScriptObjectFlag, ScriptProfileId,
-    ScriptProfileResourceKind, ScriptRecordStateNavigationContext, SequenceRequestContext,
-    advance_game_timer_tick, object_has_flag, script_field_offset, set_object_flag,
+    GameLifecycleState, GameSceneLink, GameTimerContext, GameTimerState, IndexedGamePalette,
+    LoadedScriptProfile, OriginalSaveGame, PresentationPresentPolicy, PresentationRequestFlags,
+    PresentationResourceId, PresentationSceneDescriptor, PresentationSceneDispatchContext,
+    PresentationSceneDispatchHost, PresentationSceneDispatchOutcome,
+    PresentationSceneDispatchState, PresentationSceneQueueService, PresentationSceneSource,
+    ResourceLoadStatus, SCRIPT_PROFILE_RESOURCE_COUNT, SHIP_HUD_PALETTE_COLOR_COUNT,
+    ScriptActionRecord, ScriptClock, ScriptEnvironmentActivity, ScriptFieldSelector,
+    ScriptObjectFlag, ScriptProfileId, ScriptProfileResourceKind,
+    ScriptRecordStateNavigationContext, SequenceRequestContext, advance_game_timer_tick,
+    dispatch_presentation_scene, object_has_flag, presentation_line_for_text_selector,
+    script_field_offset, set_object_flag, update_game_presentation_ownership,
 };
 use commander_blood_game::runtime::{
     OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime, RuntimeScriptSystem,
@@ -33,6 +43,12 @@ const MAXIMUM_ENTRY_FRAMES: usize = 32;
 const MAXIMUM_CONTACT_COMPLETION_FRAMES: usize = 256;
 const MAXIMUM_TIMER_TICKS_PER_SCRIPT_COUNTDOWN: usize = 256;
 const EXIT_DIALOGUE_TOPIC: &[u8] = b"bye_bye";
+const SCRUTER_JO_PROCEDURE: &str = "scrujo";
+const SCRUTER_JO_OVERLAY_VOICE_SELECTOR: u8 = 20;
+const SCRUTER_JO_POST_OVERLAY_VOICE_SELECTOR: u8 = 21;
+const PRIMARY_TEXT_REQUEST_PENDING: u8 = 1;
+const UNCLAMPED_PRESENTATION_LINE_COUNT: usize = 8;
+const PRESENTATION_DESCRIPTOR_TERMINATOR_COUNT: usize = 1;
 const PROFILE_RESOURCE_IDENTITIES: &[(ScriptProfileResourceKind, &str)] = &[
     (ScriptProfileResourceKind::Code, "cod"),
     (ScriptProfileResourceKind::Dialogue, "bas"),
@@ -525,6 +541,147 @@ fn every_recovered_contact_completes_one_authored_path() {
                 .into_owned())
                 .collect::<Vec<_>>()
         );
+        assert_contact_host_handoff(scenario, &observed_indices);
+    }
+}
+
+fn assert_contact_host_handoff(scenario: &ContactScenario, observed_indices: &[usize]) {
+    if !scenario
+        .procedure
+        .eq_ignore_ascii_case(SCRUTER_JO_PROCEDURE)
+    {
+        return;
+    }
+
+    let overlay_index = scenario
+        .texts
+        .iter()
+        .position(|text| text.voice_selector == SCRUTER_JO_OVERLAY_VOICE_SELECTOR)
+        .expect("every Scruter Jo contact must declare the AMER overlay selector");
+    let post_overlay_index = scenario
+        .texts
+        .iter()
+        .position(|text| text.voice_selector == SCRUTER_JO_POST_OVERLAY_VOICE_SELECTOR)
+        .expect("every Scruter Jo contact must declare its post-overlay response");
+    assert!(
+        observed_indices.contains(&overlay_index),
+        "{}:{} never reached its authored AMER overlay selector; observed {:?}",
+        scenario.script,
+        scenario.procedure,
+        observed_indices
+    );
+    assert!(
+        observed_indices.contains(&post_overlay_index),
+        "{}:{} never resumed at its authored post-AMER response; observed {:?}",
+        scenario.script,
+        scenario.procedure,
+        observed_indices
+    );
+    assert!(overlay_index < post_overlay_index);
+
+    let mut lifecycle = GameLifecycleState::default();
+    lifecycle.presentation.active = true;
+    lifecycle.presentation.scene_gate_active = true;
+    lifecycle.presentation.text_menu_pending = true;
+    lifecycle.presentation.text_selector = Some(SCRUTER_JO_OVERLAY_VOICE_SELECTOR as i8);
+    lifecycle.presentation.request_flags =
+        PresentationRequestFlags::decode(PRIMARY_TEXT_REQUEST_PENDING);
+    let mut scene_link = GameSceneLink::Initial;
+    update_game_presentation_ownership(&mut lifecycle, &mut scene_link);
+    let expected_line =
+        presentation_line_for_text_selector(SCRUTER_JO_OVERLAY_VOICE_SELECTOR as i8);
+    assert_eq!(lifecycle.presentation.active_line, Some(expected_line));
+
+    let record = scenario.contact_object_offset;
+    let scenes = vec![
+        PresentationSceneDescriptor { image: None };
+        usize::from(expected_line) + PRESENTATION_DESCRIPTOR_TERMINATOR_COUNT
+    ];
+    let mut scene_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+    let mut presentation_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; SHIP_HUD_PALETTE_COLOR_COUNT];
+    let unclamped_line_ids = [u8::MIN; UNCLAMPED_PRESENTATION_LINE_COUNT];
+    let mut context = PresentationSceneDispatchContext {
+        scenes: &scenes,
+        active_record_related: Some(&record),
+        scruter_jo_record: Some(&record),
+        unclamped_line_ids: &unclamped_line_ids,
+        shared_cache_available: false,
+        scene_palette: &mut scene_palette,
+        presentation_palette: &mut presentation_palette,
+    };
+    let mut state = PresentationSceneDispatchState {
+        presentation: commander_blood_game::native::bloodprg::PresentationUpdateState {
+            active_line: lifecycle.presentation.active_line,
+            ..commander_blood_game::native::bloodprg::PresentationUpdateState::default()
+        },
+        scene_gate: true,
+        ..PresentationSceneDispatchState::default()
+    };
+    let mut host = CompletedPresentationHost;
+
+    assert!(matches!(
+        dispatch_presentation_scene(&mut state, &mut context, &mut host).unwrap(),
+        PresentationSceneDispatchOutcome::SequenceStarted { .. }
+    ));
+    assert!(state.alien_overlay_armed);
+    assert_eq!(
+        dispatch_presentation_scene(&mut state, &mut context, &mut host).unwrap(),
+        PresentationSceneDispatchOutcome::PresentationFinished
+    );
+    assert!(state.temporary_sound_trigger);
+}
+
+struct CompletedPresentationHost;
+
+impl PresentationSceneDispatchHost<()> for CompletedPresentationHost {
+    type Error = Infallible;
+
+    fn load_scene_image(
+        &mut self,
+        _image: &(),
+        _scene_palette: &mut IndexedGamePalette,
+    ) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    fn clear_back_buffer_band(
+        &mut self,
+        _rows: Range<usize>,
+        _color: u8,
+    ) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    fn load_presentation_sequence(
+        &mut self,
+        _resource: PresentationResourceId,
+        _source: PresentationSceneSource,
+        _policy: PresentationPresentPolicy,
+    ) -> Result<bool, Self::Error> {
+        Ok(true)
+    }
+
+    fn build_black_remap(
+        &mut self,
+        _blend_percent: u8,
+        _target: [u8; RGB_COMPONENT_COUNT],
+    ) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    fn service_presentation_queue(
+        &mut self,
+        _policy: PresentationPresentPolicy,
+    ) -> Result<PresentationSceneQueueService, Self::Error> {
+        Ok(PresentationSceneQueueService::default())
+    }
+
+    fn presentation_source_open_or_draining(&mut self) -> bool {
+        false
+    }
+
+    fn clear_display_band(&mut self, _rows: Range<usize>, _color: u8) -> Result<(), Self::Error> {
+        Ok(())
     }
 }
 
