@@ -1,7 +1,7 @@
 //! Concrete flat-memory host for dialogue concept word choices.
 
-use anyhow::{Context, Result, bail};
-use commander_blood_formats::instruction::ScriptTextWord;
+use anyhow::{Context, Result};
+use commander_blood_formats::script::{ScriptDictionary, ScriptWordId};
 
 use crate::native::bloodprg::{
     ChoiceListBackend, ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect,
@@ -141,37 +141,14 @@ impl RuntimePresentationWordChoice {
             return Ok(());
         }
 
-        let text = services.text_presentation();
-        if text.menu_word_count > text.menu_words.len() {
-            bail!(
-                "dialogue choice count {} exceeds the {} live menu words",
-                text.menu_word_count,
-                text.menu_words.len()
-            );
-        }
         let profile = services
             .runtime()
             .current_profile()
             .context("dialogue choices require a loaded BloodScript profile")?;
-        let dictionary = profile.dictionary();
-        self.state.choices = text
-            .menu_words
-            .iter()
-            .take(text.menu_word_count)
-            .enumerate()
-            .map(|(index, word)| {
-                let ScriptTextWord::Dictionary(word) = word else {
-                    bail!("dialogue choice {index} is an unexpected section separator");
-                };
-                let label = dictionary.word(*word).with_context(|| {
-                    format!(
-                        "dialogue choice {} is absent from the dictionary",
-                        word.index()
-                    )
-                })?;
-                Ok(PresentationWordChoice::new(*word, label))
-            })
-            .collect::<Result<Vec<_>>>()?;
+        self.state.choices = decode_pending_presentation_choices(
+            profile.dictionary(),
+            profile.selector_state().pending_presentation_words(),
+        )?;
         Ok(())
     }
 
@@ -189,6 +166,25 @@ impl RuntimePresentationWordChoice {
             .collect::<Vec<_>>();
         draw_choice_list_rows(services.runtime_mut(), fonts, &labels, None, frame)
     }
+}
+
+fn decode_pending_presentation_choices(
+    dictionary: &ScriptDictionary,
+    words: &[ScriptWordId],
+) -> Result<Vec<PresentationWordChoice>> {
+    words
+        .iter()
+        .enumerate()
+        .map(|(index, word)| {
+            let label = dictionary.word(*word).with_context(|| {
+                format!(
+                    "dialogue choice {index} with dictionary ID {} is absent from the dictionary",
+                    word.index()
+                )
+            })?;
+            Ok(PresentationWordChoice::new(*word, label))
+        })
+        .collect()
 }
 
 struct RuntimeWordChoiceBackend<'runtime, 'transition> {
@@ -253,7 +249,25 @@ impl PresentationWordChoiceBackend for RuntimeWordChoiceBackend<'_, '_> {
 
 #[cfg(test)]
 mod tests {
+    use commander_blood_formats::script::decode_script_dictionary;
+
     use super::*;
+
+    #[test]
+    fn choice_labels_come_from_the_selector_buffer_not_revealed_dialogue_words() {
+        let dictionary = decode_script_dictionary(b"Click\0quick\0explanations\0game\0").unwrap();
+        let explanations = dictionary.resolve_source_offset(12).unwrap();
+        let game = dictionary.resolve_source_offset(25).unwrap();
+
+        let choices =
+            decode_pending_presentation_choices(&dictionary, &[explanations, game]).unwrap();
+
+        assert_eq!(choices.len(), 2);
+        assert_eq!(choices[0].word, explanations);
+        assert_eq!(choices[0].label.as_ref(), b"explanations");
+        assert_eq!(choices[1].word, game);
+        assert_eq!(choices[1].label.as_ref(), b"game");
+    }
 
     #[test]
     fn reset_clears_every_persistent_word_choice_owner() {

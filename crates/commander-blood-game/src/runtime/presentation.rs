@@ -102,6 +102,22 @@ impl<'window> RuntimePresentationHost<'window> {
             .context("uploading true-color bridge presentation panel")
     }
 
+    /// Upload only indexed pixels written after the recovered bridge base pass.
+    fn submit_bridge_indexed_overlay(
+        &mut self,
+        runtime: &OriginalGameRuntime,
+        bridge_frame: &BridgeSceneFrame,
+    ) -> Result<()> {
+        let rgba = bridge_indexed_overlay_rgba(
+            runtime.front_buffer().pixels(),
+            runtime.live_palette(),
+            bridge_frame,
+        )?;
+        self.renderer_ref()?
+            .upload_rgba_frame(&rgba)
+            .context("uploading sparse indexed bridge UI overlay")
+    }
+
     /// Present indexed artwork without a 3D base scene.
     pub fn present_artwork(&mut self, manu3_triangles: &[RenderTriangle]) -> Result<()> {
         self.renderer_mut()?
@@ -120,16 +136,26 @@ impl<'window> RuntimePresentationHost<'window> {
     ) -> Result<()> {
         // Frame-tail text and palette work occurs after the native chunky-copy
         // boundary, so refresh the modern texture immediately before drawing.
-        if composition == RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel {
-            self.submit_true_color_panel(runtime)?;
-        } else {
-            self.submit_indexed_frame(runtime)?;
+        match composition {
+            RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay => {
+                self.submit_bridge_indexed_overlay(runtime, bridge_frame)?;
+            }
+            RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel => {
+                self.submit_true_color_panel(runtime)?;
+            }
+            RuntimeBridgeComposition::IndexedFramebuffer
+            | RuntimeBridgeComposition::BridgeScene => {
+                self.submit_indexed_frame(runtime)?;
+            }
         }
         let manu3_triangles = runtime
             .manu3()
             .map(|model| model.render_triangles())
             .unwrap_or(&[]);
         let renderer = self.renderer_mut()?;
+        renderer
+            .update_bridge_actor_palette(runtime.live_palette())
+            .context("refreshing bridge actor colors from the live DESCRIPT palette")?;
         match composition {
             RuntimeBridgeComposition::IndexedFramebuffer => {
                 renderer.render(manu3_triangles, None, None)
@@ -254,6 +280,79 @@ fn true_color_panel_rgba(indexed_pixels: &[u8], palette: &IndexedGamePalette) ->
     Ok(rgba)
 }
 
+fn bridge_indexed_overlay_rgba(
+    indexed_pixels: &[u8],
+    palette: &IndexedGamePalette,
+    bridge_frame: &BridgeSceneFrame,
+) -> Result<Vec<u8>> {
+    if indexed_pixels.len() != LOGICAL_FRAMEBUFFER_PIXEL_COUNT {
+        bail!(
+            "runtime frame has {} pixels; expected {LOGICAL_FRAMEBUFFER_PIXEL_COUNT}",
+            indexed_pixels.len()
+        );
+    }
+    for (name, layer) in [
+        (
+            "projected-object",
+            bridge_frame.object_sprite_pixels.as_ref(),
+        ),
+        ("panorama", bridge_frame.panorama_pixels.as_ref()),
+        ("actor", bridge_frame.actor_sprite_pixels.as_ref()),
+    ] {
+        if layer.len() != LOGICAL_FRAMEBUFFER_PIXEL_COUNT {
+            bail!(
+                "bridge {name} layer has {} pixels; expected {LOGICAL_FRAMEBUFFER_PIXEL_COUNT}",
+                layer.len()
+            );
+        }
+    }
+
+    let mut bridge_base = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+    for star in &bridge_frame.starfield.plotted {
+        bridge_base[star.framebuffer_index] = star.palette_index;
+    }
+    overlay_nonzero_indices(&mut bridge_base, &bridge_frame.object_sprite_pixels);
+    overlay_nonzero_indices(&mut bridge_base, &bridge_frame.panorama_pixels);
+    overlay_nonzero_indices(&mut bridge_base, &bridge_frame.actor_sprite_pixels);
+
+    sparse_indexed_overlay_rgba(indexed_pixels, palette, &bridge_base)
+}
+
+fn sparse_indexed_overlay_rgba(
+    indexed_pixels: &[u8],
+    palette: &IndexedGamePalette,
+    bridge_base: &[u8],
+) -> Result<Vec<u8>> {
+    if indexed_pixels.len() != bridge_base.len() {
+        bail!(
+            "runtime frame has {} pixels but its reconstructed bridge base has {}",
+            indexed_pixels.len(),
+            bridge_base.len()
+        );
+    }
+    let colors = indexed_palette_rgba(palette)?;
+    let mut rgba = vec![u8::MIN; indexed_pixels.len() * RGBA_COMPONENT_COUNT];
+    for (index, (&presented, &base)) in indexed_pixels.iter().zip(bridge_base).enumerate() {
+        if presented == base {
+            continue;
+        }
+        let source = usize::from(presented) * RGBA_COMPONENT_COUNT;
+        let destination = index * RGBA_COMPONENT_COUNT;
+        rgba[destination..destination + RGBA_COMPONENT_COUNT]
+            .copy_from_slice(&colors[source..source + RGBA_COMPONENT_COUNT]);
+        rgba[destination + RGBA_COMPONENT_COUNT - 1] = OPAQUE_ALPHA;
+    }
+    Ok(rgba)
+}
+
+fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
+    for (destination, source) in destination.iter_mut().zip(source.iter().copied()) {
+        if source != u8::MIN {
+            *destination = source;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -307,5 +406,25 @@ mod tests {
             &EXPANDED_TEST_COLOR
         );
         assert_eq!(rgba[after_panel * RGBA_COMPONENT_COUNT + 3], u8::MIN);
+    }
+
+    #[test]
+    fn bridge_overlay_uploads_only_pixels_authored_after_scene_composition() {
+        let mut palette = [[u8::MIN; 3]; 256];
+        palette[usize::from(TEST_PALETTE_INDEX)] = TEST_COLOR;
+        let bridge_base = [4, 5, 6];
+        let presented = [4, TEST_PALETTE_INDEX, 6];
+
+        let rgba = sparse_indexed_overlay_rgba(&presented, &palette, &bridge_base).unwrap();
+
+        assert_eq!(&rgba[..RGBA_COMPONENT_COUNT], &[0, 0, 0, 0]);
+        assert_eq!(
+            &rgba[RGBA_COMPONENT_COUNT..RGBA_COMPONENT_COUNT * 2],
+            &EXPANDED_TEST_COLOR
+        );
+        assert_eq!(
+            &rgba[RGBA_COMPONENT_COUNT * 2..RGBA_COMPONENT_COUNT * 3],
+            &[0, 0, 0, 0]
+        );
     }
 }

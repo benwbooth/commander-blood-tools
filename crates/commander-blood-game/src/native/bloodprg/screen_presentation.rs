@@ -146,6 +146,24 @@ pub enum PresentationPanelPhase {
     Finalizing,
 }
 
+impl PresentationPanelPhase {
+    /// Encode the phase through the integer values used by the native state machine.
+    pub const fn executable_value(self) -> u16 {
+        match self {
+            Self::Begin => 0,
+            Self::Opening(step) => 1 + step.index() as u16,
+            Self::Transition(frame) => match frame {
+                PresentationTransitionFrame::One => 7,
+                PresentationTransitionFrame::Two => 8,
+                PresentationTransitionFrame::Three => 9,
+            },
+            Self::Active => 10,
+            Self::Closing(step) => 101 + step.index() as u16,
+            Self::Finalizing => 100,
+        }
+    }
+}
+
 /// Music action requested by a newly applied DESCRIPT record.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PresentationMusicChange {
@@ -276,6 +294,11 @@ impl PresentationScreenState {
         self.phase
     }
 
+    /// Return whether accepted input closes the startup panel.
+    pub const fn reverse(&self) -> bool {
+        self.reverse
+    }
+
     /// Start the actor-driven close at native phase 106 when the panel has not
     /// already entered its closing or finalizing phases.
     pub fn begin_actor_close_if_open(&mut self) -> bool {
@@ -302,6 +325,11 @@ impl PresentationScreenState {
     /// Set whether accepted input closes the panel instead of cycling records.
     pub fn set_reverse(&mut self, reverse: bool) {
         self.reverse = reverse;
+    }
+
+    /// Arm startup dismissal semantics without activating the actor-owned panel.
+    pub fn arm_startup_reverse(&mut self) {
+        self.reverse = true;
     }
 
     /// Set the primary-button edge for this frame.
@@ -963,6 +991,17 @@ mod tests {
             assert!(!state.begin_actor_close_if_open());
             assert_eq!(state.phase(), phase);
         }
+    }
+
+    #[test]
+    fn startup_reverse_is_armed_before_the_panel_actor_activates_the_screen() {
+        let mut state = PresentationScreenState::default();
+
+        state.arm_startup_reverse();
+
+        assert!(state.reverse());
+        assert!(!state.active());
+        assert_eq!(state.phase().executable_value(), 0);
     }
 
     fn oracle_state(vector: &ScreenOracle) -> PresentationScreenState {

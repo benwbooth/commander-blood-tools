@@ -66,9 +66,9 @@ use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
 use super::ship_target::ship_hud_arche_link;
 use super::{
-    LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, OriginalGameData,
-    OriginalGameRuntime, RuntimeAlienOverlayCycle, RuntimeAssetLoadStatus, RuntimeAudioHost,
-    RuntimeConfirmDialog, RuntimeInputHost, RuntimePaletteTransition,
+    LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, LOGICAL_FRAMEBUFFER_WIDTH,
+    OriginalGameData, OriginalGameRuntime, RuntimeAlienOverlayCycle, RuntimeAssetLoadStatus,
+    RuntimeAudioHost, RuntimeConfirmDialog, RuntimeInputHost, RuntimePaletteTransition,
     RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome, RuntimePcmClip,
     RuntimePlatformHost, RuntimePresentationCatalog, RuntimePresentationHost,
     RuntimePresentationPlayer, RuntimePresentationQueueMetrics, RuntimePresentationScreen,
@@ -100,6 +100,10 @@ const SHIP_NAVIGATION_STATUS_LINE: u16 = 3;
 const NAVIGATION_PALETTE_TRANSITION_INCREMENT: u16 = 10;
 const FIRST_SHIP_PROJECTION_ENTITY: u16 = 21;
 const AFTER_LAST_SHIP_PROJECTION_ENTITY: u16 = BRIDGE_SPRITE_ENTITY_COUNT as u16;
+const FIRST_TRANSITION_ENTITY: u16 = 20;
+const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
+const NAME_AREA_PALETTE_FIRST: usize = 224;
+const NAME_AREA_PALETTE_AFTER_LAST: usize = 240;
 const RECOVERED_PRESENTATION_MODE_BLOCKED: bool = false;
 const PRIMARY_PRESENTATION_ACTOR_SLOT: usize = 0;
 const SECONDARY_PRESENTATION_ACTOR_SLOT: usize = 2;
@@ -1809,6 +1813,7 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         state: &mut GameLifecycleState,
     ) -> Result<crate::native::bloodprg::SubtitleRevealOutcome> {
+        self.scripts.prepare_lifecycle_text_frame(state);
         let mut subtitle = self
             .subtitle_reveal
             .take()
@@ -1817,8 +1822,7 @@ impl<'window> ModernGameServices<'window> {
         let outcome = subtitle.update(&mut self.runtime, self.scripts.text_presentation_mut());
         self.subtitle_reveal = Some(subtitle);
         let outcome = outcome?;
-        self.scripts.prepare_lifecycle_scan_state(state);
-        self.scripts.finish_lifecycle_frame(state)?;
+        self.scripts.finish_lifecycle_text_frame(state)?;
         Ok(outcome)
     }
 
@@ -1953,8 +1957,9 @@ impl<'window> ModernGameServices<'window> {
                 .as_mut()
                 .context("presentation screen is already being updated")?
                 .state_mut();
-            screen.set_active(true);
-            screen.set_reverse(true);
+            // Native screen_flags_init preserves the actor slots in reverse mode;
+            // handler 3 activates the panel only after its authored line completes.
+            screen.arm_startup_reverse();
         }
         Ok(())
     }
@@ -2327,10 +2332,10 @@ impl<'window> ModernGameServices<'window> {
         state: &mut GameLifecycleState,
         word_delay: u16,
     ) -> Result<InlineMenuRevealOutcome> {
+        self.scripts.prepare_lifecycle_text_frame(state);
         let owner_matches = state.presentation.owner == Some(GamePresentationOwner::DeferredMenu);
         let outcome = self.reveal_inline_menu(owner_matches, word_delay)?;
-        self.scripts.prepare_lifecycle_scan_state(state);
-        self.scripts.finish_lifecycle_frame(state)?;
+        self.scripts.finish_lifecycle_text_frame(state)?;
         Ok(outcome)
     }
 
@@ -3127,11 +3132,13 @@ impl<'window> ModernGameServices<'window> {
         let sprite_layer = &mut bridge_frame
             .as_mut()
             .context("name-area effect requires a rendered bridge frame")?
-            .object_sprite_pixels;
-        runtime.advance_name_area_effect_on(sprite_layer, &mut |modulus| {
+            .actor_sprite_pixels;
+        let outcome = runtime.advance_name_area_effect_on(sprite_layer, &mut |modulus| {
             let modulus = u16::try_from(modulus).unwrap_or(u16::MAX);
             usize::from(random.next(modulus))
-        })
+        })?;
+        overlay_nonzero_indices(runtime.front_buffer_mut().pixels_mut(), sprite_layer);
+        Ok(outcome)
     }
 
     /// Apply the final fixed bridge-console tint after actor completion.
@@ -3188,6 +3195,12 @@ impl<'window> ModernGameServices<'window> {
         self.rasterize_bridge_frame_sprite_range(
             FIRST_SHIP_PROJECTION_ENTITY..AFTER_LAST_SHIP_PROJECTION_ENTITY,
         )?;
+        let mut indexed_bridge_base = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        self.compose_current_bridge_work_surface(&mut indexed_bridge_base)?;
+        self.runtime
+            .front_buffer_mut()
+            .pixels_mut()
+            .copy_from_slice(&indexed_bridge_base);
         Ok(self
             .bridge_frame
             .as_ref()
@@ -3230,8 +3243,43 @@ impl<'window> ModernGameServices<'window> {
             .bridge_frame
             .as_mut()
             .context("bridge sprite rasterization requires a rendered frame")?;
-        self.runtime
-            .rasterize_ship_entity_range(entities, &mut frame.object_sprite_pixels)
+        let actor_end = entities.end.min(FIRST_TRANSITION_ENTITY);
+        let projection_start = entities.start.max(FIRST_TRANSITION_ENTITY);
+        let mut draw_requests = Vec::new();
+        let mut selected_blitter_after = None;
+        let mut rasterized_request_count = usize::MIN;
+        if projection_start < entities.end {
+            let projected = self.runtime.rasterize_ship_entity_range(
+                projection_start..entities.end,
+                &mut frame.object_sprite_pixels,
+            )?;
+            draw_requests.extend(projected.dispatch.draw_requests);
+            selected_blitter_after = projected.dispatch.selected_blitter_after;
+            rasterized_request_count += projected.rasterized_request_count;
+        }
+        if entities.start < actor_end {
+            let actors = self.runtime.rasterize_ship_entity_range(
+                entities.start..actor_end,
+                &mut frame.actor_sprite_pixels,
+            )?;
+            draw_requests.extend(actors.dispatch.draw_requests);
+            selected_blitter_after = actors
+                .dispatch
+                .selected_blitter_after
+                .or(selected_blitter_after);
+            rasterized_request_count += actors.rasterized_request_count;
+            overlay_nonzero_indices(
+                self.runtime.front_buffer_mut().pixels_mut(),
+                &frame.actor_sprite_pixels,
+            );
+        }
+        Ok(BridgeSpriteRasterOutcome {
+            dispatch: crate::native::bloodprg::BridgeSpriteRenderOutcome {
+                draw_requests: draw_requests.into_boxed_slice(),
+                selected_blitter_after,
+            },
+            rasterized_request_count,
+        })
     }
 
     /// Return the current logical panorama frame used by bridge hit testing.
@@ -3395,14 +3443,40 @@ impl<'window> ModernGameServices<'window> {
         let bridge_seek_requested = self.bridge_seek_requested().unwrap_or(false);
         let bridge_seek_target = self.bridge_seek_target_arc().unwrap_or(u16::MIN);
         let radio_slot = &self.nav_actor_slots[1];
-        let presentation_screen_active = self
+        let panel_slot = &self.nav_actor_slots[2];
+        let presentation_screen = self
             .presentation_screen
             .as_ref()
-            .is_some_and(|screen| screen.state().active());
+            .map(|screen| screen.state());
+        let presentation_screen_active =
+            presentation_screen.is_some_and(PresentationScreenState::active);
         let waiting_for_input = lifecycle.presentation.word_choice_active
             && !lifecycle.primary_pointer_pressed
             && lifecycle.pointer_press_pending == u8::MIN
             && !lifecycle.navigation_target_selected;
+        let selector_word_choices = profile
+            .map(|profile| {
+                profile
+                    .selector_state()
+                    .pending_presentation_words()
+                    .iter()
+                    .filter_map(|word| profile.dictionary().word(*word))
+                    .map(|label| String::from_utf8_lossy(label).into_owned())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let rendered_word_choices = self
+            .presentation_word_choice
+            .as_ref()
+            .map(|choice| {
+                choice
+                    .state()
+                    .choices
+                    .iter()
+                    .map(|choice| String::from_utf8_lossy(&choice.label).into_owned())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
         let screen_hash = fnv1a64(self.runtime.front_buffer().pixels());
         let palette_bytes: Vec<_> = self
             .runtime
@@ -3414,8 +3488,47 @@ impl<'window> ModernGameServices<'window> {
         let bridge_layers = self.bridge_frame.as_ref().map(|frame| {
             serde_json::json!({
                 "panorama_hash": fnv1a64(&frame.panorama_pixels),
-                "sprite_hash": fnv1a64(&frame.object_sprite_pixels),
+                "object_sprite_hash": fnv1a64(&frame.object_sprite_pixels),
+                "actor_sprite_hash": fnv1a64(&frame.actor_sprite_pixels),
+                "actor_sprite_metrics": indexed_layer_metrics(&frame.actor_sprite_pixels),
             })
+        });
+        let portrait = self.runtime.bridge_sprite_entities()[NAME_AREA_EFFECT_ENTITY_INDEX];
+        let portrait_source = portrait.frame.map(|frame| match frame.source {
+            crate::native::bloodprg::BridgeSpriteFrameSource::CachedResource {
+                resource,
+                byte_offset,
+            } => serde_json::json!({
+                "kind": "cached",
+                "resource": resource.value(),
+                "byte_offset": byte_offset,
+                "frame_index": frame.frame_index,
+            }),
+            crate::native::bloodprg::BridgeSpriteFrameSource::RetainedFramebuffer => {
+                serde_json::json!({
+                    "kind": "retained_framebuffer",
+                    "frame_index": frame.frame_index,
+                })
+            }
+        });
+        let portrait_palette = self.runtime.live_palette()
+            [NAME_AREA_PALETTE_FIRST..NAME_AREA_PALETTE_AFTER_LAST]
+            .to_vec();
+        let text_state = serde_json::json!({
+            "start_locked": lifecycle.presentation.start_locked,
+            "hold_ready": lifecycle.presentation.hold_ready,
+            "dialogue_hold_complete": lifecycle.presentation.dialogue_hold_complete,
+            "word_buffer_nonempty": lifecycle.presentation.word_buffer_nonempty,
+            "text_menu_pending": lifecycle.presentation.text_menu_pending,
+            "scene_gate_active": lifecycle.presentation.scene_gate_active,
+            "sequence_active": lifecycle.presentation.sequence_active,
+            "menu_word_count": text.menu_word_count,
+            "dialogue_chatter_active": text.dialogue_chatter_active,
+            "dialogue_chatter_seed_pending": text.dialogue_chatter_seed_pending,
+            "subtitle_voice_trigger": text.subtitle_voice_trigger,
+            "owned_hold_ready": text.hold_ready,
+            "owned_dialogue_hold_complete": text.dialogue_hold_complete,
+            "owned_dialogue_hold_countdown": text.dialogue_hold_countdown,
         });
 
         Ok(serde_json::json!({
@@ -3436,11 +3549,19 @@ impl<'window> ModernGameServices<'window> {
                 "ship_flags": self.ship_presentation.flags,
                 "ship_ui_state": self.ship_presentation.ui_state,
                 "mode": u8::from(lifecycle.presentation_mode),
-                "box_mode": u8::MIN,
+                "box_mode": u8::from(presentation_screen_active),
+                "screen_phase": presentation_screen
+                    .map(|screen| screen.phase().executable_value())
+                    .unwrap_or(u16::MIN),
+                "screen_reverse": presentation_screen.is_some_and(PresentationScreenState::reverse),
+                "navigation_rebuild_pending": lifecycle.navigation_rebuild_pending,
                 "word_choice_active": u8::from(lifecycle.presentation.word_choice_active),
+                "selector_word_choices": selector_word_choices,
+                "rendered_word_choices": rendered_word_choices,
                 "nav_target_selection": u8::from(lifecycle.navigation_target_selected),
                 "active": u8::from(lifecycle.presentation.active),
                 "defer": u8::from(lifecycle.presentation.menu_deferred),
+                "text_state": text_state,
                 "text_wait": u8::from(lifecycle.presentation.word_choice_active) * 2,
                 "text_display_active": u8::from(lifecycle.presentation.subtitle_display_active),
                 "request_flags": lifecycle.presentation.request_flags.bits(),
@@ -3456,6 +3577,30 @@ impl<'window> ModernGameServices<'window> {
                     "loaded": radio_slot.flags.clear_mouse_before_hit,
                     "frame": radio_slot.line.frame,
                     "terminal_frame": radio_slot.line.terminal_frame,
+                },
+                "panel_slot": {
+                    "active": panel_slot.flags.active,
+                    "auto_seek": panel_slot.flags.auto_seek,
+                    "locked": panel_slot.flags.locked,
+                    "loaded": panel_slot.flags.clear_mouse_before_hit,
+                    "frame": panel_slot.line.frame,
+                    "terminal_frame": panel_slot.line.terminal_frame,
+                },
+                "portrait_entity": {
+                    "flags": portrait.flags.bits(),
+                    "source": portrait_source,
+                    "source_extent": [portrait.source_extent.width, portrait.source_extent.height],
+                    "draw_position": [portrait.draw_position.x, portrait.draw_position.y],
+                    "extent": [portrait.extent.width, portrait.extent.height],
+                    "committed_position": [
+                        portrait.committed_draw_position.x,
+                        portrait.committed_draw_position.y,
+                    ],
+                    "committed_extent": [
+                        portrait.committed_extent.width,
+                        portrait.committed_extent.height,
+                    ],
+                    "palette": portrait_palette,
                 },
                 "waiting_for_input": waiting_for_input,
             },
@@ -3473,6 +3618,7 @@ impl<'window> ModernGameServices<'window> {
                 "stream_channel": u8::MIN,
                 "dialogue_delay": self.audio_events.dialogue_delay,
                 "dialogue_hold": lifecycle.presentation.dialogue_hold_countdown,
+                "timer_tick": self.game_timer_tick,
                 "clip_playback_state": lifecycle.clip_playback_state,
                 "last_clip": self.audio_events.last_clip,
                 "streamed_clip_count": u16::MIN,
@@ -3546,6 +3692,36 @@ fn fnv1a64(bytes: &[u8]) -> String {
         hash = hash.wrapping_mul(0x100000001b3);
     }
     format!("{hash:016x}")
+}
+
+fn indexed_layer_metrics(pixels: &[u8]) -> serde_json::Value {
+    let mut nonzero_count = usize::MIN;
+    let mut minimum = [usize::MAX; 2];
+    let mut maximum = [usize::MIN; 2];
+    let mut used = [false; 256];
+    for (index, palette_index) in pixels.iter().copied().enumerate() {
+        if palette_index == u8::MIN {
+            continue;
+        }
+        let x = index % LOGICAL_FRAMEBUFFER_WIDTH;
+        let y = index / LOGICAL_FRAMEBUFFER_WIDTH;
+        nonzero_count += 1;
+        minimum[0] = minimum[0].min(x);
+        minimum[1] = minimum[1].min(y);
+        maximum[0] = maximum[0].max(x);
+        maximum[1] = maximum[1].max(y);
+        used[usize::from(palette_index)] = true;
+    }
+    let palette_indices = used
+        .iter()
+        .enumerate()
+        .filter_map(|(index, used)| used.then_some(index))
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "nonzero_count": nonzero_count,
+        "bounds": (nonzero_count != usize::MIN).then_some([minimum, maximum]),
+        "palette_indices": palette_indices,
+    })
 }
 
 fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
@@ -4707,7 +4883,7 @@ mod tests {
             .bridge_frame
             .as_ref()
             .unwrap()
-            .object_sprite_pixels
+            .actor_sprite_pixels
             .clone();
         services
             .execute_and_apply_lifecycle_script_frame(&mut phone_lifecycle)
@@ -4798,7 +4974,7 @@ mod tests {
             .bridge_frame
             .as_ref()
             .unwrap()
-            .object_sprite_pixels
+            .actor_sprite_pixels
             .clone();
         assert!(matches!(
             services.advance_bridge_name_area_effect().unwrap(),
@@ -4809,7 +4985,7 @@ mod tests {
                 .bridge_frame
                 .as_ref()
                 .unwrap()
-                .object_sprite_pixels
+                .actor_sprite_pixels
                 .iter()
                 .zip(&phone_portrait_before_effect)
                 .any(|(after, before)| after != before),
@@ -4820,7 +4996,7 @@ mod tests {
                 .bridge_frame
                 .as_ref()
                 .unwrap()
-                .object_sprite_pixels
+                .actor_sprite_pixels
                 .iter()
                 .zip(&bridge_before_phone)
                 .any(|(after, before)| after != before),

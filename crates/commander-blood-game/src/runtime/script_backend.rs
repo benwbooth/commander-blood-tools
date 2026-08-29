@@ -105,6 +105,7 @@ pub struct RuntimeScriptActionEffects {
 pub struct RuntimeScriptSystem {
     dispatch: ScriptDispatchState,
     service: ScriptExecutionService<RuntimeScriptBackend>,
+    presentation_word_buffer_nonempty: bool,
 }
 
 impl RuntimeScriptSystem {
@@ -113,6 +114,7 @@ impl RuntimeScriptSystem {
         Self {
             dispatch: ScriptDispatchState::default(),
             service: ScriptExecutionService::new(RuntimeScriptBackend::new(data, clock)),
+            presentation_word_buffer_nonempty: false,
         }
     }
 
@@ -125,6 +127,7 @@ impl RuntimeScriptSystem {
         let outcome = runtime.load_profile(profile)?;
         self.dispatch.reset_for_profile_change();
         self.service.reset_for_profile_change();
+        self.presentation_word_buffer_nonempty = false;
         self.service.backend_mut().bind_profile(
             runtime
                 .current_profile()
@@ -139,7 +142,7 @@ impl RuntimeScriptSystem {
         runtime: &mut OriginalGameRuntime,
         enabled: bool,
     ) -> Result<ScriptFrameOutcome> {
-        execute_loaded_script_frame(
+        let outcome = execute_loaded_script_frame(
             runtime
                 .current_profile_mut()
                 .context("no BloodScript profile is loaded")?,
@@ -147,7 +150,14 @@ impl RuntimeScriptSystem {
             &mut self.dispatch,
             &mut self.service,
         )
-        .map_err(|error| anyhow!("executing BloodScript frame: {error:?}"))
+        .map_err(|error| anyhow!("executing BloodScript frame: {error:?}"))?;
+        self.presentation_word_buffer_nonempty = !runtime
+            .current_profile()
+            .context("BloodScript profile disappeared after execution")?
+            .selector_state()
+            .pending_presentation_words()
+            .is_empty();
+        Ok(outcome)
     }
 
     /// Import the ship-owned half of globals aliased into BloodScript state.
@@ -180,6 +190,26 @@ impl RuntimeScriptSystem {
             self.dispatch.import_presentation_scan_state(presentation);
         }
         self.dispatch.record_clear_presentation.sequence_active = source.sequence_active;
+    }
+
+    /// Import main-loop writes immediately before a late text renderer runs.
+    pub fn prepare_lifecycle_text_frame(&mut self, lifecycle: &GameLifecycleState) {
+        self.prepare_lifecycle_frame(lifecycle);
+        let source = &lifecycle.presentation;
+        let text = &mut self.dispatch.text_presentation;
+        text.dialogue_hold_complete = source.dialogue_hold_complete;
+    }
+
+    /// Merge late text-renderer writes without replacing them from an older lifecycle snapshot.
+    pub fn finish_lifecycle_text_frame(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<()> {
+        let dialogue_hold_complete = self.dispatch.text_presentation.dialogue_hold_complete;
+        self.prepare_lifecycle_scan_state(lifecycle);
+        self.dispatch.text_presentation.dialogue_hold_complete = dialogue_hold_complete;
+        self.service.presentation_state_mut().dialogue_hold_complete = dialogue_hold_complete;
+        self.finish_lifecycle_frame(lifecycle)
     }
 
     /// Import globals owned by the recovered main loop before one VM pass.
@@ -232,7 +262,7 @@ impl RuntimeScriptSystem {
         target.subtitle_voice_trigger = text.subtitle_voice_trigger;
         target.text_menu_pending = text.menu_pending;
         target.text_selector = text.selected_line;
-        target.word_buffer_nonempty = text.menu_word_count != usize::MIN;
+        target.word_buffer_nonempty = self.presentation_word_buffer_nonempty;
         target.dialogue_hold_countdown = text.dialogue_hold_countdown;
         target.sequence_active = self.dispatch.record_clear_presentation.sequence_active;
         lifecycle.set_modal_ui_busy(presentation.ui_busy);
@@ -320,6 +350,12 @@ impl RuntimeScriptSystem {
             .context("completing a word choice requires a loaded BloodScript profile")?
             .runtime_mut()
             .set_selected_concept(Some(concept));
+        runtime
+            .current_profile_mut()
+            .expect("loaded profile remains available while completing a choice")
+            .selector_state_mut()
+            .replace_presentation_words([]);
+        self.presentation_word_buffer_nonempty = false;
         self.service.presentation_state_mut().word_choice_active = false;
         let text = &mut self.dispatch.text_presentation;
         text.menu_deferred = false;
@@ -336,7 +372,9 @@ impl RuntimeScriptSystem {
         &mut self,
         name: &[u8],
     ) -> Result<Option<DescriptRecordApplication>> {
-        let Self { dispatch, service } = self;
+        let Self {
+            dispatch, service, ..
+        } = self;
         let interface_active = service.backend().presentation_interface_active;
         service.backend_mut().apply_description(
             name,
@@ -350,7 +388,9 @@ impl RuntimeScriptSystem {
         &mut self,
         object: ScriptObjectId,
     ) -> Result<Option<DescriptRecordApplication>> {
-        let Self { dispatch, service } = self;
+        let Self {
+            dispatch, service, ..
+        } = self;
         let name = service.backend().object_name(object)?.to_vec();
         let interface_active = service.backend().presentation_interface_active;
         let application = service.backend_mut().apply_description(
@@ -1296,6 +1336,7 @@ mod tests {
         scripts.dispatch.text_presentation.subtitle_voice_trigger = false;
         scripts.dispatch.text_presentation.menu_pending = false;
         scripts.dispatch.text_presentation.menu_word_count = 2;
+        scripts.presentation_word_buffer_nonempty = true;
         scripts.dispatch.text_presentation.dialogue_hold_countdown = 4;
         scripts.dispatch.record_clear_presentation.sequence_active = false;
         let code = decode_script_code(&[
@@ -1326,6 +1367,25 @@ mod tests {
         assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 4);
         assert!(lifecycle.profile_ui_blocked());
         assert_eq!(lifecycle.pending_profile, ScriptProfileId::new(2));
+    }
+
+    #[test]
+    fn dialogue_reveal_words_do_not_alias_the_native_presentation_choice_buffer() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut lifecycle = GameLifecycleState::default();
+        scripts.dispatch.text_presentation.menu_word_count = 11;
+
+        scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
+
+        assert!(!lifecycle.presentation.word_buffer_nonempty);
+        scripts.presentation_word_buffer_nonempty = true;
+        scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
+        assert!(lifecycle.presentation.word_buffer_nonempty);
     }
 
     #[test]
@@ -1557,6 +1617,50 @@ mod tests {
         assert_eq!(text.request_flags.bits(), u8::MIN);
         assert!(text.menu_words.is_empty());
         assert_eq!(text.menu_word_count, usize::MIN);
+    }
+
+    #[test]
+    fn late_text_completion_is_not_replaced_by_the_pre_renderer_lifecycle_snapshot() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut lifecycle = GameLifecycleState::default();
+        scripts.dispatch.text_presentation.dialogue_hold_complete = true;
+        scripts.dispatch.text_presentation.dialogue_hold_countdown = 17;
+
+        scripts.finish_lifecycle_text_frame(&mut lifecycle).unwrap();
+
+        assert!(lifecycle.presentation.dialogue_hold_complete);
+        assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 17);
+        assert!(scripts.dispatch.text_presentation.dialogue_hold_complete);
+        assert!(scripts.service.presentation_state().dialogue_hold_complete);
+    }
+
+    #[test]
+    fn main_loop_hold_completion_clear_reaches_the_late_text_renderer() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut lifecycle = GameLifecycleState::default();
+        scripts.dispatch.text_presentation.dialogue_hold_complete = true;
+        scripts.dispatch.text_presentation.menu_deferred = true;
+        lifecycle.presentation.dialogue_hold_complete = false;
+        lifecycle.presentation.menu_deferred = false;
+
+        scripts.prepare_lifecycle_text_frame(&lifecycle);
+        scripts.finish_lifecycle_text_frame(&mut lifecycle).unwrap();
+
+        assert!(!scripts.dispatch.text_presentation.dialogue_hold_complete);
+        assert!(!scripts.dispatch.text_presentation.menu_deferred);
+        assert!(!scripts.service.presentation_state().dialogue_hold_complete);
+        assert!(!lifecycle.presentation.dialogue_hold_complete);
+        assert!(!lifecycle.presentation.menu_deferred);
     }
 
     #[test]

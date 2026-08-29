@@ -187,7 +187,9 @@ def compare_port_records(
 def render_observations(
     modern: list[dict[str, Any]], start_action: int
 ) -> dict[str, Any]:
-    sprite_hashes = []
+    sprite_layer_hashes = []
+    object_sprite_hashes = []
+    actor_sprite_hashes = []
     screen_hashes = []
     for record in modern:
         if record["action_index"] < start_action:
@@ -195,10 +197,21 @@ def render_observations(
         screen_hashes.append(value_at(record, "video.screen_hash"))
         layers = value_at(record, "video").get("bridge_layers")
         if layers is not None:
-            sprite_hashes.append(layers["sprite_hash"])
+            if "sprite_hash" in layers:
+                sprite_layer_hashes.append((layers["sprite_hash"],))
+                continue
+            object_hash = layers["object_sprite_hash"]
+            actor_hash = layers["actor_sprite_hash"]
+            object_sprite_hashes.append(object_hash)
+            actor_sprite_hashes.append(actor_hash)
+            sprite_layer_hashes.append((object_hash, actor_hash))
     return {
         "modern_distinct_screen_hashes": len(set(screen_hashes)),
-        "modern_distinct_bridge_sprite_hashes": len(set(sprite_hashes)),
+        "modern_distinct_bridge_sprite_hashes": len(set(sprite_layer_hashes)),
+        "modern_distinct_bridge_object_sprite_hashes": len(
+            set(object_sprite_hashes)
+        ),
+        "modern_distinct_bridge_actor_sprite_hashes": len(set(actor_sprite_hashes)),
         "note": (
             "Modern rendering uses split true-color layers, so hashes are reported "
             "for temporal-stasis checks and are not compared to DOS VGA hashes."

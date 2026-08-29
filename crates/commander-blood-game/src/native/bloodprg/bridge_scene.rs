@@ -57,6 +57,8 @@ pub struct BridgeSceneFrame {
     pub object_sprites: Box<[ShipObjectSpriteProjection]>,
     /// Fresh transparent indexed layer rasterized from projected ship objects.
     pub object_sprite_pixels: Box<[u8]>,
+    /// Fresh transparent indexed layer rasterized from bridge actors after the panorama.
+    pub actor_sprite_pixels: Box<[u8]>,
     /// Observable steering result for bridge interaction and presentation routing.
     pub steering: BridgeSteeringOutcome,
 }
@@ -382,6 +384,7 @@ impl BridgeScene {
             starfield,
             object_sprites,
             object_sprite_pixels: vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT].into_boxed_slice(),
+            actor_sprite_pixels: vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT].into_boxed_slice(),
             steering,
         })
     }
@@ -516,6 +519,10 @@ mod tests {
         assert_eq!(centered.panorama_pixels.len(), PANORAMA_FRAME_PIXEL_COUNT);
         assert_eq!(
             centered.object_sprite_pixels.len(),
+            PANORAMA_FRAME_PIXEL_COUNT
+        );
+        assert_eq!(
+            centered.actor_sprite_pixels.len(),
             PANORAMA_FRAME_PIXEL_COUNT
         );
         assert!(!centered.starfield.plotted.is_empty());

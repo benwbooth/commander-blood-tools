@@ -79,6 +79,22 @@ class PortTraceComparisonTests(unittest.TestCase):
             "semantic.presentation.active",
         )
 
+    def test_reports_split_object_and_actor_layers_without_stale_schema_failures(self) -> None:
+        modern = [record(0), record(1)]
+        for action_index, item in enumerate(modern):
+            item["semantic"]["video"]["bridge_layers"] = {
+                "object_sprite_hash": f"object-{action_index}",
+                "actor_sprite_hash": f"actor-{action_index}",
+            }
+
+        observations = compare_port.render_observations(modern, start_action=0)
+
+        self.assertEqual(observations["modern_distinct_bridge_sprite_hashes"], 2)
+        self.assertEqual(
+            observations["modern_distinct_bridge_object_sprite_hashes"], 2
+        )
+        self.assertEqual(observations["modern_distinct_bridge_actor_sprite_hashes"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -47,11 +47,15 @@ pub(crate) struct BridgeRenderer {
     panorama_pipeline: wgpu::RenderPipeline,
     panorama_bind_group: wgpu::BindGroup,
     object_sprite_bind_group: wgpu::BindGroup,
+    actor_sprite_bind_group: wgpu::BindGroup,
     panorama_texture: wgpu::Texture,
     object_sprite_texture: wgpu::Texture,
+    actor_sprite_texture: wgpu::Texture,
     colors: [[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+    actor_colors: [[u8; RGBA_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
     panorama_rgba: Vec<u8>,
     object_sprite_rgba: Vec<u8>,
+    actor_sprite_rgba: Vec<u8>,
     star_vertices: wgpu::Buffer,
     maximum_star_vertices: usize,
 }
@@ -80,6 +84,16 @@ impl BridgeRenderer {
         });
         let object_sprite_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("bridge RGBA object sprites"),
+            size: panorama_size,
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let actor_sprite_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("bridge RGBA actor sprites"),
             size: panorama_size,
             mip_level_count: MIP_LEVEL_COUNT,
             sample_count: SINGLE_SAMPLE_COUNT,
@@ -120,6 +134,16 @@ impl BridgeRenderer {
                 binding: PANORAMA_TEXTURE_BINDING,
                 resource: wgpu::BindingResource::TextureView(
                     &object_sprite_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                ),
+            }],
+        });
+        let actor_sprite_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("bridge actor sprite bind group"),
+            layout: &bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: PANORAMA_TEXTURE_BINDING,
+                resource: wgpu::BindingResource::TextureView(
+                    &actor_sprite_texture.create_view(&wgpu::TextureViewDescriptor::default()),
                 ),
             }],
         });
@@ -207,14 +231,24 @@ impl BridgeRenderer {
             panorama_pipeline,
             panorama_bind_group,
             object_sprite_bind_group,
+            actor_sprite_bind_group,
             panorama_texture,
             object_sprite_texture,
+            actor_sprite_texture,
             colors,
+            actor_colors: colors,
             panorama_rgba: vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT * RGBA_COMPONENT_COUNT],
             object_sprite_rgba: vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT * RGBA_COMPONENT_COUNT],
+            actor_sprite_rgba: vec![u8::MIN; PANORAMA_FRAME_PIXEL_COUNT * RGBA_COMPONENT_COUNT],
             star_vertices,
             maximum_star_vertices,
         })
+    }
+
+    /// Refresh only the foreground actor colors from the current DESCRIPT palette.
+    pub(crate) fn update_actor_palette(&mut self, palette: &IndexedGamePalette) -> Result<()> {
+        self.actor_colors = palette_rgba(palette)?;
+        Ok(())
     }
 
     /// Upload and encode one bridge frame in original compositing order.
@@ -285,6 +319,11 @@ impl BridgeRenderer {
                 u32::MIN..PANORAMA_VERTEX_COUNT,
                 u32::MIN..SINGLE_TEXTURE_LAYER,
             );
+            pass.set_bind_group(PANORAMA_TEXTURE_BINDING, &self.actor_sprite_bind_group, &[]);
+            pass.draw(
+                u32::MIN..PANORAMA_VERTEX_COUNT,
+                u32::MIN..SINGLE_TEXTURE_LAYER,
+            );
         }
         Ok(())
     }
@@ -304,6 +343,12 @@ impl BridgeRenderer {
                 PANORAMA_FRAME_PIXEL_COUNT
             );
         }
+        if frame.actor_sprite_pixels.len() != PANORAMA_FRAME_PIXEL_COUNT {
+            anyhow::bail!(
+                "bridge actor layer contains {} pixels, expected {PANORAMA_FRAME_PIXEL_COUNT}",
+                frame.actor_sprite_pixels.len()
+            );
+        }
         expand_indexed_rgba_into(
             &frame.panorama_pixels,
             &self.colors,
@@ -315,6 +360,12 @@ impl BridgeRenderer {
             &self.colors,
             true,
             &mut self.object_sprite_rgba,
+        );
+        expand_indexed_rgba_into(
+            &frame.actor_sprite_pixels,
+            &self.actor_colors,
+            true,
+            &mut self.actor_sprite_rgba,
         );
         queue.write_texture(
             wgpu::TexelCopyTextureInfo {
@@ -343,6 +394,25 @@ impl BridgeRenderer {
                 aspect: wgpu::TextureAspect::All,
             },
             &self.object_sprite_rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: u64::MIN,
+                bytes_per_row: Some(PANORAMA_FRAME_WIDTH as u32 * RGBA_COMPONENT_COUNT as u32),
+                rows_per_image: Some(PANORAMA_FRAME_HEIGHT as u32),
+            },
+            wgpu::Extent3d {
+                width: PANORAMA_FRAME_WIDTH as u32,
+                height: PANORAMA_FRAME_HEIGHT as u32,
+                depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+            },
+        );
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &self.actor_sprite_texture,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &self.actor_sprite_rgba,
             wgpu::TexelCopyBufferLayout {
                 offset: u64::MIN,
                 bytes_per_row: Some(PANORAMA_FRAME_WIDTH as u32 * RGBA_COMPONENT_COUNT as u32),
@@ -479,10 +549,13 @@ mod tests {
     const OBJECT_SAMPLE_Y: usize = PANORAMA_FRAME_HEIGHT / 2;
     const OBJECT_SAMPLE_PALETTE_INDEX: u8 = 17;
     const PANORAMA_SAMPLE_PALETTE_INDEX: u8 = 23;
+    const ACTOR_SAMPLE_PALETTE_INDEX: u8 = 29;
     const RED_DAC_COLOR: [u8; RGB_COMPONENT_COUNT] = [63, u8::MIN, u8::MIN];
     const GREEN_DAC_COLOR: [u8; RGB_COMPONENT_COUNT] = [u8::MIN, 63, u8::MIN];
+    const BLUE_DAC_COLOR: [u8; RGB_COMPONENT_COUNT] = [u8::MIN, u8::MIN, 63];
     const RED_RGBA_COLOR: [u8; RGBA_COMPONENT_COUNT] = [u8::MAX, u8::MIN, u8::MIN, u8::MAX];
     const GREEN_RGBA_COLOR: [u8; RGBA_COMPONENT_COUNT] = [u8::MIN, u8::MAX, u8::MIN, u8::MAX];
+    const BLUE_RGBA_COLOR: [u8; RGBA_COMPONENT_COUNT] = [u8::MIN, u8::MIN, u8::MAX, u8::MAX];
 
     #[test]
     fn original_bridge_renders_nonblank_inside_wide_and_portrait_viewports() {
@@ -516,7 +589,7 @@ mod tests {
     }
 
     #[test]
-    fn object_sprite_layer_is_visible_through_transparent_panorama_and_below_opaque_panorama() {
+    fn sprite_layers_preserve_native_object_panorama_actor_order() {
         let Some(executable_path) = original_file("BLOODPRG.EXE") else {
             return;
         };
@@ -539,12 +612,14 @@ mod tests {
         frame.starfield.plotted = Box::default();
         frame.panorama_pixels.fill(u8::MIN);
         frame.object_sprite_pixels.fill(u8::MIN);
+        frame.actor_sprite_pixels.fill(u8::MIN);
         let sample_index = OBJECT_SAMPLE_Y * PANORAMA_FRAME_WIDTH + OBJECT_SAMPLE_X;
         frame.object_sprite_pixels[sample_index] = OBJECT_SAMPLE_PALETTE_INDEX;
 
         let mut palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
         palette[usize::from(OBJECT_SAMPLE_PALETTE_INDEX)] = RED_DAC_COLOR;
         palette[usize::from(PANORAMA_SAMPLE_PALETTE_INDEX)] = GREEN_DAC_COLOR;
+        palette[usize::from(ACTOR_SAMPLE_PALETTE_INDEX)] = BLUE_DAC_COLOR;
         let Some((device, queue)) = offscreen_device() else {
             return;
         };
@@ -572,6 +647,17 @@ mod tests {
             rgba_at(&panorama_over_object, sample_index),
             GREEN_RGBA_COLOR
         );
+
+        frame.actor_sprite_pixels[sample_index] = ACTOR_SAMPLE_PALETTE_INDEX;
+        let actor_over_panorama = render_offscreen_bridge(
+            &device,
+            &queue,
+            &palette,
+            &frame,
+            LOGICAL_OUTPUT_WIDTH,
+            LOGICAL_OUTPUT_HEIGHT,
+        );
+        assert_eq!(rgba_at(&actor_over_panorama, sample_index), BLUE_RGBA_COLOR);
     }
 
     fn original_file(filename: &str) -> Option<PathBuf> {

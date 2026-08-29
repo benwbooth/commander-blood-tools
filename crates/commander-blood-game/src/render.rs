@@ -426,6 +426,14 @@ impl<'window> Renderer<'window> {
         )
     }
 
+    /// Refresh bridge foreground colors without recoloring the immutable panorama.
+    pub fn update_bridge_actor_palette(&mut self, palette: &IndexedGamePalette) -> Result<()> {
+        self.bridge
+            .as_mut()
+            .context("bridge actor palette supplied without bridge GPU resources")?
+            .update_actor_palette(palette)
+    }
+
     fn render_layers(
         &mut self,
         manu3_triangles: &[RenderTriangle],

@@ -13,12 +13,33 @@ const BRIDGE_VIEW_FRAME_COUNT: u16 = 180;
 const PARK_FRAME_TOLERANCE: u16 = 2;
 const MAXIMUM_PARK_FRAME_COUNT: u16 = 600;
 const CLICK_RELEASE_SETTLE_FRAMES: u16 = 2;
-/// One runtime_boot wait unit advances about two recovered presentation loops.
+/// One runtime_boot wait unit advances about two recovered blocking-presentation loops.
 ///
 /// The clean-boot oracle's 150-unit opening span reaches the authored terminal
 /// frame of the 263-frame MIND.HNM stream. Keeping this conversion explicit
 /// makes the same checked-in action timeline meaningful in the flat runtime.
-const RUST_TICKS_PER_ORACLE_WAIT_UNIT: u16 = 2;
+const PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT: u16 = 2;
+/// One runtime_boot wait unit advances about three recovered ordinary game loops.
+///
+/// The oracle spends a fixed number of emulated CPU instructions per unit. The
+/// ordinary bridge loop is cheaper than HNM decoding, and live dialogue hold
+/// counters prove that ten units span thirty main-loop timer budgets.
+const GAME_TICKS_PER_ORACLE_WAIT_UNIT: u16 = 3;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum RuntimeScenarioCadence {
+    BlockingPresentation,
+    GameLoop,
+}
+
+impl RuntimeScenarioCadence {
+    const fn ticks_per_wait_unit(self) -> u16 {
+        match self {
+            Self::BlockingPresentation => PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT,
+            Self::GameLoop => GAME_TICKS_PER_ORACLE_WAIT_UNIT,
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RuntimeScenarioKey {
@@ -132,6 +153,7 @@ impl RuntimeScenarioDriver {
     pub(super) fn advance(
         &mut self,
         current_bridge_frame: Option<u16>,
+        cadence: RuntimeScenarioCadence,
     ) -> Result<RuntimeScenarioFrameInput> {
         self.frame_count = self.frame_count.wrapping_add(1);
         let Some(action) = self.actions.get(self.action_index) else {
@@ -156,7 +178,7 @@ impl RuntimeScenarioDriver {
                 true
             }
             RuntimeScenarioActionKind::Wait { frames } => {
-                self.action_frame + 1 >= frames.saturating_mul(RUST_TICKS_PER_ORACLE_WAIT_UNIT)
+                self.action_frame + 1 >= frames.saturating_mul(cadence.ticks_per_wait_unit())
             }
             RuntimeScenarioActionKind::Park {
                 edge_x,
@@ -391,7 +413,9 @@ mod tests {
         };
 
         assert_eq!(
-            driver.advance(None).unwrap(),
+            driver
+                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+                .unwrap(),
             RuntimeScenarioFrameInput {
                 pointer_position: Some([125, 118]),
                 primary_pressed: true,
@@ -399,7 +423,9 @@ mod tests {
             }
         );
         assert_eq!(
-            driver.advance(None).unwrap(),
+            driver
+                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+                .unwrap(),
             RuntimeScenarioFrameInput {
                 pointer_position: Some([125, 118]),
                 ..RuntimeScenarioFrameInput::default()
@@ -407,7 +433,9 @@ mod tests {
         );
         assert_eq!(driver.action_index, 0);
         assert_eq!(
-            driver.advance(None).unwrap(),
+            driver
+                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+                .unwrap(),
             RuntimeScenarioFrameInput {
                 pointer_position: Some([125, 118]),
                 ..RuntimeScenarioFrameInput::default()
@@ -444,9 +472,46 @@ mod tests {
             frame_count: 0,
         };
 
-        driver.advance(None).unwrap();
+        driver
+            .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+            .unwrap();
         assert_eq!(driver.action_index, 0);
-        driver.advance(None).unwrap();
+        driver
+            .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+            .unwrap();
+        assert_eq!(driver.action_index, 1);
+        let _ = std::fs::remove_file(trace_path);
+    }
+
+    #[test]
+    fn oracle_wait_units_use_the_calibrated_ordinary_game_loop_conversion() {
+        let action = parse_action("wait 1", Path::new("scenario.tsv"), 1).unwrap();
+        let trace_path = std::env::temp_dir().join(format!(
+            "commander-blood-game-wait-{}-{}.jsonl",
+            std::process::id(),
+            std::thread::current().name().unwrap_or("game-wait")
+        ));
+        let mut driver = RuntimeScenarioDriver {
+            scenario_path: PathBuf::from("scenario.tsv"),
+            actions: vec![action],
+            trace: BufWriter::new(File::create(&trace_path).unwrap()),
+            action_index: 0,
+            action_frame: 0,
+            pending_trace: None,
+            initial_trace_written: false,
+            frame_count: 0,
+        };
+
+        driver
+            .advance(None, RuntimeScenarioCadence::GameLoop)
+            .unwrap();
+        driver
+            .advance(None, RuntimeScenarioCadence::GameLoop)
+            .unwrap();
+        assert_eq!(driver.action_index, 0);
+        driver
+            .advance(None, RuntimeScenarioCadence::GameLoop)
+            .unwrap();
         assert_eq!(driver.action_index, 1);
         let _ = std::fs::remove_file(trace_path);
     }

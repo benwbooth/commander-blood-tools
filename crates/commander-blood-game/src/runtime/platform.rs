@@ -15,7 +15,7 @@ use crate::native::bloodprg::{
 };
 
 use super::input::{INITIAL_LOGICAL_POINTER, map_host_pointer_to_logical};
-use super::scenario::{RuntimeScenarioDriver, RuntimeScenarioKey};
+use super::scenario::{RuntimeScenarioCadence, RuntimeScenarioDriver, RuntimeScenarioKey};
 use super::{ModernGameServices, RuntimeAlienOverlayFrameInput};
 
 /// Input frequency of the IBM PC programmable interval timer.
@@ -173,7 +173,14 @@ impl<'window> RuntimePlatformHost<'window> {
                     .scenario
                     .as_mut()
                     .expect("scenario presence was checked")
-                    .advance(bridge_frame)?;
+                    .advance(
+                        bridge_frame,
+                        if record_completed_boundary {
+                            RuntimeScenarioCadence::BlockingPresentation
+                        } else {
+                            RuntimeScenarioCadence::GameLoop
+                        },
+                    )?;
                 if let Some(position) = input.pointer_position {
                     self.logical_pointer = position.map(f32::from);
                     self.pointer_inside_window = true;
