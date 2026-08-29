@@ -32,6 +32,7 @@ const BIOS_FUNCTION_KEY_BASE: u16 = 0x3b00;
 const BIOS_SCAN_CODE_SHIFT: u32 = 8;
 const BIOS_P_SCAN_CODE: u16 = 0x19;
 const ASCII_ESCAPE: u8 = 27;
+const ASCII_CARRIAGE_RETURN: u8 = b'\r';
 
 /// Logical pointer position installed by `bloodprg_main` after line zero.
 ///
@@ -105,6 +106,9 @@ impl RuntimeInputHost {
     pub fn dispatch_next(&mut self, save_menu_active: bool) -> Option<InputAction> {
         let action = dispatch_input_key(&mut self.dispatch, self.pending_keys.pop_front());
         match action {
+            Some(InputAction::Accept) => {
+                latch_input_text_byte(&mut self.dispatch, ASCII_CARRIAGE_RETURN);
+            }
             Some(InputAction::LatchTextByte(text_byte)) => {
                 latch_input_text_byte(&mut self.dispatch, text_byte);
             }
@@ -342,6 +346,18 @@ mod tests {
 
         assert_eq!(input.dispatch_next(false), Some(InputAction::Cancel));
         assert_eq!(input.pending_key_count(), "queued".len());
+    }
+
+    #[test]
+    fn accept_publishes_the_native_carriage_return_text_byte() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        assert!(input.queue_keycode(Keycode::Return));
+
+        assert_eq!(input.dispatch_next(false), Some(InputAction::Accept));
+        assert_eq!(
+            input.dispatch_state().text_byte,
+            Some(ASCII_CARRIAGE_RETURN)
+        );
     }
 
     #[test]

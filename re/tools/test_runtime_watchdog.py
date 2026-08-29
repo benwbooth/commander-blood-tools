@@ -483,6 +483,7 @@ class DialogueAudioTests(unittest.TestCase):
         struct.pack_into("<h", memory, game + 0x0A2C, 103)
         struct.pack_into("<H", memory, game + 0x0A2E, 1)
         struct.pack_into("<H", memory, game + 0x0A30, 0)
+        memory[game + 0x0B17] = 1
         struct.pack_into("<h", memory, game + 0x0A38, 229)
         struct.pack_into("<h", memory, game + 0x0A3A, 102)
         struct.pack_into("<h", memory, game + 0x2795, 45)
@@ -503,6 +504,7 @@ class DialogueAudioTests(unittest.TestCase):
         self.assertEqual(state["mouse_y"], 103)
         self.assertEqual(state["mouse_button_state"], 1)
         self.assertEqual(state["mouse_previous_button_state"], 0)
+        self.assertEqual(state["presentation_sound_enabled"], 1)
         self.assertEqual(state["mouse_last_x"], 229)
         self.assertEqual(state["mouse_last_y"], 102)
         self.assertEqual(state["bridge_view_frame"], 45)

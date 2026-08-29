@@ -161,6 +161,7 @@ PRESENTATION_FLOW_OFFSETS = {
     "mouse_primary_pressed": (0x0A3E, "B"),
     "mouse_secondary_pressed": (0x0A3F, "B"),
     "mouse_press_pending": (0x0A40, "B"),
+    "presentation_sound_enabled": (0x0B17, "B"),
     "list_file_handle": (0x0D5B, "H"),
     "list_state": (0x0D5F, "B"),
     "list_read_wrap_index": (0x0D60, "H"),

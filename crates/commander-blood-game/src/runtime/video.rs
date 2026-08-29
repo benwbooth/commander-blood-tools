@@ -12,7 +12,7 @@ use crate::native::bloodprg::{
     PresentationQueueServiceOutcome, PresentationQueueState, PresentationResourceCursor,
     PresentationResourceDescriptor, PresentationResourceId, PresentationResourceSequenceContext,
     PresentationResourceSequenceOutcome, PresentationResourceStreamState, PresentationSourceRange,
-    load_presentation_resource_sequence, service_presentation_queue,
+    load_presentation_resource_sequence, presentation_resource_enabled, service_presentation_queue,
 };
 
 use super::OriginalGameRuntime;
@@ -21,6 +21,8 @@ const RUNTIME_PRESENTATION_RESOURCE_ID: PresentationResourceId =
     PresentationResourceId::new(u16::MIN);
 const PRESENTATION_BUFFER_BYTE_COUNT: usize = u16::MAX as usize + 1;
 const PRESENTED_FRAME_INCREMENT: u64 = 1;
+// GS:0x0B17 has no recovered writer and remains zero in guarded native runs.
+const SHIPPED_PRESENTATION_SOUND_STATE: u8 = u8::MIN;
 
 /// Authored descriptor and runtime gates for one HNM presentation stream.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -47,7 +49,7 @@ impl RuntimePresentationRequest {
             descriptor_flags: u8::MIN,
             variant: u8::MIN,
             entry_policy: PresentationEntryPolicy {
-                sound_enabled: true,
+                sound_enabled: presentation_resource_enabled(SHIPPED_PRESENTATION_SOUND_STATE),
                 skip_back_buffer_present: false,
                 draw_via_back_buffer: false,
             },
@@ -413,6 +415,14 @@ mod tests {
     const CONTENT_PANEL_ROW_COUNT: usize = 130;
     const CLIPTOOT_BOTTOM_ROW_ORACLE_FRAME: u16 = 856;
     const CLIPTOOT_BOTTOM_ROW_ORACLE_PIXELS: &[(usize, u8)] = &[(25, 18), (26, 6)];
+
+    #[test]
+    fn ordinary_request_uses_the_shipped_embedded_sound_gate() {
+        let request =
+            RuntimePresentationRequest::new(BloodResourceName::new(TEST_VIDEO_RESOURCE).unwrap());
+
+        assert!(!request.entry_policy.sound_enabled);
+    }
 
     #[test]
     fn stream_palette_only_publishes_when_a_palette_record_was_applied() {

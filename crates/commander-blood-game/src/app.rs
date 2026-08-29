@@ -23,7 +23,8 @@ use crate::native::alien::{AlienInputAction, AlienMouseSample, AlienScene};
 use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeScene, BridgeSceneInput, BridgeSpriteEntity,
     BridgeSteeringInteraction, GameLifecycleError, GameLifecycleState, InputAction, PointerButton,
-    PointerButtons, ScriptClock, ShipProjectionResources, run_game_lifecycle,
+    PointerButtons, ScriptClock, ShipProjectionResources, decode_script_clock_date,
+    decode_script_clock_hour, run_game_lifecycle,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::manu3::model::{Manu3FrameRequest, Manu3Model};
@@ -520,30 +521,49 @@ struct HostClockSample {
 
 fn host_clock_sample() -> Result<HostClockSample> {
     let now = Local::now();
-    host_clock_sample_from_local_fields(now.hour(), now.month(), now.day(), now.second())
+    host_clock_sample_from_local_fields(
+        now.year(),
+        now.hour(),
+        now.month(),
+        now.day(),
+        now.second(),
+    )
 }
 
 fn host_clock_sample_from_local_fields(
+    year: i32,
     hour: u32,
     month: u32,
     day: u32,
     second: u32,
 ) -> Result<HostClockSample> {
+    let century = year.div_euclid(100);
+    let year_in_century = year.rem_euclid(100);
+    let date = decode_script_clock_date(
+        pack_clock_field(u8::try_from(century).context("local clock century exceeds RTC state")?),
+        pack_clock_field(
+            u8::try_from(year_in_century).context("local clock year exceeds RTC state")?,
+        ),
+        pack_clock_field(u8::try_from(month).context("local clock month exceeds RTC state")?),
+        pack_clock_field(u8::try_from(day).context("local clock day exceeds RTC state")?),
+    );
     Ok(HostClockSample {
         script: ScriptClock {
-            hour: i16::try_from(hour).context("local clock hour exceeds script state")?,
-            day: i8::try_from(day).context("local clock day exceeds script state")?,
-            month: i8::try_from(month).context("local clock month exceeds script state")?,
+            hour: decode_script_clock_hour(pack_clock_field(
+                u8::try_from(hour).context("local clock hour exceeds RTC state")?,
+            )),
+            day: i8::try_from(date.day).context("decoded clock day exceeds script state")?,
+            month: i8::try_from(date.month).context("decoded clock month exceeds script state")?,
         },
-        packed_second: pack_clock_seconds(
+        packed_second: pack_clock_field(
             u8::try_from(second).context("local clock second exceeds packed RTC state")?,
         ),
     })
 }
 
-fn pack_clock_seconds(seconds: u8) -> u8 {
-    let tens = seconds / DECIMAL_RADIX;
-    let ones = seconds % DECIMAL_RADIX;
+fn pack_clock_field(value: u8) -> u8 {
+    let tens = value / DECIMAL_RADIX;
+    let ones = value % DECIMAL_RADIX;
     tens << PACKED_BCD_DIGIT_SHIFT | ones
 }
 
@@ -594,6 +614,7 @@ mod tests {
     const TEST_LOCAL_HOUR: u32 = 23;
     const TEST_LOCAL_MONTH: u32 = 2;
     const TEST_LOCAL_DAY: u32 = 29;
+    const TEST_LOCAL_YEAR: i32 = 2024;
 
     #[test]
     fn original_cursor_maps_to_the_alien_driver_range_without_pointer_warping() {
@@ -645,17 +666,18 @@ mod tests {
 
     #[test]
     fn host_seconds_use_the_pc_clocks_packed_decimal_byte() {
-        assert_eq!(pack_clock_seconds(u8::MIN), u8::MIN);
+        assert_eq!(pack_clock_field(u8::MIN), u8::MIN);
         assert_eq!(
-            pack_clock_seconds(FIRST_DOUBLE_DIGIT_SECOND),
+            pack_clock_field(FIRST_DOUBLE_DIGIT_SECOND),
             FIRST_DOUBLE_DIGIT_BCD
         );
-        assert_eq!(pack_clock_seconds(LAST_CLOCK_SECOND), LAST_CLOCK_SECOND_BCD);
+        assert_eq!(pack_clock_field(LAST_CLOCK_SECOND), LAST_CLOCK_SECOND_BCD);
     }
 
     #[test]
     fn local_clock_fields_map_to_script_and_packed_rtc_state() {
         let sample = host_clock_sample_from_local_fields(
+            TEST_LOCAL_YEAR,
             TEST_LOCAL_HOUR,
             TEST_LOCAL_MONTH,
             TEST_LOCAL_DAY,
