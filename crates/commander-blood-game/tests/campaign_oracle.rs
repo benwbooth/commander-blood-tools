@@ -32,6 +32,7 @@ const CONTACT_COUNTDOWN_TIMER_INDEX: u8 = 1;
 const MAXIMUM_ENTRY_FRAMES: usize = 32;
 const MAXIMUM_CONTACT_COMPLETION_FRAMES: usize = 256;
 const MAXIMUM_TIMER_TICKS_PER_SCRIPT_COUNTDOWN: usize = 256;
+const EXIT_DIALOGUE_TOPIC: &[u8] = b"bye_bye";
 const PROFILE_RESOURCE_IDENTITIES: &[(ScriptProfileResourceKind, &str)] = &[
     (ScriptProfileResourceKind::Code, "cod"),
     (ScriptProfileResourceKind::Dialogue, "bas"),
@@ -248,9 +249,12 @@ fn every_recovered_contact_completes_one_authored_path() {
         let mut next_expected_index = usize::MIN;
         let mut observed_indices = Vec::new();
         let mut observed_bas_offsets = Vec::new();
-        let mut selected_topics = Vec::new();
+        let mut selected_topics: Vec<String> = Vec::new();
+        let mut bas_count_at_topic_selection = None;
         let mut completed = false;
         for _ in usize::MIN..MAXIMUM_CONTACT_COMPLETION_FRAMES {
+            let mut presentation_completed_this_frame = false;
+            let mut word_choice_completed_this_frame = false;
             let outcome = scripts
                 .execute_frame(&mut runtime, true)
                 .unwrap_or_else(|error| {
@@ -270,28 +274,74 @@ fn every_recovered_contact_completes_one_authored_path() {
             let published_topics = presentation_dictionary_words(&scripts);
             if snapshot.subtitle.is_empty()
                 && !selector_topics.is_empty()
-                && published_topics == selector_topics
+                && ((published_topics == selector_topics)
+                    || (snapshot.word_offsets.is_empty()
+                        && bas_count_at_topic_selection
+                            .is_some_and(|before| observed_bas_offsets.len() > before)))
             {
-                if !selected_topics.is_empty() {
+                let profile = runtime.current_profile().unwrap();
+                let topic_names = selector_topics
+                    .iter()
+                    .map(|word| profile.dictionary().word(*word).unwrap())
+                    .collect::<Vec<_>>();
+                if let Some(previous_bas_count) = bas_count_at_topic_selection {
+                    if selected_topics.last().is_some_and(|topic| {
+                        topic.as_bytes().eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC)
+                    }) {
+                        assert!(
+                            !observed_bas_offsets.is_empty(),
+                            "{}:{} reached the exit topic without first presenting BAS dialogue",
+                            scenario.script,
+                            scenario.procedure
+                        );
+                        completed = true;
+                        break;
+                    }
+                    assert!(
+                        observed_bas_offsets.len() > previous_bas_count,
+                        "{}:{} returned to selector {:?} without presenting BAS dialogue after topic {:?}; snapshot {:?}, selector state {:?}, presentation {:?}",
+                        scenario.script,
+                        scenario.procedure,
+                        topic_names
+                            .iter()
+                            .map(|name| String::from_utf8_lossy(name).into_owned())
+                            .collect::<Vec<_>>(),
+                        selected_topics.last(),
+                        snapshot,
+                        profile.selector_state(),
+                        scripts.presentation_scan_state()
+                    );
+                    if let Some(exit_index) = topic_names
+                        .iter()
+                        .position(|name| name.eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC))
+                    {
+                        let selected = selector_topics[exit_index];
+                        selected_topics.push(
+                            String::from_utf8_lossy(profile.dictionary().word(selected).unwrap())
+                                .into_owned(),
+                        );
+                        bas_count_at_topic_selection = Some(observed_bas_offsets.len());
+                        scripts
+                            .complete_word_choice(&mut runtime, selected)
+                            .unwrap();
+                        continue;
+                    }
                     completed = true;
                     break;
                 }
-                let selected = selector_topics[usize::MIN];
+                let selected_index = topic_names
+                    .iter()
+                    .position(|name| !name.eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC))
+                    .unwrap_or(usize::MIN);
+                let selected = selector_topics[selected_index];
                 selected_topics.push(
-                    String::from_utf8_lossy(
-                        runtime
-                            .current_profile()
-                            .unwrap()
-                            .dictionary()
-                            .word(selected)
-                            .unwrap(),
-                    )
-                    .into_owned(),
+                    String::from_utf8_lossy(profile.dictionary().word(selected).unwrap())
+                        .into_owned(),
                 );
+                bas_count_at_topic_selection = Some(observed_bas_offsets.len());
                 scripts
                     .complete_word_choice(&mut runtime, selected)
                     .unwrap();
-                complete_contact_text(&mut scripts);
                 continue;
             }
             let presentation_pending = snapshot.selected_line.is_some()
@@ -347,12 +397,26 @@ fn every_recovered_contact_completes_one_authored_path() {
                         scripts
                             .complete_word_choice(&mut runtime, choice_words[usize::MIN])
                             .unwrap();
+                        word_choice_completed_this_frame = true;
                     }
                 } else if let Some(source_offset) =
                     matching_bas_text_offset(runtime.current_profile().unwrap(), &snapshot)
                 {
-                    observed_bas_offsets.push(source_offset);
-                    if snapshot.word_offsets.contains(&u16::MAX) {
+                    let repeated_terminal_response = observed_bas_offsets.last()
+                        == Some(&source_offset)
+                        && bas_count_at_topic_selection
+                            .is_some_and(|before| observed_bas_offsets.len() > before);
+                    if repeated_terminal_response {
+                        completed = true;
+                        break;
+                    }
+                    if observed_bas_offsets.last() != Some(&source_offset) {
+                        observed_bas_offsets.push(source_offset);
+                    }
+                    if bas_text_arms_selector_resume(
+                        runtime.current_profile().unwrap(),
+                        source_offset,
+                    ) {
                         let choice_words = contact_choice_words(&scripts, &runtime);
                         let selected = choice_words[usize::MIN];
                         selected_topics.push(
@@ -369,6 +433,7 @@ fn every_recovered_contact_completes_one_authored_path() {
                         scripts
                             .complete_word_choice(&mut runtime, selected)
                             .unwrap();
+                        word_choice_completed_this_frame = true;
                     }
                 } else {
                     let actor = object_at_source_offset(
@@ -394,7 +459,10 @@ fn every_recovered_contact_completes_one_authored_path() {
                         actor_flags
                     )
                 }
-                complete_contact_text(&mut scripts);
+                if !word_choice_completed_this_frame {
+                    complete_contact_text(&mut scripts);
+                }
+                presentation_completed_this_frame = true;
             }
             let selected_procedure_enabled = runtime
                 .current_profile()
@@ -403,7 +471,8 @@ fn every_recovered_contact_completes_one_authored_path() {
                 .is_enabled(selected_procedure)
                 .unwrap();
             let one_shot_procedure_completed = !selected_procedure_enabled;
-            let persistent_dialogue_completed = !scripts.presentation_scan_state().active;
+            let persistent_dialogue_completed =
+                !presentation_completed_this_frame && !scripts.presentation_scan_state().active;
             if !observed_indices.is_empty()
                 && (one_shot_procedure_completed || persistent_dialogue_completed)
             {
@@ -422,17 +491,21 @@ fn every_recovered_contact_completes_one_authored_path() {
 
         assert!(
             completed,
-            "{}:{} did not complete an authored path within {} frames; observed {:?}, selected topics {:?}, contact timer {}, presentation {:?}, scan {:?}, pending selector words {:?}",
+            "{}:{} did not complete an authored path within {} frames; observed COD {:?}, observed BAS {:?}, selected topics {:?}, BAS count at selection {:?}, contact timer {}, current text {:?}, raw text {:?}, presentation {:?}, scan {:?}, pending selector words {:?}",
             scenario.script,
             scenario.procedure,
             MAXIMUM_CONTACT_COMPLETION_FRAMES,
             observed_indices,
+            observed_bas_offsets,
             selected_topics,
+            bas_count_at_topic_selection,
             runtime
                 .current_profile()
                 .unwrap()
                 .runtime()
                 .timer(ScriptTimerSlot::decode(CONTACT_COUNTDOWN_TIMER_INDEX).unwrap()),
+            contact_snapshot(&scripts, &runtime),
+            scripts.text_presentation(),
             scripts.presentation_scan_state(),
             scripts.last_presentation_outcome(),
             runtime
@@ -976,7 +1049,11 @@ fn contact_snapshot(
     ContactEntrySnapshot {
         selected_line: text.selected_line,
         word_offsets,
-        subtitle: normalize_text(&text.subtitle_text),
+        subtitle: if text.subtitle_display_active {
+            normalize_text(&text.subtitle_text)
+        } else {
+            String::new()
+        },
     }
 }
 
@@ -1021,6 +1098,16 @@ fn matching_bas_text_offset(
                 .eq(actual.word_offsets.iter().copied())
         };
         matches.then_some(token.source_offset().index())
+    })
+}
+
+fn bas_text_arms_selector_resume(profile: &LoadedScriptProfile, source_offset: usize) -> bool {
+    profile.dialogue().tokens().iter().any(|token| {
+        token.source_offset().index() == source_offset
+            && matches!(
+                token.instruction(),
+                ScriptBasInstruction::Text(text) if text.control.arms_resume()
+            )
     })
 }
 

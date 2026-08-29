@@ -185,7 +185,12 @@ pub fn execute_script_dialogue_control<Host: ScriptBasDispatchHost>(
         )
     };
     dispatch.sequence_presentation.offered_topic = offered_topic;
-    if result.as_ref().is_ok_and(|outcome| outcome.menu_collected) {
+    if result.as_ref().is_ok_and(|outcome| outcome.menu_collected)
+        && !dispatch
+            .text_presentation
+            .request_flags
+            .text_request_pending()
+    {
         let menu_words = selector
             .pending_presentation_words()
             .iter()
@@ -764,6 +769,37 @@ mod tests {
                         )
                     });
                     assert_eq!(response_outcome.current_body, Some(expected_response_body));
+                    let published_words = dispatch
+                        .text_presentation
+                        .menu_words
+                        .iter()
+                        .filter_map(|word| match word {
+                            ScriptTextWord::Dictionary(word) => Some(*word),
+                            ScriptTextWord::SectionSeparator => None,
+                        })
+                        .collect::<Vec<_>>();
+                    if dispatch
+                        .text_presentation
+                        .request_flags
+                        .text_request_pending()
+                    {
+                        assert_ne!(
+                            published_words,
+                            expected_menu,
+                            "SCRIPT{} node {:#06x} overwrote the selected response with its returning menu",
+                            profile_id.value() + 1,
+                            node.offset
+                        );
+                        assert!(
+                            !published_words.is_empty()
+                                || !dispatch.text_presentation.subtitle_text.is_empty(),
+                            "SCRIPT{} node {:#06x} requested text without publishing response words",
+                            profile_id.value() + 1,
+                            node.offset
+                        );
+                    } else if response_outcome.menu_collected {
+                        assert_eq!(published_words, expected_menu);
+                    }
                     assert_eq!(
                         profile.selector_state().history().entries()[FIRST_CONCEPT_HISTORY_SLOT],
                         Some(selected)
