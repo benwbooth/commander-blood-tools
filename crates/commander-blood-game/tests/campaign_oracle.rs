@@ -25,6 +25,7 @@ const FIRST_SCRIPT_NUMBER: u8 = 1;
 const SCRIPT_NAME_PREFIX: &str = "SCRIPT";
 const PROFILE_RESOURCE_NAME_PREFIX: &str = "script";
 const AUTHENTIC_SAVE_FILENAMES: &[&str] = &["GAME1.SAV", "game1.sav"];
+const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
 const PROCEDURE_ENTRY_BIAS: usize = 1;
 const OBJECT_FLAGS_WORD_INDEX: usize = 1;
 const CONTACT_COUNTDOWN_TIMER_INDEX: u8 = 1;
@@ -104,9 +105,10 @@ fn contact_manifest_declares_every_recovered_contact_entry() {
 }
 
 #[test]
-#[ignore = "requires original Commander Blood data"]
 fn every_profile_handoff_reloads_the_exact_authored_companion_set() {
-    let paths = OriginalGameDataPaths::discover(None).unwrap();
+    let Some(paths) = original_data_paths() else {
+        return;
+    };
     let mut transition_count = usize::MIN;
 
     for source in ScriptProfileId::all() {
@@ -171,15 +173,16 @@ fn every_profile_handoff_reloads_the_exact_authored_companion_set() {
 }
 
 #[test]
-#[ignore = "requires original Commander Blood data and authentic GAME1.SAV"]
 fn authentic_save_restores_through_the_production_flat_transaction() {
-    let paths = OriginalGameDataPaths::discover(None).unwrap();
+    let Some(paths) = original_data_paths() else {
+        return;
+    };
+    let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
     let save_bytes = AUTHENTIC_SAVE_FILENAMES
         .iter()
-        .find_map(|name| std::fs::read(paths.root().join(name)).ok())
-        .expect("complete original data root has no authentic GAME1.SAV");
+        .find_map(|name| data.load_named_resource(name.as_bytes()).ok())
+        .expect("complete original resource store has no authentic GAME1.SAV");
     let saved_profile = OriginalSaveGame::decode_profile(&save_bytes).unwrap();
-    let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
     let mut scripts = RuntimeScriptSystem::new(&data, ORACLE_CLOCK);
     let mut runtime = OriginalGameRuntime::new(data);
     scripts.load_profile(&mut runtime, saved_profile).unwrap();
@@ -197,7 +200,7 @@ fn authentic_save_restores_through_the_production_flat_transaction() {
     assert_eq!(lifecycle.pending_profile, None);
     assert!(lifecycle.vm_execution_enabled);
     let recaptured = OriginalSaveGame::capture(runtime.current_profile().unwrap()).unwrap();
-    assert_eq!(recaptured.encode(), save_bytes);
+    assert_eq!(recaptured.encode(), save_bytes.as_ref());
 
     let outcome = scripts
         .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
@@ -209,10 +212,11 @@ fn authentic_save_restores_through_the_production_flat_transaction() {
 }
 
 #[test]
-#[ignore = "requires original Commander Blood data"]
 fn every_recovered_contact_completes_one_authored_path() {
     let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON).unwrap();
-    let paths = OriginalGameDataPaths::discover(None).unwrap();
+    let Some(paths) = original_data_paths() else {
+        return;
+    };
 
     for scenario in &manifest.procedures {
         let data =
@@ -452,10 +456,11 @@ fn every_recovered_contact_completes_one_authored_path() {
 }
 
 #[test]
-#[ignore = "requires original Commander Blood data"]
 fn every_recovered_contact_enters_the_expected_rust_presentation() {
     let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON).unwrap();
-    let paths = OriginalGameDataPaths::discover(None).unwrap();
+    let Some(paths) = original_data_paths() else {
+        return;
+    };
 
     for scenario in &manifest.procedures {
         let data =
@@ -543,6 +548,16 @@ fn every_recovered_contact_enters_the_expected_rust_presentation() {
             scenario.procedure,
             expected.subtitle
         );
+    }
+}
+
+fn original_data_paths() -> Option<OriginalGameDataPaths> {
+    match OriginalGameDataPaths::discover(None) {
+        Ok(paths) => Some(paths),
+        Err(error) if std::env::var_os(ASSET_CACHE_ENVIRONMENT_VARIABLE).is_some() => {
+            panic!("configured Commander Blood asset cache is invalid: {error:#}")
+        }
+        Err(_) => None,
     }
 }
 

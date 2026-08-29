@@ -844,6 +844,27 @@ class ContactScenarioTests(unittest.TestCase):
         with self.assertRaisesRegex(watchdog.WatchdogError, "resolved to 2"):
             self.scenario("SCRIPT4:beau")
 
+    def test_resolves_pointerless_contact_text_by_unique_normalized_subtitle(self) -> None:
+        scenario = self.scenario("SCRIPT2:scrub")
+
+        expected = watchdog.resolve_contact_text(
+            scenario,
+            0,
+            "Ask SCRUTER JO a few questions,  Commander. You'll understand...",
+        )
+
+        self.assertIsNotNone(expected)
+        assert expected is not None
+        self.assertEqual(expected["word_list_offset"], 867)
+
+    def test_ambiguous_subtitles_do_not_replace_a_missing_native_pointer(self) -> None:
+        scenario = {
+            "text_by_word_offset": {},
+            "text_by_unique_subtitle": {},
+        }
+
+        self.assertIsNone(watchdog.resolve_contact_text(scenario, 0, "WAIT"))
+
     def test_plans_presentation_free_morning_oil_predicates(self) -> None:
         scenario = self.scenario("SCRIPT2:Cryomorn2")
         self.assertEqual(scenario["presentations"], [])

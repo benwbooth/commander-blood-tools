@@ -855,7 +855,43 @@ def load_contact_scenario(path: Path, selector: str) -> dict[str, object]:
     match["text_by_word_offset"] = {
         int(text["word_list_offset"]): text for text in texts
     }
+    texts_by_subtitle: dict[str, list[dict[str, object]]] = {}
+    for text in texts:
+        if not isinstance(text, dict) or not isinstance(text.get("subtitle"), str):
+            raise WatchdogError(
+                f"contact scenario {selector!r} has invalid subtitle metadata"
+            )
+        subtitle = normalize_contact_subtitle(text["subtitle"])
+        if subtitle:
+            texts_by_subtitle.setdefault(subtitle, []).append(text)
+    match["text_by_unique_subtitle"] = {
+        subtitle: matches[0]
+        for subtitle, matches in texts_by_subtitle.items()
+        if len(matches) == 1
+    }
     return match
+
+
+def normalize_contact_subtitle(subtitle: str) -> str:
+    """Normalize native line breaks and repeated display whitespace for matching."""
+
+    return " ".join(subtitle.split())
+
+
+def resolve_contact_text(
+    scenario: dict[str, object], word_offset: int, subtitle: str
+) -> dict[str, object] | None:
+    """Resolve visible contact text through its live pointer or unique subtitle."""
+
+    by_word_offset = scenario["text_by_word_offset"]
+    by_subtitle = scenario["text_by_unique_subtitle"]
+    assert isinstance(by_word_offset, dict)
+    assert isinstance(by_subtitle, dict)
+    expected = by_word_offset.get(word_offset)
+    if expected is None and subtitle:
+        expected = by_subtitle.get(normalize_contact_subtitle(subtitle))
+    assert expected is None or isinstance(expected, dict)
+    return expected
 
 
 def plan_contact_predicate_writes(
@@ -1098,9 +1134,9 @@ def read_contact_probe_state(
         ].hex(),
     }
     state.update(read_active_vm_subtitle(memory, game_segment))
-    state["word_list_known"] = (
-        state["menu_words_offset"] in scenario["text_by_word_offset"]
-    )
+    state["word_list_known"] = resolve_contact_text(
+        scenario, int(state["menu_words_offset"]), str(state["subtitle"])
+    ) is not None
     return state
 
 
@@ -3198,11 +3234,7 @@ def main() -> int:
                         game_address = int(expected["guest_base"]) + game_offset
                         blockers = dict(profile_state.blockers)
                         texts = contact_scenario["texts"]
-                        text_by_word_offset = contact_scenario[
-                            "text_by_word_offset"
-                        ]
                         assert isinstance(texts, list)
-                        assert isinstance(text_by_word_offset, dict)
                         target_line_count = min(args.contact_min_lines, len(texts))
                         probe = report.setdefault(
                             "contact_probe",
@@ -3435,16 +3467,24 @@ def main() -> int:
                         ):
                             subtitle = str(contact_state["subtitle"])
                             word_offset = int(contact_state["menu_words_offset"])
-                            expected_text = text_by_word_offset.get(word_offset)
+                            expected_text = resolve_contact_text(
+                                contact_scenario, word_offset, subtitle
+                            )
+                            expected_word_offset = (
+                                int(expected_text["word_list_offset"])
+                                if expected_text is not None
+                                else None
+                            )
                             if (
                                 subtitle
                                 and expected_text is not None
-                                and word_offset != contact_last_word_offset
+                                and expected_word_offset != contact_last_word_offset
                             ):
                                 assert isinstance(expected_text, dict)
                                 checkpoint = {
                                     "sample": report["guarded_samples"],
                                     "menu_words_offset": word_offset,
+                                    "expected_word_list_offset": expected_word_offset,
                                     "subtitle": subtitle,
                                     "expected_subtitle": expected_text[
                                         "subtitle"
@@ -3464,7 +3504,7 @@ def main() -> int:
                                     }
                                 )
                                 contact_started = True
-                                contact_last_word_offset = word_offset
+                                contact_last_word_offset = expected_word_offset
                             elif (
                                 contact_started
                                 and subtitle
