@@ -1,0 +1,17 @@
+# Dismiss the opening, answer Izwalito's startup call, choose GAME, and verify
+# that the bridge returns to its ordinary interactive state in SCRIPT2.
+wait 50
+wait 50
+wait 55
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+wait 10
+wait 10
+wait 10
+wait 100
+sclick 200 105
+wait 20
+wait 20

@@ -1,0 +1,14 @@
+component	entry	disposition	evidence	rationale
+xdb_amer	0x001b5f	native_unreachable	crates/commander-blood-formats/src/alien.rs:1924	No model decoded from the shipped AMER XDB selects the full-scale sample-delta method.
+xdb_croolis	0x001acb	native_unreachable	crates/commander-blood-formats/src/alien.rs:1924	No model decoded from the shipped CROOLIS XDB selects the full-scale sample-delta method.
+xdb_scrut	0x001b80	native_unreachable	crates/commander-blood-formats/src/alien.rs:1924	No model decoded from the shipped SCRUT XDB selects the full-scale sample-delta method.
+xdb_amer	0x001b8f	native_unreachable	crates/commander-blood-formats/src/alien.rs:1924	No model decoded from the shipped AMER XDB selects the scaled sample-delta method.
+xdb_croolis	0x001afb	native_unreachable	crates/commander-blood-formats/src/alien.rs:1924	No model decoded from the shipped CROOLIS XDB selects the scaled sample-delta method.
+xdb_scrut	0x001bb0	native_unreachable	crates/commander-blood-formats/src/alien.rs:1924	No model decoded from the shipped SCRUT XDB selects the scaled sample-delta method.
+xdb_manu3	0x000150	external_entry_unused_by_game	re/source/bloodprg/candidates/seg_008b/func_001610_manu3_hand_frame_dispatch.c:53,re/source/xdb/candidates/manu3/func_000000_api_entry.c:29	BLOODPRG invokes only MANU3's request entry; this separate no-request frame export has no game caller.
+xdb_manu3	0x00017c	abi_adapter_only	re/source/xdb/candidates/manu3/func_00017c_anim_select_entry.c:5,re/source/xdb/candidates/manu3/func_000000_api_entry.c:25	This far selector wrapper only forwards to the near selector that the game-facing MANU3 request entry calls directly.
+xdb_amer	0x001b1a	native_unreachable	re/source/xdb/candidates/manifest.tsv:71	Table and pointer scans prove this compiled steering sibling has no in-overlay route.
+xdb_croolis	0x001a86	native_unreachable	re/source/xdb/candidates/manifest.tsv:81	Table and pointer scans prove this compiled steering sibling has no in-overlay route.
+xdb_scrut	0x001b3b	native_unreachable	re/source/xdb/candidates/manifest.tsv:99	Table and pointer scans prove this compiled steering sibling has no in-overlay route.
+xdb_scrut	0x0017e1	native_unreachable	re/source/xdb/candidates/manifest.tsv:86	Static reference recovery proves this compiled callback setup has no native caller.
+xdb_scrut	0x001a03	native_unreachable	re/source/xdb/candidates/manifest.tsv:97	Static reference recovery proves this compiled active-reset setup has no native caller.

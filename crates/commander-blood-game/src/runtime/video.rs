@@ -250,6 +250,11 @@ impl RuntimePresentationStream {
         self.finished
     }
 
+    /// Return whether the recovered queue status still owns or drains a source.
+    pub const fn source_open_or_draining(&self) -> bool {
+        self.queue.source_open_or_draining()
+    }
+
     /// Number of decoded frames retired into the logical framebuffer.
     pub const fn presented_frame_count(&self) -> u64 {
         self.presented_frame_count
@@ -445,6 +450,7 @@ mod tests {
 
         assert!(initial.initial_entry_accepted);
         assert!(initial.initial_present.frame_presented);
+        assert!(stream.source_open_or_draining());
         let mut saw_visible_pixels = runtime
             .front_buffer()
             .pixels()
@@ -455,6 +461,7 @@ mod tests {
             stream
                 .service_frame(&mut runtime, u16::MIN, timer_tick, false)
                 .unwrap_or_else(|error| panic!("frame {timer_tick} failed: {error:#}"));
+            assert_eq!(stream.source_open_or_draining(), !stream.is_finished());
             saw_visible_pixels |= runtime
                 .front_buffer()
                 .pixels()
@@ -466,6 +473,7 @@ mod tests {
         }
 
         assert!(stream.is_finished());
+        assert!(!stream.source_open_or_draining());
         assert!(stream.presented_frame_count() >= MINIMUM_EXPECTED_FRAME_COUNT);
         assert!(saw_visible_pixels);
     }

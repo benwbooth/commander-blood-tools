@@ -102,11 +102,11 @@ impl RuntimePresentationPlayer {
         self.active_stream.is_some()
     }
 
-    /// Return whether the retained source and queue have both finished.
-    pub fn is_finished(&self) -> bool {
+    /// Return whether the recovered queue status still owns or drains a source.
+    pub fn source_open_or_draining(&self) -> bool {
         self.active_stream
             .as_ref()
-            .is_none_or(RuntimePresentationStream::is_finished)
+            .is_some_and(RuntimePresentationStream::source_open_or_draining)
     }
 
     /// Number of decoded frames retired by the active stream.
@@ -217,6 +217,7 @@ mod tests {
             .unwrap();
         assert!(initial.initial_present.frame_presented);
         assert!(player.has_stream());
+        assert!(player.source_open_or_draining());
         assert_eq!(player.decoded_frame_count(), INITIAL_DECODED_FRAME_COUNT);
         assert_eq!(
             player
@@ -228,6 +229,7 @@ mod tests {
         );
         assert!(player.finish().is_some());
         assert!(!player.has_stream());
+        assert!(!player.source_open_or_draining());
     }
 
     #[test]

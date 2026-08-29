@@ -2,6 +2,7 @@
 
 import pathlib
 import sys
+import tempfile
 import unittest
 
 
@@ -9,10 +10,12 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from audit_rust_port_routing import (
     PortedRoutine,
+    RoutingDisposition,
     production_text,
     retained,
     source_module,
     source_routed,
+    validate_dispositions,
     without_function_body,
 )
 
@@ -129,6 +132,65 @@ class RustPortRoutingAuditTests(unittest.TestCase):
         stripped = without_function_body(source, "target")
         self.assertNotIn("fn target", stripped)
         self.assertIn("fn caller() { target(); }", stripped)
+
+    def test_dispositions_require_current_missing_rows_and_real_evidence(self) -> None:
+        routine = PortedRoutine(
+            "xdb_scrut",
+            "0x0017e1",
+            pathlib.PurePosixPath(
+                "crates/commander-blood-game/src/native/alien/slot2.rs"
+            ),
+            "begin_scrut_fade",
+        )
+        disposition = RoutingDisposition(
+            component=routine.component,
+            entry=routine.entry,
+            disposition="native_unreachable",
+            evidence=("proof.txt:1",),
+            rationale="Static references prove that the callback has no caller.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "proof.txt").write_text("reviewed evidence\n", encoding="utf-8")
+            validate_dispositions(
+                {disposition.key: disposition}, [routine], [routine], root
+            )
+            with self.assertRaisesRegex(ValueError, "stale disposition"):
+                validate_dispositions(
+                    {disposition.key: disposition}, [routine], [], root
+                )
+
+    def test_dispositions_reject_unknown_categories_and_bad_evidence(self) -> None:
+        routine = PortedRoutine(
+            "xdb_scrut",
+            "0x0017e1",
+            pathlib.PurePosixPath(
+                "crates/commander-blood-game/src/native/alien/slot2.rs"
+            ),
+            "begin_scrut_fade",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "proof.txt").write_text("reviewed evidence\n", encoding="utf-8")
+            unknown = RoutingDisposition(
+                routine.component,
+                routine.entry,
+                "guess",
+                ("proof.txt:1",),
+                "Not an allowed classification.",
+            )
+            with self.assertRaisesRegex(ValueError, "unsupported disposition"):
+                validate_dispositions({unknown.key: unknown}, [routine], [routine], root)
+
+            missing = RoutingDisposition(
+                routine.component,
+                routine.entry,
+                "native_unreachable",
+                ("missing.txt:1",),
+                "References were audited.",
+            )
+            with self.assertRaisesRegex(ValueError, "evidence path does not exist"):
+                validate_dispositions({missing.key: missing}, [routine], [routine], root)
 
 
 if __name__ == "__main__":

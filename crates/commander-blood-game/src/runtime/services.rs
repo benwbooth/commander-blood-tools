@@ -1985,7 +1985,9 @@ impl<'window> ModernGameServices<'window> {
     ) -> Result<InputCancellationOutcome> {
         let cursor = self.presentation_player.cancellation_cursor();
         let mut cancellation = InputCancellationState {
-            presentation_active: lifecycle.presentation.c2_presentation_gate && cursor.is_some(),
+            presentation_active: lifecycle.presentation.c2_presentation_gate
+                && self.presentation_player.source_open_or_draining()
+                && cursor.is_some(),
             dialogue_ready: self.ship_presentation.dialogue_phase_ready & 1 != u8::MIN,
             ship_active: self.ship_presentation.flags & INPUT_CANCEL_SHIP_BLOCK != u16::MIN,
             active_line: usize::from(
@@ -2611,7 +2613,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Return whether a presentation stream is retained and still draining.
     pub fn presentation_stream_active(&self) -> bool {
-        self.presentation_player.has_stream() && !self.presentation_player.is_finished()
+        self.presentation_player.source_open_or_draining()
     }
 
     /// Return the active presentation queue counters shared with subtitle cues.
@@ -3742,10 +3744,10 @@ const fn select_bridge_composition(
         RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
     } else if presentation_stream_active {
         RuntimeBridgeComposition::IndexedFramebuffer
-    } else if bridge_view_changed {
-        RuntimeBridgeComposition::BridgeScene
     } else if indexed_ui_active {
         RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay
+    } else if bridge_view_changed {
+        RuntimeBridgeComposition::BridgeScene
     } else {
         RuntimeBridgeComposition::BridgeScene
     }
@@ -4065,7 +4067,7 @@ mod tests {
     const SCRIPT_RADIO_CLIP_COUNTDOWN: u16 = 2;
 
     #[test]
-    fn bridge_composition_never_duplicates_owned_or_moving_indexed_backgrounds() {
+    fn bridge_composition_preserves_indexed_ui_while_the_bridge_moves() {
         assert_eq!(
             select_bridge_composition(true, false, false, false),
             RuntimeBridgeComposition::IndexedFramebuffer
@@ -4084,7 +4086,7 @@ mod tests {
         );
         assert_eq!(
             select_bridge_composition(false, false, true, true),
-            RuntimeBridgeComposition::BridgeScene
+            RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay
         );
         assert_eq!(
             select_bridge_composition(false, false, true, false),

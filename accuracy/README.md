@@ -174,6 +174,20 @@ The comparator checks recovered VM, presentation, subtitle, and bridge-frame
 state. True-color Rust render hashes are reported only as temporal-stasis
 signals because they are intentionally not byte-comparable with DOS VGA pages.
 
+The complete startup-phone scenario also has an invariant verifier for the
+answer flick, Izwalito inset animation, authored word choice, and SCRIPT2
+handoff:
+
+```sh
+python3 -P re/tools/verify_startup_phone_trace.py \
+  output/startup-phone-original/semantic-trace.jsonl \
+  output/startup-phone-modern.jsonl
+```
+
+Generate the modern side from `accuracy/scenarios/startup_phone_complete.tsv`.
+The verifier intentionally expects text plus `IZWALITO.SPR`, not an HNM: that
+is the presentation selected by the recovered C and BloodScript startup path.
+
 For generated dialogue-run videos with timeline sidecars, rank candidates at
 their own event boundaries instead of a uniform time grid:
 

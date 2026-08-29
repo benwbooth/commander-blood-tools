@@ -448,6 +448,7 @@ pub fn update_scene_transition<Host: SceneTransitionHost>(
             presentation.hold_ready = false;
             presentation.text_wait_active = false;
             text.selected_line = None;
+            text.menu_deferred = false;
             text.subtitle_display_active = false;
             text.request_flags.clear_primary_requests();
             state.redraw_pending = true;
@@ -868,6 +869,7 @@ mod tests {
                 assert!(!presentation.hold_ready);
                 assert!(!presentation.text_wait_active);
                 assert_eq!(text.selected_line, None);
+                assert!(!text.menu_deferred);
                 assert!(!text.subtitle_display_active);
                 assert_eq!(text.request_flags.bits(), TEXT_REQUEST_TEST_BITS & !3);
             }

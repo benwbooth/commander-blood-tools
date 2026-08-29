@@ -125,6 +125,8 @@ fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value
         },
         "presentation": {
             "ui_flags": read_word(rt, game_segment, 0x2793),
+            "manu3_selector_request": read_word(rt, game_segment, 0x0a32),
+            "manu3_selector_current": read_word(rt, game_segment, 0x0a34),
             "actor_transition": rt.m.read8(game_segment, 0x2792),
             "bridge_frame": read_word(rt, game_segment, 0x2795) as i16,
             "mode": rt.m.read8(game_segment, 0x27e0),

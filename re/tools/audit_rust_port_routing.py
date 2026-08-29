@@ -27,8 +27,16 @@ from dataclasses import dataclass
 
 WORKSPACE_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_LEDGER = WORKSPACE_ROOT / "re/rust-port/ported.tsv"
+DEFAULT_DISPOSITIONS = WORKSPACE_ROOT / "re/rust-port/production-routing-dispositions.tsv"
 DEFAULT_BINARY = WORKSPACE_ROOT / "target/debug/commander-blood"
 CRATES_PREFIX = pathlib.PurePosixPath("crates")
+VALID_DISPOSITIONS = {
+    "abi_adapter_only",
+    "external_entry_unused_by_game",
+    "modernized_replacement",
+    "native_unreachable",
+    "semantically_inlined",
+}
 
 
 @dataclass(frozen=True)
@@ -46,6 +54,23 @@ class PortedRoutine:
     @property
     def function_name(self) -> str:
         return self.rust_symbol.rsplit("::", 1)[-1]
+
+    @property
+    def key(self) -> tuple[str, str]:
+        return self.component, self.entry
+
+
+@dataclass(frozen=True)
+class RoutingDisposition:
+    component: str
+    entry: str
+    disposition: str
+    evidence: tuple[str, ...]
+    rationale: str
+
+    @property
+    def key(self) -> tuple[str, str]:
+        return self.component, self.entry
 
 
 def source_module(source_path: pathlib.PurePosixPath) -> str:
@@ -79,6 +104,70 @@ def read_ledger(path: pathlib.Path) -> list[PortedRoutine]:
         )
         for row in rows
     ]
+
+
+def read_dispositions(path: pathlib.Path) -> dict[tuple[str, str], RoutingDisposition]:
+    with path.open(encoding="utf-8", newline="") as source:
+        rows = list(csv.DictReader(source, delimiter="\t"))
+    dispositions: dict[tuple[str, str], RoutingDisposition] = {}
+    for row in rows:
+        disposition = RoutingDisposition(
+            component=row["component"],
+            entry=row["entry"],
+            disposition=row["disposition"],
+            evidence=tuple(filter(None, row["evidence"].split(","))),
+            rationale=row["rationale"],
+        )
+        if disposition.key in dispositions:
+            raise ValueError(
+                "duplicate production-routing disposition for "
+                f"{disposition.component}:{disposition.entry}"
+            )
+        dispositions[disposition.key] = disposition
+    return dispositions
+
+
+def validate_evidence_reference(reference: str, root: pathlib.Path) -> None:
+    path_text, separator, line_text = reference.rpartition(":")
+    if not separator or not line_text.isdecimal() or int(line_text) < 1:
+        raise ValueError(f"invalid evidence reference {reference!r}; expected path:line")
+    path = root / path_text
+    if not path.is_file():
+        raise ValueError(f"evidence path does not exist: {path_text}")
+    line = int(line_text)
+    with path.open(encoding="utf-8", errors="replace") as source:
+        for current_line, text in enumerate(source, start=1):
+            if current_line == line:
+                if not text.strip():
+                    raise ValueError(f"evidence reference points to a blank line: {reference}")
+                return
+    raise ValueError(f"evidence line is outside the file: {reference}")
+
+
+def validate_dispositions(
+    dispositions: dict[tuple[str, str], RoutingDisposition],
+    routines: list[PortedRoutine],
+    missing: list[PortedRoutine],
+    root: pathlib.Path,
+) -> None:
+    routine_keys = {routine.key for routine in routines}
+    missing_keys = {routine.key for routine in missing}
+    for disposition in dispositions.values():
+        label = f"{disposition.component}:{disposition.entry}"
+        if disposition.key not in routine_keys:
+            raise ValueError(f"disposition does not match a translated routine: {label}")
+        if disposition.key not in missing_keys:
+            raise ValueError(f"stale disposition now has production routing: {label}")
+        if disposition.disposition not in VALID_DISPOSITIONS:
+            raise ValueError(
+                f"unsupported disposition {disposition.disposition!r} for {label}"
+            )
+        if not disposition.evidence:
+            raise ValueError(f"disposition has no evidence references: {label}")
+        if not disposition.rationale.strip():
+            raise ValueError(f"disposition has no rationale: {label}")
+        for reference in disposition.evidence:
+            validate_evidence_reference(reference, root)
 
 
 def demangled_symbols(binary: pathlib.Path) -> set[str]:
@@ -207,6 +296,9 @@ def source_routed(routine: PortedRoutine, sources: dict[pathlib.PurePosixPath, s
 def parse_args(arguments: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ledger", type=pathlib.Path, default=DEFAULT_LEDGER)
+    parser.add_argument(
+        "--dispositions", type=pathlib.Path, default=DEFAULT_DISPOSITIONS
+    )
     parser.add_argument("--binary", type=pathlib.Path, default=DEFAULT_BINARY)
     parser.add_argument(
         "--strict",
@@ -219,6 +311,7 @@ def parse_args(arguments: list[str]) -> argparse.Namespace:
 def main(arguments: list[str] | None = None) -> int:
     options = parse_args(sys.argv[1:] if arguments is None else arguments)
     routines = read_ledger(options.ledger)
+    dispositions = read_dispositions(options.dispositions)
     symbols = demangled_symbols(options.binary)
     sources = load_production_sources(WORKSPACE_ROOT)
     binary_retained = [routine for routine in routines if retained(routine.qualified_symbol, symbols)]
@@ -233,20 +326,37 @@ def main(arguments: list[str] | None = None) -> int:
         if routine not in binary_retained and routine not in source_only
     ]
 
+    try:
+        validate_dispositions(dispositions, routines, missing, WORKSPACE_ROOT)
+    except ValueError as error:
+        print(f"INVALID-DISPOSITION {error}", file=sys.stderr)
+        return 1
+
     for routine in missing:
-        print(
-            "UNROUTED-RUST "
-            f"{routine.component}:{routine.entry} "
-            f"{routine.qualified_symbol} "
-            f"({routine.source_path})"
-        )
+        disposition = dispositions.get(routine.key)
+        if disposition is None:
+            print(
+                "UNREVIEWED-UNROUTED "
+                f"{routine.component}:{routine.entry} "
+                f"{routine.qualified_symbol} "
+                f"({routine.source_path})"
+            )
+        else:
+            print(
+                "REVIEWED-UNROUTED "
+                f"{routine.component}:{routine.entry} "
+                f"{disposition.disposition} "
+                f"[{disposition.rationale}]"
+            )
+    unreviewed = [routine for routine in missing if routine.key not in dispositions]
     retained_count = len(binary_retained)
     print(
         f"{retained_count}/{len(routines)} translated routine rows retain a production "
         f"symbol; {len(source_only)} have a non-test source caller after inlining; "
-        f"{len(missing)} have no production routing evidence"
+        f"{len(dispositions)} have reviewed non-routing dispositions; "
+        f"{len(unreviewed)} remain unreviewed"
     )
-    return int(options.strict and bool(missing))
+    return int(options.strict and bool(unreviewed))
 
 
 if __name__ == "__main__":

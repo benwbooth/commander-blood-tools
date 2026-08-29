@@ -245,9 +245,11 @@ impl BridgeRenderer {
         })
     }
 
-    /// Refresh only the foreground actor colors from the current DESCRIPT palette.
-    pub(crate) fn update_actor_palette(&mut self, palette: &IndexedGamePalette) -> Result<()> {
-        self.actor_colors = palette_rgba(palette)?;
+    /// Refresh every bridge layer from the current DESCRIPT palette.
+    pub(crate) fn update_palette(&mut self, palette: &IndexedGamePalette) -> Result<()> {
+        let colors = palette_rgba(palette)?;
+        self.colors = colors;
+        self.actor_colors = colors;
         Ok(())
     }
 
@@ -586,6 +588,29 @@ mod tests {
         for (width, height) in OFFSCREEN_VIEWPORTS {
             assert_offscreen_bridge(&device, &queue, &palette, &frame, width, height);
         }
+    }
+
+    #[test]
+    fn live_palette_refresh_recolors_every_bridge_layer() {
+        let Some((device, _queue)) = offscreen_device() else {
+            return;
+        };
+        let initial_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        let mut live_palette = initial_palette;
+        live_palette[usize::from(OBJECT_SAMPLE_PALETTE_INDEX)] = RED_DAC_COLOR;
+        let mut renderer =
+            BridgeRenderer::new(&device, OFFSCREEN_FORMAT, &initial_palette).unwrap();
+
+        renderer.update_palette(&live_palette).unwrap();
+
+        assert_eq!(
+            renderer.colors[usize::from(OBJECT_SAMPLE_PALETTE_INDEX)],
+            RED_RGBA_COLOR
+        );
+        assert_eq!(
+            renderer.actor_colors[usize::from(OBJECT_SAMPLE_PALETTE_INDEX)],
+            RED_RGBA_COLOR
+        );
     }
 
     #[test]

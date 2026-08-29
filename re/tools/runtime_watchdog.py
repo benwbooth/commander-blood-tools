@@ -148,6 +148,8 @@ DIALOGUE_AUDIO_OFFSETS = {
 }
 
 PRESENTATION_FLOW_OFFSETS = {
+    "manu3_selector_request": (0x0A32, "H"),
+    "manu3_selector_current": (0x0A34, "H"),
     "mouse_x": (0x0A2A, "h"),
     "mouse_y": (0x0A2C, "h"),
     "mouse_button_state": (0x0A2E, "H"),
@@ -179,6 +181,8 @@ PRESENTATION_FLOW_OFFSETS = {
     "list_rollover_state": (0x0DAC, "B"),
     "list_entry_metric": (0x0DAF, "H"),
     "c2_presentation_gate": (0x1FB2, "B"),
+    "sequence_active": (0x252A, "B"),
+    "scene_gate_active": (0x274F, "B"),
     "ui_state": (0x2793, "H"),
     "presentation_mode": (0x27E0, "B"),
     "presentation_box_mode": (0x27E1, "B"),

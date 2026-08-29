@@ -361,7 +361,7 @@ impl RuntimeScriptSystem {
         text.menu_deferred = false;
         text.subtitle_display_active = false;
         text.dialogue_hold_complete = false;
-        text.request_flags.clear_pending_requests();
+        text.request_flags.clear_text_request();
         text.menu_words = Box::new([]);
         text.menu_word_count = usize::MIN;
         Ok(())
@@ -1614,7 +1614,8 @@ mod tests {
         assert!(!text.menu_deferred);
         assert!(!text.subtitle_display_active);
         assert!(!text.dialogue_hold_complete);
-        assert_eq!(text.request_flags.bits(), u8::MIN);
+        assert!(!text.request_flags.text_request_pending());
+        assert!(text.request_flags.secondary_request_pending());
         assert!(text.menu_words.is_empty());
         assert_eq!(text.menu_word_count, usize::MIN);
     }

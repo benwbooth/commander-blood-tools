@@ -110,6 +110,11 @@ impl PresentationRequestFlags {
         self.clear_primary_requests();
     }
 
+    /// Clear only the primary dialogue-text request after its owner completes.
+    pub fn clear_text_request(&mut self) {
+        self.0 &= !TEXT_REQUEST_PENDING;
+    }
+
     /// Clear only the secondary scene/sequence request after its owner finishes.
     pub fn clear_secondary_request(&mut self) {
         self.0 &= !SECONDARY_PRESENTATION_REQUEST_PENDING;

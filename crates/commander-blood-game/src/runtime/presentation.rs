@@ -154,8 +154,8 @@ impl<'window> RuntimePresentationHost<'window> {
             .unwrap_or(&[]);
         let renderer = self.renderer_mut()?;
         renderer
-            .update_bridge_actor_palette(runtime.live_palette())
-            .context("refreshing bridge actor colors from the live DESCRIPT palette")?;
+            .update_bridge_palette(runtime.live_palette())
+            .context("refreshing bridge colors from the live DESCRIPT palette")?;
         match composition {
             RuntimeBridgeComposition::IndexedFramebuffer => {
                 renderer.render(manu3_triangles, None, None)

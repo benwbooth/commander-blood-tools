@@ -20,6 +20,24 @@ canonical Rust owner or document why the native storage overlap can be split or
 eliminated after moving to flat typed state. This completes the address-alias
 ownership audit; it does not by itself claim behavioral parity.
 
+`production-routing-dispositions.tsv` complements the positive translation
+ledger. The production-routing audit requires every translated routine either
+to retain a symbol in the game executable, have a non-test Rust caller, or carry
+an evidence-backed disposition such as a native-unreachable callback, unused
+external entry, ABI-only adapter, semantic inline, or explicit modernization
+replacement. Entries become errors when the corresponding routine gains a real
+production route, which prevents old audit exceptions from hiding later work.
+
+Run the gate against a debug production binary with:
+
+```sh
+nix develop -c cargo build -p commander-blood-game --bin commander-blood
+nix develop -c python3 -P re/tools/audit_rust_port_routing.py --strict
+```
+
+Strict mode remains red until every `UNREVIEWED-UNROUTED` row is either wired
+into production or assigned a source-backed disposition.
+
 The real-data acceptance suite restores an authentic save, reloads every script
 profile and companion resource set, enters and completes an authored path for
 all 65 recovered contacts, decodes every navigation world, and exercises the
