@@ -352,6 +352,85 @@ mod tests {
         finish_count: usize,
     }
 
+    const DRIVEN_FRAME_COUNT: usize = 1_000;
+    const DRIVEN_CLICK_PERIOD: usize = 4;
+    const DRIVEN_KEY_PERIOD: usize = 3;
+    const DRIVEN_TIMING_SCALE: u16 = 10;
+    const DRIVEN_INITIAL_CLOCK: u32 = 1_000;
+    const CENTERED_MOUSE_X: u16 = 320;
+    const CENTERED_MOUSE_Y: u16 = 512;
+    const BIOS_CURSOR_UP: u16 = 0x4800;
+    const BIOS_CURSOR_DOWN: u16 = 0x5000;
+    const BIOS_SPACE: u16 = 0x3920;
+    const BIOS_ESCAPE: u16 = 0x011b;
+
+    struct DrivenAlienOverlayHost {
+        poll_count: usize,
+        presented_frames: usize,
+        sound_callbacks: usize,
+        pace_count: usize,
+        finish_count: usize,
+    }
+
+    impl DrivenAlienOverlayHost {
+        fn new() -> Self {
+            Self {
+                poll_count: usize::MIN,
+                presented_frames: usize::MIN,
+                sound_callbacks: usize::MIN,
+                pace_count: usize::MIN,
+                finish_count: usize::MIN,
+            }
+        }
+    }
+
+    impl RuntimeAlienOverlayFrameHost for DrivenAlienOverlayHost {
+        fn begin_overlay(&mut self, _asset: &AlienAsset) -> Result<()> {
+            Ok(())
+        }
+
+        fn poll_frame(&mut self) -> Result<RuntimeAlienOverlayFrameInput> {
+            self.poll_count += 1;
+            let key = if self.poll_count >= DRIVEN_FRAME_COUNT {
+                BIOS_ESCAPE
+            } else {
+                match self.poll_count % DRIVEN_KEY_PERIOD {
+                    0 => BIOS_CURSOR_UP,
+                    1 => BIOS_CURSOR_DOWN,
+                    _ => BIOS_SPACE,
+                }
+            };
+            Ok(RuntimeAlienOverlayFrameInput {
+                mouse: AlienMouseSample {
+                    x: CENTERED_MOUSE_X,
+                    y: CENTERED_MOUSE_Y,
+                    buttons: u16::from(self.poll_count % DRIVEN_CLICK_PERIOD == usize::MIN),
+                },
+                key_events: vec![key],
+            })
+        }
+
+        fn present_frame(&mut self, _frame: &AlienSceneFrame) -> Result<()> {
+            self.presented_frames += 1;
+            Ok(())
+        }
+
+        fn play_sound_clip(&mut self, _clip_index: u16, _clock: u32) -> Result<()> {
+            self.sound_callbacks += 1;
+            Ok(())
+        }
+
+        fn pace_frame(&mut self) -> Result<()> {
+            self.pace_count += 1;
+            Ok(())
+        }
+
+        fn finish_overlay(&mut self) -> Result<()> {
+            self.finish_count += 1;
+            Ok(())
+        }
+    }
+
     impl RuntimeAlienOverlayFrameHost for ExitAfterFirstFrameHost {
         fn begin_overlay(&mut self, asset: &AlienAsset) -> Result<()> {
             self.selected_kind = Some(asset.kind);
@@ -413,5 +492,43 @@ mod tests {
         assert_eq!(host.finish_count, 1);
         assert_eq!(outcome.presented_frames, 1);
         assert_eq!(outcome.frame_clock, 1_008);
+    }
+
+    #[test]
+    fn all_shipped_alien_overlays_survive_a_driven_production_runtime_campaign() {
+        let Ok(paths) = OriginalGameDataPaths::discover(None) else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(
+            paths,
+            std::env::temp_dir().join("commander-blood-alien-campaign-test"),
+        )
+        .unwrap();
+        let cases = [
+            (b"AMER.XDB".as_slice(), AlienXdbKind::Amer),
+            (b"CROOLIS.XDB".as_slice(), AlienXdbKind::Croolis),
+            (b"SCRUT.XDB".as_slice(), AlienXdbKind::Scrut),
+        ];
+
+        for (filename, kind) in cases {
+            let encoded = data.load_named_resource(filename).unwrap();
+            let asset = decode_alien_xdb(&encoded, kind).unwrap();
+            let mut host = DrivenAlienOverlayHost::new();
+
+            let outcome = run_runtime_alien_overlay(
+                asset,
+                DRIVEN_TIMING_SCALE,
+                DRIVEN_INITIAL_CLOCK,
+                &mut host,
+            )
+            .unwrap();
+
+            assert_eq!(host.poll_count, DRIVEN_FRAME_COUNT);
+            assert_eq!(host.presented_frames, DRIVEN_FRAME_COUNT);
+            assert_eq!(host.pace_count, DRIVEN_FRAME_COUNT);
+            assert_eq!(host.finish_count, 1);
+            assert!(host.sound_callbacks > usize::MIN);
+            assert_eq!(outcome.presented_frames, DRIVEN_FRAME_COUNT as u64);
+        }
     }
 }

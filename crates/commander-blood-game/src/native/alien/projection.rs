@@ -170,6 +170,49 @@ impl AlienModelPose {
         screen_center: AlienScreenCenter,
         trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
     ) -> Result<(), AlienProjectionError> {
+        self.transform_and_project_inner(
+            mesh,
+            scene_camera,
+            screen_center,
+            trigonometry,
+            None,
+            &[],
+            &[],
+        )
+    }
+
+    /// Project one model while resolving callback-authored parents across the scene.
+    pub(crate) fn transform_and_project_in_scene(
+        &mut self,
+        model_index: usize,
+        earlier_models: &[AlienModelPose],
+        later_models: &[AlienModelPose],
+        mesh: &AlienMeshData,
+        scene_camera: AlienTransformData,
+        screen_center: AlienScreenCenter,
+        trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+    ) -> Result<(), AlienProjectionError> {
+        self.transform_and_project_inner(
+            mesh,
+            scene_camera,
+            screen_center,
+            trigonometry,
+            Some(model_index),
+            earlier_models,
+            later_models,
+        )
+    }
+
+    fn transform_and_project_inner(
+        &mut self,
+        mesh: &AlienMeshData,
+        scene_camera: AlienTransformData,
+        screen_center: AlienScreenCenter,
+        trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
+        model_index: Option<usize>,
+        earlier_models: &[AlienModelPose],
+        later_models: &[AlienModelPose],
+    ) -> Result<(), AlienProjectionError> {
         if self.nodes.is_empty() {
             return Err(AlienProjectionError::EmptyHierarchy);
         }
@@ -179,7 +222,13 @@ impl AlienModelPose {
         }
 
         for node_index in usize::MIN..self.nodes.len() {
-            let parent = self.parent_transform(node_index, scene_camera)?;
+            let parent = self.parent_transform(
+                node_index,
+                scene_camera,
+                model_index,
+                earlier_models,
+                later_models,
+            )?;
             let rotation = node_rotation_matrix(self.nodes[node_index].angles, trigonometry);
             self.last_rotation_matrix = rotation;
             apply_radial_offset(&mut self.nodes[node_index], rotation);
@@ -264,9 +313,31 @@ impl AlienModelPose {
         &self,
         node_index: usize,
         scene_camera: AlienTransformData,
+        model_index: Option<usize>,
+        earlier_models: &[AlienModelPose],
+        later_models: &[AlienModelPose],
     ) -> Result<AlienTransformData, AlienProjectionError> {
         if let Some(parent) = self.nodes[node_index].scene_parent {
-            return Err(AlienProjectionError::UnresolvedSceneParent { node_index, parent });
+            let Some(model_index) = model_index else {
+                return Err(AlienProjectionError::UnresolvedSceneParent { node_index, parent });
+            };
+            // Native contexts are traversed in model order. Earlier models therefore
+            // expose this frame's transform, while later models still expose the
+            // retained transform from the preceding frame.
+            let parent_pose = if parent.model_index == model_index {
+                Some(self)
+            } else if parent.model_index < model_index {
+                earlier_models.get(parent.model_index)
+            } else {
+                parent
+                    .model_index
+                    .checked_sub(model_index + 1)
+                    .and_then(|index| later_models.get(index))
+            };
+            return parent_pose
+                .and_then(|pose| pose.nodes.get(parent.node_index))
+                .map(|node| node.transform)
+                .ok_or(AlienProjectionError::InvalidSceneParent { node_index, parent });
         }
         match self.nodes[node_index].parent {
             AlienNodeParent::SceneCamera => Ok(scene_camera),
@@ -315,6 +386,13 @@ pub enum AlienProjectionError {
         /// Node requesting the external transform.
         node_index: usize,
         /// Typed scene node whose transform must be supplied by the coordinator.
+        parent: AlienSceneNode,
+    },
+    /// A callback-authored parent referred outside the decoded scene hierarchy.
+    InvalidSceneParent {
+        /// Node requesting the external transform.
+        node_index: usize,
+        /// Invalid scene-node reference.
         parent: AlienSceneNode,
     },
     /// A projection-copy source or destination was outside the mesh.
@@ -520,6 +598,7 @@ mod tests {
 
     const ORIGINAL_SCREEN_CENTER: AlienScreenCenter = AlienScreenCenter { x: 160, y: 100 };
     const IDENTITY_MATRIX_COMPONENT: i32 = 32_768;
+    const TEST_PARENT_TRANSLATION: [i32; AXIS_COUNT] = [65_536, 131_072, 196_608];
 
     #[derive(Deserialize)]
     struct TrigonometryPattern {
@@ -594,6 +673,44 @@ mod tests {
                 .wrapping_mul(pattern.sine_multiplier)
                 .wrapping_add(pattern.sine_offset) as i16,
         })
+    }
+
+    fn identity_transform(translation: [i32; AXIS_COUNT]) -> AlienTransformData {
+        AlienTransformData {
+            matrix: std::array::from_fn(|row| {
+                std::array::from_fn(|column| {
+                    if row == column {
+                        IDENTITY_MATRIX_COMPONENT
+                    } else {
+                        ZERO_COMPONENT
+                    }
+                })
+            }),
+            translation,
+        }
+    }
+
+    fn single_node_pose(transform: AlienTransformData) -> AlienModelPose {
+        AlienModelPose {
+            root: identity_transform([ZERO_COMPONENT; AXIS_COUNT]),
+            nodes: vec![AlienNodePose {
+                parent: AlienNodeParent::Root,
+                scene_parent: None,
+                first_vertex: usize::MIN,
+                vertex_count: 1,
+                transform,
+                local_position: [ZERO_COMPONENT; AXIS_COUNT],
+                angles: [u16::MIN; AXIS_COUNT],
+                radial_offset: ZERO_RADIAL_OFFSET,
+            }],
+            projected_vertices: vec![AlienProjectedVertex::default()],
+            texture_coordinates: vec![[i16::MIN; TEXTURE_AXIS_COUNT]],
+            object_positions: vec![[i16::MIN; AXIS_COUNT]],
+            authored_vertex_count: 1,
+            faces: Vec::new(),
+            last_rotation_matrix: [[ZERO_COMPONENT; AXIS_COUNT]; AXIS_COUNT],
+            last_common_clip: COMMON_CLIP_INITIAL,
+        }
     }
 
     fn run_vector(vector: ProjectionVector) {
@@ -731,6 +848,59 @@ mod tests {
                 run_vector(vector);
             }
         }
+    }
+
+    #[test]
+    fn scene_projection_resolves_callback_authored_cross_model_parent() {
+        let parent = single_node_pose(identity_transform(TEST_PARENT_TRANSLATION));
+        let mut child = single_node_pose(AlienTransformData::default());
+        let parent_reference = AlienSceneNode {
+            model_index: usize::MIN,
+            node_index: usize::MIN,
+        };
+        child.nodes[0].scene_parent = Some(parent_reference);
+        let mesh = AlienMeshData {
+            vertices: vec![AlienVertexData::default()],
+            projection_copies: Vec::new(),
+            faces: Vec::new(),
+        };
+        let trigonometry = std::array::from_fn(|_| AlienTrigonometryPair {
+            cosine: (IDENTITY_MATRIX_COMPONENT / DOUBLE_COMPONENT) as i16,
+            sine: i16::MIN,
+        });
+
+        let standalone_error = child
+            .clone()
+            .transform_and_project(
+                &mesh,
+                identity_transform([ZERO_COMPONENT; AXIS_COUNT]),
+                ORIGINAL_SCREEN_CENTER,
+                &trigonometry,
+            )
+            .unwrap_err();
+        assert_eq!(
+            standalone_error,
+            AlienProjectionError::UnresolvedSceneParent {
+                node_index: usize::MIN,
+                parent: parent_reference,
+            }
+        );
+
+        child
+            .transform_and_project_in_scene(
+                1,
+                &[parent],
+                &[],
+                &mesh,
+                identity_transform([ZERO_COMPONENT; AXIS_COUNT]),
+                ORIGINAL_SCREEN_CENTER,
+                &trigonometry,
+            )
+            .unwrap();
+        assert_eq!(
+            child.nodes[0].transform.translation,
+            TEST_PARENT_TRANSLATION
+        );
     }
 
     #[test]

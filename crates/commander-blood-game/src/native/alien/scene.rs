@@ -1489,8 +1489,15 @@ impl AlienScene {
                     result.map_err(|error| AlienSceneError::Behavior { model_index, error })?;
                 }
             }
-            self.models[model_index]
-                .transform_and_project(
+            let (earlier_models, current_and_later_models) = self.models.split_at_mut(model_index);
+            let (current_model, later_models) = current_and_later_models
+                .split_first_mut()
+                .expect("the model index came from the decoded model range");
+            current_model
+                .transform_and_project_in_scene(
+                    model_index,
+                    earlier_models,
+                    later_models,
                     &self.asset.models[model_index].mesh,
                     scene_camera,
                     ORIGINAL_SCREEN_CENTER,
@@ -1580,6 +1587,8 @@ mod tests {
     const EXPECTED_PAIRED_RESUME_COUNTDOWN: u16 = 24;
     const REMAP_TEST_LEVEL: i16 = 60;
     const REMAP_TEST_PREVIOUS_LEVEL: u16 = 56;
+    const AMER_WAVE_MODEL_INDEX: usize = 16;
+    const AMER_WAVE_NODE_INDEX: usize = 1;
 
     fn original_xdb(name: &str) -> Option<PathBuf> {
         [
@@ -1740,6 +1749,34 @@ mod tests {
                 scene.asset.texture.width * scene.asset.texture.height
             );
         }
+    }
+
+    #[test]
+    fn amer_wave_selection_projects_through_its_callback_authored_parent() {
+        let Some(path) = original_xdb("amer.xdb") else {
+            return;
+        };
+        let data = std::fs::read(path).unwrap();
+        let asset = decode_alien_xdb(&data, AlienXdbKind::Amer).unwrap();
+        let mut scene = AlienScene::from_asset(asset);
+        scene.models[AMER_WAVE_MODEL_INDEX].nodes[AMER_WAVE_NODE_INDEX]
+            .transform
+            .translation = [i32::default(); AXIS_COUNT];
+
+        let update = update_wave_selection(
+            AlienSpecies::Amer,
+            AMER_WAVE_MODEL_INDEX,
+            AMER_WAVE_NODE_INDEX,
+            &mut scene.models[AMER_WAVE_MODEL_INDEX],
+            scene.ring_states[AMER_WAVE_MODEL_INDEX]
+                .as_mut()
+                .expect("the shipped wave model owns ring callback state"),
+            &mut scene.callback_state,
+        )
+        .unwrap();
+        assert_eq!(update, AlienSelectionUpdate::WaveStarted);
+
+        scene.step(CENTERED_MOUSE).unwrap();
     }
 
     #[test]
