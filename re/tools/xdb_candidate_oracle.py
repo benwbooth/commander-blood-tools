@@ -20672,6 +20672,68 @@ def face_gradient_vectors(
     )
     vectors = []
 
+    def semantic_record(writes: dict[int, int]) -> dict[str, int]:
+        fields = (
+            ("edge_0_position", 0x08, 32, True),
+            ("edge_0_step", 0x0C, 32, True),
+            ("edge_1_position", 0x18, 32, True),
+            ("edge_1_step", 0x1C, 32, True),
+            ("depth_position", 0x20, 32, True),
+            ("depth_step", 0x24, 32, True),
+            ("depth_gradient", 0x28, 32, True),
+            ("remaining", 0x2E, 16, True),
+            ("secondary_remaining", 0x30, 16, True),
+            ("secondary_edge_position", 0x32, 32, True),
+            ("secondary_edge_step", 0x36, 32, True),
+            ("secondary_depth_position", 0x3A, 32, True),
+            ("secondary_depth_step", 0x3E, 32, True),
+            ("texture_u", 0x42, 16, True),
+            ("texture_v", 0x44, 16, True),
+            ("secondary_texture_u", 0x46, 16, True),
+            ("secondary_texture_v", 0x48, 16, True),
+            ("texture_u_step", 0x4A, 16, True),
+            ("texture_v_step", 0x4C, 16, True),
+            ("secondary_texture_u_step", 0x4E, 16, True),
+            ("secondary_texture_v_step", 0x50, 16, True),
+            ("texture_du", 0x52, 16, True),
+            ("texture_dv", 0x54, 16, True),
+        )
+        record = {}
+        for name, offset, bits, signed in fields:
+            if offset not in writes:
+                continue
+            value = writes[offset] & ((1 << bits) - 1)
+            if signed and value & (1 << (bits - 1)):
+                value -= 1 << bits
+            record[name] = value
+        if 0x56 in writes:
+            record["texture_bank"] = (
+                ((writes[0x56] - work_segment) & 0xFFFF) // 0x1000
+            )
+        if 0x2C in writes:
+            record["advance"] = {
+                layout["advance_secondary"]: "secondary_left",
+                layout["advance_switch"]: "secondary_right",
+                layout["advance_remove"]: "remove",
+            }[writes[0x2C]]
+        return record
+
+    def reciprocal_inputs(
+        screen: tuple[tuple[int, int], tuple[int, int], tuple[int, int]],
+    ) -> list[dict[str, int]]:
+        widths = {
+            (screen[1][0] - screen[0][0]) & 0xFFFF,
+            (screen[2][0] - screen[0][0]) & 0xFFFF,
+            (screen[1][0] - screen[2][0]) & 0xFFFF,
+            (screen[2][0] - screen[1][0]) & 0xFFFF,
+            (screen[1][1] - screen[0][1]) & 0xFFFF,
+        }
+        return [
+            {"width": width, "value": reciprocal_table[width]}
+            for width in sorted(widths)
+            if width < len(reciprocal_table)
+        ]
+
     for case_index, case in enumerate(cases):
         screen = case["screen"]
         active = bool(case.get("active", True))
@@ -20918,9 +20980,13 @@ def face_gradient_vectors(
                 "module": module,
                 "entry": entry,
                 "screen": [list(pair) for pair in screen],
+                "texture": [list(pair) for pair in texture],
+                "depth": list(depth),
+                "reciprocals": reciprocal_inputs(screen),
                 "accepted": accepted,
                 "advance_offset": writes.get(0x2C),
                 "remaining": writes.get(0x2E),
+                "record": semantic_record(writes) if accepted else None,
                 "record_sha256": hashlib.sha256(actual_record).hexdigest(),
             }
         )
@@ -21019,6 +21085,10 @@ def manu3_full_renderer_vectors() -> list[dict[str, object]]:
     def i16(value: int) -> int:
         value &= 0xFFFF
         return value if value < 0x8000 else value - 0x10000
+
+    def i32(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
 
     def write_word(buffer: bytearray, offset: int, value: int) -> None:
         struct.pack_into("<H", buffer, offset, u16(value))
@@ -21635,6 +21705,10 @@ def alien_full_renderer_vectors(
         value &= 0xFFFF
         return value if value < 0x8000 else value - 0x10000
 
+    def i32(value: int) -> int:
+        value &= 0xFFFFFFFF
+        return value if value < 0x80000000 else value - 0x100000000
+
     def write_word(buffer: bytearray, offset: int, value: int) -> None:
         struct.pack_into("<H", buffer, offset, u16(value))
 
@@ -21817,6 +21891,8 @@ def alien_full_renderer_vectors(
         },
     )
     texture = bytes((offset * 37 + 11) & 0xFF for offset in range(0x10000))
+    texture_unit = list(texture[:0x100])
+    texture_sha256 = hashlib.sha256(texture).hexdigest()
 
     for case_index, case in enumerate(cases):
         column = int(case["column"])
@@ -22206,6 +22282,20 @@ def alien_full_renderer_vectors(
             raise AssertionError(
                 f"{module}:{entry:#x} {case['name']}: final column differs"
             )
+        logical_pixels = []
+        for pixel in expected_pixels:
+            columns = (
+                range(pixel["x"], pixel["x"] + 4)
+                if continuation == layout["render_four_planes"]
+                else (pixel["x"],)
+            )
+            logical_pixels.extend(
+                {"x": x, "y": pixel["y"], "value": pixel["value"]}
+                for x in columns
+            )
+        logical_framebuffer = bytearray(320 * 200)
+        for pixel in logical_pixels:
+            logical_framebuffer[pixel["y"] * 320 + pixel["x"]] = pixel["value"]
         vectors.append(
             {
                 "name": case["name"],
@@ -22213,8 +22303,66 @@ def alien_full_renderer_vectors(
                 "entry": entry,
                 "bucket_column": column,
                 "continuation": continuation,
+                "output_mode": (
+                    "linear"
+                    if continuation == layout["render_linear"]
+                    else "four_planes"
+                    if continuation == layout["render_four_planes"]
+                    else "mode_x"
+                ),
                 "active_columns": active_column - column,
+                "initial_record": {
+                    "remaining": i16(state_initial["remaining"]),
+                    "edge_0_position": i32(state_initial["edge_0"]),
+                    "edge_0_step": i32(state_initial["edge_0_step"]),
+                    "edge_1_position": i32(state_initial["edge_1"]),
+                    "edge_1_step": i32(state_initial["edge_1_step"]),
+                    "depth_position": i32(state_initial["depth"]),
+                    "depth_step": i32(state_initial["depth_step"]),
+                    "depth_gradient": i32(state_initial["depth_gradient"]),
+                    "texture_u": i16(state_initial["texture_u"]),
+                    "texture_v": i16(state_initial["texture_v"]),
+                    "texture_u_step": i16(state_initial["texture_u_step"]),
+                    "texture_v_step": i16(state_initial["texture_v_step"]),
+                    "texture_du": i16(state_initial["texture_du"]),
+                    "texture_dv": i16(state_initial["texture_dv"]),
+                    "advance": (
+                        "secondary_left"
+                        if state_initial["advance"] == layout["advance_secondary"]
+                        else "secondary_right"
+                        if state_initial["advance"] == layout["advance_switch"]
+                        else "remove"
+                    ),
+                    "secondary_remaining": i16(
+                        state_initial["secondary_remaining"]
+                    ),
+                    "secondary_edge_position": i32(state_initial["secondary_edge"]),
+                    "secondary_edge_step": i32(state_initial["secondary_edge_step"]),
+                    "secondary_depth_position": i32(state_initial["secondary_depth"]),
+                    "secondary_depth_step": i32(state_initial["secondary_depth_step"]),
+                    "secondary_texture_u": i16(state_initial["secondary_texture_u"]),
+                    "secondary_texture_v": i16(state_initial["secondary_texture_v"]),
+                    "secondary_texture_u_step": i16(
+                        state_initial["secondary_texture_u_step"]
+                    ),
+                    "secondary_texture_v_step": i16(
+                        state_initial["secondary_texture_v_step"]
+                    ),
+                    "texture_bank": 0,
+                },
+                "texture": {
+                    "unit": texture_unit,
+                    "repetitions": 0x100,
+                    "sha256": texture_sha256,
+                },
+                "framebuffer": {
+                    "width": 320,
+                    "height": 200,
+                    "initial_value": 0,
+                    "sha256": hashlib.sha256(logical_framebuffer).hexdigest(),
+                },
                 "pixels": expected_pixels,
+                "logical_pixels": logical_pixels,
                 "vga_outputs": [list(item) for item in expected_outputs],
                 "clipped_sort_keys": clipped_sort_keys,
                 "record_returned_to_free_list": True,

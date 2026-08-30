@@ -7,7 +7,8 @@ const RECOVERED_MANU3_ROUTINE_COUNT: usize = 12;
 const RECOVERED_NATIVE_ROUTINE_COUNT: usize =
     RECOVERED_BLOODPRG_ROUTINE_COUNT + RECOVERED_XDB_ROUTINE_COUNT;
 const CURRENT_PORTED_ROUTINE_COUNT: usize = 471;
-const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 50;
+const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 47;
+const CURRENT_PARTIAL_ROUTINE_COUNT: usize = 3;
 const RECOVERED_BLOODPRG_SEMANTIC_ALIAS_COUNT: usize = 71;
 const CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT: usize = 71;
 const RECOVERED_SHARED_UI_WRITER_COUNT: usize = 25;
@@ -143,6 +144,49 @@ fn coverage_ledger_only_accepts_documented_authoritative_routines() {
         assert!(vector_count.parse::<usize>().unwrap() > usize::MIN);
     }
     assert_eq!(eliminated.len(), CURRENT_ELIMINATED_ROUTINE_COUNT);
+
+    let partial = tab_separated_rows(&root.join("re/rust-port/partial.tsv"));
+    for row in &partial {
+        let key = (row["component"].clone(), row["entry"].clone());
+        assert!(
+            seen.insert(key.clone()),
+            "duplicate Rust mapping row: {key:?}"
+        );
+        let expected = recovered
+            .get(&key)
+            .unwrap_or_else(|| panic!("partial row is not in recovered manifests: {key:?}"));
+        assert_eq!(
+            (&row["source"], &row["function"]),
+            (&expected.0, &expected.1)
+        );
+        assert_eq!(row["disposition"], "partial_source_translation");
+        assert!(!row["implemented"].trim().is_empty());
+        assert!(!row["pending"].trim().is_empty());
+
+        let rust_path = root.join(&row["rust_path"]);
+        let rust_source = std::fs::read_to_string(&rust_path).unwrap();
+        let function_name = row["rust_symbol"].rsplit("::").next().unwrap();
+        assert!(
+            rust_source.contains(&format!("fn {function_name}")),
+            "{} does not define {}",
+            rust_path.display(),
+            row["rust_symbol"]
+        );
+
+        let (evidence_path, vector_count) = row["evidence"].rsplit_once(':').unwrap();
+        assert!(root.join(evidence_path).is_file());
+        assert!(vector_count.parse::<usize>().unwrap() > usize::MIN);
+        let evidence_name = Path::new(evidence_path)
+            .file_name()
+            .unwrap()
+            .to_string_lossy();
+        assert!(
+            rust_source_corpus.contains(evidence_name.as_ref()),
+            "{} claims unconsumed verification evidence {evidence_path}",
+            row["rust_symbol"]
+        );
+    }
+    assert_eq!(partial.len(), CURRENT_PARTIAL_ROUTINE_COUNT);
     assert_eq!(
         seen.iter()
             .filter(|(component, _entry)| component == "xdb_manu3")

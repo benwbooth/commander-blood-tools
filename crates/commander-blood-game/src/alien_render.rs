@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 use std::mem::size_of;
+use std::ops::Range;
 
 use anyhow::Result;
 use bytemuck::{Pod, Zeroable};
@@ -48,11 +49,10 @@ const ALIEN_VERTEX_ATTRIBUTES: [wgpu::VertexAttribute; 3] =
 const STAR_VERTEX_ATTRIBUTES: [wgpu::VertexAttribute; 2] =
     wgpu::vertex_attr_array![0 => Float32x2, 1 => Unorm8x4];
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 struct AlienDrawRanges {
     primary_end: u32,
-    models_start: u32,
-    models_end: u32,
+    model_layers: Vec<Range<u32>>,
     stars_end: u32,
 }
 
@@ -294,7 +294,12 @@ impl AlienRenderer {
         let mut triangle_vertices = Vec::new();
         append_triangle_layer(&mut triangle_vertices, &frame.geometry.primary_triangles);
         let primary_end = triangle_vertices.len();
-        append_triangle_layer(&mut triangle_vertices, &frame.geometry.model_triangles);
+        let mut model_layers = Vec::with_capacity(frame.geometry.model_layers.len());
+        for layer in &frame.geometry.model_layers {
+            let start = triangle_vertices.len() as u32;
+            append_triangle_layer(&mut triangle_vertices, layer);
+            model_layers.push(start..triangle_vertices.len() as u32);
+        }
         if triangle_vertices.len() > self.maximum_triangle_vertices {
             anyhow::bail!(
                 "alien scene generated {} triangle vertices, exceeding decoded capacity {}",
@@ -333,8 +338,7 @@ impl AlienRenderer {
 
         Ok(AlienDrawRanges {
             primary_end: primary_end as u32,
-            models_start: primary_end as u32,
-            models_end: triangle_vertices.len() as u32,
+            model_layers,
             stars_end: star_vertices.len() as u32,
         })
     }
@@ -404,7 +408,10 @@ impl AlienRenderer {
             pass.set_vertex_buffer(u32::MIN, self.star_vertices.slice(..));
             pass.draw(u32::MIN..ranges.stars_end, u32::MIN..SINGLE_TEXTURE_LAYER);
         }
-        if ranges.models_end != ranges.models_start {
+        for model_layer in ranges.model_layers {
+            if model_layer.is_empty() {
+                continue;
+            }
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("alien model geometry pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -432,10 +439,7 @@ impl AlienRenderer {
             pass.set_pipeline(&self.textured_pipeline);
             pass.set_bind_group(TEXTURE_BINDING, &self.bind_group, &[]);
             pass.set_vertex_buffer(u32::MIN, self.triangle_vertices.slice(..));
-            pass.draw(
-                ranges.models_start..ranges.models_end,
-                u32::MIN..SINGLE_TEXTURE_LAYER,
-            );
+            pass.draw(model_layer, u32::MIN..SINGLE_TEXTURE_LAYER);
         }
         Ok(())
     }

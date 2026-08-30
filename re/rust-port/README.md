@@ -84,6 +84,11 @@ XDB relocation deltas are interpreted only by the format decoder to locate file
 sections. The decoder immediately produces typed owned data; native addresses do
 not survive into runtime state.
 
+`partial.tsv` records routines whose source-backed translation has begun but is
+not yet a complete production replacement. These rows are deliberately absent
+from both `ported.tsv` and `eliminated.tsv`; the coverage gate requires explicit
+implemented and pending behavior so incomplete work cannot be counted as done.
+
 ## MANU3 status
 
 Ten of the twelve MANU3 routines have direct Rust coverage. The current path
@@ -154,17 +159,19 @@ method-table slots to semantic behavior kinds. File-relative relocation and
 object offsets are loader inputs only and become validated Rust indices.
 
 The alien face-activation rule is translated for all three overlays. Thirty-nine
-direct vectors verify raster-capacity rejection, fixed-point orientation,
-vertical-edge handling, backface and degenerate rejection, and width limits.
-Accepted faces become owned textured triangles with unsigned 256-by-512 atlas
-coordinates and recovered depth values.
+direct vectors now verify every fixed-point raster-record field in addition to
+capacity rejection, vertical-edge handling, backface and degenerate rejection,
+edge switching, clipping, and width limits. Accepted faces retain typed
+fixed-point edges, depth gradients, wrapping UV steps, texture-bank ownership,
+and first-column activation state without retaining native record offsets.
 
-The SDL3 executable now connects the typed alien frame to wgpu. It renders the
-primary mesh, palette-colored starfield, and behavior models in recovered order,
-with independent depth passes for the two mesh layers. The segmented scanline
-pool, linked span records, Mode X planes, and framebuffer writes are classified
-as eliminated presentation adapters. Offscreen GPU tests render all three
-shipped overlays at wide and portrait output sizes.
+The SDL3 executable connects the typed alien frame to wgpu and now preserves a
+separate draw call and depth lifetime for every behavior model. The original
+fixed-point renderer is not classified as an eliminated adapter: direct vectors
+prove isolated clipping, UV stepping, both edge transitions, and deplanarized
+output, while multi-record visible-span ordering and authoritative 320-by-200
+frame presentation remain explicit work in `partial.tsv`. Offscreen GPU tests
+remain smoke coverage, not pixel-equivalence proof.
 
 Four shared behavior operations are translated for all three species. Ninety-six
 direct binary cases verify camera-relative position wrapping, bounds and exit

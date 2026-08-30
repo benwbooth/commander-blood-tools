@@ -12,6 +12,7 @@ mod raster;
 mod resume;
 mod ring;
 mod runtime;
+mod scanline;
 mod scene;
 mod selection;
 mod slot2;

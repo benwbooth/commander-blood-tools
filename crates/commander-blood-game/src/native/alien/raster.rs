@@ -11,6 +11,7 @@ use commander_blood_formats::alien::{
     AXIS_COUNT, AlienMeshData, AlienModelData, RASTER_RECIPROCAL_COUNT,
 };
 
+use super::scanline::{AlienRasterRecord, build_raster_record};
 use super::{
     AlienFaceBucket, AlienFaceReference, AlienFaceSelection, AlienModelPose, AlienPrimaryMeshFrame,
     AlienPrimaryMeshPose, AlienProjectedVertex,
@@ -42,6 +43,10 @@ pub struct AlienRenderTriangle {
     pub source: AlienFaceReference,
     /// Cyclically ordered vertices consumed by the renderer.
     pub vertices: [AlienRenderVertex; TRIANGLE_VERTEX_COUNT],
+    /// First logical column at which the recovered renderer activates the face.
+    pub(crate) first_column: usize,
+    /// Exact fixed-point state built by the native face-activation routine.
+    pub(crate) record: AlienRasterRecord,
 }
 
 /// Render-facing geometry for the two original alien triangle passes.
@@ -49,8 +54,8 @@ pub struct AlienRenderTriangle {
 pub struct AlienRenderGeometry {
     /// Camera-relative primary mesh rendered before the starfield.
     pub primary_triangles: Vec<AlienRenderTriangle>,
-    /// Behavior-model meshes rendered after the starfield.
-    pub model_triangles: Vec<AlienRenderTriangle>,
+    /// Behavior-model meshes rendered after the starfield, one native call per model.
+    pub model_layers: Vec<Vec<AlienRenderTriangle>>,
 }
 
 /// Invalid flat scene topology encountered while preparing triangles.
@@ -113,11 +118,11 @@ pub fn prepare_render_geometry(
     } else {
         Vec::new()
     };
-    let model_triangles =
+    let model_layers =
         prepare_model_triangles(models, model_poses, &model_selection.buckets, reciprocals)?;
     Ok(AlienRenderGeometry {
         primary_triangles,
-        model_triangles,
+        model_layers,
     })
 }
 
@@ -128,7 +133,7 @@ fn prepare_primary_triangles(
     reciprocals: &[i32; RASTER_RECIPROCAL_COUNT],
 ) -> Result<Vec<AlienRenderTriangle>, AlienRasterError> {
     let mut triangles = Vec::with_capacity(pose.faces.len());
-    for source in bucket_faces(buckets) {
+    for (first_column, source) in bucket_faces(buckets) {
         let face = pose
             .faces
             .get(source.face_index)
@@ -138,14 +143,14 @@ fn prepare_primary_triangles(
                 available: pose.faces.len(),
             })?;
         if face_is_active(face.vertices, &pose.projected_vertices, reciprocals, true) {
+            let vertices =
+                render_mesh_vertices(source, face.vertices, mesh, &pose.projected_vertices)?;
             triangles.push(AlienRenderTriangle {
                 source,
-                vertices: render_mesh_vertices(
-                    source,
-                    face.vertices,
-                    mesh,
-                    &pose.projected_vertices,
-                )?,
+                vertices,
+                first_column,
+                record: build_raster_record(vertices, reciprocals, true)
+                    .expect("the shared native activation predicate accepted the face"),
             });
         }
     }
@@ -157,9 +162,9 @@ fn prepare_model_triangles(
     poses: &[AlienModelPose],
     buckets: &[AlienFaceBucket],
     reciprocals: &[i32; RASTER_RECIPROCAL_COUNT],
-) -> Result<Vec<AlienRenderTriangle>, AlienRasterError> {
-    let mut triangles = Vec::new();
-    for source in bucket_faces(buckets) {
+) -> Result<Vec<Vec<AlienRenderTriangle>>, AlienRasterError> {
+    let mut layers = vec![Vec::new(); models.len()];
+    for (first_column, source) in bucket_faces(buckets) {
         models
             .get(source.model_index)
             .ok_or(AlienRasterError::InvalidModel {
@@ -181,19 +186,29 @@ fn prepare_model_triangles(
                 available: pose.faces.len(),
             })?;
         if face_is_active(face.vertices, &pose.projected_vertices, reciprocals, true) {
-            triangles.push(AlienRenderTriangle {
+            let vertices = render_pose_vertices(source, face.vertices, pose)?;
+            layers[source.model_index].push(AlienRenderTriangle {
                 source,
-                vertices: render_pose_vertices(source, face.vertices, pose)?,
+                vertices,
+                first_column,
+                record: build_raster_record(vertices, reciprocals, true)
+                    .expect("the shared native activation predicate accepted the face"),
             });
         }
     }
-    Ok(triangles)
+    Ok(layers)
 }
 
-fn bucket_faces(buckets: &[AlienFaceBucket]) -> impl Iterator<Item = AlienFaceReference> + '_ {
-    buckets
-        .iter()
-        .flat_map(|bucket| bucket.faces.iter().copied())
+fn bucket_faces(
+    buckets: &[AlienFaceBucket],
+) -> impl Iterator<Item = (usize, AlienFaceReference)> + '_ {
+    buckets.iter().enumerate().flat_map(|(column, bucket)| {
+        bucket
+            .faces
+            .iter()
+            .copied()
+            .map(move |source| (column, source))
+    })
 }
 
 fn render_mesh_vertices(
@@ -444,7 +459,13 @@ mod tests {
             let mut scene = AlienScene::from_asset(asset);
             let frame = scene.step(CENTERED_MOUSE).unwrap();
             assert!(!frame.geometry.primary_triangles.is_empty());
-            assert!(!frame.geometry.model_triangles.is_empty());
+            assert!(
+                frame
+                    .geometry
+                    .model_layers
+                    .iter()
+                    .any(|layer| !layer.is_empty())
+            );
         }
     }
 }

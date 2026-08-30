@@ -17,9 +17,47 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 30,
+        "value": 2185
+      },
+      {
+        "width": 40,
+        "value": 1638
+      },
+      {
+        "width": 70,
+        "value": 936
+      },
+      {
+        "width": 80,
+        "value": 819
+      }
+    ],
     "accepted": false,
     "advance_offset": null,
     "remaining": null,
+    "record": null,
     "record_sha256": "45a6083c04d70894f911c840c778c2749c229c1cf8e88bd12a46d8165c8343b0"
   },
   {
@@ -40,9 +78,47 @@
         100
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 5,
+        "value": 13107
+      },
+      {
+        "width": 30,
+        "value": 2185
+      },
+      {
+        "width": 40,
+        "value": 1638
+      },
+      {
+        "width": 70,
+        "value": 936
+      }
+    ],
     "accepted": false,
     "advance_offset": null,
     "remaining": 39,
+    "record": null,
     "record_sha256": "f5f00280d729a71cfaa3f06d3c81db016ef884497668e89539f31ce904d3df26"
   },
   {
@@ -63,9 +139,73 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 30,
+        "value": 2185
+      },
+      {
+        "width": 40,
+        "value": 1638
+      },
+      {
+        "width": 70,
+        "value": 936
+      },
+      {
+        "width": 80,
+        "value": 819
+      }
+    ],
     "accepted": true,
     "advance_offset": 10938,
     "remaining": 39,
+    "record": {
+      "edge_0_position": 1318910,
+      "edge_0_step": 16380,
+      "edge_1_position": 1348160,
+      "edge_1_step": 74880,
+      "depth_position": 277280518,
+      "depth_step": 13471117,
+      "depth_gradient": 23981,
+      "remaining": 39,
+      "secondary_remaining": 29,
+      "secondary_edge_position": 2042555,
+      "secondary_edge_step": 152950,
+      "secondary_depth_position": 795708131,
+      "secondary_depth_step": -27626234,
+      "texture_u": -667,
+      "texture_v": 3685,
+      "secondary_texture_u": 21845,
+      "secondary_texture_v": 26197,
+      "texture_u_step": -19253,
+      "texture_v_step": -19253,
+      "secondary_texture_u_step": -9045,
+      "secondary_texture_v_step": -9045,
+      "texture_du": -23751,
+      "texture_dv": -23751,
+      "texture_bank": 2,
+      "advance": "secondary_left"
+    },
     "record_sha256": "ed9a9e955a11c8acfab9314613c4c3303ee8b97b3761fc06bd0d96cca472f163"
   },
   {
@@ -86,9 +226,60 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 80,
+        "value": 819
+      },
+      {
+        "width": 100,
+        "value": 655
+      },
+      {
+        "width": 180,
+        "value": 364
+      }
+    ],
     "accepted": true,
     "advance_offset": 11086,
     "remaining": 79,
+    "record": {
+      "edge_0_position": 3145080,
+      "edge_0_step": 58950,
+      "edge_1_position": 4968920,
+      "edge_1_step": 36400,
+      "depth_position": 643890268,
+      "depth_step": -8281549,
+      "depth_gradient": -48825,
+      "remaining": 79,
+      "texture_u": -27556,
+      "texture_v": -23204,
+      "texture_u_step": -22357,
+      "texture_v_step": -22357,
+      "texture_du": 30782,
+      "texture_dv": 30782,
+      "texture_bank": 2,
+      "advance": "remove"
+    },
     "record_sha256": "885065e29bdfdc58de04219aa54c8a944a6716c93107419ce8afd7a439c80ee1"
   },
   {
@@ -109,9 +300,67 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 40,
+        "value": 1638
+      },
+      {
+        "width": 50,
+        "value": 1311
+      },
+      {
+        "width": 80,
+        "value": 819
+      },
+      {
+        "width": 90,
+        "value": 728
+      }
+    ],
     "accepted": true,
     "advance_offset": 11017,
     "remaining": 39,
+    "record": {
+      "edge_0_position": 1314360,
+      "edge_0_step": 7280,
+      "edge_1_position": 1376240,
+      "edge_1_step": 131040,
+      "depth_position": 273538541,
+      "depth_step": 5987163,
+      "depth_gradient": 6365,
+      "remaining": 39,
+      "secondary_remaining": 49,
+      "secondary_edge_position": 6507715,
+      "secondary_edge_step": -91770,
+      "texture_u": 1040,
+      "texture_v": 5392,
+      "texture_u_step": -15839,
+      "texture_v_step": -15839,
+      "texture_du": 3285,
+      "texture_dv": 3285,
+      "texture_bank": 2,
+      "advance": "secondary_right"
+    },
     "record_sha256": "4e239789b63f0ab6ac36ddd96e3e8afe72153012c06b0a922101131c632b6c3d"
   },
   {
@@ -132,9 +381,60 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 80,
+        "value": 819
+      },
+      {
+        "width": 100,
+        "value": 655
+      },
+      {
+        "width": 180,
+        "value": 364
+      }
+    ],
     "accepted": true,
     "advance_offset": 11086,
     "remaining": 79,
+    "record": {
+      "edge_0_position": 1676540,
+      "edge_0_step": 3640,
+      "edge_1_position": 5636600,
+      "edge_1_step": -45850,
+      "depth_position": 571399850,
+      "depth_step": 2993581,
+      "depth_gradient": 6365,
+      "remaining": 79,
+      "texture_u": 15816,
+      "texture_v": 20168,
+      "texture_u_step": 24848,
+      "texture_v_step": 24848,
+      "texture_du": 3285,
+      "texture_dv": 3285,
+      "texture_bank": 2,
+      "advance": "remove"
+    },
     "record_sha256": "c46caaf149df817493ad3d7b4bf3380d058a936886bced001b657597c74045b0"
   },
   {
@@ -155,9 +455,60 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 0,
+        "value": 0
+      },
+      {
+        "width": 70,
+        "value": 936
+      },
+      {
+        "width": 80,
+        "value": 819
+      }
+    ],
     "accepted": true,
     "advance_offset": 11086,
     "remaining": 69,
+    "record": {
+      "edge_0_position": 1315400,
+      "edge_0_step": 9360,
+      "edge_1_position": 1348160,
+      "edge_1_step": 74880,
+      "depth_position": 274393850,
+      "depth_step": 7697781,
+      "depth_gradient": 27620,
+      "remaining": 69,
+      "texture_u": 8140,
+      "texture_v": 12492,
+      "texture_u_step": -1640,
+      "texture_v_step": -1640,
+      "texture_du": -31948,
+      "texture_dv": -31948,
+      "texture_bank": 2,
+      "advance": "remove"
+    },
     "record_sha256": "bef4cd2c814d9911ba90489e7fa11fb53c52f098db5b229ca43471cee2d219ff"
   },
   {
@@ -178,9 +529,60 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 0,
+        "value": 0
+      },
+      {
+        "width": 80,
+        "value": 819
+      },
+      {
+        "width": 90,
+        "value": 728
+      }
+    ],
     "accepted": true,
     "advance_offset": 11086,
     "remaining": 89,
+    "record": {
+      "edge_0_position": 1314360,
+      "edge_0_step": 7280,
+      "edge_1_position": 6528120,
+      "edge_1_step": -50960,
+      "depth_position": 273538541,
+      "depth_step": 5987163,
+      "depth_gradient": -3619538,
+      "remaining": 89,
+      "texture_u": -31728,
+      "texture_v": -27376,
+      "texture_u_step": -15839,
+      "texture_v_step": -15839,
+      "texture_du": 27954,
+      "texture_dv": 27954,
+      "texture_bank": 2,
+      "advance": "remove"
+    },
     "record_sha256": "fdf9493be1d8302d550861aa2528cfbb0b85a983429004ed85f33a87a0caef01"
   },
   {
@@ -201,9 +603,43 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 0,
+        "value": 0
+      },
+      {
+        "width": 70,
+        "value": 936
+      },
+      {
+        "width": 80,
+        "value": 819
+      }
+    ],
     "accepted": false,
     "advance_offset": null,
     "remaining": null,
+    "record": null,
     "record_sha256": "1f9fbe9fa3e5b5919657647174a3ed4d24361050d15f6e295220542bc032cf9d"
   },
   {
@@ -224,9 +660,39 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 0,
+        "value": 0
+      },
+      {
+        "width": 90,
+        "value": 728
+      }
+    ],
     "accepted": false,
     "advance_offset": null,
     "remaining": null,
+    "record": null,
     "record_sha256": "c33a80c308a6732c281031fc9ef491b9b53a269b8da46cbeeedac058e45afc2d"
   },
   {
@@ -247,9 +713,56 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 0,
+        "value": 0
+      },
+      {
+        "width": 499,
+        "value": 131
+      }
+    ],
     "accepted": true,
     "advance_offset": 11086,
     "remaining": 498,
+    "record": {
+      "edge_0_position": 1311375,
+      "edge_0_step": 1310,
+      "edge_1_position": 33981154,
+      "edge_1_step": -64059,
+      "depth_position": 271083640,
+      "depth_step": 1077360,
+      "depth_gradient": -578950,
+      "remaining": 498,
+      "texture_u": 13431,
+      "texture_v": 17783,
+      "texture_u_step": 8942,
+      "texture_v_step": 8942,
+      "texture_du": 4471,
+      "texture_dv": 4471,
+      "texture_bank": 2,
+      "advance": "remove"
+    },
     "record_sha256": "51bb13894b162d2a2d925649d9a87fe3babf7b167f19b31603b5f961966c1054"
   },
   {
@@ -270,9 +783,39 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 0,
+        "value": 0
+      },
+      {
+        "width": 80,
+        "value": 819
+      }
+    ],
     "accepted": false,
     "advance_offset": null,
     "remaining": null,
+    "record": null,
     "record_sha256": "5ca1cecbdfcc593c66a84406ded979b319a1bbb25f867ae220d6b81a9b35eeb5"
   },
   {
@@ -293,9 +836,39 @@
         30
       ]
     ],
+    "texture": [
+      [
+        291,
+        4660
+      ],
+      [
+        9029,
+        13398
+      ],
+      [
+        17767,
+        22136
+      ]
+    ],
+    "depth": [
+      270544960,
+      -19088743,
+      809521248
+    ],
+    "reciprocals": [
+      {
+        "width": 0,
+        "value": 0
+      },
+      {
+        "width": 499,
+        "value": 131
+      }
+    ],
     "accepted": false,
     "advance_offset": null,
     "remaining": null,
+    "record": null,
     "record_sha256": "c8459d740545ab7e505150e483edc440d462d0693d3663e3829fcb7ff642c77d"
   }
 ]
