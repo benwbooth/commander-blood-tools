@@ -112,10 +112,14 @@ impl RuntimeShipHud {
                 remap_palette: &mut self.remap_palette,
                 remap_rows: &mut self.remap_rows,
                 description_applied: false,
+                frame_presented: None,
                 deferred_error: None,
             };
             native_outcome = update_ship_hud(&mut state, &context, &mut backend);
             description_applied = backend.description_applied;
+            if let Some(frame_presented) = backend.frame_presented {
+                lifecycle.frame_presented = frame_presented;
+            }
             deferred_error = backend.deferred_error.take();
         }
         if let Some(error) = deferred_error {
@@ -312,6 +316,7 @@ struct RuntimeShipHudBackend<'services, 'window> {
     remap_palette: &'services mut Option<IndexedGamePalette>,
     remap_rows: &'services mut Option<Range<u16>>,
     description_applied: bool,
+    frame_presented: Option<bool>,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -384,9 +389,16 @@ impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
             ship.depth_band_enabled = true;
             ship.presentation_gate = u16::MIN;
         }
-        let result = self.services.dispatch_ship_scene().with_context(|| {
-            format!("dispatching ship HUD scene at authored row {vertical_offset}")
-        });
+        let result = self
+            .services
+            .dispatch_ship_scene()
+            .with_context(|| {
+                format!("dispatching ship HUD scene at authored row {vertical_offset}")
+            })
+            .and_then(|_| {
+                self.frame_presented = Some(self.services.presentation_scene_frame_presented()?);
+                Ok(())
+            });
         self.record(result.map(|_| ()), ());
     }
 

@@ -10,7 +10,6 @@ const POINTER_PRESS_STATE_MASK: u8 = 3;
 const SECONDARY_POINTER_PRESS_STATE: u8 = 2;
 const DEFAULT_PRESENTATION_LINE: u16 = 8;
 const TEXT_PRESENTATION_LINE_BASE: u16 = 9;
-const COMPLETION_AUDIO_RESET_FRAMES: u16 = 120;
 const PRESENTATION_INTERFACE_UI_BIT: u16 = 1;
 const RESERVED_PROFILE_BLOCKER_UI_BIT: u16 = 2;
 const MODAL_BUSY_UI_BIT: u16 = 4;
@@ -260,7 +259,11 @@ pub struct GameLifecycleState {
     pub navigation_transition_pending: bool,
     /// The current scene produced a frame ready for final presentation.
     pub frame_presented: bool,
-    /// Timer-owned clip playback countdown shared by scripted and completion audio.
+    /// Timer-owned radio clip playback countdown used by scripted C3 actions.
+    ///
+    /// This is the flat owner of `GS:0x0B39`. The separate one-byte
+    /// `voc_tablo2_reset_gate` at `DS:0x0D30` belongs to the DOS audio driver
+    /// and must never be folded into this script-visible countdown.
     pub clip_playback_state: u16,
     /// One-shot request to arm the no-VOC PC-speaker pulse in the canonical timer.
     pub speaker_pulse_requested: bool,
@@ -793,7 +796,6 @@ fn play_completion_audio_if_pending<Host: GameLifecycleHost>(
     if state.presentation.completion_audio_pending {
         state.presentation.completion_audio_pending = false;
         host.stop_completion_audio()?;
-        state.clip_playback_state = COMPLETION_AUDIO_RESET_FRAMES;
         host.load_completion_audio()?;
         host.start_completion_audio()?;
     }

@@ -80,6 +80,10 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
         self.services
             .dispatch_ship_scene()
             .context("dispatching the bridge travel scene")?;
+        self.lifecycle.frame_presented = self
+            .services
+            .presentation_scene_frame_presented()
+            .context("publishing bridge scene frame readiness")?;
         Ok(())
     }
 
@@ -229,6 +233,13 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
     ) -> Result<()> {
         self.services
             .update_presentation_screen(scene_link, self.presentation_primary_pressed)?;
+        if let Some(frame_presented) = self
+            .services
+            .take_presentation_scene_frame_output()
+            .context("publishing presentation scene frame readiness")?
+        {
+            self.lifecycle.frame_presented = frame_presented;
+        }
         self.services
             .consume_presentation_screen_outputs(self.lifecycle)?;
         state.set_frame_ready(self.lifecycle.frame_presented);

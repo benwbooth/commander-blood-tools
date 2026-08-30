@@ -42,6 +42,7 @@ pub struct RuntimePresentationScreen {
     scene_state: PresentationSceneDispatchState<DescriptBackgroundSlot>,
     scene: RuntimePresentationScene,
     console_tint: PaletteRemapTable,
+    scene_frame_presented_output: Option<bool>,
 }
 
 pub(super) struct RuntimeSceneTransitionDispatchContext<'state> {
@@ -68,6 +69,7 @@ impl RuntimePresentationScreen {
             scene_state: PresentationSceneDispatchState::default(),
             scene: RuntimePresentationScene::new(initial_palette),
             console_tint,
+            scene_frame_presented_output: None,
         })
     }
 
@@ -84,6 +86,11 @@ impl RuntimePresentationScreen {
     /// Borrow the underlying general presentation-scene dispatcher state.
     pub const fn scene_state(&self) -> &PresentationSceneDispatchState<DescriptBackgroundSlot> {
         &self.scene_state
+    }
+
+    /// Take the shared frame-ready write produced by this panel update, if any.
+    pub fn take_scene_frame_presented_output(&mut self) -> Option<bool> {
+        self.scene_frame_presented_output.take()
     }
 
     /// Return the armed and pending flags consumed by the alien-overlay coordinator.
@@ -208,6 +215,7 @@ impl RuntimePresentationScreen {
         active_record_related: Option<ScriptObjectId>,
         scruter_jo_record: Option<ScriptObjectId>,
     ) -> Result<PresentationScreenOutcome> {
+        self.scene_frame_presented_output = None;
         if self.state.active() && self.state.phase() == PresentationPanelPhase::Begin {
             build_banked_tint_table(
                 services.runtime().live_palette(),
@@ -228,6 +236,7 @@ impl RuntimePresentationScreen {
             console_tint: &self.console_tint,
             active_record_related,
             scruter_jo_record,
+            scene_frame_presented_output: &mut self.scene_frame_presented_output,
             deferred_error: None,
         };
         let outcome =
@@ -293,6 +302,7 @@ struct RuntimePresentationScreenBackend<'services, 'window> {
     console_tint: &'services PaletteRemapTable,
     active_record_related: Option<ScriptObjectId>,
     scruter_jo_record: Option<ScriptObjectId>,
+    scene_frame_presented_output: &'services mut Option<bool>,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -496,6 +506,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
             self.scruter_jo_record,
             false,
         )?;
+        *self.scene_frame_presented_output = Some(self.scene_state.frame_presented);
         Ok(PresentationSceneStatus {
             queued: self.scene_state.presentation.active_line.is_some()
                 || self.scene_state.presentation.gate_flags & PRESENTATION_ACTIVE_GATE != u8::MIN,

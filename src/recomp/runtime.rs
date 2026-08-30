@@ -213,6 +213,14 @@ pub struct Runtime {
 }
 
 impl Runtime {
+    /// Return the DOS segment where the MZ load image begins.
+    ///
+    /// Oracle diagnostics use this to read code-segment-owned globals whose
+    /// addresses cannot be derived from the game's separately allocated DGROUP.
+    pub const fn executable_image_segment(&self) -> u16 {
+        PSP_SEG + 0x10
+    }
+
     /// Serialize the FULL deterministic machine state to `path` — memory, CPU,
     /// VGA planes/registers, timers, EMS mapping, input queues, DMA/SB, and the
     /// open DOS file handles (as host path + seek position, reopened on load).

@@ -118,7 +118,10 @@ impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
 
     fn dispatch_scene(&mut self, state: &mut ShipPresentationState, _scene_link: &Self::SceneLink) {
         self.import_state(state);
-        let result = self.services.dispatch_ship_scene().map(|_| ());
+        let result = self.services.dispatch_ship_scene().and_then(|_| {
+            self.lifecycle.frame_presented = self.services.presentation_scene_frame_presented()?;
+            Ok(())
+        });
         self.export_state(state);
         self.record(result, ());
     }

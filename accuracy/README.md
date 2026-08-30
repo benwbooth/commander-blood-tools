@@ -158,8 +158,14 @@ pointer and writes one JSONL state record at each action boundary:
 DISPLAY=:99 nix develop --command cargo run --quiet \
   -p commander-blood-game --bin commander-blood -- \
   --scenario accuracy/scenarios/startup_phone.tsv \
-  --trace output/rust-startup-phone.jsonl
+  --trace output/rust-startup-phone.jsonl \
+  --oracle-packed-second 39
 ```
+
+The packed-second override reproduces the `0x27` PRNG seed stored in
+`output/startup-phone-ready.state`. It is accepted only with a deterministic
+scenario and prevents randomized chatter delays from creating false parity
+failures against that saved DOS checkpoint.
 
 Compare the action-aligned original and modern traces with:
 

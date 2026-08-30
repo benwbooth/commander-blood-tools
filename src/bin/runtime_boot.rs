@@ -11,6 +11,11 @@ use std::io::Write as _;
 use std::path::PathBuf;
 
 const GAME_DATA_ANCHOR: &[u8] = b"386 minimum !\0Not enough memory (570Ko min) !\0";
+const PRNG_CODE_RELATIVE_SEGMENT: u16 = 0x01ce;
+const PRNG_SEED_OFFSET: u32 = 0x0aee;
+const PRNG_MIX_LOW_OFFSET: u32 = 0x0af0;
+const PRNG_MIX_HIGH_OFFSET: u32 = 0x0af1;
+const PRNG_COUNTER_OFFSET: u32 = 0x0af2;
 
 fn game_data_segment(rt: &Runtime) -> Result<u16, String> {
     let conventional = &rt.m.mem[..0xa0000];
@@ -86,7 +91,39 @@ fn word_choice_waiting_for_input(rt: &Runtime, game_segment: u16) -> bool {
         && rt.m.read8(game_segment, 0x27e7) == 0
 }
 
+fn name_area_effect_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value {
+    const SEQUENCE_COUNT: u32 = 10;
+    const SEQUENCE_POINTER_TABLE: u32 = 0x27f1;
+    const SEQUENCE_HEADER_SIZE: u16 = 2;
+    const FRAME_SIZE: u16 = 8;
+
+    let cursor = read_word(rt, game_segment, 0x27ed);
+    let selected = (0..SEQUENCE_COUNT).find_map(|index| {
+        let sequence = read_word(rt, game_segment, SEQUENCE_POINTER_TABLE + index * 2);
+        let frames_start = sequence.wrapping_add(SEQUENCE_HEADER_SIZE);
+        let frame_count = u16::from(rt.m.read8(game_segment, u32::from(sequence) + 1));
+        let frames_end = frames_start.wrapping_add(frame_count.wrapping_mul(FRAME_SIZE));
+        let delta = cursor.wrapping_sub(frames_start);
+        (cursor >= frames_start && cursor <= frames_end && delta % FRAME_SIZE == 0)
+            .then_some((index, delta / FRAME_SIZE))
+    });
+    let control = read_word(rt, game_segment, 0x27ef);
+
+    serde_json::json!({
+        "active": rt.m.read8(game_segment, 0x27e8) & 1 != 0,
+        "restart_requested": rt.m.read8(game_segment, 0x27e9) & 1 != 0,
+        "sequence_index": selected.map(|(index, _)| index),
+        "frame_index": selected.map(|(_, frame)| frame),
+        "operation": control as u8,
+        "frames_remaining": (control >> 8) as u8,
+        "frame_cursor": cursor,
+    })
+}
+
 fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value {
+    let random_segment = rt
+        .executable_image_segment()
+        .wrapping_add(PRNG_CODE_RELATIVE_SEGMENT);
     let state_array = runtime_bytes(rt, game_segment, 0x6ade, 0x0200);
     let character_slots = runtime_bytes(rt, game_segment, 0x6cde, 0x0060);
     let record_offset = read_word(rt, game_segment, 0x6724);
@@ -135,7 +172,15 @@ fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value
             "nav_target_selection": rt.m.read8(game_segment, 0x27e7),
             "active": rt.m.read8(game_segment, 0x67ac),
             "defer": rt.m.read8(game_segment, 0x67b0),
+            "request_flags": rt.m.read8(game_segment, 0x67aa),
+            "scene_gate_active": rt.m.read8(game_segment, 0x274f),
+            "sequence_active": rt.m.read8(game_segment, 0x252a),
+            "start_locked": rt.m.read8(game_segment, 0x67b7),
             "text_wait": rt.m.read8(game_segment, 0x67ba),
+            "text_menu_pending": rt.m.read8(game_segment, 0x1fb3),
+            "dialogue_hold_complete": rt.m.read8(game_segment, 0x67bb),
+            "hold_ready": rt.m.read8(game_segment, 0x67bc),
+            "word_buffer_nonempty": rt.m.read8(game_segment, 0x6790) != 0,
             "text_display_active": rt.m.read8(game_segment, 0x5e64),
             "progress_key": presentation_progress_key(rt, game_segment),
             "waiting_for_input": word_choice_waiting_for_input(rt, game_segment),
@@ -154,6 +199,7 @@ fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value
             "stream_channel": rt.m.read8(game_segment, 0x0ba3),
             "dialogue_delay": read_word(rt, game_segment, 0x0b33),
             "dialogue_hold": read_word(rt, game_segment, 0x0b35),
+            "timer_tick": read_word(rt, game_segment, 0x0b29),
             "clip_playback_state": read_word(rt, game_segment, 0x0b39),
             "last_clip": read_word(rt, game_segment, 0x0c4d),
             "streamed_clip_count": read_word(rt, game_segment, 0x0c53),
@@ -166,6 +212,13 @@ fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value
             "record_block": format!("{record_segment:04x}:{record_offset:04x}"),
             "record_hash": record_hash,
         },
+        "random": {
+            "seed": read_word(rt, random_segment, PRNG_SEED_OFFSET),
+            "mix_low": rt.m.read8(random_segment, PRNG_MIX_LOW_OFFSET),
+            "mix_high": rt.m.read8(random_segment, PRNG_MIX_HIGH_OFFSET),
+            "counter": rt.m.read8(random_segment, PRNG_COUNTER_OFFSET),
+        },
+        "name_area_effect": name_area_effect_snapshot(rt, game_segment),
         "assets": opened_files,
         "video": {
             "screen_hash": fnv1a64(&screen),

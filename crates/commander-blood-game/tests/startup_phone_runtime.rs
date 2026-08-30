@@ -19,6 +19,7 @@ const PORTRAIT_EXTENT: [u64; 2] = [104, 80];
 const ACTIVE_ENTITY_FLAG: u64 = 1;
 const UI_ENABLED_FLAG: u64 = 1;
 const MODAL_UI_FLAG: u64 = 1 << 2;
+const DOS_ORACLE_PACKED_SECOND: u8 = 39;
 
 static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
@@ -66,6 +67,8 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
         .arg(&scenario_path)
         .arg("--trace")
         .arg(&trace_path)
+        .arg("--oracle-packed-second")
+        .arg(DOS_ORACLE_PACKED_SECOND.to_string())
         .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, asset_cache)
         .env("SDL_AUDIODRIVER", "dummy")
         .output()

@@ -114,6 +114,19 @@ const CAMERA_PAGE_SHIP_ACTIVE_RESULT: u16 = 21;
 const CAMERA_PAGE_TOGGLE_BIT: u16 = 2;
 const INPUT_CANCEL_SHIP_BLOCK: u16 = 4;
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct RandomDrawAudit {
+    startup_point_cloud: u64,
+    script: u64,
+    audio: u64,
+    name_area_effect: u64,
+    presentation_noise: u64,
+}
+
+const fn random_draw_delta(before: u8, after: u8) -> u64 {
+    after.wrapping_sub(before) as u64
+}
+
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
 /// This type deliberately exposes only operations backed by translated logic
@@ -157,6 +170,7 @@ pub struct ModernGameServices<'window> {
     manu3_previous_animation: Manu3AnimationSelector,
     ship_presentation: ShipPresentationState,
     random: BloodPrng,
+    random_draws: RandomDrawAudit,
     game_timer_tick: u16,
     scripts: RuntimeScriptSystem,
     cd_audio: CdAudioState,
@@ -253,6 +267,7 @@ impl<'window> ModernGameServices<'window> {
             manu3_previous_animation: Manu3AnimationSelector::Neutral,
             ship_presentation: ShipPresentationState::default(),
             random: BloodPrng::default(),
+            random_draws: RandomDrawAudit::default(),
             game_timer_tick: u16::MIN,
             scripts,
             cd_audio: CdAudioState::default(),
@@ -310,12 +325,15 @@ impl<'window> ModernGameServices<'window> {
             .take_bridge_panorama()
             .context("bridge panorama must be opened before scene initialization")?;
         self.random.seed_from_clock_register(packed_clock_seed);
+        let random_counter_before = self.random.counter;
         let bridge_scene = BridgeScene::new(
             panorama,
             ShipProjectionResources::from(resources),
             &mut self.random,
         )
         .context("constructing live bridge scene")?;
+        self.random_draws.startup_point_cloud +=
+            random_draw_delta(random_counter_before, self.random.counter);
         self.nav_actor_slots = nav_actor_slots;
         self.bridge_scene = Some(bridge_scene);
         Ok(())
@@ -770,6 +788,7 @@ impl<'window> ModernGameServices<'window> {
         let requests = {
             let audio_events = &mut self.audio_events;
             let random = &mut self.random;
+            let audio_random_draws = &mut self.random_draws.audio;
             process_audio_events(
                 audio_events,
                 AudioEventContext {
@@ -779,7 +798,10 @@ impl<'window> ModernGameServices<'window> {
                     dialogue_delay_base: delay_base,
                     dialogue_delay_limit: delay_limit,
                 },
-                |upper_bound| random.next(upper_bound),
+                |upper_bound| {
+                    *audio_random_draws += 1;
+                    random.next(upper_bound)
+                },
             )
             .context("selecting dialogue and chatter audio events")?
         };
@@ -2250,6 +2272,25 @@ impl<'window> ModernGameServices<'window> {
         outcome
     }
 
+    /// Return the shared frame-readiness flag written by the latest scene dispatch.
+    pub(super) fn presentation_scene_frame_presented(&self) -> Result<bool> {
+        Ok(self
+            .presentation_screen
+            .as_ref()
+            .context("presentation screen is already being updated")?
+            .scene_state()
+            .frame_presented)
+    }
+
+    /// Take a frame-readiness write emitted while updating the presentation panel.
+    pub(super) fn take_presentation_scene_frame_output(&mut self) -> Result<Option<bool>> {
+        Ok(self
+            .presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .take_scene_frame_presented_output())
+    }
+
     pub(super) fn dispatch_scene_transition(
         &mut self,
         transition: &mut SceneTransitionState,
@@ -2369,6 +2410,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Consume the next value from the game's persistent recovered PRNG.
     pub fn next_random(&mut self, modulus: u16) -> u16 {
+        self.random_draws.presentation_noise += 1;
         self.random.next(modulus)
     }
 
@@ -2393,8 +2435,10 @@ impl<'window> ModernGameServices<'window> {
         self.scripts
             .prepare_ship_presentation_state(&self.ship_presentation);
         self.scripts.import_random_state(self.random);
+        let random_counter_before = self.random.counter;
         let outcome = self.scripts.execute_frame(&mut self.runtime, enabled);
         self.random = self.scripts.random_state();
+        self.random_draws.script += random_draw_delta(random_counter_before, self.random.counter);
         let outcome = outcome?;
         self.scripts
             .finish_ship_presentation_state(&mut self.ship_presentation);
@@ -2421,10 +2465,12 @@ impl<'window> ModernGameServices<'window> {
         self.scripts
             .prepare_ship_presentation_state(&self.ship_presentation);
         self.scripts.import_random_state(self.random);
+        let random_counter_before = self.random.counter;
         let outcome =
             self.scripts
                 .execute_lifecycle_frame(&mut self.runtime, state, execution_enabled);
         self.random = self.scripts.random_state();
+        self.random_draws.script += random_draw_delta(random_counter_before, self.random.counter);
         let outcome = outcome?;
         self.scripts
             .finish_ship_presentation_state(&mut self.ship_presentation);
@@ -3145,6 +3191,7 @@ impl<'window> ModernGameServices<'window> {
         let Self {
             runtime,
             random,
+            random_draws,
             bridge_frame,
             ..
         } = self;
@@ -3154,6 +3201,7 @@ impl<'window> ModernGameServices<'window> {
             .actor_sprite_pixels;
         let outcome = runtime.advance_name_area_effect_on(sprite_layer, &mut |modulus| {
             let modulus = u16::try_from(modulus).unwrap_or(u16::MAX);
+            random_draws.name_area_effect += 1;
             usize::from(random.next(modulus))
         })?;
         overlay_nonzero_indices(runtime.front_buffer_mut().pixels_mut(), sprite_layer);
@@ -3533,6 +3581,15 @@ impl<'window> ModernGameServices<'window> {
         let portrait_palette = self.runtime.live_palette()
             [NAME_AREA_PALETTE_FIRST..NAME_AREA_PALETTE_AFTER_LAST]
             .to_vec();
+        let name_area_effect = self.runtime.name_area_effect();
+        let name_area_operation = match name_area_effect.operation {
+            commander_blood_formats::name_area_effect::NameAreaEffectOperation::CollapseToFirst => {
+                0
+            }
+            commander_blood_formats::name_area_effect::NameAreaEffectOperation::CollapseToLast => 1,
+            commander_blood_formats::name_area_effect::NameAreaEffectOperation::CycleForward => 2,
+            commander_blood_formats::name_area_effect::NameAreaEffectOperation::FadeBackward => 3,
+        };
         let text_state = serde_json::json!({
             "start_locked": lifecycle.presentation.start_locked,
             "hold_ready": lifecycle.presentation.hold_ready,
@@ -3649,6 +3706,28 @@ impl<'window> ModernGameServices<'window> {
                 "character_slots_hash": character_slots_hash,
                 "record_block": null,
                 "record_hash": state_array_hash,
+            },
+            "random": {
+                "seed": self.random.seed,
+                "mix_low": self.random.mix_low,
+                "mix_high": self.random.mix_high,
+                "counter": self.random.counter,
+                "draws": {
+                    "startup_point_cloud": self.random_draws.startup_point_cloud,
+                    "script": self.random_draws.script,
+                    "audio": self.random_draws.audio,
+                    "name_area_effect": self.random_draws.name_area_effect,
+                    "presentation_noise": self.random_draws.presentation_noise,
+                },
+            },
+            "name_area_effect": {
+                "active": name_area_effect.active,
+                "restart_requested": name_area_effect.restart_requested,
+                "sequence_index": name_area_effect.active.then_some(name_area_effect.sequence_index),
+                "frame_index": name_area_effect.active.then_some(name_area_effect.frame_index),
+                "operation": name_area_operation,
+                "frames_remaining": name_area_effect.frames_remaining,
+                "frame_cursor": null,
             },
             "assets": assets,
             "video": {

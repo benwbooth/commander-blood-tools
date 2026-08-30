@@ -20,7 +20,31 @@ EXACT_PATHS = (
     "presentation.defer",
     "presentation.text_display_active",
     "presentation.waiting_for_input",
+    "random.seed",
+    "random.mix_low",
+    "random.mix_high",
+    "random.counter",
+    "name_area_effect.active",
+    "name_area_effect.restart_requested",
+    "name_area_effect.sequence_index",
+    "name_area_effect.frame_index",
+    "name_area_effect.operation",
+    "name_area_effect.frames_remaining",
     "subtitle",
+)
+OPTIONAL_EXACT_PATHS = frozenset(
+    (
+        "random.seed",
+        "random.mix_low",
+        "random.mix_high",
+        "random.counter",
+        "name_area_effect.active",
+        "name_area_effect.restart_requested",
+        "name_area_effect.sequence_index",
+        "name_area_effect.frame_index",
+        "name_area_effect.operation",
+        "name_area_effect.frames_remaining",
+    )
 )
 OPTIONAL_SENTINEL_PATHS = frozenset(("vm.resource_profile", "vm.active_line"))
 BRIDGE_FRAME_COUNT = 180
@@ -54,6 +78,15 @@ def value_at(record: dict[str, Any], path: str) -> Any:
     for component in path.split("."):
         value = value[component]
     return value
+
+
+def has_value(record: dict[str, Any], path: str) -> bool:
+    value: Any = record.get("semantic", {})
+    for component in path.split("."):
+        if not isinstance(value, dict) or component not in value:
+            return False
+        value = value[component]
+    return True
 
 
 def compact(value: Any, limit: int = 240) -> Any:
@@ -137,6 +170,10 @@ def compare_port_records(
                         }
                     )
             for path in EXACT_PATHS:
+                if path in OPTIONAL_EXACT_PATHS and (
+                    not has_value(expected, path) or not has_value(actual, path)
+                ):
+                    continue
                 expected_value = normalize(path, value_at(expected, path))
                 actual_value = normalize(path, value_at(actual, path))
                 if expected_value != actual_value:

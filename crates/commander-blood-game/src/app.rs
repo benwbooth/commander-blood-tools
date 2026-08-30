@@ -65,6 +65,7 @@ struct Options {
     frame_limit: Option<u64>,
     scenario: Option<PathBuf>,
     trace: Option<PathBuf>,
+    oracle_packed_second: Option<u8>,
 }
 
 enum ParseOutcome {
@@ -118,6 +119,16 @@ impl Options {
                         arguments.next().context("--trace requires a JSONL path")?,
                     ));
                 }
+                "--oracle-packed-second" => {
+                    let value = arguments
+                        .next()
+                        .context("--oracle-packed-second requires a byte")?;
+                    options.oracle_packed_second = Some(
+                        value
+                            .parse()
+                            .context("invalid --oracle-packed-second byte")?,
+                    );
+                }
                 "--bloodprg" => {
                     options.bloodprg = Some(PathBuf::from(
                         arguments
@@ -150,13 +161,16 @@ impl Options {
             (None, Some(_)) => bail!("--trace requires --scenario"),
             _ => {}
         }
+        if options.oracle_packed_second.is_some() && options.scenario.is_none() {
+            bail!("--oracle-packed-second requires --scenario");
+        }
         Ok(ParseOutcome::Run(options))
     }
 }
 
 fn print_usage() {
     println!(
-        "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT] [--scenario ACTIONS.TSV --trace TRACE.JSONL]\n\
+        "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT] [--scenario ACTIONS.TSV --trace TRACE.JSONL [--oracle-packed-second BYTE]]\n\
          \n\
          CBLOOD_DATA may point to the original game-data directory.\n\
          CBLOOD_ASSET_CACHE may select the versioned imported loose-asset directory.\n\
@@ -442,7 +456,10 @@ fn run_production_game(options: &Options) -> Result<()> {
         None => OriginalGameData::load(paths)?,
     };
     let data = crate::video_import::prepare_lossless_webm_derivatives(data)?;
-    let clock = host_clock_sample()?;
+    let mut clock = host_clock_sample()?;
+    if let Some(packed_second) = options.oracle_packed_second {
+        clock.packed_second = packed_second;
+    }
     let sdl = sdl3::init().map_err(anyhow::Error::msg)?;
     let video = sdl.video().map_err(anyhow::Error::msg)?;
     let audio = sdl.audio().map_err(anyhow::Error::msg)?;

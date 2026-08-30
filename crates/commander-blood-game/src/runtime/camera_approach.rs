@@ -37,6 +37,7 @@ pub(super) fn update_runtime_camera_approach<'window>(
     {
         let mut host = RuntimeCameraApproachHost {
             services,
+            frame_presented: None,
             deferred_error: None,
         };
         native_result = update_camera_approach(
@@ -48,6 +49,9 @@ pub(super) fn update_runtime_camera_approach<'window>(
             &mut host,
         );
         deferred_error = host.deferred_error;
+        if let Some(frame_presented) = host.frame_presented {
+            lifecycle.frame_presented = frame_presented;
+        }
     }
 
     let mut integration_error = deferred_error;
@@ -103,6 +107,7 @@ fn publish_camera_approach_modal_ui(lifecycle: &mut GameLifecycleState, ui_activ
 
 struct RuntimeCameraApproachHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
+    frame_presented: Option<bool>,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -160,6 +165,7 @@ impl CameraApproachHost<GameSceneLink> for RuntimeCameraApproachHost<'_, '_> {
                 | u16::from(*presentation_pending);
         }
         self.services.dispatch_ship_scene()?;
+        self.frame_presented = Some(self.services.presentation_scene_frame_presented()?);
         *presentation_pending = self.services.ship_presentation_state().presentation_gate
             & PRESENTATION_GATE_ACTIVE
             != u16::MIN;

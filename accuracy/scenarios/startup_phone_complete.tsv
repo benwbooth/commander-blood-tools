@@ -11,7 +11,8 @@ click 125 118
 wait 10
 wait 10
 wait 10
-wait 100
 sclick 200 105
+wait 20
+wait 20
 wait 20
 wait 20

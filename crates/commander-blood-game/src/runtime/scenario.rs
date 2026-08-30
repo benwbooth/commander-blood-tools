@@ -12,19 +12,24 @@ const LOGICAL_SCREEN_HEIGHT: i16 = 200;
 const BRIDGE_VIEW_FRAME_COUNT: u16 = 180;
 const PARK_FRAME_TOLERANCE: u16 = 2;
 const MAXIMUM_PARK_FRAME_COUNT: u16 = 600;
-const CLICK_RELEASE_SETTLE_FRAMES: u16 = 2;
+/// Main-loop frames consumed by the DOS oracle's click press/release plus settle span.
+///
+/// A post-intro phone capture advances the native PIT low word by 51 ticks.
+/// Six translated eight-tick frames are the closest whole-frame equivalent.
+const CLICK_FRAME_COUNT: u16 = 6;
 /// One runtime_boot wait unit advances about two recovered blocking-presentation loops.
 ///
 /// The clean-boot oracle's 150-unit opening span reaches the authored terminal
 /// frame of the 263-frame MIND.HNM stream. Keeping this conversion explicit
 /// makes the same checked-in action timeline meaningful in the flat runtime.
 const PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT: u16 = 2;
-/// One runtime_boot wait unit advances about three recovered ordinary game loops.
+/// Two runtime_boot wait units advance nine recovered ordinary game loops.
 ///
-/// The oracle spends a fixed number of emulated CPU instructions per unit. The
-/// ordinary bridge loop is cheaper than HNM decoding, and live dialogue hold
-/// counters prove that ten units span thirty main-loop timer budgets.
-const GAME_TICKS_PER_ORACLE_WAIT_UNIT: u16 = 3;
+/// Direct call-count tracing around `name_area_palette_effect_update` proves that
+/// each ten-unit post-intro phone wait executes 45 complete DOS game loops. Use
+/// that semantic loop cadence; the native PIT low word is not a game-frame count.
+const GAME_FRAMES_PER_TWO_ORACLE_WAIT_UNITS: u32 = 9;
+const ORACLE_WAIT_UNIT_PAIR: u32 = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RuntimeScenarioCadence {
@@ -33,10 +38,20 @@ pub(super) enum RuntimeScenarioCadence {
 }
 
 impl RuntimeScenarioCadence {
-    const fn ticks_per_wait_unit(self) -> u16 {
+    const fn frame_count(self, wait_units: u16) -> u16 {
         match self {
-            Self::BlockingPresentation => PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT,
-            Self::GameLoop => GAME_TICKS_PER_ORACLE_WAIT_UNIT,
+            Self::BlockingPresentation => {
+                wait_units.saturating_mul(PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT)
+            }
+            Self::GameLoop => {
+                let numerator = wait_units as u32 * GAME_FRAMES_PER_TWO_ORACLE_WAIT_UNITS;
+                let rounded_up = numerator.div_ceil(ORACLE_WAIT_UNIT_PAIR);
+                if rounded_up > u16::MAX as u32 {
+                    u16::MAX
+                } else {
+                    rounded_up as u16
+                }
+            }
         }
     }
 }
@@ -171,14 +186,14 @@ impl RuntimeScenarioDriver {
             RuntimeScenarioActionKind::Click { position } => {
                 input.pointer_position = Some(position);
                 input.primary_pressed = self.action_frame == u16::MIN;
-                self.action_frame >= CLICK_RELEASE_SETTLE_FRAMES
+                self.action_frame + 1 >= CLICK_FRAME_COUNT
             }
             RuntimeScenarioActionKind::Key(key) => {
                 input.key = Some(key);
                 true
             }
             RuntimeScenarioActionKind::Wait { frames } => {
-                self.action_frame + 1 >= frames.saturating_mul(cadence.ticks_per_wait_unit())
+                self.action_frame + 1 >= cadence.frame_count(frames)
             }
             RuntimeScenarioActionKind::Park {
                 edge_x,
@@ -412,35 +427,17 @@ mod tests {
             frame_count: 0,
         };
 
-        assert_eq!(
-            driver
+        for frame in u16::MIN..CLICK_FRAME_COUNT {
+            let input = driver
                 .advance(None, RuntimeScenarioCadence::BlockingPresentation)
-                .unwrap(),
-            RuntimeScenarioFrameInput {
-                pointer_position: Some([125, 118]),
-                primary_pressed: true,
-                ..RuntimeScenarioFrameInput::default()
-            }
-        );
-        assert_eq!(
-            driver
-                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
-                .unwrap(),
-            RuntimeScenarioFrameInput {
-                pointer_position: Some([125, 118]),
-                ..RuntimeScenarioFrameInput::default()
-            }
-        );
-        assert_eq!(driver.action_index, 0);
-        assert_eq!(
-            driver
-                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
-                .unwrap(),
-            RuntimeScenarioFrameInput {
-                pointer_position: Some([125, 118]),
-                ..RuntimeScenarioFrameInput::default()
-            }
-        );
+                .unwrap();
+            assert_eq!(input.pointer_position, Some([125, 118]));
+            assert_eq!(input.primary_pressed, frame == u16::MIN);
+            assert_eq!(
+                driver.action_index,
+                usize::from(frame + 1 == CLICK_FRAME_COUNT)
+            );
+        }
         assert_eq!(driver.action_index, 1);
         assert!(driver.pending_trace.is_some());
         let _ = std::fs::remove_file(trace_path);
@@ -502,13 +499,15 @@ mod tests {
             frame_count: 0,
         };
 
-        driver
-            .advance(None, RuntimeScenarioCadence::GameLoop)
-            .unwrap();
-        driver
-            .advance(None, RuntimeScenarioCadence::GameLoop)
-            .unwrap();
-        assert_eq!(driver.action_index, 0);
+        let expected_frames = RuntimeScenarioCadence::GameLoop.frame_count(1);
+        assert_eq!(expected_frames, 5);
+        assert_eq!(RuntimeScenarioCadence::GameLoop.frame_count(10), 45);
+        for _ in u16::MIN..expected_frames - 1 {
+            driver
+                .advance(None, RuntimeScenarioCadence::GameLoop)
+                .unwrap();
+            assert_eq!(driver.action_index, 0);
+        }
         driver
             .advance(None, RuntimeScenarioCadence::GameLoop)
             .unwrap();
