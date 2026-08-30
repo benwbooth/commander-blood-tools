@@ -14,6 +14,15 @@ pub enum PresentationResourceLine {
     Sequence,
 }
 
+impl PresentationResourceLine {
+    /// Return the shared native `vm_active_line` value written by A8.
+    pub const fn number(self) -> u16 {
+        match self {
+            Self::Sequence => 7,
+        }
+    }
+}
+
 /// Flat state shared by topic collection and sequence presentation requests.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SequencePresentationState {
@@ -34,13 +43,13 @@ pub struct SequencePresentationState {
     /// Dialogue dispatch is waiting on its current gate.
     pub dialogue_gate_active: bool,
     /// A successful A8 request must clear the low byte of the aliased mouse-idle timer.
-    pub mouse_idle_reset_pending: bool,
+    pub mouse_idle_low_byte_clear_pending: bool,
 }
 
 impl SequencePresentationState {
     /// Drain the one-shot write to native data address `0x0B3B`.
-    pub fn take_mouse_idle_reset_request(&mut self) -> bool {
-        std::mem::take(&mut self.mouse_idle_reset_pending)
+    pub fn take_mouse_idle_low_byte_clear_request(&mut self) -> bool {
+        std::mem::take(&mut self.mouse_idle_low_byte_clear_pending)
     }
 }
 
@@ -89,7 +98,7 @@ pub fn load_sequence_request(
     state.presentation_gate_active = false;
     state.loaded_scene_image_valid = false;
     state.dialogue_gate_active = false;
-    state.mouse_idle_reset_pending = true;
+    state.mouse_idle_low_byte_clear_pending = true;
     true
 }
 
@@ -242,14 +251,22 @@ mod tests {
             assert_eq!(state.presentation_gate_active, !raised, "{}", vector.name);
             assert_eq!(state.loaded_scene_image_valid, !raised, "{}", vector.name);
             assert_eq!(state.dialogue_gate_active, !raised, "{}", vector.name);
-            assert_eq!(state.mouse_idle_reset_pending, raised, "{}", vector.name);
             assert_eq!(
-                state.take_mouse_idle_reset_request(),
+                state.mouse_idle_low_byte_clear_pending, raised,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.take_mouse_idle_low_byte_clear_request(),
                 raised,
                 "{}",
                 vector.name
             );
-            assert!(!state.take_mouse_idle_reset_request(), "{}", vector.name);
+            assert!(
+                !state.take_mouse_idle_low_byte_clear_request(),
+                "{}",
+                vector.name
+            );
         }
     }
 

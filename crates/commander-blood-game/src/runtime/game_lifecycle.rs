@@ -345,8 +345,11 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         self.services.set_script_clock(clock);
         self.services
             .execute_and_apply_lifecycle_script_frame(state)?;
-        if self.services.take_script_mouse_idle_reset_request() {
-            self.timer.reset_mouse_idle_counter();
+        if self
+            .services
+            .take_script_mouse_idle_low_byte_clear_request()
+        {
+            self.timer.clear_mouse_idle_counter_low_byte();
         }
         Ok(GameVmRunStatus::Continue)
     }
@@ -402,6 +405,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             },
             self.timer.navigation_animation_phase,
         )?;
+        state.exit_requested |= self.services.take_script_finale_shutdown_request();
         Ok(())
     }
 
@@ -440,9 +444,12 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         link: GameSceneLink,
         state: &mut GameLifecycleState,
     ) -> Result<()> {
-        self.services
+        let outcome = self
+            .services
             .update_runtime_scene_transition(link, state, &mut self.platform)
-            .map(|_| ())
+            .map(|_| ());
+        state.exit_requested |= self.services.take_script_finale_shutdown_request();
+        outcome
     }
 
     fn update_save_load(&mut self, state: &mut GameLifecycleState) -> Result<()> {

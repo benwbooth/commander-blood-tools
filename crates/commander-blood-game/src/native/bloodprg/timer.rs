@@ -11,6 +11,7 @@ const NAVIGATION_TICK_MASK: u16 = 15;
 const PERIODIC_TICK_MASK: u16 = 31;
 const GAME_SUBTICK_RELOAD: u16 = 25;
 const SCRIPT_COUNTDOWN_SLOT_COUNT: u8 = 30;
+const MOUSE_IDLE_COUNTER_HIGH_BYTE_MASK: u16 = 0xff00;
 
 /// Semantic state of the two-bit PC-speaker pulse request.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -106,9 +107,14 @@ impl Default for GameTimerState {
 }
 
 impl GameTimerState {
-    /// Clear the idle counter exactly as mouse motion and A8 sequence requests do.
+    /// Clear the complete idle counter after real pointer motion.
     pub fn reset_mouse_idle_counter(&mut self) {
         self.mouse_motion_idle_counter = u16::MIN;
+    }
+
+    /// Clear only the low byte written by BloodScript A8 at native address `0x0B3B`.
+    pub fn clear_mouse_idle_counter_low_byte(&mut self) {
+        self.mouse_motion_idle_counter &= MOUSE_IDLE_COUNTER_HIGH_BYTE_MASK;
     }
 
     /// Start modern timer delivery and restore the native slow-update period.
@@ -252,6 +258,24 @@ mod tests {
     use serde::Deserialize;
 
     use super::*;
+
+    const IDLE_COUNTER_WITH_BOTH_BYTES: u16 = 0xabcd;
+    const IDLE_COUNTER_WITH_CLEARED_LOW_BYTE: u16 = 0xab00;
+
+    #[test]
+    fn a8_idle_alias_clear_preserves_the_counter_high_byte() {
+        let mut state = GameTimerState {
+            mouse_motion_idle_counter: IDLE_COUNTER_WITH_BOTH_BYTES,
+            ..GameTimerState::default()
+        };
+
+        state.clear_mouse_idle_counter_low_byte();
+
+        assert_eq!(
+            state.mouse_motion_idle_counter,
+            IDLE_COUNTER_WITH_CLEARED_LOW_BYTE
+        );
+    }
 
     const TIMER_ISR_ORACLE_VECTOR_COUNT: usize = 15;
     const TIMER_LIFECYCLE_ORACLE_VECTOR_COUNT: usize = 4;

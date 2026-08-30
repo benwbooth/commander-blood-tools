@@ -481,7 +481,8 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
             cod_text_states,
             bas: self.bas,
         };
-        dispatch_script_action(
+        let active_line_before = self.action.active_line;
+        let outcome = dispatch_script_action(
             ScriptActionContext {
                 state: context.state,
                 records: action_records,
@@ -502,7 +503,13 @@ impl<Backend: ScriptExecutionBackend> ScriptPresentationScanHost<super::ScriptPr
             context.record,
             &mut host,
         )
-        .map_err(ScriptPresentationCallbackError::Action)
+        .map_err(ScriptPresentationCallbackError::Action)?;
+        if self.action.active_line != active_line_before
+            && let Some(line) = self.action.active_line
+        {
+            self.dispatch.record_active_line_write(line.number());
+        }
+        Ok(outcome)
     }
 }
 

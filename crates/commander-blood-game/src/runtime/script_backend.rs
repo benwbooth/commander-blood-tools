@@ -92,8 +92,6 @@ pub enum RuntimeScriptCommand {
 pub struct RuntimeScriptActionEffects {
     /// Reinitialize the canonical ship HUD on the next HUD update.
     pub ship_hud_refresh_requested: bool,
-    /// Select the authored presentation line associated with the completed action.
-    pub presentation_line: Option<crate::native::bloodprg::ScriptActionPresentationLine>,
     /// Rebuild the ordinary navigation screen after the action transition.
     pub screen_rebuild_requested: bool,
     /// Reload the canonical clip playback countdown after C3 starts radio clip 6.
@@ -177,8 +175,9 @@ impl RuntimeScriptSystem {
     }
 
     /// Publish BloodScript writes to globals canonically owned by the ship FSM.
-    pub fn finish_ship_presentation_state(&self, ship: &mut ShipPresentationState) {
+    pub fn finish_ship_presentation_state(&mut self, ship: &mut ShipPresentationState) {
         export_ship_presentation_state(&self.dispatch, ship);
+        publish_script_active_line_to_ship(&mut self.dispatch, ship);
     }
 
     /// Refresh lifecycle-owned presentation scan fields before exporting VM state.
@@ -276,6 +275,7 @@ impl RuntimeScriptSystem {
         target.word_buffer_nonempty = self.presentation_word_buffer_nonempty;
         target.dialogue_hold_countdown = text.dialogue_hold_countdown;
         target.sequence_active = self.dispatch.record_clear_presentation.sequence_active;
+        publish_script_active_line_to_lifecycle(&self.dispatch, target);
         lifecycle.set_modal_ui_busy(presentation.ui_busy);
         lifecycle.pending_profile = self
             .dispatch
@@ -318,11 +318,11 @@ impl RuntimeScriptSystem {
         &self.dispatch.sequence_presentation
     }
 
-    /// Drain A8's write to the mouse-idle timer alias at native address `0x0B3B`.
-    pub fn take_mouse_idle_reset_request(&mut self) -> bool {
+    /// Drain A8's low-byte clear of the mouse-idle timer alias at native address `0x0B3B`.
+    pub fn take_mouse_idle_low_byte_clear_request(&mut self) -> bool {
         self.dispatch
             .sequence_presentation
-            .take_mouse_idle_reset_request()
+            .take_mouse_idle_low_byte_clear_request()
     }
 
     /// Borrow subtitle and inline-menu state produced by translated A6 handlers.
@@ -555,9 +555,9 @@ impl RuntimeScriptSystem {
     /// Consume C1-C6 outputs exactly once when their canonical owners are available.
     pub fn take_action_effects(&mut self, lifecycle_available: bool) -> RuntimeScriptActionEffects {
         let action = self.service.action_state_mut();
+        action.active_line = None;
         RuntimeScriptActionEffects {
             ship_hud_refresh_requested: std::mem::take(&mut action.ship_hud_refresh_requested),
-            presentation_line: action.active_line.take(),
             screen_rebuild_requested: lifecycle_available
                 && std::mem::take(&mut action.screen_rebuild_requested),
             clip_playback_state_reload: lifecycle_available
@@ -581,6 +581,24 @@ fn export_ship_presentation_state(
     ship: &mut ShipPresentationState,
 ) {
     ship.depth_step = dispatch.record_clear_presentation.ship_3d_depth_step;
+}
+
+fn publish_script_active_line_to_ship(
+    dispatch: &mut ScriptDispatchState,
+    ship: &mut ShipPresentationState,
+) {
+    if let Some(line) = dispatch.take_active_line_write() {
+        ship.active_line = line;
+    }
+}
+
+fn publish_script_active_line_to_lifecycle(
+    dispatch: &ScriptDispatchState,
+    presentation: &mut crate::native::bloodprg::GamePresentationScheduler,
+) {
+    if let Some(line) = dispatch.pending_active_line_write() {
+        presentation.active_line = Some(line);
+    }
 }
 
 /// Initialize an already selected profile, then transactionally restore one original save image.
@@ -1072,8 +1090,9 @@ mod tests {
     };
 
     use crate::native::bloodprg::{
-        GameTimerContext, GameTimerState, ORIGINAL_SCRIPT_PROFILE_COUNT,
-        ScriptActionPresentationLine, ScriptFrameEnd, ScriptProfileId, advance_game_timer_tick,
+        GameTimerContext, GameTimerState, ORIGINAL_SCRIPT_PROFILE_COUNT, PresentationResourceLine,
+        ScriptAboardPresentationLine, ScriptActionPresentationLine, ScriptFrameEnd,
+        ScriptProfileId, ScriptTransferPresentationLine, advance_game_timer_tick,
     };
 
     use super::super::OriginalGameDataPaths;
@@ -1890,10 +1909,7 @@ mod tests {
 
         let effects = scripts.take_action_effects(false);
         assert!(effects.ship_hud_refresh_requested);
-        assert_eq!(
-            effects.presentation_line,
-            Some(ScriptActionPresentationLine::NavigationTarget)
-        );
+        assert_eq!(scripts.action_state().active_line, None);
         assert!(!effects.screen_rebuild_requested);
         assert_eq!(effects.clip_playback_state_reload, None);
         assert!(!effects.speaker_pulse_requested);
@@ -1906,7 +1922,6 @@ mod tests {
 
         let effects = scripts.take_action_effects(true);
         assert!(!effects.ship_hud_refresh_requested);
-        assert_eq!(effects.presentation_line, None);
         assert!(effects.screen_rebuild_requested);
         assert_eq!(
             effects.clip_playback_state_reload,
@@ -1917,6 +1932,29 @@ mod tests {
             scripts.take_action_effects(true),
             RuntimeScriptActionEffects::default()
         );
+    }
+
+    #[test]
+    fn canonical_vm_active_line_uses_the_last_script_or_scan_write() {
+        let mut dispatch = ScriptDispatchState::default();
+        dispatch.record_active_line_write(PresentationResourceLine::Sequence.number());
+        dispatch.record_active_line_write(ScriptAboardPresentationLine::ActorArrived.number());
+        dispatch.record_active_line_write(ScriptTransferPresentationLine::InventoryMoved.number());
+        assert_eq!(
+            dispatch.pending_active_line_write(),
+            Some(ScriptTransferPresentationLine::InventoryMoved.number())
+        );
+        dispatch.record_active_line_write(ScriptActionPresentationLine::NavigationTarget.number());
+
+        let mut lifecycle = GameLifecycleState::default();
+        let mut ship = ShipPresentationState::default();
+        publish_script_active_line_to_lifecycle(&dispatch, &mut lifecycle.presentation);
+        publish_script_active_line_to_ship(&mut dispatch, &mut ship);
+
+        let expected = ScriptActionPresentationLine::NavigationTarget.number();
+        assert_eq!(lifecycle.presentation.active_line, Some(expected));
+        assert_eq!(ship.active_line, expected);
+        assert_eq!(dispatch.pending_active_line_write(), None);
     }
 
     #[test]

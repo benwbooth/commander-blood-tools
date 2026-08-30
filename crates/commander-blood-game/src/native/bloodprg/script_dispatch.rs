@@ -40,8 +40,8 @@ use super::script_profile::{
 };
 use super::script_selector::{ScriptSelectionError, ScriptSelectorState, commit_selected_concept};
 use super::sequence::{
-    SequencePresentationState, SequenceRequestContext, load_sequence_request,
-    offer_topic_if_presentation_active,
+    PresentationResourceLine, SequencePresentationState, SequenceRequestContext,
+    load_sequence_request, offer_topic_if_presentation_active,
 };
 use super::state::{
     ScriptStateOperationError, apply_bit_flag_operation, apply_shared_bit_operation,
@@ -74,9 +74,27 @@ pub struct ScriptDispatchState {
     pub record_clear_presentation: ScriptRecordClearPresentationState,
     /// D2 request retained until the main loop completes profile replacement.
     pub profile_request: ScriptProfileRequestSlot,
+    /// Last write to the single shared `vm_active_line` during this VM frame.
+    pending_active_line_write: Option<u16>,
 }
 
 impl ScriptDispatchState {
+    fn begin_frame(&mut self) {
+        self.pending_active_line_write = None;
+    }
+
+    pub(crate) fn record_active_line_write(&mut self, line: u16) {
+        self.pending_active_line_write = Some(line);
+    }
+
+    pub(crate) const fn pending_active_line_write(&self) -> Option<u16> {
+        self.pending_active_line_write
+    }
+
+    pub(crate) fn take_active_line_write(&mut self) -> Option<u16> {
+        self.pending_active_line_write.take()
+    }
+
     /// Reset state owned by one loaded profile while preserving the session PRNG.
     pub fn reset_for_profile_change(&mut self) {
         let random = self.random;
@@ -237,6 +255,7 @@ pub fn execute_loaded_script_frame<Host: ScriptDispatchHost>(
     dispatch: &mut ScriptDispatchState,
     host: &mut Host,
 ) -> Result<ScriptFrameOutcome, ScriptFrameError<ScriptDispatchError<Host::Error>>> {
+    dispatch.begin_frame();
     let LoadedScriptExecutionParts {
         code,
         instructions,
@@ -352,12 +371,15 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 ScriptControl::Continue
             }
             DecodedScriptInstruction::SequenceRequest(request) => {
-                load_sequence_request(
+                if load_sequence_request(
                     request,
                     self.host.sequence_context(),
                     &mut self.dispatch.text_presentation.request_flags,
                     &mut self.dispatch.sequence_presentation,
-                );
+                ) {
+                    self.dispatch
+                        .record_active_line_write(PresentationResourceLine::Sequence.number());
+                }
                 ScriptControl::Continue
             }
             DecodedScriptInstruction::ProcedureGate(gate) => {
@@ -422,7 +444,7 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     .host
                     .aboard_context(operation.related)
                     .map_err(ScriptDispatchError::Host)?;
-                apply_aboard_record_operation(
+                let outcome = apply_aboard_record_operation(
                     *operation,
                     self.state,
                     &self.records.action_records,
@@ -433,8 +455,16 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     &mut self.dispatch.aboard_presentation,
                     runtime,
                 )
-                .map_err(ScriptDispatchError::ActionRecord)?
-                .control
+                .map_err(ScriptDispatchError::ActionRecord)?;
+                if outcome.presentation_requested {
+                    let line = self
+                        .dispatch
+                        .aboard_presentation
+                        .active_line
+                        .expect("C2 reports a request only after selecting an active line");
+                    self.dispatch.record_active_line_write(line.number());
+                }
+                outcome.control
             }
             DecodedScriptInstruction::PresentationQueue(operation) => {
                 commit_to_var = !runtime.query_mode();
@@ -527,7 +557,7 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     .host
                     .transfer_context(transfer.item)
                     .map_err(ScriptDispatchError::Host)?;
-                apply_transfer(
+                let outcome = apply_transfer(
                     *transfer,
                     self.state,
                     &self.records.transfer_records,
@@ -538,8 +568,16 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     &mut self.dispatch.transfer_presentation,
                     runtime,
                 )
-                .map_err(ScriptDispatchError::Record)?
-                .control
+                .map_err(ScriptDispatchError::Record)?;
+                if outcome.presentation_requested {
+                    let line = self
+                        .dispatch
+                        .transfer_presentation
+                        .active_line
+                        .expect("CD reports a request only after selecting an active line");
+                    self.dispatch.record_active_line_write(line.number());
+                }
+                outcome.control
             }
             DecodedScriptInstruction::Environment(instruction) => self
                 .host

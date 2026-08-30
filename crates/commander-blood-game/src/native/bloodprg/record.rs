@@ -134,6 +134,15 @@ pub enum ScriptTransferPresentationLine {
     InventoryMoved,
 }
 
+impl ScriptTransferPresentationLine {
+    /// Return the shared native `vm_active_line` value written by CD.
+    pub const fn number(self) -> u16 {
+        match self {
+            Self::InventoryMoved => 43,
+        }
+    }
+}
+
 /// Presentation state changed by a successful descriptor-backed transfer.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptTransferPresentationState {

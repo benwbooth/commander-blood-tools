@@ -124,6 +124,16 @@ pub enum ScriptAboardPresentationLine {
     InventoryArrived,
 }
 
+impl ScriptAboardPresentationLine {
+    /// Return the shared native `vm_active_line` value written by C2.
+    pub const fn number(self) -> u16 {
+        match self {
+            Self::ActorArrived => 39,
+            Self::InventoryArrived => 43,
+        }
+    }
+}
+
 /// Presentation state changed by a successful C2 aboard transition.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptAboardPresentationState {

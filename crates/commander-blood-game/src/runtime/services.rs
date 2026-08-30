@@ -173,6 +173,7 @@ pub struct ModernGameServices<'window> {
     random_draws: RandomDrawAudit,
     game_timer_tick: u16,
     scripts: RuntimeScriptSystem,
+    script_finale_shutdown_pending: bool,
     cd_audio: CdAudioState,
     main_viewport_configured: bool,
 }
@@ -198,6 +199,16 @@ fn publish_presentation_screen_modal_ui(
     redraw_requested: bool,
 ) {
     lifecycle.set_modal_ui_busy(redraw_requested);
+}
+
+fn latch_script_finale_completion(
+    shutdown_pending: &mut bool,
+    finale_requested: bool,
+    active_line_before: Option<u16>,
+    active_line_after: Option<u16>,
+) {
+    *shutdown_pending |=
+        finale_requested && active_line_before.is_some() && active_line_after.is_none();
 }
 
 impl<'window> ModernGameServices<'window> {
@@ -270,6 +281,7 @@ impl<'window> ModernGameServices<'window> {
             random_draws: RandomDrawAudit::default(),
             game_timer_tick: u16::MIN,
             scripts,
+            script_finale_shutdown_pending: false,
             cd_audio: CdAudioState::default(),
             main_viewport_configured: false,
         })
@@ -2066,6 +2078,8 @@ impl<'window> ModernGameServices<'window> {
             .presentation_screen
             .take()
             .context("presentation screen update is reentrant")?;
+        let active_line_before = screen.scene_state().presentation.active_line;
+        let finale_requested = self.scripts.sequence_presentation().finale_requested;
         screen
             .state_mut()
             .set_primary_pressed(primary_pointer_pressed);
@@ -2074,6 +2088,12 @@ impl<'window> ModernGameServices<'window> {
             queued_scene_link,
             active_record_related,
             scruter_jo_record,
+        );
+        latch_script_finale_completion(
+            &mut self.script_finale_shutdown_pending,
+            finale_requested,
+            active_line_before,
+            screen.scene_state().presentation.active_line,
         );
         self.presentation_screen = Some(screen);
         if matches!(&outcome, Ok(PresentationScreenOutcome::Initialized)) {
@@ -2267,6 +2287,13 @@ impl<'window> ModernGameServices<'window> {
         let mut ship = std::mem::take(&mut self.ship_presentation);
         let outcome =
             screen.dispatch_ship_scene(self, &mut ship, active_record_related, scruter_jo_record);
+        if matches!(
+            &outcome,
+            Ok(PresentationSceneDispatchOutcome::PresentationFinished)
+        ) && self.scripts.sequence_presentation().finale_requested
+        {
+            self.script_finale_shutdown_pending = true;
+        }
         self.ship_presentation = ship;
         self.presentation_screen = Some(screen);
         outcome
@@ -2318,6 +2345,13 @@ impl<'window> ModernGameServices<'window> {
                 palette_transition_percent,
             },
         );
+        if matches!(
+            &outcome,
+            Ok(PresentationSceneDispatchOutcome::PresentationFinished)
+        ) && self.scripts.sequence_presentation().finale_requested
+        {
+            self.script_finale_shutdown_pending = true;
+        }
         self.presentation_screen = Some(screen);
         outcome
     }
@@ -2514,9 +2548,14 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
-    /// Drain a script request to clear the native mouse-idle timer alias.
-    pub fn take_script_mouse_idle_reset_request(&mut self) -> bool {
-        self.scripts.take_mouse_idle_reset_request()
+    /// Drain A8's request to clear the low byte of the native mouse-idle timer alias.
+    pub fn take_script_mouse_idle_low_byte_clear_request(&mut self) -> bool {
+        self.scripts.take_mouse_idle_low_byte_clear_request()
+    }
+
+    /// Drain the finale completion sampled into the native next-frame shutdown gate.
+    pub fn take_script_finale_shutdown_request(&mut self) -> bool {
+        std::mem::take(&mut self.script_finale_shutdown_pending)
     }
 
     fn publish_script_presentation_status_change(&mut self) -> Result<()> {
@@ -2563,13 +2602,6 @@ impl<'window> ModernGameServices<'window> {
         let effects = self.scripts.take_action_effects(lifecycle.is_some());
         if effects.ship_hud_refresh_requested {
             self.ship_presentation.hud_initialization_pending = 1;
-        }
-        if let Some(line) = effects.presentation_line {
-            let number = line.number();
-            self.ship_presentation.active_line = number;
-            if let Some(state) = lifecycle.as_deref_mut() {
-                state.presentation.active_line = Some(number);
-            }
         }
         if effects.screen_rebuild_requested {
             lifecycle
@@ -4174,7 +4206,7 @@ mod tests {
     use super::*;
     use crate::native::bloodprg::{
         BridgeSpriteFrameSource, ChoiceListRowKind, GameTimerContext, GameTimerState,
-        PointerButton, ResourceId, ScriptActionPresentationLine, ScriptDeferredRecord,
+        PointerButton, PresentationResourceLine, ResourceId, ScriptDeferredRecord,
         advance_game_timer_tick, update_game_presentation_ownership,
     };
     use crate::runtime::OriginalGameDataPaths;
@@ -4188,6 +4220,24 @@ mod tests {
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const SCRIPT_RADIO_CLIP_COUNTDOWN: u16 = 2;
+
+    #[test]
+    fn authored_finale_latches_only_when_its_active_line_finishes() {
+        let mut shutdown_pending = false;
+        let finale_line = PresentationResourceLine::Sequence.number();
+
+        latch_script_finale_completion(
+            &mut shutdown_pending,
+            true,
+            Some(finale_line),
+            Some(finale_line),
+        );
+        assert!(!shutdown_pending);
+        latch_script_finale_completion(&mut shutdown_pending, false, Some(finale_line), None);
+        assert!(!shutdown_pending);
+        latch_script_finale_completion(&mut shutdown_pending, true, Some(finale_line), None);
+        assert!(shutdown_pending);
+    }
 
     #[test]
     fn presentation_screen_redraw_latch_owns_the_native_modal_ui_bit() {
@@ -5312,7 +5362,6 @@ mod tests {
             let action = services.scripts.action_state_mut();
             action.ship_navigation_mode = ScriptShipNavigationMode::Active;
             action.ship_hud_refresh_requested = true;
-            action.active_line = Some(ScriptActionPresentationLine::NavigationTarget);
             action.screen_rebuild_requested = true;
             action.clip_playback_state_reload = Some(SCRIPT_RADIO_CLIP_COUNTDOWN);
             action.speaker_pulse_requested = true;
@@ -5324,12 +5373,9 @@ mod tests {
         assert_eq!(services.ship_presentation.hud_initialization_pending, 1);
         assert_eq!(
             services.ship_presentation.active_line,
-            ScriptActionPresentationLine::NavigationTarget.number()
+            original_ship.active_line
         );
-        assert_eq!(
-            lifecycle.presentation.active_line,
-            Some(ScriptActionPresentationLine::NavigationTarget.number())
-        );
+        assert_eq!(lifecycle.presentation.active_line, None);
         assert!(lifecycle.navigation_rebuild_pending);
         assert_eq!(lifecycle.clip_playback_state, SCRIPT_RADIO_CLIP_COUNTDOWN);
         assert!(lifecycle.speaker_pulse_requested);

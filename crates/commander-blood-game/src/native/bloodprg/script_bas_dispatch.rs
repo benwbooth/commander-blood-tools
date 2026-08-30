@@ -15,12 +15,12 @@ use commander_blood_formats::script::{
 };
 
 use super::{
-    ScriptBlockError, ScriptBlockFlow, ScriptBlockHandler, ScriptBlockOutcome, ScriptBlockStep,
-    ScriptControl, ScriptControlFlowContext, ScriptControlFlowError, ScriptDispatchState,
-    ScriptFrameFlow, ScriptProfileBuiltins, ScriptProfileRecordState,
-    ScriptProfileRecordStateError, ScriptRecordError, ScriptRecordStateError, ScriptRuntime,
-    ScriptSelectorBlockContext, ScriptSelectorControlHost, ScriptSelectorState,
-    ScriptStateOperationError, ScriptTransferContext, SequenceRequestContext,
+    PresentationResourceLine, ScriptBlockError, ScriptBlockFlow, ScriptBlockHandler,
+    ScriptBlockOutcome, ScriptBlockStep, ScriptControl, ScriptControlFlowContext,
+    ScriptControlFlowError, ScriptDispatchState, ScriptFrameFlow, ScriptProfileBuiltins,
+    ScriptProfileRecordState, ScriptProfileRecordStateError, ScriptRecordError,
+    ScriptRecordStateError, ScriptRuntime, ScriptSelectorBlockContext, ScriptSelectorControlHost,
+    ScriptSelectorState, ScriptStateOperationError, ScriptTransferContext, SequenceRequestContext,
     TextInstructionExecutionError, TextInstructionState, apply_record_clear_operation,
     apply_shared_bit_operation, apply_shared_state_operation, apply_transfer, execute_script_block,
     execute_selector_control_with_host, execute_text_instruction, load_sequence_request,
@@ -329,12 +329,15 @@ impl<Host: ScriptBasDispatchHost> ScriptBlockHandler for BasInstructionDispatche
                 ScriptControl::Continue
             }
             ScriptBasInstruction::SequenceRequest(request) => {
-                load_sequence_request(
+                if load_sequence_request(
                     request,
                     self.host.sequence_context(),
                     &mut self.dispatch.text_presentation.request_flags,
                     &mut self.dispatch.sequence_presentation,
-                );
+                ) {
+                    self.dispatch
+                        .record_active_line_write(PresentationResourceLine::Sequence.number());
+                }
                 ScriptControl::Continue
             }
             ScriptBasInstruction::SharedBitState(framed) => {
@@ -372,7 +375,7 @@ impl<Host: ScriptBasDispatchHost> ScriptBlockHandler for BasInstructionDispatche
                     .host
                     .transfer_context(transfer.item)
                     .map_err(ScriptBasDispatchError::Host)?;
-                apply_transfer(
+                let outcome = apply_transfer(
                     transfer,
                     self.state,
                     &self.records.transfer_records,
@@ -383,8 +386,16 @@ impl<Host: ScriptBasDispatchHost> ScriptBlockHandler for BasInstructionDispatche
                     &mut self.dispatch.transfer_presentation,
                     runtime,
                 )
-                .map_err(ScriptBasDispatchError::Record)?
-                .control
+                .map_err(ScriptBasDispatchError::Record)?;
+                if outcome.presentation_requested {
+                    let line = self
+                        .dispatch
+                        .transfer_presentation
+                        .active_line
+                        .expect("CD reports a request only after selecting an active line");
+                    self.dispatch.record_active_line_write(line.number());
+                }
+                outcome.control
             }
             ScriptBasInstruction::End => unreachable!("block traversal handles BAS end markers"),
         };
