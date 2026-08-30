@@ -84,6 +84,7 @@ pub struct RuntimePlatformHost<'window> {
     pointer_buttons: PointerButtons,
     logical_pointer: [f32; 2],
     pointer_inside_window: bool,
+    pointer_position_locked: bool,
     alien_pointer: Option<[f32; 2]>,
     scenario: Option<RuntimeScenarioDriver>,
 }
@@ -105,6 +106,7 @@ impl<'window> RuntimePlatformHost<'window> {
             pointer_buttons: PointerButtons::NONE,
             logical_pointer: INITIAL_LOGICAL_POINTER.map(f32::from),
             pointer_inside_window: false,
+            pointer_position_locked: false,
             alien_pointer: None,
             scenario: None,
         }
@@ -153,6 +155,10 @@ impl<'window> RuntimePlatformHost<'window> {
         record_completed_boundary: bool,
     ) -> Result<Option<InputAction>> {
         self.frame_clock.begin_frame(Instant::now());
+        self.synchronize_pointer_lock(
+            state.pointer_position_locked,
+            services.input().pointer_sample().position,
+        );
         self.pump_events(services);
         if self.scenario.is_some() {
             let semantic = services.semantic_trace_snapshot(state)?;
@@ -236,7 +242,9 @@ impl<'window> RuntimePlatformHost<'window> {
         services: &mut ModernGameServices<'window>,
         input: RuntimeScenarioFrameInput,
     ) {
-        if let Some(position) = input.pointer_position {
+        if !self.pointer_position_locked
+            && let Some(position) = input.pointer_position
+        {
             self.logical_pointer = position.map(f32::from);
             self.pointer_inside_window = true;
         }
@@ -361,10 +369,14 @@ impl<'window> RuntimePlatformHost<'window> {
                         pointer[1] = (pointer[1] + delta[1]).clamp(0.0, ALIEN_DRIVER_HEIGHT);
                     } else {
                         self.pointer_inside_window = true;
-                        let delta = map_motion_to_logical(output_size, [xrel, yrel]);
-                        self.bridge_horizontal_delta += delta[0];
-                        self.logical_pointer =
-                            map_host_pointer_to_logical(output_size, [x, y]).map(f32::from);
+                        apply_bridge_pointer_motion(
+                            &mut self.logical_pointer,
+                            &mut self.bridge_horizontal_delta,
+                            self.pointer_position_locked,
+                            output_size,
+                            [x, y],
+                            [xrel, yrel],
+                        );
                     }
                 }
                 Event::MouseButtonDown {
@@ -416,11 +428,23 @@ impl<'window> RuntimePlatformHost<'window> {
 
     /// Consume horizontal mouse motion plus uncaptured edge-scroll velocity.
     pub fn take_bridge_horizontal_delta(&mut self) -> i32 {
-        self.bridge_horizontal_delta += edge_scroll_delta(
+        take_bridge_motion(
+            &mut self.bridge_horizontal_delta,
             self.logical_pointer[0],
             self.pointer_inside_window && self.alien_pointer.is_none(),
-        );
-        take_whole_motion(&mut self.bridge_horizontal_delta)
+            self.pointer_position_locked,
+        )
+    }
+
+    fn synchronize_pointer_lock(&mut self, locked: bool, published_position: [i16; 2]) {
+        self.pointer_position_locked = locked;
+        if locked {
+            retain_locked_pointer_position(
+                &mut self.logical_pointer,
+                &mut self.bridge_horizontal_delta,
+                published_position,
+            );
+        }
     }
 
     /// Sleep only for the unused portion of the current recovered frame budget.
@@ -589,6 +613,45 @@ fn take_whole_motion(accumulated: &mut f32) -> i32 {
     whole as i32
 }
 
+fn take_bridge_motion(
+    accumulated: &mut f32,
+    logical_x: f32,
+    pointer_inside_window: bool,
+    pointer_position_locked: bool,
+) -> i32 {
+    if pointer_position_locked {
+        *accumulated = 0.0;
+        return 0;
+    }
+    *accumulated += edge_scroll_delta(logical_x, pointer_inside_window);
+    take_whole_motion(accumulated)
+}
+
+fn retain_locked_pointer_position(
+    logical_pointer: &mut [f32; 2],
+    horizontal_delta: &mut f32,
+    published_position: [i16; 2],
+) {
+    *logical_pointer = published_position.map(f32::from);
+    *horizontal_delta = 0.0;
+}
+
+fn apply_bridge_pointer_motion(
+    logical_pointer: &mut [f32; 2],
+    horizontal_delta: &mut f32,
+    pointer_position_locked: bool,
+    output_size: [f32; 2],
+    host_position: [f32; 2],
+    relative_motion: [f32; 2],
+) {
+    if pointer_position_locked {
+        return;
+    }
+    let delta = map_motion_to_logical(output_size, relative_motion);
+    *horizontal_delta += delta[0];
+    *logical_pointer = map_host_pointer_to_logical(output_size, host_position).map(f32::from);
+}
+
 fn edge_scroll_delta(logical_x: f32, pointer_inside_window: bool) -> f32 {
     if !pointer_inside_window {
         return 0.0;
@@ -752,6 +815,46 @@ mod tests {
         negative -= 0.25;
         assert_eq!(take_whole_motion(&mut negative), -1);
         assert_eq!(negative, 0.0);
+    }
+
+    #[test]
+    fn pointer_lock_discards_motion_and_retains_the_last_published_position() {
+        let published_position = [160, 100];
+        let mut logical_pointer = [240.0, 80.0];
+        let mut horizontal_delta = 9.75;
+        retain_locked_pointer_position(
+            &mut logical_pointer,
+            &mut horizontal_delta,
+            published_position,
+        );
+
+        apply_bridge_pointer_motion(
+            &mut logical_pointer,
+            &mut horizontal_delta,
+            true,
+            WIDESCREEN_OUTPUT,
+            [1_440.0, 540.0],
+            [720.0, 0.0],
+        );
+
+        assert_eq!(logical_pointer, published_position.map(f32::from));
+        assert_eq!(horizontal_delta, 0.0);
+
+        horizontal_delta = 7.5;
+        assert_eq!(
+            take_bridge_motion(&mut horizontal_delta, 0.0, true, true),
+            0
+        );
+        assert_eq!(horizontal_delta, 0.0);
+        assert_eq!(
+            take_bridge_motion(
+                &mut horizontal_delta,
+                LOGICAL_SCREEN_WIDTH / 2.0,
+                true,
+                false,
+            ),
+            0
+        );
     }
 
     #[test]

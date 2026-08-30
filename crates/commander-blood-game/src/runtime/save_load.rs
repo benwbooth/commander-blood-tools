@@ -182,10 +182,7 @@ impl RuntimeSaveLoad {
         match action {
             InputAction::Accept => Ok(Some(SAVE_EDITOR_ENTER_KEY)),
             InputAction::LatchTextByte(byte) | InputAction::TogglePause(byte) => Ok(Some(byte)),
-            InputAction::Cancel => {
-                self.state.cancel();
-                Ok(None)
-            }
+            InputAction::Cancel => Ok(services.input().dispatch_state().text_byte),
             InputAction::MovePrevious | InputAction::MoveNext => {
                 self.move_selection(services, action)?;
                 Ok(None)
@@ -199,7 +196,7 @@ impl RuntimeSaveLoad {
         services: &ModernGameServices<'_>,
         action: InputAction,
     ) -> Result<()> {
-        if !self.state.requests.save && !self.state.requests.load {
+        if !save_slot_movement_active(&self.state) {
             return Ok(());
         }
         let directory = services
@@ -243,6 +240,10 @@ impl RuntimeSaveLoad {
         self.state.edit_name = menu.edit_name;
         Ok(())
     }
+}
+
+const fn save_slot_movement_active(state: &SaveLoadMenuState) -> bool {
+    state.requests.save
 }
 
 struct RuntimeSaveLoadBackend<'services, 'window> {
@@ -479,18 +480,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn requests_and_cancel_share_the_recovered_menu_state() {
+    fn cancel_input_does_not_close_the_save_or_load_menu() {
         let mut runtime = RuntimeSaveLoad::default();
         runtime.request_save();
         assert!(runtime.state().requests.save);
         assert_eq!(runtime.state().phase, SaveLoadMenuPhase::LayoutPending);
         assert!(runtime.queue_input(InputAction::Cancel));
-        runtime.state.cancel();
-        assert!(!runtime.state().is_active());
+        assert_eq!(runtime.pending_input, Some(InputAction::Cancel));
+        assert!(runtime.state().is_active());
 
+        runtime.state.cancel();
         runtime.request_load();
         assert!(runtime.state().requests.load);
         assert_eq!(runtime.state().phase, SaveLoadMenuPhase::LayoutPending);
+        assert!(runtime.queue_input(InputAction::Cancel));
+        assert_eq!(runtime.pending_input, Some(InputAction::Cancel));
+        assert!(runtime.state().is_active());
+    }
+
+    #[test]
+    fn arrow_movement_is_owned_only_by_an_active_save_request() {
+        let mut runtime = RuntimeSaveLoad::default();
+        assert!(!save_slot_movement_active(&runtime.state));
+
+        runtime.request_load();
+        assert!(runtime.state.requests.load);
+        assert!(!save_slot_movement_active(&runtime.state));
+
+        runtime.state.cancel();
+        runtime.request_save();
+        assert!(!runtime.state.requests.load);
+        assert!(save_slot_movement_active(&runtime.state));
     }
 
     #[test]

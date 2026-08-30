@@ -32,6 +32,7 @@ const BIOS_FUNCTION_KEY_BASE: u16 = 0x3b00;
 const BIOS_SCAN_CODE_SHIFT: u32 = 8;
 const BIOS_P_SCAN_CODE: u16 = 0x19;
 const ASCII_ESCAPE: u8 = 27;
+const ASCII_SPACE: u8 = b' ';
 const ASCII_CARRIAGE_RETURN: u8 = b'\r';
 
 /// Logical pointer position installed by `bloodprg_main` after line zero.
@@ -52,6 +53,7 @@ pub struct RuntimeInputHost {
     pointer_sample: PointerSampleState,
     pointer_buttons: PointerButtonState,
     motion_idle_counter: u16,
+    pending_cancel_text_byte: Option<u8>,
 }
 
 impl RuntimeInputHost {
@@ -70,6 +72,7 @@ impl RuntimeInputHost {
             },
             pointer_buttons: PointerButtonState::default(),
             motion_idle_counter: u16::MIN,
+            pending_cancel_text_byte: None,
         }
     }
 
@@ -78,11 +81,7 @@ impl RuntimeInputHost {
         let Some(key) = host_key_for_sdl_keycode(keycode) else {
             return false;
         };
-        if matches!(key, HostInputKey::Escape) {
-            self.pending_keys.push_front(key);
-        } else {
-            self.pending_keys.push_back(key);
-        }
+        self.pending_keys.push_back(key);
         true
     }
 
@@ -104,7 +103,9 @@ impl RuntimeInputHost {
 
     /// Dispatch at most one queued key and update recovered input latches.
     pub fn dispatch_next(&mut self, save_menu_active: bool) -> Option<InputAction> {
-        let action = dispatch_input_key(&mut self.dispatch, self.pending_keys.pop_front());
+        let key = self.pending_keys.pop_front();
+        self.pending_cancel_text_byte = key.and_then(cancel_text_byte);
+        let action = dispatch_input_key(&mut self.dispatch, key);
         match action {
             Some(InputAction::Accept) => {
                 latch_input_text_byte(&mut self.dispatch, ASCII_CARRIAGE_RETURN);
@@ -137,7 +138,8 @@ impl RuntimeInputHost {
         cancellation: &mut InputCancellationState,
         backend: &mut Backend,
     ) -> InputCancellationOutcome {
-        cancel_input_action(&mut self.dispatch, cancellation, backend, ASCII_ESCAPE)
+        let text_byte = self.pending_cancel_text_byte.take().unwrap_or(ASCII_ESCAPE);
+        cancel_input_action(&mut self.dispatch, cancellation, backend, text_byte)
     }
 
     /// Drain queued host keys as the BIOS words consumed by an alien XDB loop.
@@ -288,6 +290,14 @@ fn host_key_for_sdl_keycode(keycode: Keycode) -> Option<HostInputKey> {
     }
 }
 
+const fn cancel_text_byte(key: HostInputKey) -> Option<u8> {
+    match key {
+        HostInputKey::Escape => Some(ASCII_ESCAPE),
+        HostInputKey::Space => Some(ASCII_SPACE),
+        _ => None,
+    }
+}
+
 fn alien_bios_key(key: HostInputKey) -> u16 {
     match key {
         HostInputKey::Character(character) => {
@@ -313,11 +323,36 @@ fn alien_bios_key(key: HostInputKey) -> u16 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::native::bloodprg::{IgnoredInputAction, PointerButton};
+    use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
+
+    use crate::native::bloodprg::{IgnoredInputAction, PointerButton, PresentationResourceCursor};
 
     const INITIAL_POSITION: [i16; 2] = [160, 100];
     const WIDESCREEN_OUTPUT: [f32; 2] = [1_920.0, 1_080.0];
     const WIDESCREEN_CENTER: [f32; 2] = [960.0, 540.0];
+
+    #[derive(Default)]
+    struct CancellationBackend {
+        queue_reset: bool,
+    }
+
+    impl InputCancellationBackend for CancellationBackend {
+        fn reset_presentation_queue(&mut self) {
+            self.queue_reset = true;
+        }
+    }
+
+    fn inactive_cancellation() -> InputCancellationState {
+        InputCancellationState {
+            presentation_active: false,
+            dialogue_ready: false,
+            ship_active: false,
+            active_line: usize::MIN,
+            resources: PresentationResourceCursor::default(),
+            scene_palette: [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+            palette_dirty: false,
+        }
+    }
 
     #[test]
     fn key_bursts_remain_ordered_across_dispatch_frames() {
@@ -339,13 +374,50 @@ mod tests {
     }
 
     #[test]
-    fn escape_preempts_queued_text_for_modal_cancellation() {
+    fn escape_retains_bios_arrival_order() {
         let mut input = RuntimeInputHost::new(INITIAL_POSITION);
-        input.queue_text("queued");
+        assert_eq!(input.queue_text("q"), 1);
         assert!(input.queue_keycode(Keycode::Escape));
 
+        assert_eq!(
+            input.dispatch_next(false),
+            Some(InputAction::LatchTextByte(b'q'))
+        );
+        assert_eq!(input.pending_key_count(), 1);
         assert_eq!(input.dispatch_next(false), Some(InputAction::Cancel));
-        assert_eq!(input.pending_key_count(), "queued".len());
+        assert_eq!(input.pending_key_count(), 0);
+    }
+
+    #[test]
+    fn physical_space_keydown_and_text_input_enqueue_one_action() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        assert!(input.queue_keycode(Keycode::Space));
+        assert_eq!(input.queue_text(" "), 0);
+        assert_eq!(input.pending_key_count(), 1);
+
+        assert_eq!(input.dispatch_next(false), Some(InputAction::Cancel));
+        assert_eq!(input.dispatch_next(false), None);
+    }
+
+    #[test]
+    fn cancel_fallback_latches_the_arriving_bios_low_byte() {
+        for (keycode, expected_byte) in [
+            (Keycode::Escape, ASCII_ESCAPE),
+            (Keycode::Space, ASCII_SPACE),
+        ] {
+            let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+            let mut cancellation = inactive_cancellation();
+            let mut backend = CancellationBackend::default();
+            assert!(input.queue_keycode(keycode));
+            assert_eq!(input.dispatch_next(false), Some(InputAction::Cancel));
+
+            assert_eq!(
+                input.cancel_presentation(&mut cancellation, &mut backend),
+                InputCancellationOutcome::ForwardedToText
+            );
+            assert_eq!(input.dispatch_state().text_byte, Some(expected_byte));
+            assert!(!backend.queue_reset);
+        }
     }
 
     #[test]
