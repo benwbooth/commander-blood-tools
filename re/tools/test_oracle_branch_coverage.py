@@ -65,6 +65,15 @@ class OracleBranchCoverageTests(unittest.TestCase):
         self.assertEqual(recorder.instructions["demo"], {0})
         self.assertEqual(recorder.edges["demo"], {(0, 1)})
 
+    def test_terminal_edge_does_not_credit_unexecuted_destination(self) -> None:
+        image = bytes.fromhex("90c390")
+        recorder = coverage.CoverageRecorder({len(image): "demo"})
+        hook = recorder.hook_for(image, 0, terminal_offset=2)
+        hook(None, 0, 1, None)
+        hook(None, 2, 1, None)
+        self.assertEqual(recorder.instructions["demo"], {0})
+        self.assertEqual(recorder.edges["demo"], {(0, 2)})
+
     def test_missing_edge_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -87,10 +87,10 @@
     "name": "pitch_high_clamp",
     "module": "scrut",
     "entry": 6023,
-    "camera_y_before": 7000,
-    "seed_low_word": 1000,
+    "camera_y_before": 12288,
+    "seed_low_word": 0,
     "pitch_before": 0,
-    "pitch_after": 500,
+    "pitch_after": 768,
     "radial_target": 0,
     "radial_before": 0,
     "radial_after": 0,
@@ -102,16 +102,16 @@
     "heading_carry": 0,
     "follower_pan_after": 0,
     "follower_roll_after": 0,
-    "data_sha256": "1a037d883eb9d29aa49121a187f2c9560b3853ded80482ee40b58f6204ad8102"
+    "data_sha256": "913b1ae79d41dd1131395add450d7f86222e62847b6689f3030c0f48c5a6745f"
   },
   {
     "name": "pitch_low_clamp",
     "module": "scrut",
     "entry": 6023,
-    "camera_y_before": 58536,
-    "seed_low_word": 64536,
+    "camera_y_before": 53248,
+    "seed_low_word": 0,
     "pitch_before": 0,
-    "pitch_after": 65036,
+    "pitch_after": 64768,
     "radial_target": 0,
     "radial_before": 0,
     "radial_after": 0,
@@ -123,7 +123,7 @@
     "heading_carry": 0,
     "follower_pan_after": 0,
     "follower_roll_after": 0,
-    "data_sha256": "aca6f3fe3e7e7ef3b3945d5f8d33bb3426df3137c7484a5991771e742d74788e"
+    "data_sha256": "4f11e7a91bd2e69a144cd571a45cbae23e46a2272b8da3159d0c6edd49bc769e"
   },
   {
     "name": "negative_average_rounding",

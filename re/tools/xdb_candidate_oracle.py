@@ -151,12 +151,19 @@ def execute(
             returned.append(address)
             machine.emu_stop()
 
-    machine.hook_add(UC_HOOK_CODE, stop_at_return)
     if _COVERAGE_RECORDER is not None:
+        # Record the edge into the requested stop address before the stop hook
+        # halts emulation. Otherwise every head-only vector loses its terminal
+        # branch even though the original instruction reached that address.
         machine.hook_add(
             UC_HOOK_CODE,
-            _COVERAGE_RECORDER.hook_for(image, code_segment),
+            _COVERAGE_RECORDER.hook_for(
+                image,
+                code_segment,
+                return_address if return_segment == code_segment else None,
+            ),
         )
+    machine.hook_add(UC_HOOK_CODE, stop_at_return)
     if code_handler is not None:
         machine.hook_add(UC_HOOK_CODE, code_handler)
     if interrupt_handler is not None:
@@ -6615,8 +6622,8 @@ def scrut_slot2_motion_vectors(entry: int) -> list[dict[str, object]]:
         ("positive_heading_carry", 0x4400, 100, 20, 0, 40, 80, 0, 16, 1000),
         ("negative_rounds_to_zero", 0x4800, 100, 20, 0, 40, 80, 0, -1, 1000),
         ("negative_without_carry", 0x4C00, 100, 20, 0, 40, 80, 0, -17, 1000),
-        ("pitch_high_clamp", 0x5000, 7000, 1000, 0, 0, 0, 0, 0, 0),
-        ("pitch_low_clamp", 0x5400, -7000, -1000, 0, 0, 0, 0, 0, 0),
+        ("pitch_high_clamp", 0x5000, 12288, 0, 0, 0, 0, 0, 0, 0),
+        ("pitch_low_clamp", 0x5400, -12288, 0, 0, 0, 0, 0, 0, 0),
         ("negative_average_rounding", 0x5800, -1, 0, 0, 0, 0, 0, 0, 0),
         ("radial_wrapping_delta", 0x5C00, 0, 0, 0, 0x7FF0, 0x800F, 0, 0, 0),
         ("roll_sign_wrap", 0x6000, 0, 0, 0, 0, 0, 0x7FFF, 1, 0x7FFF),

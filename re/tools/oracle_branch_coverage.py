@@ -83,7 +83,12 @@ class CoverageRecorder:
             module: set() for module in image_sizes.values()
         }
 
-    def hook_for(self, image: bytes, code_segment: int):
+    def hook_for(
+        self,
+        image: bytes,
+        code_segment: int,
+        terminal_offset: int | None = None,
+    ):
         try:
             module = self._image_sizes[len(image)]
         except KeyError as error:
@@ -97,6 +102,11 @@ class CoverageRecorder:
             nonlocal previous
             normalized = address - code_base
             if not 0 <= normalized < len(image):
+                previous = None
+                return
+            if normalized == terminal_offset:
+                if previous is not None:
+                    self.edges[module].add((previous, normalized))
                 previous = None
                 return
             canonical = self._canonical_images.get(module)
