@@ -222,7 +222,7 @@ pub fn update_choice_list<Backend: ChoiceListBackend>(
         .then_some(state.hovered_row)
         .flatten();
     let selected_item = selected_row.filter(|row| *row < labels.len());
-    let cancelled = selected_row == config.cancel_label.map(|_| labels.len());
+    let cancelled = config.cancel_label.is_some() && selected_row == Some(labels.len());
     let content_width = width.wrapping_sub(CHOICE_LIST_WIDTH_PADDING);
     let row_x = (rect.origin[0] as u16).wrapping_add(TEXT_X_INSET);
     let mut row_y = (rect.origin[1] as u16).wrapping_add(TEXT_Y_INSET);
@@ -470,6 +470,28 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn idle_list_without_a_cancel_row_is_not_cancelled() {
+        let labels = [b"LABEL".as_slice()];
+        let mut backend = backend_for("idle_without_cancel", labels.len(), u16::MIN);
+        let mut state = ChoiceListState::default();
+
+        let frame = update_choice_list(
+            &labels,
+            ChoiceListConfig {
+                center_x: 100,
+                preserve_individual_widths: true,
+                cancel_label: None,
+                layout_only: false,
+            },
+            &mut state,
+            &mut backend,
+        );
+
+        assert_eq!(frame.selected_item, None);
+        assert!(!frame.cancelled);
     }
 
     fn config_for(name: &str) -> ChoiceListConfig<'static> {

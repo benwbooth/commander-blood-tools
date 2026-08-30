@@ -22,6 +22,8 @@ const MODAL_UI_FLAG: u64 = 1 << 2;
 const NAVIGATION_UI_FLAG: u64 = 1 << 3;
 const DOS_ORACLE_PACKED_SECOND: u8 = 39;
 const HONK_CLICK: &str = "click 230 88";
+const SAVE_OPTION_CLICK: &str = "sclick 100 95";
+const SAVE_CANCEL_CLICK: &str = "sclick 100 151";
 const HONK_WORD_CHOICES: [&str; 9] = [
     "bye_bye",
     "optimization",
@@ -304,6 +306,57 @@ fn production_runtime_reaches_each_authored_bridge_console_handler() {
     }
 }
 
+#[test]
+fn production_runtime_opens_and_closes_the_authored_save_menu() {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/production_save_menu.tsv",
+        "production-save-menu.jsonl",
+    ) else {
+        return;
+    };
+
+    let save_index = records
+        .iter()
+        .position(|record| record["action"] == SAVE_OPTION_CLICK)
+        .expect("runtime trace omitted the authored SAVE option click");
+    let save_records = &records[save_index..];
+    let active = save_records
+        .iter()
+        .find(|record| save_load(record)["save_requested"] == true)
+        .expect("SAVE option never reached the production save/load owner");
+    assert_eq!(save_load(active)["active"], true);
+    assert_ne!(
+        presentation_u64(active, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "save menu did not acquire the shared modal UI bit"
+    );
+
+    let interactive = save_records
+        .iter()
+        .find(|record| {
+            save_load(record)["save_requested"] == true && save_load(record)["phase"] == "ready"
+        })
+        .expect("save menu never completed its recovered opening transition");
+    assert_eq!(save_load(interactive)["selected_slot"], 0);
+    assert_eq!(save_load(interactive)["active_slot"], 0);
+
+    let cancel_index = records
+        .iter()
+        .position(|record| record["action"] == SAVE_CANCEL_CLICK)
+        .expect("runtime trace omitted the authored save CANCEL click");
+    let closed = records[cancel_index..]
+        .iter()
+        .find(|record| save_load(record)["active"] == false)
+        .expect("save CANCEL row did not release the production save/load owner");
+    assert_eq!(save_load(closed)["save_requested"], false);
+    assert_eq!(save_load(closed)["load_requested"], false);
+    assert_eq!(
+        presentation_u64(closed, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "save CANCEL row left the shared modal UI bit latched"
+    );
+}
+
 fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value>> {
     let asset_cache = configured_runtime_asset_cache()?;
     if !DISPLAY_ENVIRONMENT_VARIABLES
@@ -379,6 +432,10 @@ fn presentation(record: &Value) -> &Value {
 
 fn console(record: &Value) -> &Value {
     &record["semantic"]["bridge_console"]
+}
+
+fn save_load(record: &Value) -> &Value {
+    &record["semantic"]["save_load"]
 }
 
 fn console_u64(record: &Value, field: &str) -> u64 {

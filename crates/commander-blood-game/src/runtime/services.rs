@@ -36,9 +36,9 @@ use crate::native::bloodprg::{
     PresentationQueueClockGates, PresentationQueueServiceOutcome, PresentationResourceId,
     PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState,
-    ScriptActionRuntimeState, ScriptActionState, ScriptClock, ScriptFrameOutcome,
-    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
+    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SaveLoadMenuPhase,
+    SceneTransitionState, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
+    ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
@@ -1195,6 +1195,11 @@ impl<'window> ModernGameServices<'window> {
     /// Publish the shared width-mode write performed by save/load initialization.
     pub(super) fn set_choice_list_preserve_individual_widths(&mut self, preserve: bool) {
         self.choice_list_style.preserve_individual_widths = preserve;
+    }
+
+    /// Publish the shared list-layout values written by bridge-console activation.
+    pub(super) fn activate_bridge_console_list_style(&mut self) {
+        self.choice_list_style = RuntimeChoiceListStyle::BRIDGE_CONSOLE;
     }
 
     /// Publish the values written by first-time ship HUD initialization.
@@ -3575,6 +3580,27 @@ impl<'window> ModernGameServices<'window> {
             .bridge_console
             .as_ref()
             .map(|console| console.semantic_trace_snapshot(self.runtime.data().bridge_menu_text()));
+        let save_load = self.save_load.as_ref().map(|save_load| {
+            let state = save_load.state();
+            let phase = match state.phase {
+                SaveLoadMenuPhase::Ready => "ready",
+                SaveLoadMenuPhase::LayoutPending => "layout_pending",
+                SaveLoadMenuPhase::Transitioning => "transitioning",
+            };
+            serde_json::json!({
+                "active": state.is_active(),
+                "save_requested": state.requests.save,
+                "load_requested": state.requests.load,
+                "quick_save_requested": state.requests.quick_save,
+                "phase": phase,
+                "ui_flags": state.ui_flags,
+                "selected_slot": state.selected_slot,
+                "active_slot": state.active_slot,
+                "name_length": state.name_length,
+                "redraw_pending": state.redraw_pending,
+                "palette_dirty": state.palette_dirty,
+            })
+        });
         let pending_presentation_owner = self.pending_ship_presentation_owner().map(|record| {
             let name = profile
                 .and_then(|profile| profile.directory().object(record))
@@ -3734,6 +3760,7 @@ impl<'window> ModernGameServices<'window> {
                 "waiting_for_input": waiting_for_input,
             },
             "bridge_console": bridge_console,
+            "save_load": save_load,
             "input": {
                 "mouse_x": pointer.position[0],
                 "mouse_y": pointer.position[1],

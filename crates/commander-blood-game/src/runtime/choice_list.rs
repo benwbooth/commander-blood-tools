@@ -35,6 +35,13 @@ pub(super) struct RuntimeChoiceListStyle {
 }
 
 impl RuntimeChoiceListStyle {
+    /// Values written by `nav_choice_dispatch` when a bridge command is selected.
+    pub const BRIDGE_CONSOLE: Self = Self {
+        center_x: 100,
+        preserve_individual_widths: true,
+        extra_cancel_entry: true,
+    };
+
     /// Values written by `ship_3d_hud_init` before target selection.
     pub const SHIP_TARGET: Self = Self {
         center_x: 80,

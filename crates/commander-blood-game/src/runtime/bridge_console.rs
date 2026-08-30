@@ -144,6 +144,7 @@ impl RuntimeBridgeConsole {
             } => {
                 apply_console_palette(services.runtime_mut(), palette);
                 services.request_manu3_animation(Manu3AnimationSelector::NavigationChoice);
+                services.activate_bridge_console_list_style();
                 self.transition = FramebufferTransitionState::default();
                 services.request_bridge_seek(self.console.hold_ticks)?;
                 if play_selection_clip {
@@ -499,7 +500,7 @@ impl RuntimeBridgeConsole {
     fn publish_interface_ownership(&self, lifecycle: &mut GameLifecycleState) {
         let active = self.console.selected.is_some() || self.options.text_options_active;
         lifecycle.profile_change_blockers.navigation_choice_active = active;
-        lifecycle.set_navigation_ui_busy(active);
+        lifecycle.set_navigation_ui_busy(self.console.interface_busy);
     }
 }
 
@@ -923,5 +924,24 @@ mod tests {
         publish_console_modal_ui(&mut lifecycle, false, &BridgeConsoleState::default());
 
         assert!(lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn interactive_console_keeps_profile_ownership_without_relocking_the_pointer() {
+        let mut console = RuntimeBridgeConsole::new(u16::MIN);
+        console.console.selected = Some(BridgeConsoleChoice::Options);
+        console.console.interface_active = true;
+        console.console.interface_busy = false;
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_navigation_ui_busy(true);
+
+        console.publish_interface_ownership(&mut lifecycle);
+
+        assert!(lifecycle.profile_change_blockers.navigation_choice_active);
+        assert!(!lifecycle.navigation_ui_busy());
+
+        console.console.interface_busy = true;
+        console.publish_interface_ownership(&mut lifecycle);
+        assert!(lifecycle.navigation_ui_busy());
     }
 }
