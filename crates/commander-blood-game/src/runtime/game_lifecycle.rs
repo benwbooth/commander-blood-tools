@@ -103,6 +103,12 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         &self.services
     }
 
+    fn apply_alien_overlay_mouse_idle_reset(&mut self) {
+        if self.services.take_alien_overlay_mouse_idle_reset_request() {
+            self.timer.reset_mouse_idle_counter();
+        }
+    }
+
     fn advance_frame_timers(&mut self, state: &mut GameLifecycleState) -> Result<()> {
         let elapsed_ticks = self.platform.take_game_timer_ticks();
         arm_requested_speaker_pulse(state, &mut self.timer);
@@ -408,6 +414,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             },
             self.timer.navigation_animation_phase,
         )?;
+        self.apply_alien_overlay_mouse_idle_reset();
         state.exit_requested |= self.services.take_script_finale_shutdown_request();
         Ok(())
     }
@@ -451,6 +458,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             .services
             .update_runtime_scene_transition(link, state, &mut self.platform)
             .map(|_| ());
+        self.apply_alien_overlay_mouse_idle_reset();
         state.exit_requested |= self.services.take_script_finale_shutdown_request();
         outcome
     }

@@ -161,6 +161,9 @@ impl RuntimeAlienOverlayCycle {
         services.write_alien_timing_scale(self.state.shared.timing_scale)?;
         lifecycle.presentation.sequence_active =
             self.state.shared.sequence_flags & SHIP_SEQUENCE_ACTIVE != u16::MIN;
+        if matches!(&result, Ok(AlienOverlayCycleOutcome::Ran { .. })) {
+            services.publish_alien_overlay_bridge_restoration();
+        }
         result
     }
 }

@@ -178,6 +178,7 @@ pub struct ModernGameServices<'window> {
     game_timer_tick: u16,
     scripts: RuntimeScriptSystem,
     script_finale_shutdown_pending: bool,
+    alien_overlay_mouse_idle_reset_pending: bool,
     cd_audio: CdAudioState,
     main_viewport_configured: bool,
 }
@@ -285,6 +286,7 @@ impl<'window> ModernGameServices<'window> {
             game_timer_tick: u16::MIN,
             scripts,
             script_finale_shutdown_pending: false,
+            alien_overlay_mouse_idle_reset_pending: false,
             cd_audio: CdAudioState::default(),
             main_viewport_configured: false,
         })
@@ -1146,6 +1148,17 @@ impl<'window> ModernGameServices<'window> {
         self.alien_overlay
             .as_ref()
             .context("alien-overlay cycle is already running")
+    }
+
+    /// Publish the bridge globals restored by BLOODPRG after an XDB returns.
+    pub(super) fn publish_alien_overlay_bridge_restoration(&mut self) {
+        self.bridge_screen.palette_dirty = true;
+        self.alien_overlay_mouse_idle_reset_pending = true;
+    }
+
+    /// Consume the native full mouse-idle counter reset at its timer owner.
+    pub(super) fn take_alien_overlay_mouse_idle_reset_request(&mut self) -> bool {
+        std::mem::take(&mut self.alien_overlay_mouse_idle_reset_pending)
     }
 
     /// Advance the recovered top-level ship presentation state machine.
