@@ -1,0 +1,26 @@
+# Complete Izwalito's startup call, open CONTACTS, select Bob Morlock, and
+# advance through his thaw and first dialogue into the authored topic chooser.
+wait 50
+wait 50
+wait 55
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+wait 10
+wait 10
+wait 10
+sclick 200 105
+wait 20
+wait 20
+wait 20
+wait 20
+click 230 124
+wait 20
+sclick 100 89
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20

@@ -18,6 +18,8 @@ const OPENING_VIDEO: &str = "sq\\mind.HNM";
 const FIRST_STARTUP_VIDEO: &str = "SQ\\cliptoot.hnm";
 const PHONE_CLICK: &str = "click 125 118";
 const GAME_CHOICE_CLICK: &str = "sclick 200 105";
+const CONTACTS_CLICK: &str = "click 230 124";
+const BOB_CONTACT_CLICK: &str = "sclick 100 89";
 const INITIAL_PROFILE: u64 = 0;
 const POST_CALL_PROFILE: u64 = 1;
 const ANSWER_HAND_SELECTOR: u64 = 4;
@@ -74,6 +76,24 @@ const IZWALITO_IDLE_VIDEO: &str = "aaisw.hnm";
 const IZWALITO_FIRST_TALK_VIDEO: &str = "iswa1.hnm";
 const IZWALITO_LAST_TALK_VIDEO: &str = "iswx.hnm";
 const IZWALITO_TALK_CLIP_COUNT: usize = 15;
+const BOB_NAME: &str = "Bob_Morlock";
+const BOB_SOUND_BANK: &str = "bob.snd";
+const BOB_SPRITE: &str = "bob.spr";
+const BOB_THAW_VIDEO: &str = "sq\\cryogel.hnm";
+const BOB_IDLE_VIDEO: &str = "PE\\aabob.hnm";
+const BOB_FIRST_TALK_VIDEO: &str = "PE\\bobc.hnm";
+const BOB_SECOND_TALK_VIDEO: &str = "PE\\bobd.hnm";
+const RESIDENT_LAST_CLIP_INDEX: u64 = 16;
+const BOB_FIRST_CONTACT_CHOICES: [&str; 8] = [
+    "bye_bye",
+    "black_hole",
+    "Big_Bang",
+    "Bob_Morlock",
+    "Kanary",
+    "mission",
+    "Corpo",
+    "Good_ol_Bob",
+];
 const EMPTY_LABELS: [&str; 0] = [];
 const CONTACT_LABELS: [&str; 1] = ["Bob_Morlock"];
 const OPTION_LABELS: [&str; 6] = ["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT", "CANCEL"];
@@ -447,6 +467,88 @@ fn production_runtime_dispatches_honk_after_the_startup_phone_call() {
         waiting["semantic"]["presentation"]["rendered_word_choices"],
         serde_json::json!(HONK_WORD_CHOICES)
     );
+}
+
+#[test]
+fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/production_bob_first_contact.tsv",
+        "production-bob-first-contact.jsonl",
+    ) else {
+        return;
+    };
+
+    let contacts_index = records
+        .iter()
+        .position(|record| record["action"] == CONTACTS_CLICK)
+        .expect("runtime trace omitted the authored CONTACTS click");
+    let contacts = records[contacts_index..]
+        .iter()
+        .find(|record| console(record)["panel_phase"] == "interactive")
+        .expect("CONTACTS never reached its interactive choice list");
+    assert_eq!(
+        console(contacts)["choice_labels"],
+        serde_json::json!([BOB_NAME])
+    );
+
+    let bob_index = records
+        .iter()
+        .position(|record| record["action"] == BOB_CONTACT_CLICK)
+        .expect("runtime trace omitted the authored Bob Morlock click");
+    let thaw = &records[bob_index];
+    assert_eq!(thaw["semantic"]["video"]["active_resource"], BOB_THAW_VIDEO);
+    assert_eq!(descript(thaw)["active_object"]["name"], BOB_NAME);
+    assert_eq!(descript(thaw)["sound_bank"], BOB_SOUND_BANK);
+    assert_eq!(descript(thaw)["character_sprite"], BOB_SPRITE);
+    assert_eq!(descript(thaw)["idle_clip"]["video"], "aabob.hnm");
+
+    let bob_records = &records[bob_index + 1..];
+    let first_talk = bob_records
+        .iter()
+        .find(|record| record["semantic"]["video"]["active_resource"] == BOB_FIRST_TALK_VIDEO)
+        .expect("Bob's first authored talk clip never played");
+    assert_eq!(
+        presentation(first_talk)["active_actor_presentation"]["name"],
+        BOB_NAME
+    );
+    assert!(presentation_flag(first_talk, "active"));
+
+    assert!(
+        bob_records
+            .iter()
+            .any(|record| { record["semantic"]["video"]["active_resource"] == BOB_IDLE_VIDEO })
+    );
+    assert!(
+        bob_records.iter().any(|record| {
+            record["semantic"]["video"]["active_resource"] == BOB_SECOND_TALK_VIDEO
+        })
+    );
+
+    let waiting = bob_records
+        .iter()
+        .find(|record| {
+            presentation_flag(record, "waiting_for_input")
+                && presentation_flag(record, "word_choice_active")
+        })
+        .expect("Bob's first contact never reached its authored topic chooser");
+    assert_eq!(
+        presentation(waiting)["rendered_word_choices"],
+        serde_json::json!(BOB_FIRST_CONTACT_CHOICES)
+    );
+    assert_eq!(
+        waiting["semantic"]["video"]["active_resource"],
+        BOB_IDLE_VIDEO
+    );
+    assert_eq!(
+        waiting["semantic"]["audio"]["streamed_sound_bank"],
+        BOB_SOUND_BANK
+    );
+    assert!(bob_records.iter().any(|record| {
+        audio_events(record).iter().any(|event| {
+            event["kind"].as_str() == Some(VOICE_REACTION_EVENT_KIND)
+                && event["index"].as_u64() == Some(RESIDENT_LAST_CLIP_INDEX)
+        })
+    }));
 }
 
 #[test]

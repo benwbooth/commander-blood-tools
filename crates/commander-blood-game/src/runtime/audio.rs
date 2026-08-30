@@ -1055,6 +1055,7 @@ mod tests {
                 AudioClipRequest::StreamedDialogue { index: 0 },
                 AudioPlaybackBanks {
                     resident_effects: &resident_effects,
+                    resident_effects_memory: resident_effects.payload(),
                     streamed_dialogue: &streamed_dialogue,
                 },
             )

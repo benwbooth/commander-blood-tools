@@ -78,6 +78,13 @@ pub struct AudioPlaybackState {
 pub struct AudioPlaybackBanks<'a> {
     /// Short effects and voice reactions retained in memory by the DOS game.
     pub resident_effects: &'a SndBank,
+    /// Payload-relative image of the original resident-sound arena.
+    ///
+    /// The native mixer starts six bytes into a resident clip while retaining
+    /// the loader's `clip_length - 1` count. Consequently, the final clip can
+    /// consume up to five retained bytes after the bank payload. Keeping the
+    /// arena explicit preserves that behavior without an out-of-bounds read.
+    pub resident_effects_memory: &'a [u8],
     /// Dialogue clips that the DOS game staged through EMS, XMS, or a file.
     pub streamed_dialogue: &'a SndBank,
 }
@@ -336,7 +343,10 @@ fn resolve_mix_source<'a>(
             let source_start = banks.resident_effects.offsets()[usize::from(bank_index)]
                 + SND_CLIP_HEADER_BYTE_COUNT;
             (
-                &banks.resident_effects.payload()[source_start..],
+                banks
+                    .resident_effects_memory
+                    .get(source_start..)
+                    .unwrap_or_default(),
                 physical_source_count,
             )
         }
@@ -526,10 +536,12 @@ mod tests {
             let banks = match request {
                 AudioClipRequest::VoiceReaction { .. } => AudioPlaybackBanks {
                     resident_effects: &selected_bank,
+                    resident_effects_memory: selected_bank.payload(),
                     streamed_dialogue: &empty_bank,
                 },
                 AudioClipRequest::StreamedDialogue { .. } => AudioPlaybackBanks {
                     resident_effects: &empty_bank,
+                    resident_effects_memory: empty_bank.payload(),
                     streamed_dialogue: &selected_bank,
                 },
             };
@@ -648,6 +660,7 @@ mod tests {
             request,
             AudioPlaybackBanks {
                 resident_effects: &bank,
+                resident_effects_memory: bank.payload(),
                 streamed_dialogue: &empty_bank(),
             },
             || Some(8),

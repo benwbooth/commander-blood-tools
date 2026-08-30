@@ -83,6 +83,9 @@ const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
 const SOUND_BANK_RESOURCE_DIRECTORY: &[u8] = b"SN\\";
 const DEFAULT_BRIDGE_SOUND_BANK: &[u8] = b"tb.snd";
 const RADIO_SOUND_BANK: &[u8] = b"radio.snd";
+/// The native 64 KiB sound allocation places streamed storage 32 KiB after
+/// the resident-bank base, leaving this complete retained resident arena.
+const RESIDENT_SOUND_ARENA_BYTE_COUNT: usize = 32 * 1024;
 const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
     top: 0,
     bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32 - 1,
@@ -145,6 +148,7 @@ pub struct ModernGameServices<'window> {
     presentation_player: RuntimePresentationPlayer,
     audio: Option<RuntimeAudioHost>,
     resident_sound_bank: Option<LoadedSoundBank>,
+    resident_sound_memory: Box<[u8]>,
     audio_events: AudioEventState,
     audio_event_history: Vec<AudioClipRequest>,
     bridge_scene: Option<BridgeScene>,
@@ -262,6 +266,8 @@ impl<'window> ModernGameServices<'window> {
             presentation_player,
             audio: None,
             resident_sound_bank: None,
+            resident_sound_memory: vec![u8::MIN; RESIDENT_SOUND_ARENA_BYTE_COUNT]
+                .into_boxed_slice(),
             audio_events: AudioEventState {
                 playback_enabled: false,
                 menu_words_pending: false,
@@ -523,15 +529,25 @@ impl<'window> ModernGameServices<'window> {
                     String::from_utf8_lossy(resource_name.as_bytes())
                 )
             })?;
-        self.resident_sound_bank = load_sound_bank(
+        let loaded = load_sound_bank(
             self.audio_is_initialized(),
             SoundBankUsage::ResidentEffects,
             &encoded,
         )
         .context("decoding resident sound bank")?;
-        if self.resident_sound_bank.is_none() {
+        let Some(loaded) = loaded else {
             bail!("resident sound bank was loaded before SDL audio initialization");
+        };
+        let payload = loaded.bank.payload();
+        if payload.len() > self.resident_sound_memory.len() {
+            bail!(
+                "resident sound bank payload has {} bytes, exceeding the recovered {}-byte arena",
+                payload.len(),
+                self.resident_sound_memory.len()
+            );
         }
+        self.resident_sound_memory[..payload.len()].copy_from_slice(payload);
+        self.resident_sound_bank = Some(loaded);
         Ok(())
     }
 
@@ -902,6 +918,7 @@ impl<'window> ModernGameServices<'window> {
             request,
             AudioPlaybackBanks {
                 resident_effects: &resident.bank,
+                resident_effects_memory: &self.resident_sound_memory,
                 streamed_dialogue: streamed,
             },
         )?;
