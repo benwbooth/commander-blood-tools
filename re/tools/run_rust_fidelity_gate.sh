@@ -77,7 +77,7 @@ cargo test \
   --test-threads=1
 
 COVERAGE_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/cblood-production-coverage.XXXXXX")
-printf 'Instrumenting startup production coverage under %s\n' "$COVERAGE_ROOT"
+printf 'Instrumenting all production campaigns under %s\n' "$COVERAGE_ROOT"
 CARGO_TARGET_DIR="$COVERAGE_ROOT/target" \
   CARGO_INCREMENTAL=0 \
   RUSTFLAGS=-Cinstrument-coverage \
@@ -85,17 +85,15 @@ CARGO_TARGET_DIR="$COVERAGE_ROOT/target" \
   cargo test \
     -p commander-blood-game \
     --test startup_phone_runtime \
-    production_runtime_completes_the_authored_startup_phone_call \
     -- \
-    --exact \
     --test-threads=1
 llvm-profdata merge -sparse "$COVERAGE_ROOT"/*.profraw \
   -o "$COVERAGE_ROOT/merged.profdata"
 python3 -P re/tools/audit_rust_production_coverage.py \
   --binary "$COVERAGE_ROOT/target/debug/commander-blood" \
   --profile "$COVERAGE_ROOT/merged.profdata" \
-  --scenario startup-phone-complete \
-  --expected-covered re/rust-port/production-startup-covered.tsv \
+  --scenario production-campaigns \
+  --expected-covered re/rust-port/production-campaign-covered.tsv \
   --output "$COVERAGE_ROOT/report.json" \
   --summary-only
 
