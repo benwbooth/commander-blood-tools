@@ -4,14 +4,15 @@ use anyhow::{Context, Result, bail};
 use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind};
 
 use crate::native::bloodprg::{
-    BRIDGE_SPRITE_ENTITY_COUNT, BridgeSceneInput, BridgeSpriteEntity, BridgeSteeringInteraction,
-    GameLifecycleState, GameSceneLink, PbmDecodeOptions, PbmPaletteUpdate, PbmTransparency,
-    SceneImageBand, SceneImageLoadOptions, SceneTransitionHost, SceneTransitionLine,
-    SceneTransitionOutcome, SceneTransitionPalettes, SceneTransitionPhase,
+    BRIDGE_SPRITE_ENTITY_COUNT, BridgeSceneInput, BridgeSpriteEntity, GameLifecycleState,
+    GameSceneLink, PbmDecodeOptions, PbmPaletteUpdate, PbmTransparency,
+    PresentationWordChoicePhase, SceneImageBand, SceneImageLoadOptions, SceneTransitionHost,
+    SceneTransitionLine, SceneTransitionOutcome, SceneTransitionPalettes, SceneTransitionPhase,
     SceneTransitionRecordKind, SceneTransitionRecordSource, SceneTransitionState,
     ScriptPresentationScanState, decode_pbm_image, fill_back_buffer_band, update_scene_transition,
 };
 
+use super::game_lifecycle::bridge_steering_interaction;
 use super::{ModernGameServices, RuntimePaletteTransitionConfig, RuntimePlatformHost};
 
 pub(super) const SCENE_TRANSITION_IMAGE_RESOURCE: &[u8] = b"FRIGO.FD";
@@ -367,10 +368,12 @@ impl SceneTransitionHost for RuntimeSceneTransitionHost<'_, '_, '_, '_> {
         _presentation: &mut ScriptPresentationScanState,
     ) -> Result<()> {
         let pointer = self.services.input().pointer_sample();
+        let retained_word_choice_owner =
+            self.services.presentation_word_choice_phase()? != PresentationWordChoicePhase::Closed;
         self.services.update_bridge_steering(BridgeSceneInput {
             horizontal_delta: self.platform.take_bridge_horizontal_delta(),
             pointer_buttons: pointer.buttons.bits(),
-            interaction: BridgeSteeringInteraction::Free,
+            interaction: bridge_steering_interaction(self.lifecycle, retained_word_choice_owner),
         })?;
         Ok(())
     }

@@ -466,7 +466,7 @@ impl<'window> RuntimePlatformHost<'window> {
         self.logical_pointer.map(|coordinate| coordinate as i16)
     }
 
-    /// Retain the native steering cursor without moving the desktop pointer.
+    /// Retain the logical pointer selected by the current bridge input owner.
     pub fn synchronize_bridge_pointer(&mut self, position: [i16; 2]) {
         self.logical_pointer = position.map(f32::from);
     }

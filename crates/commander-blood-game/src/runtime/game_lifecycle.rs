@@ -7,7 +7,8 @@ use crate::native::bloodprg::{
     BridgeSceneInput, BridgeSteeringInteraction, CdAudioPreparationOutcome, ConfirmDialogOutcome,
     GameLifecycleHost, GameLifecycleState, GameProfileLoadStatus, GameSceneLink, GameTimerContext,
     GameTimerState, GameVmRunStatus, InputAction, InputCancellationOutcome, PresentationResourceId,
-    ScriptClock, ScriptProfileId, ScriptRuntime, advance_game_timer_tick,
+    PresentationWordChoicePhase, ScriptClock, ScriptProfileId, ScriptRuntime,
+    advance_game_timer_tick,
 };
 
 use super::bridge_frame::run_runtime_bridge_frame;
@@ -30,6 +31,24 @@ pub(super) const fn native_scene_link_target(link: GameSceneLink) -> u16 {
         GameSceneLink::DeferredPresentation => DEFERRED_MENU_SCENE_LINK_TARGET,
         GameSceneLink::MenuWords => PRESENTATION_MENU_BUFFER_LINK_TARGET,
         GameSceneLink::BridgePresentation(target) => target,
+    }
+}
+
+pub(super) fn bridge_steering_interaction(
+    state: &GameLifecycleState,
+    retained_word_choice_owner: bool,
+) -> BridgeSteeringInteraction {
+    let presentation = &state.presentation;
+    if state.modal_ui_busy()
+        || retained_word_choice_owner
+        || presentation.active
+        || presentation.word_choice_active
+        || presentation.menu_deferred
+        || presentation.subtitle_display_active
+    {
+        BridgeSteeringInteraction::MenuEngaged
+    } else {
+        BridgeSteeringInteraction::Free
     }
 }
 
@@ -154,14 +173,6 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
     fn frame_limit_reached(&self) -> bool {
         self.frame_limit
             .is_some_and(|limit| self.main_frames_presented >= limit)
-    }
-
-    fn bridge_interaction(state: &GameLifecycleState) -> BridgeSteeringInteraction {
-        if state.modal_ui_busy() {
-            BridgeSteeringInteraction::MenuEngaged
-        } else {
-            BridgeSteeringInteraction::Free
-        }
     }
 
     fn indexed_bridge_ui_active(state: &GameLifecycleState) -> bool {
@@ -398,6 +409,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     ) -> Result<()> {
         self.current_scene_link = link;
         let pointer = self.services.input().pointer_sample();
+        let retained_word_choice_owner =
+            self.services.presentation_word_choice_phase()? != PresentationWordChoicePhase::Closed;
         run_runtime_bridge_frame(
             &mut self.services,
             state,
@@ -405,7 +418,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             BridgeSceneInput {
                 horizontal_delta: self.platform.take_bridge_horizontal_delta(),
                 pointer_buttons: pointer.buttons.bits(),
-                interaction: Self::bridge_interaction(state),
+                interaction: bridge_steering_interaction(state, retained_word_choice_owner),
             },
             self.timer.navigation_animation_phase,
         )?;
@@ -622,25 +635,39 @@ mod tests {
     }
 
     #[test]
-    fn only_native_ui_bit_two_constrains_bridge_steering() {
+    fn every_typed_presentation_owner_constrains_bridge_steering() {
         let mut state = GameLifecycleState::default();
         assert_eq!(
-            RuntimeGameLifecycleHost::bridge_interaction(&state),
+            bridge_steering_interaction(&state, false),
             BridgeSteeringInteraction::Free
         );
         state.presentation.menu_word_source = GameMenuWordSource::PresentationBuffer;
         state.presentation.menu_deferred = true;
         assert_eq!(
-            RuntimeGameLifecycleHost::bridge_interaction(&state),
-            BridgeSteeringInteraction::Free
+            bridge_steering_interaction(&state, false),
+            BridgeSteeringInteraction::MenuEngaged
         );
 
+        state.presentation.menu_deferred = false;
+        state.presentation.word_choice_active = true;
+        assert_eq!(
+            bridge_steering_interaction(&state, false),
+            BridgeSteeringInteraction::MenuEngaged
+        );
+
+        state.presentation.word_choice_active = false;
         state.set_modal_ui_busy(true);
         assert_eq!(
-            RuntimeGameLifecycleHost::bridge_interaction(&state),
+            bridge_steering_interaction(&state, false),
             BridgeSteeringInteraction::MenuEngaged
         );
         assert!(RuntimeGameLifecycleHost::indexed_bridge_ui_active(&state));
+
+        state.set_modal_ui_busy(false);
+        assert_eq!(
+            bridge_steering_interaction(&state, true),
+            BridgeSteeringInteraction::MenuEngaged
+        );
     }
 
     #[test]

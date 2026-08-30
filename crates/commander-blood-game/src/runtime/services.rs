@@ -15,10 +15,10 @@ use sdl3::video::Window;
 
 use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{
-    AudioClipRequest, AudioEventContext, AudioEventState, AudioPlaybackBanks,
-    BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT, BRIDGE_SPRITE_ENTITY_COUNT,
-    BridgeActorPresentationState, BridgePageBackend, BridgePageState, BridgePageTarget,
-    BridgePaletteAdjustment, BridgeScene, BridgeSceneFrame, BridgeSceneInput,
+    AudioClipRequest, AudioEventContext, AudioEventState, AudioMixStatus, AudioPlaybackBanks,
+    AudioPlaybackOutcome, BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT,
+    BRIDGE_SPRITE_ENTITY_COUNT, BridgeActorPresentationState, BridgePageBackend, BridgePageState,
+    BridgePageTarget, BridgePaletteAdjustment, BridgeScene, BridgeSceneFrame, BridgeSceneInput,
     BridgeScreenInitializationBackend, BridgeScreenInitializationState, BridgeSpriteCommitOutcome,
     BridgeSpriteRasterOutcome, BridgeSteeringInteraction, BridgeSteeringOutcome,
     CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
@@ -134,6 +134,45 @@ struct RandomDrawAudit {
     presentation_noise: u64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct BridgePointerAudit {
+    interaction: BridgeSteeringInteraction,
+    before: [i16; 2],
+    after: [i16; 2],
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AudioPlaybackRoute {
+    Disabled,
+    Direct,
+    StreamMixed,
+    StreamUnavailable,
+}
+
+impl AudioPlaybackRoute {
+    const fn from_outcome(outcome: &AudioPlaybackOutcome) -> Self {
+        match outcome {
+            AudioPlaybackOutcome::PlaybackDisabled => Self::Disabled,
+            AudioPlaybackOutcome::StopAndPlay(_) => Self::Direct,
+            AudioPlaybackOutcome::StreamMix(report) => match report.status {
+                AudioMixStatus::Mixed => Self::StreamMixed,
+                AudioMixStatus::NoActiveBuffer | AudioMixStatus::PositionUnavailable => {
+                    Self::StreamUnavailable
+                }
+            },
+        }
+    }
+
+    const fn trace_name(self) -> &'static str {
+        match self {
+            Self::Disabled => "disabled",
+            Self::Direct => "direct",
+            Self::StreamMixed => "stream_mixed",
+            Self::StreamUnavailable => "stream_unavailable",
+        }
+    }
+}
+
 const fn random_draw_delta(before: u8, after: u8) -> u64 {
     after.wrapping_sub(before) as u64
 }
@@ -154,8 +193,10 @@ pub struct ModernGameServices<'window> {
     resident_sound_memory: Box<[u8]>,
     audio_events: AudioEventState,
     audio_event_history: Vec<AudioClipRequest>,
+    audio_playback_routes: Vec<AudioPlaybackRoute>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
+    bridge_pointer_audit: Option<BridgePointerAudit>,
     bridge_screen: BridgeScreenInitializationState,
     bridge_presentation_mode: Option<PresentationBridgeMode>,
     presentation_hover: PresentationHoverState<BridgeActorPresentationState>,
@@ -224,21 +265,28 @@ fn latch_script_finale_completion(
         finale_requested && active_line_before.is_some() && active_line_after.is_none();
 }
 
-fn audio_event_trace(history: &[AudioClipRequest]) -> (usize, Vec<serde_json::Value>) {
+fn audio_event_trace(
+    history: &[AudioClipRequest],
+    playback_routes: &[AudioPlaybackRoute],
+) -> (usize, Vec<serde_json::Value>) {
+    debug_assert_eq!(history.len(), playback_routes.len());
     let mut streamed_clip_count = usize::MIN;
     let events = history
         .iter()
-        .map(|request| match request {
+        .zip(playback_routes)
+        .map(|(request, route)| match request {
             AudioClipRequest::StreamedDialogue { index } => {
                 streamed_clip_count += 1;
                 serde_json::json!({
                     "kind": "streamed_dialogue",
                     "index": index,
+                    "route": route.trace_name(),
                 })
             }
             AudioClipRequest::VoiceReaction { bank_index } => serde_json::json!({
                 "kind": "voice_reaction",
                 "index": bank_index,
+                "route": route.trace_name(),
             }),
         })
         .collect();
@@ -282,8 +330,10 @@ impl<'window> ModernGameServices<'window> {
                 last_clip: u16::MIN,
             },
             audio_event_history: Vec::new(),
+            audio_playback_routes: Vec::new(),
             bridge_scene: None,
             bridge_frame: None,
+            bridge_pointer_audit: None,
             bridge_screen: BridgeScreenInitializationState::default(),
             bridge_presentation_mode: None,
             presentation_hover: PresentationHoverState::new(
@@ -917,7 +967,7 @@ impl<'window> ModernGameServices<'window> {
             .audio
             .as_mut()
             .context("runtime audio has not been initialized")?;
-        audio.play_sound_request(
+        let outcome = audio.play_sound_request(
             request,
             AudioPlaybackBanks {
                 resident_effects: &resident.bank,
@@ -926,6 +976,8 @@ impl<'window> ModernGameServices<'window> {
             },
         )?;
         self.audio_event_history.push(request);
+        self.audio_playback_routes
+            .push(AudioPlaybackRoute::from_outcome(&outcome));
         Ok(())
     }
 
@@ -3069,9 +3121,15 @@ impl<'window> ModernGameServices<'window> {
             let outcome = scene.update_steering(input);
             (outcome, scene.steering().cursor_ring_position as i16)
         };
-        let pointer = bridge_pointer_sample(self.input.pointer_sample(), cursor_x);
+        let pointer_before = self.input.pointer_sample();
+        let pointer = bridge_pointer_sample(pointer_before, cursor_x, input.interaction);
         self.input
             .publish_logical_pointer(pointer.position, pointer.buttons);
+        self.bridge_pointer_audit = Some(BridgePointerAudit {
+            interaction: input.interaction,
+            before: pointer_before.position,
+            after: pointer.position,
+        });
         Ok(outcome)
     }
 
@@ -3665,6 +3723,14 @@ impl<'window> ModernGameServices<'window> {
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
+        let retained_word_choice = self.presentation_word_choice.as_ref().map(|choice| {
+            let state = choice.state();
+            serde_json::json!({
+                "active": state.active,
+                "interface_active": state.interface_active,
+                "phase": format!("{:?}", state.phase),
+            })
+        });
         let inline_menu_entries = profile
             .map(|profile| {
                 text.menu_words
@@ -3872,7 +3938,7 @@ impl<'window> ModernGameServices<'window> {
             "owned_dialogue_hold_countdown": text.dialogue_hold_countdown,
         });
         let (streamed_clip_count, audio_event_history) =
-            audio_event_trace(&self.audio_event_history);
+            audio_event_trace(&self.audio_event_history, &self.audio_playback_routes);
         let streamed_sound_bank = self
             .scripts
             .backend()
@@ -3980,6 +4046,7 @@ impl<'window> ModernGameServices<'window> {
             "screen_reverse": presentation_screen.is_some_and(PresentationScreenState::reverse),
             "navigation_rebuild_pending": lifecycle.navigation_rebuild_pending,
             "word_choice_active": u8::from(lifecycle.presentation.word_choice_active),
+            "retained_word_choice": retained_word_choice,
             "selector_word_choices": selector_word_choices,
             "rendered_word_choices": rendered_word_choices,
             "inline_menu": inline_menu_trace,
@@ -4078,6 +4145,14 @@ impl<'window> ModernGameServices<'window> {
                 "previous_buttons": previous_buttons.bits(),
                 "primary_pressed": u8::from(pointer_edges.primary_pressed || lifecycle.primary_pointer_pressed),
                 "press_pending": lifecycle.pointer_press_pending,
+                "bridge_steering": self.bridge_pointer_audit.map(|audit| serde_json::json!({
+                    "interaction": match audit.interaction {
+                        BridgeSteeringInteraction::Free => "free",
+                        BridgeSteeringInteraction::MenuEngaged => "menu_engaged",
+                    },
+                    "before": audit.before,
+                    "after": audit.after,
+                })),
             },
             "audio": {
                 "driver_pending": u8::from(self.audio.is_none()),
@@ -4544,8 +4619,14 @@ fn input_cancellation_state(
     }
 }
 
-fn bridge_pointer_sample(mut pointer: PointerSample, cursor_x: i16) -> PointerSample {
-    pointer.position[0] = cursor_x;
+fn bridge_pointer_sample(
+    mut pointer: PointerSample,
+    cursor_x: i16,
+    interaction: BridgeSteeringInteraction,
+) -> PointerSample {
+    if interaction == BridgeSteeringInteraction::Free {
+        pointer.position[0] = cursor_x;
+    }
     pointer
 }
 
@@ -4764,17 +4845,20 @@ mod tests {
     }
 
     #[test]
-    fn recovered_steering_x_replaces_raw_x_before_bridge_interactions() {
+    fn recovered_steering_rebases_only_the_free_bridge_pointer() {
         let buttons = PointerButtons::from_bits(PointerButton::Primary as u16);
         let pointer = PointerSample {
             position: [301, 87],
             buttons,
         };
 
-        let synchronized = bridge_pointer_sample(pointer, 142);
+        let free = bridge_pointer_sample(pointer, 142, BridgeSteeringInteraction::Free);
+        let modal = bridge_pointer_sample(pointer, 142, BridgeSteeringInteraction::MenuEngaged);
 
-        assert_eq!(synchronized.position, [142, 87]);
-        assert_eq!(synchronized.buttons, buttons);
+        assert_eq!(free.position, [142, 87]);
+        assert_eq!(modal.position, pointer.position);
+        assert_eq!(free.buttons, buttons);
+        assert_eq!(modal.buttons, buttons);
     }
 
     #[test]
@@ -4813,15 +4897,18 @@ mod tests {
                 bank_index: VOICE_BANK_INDEX,
             },
         ];
+        let routes = [AudioPlaybackRoute::StreamMixed, AudioPlaybackRoute::Direct];
 
-        let (streamed_clip_count, events) = audio_event_trace(&history);
+        let (streamed_clip_count, events) = audio_event_trace(&history, &routes);
 
         assert_eq!(streamed_clip_count, EXPECTED_STREAMED_CLIP_COUNT);
         assert_eq!(events.len(), history.len());
         assert_eq!(events[DIALOGUE_EVENT_INDEX]["kind"], "streamed_dialogue");
         assert_eq!(events[DIALOGUE_EVENT_INDEX]["index"], DIALOGUE_CLIP_INDEX);
+        assert_eq!(events[DIALOGUE_EVENT_INDEX]["route"], "stream_mixed");
         assert_eq!(events[VOICE_EVENT_INDEX]["kind"], "voice_reaction");
         assert_eq!(events[VOICE_EVENT_INDEX]["index"], VOICE_BANK_INDEX);
+        assert_eq!(events[VOICE_EVENT_INDEX]["route"], "direct");
     }
 
     const STATUS_TEST_ORIGIN: [u16; 2] = [40, 50];

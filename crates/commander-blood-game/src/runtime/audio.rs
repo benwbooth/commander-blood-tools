@@ -721,11 +721,11 @@ impl RuntimeAudioHost {
         &mut self,
         request: crate::native::bloodprg::AudioClipRequest,
         banks: AudioPlaybackBanks<'_>,
-    ) -> Result<()> {
+    ) -> Result<AudioPlaybackOutcome> {
         self.check_callback()?;
         let mut shared = lock_shared(&self.shared);
         let outcome = shared.music_stream.update_clip(request, banks)?;
-        let direct_playback = match outcome {
+        let direct_playback = match &outcome {
             AudioPlaybackOutcome::PlaybackDisabled => false,
             AudioPlaybackOutcome::StopAndPlay(playback) => {
                 let clip = RuntimePcmClip::from_encoded_snd(&playback.encoded_clip)?;
@@ -741,7 +741,7 @@ impl RuntimeAudioHost {
                 .clear()
                 .map_err(|error| anyhow!("clearing SDL3 stream before direct playback: {error}"))?;
         }
-        Ok(())
+        Ok(outcome)
     }
 
     /// Start one foreground clip over active music.

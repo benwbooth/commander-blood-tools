@@ -6,9 +6,9 @@ use std::fmt;
 use commander_blood_formats::bas::{ScriptBas, ScriptBasInstruction, ScriptBasToken};
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::instruction::{
-    DecodedScriptInstruction, ScriptInstructionError, ScriptTextWord,
-    decode_script_record_clear_operation, decode_script_shared_bit_operation,
-    decode_script_shared_state_operation, decode_script_transfer,
+    DecodedScriptInstruction, ScriptInstructionError, decode_script_record_clear_operation,
+    decode_script_shared_bit_operation, decode_script_shared_state_operation,
+    decode_script_transfer,
 };
 use commander_blood_formats::script::{
     ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptState, ScriptWordId,
@@ -196,22 +196,6 @@ pub fn execute_script_dialogue_control<Host: ScriptBasDispatchHost>(
         )
     };
     dispatch.sequence_presentation.offered_topic = offered_topic;
-    if result.as_ref().is_ok_and(|outcome| outcome.menu_collected)
-        && !dispatch
-            .text_presentation
-            .request_flags
-            .text_request_pending()
-    {
-        let menu_words = selector
-            .pending_presentation_words()
-            .iter()
-            .copied()
-            .map(ScriptTextWord::Dictionary)
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
-        dispatch.text_presentation.menu_word_count = menu_words.len();
-        dispatch.text_presentation.menu_words = menu_words;
-    }
     result
 }
 
@@ -448,7 +432,7 @@ mod tests {
     use std::convert::Infallible;
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::instruction::ScriptText;
+    use commander_blood_formats::instruction::{ScriptText, ScriptTextWord};
     use commander_blood_formats::script::ScriptObjectKind;
     use serde::Deserialize;
 
@@ -638,11 +622,27 @@ mod tests {
                     )
                 });
                 if outcome.menu_collected {
-                    assert!(!dispatch.text_presentation.menu_words.is_empty());
-                    assert_eq!(
-                        dispatch.text_presentation.menu_word_count,
-                        dispatch.text_presentation.menu_words.len()
+                    assert!(
+                        !profile
+                            .selector_state()
+                            .pending_presentation_words()
+                            .is_empty(),
+                        "SCRIPT{} BAS list {:#06x} collected an empty selector menu",
+                        profile_id.value() + 1,
+                        node.offset
                     );
+                    if dispatch
+                        .text_presentation
+                        .request_flags
+                        .text_request_pending()
+                    {
+                        assert!(
+                            !dispatch.text_presentation.menu_words.is_empty()
+                                || !dispatch.text_presentation.subtitle_text.is_empty()
+                        );
+                    } else {
+                        assert!(dispatch.text_presentation.menu_words.is_empty());
+                    }
                 }
                 profile.synchronized_state().unwrap();
                 executed_lists += 1;
@@ -869,8 +869,22 @@ mod tests {
                             profile_id.value() + 1,
                             node.offset
                         );
-                    } else if response_outcome.menu_collected {
-                        assert_eq!(published_words, expected_response_menu);
+                    } else {
+                        assert!(
+                            published_words.is_empty(),
+                            "SCRIPT{} node {:#06x} published selector choices as dialogue text",
+                            profile_id.value() + 1,
+                            node.offset
+                        );
+                    }
+                    if response_outcome.menu_collected {
+                        assert_eq!(
+                            profile.selector_state().pending_presentation_words(),
+                            expected_response_menu,
+                            "SCRIPT{} node {:#06x} lost its independently collected selector menu",
+                            profile_id.value() + 1,
+                            node.offset
+                        );
                     }
                     assert_eq!(
                         profile.selector_state().history().entries()[FIRST_CONCEPT_HISTORY_SLOT],

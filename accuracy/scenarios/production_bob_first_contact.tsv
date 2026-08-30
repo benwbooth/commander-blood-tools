@@ -1,5 +1,6 @@
 # Complete Izwalito's startup call, open CONTACTS, select Bob Morlock, and
-# advance through his thaw and first dialogue into the authored topic chooser.
+# advance through his thaw and first dialogue, choose goodbye, and prove the
+# bridge regains pointer ownership.
 wait 50
 wait 50
 wait 55
@@ -22,5 +23,8 @@ sclick 100 89
 wait 20
 wait 20
 wait 20
+wait 20
+wait 20
+sclick 225 58
 wait 20
 wait 20

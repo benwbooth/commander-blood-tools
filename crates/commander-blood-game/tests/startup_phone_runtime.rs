@@ -79,6 +79,8 @@ const IZWALITO_EXPLANATIONS_FINAL_WORDS: [&str; 7] =
     ["Click", "quick", "on", "\"HONK\"", ".", "He", "has"];
 const STREAMED_DIALOGUE_EVENT_KIND: &str = "streamed_dialogue";
 const VOICE_REACTION_EVENT_KIND: &str = "voice_reaction";
+const STREAM_MIXED_AUDIO_ROUTE: &str = "stream_mixed";
+const STREAM_UNAVAILABLE_AUDIO_ROUTE: &str = "stream_unavailable";
 const RADIO_RING_CLIP_INDEX: u64 = 6;
 const RADIO_COMPLETION_CLIP_INDEX: u64 = 2;
 const MINIMUM_REPEATED_RING_COUNT: usize = 2;
@@ -97,7 +99,19 @@ const BOB_THAW_VIDEO: &str = "sq\\cryogel.hnm";
 const BOB_IDLE_VIDEO: &str = "PE\\aabob.hnm";
 const BOB_FIRST_TALK_VIDEO: &str = "PE\\bobc.hnm";
 const BOB_SECOND_TALK_VIDEO: &str = "PE\\bobd.hnm";
+const BOB_GOODBYE_CLICK: &str = "sclick 225 58";
 const RESIDENT_LAST_CLIP_INDEX: u64 = 16;
+const BOB_FIRST_CONTACT_PROMPT: [&str; 9] = [
+    "What",
+    "do",
+    "you",
+    "want",
+    "to",
+    "know",
+    ",",
+    "Commander",
+    "?",
+];
 const BOB_FIRST_CONTACT_CHOICES: [&str; 8] = [
     "bye_bye",
     "black_hole",
@@ -357,6 +371,17 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
     assert_eq!(
         post_answer_audio.first().unwrap()["index"],
         RADIO_COMPLETION_CLIP_INDEX
+    );
+    assert_eq!(
+        post_answer_audio.first().unwrap()["route"],
+        STREAM_MIXED_AUDIO_ROUTE,
+        "the radio completion boing was requested but not mixed into the live audio stream"
+    );
+    assert!(
+        post_answer_audio
+            .iter()
+            .all(|event| event["route"] != STREAM_UNAVAILABLE_AUDIO_ROUTE),
+        "the startup phone call selected audio without an available playback route"
     );
     assert_eq!(
         post_answer_audio
@@ -622,6 +647,11 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
         serde_json::json!(BOB_FIRST_CONTACT_CHOICES)
     );
     assert_eq!(
+        presentation(waiting)["inline_menu"]["words"],
+        serde_json::json!(BOB_FIRST_CONTACT_PROMPT),
+        "Bob's selector choices replaced his active authored dialogue"
+    );
+    assert_eq!(
         waiting["semantic"]["video"]["active_resource"],
         BOB_IDLE_VIDEO
     );
@@ -635,6 +665,24 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
                 && event["index"].as_u64() == Some(RESIDENT_LAST_CLIP_INDEX)
         })
     }));
+
+    let goodbye = bob_records
+        .iter()
+        .find(|record| record["action"] == BOB_GOODBYE_CLICK)
+        .expect("runtime trace omitted Bob's authored goodbye choice");
+    assert_eq!(
+        goodbye["semantic"]["input"]["bridge_steering"]["before"][0],
+        225
+    );
+
+    let goodbye_settled = bob_records
+        .last()
+        .expect("Bob's goodbye scenario produced no settled record");
+    assert!(!presentation_flag(goodbye_settled, "word_choice_active"));
+    assert_eq!(
+        presentation(goodbye_settled)["rendered_word_choices"],
+        serde_json::json!([])
+    );
 }
 
 #[test]
