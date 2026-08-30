@@ -24,9 +24,10 @@ use super::{ModernGameServices, RuntimeAlienOverlayFrameInput};
 const PIT_INPUT_FREQUENCY_HZ: u64 = 1_193_182;
 /// Divisor programmed by the recovered timer setup routine.
 const GAME_TIMER_DIVISOR: u64 = 5_958;
-/// Timer interrupts assigned to one main-loop frame by `bloodprg_main`.
+/// Minimum timer interrupts in the `bloodprg_main` frame-delay wait.
 const GAME_FRAME_TIMER_TICKS: u64 = 8;
 const NANOSECONDS_PER_SECOND: u64 = 1_000_000_000;
+const PIT_TICK_SCALED_UNITS: u128 = GAME_TIMER_DIVISOR as u128 * NANOSECONDS_PER_SECOND as u128;
 const MEASURED_GAME_FRAME_MILLISECONDS: u64 = 46;
 const MEASURED_PRESENTATION_FRAME_MILLISECONDS: u64 = 68;
 const MODERN_VISUAL_REFRESH_HZ: u64 = 60;
@@ -80,6 +81,7 @@ pub struct RuntimePlatformHost<'window> {
     mouse: MouseUtil,
     events: EventPump,
     frame_clock: GameFrameClock,
+    pit_clock: GamePitClock,
     bridge_horizontal_delta: f32,
     pointer_buttons: PointerButtons,
     logical_pointer: [f32; 2],
@@ -102,6 +104,7 @@ impl<'window> RuntimePlatformHost<'window> {
             mouse,
             events,
             frame_clock: GameFrameClock::default(),
+            pit_clock: GamePitClock::default(),
             bridge_horizontal_delta: 0.0,
             pointer_buttons: PointerButtons::NONE,
             logical_pointer: INITIAL_LOGICAL_POINTER.map(f32::from),
@@ -426,6 +429,30 @@ impl<'window> RuntimePlatformHost<'window> {
         self.logical_pointer.map(|coordinate| coordinate as i16)
     }
 
+    /// Start the monotonic replacement for the recovered channel-zero PIT ISR.
+    pub fn start_game_timer(&mut self) {
+        self.pit_clock.start(Instant::now());
+    }
+
+    /// Stop timer delivery and discard any fractional interval still pending.
+    pub fn stop_game_timer(&mut self) {
+        self.pit_clock.stop();
+    }
+
+    /// Return every PIT interrupt elapsed since the previous runtime boundary.
+    ///
+    /// Scripted oracle campaigns retain their calibrated eight-tick semantic
+    /// frame. Production uses elapsed monotonic time because the DOS ISR kept
+    /// running after the main loop's eight-interrupt minimum had expired.
+    pub fn take_game_timer_ticks(&mut self) -> u64 {
+        let now = Instant::now();
+        if self.scenario.is_some() {
+            self.pit_clock.take_fixed_ticks(now, GAME_FRAME_TIMER_TICKS)
+        } else {
+            self.pit_clock.take_elapsed_ticks(now)
+        }
+    }
+
     /// Consume horizontal mouse motion plus uncaptured edge-scroll velocity.
     pub fn take_bridge_horizontal_delta(&mut self) -> i32 {
         take_bridge_motion(
@@ -565,6 +592,45 @@ impl Drop for RuntimePlatformHost<'_> {
 #[derive(Default)]
 struct GameFrameClock {
     started_at: Option<Instant>,
+}
+
+#[derive(Default)]
+struct GamePitClock {
+    sampled_at: Option<Instant>,
+    scaled_remainder: u128,
+}
+
+impl GamePitClock {
+    fn start(&mut self, now: Instant) {
+        self.sampled_at = Some(now);
+        self.scaled_remainder = u128::MIN;
+    }
+
+    fn stop(&mut self) {
+        self.sampled_at = None;
+        self.scaled_remainder = u128::MIN;
+    }
+
+    fn take_elapsed_ticks(&mut self, now: Instant) -> u64 {
+        let Some(sampled_at) = self.sampled_at.replace(now) else {
+            return u64::MIN;
+        };
+        let elapsed_scaled = now
+            .saturating_duration_since(sampled_at)
+            .as_nanos()
+            .saturating_mul(PIT_INPUT_FREQUENCY_HZ as u128);
+        let accumulated = self.scaled_remainder.saturating_add(elapsed_scaled);
+        self.scaled_remainder = accumulated % PIT_TICK_SCALED_UNITS;
+        u64::try_from(accumulated / PIT_TICK_SCALED_UNITS).unwrap_or(u64::MAX)
+    }
+
+    fn take_fixed_ticks(&mut self, now: Instant, ticks: u64) -> u64 {
+        if self.sampled_at.replace(now).is_none() {
+            return u64::MIN;
+        }
+        self.scaled_remainder = u128::MIN;
+        ticks
+    }
 }
 
 impl GameFrameClock {
@@ -726,6 +792,49 @@ mod tests {
         );
         let update_rate = 1.0 / RECOVERED_FRAME_BUDGET.as_secs_f64();
         assert!((update_rate - 25.03).abs() < 0.01);
+    }
+
+    #[test]
+    fn pit_clock_retains_fractional_ticks_across_measured_frames() {
+        let start = Instant::now();
+        let mut clock = GamePitClock::default();
+        clock.start(start);
+
+        assert_eq!(clock.take_elapsed_ticks(start + GAME_FRAME_DURATION), 9);
+        assert_eq!(clock.take_elapsed_ticks(start + GAME_FRAME_DURATION * 2), 9);
+        assert_eq!(
+            clock.take_elapsed_ticks(start + Duration::from_secs(1)),
+            182
+        );
+
+        let mut presentation_clock = GamePitClock::default();
+        presentation_clock.start(start);
+        assert_eq!(
+            presentation_clock.take_elapsed_ticks(start + PRESENTATION_FRAME_DURATION),
+            13
+        );
+        assert_eq!(
+            presentation_clock.take_elapsed_ticks(start + PRESENTATION_FRAME_DURATION * 2),
+            14
+        );
+    }
+
+    #[test]
+    fn scripted_pit_clock_retains_the_calibrated_frame_tick_count() {
+        let start = Instant::now();
+        let mut clock = GamePitClock::default();
+        assert_eq!(clock.take_fixed_ticks(start, GAME_FRAME_TIMER_TICKS), 0);
+
+        clock.start(start);
+        assert_eq!(
+            clock.take_fixed_ticks(start + PRESENTATION_FRAME_DURATION, GAME_FRAME_TIMER_TICKS),
+            GAME_FRAME_TIMER_TICKS
+        );
+        clock.stop();
+        assert_eq!(
+            clock.take_fixed_ticks(start + Duration::from_secs(1), GAME_FRAME_TIMER_TICKS),
+            0
+        );
     }
 
     #[test]

@@ -21,7 +21,6 @@ const INITIAL_SCENE_LINK_TARGET: u16 = 16;
 const SUBTITLE_SCENE_LINK_TARGET: u16 = 24_164;
 const DEFERRED_MENU_SCENE_LINK_TARGET: u16 = 26_544;
 const PRESENTATION_MENU_BUFFER_LINK_TARGET: u16 = u16::MIN;
-const GAME_TIMER_TICKS_PER_FRAME: usize = 8;
 const COMPLETION_VOICE_RESOURCE: &[u8] = b"mu\\tablo2.voc";
 
 pub(super) fn arm_requested_speaker_pulse(
@@ -95,6 +94,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
     }
 
     fn advance_frame_timers(&mut self, state: &mut GameLifecycleState) -> Result<()> {
+        let elapsed_ticks = self.platform.take_game_timer_ticks();
         arm_requested_speaker_pulse(state, &mut self.timer);
         let (chatter_cooldown, dialogue_delay) = self.services.audio_event_timer_counters();
         self.timer.chatter_cooldown = chatter_cooldown;
@@ -108,14 +108,14 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         };
         let mut speaker_gate = None;
         if let Some(profile) = self.services.runtime_mut().current_profile_mut() {
-            for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
+            for _ in u64::MIN..elapsed_ticks {
                 speaker_gate =
                     advance_game_timer_tick(&mut self.timer, profile.runtime_mut(), context)
                         .speaker_gate
                         .or(speaker_gate);
             }
         } else {
-            for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
+            for _ in u64::MIN..elapsed_ticks {
                 speaker_gate = advance_game_timer_tick(
                     &mut self.timer,
                     &mut self.startup_timer_runtime,
@@ -194,6 +194,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             bail!("flat runtime framebuffers were not allocated");
         }
         self.timer.start();
+        self.platform.start_game_timer();
         self.runtime_storage_initialized = true;
         Ok(())
     }
@@ -521,6 +522,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
 
     fn finish_presentations(&mut self) -> Result<()> {
         self.timer.stop();
+        self.platform.stop_game_timer();
         self.services.finish_runtime_presentations()
     }
 

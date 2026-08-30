@@ -15,7 +15,6 @@ use super::{ModernGameServices, RuntimePlatformHost};
 const OPENING_PRESENTATION_LINE: u16 = 0;
 const CREDITS_PRESENTATION_LINE: u16 = 1;
 const PRESENTATION_GATE_ACTIVE: u8 = 1;
-const GAME_TIMER_TICKS_PER_FRAME: usize = 8;
 
 /// Terminal state returned by one recovered blocking presentation loop.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -76,11 +75,12 @@ struct RuntimePresentationRunHost<'services, 'window> {
 
 impl RuntimePresentationRunHost<'_, '_> {
     fn advance_timer(&mut self) -> Result<()> {
+        let elapsed_ticks = self.platform.take_game_timer_ticks();
         arm_requested_speaker_pulse(&mut self.input_state, self.timer);
         self.services.export_game_timer_state(self.timer)?;
         let mut speaker_gate = None;
         if let Some(profile) = self.services.runtime_mut().current_profile_mut() {
-            for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
+            for _ in u64::MIN..elapsed_ticks {
                 speaker_gate = advance_game_timer_tick(
                     self.timer,
                     profile.runtime_mut(),
@@ -90,7 +90,7 @@ impl RuntimePresentationRunHost<'_, '_> {
                 .or(speaker_gate);
             }
         } else {
-            for _ in usize::MIN..GAME_TIMER_TICKS_PER_FRAME {
+            for _ in u64::MIN..elapsed_ticks {
                 speaker_gate = advance_game_timer_tick(
                     self.timer,
                     self.startup_timer_runtime,
