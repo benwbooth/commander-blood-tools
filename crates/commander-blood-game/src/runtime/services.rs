@@ -3291,6 +3291,14 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         refresh_live_palette: bool,
     ) -> Result<&BridgeSceneFrame> {
+        self.render_current_bridge_frame_to_target(refresh_live_palette, BridgePageTarget::Primary)
+    }
+
+    fn render_current_bridge_frame_to_target(
+        &mut self,
+        refresh_live_palette: bool,
+        target: BridgePageTarget,
+    ) -> Result<&BridgeSceneFrame> {
         {
             let Self {
                 runtime,
@@ -3331,10 +3339,8 @@ impl<'window> ModernGameServices<'window> {
         )?;
         let mut indexed_bridge_base = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
         self.compose_current_bridge_work_surface(&mut indexed_bridge_base)?;
-        self.runtime
-            .front_buffer_mut()
-            .pixels_mut()
-            .copy_from_slice(&indexed_bridge_base);
+        let (front, back) = self.runtime.presentation_buffers_mut();
+        selected_bridge_page_mut(front, back, target).copy_from_slice(&indexed_bridge_base);
         Ok(self
             .bridge_frame
             .as_ref()
@@ -4050,15 +4056,20 @@ impl RuntimeBridgeScreenBackend<'_, '_> {
         Ok(())
     }
 
-    fn compose_panorama_page(&mut self, transparent_zero: bool) -> Result<()> {
+    fn compose_panorama_page(
+        &mut self,
+        target: BridgePageTarget,
+        transparent_zero: bool,
+    ) -> Result<()> {
         let panorama = &self
             .services
             .bridge_frame
             .as_ref()
             .context("bridge frame was not retained for page composition")?
             .panorama_pixels;
-        let (_front, back) = self.services.runtime.presentation_buffers_mut();
-        compose_bridge_page(back, panorama, transparent_zero)
+        let (front, back) = self.services.runtime.presentation_buffers_mut();
+        let destination = selected_bridge_page_mut(front, back, target);
+        compose_bridge_page(destination, panorama, transparent_zero)
     }
 }
 
@@ -4089,12 +4100,13 @@ impl BridgeScreenInitializationBackend for RuntimeBridgeScreenBackend<'_, '_> {
         state: &mut BridgeScreenInitializationState,
     ) -> Result<()> {
         self.ensure_panorama_frame(frame, state.palette_refresh_in_progress)?;
-        self.compose_panorama_page(state.transparent_zero)?;
+        self.compose_panorama_page(BridgePageTarget::Primary, state.transparent_zero)?;
         *panorama_palette = self.services.bridge_palette;
         Ok(())
     }
 
     fn clear_secondary_page(&mut self, _state: &mut BridgeScreenInitializationState) -> Result<()> {
+        self.services.runtime.clear_back_buffer();
         self.services.bridge_frame = None;
         Ok(())
     }
@@ -4155,6 +4167,7 @@ impl BridgePageBackend for RuntimeBridgeScreenBackend<'_, '_> {
         if target != BridgePageTarget::Secondary {
             bail!("bridge page clear requested unsupported target {target:?}");
         }
+        self.services.runtime.clear_back_buffer();
         self.services.bridge_frame = None;
         Ok(())
     }
@@ -4198,7 +4211,10 @@ impl BridgePageBackend for RuntimeBridgeScreenBackend<'_, '_> {
             bail!("bridge sprite render requested unsupported target {target:?}");
         }
         self.services
-            .render_current_bridge_frame_with_palette_refresh(self.palette_refresh_in_progress)
+            .render_current_bridge_frame_to_target(
+                self.palette_refresh_in_progress,
+                BridgePageTarget::Secondary,
+            )
             .map(|_| ())
     }
 
@@ -4212,7 +4228,7 @@ impl BridgePageBackend for RuntimeBridgeScreenBackend<'_, '_> {
             bail!("bridge panorama load requested unsupported target {target:?}");
         }
         self.ensure_panorama_frame(frame, self.palette_refresh_in_progress)?;
-        self.compose_panorama_page(state.transparent_zero)
+        self.compose_panorama_page(target, state.transparent_zero)
     }
 }
 
@@ -4234,6 +4250,17 @@ fn compose_bridge_page(
         destination.copy_from_slice(panorama);
     }
     Ok(())
+}
+
+fn selected_bridge_page_mut<'page>(
+    primary: &'page mut [u8],
+    secondary: &'page mut [u8],
+    target: BridgePageTarget,
+) -> &'page mut [u8] {
+    match target {
+        BridgePageTarget::Primary => primary,
+        BridgePageTarget::Secondary => secondary,
+    }
 }
 
 fn prefixed_resource_name(directory: &[u8], name: &[u8]) -> Result<BloodResourceName> {
@@ -4433,6 +4460,23 @@ mod tests {
         compose_bridge_page(&mut replacing_page, &panorama, false).unwrap();
         assert_eq!(replacing_page, panorama);
     }
+
+    #[test]
+    fn bridge_page_targets_preserve_the_original_primary_secondary_mapping() {
+        let mut primary = [1, 2];
+        let mut secondary = [3, 4];
+
+        selected_bridge_page_mut(&mut primary, &mut secondary, BridgePageTarget::Secondary)
+            .copy_from_slice(&[5, 6]);
+        assert_eq!(primary, [1, 2]);
+        assert_eq!(secondary, [5, 6]);
+
+        selected_bridge_page_mut(&mut primary, &mut secondary, BridgePageTarget::Primary)
+            .copy_from_slice(&[7, 8]);
+        assert_eq!(primary, [7, 8]);
+        assert_eq!(secondary, [5, 6]);
+    }
+
     const STATUS_TEST_ORIGIN: [u16; 2] = [40, 50];
     const STATUS_TEST_EXTENT: [u16; 2] = [30, 20];
     const STATUS_TEST_ACTIVE_FLAGS: u16 = 1;
