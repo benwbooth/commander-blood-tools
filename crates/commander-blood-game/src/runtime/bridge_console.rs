@@ -28,6 +28,7 @@ const CONSOLE_TINT_FIRST_INDEX: u8 = 224;
 const PRESENTATION_CHOICE_ACTIVE_FLAG: u8 = 1;
 const PRESENTATION_CHOICE_LAYOUT_PHASE: u8 = 1;
 const PRESENTATION_CHOICE_TRANSITION_PHASE: u8 = 1 << 1;
+const PRESENTATION_CHOICE_MODAL_UI_FLAG: u8 = 1 << 2;
 const OPTION_MENU_LABEL_COUNT: usize = 5;
 const TEXT_SPEED_LABEL_COUNT: usize = 5;
 const PANEL_CENTER_X: i16 = 100;
@@ -77,6 +78,7 @@ impl RuntimeBridgeConsole {
             return Ok(());
         }
 
+        let console_owned_modal_ui_before_update = self.console.selected.is_some();
         if self.console.selected.is_some() && self.console.interface_busy {
             self.console.interface_busy = services.bridge_seek_requested()?;
         }
@@ -120,6 +122,11 @@ impl RuntimeBridgeConsole {
             BridgeConsoleDispatchOutcome::Gated(_) => {}
         }
         self.publish_interface_ownership(lifecycle);
+        publish_console_modal_ui(
+            lifecycle,
+            console_owned_modal_ui_before_update,
+            &self.console,
+        );
         Ok(())
     }
 
@@ -129,7 +136,9 @@ impl RuntimeBridgeConsole {
         lifecycle: &mut GameLifecycleState,
     ) -> Result<()> {
         if self.options.text_options_active {
+            import_text_speed_modal_ui(&mut self.text_speed.state, lifecycle);
             self.update_text_speed_menu(services)?;
+            export_text_speed_modal_ui(&self.text_speed.state, lifecycle);
         }
         self.publish_interface_ownership(lifecycle);
         Ok(())
@@ -457,6 +466,29 @@ impl RuntimeBridgeConsole {
     }
 }
 
+fn import_text_speed_modal_ui(state: &mut PresentationChoiceState, lifecycle: &GameLifecycleState) {
+    state.ui_flags = (state.ui_flags & !PRESENTATION_CHOICE_MODAL_UI_FLAG)
+        | if lifecycle.modal_ui_busy() {
+            PRESENTATION_CHOICE_MODAL_UI_FLAG
+        } else {
+            u8::MIN
+        };
+}
+
+fn publish_console_modal_ui(
+    lifecycle: &mut GameLifecycleState,
+    console_owned_before_update: bool,
+    state: &BridgeConsoleState,
+) {
+    if console_owned_before_update || state.selected.is_some() {
+        lifecycle.set_modal_ui_busy(state.interface_active);
+    }
+}
+
+fn export_text_speed_modal_ui(state: &PresentationChoiceState, lifecycle: &mut GameLifecycleState) {
+    lifecycle.set_modal_ui_busy(state.ui_flags & PRESENTATION_CHOICE_MODAL_UI_FLAG != u8::MIN);
+}
+
 struct RuntimeTextSpeedMenu {
     state: PresentationChoiceState,
     list: ChoiceListState,
@@ -778,5 +810,47 @@ mod tests {
         assert_eq!(menu.state.phase, PRESENTATION_CHOICE_LAYOUT_PHASE);
         assert_eq!(menu.state.result, 7);
         assert_eq!(menu.animation_target, target);
+    }
+
+    #[test]
+    fn text_speed_choice_synchronizes_the_native_modal_ui_bit() {
+        let mut state = RuntimeTextSpeedMenu::new(u16::MIN).state;
+        state.ui_flags = u8::MAX & !PRESENTATION_CHOICE_MODAL_UI_FLAG;
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_modal_ui_busy(true);
+
+        import_text_speed_modal_ui(&mut state, &lifecycle);
+        assert_ne!(state.ui_flags & PRESENTATION_CHOICE_MODAL_UI_FLAG, u8::MIN);
+
+        state.ui_flags &= !PRESENTATION_CHOICE_MODAL_UI_FLAG;
+        export_text_speed_modal_ui(&state, &mut lifecycle);
+        assert!(!lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn selected_console_command_owns_the_native_modal_ui_bit() {
+        let mut lifecycle = GameLifecycleState::default();
+        let active = BridgeConsoleState {
+            selected: Some(BridgeConsoleChoice::Contacts),
+            interface_active: true,
+            ..BridgeConsoleState::default()
+        };
+
+        publish_console_modal_ui(&mut lifecycle, false, &active);
+        assert!(lifecycle.modal_ui_busy());
+
+        let closed = BridgeConsoleState::default();
+        publish_console_modal_ui(&mut lifecycle, true, &closed);
+        assert!(!lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn inactive_console_does_not_clear_another_modal_ui_owner() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_modal_ui_busy(true);
+
+        publish_console_modal_ui(&mut lifecycle, false, &BridgeConsoleState::default());
+
+        assert!(lifecycle.modal_ui_busy());
     }
 }

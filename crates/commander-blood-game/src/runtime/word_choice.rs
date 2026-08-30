@@ -48,6 +48,7 @@ impl RuntimePresentationWordChoice {
         lifecycle: &mut GameLifecycleState,
     ) -> Result<PresentationWordChoiceOutcome> {
         self.import_lifecycle_state(services, lifecycle)?;
+        let interface_active_before_update = self.state.interface_active;
         let phase_before_update = self.state.phase;
         if self.state.phase == PresentationWordChoicePhase::Closed {
             self.transition = FramebufferTransitionState {
@@ -120,7 +121,7 @@ impl RuntimePresentationWordChoice {
             | PresentationWordChoiceOutcome::Opening
             | PresentationWordChoiceOutcome::Closing => {}
         }
-        lifecycle.presentation.word_choice_active = self.state.active;
+        publish_lifecycle_state(lifecycle, &self.state, interface_active_before_update);
         Ok(outcome)
     }
 
@@ -165,6 +166,17 @@ impl RuntimePresentationWordChoice {
             .map(|choice| choice.label.as_ref())
             .collect::<Vec<_>>();
         draw_choice_list_rows(services.runtime_mut(), fonts, &labels, None, frame)
+    }
+}
+
+fn publish_lifecycle_state(
+    lifecycle: &mut GameLifecycleState,
+    state: &PresentationWordChoiceState,
+    interface_active_before_update: bool,
+) {
+    lifecycle.presentation.word_choice_active = state.active;
+    if !interface_active_before_update && state.interface_active {
+        lifecycle.set_modal_ui_busy(true);
     }
 }
 
@@ -291,6 +303,39 @@ mod tests {
             word_choice.transition,
             FramebufferTransitionState::default()
         );
+    }
+
+    #[test]
+    fn completed_word_choice_leaves_the_modal_bit_for_the_next_bridge_owner() {
+        let mut lifecycle = GameLifecycleState::default();
+        let mut state = PresentationWordChoiceState {
+            active: true,
+            interface_active: true,
+            ..PresentationWordChoiceState::default()
+        };
+
+        publish_lifecycle_state(&mut lifecycle, &state, false);
+        assert!(lifecycle.presentation.word_choice_active);
+        assert!(lifecycle.modal_ui_busy());
+
+        state.active = false;
+        publish_lifecycle_state(&mut lifecycle, &state, true);
+        assert!(!lifecycle.presentation.word_choice_active);
+        assert!(lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn inactive_word_choice_does_not_clear_another_modal_ui_owner() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_modal_ui_busy(true);
+
+        publish_lifecycle_state(
+            &mut lifecycle,
+            &PresentationWordChoiceState::default(),
+            false,
+        );
+
+        assert!(lifecycle.modal_ui_busy());
     }
 }
 

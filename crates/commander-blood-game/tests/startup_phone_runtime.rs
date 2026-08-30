@@ -18,6 +18,7 @@ const PORTRAIT_POSITION: [u64; 2] = [16, 74];
 const PORTRAIT_EXTENT: [u64; 2] = [104, 80];
 const ACTIVE_ENTITY_FLAG: u64 = 1;
 const UI_ENABLED_FLAG: u64 = 1;
+const MODAL_UI_FLAG: u64 = 1 << 2;
 
 static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
@@ -83,6 +84,11 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
         .expect("runtime trace omitted the authored phone click");
     let answer = &records[phone_index];
     assert_eq!(hand_selector(answer), ANSWER_HAND_SELECTOR);
+    assert_ne!(
+        presentation_u64(answer, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "answering the phone did not acquire the native console modal bit"
+    );
 
     let before_answer = &records[phone_index - 1];
     let after_answer = &records[phone_index + 1..];
@@ -123,6 +129,11 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
         .find(|record| record["action"] == GAME_CHOICE_CLICK)
         .expect("runtime trace omitted the authored GAME choice");
     assert_eq!(hand_selector(choice), CHOICE_HAND_SELECTOR);
+    assert_ne!(
+        presentation_u64(choice, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "closing the authored word choice released the modal bit before bridge cleanup"
+    );
 
     let teardown = after_answer
         .iter()

@@ -2704,8 +2704,7 @@ impl<'window> ModernGameServices<'window> {
         state: &mut GameLifecycleState,
     ) -> Result<()> {
         self.scripts
-            .complete_word_choice(&mut self.runtime, concept)?;
-        self.scripts.finish_lifecycle_frame(state)
+            .complete_lifecycle_word_choice(&mut self.runtime, state, concept)
     }
 
     /// Drain ordered renderer, audio, camera, and HUD commands from BloodScript.

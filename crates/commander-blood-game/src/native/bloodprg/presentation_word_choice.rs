@@ -85,7 +85,9 @@ pub struct PresentationWordChoiceState {
     pub selected_word: Option<ScriptWordId>,
     /// Word published back to BloodScript after closing.
     pub published_word: Option<ScriptWordId>,
-    /// Whether this panel currently owns shared interface presentation.
+    /// Shared UI bit latched when the panel opens.
+    ///
+    /// Native completion leaves this set for the following bridge owner to clear.
     pub interface_active: bool,
     /// Existing presentation defer latch cleared on completion.
     pub presentation_deferred: bool,
@@ -128,7 +130,7 @@ pub enum PresentationWordChoiceOutcome {
     },
     /// Closing interpolation remains in progress.
     Closing,
-    /// The selected word was published and all presentation latches cleared.
+    /// The selected word was published and the word-presentation latches cleared.
     Completed(ScriptWordId),
 }
 
@@ -212,7 +214,6 @@ pub fn update_presentation_word_choice<Backend: PresentationWordChoiceBackend>(
     state.active = false;
     state.phase = PresentationWordChoicePhase::Closed;
     state.choices.clear();
-    state.interface_active = false;
     state.presentation_deferred = false;
     state.text_display_active = false;
     state.dialogue_hold_complete = false;
@@ -297,6 +298,7 @@ mod tests {
                 choices,
                 selected_word: Some(words[0]),
                 published_word: Some(words[1]),
+                interface_active: vector.phase_before != u8::MIN,
                 presentation_deferred: true,
                 text_display_active: true,
                 dialogue_hold_complete: true,
@@ -330,6 +332,7 @@ mod tests {
             if let PresentationWordChoiceOutcome::Completed(word) = outcome {
                 assert_eq!(state.published_word, Some(word), "{}", vector.name);
                 assert!(!state.active && state.choices.is_empty(), "{}", vector.name);
+                assert!(state.interface_active, "{}", vector.name);
                 assert!(
                     !state.presentation_deferred && !state.text_display_active,
                     "{}",

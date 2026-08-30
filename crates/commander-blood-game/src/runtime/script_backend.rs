@@ -356,7 +356,11 @@ impl RuntimeScriptSystem {
             .selector_state_mut()
             .replace_presentation_words([]);
         self.presentation_word_buffer_nonempty = false;
-        self.service.presentation_state_mut().word_choice_active = false;
+        {
+            let presentation = self.service.presentation_state_mut();
+            presentation.word_choice_active = false;
+            presentation.dialogue_hold_complete = false;
+        }
         let text = &mut self.dispatch.text_presentation;
         text.menu_deferred = false;
         text.subtitle_display_active = false;
@@ -365,6 +369,18 @@ impl RuntimeScriptSystem {
         text.menu_words = Box::new([]);
         text.menu_word_count = usize::MIN;
         Ok(())
+    }
+
+    /// Complete a word choice without exporting stale copies of other lifecycle globals.
+    pub fn complete_lifecycle_word_choice(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        lifecycle: &mut GameLifecycleState,
+        concept: ScriptWordId,
+    ) -> Result<()> {
+        self.prepare_lifecycle_frame(lifecycle);
+        self.complete_word_choice(runtime, concept)?;
+        self.finish_lifecycle_frame(lifecycle)
     }
 
     /// Apply a presentation-panel DESCRIPT record through the live script state.
@@ -1618,6 +1634,61 @@ mod tests {
         assert!(text.request_flags.secondary_request_pending());
         assert!(text.menu_words.is_empty());
         assert_eq!(text.menu_word_count, usize::MIN);
+    }
+
+    #[test]
+    fn completed_word_choice_preserves_unrelated_main_loop_ownership() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut scripts = RuntimeScriptSystem::new(runtime.data(), TEST_CLOCK);
+        runtime.load_profile(ScriptProfileId::INITIAL).unwrap();
+        let selected_concept = runtime
+            .current_profile()
+            .unwrap()
+            .dictionary()
+            .words()
+            .next()
+            .unwrap()
+            .0;
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_modal_ui_busy(true);
+        lifecycle.set_presentation_interface_active(true);
+        lifecycle.presentation.active = true;
+        lifecycle.presentation.c2_presentation_gate = true;
+        lifecycle.presentation.scene_gate_active = true;
+        lifecycle.presentation.sequence_active = true;
+        lifecycle.presentation.word_choice_active = true;
+        lifecycle.presentation.menu_deferred = true;
+        lifecycle.presentation.subtitle_display_active = true;
+        lifecycle.presentation.dialogue_hold_complete = true;
+        lifecycle.presentation.request_flags =
+            crate::native::bloodprg::PresentationRequestFlags::decode(3);
+
+        scripts
+            .complete_lifecycle_word_choice(&mut runtime, &mut lifecycle, selected_concept)
+            .unwrap();
+
+        assert!(lifecycle.modal_ui_busy());
+        assert!(lifecycle.presentation_interface_active());
+        assert!(lifecycle.presentation.active);
+        assert!(lifecycle.presentation.c2_presentation_gate);
+        assert!(lifecycle.presentation.scene_gate_active);
+        assert!(lifecycle.presentation.sequence_active);
+        assert!(!lifecycle.presentation.word_choice_active);
+        assert!(!lifecycle.presentation.menu_deferred);
+        assert!(!lifecycle.presentation.subtitle_display_active);
+        assert!(!lifecycle.presentation.dialogue_hold_complete);
+        assert!(!lifecycle.presentation.request_flags.text_request_pending());
+        assert!(
+            lifecycle
+                .presentation
+                .request_flags
+                .secondary_request_pending()
+        );
     }
 
     #[test]
