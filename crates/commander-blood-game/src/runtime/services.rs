@@ -179,6 +179,13 @@ fn synchronize_selected_ship_target(
     ship.active_line = SHIP_NAVIGATION_STATUS_LINE;
 }
 
+fn publish_presentation_screen_modal_ui(
+    lifecycle: &mut GameLifecycleState,
+    redraw_requested: bool,
+) {
+    lifecycle.set_modal_ui_busy(redraw_requested);
+}
+
 impl<'window> ModernGameServices<'window> {
     /// Allocate flat game state and an artwork-only loading renderer.
     pub fn new(
@@ -2070,7 +2077,7 @@ impl<'window> ModernGameServices<'window> {
         let choice_animation_requested = screen.take_choice_change_animation_requested();
         let startup_mode_completed = screen.take_reverse_resource_variant_restored();
 
-        state.set_modal_ui_busy(screen.redraw_requested());
+        publish_presentation_screen_modal_ui(state, screen.redraw_requested());
         state.navigation_rebuild_pending |= screen_rebuild_pending;
         state.presentation.completion_audio_pending |= completion_audio_pending;
         if choice_animation_requested {
@@ -4069,6 +4076,17 @@ mod tests {
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const SCRIPT_RADIO_CLIP_COUNTDOWN: u16 = 2;
+
+    #[test]
+    fn presentation_screen_redraw_latch_owns_the_native_modal_ui_bit() {
+        let mut lifecycle = GameLifecycleState::default();
+
+        publish_presentation_screen_modal_ui(&mut lifecycle, true);
+        assert!(lifecycle.modal_ui_busy());
+
+        publish_presentation_screen_modal_ui(&mut lifecycle, false);
+        assert!(!lifecycle.modal_ui_busy());
+    }
 
     #[test]
     fn bridge_composition_preserves_indexed_ui_while_the_bridge_moves() {

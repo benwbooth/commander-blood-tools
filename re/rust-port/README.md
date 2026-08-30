@@ -20,6 +20,14 @@ canonical Rust owner or document why the native storage overlap can be split or
 eliminated after moving to flat typed state. This completes the address-alias
 ownership audit; it does not by itself claim behavioral parity.
 
+`shared-ui-writes.tsv` is the first write-site ownership gate. It is derived
+from every recovered C routine that assigns, sets, or clears the shared
+`vm_ui_state` word. Each row names the flat Rust owner and a test exercising
+that ownership boundary. The port-coverage test rejects any newly recovered or
+removed UI writer until this ledger is reviewed, preventing a translated
+semantic routine from silently retaining its state inside an unconnected Rust
+adapter.
+
 `production-routing-dispositions.tsv` complements the positive translation
 ledger. The production-routing audit requires every translated routine either
 to retain a symbol in the game executable, have a non-test Rust caller, or carry

@@ -82,7 +82,7 @@ pub(super) fn update_runtime_camera_approach<'window>(
     }
     lifecycle.presentation.active_line = decode_active_presentation_line(state.active_line);
     lifecycle.presentation.c2_presentation_gate = state.presentation_pending;
-    lifecycle.set_modal_ui_busy(state.ui_active);
+    publish_camera_approach_modal_ui(lifecycle, state.ui_active);
     lifecycle
         .profile_change_blockers
         .navigation_actor_transition_active = state.transition_pending;
@@ -95,6 +95,10 @@ pub(super) fn update_runtime_camera_approach<'window>(
         return Err(error);
     }
     Ok(outcome)
+}
+
+fn publish_camera_approach_modal_ui(lifecycle: &mut GameLifecycleState, ui_active: bool) {
+    lifecycle.set_modal_ui_busy(ui_active);
 }
 
 struct RuntimeCameraApproachHost<'services, 'window> {
@@ -201,5 +205,21 @@ fn record_result(slot: &mut Option<anyhow::Error>, result: Result<()>) {
 fn record_first_error(slot: &mut Option<anyhow::Error>, error: anyhow::Error) {
     if slot.is_none() {
         *slot = Some(error);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn camera_approach_owns_the_native_modal_ui_bit_for_its_exact_lifetime() {
+        let mut lifecycle = GameLifecycleState::default();
+
+        publish_camera_approach_modal_ui(&mut lifecycle, true);
+        assert!(lifecycle.modal_ui_busy());
+
+        publish_camera_approach_modal_ui(&mut lifecycle, false);
+        assert!(!lifecycle.modal_ui_busy());
     }
 }

@@ -14,6 +14,7 @@ use crate::native::bloodprg::{
 };
 
 use super::ModernGameServices;
+use super::shared_ui::{export_low_ui_state, import_low_ui_state};
 
 const ACTIVE_FLAG: u8 = 1;
 const SHIP_PRESENTATION_ACTIVE_FLAG: u16 = 1;
@@ -162,7 +163,7 @@ fn initial_coordinator_state(
         hud_palette_staged: false,
         bridge_seek_target_arc: u16::MIN,
         bridge_view_frame: u16::MIN,
-        ui_state: ship.ui_state,
+        ui_state: import_hud_ui_state(ship.ui_state, lifecycle),
         manu3_animation_requested: false,
         target_list: ShipHudTargetListState::default(),
         presentable_targets: Vec::new(),
@@ -204,7 +205,7 @@ fn import_live_state(
     let palette = services.palette_transition().state();
     state.initialization_pending = flag_is_active(ship.hud_initialization_pending);
     state.subtitle_display_mode = text.subtitle_word_list_mode;
-    state.ui_state = ship.ui_state;
+    state.ui_state = import_hud_ui_state(ship.ui_state, lifecycle);
     state.scene_dispatch_blocked = ship.scene_dispatch_blocked;
     state.active_line = decode_active_presentation_line(ship.active_line);
     state.depth_band_enabled = ship.depth_band_enabled;
@@ -260,6 +261,21 @@ fn export_live_state(
     lifecycle.presentation.c2_presentation_gate =
         presentation_gate_is_active(state.presentation_gate);
     lifecycle.presentation.active_line = state.active_line;
+    export_hud_ui_state(state.ui_state, lifecycle);
+}
+
+fn import_hud_ui_state(
+    ship_ui_state: u16,
+    lifecycle: &crate::native::bloodprg::GameLifecycleState,
+) -> u16 {
+    import_low_ui_state(ship_ui_state, lifecycle)
+}
+
+fn export_hud_ui_state(
+    hud_ui_state: u16,
+    lifecycle: &mut crate::native::bloodprg::GameLifecycleState,
+) {
+    export_low_ui_state(hud_ui_state, lifecycle);
 }
 
 fn text_reveal_complete(text: &crate::native::bloodprg::TextPresentationState) -> bool {
@@ -490,5 +506,18 @@ mod tests {
         assert!(presentation_gate_is_active(
             unrelated_bits | SHIP_PRESENTATION_ACTIVE_FLAG
         ));
+    }
+
+    #[test]
+    fn hud_boundary_synchronizes_only_the_canonical_low_ui_bits() {
+        let mut lifecycle = crate::native::bloodprg::GameLifecycleState::default();
+        lifecycle.set_low_ui_state_word(5);
+
+        let hud_ui_state = import_hud_ui_state(0b1010_0000, &lifecycle);
+
+        assert_eq!(hud_ui_state, 0b1010_0101);
+        lifecycle.set_low_ui_state_word(15);
+        export_hud_ui_state(hud_ui_state, &mut lifecycle);
+        assert_eq!(lifecycle.low_ui_state_word(), 5);
     }
 }

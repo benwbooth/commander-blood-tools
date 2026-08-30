@@ -20,6 +20,7 @@ use crate::native::bloodprg::{
 };
 
 use super::choice_list::{RuntimeChoiceListStyle, draw_choice_list_rows};
+use super::shared_ui::{export_low_ui_state, import_low_ui_state};
 use super::{ModernGameServices, OriginalGameRuntime, RuntimePlatformHost};
 
 const ACTIVE_FLAG: u8 = 1;
@@ -309,7 +310,7 @@ fn initial_state(
         presentation_actor_state: services.manu3_hand_state().requested_animation,
         previous_presentation_actor_state: services.previous_manu3_animation().value(),
         deferred_navigation_record: None,
-        ui_state: ship.ui_state,
+        ui_state: import_navigation_ui_state(ship.ui_state, lifecycle),
         transition_step: u16::MIN,
         transition_total_steps: u16::MIN,
         choice_target_rect: INITIAL_CHOICE_TARGET_RECT,
@@ -358,7 +359,7 @@ fn import_live_state(
     state.presentation_active = lifecycle.presentation.active;
     state.current_target = current_target;
     state.access_counter = access_counter;
-    state.ui_state = ship.ui_state;
+    state.ui_state = import_navigation_ui_state(ship.ui_state, lifecycle);
     state.scene_image_cached = services.ship_navigation_scene_image_cached()?;
     state.resource_vertical_offset = services.ship_navigation_scene_vertical_offset();
     state.text_menu_pending = text.menu_pending;
@@ -429,7 +430,16 @@ fn export_live_state(
     lifecycle.presentation.text_menu_pending = state.text_menu_pending;
     lifecycle.frame_presented = state.frame_presented;
     lifecycle.navigation_rebuild_pending = state.navigation_screen_rebuild_pending;
+    export_navigation_ui_state(state.ui_state, lifecycle);
     Ok(())
+}
+
+fn import_navigation_ui_state(ship_ui_state: u16, lifecycle: &GameLifecycleState) -> u16 {
+    import_low_ui_state(ship_ui_state, lifecycle)
+}
+
+fn export_navigation_ui_state(ui_state: u16, lifecycle: &mut GameLifecycleState) {
+    export_low_ui_state(ui_state, lifecycle);
 }
 
 fn publish_text_selection(
@@ -901,6 +911,19 @@ mod tests {
 
         assert_eq!(text.selected_line, None);
         assert_eq!(lifecycle.presentation.text_selector, None);
+    }
+
+    #[test]
+    fn navigation_boundary_synchronizes_only_the_canonical_low_ui_bits() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_low_ui_state_word(6);
+
+        let navigation_ui_state = import_navigation_ui_state(0b1010_0000, &lifecycle);
+
+        assert_eq!(navigation_ui_state, 0b1010_0110);
+        lifecycle.set_low_ui_state_word(15);
+        export_navigation_ui_state(navigation_ui_state, &mut lifecycle);
+        assert_eq!(lifecycle.low_ui_state_word(), 6);
     }
 
     #[test]

@@ -27,6 +27,7 @@ mod scenario;
 mod scene_transition;
 mod script_backend;
 mod services;
+mod shared_ui;
 mod ship_hud;
 mod ship_navigation;
 mod ship_presentation;

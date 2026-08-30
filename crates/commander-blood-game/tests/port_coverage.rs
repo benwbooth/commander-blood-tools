@@ -10,6 +10,7 @@ const CURRENT_PORTED_ROUTINE_COUNT: usize = 470;
 const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 50;
 const RECOVERED_BLOODPRG_SEMANTIC_ALIAS_COUNT: usize = 71;
 const CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT: usize = 71;
+const RECOVERED_SHARED_UI_WRITER_COUNT: usize = 25;
 
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -204,6 +205,55 @@ fn shared_global_alias_ledger_matches_recovered_bloodprg_headers() {
     }
     assert_eq!(ledger, recovered);
     assert_eq!(verified, CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT);
+}
+
+#[test]
+fn every_recovered_shared_ui_writer_has_a_verified_runtime_owner() {
+    let root = workspace_root();
+    let manifest = tab_separated_rows(&root.join("re/source/bloodprg/candidates/manifest.tsv"));
+    let recovered = manifest
+        .into_iter()
+        .filter_map(|row| {
+            let source = root
+                .join("re/source/bloodprg/candidates")
+                .join(&row["source"]);
+            recovered_ui_write_routine(&source)
+                .then(|| (row["entry"].clone(), row["source"].clone()))
+        })
+        .collect::<BTreeSet<_>>();
+    assert_eq!(recovered.len(), RECOVERED_SHARED_UI_WRITER_COUNT);
+
+    let rust_source = rust_source_corpus(&root.join("crates"));
+    let rows = tab_separated_rows(&root.join("re/rust-port/shared-ui-writes.tsv"));
+    let mut ledger = BTreeSet::new();
+    for row in rows {
+        let key = (row["entry"].clone(), row["source"].clone());
+        assert!(
+            ledger.insert(key.clone()),
+            "duplicate UI writer row: {key:?}"
+        );
+        assert!(!row["write_semantics"].trim().is_empty());
+        assert!(!row["canonical_owner"].trim().is_empty());
+        assert!(root.join(&row["rust_path"]).is_file());
+        for evidence in row["evidence"].split(';') {
+            let test_name = evidence.rsplit("::").next().unwrap();
+            assert!(
+                rust_source.contains(&format!("fn {test_name}")),
+                "UI writer {key:?} cites missing evidence {evidence}"
+            );
+        }
+    }
+
+    assert_eq!(ledger, recovered);
+}
+
+fn recovered_ui_write_routine(path: &Path) -> bool {
+    std::fs::read_to_string(path).unwrap().lines().any(|line| {
+        let line = line.trim_start();
+        let shared_ui_target =
+            line.starts_with("vm_ui_flags ") || line.starts_with("vm_ui_state.word ");
+        shared_ui_target && (line.contains(" |= ") || line.contains(" &= ") || line.contains(" = "))
+    })
 }
 
 fn recovered_bloodprg_aliases(root: &Path) -> BTreeMap<(String, String), BTreeSet<String>> {

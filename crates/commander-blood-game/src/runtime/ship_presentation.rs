@@ -8,10 +8,10 @@ use crate::native::bloodprg::{
     encode_active_presentation_line, update_ship_presentation,
 };
 
+use super::shared_ui::{export_low_ui_state, import_low_ui_state};
 use super::{ModernGameServices, RuntimePlatformHost};
 
 const SHIP_PRESENTATION_ACTIVE_FLAG: u16 = 1;
-const LOW_UI_STATE_MASK: u16 = 15;
 
 /// Run one ship presentation frame over the canonical flat runtime state.
 pub(super) fn update_runtime_ship_presentation<'window>(
@@ -46,7 +46,7 @@ fn import_lifecycle_presentation_state(
     state: &mut ShipPresentationState,
     lifecycle: &GameLifecycleState,
 ) {
-    state.ui_state = (state.ui_state & !LOW_UI_STATE_MASK) | lifecycle.low_ui_state_word();
+    state.ui_state = import_low_ui_state(state.ui_state, lifecycle);
     state.active_line = encode_active_presentation_line(lifecycle.presentation.active_line);
     state.presentation_gate = (state.presentation_gate & !SHIP_PRESENTATION_ACTIVE_FLAG)
         | u16::from(lifecycle.presentation.c2_presentation_gate);
@@ -56,7 +56,7 @@ fn export_lifecycle_presentation_state(
     state: &ShipPresentationState,
     lifecycle: &mut GameLifecycleState,
 ) {
-    lifecycle.set_low_ui_state_word(state.ui_state);
+    export_low_ui_state(state.ui_state, lifecycle);
     lifecycle.presentation.ship_active = state.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN;
     lifecycle.presentation.active_line = decode_active_presentation_line(state.active_line);
     lifecycle.presentation.c2_presentation_gate =
