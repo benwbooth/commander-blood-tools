@@ -844,7 +844,6 @@ impl<'window> ModernGameServices<'window> {
                 }
             }
         }
-        self.audio_event_history.extend(requests.iter().copied());
         Ok(requests)
     }
 
@@ -905,7 +904,9 @@ impl<'window> ModernGameServices<'window> {
                 resident_effects: &resident.bank,
                 streamed_dialogue: streamed,
             },
-        )
+        )?;
+        self.audio_event_history.push(request);
+        Ok(())
     }
 
     /// Current source-sample position of navigation music, when active.
@@ -3840,6 +3841,18 @@ impl<'window> ModernGameServices<'window> {
         });
         let (streamed_clip_count, audio_event_history) =
             audio_event_trace(&self.audio_event_history);
+        let streamed_sound_bank = self
+            .scripts
+            .backend()
+            .loaded_streamed_sound_bank_resource()
+            .map(|resource| String::from_utf8_lossy(resource.name()).into_owned());
+        let streamed_sound_bank_loads = self
+            .scripts
+            .backend()
+            .streamed_sound_bank_load_history()
+            .iter()
+            .map(|name| String::from_utf8_lossy(name).into_owned())
+            .collect::<Vec<_>>();
         let active_video_resource = self
             .presentation_player
             .active_resource_name()
@@ -3944,6 +3957,8 @@ impl<'window> ModernGameServices<'window> {
                 "clip_playback_state": lifecycle.clip_playback_state,
                 "last_clip": self.audio_events.last_clip,
                 "streamed_clip_count": streamed_clip_count,
+                "streamed_sound_bank": streamed_sound_bank,
+                "streamed_sound_bank_loads": streamed_sound_bank_loads,
                 "events": audio_event_history,
             },
             "subtitle": subtitle,

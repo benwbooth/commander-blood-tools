@@ -56,6 +56,12 @@ const IZWALITO_GREETING_WORDS: [&str; 11] = [
 const IZWALITO_CHOICE_PROMPT_WORDS: [&str; 7] =
     ["Click", "quick,", "Cap'n", "Bob", "is", "waiting", "..."];
 const STREAMED_DIALOGUE_EVENT_KIND: &str = "streamed_dialogue";
+const VOICE_REACTION_EVENT_KIND: &str = "voice_reaction";
+const RADIO_RING_CLIP_INDEX: u64 = 6;
+const RADIO_COMPLETION_CLIP_INDEX: u64 = 2;
+const MINIMUM_REPEATED_RING_COUNT: usize = 2;
+const RADIO_SOUND_BANK: &str = "radio.snd";
+const RADIO_TERMINAL_FRAME: u64 = 11;
 const EMPTY_LABELS: [&str; 0] = [];
 const CONTACT_LABELS: [&str; 1] = ["Bob_Morlock"];
 const OPTION_LABELS: [&str; 6] = ["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT", "CANCEL"];
@@ -159,6 +165,44 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
     );
 
     let before_answer = &records[phone_index - 1];
+    assert_eq!(
+        presentation(before_answer)["pending_presentation_owner"]["name"],
+        "Izwalito"
+    );
+    assert!(presentation(before_answer)["active_actor_presentation"].is_null());
+    let before_answer_audio = audio_events(before_answer);
+    let ring_count = before_answer_audio
+        .iter()
+        .filter(|event| {
+            event["kind"].as_str() == Some(VOICE_REACTION_EVENT_KIND)
+                && event["index"].as_u64() == Some(RADIO_RING_CLIP_INDEX)
+        })
+        .count();
+    assert!(
+        ring_count >= MINIMUM_REPEATED_RING_COUNT,
+        "C3 did not repeat radio clip 6 while the phone remained unanswered"
+    );
+    assert_eq!(
+        audio_events(answer),
+        before_answer_audio,
+        "answering the orb emitted completion audio before its animation finished"
+    );
+    assert_eq!(
+        presentation(answer)["pending_presentation_owner"]["name"],
+        "Izwalito"
+    );
+    assert!(presentation(answer)["active_actor_presentation"].is_null());
+    assert_eq!(presentation_u64(answer, "radio_slot/frame"), 4);
+    assert_eq!(
+        presentation_u64(answer, "radio_slot/terminal_frame"),
+        RADIO_TERMINAL_FRAME
+    );
+    assert_eq!(presentation(answer)["radio_slot"]["ready"], true);
+    assert_eq!(presentation(answer)["radio_slot"]["loaded"], true);
+    assert_eq!(
+        answer["semantic"]["audio"]["streamed_sound_bank_loads"],
+        serde_json::json!([])
+    );
     let after_answer = &records[phone_index + 1..];
     let active = after_answer
         .iter()
@@ -168,15 +212,53 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
                 && presentation_flag(record, "defer")
         })
         .expect("phone answer never acquired Izwalito presentation ownership");
+    assert!(presentation(active)["pending_presentation_owner"].is_null());
+    assert_eq!(
+        presentation(active)["active_actor_presentation"]["name"],
+        "Izwalito"
+    );
+    assert_eq!(hand_selector(active), NEUTRAL_HAND_SELECTOR);
+    assert_eq!(
+        presentation_u64(active, "radio_slot/frame"),
+        RADIO_TERMINAL_FRAME
+    );
+    assert_eq!(presentation(active)["radio_slot"]["ready"], false);
+    assert_eq!(presentation(active)["radio_slot"]["loaded"], false);
     assert_izwalito_inset(active);
     assert_eq!(
         presentation(active)["inline_menu"]["words"],
         serde_json::json!(IZWALITO_GREETING_WORDS)
     );
     assert!(active["semantic"]["video"]["active_resource"].is_null());
-    let greeting_audio = active["semantic"]["audio"]["events"]
-        .as_array()
-        .expect("startup call audio trace is not an event array");
+    assert_eq!(
+        active["semantic"]["audio"]["streamed_sound_bank"],
+        RADIO_SOUND_BANK
+    );
+    assert_eq!(
+        active["semantic"]["audio"]["streamed_sound_bank_loads"],
+        serde_json::json!([RADIO_SOUND_BANK])
+    );
+    let post_answer_audio = &audio_events(active)[before_answer_audio.len()..];
+    assert_eq!(
+        post_answer_audio.first().unwrap()["kind"],
+        VOICE_REACTION_EVENT_KIND
+    );
+    assert_eq!(
+        post_answer_audio.first().unwrap()["index"],
+        RADIO_COMPLETION_CLIP_INDEX
+    );
+    assert_eq!(
+        post_answer_audio
+            .iter()
+            .filter(|event| {
+                event["kind"].as_str() == Some(VOICE_REACTION_EVENT_KIND)
+                    && event["index"].as_u64() == Some(RADIO_COMPLETION_CLIP_INDEX)
+            })
+            .count(),
+        1,
+        "radio actor completion clip did not fire exactly once"
+    );
+    let greeting_audio = &post_answer_audio[1..];
     assert!(!greeting_audio.is_empty());
     assert!(
         greeting_audio
@@ -751,6 +833,12 @@ fn presentation_u64(record: &Value, path: &str) -> u64 {
 
 fn hand_selector(record: &Value) -> u64 {
     presentation_u64(record, "manu3_current")
+}
+
+fn audio_events(record: &Value) -> &[Value] {
+    record["semantic"]["audio"]["events"]
+        .as_array()
+        .expect("runtime audio trace is not an event array")
 }
 
 fn bridge_actor_hash(record: &Value) -> Option<&str> {

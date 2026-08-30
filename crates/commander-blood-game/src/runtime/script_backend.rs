@@ -790,6 +790,11 @@ impl RuntimeScriptBackend {
         self.sound_loader.decoded.as_ref()
     }
 
+    /// Borrow every successfully loaded streamed bank in native call order.
+    pub fn streamed_sound_bank_load_history(&self) -> &[Box<[u8]>] {
+        &self.sound_loader.load_history
+    }
+
     /// Load one authored streamed SND bank through the DESCRIPT resource service.
     pub fn load_streamed_sound_bank(&mut self, bank_name: &[u8]) -> Result<()> {
         self.sound_loader.load_sound_bank(bank_name)
@@ -990,6 +995,7 @@ struct RuntimeSoundBankLoader {
     store: OriginalResourceStore,
     loaded: Option<LoadedRuntimeResource>,
     decoded: Option<LoadedSoundBank>,
+    load_history: Vec<Box<[u8]>>,
 }
 
 impl RuntimeSoundBankLoader {
@@ -998,6 +1004,7 @@ impl RuntimeSoundBankLoader {
             store,
             loaded: None,
             decoded: None,
+            load_history: Vec::new(),
         }
     }
 }
@@ -1013,6 +1020,7 @@ impl DescriptSoundBankLoader for RuntimeSoundBankLoader {
             .context("streamed dialogue sound loading was unexpectedly disabled")?;
         self.loaded = Some(LoadedRuntimeResource::new(bank_name, encoded_bytes));
         self.decoded = Some(decoded);
+        self.load_history.push(Box::from(bank_name));
         Ok(())
     }
 }
@@ -1314,6 +1322,10 @@ mod tests {
         assert_eq!(
             backend.streamed_sound_bank().unwrap().usage,
             SoundBankUsage::StreamedDialogue
+        );
+        assert_eq!(
+            backend.streamed_sound_bank_load_history(),
+            &[Box::from(DEFAULT_BRIDGE_SOUND_BANK)]
         );
     }
 
