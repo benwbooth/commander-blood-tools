@@ -3,18 +3,22 @@
 //! The original renderer turned accepted faces into linked scanline records in
 //! a dedicated segment. The modern renderer retains the game-visible cyclic
 //! ordering, fixed-point orientation test, UV bank coordinates, and depth, then
-//! emits owned triangles for wgpu.
+//! emits owned fixed-point records for the flat true-color software rasterizer.
 
 use std::fmt;
 
 use commander_blood_formats::alien::{
-    AXIS_COUNT, AlienMeshData, AlienModelData, RASTER_RECIPROCAL_COUNT,
+    AXIS_COUNT, AlienMeshData, AlienModelData, RASTER_RECIPROCAL_COUNT, TEXTURE_HEIGHT,
+    TEXTURE_WIDTH,
 };
 
-use super::scanline::{AlienRasterRecord, build_raster_record};
+use super::scanline::{
+    ALIEN_RASTER_HEIGHT, ALIEN_RASTER_WIDTH, AlienRasterActivation, AlienRasterRecord,
+    build_raster_record, rasterize_activations,
+};
 use super::{
     AlienFaceBucket, AlienFaceReference, AlienFaceSelection, AlienModelPose, AlienPrimaryMeshFrame,
-    AlienPrimaryMeshPose, AlienProjectedVertex,
+    AlienPrimaryMeshPose, AlienProjectedVertex, AlienStar,
 };
 
 const FIRST_VERTEX: usize = 0;
@@ -24,8 +28,11 @@ const X_AXIS: usize = 0;
 const Y_AXIS: usize = 1;
 const TRIANGLE_VERTEX_COUNT: usize = AXIS_COUNT;
 const MAXIMUM_FACE_WIDTH: usize = RASTER_RECIPROCAL_COUNT;
+const RGB_COMPONENT_COUNT: usize = 3;
+const RGBA_COMPONENT_COUNT: usize = 4;
+const ALPHA_COMPONENT: u8 = u8::MAX;
 
-/// One projected alien vertex ready for GPU conversion.
+/// One projected alien vertex ready for fixed-point record construction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AlienRenderVertex {
     /// Position in the original 320-by-200 projection coordinate system.
@@ -58,6 +65,12 @@ pub struct AlienRenderGeometry {
     pub model_layers: Vec<Vec<AlienRenderTriangle>>,
 }
 
+/// One flat true-color frame produced by the recovered software raster rules.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct AlienTrueColorFrame {
+    pub(crate) pixels: Vec<u8>,
+}
+
 /// Invalid flat scene topology encountered while preparing triangles.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienRasterError {
@@ -88,6 +101,11 @@ pub enum AlienRasterError {
         /// Number of available vertices.
         available: usize,
     },
+    /// A recovered texture bank addressed outside the decoded atlas.
+    InvalidTextureAddress {
+        /// Number of decoded source texels.
+        available: usize,
+    },
 }
 
 impl fmt::Display for AlienRasterError {
@@ -98,7 +116,7 @@ impl fmt::Display for AlienRasterError {
 
 impl std::error::Error for AlienRasterError {}
 
-/// Prepare both alien triangle layers without retaining raster-record state.
+/// Prepare both alien triangle layers with their exact raster-record state.
 pub fn prepare_render_geometry(
     primary_mesh: &AlienMeshData,
     primary_pose: &AlienPrimaryMeshPose,
@@ -124,6 +142,64 @@ pub fn prepare_render_geometry(
         primary_triangles,
         model_layers,
     })
+}
+
+/// Rasterize the native primary, starfield, and per-model passes to RGBA.
+pub(crate) fn rasterize_true_color_frame(
+    geometry: &AlienRenderGeometry,
+    stars: &[AlienStar],
+    texture: &[u8],
+    palette: &[[u8; RGB_COMPONENT_COUNT]; 256],
+) -> Result<AlienTrueColorFrame, AlienRasterError> {
+    let mut pixels = vec![u8::MIN; ALIEN_RASTER_WIDTH * ALIEN_RASTER_HEIGHT * RGBA_COMPONENT_COUNT];
+    for pixel in pixels.chunks_exact_mut(RGBA_COMPONENT_COUNT) {
+        pixel[RGB_COMPONENT_COUNT] = ALPHA_COMPONENT;
+    }
+    rasterize_true_color_layer(&geometry.primary_triangles, texture, palette, &mut pixels)?;
+    for star in stars {
+        let [x, y] = star.screen;
+        let (Ok(x), Ok(y)) = (usize::try_from(x), usize::try_from(y)) else {
+            continue;
+        };
+        if x < ALIEN_RASTER_WIDTH && y < ALIEN_RASTER_HEIGHT {
+            write_true_color_pixel(&mut pixels, x, y, palette[usize::from(star.palette_index)]);
+        }
+    }
+    for layer in &geometry.model_layers {
+        rasterize_true_color_layer(layer, texture, palette, &mut pixels)?;
+    }
+    Ok(AlienTrueColorFrame { pixels })
+}
+
+fn rasterize_true_color_layer(
+    triangles: &[AlienRenderTriangle],
+    texture: &[u8],
+    palette: &[[u8; RGB_COMPONENT_COUNT]; 256],
+    pixels: &mut [u8],
+) -> Result<(), AlienRasterError> {
+    let activations = triangles
+        .iter()
+        .map(|triangle| AlienRasterActivation {
+            first_column: triangle.first_column,
+            record: triangle.record,
+        })
+        .collect::<Vec<_>>();
+    let valid = rasterize_activations(&activations, texture.len(), |x, y, texture_offset| {
+        let palette_index = texture[texture_offset];
+        write_true_color_pixel(pixels, x, y, palette[usize::from(palette_index)]);
+    });
+    if !valid {
+        return Err(AlienRasterError::InvalidTextureAddress {
+            available: texture.len(),
+        });
+    }
+    Ok(())
+}
+
+fn write_true_color_pixel(pixels: &mut [u8], x: usize, y: usize, color: [u8; RGB_COMPONENT_COUNT]) {
+    let offset = (y * ALIEN_RASTER_WIDTH + x) * RGBA_COMPONENT_COUNT;
+    pixels[offset..offset + RGB_COMPONENT_COUNT].copy_from_slice(&color);
+    pixels[offset + RGB_COMPONENT_COUNT] = ALPHA_COMPONENT;
 }
 
 fn prepare_primary_triangles(
@@ -342,6 +418,8 @@ fn face_coordinates_are_active(
 const fn word_difference(left: i16, right: i16) -> u16 {
     (left as u16).wrapping_sub(right as u16)
 }
+
+const _: () = assert!(TEXTURE_WIDTH * TEXTURE_HEIGHT == 2 * (1 << 16));
 
 #[cfg(test)]
 mod tests {

@@ -938,6 +938,8 @@ pub struct AlienSceneFrame {
     pub geometry: AlienRenderGeometry,
     /// Complete indexed atlas after a palette-remap frame, when it changed.
     pub texture_update: Option<Vec<u8>>,
+    /// Authoritative flat-memory true-color output of the recovered rasterizer.
+    pub(crate) true_color: super::raster::AlienTrueColorFrame,
 }
 
 /// Mutable native state for one AMER, CROOLIS, or SCRUT scene.
@@ -1518,6 +1520,12 @@ impl AlienScene {
             &models,
             &self.asset.raster_reciprocals,
         )?;
+        let true_color = super::raster::rasterize_true_color_frame(
+            &geometry,
+            &starfield.stars,
+            &self.asset.texture.pixels,
+            &self.asset.palette,
+        )?;
         match models.behind_camera {
             AlienBehindCameraSignal::Unchanged => {}
             AlienBehindCameraSignal::General => {
@@ -1537,6 +1545,7 @@ impl AlienScene {
             models,
             geometry,
             texture_update: texture_changed.then(|| self.asset.texture.pixels.clone()),
+            true_color,
         })
     }
 

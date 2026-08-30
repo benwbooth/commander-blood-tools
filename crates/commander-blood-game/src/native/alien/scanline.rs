@@ -4,9 +4,7 @@
 //! port owns them as typed values while preserving the original wrapping
 //! arithmetic, edge phases, texture addressing, and half-open scanline spans.
 
-use commander_blood_formats::alien::RASTER_RECIPROCAL_COUNT;
-#[cfg(test)]
-use commander_blood_formats::alien::{TEXTURE_HEIGHT, TEXTURE_WIDTH};
+use commander_blood_formats::alien::{RASTER_RECIPROCAL_COUNT, TEXTURE_HEIGHT, TEXTURE_WIDTH};
 
 use super::AlienRenderVertex;
 
@@ -14,15 +12,13 @@ const FIXED_FRACTION_BITS: u32 = 16;
 const TEXTURE_FRACTION_BITS: u32 = 8;
 const TEXTURE_BANK_SHIFT: u32 = 8;
 const TEXTURE_BANK_MASK: u16 = 15;
-#[cfg(test)]
 const TEXTURE_BANK_SIZE: usize = 1 << 16;
 #[cfg(test)]
 const FOUR_PLANE_COLUMN_PERIOD: usize = 4;
 const TRIANGLE_VERTEX_COUNT: usize = 3;
-#[cfg(test)]
 pub(crate) const ALIEN_RASTER_WIDTH: usize = 320;
-#[cfg(test)]
 pub(crate) const ALIEN_RASTER_HEIGHT: usize = 200;
+const ALIEN_RASTER_RECORD_CAPACITY: usize = 600;
 
 /// Column phase selected when a triangle crosses its middle X coordinate.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -68,6 +64,13 @@ pub(crate) struct AlienRasterRecord {
     pub(crate) texture_dv: i16,
     /// Zero-based 64 KiB bank in the decoded 256-by-512 atlas.
     pub(crate) texture_bank: u8,
+}
+
+/// One face activation submitted to a fresh native raster pass.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct AlienRasterActivation {
+    pub(crate) first_column: usize,
+    pub(crate) record: AlienRasterRecord,
 }
 
 impl Default for AlienRasterRecord {
@@ -434,8 +437,160 @@ pub(crate) fn rasterize_single_record(
     Some(pixels)
 }
 
+/// Run the recovered active-span renderer and emit source texel offsets.
+///
+/// Activations must retain the original bucket and face order. The output
+/// callback receives logical 320-by-200 coordinates and an offset into the
+/// decoded two-bank texture atlas.
+pub(crate) fn rasterize_activations(
+    activations: &[AlienRasterActivation],
+    texture_length: usize,
+    mut emit: impl FnMut(usize, usize, usize),
+) -> bool {
+    let mut active = Vec::new();
+    let mut next_activation = 0;
+    for column in 0..ALIEN_RASTER_WIDTH {
+        while let Some(activation) = activations.get(next_activation) {
+            if activation.first_column != column {
+                break;
+            }
+            if active.len() < ALIEN_RASTER_RECORD_CAPACITY {
+                insert_active_record(&mut active, activation.record);
+            }
+            next_activation += 1;
+        }
+        if !rasterize_active_column(&active, column, texture_length, &mut emit) {
+            return false;
+        }
+        active.retain_mut(AlienRasterRecord::advance_column);
+        active.sort_by_key(|record| record.edge_0_position);
+    }
+    true
+}
+
+fn insert_active_record(active: &mut Vec<AlienRasterRecord>, record: AlienRasterRecord) {
+    let Some(first) = active.first() else {
+        active.push(record);
+        return;
+    };
+    let mut insertion = 0;
+    if record.edge_0_position > first.edge_0_position
+        || (record.edge_0_position == first.edge_0_position
+            && record.edge_0_step > first.edge_0_step)
+    {
+        insertion = 1;
+        while let Some(next) = active.get(insertion) {
+            if record.edge_0_position > next.edge_0_position
+                || (record.edge_0_position == next.edge_0_position
+                    && record.edge_0_step > next.edge_0_position)
+            {
+                insertion += 1;
+            } else {
+                break;
+            }
+        }
+    }
+    active.insert(insertion, record);
+}
+
+fn rasterize_active_column(
+    active: &[AlienRasterRecord],
+    column: usize,
+    texture_length: usize,
+    emit: &mut impl FnMut(usize, usize, usize),
+) -> bool {
+    let mut depth_order = Vec::new();
+    let mut next_start = 0;
+    while let Some(record) = active.get(next_start) {
+        let top = fixed_integer(record.edge_0_position);
+        if top >= 0 {
+            break;
+        }
+        let bottom = fixed_integer(record.edge_1_position);
+        if bottom > 0 {
+            let projected_depth = record.depth_position.wrapping_add(
+                i32::from(top)
+                    .wrapping_neg()
+                    .wrapping_mul(record.depth_gradient),
+            );
+            let insertion = depth_order
+                .iter()
+                .position(|&existing_index| {
+                    let existing: &AlienRasterRecord = &active[existing_index];
+                    let existing_top = fixed_integer(existing.edge_0_position);
+                    let existing_depth = existing.depth_position.wrapping_add(
+                        i32::from(existing_top)
+                            .wrapping_neg()
+                            .wrapping_mul(existing.depth_gradient),
+                    );
+                    projected_depth <= existing_depth
+                })
+                .unwrap_or(depth_order.len());
+            depth_order.insert(insertion, next_start);
+        }
+        next_start += 1;
+    }
+
+    for y in 0..ALIEN_RASTER_HEIGHT {
+        let coordinate = y as i16;
+        depth_order.retain(|&record_index| {
+            fixed_integer(active[record_index].edge_1_position) > coordinate
+        });
+        while let Some(record) = active.get(next_start) {
+            if fixed_integer(record.edge_0_position) != coordinate {
+                break;
+            }
+            let record_index = next_start;
+            next_start += 1;
+            if fixed_integer(record.edge_1_position) <= coordinate {
+                continue;
+            }
+            let record = &active[record_index];
+            let insertion = depth_order
+                .iter()
+                .position(|&existing_index| {
+                    let existing = active[existing_index];
+                    if record.edge_0_position >= existing.edge_1_position {
+                        return false;
+                    }
+                    let distance = record
+                        .edge_0_position
+                        .wrapping_sub(existing.edge_0_position);
+                    let projected_depth = existing
+                        .depth_position
+                        .wrapping_add(multiply_q16(distance, existing.depth_gradient));
+                    projected_depth >= record.depth_position
+                })
+                .unwrap_or(depth_order.len());
+            depth_order.insert(insertion, record_index);
+        }
+
+        let Some(&visible_index) = depth_order.first() else {
+            continue;
+        };
+        let record = active[visible_index];
+        let relative = coordinate.wrapping_sub(fixed_integer(record.edge_0_position));
+        let texture_u = word_add(
+            record.texture_u,
+            (record.texture_du as u16).wrapping_mul(relative as u16),
+        );
+        let texture_v = word_add(
+            record.texture_v,
+            (record.texture_dv as u16).wrapping_mul(relative as u16),
+        );
+        let texture_offset = usize::from(record.texture_bank) * TEXTURE_BANK_SIZE
+            + usize::from(
+                ((texture_u as u16) >> TEXTURE_FRACTION_BITS) | ((texture_v as u16) & 0xFF00),
+            );
+        if texture_offset >= texture_length {
+            return false;
+        }
+        emit(column, y, texture_offset);
+    }
+    true
+}
+
 impl AlienRasterRecord {
-    #[cfg(test)]
     fn advance_column(&mut self) -> bool {
         self.remaining = (self.remaining as u16).wrapping_sub(1) as i16;
         if self.remaining >= 0 {
@@ -488,7 +643,6 @@ const fn fixed_y(value: i16) -> i32 {
     (value as i32) << FIXED_FRACTION_BITS
 }
 
-#[cfg(test)]
 const fn fixed_integer(value: i32) -> i16 {
     (value >> FIXED_FRACTION_BITS) as i16
 }
@@ -515,7 +669,6 @@ const fn multiply_q16(left: i32, right: i32) -> i32 {
     ((left as i64).wrapping_mul(right as i64) >> FIXED_FRACTION_BITS) as i32
 }
 
-#[cfg(test)]
 const _: () = assert!(TEXTURE_WIDTH * TEXTURE_HEIGHT == TEXTURE_BANK_SIZE * 2);
 
 #[cfg(test)]
@@ -577,6 +730,7 @@ mod tests {
         bucket_column: Option<usize>,
         output_mode: Option<AlienRasterOutputMode>,
         initial_record: Option<AlienRasterRecord>,
+        initial_records: Option<Vec<AlienRasterRecord>>,
         texture: Option<OracleTexture>,
         framebuffer: Option<FramebufferContract>,
         logical_pixels: Option<Vec<AlienRasterPixel>>,
@@ -675,6 +829,75 @@ mod tests {
                 for pixel in actual {
                     framebuffer[pixel.y * framebuffer_contract.width + pixel.x] = pixel.value;
                 }
+                assert_eq!(
+                    hex_sha256(&framebuffer),
+                    framebuffer_contract.sha256,
+                    "{} framebuffer",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn active_span_ordering_matches_every_direct_alien_overlay_vector() {
+        let fixtures = [
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_amer_func_2572_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/xdb_croolis_func_25d6_natural.json"
+            ),
+            include_str!("../../../../../re/tools/oracle_vectors/xdb_scrut_func_2696_natural.json"),
+        ];
+        for fixture in fixtures {
+            let vectors: Vec<RendererVector> = serde_json::from_str(fixture).unwrap();
+            for vector in vectors {
+                let (
+                    Some(column),
+                    Some(records),
+                    Some(texture_contract),
+                    Some(framebuffer_contract),
+                    Some(expected_pixels),
+                ) = (
+                    vector.bucket_column,
+                    vector.initial_records,
+                    vector.texture,
+                    vector.framebuffer,
+                    vector.logical_pixels,
+                )
+                else {
+                    continue;
+                };
+                let texture = texture_contract.unit.repeat(texture_contract.repetitions);
+                let activations = records
+                    .into_iter()
+                    .map(|record| AlienRasterActivation {
+                        first_column: column,
+                        record,
+                    })
+                    .collect::<Vec<_>>();
+                let mut framebuffer = vec![
+                    framebuffer_contract.initial_value;
+                    framebuffer_contract.width * framebuffer_contract.height
+                ];
+                assert!(rasterize_activations(
+                    &activations,
+                    texture.len(),
+                    |x, y, texture_offset| {
+                        framebuffer[y * framebuffer_contract.width + x] = texture[texture_offset];
+                    },
+                ));
+                let actual_pixels = framebuffer
+                    .iter()
+                    .copied()
+                    .enumerate()
+                    .filter(|(_offset, value)| *value != framebuffer_contract.initial_value)
+                    .map(|(offset, value)| AlienRasterPixel {
+                        x: offset % framebuffer_contract.width,
+                        y: offset / framebuffer_contract.width,
+                        value,
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(actual_pixels, expected_pixels, "{}", vector.name);
                 assert_eq!(
                     hex_sha256(&framebuffer),
                     framebuffer_contract.sha256,

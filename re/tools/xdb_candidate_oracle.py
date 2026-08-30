@@ -22372,6 +22372,370 @@ def alien_full_renderer_vectors(
     return vectors
 
 
+def alien_overlap_renderer_vectors(
+    module: str,
+    entry: int,
+    face_activate: int,
+    body_hash: str,
+    layout: dict[str, int],
+) -> list[dict[str, object]]:
+    """Capture native multi-record span ordering from an original alien XDB."""
+    image = load_image(module)
+    if hashlib.sha256(image[entry:face_activate]).hexdigest() != body_hash:
+        raise AssertionError(f"{module}:{entry:#x}: recovered renderer body changed")
+
+    globals_segment = 0x3000
+    geometry_segment = 0x5000
+    raster_segment = 0x7000
+    texture_segment = 0x9000
+    linear_segment = 0xB000
+    stack_segment = 0xC000
+    return_address = 0xF000
+    face_offset = 0x1000
+    head_offset = layout["active_head"]
+    middle_offset = layout["active_middle"]
+    first_column = 10
+
+    def u16(value: int) -> int:
+        return value & 0xFFFF
+
+    def u32(value: int) -> int:
+        return value & 0xFFFFFFFF
+
+    def write_word(buffer: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<H", buffer, offset, u16(value))
+
+    def write_dword(buffer: bytearray, offset: int, value: int) -> None:
+        struct.pack_into("<I", buffer, offset, u32(value))
+
+    def complete_record(fields: dict[str, int]) -> dict[str, int | str]:
+        return {
+            "remaining": int(fields.get("remaining", 0)),
+            "edge_0_position": int(fields["edge_0_position"]),
+            "edge_0_step": int(fields.get("edge_0_step", 0)),
+            "edge_1_position": int(fields["edge_1_position"]),
+            "edge_1_step": int(fields.get("edge_1_step", 0)),
+            "depth_position": int(fields["depth_position"]),
+            "depth_step": int(fields.get("depth_step", 0)),
+            "depth_gradient": int(fields.get("depth_gradient", 0)),
+            "texture_u": int(fields["texture_u"]),
+            "texture_v": int(fields.get("texture_v", 0)),
+            "texture_u_step": int(fields.get("texture_u_step", 0)),
+            "texture_v_step": int(fields.get("texture_v_step", 0)),
+            "texture_du": int(fields.get("texture_du", 0)),
+            "texture_dv": int(fields.get("texture_dv", 0)),
+            "advance": "remove",
+            "secondary_remaining": 0,
+            "secondary_edge_position": 0,
+            "secondary_edge_step": 0,
+            "secondary_depth_position": 0,
+            "secondary_depth_step": 0,
+            "secondary_texture_u": 0,
+            "secondary_texture_v": 0,
+            "secondary_texture_u_step": 0,
+            "secondary_texture_v_step": 0,
+            "texture_bank": 0,
+        }
+
+    cases = (
+        {
+            "name": "multi_touching_spans",
+            "records": (
+                {
+                    "edge_0_position": 1 << 16,
+                    "edge_1_position": 3 << 16,
+                    "depth_position": 0x01000000,
+                    "texture_u": 0x1000,
+                },
+                {
+                    "edge_0_position": 3 << 16,
+                    "edge_1_position": 5 << 16,
+                    "depth_position": 0x02000000,
+                    "texture_u": 0x2000,
+                },
+            ),
+        },
+        {
+            "name": "multi_first_span_nearer",
+            "records": (
+                {
+                    "edge_0_position": 1 << 16,
+                    "edge_1_position": 5 << 16,
+                    "depth_position": 0x01000000,
+                    "texture_u": 0x1000,
+                },
+                {
+                    "edge_0_position": 2 << 16,
+                    "edge_1_position": 4 << 16,
+                    "depth_position": 0x02000000,
+                    "texture_u": 0x2000,
+                },
+            ),
+        },
+        {
+            "name": "multi_second_span_nearer",
+            "records": (
+                {
+                    "edge_0_position": 1 << 16,
+                    "edge_1_position": 5 << 16,
+                    "depth_position": 0x02000000,
+                    "texture_u": 0x1000,
+                },
+                {
+                    "edge_0_position": 2 << 16,
+                    "edge_1_position": 4 << 16,
+                    "depth_position": 0x01000000,
+                    "texture_u": 0x2000,
+                },
+            ),
+        },
+        {
+            "name": "multi_equal_depth_new_span_wins",
+            "records": (
+                {
+                    "edge_0_position": 1 << 16,
+                    "edge_1_position": 5 << 16,
+                    "depth_position": 0x01000000,
+                    "texture_u": 0x1000,
+                },
+                {
+                    "edge_0_position": 2 << 16,
+                    "edge_1_position": 4 << 16,
+                    "depth_position": 0x01000000,
+                    "texture_u": 0x2000,
+                },
+            ),
+        },
+        {
+            "name": "multi_clipped_depth_order",
+            "records": (
+                {
+                    "edge_0_position": -(2 << 16),
+                    "edge_1_position": 4 << 16,
+                    "depth_position": 0x02000000,
+                    "depth_gradient": 1 << 16,
+                    "texture_u": 0x1000,
+                },
+                {
+                    "edge_0_position": -(1 << 16),
+                    "edge_1_position": 3 << 16,
+                    "depth_position": 0x01000000,
+                    "depth_gradient": -(1 << 16),
+                    "texture_u": 0x2000,
+                },
+            ),
+        },
+        {
+            "name": "multi_fractional_edges_reorder_after_column",
+            "records": (
+                {
+                    "remaining": 1,
+                    "edge_0_position": (1 << 16) + 0x4000,
+                    "edge_0_step": 2 << 16,
+                    "edge_1_position": (5 << 16) + 0x4000,
+                    "depth_position": 0x01000000,
+                    "texture_u": 0x1000,
+                    "texture_u_step": 0x0100,
+                },
+                {
+                    "remaining": 1,
+                    "edge_0_position": (2 << 16) + 0xC000,
+                    "edge_0_step": -(2 << 16),
+                    "edge_1_position": (4 << 16) + 0xC000,
+                    "depth_position": 0x02000000,
+                    "texture_u": 0x2000,
+                    "texture_u_step": 0x0100,
+                },
+            ),
+        },
+    )
+    texture = bytes((offset * 37 + 11) & 0xFF for offset in range(0x10000))
+    texture_unit = list(texture[:0x100])
+    texture_sha256 = hashlib.sha256(texture).hexdigest()
+    vectors: list[dict[str, object]] = []
+
+    for case_index, case in enumerate(cases):
+        records = [complete_record(record) for record in case["records"]]
+        globals_before = bytearray(0x10000)
+        geometry_before = bytearray(0x10000)
+        raster_before = bytearray(0x10000)
+        write_word(globals_before, 0x0002, geometry_segment)
+        write_word(globals_before, 0x0006, raster_segment)
+        write_word(globals_before, 0x0024, linear_segment)
+        write_word(raster_before, layout["render_continuation"], layout["render_linear"])
+        write_word(
+            raster_before,
+            layout["bucket_heads"] + first_column * 2,
+            face_offset,
+        )
+        write_word(geometry_before, face_offset, 0)
+
+        patched_image = bytearray(image)
+        patched_image[face_activate] = 0xC3
+        activations: list[int] = []
+        injected_offsets: list[int] = []
+
+        def code_handler(
+            machine: Uc, address: int, _size: int, _data: object
+        ) -> None:
+            if address != face_activate:
+                return
+            activations.append(machine.reg_read(UC_X86_REG_ESI) & 0xFFFF)
+            raster_base = raster_segment * 16
+            free_offset = struct.unpack(
+                "<H",
+                machine.mem_read(raster_base + layout["free_head"], 2),
+            )[0]
+            injected_offsets.clear()
+            for _record in records:
+                injected_offsets.append(free_offset)
+                free_offset = struct.unpack(
+                    "<H", machine.mem_read(raster_base + free_offset, 2)
+                )[0]
+
+            for record_index, (record, record_offset) in enumerate(
+                zip(records, injected_offsets)
+            ):
+                record_data = bytearray(0x5A)
+                next_offset = (
+                    injected_offsets[record_index + 1]
+                    if record_index + 1 < len(injected_offsets)
+                    else middle_offset
+                )
+                previous_offset = (
+                    head_offset
+                    if record_index == 0
+                    else injected_offsets[record_index - 1]
+                )
+                write_word(record_data, 0x00, next_offset)
+                write_dword(record_data, 0x08, record["edge_0_position"])
+                write_dword(record_data, 0x0C, record["edge_0_step"])
+                write_word(record_data, 0x10, previous_offset)
+                write_dword(record_data, 0x18, record["edge_1_position"])
+                write_dword(record_data, 0x1C, record["edge_1_step"])
+                write_dword(record_data, 0x20, record["depth_position"])
+                write_dword(record_data, 0x24, record["depth_step"])
+                write_dword(record_data, 0x28, record["depth_gradient"])
+                write_word(record_data, 0x2C, layout["advance_remove"])
+                write_word(record_data, 0x2E, record["remaining"])
+                write_word(record_data, 0x30, record["secondary_remaining"])
+                write_dword(record_data, 0x32, record["secondary_edge_position"])
+                write_dword(record_data, 0x36, record["secondary_edge_step"])
+                write_dword(record_data, 0x3A, record["secondary_depth_position"])
+                write_dword(record_data, 0x3E, record["secondary_depth_step"])
+                write_word(record_data, 0x42, record["texture_u"])
+                write_word(record_data, 0x44, record["texture_v"])
+                write_word(record_data, 0x46, record["secondary_texture_u"])
+                write_word(record_data, 0x48, record["secondary_texture_v"])
+                write_word(record_data, 0x4A, record["texture_u_step"])
+                write_word(record_data, 0x4C, record["texture_v_step"])
+                write_word(record_data, 0x4E, record["secondary_texture_u_step"])
+                write_word(record_data, 0x50, record["secondary_texture_v_step"])
+                write_word(record_data, 0x52, record["texture_du"])
+                write_word(record_data, 0x54, record["texture_dv"])
+                write_word(record_data, 0x56, texture_segment)
+                machine.mem_write(raster_base + record_offset, bytes(record_data))
+
+            machine.mem_write(
+                raster_base + layout["free_head"], struct.pack("<H", free_offset)
+            )
+            machine.mem_write(
+                raster_base + head_offset,
+                struct.pack("<H", injected_offsets[0]),
+            )
+            machine.mem_write(
+                raster_base + middle_offset + 0x10,
+                struct.pack("<H", injected_offsets[-1]),
+            )
+
+        initial = {
+            "eax": 0xA1A1BEEF + case_index,
+            "ebx": 0xB2B22345 + case_index,
+            "ecx": 0xC3C33456 + case_index,
+            "edx": 0xD4D44567 + case_index,
+            "esi": 0xE5E55678 + case_index,
+            "edi": 0xF6F66789 + case_index,
+            "ebp": 0x9797789A + case_index,
+            "sp": 0xFF00,
+            "ds": geometry_segment,
+            "es": raster_segment,
+            "fs": globals_segment,
+            "gs": 0x2800,
+            "ss": stack_segment,
+            "flags": 0x0A93,
+        }
+        machine = execute(
+            bytes(patched_image),
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (globals_segment, 0, bytes(globals_before)),
+                (geometry_segment, 0, bytes(geometry_before)),
+                (raster_segment, 0, bytes(raster_before)),
+                (texture_segment, 0, texture),
+                (linear_segment, 0, bytes(0x10000)),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + bytes.fromhex("5aa596698778"),
+                ),
+            ],
+            max_instructions=700000,
+            code_handler=code_handler,
+        )
+        if activations != [face_offset]:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: activations={activations}"
+            )
+        raster_after = bytes(machine.mem_read(raster_segment * 16, 0x10000))
+        if struct.unpack_from("<H", raster_after, head_offset)[0] != middle_offset:
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: active records remain"
+            )
+        free_chain = []
+        free_offset = struct.unpack_from("<H", raster_after, layout["free_head"])[0]
+        for _record in records:
+            free_chain.append(free_offset)
+            free_offset = struct.unpack_from("<H", raster_after, free_offset)[0]
+        if set(free_chain) != set(injected_offsets):
+            raise AssertionError(
+                f"{module}:{entry:#x} {case['name']}: records were not freed"
+            )
+        framebuffer = bytes(machine.mem_read(linear_segment * 16, 320 * 200))
+        logical_pixels = [
+            {"x": offset % 320, "y": offset // 320, "value": value}
+            for offset, value in enumerate(framebuffer)
+            if value != 0
+        ]
+        vectors.append(
+            {
+                "name": case["name"],
+                "module": module,
+                "entry": entry,
+                "bucket_column": first_column,
+                "output_mode": "linear",
+                "activation_order": list(range(len(records))),
+                "initial_records": records,
+                "texture": {
+                    "unit": texture_unit,
+                    "repetitions": 0x100,
+                    "sha256": texture_sha256,
+                },
+                "framebuffer": {
+                    "width": 320,
+                    "height": 200,
+                    "initial_value": 0,
+                    "sha256": hashlib.sha256(framebuffer).hexdigest(),
+                },
+                "logical_pixels": logical_pixels,
+                "record_returned_to_free_list": True,
+            }
+        )
+
+    return vectors
+
 
 def manu3_active_renderer_vectors() -> list[dict[str, object]]:
     module = "manu3"
@@ -26453,6 +26817,13 @@ def main() -> int:
         update_vector(
             VECTOR_ROOT / f"xdb_{module}_func_{entry:04x}_natural.json",
             alien_full_renderer_vectors(
+                module,
+                entry,
+                face_activate,
+                body_hash,
+                layout,
+            )
+            + alien_overlap_renderer_vectors(
                 module,
                 entry,
                 face_activate,

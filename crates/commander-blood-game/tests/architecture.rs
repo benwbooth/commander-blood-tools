@@ -188,7 +188,7 @@ fn production_video_derivatives_are_generated_through_the_recovered_decoder() {
 
     assert!(app.contains("prepare_lossless_webm_derivatives(data)"));
     assert!(importer.contains("RuntimePresentationStream::load"));
-    assert!(importer.contains("service_frame(runtime"));
+    assert!(importer.contains(".service_frame("));
     assert!(importer.contains("build_indexed_planar_frame"));
     assert!(importer.contains("build_mask_planar_frame"));
     assert!(importer.contains("MatroskaFile::open"));

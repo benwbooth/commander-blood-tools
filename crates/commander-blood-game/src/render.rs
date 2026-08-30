@@ -268,9 +268,7 @@ impl<'window> Renderer<'window> {
                 )
             })
             .transpose()?;
-        let alien = alien_asset.map(|asset| {
-            AlienRenderer::new(&device, &queue, format, config.width, config.height, asset)
-        });
+        let alien = alien_asset.map(|_asset| AlienRenderer::new(&device, format));
         let bridge = bridge_palette
             .map(|palette| BridgeRenderer::new(&device, format, palette))
             .transpose()?;
@@ -303,9 +301,6 @@ impl<'window> Renderer<'window> {
         if let Some(manu3) = &mut self.manu3 {
             manu3.resize(&self.device, width, height);
         }
-        if let Some(alien) = &mut self.alien {
-            alien.resize(&self.device, width, height);
-        }
     }
 
     /// Install or replace the decoded alien scene used by synchronous overlays.
@@ -313,15 +308,8 @@ impl<'window> Renderer<'window> {
     /// Bridge GPU resources remain resident and are selected again as soon as
     /// callers stop supplying alien frames. This mirrors the original overlay
     /// return without rebuilding the bridge panorama or projection state.
-    pub fn install_alien_scene(&mut self, asset: &AlienAsset) {
-        self.alien = Some(AlienRenderer::new(
-            &self.device,
-            &self.queue,
-            self.config.format,
-            self.config.width,
-            self.config.height,
-            asset,
-        ));
+    pub fn install_alien_scene(&mut self, _asset: &AlienAsset) {
+        self.alien = Some(AlienRenderer::new(&self.device, self.config.format));
     }
 
     /// Release the temporary alien GPU resources after its XDB loop returns.
