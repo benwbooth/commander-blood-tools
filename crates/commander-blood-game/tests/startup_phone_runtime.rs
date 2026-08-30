@@ -592,6 +592,12 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
         BOB_NAME
     );
     assert!(presentation_flag(first_talk, "active"));
+    assert!(
+        first_talk["semantic"]["video"]["content_region"]["front"]["nonblack_count"]
+            .as_u64()
+            .is_some_and(|count| count > 0),
+        "Bob's decoded first-talk frame resolved entirely through black palette entries"
+    );
 
     assert!(
         bob_records

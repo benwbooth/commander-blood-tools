@@ -262,6 +262,7 @@ pub trait SceneTransitionHost {
         link: &Self::SceneLink,
         state: &mut SceneTransitionState,
         presentation: &mut ScriptPresentationScanState,
+        live_palette: &mut IndexedGamePalette,
     ) -> Result<(), Self::Error>;
 
     /// Decode `frigo.fd` and update its live palette when requested.
@@ -350,7 +351,7 @@ pub fn update_scene_transition<Host: SceneTransitionHost>(
         return Ok(SceneTransitionOutcome::Initialized);
     }
 
-    host.dispatch_scene_line(scene_link, state, presentation)
+    host.dispatch_scene_line(scene_link, state, presentation, &mut palettes.live)
         .map_err(SceneTransitionError::Host)?;
 
     match phase {
@@ -618,6 +619,7 @@ mod tests {
         write_reload: bool,
         alien_active: bool,
         alien_c2_gate: bool,
+        dispatch_palette_entry: Option<(usize, [u8; RGB_COMPONENT_COUNT])>,
     }
 
     impl SceneTransitionHost for OracleHost {
@@ -646,8 +648,12 @@ mod tests {
             _link: &Self::SceneLink,
             _state: &mut SceneTransitionState,
             _presentation: &mut ScriptPresentationScanState,
+            live_palette: &mut IndexedGamePalette,
         ) -> Result<(), Self::Error> {
             self.calls.push(RecordedCall::Dispatch);
+            if let Some((index, color)) = self.dispatch_palette_entry {
+                live_palette[index] = color;
+            }
             Ok(())
         }
 
@@ -746,6 +752,7 @@ mod tests {
                 write_reload: vector.name == "bridge_callback_sets_reload",
                 alien_active: vector.name == "bridge_alien_remains_active",
                 alien_c2_gate: vector.name == "bridge_alien_sets_c2_gate",
+                dispatch_palette_entry: None,
             };
 
             update_scene_transition(
@@ -877,6 +884,45 @@ mod tests {
     }
 
     #[test]
+    fn scene_dispatch_updates_the_shared_live_palette() {
+        const TEST_PALETTE_INDEX: usize = 37;
+        const TEST_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [11, 23, 47];
+
+        let mut state = SceneTransitionState {
+            phase: SceneTransitionPhase::Bridge,
+            bridge_blocked: true,
+            ..SceneTransitionState::default()
+        };
+        let mut presentation = ScriptPresentationScanState::default();
+        let mut text = TextPresentationState::default();
+        let mut palettes = SceneTransitionPalettes::default();
+        let mut entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        let mut host = OracleHost {
+            record_kind: SceneTransitionRecordKind::Presentation,
+            calls: Vec::new(),
+            write_blocked: false,
+            write_reload: false,
+            alien_active: false,
+            alien_c2_gate: false,
+            dispatch_palette_entry: Some((TEST_PALETTE_INDEX, TEST_PALETTE_COLOR)),
+        };
+
+        let outcome = update_scene_transition(
+            &mut state,
+            &mut presentation,
+            &mut text,
+            &mut palettes,
+            &mut entities,
+            &u16::MIN,
+            &mut host,
+        )
+        .unwrap();
+
+        assert_eq!(outcome, SceneTransitionOutcome::BridgeActive);
+        assert_eq!(palettes.live[TEST_PALETTE_INDEX], TEST_PALETTE_COLOR);
+    }
+
+    #[test]
     fn short_entity_tables_fail_before_mutating_entity_four() {
         let mut state = SceneTransitionState::default();
         state.begin();
@@ -894,6 +940,7 @@ mod tests {
             write_reload: false,
             alien_active: false,
             alien_c2_gate: false,
+            dispatch_palette_entry: None,
         };
 
         let error = update_scene_transition(

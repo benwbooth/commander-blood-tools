@@ -296,17 +296,21 @@ impl SceneTransitionHost for RuntimeSceneTransitionHost<'_, '_, '_, '_> {
         link: &Self::SceneLink,
         state: &mut SceneTransitionState,
         presentation: &mut ScriptPresentationScanState,
+        live_palette: &mut crate::native::bloodprg::IndexedGamePalette,
     ) -> Result<()> {
         self.scene_dispatched = true;
         let related = self.record(state.record_source).object;
-        self.services.dispatch_scene_transition(
+        *self.services.runtime_mut().live_palette_mut() = *live_palette;
+        let result = self.services.dispatch_scene_transition(
             *link,
             state,
             presentation,
             self.lifecycle,
             related,
             &mut self.dispatch_palette_percent,
-        )?;
+        );
+        *live_palette = *self.services.runtime().live_palette();
+        result?;
         Ok(())
     }
 

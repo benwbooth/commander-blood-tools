@@ -122,6 +122,8 @@ const SCRIPT2_PROFILE_VALUE: u8 = 1;
 const SCRIPT2_PTERRA_UNLOCK_STATE_OFFSET: u16 = 0x12C2;
 const SCRIPT2_INIT_PROCEDURE_NAME: &[u8] = b"init";
 const PTERRA_OBJECT_NAME: &[u8] = b"Pterra";
+const PRESENTATION_CONTENT_FIRST_ROW: usize = 35;
+const PRESENTATION_CONTENT_AFTER_LAST_ROW: usize = 130;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct RandomDrawAudit {
@@ -3794,6 +3796,19 @@ impl<'window> ModernGameServices<'window> {
                 })
             });
         let screen_hash = fnv1a64(self.runtime.front_buffer().pixels());
+        let palette_transition = self.palette_transition.state();
+        let presentation_content = serde_json::json!({
+            "front": indexed_region_metrics(
+                self.runtime.front_buffer().pixels(),
+                self.runtime.live_palette(),
+                PRESENTATION_CONTENT_FIRST_ROW..PRESENTATION_CONTENT_AFTER_LAST_ROW,
+            ),
+            "back": indexed_region_metrics(
+                self.runtime.back_buffer().pixels(),
+                self.runtime.live_palette(),
+                PRESENTATION_CONTENT_FIRST_ROW..PRESENTATION_CONTENT_AFTER_LAST_ROW,
+            ),
+        });
         let palette_bytes: Vec<_> = self
             .runtime
             .live_palette()
@@ -4114,6 +4129,14 @@ impl<'window> ModernGameServices<'window> {
                 "source_open_or_draining": self.presentation_player.source_open_or_draining(),
                 "screen_hash": screen_hash,
                 "palette_hash": fnv1a64(&palette_bytes),
+                "palette_transition": {
+                    "percent": palette_transition.percent,
+                    "increment": palette_transition.increment,
+                    "first": palette_transition.first,
+                    "last": palette_transition.last,
+                    "dirty_flags": palette_transition.dirty_flags,
+                },
+                "content_region": presentation_content,
                 "bridge_layers": bridge_layers,
             },
         }))
@@ -4199,6 +4222,37 @@ fn indexed_layer_metrics(pixels: &[u8]) -> serde_json::Value {
     serde_json::json!({
         "nonzero_count": nonzero_count,
         "bounds": (nonzero_count != usize::MIN).then_some([minimum, maximum]),
+        "palette_indices": palette_indices,
+    })
+}
+
+fn indexed_region_metrics(
+    pixels: &[u8],
+    palette: &IndexedGamePalette,
+    rows: Range<usize>,
+) -> serde_json::Value {
+    let start = rows.start * LOGICAL_FRAMEBUFFER_WIDTH;
+    let end = rows.end * LOGICAL_FRAMEBUFFER_WIDTH;
+    let region = &pixels[start..end];
+    let mut used = [false; PALETTE_ENTRY_COUNT];
+    let mut nonzero_count = usize::MIN;
+    let mut nonblack_count = usize::MIN;
+    for palette_index in region.iter().copied() {
+        used[usize::from(palette_index)] = true;
+        nonzero_count += usize::from(palette_index != u8::MIN);
+        nonblack_count +=
+            usize::from(palette[usize::from(palette_index)] != [u8::MIN; RGB_COMPONENT_COUNT]);
+    }
+    let palette_indices = used
+        .iter()
+        .enumerate()
+        .filter_map(|(index, used)| used.then_some(index))
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "row_range": [rows.start, rows.end],
+        "indexed_hash": fnv1a64(region),
+        "nonzero_count": nonzero_count,
+        "nonblack_count": nonblack_count,
         "palette_indices": palette_indices,
     })
 }
