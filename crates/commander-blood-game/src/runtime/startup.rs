@@ -1,12 +1,16 @@
 //! Concrete flat runtime host for loading-screen and writable-data preparation.
 
+use std::io::Write;
+use std::path::{Path, PathBuf};
+
 use anyhow::{Context, Result};
 use commander_blood_formats::archive::BloodResourceName;
 
 use crate::native::bloodprg::{
-    BiosFont8x8, FontPoint, IndexedGamePalette, StartupLoadingText, StartupPreparationHost,
-    StartupPreparationOutcome, StartupWritableResourceId, draw_bios_font_text,
-    prepare_startup_writable_resources,
+    BiosFont8x8, FontPoint, IndexedGamePalette, StartupFilesystemFailure,
+    StartupFilesystemOperation, StartupLoadingText, StartupPreparationHost,
+    StartupPreparationOutcome, StartupResourceCopyOutcome, StartupWritableResourceId,
+    draw_bios_font_text, prepare_startup_writable_resources,
 };
 
 use super::{IndexedFramebuffer, OriginalGameRuntime};
@@ -56,41 +60,100 @@ where
         (self.present_loading_frame)(self.runtime.front_buffer(), &self.loading_palette)
     }
 
-    fn ensure_write_directory(&mut self) -> Result<bool> {
+    fn ensure_write_directory(&mut self) -> Result<(), StartupFilesystemFailure> {
         let root = self.runtime.data().resource_store().writable_root();
-        std::fs::create_dir_all(root)
-            .with_context(|| format!("creating writable game-data root {}", root.display()))?;
-        Ok(root.is_dir())
+        std::fs::create_dir_all(root).map_err(|error| {
+            StartupFilesystemFailure::new(
+                StartupFilesystemOperation::CreateWriteDirectory,
+                format!(
+                    "creating writable game-data root {}: {error}",
+                    root.display()
+                ),
+            )
+        })?;
+        if root.is_dir() {
+            Ok(())
+        } else {
+            Err(StartupFilesystemFailure::new(
+                StartupFilesystemOperation::CreateWriteDirectory,
+                format!(
+                    "writable game-data root is not a directory: {}",
+                    root.display()
+                ),
+            ))
+        }
     }
 
     fn writable_resource_exists(
         &mut self,
         _resource: StartupWritableResourceId,
         name: &BloodResourceName,
-    ) -> Result<bool> {
-        self.runtime
-            .data()
-            .resource_store()
-            .writable_resource_exists(name)
+    ) -> Result<bool, StartupFilesystemFailure> {
+        let store = self.runtime.data().resource_store();
+        let path = startup_writable_path(store.writable_root(), name);
+        match std::fs::metadata(&path) {
+            Ok(metadata) => Ok(metadata.is_file()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(error) => Err(StartupFilesystemFailure::new(
+                StartupFilesystemOperation::ProbeWritableResource,
+                format!("probing writable resource {}: {error}", path.display()),
+            )),
+        }
     }
 
     fn copy_resource_to_writable(
         &mut self,
         resource: StartupWritableResourceId,
         name: &BloodResourceName,
-    ) -> Result<()> {
-        self.runtime
-            .data()
-            .resource_store()
-            .copy_to_loose(name, name)
-            .with_context(|| {
+    ) -> Result<StartupResourceCopyOutcome, StartupFilesystemFailure> {
+        let store = self.runtime.data().resource_store();
+        let source = store.load(name).map_err(|error| {
+            StartupFilesystemFailure::new(
+                StartupFilesystemOperation::OpenSourceResource,
                 format!(
-                    "copying startup resource {} ({})",
+                    "opening startup resource {} ({}): {error:#}",
                     resource.index(),
                     resource_name(name)
-                )
-            })?;
-        Ok(())
+                ),
+            )
+        })?;
+        if source.is_empty() {
+            return Ok(StartupResourceCopyOutcome::SkippedEmptySource);
+        }
+
+        let destination = startup_writable_path(store.writable_root(), name);
+        let parent = destination
+            .parent()
+            .expect("validated resource destination has a writable-root parent");
+        std::fs::create_dir_all(parent).map_err(|error| {
+            StartupFilesystemFailure::new(
+                StartupFilesystemOperation::CreateDestinationResource,
+                format!(
+                    "creating startup destination directory {}: {error}",
+                    parent.display()
+                ),
+            )
+        })?;
+        let mut destination_file = std::fs::File::create(&destination).map_err(|error| {
+            StartupFilesystemFailure::new(
+                StartupFilesystemOperation::CreateDestinationResource,
+                format!(
+                    "creating startup destination {}: {error}",
+                    destination.display()
+                ),
+            )
+        })?;
+        destination_file.write_all(&source).map_err(|error| {
+            StartupFilesystemFailure::new(
+                StartupFilesystemOperation::CopyResourceData,
+                format!(
+                    "copying startup resource {} to {}: {error}",
+                    resource_name(name),
+                    destination.display()
+                ),
+            )
+        })?;
+        Ok(StartupResourceCopyOutcome::Copied)
     }
 }
 
@@ -119,6 +182,19 @@ impl OriginalGameRuntime {
 
 fn resource_name(name: &BloodResourceName) -> String {
     String::from_utf8_lossy(name.as_bytes()).into_owned()
+}
+
+fn startup_writable_path(root: &Path, name: &BloodResourceName) -> PathBuf {
+    let folded = name.archive_lookup_key();
+    let host_name = std::str::from_utf8(&folded).expect("validated resource name is ASCII");
+    host_name
+        .replace('\\', "/")
+        .split('/')
+        .filter(|component| !component.is_empty())
+        .fold(root.to_owned(), |mut path, component| {
+            path.push(component);
+            path
+        })
 }
 
 #[cfg(test)]
@@ -189,6 +265,7 @@ mod tests {
             crate::native::bloodprg::STARTUP_WRITABLE_RESOURCE_COUNT
         );
         assert_eq!(outcome.copied_resources.len(), unique_names.len());
+        assert!(outcome.diagnostics.is_empty());
         let (loading_frame, loading_palette) = presented_loading_frame.unwrap();
         assert_eq!(loading_palette, *runtime.data().default_vga_palette());
         assert!(loading_frame.pixels().contains(&LOADING_TEXT_PALETTE_INDEX));
@@ -216,5 +293,6 @@ mod tests {
             .prepare_startup_resources(&VGA_BIOS_FONT_8X8, |_frame, _palette| Ok(()))
             .unwrap();
         assert!(second_outcome.copied_resources.is_empty());
+        assert!(second_outcome.diagnostics.is_empty());
     }
 }

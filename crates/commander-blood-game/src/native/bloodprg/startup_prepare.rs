@@ -149,7 +149,7 @@ pub struct StartupLoadingText {
 
 /// Modern rendering and explicit-root filesystem operations used by startup.
 pub trait StartupPreparationHost {
-    /// Host failure propagated without inventing resource data.
+    /// Fatal adapter failure propagated without inventing resource data.
     type Error;
 
     /// Publish the bridge panorama palette used by the loading screen.
@@ -164,22 +164,79 @@ pub trait StartupPreparationHost {
     /// Present the completed loading frame through the modern renderer.
     fn present_loading_frame(&mut self) -> Result<(), Self::Error>;
 
-    /// Ensure the explicit writable root exists; false retains native mkdir failure.
-    fn ensure_write_directory(&mut self) -> Result<bool, Self::Error>;
+    /// Ensure the explicit writable root exists.
+    ///
+    /// Unlike rendering failures, this failure belongs to the recovered DOS
+    /// filesystem operation and does not abort the startup catalog walk.
+    fn ensure_write_directory(&mut self) -> Result<(), StartupFilesystemFailure>;
 
     /// Probe one authored name below the explicit writable root.
     fn writable_resource_exists(
         &mut self,
         resource: StartupWritableResourceId,
         name: &BloodResourceName,
-    ) -> Result<bool, Self::Error>;
+    ) -> Result<bool, StartupFilesystemFailure>;
 
     /// Copy one missing resource from the configured source store to the writable root.
     fn copy_resource_to_writable(
         &mut self,
         resource: StartupWritableResourceId,
         name: &BloodResourceName,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<StartupResourceCopyOutcome, StartupFilesystemFailure>;
+}
+
+/// Recoverable filesystem operation attempted during startup preparation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StartupFilesystemOperation {
+    /// Create or validate the configured writable root.
+    CreateWriteDirectory,
+    /// Probe for one existing writable resource.
+    ProbeWritableResource,
+    /// Resolve and open one original source resource.
+    OpenSourceResource,
+    /// Create or truncate one writable destination resource.
+    CreateDestinationResource,
+    /// Transfer source bytes into an opened destination.
+    CopyResourceData,
+}
+
+/// Host-side detail for one nonfatal recovered filesystem failure.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StartupFilesystemFailure {
+    /// Operation that failed.
+    pub operation: StartupFilesystemOperation,
+    /// Stable human-readable host diagnostic.
+    pub message: String,
+}
+
+impl StartupFilesystemFailure {
+    /// Construct a typed failure while retaining the host error text.
+    pub fn new(operation: StartupFilesystemOperation, error: impl fmt::Display) -> Self {
+        Self {
+            operation,
+            message: error.to_string(),
+        }
+    }
+}
+
+/// Result of a startup copy attempt that reached the source resource.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StartupResourceCopyOutcome {
+    /// Nonempty source bytes were written to the destination.
+    Copied,
+    /// The native zero-length source guard skipped destination creation.
+    SkippedEmptySource,
+}
+
+/// One recoverable startup failure annotated with its catalog owner.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StartupPreparationDiagnostic {
+    /// Catalog entry owning the operation, or `None` for write-root creation.
+    pub resource: Option<StartupWritableResourceId>,
+    /// Authored resource name, absent only for write-root creation.
+    pub name: Option<BloodResourceName>,
+    /// Operation and host-side failure detail.
+    pub failure: StartupFilesystemFailure,
 }
 
 /// Completed startup probe and copy summary.
@@ -191,6 +248,8 @@ pub struct StartupPreparationOutcome {
     pub probed_resources: usize,
     /// Entries copied because their writable counterpart was absent.
     pub copied_resources: Vec<StartupWritableResourceId>,
+    /// Recoverable filesystem failures in native execution order.
+    pub diagnostics: Vec<StartupPreparationDiagnostic>,
 }
 
 /// Draw the loading screen and prepare every authored writable resource.
@@ -215,18 +274,49 @@ pub fn prepare_startup_writable_resources<Host: StartupPreparationHost>(
     })?;
     host.present_loading_frame()?;
 
-    let write_directory_created = host.ensure_write_directory()?;
+    let mut diagnostics = Vec::new();
+    let write_directory_created = match host.ensure_write_directory() {
+        Ok(()) => true,
+        Err(failure) => {
+            diagnostics.push(StartupPreparationDiagnostic {
+                resource: None,
+                name: None,
+                failure,
+            });
+            false
+        }
+    };
     let mut copied_resources = Vec::new();
     for (resource, name) in catalog.iter() {
-        if !host.writable_resource_exists(resource, name)? {
-            host.copy_resource_to_writable(resource, name)?;
-            copied_resources.push(resource);
+        let resource_exists = match host.writable_resource_exists(resource, name) {
+            Ok(resource_exists) => resource_exists,
+            Err(failure) => {
+                diagnostics.push(StartupPreparationDiagnostic {
+                    resource: Some(resource),
+                    name: Some(name.clone()),
+                    failure,
+                });
+                false
+            }
+        };
+        if resource_exists {
+            continue;
+        }
+        match host.copy_resource_to_writable(resource, name) {
+            Ok(StartupResourceCopyOutcome::Copied) => copied_resources.push(resource),
+            Ok(StartupResourceCopyOutcome::SkippedEmptySource) => {}
+            Err(failure) => diagnostics.push(StartupPreparationDiagnostic {
+                resource: Some(resource),
+                name: Some(name.clone()),
+                failure,
+            }),
         }
     }
     Ok(StartupPreparationOutcome {
         write_directory_created,
         probed_resources: catalog.len(),
         copied_resources,
+        diagnostics,
     })
 }
 
@@ -318,15 +408,22 @@ mod tests {
             Ok(())
         }
 
-        fn ensure_write_directory(&mut self) -> Result<bool, Self::Error> {
-            Ok(self.mkdir_success)
+        fn ensure_write_directory(&mut self) -> Result<(), StartupFilesystemFailure> {
+            if self.mkdir_success {
+                Ok(())
+            } else {
+                Err(StartupFilesystemFailure::new(
+                    StartupFilesystemOperation::CreateWriteDirectory,
+                    "oracle mkdir failure",
+                ))
+            }
         }
 
         fn writable_resource_exists(
             &mut self,
             resource: StartupWritableResourceId,
             name: &BloodResourceName,
-        ) -> Result<bool, Self::Error> {
+        ) -> Result<bool, StartupFilesystemFailure> {
             self.probed
                 .push((resource.index(), name.as_bytes().to_vec()));
             Ok(!self.missing.contains(&resource.index()))
@@ -336,10 +433,10 @@ mod tests {
             &mut self,
             resource: StartupWritableResourceId,
             name: &BloodResourceName,
-        ) -> Result<(), Self::Error> {
+        ) -> Result<StartupResourceCopyOutcome, StartupFilesystemFailure> {
             self.copied
                 .push((resource.index(), name.as_bytes().to_vec()));
-            Ok(())
+            Ok(StartupResourceCopyOutcome::Copied)
         }
     }
 
@@ -374,6 +471,10 @@ mod tests {
                 vector.case
             );
             assert_eq!(outcome.write_directory_created, vector.mkdir_success);
+            assert_eq!(
+                outcome.diagnostics.len(),
+                usize::from(!vector.mkdir_success)
+            );
             assert_eq!(outcome.probed_resources, vector.find_count);
             assert_eq!(host.probed.len(), vector.directory_enter_count);
             assert_eq!(
@@ -402,6 +503,140 @@ mod tests {
                 vector.case
             );
         }
+    }
+
+    #[derive(Default)]
+    struct FailureOwnershipHost {
+        probed: Vec<usize>,
+        copied: Vec<usize>,
+    }
+
+    impl StartupPreparationHost for FailureOwnershipHost {
+        type Error = Infallible;
+
+        fn publish_loading_palette(
+            &mut self,
+            _palette: &IndexedGamePalette,
+        ) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn clear_loading_frame(&mut self, _color: u8) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn draw_loading_text(&mut self, _text: StartupLoadingText) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn present_loading_frame(&mut self) -> Result<(), Self::Error> {
+            Ok(())
+        }
+
+        fn ensure_write_directory(&mut self) -> Result<(), StartupFilesystemFailure> {
+            Err(StartupFilesystemFailure::new(
+                StartupFilesystemOperation::CreateWriteDirectory,
+                "injected mkdir failure",
+            ))
+        }
+
+        fn writable_resource_exists(
+            &mut self,
+            resource: StartupWritableResourceId,
+            _name: &BloodResourceName,
+        ) -> Result<bool, StartupFilesystemFailure> {
+            self.probed.push(resource.index());
+            if resource.index() == 0 {
+                Err(StartupFilesystemFailure::new(
+                    StartupFilesystemOperation::ProbeWritableResource,
+                    "injected stat failure",
+                ))
+            } else {
+                Ok(resource.index() == 4)
+            }
+        }
+
+        fn copy_resource_to_writable(
+            &mut self,
+            resource: StartupWritableResourceId,
+            _name: &BloodResourceName,
+        ) -> Result<StartupResourceCopyOutcome, StartupFilesystemFailure> {
+            self.copied.push(resource.index());
+            let operation = match resource.index() {
+                0 => Some(StartupFilesystemOperation::OpenSourceResource),
+                1 => Some(StartupFilesystemOperation::CreateDestinationResource),
+                2 => Some(StartupFilesystemOperation::CopyResourceData),
+                _ => None,
+            };
+            match operation {
+                Some(operation) => Err(StartupFilesystemFailure::new(
+                    operation,
+                    "injected copy-stage failure",
+                )),
+                None => Ok(StartupResourceCopyOutcome::Copied),
+            }
+        }
+    }
+
+    #[test]
+    fn filesystem_failures_remain_local_and_later_catalog_entries_are_attempted() {
+        let names = [
+            b"ZERO.DAT".as_slice(),
+            b"ONE.DAT",
+            b"TWO.DAT",
+            b"THREE.DAT",
+            b"FOUR.DAT",
+        ]
+        .into_iter()
+        .map(|name| BloodResourceName::new(name).unwrap())
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+        let catalog = StartupWritableResourceCatalog { names };
+        let mut host = FailureOwnershipHost::default();
+
+        let outcome = prepare_startup_writable_resources(
+            &catalog,
+            &[[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+            &mut host,
+        )
+        .unwrap();
+
+        assert!(!outcome.write_directory_created);
+        assert_eq!(outcome.probed_resources, catalog.len());
+        assert_eq!(host.probed, vec![0, 1, 2, 3, 4]);
+        assert_eq!(host.copied, vec![0, 1, 2, 3]);
+        assert_eq!(
+            outcome
+                .copied_resources
+                .iter()
+                .map(|resource| resource.index())
+                .collect::<Vec<_>>(),
+            vec![3]
+        );
+        assert_eq!(
+            outcome
+                .diagnostics
+                .iter()
+                .map(|diagnostic| (
+                    diagnostic.resource.map(StartupWritableResourceId::index),
+                    diagnostic.failure.operation,
+                ))
+                .collect::<Vec<_>>(),
+            vec![
+                (None, StartupFilesystemOperation::CreateWriteDirectory),
+                (Some(0), StartupFilesystemOperation::ProbeWritableResource),
+                (Some(0), StartupFilesystemOperation::OpenSourceResource),
+                (
+                    Some(1),
+                    StartupFilesystemOperation::CreateDestinationResource
+                ),
+                (Some(2), StartupFilesystemOperation::CopyResourceData),
+            ]
+        );
+        assert_eq!(
+            outcome.diagnostics[1].name.as_ref().unwrap().as_bytes(),
+            b"ZERO.DAT"
+        );
     }
 
     #[test]

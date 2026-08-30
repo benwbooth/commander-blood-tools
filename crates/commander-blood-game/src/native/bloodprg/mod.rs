@@ -694,9 +694,10 @@ pub use startup_cleanup::{
 };
 pub use startup_prepare::{
     BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET, STARTUP_WRITABLE_RESOURCE_COUNT,
-    StartupLoadingText, StartupPreparationHost, StartupPreparationOutcome,
-    StartupWritableCatalogError, StartupWritableResourceCatalog, StartupWritableResourceId,
-    prepare_startup_writable_resources,
+    StartupFilesystemFailure, StartupFilesystemOperation, StartupLoadingText,
+    StartupPreparationDiagnostic, StartupPreparationHost, StartupPreparationOutcome,
+    StartupResourceCopyOutcome, StartupWritableCatalogError, StartupWritableResourceCatalog,
+    StartupWritableResourceId, prepare_startup_writable_resources,
 };
 pub use state::{
     ScriptStateOperationError, apply_bit_flag_operation, apply_shared_bit_operation,
