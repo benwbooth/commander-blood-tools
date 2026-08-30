@@ -6,7 +6,7 @@ use anyhow::{Context, Result, bail};
 use commander_blood_formats::alien::AlienAsset;
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
-use commander_blood_formats::descript::DescriptBackgroundSlot;
+use commander_blood_formats::descript::{DescriptBackgroundSlot, DescriptCharacterBackground};
 use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind, ScriptWordId};
@@ -3857,6 +3857,81 @@ impl<'window> ModernGameServices<'window> {
             .presentation_player
             .active_resource_name()
             .map(|name| String::from_utf8_lossy(name.as_bytes()).into_owned());
+        let descript_assets = self.scripts.backend().assets();
+        let descript_background_slot = |background| match background {
+            DescriptCharacterBackground::None => None,
+            DescriptCharacterBackground::Cached(slot) => Some(slot.encode()),
+        };
+        let descript_talk_clips = descript_assets
+            .talk_clips()
+            .iter()
+            .map(|clip| {
+                serde_json::json!({
+                    "video": String::from_utf8_lossy(clip.video().as_bytes()).into_owned(),
+                    "background_slot": descript_background_slot(clip.background()),
+                })
+            })
+            .collect::<Vec<_>>();
+        let descript_idle_clip = descript_assets.idle_clip().map(|clip| {
+            serde_json::json!({
+                "video": String::from_utf8_lossy(clip.video().as_bytes()).into_owned(),
+                "background_slot": descript_background_slot(clip.background()),
+                "loaded": descript_assets.encoded_idle_video().is_some(),
+            })
+        });
+        let descript_backgrounds = (usize::MIN..DescriptBackgroundSlot::COUNT)
+            .filter_map(|index| {
+                let slot = DescriptBackgroundSlot::decode((index + 1) as u8)
+                    .expect("DESCRIPT background index remains inside its four-slot domain");
+                self.scripts.backend().backgrounds().get(slot).map(|background| {
+                    serde_json::json!({
+                        "slot": slot.encode(),
+                        "resource": String::from_utf8_lossy(background.source_name()).into_owned(),
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+        let active_descript_object =
+            self.scripts
+                .backend()
+                .active_description_object()
+                .map(|record| {
+                    let name = profile
+                        .and_then(|profile| profile.directory().object(record))
+                        .map(|entry| String::from_utf8_lossy(entry.name()).into_owned());
+                    serde_json::json!({
+                        "record": record.index(),
+                        "name": name,
+                    })
+                });
+        let descript_application =
+            self.scripts
+                .backend()
+                .last_descript_application()
+                .map(|application| {
+                    serde_json::json!({
+                        "record_kind": format!("{:?}", application.record_kind()),
+                        "character_sprite_selected": application.character_sprite_selected(),
+                        "loaded_background_count": application.loaded_background_count(),
+                        "cached_background_count": application.cached_background_count(),
+                        "sound_bank_loaded": application.sound_bank_loaded(),
+                        "idle_clip_loaded": application.idle_clip_loaded(),
+                    })
+                });
+        let descript_trace = serde_json::json!({
+            "active_object": active_descript_object,
+            "application": descript_application,
+            "location_scene_video": descript_assets.location_scene_video().map(|name| String::from_utf8_lossy(name).into_owned()),
+            "object_scene_video": descript_assets.object_scene_video().map(|name| String::from_utf8_lossy(name).into_owned()),
+            "character_right_scene_video": descript_assets.character_right_scene_video().map(|name| String::from_utf8_lossy(name).into_owned()),
+            "character_left_scene_video": descript_assets.character_left_scene_video().map(|name| String::from_utf8_lossy(name).into_owned()),
+            "sound_bank": descript_assets.sound_bank().map(|name| String::from_utf8_lossy(name).into_owned()),
+            "talk_clips": descript_talk_clips,
+            "idle_clip": descript_idle_clip,
+            "character_sprite": descript_assets.character_sprite().map(|name| String::from_utf8_lossy(name.as_bytes()).into_owned()),
+            "music": descript_assets.music().map(|name| String::from_utf8_lossy(name.as_bytes()).into_owned()),
+            "backgrounds": descript_backgrounds,
+        });
         let presentation_trace = serde_json::json!({
             "ui_flags": lifecycle.low_ui_state_word(),
             "actor_transition": u8::from(lifecycle.profile_change_blockers.navigation_actor_transition_active),
@@ -3935,6 +4010,7 @@ impl<'window> ModernGameServices<'window> {
                 "displayed_line": self.ship_presentation.active_line,
             },
             "presentation": presentation_trace,
+            "descript": descript_trace,
             "bridge_console": bridge_console,
             "script2": script2,
             "navigation": navigation,

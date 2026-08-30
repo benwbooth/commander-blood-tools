@@ -62,6 +62,12 @@ const RADIO_COMPLETION_CLIP_INDEX: u64 = 2;
 const MINIMUM_REPEATED_RING_COUNT: usize = 2;
 const RADIO_SOUND_BANK: &str = "radio.snd";
 const RADIO_TERMINAL_FRAME: u64 = 11;
+const IZWALITO_DESCRIPT_SOUND_BANK: &str = "izwal.snd";
+const IZWALITO_SPRITE: &str = "izwalito.spr";
+const IZWALITO_IDLE_VIDEO: &str = "aaisw.hnm";
+const IZWALITO_FIRST_TALK_VIDEO: &str = "iswa1.hnm";
+const IZWALITO_LAST_TALK_VIDEO: &str = "iswx.hnm";
+const IZWALITO_TALK_CLIP_COUNT: usize = 15;
 const EMPTY_LABELS: [&str; 0] = [];
 const CONTACT_LABELS: [&str; 1] = ["Bob_Morlock"];
 const OPTION_LABELS: [&str; 6] = ["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT", "CANCEL"];
@@ -230,6 +236,29 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
         serde_json::json!(IZWALITO_GREETING_WORDS)
     );
     assert!(active["semantic"]["video"]["active_resource"].is_null());
+    let active_descript = descript(active);
+    assert_eq!(active_descript["active_object"]["name"], "Izwalito");
+    assert_eq!(active_descript["application"]["record_kind"], "Character");
+    assert_eq!(active_descript["character_sprite"], IZWALITO_SPRITE);
+    assert_eq!(active_descript["sound_bank"], IZWALITO_DESCRIPT_SOUND_BANK);
+    assert_eq!(active_descript["idle_clip"]["video"], IZWALITO_IDLE_VIDEO);
+    assert_eq!(active_descript["idle_clip"]["loaded"], false);
+    assert_eq!(
+        active_descript["talk_clips"]
+            .as_array()
+            .expect("Izwalito DESCRIPT talk clips are not an array")
+            .len(),
+        IZWALITO_TALK_CLIP_COUNT
+    );
+    assert_eq!(
+        active_descript["talk_clips"][usize::MIN]["video"],
+        IZWALITO_FIRST_TALK_VIDEO
+    );
+    assert_eq!(
+        active_descript["talk_clips"][IZWALITO_TALK_CLIP_COUNT - 1]["video"],
+        IZWALITO_LAST_TALK_VIDEO
+    );
+    assert_eq!(active_descript["backgrounds"], serde_json::json!([]));
     assert_eq!(
         active["semantic"]["audio"]["streamed_sound_bank"],
         RADIO_SOUND_BANK
@@ -839,6 +868,10 @@ fn audio_events(record: &Value) -> &[Value] {
     record["semantic"]["audio"]["events"]
         .as_array()
         .expect("runtime audio trace is not an event array")
+}
+
+fn descript(record: &Value) -> &Value {
+    &record["semantic"]["descript"]
 }
 
 fn bridge_actor_hash(record: &Value) -> Option<&str> {
