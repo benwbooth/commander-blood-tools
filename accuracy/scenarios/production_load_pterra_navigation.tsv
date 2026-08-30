@@ -27,3 +27,5 @@ wait 25
 click 160 150
 wait 20
 wait 20
+click 201 93
+wait 20

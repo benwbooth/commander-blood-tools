@@ -50,6 +50,7 @@ pub(super) struct RuntimeNavigationChart {
     pending_spans: Vec<NavigationChartCopySpan>,
     status_snapshot: Option<RuntimeNavigationStatusSnapshot>,
     retained_object_ids: Vec<ScriptObjectId>,
+    trace_objects: Vec<RuntimeNavigationTraceObject>,
 }
 
 impl Default for RuntimeNavigationChart {
@@ -67,6 +68,7 @@ impl Default for RuntimeNavigationChart {
             pending_spans: Vec::new(),
             status_snapshot: None,
             retained_object_ids: Vec::new(),
+            trace_objects: Vec::new(),
         }
     }
 }
@@ -80,6 +82,11 @@ impl RuntimeNavigationChart {
             "chart_object_count": self.state.chart_object_count,
             "location_panel_active": self.location_panel_active(),
             "selected_location": self.state.panel.selected_location.map(ScriptObjectId::index),
+            "objects": self.trace_objects.iter().map(|object| serde_json::json!({
+                "record": object.record.index(),
+                "name": String::from_utf8_lossy(&object.name),
+                "marker": object.marker,
+            })).collect::<Vec<_>>(),
         })
     }
 
@@ -125,6 +132,15 @@ impl RuntimeNavigationChart {
         let retained_object_ids = (!rebuild_roster && !self.retained_object_ids.is_empty())
             .then_some(self.retained_object_ids.as_slice());
         let world = RuntimeNavigationWorld::decode(services.runtime(), retained_object_ids)?;
+        self.trace_objects = world
+            .chart_objects
+            .iter()
+            .map(|object| RuntimeNavigationTraceObject {
+                record: object.id,
+                name: object.name.clone(),
+                marker: object.marker,
+            })
+            .collect();
         self.status_snapshot = Some(world.status_snapshot());
         let pointer = services.input().pointer_sample();
         self.state.transition_step = transition_step;
@@ -174,6 +190,12 @@ impl RuntimeNavigationChart {
         }
         Ok(outcome)
     }
+}
+
+struct RuntimeNavigationTraceObject {
+    record: ScriptObjectId,
+    name: Box<[u8]>,
+    marker: [u16; 2],
 }
 
 /// Publish the native `vm_ui_flags |= 4` write without clearing other UI owners.

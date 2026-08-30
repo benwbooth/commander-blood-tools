@@ -38,6 +38,8 @@ const SEEDED_LOAD_PROFILE: u8 = 2;
 const SCRIPT2_PROFILE: u8 = 1;
 const SCRIPT2_PTERRA_UNLOCK_STATE_OFFSET: u16 = 0x12C2;
 const SCRIPT2_PTERRA_UNLOCKED: u16 = 1;
+const SCRIPT2_PTERRA_MARKER: [u64; 2] = [201, 93];
+const PTERRA_NAME: &str = "Pterra";
 const AUTHENTIC_GAME1_SAVE: &str = "accuracy/cblood_install/cblood/GAME1.SAV";
 const HONK_WORD_CHOICES: [&str; 9] = [
     "bye_bye",
@@ -681,6 +683,32 @@ fn production_runtime_vm_unlocks_pterra_and_opens_the_authored_navigation_chart(
     assert_ne!(
         chart["semantic"]["navigation"]["chart"]["chart_object_count"], 0,
         "the opened navigation chart retained no known destinations"
+    );
+    let pterra_record = unlocked["semantic"]["script2"]["pterra_record"]
+        .as_u64()
+        .expect("SCRIPT2 did not expose Pterra's typed object identity");
+    let pterra_chart_object = chart["semantic"]["navigation"]["chart"]["objects"]
+        .as_array()
+        .expect("navigation chart objects are not an array")
+        .iter()
+        .find(|object| object["record"].as_u64() == Some(pterra_record))
+        .expect("the opened navigation chart omitted the unlocked Pterra object");
+    assert_eq!(pterra_chart_object["name"], PTERRA_NAME);
+    assert_eq!(
+        pterra_chart_object["marker"],
+        serde_json::json!(SCRIPT2_PTERRA_MARKER)
+    );
+
+    let pterra_panel = records[slot_index..]
+        .iter()
+        .find(|record| {
+            record["semantic"]["navigation"]["chart"]["selected_location"].as_u64()
+                == Some(pterra_record)
+        })
+        .expect("clicking Pterra's recovered marker never opened its location panel");
+    assert_eq!(
+        pterra_panel["semantic"]["navigation"]["chart"]["location_panel_active"],
+        true
     );
 }
 
