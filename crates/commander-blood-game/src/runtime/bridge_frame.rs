@@ -118,7 +118,7 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
     fn update_steering(
         &mut self,
         context: &mut BridgeSceneContext<Self::SceneLink, Self::ComparisonExtent>,
-        _state: &mut crate::native::bloodprg::BridgeFrameState,
+        state: &mut crate::native::bloodprg::BridgeFrameState,
     ) -> Result<bool> {
         let comparison_extent = self
             .services
@@ -126,6 +126,7 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
             .bridge_sprite_source_extent(LOCATION_PANEL_ENTITY_INDEX)
             .context("reading the bridge camera comparison extent")?;
         let steering = self.services.update_bridge_steering(self.input)?;
+        state.set_mouse_x(self.services.input().pointer_sample().position[0] as u16);
         *context = steering_scene_context(steering, comparison_extent);
         Ok(steering.view_changed)
     }

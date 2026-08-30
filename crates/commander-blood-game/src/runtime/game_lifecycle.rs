@@ -409,6 +409,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             },
             self.timer.navigation_animation_phase,
         )?;
+        self.platform
+            .synchronize_bridge_pointer(self.services.input().pointer_sample().position);
         self.apply_alien_overlay_mouse_idle_reset();
         state.exit_requested |= self.services.take_script_finale_shutdown_request();
         Ok(())
@@ -507,8 +509,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         } else {
             while self.platform.wait_for_visual_refresh(&mut self.services)? {
                 if self.manu3_visible {
-                    self.services
-                        .reproject_manu3_for_pointer(self.platform.logical_pointer())?;
+                    let pointer = self.platform.poll_pointer(&mut self.services).position;
+                    self.services.reproject_manu3_for_pointer(pointer)?;
                 }
                 self.services
                     .present_current_bridge_frame(self.indexed_bridge_ui_active)?;

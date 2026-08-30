@@ -3020,11 +3020,18 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         input: BridgeSceneInput,
     ) -> Result<BridgeSteeringOutcome> {
-        Ok(self
-            .bridge_scene
-            .as_mut()
-            .context("bridge scene has not been initialized")?
-            .update_steering(input))
+        let (outcome, cursor_x) = {
+            let scene = self
+                .bridge_scene
+                .as_mut()
+                .context("bridge scene has not been initialized")?;
+            let outcome = scene.update_steering(input);
+            (outcome, scene.steering().cursor_ring_position as i16)
+        };
+        let pointer = bridge_pointer_sample(self.input.pointer_sample(), cursor_x);
+        self.input
+            .publish_logical_pointer(pointer.position, pointer.buttons);
+        Ok(outcome)
     }
 
     /// Select the authored presentation band for the current panorama frame.
@@ -4263,6 +4270,11 @@ fn selected_bridge_page_mut<'page>(
     }
 }
 
+fn bridge_pointer_sample(mut pointer: PointerSample, cursor_x: i16) -> PointerSample {
+    pointer.position[0] = cursor_x;
+    pointer
+}
+
 fn prefixed_resource_name(directory: &[u8], name: &[u8]) -> Result<BloodResourceName> {
     if name.contains(&b'/') || name.contains(&b'\\') {
         return BloodResourceName::new(name).context("validating authored audio resource path");
@@ -4475,6 +4487,20 @@ mod tests {
             .copy_from_slice(&[7, 8]);
         assert_eq!(primary, [7, 8]);
         assert_eq!(secondary, [5, 6]);
+    }
+
+    #[test]
+    fn recovered_steering_x_replaces_raw_x_before_bridge_interactions() {
+        let buttons = PointerButtons::from_bits(PointerButton::Primary as u16);
+        let pointer = PointerSample {
+            position: [301, 87],
+            buttons,
+        };
+
+        let synchronized = bridge_pointer_sample(pointer, 142);
+
+        assert_eq!(synchronized.position, [142, 87]);
+        assert_eq!(synchronized.buttons, buttons);
     }
 
     const STATUS_TEST_ORIGIN: [u16; 2] = [40, 50];

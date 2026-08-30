@@ -14,7 +14,7 @@ use crate::native::bloodprg::{
     GameLifecycleState, InputAction, PointerButton, PointerButtons, PointerSample,
 };
 
-use super::input::{INITIAL_LOGICAL_POINTER, map_host_pointer_to_logical};
+use super::input::INITIAL_LOGICAL_POINTER;
 use super::scenario::{
     RuntimeScenarioCadence, RuntimeScenarioDriver, RuntimeScenarioFrameInput, RuntimeScenarioKey,
 };
@@ -245,6 +245,7 @@ impl<'window> RuntimePlatformHost<'window> {
         if !self.pointer_position_locked
             && let Some(position) = input.pointer_position
         {
+            self.bridge_horizontal_delta += f32::from(position[0]) - self.logical_pointer[0];
             self.logical_pointer = position.map(f32::from);
             self.pointer_inside_window = true;
         }
@@ -355,8 +356,6 @@ impl<'window> RuntimePlatformHost<'window> {
                 }
                 Event::MouseMotion {
                     window_id: event_window_id,
-                    x,
-                    y,
                     xrel,
                     yrel,
                     ..
@@ -374,7 +373,6 @@ impl<'window> RuntimePlatformHost<'window> {
                             &mut self.bridge_horizontal_delta,
                             self.pointer_position_locked,
                             output_size,
-                            [x, y],
                             [xrel, yrel],
                         );
                     }
@@ -424,6 +422,11 @@ impl<'window> RuntimePlatformHost<'window> {
     /// Current flat logical pointer mapped through the aspect-correct viewport.
     pub fn logical_pointer(&self) -> [i16; 2] {
         self.logical_pointer.map(|coordinate| coordinate as i16)
+    }
+
+    /// Retain the native steering cursor without moving the desktop pointer.
+    pub fn synchronize_bridge_pointer(&mut self, position: [i16; 2]) {
+        self.logical_pointer = position.map(f32::from);
     }
 
     /// Start the monotonic replacement for the recovered channel-zero PIT ISR.
@@ -700,7 +703,6 @@ fn apply_bridge_pointer_motion(
     horizontal_delta: &mut f32,
     pointer_position_locked: bool,
     output_size: [f32; 2],
-    host_position: [f32; 2],
     relative_motion: [f32; 2],
 ) {
     if pointer_position_locked {
@@ -708,7 +710,8 @@ fn apply_bridge_pointer_motion(
     }
     let delta = map_motion_to_logical(output_size, relative_motion);
     *horizontal_delta += delta[0];
-    *logical_pointer = map_host_pointer_to_logical(output_size, host_position).map(f32::from);
+    logical_pointer[0] = (logical_pointer[0] + delta[0]).clamp(0.0, LOGICAL_SCREEN_WIDTH - 1.0);
+    logical_pointer[1] = (logical_pointer[1] + delta[1]).clamp(0.0, LOGICAL_SCREEN_HEIGHT - 1.0);
 }
 
 fn map_motion_to_logical(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {
@@ -915,7 +918,6 @@ mod tests {
             &mut horizontal_delta,
             true,
             WIDESCREEN_OUTPUT,
-            [1_440.0, 540.0],
             [720.0, 0.0],
         );
 
@@ -926,6 +928,23 @@ mod tests {
         assert_eq!(take_bridge_motion(&mut horizontal_delta, true), 0);
         assert_eq!(horizontal_delta, 0.0);
         assert_eq!(take_bridge_motion(&mut horizontal_delta, false), 0);
+    }
+
+    #[test]
+    fn uncaptured_host_motion_advances_the_virtual_game_cursor() {
+        let mut pointer = [160.0, 100.0];
+        let mut horizontal_delta = 0.0;
+
+        apply_bridge_pointer_motion(
+            &mut pointer,
+            &mut horizontal_delta,
+            false,
+            WIDESCREEN_OUTPUT,
+            [WIDESCREEN_VIEWPORT_WIDTH / 4.0, 0.0],
+        );
+
+        assert_eq!(pointer, [240.0, 100.0]);
+        assert_eq!(horizontal_delta, 80.0);
     }
 
     #[test]
