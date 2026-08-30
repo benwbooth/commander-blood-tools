@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 use std::convert::Infallible;
 use std::ops::Range;
 
+use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bas::ScriptBasInstruction;
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::instruction::{
@@ -27,8 +28,8 @@ use commander_blood_game::native::bloodprg::{
 };
 use commander_blood_game::native::random::BloodPrng;
 use commander_blood_game::runtime::{
-    OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime, RuntimeScriptSystem,
-    initialize_and_restore_original_save_game,
+    OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime, RuntimePresentationBackground,
+    RuntimePresentationCatalog, RuntimeScriptSystem, initialize_and_restore_original_save_game,
 };
 use serde::Deserialize;
 
@@ -59,6 +60,7 @@ const SCRUTER_JO_PROCEDURE: &str = "scrujo";
 const SCRUTER_JO_OVERLAY_VOICE_SELECTOR: u8 = 20;
 const SCRUTER_JO_POST_OVERLAY_VOICE_SELECTOR: u8 = 21;
 const PRIMARY_TEXT_REQUEST_PENDING: u8 = 1;
+const DYNAMIC_PRESENTATION_PLACEHOLDER: &[u8] = b"xxxxxxxxxxxx";
 const UNCLAMPED_PRESENTATION_LINE_COUNT: usize = 8;
 const PRESENTATION_DESCRIPTOR_TERMINATOR_COUNT: usize = 1;
 const SCRIPT2_BOBA3_UNREACHABLE_TIMER_SLOT: u8 = 1;
@@ -1138,6 +1140,7 @@ fn run_contact_path(
 ) -> (Vec<usize>, bool) {
     let data =
         OriginalGameData::load_with_writable_root(paths.clone(), std::env::temp_dir()).unwrap();
+    let mut presentation_catalog = RuntimePresentationCatalog::new(data.presentation_catalog());
     let mut scripts = RuntimeScriptSystem::new(&data, ORACLE_CLOCK);
     let mut runtime = OriginalGameRuntime::new(data);
     let mut timer = GameTimerState::default();
@@ -1179,6 +1182,14 @@ fn run_contact_path(
             .unwrap_or_else(|error| {
                 panic!(
                     "{}:{} failed while completing contact: {error:?}",
+                    scenario.script, scenario.procedure
+                )
+            });
+        presentation_catalog
+            .apply_descript_assets(scripts.backend().assets())
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}:{} failed to publish persistent DESCRIPT media: {error:#}",
                     scenario.script, scenario.procedure
                 )
             });
@@ -1322,6 +1333,14 @@ fn run_contact_path(
                 });
             if let Some(expected_index) = expected_index {
                 let expected = &scenario.texts[expected_index];
+                assert_contact_media_selection(
+                    scenario,
+                    expected.actor_object_offset,
+                    &snapshot,
+                    &presentation_catalog,
+                    &scripts,
+                    &runtime,
+                );
                 if !observed_indices.contains(&expected_index) {
                     observed_indices.push(expected_index);
                 }
@@ -1387,6 +1406,14 @@ fn run_contact_path(
             } else if let Some(source_offset) =
                 matching_bas_text_offset(runtime.current_profile().unwrap(), &snapshot)
             {
+                assert_contact_media_selection(
+                    scenario,
+                    scenario.texts[usize::MIN].actor_object_offset,
+                    &snapshot,
+                    &presentation_catalog,
+                    &scripts,
+                    &runtime,
+                );
                 let repeated_terminal_response = observed_bas_offsets.last()
                     == Some(&source_offset)
                     && bas_count_at_topic_selection
@@ -1509,6 +1536,79 @@ fn run_contact_path(
             .collect::<Vec<_>>()
     );
     (observed_indices, selected_choice_observed)
+}
+
+fn assert_contact_media_selection(
+    scenario: &ContactScenario,
+    actor_source_offset: usize,
+    snapshot: &ContactEntrySnapshot,
+    catalog: &RuntimePresentationCatalog,
+    scripts: &RuntimeScriptSystem,
+    runtime: &OriginalGameRuntime,
+) {
+    let Some(selector) = snapshot.selected_line else {
+        return;
+    };
+    if selector < 0 {
+        return;
+    }
+    let actor = object_at_source_offset(runtime.current_profile().unwrap(), actor_source_offset);
+    assert_eq!(
+        scripts.backend().active_description_object(),
+        Some(actor),
+        "{}:{} selected dialogue for an actor that does not own the active DESCRIPT record",
+        scenario.script,
+        scenario.procedure
+    );
+
+    let line = PresentationResourceId::new(presentation_line_for_text_selector(selector));
+    let resource = catalog.resource_name(line).unwrap_or_else(|| {
+        panic!(
+            "{}:{} selector {selector} has no persistent presentation resource",
+            scenario.script, scenario.procedure
+        )
+    });
+    assert!(
+        !resource
+            .as_bytes()
+            .ends_with(DYNAMIC_PRESENTATION_PLACEHOLDER),
+        "{}:{} selector {selector} retained the executable's unresolved dynamic placeholder",
+        scenario.script,
+        scenario.procedure
+    );
+    runtime
+        .data()
+        .resource_store()
+        .load(resource)
+        .unwrap_or_else(|error| {
+            panic!(
+                "{}:{} selector {selector} selected missing media {}: {error:#}",
+                scenario.script,
+                scenario.procedure,
+                String::from_utf8_lossy(resource.as_bytes())
+            )
+        });
+
+    if let Some(RuntimePresentationBackground::Cached(slot)) = catalog.background(line) {
+        let Some(background) = scripts.backend().backgrounds().get(slot) else {
+            // Character records select an inherited scene slot. This isolated
+            // contact harness has no preceding location presentation.
+            return;
+        };
+        let background_name = BloodResourceName::new(background.source_name()).unwrap();
+        runtime
+            .data()
+            .resource_store()
+            .load(&background_name)
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}:{} selector {selector} selected missing background {}: {error:#}",
+                    scenario.script,
+                    scenario.procedure,
+                    String::from_utf8_lossy(background.source_name())
+                )
+            });
+    }
 }
 
 fn assert_contact_host_handoff(scenario: &ContactScenario, observed_indices: &[usize]) {
@@ -2122,6 +2222,7 @@ fn configure_script_context(
     runtime: &OriginalGameRuntime,
     scenario: &ContactScenario,
 ) {
+    scripts.presentation_scan_state_mut().name_lookup_enabled = true;
     scripts
         .backend_mut()
         .set_environment_activity(ScriptEnvironmentActivity {
