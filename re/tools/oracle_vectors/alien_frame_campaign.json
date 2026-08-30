@@ -12,7 +12,8 @@
     4,
     8,
     16,
-    32
+    32,
+    64
   ],
   "input_campaign": "corners",
   "captures": [
@@ -265,6 +266,48 @@
       "nonzero_pixels": 7486,
       "model_count": null,
       "frame_count": 32,
+      "timing_scale": 10,
+      "input_campaign": "corners"
+    },
+    {
+      "module": "amer",
+      "xdb_file": "amer.xdb",
+      "xdb_bytes": 266800,
+      "xdb_sha256": "6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31",
+      "indexed_sha256": "a3c0074db34d564c63e3fce245fdf2e8dd911db601bd01cc411af6df36599cfe",
+      "rgba_sha256": "a11896f2b26b508f227b98aff27137ceed5dc42d1baee1e88a8a9191368dfd16",
+      "dac_palette_sha256": "93d5e7ef8a49ccfa4c9e9eea32a0c4a89c408bbb74f0a6a07e7ec05ccbd50b7b",
+      "nonzero_pixels": 10925,
+      "model_count": null,
+      "frame_count": 64,
+      "timing_scale": 10,
+      "input_campaign": "corners"
+    },
+    {
+      "module": "croolis",
+      "xdb_file": "croolis.xdb",
+      "xdb_bytes": 258832,
+      "xdb_sha256": "13eba7c4e4f38662c44c849bd07be293c7583d2b2dc9ae273d7fe94746048c31",
+      "indexed_sha256": "3f4b8a50bb4fbb0118cbf07e566c4a786c7baa2f2aa19eac78ca42e1e8825342",
+      "rgba_sha256": "2e3905f53e15490cf37b238239637329a0aa234916a54df4e097ac9c9fdf8d99",
+      "dac_palette_sha256": "93d5e7ef8a49ccfa4c9e9eea32a0c4a89c408bbb74f0a6a07e7ec05ccbd50b7b",
+      "nonzero_pixels": 12709,
+      "model_count": null,
+      "frame_count": 64,
+      "timing_scale": 10,
+      "input_campaign": "corners"
+    },
+    {
+      "module": "scrut",
+      "xdb_file": "scrut.xdb",
+      "xdb_bytes": 258080,
+      "xdb_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77",
+      "indexed_sha256": "1bea18dfd80368babfeb38a6b7f2c8ed7cb480280d039348a247c4b039ebafc4",
+      "rgba_sha256": "d81f893a4f8dbd4f49446d69ba3558e7c1d73367dd2d984782ff01e660788ec3",
+      "dac_palette_sha256": "93d5e7ef8a49ccfa4c9e9eea32a0c4a89c408bbb74f0a6a07e7ec05ccbd50b7b",
+      "nonzero_pixels": 9557,
+      "model_count": null,
+      "frame_count": 64,
       "timing_scale": 10,
       "input_campaign": "corners"
     }

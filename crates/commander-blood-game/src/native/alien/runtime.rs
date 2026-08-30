@@ -354,11 +354,15 @@ mod tests {
 
     const FIRST_FRAME_FIXTURE_FORMAT: &str = "commander-blood-original-alien-first-frame-v1";
     const FRAME_CAMPAIGN_FIXTURE_FORMAT: &str = "commander-blood-original-alien-frame-campaign-v1";
-    const FRAME_CAMPAIGN_NAME: &str = "corners";
-    const FRAME_CAMPAIGN_CHECKPOINTS: [usize; 6] = [1, 2, 4, 8, 16, 32];
-    const FRAME_CAMPAIGN_CAPTURE_COUNT: usize = FRAME_CAMPAIGN_CHECKPOINTS.len() * 3;
+    const CORNERS_FRAME_CAMPAIGN_NAME: &str = "corners";
+    const CORNERS_FRAME_CAMPAIGN_CHECKPOINTS: [usize; 7] = [1, 2, 4, 8, 16, 32, 64];
+    const CENTERED_FRAME_CAMPAIGN_NAME: &str = "centered";
+    const CENTERED_FRAME_CAMPAIGN_CHECKPOINTS: [usize; 3] = [8, 32, 64];
+    const ALIEN_OVERLAY_MODULE_COUNT: usize = 3;
     const ORIGINAL_FRAME_WIDTH: usize = 320;
     const ORIGINAL_FRAME_HEIGHT: usize = 200;
+    const CENTERED_FRAME_MOUSE: [u16; 2] = [320, 512];
+    const MAXIMUM_FRAME_MOUSE: [u16; 2] = [640, 1_024];
     const ESCAPE_KEY_EVENT: u16 = 0x011b;
 
     const MAIN_INPUTS: [MainInput; 8] = [
@@ -519,7 +523,7 @@ mod tests {
         assert_eq!(fixture.format, FIRST_FRAME_FIXTURE_FORMAT);
         assert_eq!(fixture.width, ORIGINAL_FRAME_WIDTH);
         assert_eq!(fixture.height, ORIGINAL_FRAME_HEIGHT);
-        assert_eq!(fixture.captures.len(), 3);
+        assert_eq!(fixture.captures.len(), ALIEN_OVERLAY_MODULE_COUNT);
 
         for capture in fixture.captures {
             let Some(path) = original_xdb(&capture.xdb_file) else {
@@ -561,16 +565,38 @@ mod tests {
 
     #[test]
     fn driven_true_color_frames_match_original_xdb_execution() {
-        let fixture: FrameCampaignFixture = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/alien_frame_campaign.json"
-        ))
-        .unwrap();
+        assert_frame_campaign(
+            include_str!("../../../../../re/tools/oracle_vectors/alien_frame_campaign.json"),
+            CORNERS_FRAME_CAMPAIGN_NAME,
+            &CORNERS_FRAME_CAMPAIGN_CHECKPOINTS,
+            corners_frame_campaign_mouse,
+        );
+        assert_frame_campaign(
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/alien_centered_frame_campaign.json"
+            ),
+            CENTERED_FRAME_CAMPAIGN_NAME,
+            &CENTERED_FRAME_CAMPAIGN_CHECKPOINTS,
+            centered_frame_campaign_mouse,
+        );
+    }
+
+    fn assert_frame_campaign(
+        source: &str,
+        expected_name: &str,
+        expected_checkpoints: &[usize],
+        mouse: fn(usize) -> AlienMouseSample,
+    ) {
+        let fixture: FrameCampaignFixture = serde_json::from_str(source).unwrap();
         assert_eq!(fixture.format, FRAME_CAMPAIGN_FIXTURE_FORMAT);
         assert_eq!(fixture.width, ORIGINAL_FRAME_WIDTH);
         assert_eq!(fixture.height, ORIGINAL_FRAME_HEIGHT);
-        assert_eq!(fixture.input_campaign, FRAME_CAMPAIGN_NAME);
-        assert_eq!(fixture.frame_counts, FRAME_CAMPAIGN_CHECKPOINTS);
-        assert_eq!(fixture.captures.len(), FRAME_CAMPAIGN_CAPTURE_COUNT);
+        assert_eq!(fixture.input_campaign, expected_name);
+        assert_eq!(fixture.frame_counts, expected_checkpoints);
+        assert_eq!(
+            fixture.captures.len(),
+            expected_checkpoints.len() * ALIEN_OVERLAY_MODULE_COUNT
+        );
 
         for capture in fixture.captures {
             let Some(path) = original_xdb(&capture.xdb_file) else {
@@ -594,9 +620,7 @@ mod tests {
                 } else {
                     &[]
                 };
-                let step = runtime
-                    .step(frame_campaign_mouse(frame_number), key_events)
-                    .unwrap();
+                let step = runtime.step(mouse(frame_number), key_events).unwrap();
                 selected_frame = step.frame;
                 if frame_number < capture.frame_count {
                     assert_eq!(
@@ -655,25 +679,30 @@ mod tests {
         path.is_file().then_some(path)
     }
 
-    fn frame_campaign_mouse(frame_number: usize) -> AlienMouseSample {
-        const CENTER: [u16; 2] = [320, 512];
-        const MAXIMUM: [u16; 2] = [640, 1_024];
-
+    fn corners_frame_campaign_mouse(frame_number: usize) -> AlienMouseSample {
         let phase = frame_number.saturating_sub(1) & 7;
-        let [mut x, mut y] = CENTER;
+        let [mut x, mut y] = CENTERED_FRAME_MOUSE;
         if matches!(phase, 1 | 5) {
             x = u16::MIN;
         } else if matches!(phase, 2 | 6) {
-            x = MAXIMUM[0];
+            x = MAXIMUM_FRAME_MOUSE[0];
         }
         if matches!(phase, 3 | 5) {
             y = u16::MIN;
         } else if matches!(phase, 4 | 6) {
-            y = MAXIMUM[1];
+            y = MAXIMUM_FRAME_MOUSE[1];
         }
         AlienMouseSample {
             x,
             y,
+            buttons: u16::MIN,
+        }
+    }
+
+    fn centered_frame_campaign_mouse(_frame_number: usize) -> AlienMouseSample {
+        AlienMouseSample {
+            x: CENTERED_FRAME_MOUSE[0],
+            y: CENTERED_FRAME_MOUSE[1],
             buttons: u16::MIN,
         }
     }

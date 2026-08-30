@@ -8,11 +8,11 @@ oracle coverage and documentation.
 ## Completion status
 
 All 521 recovered native routines are accounted for by the checked coverage
-ledgers: 471 routines have documented complete Rust implementations, 47 DOS
+ledgers: 474 routines have documented complete Rust implementations and 47 DOS
 memory, hardware, or authored no-operation adapters have documented
-eliminations, and three alien rasterizers remain explicitly partial. The
-coverage test rejects missing, duplicate, or unsupported mappings and prevents
-partial work from being counted as complete.
+eliminations. No recovered routine remains partially translated. The coverage
+test rejects missing, duplicate, or unsupported mappings and prevents partial
+work from being counted as complete.
 
 Routine counts alone do not prove cross-routine state fidelity. The recovered
 BLOODPRG headers currently expose 71 semantically distinct address-alias
@@ -62,8 +62,8 @@ profile and companion resource set, enters and completes an authored path for
 all 65 recovered contacts, decodes every navigation world, and drives the
 production Pterra unlock and navigation-chart path. These gates establish
 implementation coverage and broad behavioral readiness; they do not replace a
-continuous start-to-credits playthrough or prove the three partial alien
-rasterizers.
+continuous start-to-credits playthrough or prove every cross-routine state
+transition.
 
 The BAS dispatch audit separately derives its inventory from the five recovered
 selector graphs. It executes all 321 selector nodes, commits all 1,396 authored
@@ -91,6 +91,7 @@ not survive into runtime state.
 not yet a complete production replacement. These rows are deliberately absent
 from both `ported.tsv` and `eliminated.tsv`; the coverage gate requires explicit
 implemented and pending behavior so incomplete work cannot be counted as done.
+It currently contains no routine rows.
 
 ## MANU3 status
 
@@ -171,10 +172,12 @@ and first-column activation state without retaining native record offsets.
 The SDL3 executable connects the typed alien frame to wgpu and now preserves a
 separate draw call and depth lifetime for every behavior model. The original
 fixed-point renderer is not classified as an eliminated adapter: direct vectors
-prove isolated clipping, UV stepping, both edge transitions, and deplanarized
-output, while multi-record visible-span ordering and authoritative 320-by-200
-frame presentation remain explicit work in `partial.tsv`. Offscreen GPU tests
-remain smoke coverage, not pixel-equivalence proof.
+prove isolated clipping, UV stepping, both edge transitions, deplanarized
+output, and multi-record visible-span ordering. Corner-driven frames 1, 2, 4,
+8, 16, 32, and 64 plus centered frames 8, 32, and 64 match full 320-by-200 RGBA
+output from each original XDB exactly. Offscreen GPU tests remain smoke coverage
+for the modern presentation boundary rather than evidence for the recovered
+software renderer itself.
 
 Four shared behavior operations are translated for all three species. Ninety-six
 direct binary cases verify camera-relative position wrapping, bounds and exit
