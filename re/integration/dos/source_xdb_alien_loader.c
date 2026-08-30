@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <io.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "xdb_alien.h"
 
@@ -34,6 +35,9 @@
 #if defined(XDB_DUMP_FRAME) && !defined(XDB_FINAL_CLEAR_CALL_DISPLACEMENT)
 #error XDB_FINAL_CLEAR_CALL_DISPLACEMENT must be defined by the frame-oracle driver
 #endif
+#if defined(XDB_DUMP_FRAME) && !defined(XDB_CALLBACK_LOAD_OFFSET)
+#error XDB_CALLBACK_LOAD_OFFSET must be defined by the frame-oracle driver
+#endif
 
 #define XDB_FILENAME "ALIEN.XDB"
 #define RESULT_FILENAME "RESULT.TXT"
@@ -41,22 +45,123 @@
 #define FRAME_DUMP_FILENAME "FRAME.BIN"
 #define DATA_DUMP_FILENAME "DATA.BIN"
 #define OBJECT_DUMP_FILENAME "OBJECT.BIN"
+#define PALETTE_DUMP_FILENAME "PALETTE.BIN"
 #define VGA_GRAPHICS_CONTROLLER_INDEX 0x03ceu
 #define VGA_GRAPHICS_CONTROLLER_DATA 0x03cfu
 #define VGA_SEQUENCER_INDEX 0x03c4u
 #define VGA_SEQUENCER_DATA 0x03c5u
+#define VGA_DAC_READ_INDEX 0x03c7u
+#define VGA_DAC_DATA 0x03c9u
 #define VGA_READ_MAP_SELECT_REGISTER 0x04u
+#define VGA_CRTC_START_HIGH_REGISTER 0x0cu
+#define VGA_CRTC_START_LOW_REGISTER 0x0du
 #define VGA_PLANE_COUNT 4u
-#define VGA_FRAME_PAGE_OFFSET 0x4000u
 #define VGA_PLANE_FRAME_BYTES 16000u
+#define VGA_PALETTE_BYTES 768u
+#define INPUT_CAMPAIGN_CENTERED 0u
+#define INPUT_CAMPAIGN_CORNERS 1u
+#define ALIEN_MOUSE_CENTER_X 320u
+#define ALIEN_MOUSE_CENTER_Y 512u
+#define ALIEN_MOUSE_MAXIMUM_X 640u
+#define ALIEN_MOUSE_MAXIMUM_Y 1024u
+#define INPUT_CAMPAIGN_PHASE_MASK 7u
+#define INPUT_CAMPAIGN_LEFT_PHASE 1u
+#define INPUT_CAMPAIGN_RIGHT_PHASE 2u
+#define INPUT_CAMPAIGN_TOP_PHASE 3u
+#define INPUT_CAMPAIGN_BOTTOM_PHASE 4u
+#define INPUT_CAMPAIGN_TOP_LEFT_PHASE 5u
+#define INPUT_CAMPAIGN_BOTTOM_RIGHT_PHASE 6u
 
 static volatile xdb_u16 timing_scale = 7u;
 static void queue_escape(void);
+#if defined(XDB_DUMP_FRAME)
+static xdb_u16 capture_frame_count = 1u;
+static xdb_u16 rendered_frame_count;
+static xdb_u16 input_campaign = INPUT_CAMPAIGN_CENTERED;
+static xdb_u16 XDB_CODE_DATA callback_data_segment;
+
+static int parse_word_argument(
+        const char *text,
+        xdb_u16 *value,
+        int allow_zero)
+{
+    char *end;
+    unsigned long parsed = strtoul(text, &end, 10);
+
+    if (*text == '\0'
+            || *end != '\0'
+            || parsed > 0xfffful
+            || (!allow_zero && parsed == 0ul)) {
+        return 0;
+    }
+    *value = (xdb_u16)parsed;
+    return 1;
+}
+
+static xdb_u16 data_segment_install(xdb_u16 segment);
+
+#pragma aux data_segment_install = \
+        "mov ax,ds" \
+        "mov ds,dx" \
+        parm [dx] \
+        value [ax] \
+        modify exact []
+
+static void mouse_position_set(xdb_u16 x, xdb_u16 y);
+
+#pragma aux mouse_position_set = \
+        "mov ax,4" \
+        "int 33h" \
+        parm [cx] [dx] \
+        modify exact [ax bx]
+
+static void advance_capture_mouse(void)
+{
+    xdb_u16 phase = (xdb_u16)(
+            rendered_frame_count & INPUT_CAMPAIGN_PHASE_MASK);
+    xdb_u16 x = ALIEN_MOUSE_CENTER_X;
+    xdb_u16 y = ALIEN_MOUSE_CENTER_Y;
+
+    if (phase == INPUT_CAMPAIGN_LEFT_PHASE
+            || phase == INPUT_CAMPAIGN_TOP_LEFT_PHASE) {
+        x = 0u;
+    } else if (phase == INPUT_CAMPAIGN_RIGHT_PHASE
+            || phase == INPUT_CAMPAIGN_BOTTOM_RIGHT_PHASE) {
+        x = ALIEN_MOUSE_MAXIMUM_X;
+    }
+    if (phase == INPUT_CAMPAIGN_TOP_PHASE
+            || phase == INPUT_CAMPAIGN_TOP_LEFT_PHASE) {
+        y = 0u;
+    } else if (phase == INPUT_CAMPAIGN_BOTTOM_PHASE
+            || phase == INPUT_CAMPAIGN_BOTTOM_RIGHT_PHASE) {
+        y = ALIEN_MOUSE_MAXIMUM_Y;
+    }
+    mouse_position_set(x, y);
+}
+#endif
 
 static void XDB_FAR test_frame_callback(xdb_u16 event, xdb_u32 clock)
 {
+#if defined(XDB_DUMP_FRAME)
+    xdb_u16 saved_data_segment = data_segment_install(callback_data_segment);
+    int capture_complete;
+#endif
+
     (void)event;
     (void)clock;
+#if defined(XDB_DUMP_FRAME)
+    ++rendered_frame_count;
+    capture_complete = rendered_frame_count >= capture_frame_count;
+    if (!capture_complete) {
+        if (input_campaign == INPUT_CAMPAIGN_CORNERS) {
+            advance_capture_mouse();
+        }
+    }
+    data_segment_install(saved_data_segment);
+    if (!capture_complete) {
+        return;
+    }
+#endif
     queue_escape();
 }
 
@@ -168,14 +273,24 @@ static int preserve_rendered_frame(xdb_u16 overlay_segment)
             XDB_FINAL_CLEAR_CALL_OFFSET);
     xdb_u16 displacement = (xdb_u16)instruction[1]
             | ((xdb_u16)instruction[2] << 8);
+    volatile xdb_u8 XDB_FAR *callback_load = XDB_FAR_AT(
+            volatile xdb_u8,
+            overlay_segment,
+            XDB_CALLBACK_LOAD_OFFSET);
 
     if (instruction[0] != 0xe8u
-            || displacement != XDB_FINAL_CLEAR_CALL_DISPLACEMENT) {
+            || displacement != XDB_FINAL_CLEAR_CALL_DISPLACEMENT
+            || callback_load[0] != 0xa1u
+            || callback_load[1] != 0x1eu
+            || callback_load[2] != 0x00u) {
         return 0;
     }
     instruction[0] = 0x90u;
     instruction[1] = 0x90u;
     instruction[2] = 0x90u;
+    callback_load[0] = 0xb8u;
+    callback_load[1] = 0x01u;
+    callback_load[2] = 0x00u;
     return 1;
 }
 
@@ -184,6 +299,15 @@ static int dump_frame(void)
     int handle;
     unsigned error;
     xdb_u16 plane;
+    volatile xdb_u16 XDB_FAR *crtc_base =
+            XDB_FAR_AT(volatile xdb_u16, 0x0040u, 0x0063u);
+    xdb_u16 crtc_port = *crtc_base;
+    xdb_u16 frame_page_offset;
+
+    outp(crtc_port, VGA_CRTC_START_HIGH_REGISTER);
+    frame_page_offset = (xdb_u16)((xdb_u16)inp(crtc_port + 1u) << 8);
+    outp(crtc_port, VGA_CRTC_START_LOW_REGISTER);
+    frame_page_offset |= (xdb_u16)inp(crtc_port + 1u);
 
     error = _dos_creat(FRAME_DUMP_FILENAME, 0u, &handle);
     if (error != 0u) {
@@ -199,7 +323,7 @@ static int dump_frame(void)
         registers.x.ax = 0x4000u;
         registers.x.bx = (xdb_u16)handle;
         registers.x.cx = VGA_PLANE_FRAME_BYTES;
-        registers.x.dx = VGA_FRAME_PAGE_OFFSET;
+        registers.x.dx = frame_page_offset;
         segread(&segments);
         segments.ds = 0xa000u;
         int86x(0x21, &registers, &registers, &segments);
@@ -212,6 +336,31 @@ static int dump_frame(void)
     outpw(VGA_GRAPHICS_CONTROLLER_INDEX, VGA_READ_MAP_SELECT_REGISTER);
     _dos_close(handle);
     return 1;
+}
+
+static int dump_palette(void)
+{
+    xdb_u8 palette[VGA_PALETTE_BYTES];
+    int handle;
+    unsigned error;
+    unsigned index;
+    unsigned written;
+
+    outp(VGA_DAC_READ_INDEX, 0u);
+    for (index = 0u; index < VGA_PALETTE_BYTES; ++index) {
+        palette[index] = (xdb_u8)inp(VGA_DAC_DATA);
+    }
+    error = _dos_creat(PALETTE_DUMP_FILENAME, 0u, &handle);
+    if (error != 0u) {
+        return 0;
+    }
+    error = _dos_write(
+            handle,
+            palette,
+            VGA_PALETTE_BYTES,
+            &written);
+    _dos_close(handle);
+    return error == 0u && written == VGA_PALETTE_BYTES;
 }
 #endif
 
@@ -271,7 +420,7 @@ static void queue_escape(void)
     *first = 0x011bu;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     xdb_alien_api_request request;
     volatile xdb_alien_segment_directory XDB_FAR *directory;
@@ -280,11 +429,50 @@ int main(void)
     xdb_u16 expected_object;
     xdb_u16 expected_palette;
     xdb_u16 expected_raster;
+    xdb_u16 expected_timing_scale;
 #if defined(XDB_DUMP_RASTER)
     xdb_u16 published_raster;
 #endif
     xdb_u16 paragraphs = (xdb_u16)XDB_ALLOCATION_PARAGRAPHS;
     int status = 0;
+
+#if defined(XDB_DUMP_FRAME)
+    if (argc >= 2) {
+        xdb_u16 requested_frame_count;
+
+        if (!parse_word_argument(argv[1], &requested_frame_count, 0)) {
+            return write_result("FAIL alien frame checkpoint");
+        }
+        capture_frame_count = requested_frame_count;
+    }
+    if (argc >= 3) {
+        xdb_u16 requested_timing_scale;
+
+        if (!parse_word_argument(argv[2], &requested_timing_scale, 1)) {
+            return write_result("FAIL alien timing argument");
+        }
+        timing_scale = requested_timing_scale;
+    }
+    if (argc >= 4) {
+        xdb_u16 requested_input_campaign;
+
+        if (!parse_word_argument(argv[3], &requested_input_campaign, 1)
+                || requested_input_campaign > INPUT_CAMPAIGN_CORNERS) {
+            return write_result("FAIL alien input campaign");
+        }
+        input_campaign = requested_input_campaign;
+    }
+    if (argc > 4) {
+        return write_result("FAIL alien frame arguments");
+    }
+#else
+    (void)argc;
+    (void)argv;
+#endif
+    expected_timing_scale = timing_scale;
+#if defined(XDB_DUMP_FRAME)
+    callback_data_segment = FP_SEG(&timing_scale);
+#endif
 
     if (_dos_allocmem(paragraphs, &overlay_segment) != 0u) {
         return write_result("FAIL source alien allocation");
@@ -306,13 +494,27 @@ int main(void)
             FP_OFF(&timing_scale));
     request.frame_callback = test_frame_callback;
     configure_game_video_mode();
+#if !defined(XDB_DUMP_FRAME) || defined(XDB_PREQUEUE_ESCAPE)
     queue_escape();
+#endif
     call_overlay(overlay_segment, &request);
+#if defined(XDB_DUMP_FRAME) && !defined(XDB_PREQUEUE_ESCAPE)
+    if (rendered_frame_count < capture_frame_count) {
+        set_video_mode(0x03u);
+        _dos_freemem(overlay_segment);
+        return write_result("FAIL alien frame not reached");
+    }
+#endif
 #if defined(XDB_DUMP_FRAME)
     if (!dump_frame()) {
         set_video_mode(0x03u);
         _dos_freemem(overlay_segment);
         return write_result("FAIL alien frame dump");
+    }
+    if (!dump_palette()) {
+        set_video_mode(0x03u);
+        _dos_freemem(overlay_segment);
+        return write_result("FAIL alien palette dump");
     }
 #endif
     set_video_mode(0x03u);
@@ -357,7 +559,7 @@ int main(void)
                 expected_raster,
                 XDB_RENDER_CONTINUATION_OFFSET) != XDB_RENDER_MODE_OFFSET) {
         status = write_result("FAIL source alien render continuation");
-    } else if (timing_scale != 7u) {
+    } else if (timing_scale != expected_timing_scale) {
         status = write_result("FAIL source alien timing writeback");
     } else {
         status = write_result("PASS source-linked alien XDB");

@@ -331,7 +331,32 @@ mod tests {
         rgba_sha256: String,
     }
 
+    #[derive(Deserialize)]
+    struct FrameCampaignFixture {
+        format: String,
+        width: usize,
+        height: usize,
+        timing_scale: u16,
+        input_campaign: String,
+        frame_counts: Vec<usize>,
+        captures: Vec<FrameCampaignCapture>,
+    }
+
+    #[derive(Deserialize)]
+    struct FrameCampaignCapture {
+        module: String,
+        xdb_file: String,
+        xdb_bytes: usize,
+        xdb_sha256: String,
+        rgba_sha256: String,
+        frame_count: usize,
+    }
+
     const FIRST_FRAME_FIXTURE_FORMAT: &str = "commander-blood-original-alien-first-frame-v1";
+    const FRAME_CAMPAIGN_FIXTURE_FORMAT: &str = "commander-blood-original-alien-frame-campaign-v1";
+    const FRAME_CAMPAIGN_NAME: &str = "corners";
+    const FRAME_CAMPAIGN_CHECKPOINTS: [usize; 6] = [1, 2, 4, 8, 16, 32];
+    const FRAME_CAMPAIGN_CAPTURE_COUNT: usize = FRAME_CAMPAIGN_CHECKPOINTS.len() * 3;
     const ORIGINAL_FRAME_WIDTH: usize = 320;
     const ORIGINAL_FRAME_HEIGHT: usize = 200;
     const ESCAPE_KEY_EVENT: u16 = 0x011b;
@@ -535,6 +560,68 @@ mod tests {
     }
 
     #[test]
+    fn driven_true_color_frames_match_original_xdb_execution() {
+        let fixture: FrameCampaignFixture = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/alien_frame_campaign.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.format, FRAME_CAMPAIGN_FIXTURE_FORMAT);
+        assert_eq!(fixture.width, ORIGINAL_FRAME_WIDTH);
+        assert_eq!(fixture.height, ORIGINAL_FRAME_HEIGHT);
+        assert_eq!(fixture.input_campaign, FRAME_CAMPAIGN_NAME);
+        assert_eq!(fixture.frame_counts, FRAME_CAMPAIGN_CHECKPOINTS);
+        assert_eq!(fixture.captures.len(), FRAME_CAMPAIGN_CAPTURE_COUNT);
+
+        for capture in fixture.captures {
+            let Some(path) = original_xdb(&capture.xdb_file) else {
+                continue;
+            };
+            let data = std::fs::read(&path).unwrap();
+            assert_eq!(data.len(), capture.xdb_bytes, "{}", capture.module);
+            assert_eq!(sha256(&data), capture.xdb_sha256, "{}", capture.module);
+            let kind = match capture.module.as_str() {
+                "amer" => AlienXdbKind::Amer,
+                "croolis" => AlienXdbKind::Croolis,
+                "scrut" => AlienXdbKind::Scrut,
+                other => panic!("unknown alien frame-campaign module: {other}"),
+            };
+            let asset = decode_alien_xdb(&data, kind).unwrap();
+            let mut runtime = AlienSceneRuntime::enter(asset, fixture.timing_scale, u32::MIN);
+            let mut selected_frame = None;
+            for frame_number in 1..=capture.frame_count {
+                let key_events: &[u16] = if frame_number == capture.frame_count {
+                    &[ESCAPE_KEY_EVENT]
+                } else {
+                    &[]
+                };
+                let step = runtime
+                    .step(frame_campaign_mouse(frame_number), key_events)
+                    .unwrap();
+                selected_frame = step.frame;
+                if frame_number < capture.frame_count {
+                    assert_eq!(
+                        step.status,
+                        AlienRuntimeStatus::Running,
+                        "{} stopped before campaign frame {}",
+                        capture.module,
+                        capture.frame_count
+                    );
+                } else {
+                    assert_eq!(step.status, AlienRuntimeStatus::Stopped);
+                }
+            }
+            let frame = selected_frame.expect("campaign checkpoint must render");
+            assert_eq!(
+                sha256(&frame.true_color.pixels),
+                capture.rgba_sha256,
+                "{} frame {} differs from original XDB execution",
+                capture.module,
+                capture.frame_count
+            );
+        }
+    }
+
+    #[test]
     fn keyboard_drain_retains_native_pause_and_escape_rules() {
         let mut running = true;
         let mut paused = false;
@@ -566,6 +653,29 @@ mod tests {
         let repository = Path::new(env!("CARGO_MANIFEST_DIR")).parent()?.parent()?;
         let path = repository.join("output/_tmp_dat").join(name);
         path.is_file().then_some(path)
+    }
+
+    fn frame_campaign_mouse(frame_number: usize) -> AlienMouseSample {
+        const CENTER: [u16; 2] = [320, 512];
+        const MAXIMUM: [u16; 2] = [640, 1_024];
+
+        let phase = frame_number.saturating_sub(1) & 7;
+        let [mut x, mut y] = CENTER;
+        if matches!(phase, 1 | 5) {
+            x = u16::MIN;
+        } else if matches!(phase, 2 | 6) {
+            x = MAXIMUM[0];
+        }
+        if matches!(phase, 3 | 5) {
+            y = u16::MIN;
+        } else if matches!(phase, 4 | 6) {
+            y = MAXIMUM[1];
+        }
+        AlienMouseSample {
+            x,
+            y,
+            buttons: u16::MIN,
+        }
     }
 
     fn sha256(bytes: &[u8]) -> String {

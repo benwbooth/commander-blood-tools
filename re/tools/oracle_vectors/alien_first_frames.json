@@ -6,6 +6,8 @@
   "mouse_x": 320,
   "mouse_y": 512,
   "model_count": null,
+  "frame_count": 1,
+  "input_campaign": "centered",
   "captures": [
     {
       "module": "amer",
@@ -14,8 +16,12 @@
       "xdb_sha256": "6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31",
       "indexed_sha256": "e3d00988d0d5624434059c43e834218cc46b519002adb21014c9596b88ece2eb",
       "rgba_sha256": "ea3233f76fcb6e178e427d996d368caa4fc67e44ca9df362c1cfeb662acc98a5",
+      "dac_palette_sha256": "93d5e7ef8a49ccfa4c9e9eea32a0c4a89c408bbb74f0a6a07e7ec05ccbd50b7b",
       "nonzero_pixels": 11460,
-      "model_count": null
+      "model_count": null,
+      "frame_count": 1,
+      "timing_scale": 7,
+      "input_campaign": "centered"
     },
     {
       "module": "croolis",
@@ -24,8 +30,12 @@
       "xdb_sha256": "13eba7c4e4f38662c44c849bd07be293c7583d2b2dc9ae273d7fe94746048c31",
       "indexed_sha256": "1fccc8e155c89ab2c80de1189204dddfc670dd1c8456961a0592034d43c45dc9",
       "rgba_sha256": "82ba9eda5249cdb5945e48a4a9477fb5751d15a811ec6f47336f6631b1cdaf0e",
+      "dac_palette_sha256": "93d5e7ef8a49ccfa4c9e9eea32a0c4a89c408bbb74f0a6a07e7ec05ccbd50b7b",
       "nonzero_pixels": 12369,
-      "model_count": null
+      "model_count": null,
+      "frame_count": 1,
+      "timing_scale": 7,
+      "input_campaign": "centered"
     },
     {
       "module": "scrut",
@@ -34,8 +44,12 @@
       "xdb_sha256": "8522e77aad6639cf9bb06f148048fed3c6bf1cfbe6459c9a0be7b987c3c3ac77",
       "indexed_sha256": "e625038cc7d6451d1e18d7825853f157a204471b828232ca3f04ff17f3193dc9",
       "rgba_sha256": "7c9f325f6c166fc0e075b83c036f9ff8a79f29d94d2317572917631d50d029d7",
+      "dac_palette_sha256": "93d5e7ef8a49ccfa4c9e9eea32a0c4a89c408bbb74f0a6a07e7ec05ccbd50b7b",
       "nonzero_pixels": 7013,
-      "model_count": null
+      "model_count": null,
+      "frame_count": 1,
+      "timing_scale": 7,
+      "input_campaign": "centered"
     }
   ]
 }

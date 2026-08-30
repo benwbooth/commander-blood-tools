@@ -1439,7 +1439,7 @@ pub fn update_scrut_head(
     let roll_delta = target_roll.wrapping_sub(primary.angles[Z_AXIS] as i16);
     animation.phase_timer = duration;
     animation.random_value = random_value;
-    animation.nodes[PRIMARY_NODE].motion_parameter = roll_delta / duration;
+    animation.nodes[PRIMARY_NODE].secondary_motion_parameter = roll_delta / duration;
     animation.nodes[PRIMARY_NODE].radial_target = target_complement >> SCRUT_RADIAL_TARGET_SHIFT;
     Ok(AlienScrutUpdateHead::CommonRequested)
 }
@@ -1469,7 +1469,7 @@ pub fn update_scrut_motion(
     }
 
     let radial_target = animation.nodes[PRIMARY_NODE].radial_target;
-    let roll_velocity = animation.nodes[PRIMARY_NODE].motion_parameter;
+    let roll_velocity = animation.nodes[PRIMARY_NODE].secondary_motion_parameter;
     let primary = &mut pose.nodes[PRIMARY_NODE];
     let pitch = primary.angles[X_AXIS] as i16;
     let desired_pitch = transformed_component(primary, Y_AXIS)
@@ -1554,7 +1554,7 @@ pub fn restart_scrut_selection(
 ) -> Result<AlienSlot2Callback, AlienSlot2Error> {
     validate_state(AlienSpecies::Scrut, pose, animation)?;
     animation.callback = Some(AlienSlot2Callback::ScrutSelectionBegin);
-    animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+    animation.nodes[PRIMARY_NODE].motion_parameter =
         pose.nodes[PRIMARY_NODE].transform.translation[X_AXIS] as i16;
     Ok(AlienSlot2Callback::ScrutSelectionBegin)
 }
@@ -1581,8 +1581,8 @@ pub fn update_scrut_selection_begin(
     }
 
     animation.callback = Some(AlienSlot2Callback::ScrutSelectionDamp);
-    animation.nodes[PRIMARY_NODE].secondary_motion_parameter = SCRUT_SELECTION_DAMPING_PARAMETER;
-    animation.nodes[PRIMARY_NODE].motion_parameter = primary.angles[Z_AXIS] as i16;
+    animation.nodes[PRIMARY_NODE].motion_parameter = SCRUT_SELECTION_DAMPING_PARAMETER;
+    animation.nodes[PRIMARY_NODE].secondary_motion_parameter = primary.angles[Z_AXIS] as i16;
     animation.nodes[PRIMARY_NODE].radial_target = u16::default();
     Ok(AlienScrutSelectionBeginUpdate::DampingRequested)
 }
@@ -1621,10 +1621,10 @@ pub fn update_scrut_steering(
         .cast_signed()
         .clamp(SCRUT_STEERING_MINIMUM, SCRUT_STEERING_MAXIMUM);
     let mut roll = steering.wrapping_add(primary.angles[Z_AXIS] as i16);
-    let previous_turn = animation.nodes[PRIMARY_NODE].motion_parameter;
+    let previous_turn = animation.nodes[PRIMARY_NODE].secondary_motion_parameter;
     if (previous_turn ^ roll) < i16::default() {
         roll >>= 1;
-        animation.nodes[PRIMARY_NODE].motion_parameter = roll;
+        animation.nodes[PRIMARY_NODE].secondary_motion_parameter = roll;
     }
     roll = roll.clamp(SCRUT_PITCH_MINIMUM, SCRUT_PITCH_MAXIMUM);
     primary.angles[Z_AXIS] = roll as u16;
@@ -1801,7 +1801,7 @@ pub fn reset_scrut_selection(
     restore_scrut_selection_visuals(pose, animation);
     scene.slot2_active = false;
     animation.nodes[PRIMARY_NODE].radial_target = u16::default();
-    animation.nodes[PRIMARY_NODE].motion_parameter = i16::default();
+    animation.nodes[PRIMARY_NODE].secondary_motion_parameter = i16::default();
     Ok(AlienScrutSelectionResetUpdate::RestartRequested)
 }
 
@@ -1878,7 +1878,7 @@ pub fn update_scrut_reset_or_camera(
     let turn_score = vertical
         .wrapping_mul(forward_z)
         .wrapping_sub(horizontal.wrapping_mul(forward_x));
-    animation.nodes[PRIMARY_NODE].motion_parameter = if turn_score < i32::default() {
+    animation.nodes[PRIMARY_NODE].secondary_motion_parameter = if turn_score < i32::default() {
         SCRUT_RESET_TURN_STEP
     } else {
         -SCRUT_RESET_TURN_STEP
@@ -3606,7 +3606,8 @@ mod tests {
             animation.callback = Some(AlienSlot2Callback::Update);
             animation.phase_timer = vector.duration_before as i16;
             animation.random_value = vector.random_before;
-            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                vector.motion_parameter_before as i16;
             animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
             let scene = AlienCallbackSceneState {
                 wave_selection: match vector.selection_state {
@@ -3641,7 +3642,7 @@ mod tests {
                 vector.name
             );
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
                 vector.motion_parameter_after,
                 "{}",
                 vector.name
@@ -3703,7 +3704,7 @@ mod tests {
             primary.radial_offset = vector.radial_before as i16;
             let mut animation = AlienSlot2AnimationState::new(SCRUT_MOTION_NODE_COUNT);
             animation.species_seed_at_initialization = i32::from(vector.seed_low_word as i16);
-            animation.nodes[PRIMARY_NODE].motion_parameter = vector.roll_velocity as i16;
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter = vector.roll_velocity as i16;
             animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target;
 
             update_scrut_motion(&mut pose, &animation).unwrap();
@@ -3858,8 +3859,7 @@ mod tests {
             pose.nodes[PRIMARY_NODE].transform.translation[X_AXIS] =
                 join_words(TRANSFORM_LOW_WORD_SENTINEL, vector.transform_x_fraction);
             let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
-            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
-                vector.secondary_before as i16;
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.secondary_before as i16;
 
             assert_eq!(
                 restart_scrut_selection(&pose, &mut animation).unwrap(),
@@ -3872,8 +3872,7 @@ mod tests {
                 Some(AlienSlot2Callback::ScrutSelectionBegin)
             );
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
-                vector.secondary_after,
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16, vector.secondary_after,
                 "{}",
                 vector.name
             );
@@ -3897,10 +3896,10 @@ mod tests {
             primary.angles[Z_AXIS] = vector.roll_before;
             let mut animation = AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
             animation.callback = Some(AlienSlot2Callback::ScrutSelectionBegin);
-            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
-                vector.secondary_before as i16;
+            animation.nodes[PRIMARY_NODE].motion_parameter = vector.secondary_before as i16;
             animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
-            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                vector.motion_parameter_before as i16;
             let scene = AlienCallbackSceneState {
                 wave_selection: match vector.selection_state {
                     0 => AlienWaveSelection::Disabled,
@@ -3924,8 +3923,7 @@ mod tests {
                 vector.name
             );
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
-                vector.secondary_after,
+                animation.nodes[PRIMARY_NODE].motion_parameter as u16, vector.secondary_after,
                 "{}",
                 vector.name
             );
@@ -3935,7 +3933,7 @@ mod tests {
                 vector.name
             );
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
                 vector.motion_parameter_after,
                 "{}",
                 vector.name
@@ -4029,7 +4027,8 @@ mod tests {
             let mut animation = AlienSlot2AnimationState::new(SCRUT_MOTION_NODE_COUNT);
             animation.callback = Some(AlienSlot2Callback::ScrutSelectionApproach);
             animation.species_seed_at_initialization = i32::from(vector.seed);
-            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                vector.motion_parameter_before as i16;
             let scene = AlienCallbackSceneState {
                 wave_selection: match vector.selection_state {
                     0 => AlienWaveSelection::Disabled,
@@ -4073,7 +4072,7 @@ mod tests {
             assert_eq!(primary.angles[Y_AXIS], vector.pan_after, "{}", vector.name);
             assert_eq!(primary.angles[Z_AXIS], vector.roll_after, "{}", vector.name);
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
                 vector.motion_parameter_after,
                 "{}",
                 vector.name
@@ -4278,7 +4277,8 @@ mod tests {
             let mut animation = AlienSlot2AnimationState::new(SCRUT_FINISH_REQUIRED_NODE_COUNT);
             animation.callback = Some(AlienSlot2Callback::ScrutSelectionApproach);
             animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
-            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                vector.motion_parameter_before as i16;
             for (visual_index, node_index) in visual_nodes.into_iter().enumerate() {
                 animation.nodes[node_index].motion_parameter =
                     vector.saved_positions[visual_index][VISUAL_X_COMPONENT] as i16;
@@ -4308,7 +4308,7 @@ mod tests {
                 vector.name
             );
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
                 vector.motion_parameter_after,
                 "{}",
                 vector.name
@@ -4396,7 +4396,8 @@ mod tests {
             animation.phase_timer = vector.duration_before as i16;
             animation.species_seed_at_initialization = vector.seed;
             animation.random_value = vector.random_before;
-            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                vector.motion_parameter_before as i16;
             animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target_before;
             let mut camera = AlienCameraTransform {
                 view: vector.camera_view.map(|value| value as i16),
@@ -4468,7 +4469,7 @@ mod tests {
                 vector.name
             );
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
                 vector.motion_parameter_after,
                 "{}",
                 vector.name
@@ -4505,7 +4506,8 @@ mod tests {
             primary.angles[Y_AXIS] = vector.pan_before;
             primary.angles[Z_AXIS] = vector.roll_before;
             let mut animation = AlienSlot2AnimationState::new(SCRUT_MOTION_NODE_COUNT);
-            animation.nodes[PRIMARY_NODE].motion_parameter = vector.motion_parameter_before as i16;
+            animation.nodes[PRIMARY_NODE].secondary_motion_parameter =
+                vector.motion_parameter_before as i16;
             let precision = match vector.precision.as_str() {
                 "damping" => AlienScrutSteeringPrecision::Damping,
                 "approach" => AlienScrutSteeringPrecision::Approach,
@@ -4527,7 +4529,7 @@ mod tests {
             assert_eq!(primary.angles[Y_AXIS], vector.pan_after, "{}", vector.name);
             assert_eq!(primary.angles[Z_AXIS], vector.roll_after, "{}", vector.name);
             assert_eq!(
-                animation.nodes[PRIMARY_NODE].motion_parameter as u16,
+                animation.nodes[PRIMARY_NODE].secondary_motion_parameter as u16,
                 vector.motion_parameter_after,
                 "{}",
                 vector.name

@@ -28,10 +28,11 @@ MOUSE_CENTER_Y = 512
 PLANE_COUNT = 4
 PLANE_ROW_BYTES = FRAME_WIDTH // PLANE_COUNT
 PLANE_FRAME_BYTES = PLANE_ROW_BYTES * FRAME_HEIGHT
-DISPLAY_PALETTE_POSITION = 0x1F6A
 PALETTE_BYTES = 256 * 3
 VGA_DAC_MAXIMUM = 63
 EIGHT_BIT_MAXIMUM = 255
+STANDARD_CAMPAIGN_FRAMES = (1, 2, 4, 8, 16, 32)
+STANDARD_CAMPAIGN_TIMING_SCALE = 10
 
 MODULES = {
     "amer": {
@@ -40,6 +41,7 @@ MODULES = {
         "render_mode": 0x28D0,
         "final_clear_call": 0x0204,
         "final_clear_displacement": 0x00E9,
+        "callback_load": 0x019E,
     },
     "croolis": {
         "data_delta_field": 0x32E5,
@@ -47,6 +49,7 @@ MODULES = {
         "render_mode": 0x2940,
         "final_clear_call": 0x020B,
         "final_clear_displacement": 0x00F7,
+        "callback_load": 0x01A5,
     },
     "scrut": {
         "data_delta_field": 0x33A5,
@@ -54,6 +57,7 @@ MODULES = {
         "render_mode": 0x2A00,
         "final_clear_call": 0x020B,
         "final_clear_displacement": 0x00F7,
+        "callback_load": 0x01A5,
     },
 }
 
@@ -91,6 +95,24 @@ def parse_args() -> argparse.Namespace:
         "--model-count",
         type=int,
         help="stop the original context list after this many behavior models",
+    )
+    parser.add_argument(
+        "--frame-count",
+        type=int,
+        action="append",
+        help="capture this one-based rendered frame; may be repeated",
+    )
+    parser.add_argument(
+        "--timing-scale",
+        type=int,
+        default=7,
+        help="native API timing-scale input word",
+    )
+    parser.add_argument(
+        "--input-campaign",
+        choices=("centered", "corners"),
+        default="centered",
+        help="deterministic mouse samples applied between rendered frames",
     )
     return parser.parse_args()
 
@@ -148,11 +170,11 @@ def deplanarize(planes: bytes) -> bytes:
     return bytes(indexed)
 
 
-def expand_palette(data: bytes, data_start: int) -> bytes:
-    palette_start = data_start + DISPLAY_PALETTE_POSITION
-    palette = data[palette_start : palette_start + PALETTE_BYTES]
+def expand_palette(palette: bytes) -> bytes:
     if len(palette) != PALETTE_BYTES:
-        raise SystemExit("display palette extends beyond XDB image")
+        raise SystemExit(
+            f"PALETTE.BIN has {len(palette)} bytes; expected {PALETTE_BYTES}"
+        )
     if any(component > VGA_DAC_MAXIMUM for component in palette):
         raise SystemExit("display palette contains a component above the VGA DAC range")
     return bytes(
@@ -178,6 +200,9 @@ def capture_module(
     wcl: str,
     dosbox: str,
     model_count: int | None,
+    frame_count: int,
+    timing_scale: int,
+    input_campaign: str,
 ) -> dict[str, object]:
     data = source.read_bytes()
     data_delta_field = config["data_delta_field"]
@@ -216,6 +241,11 @@ def capture_module(
     work.mkdir(parents=True)
     (work / "ALIEN.XDB").write_bytes(loaded_data)
     executable_path = work / "XDBLOAD.EXE"
+    capture_defines = (
+        ["-dXDB_PREQUEUE_ESCAPE"]
+        if frame_count == 1 and timing_scale == 7
+        else []
+    )
     run(
         [
             wcl,
@@ -234,6 +264,8 @@ def capture_module(
             f"-dXDB_FINAL_CLEAR_CALL_OFFSET=0x{call_offset:04x}U",
             "-dXDB_FINAL_CLEAR_CALL_DISPLACEMENT="
             f"0x{config['final_clear_displacement']:04x}U",
+            f"-dXDB_CALLBACK_LOAD_OFFSET=0x{config['callback_load']:04x}U",
+            *capture_defines,
             "-dXDB_RENDER_CONTINUATION_OFFSET="
             f"0x{config['render_continuation']:04x}U",
             f"-dXDB_RENDER_MODE_OFFSET=0x{config['render_mode']:04x}U",
@@ -247,6 +279,7 @@ def capture_module(
     environment = os.environ.copy()
     environment["SDL_AUDIODRIVER"] = "dummy"
     environment["SDL_VIDEODRIVER"] = "offscreen"
+    input_campaign_id = {"centered": 0, "corners": 1}[input_campaign]
     try:
         process = subprocess.run(
             [
@@ -264,7 +297,8 @@ def capture_module(
                 "-c",
                 "c:",
                 "-c",
-                "XDBLOAD.EXE > CONSOLE.TXT",
+                f"XDBLOAD.EXE {frame_count} {timing_scale} "
+                f"{input_campaign_id} > CONSOLE.TXT",
             ],
             cwd=work,
             env=environment,
@@ -292,7 +326,8 @@ def capture_module(
         )
         raise SystemExit(f"{module.upper()} frame capture failed\n{detail}")
     indexed = deplanarize((work / "FRAME.BIN").read_bytes())
-    palette = expand_palette(data, data_paragraph * 16)
+    dac_palette = (work / "PALETTE.BIN").read_bytes()
+    palette = expand_palette(dac_palette)
     rgba = rgba_frame(indexed, palette)
     (work / "FRAME.INDEXED").write_bytes(indexed)
     (work / "FRAME.RGBA").write_bytes(rgba)
@@ -303,13 +338,24 @@ def capture_module(
         "xdb_sha256": hashlib.sha256(data).hexdigest(),
         "indexed_sha256": hashlib.sha256(indexed).hexdigest(),
         "rgba_sha256": hashlib.sha256(rgba).hexdigest(),
+        "dac_palette_sha256": hashlib.sha256(dac_palette).hexdigest(),
         "nonzero_pixels": sum(pixel != 0 for pixel in indexed),
         "model_count": model_count,
+        "frame_count": frame_count,
+        "timing_scale": timing_scale,
+        "input_campaign": input_campaign,
     }
 
 
 def main() -> int:
     args = parse_args()
+    frame_counts = args.frame_count or [1]
+    if any(frame_count < 1 for frame_count in frame_counts):
+        raise SystemExit("--frame-count must be positive")
+    if len(set(frame_counts)) != len(frame_counts):
+        raise SystemExit("--frame-count values must be unique")
+    if args.timing_scale < 0 or args.timing_scale > 0xFFFF:
+        raise SystemExit("--timing-scale must fit an unsigned 16-bit word")
     xdb_dir = args.xdb_dir.resolve()
     output = args.output_dir.resolve()
     if output.exists():
@@ -319,43 +365,88 @@ def main() -> int:
     dosbox = executable(args.dosbox)
     captures = []
     selected_modules = args.module or list(MODULES)
-    for module in selected_modules:
-        config = MODULES[module]
-        source = xdb_dir / f"{module}.xdb"
-        if not source.is_file():
-            raise SystemExit(f"missing original XDB: {source}")
-        capture = capture_module(
-            module,
-            config,
-            source,
-            output,
-            wcl,
-            dosbox,
-            args.model_count,
+    for frame_count in frame_counts:
+        capture_output = (
+            output
+            if len(frame_counts) == 1
+            else output / f"frame-{frame_count:04d}"
         )
-        captures.append(capture)
-        print(
-            f"{module.upper()}: {capture['nonzero_pixels']} nonzero pixels, "
-            f"RGBA {capture['rgba_sha256']}"
-        )
+        for module in selected_modules:
+            config = MODULES[module]
+            source = xdb_dir / f"{module}.xdb"
+            if not source.is_file():
+                raise SystemExit(f"missing original XDB: {source}")
+            capture = capture_module(
+                module,
+                config,
+                source,
+                capture_output,
+                wcl,
+                dosbox,
+                args.model_count,
+                frame_count,
+                args.timing_scale,
+                args.input_campaign,
+            )
+            captures.append(capture)
+            print(
+                f"{module.upper()} frame {frame_count}: "
+                f"{capture['nonzero_pixels']} nonzero pixels, "
+                f"RGBA {capture['rgba_sha256']}"
+            )
+    complete_first_frame = (
+        args.module is None
+        and args.model_count is None
+        and frame_counts == [1]
+        and args.timing_scale == 7
+        and args.input_campaign == "centered"
+    )
+    complete_campaign = (
+        args.module is None
+        and args.model_count is None
+        and tuple(frame_counts) == STANDARD_CAMPAIGN_FRAMES
+        and args.timing_scale == STANDARD_CAMPAIGN_TIMING_SCALE
+        and args.input_campaign == "corners"
+    )
     fixture = {
-        "format": "commander-blood-original-alien-first-frame-v1",
+        "format": (
+            "commander-blood-original-alien-first-frame-v1"
+            if complete_first_frame
+            else "commander-blood-original-alien-frame-campaign-v1"
+        ),
         "width": FRAME_WIDTH,
         "height": FRAME_HEIGHT,
-        "timing_scale": 7,
+        "timing_scale": args.timing_scale,
         "mouse_x": MOUSE_CENTER_X,
         "mouse_y": MOUSE_CENTER_Y,
         "model_count": args.model_count,
-        "captures": captures,
     }
-    complete_capture = args.module is None and args.model_count is None
+    if complete_first_frame:
+        fixture["frame_count"] = frame_counts[0]
+    else:
+        fixture["frame_counts"] = frame_counts
+    fixture["input_campaign"] = args.input_campaign
+    fixture["captures"] = captures
     fixture_path = args.fixture
     if fixture_path is None:
-        fixture_path = (
-            ROOT / "re" / "tools" / "oracle_vectors" / "alien_first_frames.json"
-            if complete_capture
-            else output / "alien_first_frames.json"
-        )
+        if complete_first_frame:
+            fixture_path = (
+                ROOT
+                / "re"
+                / "tools"
+                / "oracle_vectors"
+                / "alien_first_frames.json"
+            )
+        elif complete_campaign:
+            fixture_path = (
+                ROOT
+                / "re"
+                / "tools"
+                / "oracle_vectors"
+                / "alien_frame_campaign.json"
+            )
+        else:
+            fixture_path = output / "alien_frame_campaign.json"
     fixture_path.parent.mkdir(parents=True, exist_ok=True)
     fixture_path.write_text(
         json.dumps(fixture, indent=2) + "\n",

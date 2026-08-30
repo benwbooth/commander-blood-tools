@@ -548,15 +548,41 @@ NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
   python3 re/tools/original_xdb_alien_frame_oracle.py
 ```
 
-This gate executes the shipped AMER, CROOLIS, and SCRUT images, verifies the
-exact original XDB hashes and cleanup-call bytes, reproduces BLOODPRG's Mode X
-setup, and patches only the final cleanup call so the rendered VGA page can be
-captured. It deplanarizes all four VGA planes and records full indexed and RGBA
+This gate executes the shipped AMER, CROOLIS, and SCRUT images, verifies their
+exact hashes and the expected main-loop instruction bytes, and reproduces
+BLOODPRG's Mode X setup. The capture harness makes two bounded code patches: it
+replaces the final framebuffer-clear call with three no-ops, and changes the
+main loop's `mov ax,[001eh]` to `mov ax,1` so the existing host callback runs
+after every rendered frame. The callback restores the harness data segment,
+applies requested mouse input between frames, and queues Escape only after the
+requested checkpoint. No alien update, transform, projection, palette, or
+raster routine is replaced.
+
+The harness reads the displayed page from the live CRTC start address, captures
+all four VGA planes and the live DAC palette, and records full indexed and RGBA
 frame hashes in `re/tools/oracle_vectors/alien_first_frames.json`. The Rust
 runtime test compares its complete first frame against those original-execution
 hashes. `--module` and `--model-count` provide diagnostic prefix captures and,
 unless `--fixture` is explicit, write their temporary fixture under the output
 directory rather than replacing the committed complete oracle.
+
+Exercise delayed behavior and deterministic mouse-driven camera movement at
+six checkpoints with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/original_xdb_alien_frame_oracle.py \
+    --timing-scale 10 --input-campaign corners \
+    --frame-count 1 --frame-count 2 --frame-count 4 \
+    --frame-count 8 --frame-count 16 --frame-count 32
+```
+
+This standard campaign writes
+`re/tools/oracle_vectors/alien_frame_campaign.json`. The Rust runtime must
+match all 18 original-XDB RGBA hashes: all three overlays at frames 1, 2, 4, 8,
+16, and 32. The campaign also preserves each indexed-frame hash and live-DAC
+hash for lower-level diagnosis.
 
 To measure fixed-offset placement, use the layout probe:
 
