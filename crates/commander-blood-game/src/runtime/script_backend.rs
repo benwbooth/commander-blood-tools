@@ -26,6 +26,7 @@ use crate::native::bloodprg::{
     execute_loaded_script_frame, load_sound_bank, lookup_and_apply_descript_record,
     original_save_state_block_byte_count, script_field_offset,
 };
+use crate::native::random::BloodPrng;
 
 use super::{OriginalGameData, OriginalGameRuntime};
 
@@ -134,6 +135,16 @@ impl RuntimeScriptSystem {
                 .context("profile loader did not retain the selected profile")?,
         );
         Ok(outcome)
+    }
+
+    /// Import the session PRNG shared by every recovered native caller.
+    pub fn import_random_state(&mut self, random: BloodPrng) {
+        self.dispatch.random = random;
+    }
+
+    /// Return the session PRNG after COD, BAS, and text chance handlers run.
+    pub const fn random_state(&self) -> BloodPrng {
+        self.dispatch.random
     }
 
     /// Execute one complete translated COD/BAS/presentation frame.
@@ -1130,6 +1141,26 @@ mod tests {
         assert_eq!(backend.clock(), TEST_CLOCK);
         backend.set_clock(UPDATED_TEST_CLOCK);
         assert_eq!(backend.clock(), UPDATED_TEST_CLOCK);
+    }
+
+    #[test]
+    fn script_system_round_trips_the_shared_session_prng_state() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let random = BloodPrng {
+            seed: 4_660,
+            mix_low: 17,
+            mix_high: 29,
+            counter: 9,
+        };
+
+        scripts.import_random_state(random);
+
+        assert_eq!(scripts.random_state(), random);
     }
 
     #[test]

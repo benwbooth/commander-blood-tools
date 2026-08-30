@@ -2392,7 +2392,10 @@ impl<'window> ModernGameServices<'window> {
         self.synchronize_script_action_runtime_state(u16::MIN)?;
         self.scripts
             .prepare_ship_presentation_state(&self.ship_presentation);
-        let outcome = self.scripts.execute_frame(&mut self.runtime, enabled)?;
+        self.scripts.import_random_state(self.random);
+        let outcome = self.scripts.execute_frame(&mut self.runtime, enabled);
+        self.random = self.scripts.random_state();
+        let outcome = outcome?;
         self.scripts
             .finish_ship_presentation_state(&mut self.ship_presentation);
         Ok(outcome)
@@ -2417,9 +2420,12 @@ impl<'window> ModernGameServices<'window> {
         self.synchronize_script_action_runtime_state(state.clip_playback_state)?;
         self.scripts
             .prepare_ship_presentation_state(&self.ship_presentation);
+        self.scripts.import_random_state(self.random);
         let outcome =
             self.scripts
-                .execute_lifecycle_frame(&mut self.runtime, state, execution_enabled)?;
+                .execute_lifecycle_frame(&mut self.runtime, state, execution_enabled);
+        self.random = self.scripts.random_state();
+        let outcome = outcome?;
         self.scripts
             .finish_ship_presentation_state(&mut self.ship_presentation);
         self.publish_script_presentation_status_change()?;

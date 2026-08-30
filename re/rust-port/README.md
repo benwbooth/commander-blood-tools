@@ -28,6 +28,15 @@ removed UI writer until this ledger is reviewed, preventing a translated
 semantic routine from silently retaining its state inside an unconnected Rust
 adapter.
 
+`shared-prng-calls.tsv` applies the same rule to the executable's single
+persistent random stream. All six recovered callers consume
+`ModernGameServices::random`, including BloodScript conditions, startup ship
+geometry, presentation noise, name effects, and dialogue chatter. The service
+imports that state into a script pass and takes it back afterward, including on
+script errors. The coverage gate derives the caller set from the recovered C
+and rejects a missing or newly introduced caller until its runtime ownership is
+documented.
+
 `production-routing-dispositions.tsv` complements the positive translation
 ledger. The production-routing audit requires every translated routine either
 to retain a symbol in the game executable, have a non-test Rust caller, or carry

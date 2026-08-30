@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::convert::Infallible;
 use std::ops::Range;
 
@@ -8,7 +9,9 @@ use commander_blood_formats::instruction::{
     ScriptStateOperator, ScriptTextWord, ScriptTimerSlot,
 };
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
-use commander_blood_formats::script::{ScriptObjectId, ScriptProcedureId};
+use commander_blood_formats::script::{
+    ScriptObjectId, ScriptProcedureId, ScriptStateByte, ScriptStateWord, ScriptStateWordPair,
+};
 use commander_blood_game::native::bloodprg::{
     GameLifecycleState, GameSceneLink, GameTimerContext, GameTimerState, IndexedGamePalette,
     LoadedScriptProfile, OriginalSaveGame, PresentationPresentPolicy, PresentationRequestFlags,
@@ -22,6 +25,7 @@ use commander_blood_game::native::bloodprg::{
     dispatch_presentation_scene, object_has_flag, presentation_line_for_text_selector,
     script_field_offset, set_object_flag, update_game_presentation_ownership,
 };
+use commander_blood_game::native::random::BloodPrng;
 use commander_blood_game::runtime::{
     OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime, RuntimeScriptSystem,
     initialize_and_restore_original_save_game,
@@ -31,6 +35,11 @@ use serde::Deserialize;
 const CONTACT_MANIFEST_JSON: &str =
     include_str!("../../../re/vm/contact-manifest/contact-manifest.json");
 const EXPECTED_CONTACT_PROCEDURE_COUNT: usize = 65;
+const EXPECTED_CONTACT_TEXT_COUNT: usize = 661;
+const EXPECTED_RENDERED_CONTACT_TEXT_COUNT: usize = 658;
+const EXPECTED_REACHABLE_CONTACT_TEXT_COUNT: usize = 655;
+const EXPECTED_CONTACT_CHOICE_EDGE_COUNT: usize = 24;
+const EXPECTED_REACHABLE_CONTACT_CHOICE_EDGE_COUNT: usize = 23;
 const FIRST_SCRIPT_NUMBER: u8 = 1;
 const SCRIPT_NAME_PREFIX: &str = "SCRIPT";
 const PROFILE_RESOURCE_NAME_PREFIX: &str = "script";
@@ -42,6 +51,8 @@ const CONTACT_COUNTDOWN_TIMER_INDEX: u8 = 1;
 const MAXIMUM_ENTRY_FRAMES: usize = 32;
 const MAXIMUM_CONTACT_COMPLETION_FRAMES: usize = 256;
 const MAXIMUM_TIMER_TICKS_PER_SCRIPT_COUNTDOWN: usize = 256;
+const REACHABLE_RANDOM_WARMUP_LIMIT: u8 = 128;
+const CLOCK_SECONDS_PER_MINUTE: u8 = 60;
 const EXIT_DIALOGUE_TOPIC: &[u8] = b"bye_bye";
 const SCRUTER_JO_PROCEDURE: &str = "scrujo";
 const SCRUTER_JO_OVERLAY_VOICE_SELECTOR: u8 = 20;
@@ -49,12 +60,45 @@ const SCRUTER_JO_POST_OVERLAY_VOICE_SELECTOR: u8 = 21;
 const PRIMARY_TEXT_REQUEST_PENDING: u8 = 1;
 const UNCLAMPED_PRESENTATION_LINE_COUNT: usize = 8;
 const PRESENTATION_DESCRIPTOR_TERMINATOR_COUNT: usize = 1;
+const SCRIPT2_BOBA3_UNREACHABLE_TIMER_SLOT: u8 = 1;
+const SCRIPT2_BOBA3_UNREACHABLE_TEXT_INDICES: &[usize] = &[6, 7];
+const SCRIPT4_BOBA1_UNREACHABLE_TEXT_INDICES: &[usize] = &[5];
 const PROFILE_RESOURCE_IDENTITIES: &[(ScriptProfileResourceKind, &str)] = &[
     (ScriptProfileResourceKind::Code, "cod"),
     (ScriptProfileResourceKind::Dialogue, "bas"),
     (ScriptProfileResourceKind::State, "var"),
     (ScriptProfileResourceKind::Dictionary, "dic"),
     (ScriptProfileResourceKind::Directory, "deb"),
+];
+
+struct ProvenUnreachableContactTexts {
+    script: &'static str,
+    procedure: &'static str,
+    reason: ProvenUnreachableReason,
+    text_indices: &'static [usize],
+}
+
+#[derive(Clone, Copy)]
+enum ProvenUnreachableReason {
+    TimerReassignedBeforeGuard { slot: u8 },
+    BasExitEndsPresentation,
+}
+
+const PROVEN_UNREACHABLE_CONTACT_TEXTS: &[ProvenUnreachableContactTexts] = &[
+    ProvenUnreachableContactTexts {
+        script: "SCRIPT2",
+        procedure: "boba3",
+        reason: ProvenUnreachableReason::TimerReassignedBeforeGuard {
+            slot: SCRIPT2_BOBA3_UNREACHABLE_TIMER_SLOT,
+        },
+        text_indices: SCRIPT2_BOBA3_UNREACHABLE_TEXT_INDICES,
+    },
+    ProvenUnreachableContactTexts {
+        script: "SCRIPT4",
+        procedure: "boba1",
+        reason: ProvenUnreachableReason::BasExitEndsPresentation,
+        text_indices: SCRIPT4_BOBA1_UNREACHABLE_TEXT_INDICES,
+    },
 ];
 const ORACLE_CLOCK: ScriptClock = ScriptClock {
     hour: 12,
@@ -73,6 +117,7 @@ struct ContactScenario {
     script: String,
     procedure: String,
     procedure_offset: usize,
+    procedure_end: usize,
     contact_object_offset: usize,
     entry_tokens: Vec<ContactEntryToken>,
     presentations: Vec<ContactPresentation>,
@@ -93,6 +138,7 @@ struct ContactPresentation {
 
 #[derive(Debug, Deserialize)]
 struct ContactText {
+    opcode_offset: usize,
     actor_object_offset: usize,
     voice_selector: u8,
     word_offsets: Vec<u16>,
@@ -107,18 +153,276 @@ struct ContactEntrySnapshot {
     subtitle: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum ContactStateVariant {
+    Default,
+    SharedWord {
+        target: ScriptStateWord,
+        value: u16,
+    },
+    SharedByte {
+        target: ScriptStateByte,
+        value: u8,
+    },
+    RecordValue {
+        target: ScriptStateWord,
+        value: ScriptRecordValue,
+    },
+    RecordPair {
+        target: ScriptStateWordPair,
+        value: [u16; 2],
+    },
+    Timer {
+        slot: ScriptTimerSlot,
+        value: u16,
+    },
+    Random(BloodPrng),
+    WaitForTimer {
+        slot: ScriptTimerSlot,
+    },
+    Combined(Vec<ContactStateVariant>),
+}
+
 #[test]
 fn contact_manifest_declares_every_recovered_contact_entry() {
     let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON).unwrap();
 
     assert_eq!(manifest.procedure_count, EXPECTED_CONTACT_PROCEDURE_COUNT);
     assert_eq!(manifest.procedures.len(), EXPECTED_CONTACT_PROCEDURE_COUNT);
+    assert_eq!(
+        manifest
+            .procedures
+            .iter()
+            .map(|scenario| scenario.texts.len())
+            .sum::<usize>(),
+        EXPECTED_CONTACT_TEXT_COUNT
+    );
+    assert_eq!(
+        manifest
+            .procedures
+            .iter()
+            .flat_map(|scenario| &scenario.texts)
+            .filter(|text| !text.subtitle.is_empty() || !text.choices.is_empty())
+            .count(),
+        EXPECTED_RENDERED_CONTACT_TEXT_COUNT
+    );
+    assert_eq!(
+        manifest
+            .procedures
+            .iter()
+            .flat_map(|scenario| &scenario.texts)
+            .map(|text| text.choices.len())
+            .sum::<usize>(),
+        EXPECTED_CONTACT_CHOICE_EDGE_COUNT
+    );
+    assert_eq!(
+        manifest
+            .procedures
+            .iter()
+            .map(|scenario| {
+                scenario
+                    .texts
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, text)| {
+                        (!text.subtitle.is_empty() || !text.choices.is_empty())
+                            && !proven_unreachable_contact_texts(scenario)
+                                .is_some_and(|entry| entry.text_indices.contains(index))
+                    })
+                    .count()
+            })
+            .sum::<usize>(),
+        EXPECTED_REACHABLE_CONTACT_TEXT_COUNT
+    );
+    assert_eq!(
+        manifest
+            .procedures
+            .iter()
+            .map(|scenario| {
+                let unreachable = proven_unreachable_contact_texts(scenario)
+                    .map(|entry| entry.text_indices)
+                    .unwrap_or_default();
+                scenario
+                    .texts
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, _text)| !unreachable.contains(index))
+                    .map(|(_index, text)| text.choices.len())
+                    .sum::<usize>()
+            })
+            .sum::<usize>(),
+        EXPECTED_REACHABLE_CONTACT_CHOICE_EDGE_COUNT
+    );
     assert!(
         manifest
             .procedures
             .iter()
             .all(|scenario| scenario.texts.iter().any(|text| !text.subtitle.is_empty()))
     );
+}
+
+#[test]
+fn declared_unreachable_contact_texts_remain_dominated_by_timer_reassignment() {
+    let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON).unwrap();
+    let Some(paths) = original_data_paths() else {
+        return;
+    };
+
+    for declared in PROVEN_UNREACHABLE_CONTACT_TEXTS {
+        let ProvenUnreachableReason::TimerReassignedBeforeGuard { slot: timer_slot } =
+            declared.reason
+        else {
+            continue;
+        };
+        let scenario = manifest
+            .procedures
+            .iter()
+            .find(|scenario| {
+                declared.script.eq_ignore_ascii_case(&scenario.script)
+                    && declared.procedure.eq_ignore_ascii_case(&scenario.procedure)
+            })
+            .expect("every unreachable-contact declaration names a recovered procedure");
+        let data =
+            OriginalGameData::load_with_writable_root(paths.clone(), std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut scripts = RuntimeScriptSystem::new(runtime.data(), ORACLE_CLOCK);
+        scripts
+            .load_profile(&mut runtime, profile_id(&scenario.script))
+            .unwrap();
+        let profile = runtime.current_profile().unwrap();
+        let slot = ScriptTimerSlot::decode(timer_slot).unwrap();
+        let procedure = profile
+            .code()
+            .tokens()
+            .iter()
+            .zip(profile.instructions())
+            .filter(|(token, _instruction)| {
+                let offset = token.source_offset().index();
+                offset > scenario.procedure_offset && offset < scenario.procedure_end
+            })
+            .collect::<Vec<_>>();
+        let guard_index = procedure
+            .iter()
+            .enumerate()
+            .filter_map(|(index, (_token, instruction))| {
+                matches!(
+                    instruction,
+                    DecodedScriptInstruction::Control(ScriptInstruction::TimerGuard {
+                        slot: candidate
+                    }) if *candidate == slot
+                )
+                .then_some(index)
+            })
+            .next()
+            .expect("declared unreachable branch retains its timer guard");
+        let assignments = procedure
+            .iter()
+            .take(guard_index)
+            .enumerate()
+            .filter_map(|(index, (_token, instruction))| {
+                matches!(
+                    instruction,
+                    DecodedScriptInstruction::Control(ScriptInstruction::TimerAssignment {
+                        slot: candidate,
+                        ..
+                    }) if *candidate == slot
+                )
+                .then_some(index)
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(assignments.len(), 1);
+        let assignment_index = assignments[usize::MIN];
+        let DecodedScriptInstruction::Text(preceding_text) = procedure[assignment_index - 1].1
+        else {
+            panic!("timer reassignment is no longer immediately preceded by A6 text")
+        };
+        assert_eq!(preceding_text.control.rejection_skip_count(), None);
+
+        assert!(matches!(
+            procedure[guard_index - 1].1,
+            DecodedScriptInstruction::Control(ScriptInstruction::GuardBegin { .. })
+        ));
+        let guard_offset = procedure[guard_index].0.source_offset().index();
+        for text_index in declared.text_indices {
+            assert!(scenario.texts[*text_index].opcode_offset > guard_offset);
+        }
+    }
+}
+
+#[test]
+fn declared_unreachable_history_signoffs_remain_preempted_by_bas_teardown() {
+    let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON).unwrap();
+    let Some(paths) = original_data_paths() else {
+        return;
+    };
+
+    for declared in PROVEN_UNREACHABLE_CONTACT_TEXTS {
+        if !matches!(
+            declared.reason,
+            ProvenUnreachableReason::BasExitEndsPresentation
+        ) {
+            continue;
+        }
+        let scenario = manifest
+            .procedures
+            .iter()
+            .find(|scenario| {
+                declared.script.eq_ignore_ascii_case(&scenario.script)
+                    && declared.procedure.eq_ignore_ascii_case(&scenario.procedure)
+            })
+            .expect("every BAS-teardown declaration names a recovered procedure");
+        let data =
+            OriginalGameData::load_with_writable_root(paths.clone(), std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut scripts = RuntimeScriptSystem::new(runtime.data(), ORACLE_CLOCK);
+        scripts
+            .load_profile(&mut runtime, profile_id(&scenario.script))
+            .unwrap();
+        let profile = runtime.current_profile().unwrap();
+        let exit_word = profile
+            .dictionary()
+            .words()
+            .find_map(|(word, bytes)| {
+                bytes
+                    .eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC)
+                    .then_some(word)
+            })
+            .expect("profile dictionary retains the exit concept");
+
+        for text_index in declared.text_indices {
+            let instruction = profile
+                .instruction_at(ScriptCodeOffset::new(
+                    scenario.texts[*text_index].opcode_offset,
+                ))
+                .expect("declared unreachable COD text remains decoded");
+            let DecodedScriptInstruction::Text(text) = instruction else {
+                panic!("declared unreachable COD offset is no longer A6 text")
+            };
+            assert!(text.control.uses_history_condition());
+            assert!(text.words.iter().any(
+                |word| matches!(word, ScriptTextWord::Dictionary(candidate) if *candidate == exit_word)
+            ));
+        }
+
+        let bas_exit_teardown = profile.dialogue().tokens().windows(2).any(|tokens| {
+            let ScriptBasInstruction::Text(text) = tokens[usize::MIN].instruction() else {
+                return false;
+            };
+            text.line_record.byte_offset() == scenario.contact_object_offset
+                && text.words.iter().any(
+                    |word| matches!(word, ScriptTextWord::Dictionary(candidate) if *candidate == exit_word)
+                )
+                && matches!(
+                    tokens[1].instruction(),
+                    ScriptBasInstruction::RecordClear(_)
+                )
+        });
+        assert!(
+            bas_exit_teardown,
+            "{}:{} no longer has a BAS exit line followed by presentation teardown",
+            scenario.script, scenario.procedure
+        );
+    }
 }
 
 #[test]
@@ -229,320 +533,981 @@ fn authentic_save_restores_through_the_production_flat_transaction() {
 }
 
 #[test]
-fn every_recovered_contact_completes_one_authored_path() {
+fn every_recovered_contact_completes_every_authored_choice_path() {
     let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON).unwrap();
     let Some(paths) = original_data_paths() else {
         return;
     };
+    let mut uncovered = Vec::new();
+    let mut uncovered_choices = Vec::new();
 
     for scenario in &manifest.procedures {
-        let data =
-            OriginalGameData::load_with_writable_root(paths.clone(), std::env::temp_dir()).unwrap();
-        let mut scripts = RuntimeScriptSystem::new(&data, ORACLE_CLOCK);
-        let mut runtime = OriginalGameRuntime::new(data);
-        let mut timer = GameTimerState::default();
-        timer.start();
-        scripts
-            .load_profile(&mut runtime, profile_id(&scenario.script))
-            .unwrap();
-        scripts.execute_frame(&mut runtime, true).unwrap();
-        let selected_procedure = configure_contact_entry(&manifest, scenario, &mut runtime);
-        configure_script_context(&mut scripts, &runtime, scenario);
-        runtime
-            .current_profile_mut()
-            .unwrap()
-            .procedures_mut()
-            .set_enabled(selected_procedure, false)
-            .unwrap();
-        scripts.execute_frame(&mut runtime, true).unwrap();
-        runtime
-            .current_profile_mut()
-            .unwrap()
-            .procedures_mut()
-            .set_enabled(selected_procedure, true)
-            .unwrap();
-
-        let mut next_expected_index = usize::MIN;
-        let mut observed_indices = Vec::new();
-        let mut observed_bas_offsets = Vec::new();
-        let mut selected_topics: Vec<String> = Vec::new();
-        let mut bas_count_at_topic_selection = None;
-        let mut completed = false;
-        for _ in usize::MIN..MAXIMUM_CONTACT_COMPLETION_FRAMES {
-            let mut presentation_completed_this_frame = false;
-            let mut word_choice_completed_this_frame = false;
-            let outcome = scripts
-                .execute_frame(&mut runtime, true)
-                .unwrap_or_else(|error| {
-                    panic!(
-                        "{}:{} failed while completing contact: {error:?}",
-                        scenario.script, scenario.procedure
-                    )
+        let proven_unreachable = proven_unreachable_contact_texts(scenario)
+            .map(|entry| entry.text_indices)
+            .unwrap_or_default();
+        let choice_nodes = scenario
+            .texts
+            .iter()
+            .enumerate()
+            .filter(|(index, text)| !proven_unreachable.contains(index) && !text.choices.is_empty())
+            .collect::<Vec<_>>();
+        assert!(
+            choice_nodes.len() <= 1,
+            "{}:{} requires multi-choice path enumeration",
+            scenario.script,
+            scenario.procedure
+        );
+        let choice_paths = choice_nodes.first().map_or_else(
+            || vec![None],
+            |(text_index, text)| {
+                (usize::MIN..text.choices.len())
+                    .map(|choice_index| Some((*text_index, choice_index)))
+                    .collect()
+            },
+        );
+        let state_variants = contact_state_variants(&paths, scenario);
+        let mut observed_indices = BTreeSet::new();
+        let mut observed_choice_edges = BTreeSet::new();
+        let expected_choice_edges =
+            choice_nodes
+                .first()
+                .map_or_else(BTreeSet::new, |(text_index, text)| {
+                    (usize::MIN..text.choices.len())
+                        .map(|choice_index| (*text_index, choice_index))
+                        .collect()
                 });
-            advance_one_script_countdown(&mut timer, &mut runtime);
-            let snapshot = contact_snapshot(&scripts, &runtime);
-            let selector_topics = runtime
-                .current_profile()
-                .unwrap()
-                .selector_state()
-                .pending_presentation_words()
-                .to_vec();
-            let published_topics = presentation_dictionary_words(&scripts);
-            if snapshot.subtitle.is_empty()
-                && !selector_topics.is_empty()
-                && ((published_topics == selector_topics)
-                    || (snapshot.word_offsets.is_empty()
-                        && bas_count_at_topic_selection
-                            .is_some_and(|before| observed_bas_offsets.len() > before)))
+        run_contact_variants(
+            &manifest,
+            scenario,
+            &paths,
+            &choice_paths,
+            &state_variants,
+            &mut observed_indices,
+            &mut observed_choice_edges,
+        );
+        let mut missing_indices = missing_rendered_contact_indices(scenario, &observed_indices);
+        if !missing_indices.is_empty() || observed_choice_edges != expected_choice_edges {
+            let pairwise_variants = combined_contact_state_variants(&state_variants, 2);
+            run_contact_variants(
+                &manifest,
+                scenario,
+                &paths,
+                &choice_paths,
+                &pairwise_variants,
+                &mut observed_indices,
+                &mut observed_choice_edges,
+            );
+            missing_indices = missing_rendered_contact_indices(scenario, &observed_indices);
+        }
+        if !missing_indices.is_empty() || observed_choice_edges != expected_choice_edges {
+            let triple_variants = combined_contact_state_variants(&state_variants, 3);
+            run_contact_variants(
+                &manifest,
+                scenario,
+                &paths,
+                &choice_paths,
+                &triple_variants,
+                &mut observed_indices,
+                &mut observed_choice_edges,
+            );
+            missing_indices = missing_rendered_contact_indices(scenario, &observed_indices);
+        }
+        if !missing_indices.is_empty() {
+            uncovered.push((
+                scenario.script.clone(),
+                scenario.procedure.clone(),
+                missing_indices,
+                observed_indices,
+            ));
+        }
+        if observed_choice_edges != expected_choice_edges {
+            uncovered_choices.push((
+                scenario.script.clone(),
+                scenario.procedure.clone(),
+                expected_choice_edges
+                    .difference(&observed_choice_edges)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ));
+        }
+    }
+    assert!(
+        uncovered.is_empty() && uncovered_choices.is_empty(),
+        "recovered contact paths left rendered COD texts uncovered: {uncovered:#?}; choice edges: {uncovered_choices:#?}"
+    );
+}
+
+fn run_contact_variants(
+    manifest: &ContactManifest,
+    scenario: &ContactScenario,
+    paths: &OriginalGameDataPaths,
+    choice_paths: &[Option<(usize, usize)>],
+    state_variants: &[ContactStateVariant],
+    observed_indices: &mut BTreeSet<usize>,
+    observed_choice_edges: &mut BTreeSet<(usize, usize)>,
+) {
+    for selected_choice in choice_paths.iter().copied() {
+        for state_variant in state_variants {
+            let (path_indices, selected_choice_observed) =
+                run_contact_path(manifest, scenario, paths, selected_choice, state_variant);
+            if let Some(edge) = selected_choice.filter(|_| selected_choice_observed) {
+                observed_choice_edges.insert(edge);
+            }
+            assert_contact_host_handoff(scenario, &path_indices);
+            observed_indices.extend(path_indices);
+        }
+    }
+}
+
+fn missing_rendered_contact_indices(
+    scenario: &ContactScenario,
+    observed_indices: &BTreeSet<usize>,
+) -> Vec<usize> {
+    let proven_unreachable = proven_unreachable_contact_texts(scenario)
+        .map(|entry| entry.text_indices)
+        .unwrap_or_default();
+    scenario
+        .texts
+        .iter()
+        .enumerate()
+        .filter_map(|(expected_index, expected)| {
+            if proven_unreachable.contains(&expected_index)
+                || (expected.subtitle.is_empty() && expected.choices.is_empty())
             {
-                let profile = runtime.current_profile().unwrap();
-                let topic_names = selector_topics
-                    .iter()
-                    .map(|word| profile.dictionary().word(*word).unwrap())
-                    .collect::<Vec<_>>();
-                if let Some(previous_bas_count) = bas_count_at_topic_selection {
-                    if selected_topics.last().is_some_and(|topic| {
-                        topic.as_bytes().eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC)
-                    }) {
-                        assert!(
-                            !observed_bas_offsets.is_empty(),
-                            "{}:{} reached the exit topic without first presenting BAS dialogue",
-                            scenario.script,
-                            scenario.procedure
-                        );
-                        completed = true;
-                        break;
-                    }
-                    assert!(
-                        observed_bas_offsets.len() > previous_bas_count,
-                        "{}:{} returned to selector {:?} without presenting BAS dialogue after topic {:?}; snapshot {:?}, selector state {:?}, presentation {:?}",
-                        scenario.script,
-                        scenario.procedure,
-                        topic_names
-                            .iter()
-                            .map(|name| String::from_utf8_lossy(name).into_owned())
-                            .collect::<Vec<_>>(),
-                        selected_topics.last(),
-                        snapshot,
-                        profile.selector_state(),
-                        scripts.presentation_scan_state()
+                return None;
+            }
+            let covered = observed_indices.iter().any(|observed_index| {
+                contact_texts_are_semantically_equal(expected, &scenario.texts[*observed_index])
+            });
+            (!covered).then_some(expected_index)
+        })
+        .collect()
+}
+
+fn contact_texts_are_semantically_equal(left: &ContactText, right: &ContactText) -> bool {
+    left.actor_object_offset == right.actor_object_offset
+        && left.voice_selector == right.voice_selector
+        && left.word_offsets == right.word_offsets
+        && normalize_text(left.subtitle.as_bytes()) == normalize_text(right.subtitle.as_bytes())
+        && left.choices == right.choices
+}
+
+fn proven_unreachable_contact_texts(
+    scenario: &ContactScenario,
+) -> Option<&'static ProvenUnreachableContactTexts> {
+    PROVEN_UNREACHABLE_CONTACT_TEXTS.iter().find(|entry| {
+        entry.script.eq_ignore_ascii_case(&scenario.script)
+            && entry.procedure.eq_ignore_ascii_case(&scenario.procedure)
+    })
+}
+
+fn contact_state_variants(
+    paths: &OriginalGameDataPaths,
+    scenario: &ContactScenario,
+) -> Vec<ContactStateVariant> {
+    let data =
+        OriginalGameData::load_with_writable_root(paths.clone(), std::env::temp_dir()).unwrap();
+    let mut runtime = OriginalGameRuntime::new(data);
+    let mut scripts = RuntimeScriptSystem::new(runtime.data(), ORACLE_CLOCK);
+    scripts
+        .load_profile(&mut runtime, profile_id(&scenario.script))
+        .unwrap();
+    let profile = runtime.current_profile().unwrap();
+    let gate = profile
+        .instruction_at(ScriptCodeOffset::new(scenario.procedure_offset))
+        .expect("contact procedure gate remains decoded");
+    let DecodedScriptInstruction::ProcedureGate(gate) = gate else {
+        panic!(
+            "{}:{} does not begin with a decoded procedure gate",
+            scenario.script, scenario.procedure
+        );
+    };
+    let procedure_end = gate.failure_target.index();
+    let entry_offsets = scenario
+        .entry_tokens
+        .iter()
+        .map(|entry| entry.offset)
+        .collect::<BTreeSet<_>>();
+    let mut protected_words = BTreeSet::new();
+    let mut protected_bytes = BTreeSet::new();
+    let mut protected_timers = BTreeSet::new();
+    for (token, instruction) in profile.code().tokens().iter().zip(profile.instructions()) {
+        if !entry_offsets.contains(&token.source_offset().index()) {
+            continue;
+        }
+        match instruction {
+            DecodedScriptInstruction::Control(ScriptInstruction::GuardBegin { .. }) => break,
+            DecodedScriptInstruction::SharedState(operation) => {
+                protected_words.insert(operation.target);
+            }
+            DecodedScriptInstruction::SharedBit(operation) => {
+                protected_words.insert(operation.target);
+            }
+            DecodedScriptInstruction::DirectRecord(operation) => {
+                protected_words.insert(operation.target);
+            }
+            DecodedScriptInstruction::BitFlag(operation) => {
+                protected_bytes.insert(operation.target);
+            }
+            DecodedScriptInstruction::Control(ScriptInstruction::TimerGuard { slot }) => {
+                protected_timers.insert(*slot);
+            }
+            _ => {}
+        }
+    }
+
+    let mut variants = vec![ContactStateVariant::Default];
+    let mut random_gate_count = usize::MIN;
+    let mut timer_guard_slots = BTreeSet::new();
+    for (token, instruction) in profile.code().tokens().iter().zip(profile.instructions()) {
+        let offset = token.source_offset().index();
+        if offset <= scenario.procedure_offset || offset >= procedure_end {
+            continue;
+        }
+        match instruction {
+            DecodedScriptInstruction::Text(text) if text.control.uses_random_gate() => {
+                random_gate_count += 1;
+            }
+            DecodedScriptInstruction::Control(ScriptInstruction::RandomGuard { .. }) => {
+                random_gate_count += 1;
+            }
+            DecodedScriptInstruction::SharedState(operation)
+                if !protected_words.contains(&operation.target) =>
+            {
+                let operand = match operation.operand {
+                    ScriptStateOperand::Immediate(value) => value,
+                    ScriptStateOperand::StateWord(source) => profile
+                        .state()
+                        .word(source)
+                        .expect("decoded shared-state source remains bound"),
+                };
+                for value in comparison_boundary_values(operation.operator, operand) {
+                    push_contact_variant(
+                        &mut variants,
+                        ContactStateVariant::SharedWord {
+                            target: operation.target,
+                            value,
+                        },
                     );
-                    if let Some(exit_index) = topic_names
-                        .iter()
-                        .position(|name| name.eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC))
-                    {
-                        let selected = selector_topics[exit_index];
-                        selected_topics.push(
-                            String::from_utf8_lossy(profile.dictionary().word(selected).unwrap())
-                                .into_owned(),
-                        );
-                        bas_count_at_topic_selection = Some(observed_bas_offsets.len());
-                        scripts
-                            .complete_word_choice(&mut runtime, selected)
-                            .unwrap();
-                        continue;
-                    }
-                    completed = true;
-                    break;
                 }
-                let selected_index = topic_names
-                    .iter()
-                    .position(|name| !name.eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC))
-                    .unwrap_or(usize::MIN);
-                let selected = selector_topics[selected_index];
-                selected_topics.push(
-                    String::from_utf8_lossy(profile.dictionary().word(selected).unwrap())
-                        .into_owned(),
-                );
-                bas_count_at_topic_selection = Some(observed_bas_offsets.len());
-                scripts
-                    .complete_word_choice(&mut runtime, selected)
-                    .unwrap();
+            }
+            DecodedScriptInstruction::SharedBit(operation)
+                if !protected_words.contains(&operation.target) =>
+            {
+                let current = profile.state().word(operation.target).unwrap();
+                for value in [current | operation.mask, current & !operation.mask] {
+                    push_contact_variant(
+                        &mut variants,
+                        ContactStateVariant::SharedWord {
+                            target: operation.target,
+                            value,
+                        },
+                    );
+                }
+            }
+            DecodedScriptInstruction::DirectRecord(operation)
+                if !protected_words.contains(&operation.target) =>
+            {
+                for value in [
+                    operation.value,
+                    unequal_record_value(profile, operation.value),
+                ] {
+                    push_contact_variant(
+                        &mut variants,
+                        ContactStateVariant::RecordValue {
+                            target: operation.target,
+                            value,
+                        },
+                    );
+                }
+            }
+            DecodedScriptInstruction::BitFlag(operation)
+                if !protected_bytes.contains(&operation.target) =>
+            {
+                let current = profile.state().byte(operation.target).unwrap();
+                for value in [current | operation.mask, current & !operation.mask] {
+                    push_contact_variant(
+                        &mut variants,
+                        ContactStateVariant::SharedByte {
+                            target: operation.target,
+                            value,
+                        },
+                    );
+                }
+            }
+            DecodedScriptInstruction::RecordPair(operation) => {
+                for value in [
+                    operation.value,
+                    [operation.value[0] ^ 1, operation.value[1]],
+                ] {
+                    push_contact_variant(
+                        &mut variants,
+                        ContactStateVariant::RecordPair {
+                            target: operation.target,
+                            value,
+                        },
+                    );
+                }
+            }
+            DecodedScriptInstruction::Control(ScriptInstruction::TimerGuard { slot })
+                if !protected_timers.contains(slot) =>
+            {
+                timer_guard_slots.insert(*slot);
+                for value in [u16::MIN, 1] {
+                    push_contact_variant(
+                        &mut variants,
+                        ContactStateVariant::Timer { value, slot: *slot },
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+    for random in reachable_random_states_covering_each_call(random_gate_count) {
+        push_contact_variant(&mut variants, ContactStateVariant::Random(random));
+    }
+    let unreachable_timer_slot =
+        proven_unreachable_contact_texts(scenario).and_then(|entry| match entry.reason {
+            ProvenUnreachableReason::TimerReassignedBeforeGuard { slot } => {
+                ScriptTimerSlot::decode(slot)
+            }
+            ProvenUnreachableReason::BasExitEndsPresentation => None,
+        });
+    for slot in timer_guard_slots {
+        if Some(slot) == unreachable_timer_slot {
+            continue;
+        }
+        push_contact_variant(&mut variants, ContactStateVariant::WaitForTimer { slot });
+    }
+    variants
+}
+
+fn reachable_random_states_covering_each_call(call_count: usize) -> Vec<BloodPrng> {
+    let mut uncovered = (usize::MIN..call_count).collect::<BTreeSet<_>>();
+    let mut selected = Vec::new();
+    for seconds in u8::MIN..CLOCK_SECONDS_PER_MINUTE {
+        for warmup in u8::MIN..REACHABLE_RANDOM_WARMUP_LIMIT {
+            let mut candidate = BloodPrng::default();
+            candidate.seed_from_clock_register(seconds);
+            for _ in u8::MIN..warmup {
+                candidate.next(u16::MIN);
+            }
+            let mut probe = candidate;
+            let covered = (usize::MIN..call_count)
+                .filter(|_index| probe.next(5) == u16::MIN)
+                .filter(|index| uncovered.contains(index))
+                .collect::<Vec<_>>();
+            if covered.is_empty() {
                 continue;
             }
-            let presentation_pending = snapshot.selected_line.is_some()
-                || !snapshot.word_offsets.is_empty()
-                || !snapshot.subtitle.is_empty();
-            if presentation_pending {
-                let expected_index = scenario
-                    .texts
-                    .iter()
-                    .enumerate()
-                    .skip(next_expected_index)
-                    .find_map(|(index, expected)| {
-                        contact_text_matches(expected, &snapshot).then_some(index)
-                    });
-                if let Some(expected_index) = expected_index {
-                    let expected = &scenario.texts[expected_index];
-                    observed_indices.push(expected_index);
-                    next_expected_index = expected_index + 1;
+            selected.push(candidate);
+            for index in covered {
+                uncovered.remove(&index);
+            }
+            if uncovered.is_empty() {
+                return selected;
+            }
+        }
+    }
+    assert!(
+        uncovered.is_empty(),
+        "reachable native PRNG states do not cover random calls {uncovered:?}"
+    );
+    selected
+}
 
-                    if !expected.choices.is_empty() {
-                        let profile = runtime.current_profile().unwrap();
-                        let choice_words = if snapshot.word_offsets.contains(&u16::MAX) {
-                            contact_choice_words(&scripts, &runtime)
-                        } else {
-                            selector_topics.clone()
-                        };
-                        let actual_choices = choice_words
-                            .iter()
-                            .map(|word| {
-                                String::from_utf8_lossy(profile.dictionary().word(*word).unwrap())
-                                    .into_owned()
-                            })
-                            .collect::<Vec<_>>();
-                        assert_eq!(
-                            actual_choices.len(),
-                            expected.choices.len(),
-                            "{}:{} exposed the wrong choice count at text {}",
-                            scenario.script,
-                            scenario.procedure,
-                            expected_index
-                        );
-                        assert!(
-                            actual_choices
-                                .iter()
-                                .zip(&expected.choices)
-                                .all(|(actual, expected)| actual.eq_ignore_ascii_case(expected)),
-                            "{}:{} exposed choices {:?}, expected {:?}",
-                            scenario.script,
-                            scenario.procedure,
-                            actual_choices,
-                            expected.choices
-                        );
-                        scripts
-                            .complete_word_choice(&mut runtime, choice_words[usize::MIN])
-                            .unwrap();
-                        word_choice_completed_this_frame = true;
-                    }
-                } else if let Some(source_offset) =
-                    matching_bas_text_offset(runtime.current_profile().unwrap(), &snapshot)
+fn comparison_boundary_values(operator: ScriptStateOperator, operand: u16) -> Vec<u16> {
+    let operand = operand as i16;
+    let mut values = Vec::new();
+    let mut push = |value: i16| {
+        let value = value as u16;
+        if !values.contains(&value) {
+            values.push(value);
+        }
+    };
+    match operator {
+        ScriptStateOperator::NotEqual => {
+            push(operand);
+            push(operand.wrapping_add(1));
+        }
+        ScriptStateOperator::LessThan => {
+            push(operand);
+            if operand != i16::MIN {
+                push(operand - 1);
+            }
+        }
+        ScriptStateOperator::GreaterThan => {
+            push(operand);
+            if operand != i16::MAX {
+                push(operand + 1);
+            }
+        }
+        ScriptStateOperator::LessThanOrEqual => {
+            push(operand);
+            if operand != i16::MAX {
+                push(operand + 1);
+            }
+        }
+        ScriptStateOperator::GreaterThanOrEqual => {
+            push(operand);
+            if operand != i16::MIN {
+                push(operand - 1);
+            }
+        }
+        ScriptStateOperator::EqualOrAssign => {
+            push(operand);
+            push(operand.wrapping_add(1));
+        }
+        ScriptStateOperator::Add
+        | ScriptStateOperator::Subtract
+        | ScriptStateOperator::PreserveOrFail(_) => {}
+    }
+    values
+}
+
+fn push_contact_variant(variants: &mut Vec<ContactStateVariant>, variant: ContactStateVariant) {
+    if !variants.contains(&variant) {
+        variants.push(variant);
+    }
+}
+
+fn combined_contact_state_variants(
+    variants: &[ContactStateVariant],
+    combination_size: usize,
+) -> Vec<ContactStateVariant> {
+    let atoms = variants
+        .iter()
+        .filter(|variant| !matches!(variant, ContactStateVariant::Default))
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut combinations = Vec::new();
+    collect_contact_state_combinations(
+        &atoms,
+        combination_size,
+        usize::MIN,
+        &mut Vec::new(),
+        &mut combinations,
+    );
+    combinations
+}
+
+fn collect_contact_state_combinations(
+    atoms: &[ContactStateVariant],
+    remaining: usize,
+    first_index: usize,
+    selected: &mut Vec<ContactStateVariant>,
+    combinations: &mut Vec<ContactStateVariant>,
+) {
+    if remaining == usize::MIN {
+        combinations.push(ContactStateVariant::Combined(selected.clone()));
+        return;
+    }
+    for index in first_index..atoms.len() {
+        if selected
+            .iter()
+            .any(|existing| contact_state_variants_conflict(existing, &atoms[index]))
+        {
+            continue;
+        }
+        selected.push(atoms[index].clone());
+        collect_contact_state_combinations(atoms, remaining - 1, index + 1, selected, combinations);
+        selected.pop();
+    }
+}
+
+fn contact_state_variants_conflict(
+    left: &ContactStateVariant,
+    right: &ContactStateVariant,
+) -> bool {
+    match (left, right) {
+        (
+            ContactStateVariant::SharedWord { target: left, .. }
+            | ContactStateVariant::RecordValue { target: left, .. },
+            ContactStateVariant::SharedWord { target: right, .. }
+            | ContactStateVariant::RecordValue { target: right, .. },
+        ) => left == right,
+        (
+            ContactStateVariant::SharedByte { target: left, .. },
+            ContactStateVariant::SharedByte { target: right, .. },
+        ) => left == right,
+        (
+            ContactStateVariant::RecordPair { target: left, .. },
+            ContactStateVariant::RecordPair { target: right, .. },
+        ) => left == right,
+        (
+            ContactStateVariant::Timer { slot: left, .. },
+            ContactStateVariant::Timer { slot: right, .. },
+        ) => left == right,
+        (ContactStateVariant::Random(_), ContactStateVariant::Random(_)) => true,
+        (
+            ContactStateVariant::WaitForTimer { slot: left },
+            ContactStateVariant::WaitForTimer { slot: right },
+        ) => left == right,
+        (
+            ContactStateVariant::WaitForTimer { slot: left },
+            ContactStateVariant::Timer { slot: right, .. },
+        )
+        | (
+            ContactStateVariant::Timer { slot: left, .. },
+            ContactStateVariant::WaitForTimer { slot: right },
+        ) => left == right,
+        _ => false,
+    }
+}
+
+fn apply_contact_state_variant(
+    runtime: &mut OriginalGameRuntime,
+    scripts: &mut RuntimeScriptSystem,
+    variant: &ContactStateVariant,
+) {
+    match variant {
+        ContactStateVariant::Default => {}
+        ContactStateVariant::SharedWord { target, value } => {
+            let profile = runtime.current_profile_mut().unwrap();
+            let mut state = profile.synchronized_state().unwrap();
+            assert!(state.set_word(*target, *value));
+            profile.replace_state(state).unwrap();
+            assert_eq!(profile.state().word(*target), Some(*value));
+        }
+        ContactStateVariant::SharedByte { target, value } => {
+            let profile = runtime.current_profile_mut().unwrap();
+            let mut state = profile.synchronized_state().unwrap();
+            assert!(state.set_byte(*target, *value));
+            profile.replace_state(state).unwrap();
+            assert_eq!(profile.state().byte(*target), Some(*value));
+        }
+        ContactStateVariant::RecordValue { target, value } => {
+            let profile = runtime.current_profile_mut().unwrap();
+            profile
+                .execution_parts()
+                .record_state
+                .record_fields
+                .set_value(*target, *value);
+            let state = profile.synchronized_state().unwrap();
+            profile.replace_state(state).unwrap();
+            assert_eq!(
+                profile.record_state().record_fields.value(*target),
+                Some(*value)
+            );
+        }
+        ContactStateVariant::RecordPair { target, value } => {
+            let profile = runtime.current_profile_mut().unwrap();
+            let mut state = profile.synchronized_state().unwrap();
+            assert!(state.set_word_pair(*target, *value));
+            profile.replace_state(state).unwrap();
+            assert_eq!(profile.state().word_pair(*target), Some(*value));
+        }
+        ContactStateVariant::Timer { slot, value } => {
+            runtime
+                .current_profile_mut()
+                .unwrap()
+                .runtime_mut()
+                .assign_timer(*slot, *value);
+            assert_eq!(
+                runtime.current_profile().unwrap().runtime().timer(*slot),
+                *value
+            );
+        }
+        ContactStateVariant::Random(random) => scripts.import_random_state(*random),
+        ContactStateVariant::WaitForTimer { .. } => {}
+        ContactStateVariant::Combined(variants) => {
+            for variant in variants {
+                apply_contact_state_variant(runtime, scripts, variant);
+            }
+        }
+    }
+}
+
+fn contact_variant_wait_timer(variant: &ContactStateVariant) -> Option<ScriptTimerSlot> {
+    match variant {
+        ContactStateVariant::WaitForTimer { slot } => Some(*slot),
+        ContactStateVariant::Combined(variants) => {
+            variants.iter().find_map(contact_variant_wait_timer)
+        }
+        _ => None,
+    }
+}
+
+fn run_contact_path(
+    manifest: &ContactManifest,
+    scenario: &ContactScenario,
+    paths: &OriginalGameDataPaths,
+    selected_choice: Option<(usize, usize)>,
+    state_variant: &ContactStateVariant,
+) -> (Vec<usize>, bool) {
+    let data =
+        OriginalGameData::load_with_writable_root(paths.clone(), std::env::temp_dir()).unwrap();
+    let mut scripts = RuntimeScriptSystem::new(&data, ORACLE_CLOCK);
+    let mut runtime = OriginalGameRuntime::new(data);
+    let mut timer = GameTimerState::default();
+    timer.start();
+    scripts
+        .load_profile(&mut runtime, profile_id(&scenario.script))
+        .unwrap();
+    scripts.execute_frame(&mut runtime, true).unwrap();
+    let selected_procedure = configure_contact_entry(manifest, scenario, &mut runtime);
+    configure_script_context(&mut scripts, &runtime, scenario);
+    runtime
+        .current_profile_mut()
+        .unwrap()
+        .procedures_mut()
+        .set_enabled(selected_procedure, false)
+        .unwrap();
+    scripts.execute_frame(&mut runtime, true).unwrap();
+    runtime
+        .current_profile_mut()
+        .unwrap()
+        .procedures_mut()
+        .set_enabled(selected_procedure, true)
+        .unwrap();
+    apply_contact_state_variant(&mut runtime, &mut scripts, state_variant);
+
+    let mut observed_indices: Vec<usize> = Vec::new();
+    let mut observed_bas_offsets = Vec::new();
+    let mut selected_topics: Vec<String> = Vec::new();
+    let mut bas_count_at_topic_selection = None;
+    let mut selected_choice_observed = selected_choice.is_none();
+    let wait_timer_slot = contact_variant_wait_timer(state_variant);
+    let mut waiting_choice_index = None;
+    let mut completed = false;
+    for _ in usize::MIN..MAXIMUM_CONTACT_COMPLETION_FRAMES {
+        let mut presentation_completed_this_frame = false;
+        let mut word_choice_completed_this_frame = false;
+        let outcome = scripts
+            .execute_frame(&mut runtime, true)
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{}:{} failed while completing contact: {error:?}",
+                    scenario.script, scenario.procedure
+                )
+            });
+        advance_one_script_countdown(&mut timer, &mut runtime);
+        let snapshot = contact_snapshot(&scripts, &runtime);
+        let selector_topics = runtime
+            .current_profile()
+            .unwrap()
+            .selector_state()
+            .pending_presentation_words()
+            .to_vec();
+        let published_topics = presentation_dictionary_words(&scripts);
+        if let Some(slot) = wait_timer_slot.filter(|_slot| {
+            snapshot.selected_line.is_none()
+                && snapshot.subtitle.is_empty()
+                && (!snapshot.word_offsets.is_empty() || !selector_topics.is_empty())
+        }) {
+            advance_script_countdown_to_zero(&mut timer, &mut runtime, slot);
+            continue;
+        }
+        if snapshot.subtitle.is_empty()
+            && !selector_topics.is_empty()
+            && ((published_topics == selector_topics)
+                || (snapshot.word_offsets.is_empty()
+                    && bas_count_at_topic_selection
+                        .is_some_and(|before| observed_bas_offsets.len() > before)))
+        {
+            if let Some(slot) = wait_timer_slot {
+                advance_script_countdown_to_zero(&mut timer, &mut runtime, slot);
+                continue;
+            }
+            if !matches!(state_variant, ContactStateVariant::Default) {
+                assert!(
+                    !observed_indices.is_empty(),
+                    "{}:{} entered BAS selection before its fuzzed COD contact emitted text",
+                    scenario.script,
+                    scenario.procedure
+                );
+                completed = true;
+                break;
+            }
+            let profile = runtime.current_profile().unwrap();
+            let topic_names = selector_topics
+                .iter()
+                .map(|word| profile.dictionary().word(*word).unwrap())
+                .collect::<Vec<_>>();
+            if let Some(previous_bas_count) = bas_count_at_topic_selection {
+                if selected_topics
+                    .last()
+                    .is_some_and(|topic| topic.as_bytes().eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC))
                 {
-                    let repeated_terminal_response = observed_bas_offsets.last()
-                        == Some(&source_offset)
-                        && bas_count_at_topic_selection
-                            .is_some_and(|before| observed_bas_offsets.len() > before);
-                    if repeated_terminal_response {
+                    assert!(
+                        !observed_bas_offsets.is_empty(),
+                        "{}:{} reached the exit topic without first presenting BAS dialogue",
+                        scenario.script,
+                        scenario.procedure
+                    );
+                    if selected_choice.is_none() || selected_choice_observed {
                         completed = true;
                         break;
                     }
-                    if observed_bas_offsets.last() != Some(&source_offset) {
-                        observed_bas_offsets.push(source_offset);
-                    }
-                    if bas_text_arms_selector_resume(
-                        runtime.current_profile().unwrap(),
-                        source_offset,
-                    ) {
-                        let choice_words = contact_choice_words(&scripts, &runtime);
-                        let selected = choice_words[usize::MIN];
-                        selected_topics.push(
-                            String::from_utf8_lossy(
-                                runtime
-                                    .current_profile()
-                                    .unwrap()
-                                    .dictionary()
-                                    .word(selected)
-                                    .unwrap(),
-                            )
+                    continue;
+                }
+                assert!(
+                    observed_bas_offsets.len() > previous_bas_count,
+                    "{}:{} returned to selector {:?} without presenting BAS dialogue after topic {:?}; snapshot {:?}, selector state {:?}, presentation {:?}",
+                    scenario.script,
+                    scenario.procedure,
+                    topic_names
+                        .iter()
+                        .map(|name| String::from_utf8_lossy(name).into_owned())
+                        .collect::<Vec<_>>(),
+                    selected_topics.last(),
+                    snapshot,
+                    profile.selector_state(),
+                    scripts.presentation_scan_state()
+                );
+                if let Some(exit_index) = topic_names
+                    .iter()
+                    .position(|name| name.eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC))
+                {
+                    let selected = selector_topics[exit_index];
+                    selected_topics.push(
+                        String::from_utf8_lossy(profile.dictionary().word(selected).unwrap())
                             .into_owned(),
+                    );
+                    bas_count_at_topic_selection = Some(observed_bas_offsets.len());
+                    scripts
+                        .complete_word_choice(&mut runtime, selected)
+                        .unwrap();
+                    continue;
+                }
+                completed = true;
+                break;
+            }
+            let selected_index = if selected_choice.is_some() {
+                topic_names
+                    .iter()
+                    .position(|name| name.eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC))
+                    .expect("a COD exit choice must be reachable from the BAS selector")
+            } else {
+                topic_names
+                    .iter()
+                    .position(|name| !name.eq_ignore_ascii_case(EXIT_DIALOGUE_TOPIC))
+                    .unwrap_or(usize::MIN)
+            };
+            let selected = selector_topics[selected_index];
+            selected_topics.push(
+                String::from_utf8_lossy(profile.dictionary().word(selected).unwrap()).into_owned(),
+            );
+            bas_count_at_topic_selection = Some(observed_bas_offsets.len());
+            scripts
+                .complete_word_choice(&mut runtime, selected)
+                .unwrap();
+            continue;
+        }
+        let presentation_pending = snapshot.selected_line.is_some()
+            || !snapshot.word_offsets.is_empty()
+            || !snapshot.subtitle.is_empty();
+        if presentation_pending {
+            let consumed_presentation_tail = snapshot.word_offsets.is_empty()
+                && snapshot.subtitle.is_empty()
+                && observed_indices.iter().any(|index| {
+                    snapshot.selected_line == Some(scenario.texts[*index].voice_selector as i8)
+                });
+            if consumed_presentation_tail {
+                complete_contact_text(&mut scripts);
+                continue;
+            }
+            let expected_index = scenario
+                .texts
+                .iter()
+                .enumerate()
+                .filter(|(index, _expected)| !observed_indices.contains(index))
+                .find_map(|(index, expected)| {
+                    contact_text_matches(expected, &snapshot).then_some(index)
+                })
+                .or_else(|| {
+                    waiting_choice_index
+                        .filter(|index| contact_text_matches(&scenario.texts[*index], &snapshot))
+                });
+            if let Some(expected_index) = expected_index {
+                let expected = &scenario.texts[expected_index];
+                if !observed_indices.contains(&expected_index) {
+                    observed_indices.push(expected_index);
+                }
+
+                if !expected.choices.is_empty() {
+                    let profile = runtime.current_profile().unwrap();
+                    let choice_words = if snapshot.word_offsets.contains(&u16::MAX) {
+                        contact_choice_words(&scripts, &runtime)
+                    } else {
+                        selector_topics.clone()
+                    };
+                    let actual_choices = choice_words
+                        .iter()
+                        .map(|word| {
+                            String::from_utf8_lossy(profile.dictionary().word(*word).unwrap())
+                                .into_owned()
+                        })
+                        .collect::<Vec<_>>();
+                    assert_eq!(
+                        actual_choices.len(),
+                        expected.choices.len(),
+                        "{}:{} exposed the wrong choice count at text {}",
+                        scenario.script,
+                        scenario.procedure,
+                        expected_index
+                    );
+                    assert!(
+                        actual_choices
+                            .iter()
+                            .zip(&expected.choices)
+                            .all(|(actual, expected)| actual.eq_ignore_ascii_case(expected)),
+                        "{}:{} exposed choices {:?}, expected {:?}",
+                        scenario.script,
+                        scenario.procedure,
+                        actual_choices,
+                        expected.choices
+                    );
+                    if wait_timer_slot.is_some() {
+                        waiting_choice_index = Some(expected_index);
+                        word_choice_completed_this_frame = true;
+                    } else {
+                        let choice_index = selected_choice
+                            .filter(|(text_index, _choice_index)| *text_index == expected_index)
+                            .map_or(usize::MIN, |(_text_index, choice_index)| choice_index);
+                        assert!(
+                            choice_index < choice_words.len(),
+                            "{}:{} choice {} is outside text {}",
+                            scenario.script,
+                            scenario.procedure,
+                            choice_index,
+                            expected_index
                         );
+                        selected_choice_observed |=
+                            selected_choice == Some((expected_index, choice_index));
                         scripts
-                            .complete_word_choice(&mut runtime, selected)
+                            .complete_word_choice(&mut runtime, choice_words[choice_index])
                             .unwrap();
                         word_choice_completed_this_frame = true;
                     }
                 } else {
-                    let actor = object_at_source_offset(
-                        runtime.current_profile().unwrap(),
-                        scenario.texts[usize::MIN].actor_object_offset,
-                    );
-                    let actor_flags = runtime
-                        .current_profile()
-                        .unwrap()
-                        .state()
-                        .object_word(actor, OBJECT_FLAGS_WORD_INDEX)
-                        .and_then(|field| runtime.current_profile().unwrap().state().word(field));
-                    panic!(
-                        "{}:{} emitted unknown contact text {:?} / {:?} / {:?}; next expected index {}, observed COD {:?}, observed BAS {:?}, actor flags {:?}",
-                        scenario.script,
-                        scenario.procedure,
-                        snapshot.selected_line,
-                        snapshot.word_offsets,
-                        snapshot.subtitle,
-                        next_expected_index,
-                        observed_indices,
-                        observed_bas_offsets,
-                        actor_flags
-                    )
+                    waiting_choice_index = None;
                 }
-                if !word_choice_completed_this_frame {
-                    complete_contact_text(&mut scripts);
-                }
-                presentation_completed_this_frame = true;
-            }
-            let selected_procedure_enabled = runtime
-                .current_profile()
-                .unwrap()
-                .procedures()
-                .is_enabled(selected_procedure)
-                .unwrap();
-            let one_shot_procedure_completed = !selected_procedure_enabled;
-            let persistent_dialogue_completed =
-                !presentation_completed_this_frame && !scripts.presentation_scan_state().active;
-            if !observed_indices.is_empty()
-                && (one_shot_procedure_completed || persistent_dialogue_completed)
+            } else if let Some(source_offset) =
+                matching_bas_text_offset(runtime.current_profile().unwrap(), &snapshot)
             {
-                completed = true;
-                break;
+                let repeated_terminal_response = observed_bas_offsets.last()
+                    == Some(&source_offset)
+                    && bas_count_at_topic_selection
+                        .is_some_and(|before| observed_bas_offsets.len() > before);
+                if repeated_terminal_response {
+                    completed = true;
+                    break;
+                }
+                if observed_bas_offsets.last() != Some(&source_offset) {
+                    observed_bas_offsets.push(source_offset);
+                }
+                if bas_text_arms_selector_resume(runtime.current_profile().unwrap(), source_offset)
+                {
+                    let choice_words = contact_choice_words(&scripts, &runtime);
+                    let selected = choice_words[usize::MIN];
+                    selected_topics.push(
+                        String::from_utf8_lossy(
+                            runtime
+                                .current_profile()
+                                .unwrap()
+                                .dictionary()
+                                .word(selected)
+                                .unwrap(),
+                        )
+                        .into_owned(),
+                    );
+                    scripts
+                        .complete_word_choice(&mut runtime, selected)
+                        .unwrap();
+                    word_choice_completed_this_frame = true;
+                }
+            } else {
+                let actor = object_at_source_offset(
+                    runtime.current_profile().unwrap(),
+                    scenario.texts[usize::MIN].actor_object_offset,
+                );
+                let actor_flags = runtime
+                    .current_profile()
+                    .unwrap()
+                    .state()
+                    .object_word(actor, OBJECT_FLAGS_WORD_INDEX)
+                    .and_then(|field| runtime.current_profile().unwrap().state().word(field));
+                panic!(
+                    "{}:{} emitted unknown contact text {:?} / {:?} / {:?}; observed COD {:?}, observed BAS {:?}, actor flags {:?}, variant {:?}",
+                    scenario.script,
+                    scenario.procedure,
+                    snapshot.selected_line,
+                    snapshot.word_offsets,
+                    snapshot.subtitle,
+                    observed_indices,
+                    observed_bas_offsets,
+                    actor_flags,
+                    state_variant
+                )
             }
-            assert!(
-                outcome.next_instruction.is_some(),
-                "{}:{} terminated before presentation teardown; observed {:?}, selected topics {:?}",
-                scenario.script,
-                scenario.procedure,
-                observed_indices,
-                selected_topics
-            );
+            if !word_choice_completed_this_frame {
+                complete_contact_text(&mut scripts);
+            }
+            presentation_completed_this_frame = true;
         }
-
+        let selected_procedure_enabled = runtime
+            .current_profile()
+            .unwrap()
+            .procedures()
+            .is_enabled(selected_procedure)
+            .unwrap();
+        let one_shot_procedure_completed = !selected_procedure_enabled;
+        let persistent_dialogue_completed =
+            !presentation_completed_this_frame && !scripts.presentation_scan_state().active;
+        if !observed_indices.is_empty()
+            && (one_shot_procedure_completed || persistent_dialogue_completed)
+        {
+            completed = true;
+            break;
+        }
         assert!(
-            completed,
-            "{}:{} did not complete an authored path within {} frames; observed COD {:?}, observed BAS {:?}, selected topics {:?}, BAS count at selection {:?}, contact timer {}, current text {:?}, raw text {:?}, presentation {:?}, scan {:?}, pending selector words {:?}",
+            outcome.next_instruction.is_some(),
+            "{}:{} terminated before presentation teardown; observed {:?}, selected topics {:?}",
             scenario.script,
             scenario.procedure,
-            MAXIMUM_CONTACT_COMPLETION_FRAMES,
             observed_indices,
-            observed_bas_offsets,
-            selected_topics,
-            bas_count_at_topic_selection,
-            runtime
-                .current_profile()
-                .unwrap()
-                .runtime()
-                .timer(ScriptTimerSlot::decode(CONTACT_COUNTDOWN_TIMER_INDEX).unwrap()),
-            contact_snapshot(&scripts, &runtime),
-            scripts.text_presentation(),
-            scripts.presentation_scan_state(),
-            scripts.last_presentation_outcome(),
-            runtime
-                .current_profile()
-                .unwrap()
-                .selector_state()
-                .pending_presentation_words()
-                .iter()
-                .map(|word| String::from_utf8_lossy(
-                    runtime
-                        .current_profile()
-                        .unwrap()
-                        .dictionary()
-                        .word(*word)
-                        .unwrap()
-                )
-                .into_owned())
-                .collect::<Vec<_>>()
+            selected_topics
         );
-        assert_contact_host_handoff(scenario, &observed_indices);
     }
+
+    assert!(
+        completed,
+        "{}:{} did not complete an authored path within {} frames; observed COD {:?}, observed BAS {:?}, selected topics {:?}, BAS count at selection {:?}, contact timer {}, current text {:?}, raw text {:?}, presentation {:?}, scan {:?}, pending selector words {:?}",
+        scenario.script,
+        scenario.procedure,
+        MAXIMUM_CONTACT_COMPLETION_FRAMES,
+        observed_indices,
+        observed_bas_offsets,
+        selected_topics,
+        bas_count_at_topic_selection,
+        runtime
+            .current_profile()
+            .unwrap()
+            .runtime()
+            .timer(ScriptTimerSlot::decode(CONTACT_COUNTDOWN_TIMER_INDEX).unwrap()),
+        contact_snapshot(&scripts, &runtime),
+        scripts.text_presentation(),
+        scripts.presentation_scan_state(),
+        scripts.last_presentation_outcome(),
+        runtime
+            .current_profile()
+            .unwrap()
+            .selector_state()
+            .pending_presentation_words()
+            .iter()
+            .map(|word| String::from_utf8_lossy(
+                runtime
+                    .current_profile()
+                    .unwrap()
+                    .dictionary()
+                    .word(*word)
+                    .unwrap()
+            )
+            .into_owned())
+            .collect::<Vec<_>>()
+    );
+    (observed_indices, selected_choice_observed)
 }
 
 fn assert_contact_host_handoff(scenario: &ContactScenario, observed_indices: &[usize]) {
@@ -1131,10 +2096,14 @@ fn unequal_record_value(
                     .expect("shipped profiles provide a distinct relation object"),
             )
         }
-        ScriptRecordValue::Topic(_) => ScriptRecordValue::NativeWord(u16::MIN),
-        ScriptRecordValue::NativeWord(word) => {
-            ScriptRecordValue::NativeWord(if word == u16::MIN { u16::MAX } else { u16::MIN })
-        }
+        ScriptRecordValue::Topic(word) => ScriptRecordValue::Topic(
+            profile
+                .dictionary()
+                .words()
+                .find_map(|(candidate, _bytes)| (candidate != word).then_some(candidate))
+                .expect("shipped dictionaries contain more than one topic"),
+        ),
+        ScriptRecordValue::NativeWord(_) => ScriptRecordValue::Aboard,
     }
 }
 
@@ -1222,7 +2191,8 @@ fn contact_text_matches(expected: &ContactText, actual: &ContactEntrySnapshot) -
         if normalize_text(expected.subtitle.as_bytes()) != actual.subtitle {
             return false;
         }
-        return actual.word_offsets.is_empty()
+        return expected.choices.is_empty()
+            || actual.word_offsets.is_empty()
             || post_separator_offsets(&expected.word_offsets) == actual.word_offsets;
     }
     expected.word_offsets == actual.word_offsets
@@ -1391,5 +2361,26 @@ fn advance_one_script_countdown(timer: &mut GameTimerState, runtime: &mut Origin
     panic!(
         "native timer cadence did not reach a script countdown within {} ticks",
         MAXIMUM_TIMER_TICKS_PER_SCRIPT_COUNTDOWN
+    );
+}
+
+fn advance_script_countdown_to_zero(
+    timer: &mut GameTimerState,
+    runtime: &mut OriginalGameRuntime,
+    slot: ScriptTimerSlot,
+) {
+    let countdown = runtime.current_profile().unwrap().runtime().timer(slot);
+    assert!(
+        usize::from(countdown) <= MAXIMUM_CONTACT_COMPLETION_FRAMES,
+        "contact timer {} contains non-countdown value {}",
+        slot.index(),
+        countdown
+    );
+    for _ in u16::MIN..countdown {
+        advance_one_script_countdown(timer, runtime);
+    }
+    assert_eq!(
+        runtime.current_profile().unwrap().runtime().timer(slot),
+        u16::MIN
     );
 }

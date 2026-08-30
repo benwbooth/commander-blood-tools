@@ -11,6 +11,7 @@ const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 50;
 const RECOVERED_BLOODPRG_SEMANTIC_ALIAS_COUNT: usize = 71;
 const CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT: usize = 71;
 const RECOVERED_SHARED_UI_WRITER_COUNT: usize = 25;
+const RECOVERED_SHARED_PRNG_CALLER_COUNT: usize = 6;
 
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -240,6 +241,47 @@ fn every_recovered_shared_ui_writer_has_a_verified_runtime_owner() {
             assert!(
                 rust_source.contains(&format!("fn {test_name}")),
                 "UI writer {key:?} cites missing evidence {evidence}"
+            );
+        }
+    }
+
+    assert_eq!(ledger, recovered);
+}
+
+#[test]
+fn every_recovered_prng_caller_uses_the_shared_runtime_owner() {
+    let root = workspace_root();
+    let manifest = tab_separated_rows(&root.join("re/source/bloodprg/candidates/manifest.tsv"));
+    let recovered = manifest
+        .into_iter()
+        .filter_map(|row| {
+            let source = root
+                .join("re/source/bloodprg/candidates")
+                .join(&row["source"]);
+            let body = std::fs::read_to_string(source).unwrap();
+            (row["function"] != "blood_prng_next" && body.contains("blood_prng_next("))
+                .then(|| (row["entry"].clone(), row["source"].clone()))
+        })
+        .collect::<BTreeSet<_>>();
+    assert_eq!(recovered.len(), RECOVERED_SHARED_PRNG_CALLER_COUNT);
+
+    let rust_source = rust_source_corpus(&root.join("crates"));
+    let rows = tab_separated_rows(&root.join("re/rust-port/shared-prng-calls.tsv"));
+    let mut ledger = BTreeSet::new();
+    for row in rows {
+        let key = (row["entry"].clone(), row["source"].clone());
+        assert!(
+            ledger.insert(key.clone()),
+            "duplicate PRNG caller row: {key:?}"
+        );
+        assert!(!row["native_use"].trim().is_empty());
+        assert_eq!(row["canonical_owner"], "ModernGameServices::random");
+        assert!(root.join(&row["rust_path"]).is_file());
+        for evidence in row["evidence"].split(';') {
+            let test_name = evidence.rsplit("::").next().unwrap();
+            assert!(
+                rust_source.contains(&format!("fn {test_name}")),
+                "PRNG caller {key:?} cites missing evidence {evidence}"
             );
         }
     }
