@@ -2351,7 +2351,7 @@ fn advance_one_script_countdown(timer: &mut GameTimerState, runtime: &mut Origin
             profile.runtime_mut(),
             GameTimerContext {
                 paused: false,
-                navigation_link_pending: false,
+                pending_record_link: false,
             },
         );
         if timer.mouse_motion_idle_counter != previous_countdown_count {

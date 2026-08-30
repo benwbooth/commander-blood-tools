@@ -113,8 +113,8 @@ impl RuntimeBridgeConsole {
         }
 
         let console_owned_modal_ui_before_update = self.console.selected.is_some();
-        if self.console.selected.is_some() && self.console.interface_busy {
-            self.console.interface_busy = services.bridge_seek_requested()?;
+        if self.console.interface_busy {
+            synchronize_console_seek(&mut self.console, services.bridge_seek_requested()?);
         }
         let pointer = services.input().pointer_sample();
         let outcome = update_bridge_console_dispatch(
@@ -545,6 +545,12 @@ impl RuntimeBridgeConsole {
         let active = self.console.selected.is_some() || self.options.text_options_active;
         lifecycle.profile_change_blockers.navigation_choice_active = active;
         lifecycle.set_navigation_ui_busy(self.console.interface_busy);
+    }
+}
+
+fn synchronize_console_seek(state: &mut BridgeConsoleState, seek_requested: bool) {
+    if state.interface_busy {
+        state.interface_busy = seek_requested;
     }
 }
 
@@ -1002,6 +1008,19 @@ mod tests {
         console.console.interface_busy = true;
         console.publish_interface_ownership(&mut lifecycle);
         assert!(lifecycle.navigation_ui_busy());
+    }
+
+    #[test]
+    fn cleared_selection_alias_does_not_retain_a_completed_seek() {
+        let mut console = BridgeConsoleState {
+            selected: None,
+            interface_busy: true,
+            ..BridgeConsoleState::default()
+        };
+
+        synchronize_console_seek(&mut console, false);
+
+        assert!(!console.interface_busy);
     }
 
     #[test]

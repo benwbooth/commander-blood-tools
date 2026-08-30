@@ -142,8 +142,8 @@ impl GameTimerState {
 pub struct GameTimerContext {
     /// Whether gameplay timer updates are paused.
     pub paused: bool,
-    /// Whether a pending navigation link blocks script countdowns.
-    pub navigation_link_pending: bool,
+    /// Whether the native pending-record link blocks script countdowns.
+    pub pending_record_link: bool,
 }
 
 /// Reason one host timer delivery returned and its optional audio action.
@@ -208,7 +208,7 @@ pub fn advance_game_timer_tick(
                 if state.subtick_countdown == u16::MIN {
                     state.mouse_motion_idle_counter =
                         state.mouse_motion_idle_counter.wrapping_add(1);
-                    if !context.navigation_link_pending {
+                    if !context.pending_record_link {
                         decrement_positive_script_countdowns(script);
                     }
                     state.subtick_countdown = GAME_SUBTICK_RELOAD;
@@ -409,6 +409,40 @@ mod tests {
         }
     }
 
+    #[test]
+    fn pending_phone_record_freezes_only_script_countdowns() {
+        const TIMER_VALUE: u16 = 2;
+        const CLIP_COUNTDOWN: u16 = 2;
+        let timer_slot = ScriptTimerSlot::decode(u8::MIN).unwrap();
+        let mut script = ScriptRuntime::default();
+        script.assign_timer(timer_slot, TIMER_VALUE);
+        let mut state = GameTimerState {
+            running: true,
+            tick: DIALOGUE_TICK_MASK,
+            subtick_countdown: 1,
+            clip_playback_state: CLIP_COUNTDOWN,
+            ..GameTimerState::default()
+        };
+
+        advance_game_timer_tick(
+            &mut state,
+            &mut script,
+            GameTimerContext {
+                pending_record_link: true,
+                ..GameTimerContext::default()
+            },
+        );
+
+        assert_eq!(script.timer(timer_slot), TIMER_VALUE);
+        assert_eq!(state.clip_playback_state, CLIP_COUNTDOWN - 1);
+        assert_eq!(state.subtick_countdown, GAME_SUBTICK_RELOAD);
+
+        state.tick = DIALOGUE_TICK_MASK;
+        state.subtick_countdown = 1;
+        advance_game_timer_tick(&mut state, &mut script, GameTimerContext::default());
+        assert_eq!(script.timer(timer_slot), TIMER_VALUE - 1);
+    }
+
     fn native_initial_state(vector: &TimerOracle) -> GameTimerState {
         let speaker_request = match vector.name.as_str() {
             "speaker_enable_request" => NATIVE_SPEAKER_ACTIVE_BIT,
@@ -442,7 +476,7 @@ mod tests {
     fn native_context(name: &str) -> GameTimerContext {
         GameTimerContext {
             paused: matches!(name, "paused_interrupt_acknowledged" | "paused_bios_chain"),
-            navigation_link_pending: name == "subtick_scan_blocked_by_navigation_link",
+            pending_record_link: name == "subtick_scan_blocked_by_navigation_link",
         }
     }
 

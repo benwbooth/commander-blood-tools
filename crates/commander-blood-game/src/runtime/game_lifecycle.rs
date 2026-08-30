@@ -118,10 +118,10 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         self.timer.dialogue_hold_countdown = state.presentation.dialogue_hold_countdown;
         self.timer.clip_playback_state = state.clip_playback_state;
         self.services.export_game_timer_state(&mut self.timer)?;
-        let context = GameTimerContext {
-            paused: state.pause_hud_active,
-            navigation_link_pending: state.navigation_transition_pending,
-        };
+        let context = game_timer_context(
+            state,
+            self.services.pending_ship_presentation_owner().is_some(),
+        );
         let mut speaker_gate = None;
         if let Some(profile) = self.services.runtime_mut().current_profile_mut() {
             for _ in u64::MIN..elapsed_ticks {
@@ -582,6 +582,16 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 }
 
+const fn game_timer_context(
+    state: &GameLifecycleState,
+    pending_record_link: bool,
+) -> GameTimerContext {
+    GameTimerContext {
+        paused: state.pause_hud_active,
+        pending_record_link,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -631,6 +641,16 @@ mod tests {
     fn idle_bridge_does_not_claim_an_indexed_overlay() {
         let state = GameLifecycleState::default();
         assert!(!RuntimeGameLifecycleHost::indexed_bridge_ui_active(&state));
+    }
+
+    #[test]
+    fn timer_context_uses_pending_record_owner_not_navigation_transition() {
+        let mut state = GameLifecycleState::default();
+        state.navigation_transition_pending = true;
+        assert!(!game_timer_context(&state, false).pending_record_link);
+
+        state.navigation_transition_pending = false;
+        assert!(game_timer_context(&state, true).pending_record_link);
     }
 
     #[test]
