@@ -2,6 +2,11 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use commander_blood_formats::archive::BloodResourceName;
+use commander_blood_game::native::bloodprg::{
+    OriginalSaveGame, OriginalSaveSlotDirectory, ScriptProfileId,
+};
+use commander_blood_game::runtime::{OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime};
 use serde_json::Value;
 
 const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
@@ -25,6 +30,8 @@ const HONK_CLICK: &str = "click 230 88";
 const SAVE_OPTION_CLICK: &str = "sclick 100 95";
 const LOAD_OPTION_CLICK: &str = "sclick 100 106";
 const SAVE_CANCEL_CLICK: &str = "sclick 100 151";
+const LOAD_FIRST_SLOT_CLICK: &str = "sclick 100 40";
+const SEEDED_LOAD_PROFILE: u8 = 2;
 const HONK_WORD_CHOICES: [&str; 9] = [
     "bye_bye",
     "optimization",
@@ -395,7 +402,57 @@ fn production_runtime_opens_and_closes_the_authored_save_and_load_menus() {
     );
 }
 
+#[test]
+fn production_runtime_restores_an_exact_seeded_save_through_the_authored_load_path() {
+    let Some(records) = run_production_scenario_with_setup(
+        "accuracy/scenarios/production_load_seeded_profile.tsv",
+        "production-load-seeded-profile.jsonl",
+        |asset_cache, writable_path| {
+            seed_original_save(asset_cache, writable_path, SEEDED_LOAD_PROFILE)
+        },
+    ) else {
+        return;
+    };
+
+    let load_index = records
+        .iter()
+        .position(|record| record["action"] == LOAD_OPTION_CLICK)
+        .expect("runtime trace omitted the authored LOAD option click");
+    let interactive = records[load_index..]
+        .iter()
+        .find(|record| {
+            save_load(record)["load_requested"] == true && save_load(record)["phase"] == "ready"
+        })
+        .expect("seeded load menu never completed its opening transition");
+    assert_eq!(save_load(interactive)["selected_slot"], 0);
+
+    let slot_index = records
+        .iter()
+        .position(|record| record["action"] == LOAD_FIRST_SLOT_CLICK)
+        .expect("runtime trace omitted the authored first save-slot click");
+    let restored = records[slot_index..]
+        .iter()
+        .find(|record| profile(record) == Some(u64::from(SEEDED_LOAD_PROFILE)))
+        .expect("seeded save never selected its encoded BloodScript profile");
+    assert_eq!(save_load(restored)["active"], false);
+    assert_eq!(save_load(restored)["save_requested"], false);
+    assert_eq!(save_load(restored)["load_requested"], false);
+    assert_eq!(
+        presentation_u64(restored, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "successful load left the shared modal UI bit latched"
+    );
+}
+
 fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value>> {
+    run_production_scenario_with_setup(scenario, trace_name, |_, _| Ok(()))
+}
+
+fn run_production_scenario_with_setup(
+    scenario: &str,
+    trace_name: &str,
+    setup: impl FnOnce(&Path, &Path) -> anyhow::Result<()>,
+) -> Option<Vec<Value>> {
     let asset_cache = configured_runtime_asset_cache()?;
     if !DISPLAY_ENVIRONMENT_VARIABLES
         .iter()
@@ -408,6 +465,7 @@ fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value
     let temporary = TemporaryRoot::create();
     let trace_path = temporary.0.join(trace_name);
     let writable_path = temporary.0.join("writable");
+    setup(&asset_cache, &writable_path).unwrap();
     let scenario_path = root.join(scenario);
     let output = Command::new(env!("CARGO_BIN_EXE_commander-blood"))
         .arg("--write-data")
@@ -430,6 +488,28 @@ fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value
         String::from_utf8_lossy(&output.stderr)
     );
     Some(load_trace(&trace_path))
+}
+
+fn seed_original_save(asset_cache: &Path, writable_path: &Path, profile: u8) -> anyhow::Result<()> {
+    std::fs::create_dir_all(writable_path)?;
+    let paths = OriginalGameDataPaths::from_root(asset_cache)?;
+    let data = OriginalGameData::load_with_writable_root(paths, writable_path)?;
+    let directory_name = BloodResourceName::new(b"BLOOD.SAV")?;
+    let directory =
+        OriginalSaveSlotDirectory::decode(&data.resource_store().load(&directory_name)?)?;
+    std::fs::write(writable_path.join("BLOOD.SAV"), directory.encode())?;
+
+    let mut runtime = OriginalGameRuntime::new(data);
+    let profile = ScriptProfileId::new(profile)
+        .ok_or_else(|| anyhow::anyhow!("invalid seeded BloodScript profile {profile}"))?;
+    runtime.load_profile(profile)?;
+    let save = OriginalSaveGame::capture(
+        runtime
+            .current_profile()
+            .expect("seeded profile load retained no profile"),
+    )?;
+    std::fs::write(writable_path.join("GAME1.SAV"), save.encode())?;
+    Ok(())
 }
 
 fn configured_runtime_asset_cache() -> Option<PathBuf> {
