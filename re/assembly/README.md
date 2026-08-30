@@ -25,10 +25,10 @@ range.
 
 Routine counts:
 
-- `bloodprg`: 321
-- `xdb_amer`: 27
-- `xdb_croolis`: 25
+- `bloodprg`: 338
+- `xdb_amer`: 55
+- `xdb_croolis`: 54
 - `xdb_manu3`: 12
-- `xdb_scrut`: 25
+- `xdb_scrut`: 62
 
 The pending data-referenced ledger is not included in these counts.

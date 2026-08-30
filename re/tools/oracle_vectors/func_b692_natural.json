@@ -1,0 +1,104 @@
+[
+  {
+    "name": "idle_at_threshold",
+    "armed_before": 0,
+    "mouse_idle_frames": 120,
+    "opening_before": 82,
+    "closing_before": 99,
+    "step_before": 116,
+    "random_results": [],
+    "armed_after": 0,
+    "opening_after": 82,
+    "closing_after": 99,
+    "step_after": 116,
+    "path": "idle"
+  },
+  {
+    "name": "idle_above_threshold",
+    "armed_before": 0,
+    "mouse_idle_frames": 121,
+    "opening_before": 82,
+    "closing_before": 99,
+    "step_before": 116,
+    "random_results": [],
+    "armed_after": 1,
+    "opening_after": 1,
+    "closing_after": 99,
+    "step_after": 4,
+    "path": "opening_started"
+  },
+  {
+    "name": "armed_high_bits_only",
+    "armed_before": 254,
+    "mouse_idle_frames": 65535,
+    "opening_before": 162,
+    "closing_before": 179,
+    "step_before": 196,
+    "random_results": [],
+    "armed_after": 1,
+    "opening_after": 1,
+    "closing_after": 179,
+    "step_after": 4,
+    "path": "opening_started"
+  },
+  {
+    "name": "zero_idle_closes",
+    "armed_before": 1,
+    "mouse_idle_frames": 0,
+    "opening_before": 129,
+    "closing_before": 68,
+    "step_before": 85,
+    "random_results": [],
+    "armed_after": 0,
+    "opening_after": 129,
+    "closing_after": 1,
+    "step_after": 8,
+    "path": "closing_started"
+  },
+  {
+    "name": "opening_waits",
+    "armed_before": 253,
+    "mouse_idle_frames": 1,
+    "opening_before": 1,
+    "closing_before": 102,
+    "step_before": 119,
+    "random_results": [],
+    "armed_after": 253,
+    "opening_after": 1,
+    "closing_after": 102,
+    "step_after": 119,
+    "path": "opening_active"
+  },
+  {
+    "name": "nonzero_random_waits",
+    "armed_before": 1,
+    "mouse_idle_frames": 5,
+    "opening_before": 2,
+    "closing_before": 136,
+    "step_before": 153,
+    "random_results": [
+      7
+    ],
+    "armed_after": 1,
+    "opening_after": 2,
+    "closing_after": 136,
+    "step_after": 153,
+    "path": "random_wait"
+  },
+  {
+    "name": "zero_random_closes",
+    "armed_before": 129,
+    "mouse_idle_frames": 65535,
+    "opening_before": 0,
+    "closing_before": 170,
+    "step_before": 187,
+    "random_results": [
+      0
+    ],
+    "armed_after": 0,
+    "opening_after": 0,
+    "closing_after": 1,
+    "step_after": 8,
+    "path": "closing_started"
+  }
+]

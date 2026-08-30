@@ -132,6 +132,7 @@ extern volatile cb_u8
 extern volatile cb_u8 ship_3d_depth_opening; /* DS:0x252F */
 extern volatile cb_u8 ship_3d_depth_closing; /* DS:0x2530 */
 extern volatile cb_u8 ship_3d_depth_step;    /* DS:0x2531 */
+extern volatile cb_u8 ship_3d_transition_armed; /* DS:0x2533 */
 extern volatile cb_u8 ship_3d_scene_dispatch_blocked; /* DS:0x252D */
 extern volatile cb_u8 ship_3d_hud_initialized; /* DS:0x2529 */
 extern volatile cb_u16 CB_GAME_DATA
@@ -225,6 +226,7 @@ extern volatile ship_3d_hud_layout_entry CB_GAME_DATA ship_3d_hud_layout[];
 #pragma aux matrix_table_clear_2a1b modify exact []
 #pragma aux ship_3d_projection_matrix_build modify exact [ax es]
 #pragma aux ship_3d_point_cloud_randomize modify exact [ax es]
+#pragma aux ship_3d_transition_state_update modify exact [ax]
 #pragma aux ship_3d_depth_scroll_step modify exact [ax]
 #pragma aux ship_3d_point_cloud_project modify exact [ax es]
 #pragma aux ship_3d_object_sprite_project modify exact [ax es]
@@ -265,6 +267,7 @@ void CB_FAR ship_3d_object_sprite_project(void); /* 0x009B98 */
 void CB_FAR ship_3d_point_cloud_randomize(void); /* 0x009B67 */
 void CB_NEAR bridge_panorama_frame_load(cb_u16 frame); /* 0x00981B */
 cb_u16 CB_FAR page_flip(void); /* 0x00954A */
+void CB_NEAR ship_3d_transition_state_update(void); /* 0x00B692 */
 void CB_NEAR ship_3d_depth_scroll_step(void); /* 0x00B75C */
 cb_u16 CB_NEAR ship_3d_target_record_select(void); /* 0x00B2BB */
 void CB_FAR draw_hud_element_2bc7(void); /* 0x006FF3 */

@@ -1,17 +1,17 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
-const RECOVERED_BLOODPRG_ROUTINE_COUNT: usize = 337;
+const RECOVERED_BLOODPRG_ROUTINE_COUNT: usize = 338;
 const RECOVERED_XDB_ROUTINE_COUNT: usize = 183;
 const RECOVERED_MANU3_ROUTINE_COUNT: usize = 12;
 const RECOVERED_NATIVE_ROUTINE_COUNT: usize =
     RECOVERED_BLOODPRG_ROUTINE_COUNT + RECOVERED_XDB_ROUTINE_COUNT;
-const CURRENT_PORTED_ROUTINE_COUNT: usize = 470;
+const CURRENT_PORTED_ROUTINE_COUNT: usize = 471;
 const CURRENT_ELIMINATED_ROUTINE_COUNT: usize = 50;
 const RECOVERED_BLOODPRG_SEMANTIC_ALIAS_COUNT: usize = 71;
 const CURRENT_VERIFIED_BLOODPRG_ALIAS_COUNT: usize = 71;
 const RECOVERED_SHARED_UI_WRITER_COUNT: usize = 25;
-const RECOVERED_SHARED_PRNG_CALLER_COUNT: usize = 6;
+const RECOVERED_SHARED_PRNG_CALLER_COUNT: usize = 7;
 
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -249,7 +249,7 @@ fn every_recovered_shared_ui_writer_has_a_verified_runtime_owner() {
 }
 
 #[test]
-fn every_recovered_prng_caller_uses_the_shared_runtime_owner() {
+fn every_recovered_prng_caller_is_shared_or_proven_unreachable() {
     let root = workspace_root();
     let manifest = tab_separated_rows(&root.join("re/source/bloodprg/candidates/manifest.tsv"));
     let recovered = manifest
@@ -265,6 +265,13 @@ fn every_recovered_prng_caller_uses_the_shared_runtime_owner() {
         .collect::<BTreeSet<_>>();
     assert_eq!(recovered.len(), RECOVERED_SHARED_PRNG_CALLER_COUNT);
 
+    let unreachable =
+        tab_separated_rows(&root.join("re/rust-port/production-routing-dispositions.tsv"))
+            .into_iter()
+            .filter(|row| row["disposition"] == "native_unreachable")
+            .map(|row| row["entry"].clone())
+            .collect::<BTreeSet<_>>();
+
     let rust_source = rust_source_corpus(&root.join("crates"));
     let rows = tab_separated_rows(&root.join("re/rust-port/shared-prng-calls.tsv"));
     let mut ledger = BTreeSet::new();
@@ -275,7 +282,11 @@ fn every_recovered_prng_caller_uses_the_shared_runtime_owner() {
             "duplicate PRNG caller row: {key:?}"
         );
         assert!(!row["native_use"].trim().is_empty());
-        assert_eq!(row["canonical_owner"], "ModernGameServices::random");
+        if unreachable.contains(&row["entry"]) {
+            assert_eq!(row["canonical_owner"], "native_unreachable");
+        } else {
+            assert_eq!(row["canonical_owner"], "ModernGameServices::random");
+        }
         assert!(root.join(&row["rust_path"]).is_file());
         for evidence in row["evidence"].split(';') {
             let test_name = evidence.rsplit("::").next().unwrap();

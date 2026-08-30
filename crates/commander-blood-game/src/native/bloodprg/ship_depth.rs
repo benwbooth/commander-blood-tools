@@ -2,6 +2,10 @@
 
 const ACTIVE_FLAG: u16 = 1;
 const FULLY_OPEN_DEPTH: u16 = 65;
+const AUTOMATIC_OPEN_IDLE_THRESHOLD: u16 = 120;
+const AUTOMATIC_OPEN_STEP: u8 = 4;
+const AUTOMATIC_CLOSE_STEP: u8 = 8;
+const AUTOMATIC_CLOSE_RANDOM_MODULUS: u16 = 20;
 const TRANSITION_INCREMENT_HOLD: u16 = 10;
 const MAXIMUM_TRANSITION_PERCENT: u16 = 100;
 const BAND_DEPTH_BIAS: u16 = 35;
@@ -37,6 +41,69 @@ pub enum ShipDepthTransitionOutcome {
     ClosingCompleted,
     /// The closing low byte retreated and the result was stored or clamped.
     ClosingAdvanced,
+}
+
+/// State touched by the compiled but natively unreachable depth-control routine.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ShipDepthAutomaticControl {
+    /// Native armed flags; only bit zero is tested.
+    pub armed_flags: u16,
+    /// Native opening flags; only bit zero is tested.
+    pub opening_flags: u16,
+    /// Closing flags overwritten when automatic closing starts.
+    pub closing_flags: u16,
+    /// Depth movement overwritten when opening or closing starts.
+    pub step: u8,
+}
+
+/// Observable path selected by dead native routine `0x00B692`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShipDepthAutomaticControlOutcome {
+    /// The unarmed idle threshold has not elapsed.
+    Idle,
+    /// Mouse inactivity armed an opening transition.
+    OpeningStarted,
+    /// The opening transition remains active.
+    OpeningActive,
+    /// The one-in-twenty random close gate did not fire.
+    RandomDelay,
+    /// A zero idle counter or zero random draw started closing.
+    ClosingStarted,
+}
+
+/// Translate native routine `0x00B692` without inserting it into live behavior.
+///
+/// Static call, branch, pointer, dispatch-table, and indirect-call recovery prove
+/// that the shipped executable cannot reach this routine. It remains modeled so
+/// the complete compiled body is not omitted from the C-to-Rust correspondence.
+pub fn update_ship_depth_automatic_control(
+    state: &mut ShipDepthAutomaticControl,
+    mouse_idle_frames: u16,
+    mut random: impl FnMut(u16) -> u16,
+) -> ShipDepthAutomaticControlOutcome {
+    if state.armed_flags & ACTIVE_FLAG == u16::MIN {
+        if mouse_idle_frames <= AUTOMATIC_OPEN_IDLE_THRESHOLD {
+            return ShipDepthAutomaticControlOutcome::Idle;
+        }
+        state.step = AUTOMATIC_OPEN_STEP;
+        state.opening_flags = ACTIVE_FLAG;
+        state.armed_flags = ACTIVE_FLAG;
+        return ShipDepthAutomaticControlOutcome::OpeningStarted;
+    }
+
+    if mouse_idle_frames != u16::MIN {
+        if state.opening_flags & ACTIVE_FLAG != u16::MIN {
+            return ShipDepthAutomaticControlOutcome::OpeningActive;
+        }
+        if random(AUTOMATIC_CLOSE_RANDOM_MODULUS) != u16::MIN {
+            return ShipDepthAutomaticControlOutcome::RandomDelay;
+        }
+    }
+
+    state.step = AUTOMATIC_CLOSE_STEP;
+    state.closing_flags = ACTIVE_FLAG;
+    state.armed_flags = u16::MIN;
+    ShipDepthAutomaticControlOutcome::ClosingStarted
 }
 
 /// Advance the ship-view depth door exactly as native routine `0x00B75C`.
@@ -211,6 +278,61 @@ mod tests {
         second_destination_offset: Option<u16>,
     }
 
+    #[derive(Deserialize)]
+    struct AutomaticControlVector {
+        name: String,
+        armed_before: u16,
+        mouse_idle_frames: u16,
+        opening_before: u16,
+        closing_before: u16,
+        step_before: u8,
+        random_results: Vec<u16>,
+        armed_after: u16,
+        opening_after: u16,
+        closing_after: u16,
+        step_after: u8,
+        path: String,
+    }
+
+    #[test]
+    fn unreachable_automatic_control_matches_every_original_vector() {
+        let vectors: Vec<AutomaticControlVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_b692_natural.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), 7);
+        for vector in vectors {
+            let mut state = ShipDepthAutomaticControl {
+                armed_flags: vector.armed_before,
+                opening_flags: vector.opening_before,
+                closing_flags: vector.closing_before,
+                step: vector.step_before,
+            };
+            let mut draw_index = usize::MIN;
+            let outcome = update_ship_depth_automatic_control(
+                &mut state,
+                vector.mouse_idle_frames,
+                |modulus| {
+                    assert_eq!(modulus, AUTOMATIC_CLOSE_RANDOM_MODULUS, "{}", vector.name);
+                    let result = vector.random_results[draw_index];
+                    draw_index += 1;
+                    result
+                },
+            );
+            assert_eq!(draw_index, vector.random_results.len(), "{}", vector.name);
+            assert_eq!(state.armed_flags, vector.armed_after, "{}", vector.name);
+            assert_eq!(state.opening_flags, vector.opening_after, "{}", vector.name);
+            assert_eq!(state.closing_flags, vector.closing_after, "{}", vector.name);
+            assert_eq!(state.step, vector.step_after, "{}", vector.name);
+            assert_eq!(
+                outcome,
+                automatic_outcome_for_path(&vector.path),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
     #[test]
     fn depth_transition_matches_every_original_vector() {
         let vectors: Vec<DepthVector> = serde_json::from_str(include_str!(
@@ -342,6 +464,17 @@ mod tests {
             "close_clear" => ShipDepthTransitionOutcome::ClosingCompleted,
             "close_store" | "close_store_zero" => ShipDepthTransitionOutcome::ClosingAdvanced,
             _ => panic!("unknown oracle path {path}"),
+        }
+    }
+
+    fn automatic_outcome_for_path(path: &str) -> ShipDepthAutomaticControlOutcome {
+        match path {
+            "idle" => ShipDepthAutomaticControlOutcome::Idle,
+            "opening_started" => ShipDepthAutomaticControlOutcome::OpeningStarted,
+            "opening_active" => ShipDepthAutomaticControlOutcome::OpeningActive,
+            "random_wait" => ShipDepthAutomaticControlOutcome::RandomDelay,
+            "closing_started" => ShipDepthAutomaticControlOutcome::ClosingStarted,
+            _ => panic!("unknown automatic-control oracle path {path}"),
         }
     }
 }

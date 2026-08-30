@@ -322,6 +322,7 @@ name_area_palette_effect_update	closed_world_exact	direct_rebuilt_calls	none	nea
 location_info_panel_dispatch	closed_world_exact	direct_rebuilt_calls	none	near:0	near:0	void	void	direct callers	direct callers	none
 nav_camera_state_check	closed_world_exact	direct_rebuilt_calls	none	near:0	near:0	void	void	direct callers	direct callers	none
 alien_overlay_cycle	closed_world_difference	direct_rebuilt_calls	none	far:0	far:0	void	ax:16	direct callers	direct callers	none
+ship_3d_transition_state_update	closed_world_exact	direct_rebuilt_calls	none	near:0	near:0	ax:16	ax:16	callee exits	callee exits	none
 ship_3d_plane_band_copy	closed_world_exact	direct_rebuilt_calls	none	far:0	far:0	void	void	direct callers	direct callers	none
 ship_3d_depth_scroll_step	closed_world_exact	direct_rebuilt_calls	none	near:0	near:0	void	void	direct callers	direct callers	none
 audio_param_init_cd5	closed_world_exact	direct_rebuilt_calls	none	far:0	far:0	void	void	direct callers	direct callers	none

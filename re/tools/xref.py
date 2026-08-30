@@ -11,6 +11,8 @@ Usage:
     python3 re/tools/xref.py --seg 0x1234       # relocations that load this segment
     python3 re/tools/xref.py --imm16 0x0a6      # raw LE16 immediate occurrences
     python3 re/tools/xref.py --callers SEG:OFF  # near (E8) callers within seg range
+    python3 re/tools/xref.py --branches SEG:OFF [END_FILE]
+                                                # every encoded relative branch
 
 Far targets are matched against the *relative* segment (relocation pre-add
 value), so SEG is the base-0 relative segment used by the other tools.
@@ -92,6 +94,50 @@ def near_callers(mz, seg, off, span=0x10000):
     return hits
 
 
+def relative_branches(mz, seg, off, end_file=None):
+    """Find encoded near and short branches to OFF in one segment range.
+
+    Scanning every byte is intentionally conservative: a hit may be embedded
+    data and must be disassembled, while zero hits prove no ordinary relative
+    transfer encoding exists. END_FILE can bound a reviewed code segment before
+    the next linked segment begins.
+    """
+    base = mz.segoff_to_file(seg, 0)
+    end = min(len(mz.data), base + 0x10000) if end_file is None else end_file
+    if end < base or end > len(mz.data):
+        raise ValueError(f"invalid branch scan end {end:#x}")
+    hits = []
+
+    for site in range(base, end):
+        opcode = mz.data[site]
+        if opcode in (0xE8, 0xE9) and site + 3 <= end:
+            relative = struct.unpack_from("<h", mz.data, site + 1)[0]
+            target = ((site - base) + 3 + relative) & 0xFFFF
+            if target == off:
+                hits.append((site, "call near" if opcode == 0xE8 else "jmp near"))
+            continue
+        if (
+            opcode == 0xEB
+            or 0x70 <= opcode <= 0x7F
+            or 0xE0 <= opcode <= 0xE3
+        ) and site + 2 <= end:
+            relative = struct.unpack_from("<b", mz.data, site + 1)[0]
+            target = ((site - base) + 2 + relative) & 0xFFFF
+            if target == off:
+                hits.append((site, "short branch"))
+            continue
+        if (
+            opcode == 0x0F
+            and site + 4 <= end
+            and 0x80 <= mz.data[site + 1] <= 0x8F
+        ):
+            relative = struct.unpack_from("<h", mz.data, site + 2)[0]
+            target = ((site - base) + 4 + relative) & 0xFFFF
+            if target == off:
+                hits.append((site, "conditional near"))
+    return hits
+
+
 def main():
     args = sys.argv[1:]
     if not args:
@@ -121,6 +167,15 @@ def main():
         print(f"{len(hits)} near (E8) caller(s) of {seg:#06x}:{off:#06x}:")
         for h in hits:
             print(f"  {h:#08x}")
+        return
+    if args[0] == "--branches":
+        seg, off = args[1].split(":")
+        seg, off = int(seg, 16), int(off, 16)
+        end_file = int(args[2], 16) if len(args) > 2 else None
+        hits = relative_branches(mz, seg, off, end_file)
+        print(f"{len(hits)} relative branch(es) to {seg:#06x}:{off:#06x}:")
+        for file_offset, kind in hits:
+            print(f"  {file_offset:#08x}  {kind}")
         return
 
     # default: SEG:OFF far refs

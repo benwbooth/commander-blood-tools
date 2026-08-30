@@ -623,8 +623,9 @@ pub use sequence_subtitles::{
     SequenceSubtitleRenderer, present_sequence_subtitle,
 };
 pub use ship_depth::{
-    ShipDepthBandLayout, ShipDepthTransition, ShipDepthTransitionOutcome, advance_ship_depth,
-    prepare_ship_depth_band,
+    ShipDepthAutomaticControl, ShipDepthAutomaticControlOutcome, ShipDepthBandLayout,
+    ShipDepthTransition, ShipDepthTransitionOutcome, advance_ship_depth, prepare_ship_depth_band,
+    update_ship_depth_automatic_control,
 };
 pub use ship_hud::{
     IndexedGamePalette, SHIP_CAMERA_RESET, SHIP_HUD_PALETTE_COLOR_COUNT, SHIP_HUD_PALETTE_FIRST,

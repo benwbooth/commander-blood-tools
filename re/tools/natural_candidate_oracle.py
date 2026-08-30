@@ -61751,6 +61751,157 @@ def ship_3d_plane_band_copy_vectors() -> list[dict[str, object]]:
     return vectors
 
 
+def ship_3d_transition_state_update_vectors() -> list[dict[str, object]]:
+    entry = 0xB692
+    expected_hash = "e12b8f381dfe836a526af3f50cd8040af309127fa102175cee3cc1075be6e1fb"
+    if hashlib.sha256(EXE[entry : entry + 75]).hexdigest() != expected_hash:
+        raise AssertionError("0xb692: recovered 75-byte body changed")
+
+    cases = [
+        ("idle_at_threshold", 0x00, 120, 0x52, 0x63, 0x74, [], 0x00, 0x52, 0x63, 0x74, "idle"),
+        ("idle_above_threshold", 0x00, 121, 0x52, 0x63, 0x74, [], 0x01, 0x01, 0x63, 0x04, "opening_started"),
+        ("armed_high_bits_only", 0xFE, 0xFFFF, 0xA2, 0xB3, 0xC4, [], 0x01, 0x01, 0xB3, 0x04, "opening_started"),
+        ("zero_idle_closes", 0x01, 0, 0x81, 0x44, 0x55, [], 0x00, 0x81, 0x01, 0x08, "closing_started"),
+        ("opening_waits", 0xFD, 1, 0x01, 0x66, 0x77, [], 0xFD, 0x01, 0x66, 0x77, "opening_active"),
+        ("nonzero_random_waits", 0x01, 5, 0x02, 0x88, 0x99, [7], 0x01, 0x02, 0x88, 0x99, "random_wait"),
+        ("zero_random_closes", 0x81, 0xFFFF, 0x00, 0xAA, 0xBB, [0], 0x00, 0x00, 0x01, 0x08, "closing_started"),
+    ]
+    data_segment = 0x4000
+    game_segment = 0x4800
+    extra_segment = 0x5000
+    stack_segment = 0x6800
+    return_address = 0x6F00
+    prng_entry = 0x01CE * 16 + 0x0B02
+    vectors = []
+
+    for (
+        name,
+        armed,
+        idle,
+        opening,
+        closing,
+        step,
+        random_results,
+        expected_armed,
+        expected_opening,
+        expected_closing,
+        expected_step,
+        path,
+    ) in cases:
+        state_before = bytes((opening, closing, step, 0xD5, armed))
+        state_expected = bytes(
+            (expected_opening, expected_closing, expected_step, 0xD5, expected_armed)
+        )
+        data_decoy = bytes((0xA1 + index * 13) & 0xFF for index in range(5))
+        game_decoy = bytes((0xB2 + index * 17) & 0xFF for index in range(5))
+        extra_decoy = bytes((0xC3 + index * 19) & 0xFF for index in range(5))
+        stack_sentinel = bytes.fromhex("5aa596698778")
+        initial = {
+            "eax": 0xA1A11234,
+            "ebx": 0xB2B22345,
+            "ecx": 0xC3C33456,
+            "edx": 0xD4D44567,
+            "esi": 0xE5E55678,
+            "edi": 0xF6F66789,
+            "ebp": 0x9797789A,
+            "sp": 0xFF00,
+            "ds": data_segment,
+            "es": extra_segment,
+            "fs": 0x5800,
+            "gs": game_segment,
+            "ss": stack_segment,
+            "flags": 0x0AD7,
+        }
+        draws = []
+
+        def capture(machine: Uc, address: int, _size: int) -> None:
+            if address != prng_entry:
+                return
+            if machine.reg_read(UC_X86_REG_AX) != 20:
+                raise AssertionError(f"0xb692 {name}: PRNG modulus is not 20")
+            if len(draws) >= len(random_results):
+                raise AssertionError(f"0xb692 {name}: unexpected PRNG call")
+            result = random_results[len(draws)]
+            draws.append(result)
+            machine.reg_write(UC_X86_REG_AX, result)
+
+        machine = execute(
+            entry,
+            return_address,
+            initial,
+            [
+                (0, return_address, b"\xcc"),
+                (0, prng_entry, b"\xcb"),
+                (data_segment, 0x0B3B, struct.pack("<H", idle)),
+                (data_segment, 0x252F, state_before),
+                (game_segment, 0x252F, game_decoy),
+                (extra_segment, 0x252F, extra_decoy),
+                (stack_segment, 0x252F, data_decoy),
+                (
+                    stack_segment,
+                    0xFF00,
+                    struct.pack("<H", return_address) + stack_sentinel,
+                ),
+            ],
+            code_handler=capture,
+        )
+
+        actual_state = bytes(machine.mem_read(data_segment * 16 + 0x252F, 5))
+        if actual_state != state_expected:
+            raise AssertionError(
+                f"0xb692 {name}: state={actual_state.hex()}, expected={state_expected.hex()}"
+            )
+        if draws != random_results:
+            raise AssertionError(
+                f"0xb692 {name}: draws={draws}, expected={random_results}"
+            )
+        for segment_name, segment, expected in (
+            ("GS", game_segment, game_decoy),
+            ("ES", extra_segment, extra_decoy),
+            ("SS", stack_segment, data_decoy),
+        ):
+            actual = bytes(machine.mem_read(segment * 16 + 0x252F, 5))
+            if actual != expected:
+                raise AssertionError(f"0xb692 {name}: {segment_name} decoy changed")
+
+        expected_registers = dict(initial)
+        del expected_registers["flags"]
+        expected_registers["sp"] = 0xFF02
+        if random_results:
+            expected_registers["eax"] = (
+                initial["eax"] & 0xFFFF0000
+            ) | random_results[-1]
+        for register, expected in expected_registers.items():
+            actual = machine.reg_read(REGISTERS[register])
+            if actual != expected:
+                raise AssertionError(
+                    f"0xb692 {name}: {register}={actual:#x}, expected={expected:#x}"
+                )
+        if machine.reg_read(UC_X86_REG_CS) != 0:
+            raise AssertionError(f"0xb692 {name}: near return changed CS")
+        if bytes(machine.mem_read(stack_segment * 16 + 0xFF02, 6)) != stack_sentinel:
+            raise AssertionError(f"0xb692 {name}: stack sentinel changed")
+
+        vectors.append(
+            {
+                "name": name,
+                "armed_before": armed,
+                "mouse_idle_frames": idle,
+                "opening_before": opening,
+                "closing_before": closing,
+                "step_before": step,
+                "random_results": random_results,
+                "armed_after": expected_armed,
+                "opening_after": expected_opening,
+                "closing_after": expected_closing,
+                "step_after": expected_step,
+                "path": path,
+            }
+        )
+
+    return vectors
+
+
 def ship_3d_depth_scroll_step_vectors() -> list[dict[str, object]]:
     entry = 0xB75C
     expected_hash = "7b169cde9fa6c63a0388539519b45c9d087b3079b8bfc60fe27c28ade04553dd"
@@ -91931,6 +92082,11 @@ def main() -> int:
     update_vector(
         VECTOR_ROOT / "func_b591_natural.json",
         alien_overlay_cycle_vectors(),
+        args.check,
+    )
+    update_vector(
+        VECTOR_ROOT / "func_b692_natural.json",
+        ship_3d_transition_state_update_vectors(),
         args.check,
     )
     update_vector(
