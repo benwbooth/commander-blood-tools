@@ -191,8 +191,10 @@ impl RuntimePresentationPlayer {
             .map_or(u64::MIN, RuntimePresentationStream::presented_frame_count)
     }
 
-    #[cfg(test)]
-    fn active_resource_name(&self) -> Option<&commander_blood_formats::archive::BloodResourceName> {
+    /// Borrow the authored DOS resource identity owned by the active stream.
+    pub(crate) fn active_resource_name(
+        &self,
+    ) -> Option<&commander_blood_formats::archive::BloodResourceName> {
         self.active_stream
             .as_ref()
             .map(RuntimePresentationStream::resource_name)

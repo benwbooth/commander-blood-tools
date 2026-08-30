@@ -146,6 +146,7 @@ pub struct ModernGameServices<'window> {
     audio: Option<RuntimeAudioHost>,
     resident_sound_bank: Option<LoadedSoundBank>,
     audio_events: AudioEventState,
+    audio_event_history: Vec<AudioClipRequest>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
     bridge_screen: BridgeScreenInitializationState,
@@ -216,6 +217,27 @@ fn latch_script_finale_completion(
         finale_requested && active_line_before.is_some() && active_line_after.is_none();
 }
 
+fn audio_event_trace(history: &[AudioClipRequest]) -> (usize, Vec<serde_json::Value>) {
+    let mut streamed_clip_count = usize::MIN;
+    let events = history
+        .iter()
+        .map(|request| match request {
+            AudioClipRequest::StreamedDialogue { index } => {
+                streamed_clip_count += 1;
+                serde_json::json!({
+                    "kind": "streamed_dialogue",
+                    "index": index,
+                })
+            }
+            AudioClipRequest::VoiceReaction { bank_index } => serde_json::json!({
+                "kind": "voice_reaction",
+                "index": bank_index,
+            }),
+        })
+        .collect();
+    (streamed_clip_count, events)
+}
+
 impl<'window> ModernGameServices<'window> {
     /// Allocate flat game state and an artwork-only loading renderer.
     pub fn new(
@@ -250,6 +272,7 @@ impl<'window> ModernGameServices<'window> {
                 dialogue_seed: u16::MIN,
                 last_clip: u16::MIN,
             },
+            audio_event_history: Vec::new(),
             bridge_scene: None,
             bridge_frame: None,
             bridge_screen: BridgeScreenInitializationState::default(),
@@ -821,6 +844,7 @@ impl<'window> ModernGameServices<'window> {
                 }
             }
         }
+        self.audio_event_history.extend(requests.iter().copied());
         Ok(requests)
     }
 
@@ -3616,6 +3640,40 @@ impl<'window> ModernGameServices<'window> {
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
+        let inline_menu_entries = profile
+            .map(|profile| {
+                text.menu_words
+                    .iter()
+                    .take(text.menu_word_count)
+                    .filter_map(|word| match word {
+                        ScriptTextWord::Dictionary(word) => {
+                            profile.dictionary().word(*word).map(|label| {
+                                (word.index(), String::from_utf8_lossy(label).into_owned())
+                            })
+                        }
+                        ScriptTextWord::SectionSeparator => None,
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let inline_menu_word_ids = inline_menu_entries
+            .iter()
+            .map(|(word, _label)| *word)
+            .collect::<Vec<_>>();
+        let inline_menu_words = inline_menu_entries
+            .iter()
+            .map(|(_word, label)| label.clone())
+            .collect::<Vec<_>>();
+        let revealed_menu_word_count = text.menu_reveal_count.min(inline_menu_entries.len());
+        let revealed_menu_word_ids = inline_menu_word_ids[..revealed_menu_word_count].to_vec();
+        let revealed_menu_words = inline_menu_words[..revealed_menu_word_count].to_vec();
+        let inline_menu_trace = serde_json::json!({
+            "word_ids": inline_menu_word_ids,
+            "words": inline_menu_words,
+            "revealed_word_ids": revealed_menu_word_ids,
+            "revealed_words": revealed_menu_words,
+            "reveal_count": text.menu_reveal_count,
+        });
         let bridge_console = self
             .bridge_console
             .as_ref()
@@ -3775,6 +3833,79 @@ impl<'window> ModernGameServices<'window> {
             "owned_dialogue_hold_complete": text.dialogue_hold_complete,
             "owned_dialogue_hold_countdown": text.dialogue_hold_countdown,
         });
+        let (streamed_clip_count, audio_event_history) =
+            audio_event_trace(&self.audio_event_history);
+        let active_video_resource = self
+            .presentation_player
+            .active_resource_name()
+            .map(|name| String::from_utf8_lossy(name.as_bytes()).into_owned());
+        let presentation_trace = serde_json::json!({
+            "ui_flags": lifecycle.low_ui_state_word(),
+            "actor_transition": u8::from(lifecycle.profile_change_blockers.navigation_actor_transition_active),
+            "bridge_frame": current_bridge_frame as i16,
+            "bridge_seek_requested": bridge_seek_requested,
+            "bridge_seek_target": bridge_seek_target,
+            "ship_flags": self.ship_presentation.flags,
+            "ship_ui_state": self.ship_presentation.ui_state,
+            "mode": u8::from(lifecycle.presentation_mode),
+            "box_mode": u8::from(presentation_screen_active),
+            "screen_phase": presentation_screen
+                .map(|screen| screen.phase().executable_value())
+                .unwrap_or(u16::MIN),
+            "screen_reverse": presentation_screen.is_some_and(PresentationScreenState::reverse),
+            "navigation_rebuild_pending": lifecycle.navigation_rebuild_pending,
+            "word_choice_active": u8::from(lifecycle.presentation.word_choice_active),
+            "selector_word_choices": selector_word_choices,
+            "rendered_word_choices": rendered_word_choices,
+            "inline_menu": inline_menu_trace,
+            "pending_presentation_owner": pending_presentation_owner,
+            "active_actor_presentation": active_actor_presentation,
+            "nav_target_selection": u8::from(lifecycle.navigation_target_selected),
+            "active": u8::from(lifecycle.presentation.active),
+            "defer": u8::from(lifecycle.presentation.menu_deferred),
+            "text_state": text_state,
+            "text_wait": u8::from(lifecycle.presentation.word_choice_active) * 2,
+            "text_display_active": u8::from(lifecycle.presentation.subtitle_display_active),
+            "request_flags": lifecycle.presentation.request_flags.bits(),
+            "screen_active": presentation_screen_active,
+            "manu3_requested": self.manu3_hand.requested_animation,
+            "manu3_current": self.manu3_hand.current_animation,
+            "radio_slot": {
+                "active": radio_slot.flags.active,
+                "auto_seek": radio_slot.flags.auto_seek,
+                "locked": radio_slot.flags.locked,
+                "present": radio_slot.flags.active,
+                "ready": radio_slot.flags.auto_seek,
+                "loaded": radio_slot.flags.clear_mouse_before_hit,
+                "frame": radio_slot.line.frame,
+                "terminal_frame": radio_slot.line.terminal_frame,
+            },
+            "panel_slot": {
+                "active": panel_slot.flags.active,
+                "auto_seek": panel_slot.flags.auto_seek,
+                "locked": panel_slot.flags.locked,
+                "loaded": panel_slot.flags.clear_mouse_before_hit,
+                "frame": panel_slot.line.frame,
+                "terminal_frame": panel_slot.line.terminal_frame,
+            },
+            "portrait_entity": {
+                "flags": portrait.flags.bits(),
+                "source": portrait_source,
+                "source_extent": [portrait.source_extent.width, portrait.source_extent.height],
+                "draw_position": [portrait.draw_position.x, portrait.draw_position.y],
+                "extent": [portrait.extent.width, portrait.extent.height],
+                "committed_position": [
+                    portrait.committed_draw_position.x,
+                    portrait.committed_draw_position.y,
+                ],
+                "committed_extent": [
+                    portrait.committed_extent.width,
+                    portrait.committed_extent.height,
+                ],
+                "palette": portrait_palette,
+            },
+            "waiting_for_input": waiting_for_input,
+        });
 
         Ok(serde_json::json!({
             "vm": {
@@ -3785,72 +3916,7 @@ impl<'window> ModernGameServices<'window> {
                 "active_line": lifecycle.presentation.active_line,
                 "displayed_line": self.ship_presentation.active_line,
             },
-            "presentation": {
-                "ui_flags": lifecycle.low_ui_state_word(),
-                "actor_transition": u8::from(lifecycle.profile_change_blockers.navigation_actor_transition_active),
-                "bridge_frame": current_bridge_frame as i16,
-                "bridge_seek_requested": bridge_seek_requested,
-                "bridge_seek_target": bridge_seek_target,
-                "ship_flags": self.ship_presentation.flags,
-                "ship_ui_state": self.ship_presentation.ui_state,
-                "mode": u8::from(lifecycle.presentation_mode),
-                "box_mode": u8::from(presentation_screen_active),
-                "screen_phase": presentation_screen
-                    .map(|screen| screen.phase().executable_value())
-                    .unwrap_or(u16::MIN),
-                "screen_reverse": presentation_screen.is_some_and(PresentationScreenState::reverse),
-                "navigation_rebuild_pending": lifecycle.navigation_rebuild_pending,
-                "word_choice_active": u8::from(lifecycle.presentation.word_choice_active),
-                "selector_word_choices": selector_word_choices,
-                "rendered_word_choices": rendered_word_choices,
-                "pending_presentation_owner": pending_presentation_owner,
-                "active_actor_presentation": active_actor_presentation,
-                "nav_target_selection": u8::from(lifecycle.navigation_target_selected),
-                "active": u8::from(lifecycle.presentation.active),
-                "defer": u8::from(lifecycle.presentation.menu_deferred),
-                "text_state": text_state,
-                "text_wait": u8::from(lifecycle.presentation.word_choice_active) * 2,
-                "text_display_active": u8::from(lifecycle.presentation.subtitle_display_active),
-                "request_flags": lifecycle.presentation.request_flags.bits(),
-                "screen_active": presentation_screen_active,
-                "manu3_requested": self.manu3_hand.requested_animation,
-                "manu3_current": self.manu3_hand.current_animation,
-                "radio_slot": {
-                    "active": radio_slot.flags.active,
-                    "auto_seek": radio_slot.flags.auto_seek,
-                    "locked": radio_slot.flags.locked,
-                    "present": radio_slot.flags.active,
-                    "ready": radio_slot.flags.auto_seek,
-                    "loaded": radio_slot.flags.clear_mouse_before_hit,
-                    "frame": radio_slot.line.frame,
-                    "terminal_frame": radio_slot.line.terminal_frame,
-                },
-                "panel_slot": {
-                    "active": panel_slot.flags.active,
-                    "auto_seek": panel_slot.flags.auto_seek,
-                    "locked": panel_slot.flags.locked,
-                    "loaded": panel_slot.flags.clear_mouse_before_hit,
-                    "frame": panel_slot.line.frame,
-                    "terminal_frame": panel_slot.line.terminal_frame,
-                },
-                "portrait_entity": {
-                    "flags": portrait.flags.bits(),
-                    "source": portrait_source,
-                    "source_extent": [portrait.source_extent.width, portrait.source_extent.height],
-                    "draw_position": [portrait.draw_position.x, portrait.draw_position.y],
-                    "extent": [portrait.extent.width, portrait.extent.height],
-                    "committed_position": [
-                        portrait.committed_draw_position.x,
-                        portrait.committed_draw_position.y,
-                    ],
-                    "committed_extent": [
-                        portrait.committed_extent.width,
-                        portrait.committed_extent.height,
-                    ],
-                    "palette": portrait_palette,
-                },
-                "waiting_for_input": waiting_for_input,
-            },
+            "presentation": presentation_trace,
             "bridge_console": bridge_console,
             "script2": script2,
             "navigation": navigation,
@@ -3872,8 +3938,8 @@ impl<'window> ModernGameServices<'window> {
                 "timer_tick": self.game_timer_tick,
                 "clip_playback_state": lifecycle.clip_playback_state,
                 "last_clip": self.audio_events.last_clip,
-                "streamed_clip_count": u16::MIN,
-                "events": [],
+                "streamed_clip_count": streamed_clip_count,
+                "events": audio_event_history,
             },
             "subtitle": subtitle,
             "persistent": {
@@ -3906,6 +3972,9 @@ impl<'window> ModernGameServices<'window> {
             },
             "assets": assets,
             "video": {
+                "active_resource": active_video_resource,
+                "decoded_frame_count": self.presentation_player.decoded_frame_count(),
+                "source_open_or_draining": self.presentation_player.source_open_or_draining(),
                 "screen_hash": screen_hash,
                 "palette_hash": fnv1a64(&palette_bytes),
                 "bridge_layers": bridge_layers,
@@ -4538,6 +4607,32 @@ mod tests {
         );
     }
 
+    #[test]
+    fn semantic_audio_trace_retains_each_selected_clip_in_order() {
+        const DIALOGUE_CLIP_INDEX: u16 = 4;
+        const VOICE_BANK_INDEX: u16 = 9;
+        const EXPECTED_STREAMED_CLIP_COUNT: usize = 1;
+        const DIALOGUE_EVENT_INDEX: usize = usize::MIN;
+        const VOICE_EVENT_INDEX: usize = DIALOGUE_EVENT_INDEX + 1;
+        let history = [
+            AudioClipRequest::StreamedDialogue {
+                index: DIALOGUE_CLIP_INDEX,
+            },
+            AudioClipRequest::VoiceReaction {
+                bank_index: VOICE_BANK_INDEX,
+            },
+        ];
+
+        let (streamed_clip_count, events) = audio_event_trace(&history);
+
+        assert_eq!(streamed_clip_count, EXPECTED_STREAMED_CLIP_COUNT);
+        assert_eq!(events.len(), history.len());
+        assert_eq!(events[DIALOGUE_EVENT_INDEX]["kind"], "streamed_dialogue");
+        assert_eq!(events[DIALOGUE_EVENT_INDEX]["index"], DIALOGUE_CLIP_INDEX);
+        assert_eq!(events[VOICE_EVENT_INDEX]["kind"], "voice_reaction");
+        assert_eq!(events[VOICE_EVENT_INDEX]["index"], VOICE_BANK_INDEX);
+    }
+
     const STATUS_TEST_ORIGIN: [u16; 2] = [40, 50];
     const STATUS_TEST_EXTENT: [u16; 2] = [30, 20];
     const STATUS_TEST_ACTIVE_FLAGS: u16 = 1;
@@ -4793,6 +4888,28 @@ mod tests {
             dialogue_requests.as_ref(),
             [AudioClipRequest::StreamedDialogue { .. }]
         ));
+        assert_eq!(
+            services.audio_event_history.as_slice(),
+            dialogue_requests.as_ref()
+        );
+        let trace = services.semantic_trace_snapshot(&lifecycle).unwrap();
+        assert_eq!(
+            trace["audio"]["streamed_clip_count"],
+            dialogue_requests.len()
+        );
+        assert_eq!(
+            trace["audio"]["events"][usize::MIN]["kind"],
+            "streamed_dialogue"
+        );
+        assert_eq!(
+            trace["audio"]["events"][usize::MIN]["index"],
+            match dialogue_requests[usize::MIN] {
+                AudioClipRequest::StreamedDialogue { index } => index,
+                AudioClipRequest::VoiceReaction { .. } => {
+                    panic!("dialogue request changed kind after selection")
+                }
+            }
+        );
         assert_eq!(services.resident_sound_bank().unwrap(), &resident_bank);
         let horn = services
             .runtime()

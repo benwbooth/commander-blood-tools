@@ -50,6 +50,12 @@ const HONK_WORD_CHOICES: [&str; 9] = [
     "lose",
     "help",
 ];
+const IZWALITO_GREETING_WORDS: [&str; 11] = [
+    "You", "found", "the", "right", "button", ".", "So", "far", "so", "good", "...",
+];
+const IZWALITO_CHOICE_PROMPT_WORDS: [&str; 7] =
+    ["Click", "quick,", "Cap'n", "Bob", "is", "waiting", "..."];
+const STREAMED_DIALOGUE_EVENT_KIND: &str = "streamed_dialogue";
 const EMPTY_LABELS: [&str; 0] = [];
 const CONTACT_LABELS: [&str; 1] = ["Bob_Morlock"];
 const OPTION_LABELS: [&str; 6] = ["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT", "CANCEL"];
@@ -163,6 +169,20 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
         })
         .expect("phone answer never acquired Izwalito presentation ownership");
     assert_izwalito_inset(active);
+    assert_eq!(
+        presentation(active)["inline_menu"]["words"],
+        serde_json::json!(IZWALITO_GREETING_WORDS)
+    );
+    assert!(active["semantic"]["video"]["active_resource"].is_null());
+    let greeting_audio = active["semantic"]["audio"]["events"]
+        .as_array()
+        .expect("startup call audio trace is not an event array");
+    assert!(!greeting_audio.is_empty());
+    assert!(
+        greeting_audio
+            .iter()
+            .all(|event| { event["kind"].as_str() == Some(STREAMED_DIALOGUE_EVENT_KIND) })
+    );
 
     let active_actor_hashes = after_answer
         .iter()
@@ -184,6 +204,16 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
     assert_eq!(
         waiting["semantic"]["presentation"]["rendered_word_choices"],
         serde_json::json!(["explanations", "game"])
+    );
+    assert_eq!(
+        presentation(waiting)["inline_menu"]["words"],
+        serde_json::json!(IZWALITO_CHOICE_PROMPT_WORDS)
+    );
+    assert!(
+        after_answer
+            .iter()
+            .filter(|record| presentation_flag(record, "active"))
+            .all(|record| record["semantic"]["video"]["active_resource"].is_null())
     );
 
     let choice = after_answer
