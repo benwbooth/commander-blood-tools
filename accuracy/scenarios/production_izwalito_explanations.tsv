@@ -1,0 +1,25 @@
+# Answer Izwalito's startup call, choose EXPLANATIONS, and let the complete
+# tutorial branch end its presentation naturally without switching profiles.
+wait 50
+wait 50
+wait 55
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+wait 10
+wait 10
+wait 10
+sclick 200 94
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20

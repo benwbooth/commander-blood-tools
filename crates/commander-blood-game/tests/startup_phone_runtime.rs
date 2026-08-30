@@ -18,6 +18,7 @@ const OPENING_VIDEO: &str = "sq\\mind.HNM";
 const FIRST_STARTUP_VIDEO: &str = "SQ\\cliptoot.hnm";
 const PHONE_CLICK: &str = "click 125 118";
 const GAME_CHOICE_CLICK: &str = "sclick 200 105";
+const EXPLANATIONS_CHOICE_CLICK: &str = "sclick 200 94";
 const CONTACTS_CLICK: &str = "click 230 124";
 const BOB_CONTACT_CLICK: &str = "sclick 100 89";
 const INITIAL_PROFILE: u64 = 0;
@@ -63,6 +64,8 @@ const IZWALITO_GREETING_WORDS: [&str; 11] = [
 ];
 const IZWALITO_CHOICE_PROMPT_WORDS: [&str; 7] =
     ["Click", "quick,", "Cap'n", "Bob", "is", "waiting", "..."];
+const IZWALITO_EXPLANATIONS_FINAL_WORDS: [&str; 7] =
+    ["Click", "quick", "on", "\"HONK\"", ".", "He", "has"];
 const STREAMED_DIALOGUE_EVENT_KIND: &str = "streamed_dialogue";
 const VOICE_REACTION_EVENT_KIND: &str = "voice_reaction";
 const RADIO_RING_CLIP_INDEX: u64 = 6;
@@ -426,6 +429,72 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
     assert_eq!(
         bridge_actor_hash(teardown),
         bridge_actor_hash(before_answer)
+    );
+}
+
+#[test]
+fn production_runtime_completes_izwalito_explanations_and_releases_the_phone() {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/production_izwalito_explanations.tsv",
+        "production-izwalito-explanations.jsonl",
+    ) else {
+        return;
+    };
+
+    let phone_index = records
+        .iter()
+        .position(|record| record["action"] == PHONE_CLICK)
+        .expect("runtime trace omitted the authored phone click");
+    let choice_index = records
+        .iter()
+        .position(|record| record["action"] == EXPLANATIONS_CHOICE_CLICK)
+        .expect("runtime trace omitted the authored EXPLANATIONS click");
+    let choice = &records[choice_index];
+    assert_eq!(profile(choice), Some(INITIAL_PROFILE));
+    assert_eq!(hand_selector(choice), CHOICE_HAND_SELECTOR);
+    assert!(presentation_flag(choice, "active"));
+
+    let explanations = &records[choice_index + 1..];
+    let final_instruction = explanations
+        .iter()
+        .find(|record| {
+            let words = presentation(record)["inline_menu"]["words"]
+                .as_array()
+                .expect("Izwalito inline menu words are not an array");
+            words.starts_with(
+                &IZWALITO_EXPLANATIONS_FINAL_WORDS
+                    .iter()
+                    .map(|word| serde_json::json!(word))
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .expect("Izwalito's authored HONK instruction never appeared");
+    assert_eq!(profile(final_instruction), Some(INITIAL_PROFILE));
+    assert_eq!(
+        presentation(final_instruction)["active_actor_presentation"]["name"],
+        "Izwalito"
+    );
+
+    let teardown = explanations
+        .iter()
+        .find(|record| {
+            profile(record) == Some(INITIAL_PROFILE)
+                && !presentation_flag(record, "active")
+                && presentation(record)["active_actor_presentation"].is_null()
+        })
+        .expect("Izwalito's EXPLANATIONS branch never released presentation ownership");
+    assert_eq!(hand_selector(teardown), NEUTRAL_HAND_SELECTOR);
+    assert_ne!(
+        presentation_u64(teardown, "ui_flags") & UI_ENABLED_FLAG,
+        u64::MIN
+    );
+    assert_eq!(
+        presentation_u64(teardown, "portrait_entity/flags") & ACTIVE_ENTITY_FLAG,
+        u64::MIN
+    );
+    assert_eq!(
+        bridge_actor_hash(teardown),
+        bridge_actor_hash(&records[phone_index - 1])
     );
 }
 
