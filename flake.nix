@@ -79,6 +79,7 @@
                 imagemagick
                 jq
                 libvpx
+                llvmPackages.llvm
                 nasm
                 p7zip
                 pkg-config

@@ -45,6 +45,7 @@ const SCRIPT_NAME_PREFIX: &str = "SCRIPT";
 const PROFILE_RESOURCE_NAME_PREFIX: &str = "script";
 const AUTHENTIC_SAVE_FILENAMES: &[&str] = &["GAME1.SAV", "game1.sav"];
 const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
+const REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE: &str = "CBLOOD_REQUIRE_ACCURACY_TESTS";
 const PROCEDURE_ENTRY_BIAS: usize = 1;
 const OBJECT_FLAGS_WORD_INDEX: usize = 1;
 const CONTACT_COUNTDOWN_TIMER_INDEX: u8 = 1;
@@ -1752,8 +1753,17 @@ fn original_data_paths() -> Option<OriginalGameDataPaths> {
         Err(error) if std::env::var_os(ASSET_CACHE_ENVIRONMENT_VARIABLE).is_some() => {
             panic!("configured Commander Blood asset cache is invalid: {error:#}")
         }
+        Err(error) if accuracy_tests_are_required() => {
+            panic!(
+                "{REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE}=1 requires original Commander Blood data: {error:#}"
+            )
+        }
         Err(_) => None,
     }
+}
+
+fn accuracy_tests_are_required() -> bool {
+    std::env::var_os(REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE).is_some()
 }
 
 fn profile_id(script: &str) -> ScriptProfileId {

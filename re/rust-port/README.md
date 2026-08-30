@@ -57,6 +57,23 @@ nix develop -c python3 -P re/tools/audit_rust_port_routing.py --strict
 Strict mode fails whenever an `UNREVIEWED-UNROUTED` row is not wired into
 production or assigned a source-backed disposition.
 
+Run the complete asset-backed acceptance gate inside the development shell:
+
+```sh
+nix develop -c re/tools/run_rust_fidelity_gate.sh
+```
+
+The gate creates an isolated Xvfb display, requires the original-data cache,
+runs every production-port crate test serially, builds the production game,
+checks strict recovered-routine routing, and runs the runtime-trace audit tests.
+Archive-decoder oracles use `CBLOOD_ORIGINAL_ARCHIVE_ROOT`, which defaults to
+the local extracted-CD tree under `commander-blood-audio/_tmp_iso`.
+The retired top-level heuristic exporter/engine is intentionally excluded: the
+modern executable does not link it, and its tests are not Rust-port evidence.
+It sets `CBLOOD_REQUIRE_ACCURACY_TESTS=1`, which turns every otherwise optional
+asset or display prerequisite into a test failure. Ordinary asset-free unit
+test runs may still skip copyrighted-data scenarios explicitly.
+
 The real-data acceptance suite restores an authentic save, reloads every script
 profile and companion resource set, enters and completes an authored path for
 all 65 recovered contacts, decodes every navigation world, and drives the

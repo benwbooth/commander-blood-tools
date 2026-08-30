@@ -286,7 +286,7 @@ fn read_nonnegative_i32(
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     use serde::Deserialize;
 
@@ -295,6 +295,8 @@ mod tests {
     const TEST_TRAILING_BYTE: u8 = 0x5A;
     const SHIPPED_ARCHIVE_ENTRY_COUNT: usize = 974;
     const SHIPPED_FIRST_MEMBER_BYTE_COUNT: usize = 139_169;
+    const ORIGINAL_ARCHIVE_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ORIGINAL_ARCHIVE_ROOT";
+    const REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE: &str = "CBLOOD_REQUIRE_ACCURACY_TESTS";
 
     #[derive(Deserialize)]
     struct ArchiveLookupOracle {
@@ -389,7 +391,9 @@ mod tests {
 
     #[test]
     fn shipped_archive_directory_and_first_member_decode() {
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/_tmp_iso/BLOOD.DAT");
+        let Some(path) = shipped_archive() else {
+            return;
+        };
         let archive = BloodArchive::decode(
             std::fs::read(&path)
                 .unwrap_or_else(|error| panic!("reading {}: {error}", path.display()))
@@ -403,5 +407,26 @@ mod tests {
             archive.member(&first_name).unwrap().len(),
             SHIPPED_FIRST_MEMBER_BYTE_COUNT
         );
+    }
+
+    fn shipped_archive() -> Option<PathBuf> {
+        if let Some(root) = std::env::var_os(ORIGINAL_ARCHIVE_ROOT_ENVIRONMENT_VARIABLE) {
+            let path = PathBuf::from(root).join("BLOOD.DAT");
+            assert!(
+                path.is_file(),
+                "configured original BLOOD.DAT does not exist: {}",
+                path.display()
+            );
+            return Some(path);
+        }
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/_tmp_iso/BLOOD.DAT");
+        if path.is_file() {
+            return Some(path);
+        }
+        assert!(
+            std::env::var_os(REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE).is_none(),
+            "{REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE}=1 requires {ORIGINAL_ARCHIVE_ROOT_ENVIRONMENT_VARIABLE}"
+        );
+        None
     }
 }

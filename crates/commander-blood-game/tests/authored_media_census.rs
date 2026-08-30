@@ -43,6 +43,7 @@ const FIRST_PROFILE_NUMBER: u8 = 1;
 const TEXT_ONLY_SELECTOR: i8 = -1;
 const DYNAMIC_EXECUTABLE_PLACEHOLDER: &[u8] = b"xxxxxxxxxxxx";
 const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
+const REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE: &str = "CBLOOD_REQUIRE_ACCURACY_TESTS";
 
 const BACKGROUND_DIRECTORY: &[u8] = b"FD\\";
 const LOCATION_VIDEO_DIRECTORY: &[u8] = b"PL\\";
@@ -852,10 +853,19 @@ fn original_data() -> Option<OriginalGameData> {
         Err(error) if std::env::var_os(ASSET_CACHE_ENVIRONMENT_VARIABLE).is_some() => {
             panic!("configured Commander Blood asset cache is invalid: {error:#}")
         }
+        Err(error) if accuracy_tests_are_required() => {
+            panic!(
+                "{REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE}=1 requires original Commander Blood data: {error:#}"
+            )
+        }
         Err(_) => return None,
     };
     Some(
         OriginalGameData::load_with_writable_root(paths, std::env::temp_dir())
             .expect("loading original Commander Blood data for authored-media census"),
     )
+}
+
+fn accuracy_tests_are_required() -> bool {
+    std::env::var_os(REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE).is_some()
 }

@@ -11,6 +11,7 @@ use commander_blood_game::runtime::{OriginalGameData, OriginalGameDataPaths, Ori
 use serde_json::Value;
 
 const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
+const REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE: &str = "CBLOOD_REQUIRE_ACCURACY_TESTS";
 const DISPLAY_ENVIRONMENT_VARIABLES: [&str; 2] = ["DISPLAY", "WAYLAND_DISPLAY"];
 const PHONE_CLICK: &str = "click 125 118";
 const GAME_CHOICE_CLICK: &str = "sclick 200 105";
@@ -726,6 +727,10 @@ fn run_production_scenario_with_setup(
         .iter()
         .any(|variable| std::env::var_os(variable).is_some())
     {
+        assert!(
+            !accuracy_tests_are_required(),
+            "{REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE}=1 requires DISPLAY or WAYLAND_DISPLAY"
+        );
         return None;
     }
 
@@ -827,13 +832,23 @@ fn seed_authentic_pterra_unlock_save(
 }
 
 fn configured_runtime_asset_cache() -> Option<PathBuf> {
-    let path = std::env::var_os(ASSET_CACHE_ENVIRONMENT_VARIABLE).map(PathBuf::from)?;
+    let Some(path) = std::env::var_os(ASSET_CACHE_ENVIRONMENT_VARIABLE).map(PathBuf::from) else {
+        assert!(
+            !accuracy_tests_are_required(),
+            "{REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE}=1 requires {ASSET_CACHE_ENVIRONMENT_VARIABLE}"
+        );
+        return None;
+    };
     assert!(
         path.is_dir(),
         "configured Commander Blood asset cache does not exist: {}",
         path.display()
     );
     Some(path)
+}
+
+fn accuracy_tests_are_required() -> bool {
+    std::env::var_os(REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE).is_some()
 }
 
 fn workspace_root() -> PathBuf {

@@ -370,6 +370,9 @@ mod tests {
 
     const UNPACK_ORACLE_VECTOR_COUNT: usize = 4;
     const SYNTHETIC_TRANSPARENT_SEED: u8 = 204;
+    const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
+    const ORIGINAL_ARCHIVE_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ORIGINAL_ARCHIVE_ROOT";
+    const REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE: &str = "CBLOOD_REQUIRE_ACCURACY_TESTS";
 
     #[derive(Deserialize)]
     struct UnpackOracle {
@@ -410,10 +413,11 @@ mod tests {
 
     #[test]
     fn shipped_archive_decodes_every_frame_and_station_sector() {
-        let archive = BridgePanoramaArchive::decode(
-            std::fs::read(shipped_archive()).unwrap().into_boxed_slice(),
-        )
-        .unwrap();
+        let Some(path) = shipped_archive() else {
+            return;
+        };
+        let archive =
+            BridgePanoramaArchive::decode(std::fs::read(path).unwrap().into_boxed_slice()).unwrap();
         assert_eq!(archive.frame_count(), SHIPPED_PANORAMA_FRAME_COUNT);
 
         let mut stations = Vec::with_capacity(SHIPPED_PANORAMA_FRAME_COUNT);
@@ -481,11 +485,25 @@ mod tests {
         assert_eq!(framebuffer, before);
     }
 
-    fn shipped_archive() -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../output/_tmp_iso/TB.BIG")
-            .canonicalize()
-            .expect("shipped TB.BIG must be available for decoder verification")
+    fn shipped_archive() -> Option<PathBuf> {
+        let mut candidates = Vec::new();
+        if let Some(root) = std::env::var_os(ASSET_CACHE_ENVIRONMENT_VARIABLE) {
+            let root = PathBuf::from(root);
+            candidates.push(root.join("companions/TB.BIG"));
+            candidates.push(root.join("resources/TB.BIG"));
+        }
+        if let Some(root) = std::env::var_os(ORIGINAL_ARCHIVE_ROOT_ENVIRONMENT_VARIABLE) {
+            candidates.push(PathBuf::from(root).join("TB.BIG"));
+        }
+        candidates.push(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/_tmp_iso/TB.BIG"));
+        if let Some(path) = candidates.into_iter().find(|path| path.is_file()) {
+            return Some(path);
+        }
+        assert!(
+            std::env::var_os(REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE).is_none(),
+            "{REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE}=1 requires a configured TB.BIG"
+        );
+        None
     }
 
     fn oracle_stream(transparent: bool) -> (Vec<u8>, Vec<u8>) {
