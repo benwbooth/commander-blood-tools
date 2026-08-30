@@ -300,7 +300,7 @@ fn production_runtime_reaches_each_authored_bridge_console_handler() {
             console(settled)["choice_records"],
             serde_json::json!(probe.records)
         );
-        assert_ne!(
+        assert_eq!(
             presentation_u64(settled, "ui_flags") & NAVIGATION_UI_FLAG,
             u64::MIN
         );
