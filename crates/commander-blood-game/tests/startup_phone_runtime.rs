@@ -23,6 +23,7 @@ const NAVIGATION_UI_FLAG: u64 = 1 << 3;
 const DOS_ORACLE_PACKED_SECOND: u8 = 39;
 const HONK_CLICK: &str = "click 230 88";
 const SAVE_OPTION_CLICK: &str = "sclick 100 95";
+const LOAD_OPTION_CLICK: &str = "sclick 100 106";
 const SAVE_CANCEL_CLICK: &str = "sclick 100 151";
 const HONK_WORD_CHOICES: [&str; 9] = [
     "bye_bye",
@@ -307,7 +308,7 @@ fn production_runtime_reaches_each_authored_bridge_console_handler() {
 }
 
 #[test]
-fn production_runtime_opens_and_closes_the_authored_save_menu() {
+fn production_runtime_opens_and_closes_the_authored_save_and_load_menus() {
     let Some(records) = run_production_scenario(
         "accuracy/scenarios/production_save_menu.tsv",
         "production-save-menu.jsonl",
@@ -354,6 +355,43 @@ fn production_runtime_opens_and_closes_the_authored_save_menu() {
         presentation_u64(closed, "ui_flags") & MODAL_UI_FLAG,
         u64::MIN,
         "save CANCEL row left the shared modal UI bit latched"
+    );
+
+    let load_index = records
+        .iter()
+        .position(|record| record["action"] == LOAD_OPTION_CLICK)
+        .expect("runtime trace omitted the authored LOAD option click");
+    let load_records = &records[load_index..];
+    let active = load_records
+        .iter()
+        .find(|record| save_load(record)["load_requested"] == true)
+        .expect("LOAD option never reached the production save/load owner");
+    assert_eq!(save_load(active)["active"], true);
+    assert_ne!(
+        presentation_u64(active, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "load menu did not acquire the shared modal UI bit"
+    );
+
+    let interactive = load_records
+        .iter()
+        .find(|record| {
+            save_load(record)["load_requested"] == true && save_load(record)["phase"] == "ready"
+        })
+        .expect("load menu never completed its recovered opening transition");
+    assert_eq!(save_load(interactive)["selected_slot"], 0);
+
+    let closed = load_records
+        .iter()
+        .skip_while(|record| record["action"] != SAVE_CANCEL_CLICK)
+        .find(|record| save_load(record)["active"] == false)
+        .expect("load CANCEL row did not release the production save/load owner");
+    assert_eq!(save_load(closed)["save_requested"], false);
+    assert_eq!(save_load(closed)["load_requested"], false);
+    assert_eq!(
+        presentation_u64(closed, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "load CANCEL row left the shared modal UI bit latched"
     );
 }
 

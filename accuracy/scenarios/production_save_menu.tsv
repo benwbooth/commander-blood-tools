@@ -22,3 +22,14 @@ sclick 100 95
 wait 20
 sclick 100 151
 wait 10
+
+# Reopen OPTIONS and exercise the sibling LOAD owner through the same authored
+# list transition and CANCEL row.
+park 316 45
+wait 10
+click 230 160
+wait 20
+sclick 100 106
+wait 20
+sclick 100 151
+wait 10
