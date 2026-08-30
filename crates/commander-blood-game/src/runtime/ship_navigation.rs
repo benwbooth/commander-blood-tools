@@ -387,6 +387,7 @@ fn export_live_state(
     services: &mut ModernGameServices<'_>,
     lifecycle: &mut GameLifecycleState,
 ) -> Result<()> {
+    let text_selection = export_text_selection(state.text_selection)?;
     {
         let ship = services.ship_presentation_state_mut();
         ship.flags = state.ship_active_flags;
@@ -404,7 +405,7 @@ fn export_live_state(
     {
         let text = services.text_presentation_mut();
         text.menu_pending = state.text_menu_pending;
-        text.selected_line = export_text_selection(state.text_selection)?;
+        publish_text_selection(text_selection, text, lifecycle);
         text.subtitle_display_active = state.text_display_active;
         text.menu_deferred = state.presentation_deferred;
         text.hold_ready = state.presentation_hold_ready;
@@ -429,6 +430,15 @@ fn export_live_state(
     lifecycle.frame_presented = state.frame_presented;
     lifecycle.navigation_rebuild_pending = state.navigation_screen_rebuild_pending;
     Ok(())
+}
+
+fn publish_text_selection(
+    selection: Option<i8>,
+    text: &mut crate::native::bloodprg::TextPresentationState,
+    lifecycle: &mut GameLifecycleState,
+) {
+    text.selected_line = selection;
+    lifecycle.presentation.text_selector = selection;
 }
 
 fn import_text_selection(selection: Option<i8>) -> Result<Option<usize>> {
@@ -876,6 +886,21 @@ mod tests {
         assert_eq!(export_text_selection(native).unwrap(), selected);
         assert!(import_text_selection(Some(-2)).is_err());
         assert!(export_text_selection(Some(usize::from(i8::MAX as u8) + 1)).is_err());
+    }
+
+    #[test]
+    fn navigation_text_selector_is_published_to_both_shared_state_owners() {
+        let mut text = crate::native::bloodprg::TextPresentationState {
+            selected_line: Some(4),
+            ..crate::native::bloodprg::TextPresentationState::default()
+        };
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.text_selector = Some(4);
+
+        publish_text_selection(None, &mut text, &mut lifecycle);
+
+        assert_eq!(text.selected_line, None);
+        assert_eq!(lifecycle.presentation.text_selector, None);
     }
 
     #[test]

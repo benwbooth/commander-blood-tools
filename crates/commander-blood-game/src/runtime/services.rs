@@ -2660,6 +2660,11 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.presentation_scan_state()
     }
 
+    /// Refresh main-loop presentation writes before a scene transition clones script state.
+    pub(super) fn prepare_scene_transition_presentation(&mut self, lifecycle: &GameLifecycleState) {
+        self.scripts.prepare_lifecycle_frame(lifecycle);
+    }
+
     pub(super) fn latest_presentation_started(&self) -> Option<ScriptObjectId> {
         self.scripts
             .last_presentation_outcome()

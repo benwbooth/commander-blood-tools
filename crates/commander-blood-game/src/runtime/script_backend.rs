@@ -1665,6 +1665,60 @@ mod tests {
     }
 
     #[test]
+    fn main_loop_presentation_writes_survive_a_scene_state_exchange() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_modal_ui_busy(true);
+        lifecycle.set_presentation_interface_active(true);
+        lifecycle.presentation.active = true;
+        lifecycle.presentation.c2_presentation_gate = true;
+        lifecycle.presentation.word_choice_active = true;
+        lifecycle.presentation.start_locked = true;
+        lifecycle.presentation.hold_ready = true;
+        lifecycle.presentation.dialogue_hold_complete = true;
+        lifecycle.presentation.subtitle_display_active = true;
+        lifecycle.presentation.menu_deferred = true;
+        lifecycle.presentation.request_flags =
+            crate::native::bloodprg::PresentationRequestFlags::decode(3);
+        lifecycle.presentation.subtitle_word_list_mode = true;
+        lifecycle.presentation.subtitle_voice_trigger = true;
+        lifecycle.presentation.text_menu_pending = true;
+        lifecycle.presentation.text_selector = Some(20);
+        lifecycle.presentation.dialogue_hold_countdown = 17;
+        lifecycle.presentation.sequence_active = true;
+
+        scripts.prepare_lifecycle_frame(&lifecycle);
+        let presentation = scripts.presentation_scan_state().clone();
+        let text = scripts.text_presentation().clone();
+        *scripts.presentation_scan_state_mut() = presentation;
+        *scripts.text_presentation_mut() = text;
+        scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
+
+        assert!(lifecycle.modal_ui_busy());
+        assert!(lifecycle.presentation_interface_active());
+        assert!(lifecycle.presentation.active);
+        assert!(lifecycle.presentation.c2_presentation_gate);
+        assert!(lifecycle.presentation.word_choice_active);
+        assert!(lifecycle.presentation.start_locked);
+        assert!(lifecycle.presentation.hold_ready);
+        assert!(lifecycle.presentation.dialogue_hold_complete);
+        assert!(lifecycle.presentation.subtitle_display_active);
+        assert!(lifecycle.presentation.menu_deferred);
+        assert_eq!(lifecycle.presentation.request_flags.bits(), 3);
+        assert!(lifecycle.presentation.subtitle_word_list_mode);
+        assert!(lifecycle.presentation.subtitle_voice_trigger);
+        assert!(lifecycle.presentation.text_menu_pending);
+        assert_eq!(lifecycle.presentation.text_selector, Some(20));
+        assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 17);
+        assert!(lifecycle.presentation.sequence_active);
+    }
+
+    #[test]
     fn presentation_palette_dirty_is_a_one_shot_runtime_alias() {
         let Some(paths) = original_data_paths() else {
             return;

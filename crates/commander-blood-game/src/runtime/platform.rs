@@ -15,7 +15,9 @@ use crate::native::bloodprg::{
 };
 
 use super::input::{INITIAL_LOGICAL_POINTER, map_host_pointer_to_logical};
-use super::scenario::{RuntimeScenarioCadence, RuntimeScenarioDriver, RuntimeScenarioKey};
+use super::scenario::{
+    RuntimeScenarioCadence, RuntimeScenarioDriver, RuntimeScenarioFrameInput, RuntimeScenarioKey,
+};
 use super::{ModernGameServices, RuntimeAlienOverlayFrameInput};
 
 /// Input frequency of the IBM PC programmable interval timer.
@@ -181,21 +183,7 @@ impl<'window> RuntimePlatformHost<'window> {
                             RuntimeScenarioCadence::GameLoop
                         },
                     )?;
-                if let Some(position) = input.pointer_position {
-                    self.logical_pointer = position.map(f32::from);
-                    self.pointer_inside_window = true;
-                }
-                self.pointer_buttons = if input.primary_pressed {
-                    PointerButtons::from_bits(PointerButton::Primary as u16)
-                } else {
-                    PointerButtons::NONE
-                };
-                if let Some(key) = input.key {
-                    queue_scenario_key(services, key);
-                }
-                if input.request_shutdown {
-                    services.input_mut().request_shutdown();
-                }
+                self.apply_game_scenario_input(services, input);
             }
         }
         Ok(services.dispatch_lifecycle_input(state))
@@ -224,7 +212,12 @@ impl<'window> RuntimePlatformHost<'window> {
         services: &mut ModernGameServices<'window>,
     ) -> Result<RuntimeAlienOverlayFrameInput> {
         self.frame_clock.begin_frame(Instant::now());
-        let platform_shutdown = self.pump_events(services);
+        let mut platform_shutdown = self.pump_events(services);
+        if let Some(scenario) = self.scenario.as_mut() {
+            let input = scenario.advance(None, RuntimeScenarioCadence::BlockingPresentation)?;
+            platform_shutdown |= input.request_shutdown;
+            self.apply_alien_scenario_input(services, input);
+        }
         let key_events = services
             .input_mut()
             .drain_alien_key_events(platform_shutdown);
@@ -236,6 +229,47 @@ impl<'window> RuntimePlatformHost<'window> {
             self.pointer_buttons,
             key_events,
         ))
+    }
+
+    fn apply_game_scenario_input(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        input: RuntimeScenarioFrameInput,
+    ) {
+        if let Some(position) = input.pointer_position {
+            self.logical_pointer = position.map(f32::from);
+            self.pointer_inside_window = true;
+        }
+        self.apply_scenario_buttons_and_key(services, input);
+    }
+
+    fn apply_alien_scenario_input(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        input: RuntimeScenarioFrameInput,
+    ) {
+        if let Some(position) = input.pointer_position {
+            self.alien_pointer = Some(map_logical_to_alien_driver(position));
+        }
+        self.apply_scenario_buttons_and_key(services, input);
+    }
+
+    fn apply_scenario_buttons_and_key(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        input: RuntimeScenarioFrameInput,
+    ) {
+        self.pointer_buttons = if input.primary_pressed {
+            PointerButtons::from_bits(PointerButton::Primary as u16)
+        } else {
+            PointerButtons::NONE
+        };
+        if let Some(key) = input.key {
+            queue_scenario_key(services, key);
+        }
+        if input.request_shutdown {
+            services.input_mut().request_shutdown();
+        }
     }
 
     /// Center the overlay's virtual mouse driver without moving the real cursor.
@@ -601,6 +635,13 @@ fn map_motion_to_alien_driver(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 
     ]
 }
 
+fn map_logical_to_alien_driver(position: [i16; 2]) -> [f32; 2] {
+    [
+        f32::from(position[0]) * ALIEN_DRIVER_WIDTH / LOGICAL_SCREEN_WIDTH,
+        f32::from(position[1]) * ALIEN_DRIVER_HEIGHT / LOGICAL_SCREEN_HEIGHT,
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -769,6 +810,18 @@ mod tests {
                 WIDESCREEN_OUTPUT,
                 [WIDESCREEN_VIEWPORT_WIDTH, WIDESCREEN_OUTPUT[1]],
             ),
+            [ALIEN_DRIVER_WIDTH, ALIEN_DRIVER_HEIGHT]
+        );
+    }
+
+    #[test]
+    fn scripted_absolute_pointer_maps_across_the_full_alien_driver_domain() {
+        assert_eq!(map_logical_to_alien_driver([0, 0]), [0.0, 0.0]);
+        assert_eq!(
+            map_logical_to_alien_driver([
+                LOGICAL_SCREEN_WIDTH as i16,
+                LOGICAL_SCREEN_HEIGHT as i16,
+            ]),
             [ALIEN_DRIVER_WIDTH, ALIEN_DRIVER_HEIGHT]
         );
     }

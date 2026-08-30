@@ -100,6 +100,7 @@ impl RuntimeSceneTransition {
             )
         })?;
 
+        services.prepare_scene_transition_presentation(lifecycle);
         let mut presentation = services.presentation_scan_state().clone();
         let mut text = services.text_presentation().clone();
         lifecycle.presentation.request_flags = text.request_flags;

@@ -257,7 +257,8 @@ fn export_live_state(
     lifecycle.presentation.subtitle_display_active = state.text_display_active;
     lifecycle.presentation.subtitle_word_list_mode = state.subtitle_display_mode;
     lifecycle.presentation.sequence_active = state.sequence_active;
-    lifecycle.presentation.c2_presentation_gate = state.presentation_gate != u16::MIN;
+    lifecycle.presentation.c2_presentation_gate =
+        presentation_gate_is_active(state.presentation_gate);
     lifecycle.presentation.active_line = state.active_line;
 }
 
@@ -280,6 +281,10 @@ const fn flag_is_active(flags: u8) -> bool {
 
 const fn replace_active_flag(flags: u8, active: bool) -> u8 {
     (flags & !ACTIVE_FLAG) | active as u8
+}
+
+const fn presentation_gate_is_active(gate: u16) -> bool {
+    gate & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN
 }
 
 struct RuntimeShipHudBackend<'services, 'window> {
@@ -476,5 +481,14 @@ mod tests {
         let original = 0b1010_1010;
         assert_eq!(replace_active_flag(original, true), 0b1010_1011);
         assert_eq!(replace_active_flag(original, false), original);
+    }
+
+    #[test]
+    fn c2_ownership_ignores_unrelated_presentation_gate_bits() {
+        let unrelated_bits = u16::MAX & !SHIP_PRESENTATION_ACTIVE_FLAG;
+        assert!(!presentation_gate_is_active(unrelated_bits));
+        assert!(presentation_gate_is_active(
+            unrelated_bits | SHIP_PRESENTATION_ACTIVE_FLAG
+        ));
     }
 }
