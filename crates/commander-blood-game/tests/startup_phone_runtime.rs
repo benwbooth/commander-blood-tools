@@ -32,6 +32,8 @@ const SAVE_OPTION_CLICK: &str = "sclick 100 95";
 const LOAD_OPTION_CLICK: &str = "sclick 100 106";
 const SAVE_CANCEL_CLICK: &str = "sclick 100 151";
 const LOAD_FIRST_SLOT_CLICK: &str = "sclick 100 40";
+const OPTIONS_CANCEL_CLICK: &str = "sclick 100 125";
+const TEXT_OPTION_CLICK: &str = "sclick 100 68";
 const SEEDED_LOAD_PROFILE: u8 = 2;
 const SCRIPT2_PROFILE: u8 = 1;
 const SCRIPT2_PTERRA_UNLOCK_STATE_OFFSET: u16 = 0x12C2;
@@ -50,7 +52,7 @@ const HONK_WORD_CHOICES: [&str; 9] = [
 ];
 const EMPTY_LABELS: [&str; 0] = [];
 const CONTACT_LABELS: [&str; 1] = ["Bob_Morlock"];
-const OPTION_LABELS: [&str; 5] = ["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT"];
+const OPTION_LABELS: [&str; 6] = ["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT", "CANCEL"];
 const NO_RECORDS: [u64; 0] = [];
 const CONTACT_RECORDS: [u64; 1] = [3];
 
@@ -404,6 +406,61 @@ fn production_runtime_opens_and_closes_the_authored_save_and_load_menus() {
         presentation_u64(closed, "ui_flags") & MODAL_UI_FLAG,
         u64::MIN,
         "load CANCEL row left the shared modal UI bit latched"
+    );
+}
+
+#[test]
+fn production_runtime_cancels_options_and_text_speed_without_side_effects() {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/production_options_cancel.tsv",
+        "production-options-cancel.jsonl",
+    ) else {
+        return;
+    };
+
+    let cancel_indices = records
+        .iter()
+        .enumerate()
+        .filter_map(|(index, record)| (record["action"] == OPTIONS_CANCEL_CLICK).then_some(index))
+        .collect::<Vec<_>>();
+    assert_eq!(cancel_indices.len(), 2);
+
+    let options_closed = records[cancel_indices[0]..]
+        .iter()
+        .find(|record| console(record)["selected"].is_null())
+        .expect("Options CANCEL did not close the bridge submenu");
+    assert_eq!(console(options_closed)["text_options_active"], false);
+    assert_eq!(
+        presentation_u64(options_closed, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "Options CANCEL left the modal UI bit latched"
+    );
+
+    let text_index = records
+        .iter()
+        .position(|record| record["action"] == TEXT_OPTION_CLICK)
+        .expect("runtime trace omitted the authored TEXT option click");
+    let text_open = records[text_index..]
+        .iter()
+        .find(|record| console(record)["text_options_active"] == true)
+        .expect("TEXT option never opened the text-speed chooser");
+    let dialogue_delay =
+        text_open["semantic"]["presentation"]["text_state"]["dialogue_word_delay"].clone();
+
+    let text_closed = records[cancel_indices[1]..]
+        .iter()
+        .find(|record| console(record)["text_options_active"] == false)
+        .expect("Text Speed CANCEL did not close the chooser");
+    assert_eq!(console(text_closed)["selected"], Value::Null);
+    assert_eq!(
+        presentation_u64(text_closed, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "Text Speed CANCEL left the modal UI bit latched"
+    );
+    assert_eq!(
+        text_closed["semantic"]["presentation"]["text_state"]["dialogue_word_delay"],
+        dialogue_delay,
+        "Text Speed CANCEL changed dialogue timing"
     );
 }
 

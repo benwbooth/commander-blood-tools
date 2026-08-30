@@ -645,6 +645,8 @@ pub enum OptionMenuOutcome {
     Interactive(ChoiceListFrame),
     /// One authored option was applied and the panel closed.
     Selected(OptionMenuChoice),
+    /// The executable-authored final cancel row closed the panel without an action.
+    Cancelled,
 }
 
 /// Update text, music, save, load, and quit options.
@@ -654,6 +656,7 @@ pub enum OptionMenuOutcome {
 /// aliases, packed flags, mutable label pointers, and DOS input globals.
 pub fn update_option_menu<Backend: BridgeChoiceBackend>(
     labels: &[&[u8]],
+    cancel_label: &[u8],
     animation_target: ChoiceListRect,
     console: &mut BridgeConsoleState,
     options: &mut OptionMenuState,
@@ -665,7 +668,7 @@ pub fn update_option_menu<Backend: BridgeChoiceBackend>(
     let config = ChoiceListConfig {
         center_x: PANEL_CENTER_X,
         preserve_individual_widths: true,
-        cancel_label: None,
+        cancel_label: Some(cancel_label),
         layout_only: true,
     };
     if console.panel_phase == BridgeChoicePanelPhase::NeedsLayout {
@@ -688,6 +691,10 @@ pub fn update_option_menu<Backend: BridgeChoiceBackend>(
         backend,
     );
     let Some(index) = frame.selected_item else {
+        if frame.cancelled {
+            close_console(console);
+            return OptionMenuOutcome::Cancelled;
+        }
         return OptionMenuOutcome::Interactive(frame);
     };
     let Some(choice) = OptionMenuChoice::from_row(index) else {
@@ -1084,14 +1091,6 @@ mod tests {
         assert_eq!(vectors.len(), OPTION_VECTOR_COUNT);
         for vector in vectors {
             let selection = vector.selection.map(usize::from);
-            if selection.is_some_and(|row| OptionMenuChoice::from_row(row).is_none()) {
-                assert!(
-                    OptionMenuChoice::from_row(selection.unwrap()).is_none(),
-                    "{}",
-                    vector.name
-                );
-                continue;
-            }
             let mut backend = OracleBackend::for_selection(
                 selection.filter(|_| vector.phase_before != 2),
                 transition_complete(&vector.calls),
@@ -1108,18 +1107,29 @@ mod tests {
             let labels = [b"TEXT".as_slice(), b"MUSIC", b"SAVE", b"LOAD", b"QUIT"];
             let outcome = update_option_menu(
                 &labels,
+                CANCEL_LABEL,
                 ANIMATION_TARGET,
                 &mut console,
                 &mut options,
                 &mut backend,
             );
             if let Some(row) = selection.filter(|_| vector.phase_before != 2) {
-                assert_eq!(
-                    outcome,
-                    OptionMenuOutcome::Selected(OptionMenuChoice::from_row(row).unwrap()),
-                    "{}",
-                    vector.name
-                );
+                if row == labels.len() {
+                    assert_eq!(outcome, OptionMenuOutcome::Cancelled, "{}", vector.name);
+                } else if let Some(choice) = OptionMenuChoice::from_row(row) {
+                    assert_eq!(
+                        outcome,
+                        OptionMenuOutcome::Selected(choice),
+                        "{}",
+                        vector.name
+                    );
+                } else {
+                    assert!(
+                        matches!(outcome, OptionMenuOutcome::Interactive(_)),
+                        "{}: {outcome:?}",
+                        vector.name
+                    );
+                }
             }
             if vector.name.starts_with("music_") {
                 assert_eq!(

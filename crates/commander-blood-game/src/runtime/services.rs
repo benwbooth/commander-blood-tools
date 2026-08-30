@@ -38,8 +38,8 @@ use crate::native::bloodprg::{
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SaveLoadMenuPhase,
     SceneTransitionState, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
-    ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
-    ScriptObjectFlag, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    ScriptFrameOutcome, ScriptObjectFlag, ScriptPresentationEntity, ScriptPresentationScanState,
+    ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
     SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TextPresentationState,
@@ -3723,6 +3723,7 @@ impl<'window> ModernGameServices<'window> {
             commander_blood_formats::name_area_effect::NameAreaEffectOperation::FadeBackward => 3,
         };
         let text_state = serde_json::json!({
+            "dialogue_word_delay": self.dialogue_word_delay()?,
             "start_locked": lifecycle.presentation.start_locked,
             "hold_ready": lifecycle.presentation.hold_ready,
             "dialogue_hold_complete": lifecycle.presentation.dialogue_hold_complete,
