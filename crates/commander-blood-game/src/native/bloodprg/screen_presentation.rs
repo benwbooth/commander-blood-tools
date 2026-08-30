@@ -10,6 +10,8 @@ const CONTENT_HEIGHT: u16 = 140;
 const CONTENT_FRAME_HEIGHT: u16 = 130;
 const SCREEN_WIDTH: u16 = 320;
 const SCREEN_HEIGHT: u16 = 200;
+const NORMAL_TEXT_ORIGIN_Y: u16 = 8;
+const OPENING_TEXT_ORIGIN_Y: u16 = 1;
 
 const FULL_SCREEN: PresentationRenderRegion =
     PresentationRenderRegion::new([0, 0], [SCREEN_WIDTH, SCREEN_HEIGHT]);
@@ -181,6 +183,16 @@ pub enum PresentationTextOrigin {
     Normal,
     /// Temporary opening layout used while the panel owns the bridge.
     Opening,
+}
+
+impl PresentationTextOrigin {
+    /// Return the Y coordinate written to `presentation_text_origin_y`.
+    pub const fn logical_y(self) -> u16 {
+        match self {
+            Self::Normal => NORMAL_TEXT_ORIGIN_Y,
+            Self::Opening => OPENING_TEXT_ORIGIN_Y,
+        }
+    }
 }
 
 /// Placement of the currently loaded presentation resource.
@@ -946,11 +958,13 @@ mod tests {
 
         update_presentation_screen(&mut state, &records, &QUEUED_SCENE_LINK, &mut backend).unwrap();
         assert_eq!(state.text_origin(), PresentationTextOrigin::Opening);
+        assert_eq!(state.text_origin().logical_y(), OPENING_TEXT_ORIGIN_Y);
         assert!(state.panel_hover_restore_requested());
 
         state.set_phase(PresentationPanelPhase::Finalizing);
         update_presentation_screen(&mut state, &records, &QUEUED_SCENE_LINK, &mut backend).unwrap();
         assert_eq!(state.text_origin(), PresentationTextOrigin::Normal);
+        assert_eq!(state.text_origin().logical_y(), NORMAL_TEXT_ORIGIN_Y);
         assert_eq!(
             state.resource_placement(),
             PresentationResourcePlacement::Hidden,

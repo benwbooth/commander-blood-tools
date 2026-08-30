@@ -60,15 +60,14 @@ pub struct RuntimePresentationCatalog {
 }
 
 impl RuntimePresentationCatalog {
-    /// Clone fixed executable templates and clear every dynamically authored line.
+    /// Clone every executable template before DESCRIPT overwrites dynamic names.
+    ///
+    /// The shipped dynamic slots contain deliberately unavailable placeholder
+    /// names. Retaining them reproduces the native soft resource-open failure
+    /// when a script selects a slot before any DESCRIPT record has populated it.
     pub fn new(initial: &BloodprgPresentationCatalog) -> Self {
-        let mut names =
-            std::array::from_fn(|line| Some(initial.lines()[line].resource_name().clone()));
-        for line in dynamic_presentation_lines() {
-            names[line] = None;
-        }
         Self {
-            names,
+            names: std::array::from_fn(|line| Some(initial.lines()[line].resource_name().clone())),
             backgrounds: [RuntimePresentationBackground::None; BLOODPRG_PRESENTATION_LINE_COUNT],
             flags: std::array::from_fn(|line| initial.lines()[line].flags()),
             variants: std::array::from_fn(|line| initial.lines()[line].variant()),
@@ -208,24 +207,6 @@ impl RuntimePresentationCatalog {
     }
 }
 
-fn dynamic_presentation_lines() -> impl Iterator<Item = usize> {
-    [
-        SEQUENCE_PRESENTATION_LINE,
-        LOCATION_PRESENTATION_LINE,
-        HYPERSPACE_PRESENTATION_LINE,
-        SCRIPT_SEQUENCE_PRESENTATION_LINE,
-        CHARACTER_IDLE_PRESENTATION_LINE,
-        CHARACTER_RIGHT_PRESENTATION_LINE,
-        CHARACTER_LEFT_PRESENTATION_LINE,
-        OBJECT_PRESENTATION_LINE,
-    ]
-    .into_iter()
-    .chain(
-        FIRST_CHARACTER_TALK_PRESENTATION_LINE
-            ..FIRST_CHARACTER_TALK_PRESENTATION_LINE + CHARACTER_TALK_PRESENTATION_LINE_COUNT,
-    )
-}
-
 fn prefixed_name(directory: &[u8], basename: &[u8], context: &str) -> Result<BloodResourceName> {
     if basename.contains(&b'/') || basename.contains(&b'\\') {
         return BloodResourceName::new(basename).with_context(|| context.to_owned());
@@ -248,10 +229,11 @@ mod tests {
     const OPENING_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(0);
     const FIRST_DYNAMIC_PRESENTATION_LINE: PresentationResourceId =
         PresentationResourceId::new(SEQUENCE_PRESENTATION_LINE as u16);
+    const EXECUTABLE_DYNAMIC_RESOURCE_PLACEHOLDER: &[u8] = b"xxxxxxxxxxxx";
     type MissingAuthoredResource = (Box<[u8]>, Box<[u8]>);
 
     #[test]
-    fn fixed_templates_are_retained_and_mutable_templates_start_unresolved() {
+    fn fixed_and_placeholder_templates_retain_the_executable_names() {
         let Some(data) = original_data() else {
             return;
         };
@@ -260,7 +242,14 @@ mod tests {
         assert_eq!(opening.resource_name.as_bytes(), b"sq\\mind.HNM");
         assert_eq!(opening.descriptor_flags, 0);
         assert_eq!(opening.variant, 16);
-        assert!(catalog.request(FIRST_DYNAMIC_PRESENTATION_LINE).is_err());
+        assert_eq!(
+            catalog
+                .request(FIRST_DYNAMIC_PRESENTATION_LINE)
+                .unwrap()
+                .resource_name
+                .as_bytes(),
+            b"sq\\xxxxxxxxxxxx"
+        );
     }
 
     #[test]
@@ -370,6 +359,12 @@ mod tests {
                 let Some(resource_name) = catalog.resource_name(line) else {
                     continue;
                 };
+                if resource_name
+                    .as_bytes()
+                    .ends_with(EXECUTABLE_DYNAMIC_RESOURCE_PLACEHOLDER)
+                {
+                    continue;
+                }
                 if !data
                     .resource_store()
                     .resource_exists(resource_name)

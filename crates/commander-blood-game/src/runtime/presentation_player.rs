@@ -454,6 +454,37 @@ mod tests {
     }
 
     #[test]
+    fn unresolved_dynamic_line_uses_the_native_unavailable_source_path() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+
+        let load = player
+            .load(
+                &mut runtime,
+                DESCRIPT_SEQUENCE_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                u16::MIN,
+                false,
+            )
+            .unwrap();
+
+        assert!(load.is_none());
+        assert!(!player.has_stream());
+        assert_eq!(
+            player
+                .catalog()
+                .resource_name(DESCRIPT_SEQUENCE_PRESENTATION_LINE)
+                .unwrap()
+                .as_bytes(),
+            b"sq\\xxxxxxxxxxxx"
+        );
+    }
+
+    #[test]
     fn cancelled_real_stream_rewinds_and_resumes_without_stalling() {
         let Some(data) = original_data() else {
             return;

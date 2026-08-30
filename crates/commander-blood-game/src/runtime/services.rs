@@ -2102,6 +2102,7 @@ impl<'window> ModernGameServices<'window> {
             active_record_related,
             scruter_jo_record,
         );
+        let presentation_text_origin = screen.state().text_origin();
         latch_script_finale_completion(
             &mut self.script_finale_shutdown_pending,
             finale_requested,
@@ -2109,6 +2110,10 @@ impl<'window> ModernGameServices<'window> {
             screen.scene_state().presentation.active_line,
         );
         self.presentation_screen = Some(screen);
+        self.subtitle_reveal
+            .as_mut()
+            .context("subtitle reveal is already being updated")?
+            .set_presentation_text_origin(presentation_text_origin);
         if matches!(&outcome, Ok(PresentationScreenOutcome::Initialized)) {
             self.set_previous_manu3_animation(Manu3AnimationSelector::PresentationPanel);
             self.presentation_hover

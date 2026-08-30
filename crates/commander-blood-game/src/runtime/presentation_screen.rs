@@ -14,13 +14,14 @@ use crate::native::bloodprg::{
     PresentationScreenState, RasterNoiseMode, RasterPoint, RasterSpanPaint, SceneTransitionLine,
     SceneTransitionPhase, SceneTransitionState, ScriptPresentationScanState,
     SequenceSubtitlePlayback, SequenceSubtitleRenderer, ShipPresentationState,
-    build_banked_tint_table, decode_active_presentation_line, draw_framebuffer_noise_rect,
-    draw_rect_outline, encode_active_presentation_line, fill_framebuffer_rect,
-    present_sequence_subtitle, remap_framebuffer_rect, update_presentation_screen,
+    build_banked_tint_table, decode_active_presentation_line, draw_bios_font_text,
+    draw_framebuffer_noise_rect, draw_rect_outline, encode_active_presentation_line,
+    fill_framebuffer_rect, present_sequence_subtitle, remap_framebuffer_rect,
+    update_presentation_screen,
 };
 
 use super::game_lifecycle::native_scene_link_target;
-use super::{ModernGameServices, OriginalGameRuntime, RuntimePresentationScene};
+use super::{ModernGameServices, OriginalGameRuntime, RuntimePresentationScene, VGA_BIOS_FONT_8X8};
 
 const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
     left: 0,
@@ -624,17 +625,29 @@ impl SequenceSubtitleRenderer for RuntimeSequenceSubtitleRenderer<'_> {
     }
 
     fn draw_centered_line(&mut self, line: CenteredSequenceSubtitleLine<'_>) -> Result<()> {
-        self.runtime
-            .draw_small_font_line(
-                line.text,
-                FontPoint {
-                    x: i32::from(line.position[0]),
-                    y: i32::from(line.position[1]),
-                },
-                line.color,
-            )
-            .map(|_| ())
+        draw_sequence_subtitle_bios_line(self.runtime.front_buffer_mut().pixels_mut(), line)
     }
+}
+
+fn draw_sequence_subtitle_bios_line(
+    framebuffer: &mut [u8],
+    line: CenteredSequenceSubtitleLine<'_>,
+) -> Result<()> {
+    let character_limit = u8::try_from(line.text.len())
+        .context("DESCRIPT sequence subtitle line exceeds the BIOS byte limit")?;
+    draw_bios_font_text(
+        framebuffer,
+        &VGA_BIOS_FONT_8X8,
+        line.text,
+        FontPoint {
+            x: i32::from(line.position[0]),
+            y: i32::from(line.position[1]),
+        },
+        line.color,
+        character_limit,
+    )
+    .context("drawing a DESCRIPT sequence subtitle through the BIOS 8x8 font")
+    .map(|_| ())
 }
 
 fn region_origin(region: PresentationRenderRegion) -> RasterPoint {
@@ -648,6 +661,12 @@ fn region_origin(region: PresentationRenderRegion) -> RasterPoint {
 mod tests {
     use super::*;
 
+    const BIOS_GLYPH_WIDTH: usize = 8;
+    const BIOS_GLYPH_HEIGHT: usize = 8;
+    const BIOS_GLYPH_HIGHEST_BIT: u8 = 128;
+    const TEST_SEQUENCE_CHARACTER: u8 = b'L';
+    const TEST_SEQUENCE_POSITION: [u16; 2] = [16, 74];
+    const TEST_SEQUENCE_COLOR: u8 = 203;
     const INITIAL_LINE: u16 = 42;
     const INITIAL_PRESENTATION_GATE: u16 = 257;
     const INITIAL_SCENE_GATE_FLAGS: u8 = 128;
@@ -661,6 +680,39 @@ mod tests {
     const EXPORTED_TRANSITION_PERCENT: u16 = 100;
     const EXPORTED_DEPTH_FLAGS: u8 = 128;
     const EXPORTED_DEPTH_STEP: u8 = 2;
+
+    #[test]
+    fn production_sequence_subtitle_uses_the_exact_bios_8x8_glyph() {
+        let mut framebuffer = vec![u8::MIN; crate::runtime::LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        draw_sequence_subtitle_bios_line(
+            &mut framebuffer,
+            CenteredSequenceSubtitleLine {
+                text: &[TEST_SEQUENCE_CHARACTER],
+                position: TEST_SEQUENCE_POSITION,
+                color: TEST_SEQUENCE_COLOR,
+            },
+        )
+        .unwrap();
+
+        let glyph = VGA_BIOS_FONT_8X8[usize::from(TEST_SEQUENCE_CHARACTER)];
+        for (row, encoded) in glyph.into_iter().enumerate().take(BIOS_GLYPH_HEIGHT) {
+            for column in usize::MIN..BIOS_GLYPH_WIDTH {
+                let mask = BIOS_GLYPH_HIGHEST_BIT >> column;
+                let expected = if encoded & mask != u8::MIN {
+                    TEST_SEQUENCE_COLOR
+                } else {
+                    u8::MIN
+                };
+                let x = usize::from(TEST_SEQUENCE_POSITION[0]) + column;
+                let y = usize::from(TEST_SEQUENCE_POSITION[1]) + row;
+                assert_eq!(
+                    framebuffer[y * crate::runtime::LOGICAL_FRAMEBUFFER_WIDTH + x],
+                    expected,
+                    "BIOS glyph pixel differs at ({column}, {row})"
+                );
+            }
+        }
+    }
 
     #[test]
     fn inactive_screen_does_not_require_a_loaded_profile() {

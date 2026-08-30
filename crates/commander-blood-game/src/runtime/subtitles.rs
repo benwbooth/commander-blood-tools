@@ -3,11 +3,12 @@
 use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, FontPoint, GameTimerState, PaletteRemapTable, RasterPoint, RasterSpanPaint,
-    SubtitleFrameDraw, SubtitleFramePrimitive, SubtitleFramePrimitiveKind, SubtitleRevealLine,
-    SubtitleRevealOutcome, SubtitleRevealRenderer, SubtitleRevealState, TextPresentationState,
-    build_palette_blend_remap_table, draw_planar_horizontal_span, draw_planar_vertical_span,
-    draw_subtitle_reveal_line, update_subtitle_reveal,
+    BridgeSpriteRect, FontPoint, GameTimerState, PaletteRemapTable, PresentationTextOrigin,
+    RasterPoint, RasterSpanPaint, SubtitleFrameDraw, SubtitleFramePrimitive,
+    SubtitleFramePrimitiveKind, SubtitleRevealLine, SubtitleRevealOutcome, SubtitleRevealRenderer,
+    SubtitleRevealState, TextPresentationState, build_palette_blend_remap_table,
+    draw_planar_horizontal_span, draw_planar_vertical_span, draw_subtitle_reveal_line,
+    update_subtitle_reveal,
 };
 
 use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime};
@@ -89,6 +90,11 @@ impl RuntimeSubtitleReveal {
     /// Apply a player-selected text-speed step without changing reveal progress.
     pub fn set_text_speed_step(&mut self, step: u16) {
         self.state.text_speed_step = step;
+    }
+
+    /// Synchronize the panel-owned native subtitle Y origin.
+    pub(super) fn set_presentation_text_origin(&mut self, origin: PresentationTextOrigin) {
+        self.state.text_origin[1] = origin.logical_y();
     }
 
     /// Draw the synchronous loading caption emitted by the native VOC source loader.
@@ -289,6 +295,22 @@ mod tests {
     const REMAINING_OPENING_PULSE_TICKS: usize = 24;
 
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+    #[test]
+    fn presentation_panel_origin_updates_only_the_native_subtitle_y_coordinate() {
+        let mut subtitle = RuntimeSubtitleReveal::new(u16::MIN);
+        let original_x = subtitle.state().text_origin[0];
+
+        subtitle.set_presentation_text_origin(PresentationTextOrigin::Opening);
+        assert_eq!(subtitle.state().text_origin[0], original_x);
+        assert_eq!(
+            subtitle.state().text_origin[1],
+            PresentationTextOrigin::Opening.logical_y()
+        );
+
+        subtitle.set_presentation_text_origin(PresentationTextOrigin::Normal);
+        assert_eq!(subtitle.state().text_origin, SUBTITLE_TEXT_ORIGIN);
+    }
 
     struct TemporaryRoot(std::path::PathBuf);
 
