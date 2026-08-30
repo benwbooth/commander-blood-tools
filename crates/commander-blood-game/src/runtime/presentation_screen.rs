@@ -153,6 +153,7 @@ impl RuntimePresentationScreen {
             active_record_related,
             scruter_jo_record,
             false,
+            self.state.active(),
         );
         export_ship_scene_state(&self.scene_state, ship);
         outcome
@@ -190,6 +191,7 @@ impl RuntimePresentationScreen {
             Some(active_record_related),
             scruter_jo_record,
             render_snapshot_suppressed,
+            self.state.active(),
         );
 
         transition.active_line = scene
@@ -234,6 +236,7 @@ impl RuntimePresentationScreen {
         } else {
             std::array::from_fn(|_| None)
         };
+        let secondary_presentation_mode = self.state.active();
         let mut backend = RuntimePresentationScreenBackend {
             services,
             scene: &mut self.scene,
@@ -242,6 +245,7 @@ impl RuntimePresentationScreen {
             active_record_related,
             scruter_jo_record,
             scene_frame_presented_output: &mut self.scene_frame_presented_output,
+            secondary_presentation_mode,
             deferred_error: None,
         };
         let outcome =
@@ -315,6 +319,7 @@ struct RuntimePresentationScreenBackend<'services, 'window> {
     active_record_related: Option<ScriptObjectId>,
     scruter_jo_record: Option<ScriptObjectId>,
     scene_frame_presented_output: &'services mut Option<bool>,
+    secondary_presentation_mode: bool,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -517,6 +522,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
             self.active_record_related,
             self.scruter_jo_record,
             false,
+            self.secondary_presentation_mode,
         )?;
         *self.scene_frame_presented_output = Some(self.scene_state.frame_presented);
         Ok(PresentationSceneStatus {

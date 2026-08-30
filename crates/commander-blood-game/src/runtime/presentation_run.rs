@@ -105,14 +105,22 @@ impl RuntimePresentationRunHost<'_, '_> {
         }
         self.services.import_game_timer_state(self.timer)
     }
+}
 
-    fn audio_position(&self) -> Result<u16> {
-        let position = self
-            .services
-            .foreground_audio_position()?
-            .unwrap_or(u64::MIN);
-        Ok(position as u16)
-    }
+fn import_blocking_presentation_input(
+    run: &PresentationRunState,
+    lifecycle: &mut GameLifecycleState,
+) {
+    lifecycle.presentation.active_line = run.active_line;
+    lifecycle.presentation.c2_presentation_gate =
+        run.presentation_gate & PRESENTATION_GATE_ACTIVE != u8::MIN;
+}
+
+fn export_blocking_presentation_stop_gate(
+    run: &mut PresentationRunState,
+    lifecycle: &GameLifecycleState,
+) {
+    run.input_stop_gate = u8::from(lifecycle.exit_requested);
 }
 
 impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
@@ -135,15 +143,15 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
 
     fn dispatch_input(&mut self, state: &mut PresentationRunState) -> Result<()> {
         self.advance_timer()?;
+        import_blocking_presentation_input(state, &mut self.input_state);
         let action = self
             .platform
             .dispatch_events(self.services, &mut self.input_state)?;
-        let cancelled = action == Some(InputAction::Cancel);
-        if cancelled {
-            self.services.finish_presentation_sequence();
-            self.active_policy = None;
+        if action == Some(InputAction::Cancel) {
+            self.services
+                .cancel_lifecycle_presentation(&mut self.input_state)?;
         }
-        state.input_stop_gate = u8::from(self.input_state.exit_requested || cancelled);
+        export_blocking_presentation_stop_gate(state, &self.input_state);
         Ok(())
     }
 
@@ -173,10 +181,9 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
             )?;
             self.active_policy = Some(policy);
         } else {
-            let audio_position = self.audio_position()?;
             let timer_tick = self.services.game_timer_tick();
             self.services
-                .service_presentation_sequence(audio_position, timer_tick, false)?;
+                .service_presentation_sequence(timer_tick, false, false)?;
         }
 
         if self.services.presentation_stream_active() {
@@ -199,11 +206,11 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
         if path != CREDITS_VOICE_RESOURCE_PATH {
             bail!("unexpected credits voice path {path}");
         }
-        self.services.load_voice_resource(path.as_bytes())
+        self.services.load_streamed_voice_resource(path.as_bytes())
     }
 
     fn start_voice_stream(&mut self) -> Result<()> {
-        self.services.start_loaded_voice()
+        self.services.start_loaded_streamed_voice()
     }
 
     fn clear_live_palette(&mut self) -> Result<()> {
@@ -213,7 +220,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
 
     fn refill_voice_stream(&mut self) -> Result<()> {
         self.services
-            .check_audio()
+            .refill_navigation_music()
             .context("servicing the SDL credits voice stream")
     }
 }
@@ -251,5 +258,28 @@ mod tests {
         assert!(credits.skip_back_buffer_present);
         assert!(credits.unclamped_rows);
         assert!(credits_request_pending);
+    }
+
+    #[test]
+    fn blocking_cancel_state_does_not_alias_the_shutdown_gate() {
+        let mut run = PresentationRunState {
+            active_line: Some(OPENING_PRESENTATION_LINE),
+            input_stop_gate: u8::MIN,
+            presentation_gate: PRESENTATION_GATE_ACTIVE,
+            plane_blit_crop_enabled: true,
+            resource_vertical_offset: u16::MIN,
+        };
+        let mut lifecycle = GameLifecycleState::default();
+
+        import_blocking_presentation_input(&run, &mut lifecycle);
+        export_blocking_presentation_stop_gate(&mut run, &lifecycle);
+
+        assert_eq!(lifecycle.presentation.active_line, run.active_line);
+        assert!(lifecycle.presentation.c2_presentation_gate);
+        assert_eq!(run.input_stop_gate, u8::MIN);
+
+        lifecycle.exit_requested = true;
+        export_blocking_presentation_stop_gate(&mut run, &lifecycle);
+        assert_eq!(run.input_stop_gate, PRESENTATION_GATE_ACTIVE);
     }
 }

@@ -37,8 +37,6 @@ pub struct RuntimePresentationRequest {
     pub entry_policy: PresentationEntryPolicy,
     /// Destination, vertical placement, and row-clamping policy.
     pub present_policy: PresentationPresentPolicy,
-    /// Whether voice position or the software timer paces frame retirement.
-    pub clock_gates: PresentationQueueClockGates,
 }
 
 impl RuntimePresentationRequest {
@@ -58,11 +56,6 @@ impl RuntimePresentationRequest {
                 skip_back_buffer_present: false,
                 unclamped_rows: false,
                 vertical_offset: usize::MIN,
-            },
-            clock_gates: PresentationQueueClockGates {
-                primary_mode: false,
-                secondary_mode: false,
-                voice_playback: false,
             },
         }
     }
@@ -102,7 +95,6 @@ pub struct RuntimePresentationStream {
     entry_policy: PresentationEntryPolicy,
     present_policy: PresentationPresentPolicy,
     clock: PresentationQueueClock,
-    clock_gates: PresentationQueueClockGates,
     link_cursor: PresentationQueueLinkCursor,
     decode_staging: Box<[u8]>,
     finished: bool,
@@ -138,7 +130,6 @@ impl RuntimePresentationStream {
             entry_policy: request.entry_policy,
             present_policy: request.present_policy,
             clock: PresentationQueueClock::default(),
-            clock_gates: request.clock_gates,
             link_cursor: PresentationQueueLinkCursor::default(),
             decode_staging: zeroed_presentation_buffer(),
             finished: false,
@@ -193,6 +184,7 @@ impl RuntimePresentationStream {
         runtime: &mut OriginalGameRuntime,
         audio_position: u16,
         timer_tick: u16,
+        clock_gates: PresentationQueueClockGates,
         render_snapshot_suppressed: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
         import_shared_live_palette(runtime.live_palette(), &mut self.palette);
@@ -217,7 +209,7 @@ impl RuntimePresentationStream {
                 palette: &mut self.palette,
                 render_update_flags: u8::from(render_snapshot_suppressed),
                 clock: &mut self.clock,
-                clock_gates: self.clock_gates,
+                clock_gates,
                 audio_position: &mut read_audio_position,
                 timer_tick: &mut read_timer_tick,
                 link_cursor: &mut self.link_cursor,
@@ -469,7 +461,13 @@ mod tests {
         for timer_tick in 1..=MAXIMUM_TEST_SERVICE_CALLS {
             let timer_tick = timer_tick as u16;
             stream
-                .service_frame(&mut runtime, u16::MIN, timer_tick, false)
+                .service_frame(
+                    &mut runtime,
+                    u16::MIN,
+                    timer_tick,
+                    PresentationQueueClockGates::default(),
+                    false,
+                )
                 .unwrap_or_else(|error| panic!("frame {timer_tick} failed: {error:#}"));
             assert_eq!(stream.source_open_or_draining(), !stream.is_finished());
             saw_visible_pixels |= runtime
@@ -507,7 +505,13 @@ mod tests {
 
         for clock in 1..=MIND_ORACLE_FRAME_INDEX {
             let step = stream
-                .service_frame(&mut runtime, clock, clock, false)
+                .service_frame(
+                    &mut runtime,
+                    clock,
+                    clock,
+                    PresentationQueueClockGates::default(),
+                    false,
+                )
                 .unwrap();
             assert!(queue_presented_frame(&step.queue), "clock {clock}");
         }
@@ -555,7 +559,13 @@ mod tests {
 
         for timer_tick in 1..=MAXIMUM_TEST_SERVICE_CALLS {
             stream
-                .service_frame(&mut runtime, u16::MIN, timer_tick as u16, false)
+                .service_frame(
+                    &mut runtime,
+                    u16::MIN,
+                    timer_tick as u16,
+                    PresentationQueueClockGates::default(),
+                    false,
+                )
                 .unwrap();
             if stream.is_finished() {
                 break;
@@ -588,7 +598,13 @@ mod tests {
         let row_end = row_start + LOGICAL_FRAMEBUFFER_WIDTH;
         for timer_tick in 1..=CLIPTOOT_BOTTOM_ROW_ORACLE_FRAME {
             stream
-                .service_frame(&mut runtime, u16::MIN, timer_tick, false)
+                .service_frame(
+                    &mut runtime,
+                    u16::MIN,
+                    timer_tick,
+                    PresentationQueueClockGates::default(),
+                    false,
+                )
                 .unwrap();
         }
 

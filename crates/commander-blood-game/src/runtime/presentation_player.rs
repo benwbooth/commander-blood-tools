@@ -5,8 +5,8 @@ use commander_blood_formats::bloodprg::BloodprgPresentationCatalog;
 
 use crate::native::bloodprg::{
     DescriptPresentationAssets, IndexedGamePalette, InputCancellationBackend,
-    PresentationPresentPolicy, PresentationResourceCursor, PresentationResourceId,
-    PresentationResourceSequenceOutcome,
+    PresentationPresentPolicy, PresentationQueueClockGates, PresentationResourceCursor,
+    PresentationResourceId, PresentationResourceSequenceOutcome,
 };
 
 use super::{
@@ -84,6 +84,7 @@ impl RuntimePresentationPlayer {
         runtime: &mut OriginalGameRuntime,
         audio_position: u16,
         timer_tick: u16,
+        clock_gates: PresentationQueueClockGates,
         render_snapshot_suppressed: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
         self.active_stream
@@ -93,6 +94,7 @@ impl RuntimePresentationPlayer {
                 runtime,
                 audio_position,
                 timer_tick,
+                clock_gates,
                 render_snapshot_suppressed,
             )
     }
@@ -296,7 +298,13 @@ mod tests {
             )
             .unwrap();
         player
-            .service_frame(&mut runtime, u16::MIN, 1, false)
+            .service_frame(
+                &mut runtime,
+                u16::MIN,
+                1,
+                PresentationQueueClockGates::default(),
+                false,
+            )
             .unwrap();
 
         let mut cancellation = InputCancellationState {
@@ -320,7 +328,13 @@ mod tests {
             .unwrap();
         assert_eq!(player.cancellation_cursor().unwrap().read_position, rewind);
         player
-            .service_frame(&mut runtime, u16::MIN, 2, false)
+            .service_frame(
+                &mut runtime,
+                u16::MIN,
+                2,
+                PresentationQueueClockGates::default(),
+                false,
+            )
             .unwrap();
         assert!(player.has_stream());
     }

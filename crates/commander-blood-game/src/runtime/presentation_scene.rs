@@ -50,6 +50,7 @@ impl RuntimePresentationScene {
         active_record_related: Option<ScriptObjectId>,
         scruter_jo_record: Option<ScriptObjectId>,
         render_snapshot_suppressed: bool,
+        secondary_presentation_mode: bool,
     ) -> Result<PresentationSceneDispatchOutcome> {
         let scenes = resolved_scene_descriptors(services);
         let unclamped_line_ids = *services.presentation_catalog().unclamped_line_ids();
@@ -73,6 +74,7 @@ impl RuntimePresentationScene {
                 services,
                 remap_request: &mut remap_request,
                 render_snapshot_suppressed,
+                secondary_presentation_mode,
             };
             dispatch_presentation_scene(state, &mut context, &mut host)
                 .map_err(|error| anyhow::anyhow!("{error}"))?
@@ -117,6 +119,7 @@ struct RuntimePresentationSceneHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
     remap_request: &'services mut Option<(u8, [u8; RGB_COMPONENT_COUNT])>,
     render_snapshot_suppressed: bool,
+    secondary_presentation_mode: bool,
 }
 
 impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
@@ -195,14 +198,10 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
         &mut self,
         _policy: PresentationPresentPolicy,
     ) -> Result<PresentationSceneQueueService> {
-        let audio_position = self
-            .services
-            .foreground_audio_position()?
-            .unwrap_or(u64::MIN) as u16;
         let outcome = self.services.service_presentation_sequence(
-            audio_position,
             self.services.game_timer_tick(),
             self.render_snapshot_suppressed,
+            self.secondary_presentation_mode,
         )?;
         Ok(PresentationSceneQueueService {
             frame_presented: queue_presented_frame(&outcome.queue),

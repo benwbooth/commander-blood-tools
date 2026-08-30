@@ -337,6 +337,13 @@ impl RuntimeMusicStream {
         }
     }
 
+    fn playback_remaining(&self) -> Option<u16> {
+        match self.playback_position() {
+            AudioStreamPlaybackPosition::Playing(remaining) => Some(remaining),
+            AudioStreamPlaybackPosition::Stopped | AudioStreamPlaybackPosition::Unavailable => None,
+        }
+    }
+
     fn render_unsigned(&mut self, output: &mut [u8]) -> bool {
         let was_active = self.cursor.is_some();
         for destination in output {
@@ -442,6 +449,12 @@ impl RuntimePcmMixer {
         self.background = None;
         self.foreground = None;
         self.speaker = None;
+    }
+
+    /// Stop digital PCM sources without changing the independent PC-speaker gate.
+    pub fn stop_digital(&mut self) {
+        self.background = None;
+        self.foreground = None;
     }
 
     /// Stop looping background music without interrupting foreground speech.
@@ -693,6 +706,11 @@ impl RuntimeAudioHost {
         lock_shared(&self.shared).music_stream.pending()
     }
 
+    /// Return the native driver callback's remaining samples in the active stream page.
+    pub fn background_stream_remaining(&self) -> Option<u16> {
+        lock_shared(&self.shared).music_stream.playback_remaining()
+    }
+
     /// Discard a loaded stream that has not started.
     pub fn discard_pending_background_stream(&mut self) -> bool {
         lock_shared(&self.shared).music_stream.discard_pending()
@@ -766,6 +784,18 @@ impl RuntimeAudioHost {
         self.stream
             .clear()
             .map_err(|error| anyhow!("clearing SDL3 audio stream: {error}"))?;
+        self.check_callback()
+    }
+
+    /// Stop digital stream and PCM playback while preserving the PC-speaker channel.
+    pub fn stop_digital(&mut self) -> Result<()> {
+        let mut shared = lock_shared(&self.shared);
+        shared.music_stream.stop();
+        shared.mixer.stop_digital();
+        drop(shared);
+        self.stream
+            .clear()
+            .map_err(|error| anyhow!("clearing SDL3 digital audio stream: {error}"))?;
         self.check_callback()
     }
 
@@ -915,6 +945,10 @@ mod tests {
 
         let mut mixer = RuntimePcmMixer::new(PC_SPEAKER_PIT_CLOCK_HZ).unwrap();
         mixer.enable_speaker(tone);
+        mixer.play_foreground(
+            RuntimePcmClip::new(PC_SPEAKER_PIT_CLOCK_HZ, [PC_SPEAKER_HIGH_SAMPLE]).unwrap(),
+        );
+        mixer.stop_digital();
         let mut enabled = [UNSIGNED_PCM_SILENCE; 2];
         mixer.render_unsigned(&mut enabled);
         assert_eq!(enabled, [PC_SPEAKER_LOW_SAMPLE; 2]);
@@ -962,6 +996,8 @@ mod tests {
             .load(&encoded, TEST_STREAM_RATE_HZ)
             .expect("synthetic stream loads");
         stream.start().expect("synthetic stream starts");
+        let initial_remaining = stream.playback_remaining().unwrap();
+        assert_eq!(usize::from(initial_remaining), AUDIO_STREAM_PAGE_BYTE_COUNT);
         assert_eq!(
             stream.playback.stream_buffers[0].status,
             AudioStreamBufferStatus::ReadyAndDriverOwned
@@ -978,6 +1014,7 @@ mod tests {
         ));
         let mut output = vec![u8::MIN; AUDIO_STREAM_PAGE_BYTE_COUNT + 1];
         assert!(stream.render_unsigned(&mut output));
+        assert!(stream.playback_remaining().unwrap() < initial_remaining);
 
         let first_page_pcm_count = AUDIO_STREAM_PAGE_BYTE_COUNT - SND_CLIP_HEADER_BYTE_COUNT;
         assert_eq!(

@@ -376,15 +376,16 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn stop_completion_audio(&mut self) -> Result<()> {
-        self.services.stop_audio()
+        self.services.stop_digital_audio()
     }
 
     fn load_completion_audio(&mut self) -> Result<()> {
-        self.services.load_voice_resource(COMPLETION_VOICE_RESOURCE)
+        self.services
+            .load_streamed_voice_resource(COMPLETION_VOICE_RESOURCE)
     }
 
     fn start_completion_audio(&mut self) -> Result<()> {
-        self.services.start_loaded_voice()
+        self.services.start_loaded_streamed_voice()
     }
 
     fn render_bridge_frame(

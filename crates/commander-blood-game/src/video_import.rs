@@ -28,7 +28,7 @@ use crate::asset_import::{
 };
 use crate::native::bloodprg::{
     IndexedGamePalette, LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH,
-    PresentationQueueServiceOutcome,
+    PresentationQueueClockGates, PresentationQueueServiceOutcome,
 };
 use crate::runtime::{
     OriginalGameData, OriginalGameRuntime, RuntimePresentationQueueMetrics,
@@ -423,7 +423,13 @@ fn decode_trace(
     for service_call in 1..=MAXIMUM_TRACE_SERVICE_CALLS {
         let clock = service_call as u16;
         let step = stream
-            .service_frame(runtime, clock, clock, false)
+            .service_frame(
+                runtime,
+                clock,
+                clock,
+                PresentationQueueClockGates::default(),
+                false,
+            )
             .with_context(|| {
                 format!(
                     "decoding HNM {} at service call {service_call}",

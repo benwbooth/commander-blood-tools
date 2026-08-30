@@ -33,12 +33,13 @@ use crate::native::bloodprg::{
     PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
     PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
     PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
-    PresentationQueueServiceOutcome, PresentationResourceId, PresentationResourceSequenceOutcome,
-    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
-    PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
-    SHIP_CAMERA_RESET, SceneTransitionState, ScriptActionRuntimeState, ScriptActionState,
-    ScriptClock, ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState,
-    ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    PresentationQueueClockGates, PresentationQueueServiceOutcome, PresentationResourceId,
+    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
+    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SceneTransitionState,
+    ScriptActionRuntimeState, ScriptActionState, ScriptClock, ScriptFrameOutcome,
+    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
     SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TextPresentationState,
@@ -69,13 +70,13 @@ use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, LOGICAL_FRAMEBUFFER_WIDTH,
     OriginalGameData, OriginalGameRuntime, RuntimeAlienOverlayCycle, RuntimeAssetLoadStatus,
     RuntimeAudioHost, RuntimeConfirmDialog, RuntimeInputHost, RuntimePaletteTransition,
-    RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome, RuntimePcmClip,
-    RuntimePlatformHost, RuntimePresentationCatalog, RuntimePresentationHost,
-    RuntimePresentationPlayer, RuntimePresentationQueueMetrics, RuntimePresentationScreen,
-    RuntimePresentationStepOutcome, RuntimePresentationWordChoice, RuntimeSaveLoad,
-    RuntimeSceneTransition, RuntimeScriptBackend, RuntimeScriptCommand, RuntimeScriptSystem,
-    RuntimeShipHud, RuntimeShipNavigation, RuntimeShipTargetSelection, RuntimeShipTargetSelector,
-    RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8, initialize_and_restore_original_save_game,
+    RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome, RuntimePlatformHost,
+    RuntimePresentationCatalog, RuntimePresentationHost, RuntimePresentationPlayer,
+    RuntimePresentationQueueMetrics, RuntimePresentationScreen, RuntimePresentationStepOutcome,
+    RuntimePresentationWordChoice, RuntimeSaveLoad, RuntimeSceneTransition, RuntimeScriptBackend,
+    RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation,
+    RuntimeShipTargetSelection, RuntimeShipTargetSelector, RuntimeSubtitleReveal,
+    VGA_BIOS_FONT_8X8, initialize_and_restore_original_save_game,
 };
 
 const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
@@ -141,7 +142,6 @@ pub struct ModernGameServices<'window> {
     audio: Option<RuntimeAudioHost>,
     resident_sound_bank: Option<LoadedSoundBank>,
     audio_events: AudioEventState,
-    loaded_voice: Option<RuntimePcmClip>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
     bridge_screen: BridgeScreenInitializationState,
@@ -245,7 +245,6 @@ impl<'window> ModernGameServices<'window> {
                 dialogue_seed: u16::MIN,
                 last_clip: u16::MIN,
             },
-            loaded_voice: None,
             bridge_scene: None,
             bridge_frame: None,
             bridge_screen: BridgeScreenInitializationState::default(),
@@ -645,10 +644,9 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
-    /// Decode and retain one authored Creative Voice resource for a later start call.
-    pub fn load_voice_resource(&mut self, path: &[u8]) -> Result<()> {
+    /// Decode one authored Creative Voice resource into the shared native stream owner.
+    pub fn load_streamed_voice_resource(&mut self, path: &[u8]) -> Result<()> {
         if !self.navigation_music_enabled()? {
-            self.loaded_voice = None;
             return self.check_audio();
         }
         let resource_name =
@@ -664,24 +662,23 @@ impl<'window> ModernGameServices<'window> {
                     String::from_utf8_lossy(resource_name.as_bytes())
                 )
             })?;
-        self.loaded_voice = Some(RuntimePcmClip::new(
+        let wait_prompt = self.audio_mut()?.load_background_pcm_stream(
+            &normalized.samples,
             normalized.sample_rate_hz,
-            normalized.samples,
-        )?);
+            normalized.sample_rate_code,
+        )?;
+        if let Some(wait_prompt) = wait_prompt {
+            self.draw_audio_stream_wait_prompt(wait_prompt)?;
+        }
         Ok(())
     }
 
-    /// Start the previously decoded voice clip over any active background music.
-    pub fn start_loaded_voice(&mut self) -> Result<()> {
+    /// Start the voice retained by [`Self::load_streamed_voice_resource`].
+    pub fn start_loaded_streamed_voice(&mut self) -> Result<()> {
         if !self.navigation_music_enabled()? {
-            self.loaded_voice = None;
             return self.check_audio();
         }
-        let clip = self
-            .loaded_voice
-            .take()
-            .context("no decoded voice resource is waiting to start")?;
-        self.audio_mut()?.play_foreground(clip)
+        self.audio_mut()?.start_background_stream()
     }
 
     /// Replace the complete live indexed palette with black.
@@ -694,9 +691,16 @@ impl<'window> ModernGameServices<'window> {
         self.audio_mut()?.stop_all()
     }
 
-    /// Release a decoded voice clip that was loaded but never started.
+    /// Stop native digital playback without changing the independent PC-speaker gate.
+    pub fn stop_digital_audio(&mut self) -> Result<()> {
+        self.audio_mut()?.stop_digital()
+    }
+
+    /// Release a streamed voice that was loaded but never started.
     pub fn discard_loaded_voice(&mut self) -> bool {
-        self.loaded_voice.take().is_some()
+        self.audio
+            .as_mut()
+            .is_some_and(RuntimeAudioHost::discard_pending_background_stream)
     }
 
     /// Release decoded navigation music that has not yet entered SDL playback.
@@ -887,11 +891,6 @@ impl<'window> ModernGameServices<'window> {
     /// Apply a PC-speaker gate transition through the SDL square-wave replacement.
     pub fn apply_speaker_gate(&mut self, action: SpeakerGateAction) -> Result<()> {
         self.audio_mut()?.apply_speaker_gate(action)
-    }
-
-    /// Current source-sample position of the foreground voice or effect.
-    pub fn foreground_audio_position(&self) -> Result<Option<u64>> {
-        Ok(self.audio_ref()?.foreground_position())
     }
 
     /// Load one complete BloodScript profile and bind its concrete runtime services.
@@ -2656,14 +2655,24 @@ impl<'window> ModernGameServices<'window> {
     /// Advance the active presentation queue with explicit clock samples.
     pub fn service_presentation_sequence(
         &mut self,
-        audio_position: u16,
         timer_tick: u16,
         render_snapshot_suppressed: bool,
+        secondary_presentation_mode: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
+        let audio_position = self
+            .audio_ref()?
+            .background_stream_remaining()
+            .unwrap_or(u16::MIN);
+        let clock_gates = PresentationQueueClockGates {
+            primary_mode: self.bridge_screen.reverse_presentation_active,
+            secondary_mode: secondary_presentation_mode,
+            voice_playback: self.navigation_music_enabled()?,
+        };
         let outcome = self.presentation_player.service_frame(
             &mut self.runtime,
             audio_position,
             timer_tick,
+            clock_gates,
             render_snapshot_suppressed,
         )?;
         if matches!(
@@ -4191,8 +4200,8 @@ mod tests {
 
     use super::*;
     use crate::native::bloodprg::{
-        BridgeSpriteFrameSource, ChoiceListRowKind, GameTimerContext, GameTimerState,
-        PointerButton, PresentationResourceLine, ResourceId, ScriptDeferredRecord,
+        BridgeSpriteFrameSource, CREDITS_VOICE_RESOURCE_PATH, ChoiceListRowKind, GameTimerContext,
+        GameTimerState, PointerButton, PresentationResourceLine, ResourceId, ScriptDeferredRecord,
         advance_game_timer_tick, update_game_presentation_ownership,
     };
     use crate::runtime::OriginalGameDataPaths;
@@ -5338,6 +5347,7 @@ mod tests {
         );
         exercise_script_action_effect_bridge(&mut services);
         exercise_pterra_hud_transition(&mut services);
+        exercise_streamed_credits_voice(&mut services);
         assert!(services.close_bridge_scene());
     }
 
@@ -5574,5 +5584,22 @@ mod tests {
                 .iter()
                 .any(|pixel| *pixel != u8::MIN)
         );
+    }
+
+    fn exercise_streamed_credits_voice(services: &mut ModernGameServices<'_>) {
+        services.stop_digital_audio().unwrap();
+        services
+            .load_streamed_voice_resource(CREDITS_VOICE_RESOURCE_PATH.as_bytes())
+            .unwrap();
+        services.start_loaded_streamed_voice().unwrap();
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_stream_remaining()
+                .is_some()
+        );
+        services.refill_navigation_music().unwrap();
+        services.stop_digital_audio().unwrap();
     }
 }
