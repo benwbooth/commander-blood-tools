@@ -33,6 +33,65 @@ const HONK_WORD_CHOICES: [&str; 9] = [
     "lose",
     "help",
 ];
+const EMPTY_LABELS: [&str; 0] = [];
+const CONTACT_LABELS: [&str; 1] = ["Bob_Morlock"];
+const OPTION_LABELS: [&str; 5] = ["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT"];
+const NO_RECORDS: [u64; 0] = [];
+const CONTACT_RECORDS: [u64; 1] = [3];
+
+struct BridgeConsoleProbe {
+    scenario: &'static str,
+    trace_name: &'static str,
+    click: &'static str,
+    selected: Option<&'static str>,
+    labels: &'static [&'static str],
+    records: &'static [u64],
+    panel_target_y: u64,
+    presentation_target: Option<&'static str>,
+}
+
+const BRIDGE_CONSOLE_PROBES: [BridgeConsoleProbe; 4] = [
+    BridgeConsoleProbe {
+        scenario: "accuracy/scenarios/probe_console_navigation.tsv",
+        trace_name: "console-navigation.jsonl",
+        click: "click 230 106",
+        selected: Some("navigation"),
+        labels: &EMPTY_LABELS,
+        records: &NO_RECORDS,
+        panel_target_y: 98,
+        presentation_target: None,
+    },
+    BridgeConsoleProbe {
+        scenario: "accuracy/scenarios/probe_console_contacts.tsv",
+        trace_name: "console-contacts.jsonl",
+        click: "click 230 124",
+        selected: Some("contacts"),
+        labels: &CONTACT_LABELS,
+        records: &CONTACT_RECORDS,
+        panel_target_y: 116,
+        presentation_target: None,
+    },
+    BridgeConsoleProbe {
+        scenario: "accuracy/scenarios/probe_console_radio.tsv",
+        trace_name: "console-radio.jsonl",
+        click: "click 230 142",
+        selected: None,
+        labels: &EMPTY_LABELS,
+        records: &NO_RECORDS,
+        panel_target_y: 134,
+        presentation_target: Some("menu"),
+    },
+    BridgeConsoleProbe {
+        scenario: "accuracy/scenarios/probe_console_options.tsv",
+        trace_name: "console-options.jsonl",
+        click: "click 230 160",
+        selected: Some("options"),
+        labels: &OPTION_LABELS,
+        records: &NO_RECORDS,
+        panel_target_y: 152,
+        presentation_target: None,
+    },
+];
 
 static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
@@ -184,6 +243,67 @@ fn production_runtime_dispatches_honk_after_the_startup_phone_call() {
     );
 }
 
+#[test]
+fn production_runtime_reaches_each_authored_bridge_console_handler() {
+    for probe in &BRIDGE_CONSOLE_PROBES {
+        let Some(records) = run_production_scenario(probe.scenario, probe.trace_name) else {
+            return;
+        };
+        let click_index = records
+            .iter()
+            .position(|record| record["action"] == probe.click)
+            .unwrap_or_else(|| panic!("runtime trace omitted {}", probe.click));
+        let activated = &records[click_index];
+        let settled = records
+            .last()
+            .expect("bridge console probe wrote no settled trace record");
+        assert_eq!(profile(activated), Some(POST_CALL_PROFILE));
+        assert_eq!(
+            console_u64(activated, "panel_target_y"),
+            probe.panel_target_y
+        );
+
+        if let Some(presentation_target) = probe.presentation_target {
+            assert_eq!(console(activated)["selected"], Value::Null);
+            assert!(presentation_flag(activated, "active"));
+            assert!(presentation_flag(activated, "defer"));
+            assert_eq!(
+                presentation(activated)["active_actor_presentation"]["name"],
+                presentation_target
+            );
+            assert_eq!(
+                presentation(settled)["active_actor_presentation"]["name"],
+                presentation_target
+            );
+            continue;
+        }
+
+        assert_eq!(
+            console(activated)["selected"].as_str(),
+            probe.selected,
+            "{} activated the wrong top-level handler",
+            probe.scenario
+        );
+        assert_eq!(console(activated)["panel_phase"], "transitioning");
+        assert_eq!(console(settled)["selected"].as_str(), probe.selected);
+        assert_eq!(console(settled)["panel_phase"], "interactive");
+        assert_eq!(console(settled)["interface_active"], true);
+        assert_eq!(console(settled)["interface_busy"], false);
+        assert_eq!(
+            console(settled)["choice_labels"],
+            serde_json::json!(probe.labels)
+        );
+        assert_eq!(
+            console(settled)["choice_records"],
+            serde_json::json!(probe.records)
+        );
+        assert_ne!(
+            presentation_u64(settled, "ui_flags") & NAVIGATION_UI_FLAG,
+            u64::MIN
+        );
+    }
+}
+
 fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value>> {
     let asset_cache = configured_runtime_asset_cache()?;
     if !DISPLAY_ENVIRONMENT_VARIABLES
@@ -255,6 +375,14 @@ fn profile(record: &Value) -> Option<u64> {
 
 fn presentation(record: &Value) -> &Value {
     &record["semantic"]["presentation"]
+}
+
+fn console(record: &Value) -> &Value {
+    &record["semantic"]["bridge_console"]
+}
+
+fn console_u64(record: &Value, field: &str) -> u64 {
+    console(record)[field].as_u64().unwrap()
 }
 
 fn presentation_flag(record: &Value, field: &str) -> bool {

@@ -1,6 +1,7 @@
 //! Production bridge-console interaction over flat runtime state.
 
 use anyhow::{Context, Result};
+use commander_blood_formats::bloodprg::BloodprgBridgeMenuText;
 use commander_blood_formats::lbm::PALETTE_ENTRY_COUNT;
 use commander_blood_formats::script::ScriptObjectId;
 
@@ -62,6 +63,38 @@ impl RuntimeBridgeConsole {
 
     pub(super) const fn selected_item_active(&self) -> bool {
         self.console.selected.is_some()
+    }
+
+    pub(super) fn semantic_trace_snapshot(
+        &self,
+        menu_text: &BloodprgBridgeMenuText,
+    ) -> serde_json::Value {
+        let selected = self.console.selected.map(bridge_console_choice_name);
+        let panel_phase = bridge_choice_panel_phase_name(self.console.panel_phase);
+        let (choice_records, choice_labels) = match self.console.selected {
+            Some(BridgeConsoleChoice::Navigation) => record_choice_trace(&self.navigation.choices),
+            Some(BridgeConsoleChoice::Contacts) => record_choice_trace(&self.contacts.choices),
+            Some(BridgeConsoleChoice::Options) => (
+                Vec::new(),
+                option_labels(menu_text, self.options.music_label)
+                    .iter()
+                    .map(|label| String::from_utf8_lossy(label).into_owned())
+                    .collect(),
+            ),
+            Some(BridgeConsoleChoice::Horn | BridgeConsoleChoice::Radio) | None => {
+                (Vec::new(), Vec::new())
+            }
+        };
+        serde_json::json!({
+            "selected": selected,
+            "panel_phase": panel_phase,
+            "interface_busy": self.console.interface_busy,
+            "interface_active": self.console.interface_active,
+            "panel_target_y": self.console.panel_target_y,
+            "choice_records": choice_records,
+            "choice_labels": choice_labels,
+            "text_options_active": self.options.text_options_active,
+        })
     }
 
     pub(super) fn clear_selected_item_alias(&mut self) {
@@ -303,7 +336,10 @@ impl RuntimeBridgeConsole {
         } else {
             MusicOptionLabel::MusicOn
         };
-        let labels = option_labels(services, self.options.music_label);
+        let labels = option_labels(
+            services.runtime().data().bridge_menu_text(),
+            self.options.music_label,
+        );
         let label_refs = labels.iter().map(Box::as_ref).collect::<Vec<_>>();
         let fonts = services.runtime().data().font_resources().clone();
         let tint = choice_tint(services.runtime())?;
@@ -697,15 +733,49 @@ fn required_builtin(
 }
 
 fn option_labels(
-    services: &ModernGameServices<'_>,
+    text: &BloodprgBridgeMenuText,
     music_label: MusicOptionLabel,
 ) -> [Box<[u8]>; OPTION_MENU_LABEL_COUNT] {
-    let text = services.runtime().data().bridge_menu_text();
     let mut labels = text.option_labels().clone();
     if music_label == MusicOptionLabel::MusicOn {
         labels[1] = text.music_on_label().into();
     }
     labels
+}
+
+const fn bridge_console_choice_name(choice: BridgeConsoleChoice) -> &'static str {
+    match choice {
+        BridgeConsoleChoice::Horn => "horn",
+        BridgeConsoleChoice::Navigation => "navigation",
+        BridgeConsoleChoice::Contacts => "contacts",
+        BridgeConsoleChoice::Radio => "radio",
+        BridgeConsoleChoice::Options => "options",
+    }
+}
+
+const fn bridge_choice_panel_phase_name(
+    phase: crate::native::bloodprg::BridgeChoicePanelPhase,
+) -> &'static str {
+    use crate::native::bloodprg::BridgeChoicePanelPhase;
+
+    match phase {
+        BridgeChoicePanelPhase::Closed => "closed",
+        BridgeChoicePanelPhase::NeedsLayout => "needs_layout",
+        BridgeChoicePanelPhase::Transitioning => "transitioning",
+        BridgeChoicePanelPhase::Interactive => "interactive",
+    }
+}
+
+fn record_choice_trace(
+    choices: &[BridgeRecordChoice<ScriptObjectId>],
+) -> (Vec<usize>, Vec<String>) {
+    (
+        choices.iter().map(|choice| choice.record.index()).collect(),
+        choices
+            .iter()
+            .map(|choice| String::from_utf8_lossy(&choice.label).into_owned())
+            .collect(),
+    )
 }
 
 fn selected_row_rect(target_y: u16) -> ChoiceListRect {

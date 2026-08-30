@@ -3544,6 +3544,30 @@ impl<'window> ModernGameServices<'window> {
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
+        let bridge_console = self
+            .bridge_console
+            .as_ref()
+            .map(|console| console.semantic_trace_snapshot(self.runtime.data().bridge_menu_text()));
+        let pending_presentation_owner = self.pending_ship_presentation_owner().map(|record| {
+            let name = profile
+                .and_then(|profile| profile.directory().object(record))
+                .map(|entry| String::from_utf8_lossy(entry.name()).into_owned());
+            serde_json::json!({
+                "record": record.index(),
+                "name": name,
+            })
+        });
+        let active_actor_presentation = profile
+            .and_then(|profile| profile.active_actor_presentation_related())
+            .map(|record| {
+                let name = profile
+                    .and_then(|profile| profile.directory().object(record))
+                    .map(|entry| String::from_utf8_lossy(entry.name()).into_owned());
+                serde_json::json!({
+                    "record": record.index(),
+                    "name": name,
+                })
+            });
         let screen_hash = fnv1a64(self.runtime.front_buffer().pixels());
         let palette_bytes: Vec<_> = self
             .runtime
@@ -3634,6 +3658,8 @@ impl<'window> ModernGameServices<'window> {
                 "word_choice_active": u8::from(lifecycle.presentation.word_choice_active),
                 "selector_word_choices": selector_word_choices,
                 "rendered_word_choices": rendered_word_choices,
+                "pending_presentation_owner": pending_presentation_owner,
+                "active_actor_presentation": active_actor_presentation,
                 "nav_target_selection": u8::from(lifecycle.navigation_target_selected),
                 "active": u8::from(lifecycle.presentation.active),
                 "defer": u8::from(lifecycle.presentation.menu_deferred),
@@ -3680,6 +3706,7 @@ impl<'window> ModernGameServices<'window> {
                 },
                 "waiting_for_input": waiting_for_input,
             },
+            "bridge_console": bridge_console,
             "input": {
                 "mouse_x": pointer.position[0],
                 "mouse_y": pointer.position[1],
