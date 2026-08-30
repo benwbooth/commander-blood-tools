@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_game::native::bloodprg::{
     OriginalSaveGame, OriginalSaveSlotDirectory, ScriptProfileId,
+    original_save_state_block_byte_count,
 };
 use commander_blood_game::runtime::{OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime};
 use serde_json::Value;
@@ -32,6 +33,10 @@ const LOAD_OPTION_CLICK: &str = "sclick 100 106";
 const SAVE_CANCEL_CLICK: &str = "sclick 100 151";
 const LOAD_FIRST_SLOT_CLICK: &str = "sclick 100 40";
 const SEEDED_LOAD_PROFILE: u8 = 2;
+const SCRIPT2_PROFILE: u8 = 1;
+const SCRIPT2_PTERRA_UNLOCK_STATE_OFFSET: u16 = 0x12C2;
+const SCRIPT2_PTERRA_UNLOCKED: u16 = 1;
+const AUTHENTIC_GAME1_SAVE: &str = "accuracy/cblood_install/cblood/GAME1.SAV";
 const HONK_WORD_CHOICES: [&str; 9] = [
     "bye_bye",
     "optimization",
@@ -444,6 +449,43 @@ fn production_runtime_restores_an_exact_seeded_save_through_the_authored_load_pa
     );
 }
 
+#[test]
+fn production_runtime_vm_unlocks_pterra_and_opens_the_authored_navigation_chart() {
+    let Some(records) = run_production_scenario_with_setup(
+        "accuracy/scenarios/production_load_pterra_navigation.tsv",
+        "production-load-pterra-navigation.jsonl",
+        seed_authentic_pterra_unlock_save,
+    ) else {
+        return;
+    };
+
+    let slot_index = records
+        .iter()
+        .position(|record| record["action"] == LOAD_FIRST_SLOT_CLICK)
+        .expect("runtime trace omitted the authored first save-slot click");
+    let restored = records[slot_index..]
+        .iter()
+        .find(|record| profile(record) == Some(u64::from(SCRIPT2_PROFILE)))
+        .expect("authentic GAME1.SAV never restored SCRIPT2");
+    assert_eq!(save_load(restored)["active"], false);
+
+    let unlocked = records[slot_index..]
+        .iter()
+        .find(|record| record["semantic"]["script2"]["pterra_in_play"] == true)
+        .expect("SCRIPT2 proc init never marked Pterra as known");
+    assert_eq!(unlocked["semantic"]["script2"]["globals_a0"], 1);
+    assert_eq!(unlocked["semantic"]["script2"]["init_enabled"], false);
+
+    let chart = records[slot_index..]
+        .iter()
+        .find(|record| record["semantic"]["navigation"]["chart"]["active"] == true)
+        .expect("the source-proven bridge navigation station never opened the chart");
+    assert_ne!(
+        chart["semantic"]["navigation"]["chart"]["chart_object_count"], 0,
+        "the opened navigation chart retained no known destinations"
+    );
+}
+
 fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value>> {
     run_production_scenario_with_setup(scenario, trace_name, |_, _| Ok(()))
 }
@@ -508,6 +550,52 @@ fn seed_original_save(asset_cache: &Path, writable_path: &Path, profile: u8) -> 
             .current_profile()
             .expect("seeded profile load retained no profile"),
     )?;
+    std::fs::write(writable_path.join("GAME1.SAV"), save.encode())?;
+    Ok(())
+}
+
+fn seed_authentic_pterra_unlock_save(
+    asset_cache: &Path,
+    writable_path: &Path,
+) -> anyhow::Result<()> {
+    std::fs::create_dir_all(writable_path)?;
+    let paths = OriginalGameDataPaths::from_root(asset_cache)?;
+    let data = OriginalGameData::load_with_writable_root(paths, writable_path)?;
+    let directory_name = BloodResourceName::new(b"BLOOD.SAV")?;
+    let directory =
+        OriginalSaveSlotDirectory::decode(&data.resource_store().load(&directory_name)?)?;
+    std::fs::write(writable_path.join("BLOOD.SAV"), directory.encode())?;
+
+    let mut runtime = OriginalGameRuntime::new(data);
+    let script2 = ScriptProfileId::new(SCRIPT2_PROFILE).expect("SCRIPT2 profile is valid");
+    runtime.load_profile(script2)?;
+    let state_block_byte_count = original_save_state_block_byte_count(
+        runtime
+            .current_profile()
+            .expect("SCRIPT2 load retained no profile"),
+    )?;
+    let authentic_save = std::fs::read(workspace_root().join(AUTHENTIC_GAME1_SAVE))?;
+    let authentic_save = OriginalSaveGame::decode(&authentic_save, state_block_byte_count)?;
+    authentic_save.restore_into(
+        runtime
+            .current_profile_mut()
+            .expect("SCRIPT2 load retained no mutable profile"),
+    )?;
+
+    let profile = runtime
+        .current_profile_mut()
+        .expect("authentic save restore retained no profile");
+    let unlock = profile
+        .state()
+        .resolve_word_source_offset(SCRIPT2_PTERRA_UNLOCK_STATE_OFFSET)
+        .ok_or_else(|| anyhow::anyhow!("SCRIPT2 globals.A0 has no decoded state word"))?;
+    if !profile
+        .state_mut()
+        .set_word(unlock, SCRIPT2_PTERRA_UNLOCKED)
+    {
+        anyhow::bail!("failed to seed SCRIPT2 globals.A0");
+    }
+    let save = OriginalSaveGame::capture(profile)?;
     std::fs::write(writable_path.join("GAME1.SAV"), save.encode())?;
     Ok(())
 }

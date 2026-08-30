@@ -39,14 +39,14 @@ use crate::native::bloodprg::{
     RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SaveLoadMenuPhase,
     SceneTransitionState, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
     ScriptFrameOutcome, ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    ScriptObjectFlag, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
     SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TextPresentationState,
     clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
     increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
-    measure_game_text_width, objects_at_arche_position, play_cd_audio_track_two, prepare_cd_audio,
-    presentable_navigation_objects, process_audio_events, render_bridge_page,
+    measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
+    prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
     reveal_inline_menu_step, stop_cd_audio, update_manu3_hand_frame,
     update_presentation_bridge_mode, update_presentation_hover,
 };
@@ -114,6 +114,10 @@ const BRIDGE_ACTOR_PALETTE_COLOR_COUNT: usize = 192;
 const CAMERA_PAGE_SHIP_ACTIVE_RESULT: u16 = 21;
 const CAMERA_PAGE_TOGGLE_BIT: u16 = 2;
 const INPUT_CANCEL_SHIP_BLOCK: u16 = 4;
+const SCRIPT2_PROFILE_VALUE: u8 = 1;
+const SCRIPT2_PTERRA_UNLOCK_STATE_OFFSET: u16 = 0x12C2;
+const SCRIPT2_INIT_PROCEDURE_NAME: &[u8] = b"init";
+const PTERRA_OBJECT_NAME: &[u8] = b"Pterra";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct RandomDrawAudit {
@@ -3580,6 +3584,57 @@ impl<'window> ModernGameServices<'window> {
             .bridge_console
             .as_ref()
             .map(|console| console.semantic_trace_snapshot(self.runtime.data().bridge_menu_text()));
+        let script2 = profile
+            .filter(|profile| profile.id().value() == SCRIPT2_PROFILE_VALUE)
+            .map(|profile| {
+                let state = profile.state();
+                let unlock = state
+                    .resolve_word_source_offset(SCRIPT2_PTERRA_UNLOCK_STATE_OFFSET)
+                    .and_then(|field| state.word(field));
+                let pterra = profile.directory().find_active_object(PTERRA_OBJECT_NAME);
+                let pterra_in_play = pterra
+                    .and_then(|object| object_has_flag(state, object, ScriptObjectFlag::InPlay));
+                let init = profile
+                    .directory()
+                    .procedures()
+                    .find_map(|(procedure, entry)| {
+                        (entry.name() == SCRIPT2_INIT_PROCEDURE_NAME).then_some(procedure)
+                    });
+                let init_enabled = init
+                    .map(|procedure| profile.procedures().is_enabled(procedure))
+                    .transpose()
+                    .map_err(|error| anyhow::anyhow!("reading SCRIPT2 init state: {error}"))?;
+                Ok::<_, anyhow::Error>(serde_json::json!({
+                    "globals_a0": unlock,
+                    "init_enabled": init_enabled,
+                    "pterra_record": pterra.map(ScriptObjectId::index),
+                    "pterra_in_play": pterra_in_play,
+                }))
+            })
+            .transpose()?;
+        let navigation_chart = self
+            .navigation_chart
+            .as_ref()
+            .map(RuntimeNavigationChart::semantic_trace_snapshot);
+        let navigation_target = self
+            .scripts
+            .action_state()
+            .current_ship_target
+            .map(|record| {
+                let name = profile
+                    .and_then(|profile| profile.directory().object(record))
+                    .map(|entry| String::from_utf8_lossy(entry.name()).into_owned());
+                serde_json::json!({
+                    "record": record.index(),
+                    "name": name,
+                })
+            });
+        let navigation = serde_json::json!({
+            "chart": navigation_chart,
+            "target": navigation_target,
+            "ship_mode": format!("{:?}", self.scripts.action_state().ship_navigation_mode),
+            "travel_phase": format!("{:?}", self.scripts.action_state().travel_phase),
+        });
         let save_load = self.save_load.as_ref().map(|save_load| {
             let state = save_load.state();
             let phase = match state.phase {
@@ -3760,6 +3815,8 @@ impl<'window> ModernGameServices<'window> {
                 "waiting_for_input": waiting_for_input,
             },
             "bridge_console": bridge_console,
+            "script2": script2,
+            "navigation": navigation,
             "save_load": save_load,
             "input": {
                 "mouse_x": pointer.position[0],

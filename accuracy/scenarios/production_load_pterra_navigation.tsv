@@ -1,0 +1,29 @@
+# Complete the startup call, load the authentic SCRIPT2 save, and open navigation.
+wait 50
+wait 50
+wait 55
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+wait 10
+wait 10
+wait 10
+sclick 200 105
+wait 20
+wait 20
+wait 20
+wait 20
+click 230 160
+wait 20
+sclick 100 106
+wait 20
+sclick 100 40
+wait 20
+wait 20
+park 4 0
+wait 25
+click 160 150
+wait 20
+wait 20

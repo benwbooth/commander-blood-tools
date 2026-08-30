@@ -69,6 +69,17 @@ impl Default for RuntimeNavigationChart {
 }
 
 impl RuntimeNavigationChart {
+    /// Capture source-level chart ownership for deterministic production traces.
+    pub(super) fn semantic_trace_snapshot(&self) -> serde_json::Value {
+        serde_json::json!({
+            "active": self.state.active,
+            "transition_step": self.state.transition_step,
+            "chart_object_count": self.state.chart_object_count,
+            "location_panel_active": self.location_panel_active(),
+            "selected_location": self.state.panel.selected_location.map(ScriptObjectId::index),
+        })
+    }
+
     /// Remaining camera-actor transition steps after the latest chart frame.
     pub(super) const fn transition_step(&self) -> u8 {
         self.state.transition_step
