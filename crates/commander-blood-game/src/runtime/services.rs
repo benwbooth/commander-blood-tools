@@ -2644,18 +2644,23 @@ impl<'window> ModernGameServices<'window> {
     pub fn load_presentation_sequence(
         &mut self,
         line: PresentationResourceId,
+        source: crate::native::bloodprg::PresentationSceneSource,
         policy: PresentationPresentPolicy,
         timer_tick: u16,
         render_snapshot_suppressed: bool,
-    ) -> Result<PresentationResourceSequenceOutcome> {
+    ) -> Result<Option<PresentationResourceSequenceOutcome>> {
         let outcome = self.presentation_player.load(
             &mut self.runtime,
             line,
+            source,
             policy,
             timer_tick,
             render_snapshot_suppressed,
         )?;
-        if outcome.resource_switch.palette.copied_render_snapshot {
+        if outcome
+            .as_ref()
+            .is_some_and(|outcome| outcome.resource_switch.palette.copied_render_snapshot)
+        {
             self.synchronize_presentation_transition_source()?;
         }
         Ok(outcome)

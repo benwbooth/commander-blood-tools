@@ -6,7 +6,7 @@ use commander_blood_formats::bloodprg::BloodprgPresentationCatalog;
 use crate::native::bloodprg::{
     DescriptPresentationAssets, IndexedGamePalette, InputCancellationBackend,
     PresentationPresentPolicy, PresentationQueueClockGates, PresentationResourceCursor,
-    PresentationResourceId, PresentationResourceSequenceOutcome,
+    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneSource,
 };
 
 use super::{
@@ -17,6 +17,7 @@ use super::{
 /// Flat catalog and active stream for one presentation-line consumer.
 pub struct RuntimePresentationPlayer {
     catalog: RuntimePresentationCatalog,
+    shared_idle_video: Option<Box<[u8]>>,
     active_stream: Option<RuntimePresentationStream>,
 }
 
@@ -25,13 +26,18 @@ impl RuntimePresentationPlayer {
     pub fn new(initial: &BloodprgPresentationCatalog) -> Self {
         Self {
             catalog: RuntimePresentationCatalog::new(initial),
+            shared_idle_video: None,
             active_stream: None,
         }
     }
 
     /// Apply mutable location, object, and character names from one DESCRIPT record.
     pub fn apply_descript_assets(&mut self, assets: &DescriptPresentationAssets) -> Result<()> {
-        self.catalog.apply_descript_assets(assets)
+        self.catalog.apply_descript_assets(assets)?;
+        if let Some(video) = assets.encoded_idle_video() {
+            self.shared_idle_video = Some(Box::from(video));
+        }
+        Ok(())
     }
 
     /// Select the current line-2 video from a DESCRIPT sequence record.
@@ -54,10 +60,11 @@ impl RuntimePresentationPlayer {
         &mut self,
         runtime: &mut OriginalGameRuntime,
         line: PresentationResourceId,
+        source: PresentationSceneSource,
         policy: PresentationPresentPolicy,
         timer_tick: u16,
         render_snapshot_suppressed: bool,
-    ) -> Result<PresentationResourceSequenceOutcome> {
+    ) -> Result<Option<PresentationResourceSequenceOutcome>> {
         // The DOS resource switch closes the current queue file before opening
         // every newly requested line, even when the prior line has not drained.
         self.active_stream = None;
@@ -65,6 +72,19 @@ impl RuntimePresentationPlayer {
             .catalog
             .request(line)
             .with_context(|| format!("resolving presentation line {}", line.get()))?;
+        if source == PresentationSceneSource::SharedCache {
+            request.shared_source = Some(
+                self.shared_idle_video
+                    .clone()
+                    .context("presentation line 8 selected an unavailable DESCRIPT idle cache")?,
+            );
+        } else if !runtime
+            .data()
+            .resource_store()
+            .resource_exists(&request.resource_name)?
+        {
+            return Ok(None);
+        }
         request.present_policy = policy;
         request.entry_policy.draw_via_back_buffer = policy.draw_via_back_buffer;
         request.entry_policy.skip_back_buffer_present = policy.skip_back_buffer_present;
@@ -75,7 +95,7 @@ impl RuntimePresentationPlayer {
             render_snapshot_suppressed,
         )?;
         self.active_stream = Some(stream);
-        Ok(outcome)
+        Ok(Some(outcome))
     }
 
     /// Advance the active HNM queue using explicit host audio and timer positions.
@@ -87,16 +107,20 @@ impl RuntimePresentationPlayer {
         clock_gates: PresentationQueueClockGates,
         render_snapshot_suppressed: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
-        self.active_stream
-            .as_mut()
-            .context("no presentation stream is active")?
-            .service_frame(
-                runtime,
-                audio_position,
-                timer_tick,
-                clock_gates,
-                render_snapshot_suppressed,
-            )
+        let Some(stream) = self.active_stream.as_mut() else {
+            return Ok(RuntimePresentationStepOutcome {
+                queue: crate::native::bloodprg::PresentationQueueServiceOutcome::SourceUnavailable,
+                stream_finished: true,
+                queue_metrics: super::RuntimePresentationQueueMetrics::default(),
+            });
+        };
+        stream.service_frame(
+            runtime,
+            audio_position,
+            timer_tick,
+            clock_gates,
+            render_snapshot_suppressed,
+        )
     }
 
     /// Return whether a stream remains owned, including its final drained state.
@@ -123,6 +147,13 @@ impl RuntimePresentationPlayer {
         self.active_stream
             .as_ref()
             .map(RuntimePresentationStream::resource_name)
+    }
+
+    #[cfg(test)]
+    fn active_source_lease(&self) -> Option<crate::native::bloodprg::PresentationSourceLease> {
+        self.active_stream
+            .as_ref()
+            .map(RuntimePresentationStream::source_lease)
     }
 
     /// Copy the transition-source snapshot retained by the active stream.
@@ -193,6 +224,9 @@ mod tests {
     const SCENE_DESCRIPTION_PRESENTATION_LINE: PresentationResourceId =
         PresentationResourceId::new(41);
     const SCENE_FADE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(39);
+    const DESCRIPT_SEQUENCE_PRESENTATION_LINE: PresentationResourceId =
+        PresentationResourceId::new(2);
+    const CHARACTER_IDLE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(8);
     const INITIAL_DECODED_FRAME_COUNT: u64 = 1;
 
     #[test]
@@ -212,10 +246,12 @@ mod tests {
             .load(
                 &mut runtime,
                 OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
                 policy,
                 u16::MIN,
                 false,
             )
+            .unwrap()
             .unwrap();
         assert!(initial.initial_present.frame_presented);
         assert!(player.has_stream());
@@ -258,10 +294,12 @@ mod tests {
             .load(
                 &mut runtime,
                 SCENE_DESCRIPTION_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
             )
+            .unwrap()
             .unwrap();
         let description_resource = player.active_resource_name().unwrap().clone();
         assert_eq!(player.decoded_frame_count(), INITIAL_DECODED_FRAME_COUNT);
@@ -270,15 +308,98 @@ mod tests {
             .load(
                 &mut runtime,
                 SCENE_FADE_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
             )
+            .unwrap()
             .unwrap();
 
         assert!(player.has_stream());
         assert_eq!(player.decoded_frame_count(), INITIAL_DECODED_FRAME_COUNT);
         assert_ne!(player.active_resource_name(), Some(&description_resource));
+    }
+
+    #[test]
+    fn line_eight_uses_the_persistent_descript_idle_cache() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut backend = RuntimeScriptBackend::new(
+            &data,
+            ScriptClock {
+                hour: 12,
+                day: 1,
+                month: 1,
+            },
+        );
+        backend
+            .apply_description(b"Izwalito", false, &mut TextPresentationState::default())
+            .unwrap()
+            .unwrap();
+        assert!(backend.assets().encoded_idle_video().is_some());
+
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        player.apply_descript_assets(backend.assets()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        player
+            .load(
+                &mut runtime,
+                CHARACTER_IDLE_PRESENTATION_LINE,
+                PresentationSceneSource::SharedCache,
+                PresentationPresentPolicy::default(),
+                u16::MIN,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            player.active_source_lease(),
+            Some(crate::native::bloodprg::PresentationSourceLease::SharedCache)
+        );
+        assert!(player.source_open_or_draining());
+    }
+
+    #[test]
+    fn missing_authored_hnm_uses_the_native_unavailable_source_path() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        player
+            .select_descript_sequence_video(b"puven1.hnm")
+            .unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+
+        let load = player
+            .load(
+                &mut runtime,
+                DESCRIPT_SEQUENCE_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                u16::MIN,
+                false,
+            )
+            .unwrap();
+        assert!(load.is_none());
+        assert!(!player.has_stream());
+
+        let service = player
+            .service_frame(
+                &mut runtime,
+                u16::MIN,
+                u16::MIN,
+                PresentationQueueClockGates::default(),
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            service.queue,
+            crate::native::bloodprg::PresentationQueueServiceOutcome::SourceUnavailable
+        );
+        assert!(service.stream_finished);
     }
 
     #[test]
@@ -292,10 +413,12 @@ mod tests {
             .load(
                 &mut runtime,
                 OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
             )
+            .unwrap()
             .unwrap();
         player
             .service_frame(

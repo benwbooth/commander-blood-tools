@@ -142,7 +142,6 @@ impl DescriptPresentationAssets {
         self.sound_bank = None;
         self.talk_clips.clear();
         self.idle_clip = None;
-        self.encoded_idle_video = None;
         self.sequence_videos.clear();
         self.sequence_subtitles.clear();
         self.character_sprite = None;
@@ -1138,6 +1137,7 @@ mod tests {
         };
 
         assert!(load_descript_idle_clip(&first, false, &mut assets, &mut source).unwrap());
+        assets.begin_record_application();
         assert!(!load_descript_idle_clip(&second, true, &mut assets, &mut source).unwrap());
 
         assert_eq!(assets.idle_clip(), Some(&second));

@@ -173,16 +173,17 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
     fn load_presentation_sequence(
         &mut self,
         resource: PresentationResourceId,
-        _source: PresentationSceneSource,
+        source: PresentationSceneSource,
         policy: PresentationPresentPolicy,
     ) -> Result<bool> {
         let outcome = self.services.load_presentation_sequence(
             resource,
+            source,
             policy,
             self.services.game_timer_tick(),
             self.render_snapshot_suppressed,
         )?;
-        Ok(outcome.initial_present.frame_presented)
+        Ok(outcome.is_some_and(|outcome| outcome.initial_present.frame_presented))
     }
 
     fn build_black_remap(

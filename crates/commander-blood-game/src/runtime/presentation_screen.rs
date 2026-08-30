@@ -350,16 +350,6 @@ impl RuntimePresentationScreenBackend<'_, '_> {
             }
         }
     }
-
-    fn ensure_music_stream(&mut self) -> Result<()> {
-        if self.services.navigation_music_position()?.is_none()
-            && self.services.script_backend().assets().music().is_some()
-        {
-            self.services.restart_navigation_music()
-        } else {
-            self.services.check_audio()
-        }
-    }
 }
 
 impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
@@ -492,7 +482,9 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
     }
 
     fn start_music_stream(&mut self) {
-        let result = self.ensure_music_stream();
+        // The DOS `snd_stream_start` path resets the retained stream to page zero
+        // even when DESCRIPT reused the same music name.
+        let result = self.services.restart_navigation_music();
         self.record_error(result);
     }
 

@@ -199,8 +199,11 @@ pub fn service_presentation_queue<Host>(
 where
     Host: PresentationEntryPresenter,
 {
-    let shared_archive = stream.lease == PresentationSourceLease::SharedArchive;
-    if !shared_archive {
+    let shared_source = matches!(
+        stream.lease,
+        PresentationSourceLease::SharedArchive | PresentationSourceLease::SharedCache
+    );
+    if !shared_source {
         if stream.source.is_none() {
             context.queue.rollover_latched = false;
             return Ok(PresentationQueueServiceOutcome::SourceUnavailable);

@@ -175,6 +175,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
                 );
             self.services.load_presentation_sequence(
                 PresentationResourceId::new(line),
+                crate::native::bloodprg::PresentationSceneSource::Owned,
                 policy,
                 self.services.game_timer_tick(),
                 false,

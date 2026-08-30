@@ -342,6 +342,8 @@ pub enum PresentationSourceLease {
     Closed,
     /// Bytes belong to the shared main archive and remain available globally.
     SharedArchive,
+    /// Bytes belong to the persistent DESCRIPT idle-video cache.
+    SharedCache,
     /// Bytes belong only to this presentation and may be released.
     Owned,
 }

@@ -6,12 +6,14 @@ use commander_blood_formats::archive::BloodResourceName;
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
     FlatPresentationEntryPresenter, IndexedGamePalette, InputCancellationBackend,
-    PresentationActiveEntryState, PresentationEntryPolicy, PresentationPaletteState,
-    PresentationPresentPolicy, PresentationQueueClock, PresentationQueueClockGates,
-    PresentationQueueLinkCursor, PresentationQueueRefillOutcome, PresentationQueueServiceContext,
-    PresentationQueueServiceOutcome, PresentationQueueState, PresentationResourceCursor,
-    PresentationResourceDescriptor, PresentationResourceId, PresentationResourceSequenceContext,
-    PresentationResourceSequenceOutcome, PresentationResourceStreamState, PresentationSourceRange,
+    OpenedPresentationResource, PresentationActiveEntryState, PresentationEntryPolicy,
+    PresentationPaletteState, PresentationPresentPolicy, PresentationQueueClock,
+    PresentationQueueClockGates, PresentationQueueLinkCursor, PresentationQueueRefillOutcome,
+    PresentationQueueServiceContext, PresentationQueueServiceOutcome, PresentationQueueState,
+    PresentationResourceCursor, PresentationResourceDescriptor, PresentationResourceId,
+    PresentationResourceOpenError, PresentationResourceProvider,
+    PresentationResourceSequenceContext, PresentationResourceSequenceOutcome,
+    PresentationResourceStreamState, PresentationSourceLease, PresentationSourceRange,
     load_presentation_resource_sequence, presentation_resource_enabled, service_presentation_queue,
 };
 
@@ -37,6 +39,8 @@ pub struct RuntimePresentationRequest {
     pub entry_policy: PresentationEntryPolicy,
     /// Destination, vertical placement, and row-clamping policy.
     pub present_policy: PresentationPresentPolicy,
+    /// Persistent DESCRIPT idle-video bytes selected instead of reopening a file.
+    pub shared_source: Option<Box<[u8]>>,
 }
 
 impl RuntimePresentationRequest {
@@ -57,7 +61,30 @@ impl RuntimePresentationRequest {
                 unclamped_rows: false,
                 vertical_offset: usize::MIN,
             },
+            shared_source: None,
         }
+    }
+}
+
+#[derive(Clone)]
+struct RuntimePresentationProvider {
+    store: OriginalResourceStore,
+    shared_source: Option<Box<[u8]>>,
+}
+
+impl PresentationResourceProvider for RuntimePresentationProvider {
+    fn open_presentation_resource(
+        &mut self,
+        descriptor: &PresentationResourceDescriptor,
+    ) -> Result<OpenedPresentationResource, PresentationResourceOpenError> {
+        if let Some(bytes) = self.shared_source.as_ref() {
+            return Ok(OpenedPresentationResource::new(
+                bytes.clone(),
+                usize::MIN,
+                PresentationSourceLease::SharedCache,
+            ));
+        }
+        self.store.open_presentation_resource(descriptor)
     }
 }
 
@@ -86,7 +113,7 @@ pub struct RuntimePresentationQueueMetrics {
 /// Persistent flat ownership for one streamed HNM resource.
 pub struct RuntimePresentationStream {
     descriptors: [PresentationResourceDescriptor; 1],
-    provider: OriginalResourceStore,
+    provider: RuntimePresentationProvider,
     stream: PresentationResourceStreamState,
     queue: PresentationQueueState,
     queue_buffer: Box<[u8]>,
@@ -119,9 +146,13 @@ impl RuntimePresentationStream {
             render_snapshot: *runtime.live_palette(),
             dirty: false,
         };
+        let provider = RuntimePresentationProvider {
+            store: runtime.data().resource_store().clone(),
+            shared_source: request.shared_source,
+        };
         let mut player = Self {
             descriptors: [descriptor],
-            provider: runtime.data().resource_store().clone(),
+            provider,
             stream: PresentationResourceStreamState::default(),
             queue: PresentationQueueState::default(),
             queue_buffer: zeroed_presentation_buffer(),
@@ -257,6 +288,11 @@ impl RuntimePresentationStream {
     /// Exact authored resource currently supplying the stream.
     pub fn resource_name(&self) -> &BloodResourceName {
         &self.descriptors[usize::MIN].filename
+    }
+
+    #[cfg(test)]
+    pub(crate) const fn source_lease(&self) -> PresentationSourceLease {
+        self.stream.lease
     }
 
     /// Palette snapshot mirrored by the recovered low-128-color copy gate.
