@@ -33,6 +33,8 @@ const REFERENCE_VERTEX_INDEX: usize = 34;
 const DEPTH_FRACTIONAL_BITS: u32 = 8;
 const VISIBLE_DEPTH_MINIMUM: i32 = 0;
 const LOW_WORD_PRESERVE_MASK: u32 = 0xffff_0000;
+const MINIMUM_INTERPOLATION_FRACTION: f32 = 0.0;
+const MAXIMUM_INTERPOLATION_FRACTION: f32 = 1.0;
 
 /// Per-frame input expected by the recovered MANU3 API coordinator.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -263,6 +265,25 @@ impl Manu3Model {
         self.project_current_pose(cursor)
     }
 
+    /// Render a visual-only pose between the current and next recovered tween ticks.
+    ///
+    /// Prediction advances a clone of the animation state. The authoritative
+    /// selector, phase, tween records, and target values remain unchanged.
+    pub fn reproject_interpolated_frame(
+        &mut self,
+        cursor: CursorPosition,
+        fraction: f32,
+    ) -> Result<(), Manu3ModelError> {
+        let mut predicted = self.animation.clone();
+        predicted.step_tweens()?;
+        let interpolated =
+            interpolate_targets(self.animation.targets(), predicted.targets(), fraction);
+        self.apply_target_values(&interpolated);
+        let result = self.project_current_pose(cursor);
+        self.apply_animation_targets();
+        result
+    }
+
     fn project_current_pose(&mut self, cursor: CursorPosition) -> Result<(), Manu3ModelError> {
         let saved_view = [
             self.nodes[usize::MIN].angles[X_AXIS],
@@ -343,6 +364,19 @@ impl Manu3Model {
         }
     }
 
+    fn apply_target_values(&mut self, targets: &[i16]) {
+        for (node_index, node) in self.nodes.iter_mut().enumerate() {
+            let target_base = node_index * TARGETS_PER_NODE;
+            for axis in usize::MIN..AXIS_COUNT {
+                let value = targets[target_base + LOCAL_POSITION_TARGET_BASE + axis];
+                node.local_position[axis] = ((node.local_position[axis] as u32
+                    & LOW_WORD_PRESERVE_MASK)
+                    | u32::from(value as u16)) as i32;
+                node.angles[axis] = targets[target_base + ANGLE_TARGET_BASE + axis] as u16;
+            }
+        }
+    }
+
     fn update_projection_center(&mut self, cursor: CursorPosition) {
         let reference_node = &self.nodes[REFERENCE_NODE_INDEX];
         let reference_vertex = self.vertices[REFERENCE_VERTEX_INDEX];
@@ -359,6 +393,21 @@ impl Manu3Model {
             prepare_render_triangles(&self.vertices, &mut self.faces, &self.raster_reciprocals)?;
         Ok(())
     }
+}
+
+fn interpolate_targets(current: &[i16], next: &[i16], fraction: f32) -> Vec<i16> {
+    let fraction = fraction.clamp(
+        MINIMUM_INTERPOLATION_FRACTION,
+        MAXIMUM_INTERPOLATION_FRACTION,
+    );
+    current
+        .iter()
+        .zip(next)
+        .map(|(&current, &next)| {
+            let delta = next.wrapping_sub(current);
+            i32::from(current).wrapping_add((f32::from(delta) * fraction).round() as i32) as i16
+        })
+        .collect()
 }
 
 fn adjusted_view_angles(saved_view: [u16; 2], cursor: CursorPosition) -> [u16; 2] {
@@ -551,6 +600,56 @@ mod tests {
             pose_before
         );
         assert_ne!(model.render_triangles, triangles_before);
+    }
+
+    #[test]
+    fn visual_interpolation_predicts_without_advancing_the_native_animation() {
+        const ACTIVE_ANIMATION_SELECTOR: u16 = 1;
+        const HALF_FRAME: f32 = 0.5;
+
+        let Some(path) = original_xdb() else {
+            return;
+        };
+        let asset = decode_manu3(&std::fs::read(path).unwrap()).unwrap();
+        let mut model = Manu3Model::from_asset(asset).unwrap();
+        model
+            .render_frame(Manu3FrameRequest {
+                cursor: CENTERED_CURSOR,
+                animation_selector: ACTIVE_ANIMATION_SELECTOR,
+            })
+            .unwrap();
+        let animation_before = model.animation.clone();
+        let pose_before = model
+            .nodes
+            .iter()
+            .map(|node| (node.local_position, node.angles))
+            .collect::<Vec<_>>();
+
+        model
+            .reproject_interpolated_frame(CENTERED_CURSOR, HALF_FRAME)
+            .unwrap();
+
+        assert_eq!(model.animation, animation_before);
+        assert_eq!(
+            model
+                .nodes
+                .iter()
+                .map(|node| (node.local_position, node.angles))
+                .collect::<Vec<_>>(),
+            pose_before
+        );
+    }
+
+    #[test]
+    fn target_interpolation_uses_signed_wrapping_deltas() {
+        const HALF_FRAME: f32 = 0.5;
+        const CURRENT: [i16; 3] = [0, 100, i16::MAX - 7];
+        const NEXT: [i16; 3] = [10, 80, i16::MIN + 8];
+
+        assert_eq!(
+            interpolate_targets(&CURRENT, &NEXT, HALF_FRAME),
+            [5, 90, i16::MIN]
+        );
     }
 
     #[test]

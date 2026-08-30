@@ -51,6 +51,7 @@ const DECIMAL_RADIX: u8 = 10;
 const PACKED_BCD_DIGIT_SHIFT: u32 = 4;
 const NO_MOUSE_MOTION: f32 = 0.0;
 const MAXIMUM_BASE_SCENE_COUNT: usize = 1;
+const WINDOW_TITLE: &str = "Commander Blood - F10 releases mouse; click to recapture";
 
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
@@ -315,11 +316,7 @@ pub fn run() -> Result<()> {
     let sdl = sdl3::init().map_err(anyhow::Error::msg)?;
     let video = sdl.video().map_err(anyhow::Error::msg)?;
     let window = video
-        .window(
-            "Commander Blood",
-            DEFAULT_WINDOW_WIDTH,
-            DEFAULT_WINDOW_HEIGHT,
-        )
+        .window(WINDOW_TITLE, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
         .position_centered()
         .resizable()
         .high_pixel_density()
@@ -464,11 +461,7 @@ fn run_production_game(options: &Options) -> Result<()> {
     let video = sdl.video().map_err(anyhow::Error::msg)?;
     let audio = sdl.audio().map_err(anyhow::Error::msg)?;
     let window = video
-        .window(
-            "Commander Blood",
-            DEFAULT_WINDOW_WIDTH,
-            DEFAULT_WINDOW_HEIGHT,
-        )
+        .window(WINDOW_TITLE, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
         .position_centered()
         .resizable()
         .high_pixel_density()

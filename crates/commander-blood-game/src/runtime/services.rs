@@ -2246,16 +2246,23 @@ impl<'window> ModernGameServices<'window> {
     /// This does not advance the recovered animation selector, phase, or tween
     /// records. The next simulation frame remains the only place where the C
     /// frame-tail MANU3 dispatcher changes game state.
-    pub fn reproject_manu3_for_pointer(&mut self, pointer: [i16; 2]) -> Result<bool> {
+    pub fn reproject_manu3_for_pointer(
+        &mut self,
+        pointer: [i16; 2],
+        interpolation_fraction: f32,
+    ) -> Result<bool> {
         let Some(model) = self.runtime.manu3_mut() else {
             return Ok(false);
         };
         model
-            .reproject_frame(CursorPosition {
-                x: pointer[0],
-                y: pointer[1],
-            })
-            .context("reprojecting the current MANU3 pose")?;
+            .reproject_interpolated_frame(
+                CursorPosition {
+                    x: pointer[0],
+                    y: pointer[1],
+                },
+                interpolation_fraction,
+            )
+            .context("interpolating the current MANU3 pose")?;
         Ok(true)
     }
 

@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, Result, bail};
 use sdl3::EventPump;
 use sdl3::event::{Event, WindowEvent};
+use sdl3::keyboard::Keycode;
 use sdl3::mouse::{MouseButton, MouseUtil};
 use sdl3::video::Window;
 
@@ -39,6 +40,8 @@ const LOGICAL_SCREEN_HEIGHT: f32 = 200.0;
 const ALIEN_DRIVER_WIDTH: f32 = 640.0;
 const ALIEN_DRIVER_HEIGHT: f32 = 1_024.0;
 const ALIEN_DRIVER_CENTER: [f32; 2] = [ALIEN_DRIVER_WIDTH / 2.0, ALIEN_DRIVER_HEIGHT / 2.0];
+const MINIMUM_INTERPOLATION_FRACTION: f32 = 0.0;
+const MAXIMUM_INTERPOLATION_FRACTION: f32 = 1.0;
 
 /// Exact recovered timer budget of one original game update.
 ///
@@ -84,18 +87,25 @@ pub struct RuntimePlatformHost<'window> {
     logical_pointer: [f32; 2],
     pointer_inside_window: bool,
     pointer_position_locked: bool,
+    mouse_capture_requested: bool,
+    window_focused: bool,
     alien_pointer: Option<[f32; 2]>,
     scenario: Option<RuntimeScenarioDriver>,
 }
 
 impl<'window> RuntimePlatformHost<'window> {
-    /// Bind SDL input without capturing the desktop pointer.
-    ///
-    /// The ordinary bridge uses the host pointer directly. Relative capture is
-    /// scoped to the synchronous alien overlay, whose recovered driver consumes
-    /// unbounded motion rather than a window position.
+    /// Bind SDL input with relative capture for the game's virtual hand.
     pub fn new(window: &'window Window, mouse: MouseUtil, events: EventPump) -> Self {
-        mouse.set_relative_mouse_mode(window, false);
+        Self::with_mouse_capture(window, mouse, events, true)
+    }
+
+    fn with_mouse_capture(
+        window: &'window Window,
+        mouse: MouseUtil,
+        events: EventPump,
+        mouse_capture_requested: bool,
+    ) -> Self {
+        mouse.set_relative_mouse_mode(window, mouse_capture_requested);
         Self {
             window,
             mouse,
@@ -105,8 +115,10 @@ impl<'window> RuntimePlatformHost<'window> {
             bridge_horizontal_delta: 0.0,
             pointer_buttons: PointerButtons::NONE,
             logical_pointer: INITIAL_LOGICAL_POINTER.map(f32::from),
-            pointer_inside_window: false,
+            pointer_inside_window: mouse_capture_requested,
             pointer_position_locked: false,
+            mouse_capture_requested,
+            window_focused: true,
             alien_pointer: None,
             scenario: None,
         }
@@ -120,7 +132,7 @@ impl<'window> RuntimePlatformHost<'window> {
         scenario_path: &Path,
         trace_path: &Path,
     ) -> Result<Self> {
-        let mut platform = Self::new(window, mouse, events);
+        let mut platform = Self::with_mouse_capture(window, mouse, events, false);
         platform.pointer_inside_window = true;
         platform.scenario = Some(RuntimeScenarioDriver::load(scenario_path, trace_path)?);
         Ok(platform)
@@ -287,18 +299,12 @@ impl<'window> RuntimePlatformHost<'window> {
             bail!("alien-overlay input is already active");
         }
         self.alien_pointer = Some(ALIEN_DRIVER_CENTER);
-        if self.scenario.is_none() {
-            self.mouse.set_relative_mouse_mode(self.window, true);
-        }
         Ok(())
     }
 
     /// Release the temporary virtual pointer after the XDB loop exits.
     pub fn finish_alien_overlay_input(&mut self) -> bool {
         let released = self.alien_pointer.take().is_some();
-        if released && self.scenario.is_none() {
-            self.mouse.set_relative_mouse_mode(self.window, false);
-        }
         released
     }
 
@@ -327,6 +333,7 @@ impl<'window> RuntimePlatformHost<'window> {
                     win_event: WindowEvent::FocusLost,
                     ..
                 } if event_window_id == window_id => {
+                    self.window_focused = false;
                     self.pointer_inside_window = false;
                     self.pointer_buttons = PointerButtons::NONE;
                     self.mouse.set_relative_mouse_mode(self.window, false);
@@ -336,8 +343,13 @@ impl<'window> RuntimePlatformHost<'window> {
                     win_event: WindowEvent::FocusGained,
                     ..
                 } if event_window_id == window_id => {
-                    self.mouse
-                        .set_relative_mouse_mode(self.window, self.alien_pointer.is_some());
+                    self.window_focused = true;
+                    self.mouse.set_relative_mouse_mode(
+                        self.window,
+                        self.scenario.is_none() && self.mouse_capture_requested,
+                    );
+                    self.pointer_inside_window =
+                        self.scenario.is_some() || self.mouse_capture_requested;
                 }
                 Event::Window {
                     window_id: event_window_id,
@@ -360,6 +372,9 @@ impl<'window> RuntimePlatformHost<'window> {
                     yrel,
                     ..
                 } if event_window_id == window_id => {
+                    if self.scenario.is_none() && !self.mouse_capture_requested {
+                        continue;
+                    }
                     let (width, height) = self.window.size();
                     let output_size = [width as f32, height as f32];
                     if let Some(pointer) = &mut self.alien_pointer {
@@ -382,6 +397,15 @@ impl<'window> RuntimePlatformHost<'window> {
                     mouse_btn,
                     ..
                 } if event_window_id == window_id => {
+                    if should_recapture_mouse(self.scenario.is_some(), self.mouse_capture_requested)
+                    {
+                        self.mouse_capture_requested = true;
+                        self.pointer_inside_window = true;
+                        self.pointer_buttons = PointerButtons::NONE;
+                        self.mouse
+                            .set_relative_mouse_mode(self.window, self.window_focused);
+                        continue;
+                    }
                     self.pointer_inside_window = true;
                     set_pointer_button(&mut self.pointer_buttons, mouse_btn, true);
                 }
@@ -395,8 +419,26 @@ impl<'window> RuntimePlatformHost<'window> {
                 Event::KeyDown {
                     window_id: event_window_id,
                     keycode: Some(keycode),
+                    repeat,
                     ..
                 } if event_window_id == window_id => {
+                    if let Some(capture_requested) = toggled_mouse_capture_request(
+                        self.scenario.is_some(),
+                        self.mouse_capture_requested,
+                        keycode,
+                        repeat,
+                    ) {
+                        if capture_requested != self.mouse_capture_requested {
+                            self.mouse_capture_requested = capture_requested;
+                            self.pointer_inside_window = self.mouse_capture_requested;
+                            self.pointer_buttons = PointerButtons::NONE;
+                            self.mouse.set_relative_mouse_mode(
+                                self.window,
+                                self.window_focused && self.mouse_capture_requested,
+                            );
+                        }
+                        continue;
+                    }
                     services.input_mut().queue_keycode(keycode);
                 }
                 Event::TextInput {
@@ -484,16 +526,17 @@ impl<'window> RuntimePlatformHost<'window> {
 
     /// Wait for one render-only refresh opportunity inside the current game tick.
     ///
-    /// Returns `false` once the recovered frame deadline has been reached. SDL
-    /// events are retained immediately, but lifecycle input is still dispatched
-    /// only by the next C simulation frame.
+    /// Returns the elapsed native-frame fraction for a visual refresh, or
+    /// `None` once the recovered frame deadline has been reached. SDL events are
+    /// retained immediately, but lifecycle input is still dispatched only by
+    /// the next C simulation frame.
     pub fn wait_for_visual_refresh(
         &mut self,
         services: &mut ModernGameServices<'window>,
-    ) -> Result<bool> {
+    ) -> Result<Option<f32>> {
         if self.scenario.is_some() {
             self.frame_clock.finish_frame();
-            return Ok(false);
+            return Ok(None);
         }
         let remaining = self
             .frame_clock
@@ -504,11 +547,15 @@ impl<'window> RuntimePlatformHost<'window> {
                 thread::sleep(remaining);
             }
             self.frame_clock.finish_frame();
-            return Ok(false);
+            return Ok(None);
         }
         thread::sleep(VISUAL_FRAME_DURATION);
         self.pump_events(services);
-        Ok(true)
+        let fraction = self
+            .frame_clock
+            .elapsed_fraction(Instant::now(), GAME_FRAME_DURATION)
+            .context("visual interpolation started without a game frame budget")?;
+        Ok(Some(fraction))
     }
 
     fn pace_frame_for(&mut self, duration: Duration) -> Result<()> {
@@ -641,6 +688,16 @@ impl GameFrameClock {
             .map(|started_at| (started_at + duration).saturating_duration_since(now))
     }
 
+    fn elapsed_fraction(&self, now: Instant, duration: Duration) -> Option<f32> {
+        self.started_at.map(|started_at| {
+            let elapsed = now.saturating_duration_since(started_at).as_secs_f32();
+            (elapsed / duration.as_secs_f32()).clamp(
+                MINIMUM_INTERPOLATION_FRACTION,
+                MAXIMUM_INTERPOLATION_FRACTION,
+            )
+        })
+    }
+
     fn finish_frame(&mut self) {
         self.started_at = None;
     }
@@ -655,6 +712,26 @@ fn pointer_buttons_inside_window(
     } else {
         PointerButtons::NONE
     }
+}
+
+fn toggled_mouse_capture_request(
+    scripted: bool,
+    capture_requested: bool,
+    keycode: Keycode,
+    repeat: bool,
+) -> Option<bool> {
+    if scripted || keycode != Keycode::F10 {
+        return None;
+    }
+    Some(if repeat {
+        capture_requested
+    } else {
+        !capture_requested
+    })
+}
+
+const fn should_recapture_mouse(scripted: bool, capture_requested: bool) -> bool {
+    !scripted && !capture_requested
 }
 
 fn set_pointer_button(buttons: &mut PointerButtons, button: MouseButton, pressed: bool) {
@@ -999,6 +1076,37 @@ mod tests {
             PointerButtons::NONE
         );
         assert_eq!(pointer_buttons_inside_window(true, pressed), pressed);
+    }
+
+    #[test]
+    fn f10_toggles_host_capture_without_repeating_or_entering_scripted_input() {
+        assert_eq!(
+            toggled_mouse_capture_request(false, true, Keycode::F10, false),
+            Some(false)
+        );
+        assert_eq!(
+            toggled_mouse_capture_request(false, false, Keycode::F10, false),
+            Some(true)
+        );
+        assert_eq!(
+            toggled_mouse_capture_request(false, true, Keycode::F10, true),
+            Some(true)
+        );
+        assert_eq!(
+            toggled_mouse_capture_request(true, false, Keycode::F10, false),
+            None
+        );
+        assert_eq!(
+            toggled_mouse_capture_request(false, true, Keycode::Escape, false),
+            None
+        );
+    }
+
+    #[test]
+    fn first_click_after_release_recaptures_instead_of_reaching_the_game() {
+        assert!(should_recapture_mouse(false, false));
+        assert!(!should_recapture_mouse(false, true));
+        assert!(!should_recapture_mouse(true, false));
     }
 
     #[test]

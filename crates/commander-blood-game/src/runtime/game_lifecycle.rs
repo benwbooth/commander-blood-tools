@@ -507,10 +507,13 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         if self.services.presentation_stream_active() {
             self.platform.pace_presentation_frame()
         } else {
-            while self.platform.wait_for_visual_refresh(&mut self.services)? {
+            while let Some(interpolation_fraction) =
+                self.platform.wait_for_visual_refresh(&mut self.services)?
+            {
                 if self.manu3_visible {
                     let pointer = self.platform.poll_pointer(&mut self.services).position;
-                    self.services.reproject_manu3_for_pointer(pointer)?;
+                    self.services
+                        .reproject_manu3_for_pointer(pointer, interpolation_fraction)?;
                 }
                 self.services
                     .present_current_bridge_frame(self.indexed_bridge_ui_active)?;
