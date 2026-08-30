@@ -17,6 +17,7 @@ const FIRST_ACTOR_ENTITY: u16 = 1;
 const AFTER_LAST_BRIDGE_ENTITY: u16 = 32;
 const AFTER_LAST_ACTOR_ENTITY: u16 = 20;
 const LOCATION_PANEL_ENTITY_INDEX: usize = 0;
+const PRESENTATION_GATE_ACTIVE: u16 = 1;
 
 /// Run one bridge frame through the translated coordinator and concrete owners.
 pub(super) fn run_runtime_bridge_frame(
@@ -75,15 +76,22 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
     fn dispatch_scene(
         &mut self,
         _scene_link: &Self::SceneLink,
-        _state: &mut crate::native::bloodprg::BridgeFrameState,
+        state: &mut crate::native::bloodprg::BridgeFrameState,
     ) -> Result<()> {
         self.services
             .dispatch_ship_scene()
             .context("dispatching the bridge travel scene")?;
+        let ship = self.services.ship_presentation_state();
+        self.lifecycle.presentation.active_line =
+            crate::native::bloodprg::decode_active_presentation_line(ship.active_line);
+        self.lifecycle.presentation.c2_presentation_gate =
+            ship.presentation_gate & PRESENTATION_GATE_ACTIVE != u16::MIN;
         self.lifecycle.frame_presented = self
             .services
             .presentation_scene_frame_presented()
             .context("publishing bridge scene frame readiness")?;
+        state.set_presentation_queued(self.lifecycle.presentation.c2_presentation_gate);
+        state.set_frame_ready(self.lifecycle.frame_presented);
         Ok(())
     }
 

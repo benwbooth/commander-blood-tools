@@ -114,6 +114,7 @@ impl RuntimeNavigationChart {
         self.state.input.pointer = pointer.position.map(|coordinate| coordinate as u16);
         self.state.input.primary_pressed = lifecycle.primary_pointer_pressed;
         self.state.input.press_pending = lifecycle.pointer_press_pending != u8::MIN;
+        self.state.ui_active = false;
         let hand_before = self.state.hand;
 
         let context = NavigationCameraContext {

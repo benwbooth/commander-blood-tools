@@ -7,9 +7,10 @@ use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
     IndexedGamePalette, Manu3AnimationSelector, PaletteRemapTable, ShipHudCoordinatorHost,
-    ShipHudCoordinatorOutcome, ShipHudCoordinatorState, ShipHudInitializationContext,
-    ShipHudPaletteTransition, ShipHudTargetListState, ShipTargetSelectionOutcome,
-    ShipTargetSelectionState, build_palette_blend_remap_table, decode_active_presentation_line,
+    ShipHudCoordinatorOutcome, ShipHudCoordinatorState, ShipHudDescriptionOutcome,
+    ShipHudInitializationContext, ShipHudPaletteTransition, ShipHudTargetListState,
+    ShipPresentationState, ShipTargetSelectionOutcome, ShipTargetSelectionState,
+    build_palette_blend_remap_table, decode_active_presentation_line,
     encode_active_presentation_line, update_ship_hud,
 };
 
@@ -112,14 +113,10 @@ impl RuntimeShipHud {
                 remap_palette: &mut self.remap_palette,
                 remap_rows: &mut self.remap_rows,
                 description_applied: false,
-                frame_presented: None,
                 deferred_error: None,
             };
             native_outcome = update_ship_hud(&mut state, &context, &mut backend);
             description_applied = backend.description_applied;
-            if let Some(frame_presented) = backend.frame_presented {
-                lifecycle.frame_presented = frame_presented;
-            }
             deferred_error = backend.deferred_error.take();
         }
         if let Some(error) = deferred_error {
@@ -175,7 +172,7 @@ fn initial_coordinator_state(
         scene_dispatch_blocked: ship.scene_dispatch_blocked,
         active_line: decode_active_presentation_line(ship.active_line),
         depth_band_enabled: ship.depth_band_enabled,
-        resource_vertical_offset: context.scene_top_row,
+        resource_vertical_offset: services.ship_navigation_scene_vertical_offset(),
         presentation_gate: ship.presentation_gate,
         palette_transition: ShipHudPaletteTransition {
             staged: false,
@@ -316,8 +313,30 @@ struct RuntimeShipHudBackend<'services, 'window> {
     remap_palette: &'services mut Option<IndexedGamePalette>,
     remap_rows: &'services mut Option<Range<u16>>,
     description_applied: bool,
-    frame_presented: Option<bool>,
     deferred_error: Option<anyhow::Error>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ShipHudSceneDispatchOutput {
+    ship: ShipPresentationState,
+    resource_vertical_offset: u16,
+    frame_presented: bool,
+}
+
+fn apply_scene_dispatch_output(
+    state: &mut ShipHudCoordinatorState<ScriptObjectId>,
+    output: ShipHudSceneDispatchOutput,
+) {
+    state.scene_dispatch_blocked = output.ship.scene_dispatch_blocked;
+    state.active_line = decode_active_presentation_line(output.ship.active_line);
+    state.resource_vertical_offset = output.resource_vertical_offset;
+    state.presentation_gate = output.ship.presentation_gate;
+    state.palette_transition.percent = output.ship.transition_percent;
+    state.depth_opening = flag_is_active(output.ship.depth_opening_flags);
+    state.depth_step = output.ship.depth_step;
+    state.frame_presented = output.frame_presented;
+    state.ship_active_flags = output.ship.flags;
+    state.bridge_redraw_pending = flag_is_active(output.ship.bridge_redraw_pending);
 }
 
 impl RuntimeShipHudBackend<'_, '_> {
@@ -374,14 +393,30 @@ impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
         targets
     }
 
-    fn load_target_description(&mut self, target: &ScriptObjectId) -> bool {
+    fn load_target_description(&mut self, target: &ScriptObjectId) -> ShipHudDescriptionOutcome {
         self.ensure_selector(*target);
         self.description_applied = true;
-        let result = self.services.apply_ship_target_description(*target);
-        self.record(result, false)
+        let description_result = self.services.apply_ship_target_description(*target);
+        let music_source_changed = self.record(description_result, false);
+        let scene_top_row = self
+            .services
+            .script_backend()
+            .assets()
+            .location_scene_top_row()
+            .unwrap_or(u16::MIN);
+        self.services
+            .set_ship_navigation_scene_vertical_offset(scene_top_row);
+        ShipHudDescriptionOutcome {
+            music_source_changed,
+            scene_top_row,
+        }
     }
 
-    fn dispatch_ship_scene_line(&mut self, vertical_offset: u16) {
+    fn dispatch_ship_scene_line(
+        &mut self,
+        vertical_offset: u16,
+        state: &mut ShipHudCoordinatorState<ScriptObjectId>,
+    ) {
         {
             let ship = self.services.ship_presentation_state_mut();
             ship.scene_dispatch_blocked = true;
@@ -396,7 +431,12 @@ impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
                 format!("dispatching ship HUD scene at authored row {vertical_offset}")
             })
             .and_then(|_| {
-                self.frame_presented = Some(self.services.presentation_scene_frame_presented()?);
+                let output = ShipHudSceneDispatchOutput {
+                    ship: *self.services.ship_presentation_state(),
+                    resource_vertical_offset: self.services.ship_navigation_scene_vertical_offset(),
+                    frame_presented: self.services.presentation_scene_frame_presented()?,
+                };
+                apply_scene_dispatch_output(state, output);
                 Ok(())
             });
         self.record(result.map(|_| ()), ());

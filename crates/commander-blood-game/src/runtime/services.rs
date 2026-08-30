@@ -42,8 +42,8 @@ use crate::native::bloodprg::{
     ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
     ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
     SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TextPresentationState,
-    clear_scene_palette_entries, deactivate_nav_actor_slots, draw_planar_dialogue_text,
-    fill_display_band, increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
+    clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
+    increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, objects_at_arche_position, play_cd_audio_track_two, prepare_cd_audio,
     presentable_navigation_objects, process_audio_events, render_bridge_page,
     reveal_inline_menu_step, stop_cd_audio, update_manu3_hand_frame,
@@ -348,25 +348,6 @@ impl<'window> ModernGameServices<'window> {
             random_draw_delta(random_counter_before, self.random.counter);
         self.nav_actor_slots = nav_actor_slots;
         self.bridge_scene = Some(bridge_scene);
-        Ok(())
-    }
-
-    /// Rebuild the concrete bridge resources touched by camera travel setup.
-    pub(super) fn initialize_camera_transition_screen(&mut self) -> Result<()> {
-        let Self {
-            runtime,
-            bridge_palette,
-            nav_actor_slots,
-            ..
-        } = self;
-        *runtime.live_palette_mut() = *bridge_palette;
-        runtime
-            .rebuild_bridge_sprite_remap_tables()
-            .context("rebuilding camera-transition sprite remaps")?;
-        runtime
-            .activate_retained_bridge_background()
-            .context("activating the camera-transition bridge background")?;
-        deactivate_nav_actor_slots(nav_actor_slots);
         Ok(())
     }
 
@@ -1245,12 +1226,6 @@ impl<'window> ModernGameServices<'window> {
             arche,
             arche_link,
             linked_record_is_direct_target,
-            scene_top_row: self
-                .scripts
-                .backend()
-                .assets()
-                .location_scene_top_row()
-                .unwrap_or(u16::MIN),
         })
     }
 
@@ -2272,6 +2247,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Dispatch the ship's active authored line through the shared scene player.
     pub fn dispatch_ship_scene(&mut self) -> Result<PresentationSceneDispatchOutcome> {
+        let vertical_offset = self.ship_navigation_scene_vertical_offset();
         let active_record_related = self
             .runtime
             .current_profile()
@@ -2284,6 +2260,7 @@ impl<'window> ModernGameServices<'window> {
             .presentation_screen
             .take()
             .context("ship scene dispatch is reentrant")?;
+        screen.set_ship_scene_vertical_offset(vertical_offset);
         let mut ship = std::mem::take(&mut self.ship_presentation);
         let outcome =
             screen.dispatch_ship_scene(self, &mut ship, active_record_related, scruter_jo_record);
@@ -2593,6 +2570,15 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         mut lifecycle: Option<&mut GameLifecycleState>,
     ) {
+        if let Some(state) = lifecycle.as_deref_mut() {
+            state
+                .profile_change_blockers
+                .navigation_actor_transition_active = matches!(
+                self.scripts.action_state().travel_phase,
+                ScriptTravelActionPhase::WaitingForCamera
+                    | ScriptTravelActionPhase::WaitingForPresentation
+            );
+        }
         let selected_target = self.scripts.take_selected_ship_target();
         synchronize_selected_ship_target(
             selected_target,
@@ -5361,6 +5347,7 @@ mod tests {
         {
             let action = services.scripts.action_state_mut();
             action.ship_navigation_mode = ScriptShipNavigationMode::Active;
+            action.travel_phase = ScriptTravelActionPhase::WaitingForCamera;
             action.ship_hud_refresh_requested = true;
             action.screen_rebuild_requested = true;
             action.clip_playback_state_reload = Some(SCRIPT_RADIO_CLIP_COUNTDOWN);
@@ -5379,6 +5366,11 @@ mod tests {
         assert!(lifecycle.navigation_rebuild_pending);
         assert_eq!(lifecycle.clip_playback_state, SCRIPT_RADIO_CLIP_COUNTDOWN);
         assert!(lifecycle.speaker_pulse_requested);
+        assert!(
+            lifecycle
+                .profile_change_blockers
+                .navigation_actor_transition_active
+        );
 
         services.ship_presentation.hud_initialization_pending = u8::MIN;
         services.ship_presentation.active_line = u16::MIN;
@@ -5386,6 +5378,8 @@ mod tests {
         lifecycle.navigation_rebuild_pending = false;
         lifecycle.clip_playback_state = u16::MIN;
         lifecycle.speaker_pulse_requested = false;
+        services.scripts.action_state_mut().travel_phase =
+            ScriptTravelActionPhase::WaitingForPresentation;
         services.synchronize_script_action_effects(Some(&mut lifecycle));
 
         assert_eq!(
@@ -5397,6 +5391,18 @@ mod tests {
         assert!(!lifecycle.navigation_rebuild_pending);
         assert_eq!(lifecycle.clip_playback_state, u16::MIN);
         assert!(!lifecycle.speaker_pulse_requested);
+        assert!(
+            lifecycle
+                .profile_change_blockers
+                .navigation_actor_transition_active
+        );
+        services.scripts.action_state_mut().travel_phase = ScriptTravelActionPhase::WaitingForActor;
+        services.synchronize_script_action_effects(Some(&mut lifecycle));
+        assert!(
+            !lifecycle
+                .profile_change_blockers
+                .navigation_actor_transition_active
+        );
         *services.scripts.action_state_mut() = original_action;
         services.ship_presentation = original_ship;
     }
@@ -5449,6 +5455,30 @@ mod tests {
             services.update_runtime_ship_hud(&mut lifecycle).unwrap(),
             crate::native::bloodprg::ShipHudCoordinatorOutcome::TextInactive
         );
+        let loaded_scene_top_row = services
+            .scripts
+            .backend()
+            .assets()
+            .location_scene_top_row()
+            .unwrap();
+        let hud_scene_state = services.runtime_ship_hud().unwrap().coordinator().unwrap();
+        assert_eq!(
+            hud_scene_state.resource_vertical_offset,
+            loaded_scene_top_row
+        );
+        assert_eq!(
+            services.ship_navigation_scene_vertical_offset(),
+            loaded_scene_top_row
+        );
+        assert_eq!(
+            lifecycle.presentation.active_line,
+            hud_scene_state.active_line
+        );
+        assert_eq!(
+            lifecycle.presentation.c2_presentation_gate,
+            hud_scene_state.presentation_gate & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN
+        );
+        assert_eq!(lifecycle.frame_presented, hud_scene_state.frame_presented);
         let targets = services
             .runtime_ship_hud()
             .unwrap()

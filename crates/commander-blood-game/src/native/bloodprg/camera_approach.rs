@@ -123,7 +123,7 @@ pub trait CameraApproachHost<SceneLink> {
     fn publish_actor_presentation(&mut self, presentation: CameraApproachPresentation);
 
     /// Rebuild shared screen flags after entering or leaving the transition.
-    fn initialize_screen_flags(&mut self);
+    fn initialize_screen_flags(&mut self, transition_pending: bool);
 
     /// Mark the inclusive ship entity range for a state transition.
     fn mark_entity_range_dirty(&mut self, first: u16, last: u16);
@@ -187,7 +187,7 @@ pub fn update_camera_approach<SceneLink, Host: CameraApproachHost<SceneLink>>(
         host.publish_actor_presentation(state.actor_presentation);
         state.camera_view_active = false;
         state.transition_pending = true;
-        host.initialize_screen_flags();
+        host.initialize_screen_flags(state.transition_pending);
         state.phase = state.phase.wrapping_add(1);
         state.ui_active = true;
     }
@@ -243,7 +243,7 @@ pub fn update_camera_approach<SceneLink, Host: CameraApproachHost<SceneLink>>(
             host.publish_actor_presentation(state.actor_presentation);
             host.transition_entity(TRANSITION_ENTITY);
             host.snapshot_ship_hud_and_reset_camera(&mut state.camera);
-            host.initialize_screen_flags();
+            host.initialize_screen_flags(state.transition_pending);
             state.phase = state.phase.wrapping_add(1);
             state.camera[2] = CAMERA_Z_FINAL;
             return Ok(CameraApproachOutcome::PresentationCompleted);
@@ -259,7 +259,7 @@ pub fn update_camera_approach<SceneLink, Host: CameraApproachHost<SceneLink>>(
                 state.transition_pending = false;
                 state.phase = 0;
                 state.ui_active = false;
-                host.initialize_screen_flags();
+                host.initialize_screen_flags(state.transition_pending);
                 state.actor_presentation = CameraApproachPresentation::Active;
                 host.publish_actor_presentation(state.actor_presentation);
                 return Ok(CameraApproachOutcome::TransitionCompleted);
@@ -366,7 +366,7 @@ mod tests {
 
         fn publish_actor_presentation(&mut self, _presentation: CameraApproachPresentation) {}
 
-        fn initialize_screen_flags(&mut self) {
+        fn initialize_screen_flags(&mut self, _transition_pending: bool) {
             self.calls.push(HostCall::InitializeScreenFlags);
         }
 

@@ -117,6 +117,11 @@ impl RuntimePresentationScreen {
         self.scene_state.loaded_scene_image = None;
     }
 
+    /// Publish the shared scene row selected by the latest ship DESCRIPT lookup.
+    pub fn set_ship_scene_vertical_offset(&mut self, vertical_offset: u16) {
+        self.scene_state.present_policy.vertical_offset = usize::from(vertical_offset);
+    }
+
     /// Publish the PBM palette staged by ship navigation to the scene dispatcher.
     pub fn stage_navigation_palette(
         &mut self,
@@ -202,7 +207,7 @@ impl RuntimePresentationScreen {
         lifecycle.presentation.active_line = scene.presentation.active_line;
         lifecycle.presentation.list_entry_metric = scene.entry_metric;
         lifecycle.presentation.list_read_wrap_index = scene.read_wrap_index;
-        lifecycle.frame_presented |= scene.frame_presented;
+        export_scene_transition_frame_presented(scene.frame_presented, lifecycle);
         *palette_transition_percent = scene.palette_transition_percent;
         outcome
     }
@@ -293,6 +298,13 @@ fn export_scene_transition_queue_gate(
     presentation: &mut ScriptPresentationScanState,
 ) {
     presentation.c2_gate_active = scene.gate_flags & PRESENTATION_ACTIVE_GATE != u8::MIN;
+}
+
+fn export_scene_transition_frame_presented(
+    frame_presented: bool,
+    lifecycle: &mut crate::native::bloodprg::GameLifecycleState,
+) {
+    lifecycle.frame_presented = frame_presented;
 }
 
 struct RuntimePresentationScreenBackend<'services, 'window> {
@@ -713,5 +725,17 @@ mod tests {
         export_scene_transition_queue_gate(&scene, &mut presentation);
         assert!(!presentation.c2_gate_active);
         assert!(presentation.active);
+    }
+
+    #[test]
+    fn scene_transition_frame_readiness_overwrites_an_earlier_writer() {
+        let mut lifecycle = crate::native::bloodprg::GameLifecycleState::default();
+        lifecycle.frame_presented = true;
+
+        export_scene_transition_frame_presented(false, &mut lifecycle);
+
+        assert!(!lifecycle.frame_presented);
+        export_scene_transition_frame_presented(true, &mut lifecycle);
+        assert!(lifecycle.frame_presented);
     }
 }

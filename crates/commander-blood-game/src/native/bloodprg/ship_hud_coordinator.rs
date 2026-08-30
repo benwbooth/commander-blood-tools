@@ -58,7 +58,14 @@ pub struct ShipHudInitializationContext<RecordId> {
     pub arche_link: RecordId,
     /// Whether the linked record itself is a directly selectable target.
     pub linked_record_is_direct_target: bool,
-    /// Authored vertical offset forwarded to the first scene dispatch.
+}
+
+/// Outputs written by the C2 DESCRIPT lookup used by the ship HUD.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ShipHudDescriptionOutcome {
+    /// Whether the selected DESCRIPT record replaced the music source.
+    pub music_source_changed: bool,
+    /// Scene row written to the shared `resource_vertical_offset` global.
     pub scene_top_row: u16,
 }
 
@@ -135,10 +142,14 @@ pub trait ShipHudCoordinatorHost<RecordId> {
     fn process_vm_state(&mut self);
     /// Build presentable typed records below one root.
     fn build_presentable_targets(&mut self, root: &RecordId) -> Vec<RecordId>;
-    /// Load one selected record's description assets and report a music change.
-    fn load_target_description(&mut self, target: &RecordId) -> bool;
-    /// Dispatch the initial authored ship scene line.
-    fn dispatch_ship_scene_line(&mut self, vertical_offset: u16);
+    /// Load one selected record's description assets and return its shared outputs.
+    fn load_target_description(&mut self, target: &RecordId) -> ShipHudDescriptionOutcome;
+    /// Dispatch the initial authored ship scene line and publish its immediate shared writes.
+    fn dispatch_ship_scene_line(
+        &mut self,
+        vertical_offset: u16,
+        state: &mut ShipHudCoordinatorState<RecordId>,
+    );
     /// Copy the display surface into the back buffer.
     fn copy_display_to_back_buffer(&mut self);
     /// Compose the separately recovered two-band depth effect.
@@ -239,7 +250,9 @@ where
         ShipTargetSelectionOutcome::Selected(target) => {
             if target != state.current_target {
                 state.current_target = target.clone();
-                state.music_source_changed = host.load_target_description(&target);
+                let description = host.load_target_description(&target);
+                state.music_source_changed = description.music_source_changed;
+                state.resource_vertical_offset = description.scene_top_row;
             }
 
             if state.music_source_changed {
@@ -298,14 +311,15 @@ where
             .cloned()
             .ok_or(ShipHudCoordinatorError::MissingInitialTarget)?;
     }
-    state.music_source_changed = host.load_target_description(&state.current_target);
+    let description = host.load_target_description(&state.current_target);
+    state.music_source_changed = description.music_source_changed;
+    state.resource_vertical_offset = description.scene_top_row;
 
     state.scene_dispatch_blocked = true;
     state.active_line = Some(SHIP_HUD_ACTIVE_LINE);
     state.depth_band_enabled = true;
-    state.resource_vertical_offset = context.scene_top_row;
     state.presentation_gate = u16::MIN;
-    host.dispatch_ship_scene_line(context.scene_top_row);
+    host.dispatch_ship_scene_line(state.resource_vertical_offset, state);
     host.copy_display_to_back_buffer();
     host.compose_depth_band();
     state.palette_transition = ShipHudPaletteTransition {
@@ -406,12 +420,19 @@ mod tests {
             vec![FIRST_PRESENTABLE_TARGET]
         }
 
-        fn load_target_description(&mut self, _target: &u16) -> bool {
+        fn load_target_description(&mut self, _target: &u16) -> ShipHudDescriptionOutcome {
             self.expect("c2");
-            self.music_changed
+            ShipHudDescriptionOutcome {
+                music_source_changed: self.music_changed,
+                scene_top_row: SCENE_TOP_ROW,
+            }
         }
 
-        fn dispatch_ship_scene_line(&mut self, vertical_offset: u16) {
+        fn dispatch_ship_scene_line(
+            &mut self,
+            vertical_offset: u16,
+            _state: &mut ShipHudCoordinatorState<u16>,
+        ) {
             self.expect("dispatch");
             assert_eq!(vertical_offset, SCENE_TOP_ROW);
         }
@@ -486,7 +507,6 @@ mod tests {
                 arche: ARCHE_RECORD,
                 arche_link: ARCHE_LINK,
                 linked_record_is_direct_target,
-                scene_top_row: SCENE_TOP_ROW,
             };
             let calls = vector.calls.iter().map(|call| call.name.clone()).collect();
             let mut host = OracleHost {
@@ -521,10 +541,15 @@ mod tests {
             fn build_presentable_targets(&mut self, _root: &u16) -> Vec<u16> {
                 Vec::new()
             }
-            fn load_target_description(&mut self, _target: &u16) -> bool {
+            fn load_target_description(&mut self, _target: &u16) -> ShipHudDescriptionOutcome {
                 panic!("missing target must fail before lookup");
             }
-            fn dispatch_ship_scene_line(&mut self, _vertical_offset: u16) {}
+            fn dispatch_ship_scene_line(
+                &mut self,
+                _vertical_offset: u16,
+                _state: &mut ShipHudCoordinatorState<u16>,
+            ) {
+            }
             fn copy_display_to_back_buffer(&mut self) {}
             fn compose_depth_band(&mut self) {}
             fn update_bridge_steering(&mut self) {}
@@ -563,7 +588,6 @@ mod tests {
                 arche: ARCHE_RECORD,
                 arche_link: ARCHE_LINK,
                 linked_record_is_direct_target: false,
-                scene_top_row: SCENE_TOP_ROW,
             },
             &mut EmptyHost,
         )

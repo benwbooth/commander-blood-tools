@@ -430,7 +430,11 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         ) && let Some(record) = state.deferred_record
         {
             self.services.defer_ship_navigation_target(record);
+            self.services.runtime_mut().start_camera_transition();
             self.lifecycle.navigation_transition_pending = true;
+            self.lifecycle
+                .profile_change_blockers
+                .navigation_transition_active = true;
         }
         *self.hyperjump = state;
         *self.playback = playback;

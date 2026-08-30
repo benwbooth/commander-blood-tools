@@ -362,7 +362,7 @@ impl SceneTransitionHost for RuntimeSceneTransitionHost<'_, '_, '_, '_> {
         _presentation: &mut ScriptPresentationScanState,
     ) -> Result<()> {
         let pointer = self.services.input().pointer_sample();
-        self.services.render_bridge_frame(BridgeSceneInput {
+        self.services.update_bridge_steering(BridgeSceneInput {
             horizontal_delta: self.platform.take_bridge_horizontal_delta(),
             pointer_buttons: pointer.buttons.bits(),
             interaction: BridgeSteeringInteraction::Free,

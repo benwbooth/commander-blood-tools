@@ -34,9 +34,11 @@ pub(super) fn update_runtime_camera_approach<'window>(
 
     let native_result;
     let deferred_error;
+    let frame_presented;
     {
         let mut host = RuntimeCameraApproachHost {
             services,
+            lifecycle,
             frame_presented: None,
             deferred_error: None,
         };
@@ -49,9 +51,10 @@ pub(super) fn update_runtime_camera_approach<'window>(
             &mut host,
         );
         deferred_error = host.deferred_error;
-        if let Some(frame_presented) = host.frame_presented {
-            lifecycle.frame_presented = frame_presented;
-        }
+        frame_presented = host.frame_presented;
+    }
+    if let Some(frame_presented) = frame_presented {
+        lifecycle.frame_presented = frame_presented;
     }
 
     let mut integration_error = deferred_error;
@@ -84,12 +87,8 @@ pub(super) fn update_runtime_camera_approach<'window>(
         ship.presentation_gate = (ship.presentation_gate & !PRESENTATION_GATE_ACTIVE)
             | u16::from(state.presentation_pending);
     }
-    lifecycle.presentation.active_line = decode_active_presentation_line(state.active_line);
-    lifecycle.presentation.c2_presentation_gate = state.presentation_pending;
-    publish_camera_approach_modal_ui(lifecycle, state.ui_active);
-    lifecycle
-        .profile_change_blockers
-        .navigation_actor_transition_active = state.transition_pending;
+    export_camera_approach_lifecycle(&state, lifecycle);
+    services.set_bridge_camera_view_active(state.camera_view_active);
     services
         .runtime_mut()
         .set_camera_transition_pending(state.transition_pending);
@@ -105,8 +104,22 @@ fn publish_camera_approach_modal_ui(lifecycle: &mut GameLifecycleState, ui_activ
     lifecycle.set_modal_ui_busy(ui_active);
 }
 
+fn export_camera_approach_lifecycle(
+    state: &crate::native::bloodprg::CameraApproachState,
+    lifecycle: &mut GameLifecycleState,
+) {
+    lifecycle.presentation.active_line = decode_active_presentation_line(state.active_line);
+    lifecycle.presentation.c2_presentation_gate = state.presentation_pending;
+    publish_camera_approach_modal_ui(lifecycle, state.ui_active);
+    lifecycle.navigation_transition_pending = state.transition_pending;
+    lifecycle
+        .profile_change_blockers
+        .navigation_transition_active = state.transition_pending;
+}
+
 struct RuntimeCameraApproachHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
+    lifecycle: &'services mut GameLifecycleState,
     frame_presented: Option<bool>,
     deferred_error: Option<anyhow::Error>,
 }
@@ -133,8 +146,15 @@ impl CameraApproachHost<GameSceneLink> for RuntimeCameraApproachHost<'_, '_> {
         self.services.request_manu3_animation(selector);
     }
 
-    fn initialize_screen_flags(&mut self) {
-        let result = self.services.initialize_camera_transition_screen();
+    fn initialize_screen_flags(&mut self, transition_pending: bool) {
+        let result = self.services.initialize_bridge_screen_with_transition(
+            self.lifecycle.presentation_mode,
+            self.lifecycle.presentation.ship_active,
+            transition_pending,
+        );
+        if result.is_ok() {
+            self.lifecycle.navigation_rebuild_pending = false;
+        }
         self.record(result);
     }
 
@@ -227,5 +247,45 @@ mod tests {
 
         publish_camera_approach_modal_ui(&mut lifecycle, false);
         assert!(!lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn camera_approach_exports_only_the_native_navigation_transition_owner() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle
+            .profile_change_blockers
+            .navigation_actor_transition_active = true;
+        let mut state = crate::native::bloodprg::CameraApproachState {
+            transition_pending: true,
+            ..crate::native::bloodprg::CameraApproachState::default()
+        };
+
+        export_camera_approach_lifecycle(&state, &mut lifecycle);
+
+        assert!(lifecycle.navigation_transition_pending);
+        assert!(
+            lifecycle
+                .profile_change_blockers
+                .navigation_transition_active
+        );
+        assert!(
+            lifecycle
+                .profile_change_blockers
+                .navigation_actor_transition_active
+        );
+
+        state.transition_pending = false;
+        export_camera_approach_lifecycle(&state, &mut lifecycle);
+        assert!(!lifecycle.navigation_transition_pending);
+        assert!(
+            !lifecycle
+                .profile_change_blockers
+                .navigation_transition_active
+        );
+        assert!(
+            lifecycle
+                .profile_change_blockers
+                .navigation_actor_transition_active
+        );
     }
 }
