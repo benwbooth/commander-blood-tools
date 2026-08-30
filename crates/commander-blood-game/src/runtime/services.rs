@@ -4013,7 +4013,7 @@ const fn select_bridge_composition(
     bridge_view_changed: bool,
 ) -> RuntimeBridgeComposition {
     if presentation_panel_active {
-        RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
+        RuntimeBridgeComposition::IndexedFramebuffer
     } else if presentation_stream_active {
         RuntimeBridgeComposition::IndexedFramebuffer
     } else if indexed_ui_active {
@@ -4400,11 +4400,11 @@ mod tests {
         );
         assert_eq!(
             select_bridge_composition(false, true, false, false),
-            RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
+            RuntimeBridgeComposition::IndexedFramebuffer
         );
         assert_eq!(
             select_bridge_composition(true, true, false, true),
-            RuntimeBridgeComposition::BridgeSceneWithTrueColorPanel
+            RuntimeBridgeComposition::IndexedFramebuffer
         );
         assert_eq!(
             select_bridge_composition(false, false, true, true),
