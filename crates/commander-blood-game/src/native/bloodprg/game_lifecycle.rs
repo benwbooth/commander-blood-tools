@@ -75,6 +75,8 @@ pub enum GameSceneLink {
     DeferredPresentation,
     /// No owner was installed, so the presentation menu buffer is selected.
     MenuWords,
+    /// Bridge steering published a queue-link cursor in the native `BP` register.
+    BridgePresentation(u16),
 }
 
 /// Presentation field activated when the current scene completes.

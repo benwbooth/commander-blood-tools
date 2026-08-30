@@ -158,7 +158,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
     fn dispatch_scene(
         &mut self,
         line: u16,
-        _link_target: u16,
+        link_target: u16,
         state: &mut PresentationRunState,
     ) -> Result<()> {
         if self.active_policy.is_none() {
@@ -184,7 +184,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
         } else {
             let timer_tick = self.services.game_timer_tick();
             self.services
-                .service_presentation_sequence(timer_tick, false, false)?;
+                .service_presentation_sequence(link_target, timer_tick, false, false)?;
         }
 
         if self.services.presentation_stream_active() {

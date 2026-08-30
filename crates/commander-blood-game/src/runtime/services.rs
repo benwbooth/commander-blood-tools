@@ -1025,13 +1025,14 @@ impl<'window> ModernGameServices<'window> {
     /// Advance the recovered ship HUD against concrete flat runtime services.
     pub fn update_runtime_ship_hud(
         &mut self,
+        scene_link: GameSceneLink,
         state: &mut GameLifecycleState,
     ) -> Result<crate::native::bloodprg::ShipHudCoordinatorOutcome> {
         let mut ship_hud = self
             .ship_hud
             .take()
             .context("ship HUD update is reentrant")?;
-        let outcome = ship_hud.update(self, state);
+        let outcome = ship_hud.update(self, scene_link, state);
         self.ship_hud = Some(ship_hud);
         outcome
     }
@@ -2254,7 +2255,10 @@ impl<'window> ModernGameServices<'window> {
     }
 
     /// Dispatch the ship's active authored line through the shared scene player.
-    pub fn dispatch_ship_scene(&mut self) -> Result<PresentationSceneDispatchOutcome> {
+    pub fn dispatch_ship_scene(
+        &mut self,
+        scene_link: GameSceneLink,
+    ) -> Result<PresentationSceneDispatchOutcome> {
         let vertical_offset = self.ship_navigation_scene_vertical_offset();
         let active_record_related = self
             .runtime
@@ -2270,8 +2274,13 @@ impl<'window> ModernGameServices<'window> {
             .context("ship scene dispatch is reentrant")?;
         screen.set_ship_scene_vertical_offset(vertical_offset);
         let mut ship = std::mem::take(&mut self.ship_presentation);
-        let outcome =
-            screen.dispatch_ship_scene(self, &mut ship, active_record_related, scruter_jo_record);
+        let outcome = screen.dispatch_ship_scene(
+            self,
+            &mut ship,
+            scene_link,
+            active_record_related,
+            scruter_jo_record,
+        );
         if matches!(
             &outcome,
             Ok(PresentationSceneDispatchOutcome::PresentationFinished)
@@ -2305,6 +2314,7 @@ impl<'window> ModernGameServices<'window> {
 
     pub(super) fn dispatch_scene_transition(
         &mut self,
+        scene_link: GameSceneLink,
         transition: &mut SceneTransitionState,
         presentation: &mut ScriptPresentationScanState,
         lifecycle: &mut GameLifecycleState,
@@ -2322,6 +2332,7 @@ impl<'window> ModernGameServices<'window> {
         let outcome = screen.dispatch_scene_transition(
             self,
             RuntimeSceneTransitionDispatchContext {
+                scene_link,
                 transition,
                 presentation,
                 lifecycle,
@@ -2669,6 +2680,7 @@ impl<'window> ModernGameServices<'window> {
     /// Advance the active presentation queue with explicit clock samples.
     pub fn service_presentation_sequence(
         &mut self,
+        link_target: u16,
         timer_tick: u16,
         render_snapshot_suppressed: bool,
         secondary_presentation_mode: bool,
@@ -2682,8 +2694,9 @@ impl<'window> ModernGameServices<'window> {
             secondary_mode: secondary_presentation_mode,
             voice_playback: self.navigation_music_enabled()?,
         };
-        let outcome = self.presentation_player.service_frame(
+        let outcome = self.presentation_player.service_frame_from_link_target(
             &mut self.runtime,
+            link_target,
             audio_position,
             timer_tick,
             clock_gates,
@@ -5552,7 +5565,9 @@ mod tests {
             pterra
         );
         assert_eq!(
-            services.update_runtime_ship_hud(&mut lifecycle).unwrap(),
+            services
+                .update_runtime_ship_hud(GameSceneLink::Initial, &mut lifecycle)
+                .unwrap(),
             crate::native::bloodprg::ShipHudCoordinatorOutcome::TextInactive
         );
         let loaded_scene_top_row = services
@@ -5629,7 +5644,9 @@ mod tests {
         }
         lifecycle.presentation.subtitle_display_active = true;
         for _ in usize::MIN..TARGET_SELECTOR_SETTLE_FRAME_LIMIT {
-            services.update_runtime_ship_hud(&mut lifecycle).unwrap();
+            services
+                .update_runtime_ship_hud(GameSceneLink::Initial, &mut lifecycle)
+                .unwrap();
         }
         let ark_row = services
             .ship_target_selector
@@ -5650,7 +5667,9 @@ mod tests {
             PointerButtons::from_bits(PointerButton::Primary as u16),
         );
         assert_eq!(
-            services.update_runtime_ship_hud(&mut lifecycle).unwrap(),
+            services
+                .update_runtime_ship_hud(GameSceneLink::Initial, &mut lifecycle)
+                .unwrap(),
             crate::native::bloodprg::ShipHudCoordinatorOutcome::TargetQueued
         );
         assert_eq!(

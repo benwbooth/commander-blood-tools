@@ -293,13 +293,14 @@ impl SceneTransitionHost for RuntimeSceneTransitionHost<'_, '_, '_, '_> {
 
     fn dispatch_scene_line(
         &mut self,
-        _link: &Self::SceneLink,
+        link: &Self::SceneLink,
         state: &mut SceneTransitionState,
         presentation: &mut ScriptPresentationScanState,
     ) -> Result<()> {
         self.scene_dispatched = true;
         let related = self.record(state.record_source).object;
         self.services.dispatch_scene_transition(
+            *link,
             state,
             presentation,
             self.lifecycle,

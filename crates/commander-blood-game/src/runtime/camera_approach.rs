@@ -176,7 +176,7 @@ impl CameraApproachHost<GameSceneLink> for RuntimeCameraApproachHost<'_, '_> {
 
     fn dispatch_scene(
         &mut self,
-        _scene_link: &GameSceneLink,
+        scene_link: &GameSceneLink,
         presentation_pending: &mut bool,
     ) -> Result<()> {
         {
@@ -184,7 +184,7 @@ impl CameraApproachHost<GameSceneLink> for RuntimeCameraApproachHost<'_, '_> {
             ship.presentation_gate = (ship.presentation_gate & !PRESENTATION_GATE_ACTIVE)
                 | u16::from(*presentation_pending);
         }
-        self.services.dispatch_ship_scene()?;
+        self.services.dispatch_ship_scene(*scene_link)?;
         self.frame_presented = Some(self.services.presentation_scene_frame_presented()?);
         *presentation_pending = self.services.ship_presentation_state().presentation_gate
             & PRESENTATION_GATE_ACTIVE

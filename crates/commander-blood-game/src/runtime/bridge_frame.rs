@@ -4,8 +4,9 @@ use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeSceneContext,
-    BridgeSceneInput, BridgeSpriteExtent, BridgeSpriteRange, GameLifecycleState, GameSceneLink,
-    Manu3AnimationSelector, render_bridge_frame as coordinate_bridge_frame,
+    BridgeSceneInput, BridgeSpriteExtent, BridgeSpriteRange, BridgeSteeringOutcome,
+    GameLifecycleState, GameSceneLink, Manu3AnimationSelector,
+    render_bridge_frame as coordinate_bridge_frame,
 };
 
 use super::ModernGameServices;
@@ -75,11 +76,11 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
 
     fn dispatch_scene(
         &mut self,
-        _scene_link: &Self::SceneLink,
+        scene_link: &Self::SceneLink,
         state: &mut crate::native::bloodprg::BridgeFrameState,
     ) -> Result<()> {
         self.services
-            .dispatch_ship_scene()
+            .dispatch_ship_scene(*scene_link)
             .context("dispatching the bridge travel scene")?;
         let ship = self.services.ship_presentation_state();
         self.lifecycle.presentation.active_line =
@@ -124,11 +125,9 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
             .runtime()
             .bridge_sprite_source_extent(LOCATION_PANEL_ENTITY_INDEX)
             .context("reading the bridge camera comparison extent")?;
-        *context = BridgeSceneContext::new(*context.scene_link(), comparison_extent);
-        Ok(self
-            .services
-            .update_bridge_steering(self.input)?
-            .view_changed)
+        let steering = self.services.update_bridge_steering(self.input)?;
+        *context = steering_scene_context(steering, comparison_extent);
+        Ok(steering.view_changed)
     }
 
     fn flip_page(&mut self, state: &mut crate::native::bloodprg::BridgeFrameState) -> Result<()> {
@@ -291,6 +290,16 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
     }
 }
 
+fn steering_scene_context(
+    steering: BridgeSteeringOutcome,
+    comparison_extent: BridgeSpriteExtent,
+) -> BridgeSceneContext<GameSceneLink, BridgeSpriteExtent> {
+    BridgeSceneContext::new(
+        GameSceneLink::BridgePresentation(steering.presentation_link),
+        comparison_extent,
+    )
+}
+
 const fn entity_range(range: BridgeSpriteRange) -> std::ops::Range<u16> {
     match range {
         BridgeSpriteRange::All => FIRST_BRIDGE_ENTITY..AFTER_LAST_BRIDGE_ENTITY,
@@ -308,5 +317,26 @@ mod tests {
         assert_eq!(entity_range(BridgeSpriteRange::All), 0..32);
         assert_eq!(entity_range(BridgeSpriteRange::Transition), 20..32);
         assert_eq!(entity_range(BridgeSpriteRange::Actors), 1..20);
+    }
+
+    #[test]
+    fn steering_replaces_the_same_frame_presentation_link() {
+        let extent = BridgeSpriteExtent {
+            width: 17,
+            height: 23,
+        };
+        let context = steering_scene_context(
+            BridgeSteeringOutcome {
+                view_changed: true,
+                presentation_link: 312,
+            },
+            extent,
+        );
+
+        assert_eq!(
+            context.scene_link(),
+            &GameSceneLink::BridgePresentation(312)
+        );
+        assert_eq!(context.comparison_extent(), &extent);
     }
 }

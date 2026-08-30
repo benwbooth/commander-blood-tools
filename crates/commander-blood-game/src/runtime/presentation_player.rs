@@ -107,6 +107,45 @@ impl RuntimePresentationPlayer {
         clock_gates: PresentationQueueClockGates,
         render_snapshot_suppressed: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
+        self.service_frame_with_link_target(
+            runtime,
+            None,
+            audio_position,
+            timer_tick,
+            clock_gates,
+            render_snapshot_suppressed,
+        )
+    }
+
+    /// Service one queue frame from the caller's recovered link cursor.
+    pub fn service_frame_from_link_target(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        link_target: u16,
+        audio_position: u16,
+        timer_tick: u16,
+        clock_gates: PresentationQueueClockGates,
+        render_snapshot_suppressed: bool,
+    ) -> Result<RuntimePresentationStepOutcome> {
+        self.service_frame_with_link_target(
+            runtime,
+            Some(link_target),
+            audio_position,
+            timer_tick,
+            clock_gates,
+            render_snapshot_suppressed,
+        )
+    }
+
+    fn service_frame_with_link_target(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        link_target: Option<u16>,
+        audio_position: u16,
+        timer_tick: u16,
+        clock_gates: PresentationQueueClockGates,
+        render_snapshot_suppressed: bool,
+    ) -> Result<RuntimePresentationStepOutcome> {
         let Some(stream) = self.active_stream.as_mut() else {
             return Ok(RuntimePresentationStepOutcome {
                 queue: crate::native::bloodprg::PresentationQueueServiceOutcome::SourceUnavailable,
@@ -114,13 +153,23 @@ impl RuntimePresentationPlayer {
                 queue_metrics: super::RuntimePresentationQueueMetrics::default(),
             });
         };
-        stream.service_frame(
-            runtime,
-            audio_position,
-            timer_tick,
-            clock_gates,
-            render_snapshot_suppressed,
-        )
+        match link_target {
+            Some(link_target) => stream.service_frame_from_link_target(
+                runtime,
+                link_target,
+                audio_position,
+                timer_tick,
+                clock_gates,
+                render_snapshot_suppressed,
+            ),
+            None => stream.service_frame(
+                runtime,
+                audio_position,
+                timer_tick,
+                clock_gates,
+                render_snapshot_suppressed,
+            ),
+        }
     }
 
     /// Return whether a stream remains owned, including its final drained state.

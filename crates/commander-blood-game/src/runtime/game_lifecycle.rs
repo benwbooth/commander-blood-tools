@@ -23,6 +23,16 @@ const DEFERRED_MENU_SCENE_LINK_TARGET: u16 = 26_544;
 const PRESENTATION_MENU_BUFFER_LINK_TARGET: u16 = u16::MIN;
 const COMPLETION_VOICE_RESOURCE: &[u8] = b"mu\\tablo2.voc";
 
+pub(super) const fn native_scene_link_target(link: GameSceneLink) -> u16 {
+    match link {
+        GameSceneLink::Initial => INITIAL_SCENE_LINK_TARGET,
+        GameSceneLink::SubtitlePresentation => SUBTITLE_SCENE_LINK_TARGET,
+        GameSceneLink::DeferredPresentation => DEFERRED_MENU_SCENE_LINK_TARGET,
+        GameSceneLink::MenuWords => PRESENTATION_MENU_BUFFER_LINK_TARGET,
+        GameSceneLink::BridgePresentation(target) => target,
+    }
+}
+
 pub(super) fn arm_requested_speaker_pulse(
     state: &mut GameLifecycleState,
     timer: &mut GameTimerState,
@@ -138,15 +148,6 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
     fn frame_limit_reached(&self) -> bool {
         self.frame_limit
             .is_some_and(|limit| self.main_frames_presented >= limit)
-    }
-
-    fn scene_link_target(link: GameSceneLink) -> u16 {
-        match link {
-            GameSceneLink::Initial => INITIAL_SCENE_LINK_TARGET,
-            GameSceneLink::SubtitlePresentation => SUBTITLE_SCENE_LINK_TARGET,
-            GameSceneLink::DeferredPresentation => DEFERRED_MENU_SCENE_LINK_TARGET,
-            GameSceneLink::MenuWords => PRESENTATION_MENU_BUFFER_LINK_TARGET,
-        }
     }
 
     fn bridge_interaction(state: &GameLifecycleState) -> BridgeSteeringInteraction {
@@ -281,7 +282,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     fn run_initial_presentation(&mut self, link: GameSceneLink) -> Result<()> {
         run_runtime_presentation(
             OPENING_PRESENTATION_LINE,
-            Self::scene_link_target(link),
+            native_scene_link_target(link),
             &mut self.services,
             &mut self.platform,
             &mut self.timer,
@@ -533,7 +534,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     fn run_final_presentation(&mut self, link: GameSceneLink) -> Result<()> {
         run_runtime_presentation(
             CREDITS_PRESENTATION_LINE,
-            Self::scene_link_target(link),
+            native_scene_link_target(link),
             &mut self.services,
             &mut self.platform,
             &mut self.timer,
@@ -581,20 +582,24 @@ mod tests {
     #[test]
     fn scene_links_preserve_the_recovered_owner_offsets() {
         assert_eq!(
-            RuntimeGameLifecycleHost::scene_link_target(GameSceneLink::Initial),
+            native_scene_link_target(GameSceneLink::Initial),
             INITIAL_SCENE_LINK_TARGET
         );
         assert_eq!(
-            RuntimeGameLifecycleHost::scene_link_target(GameSceneLink::SubtitlePresentation),
+            native_scene_link_target(GameSceneLink::SubtitlePresentation),
             SUBTITLE_SCENE_LINK_TARGET
         );
         assert_eq!(
-            RuntimeGameLifecycleHost::scene_link_target(GameSceneLink::DeferredPresentation),
+            native_scene_link_target(GameSceneLink::DeferredPresentation),
             DEFERRED_MENU_SCENE_LINK_TARGET
         );
         assert_eq!(
-            RuntimeGameLifecycleHost::scene_link_target(GameSceneLink::MenuWords),
+            native_scene_link_target(GameSceneLink::MenuWords),
             PRESENTATION_MENU_BUFFER_LINK_TARGET
+        );
+        assert_eq!(
+            native_scene_link_target(GameSceneLink::BridgePresentation(312)),
+            312
         );
     }
 

@@ -29,6 +29,7 @@ pub(super) fn update_runtime_ship_presentation<'window>(
             services,
             lifecycle,
             platform,
+            scene_link,
             deferred_error: None,
         };
         outcome = update_ship_presentation(&mut state, &scene_link, &mut backend);
@@ -67,6 +68,7 @@ struct RuntimeShipPresentationBackend<'services, 'window, 'lifecycle, 'platform>
     services: &'services mut ModernGameServices<'window>,
     lifecycle: &'lifecycle mut GameLifecycleState,
     platform: &'platform mut RuntimePlatformHost<'window>,
+    scene_link: GameSceneLink,
     deferred_error: Option<anyhow::Error>,
 }
 
@@ -116,12 +118,16 @@ impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
         self.record(result, ());
     }
 
-    fn dispatch_scene(&mut self, state: &mut ShipPresentationState, _scene_link: &Self::SceneLink) {
+    fn dispatch_scene(&mut self, state: &mut ShipPresentationState, scene_link: &Self::SceneLink) {
         self.import_state(state);
-        let result = self.services.dispatch_ship_scene().and_then(|_| {
-            self.lifecycle.frame_presented = self.services.presentation_scene_frame_presented()?;
-            Ok(())
-        });
+        let result = self
+            .services
+            .dispatch_ship_scene(*scene_link)
+            .and_then(|_| {
+                self.lifecycle.frame_presented =
+                    self.services.presentation_scene_frame_presented()?;
+                Ok(())
+            });
         self.export_state(state);
         self.record(result, ());
     }
@@ -130,7 +136,7 @@ impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
         self.import_state(state);
         let result = self
             .services
-            .update_runtime_ship_hud(self.lifecycle)
+            .update_runtime_ship_hud(self.scene_link, self.lifecycle)
             .map(|_| ());
         self.export_state(state);
         self.record(result, ());

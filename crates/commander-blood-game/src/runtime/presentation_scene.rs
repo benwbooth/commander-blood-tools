@@ -47,6 +47,7 @@ impl RuntimePresentationScene {
         &mut self,
         services: &mut ModernGameServices<'window>,
         state: &mut PresentationSceneDispatchState<DescriptBackgroundSlot>,
+        link_target: u16,
         active_record_related: Option<ScriptObjectId>,
         scruter_jo_record: Option<ScriptObjectId>,
         render_snapshot_suppressed: bool,
@@ -72,6 +73,7 @@ impl RuntimePresentationScene {
             };
             let mut host = RuntimePresentationSceneHost {
                 services,
+                link_target,
                 remap_request: &mut remap_request,
                 render_snapshot_suppressed,
                 secondary_presentation_mode,
@@ -117,6 +119,7 @@ impl RuntimePresentationScene {
 
 struct RuntimePresentationSceneHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
+    link_target: u16,
     remap_request: &'services mut Option<(u8, [u8; RGB_COMPONENT_COUNT])>,
     render_snapshot_suppressed: bool,
     secondary_presentation_mode: bool,
@@ -200,6 +203,7 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
         _policy: PresentationPresentPolicy,
     ) -> Result<PresentationSceneQueueService> {
         let outcome = self.services.service_presentation_sequence(
+            self.link_target,
             self.services.game_timer_tick(),
             self.render_snapshot_suppressed,
             self.secondary_presentation_mode,

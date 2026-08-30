@@ -218,6 +218,48 @@ impl RuntimePresentationStream {
         clock_gates: PresentationQueueClockGates,
         render_snapshot_suppressed: bool,
     ) -> Result<RuntimePresentationStepOutcome> {
+        self.service_frame_with_link_target(
+            runtime,
+            None,
+            audio_position,
+            timer_tick,
+            clock_gates,
+            render_snapshot_suppressed,
+        )
+    }
+
+    /// Advance one queue frame from the caller's recovered `BP` link cursor.
+    pub fn service_frame_from_link_target(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        link_target: u16,
+        audio_position: u16,
+        timer_tick: u16,
+        clock_gates: PresentationQueueClockGates,
+        render_snapshot_suppressed: bool,
+    ) -> Result<RuntimePresentationStepOutcome> {
+        self.service_frame_with_link_target(
+            runtime,
+            Some(link_target),
+            audio_position,
+            timer_tick,
+            clock_gates,
+            render_snapshot_suppressed,
+        )
+    }
+
+    fn service_frame_with_link_target(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        link_target: Option<u16>,
+        audio_position: u16,
+        timer_tick: u16,
+        clock_gates: PresentationQueueClockGates,
+        render_snapshot_suppressed: bool,
+    ) -> Result<RuntimePresentationStepOutcome> {
+        if let Some(link_target) = link_target {
+            self.import_service_link_target(link_target);
+        }
         import_shared_live_palette(runtime.live_palette(), &mut self.palette);
         let (display_buffer, back_buffer) = runtime.presentation_buffers_mut();
         let mut presenter = FlatPresentationEntryPresenter {
@@ -268,6 +310,10 @@ impl RuntimePresentationStream {
             stream_finished: self.finished,
             queue_metrics: self.queue_metrics()?,
         })
+    }
+
+    fn import_service_link_target(&mut self, link_target: u16) {
+        self.link_cursor = PresentationQueueLinkCursor::new(usize::from(link_target));
     }
 
     /// Return whether source and queue exhaustion have completed playback.
@@ -450,6 +496,23 @@ mod tests {
             RuntimePresentationRequest::new(BloodResourceName::new(TEST_VIDEO_RESOURCE).unwrap());
 
         assert!(!request.entry_policy.sound_enabled);
+    }
+
+    #[test]
+    fn queue_service_imports_the_callers_native_link_cursor() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let request =
+            RuntimePresentationRequest::new(BloodResourceName::new(TEST_VIDEO_RESOURCE).unwrap());
+        let (mut stream, _) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+
+        stream.import_service_link_target(312);
+
+        assert_eq!(stream.link_cursor.position(), 312);
     }
 
     #[test]

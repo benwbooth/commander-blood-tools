@@ -19,6 +19,7 @@ use crate::native::bloodprg::{
     present_sequence_subtitle, remap_framebuffer_rect, update_presentation_screen,
 };
 
+use super::game_lifecycle::native_scene_link_target;
 use super::{ModernGameServices, OriginalGameRuntime, RuntimePresentationScene};
 
 const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
@@ -46,6 +47,7 @@ pub struct RuntimePresentationScreen {
 }
 
 pub(super) struct RuntimeSceneTransitionDispatchContext<'state> {
+    pub scene_link: GameSceneLink,
     pub transition: &'state mut SceneTransitionState,
     pub presentation: &'state mut ScriptPresentationScanState,
     pub lifecycle: &'state mut crate::native::bloodprg::GameLifecycleState,
@@ -143,6 +145,7 @@ impl RuntimePresentationScreen {
         &mut self,
         services: &mut ModernGameServices<'window>,
         ship: &mut ShipPresentationState,
+        scene_link: GameSceneLink,
         active_record_related: Option<ScriptObjectId>,
         scruter_jo_record: Option<ScriptObjectId>,
     ) -> Result<PresentationSceneDispatchOutcome> {
@@ -150,6 +153,7 @@ impl RuntimePresentationScreen {
         let outcome = self.scene.dispatch(
             services,
             &mut self.scene_state,
+            native_scene_link_target(scene_link),
             active_record_related,
             scruter_jo_record,
             false,
@@ -166,6 +170,7 @@ impl RuntimePresentationScreen {
         context: RuntimeSceneTransitionDispatchContext<'_>,
     ) -> Result<PresentationSceneDispatchOutcome> {
         let RuntimeSceneTransitionDispatchContext {
+            scene_link,
             transition,
             presentation,
             lifecycle,
@@ -188,6 +193,7 @@ impl RuntimePresentationScreen {
         let outcome = self.scene.dispatch(
             services,
             scene,
+            native_scene_link_target(scene_link),
             Some(active_record_related),
             scruter_jo_record,
             render_snapshot_suppressed,
@@ -511,6 +517,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
         self.scene.dispatch(
             self.services,
             self.scene_state,
+            presentation_context_link_target(context),
             self.active_record_related,
             self.scruter_jo_record,
             false,
@@ -578,6 +585,13 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
     fn reset_ship_camera(&mut self) {
         let result = self.services.reset_ship_hud();
         self.record_error(result);
+    }
+}
+
+fn presentation_context_link_target(context: &PresentationSceneContext<'_, GameSceneLink>) -> u16 {
+    match context {
+        PresentationSceneContext::Queued(scene_link) => native_scene_link_target(**scene_link),
+        PresentationSceneContext::ContentPanel => PRESENTATION_CONTENT_TOP as u16,
     }
 }
 
@@ -735,5 +749,18 @@ mod tests {
         assert!(!lifecycle.frame_presented);
         export_scene_transition_frame_presented(true, &mut lifecycle);
         assert!(lifecycle.frame_presented);
+    }
+
+    #[test]
+    fn panel_dispatch_preserves_queued_and_content_link_targets() {
+        let queued = GameSceneLink::BridgePresentation(312);
+        assert_eq!(
+            presentation_context_link_target(&PresentationSceneContext::Queued(&queued)),
+            312
+        );
+        assert_eq!(
+            presentation_context_link_target(&PresentationSceneContext::ContentPanel),
+            PRESENTATION_CONTENT_TOP as u16
+        );
     }
 }

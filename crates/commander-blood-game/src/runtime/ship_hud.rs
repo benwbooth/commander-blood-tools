@@ -6,11 +6,11 @@ use anyhow::{Context, Result};
 use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
-    IndexedGamePalette, Manu3AnimationSelector, PaletteRemapTable, ShipHudCoordinatorHost,
-    ShipHudCoordinatorOutcome, ShipHudCoordinatorState, ShipHudDescriptionOutcome,
-    ShipHudInitializationContext, ShipHudPaletteTransition, ShipHudTargetListState,
-    ShipPresentationState, ShipTargetSelectionOutcome, ShipTargetSelectionState,
-    build_palette_blend_remap_table, decode_active_presentation_line,
+    GameSceneLink, IndexedGamePalette, Manu3AnimationSelector, PaletteRemapTable,
+    ShipHudCoordinatorHost, ShipHudCoordinatorOutcome, ShipHudCoordinatorState,
+    ShipHudDescriptionOutcome, ShipHudInitializationContext, ShipHudPaletteTransition,
+    ShipHudTargetListState, ShipPresentationState, ShipTargetSelectionOutcome,
+    ShipTargetSelectionState, build_palette_blend_remap_table, decode_active_presentation_line,
     encode_active_presentation_line, update_ship_hud,
 };
 
@@ -83,6 +83,7 @@ impl RuntimeShipHud {
     pub fn update<'window>(
         &mut self,
         services: &mut ModernGameServices<'window>,
+        scene_link: GameSceneLink,
         lifecycle: &mut crate::native::bloodprg::GameLifecycleState,
     ) -> Result<ShipHudCoordinatorOutcome> {
         let context = services.ship_hud_initialization_context()?;
@@ -106,6 +107,7 @@ impl RuntimeShipHud {
         {
             let mut backend = RuntimeShipHudBackend {
                 services,
+                scene_link,
                 selector: &mut self.selector,
                 objects_at_arche_position: &mut self.objects_at_arche_position,
                 selector_targets: &mut self.selector_targets,
@@ -306,6 +308,7 @@ const fn presentation_gate_is_active(gate: u16) -> bool {
 
 struct RuntimeShipHudBackend<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
+    scene_link: GameSceneLink,
     selector: &'services mut Option<ShipTargetSelectionState<ScriptObjectId>>,
     objects_at_arche_position: &'services mut Vec<ScriptObjectId>,
     selector_targets: &'services mut Vec<ScriptObjectId>,
@@ -426,7 +429,7 @@ impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
         }
         let result = self
             .services
-            .dispatch_ship_scene()
+            .dispatch_ship_scene(self.scene_link)
             .with_context(|| {
                 format!("dispatching ship HUD scene at authored row {vertical_offset}")
             })
