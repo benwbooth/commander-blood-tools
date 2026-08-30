@@ -19,7 +19,20 @@ const PORTRAIT_EXTENT: [u64; 2] = [104, 80];
 const ACTIVE_ENTITY_FLAG: u64 = 1;
 const UI_ENABLED_FLAG: u64 = 1;
 const MODAL_UI_FLAG: u64 = 1 << 2;
+const NAVIGATION_UI_FLAG: u64 = 1 << 3;
 const DOS_ORACLE_PACKED_SECOND: u8 = 39;
+const HONK_CLICK: &str = "click 230 88";
+const HONK_WORD_CHOICES: [&str; 9] = [
+    "bye_bye",
+    "optimization",
+    "consultation",
+    "explanations",
+    "calm_down",
+    "play",
+    "win",
+    "lose",
+    "help",
+];
 
 static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
@@ -45,42 +58,12 @@ impl Drop for TemporaryRoot {
 
 #[test]
 fn production_runtime_completes_the_authored_startup_phone_call() {
-    let Some(asset_cache) = configured_runtime_asset_cache() else {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/startup_phone_complete.tsv",
+        "startup-phone.jsonl",
+    ) else {
         return;
     };
-    if !DISPLAY_ENVIRONMENT_VARIABLES
-        .iter()
-        .any(|variable| std::env::var_os(variable).is_some())
-    {
-        return;
-    }
-
-    let root = workspace_root();
-    let temporary = TemporaryRoot::create();
-    let trace_path = temporary.0.join("startup-phone.jsonl");
-    let writable_path = temporary.0.join("writable");
-    let scenario_path = root.join("accuracy/scenarios/startup_phone_complete.tsv");
-    let output = Command::new(env!("CARGO_BIN_EXE_commander-blood"))
-        .arg("--write-data")
-        .arg(&writable_path)
-        .arg("--scenario")
-        .arg(&scenario_path)
-        .arg("--trace")
-        .arg(&trace_path)
-        .arg("--oracle-packed-second")
-        .arg(DOS_ORACLE_PACKED_SECOND.to_string())
-        .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, asset_cache)
-        .env("SDL_AUDIODRIVER", "dummy")
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "production startup-phone scenario failed:\nstdout:\n{}\nstderr:\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-
-    let records = load_trace(&trace_path);
     let phone_index = records
         .iter()
         .position(|record| record["action"] == PHONE_CLICK)
@@ -159,6 +142,83 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
         bridge_actor_hash(teardown),
         bridge_actor_hash(before_answer)
     );
+}
+
+#[test]
+fn production_runtime_dispatches_honk_after_the_startup_phone_call() {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/startup_phone_honk.tsv",
+        "startup-phone-honk.jsonl",
+    ) else {
+        return;
+    };
+
+    let honk_index = records
+        .iter()
+        .position(|record| record["action"] == HONK_CLICK)
+        .expect("runtime trace omitted the authored HONK click");
+    let activated = &records[honk_index];
+    assert_eq!(profile(activated), Some(POST_CALL_PROFILE));
+    assert!(presentation_flag(activated, "active"));
+    assert_ne!(
+        presentation_u64(activated, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "HONK presentation did not retain native UI bit 2"
+    );
+    assert_eq!(
+        presentation_u64(activated, "ui_flags") & NAVIGATION_UI_FLAG,
+        u64::MIN,
+        "bridge console left native seek bit 3 latched after dispatch"
+    );
+
+    let waiting = records[honk_index..]
+        .iter()
+        .find(|record| {
+            presentation_flag(record, "waiting_for_input")
+                && presentation_flag(record, "word_choice_active")
+        })
+        .expect("HONK presentation never reached its authored word-choice gate");
+    assert_eq!(
+        waiting["semantic"]["presentation"]["rendered_word_choices"],
+        serde_json::json!(HONK_WORD_CHOICES)
+    );
+}
+
+fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value>> {
+    let asset_cache = configured_runtime_asset_cache()?;
+    if !DISPLAY_ENVIRONMENT_VARIABLES
+        .iter()
+        .any(|variable| std::env::var_os(variable).is_some())
+    {
+        return None;
+    }
+
+    let root = workspace_root();
+    let temporary = TemporaryRoot::create();
+    let trace_path = temporary.0.join(trace_name);
+    let writable_path = temporary.0.join("writable");
+    let scenario_path = root.join(scenario);
+    let output = Command::new(env!("CARGO_BIN_EXE_commander-blood"))
+        .arg("--write-data")
+        .arg(&writable_path)
+        .arg("--scenario")
+        .arg(&scenario_path)
+        .arg("--trace")
+        .arg(&trace_path)
+        .arg("--oracle-packed-second")
+        .arg(DOS_ORACLE_PACKED_SECOND.to_string())
+        .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, asset_cache)
+        .env("SDL_AUDIODRIVER", "dummy")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "production scenario {} failed:\nstdout:\n{}\nstderr:\n{}",
+        scenario_path.display(),
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    Some(load_trace(&trace_path))
 }
 
 fn configured_runtime_asset_cache() -> Option<PathBuf> {

@@ -89,7 +89,8 @@ impl RuntimeBridgeConsole {
                 save_motion_active: lifecycle.profile_change_blockers.save_active,
                 load_motion_active: lifecycle.profile_change_blockers.load_active,
                 option_panel_active: self.options.text_options_active,
-                sound_action_active: lifecycle.modal_ui_busy(),
+                sound_action_active: services.confirm_dialog_state().navigation_choice_gate
+                    != u8::MIN,
                 presentation_active: lifecycle.presentation.active,
                 bridge_view_frame: services.bridge_view_frame()?,
                 pointer: pointer.position,
