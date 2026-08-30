@@ -13,6 +13,9 @@ use serde_json::Value;
 const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
 const REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE: &str = "CBLOOD_REQUIRE_ACCURACY_TESTS";
 const DISPLAY_ENVIRONMENT_VARIABLES: [&str; 2] = ["DISPLAY", "WAYLAND_DISPLAY"];
+const INTRO_ESCAPE_KEY: &str = "key 1";
+const OPENING_VIDEO: &str = "sq\\mind.HNM";
+const FIRST_STARTUP_VIDEO: &str = "SQ\\cliptoot.hnm";
 const PHONE_CLICK: &str = "click 125 118";
 const GAME_CHOICE_CLICK: &str = "sclick 200 105";
 const INITIAL_PROFILE: u64 = 0;
@@ -151,6 +154,48 @@ impl Drop for TemporaryRoot {
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.0);
     }
+}
+
+#[test]
+fn production_runtime_escape_cancels_the_opening_and_enters_script1() {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/production_intro_escape.tsv",
+        "production-intro-escape.jsonl",
+    ) else {
+        return;
+    };
+
+    let escape_index = records
+        .iter()
+        .position(|record| record["action"] == INTRO_ESCAPE_KEY)
+        .expect("runtime trace omitted the authored Escape key");
+    let opening = records[..escape_index]
+        .iter()
+        .rev()
+        .find(|record| record["semantic"]["video"]["active_resource"] == OPENING_VIDEO)
+        .expect("opening presentation never activated MIND.HNM before Escape");
+    assert!(profile(opening).is_none());
+
+    let cancelled = &records[escape_index];
+    assert_eq!(profile(cancelled), Some(INITIAL_PROFILE));
+    assert!(cancelled["semantic"]["video"]["active_resource"].is_null());
+    assert!(!presentation_flag(cancelled, "active"));
+    assert_ne!(
+        presentation_u64(cancelled, "ui_flags") & UI_ENABLED_FLAG,
+        u64::MIN,
+        "Escape did not return input ownership to the recovered startup script"
+    );
+
+    let first_startup_presentation = records[escape_index + 1..]
+        .iter()
+        .find(|record| record["semantic"]["video"]["active_resource"] == FIRST_STARTUP_VIDEO)
+        .expect("Escape did not advance SCRIPT1 into its first authored presentation");
+    assert_eq!(profile(first_startup_presentation), Some(INITIAL_PROFILE));
+    assert_eq!(
+        presentation(first_startup_presentation)["screen_active"],
+        true
+    );
+    assert_eq!(first_startup_presentation["liveness"], "progress");
 }
 
 #[test]

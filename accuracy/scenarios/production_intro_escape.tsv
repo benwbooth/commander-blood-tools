@@ -1,0 +1,7 @@
+# Cancel the active opening presentation through the recovered BIOS Escape path,
+# then prove startup continues into a live bridge rather than freezing the stream.
+wait 50
+wait 50
+key 1
+wait 20
+wait 20
