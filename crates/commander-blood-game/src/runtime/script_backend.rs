@@ -403,11 +403,18 @@ impl RuntimeScriptSystem {
             dispatch, service, ..
         } = self;
         let interface_active = service.backend().presentation_interface_active;
-        service.backend_mut().apply_description(
+        let object = service
+            .backend()
+            .object_names
+            .iter()
+            .find_map(|(object, object_name)| (object_name.as_ref() == name).then_some(*object));
+        let application = service.backend_mut().apply_description(
             name,
             interface_active,
             &mut dispatch.text_presentation,
-        )
+        )?;
+        service.backend_mut().active_description_object = application.and(object);
+        Ok(application)
     }
 
     /// Apply a DESCRIPT record by stable profile object identity.
@@ -1633,6 +1640,26 @@ mod tests {
         assert_eq!(
             scripts.backend().active_description_object(),
             Some(unrelated)
+        );
+        scripts
+            .apply_presentation_description(IZWALITO_NAME)
+            .unwrap()
+            .expect("name-based Izwalito lookup must resolve its DESCRIPT record");
+        assert_eq!(
+            scripts.backend().active_description_object(),
+            Some(izwalito),
+            "name-based presentation lookup retained stale DESCRIPT ownership"
+        );
+        assert!(
+            scripts
+                .apply_presentation_description(b"missing-descript-record")
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            scripts.backend().active_description_object(),
+            None,
+            "a missing name-based DESCRIPT lookup retained stale ownership"
         );
         assert_eq!(
             runtime
