@@ -36,9 +36,6 @@ const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
 const LOGICAL_SCREEN_WIDTH: f32 = 320.0;
 const LOGICAL_SCREEN_HEIGHT: f32 = 200.0;
-const BRIDGE_EDGE_SCROLL_ZONE_WIDTH: f32 = 32.0;
-const BRIDGE_EDGE_SCROLL_MINIMUM_DELTA: f32 = 8.0;
-const BRIDGE_EDGE_SCROLL_MAXIMUM_DELTA: f32 = 32.0;
 const ALIEN_DRIVER_WIDTH: f32 = 640.0;
 const ALIEN_DRIVER_HEIGHT: f32 = 1_024.0;
 const ALIEN_DRIVER_CENTER: [f32; 2] = [ALIEN_DRIVER_WIDTH / 2.0, ALIEN_DRIVER_HEIGHT / 2.0];
@@ -159,7 +156,7 @@ impl<'window> RuntimePlatformHost<'window> {
     ) -> Result<Option<InputAction>> {
         self.frame_clock.begin_frame(Instant::now());
         self.synchronize_pointer_lock(
-            state.pointer_position_locked,
+            lifecycle_pointer_locked(state),
             services.input().pointer_sample().position,
         );
         self.pump_events(services);
@@ -453,12 +450,10 @@ impl<'window> RuntimePlatformHost<'window> {
         }
     }
 
-    /// Consume horizontal mouse motion plus uncaptured edge-scroll velocity.
+    /// Consume horizontal mouse motion retained since the previous bridge frame.
     pub fn take_bridge_horizontal_delta(&mut self) -> i32 {
         take_bridge_motion(
             &mut self.bridge_horizontal_delta,
-            self.logical_pointer[0],
-            self.pointer_inside_window && self.alien_pointer.is_none(),
             self.pointer_position_locked,
         )
     }
@@ -679,18 +674,16 @@ fn take_whole_motion(accumulated: &mut f32) -> i32 {
     whole as i32
 }
 
-fn take_bridge_motion(
-    accumulated: &mut f32,
-    logical_x: f32,
-    pointer_inside_window: bool,
-    pointer_position_locked: bool,
-) -> i32 {
+fn take_bridge_motion(accumulated: &mut f32, pointer_position_locked: bool) -> i32 {
     if pointer_position_locked {
         *accumulated = 0.0;
         return 0;
     }
-    *accumulated += edge_scroll_delta(logical_x, pointer_inside_window);
     take_whole_motion(accumulated)
+}
+
+fn lifecycle_pointer_locked(state: &GameLifecycleState) -> bool {
+    state.pause_hud_active || state.pointer_position_locked || state.navigation_ui_busy()
 }
 
 fn retain_locked_pointer_position(
@@ -716,26 +709,6 @@ fn apply_bridge_pointer_motion(
     let delta = map_motion_to_logical(output_size, relative_motion);
     *horizontal_delta += delta[0];
     *logical_pointer = map_host_pointer_to_logical(output_size, host_position).map(f32::from);
-}
-
-fn edge_scroll_delta(logical_x: f32, pointer_inside_window: bool) -> f32 {
-    if !pointer_inside_window {
-        return 0.0;
-    }
-    if logical_x < BRIDGE_EDGE_SCROLL_ZONE_WIDTH {
-        return -edge_scroll_speed(BRIDGE_EDGE_SCROLL_ZONE_WIDTH - logical_x);
-    }
-    let right_zone_start = LOGICAL_SCREEN_WIDTH - BRIDGE_EDGE_SCROLL_ZONE_WIDTH;
-    if logical_x >= right_zone_start {
-        return edge_scroll_speed(logical_x - right_zone_start);
-    }
-    0.0
-}
-
-fn edge_scroll_speed(edge_depth: f32) -> f32 {
-    let normalized = (edge_depth / BRIDGE_EDGE_SCROLL_ZONE_WIDTH).clamp(0.0, 1.0);
-    BRIDGE_EDGE_SCROLL_MINIMUM_DELTA
-        + normalized * (BRIDGE_EDGE_SCROLL_MAXIMUM_DELTA - BRIDGE_EDGE_SCROLL_MINIMUM_DELTA)
 }
 
 fn map_motion_to_logical(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {
@@ -950,42 +923,36 @@ mod tests {
         assert_eq!(horizontal_delta, 0.0);
 
         horizontal_delta = 7.5;
-        assert_eq!(
-            take_bridge_motion(&mut horizontal_delta, 0.0, true, true),
-            0
-        );
+        assert_eq!(take_bridge_motion(&mut horizontal_delta, true), 0);
         assert_eq!(horizontal_delta, 0.0);
-        assert_eq!(
-            take_bridge_motion(
-                &mut horizontal_delta,
-                LOGICAL_SCREEN_WIDTH / 2.0,
-                true,
-                false,
-            ),
-            0
-        );
+        assert_eq!(take_bridge_motion(&mut horizontal_delta, false), 0);
     }
 
     #[test]
-    fn uncaptured_pointer_scrolls_continuously_at_bridge_edges() {
-        assert_eq!(edge_scroll_delta(LOGICAL_SCREEN_WIDTH / 2.0, true), 0.0);
-        assert_eq!(edge_scroll_delta(0.0, false), 0.0);
-        assert_eq!(
-            edge_scroll_delta(0.0, true),
-            -BRIDGE_EDGE_SCROLL_MAXIMUM_DELTA
-        );
-        assert_eq!(
-            edge_scroll_delta(LOGICAL_SCREEN_WIDTH - 1.0, true),
-            edge_scroll_speed(BRIDGE_EDGE_SCROLL_ZONE_WIDTH - 1.0)
-        );
-        assert!(
-            edge_scroll_delta(BRIDGE_EDGE_SCROLL_ZONE_WIDTH - 1.0, true)
-                <= -BRIDGE_EDGE_SCROLL_MINIMUM_DELTA
-        );
-        assert!(
-            edge_scroll_delta(LOGICAL_SCREEN_WIDTH - BRIDGE_EDGE_SCROLL_ZONE_WIDTH, true)
-                >= BRIDGE_EDGE_SCROLL_MINIMUM_DELTA
-        );
+    fn bridge_motion_contains_only_host_delta_before_recovered_steering() {
+        let mut horizontal_delta = 12.75;
+        assert_eq!(take_bridge_motion(&mut horizontal_delta, false), 12);
+        assert_eq!(horizontal_delta, 0.75);
+
+        assert_eq!(take_bridge_motion(&mut horizontal_delta, false), 0);
+        assert_eq!(horizontal_delta, 0.75);
+    }
+
+    #[test]
+    fn native_pause_and_navigation_bit_lock_platform_pointer_motion() {
+        let mut state = GameLifecycleState::default();
+        assert!(!lifecycle_pointer_locked(&state));
+
+        state.pause_hud_active = true;
+        assert!(lifecycle_pointer_locked(&state));
+        state.pause_hud_active = false;
+
+        state.set_navigation_ui_busy(true);
+        assert!(lifecycle_pointer_locked(&state));
+        state.set_navigation_ui_busy(false);
+
+        state.pointer_position_locked = true;
+        assert!(lifecycle_pointer_locked(&state));
     }
 
     #[test]

@@ -157,12 +157,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
     }
 
     fn bridge_interaction(state: &GameLifecycleState) -> BridgeSteeringInteraction {
-        let menu_active = state.modal_ui_busy()
-            || state.profile_change_blockers.navigation_choice_active
-            || state.presentation.word_choice_active
-            || state.presentation.menu_deferred
-            || state.presentation.subtitle_display_active;
-        if menu_active {
+        if state.modal_ui_busy() {
             BridgeSteeringInteraction::MenuEngaged
         } else {
             BridgeSteeringInteraction::Free
@@ -622,7 +617,7 @@ mod tests {
     }
 
     #[test]
-    fn modal_presentation_owners_constrain_bridge_steering() {
+    fn only_native_ui_bit_two_constrains_bridge_steering() {
         let mut state = GameLifecycleState::default();
         assert_eq!(
             RuntimeGameLifecycleHost::bridge_interaction(&state),
@@ -630,6 +625,12 @@ mod tests {
         );
         state.presentation.menu_word_source = GameMenuWordSource::PresentationBuffer;
         state.presentation.menu_deferred = true;
+        assert_eq!(
+            RuntimeGameLifecycleHost::bridge_interaction(&state),
+            BridgeSteeringInteraction::Free
+        );
+
+        state.set_modal_ui_busy(true);
         assert_eq!(
             RuntimeGameLifecycleHost::bridge_interaction(&state),
             BridgeSteeringInteraction::MenuEngaged
