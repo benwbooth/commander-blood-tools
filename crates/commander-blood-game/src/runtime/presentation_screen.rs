@@ -32,6 +32,8 @@ const PRESENTATION_CONTENT_TOP: usize = 10;
 const SEQUENCE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(2);
 const PRESENTATION_ACTIVE_GATE: u8 = 1;
 const PRESENTATION_REQUEST_GATE: u8 = 2;
+const SHIP_BRIDGE_REDRAW_FLAG: u16 = 8;
+const BRIDGE_REDRAW_REQUESTED: u8 = 1;
 const SHIP_DEPTH_TRANSITION_ACTIVE: u8 = 1;
 const PRESENTATION_PANEL_SOUND_CLIP: u8 = 1;
 const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
@@ -568,11 +570,9 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
     }
 
     fn cancel_scene_presentation(&mut self) {
-        self.services.finish_presentation_sequence();
-        self.scene_state.presentation.active_line = None;
-        self.scene_state.presentation.gate_flags = u8::MIN;
-        self.scene_state.presentation.request_flags &= !PRESENTATION_REQUEST_GATE;
-        self.scene_state.frame_presented = false;
+        if release_scene_presentation(self.scene_state) {
+            self.services.finish_presentation_sequence();
+        }
     }
 
     fn prepare_choice_audio(&mut self) {
@@ -586,6 +586,22 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
         let result = self.services.reset_ship_hud();
         self.record_error(result);
     }
+}
+
+fn release_scene_presentation(
+    scene: &mut PresentationSceneDispatchState<DescriptBackgroundSlot>,
+) -> bool {
+    if scene.presentation.gate_flags & PRESENTATION_ACTIVE_GATE == u8::MIN {
+        return false;
+    }
+    if scene.ship_active_flags & SHIP_BRIDGE_REDRAW_FLAG != u16::MIN {
+        scene.presentation.bridge_redraw_pending = BRIDGE_REDRAW_REQUESTED;
+    }
+    scene.presentation.active_line = None;
+    scene.presentation.gate_flags = u8::MIN;
+    scene.presentation.request_flags &= !PRESENTATION_REQUEST_GATE;
+    scene.frame_presented = false;
+    true
 }
 
 fn presentation_context_link_target(context: &PresentationSceneContext<'_, GameSceneLink>) -> u16 {
@@ -749,6 +765,42 @@ mod tests {
         assert!(!lifecycle.frame_presented);
         export_scene_transition_frame_presented(true, &mut lifecycle);
         assert!(lifecycle.frame_presented);
+    }
+
+    #[test]
+    fn panel_cancellation_reproduces_active_queue_cleanup_and_ship_redraw() {
+        const UNOWNED_REQUEST_FLAG: u8 = 128;
+        let mut scene = PresentationSceneDispatchState::<DescriptBackgroundSlot>::default();
+        scene.presentation.active_line = Some(2);
+        scene.presentation.gate_flags = PRESENTATION_ACTIVE_GATE;
+        scene.presentation.request_flags = UNOWNED_REQUEST_FLAG | PRESENTATION_REQUEST_GATE;
+        scene.ship_active_flags = SHIP_BRIDGE_REDRAW_FLAG;
+        scene.frame_presented = true;
+
+        assert!(release_scene_presentation(&mut scene));
+
+        assert_eq!(scene.presentation.active_line, None);
+        assert_eq!(scene.presentation.gate_flags, u8::MIN);
+        assert_eq!(scene.presentation.request_flags, UNOWNED_REQUEST_FLAG);
+        assert_eq!(
+            scene.presentation.bridge_redraw_pending,
+            BRIDGE_REDRAW_REQUESTED
+        );
+        assert!(!scene.frame_presented);
+    }
+
+    #[test]
+    fn inactive_panel_cancellation_preserves_all_state() {
+        let mut scene = PresentationSceneDispatchState::<DescriptBackgroundSlot>::default();
+        scene.presentation.active_line = Some(7);
+        scene.presentation.request_flags = PRESENTATION_REQUEST_GATE;
+        scene.presentation.bridge_redraw_pending = 3;
+        scene.ship_active_flags = SHIP_BRIDGE_REDRAW_FLAG;
+        scene.frame_presented = true;
+        let expected = scene.clone();
+
+        assert!(!release_scene_presentation(&mut scene));
+        assert_eq!(scene, expected);
     }
 
     #[test]

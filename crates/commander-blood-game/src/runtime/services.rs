@@ -33,8 +33,8 @@ use crate::native::bloodprg::{
     PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
     PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
     PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
-    PresentationQueueClockGates, PresentationQueueServiceOutcome, PresentationResourceId,
-    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    PresentationQueueClockGates, PresentationQueueServiceOutcome, PresentationResourceCursor,
+    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SaveLoadMenuPhase,
     SceneTransitionState, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
@@ -2022,30 +2022,22 @@ impl<'window> ModernGameServices<'window> {
         lifecycle: &mut GameLifecycleState,
     ) -> Result<InputCancellationOutcome> {
         let cursor = self.presentation_player.cancellation_cursor();
-        let mut cancellation = InputCancellationState {
-            presentation_active: lifecycle.presentation.c2_presentation_gate
-                && self.presentation_player.source_open_or_draining()
-                && cursor.is_some(),
-            dialogue_ready: self.ship_presentation.dialogue_phase_ready & 1 != u8::MIN,
-            ship_active: self.ship_presentation.flags & INPUT_CANCEL_SHIP_BLOCK != u16::MIN,
-            active_line: usize::from(
-                lifecycle
-                    .presentation
-                    .active_line
-                    .unwrap_or(self.ship_presentation.active_line),
-            ),
-            resources: cursor.unwrap_or_default(),
-            scene_palette: *self.runtime.live_palette(),
-            palette_dirty: false,
-        };
+        let mut cancellation = input_cancellation_state(
+            lifecycle,
+            &self.ship_presentation,
+            cursor,
+            *self.runtime.live_palette(),
+        );
         let outcome = self
             .input
             .cancel_presentation(&mut cancellation, &mut self.presentation_player);
         lifecycle.pause_hud_active = self.input.dispatch_state().paused;
 
         if outcome == InputCancellationOutcome::CancelledPresentation {
-            self.presentation_player
-                .apply_cancellation_cursor(cancellation.resources)?;
+            if cursor.is_some() {
+                self.presentation_player
+                    .apply_cancellation_cursor(cancellation.resources)?;
+            }
             self.ship_presentation.dialogue_phase_ready = u8::from(cancellation.dialogue_ready);
             *self.runtime.live_palette_mut() = cancellation.scene_palette;
             self.presentation_screen
@@ -4270,6 +4262,28 @@ fn selected_bridge_page_mut<'page>(
     }
 }
 
+fn input_cancellation_state(
+    lifecycle: &GameLifecycleState,
+    ship: &ShipPresentationState,
+    cursor: Option<PresentationResourceCursor>,
+    scene_palette: IndexedGamePalette,
+) -> InputCancellationState {
+    InputCancellationState {
+        presentation_active: lifecycle.presentation.c2_presentation_gate,
+        dialogue_ready: ship.dialogue_phase_ready & 1 != u8::MIN,
+        ship_active: ship.flags & INPUT_CANCEL_SHIP_BLOCK != u16::MIN,
+        active_line: usize::from(
+            lifecycle
+                .presentation
+                .active_line
+                .unwrap_or(ship.active_line),
+        ),
+        resources: cursor.unwrap_or_default(),
+        scene_palette,
+        palette_dirty: false,
+    }
+}
+
 fn bridge_pointer_sample(mut pointer: PointerSample, cursor_x: i16) -> PointerSample {
     pointer.position[0] = cursor_x;
     pointer
@@ -4501,6 +4515,27 @@ mod tests {
 
         assert_eq!(synchronized.position, [142, 87]);
         assert_eq!(synchronized.buttons, buttons);
+    }
+
+    #[test]
+    fn cancellation_eligibility_follows_native_gate_without_a_live_cursor() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.c2_presentation_gate = true;
+        lifecycle.presentation.active_line = Some(2);
+        let ship = ShipPresentationState::default();
+
+        let cancellation = input_cancellation_state(
+            &lifecycle,
+            &ship,
+            None,
+            [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+        );
+
+        assert!(cancellation.presentation_active);
+        assert_eq!(
+            cancellation.resources,
+            PresentationResourceCursor::default()
+        );
     }
 
     const STATUS_TEST_ORIGIN: [u16; 2] = [40, 50];
