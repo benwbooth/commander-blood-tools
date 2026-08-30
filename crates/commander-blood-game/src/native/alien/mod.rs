@@ -64,7 +64,9 @@ pub use ring::{
     update_or_initialize_ring,
 };
 pub use runtime::{AlienFrameCallback, AlienRuntimeStatus, AlienRuntimeStep, AlienSceneRuntime};
-pub use scene::{AlienResumeRuntimeError, AlienScene, AlienSceneError, AlienSceneFrame};
+pub use scene::{
+    AlienFrameRenderStage, AlienResumeRuntimeError, AlienScene, AlienSceneError, AlienSceneFrame,
+};
 pub use selection::{
     AlienSelectionError, AlienSelectionUpdate, AlienWaveCallbackUpdate, AlienWaveMotionUpdate,
     AlienWaveReturnUpdate, continue_wave_steering, update_wave_callback, update_wave_camera,

@@ -31,6 +31,9 @@ const MAXIMUM_FACE_WIDTH: usize = RASTER_RECIPROCAL_COUNT;
 const RGB_COMPONENT_COUNT: usize = 3;
 const RGBA_COMPONENT_COUNT: usize = 4;
 const ALPHA_COMPONENT: u8 = u8::MAX;
+const PLANAR_PIXEL_GROUP_WIDTH: usize = 4;
+const STAR_SOURCE_PLANE_COUNT: usize = PLANAR_PIXEL_GROUP_WIDTH;
+const STAR_OUTPUT_PLANE_MASKS: [u8; STAR_SOURCE_PLANE_COUNT] = [0b0001, 0b0010, 0b0011, 0b0100];
 
 /// One projected alien vertex ready for fixed-point record construction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -56,13 +59,20 @@ pub struct AlienRenderTriangle {
     pub(crate) record: AlienRasterRecord,
 }
 
+impl AlienRenderTriangle {
+    /// First logical screen column at which the native renderer activates this face.
+    pub const fn activation_column(&self) -> usize {
+        self.first_column
+    }
+}
+
 /// Render-facing geometry for the two original alien triangle passes.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AlienRenderGeometry {
     /// Camera-relative primary mesh rendered before the starfield.
     pub primary_triangles: Vec<AlienRenderTriangle>,
-    /// Behavior-model meshes rendered after the starfield, one native call per model.
-    pub model_layers: Vec<Vec<AlienRenderTriangle>>,
+    /// Globally bucketed behavior-model meshes rendered in one native depth pass.
+    pub model_triangles: Vec<AlienRenderTriangle>,
 }
 
 /// One flat true-color frame produced by the recovered software raster rules.
@@ -136,11 +146,11 @@ pub fn prepare_render_geometry(
     } else {
         Vec::new()
     };
-    let model_layers =
+    let model_triangles =
         prepare_model_triangles(models, model_poses, &model_selection.buckets, reciprocals)?;
     Ok(AlienRenderGeometry {
         primary_triangles,
-        model_layers,
+        model_triangles,
     })
 }
 
@@ -156,19 +166,41 @@ pub(crate) fn rasterize_true_color_frame(
         pixel[RGB_COMPONENT_COUNT] = ALPHA_COMPONENT;
     }
     rasterize_true_color_layer(&geometry.primary_triangles, texture, palette, &mut pixels)?;
-    for star in stars {
-        let [x, y] = star.screen;
-        let (Ok(x), Ok(y)) = (usize::try_from(x), usize::try_from(y)) else {
-            continue;
-        };
-        if x < ALIEN_RASTER_WIDTH && y < ALIEN_RASTER_HEIGHT {
-            write_true_color_pixel(&mut pixels, x, y, palette[usize::from(star.palette_index)]);
+    rasterize_starfield(stars, palette, &mut pixels);
+    rasterize_true_color_layer(&geometry.model_triangles, texture, palette, &mut pixels)?;
+    Ok(AlienTrueColorFrame { pixels })
+}
+
+fn rasterize_starfield(
+    stars: &[AlienStar],
+    palette: &[[u8; RGB_COMPONENT_COUNT]; 256],
+    pixels: &mut [u8],
+) {
+    for (source_plane, output_mask) in STAR_OUTPUT_PLANE_MASKS.into_iter().enumerate() {
+        for star in stars {
+            let [x, y] = star.screen;
+            let (Ok(x), Ok(y)) = (usize::try_from(x), usize::try_from(y)) else {
+                continue;
+            };
+            if x >= ALIEN_RASTER_WIDTH
+                || y >= ALIEN_RASTER_HEIGHT
+                || x % STAR_SOURCE_PLANE_COUNT != source_plane
+            {
+                continue;
+            }
+            let group_start = x - source_plane;
+            for output_plane in 0..PLANAR_PIXEL_GROUP_WIDTH {
+                if output_mask & (1 << output_plane) != u8::MIN {
+                    write_true_color_pixel(
+                        pixels,
+                        group_start + output_plane,
+                        y,
+                        palette[usize::from(star.palette_index)],
+                    );
+                }
+            }
         }
     }
-    for layer in &geometry.model_layers {
-        rasterize_true_color_layer(layer, texture, palette, &mut pixels)?;
-    }
-    Ok(AlienTrueColorFrame { pixels })
 }
 
 fn rasterize_true_color_layer(
@@ -238,8 +270,8 @@ fn prepare_model_triangles(
     poses: &[AlienModelPose],
     buckets: &[AlienFaceBucket],
     reciprocals: &[i32; RASTER_RECIPROCAL_COUNT],
-) -> Result<Vec<Vec<AlienRenderTriangle>>, AlienRasterError> {
-    let mut layers = vec![Vec::new(); models.len()];
+) -> Result<Vec<AlienRenderTriangle>, AlienRasterError> {
+    let mut triangles = Vec::new();
     for (first_column, source) in bucket_faces(buckets) {
         models
             .get(source.model_index)
@@ -263,7 +295,7 @@ fn prepare_model_triangles(
             })?;
         if face_is_active(face.vertices, &pose.projected_vertices, reciprocals, true) {
             let vertices = render_pose_vertices(source, face.vertices, pose)?;
-            layers[source.model_index].push(AlienRenderTriangle {
+            triangles.push(AlienRenderTriangle {
                 source,
                 vertices,
                 first_column,
@@ -272,13 +304,14 @@ fn prepare_model_triangles(
             });
         }
     }
-    Ok(layers)
+    Ok(triangles)
 }
 
 fn bucket_faces(
     buckets: &[AlienFaceBucket],
 ) -> impl Iterator<Item = (usize, AlienFaceReference)> + '_ {
-    buckets.iter().enumerate().flat_map(|(column, bucket)| {
+    buckets.iter().flat_map(|bucket| {
+        let column = bucket.column;
         bucket
             .faces
             .iter()
@@ -429,6 +462,70 @@ mod tests {
     use serde::Deserialize;
 
     use super::*;
+
+    #[test]
+    fn sparse_face_buckets_retain_their_screen_columns() {
+        let buckets = [
+            AlienFaceBucket {
+                column: 17,
+                faces: vec![AlienFaceReference {
+                    model_index: 2,
+                    face_index: 3,
+                }],
+            },
+            AlienFaceBucket {
+                column: 270,
+                faces: vec![AlienFaceReference {
+                    model_index: 4,
+                    face_index: 5,
+                }],
+            },
+        ];
+        assert_eq!(
+            bucket_faces(&buckets).collect::<Vec<_>>(),
+            [
+                (
+                    17,
+                    AlienFaceReference {
+                        model_index: 2,
+                        face_index: 3,
+                    },
+                ),
+                (
+                    270,
+                    AlienFaceReference {
+                        model_index: 4,
+                        face_index: 5,
+                    },
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn starfield_retains_native_sequencer_masks_and_plane_order() {
+        const TEST_COLOR_COUNT: usize = STAR_SOURCE_PLANE_COUNT + 1;
+        let mut palette = [[u8::MIN; RGB_COMPONENT_COUNT]; 256];
+        for (index, entry) in palette.iter_mut().take(TEST_COLOR_COUNT).enumerate() {
+            entry[0] = index as u8;
+        }
+        let stars =
+            std::array::from_fn::<_, STAR_SOURCE_PLANE_COUNT, _>(|source_plane| AlienStar {
+                screen: [source_plane as i16, 0],
+                shade: u16::MIN,
+                palette_index: (source_plane + 1) as u8,
+            });
+        let frame =
+            rasterize_true_color_frame(&AlienRenderGeometry::default(), &stars, &[], &palette)
+                .unwrap();
+        let first_group = frame
+            .pixels
+            .chunks_exact(RGBA_COMPONENT_COUNT)
+            .take(PLANAR_PIXEL_GROUP_WIDTH)
+            .map(|pixel| pixel[0])
+            .collect::<Vec<_>>();
+        assert_eq!(first_group, [3, 3, 4, 0]);
+    }
     use crate::native::alien::{AlienMouseSample, AlienScene};
 
     const CENTERED_MOUSE: AlienMouseSample = AlienMouseSample {
@@ -537,13 +634,7 @@ mod tests {
             let mut scene = AlienScene::from_asset(asset);
             let frame = scene.step(CENTERED_MOUSE).unwrap();
             assert!(!frame.geometry.primary_triangles.is_empty());
-            assert!(
-                frame
-                    .geometry
-                    .model_layers
-                    .iter()
-                    .any(|layer| !layer.is_empty())
-            );
+            assert!(!frame.geometry.model_triangles.is_empty());
         }
     }
 }

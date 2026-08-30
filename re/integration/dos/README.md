@@ -540,6 +540,24 @@ the original keyboard/callback protocol. All four modules pass this gate. Use
 `--dump-raster` to retain the post-call 64 KiB raster segment for a byte-level
 diagnostic comparison. Substitution into sustained game flow is the next gate.
 
+Capture the original alien overlays' complete first rendered frames with:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/original_xdb_alien_frame_oracle.py
+```
+
+This gate executes the shipped AMER, CROOLIS, and SCRUT images, verifies the
+exact original XDB hashes and cleanup-call bytes, reproduces BLOODPRG's Mode X
+setup, and patches only the final cleanup call so the rendered VGA page can be
+captured. It deplanarizes all four VGA planes and records full indexed and RGBA
+frame hashes in `re/tools/oracle_vectors/alien_first_frames.json`. The Rust
+runtime test compares its complete first frame against those original-execution
+hashes. `--module` and `--model-count` provide diagnostic prefix captures and,
+unless `--fixture` is explicit, write their temporary fixture under the output
+directory rather than replacing the committed complete oracle.
+
 To measure fixed-offset placement, use the layout probe:
 
 ```sh

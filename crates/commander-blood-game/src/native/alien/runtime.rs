@@ -270,7 +270,11 @@ fn is_pause_character(character: u8) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::path::{Path, PathBuf};
+
+    use commander_blood_formats::alien::{AlienXdbKind, decode_alien_xdb};
     use serde::Deserialize;
+    use sha2::{Digest, Sha256};
 
     use super::*;
 
@@ -306,6 +310,31 @@ mod tests {
         event: u16,
         clock: u32,
     }
+
+    #[derive(Deserialize)]
+    struct FirstFrameFixture {
+        format: String,
+        width: usize,
+        height: usize,
+        timing_scale: u16,
+        mouse_x: u16,
+        mouse_y: u16,
+        captures: Vec<FirstFrameCapture>,
+    }
+
+    #[derive(Deserialize)]
+    struct FirstFrameCapture {
+        module: String,
+        xdb_file: String,
+        xdb_bytes: usize,
+        xdb_sha256: String,
+        rgba_sha256: String,
+    }
+
+    const FIRST_FRAME_FIXTURE_FORMAT: &str = "commander-blood-original-alien-first-frame-v1";
+    const ORIGINAL_FRAME_WIDTH: usize = 320;
+    const ORIGINAL_FRAME_HEIGHT: usize = 200;
+    const ESCAPE_KEY_EVENT: u16 = 0x011b;
 
     const MAIN_INPUTS: [MainInput; 8] = [
         MainInput {
@@ -457,6 +486,55 @@ mod tests {
     }
 
     #[test]
+    fn first_true_color_frames_match_original_xdb_execution() {
+        let fixture: FirstFrameFixture = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/alien_first_frames.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.format, FIRST_FRAME_FIXTURE_FORMAT);
+        assert_eq!(fixture.width, ORIGINAL_FRAME_WIDTH);
+        assert_eq!(fixture.height, ORIGINAL_FRAME_HEIGHT);
+        assert_eq!(fixture.captures.len(), 3);
+
+        for capture in fixture.captures {
+            let Some(path) = original_xdb(&capture.xdb_file) else {
+                continue;
+            };
+            let data = std::fs::read(&path).unwrap();
+            assert_eq!(data.len(), capture.xdb_bytes, "{}", capture.module);
+            assert_eq!(sha256(&data), capture.xdb_sha256, "{}", capture.module);
+            let kind = match capture.module.as_str() {
+                "amer" => AlienXdbKind::Amer,
+                "croolis" => AlienXdbKind::Croolis,
+                "scrut" => AlienXdbKind::Scrut,
+                other => panic!("unknown alien first-frame module: {other}"),
+            };
+            let asset = decode_alien_xdb(&data, kind).unwrap();
+            let mut runtime = AlienSceneRuntime::enter(asset, fixture.timing_scale, u32::MIN);
+            let step = runtime
+                .step(
+                    AlienMouseSample {
+                        x: fixture.mouse_x,
+                        y: fixture.mouse_y,
+                        buttons: u16::MIN,
+                    },
+                    &[ESCAPE_KEY_EVENT],
+                )
+                .unwrap();
+            let frame = step
+                .frame
+                .expect("the original renders before draining Escape");
+            assert_eq!(
+                sha256(&frame.true_color.pixels),
+                capture.rgba_sha256,
+                "{} first frame differs from original XDB execution",
+                capture.module
+            );
+            assert_eq!(step.status, AlienRuntimeStatus::Stopped);
+        }
+    }
+
+    #[test]
     fn keyboard_drain_retains_native_pause_and_escape_rules() {
         let mut running = true;
         let mut paused = false;
@@ -482,5 +560,15 @@ mod tests {
         drain_keyboard(&mut running, &mut paused, &mut key_event, &[283]);
         assert!(!running);
         assert_eq!(key_event, 283);
+    }
+
+    fn original_xdb(name: &str) -> Option<PathBuf> {
+        let repository = Path::new(env!("CARGO_MANIFEST_DIR")).parent()?.parent()?;
+        let path = repository.join("output/_tmp_dat").join(name);
+        path.is_file().then_some(path)
+    }
+
+    fn sha256(bytes: &[u8]) -> String {
+        format!("{:x}", Sha256::digest(bytes))
     }
 }

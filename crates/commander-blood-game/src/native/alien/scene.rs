@@ -942,6 +942,26 @@ pub struct AlienSceneFrame {
     pub(crate) true_color: super::raster::AlienTrueColorFrame,
 }
 
+/// Native render boundary selected by deterministic parity diagnostics.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienFrameRenderStage {
+    /// Primary camera-relative mesh only.
+    Primary,
+    /// Primary mesh followed by the fixed starfield.
+    Starfield,
+    /// Primary mesh, starfield, and faces owned by the first requested behavior models.
+    Models(usize),
+    /// Complete frame after the shared behavior-model depth pass.
+    Full,
+}
+
+impl AlienSceneFrame {
+    /// Complete 320-by-200 RGBA output after all recovered raster passes.
+    pub fn true_color_pixels(&self) -> &[u8] {
+        &self.true_color.pixels
+    }
+}
+
 /// Mutable native state for one AMER, CROOLIS, or SCRUT scene.
 #[derive(Clone, Debug)]
 pub struct AlienScene {
@@ -1547,6 +1567,42 @@ impl AlienScene {
             texture_update: texture_changed.then(|| self.asset.texture.pixels.clone()),
             true_color,
         })
+    }
+
+    /// Re-render one completed frame at an original main-loop call boundary.
+    pub fn rasterize_frame_stage(
+        &self,
+        frame: &AlienSceneFrame,
+        stage: AlienFrameRenderStage,
+    ) -> Result<Vec<u8>, AlienRasterError> {
+        if stage == AlienFrameRenderStage::Full {
+            return Ok(frame.true_color.pixels.clone());
+        }
+        let mut geometry = frame.geometry.clone();
+        let stars = match stage {
+            AlienFrameRenderStage::Primary => {
+                geometry.model_triangles.clear();
+                &[][..]
+            }
+            AlienFrameRenderStage::Starfield => {
+                geometry.model_triangles.clear();
+                frame.starfield.stars.as_slice()
+            }
+            AlienFrameRenderStage::Models(count) => {
+                geometry
+                    .model_triangles
+                    .retain(|triangle| triangle.source.model_index < count);
+                frame.starfield.stars.as_slice()
+            }
+            AlienFrameRenderStage::Full => unreachable!(),
+        };
+        super::raster::rasterize_true_color_frame(
+            &geometry,
+            stars,
+            &self.asset.texture.pixels,
+            &self.asset.palette,
+        )
+        .map(|rendered| rendered.pixels)
     }
 
     /// Overlay species used by this scene.
