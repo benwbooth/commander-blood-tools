@@ -14,7 +14,7 @@ use crate::native::bloodprg::{
 
 use super::{ModernGameServices, RuntimePaletteTransitionConfig, RuntimePlatformHost};
 
-const SCENE_TRANSITION_IMAGE_RESOURCE: &[u8] = b"FRIGO.FD";
+pub(super) const SCENE_TRANSITION_IMAGE_RESOURCE: &[u8] = b"FRIGO.FD";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct RuntimeSceneRecord {

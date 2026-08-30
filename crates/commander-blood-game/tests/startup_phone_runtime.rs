@@ -1,11 +1,13 @@
+use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use commander_blood_formats::archive::BloodResourceName;
+use commander_blood_formats::instruction::ScriptRecordValue;
 use commander_blood_game::native::bloodprg::{
-    OriginalSaveGame, OriginalSaveSlotDirectory, ScriptProfileId,
-    original_save_state_block_byte_count,
+    OriginalSaveGame, OriginalSaveSlotDirectory, ScriptFieldSelector, ScriptProfileId,
+    original_save_state_block_byte_count, script_field_offset,
 };
 use commander_blood_game::runtime::{OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime};
 use serde_json::Value;
@@ -47,6 +49,15 @@ const SCRIPT2_PTERRA_UNLOCK_STATE_OFFSET: u16 = 0x12C2;
 const SCRIPT2_PTERRA_UNLOCKED: u16 = 1;
 const SCRIPT2_PTERRA_MARKER: [u64; 2] = [201, 93];
 const PTERRA_NAME: &str = "Pterra";
+const SCRUTER_JO_NAME: &str = "Scruter_Jo";
+const SCRUTER_JO_CONTACT_CLICK: &str = "sclick 100 95";
+const SCRUTER_JO_SOUND_BANK: &str = "scrut.snd";
+const SCRUTER_JO_SPRITE: &str = "scruter.spr";
+const SCRUTER_JO_IDLE_VIDEO: &str = "scr20.hnm";
+const SCRUTER_JO_POST_OVERLAY_VIDEO: &str = "PE\\scr21.hnm";
+const SCRUTER_JO_RECOVERY_VIDEO: &str = "PE\\scr22.hnm";
+const SCRUTER_JO_FIRST_CONTACT_SUBTITLE: &str = "I've reprogrammed him";
+const NEXT_ALIEN_OVERLAY_AFTER_AMER: &str = "Croolis";
 const AUTHENTIC_GAME1_SAVE: &str = "accuracy/cblood_install/cblood/GAME1.SAV";
 const HONK_WORD_CHOICES: [&str; 9] = [
     "bye_bye",
@@ -929,6 +940,92 @@ fn production_runtime_vm_unlocks_pterra_and_opens_the_authored_navigation_chart(
     );
 }
 
+#[test]
+fn production_runtime_runs_scruter_jo_alien_overlay_and_restores_the_bridge() {
+    let Some(records) = run_production_scenario_with_setup(
+        "accuracy/scenarios/production_load_script2_contacts.tsv",
+        "production-load-script2-contacts.jsonl",
+        seed_script2_scruter_jo_aboard_save,
+    ) else {
+        return;
+    };
+
+    let contact_click = records
+        .iter()
+        .position(|record| record["action"] == CONTACTS_CLICK)
+        .expect("runtime trace omitted the authored CONTACTS click");
+    let contacts = records[contact_click..]
+        .iter()
+        .find(|record| record["semantic"]["bridge_console"]["selected"] == "contacts")
+        .expect("SCRIPT2 CONTACTS never opened");
+    let labels = contacts["semantic"]["bridge_console"]["choice_labels"]
+        .as_array()
+        .expect("SCRIPT2 contact labels are not an array");
+    assert_eq!(
+        labels,
+        serde_json::json!([BOB_NAME, SCRUTER_JO_NAME])
+            .as_array()
+            .expect("literal contact labels are an array"),
+        "typed aboard state did not produce the authored SCRIPT2 contact order"
+    );
+
+    let scruter_index = records
+        .iter()
+        .position(|record| record["action"] == SCRUTER_JO_CONTACT_CLICK)
+        .expect("runtime trace omitted the authored Scruter Jo click");
+    let scruter_records = &records[scruter_index..];
+    let scruter_owner = scruter_records
+        .iter()
+        .find(|record| descript(record)["active_object"]["name"] == SCRUTER_JO_NAME)
+        .expect("Scruter Jo never acquired production DESCRIPT ownership");
+    assert_eq!(descript(scruter_owner)["sound_bank"], SCRUTER_JO_SOUND_BANK);
+    assert_eq!(
+        descript(scruter_owner)["character_sprite"],
+        SCRUTER_JO_SPRITE
+    );
+    assert_eq!(
+        descript(scruter_owner)["idle_clip"]["video"],
+        SCRUTER_JO_IDLE_VIDEO
+    );
+
+    assert!(scruter_records.iter().any(|record| {
+        record["semantic"]["subtitle"]
+            .as_str()
+            .is_some_and(|subtitle| subtitle.contains(SCRUTER_JO_FIRST_CONTACT_SUBTITLE))
+    }));
+
+    let overlay_return = scruter_records
+        .iter()
+        .find(|record| {
+            record["semantic"]["alien_overlay"]["next_overlay"] == NEXT_ALIEN_OVERLAY_AFTER_AMER
+        })
+        .expect("the production AMER overlay never completed its round-robin handoff");
+    assert_eq!(overlay_return["semantic"]["alien_overlay"]["armed"], false);
+    assert_eq!(
+        overlay_return["semantic"]["alien_overlay"]["trigger_pending"],
+        false
+    );
+    assert_eq!(
+        overlay_return["semantic"]["alien_overlay"]["palette_dirty"],
+        true
+    );
+    assert_eq!(
+        overlay_return["semantic"]["alien_overlay"]["plane_band_enabled"],
+        true
+    );
+
+    assert!(scruter_records.iter().any(|record| {
+        record["semantic"]["video"]["active_resource"] == SCRUTER_JO_POST_OVERLAY_VIDEO
+    }));
+    assert!(scruter_records.iter().any(|record| {
+        record["semantic"]["video"]["active_resource"] == SCRUTER_JO_RECOVERY_VIDEO
+    }));
+    assert_eq!(
+        overlay_return["semantic"]["audio"]["streamed_sound_bank"],
+        SCRUTER_JO_SOUND_BANK
+    );
+}
+
 fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value>> {
     run_production_scenario_with_setup(scenario, trace_name, |_, _| Ok(()))
 }
@@ -1042,6 +1139,50 @@ fn seed_authentic_pterra_unlock_save(
     {
         anyhow::bail!("failed to seed SCRIPT2 globals.A0");
     }
+    let save = OriginalSaveGame::capture(profile)?;
+    std::fs::write(writable_path.join("GAME1.SAV"), save.encode())?;
+    Ok(())
+}
+
+fn seed_script2_scruter_jo_aboard_save(
+    asset_cache: &Path,
+    writable_path: &Path,
+) -> anyhow::Result<()> {
+    std::fs::create_dir_all(writable_path)?;
+    let paths = OriginalGameDataPaths::from_root(asset_cache)?;
+    let data = OriginalGameData::load_with_writable_root(paths, writable_path)?;
+    let directory_name = BloodResourceName::new(b"BLOOD.SAV")?;
+    let directory =
+        OriginalSaveSlotDirectory::decode(&data.resource_store().load(&directory_name)?)?;
+    std::fs::write(writable_path.join("BLOOD.SAV"), directory.encode())?;
+
+    let mut runtime = OriginalGameRuntime::new(data);
+    let script2 = ScriptProfileId::new(SCRIPT2_PROFILE).expect("SCRIPT2 profile is valid");
+    runtime.load_profile(script2)?;
+    let profile = runtime
+        .current_profile_mut()
+        .expect("SCRIPT2 load retained no mutable profile");
+    let scruter_jo = profile
+        .builtins()
+        .scruter_jo
+        .ok_or_else(|| anyhow::anyhow!("SCRIPT2 has no Scruter Jo object"))?;
+    let scruter_kind = profile
+        .state()
+        .object(scruter_jo)
+        .ok_or_else(|| anyhow::anyhow!("SCRIPT2 Scruter Jo object is missing from VAR"))?
+        .kind;
+    let holder_offset = script_field_offset(scruter_kind, ScriptFieldSelector::HOLDER_OR_LOCATION)
+        .ok_or_else(|| anyhow::anyhow!("Scruter Jo has no holder/location field"))?;
+    let holder = profile
+        .state()
+        .object_word(scruter_jo, holder_offset / size_of::<u16>())
+        .ok_or_else(|| anyhow::anyhow!("Scruter Jo holder/location field is outside VAR"))?;
+    profile
+        .execution_parts()
+        .record_state
+        .record_fields
+        .set_value(holder, ScriptRecordValue::Aboard);
+
     let save = OriginalSaveGame::capture(profile)?;
     std::fs::write(writable_path.join("GAME1.SAV"), save.encode())?;
     Ok(())

@@ -112,11 +112,6 @@ impl RuntimePresentationScreen {
         self.scene_state.temporary_sound_trigger = pending;
     }
 
-    /// Return the DESCRIPT background that must be restored after an overlay.
-    pub(super) const fn loaded_scene_image(&self) -> Option<DescriptBackgroundSlot> {
-        self.scene_state.loaded_scene_image
-    }
-
     /// Invalidate the cached scene identity before navigation replaces its background.
     pub fn invalidate_scene_image(&mut self) {
         self.scene_state.loaded_scene_image = None;

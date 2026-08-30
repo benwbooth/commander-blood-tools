@@ -64,6 +64,7 @@ use super::navigation_chart::RuntimeNavigationChart;
 use super::navigation_status::RuntimeNavigationStatus;
 use super::presentation::RuntimeBridgeComposition;
 use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
+use super::scene_transition::SCENE_TRANSITION_IMAGE_RESOURCE;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
 use super::ship_target::ship_hud_arche_link;
 use super::{
@@ -1610,21 +1611,13 @@ impl<'window> ModernGameServices<'window> {
         self.runtime.restore_sequence_back_buffer().map(|_| ())
     }
 
-    pub(super) fn reload_current_scene_image(&mut self) -> Result<()> {
-        let slot = self
-            .presentation_screen
-            .as_ref()
-            .context("presentation screen is already being updated")?
-            .loaded_scene_image()
-            .context("alien overlay returned without a retained scene image")?;
+    /// Reload the fixed `FRIGO.FD` path at native DS:0x00F3 after an XDB returns.
+    pub(super) fn reload_alien_return_scene_image(&mut self) -> Result<()> {
         let encoded = self
-            .scripts
-            .backend()
-            .backgrounds()
-            .get(slot)
-            .with_context(|| format!("DESCRIPT background slot {slot:?} is not loaded"))?
-            .encoded_image()
-            .to_vec();
+            .runtime
+            .data()
+            .load_named_resource(SCENE_TRANSITION_IMAGE_RESOURCE)
+            .context("loading FRIGO.FD after an alien overlay")?;
         self.runtime.reload_scene_back_buffer(&encoded).map(|_| ())
     }
 
@@ -4016,6 +4009,29 @@ impl<'window> ModernGameServices<'window> {
             },
             "waiting_for_input": waiting_for_input,
         });
+        let alien_overlay_trace = self
+            .runtime_alien_overlay()
+            .ok()
+            .map(|overlay| {
+                let state = overlay.state();
+                let (armed, trigger_pending) = self
+                    .presentation_screen
+                    .as_ref()
+                    .map(RuntimePresentationScreen::alien_overlay_flags)
+                    .unwrap_or((false, false));
+                serde_json::json!({
+                    "armed": armed,
+                    "trigger_pending": trigger_pending,
+                    "next_overlay": format!("{:?}", state.next_overlay),
+                    "timing_scale": state.shared.timing_scale,
+                    "sequence_flags": state.shared.sequence_flags,
+                    "palette_dirty": state.palette_dirty,
+                    "plane_band_enabled": state.plane_band_enabled,
+                    "loaded_scene_resource": state.loaded_scene_resource,
+                    "mouse_idle_frames": state.mouse_idle_frames,
+                })
+            })
+            .unwrap_or(serde_json::Value::Null);
 
         Ok(serde_json::json!({
             "vm": {
@@ -4027,6 +4043,7 @@ impl<'window> ModernGameServices<'window> {
                 "displayed_line": self.ship_presentation.active_line,
             },
             "presentation": presentation_trace,
+            "alien_overlay": alien_overlay_trace,
             "descript": descript_trace,
             "bridge_console": bridge_console,
             "script2": script2,

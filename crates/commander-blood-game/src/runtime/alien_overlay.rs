@@ -266,7 +266,7 @@ impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
     }
 
     fn reload_scene_image(&mut self) -> Result<()> {
-        self.services.reload_current_scene_image()
+        self.services.reload_alien_return_scene_image()
     }
 }
 
