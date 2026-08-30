@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -67,6 +68,32 @@ end_of_record
 
         self.assertEqual(result[0]["execution_count"], 0)
         self.assertEqual(result[0]["instrumented_instances"], 1)
+
+    def test_expected_coverage_fails_only_for_baseline_routines_that_dropped_out(self) -> None:
+        routines = [
+            {"component": "bloodprg", "entry": "0x000001", "execution_count": 7},
+            {"component": "bloodprg", "entry": "0x000002", "execution_count": 0},
+            {"component": "xdb_manu3", "entry": "0x000181", "execution_count": 0},
+        ]
+        expected = {("bloodprg", "0x000001"), ("bloodprg", "0x000002")}
+
+        self.assertEqual(
+            audit.missing_expected_routines(routines, expected),
+            [routines[1]],
+        )
+
+    def test_expected_coverage_manifest_rejects_duplicate_routine_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "expected.tsv"
+            path.write_text(
+                "component\tentry\n"
+                "bloodprg\t0x000001\n"
+                "bloodprg\t0x000001\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "duplicate component/entry"):
+                audit.read_expected_coverage(path)
 
 
 if __name__ == "__main__":

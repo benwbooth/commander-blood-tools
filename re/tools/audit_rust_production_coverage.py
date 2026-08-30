@@ -87,6 +87,27 @@ def read_ledger(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(source, delimiter="\t"))
 
 
+def read_expected_coverage(path: Path) -> set[tuple[str, str]]:
+    with path.open(encoding="utf-8", newline="") as source:
+        rows = list(csv.DictReader(source, delimiter="\t"))
+    keys = {(row["component"], row["entry"]) for row in rows}
+    if len(keys) != len(rows):
+        raise ValueError(f"{path}: duplicate component/entry coverage row")
+    return keys
+
+
+def missing_expected_routines(
+    routines: Iterable[dict[str, object]],
+    expected: set[tuple[str, str]],
+) -> list[dict[str, object]]:
+    return [
+        row
+        for row in routines
+        if (str(row["component"]), str(row["entry"])) in expected
+        and row["execution_count"] == 0
+    ]
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--workspace", type=Path, default=Path.cwd())
@@ -95,6 +116,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--llvm-cov", default="llvm-cov")
     parser.add_argument("--scenario", required=True)
+    parser.add_argument("--expected-covered", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--summary-only", action="store_true")
     return parser.parse_args()
@@ -123,6 +145,31 @@ def main() -> int:
         "uncovered_routine_count": len(routines) - len(covered),
         "routines": routines,
     }
+    missing_expected: list[dict[str, object]] = []
+    if args.expected_covered:
+        expected_path = (
+            args.expected_covered
+            if args.expected_covered.is_absolute()
+            else workspace / args.expected_covered
+        )
+        expected = read_expected_coverage(expected_path)
+        ledger_keys = {
+            (str(row["component"]), str(row["entry"])) for row in routines
+        }
+        unknown_expected = sorted(expected - ledger_keys)
+        if unknown_expected:
+            raise ValueError(
+                f"{expected_path}: expected coverage rows are absent from the port ledger: "
+                f"{unknown_expected}"
+            )
+        missing_expected = missing_expected_routines(routines, expected)
+        report.update(
+            {
+                "expected_covered_routine_count": len(expected),
+                "missing_expected_routine_count": len(missing_expected),
+                "missing_expected_routines": missing_expected,
+            }
+        )
     rendered = json.dumps(report, indent=2) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -132,7 +179,7 @@ def main() -> int:
         print(json.dumps(summary, indent=2))
     else:
         print(rendered, end="")
-    return 0
+    return 1 if missing_expected else 0
 
 
 if __name__ == "__main__":

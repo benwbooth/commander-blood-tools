@@ -74,6 +74,12 @@ It sets `CBLOOD_REQUIRE_ACCURACY_TESTS=1`, which turns every otherwise optional
 asset or display prerequisite into a test failure. Ordinary asset-free unit
 test runs may still skip copyrighted-data scenarios explicitly.
 
+The gate also rebuilds the production executable with LLVM coverage and runs
+the complete startup phone scenario. `production-startup-covered.tsv` records
+the 189 recovered routines exercised by that path. The audit compares routine
+presence, not compiler-dependent execution counts, and fails if a baseline
+routine stops executing.
+
 The real-data acceptance suite restores an authentic save, reloads every script
 profile and companion resource set, enters and completes an authored path for
 all 65 recovered contacts, decodes every navigation world, and drives the
