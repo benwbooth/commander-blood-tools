@@ -28,6 +28,7 @@ use super::{LOGICAL_FRAMEBUFFER_PIXEL_COUNT, ModernGameServices, OriginalGameRun
 
 const OBJECT_ACCESS_COUNTER_BYTE_OFFSET: usize = 20;
 const WORD_BYTE_COUNT: usize = size_of::<u16>();
+const NAVIGATION_CHART_FIRST_TRANSITION_STEP: u8 = 8;
 const CHART_PRIMARY_ENTITY: usize = 0;
 const AFTER_CHART_PRIMARY_ENTITY: u16 = 1;
 const LOCATION_PANEL_ENTITY: usize = 0;
@@ -48,6 +49,7 @@ pub(super) struct RuntimeNavigationChart {
     staging_surface: Box<[u8]>,
     pending_spans: Vec<NavigationChartCopySpan>,
     status_snapshot: Option<RuntimeNavigationStatusSnapshot>,
+    retained_object_ids: Vec<ScriptObjectId>,
 }
 
 impl Default for RuntimeNavigationChart {
@@ -64,6 +66,7 @@ impl Default for RuntimeNavigationChart {
             staging_surface: vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT].into_boxed_slice(),
             pending_spans: Vec::new(),
             status_snapshot: None,
+            retained_object_ids: Vec::new(),
         }
     }
 }
@@ -116,11 +119,16 @@ impl RuntimeNavigationChart {
         navigation_animation_phase: u8,
         comparison_extent: BridgeSpriteExtent,
     ) -> Result<NavigationCameraOutcome> {
-        let world = RuntimeNavigationWorld::decode(services.runtime())?;
+        let chart_active = services.bridge_camera_view_active();
+        let rebuild_roster =
+            transition_step == NAVIGATION_CHART_FIRST_TRANSITION_STEP && !chart_active;
+        let retained_object_ids = (!rebuild_roster && !self.retained_object_ids.is_empty())
+            .then_some(self.retained_object_ids.as_slice());
+        let world = RuntimeNavigationWorld::decode(services.runtime(), retained_object_ids)?;
         self.status_snapshot = Some(world.status_snapshot());
         let pointer = services.input().pointer_sample();
         self.state.transition_step = transition_step;
-        self.state.active = services.bridge_camera_view_active();
+        self.state.active = chart_active;
         self.state.entity_state_mask = navigation_animation_phase;
         self.state.input.pointer = pointer.position.map(|coordinate| coordinate as u16);
         self.state.input.primary_pressed = lifecycle.primary_pointer_pressed;
@@ -147,6 +155,7 @@ impl RuntimeNavigationChart {
             panel_rects: self.state.panel_rects,
             pointer: self.state.input.pointer,
             primary_pressed: self.state.input.primary_pressed,
+            retained_object_ids: &mut self.retained_object_ids,
             callback_error: None,
         };
         let outcome = update_navigation_camera(context, &mut self.state, &mut backend)
@@ -209,6 +218,7 @@ struct RuntimeNavigationWorld {
     arche_endpoint_context: u16,
     current_location: ScriptObjectId,
     current_location_kind: NavigationChartObjectKind,
+    roster_ids: Vec<ScriptObjectId>,
     chart_objects: Vec<NavigationChartObject<ScriptObjectId>>,
     pick_objects: Vec<NavigationChartPickObject<ScriptObjectId, u16>>,
     locations: Vec<RuntimeNavigationLocation>,
@@ -248,7 +258,10 @@ pub(super) struct RuntimeNavigationStatusLabels {
 }
 
 impl RuntimeNavigationWorld {
-    fn decode(runtime: &OriginalGameRuntime) -> Result<Self> {
+    fn decode(
+        runtime: &OriginalGameRuntime,
+        retained_object_ids: Option<&[ScriptObjectId]>,
+    ) -> Result<Self> {
         let profile = runtime
             .current_profile()
             .context("navigation chart requires a loaded BloodScript profile")?;
@@ -271,10 +284,14 @@ impl RuntimeNavigationWorld {
         let arche_endpoint_context =
             read_object_word(profile, arche, ScriptFieldSelector::BLACK_HOLE_RELATION)?;
 
+        let roster_ids = retained_object_ids.map_or_else(
+            || navigation_chart_objects(profile.state()),
+            <[ScriptObjectId]>::to_vec,
+        );
         let mut chart_objects = Vec::new();
         let mut pick_objects = Vec::new();
         let mut locations = Vec::new();
-        for object in navigation_chart_objects(profile.state()) {
+        for object in roster_ids.iter().copied() {
             let object_kind = object_kind(profile, object)?;
             let kind = chart_kind(object_kind);
             let comparison = if kind.black_hole {
@@ -405,6 +422,7 @@ impl RuntimeNavigationWorld {
             arche_endpoint_context,
             current_location,
             current_location_kind,
+            roster_ids,
             chart_objects,
             pick_objects,
             locations,
@@ -445,6 +463,7 @@ struct RuntimeNavigationChartBackend<'state, 'window> {
     panel_rects: LocationPanelRects,
     pointer: [u16; 2],
     primary_pressed: bool,
+    retained_object_ids: &'state mut Vec<ScriptObjectId>,
     callback_error: Option<anyhow::Error>,
 }
 
@@ -477,6 +496,7 @@ impl NavigationCameraHost<ScriptObjectId, BridgeSpriteExtent>
     }
 
     fn chart_objects(&mut self) -> Result<Vec<NavigationChartObject<ScriptObjectId>>> {
+        self.retained_object_ids.clone_from(&self.world.roster_ids);
         Ok(self.world.chart_objects.clone())
     }
 
@@ -1208,7 +1228,7 @@ mod tests {
                     true,
                 ));
             }
-            let world = RuntimeNavigationWorld::decode(&runtime).unwrap();
+            let world = RuntimeNavigationWorld::decode(&runtime, None).unwrap();
             assert_eq!(
                 world.chart_objects.len(),
                 chart_candidates.len(),
@@ -1226,6 +1246,23 @@ mod tests {
                     .is_some(),
                 "profile {profile}"
             );
+
+            let removed = world.roster_ids[0];
+            assert!(set_object_flag(
+                runtime.current_profile_mut().unwrap().state_mut(),
+                removed,
+                ScriptObjectFlag::InPlay,
+                false,
+            ));
+            let rebuilt = RuntimeNavigationWorld::decode(&runtime, None).unwrap();
+            assert_eq!(rebuilt.roster_ids.len() + 1, world.roster_ids.len());
+            assert!(!rebuilt.roster_ids.contains(&removed));
+
+            let retained =
+                RuntimeNavigationWorld::decode(&runtime, Some(&world.roster_ids)).unwrap();
+            assert_eq!(retained.roster_ids, world.roster_ids);
+            assert_eq!(retained.chart_objects.len(), world.chart_objects.len());
+            assert_eq!(retained.pick_objects.len(), world.pick_objects.len());
         }
     }
 }
