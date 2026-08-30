@@ -7,10 +7,12 @@ oracle coverage and documentation.
 
 ## Completion status
 
-All 520 recovered native routines are accounted for by the checked coverage
-ledgers: 470 routines have documented Rust implementations and 50 DOS memory,
-hardware, or authored no-operation adapters have documented eliminations. The
-coverage test rejects missing, duplicate, or unsupported mappings.
+All 521 recovered native routines are accounted for by the checked coverage
+ledgers: 471 routines have documented complete Rust implementations, 47 DOS
+memory, hardware, or authored no-operation adapters have documented
+eliminations, and three alien rasterizers remain explicitly partial. The
+coverage test rejects missing, duplicate, or unsupported mappings and prevents
+partial work from being counted as complete.
 
 Routine counts alone do not prove cross-routine state fidelity. The recovered
 BLOODPRG headers currently expose 71 semantically distinct address-alias
@@ -52,15 +54,16 @@ nix develop -c cargo build -p commander-blood-game --bin commander-blood
 nix develop -c python3 -P re/tools/audit_rust_port_routing.py --strict
 ```
 
-Strict mode remains red until every `UNREVIEWED-UNROUTED` row is either wired
-into production or assigned a source-backed disposition.
+Strict mode fails whenever an `UNREVIEWED-UNROUTED` row is not wired into
+production or assigned a source-backed disposition.
 
 The real-data acceptance suite restores an authentic save, reloads every script
 profile and companion resource set, enters and completes an authored path for
-all 65 recovered contacts, decodes every navigation world, and exercises the
-production SDL3/wgpu Pterra HUD transition. These gates establish implementation
-coverage and broad behavioral readiness; they do not replace a continuous
-start-to-credits playthrough.
+all 65 recovered contacts, decodes every navigation world, and drives the
+production Pterra unlock and navigation-chart path. These gates establish
+implementation coverage and broad behavioral readiness; they do not replace a
+continuous start-to-credits playthrough or prove the three partial alien
+rasterizers.
 
 The BAS dispatch audit separately derives its inventory from the five recovered
 selector graphs. It executes all 321 selector nodes, commits all 1,396 authored

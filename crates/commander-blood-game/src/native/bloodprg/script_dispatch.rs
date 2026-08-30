@@ -224,6 +224,8 @@ pub enum ScriptDispatchError<HostError> {
     Host(HostError),
     /// COD control-flow state was inconsistent.
     Runtime(ScriptRuntimeError),
+    /// COD opcode AA emitted signal one, which the native outer wrapper rejects.
+    InvalidLegacyYieldSignal,
     /// A shared VAR operation failed.
     State(ScriptStateOperationError),
     /// A procedure identity was invalid.
@@ -604,7 +606,7 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 .commit_to_var(self.state, self.directory, self.dictionary)
                 .map_err(ScriptDispatchError::ProfileRecord)?;
         }
-        Ok(step_from_control(token, control, runtime))
+        step_from_control(token.end_offset(), control, runtime)
     }
 
     fn commit_selected_concept(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error> {
@@ -649,19 +651,19 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
     }
 }
 
-fn step_from_control(
-    token: &ScriptToken,
+fn step_from_control<HostError>(
+    next: ScriptCodeOffset,
     control: ScriptControl,
     runtime: &mut ScriptRuntime,
-) -> ScriptFrameStep {
+) -> Result<ScriptFrameStep, ScriptDispatchError<HostError>> {
     let next = match control {
-        ScriptControl::Continue => token.end_offset(),
+        ScriptControl::Continue => next,
         ScriptControl::Jump(target) => target,
     };
     if runtime.take_yield_request() {
-        ScriptFrameStep::continue_after_presentation(next)
+        Err(ScriptDispatchError::InvalidLegacyYieldSignal)
     } else {
-        ScriptFrameStep::continue_at(next)
+        Ok(ScriptFrameStep::continue_at(next))
     }
 }
 
@@ -850,6 +852,22 @@ mod tests {
         assert!(!presentation.c2_gate_active);
         assert!(!presentation.hold_ready);
         assert!(!presentation.dialogue_hold_complete);
+    }
+
+    #[test]
+    fn legacy_aa_signal_is_rejected_by_the_outer_cod_dispatch() {
+        const NEXT_INSTRUCTION_OFFSET: usize = 12;
+        let mut runtime = ScriptRuntime::default();
+        runtime.request_yield();
+
+        let outcome = step_from_control::<Infallible>(
+            ScriptCodeOffset::new(NEXT_INSTRUCTION_OFFSET),
+            ScriptControl::Continue,
+            &mut runtime,
+        );
+
+        assert_eq!(outcome, Err(ScriptDispatchError::InvalidLegacyYieldSignal));
+        assert!(!runtime.take_yield_request());
     }
 
     #[test]
