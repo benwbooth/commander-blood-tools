@@ -30,6 +30,8 @@ use super::{
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptBasDispatchState {
     text_instructions: BTreeMap<ScriptCodeOffset, TextInstructionState>,
+    #[cfg(test)]
+    last_published_text: Option<ScriptCodeOffset>,
 }
 
 impl ScriptBasDispatchState {
@@ -55,6 +57,11 @@ impl ScriptBasDispatchState {
         source_offset: ScriptCodeOffset,
     ) -> Option<TextInstructionState> {
         self.text_instructions.get(&source_offset).copied()
+    }
+
+    #[cfg(test)]
+    fn take_last_published_text(&mut self) -> Option<ScriptCodeOffset> {
+        self.last_published_text.take()
     }
 }
 
@@ -158,6 +165,10 @@ pub fn execute_script_dialogue_control<Host: ScriptBasDispatchHost>(
         dispatch,
         bas,
     } = context;
+    #[cfg(test)]
+    {
+        bas.last_published_text = None;
+    }
     let mut offered_topic = dispatch.sequence_presentation.offered_topic.take();
     let result = {
         let mut control_host = BasControlHost {
@@ -287,6 +298,10 @@ impl<Host: ScriptBasDispatchHost> ScriptBlockHandler for BasInstructionDispatche
                     &mut self.dispatch.text_presentation,
                 )
                 .map_err(ScriptBasDispatchError::Text)?;
+                #[cfg(test)]
+                if execution.flow != ScriptFrameFlow::Continue {
+                    self.bas.last_published_text = Some(token.source_offset());
+                }
                 return Ok(block_step_from_text_flow(
                     token.end_offset(),
                     execution.flow,
@@ -422,22 +437,37 @@ mod tests {
     use std::convert::Infallible;
     use std::path::{Path, PathBuf};
 
+    use commander_blood_formats::instruction::ScriptText;
     use commander_blood_formats::script::ScriptObjectKind;
     use serde::Deserialize;
 
     use super::*;
     use crate::assets::OriginalResourceStore;
     use crate::native::bloodprg::{
-        OriginalResourceCache, OriginalResourceCatalog, OriginalScriptProfileCatalog,
-        ScriptFieldSelector, ScriptProfileId, ScriptProfileManager, ScriptSelectionOutcome,
-        TextPresentationState, commit_selected_concept, script_field_offset,
+        LoadedScriptProfile, OriginalResourceCache, OriginalResourceCatalog,
+        OriginalScriptProfileCatalog, ScriptActionRecord, ScriptFieldSelector, ScriptProfileId,
+        ScriptProfileManager, ScriptSelectionOutcome, TextPresentationState,
+        commit_selected_concept, script_field_offset,
     };
+    use crate::native::random::BloodPrng;
 
     const SERIALIZED_WORD_SIZE: usize = std::mem::size_of::<u16>();
     const FIRST_CONCEPT_HISTORY_SLOT: usize = usize::MIN;
     const EXPECTED_SELECTOR_NODE_COUNTS: [usize; 5] = [1, 122, 98, 43, 57];
     const EXPECTED_TOTAL_SELECTOR_NODE_COUNT: usize = 321;
     const EXPECTED_TOTAL_MENU_CHOICE_COUNT: usize = 1_396;
+    const EXPECTED_TOTAL_DIALOGUE_EVENT_COUNT: usize = 1_849;
+    const EXPECTED_REACHABLE_DIALOGUE_EVENT_COUNT: usize = 1_847;
+    const EXPECTED_UNREACHABLE_DIALOGUE_EVENT_COUNT: usize = 2;
+    const MAXIMUM_DIALOGUE_TARGET_PASSES: usize = 96;
+    const LINE_FLAGS_BYTE_OFFSET: usize = std::mem::size_of::<u16>();
+    const LINE_ALREADY_SHOWN_FLAG: u16 = 0x8000;
+    const RECORD_SELECTOR_SHIFT: u32 = 1;
+    const RECORD_SELECTOR_MASK: u8 = 0x07;
+    const FIRST_CONDITIONAL_RECORD_SELECTOR: u8 = 1;
+    const HISTORY_REQUIRED_MASK: u8 = 0x07;
+    const RANDOM_WARMUP_LIMIT: u8 = 128;
+    const CLOCK_SECONDS_PER_MINUTE: u8 = 60;
 
     #[derive(Deserialize)]
     struct SelectorGraph {
@@ -452,6 +482,7 @@ mod tests {
         body_start: usize,
         list_index: usize,
         menu_choices: Vec<SelectorMenuChoice>,
+        dialogue_events: Vec<SelectorDialogueEvent>,
     }
 
     #[derive(Deserialize)]
@@ -469,6 +500,19 @@ mod tests {
     #[derive(Deserialize)]
     struct SelectorMenuChoice {
         offset: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct SelectorDialogueEvent {
+        offset: usize,
+    }
+
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    struct UnreachableDialogueEvent {
+        profile: u8,
+        node: usize,
+        blocker: usize,
+        target: usize,
     }
 
     struct TestHost;
@@ -492,14 +536,15 @@ mod tests {
     }
 
     fn original_data_root() -> Option<PathBuf> {
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         [
             Path::new("output/_tmp_iso"),
             Path::new("commander-blood-audio/_tmp_iso"),
             Path::new("accuracy/cblood_install/cblood"),
         ]
         .into_iter()
+        .map(|root| workspace_root.join(root))
         .find(|root| root.join("SCRIPT1.COD").is_file())
-        .map(Path::to_owned)
     }
 
     #[test]
@@ -705,15 +750,31 @@ mod tests {
 
                     profile.runtime_mut().set_selected_concept(Some(selected));
                     dispatch.text_presentation = TextPresentationState::default();
-                    let expected_matched_body = list.node_offsets.iter().find_map(|node_offset| {
+                    let expected_matched_node = list.node_offsets.iter().find_map(|node_offset| {
                         let candidate = graph
                             .nodes
                             .iter()
                             .find(|candidate| candidate.offset == *node_offset)
                             .unwrap();
-                        (candidate.selector == choice.offset)
-                            .then_some(ScriptCodeOffset::new(candidate.body_start))
+                        (candidate.selector == choice.offset).then_some(candidate)
                     });
+                    let expected_matched_body = expected_matched_node
+                        .map(|candidate| ScriptCodeOffset::new(candidate.body_start));
+                    let expected_response_menu = expected_matched_node.map_or_else(
+                        || expected_menu.clone(),
+                        |candidate| {
+                            candidate
+                                .menu_choices
+                                .iter()
+                                .map(|menu_choice| {
+                                    profile
+                                        .dictionary()
+                                        .resolve_source_offset(menu_choice.offset)
+                                        .unwrap()
+                                })
+                                .collect::<Vec<_>>()
+                        },
+                    );
                     let selection_outcome = {
                         let parts = profile.execution_parts();
                         commit_selected_concept(
@@ -798,7 +859,7 @@ mod tests {
                             node.offset
                         );
                     } else if response_outcome.menu_collected {
-                        assert_eq!(published_words, expected_menu);
+                        assert_eq!(published_words, expected_response_menu);
                     }
                     assert_eq!(
                         profile.selector_state().history().entries()[FIRST_CONCEPT_HISTORY_SLOT],
@@ -811,5 +872,383 @@ mod tests {
         }
 
         assert_eq!(dispatched_choices, EXPECTED_TOTAL_MENU_CHOICE_COUNT);
+    }
+
+    #[test]
+    fn every_recovered_dialogue_event_publishes_through_typed_dispatch() {
+        let Some(root) = original_data_root() else {
+            return;
+        };
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let resources = OriginalResourceCatalog::decode_bloodprg(executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_bloodprg(executable).unwrap();
+        let mut cache = OriginalResourceCache::new();
+        let mut manager = ScriptProfileManager::new(catalog);
+        let random_states = reachable_random_states(EXPECTED_TOTAL_DIALOGUE_EVENT_COUNT);
+        let mut published_events = usize::MIN;
+        let mut failures = Vec::new();
+        let unreachable = unreachable_dialogue_events();
+        assert_eq!(unreachable.len(), EXPECTED_UNREACHABLE_DIALOGUE_EVENT_COUNT);
+
+        for profile_id in ScriptProfileId::all() {
+            manager
+                .select(profile_id, &mut cache, &store, &resources)
+                .unwrap();
+            let template = manager.current().unwrap().clone();
+            let graph: SelectorGraph = serde_json::from_slice(
+                &std::fs::read(workspace_root.join(format!(
+                    "re/vm/bas-control-flow/script{}.bas.cfg.json",
+                    profile_id.value() + 1
+                )))
+                .unwrap(),
+            )
+            .unwrap();
+
+            for node in &graph.nodes {
+                let list = &graph.lists[node.list_index];
+                for event in &node.dialogue_events {
+                    if unreachable.iter().any(|entry| {
+                        entry.profile == profile_id.value() + 1
+                            && entry.node == node.offset
+                            && entry.target == event.offset
+                    }) {
+                        continue;
+                    }
+                    let mut profile = template.clone();
+                    let actor = profile
+                        .directory()
+                        .find_active_object(list.entrypoint.object_name.as_bytes())
+                        .unwrap_or_else(|| {
+                            panic!(
+                                "SCRIPT{} has no active object named {}",
+                                profile_id.value() + 1,
+                                list.entrypoint.object_name
+                            )
+                        });
+                    let control = profile
+                        .dictionary()
+                        .resolve_source_offset(node.selector)
+                        .unwrap();
+                    profile
+                        .selector_state_mut()
+                        .set_control_selections(Some(control), None);
+                    configure_dialogue_target(&mut profile, event.offset);
+
+                    let mut dispatch = ScriptDispatchState::default();
+                    dispatch.sequence_presentation.presentation_active = true;
+                    let mut bas = ScriptBasDispatchState::default();
+                    let mut observed = Vec::new();
+                    let mut reached = false;
+
+                    for pass in usize::MIN..MAXIMUM_DIALOGUE_TARGET_PASSES {
+                        dispatch.random = random_states[pass % random_states.len()];
+                        let outcome = {
+                            let parts = profile.execution_parts();
+                            execute_script_dialogue_control(
+                                ScriptDialogueExecutionContext {
+                                    actor,
+                                    selector_root: ScriptCodeOffset::new(node.offset),
+                                    instructions: parts.instructions,
+                                    dialogue: parts.dialogue,
+                                    state: parts.state,
+                                    dictionary: parts.dictionary,
+                                    directory: parts.directory,
+                                    builtins: parts.builtins,
+                                    runtime: parts.runtime,
+                                    selector: parts.selector_state,
+                                    records: parts.record_state,
+                                    dispatch: &mut dispatch,
+                                    bas: &mut bas,
+                                },
+                                &mut TestHost,
+                            )
+                        }
+                        .unwrap_or_else(|error| {
+                            panic!(
+                                "SCRIPT{} node {:#06x} failed while targeting {:#06x}: {error:?}",
+                                profile_id.value() + 1,
+                                node.offset,
+                                event.offset
+                            )
+                        });
+                        assert_eq!(
+                            outcome.current_body,
+                            Some(ScriptCodeOffset::new(node.body_start))
+                        );
+
+                        let Some(published) = bas.take_last_published_text() else {
+                            continue;
+                        };
+                        observed.push(published.index());
+                        if published.index() == event.offset {
+                            reached = true;
+                            break;
+                        }
+                        clear_published_dialogue(&mut profile, published);
+                        dispatch.text_presentation = TextPresentationState::default();
+                    }
+
+                    if reached {
+                        profile.synchronized_state().unwrap_or_else(|error| {
+                            panic!(
+                                "SCRIPT{} BAS target {:#06x} left incoherent state: {error:?}",
+                                profile_id.value() + 1,
+                                event.offset
+                            )
+                        });
+                        published_events += 1;
+                    } else {
+                        failures.push((
+                            profile_id.value() + 1,
+                            list.entrypoint.object_name.clone(),
+                            node.offset,
+                            event.offset,
+                            observed,
+                        ));
+                    }
+                }
+            }
+        }
+
+        assert!(
+            failures.is_empty(),
+            "recovered BAS dialogue events did not publish: {failures:#?}"
+        );
+        assert_eq!(published_events, EXPECTED_REACHABLE_DIALOGUE_EVENT_COUNT);
+    }
+
+    #[test]
+    fn declared_unreachable_dialogue_events_remain_dominated_by_repeatable_text() {
+        let Some(root) = original_data_root() else {
+            return;
+        };
+        let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let resources = OriginalResourceCatalog::decode_bloodprg(executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_bloodprg(executable).unwrap();
+        let mut cache = OriginalResourceCache::new();
+        let mut manager = ScriptProfileManager::new(catalog);
+        let unreachable = unreachable_dialogue_events();
+
+        for entry in unreachable {
+            let profile_id = ScriptProfileId::new(entry.profile - 1).unwrap();
+            manager
+                .select(profile_id, &mut cache, &store, &resources)
+                .unwrap();
+            let profile = manager.current().unwrap();
+            let blocker = dialogue_text_at(profile, entry.blocker);
+            let target = dialogue_text_at(profile, entry.target);
+
+            assert!(entry.node < entry.blocker && entry.blocker < entry.target);
+            assert!(blocker.control.is_active());
+            assert!(blocker.control.preserves_active());
+            assert!(blocker.control.uses_history_condition());
+            assert!(!blocker.control.uses_random_gate());
+            assert!(!blocker.control.uses_record_condition());
+            assert_eq!(blocker.control.rejection_skip_count(), None);
+            assert!(target.control.is_active());
+            assert!(target.control.uses_history_condition());
+            assert_eq!(
+                history_condition_words(blocker),
+                history_condition_words(target)
+            );
+            assert_eq!(blocker.line_record, target.line_record);
+        }
+    }
+
+    fn configure_dialogue_target(profile: &mut LoadedScriptProfile, target_offset: usize) {
+        let target = profile
+            .dialogue()
+            .tokens()
+            .iter()
+            .find(|token| token.source_offset().index() == target_offset)
+            .unwrap_or_else(|| panic!("BAS target {target_offset:#06x} is not decoded"));
+        let ScriptBasInstruction::Text(text) = target.instruction() else {
+            panic!("BAS target {target_offset:#06x} is not a text instruction");
+        };
+        let text = text.clone();
+
+        let line_offset = text.line_record.byte_offset();
+        let line_kind = profile
+            .state()
+            .objects()
+            .iter()
+            .find(|object| object.source_offset() == line_offset)
+            .unwrap_or_else(|| {
+                panic!("BAS text {target_offset:#06x} has no line record {line_offset:#06x}")
+            })
+            .kind;
+        let action_offset = script_field_offset(line_kind, ScriptFieldSelector::ACTION).unwrap();
+        let action = u16::try_from(line_offset + action_offset).unwrap();
+        let action = profile.state().resolve_word_source_offset(action).unwrap();
+        assert!(
+            profile
+                .state_mut()
+                .set_word(action, ScriptActionRecord::ACTOR_PRESENTATION_KIND)
+        );
+        let flags_offset = u16::try_from(line_offset + LINE_FLAGS_BYTE_OFFSET).unwrap();
+        let flags = profile
+            .state()
+            .resolve_word_source_offset(flags_offset)
+            .unwrap();
+        let value = profile.state().word(flags).unwrap() & !LINE_ALREADY_SHOWN_FLAG;
+        assert!(profile.state_mut().set_word(flags, value));
+
+        if text.control.uses_history_condition() {
+            let candidates = text
+                .words
+                .split(|word| matches!(word, ScriptTextWord::SectionSeparator))
+                .nth(1)
+                .expect("history-gated BAS text retains its condition section")
+                .iter()
+                .filter_map(|word| match word {
+                    ScriptTextWord::Dictionary(word) => Some(*word),
+                    ScriptTextWord::SectionSeparator => None,
+                })
+                .collect::<Vec<_>>();
+            assert!(
+                !candidates.is_empty(),
+                "history-gated BAS text {target_offset:#06x} has no candidates"
+            );
+            let required = usize::from(text.control.detail() & HISTORY_REQUIRED_MASK);
+            let insertions = if required == usize::MIN {
+                super::super::SCRIPT_CONCEPT_HISTORY_LENGTH
+            } else {
+                required
+            };
+            for index in usize::MIN..insertions {
+                profile
+                    .selector_state_mut()
+                    .history_mut()
+                    .push(candidates[index % candidates.len()]);
+            }
+        }
+
+        if text.control.uses_record_condition() {
+            let selector_index = ((text.control.detail() >> RECORD_SELECTOR_SHIFT)
+                & RECORD_SELECTOR_MASK)
+                .wrapping_add(FIRST_CONDITIONAL_RECORD_SELECTOR);
+            let selector = ScriptFieldSelector::new(selector_index).unwrap();
+            let line = profile
+                .state()
+                .objects()
+                .iter()
+                .find(|object| object.source_offset() == line_offset)
+                .unwrap_or_else(|| {
+                    panic!("BAS text {target_offset:#06x} has no line record {line_offset:#06x}")
+                });
+            let field_offset = script_field_offset(line.kind, selector).unwrap();
+            let target = u16::try_from(line_offset + field_offset).unwrap();
+            let target = profile.state().resolve_word_source_offset(target).unwrap();
+            let operand = text.record_condition_operand.unwrap();
+            let accepted = if text.control.detail() & 1 != u8::MIN {
+                operand
+            } else {
+                (operand as i16).checked_add(1).unwrap() as u16
+            };
+            assert!(profile.state_mut().set_word(target, accepted));
+        }
+    }
+
+    fn clear_published_dialogue(profile: &mut LoadedScriptProfile, published: ScriptCodeOffset) {
+        let token = profile
+            .dialogue()
+            .tokens()
+            .iter()
+            .find(|token| token.source_offset() == published)
+            .unwrap();
+        let ScriptBasInstruction::Text(text) = token.instruction() else {
+            unreachable!("published BAS source is always text");
+        };
+        let flags_offset =
+            u16::try_from(text.line_record.byte_offset() + LINE_FLAGS_BYTE_OFFSET).unwrap();
+        let flags = profile
+            .state()
+            .resolve_word_source_offset(flags_offset)
+            .unwrap();
+        let value = profile.state().word(flags).unwrap() & !LINE_ALREADY_SHOWN_FLAG;
+        assert!(profile.state_mut().set_word(flags, value));
+    }
+
+    fn reachable_random_states(call_count: usize) -> Vec<BloodPrng> {
+        let mut uncovered = (usize::MIN..call_count).collect::<std::collections::BTreeSet<_>>();
+        let mut selected = Vec::new();
+        for seconds in u8::MIN..CLOCK_SECONDS_PER_MINUTE {
+            for warmup in u8::MIN..RANDOM_WARMUP_LIMIT {
+                let mut candidate = BloodPrng::default();
+                candidate.seed_from_clock_register(seconds);
+                for _ in u8::MIN..warmup {
+                    candidate.next(u16::MIN);
+                }
+                let mut probe = candidate;
+                let covered = (usize::MIN..call_count)
+                    .filter(|_index| probe.next(5) == u16::MIN)
+                    .filter(|index| uncovered.contains(index))
+                    .collect::<Vec<_>>();
+                if covered.is_empty() {
+                    continue;
+                }
+                selected.push(candidate);
+                for index in covered {
+                    uncovered.remove(&index);
+                }
+                if uncovered.is_empty() {
+                    return selected;
+                }
+            }
+        }
+        assert!(uncovered.is_empty(), "uncovered PRNG calls: {uncovered:?}");
+        selected
+    }
+
+    fn unreachable_dialogue_events() -> Vec<UnreachableDialogueEvent> {
+        let rows = include_str!("../../../../../re/vm/bas-control-flow/unreachable-dialogue.tsv");
+        rows.lines()
+            .skip(1)
+            .filter(|line| !line.trim().is_empty())
+            .map(|line| {
+                let columns = line.split('\t').collect::<Vec<_>>();
+                assert_eq!(columns.len(), 6);
+                assert!(!columns[5].trim().is_empty());
+                UnreachableDialogueEvent {
+                    profile: columns[0].strip_prefix("SCRIPT").unwrap().parse().unwrap(),
+                    node: parse_hex_offset(columns[2]),
+                    blocker: parse_hex_offset(columns[3]),
+                    target: parse_hex_offset(columns[4]),
+                }
+            })
+            .collect()
+    }
+
+    fn parse_hex_offset(value: &str) -> usize {
+        usize::from_str_radix(value.strip_prefix("0x").unwrap(), 16).unwrap()
+    }
+
+    fn dialogue_text_at(profile: &LoadedScriptProfile, offset: usize) -> &ScriptText {
+        let token = profile
+            .dialogue()
+            .tokens()
+            .iter()
+            .find(|token| token.source_offset().index() == offset)
+            .unwrap_or_else(|| panic!("missing BAS text at {offset:#06x}"));
+        let ScriptBasInstruction::Text(text) = token.instruction() else {
+            panic!("BAS offset {offset:#06x} is not text");
+        };
+        text
+    }
+
+    fn history_condition_words(text: &ScriptText) -> Vec<ScriptWordId> {
+        text.words
+            .split(|word| matches!(word, ScriptTextWord::SectionSeparator))
+            .nth(1)
+            .expect("history-gated text retains its condition section")
+            .iter()
+            .filter_map(|word| match word {
+                ScriptTextWord::Dictionary(word) => Some(*word),
+                ScriptTextWord::SectionSeparator => None,
+            })
+            .collect()
     }
 }

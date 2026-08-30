@@ -62,6 +62,17 @@ production SDL3/wgpu Pterra HUD transition. These gates establish implementation
 coverage and broad behavioral readiness; they do not replace a continuous
 start-to-credits playthrough.
 
+The BAS dispatch audit separately derives its inventory from the five recovered
+selector graphs. It executes all 321 selector nodes, commits all 1,396 authored
+menu edges, and publishes all 1,847 reachable dialogue events under their
+decoded history, record, and random conditions. Two later SCRIPT2 Honk responses
+are structurally unreachable behind an earlier repeatable line with the same
+`break` history predicate; `unreachable-dialogue.tsv` records them and a separate
+test proves that domination from decoded BAS tokens. Every targeted run must
+also round-trip the typed VAR and record stores. This is branch-complete semantic
+coverage of the BAS dispatcher, while the contact and production campaigns
+remain the authority for cross-frame presentation ownership.
+
 ## Memory model
 
 The runtime uses a flat address space. Skeleton parents, vertices, faces,
