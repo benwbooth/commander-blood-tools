@@ -1,6 +1,8 @@
 //! Typed loading of original Commander Blood artwork.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt;
+use std::io::Write;
 use std::ops::RangeInclusive;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
@@ -21,6 +23,50 @@ pub enum OriginalResourceSource {
     EmbeddedArchive,
     /// Standalone file below the configured game-data root.
     LooseFile,
+}
+
+/// Host filesystem operation that failed during an original resource copy.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OriginalResourceCopyOperation {
+    /// Resolve and read the archive-or-loose source bytes.
+    OpenSource,
+    /// Create the destination parent or create/truncate the destination file.
+    CreateDestination,
+    /// Write the complete source payload to the opened destination.
+    WriteDestination,
+}
+
+/// Typed failure from [`OriginalResourceStore::copy_to_loose`].
+#[derive(Debug)]
+pub struct OriginalResourceCopyError {
+    operation: OriginalResourceCopyOperation,
+    source: anyhow::Error,
+}
+
+impl OriginalResourceCopyError {
+    fn new(operation: OriginalResourceCopyOperation, source: impl Into<anyhow::Error>) -> Self {
+        Self {
+            operation,
+            source: source.into(),
+        }
+    }
+
+    /// Filesystem phase that owns this failure.
+    pub const fn operation(&self) -> OriginalResourceCopyOperation {
+        self.operation
+    }
+}
+
+impl fmt::Display for OriginalResourceCopyError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.source.fmt(formatter)
+    }
+}
+
+impl std::error::Error for OriginalResourceCopyError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(self.source.as_ref())
+    }
 }
 
 /// Unified resource loader replacing DOS files and expanded-memory backends.
@@ -234,12 +280,50 @@ impl OriginalResourceStore {
         &self,
         source: &BloodResourceName,
         destination: &BloodResourceName,
-    ) -> Result<bool> {
-        let data = self.load(source)?;
+    ) -> std::result::Result<bool, OriginalResourceCopyError> {
+        let data = self.load(source).map_err(|error| {
+            OriginalResourceCopyError::new(OriginalResourceCopyOperation::OpenSource, error)
+        })?;
         if data.is_empty() {
             return Ok(false);
         }
-        self.write_loose(destination, &data)?;
+        let path = self.writable_path(destination).map_err(|error| {
+            OriginalResourceCopyError::new(OriginalResourceCopyOperation::CreateDestination, error)
+        })?;
+        let parent = path
+            .parent()
+            .context("writable resource path has no parent directory")
+            .map_err(|error| {
+                OriginalResourceCopyError::new(
+                    OriginalResourceCopyOperation::CreateDestination,
+                    error,
+                )
+            })?;
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("creating writable resource directory {}", parent.display()))
+            .map_err(|error| {
+                OriginalResourceCopyError::new(
+                    OriginalResourceCopyOperation::CreateDestination,
+                    error,
+                )
+            })?;
+        let mut destination_file = std::fs::File::create(&path)
+            .with_context(|| format!("creating writable resource {}", path.display()))
+            .map_err(|error| {
+                OriginalResourceCopyError::new(
+                    OriginalResourceCopyOperation::CreateDestination,
+                    error,
+                )
+            })?;
+        destination_file
+            .write_all(&data)
+            .with_context(|| format!("writing writable resource {}", path.display()))
+            .map_err(|error| {
+                OriginalResourceCopyError::new(
+                    OriginalResourceCopyOperation::WriteDestination,
+                    error,
+                )
+            })?;
         Ok(true)
     }
 
@@ -795,10 +879,12 @@ mod tests {
             let destination_name = resource_name("COPIED.DAT");
             if vector.name == "source_open_failure" {
                 let store = OriginalResourceStore::new(root.0.clone(), None, [], false);
-                assert!(
-                    store
-                        .copy_to_loose(&source_name, &destination_name)
-                        .is_err(),
+                let error = store
+                    .copy_to_loose(&source_name, &destination_name)
+                    .unwrap_err();
+                assert_eq!(
+                    error.operation(),
+                    OriginalResourceCopyOperation::OpenSource,
                     "{}",
                     vector.name
                 );
@@ -819,10 +905,12 @@ mod tests {
                     [],
                     false,
                 );
-                assert!(
-                    store
-                        .copy_to_loose(&source_name, &destination_name)
-                        .is_err(),
+                let error = store
+                    .copy_to_loose(&source_name, &destination_name)
+                    .unwrap_err();
+                assert_eq!(
+                    error.operation(),
+                    OriginalResourceCopyOperation::CreateDestination,
                     "{}",
                     vector.name
                 );

@@ -1,11 +1,11 @@
 //! Concrete flat runtime host for loading-screen and writable-data preparation.
 
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use commander_blood_formats::archive::BloodResourceName;
 
+use crate::assets::OriginalResourceCopyOperation;
 use crate::native::bloodprg::{
     BiosFont8x8, FontPoint, IndexedGamePalette, StartupFilesystemFailure,
     StartupFilesystemOperation, StartupLoadingText, StartupPreparationHost,
@@ -107,53 +107,31 @@ where
         name: &BloodResourceName,
     ) -> Result<StartupResourceCopyOutcome, StartupFilesystemFailure> {
         let store = self.runtime.data().resource_store();
-        let source = store.load(name).map_err(|error| {
-            StartupFilesystemFailure::new(
-                StartupFilesystemOperation::OpenSourceResource,
-                format!(
-                    "opening startup resource {} ({}): {error:#}",
-                    resource.index(),
-                    resource_name(name)
-                ),
-            )
-        })?;
-        if source.is_empty() {
-            return Ok(StartupResourceCopyOutcome::SkippedEmptySource);
+        match store.copy_to_loose(name, name) {
+            Ok(true) => Ok(StartupResourceCopyOutcome::Copied),
+            Ok(false) => Ok(StartupResourceCopyOutcome::SkippedEmptySource),
+            Err(error) => {
+                let operation = match error.operation() {
+                    OriginalResourceCopyOperation::OpenSource => {
+                        StartupFilesystemOperation::OpenSourceResource
+                    }
+                    OriginalResourceCopyOperation::CreateDestination => {
+                        StartupFilesystemOperation::CreateDestinationResource
+                    }
+                    OriginalResourceCopyOperation::WriteDestination => {
+                        StartupFilesystemOperation::CopyResourceData
+                    }
+                };
+                Err(StartupFilesystemFailure::new(
+                    operation,
+                    format!(
+                        "copying startup resource {} ({}): {error:#}",
+                        resource.index(),
+                        resource_name(name)
+                    ),
+                ))
+            }
         }
-
-        let destination = startup_writable_path(store.writable_root(), name);
-        let parent = destination
-            .parent()
-            .expect("validated resource destination has a writable-root parent");
-        std::fs::create_dir_all(parent).map_err(|error| {
-            StartupFilesystemFailure::new(
-                StartupFilesystemOperation::CreateDestinationResource,
-                format!(
-                    "creating startup destination directory {}: {error}",
-                    parent.display()
-                ),
-            )
-        })?;
-        let mut destination_file = std::fs::File::create(&destination).map_err(|error| {
-            StartupFilesystemFailure::new(
-                StartupFilesystemOperation::CreateDestinationResource,
-                format!(
-                    "creating startup destination {}: {error}",
-                    destination.display()
-                ),
-            )
-        })?;
-        destination_file.write_all(&source).map_err(|error| {
-            StartupFilesystemFailure::new(
-                StartupFilesystemOperation::CopyResourceData,
-                format!(
-                    "copying startup resource {} to {}: {error}",
-                    resource_name(name),
-                    destination.display()
-                ),
-            )
-        })?;
-        Ok(StartupResourceCopyOutcome::Copied)
     }
 }
 

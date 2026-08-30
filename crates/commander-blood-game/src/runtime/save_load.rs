@@ -100,11 +100,7 @@ impl RuntimeSaveLoad {
         services: &mut ModernGameServices<'_>,
         lifecycle: &mut GameLifecycleState,
     ) -> Result<SaveLoadMenuOutcome> {
-        self.state.ui_flags = if lifecycle.modal_ui_busy() {
-            self.state.ui_flags | MODAL_UI_FLAG
-        } else {
-            self.state.ui_flags & !MODAL_UI_FLAG
-        };
+        import_shared_modal_ui(&mut self.state, lifecycle);
         let editor_key = self.apply_pending_input(services)?;
         let mut directory = services
             .runtime()
@@ -146,7 +142,7 @@ impl RuntimeSaveLoad {
 
         lifecycle.profile_change_blockers.save_active = self.state.requests.save;
         lifecycle.profile_change_blockers.load_active = self.state.requests.load;
-        lifecycle.set_modal_ui_busy(self.state.ui_flags & MODAL_UI_FLAG != u8::MIN);
+        export_shared_modal_ui(&self.state, lifecycle);
         let effects = self.take_frame_effects();
         if effects.redraw_requested {
             lifecycle.navigation_rebuild_pending = true;
@@ -240,6 +236,18 @@ impl RuntimeSaveLoad {
         self.state.edit_name = menu.edit_name;
         Ok(())
     }
+}
+
+fn import_shared_modal_ui(state: &mut SaveLoadMenuState, lifecycle: &GameLifecycleState) {
+    state.ui_flags = if lifecycle.modal_ui_busy() {
+        state.ui_flags | MODAL_UI_FLAG
+    } else {
+        state.ui_flags & !MODAL_UI_FLAG
+    };
+}
+
+fn export_shared_modal_ui(state: &SaveLoadMenuState, lifecycle: &mut GameLifecycleState) {
+    lifecycle.set_modal_ui_busy(state.ui_flags & MODAL_UI_FLAG != u8::MIN);
 }
 
 const fn save_slot_movement_active(state: &SaveLoadMenuState) -> bool {
@@ -496,6 +504,24 @@ mod tests {
         assert!(runtime.queue_input(InputAction::Cancel));
         assert_eq!(runtime.pending_input, Some(InputAction::Cancel));
         assert!(runtime.state().is_active());
+    }
+
+    #[test]
+    fn save_load_boundary_preserves_and_releases_the_shared_modal_ui_owner() {
+        let mut runtime = RuntimeSaveLoad::default();
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_modal_ui_busy(true);
+
+        import_shared_modal_ui(&mut runtime.state, &lifecycle);
+        assert_ne!(runtime.state.ui_flags & MODAL_UI_FLAG, u8::MIN);
+
+        runtime.request_save();
+        export_shared_modal_ui(&runtime.state, &mut lifecycle);
+        assert!(lifecycle.modal_ui_busy());
+
+        runtime.state.cancel();
+        export_shared_modal_ui(&runtime.state, &mut lifecycle);
+        assert!(!lifecycle.modal_ui_busy());
     }
 
     #[test]
