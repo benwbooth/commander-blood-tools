@@ -106,6 +106,9 @@ pub trait RadioActorBackend: PresentationLineStepper {
     /// Play the radio-line completion clip.
     fn play_radio_completion_clip(&mut self);
 
+    /// Publish the pending-to-deferred C4 record transfer.
+    fn transfer_pending_radio_record(&mut self);
+
     /// Reset the shared presentation entity.
     fn reset_presentation_entity(&mut self);
 
@@ -166,6 +169,7 @@ pub fn update_radio_actor<RecordLink: Clone, Backend: RadioActorBackend>(
     backend.play_radio_completion_clip();
     state.deferred_record = state.pending_record.take();
     state.deferred_action = RadioActorDeferredAction::RadioRecord;
+    backend.transfer_pending_radio_record();
     line.flags = present_only();
     backend.reset_presentation_entity();
     state.redraw_requested = true;
@@ -219,6 +223,8 @@ mod tests {
         clip_called: bool,
         entity_called: bool,
         bank_called: bool,
+        transfer_called: bool,
+        call_order: Vec<&'static str>,
     }
 
     impl PresentationLineStepper for OracleBackend {
@@ -230,6 +236,7 @@ mod tests {
             _playback: &mut PresentationLinePlayback,
         ) -> Result<PresentationLineOutcome, Self::Error> {
             self.line_called = true;
+            self.call_order.push("line");
             Ok(if self.completed {
                 PresentationLineOutcome::Completed
             } else {
@@ -241,18 +248,27 @@ mod tests {
     impl RadioActorBackend for OracleBackend {
         fn request_radio_hand_animation(&mut self) {
             self.hand_animation_requested = true;
+            self.call_order.push("hand");
         }
 
         fn play_radio_completion_clip(&mut self) {
             self.clip_called = true;
+            self.call_order.push("clip");
+        }
+
+        fn transfer_pending_radio_record(&mut self) {
+            self.transfer_called = true;
+            self.call_order.push("transfer");
         }
 
         fn reset_presentation_entity(&mut self) {
             self.entity_called = true;
+            self.call_order.push("entity");
         }
 
         fn reload_radio_sound_bank(&mut self) {
             self.bank_called = true;
+            self.call_order.push("bank");
         }
     }
 
@@ -304,6 +320,12 @@ mod tests {
             );
             assert_eq!(
                 backend.clip_called,
+                vector.sound_clip == Some(2),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                backend.transfer_called,
                 vector.sound_clip == Some(2),
                 "{}",
                 vector.name
@@ -362,6 +384,14 @@ mod tests {
                 "{}",
                 vector.name
             );
+            let expected_order: &[&str] = if vector.sound_clip == Some(2) {
+                &["hand", "line", "clip", "transfer", "entity", "bank"]
+            } else if vector.line_helper_called {
+                &["hand", "line"]
+            } else {
+                &[]
+            };
+            assert_eq!(backend.call_order, expected_order, "{}", vector.name);
         }
     }
 

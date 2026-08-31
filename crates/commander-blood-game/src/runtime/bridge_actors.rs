@@ -287,10 +287,7 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         );
         playback.redraw_requested = state.redraw_requested();
         if matches!(outcome, Ok(RadioActorOutcome::Completed)) {
-            self.services.clear_pending_ship_presentation_owner();
-            if let Some(record) = state.take_deferred_record() {
-                self.services.defer_ship_actor_presentation(record);
-            }
+            let _ = state.take_deferred_record();
         }
         *self.radio = state;
         *self.playback = playback;
@@ -567,6 +564,14 @@ impl RadioActorBackend for RuntimeBridgeActorBackend<'_, '_> {
             .services
             .play_loaded_sound_bank_clip(RADIO_COMPLETION_CLIP);
         self.record_callback(result);
+    }
+
+    fn transfer_pending_radio_record(&mut self) {
+        let pending = self.services.pending_ship_presentation_owner();
+        self.services.clear_pending_ship_presentation_owner();
+        if let Some(record) = pending {
+            self.services.defer_ship_actor_presentation(record);
+        }
     }
 
     fn reset_presentation_entity(&mut self) {

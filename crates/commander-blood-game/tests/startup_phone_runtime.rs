@@ -101,7 +101,9 @@ const BOB_THAW_VIDEO: &str = "sq\\cryogel.hnm";
 const BOB_IDLE_VIDEO: &str = "PE\\aabob.hnm";
 const BOB_FIRST_TALK_VIDEO: &str = "PE\\bobc.hnm";
 const BOB_SECOND_TALK_VIDEO: &str = "PE\\bobd.hnm";
-const BOB_HONK_CHATTER_PREFIX: &str = "Yes sir, Cap'n Bob";
+const BOB_TEXT_ONLY_CHATTER_PREFIX: &str = "Yes sir, Cap'n Bob";
+const BOB_TEXT_ONLY_CHATTER_BYTES: &[u8] =
+    b"Yes sir, Cap'n Bob sir!... Just \rgetting the multiplexers toned up... \r\r";
 const BOB_GOODBYE_CLICK: &str = "sclick 225 58";
 const BOB_POINTER_LEFT_MOVE: &str = "motion -2560 0";
 const BOB_POINTER_RIGHT_MOVE: &str = "motion 1280 0";
@@ -683,12 +685,17 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
             presentation_u64(record, "text_display_active") != u64::MIN
                 && record["semantic"]["subtitle"]
                     .as_str()
-                    .is_some_and(|subtitle| subtitle.starts_with(BOB_HONK_CHATTER_PREFIX))
+                    .is_some_and(|subtitle| subtitle.starts_with(BOB_TEXT_ONLY_CHATTER_PREFIX))
         })
         .expect("Bob's opening Honk response produced chatter without its authored subtitle");
     assert_eq!(
         honk_chatter["semantic"]["video"]["active_resource"], BOB_IDLE_VIDEO,
         "Honk's text-only response did not return Bob to his authored idle clip"
+    );
+    assert_eq!(
+        honk_chatter["semantic"]["subtitle_bytes"],
+        serde_json::json!(BOB_TEXT_ONLY_CHATTER_BYTES),
+        "Bob's SCRIPT2 chatter did not preserve the exact A6 dictionary bytes and native CR wrapping"
     );
     let subtitle_raster = &honk_chatter["semantic"]["subtitle_raster"];
     let expected_subtitle_pixels = subtitle_raster["expected_pixel_count"]

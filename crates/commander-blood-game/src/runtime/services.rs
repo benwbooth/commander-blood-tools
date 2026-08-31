@@ -4378,6 +4378,7 @@ impl<'window> ModernGameServices<'window> {
                 "events": audio_event_history,
             },
             "subtitle": subtitle,
+            "subtitle_bytes": text.subtitle_text.as_ref(),
             "subtitle_raster": subtitle_raster.map(|audit| serde_json::json!({
                 "expected_pixel_count": audit.expected_pixel_count,
                 "matching_pixel_count": audit.matching_pixel_count,
