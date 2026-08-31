@@ -232,6 +232,7 @@ impl RuntimeScriptSystem {
         text.request_flags = source.request_flags;
         text.subtitle_word_list_mode = source.subtitle_word_list_mode;
         text.subtitle_voice_trigger = source.subtitle_voice_trigger;
+        text.dialogue_chatter_active = source.dialogue_chatter_active;
         text.menu_pending = source.text_menu_pending;
         text.selected_line = source.text_selector;
         text.dialogue_hold_countdown = source.dialogue_hold_countdown;
@@ -270,6 +271,7 @@ impl RuntimeScriptSystem {
         target.request_flags = text.request_flags;
         target.subtitle_word_list_mode = text.subtitle_word_list_mode;
         target.subtitle_voice_trigger = text.subtitle_voice_trigger;
+        target.dialogue_chatter_active = text.dialogue_chatter_active;
         target.text_menu_pending = text.menu_pending;
         target.text_selector = text.selected_line;
         target.word_buffer_nonempty = self.presentation_word_buffer_nonempty;
@@ -1360,6 +1362,7 @@ mod tests {
             crate::native::bloodprg::PresentationRequestFlags::decode(3);
         lifecycle.presentation.subtitle_word_list_mode = true;
         lifecycle.presentation.subtitle_voice_trigger = true;
+        lifecycle.presentation.dialogue_chatter_active = true;
         lifecycle.presentation.text_menu_pending = true;
         lifecycle.presentation.dialogue_hold_countdown = 12;
         lifecycle.set_presentation_interface_active(true);
@@ -1396,6 +1399,7 @@ mod tests {
             }
         );
         assert!(scripts.service.presentation_state().name_lookup_enabled);
+        assert!(scripts.text_presentation().dialogue_chatter_active);
         assert_eq!(
             scripts.backend().environment_activity(),
             ScriptEnvironmentActivity {
@@ -1419,6 +1423,7 @@ mod tests {
             crate::native::bloodprg::PresentationRequestFlags::default();
         scripts.dispatch.text_presentation.subtitle_word_list_mode = false;
         scripts.dispatch.text_presentation.subtitle_voice_trigger = false;
+        scripts.dispatch.text_presentation.dialogue_chatter_active = false;
         scripts.dispatch.text_presentation.menu_pending = false;
         scripts.dispatch.text_presentation.menu_word_count = 2;
         scripts.presentation_word_buffer_nonempty = true;
@@ -1447,6 +1452,7 @@ mod tests {
         assert_eq!(lifecycle.presentation.request_flags.bits(), u8::MIN);
         assert!(!lifecycle.presentation.subtitle_word_list_mode);
         assert!(!lifecycle.presentation.subtitle_voice_trigger);
+        assert!(!lifecycle.presentation.dialogue_chatter_active);
         assert!(!lifecycle.presentation.text_menu_pending);
         assert!(lifecycle.presentation.word_buffer_nonempty);
         assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 4);
@@ -1847,6 +1853,7 @@ mod tests {
             crate::native::bloodprg::PresentationRequestFlags::decode(3);
         lifecycle.presentation.subtitle_word_list_mode = true;
         lifecycle.presentation.subtitle_voice_trigger = true;
+        lifecycle.presentation.dialogue_chatter_active = true;
         lifecycle.presentation.text_menu_pending = true;
         lifecycle.presentation.text_selector = Some(20);
         lifecycle.presentation.dialogue_hold_countdown = 17;
@@ -1872,6 +1879,7 @@ mod tests {
         assert_eq!(lifecycle.presentation.request_flags.bits(), 3);
         assert!(lifecycle.presentation.subtitle_word_list_mode);
         assert!(lifecycle.presentation.subtitle_voice_trigger);
+        assert!(lifecycle.presentation.dialogue_chatter_active);
         assert!(lifecycle.presentation.text_menu_pending);
         assert_eq!(lifecycle.presentation.text_selector, Some(20));
         assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 17);

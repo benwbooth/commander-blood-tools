@@ -29,6 +29,26 @@ fn text_only_selector_selects_character_idle_line() {
     assert!(!state.presentation.c2_presentation_gate);
 }
 
+#[test]
+fn default_presentation_line_clears_chatter_without_clearing_subtitle_mode() {
+    let mut state = GameLifecycleState::default();
+    state.presentation.active = true;
+    state.presentation.scene_gate_active = true;
+    state.presentation.request_flags = PresentationRequestFlags::decode(1);
+    state.presentation.subtitle_word_list_mode = true;
+    state.presentation.dialogue_chatter_active = true;
+    let mut scene_link = GameSceneLink::Initial;
+
+    update_game_presentation_ownership(&mut state, &mut scene_link);
+
+    assert_eq!(
+        state.presentation.active_line,
+        Some(DEFAULT_PRESENTATION_LINE)
+    );
+    assert!(state.presentation.subtitle_word_list_mode);
+    assert!(!state.presentation.dialogue_chatter_active);
+}
+
 #[derive(Deserialize)]
 struct MainOracle {
     name: String,
@@ -56,6 +76,7 @@ struct Scenario {
     completion_audio_pending: bool,
     subtitle_word_list_mode: bool,
     subtitle_voice_trigger: bool,
+    dialogue_chatter_active: bool,
     dialogue_hold_complete: bool,
     word_buffer_nonempty: bool,
     dialogue_hold_countdown: u16,
@@ -84,6 +105,7 @@ impl Default for Scenario {
             completion_audio_pending: false,
             subtitle_word_list_mode: false,
             subtitle_voice_trigger: false,
+            dialogue_chatter_active: false,
             dialogue_hold_complete: false,
             word_buffer_nonempty: false,
             dialogue_hold_countdown: u16::MIN,
@@ -100,6 +122,7 @@ struct OracleHost {
     input_dispatches: usize,
     pending_profiles_at_input: Vec<Option<ScriptProfileId>>,
     calls: Vec<&'static str>,
+    chatter_at_audio: Vec<bool>,
     fail_bridge_render: bool,
 }
 
@@ -223,7 +246,12 @@ impl GameLifecycleHost for OracleHost {
 
     state_host_call!(update_confirm_dialog, "confirm_dialog_step");
     plain_host_call!(refill_audio_stream, "snd_stream_refill");
-    state_host_call!(process_audio, "audio_process_ade");
+    fn process_audio(&mut self, state: &mut GameLifecycleState) -> Result<(), Self::Error> {
+        self.call("audio_process_ade");
+        self.chatter_at_audio
+            .push(state.presentation.dialogue_chatter_active);
+        Ok(())
+    }
 
     fn update_ship_presentation(
         &mut self,
@@ -314,6 +342,7 @@ fn lifecycle_matches_all_original_control_flow_vectors() {
             input_dispatches: usize::MIN,
             pending_profiles_at_input: Vec::new(),
             calls: Vec::new(),
+            chatter_at_audio: Vec::new(),
             fail_bridge_render: false,
         };
         let mut state = GameLifecycleState::default();
@@ -343,6 +372,13 @@ fn lifecycle_matches_all_original_control_flow_vectors() {
         );
         assert_case_outcome(&vector.name, outcome.exit);
         assert_case_state(&vector.name, &state);
+        if matches!(
+            vector.name.as_str(),
+            "request_bit_zero_preserves_text_modes_and_plays_audio"
+                | "request_bit_one_clears_text_modes"
+        ) {
+            assert_eq!(host.chatter_at_audio, [true], "{}", vector.name);
+        }
         if scenario.panorama_opens {
             assert_eq!(
                 host.pending_profiles_at_input.first(),
@@ -366,6 +402,7 @@ fn runtime_errors_clean_up_without_playing_the_credits() {
         input_dispatches: usize::MIN,
         pending_profiles_at_input: Vec::new(),
         calls: Vec::new(),
+        chatter_at_audio: Vec::new(),
         fail_bridge_render: true,
     };
     let mut state = GameLifecycleState::default();
@@ -392,6 +429,7 @@ fn automatic_bridge_seek_suppresses_native_pointer_polling() {
         input_dispatches: usize::MIN,
         pending_profiles_at_input: Vec::new(),
         calls: Vec::new(),
+        chatter_at_audio: Vec::new(),
         fail_bridge_render: false,
     };
     let mut state = GameLifecycleState::default();
@@ -424,6 +462,7 @@ fn apply_scenario(state: &mut GameLifecycleState, scenario: Scenario) {
         completion_audio_pending: scenario.completion_audio_pending,
         subtitle_word_list_mode: scenario.subtitle_word_list_mode,
         subtitle_voice_trigger: scenario.subtitle_voice_trigger,
+        dialogue_chatter_active: scenario.dialogue_chatter_active,
         dialogue_hold_complete: scenario.dialogue_hold_complete,
         word_buffer_nonempty: scenario.word_buffer_nonempty,
         dialogue_hold_countdown: scenario.dialogue_hold_countdown,
@@ -483,6 +522,7 @@ fn scenario_for(name: &str) -> Scenario {
             completion_audio_pending: true,
             subtitle_word_list_mode: true,
             subtitle_voice_trigger: true,
+            dialogue_chatter_active: true,
             ..Scenario::default()
         },
         "request_bit_one_clears_text_modes" => Scenario {
@@ -490,6 +530,7 @@ fn scenario_for(name: &str) -> Scenario {
             request_flags: 2,
             subtitle_word_list_mode: true,
             subtitle_voice_trigger: true,
+            dialogue_chatter_active: true,
             ..Scenario::default()
         },
         "dialogue_countdown_holds_completion" => Scenario {
@@ -654,11 +695,13 @@ fn assert_case_state(name: &str, state: &GameLifecycleState) {
         "request_bit_zero_preserves_text_modes_and_plays_audio" => {
             assert!(state.presentation.subtitle_word_list_mode);
             assert!(state.presentation.subtitle_voice_trigger);
+            assert!(state.presentation.dialogue_chatter_active);
             assert_eq!(state.clip_playback_state, u16::MIN);
         }
         "request_bit_one_clears_text_modes" => {
-            assert!(!state.presentation.subtitle_word_list_mode);
+            assert!(state.presentation.subtitle_word_list_mode);
             assert!(!state.presentation.subtitle_voice_trigger);
+            assert!(!state.presentation.dialogue_chatter_active);
         }
         "dialogue_countdown_holds_completion" => {
             assert!(state.presentation.dialogue_hold_complete);

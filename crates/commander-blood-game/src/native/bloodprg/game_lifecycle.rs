@@ -191,6 +191,8 @@ pub struct GamePresentationScheduler {
     pub subtitle_word_list_mode: bool,
     /// Whether the subtitle voice selector is armed.
     pub subtitle_voice_trigger: bool,
+    /// Whether deterministic dialogue chatter is eligible for playback.
+    pub dialogue_chatter_active: bool,
     /// One-shot completion audio request.
     pub completion_audio_pending: bool,
 }
@@ -221,6 +223,7 @@ impl Default for GamePresentationScheduler {
             menu_word_source: GameMenuWordSource::Current,
             subtitle_word_list_mode: false,
             subtitle_voice_trigger: false,
+            dialogue_chatter_active: false,
             completion_audio_pending: false,
         }
     }
@@ -744,7 +747,7 @@ pub fn update_game_presentation_ownership(
                     presentation_line_for_text_selector,
                 ));
             } else if !presentation.c2_presentation_gate {
-                presentation.subtitle_word_list_mode = false;
+                presentation.dialogue_chatter_active = false;
                 presentation.active_line = Some(DEFAULT_PRESENTATION_LINE);
             }
         } else if presentation.active_line != Some(DEFAULT_PRESENTATION_LINE)
@@ -772,13 +775,6 @@ pub fn update_game_presentation_ownership(
                 presentation.active_line = Some(DEFAULT_PRESENTATION_LINE);
             }
         }
-    }
-
-    if presentation.request_flags.secondary_request_pending()
-        || presentation.request_flags.bits() & PRIMARY_TEXT_REQUEST_PENDING == u8::MIN
-    {
-        presentation.subtitle_word_list_mode = false;
-        presentation.subtitle_voice_trigger = false;
     }
 }
 
@@ -817,6 +813,7 @@ fn run_frame_tail<Host: GameLifecycleHost>(
     host.update_scene_transition(scene_link, state)?;
     host.update_save_load(state)?;
     host.update_presentation_choice(state)?;
+    finish_presentation_audio_latches(state);
     if state.frame_presented {
         host.mark_presentation_ready(state)?;
     }
@@ -828,6 +825,16 @@ fn run_frame_tail<Host: GameLifecycleHost>(
     host.pace_frame()?;
     host.present_frame()?;
     Ok(())
+}
+
+fn finish_presentation_audio_latches(state: &mut GameLifecycleState) {
+    let presentation = &mut state.presentation;
+    if presentation.request_flags.secondary_request_pending()
+        || presentation.request_flags.bits() & PRIMARY_TEXT_REQUEST_PENDING == u8::MIN
+    {
+        presentation.dialogue_chatter_active = false;
+        presentation.subtitle_voice_trigger = false;
+    }
 }
 
 fn shutdown_game<Host: GameLifecycleHost>(

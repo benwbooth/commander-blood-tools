@@ -445,8 +445,10 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
 
     fn process_audio(&mut self, state: &mut GameLifecycleState) -> Result<()> {
         self.services
-            .process_runtime_audio_events(state.pause_hud_active)
-            .map(|_| ())
+            .process_runtime_audio_events(state.pause_hud_active)?;
+        state.presentation.dialogue_chatter_active =
+            self.services.text_presentation().dialogue_chatter_active;
+        Ok(())
     }
 
     fn update_ship_presentation(
