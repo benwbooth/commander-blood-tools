@@ -47,8 +47,6 @@ pub struct AlienPaletteAnimationState {
     pub step: i8,
     /// Frames remaining before reversing the phase increment.
     pub countdown: u8,
-    /// CROOLIS/SCRUT countdown that controls three palette pulse levels.
-    pub pulse_countdown: u16,
     /// Current CROOLIS/SCRUT pulse levels.
     pub pulse_levels: [u16; AXIS_COUNT],
 }
@@ -96,6 +94,7 @@ pub fn update_palette_animation(
     species: AlienSpecies,
     pose: &mut AlienModelPose,
     input: AlienPaletteInput,
+    scene_flags: &mut u16,
     method_delta: &mut i16,
     state: &mut AlienPaletteAnimationState,
     texture: &mut [u8],
@@ -130,9 +129,9 @@ pub fn update_palette_animation(
     node.local_position[X_AXIS] = node.local_position[X_AXIS].wrapping_add(horizontal);
     node.local_position[Y_AXIS] = node.local_position[Y_AXIS].wrapping_add(vertical);
 
-    if species != AlienSpecies::Amer && state.pulse_countdown != u16::MIN {
-        state.pulse_countdown = state.pulse_countdown.wrapping_sub(1);
-        let shift = u32::from(state.pulse_countdown & PULSE_SHIFT_MASK);
+    if species != AlienSpecies::Amer && *scene_flags != u16::MIN {
+        *scene_flags = scene_flags.wrapping_sub(1);
+        let shift = u32::from(*scene_flags & PULSE_SHIFT_MASK);
         state.pulse_levels = PULSE_BASE_LEVELS.map(|level| level << shift);
     }
 
@@ -274,7 +273,7 @@ mod tests {
         previous_level: u16,
         step: i8,
         countdown: u8,
-        pulse_countdown: u16,
+        scene_flags: u16,
     }
 
     const INITIAL_CASES: [InitialCase; 8] = [
@@ -282,49 +281,49 @@ mod tests {
             previous_level: 32,
             step: 1,
             countdown: 2,
-            pulse_countdown: 0,
+            scene_flags: 0,
         },
         InitialCase {
             previous_level: 112,
             step: 1,
             countdown: 2,
-            pulse_countdown: 1,
+            scene_flags: 1,
         },
         InitialCase {
             previous_level: 64,
             step: 0,
             countdown: 2,
-            pulse_countdown: 2,
+            scene_flags: 2,
         },
         InitialCase {
             previous_level: 56,
             step: -4,
             countdown: 2,
-            pulse_countdown: 3,
+            scene_flags: 3,
         },
         InitialCase {
             previous_level: 96,
             step: -4,
             countdown: 1,
-            pulse_countdown: 4,
+            scene_flags: 4,
         },
         InitialCase {
             previous_level: 60,
             step: -2,
             countdown: 3,
-            pulse_countdown: 5,
+            scene_flags: 5,
         },
         InitialCase {
             previous_level: 80,
             step: 2,
             countdown: 4,
-            pulse_countdown: 256,
+            scene_flags: 256,
         },
         InitialCase {
             previous_level: 100,
             step: -3,
             countdown: 0,
-            pulse_countdown: u16::MAX,
+            scene_flags: u16::MAX,
         },
     ];
 
@@ -437,9 +436,9 @@ mod tests {
                     previous_level: initial.previous_level,
                     step: initial.step,
                     countdown: initial.countdown,
-                    pulse_countdown: initial.pulse_countdown,
                     pulse_levels: INITIAL_PULSE_LEVELS,
                 };
+                let mut scene_flags = initial.scene_flags;
                 let mut texture = (usize::MIN..TEST_TEXTURE_BYTE_COUNT)
                     .map(|position| {
                         ((position * TEXTURE_PATTERN_MULTIPLIER
@@ -455,6 +454,7 @@ mod tests {
                         x: vector.mouse[X_AXIS],
                         y: vector.mouse[Y_AXIS],
                     },
+                    &mut scene_flags,
                     &mut method_delta,
                     &mut state,
                     &mut texture,
@@ -480,7 +480,7 @@ mod tests {
                     "{}",
                     vector.name
                 );
-                assert_eq!(state.pulse_countdown, vector.pulse_after, "{}", vector.name);
+                assert_eq!(scene_flags, vector.pulse_after, "{}", vector.name);
                 assert_eq!(
                     update.changed_texture_bytes, vector.changed_palette_bytes,
                     "{}",
@@ -507,12 +507,11 @@ mod tests {
                 for axis in usize::MIN..AXIS_COUNT {
                     assert_eq!(pose.root.matrix[axis][axis], ROOT_DIAGONAL);
                 }
-                if species(&vector.module) == AlienSpecies::Amer
-                    || initial.pulse_countdown == u16::MIN
+                if species(&vector.module) == AlienSpecies::Amer || initial.scene_flags == u16::MIN
                 {
                     assert_eq!(state.pulse_levels, INITIAL_PULSE_LEVELS);
                 } else {
-                    let shift = u32::from(state.pulse_countdown & PULSE_SHIFT_MASK);
+                    let shift = u32::from(scene_flags & PULSE_SHIFT_MASK);
                     assert_eq!(
                         state.pulse_levels,
                         PULSE_BASE_LEVELS.map(|level| level << shift)
@@ -528,11 +527,13 @@ mod tests {
         let mut pose = model_pose(usize::MIN);
         pose.nodes.clear();
         let mut method_delta = i16::MIN;
+        let mut scene_flags = u16::MIN;
         assert_eq!(
             update_palette_animation(
                 AlienSpecies::Amer,
                 &mut pose,
                 AlienPaletteInput::default(),
+                &mut scene_flags,
                 &mut method_delta,
                 &mut AlienPaletteAnimationState::default(),
                 &mut [],
@@ -543,6 +544,7 @@ mod tests {
 
         let mut pose = model_pose(usize::MIN);
         let mut method_delta = 100;
+        let mut scene_flags = u16::MIN;
         let mut state = AlienPaletteAnimationState {
             previous_level: 96,
             step: 1,
@@ -554,6 +556,7 @@ mod tests {
                 AlienSpecies::Amer,
                 &mut pose,
                 AlienPaletteInput::default(),
+                &mut scene_flags,
                 &mut method_delta,
                 &mut state,
                 &mut [],

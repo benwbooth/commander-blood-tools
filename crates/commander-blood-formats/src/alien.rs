@@ -41,7 +41,7 @@ const PALETTE_PREVIOUS_LEVEL_POSITION: usize = 0x009b;
 const PALETTE_CYCLE_POSITION: usize = 0x009f;
 const PALETTE_CYCLE_STEP_FIELD: usize = 0;
 const PALETTE_CYCLE_COUNTDOWN_FIELD: usize = 1;
-const OTHER_PALETTE_PULSE_COUNTDOWN_POSITION: usize = 0x02fc;
+const OTHER_SCENE_FLAGS_POSITION: usize = 0x02fc;
 const PALETTE_PULSE_POSITIONS: [usize; AXIS_COUNT] = [0x2536, 0x2594, 0x25f2];
 const PALETTE_ENTRY_COUNT: usize = 256;
 const RGB_COMPONENT_COUNT: usize = 3;
@@ -585,8 +585,6 @@ pub struct AlienPaletteAnimationData {
     pub step: i8,
     /// Frames remaining before reversing the increment.
     pub countdown: u8,
-    /// CROOLIS/SCRUT pulse countdown.
-    pub pulse_countdown: u16,
     /// Initial low-word palette pulse levels.
     pub pulse_levels: [u16; AXIS_COUNT],
 }
@@ -815,6 +813,8 @@ pub struct AlienAsset {
     pub camera: AlienCameraData,
     /// Initial shared signed delta consumed by behavior methods.
     pub initial_method_delta: i16,
+    /// Initial shared input and palette-interaction flags from code data.
+    pub initial_scene_flags: u16,
     /// Initial deterministic state shared by animation and ring callbacks.
     pub initial_behavior_random_state: u16,
     /// Initial scene-wide wave selection and sample state.
@@ -1667,6 +1667,12 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
         raster_reciprocals,
         camera,
         initial_method_delta: read_i16(data, INITIAL_METHOD_DELTA_POSITION)?,
+        initial_scene_flags: match kind {
+            AlienXdbKind::Amer => u16::MIN,
+            AlienXdbKind::Croolis | AlienXdbKind::Scrut => {
+                read_u16(data, OTHER_SCENE_FLAGS_POSITION)?
+            }
+        },
         initial_behavior_random_state: read_u16(data, data_start + BEHAVIOR_RANDOM_STATE_POSITION)?,
         wave_scene: AlienWaveSceneData {
             selection,
@@ -1677,12 +1683,6 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
             previous_level: read_u16(data, PALETTE_PREVIOUS_LEVEL_POSITION)?,
             step: *data.get(PALETTE_CYCLE_POSITION + PALETTE_CYCLE_STEP_FIELD)? as i8,
             countdown: *data.get(PALETTE_CYCLE_POSITION + PALETTE_CYCLE_COUNTDOWN_FIELD)?,
-            pulse_countdown: match kind {
-                AlienXdbKind::Amer => u16::MIN,
-                AlienXdbKind::Croolis | AlienXdbKind::Scrut => {
-                    read_u16(data, OTHER_PALETTE_PULSE_COUNTDOWN_POSITION)?
-                }
-            },
             pulse_levels: checked_array(|axis| {
                 read_u16(data, data_start + PALETTE_PULSE_POSITIONS[axis])
             })?,
@@ -1755,7 +1755,7 @@ mod tests {
             assert_eq!(asset.palette_animation.previous_level, u16::MIN);
             assert_eq!(asset.palette_animation.step, 1);
             assert_eq!(asset.palette_animation.countdown, 3);
-            assert_eq!(asset.palette_animation.pulse_countdown, u16::MIN);
+            assert_eq!(asset.initial_scene_flags, u16::MIN);
             assert_eq!(
                 asset.palette_animation.pulse_levels,
                 EXPECTED_PALETTE_PULSE_LEVELS

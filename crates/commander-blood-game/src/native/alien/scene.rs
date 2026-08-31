@@ -1144,6 +1144,7 @@ impl AlienScene {
             pan: INITIAL_PAN,
             secondary_pan: INITIAL_SECONDARY_PAN,
             depth_velocity: INITIAL_DEPTH_VELOCITY,
+            scene_flags: asset.initial_scene_flags,
             ..AlienCameraControl::default()
         };
         let primary = AlienPrimaryMeshPose::from_model(&asset.primary_model);
@@ -1307,7 +1308,6 @@ impl AlienScene {
             previous_level: asset.palette_animation.previous_level,
             step: asset.palette_animation.step,
             countdown: asset.palette_animation.countdown,
-            pulse_countdown: asset.palette_animation.pulse_countdown,
             pulse_levels: asset.palette_animation.pulse_levels,
         };
         Self {
@@ -1393,6 +1393,7 @@ impl AlienScene {
                         self.species,
                         pose,
                         palette_input,
+                        &mut self.control.scene_flags,
                         &mut self.callback_state.method_delta,
                         &mut self.palette_state,
                         &mut self.asset.texture.pixels,
@@ -1634,7 +1635,7 @@ mod tests {
 
     use commander_blood_formats::alien::{AlienXdbKind, decode_alien_xdb};
 
-    use crate::native::alien::AlienResumeUpdate;
+    use crate::native::alien::{AlienInputAction, AlienResumeUpdate};
 
     use super::*;
 
@@ -1654,6 +1655,9 @@ mod tests {
     const REMAP_TEST_PREVIOUS_LEVEL: u16 = 56;
     const AMER_WAVE_MODEL_INDEX: usize = 16;
     const AMER_WAVE_NODE_INDEX: usize = 1;
+    const INTERACTION_PULSE_REQUEST: u16 = 16;
+    const INTERACTION_PULSE_AFTER_PALETTE_STEP: u16 = 15;
+    const INTERACTION_PULSE_LEVELS: [u16; AXIS_COUNT] = [80, 104, 88];
 
     fn original_xdb(name: &str) -> Option<PathBuf> {
         [
@@ -1813,6 +1817,36 @@ mod tests {
                 remapped_texture.len(),
                 scene.asset.texture.width * scene.asset.texture.height
             );
+        }
+    }
+
+    #[test]
+    fn croolis_and_scrut_space_input_drives_the_shared_palette_pulse_word() {
+        for (kind, filename) in [
+            (AlienXdbKind::Croolis, "croolis.xdb"),
+            (AlienXdbKind::Scrut, "scrut.xdb"),
+        ] {
+            let Some(path) = original_xdb(filename) else {
+                continue;
+            };
+            let data = std::fs::read(path).unwrap();
+            let asset = decode_alien_xdb(&data, kind).unwrap();
+            let mut scene = AlienScene::from_asset(asset);
+            assert_eq!(scene.control.scene_flags, u16::MIN);
+
+            scene.control.queue_action(AlienInputAction::Interact);
+            scene.step(CENTERED_MOUSE).unwrap();
+
+            assert_eq!(
+                scene.control.scene_flags, INTERACTION_PULSE_AFTER_PALETTE_STEP,
+                "{kind:?} input and palette callbacks did not share the code-data flag word"
+            );
+            assert_eq!(
+                INTERACTION_PULSE_REQUEST - scene.control.scene_flags,
+                1,
+                "{kind:?} palette callback did not consume exactly one pulse tick"
+            );
+            assert_eq!(scene.palette_state.pulse_levels, INTERACTION_PULSE_LEVELS);
         }
     }
 
