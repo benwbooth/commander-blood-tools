@@ -528,8 +528,10 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
                     self.services
                         .reproject_manu3_for_pointer(pointer, interpolation_fraction)?;
                 }
-                self.services
-                    .present_current_bridge_frame(self.indexed_bridge_ui_active)?;
+                self.services.present_current_bridge_frame(
+                    self.indexed_bridge_ui_active,
+                    self.manu3_visible,
+                )?;
             }
             Ok(())
         }
@@ -537,7 +539,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
 
     fn present_frame(&mut self) -> Result<()> {
         self.services
-            .present_current_bridge_frame(self.indexed_bridge_ui_active)?;
+            .present_current_bridge_frame(self.indexed_bridge_ui_active, self.manu3_visible)?;
         self.main_frames_presented = self.main_frames_presented.wrapping_add(1);
         Ok(())
     }

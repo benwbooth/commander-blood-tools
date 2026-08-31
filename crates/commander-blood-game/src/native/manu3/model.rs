@@ -641,6 +641,70 @@ mod tests {
     }
 
     #[test]
+    fn visual_interpolation_produces_real_between_tick_hand_geometry() {
+        const ACTIVE_ANIMATION_SELECTOR: u16 = 1;
+        const HALF_FRAME: f32 = 0.5;
+        const FULL_FRAME: f32 = 1.0;
+        const MAXIMUM_SEARCH_FRAMES: usize = 32;
+
+        let Some(path) = original_xdb() else {
+            return;
+        };
+        let asset = decode_manu3(&std::fs::read(path).unwrap()).unwrap();
+        let mut model = Manu3Model::from_asset(asset).unwrap();
+        model
+            .render_frame(Manu3FrameRequest {
+                cursor: CENTERED_CURSOR,
+                animation_selector: ACTIVE_ANIMATION_SELECTOR,
+            })
+            .unwrap();
+
+        for _ in 0..MAXIMUM_SEARCH_FRAMES {
+            let animation_before = model.animation.clone();
+            let pose_before = model
+                .nodes
+                .iter()
+                .map(|node| (node.local_position, node.angles))
+                .collect::<Vec<_>>();
+
+            model
+                .reproject_interpolated_frame(CENTERED_CURSOR, 0.0)
+                .unwrap();
+            let current = model.render_triangles.clone();
+            model
+                .reproject_interpolated_frame(CENTERED_CURSOR, HALF_FRAME)
+                .unwrap();
+            let intermediate = model.render_triangles.clone();
+            model
+                .reproject_interpolated_frame(CENTERED_CURSOR, FULL_FRAME)
+                .unwrap();
+            let predicted = model.render_triangles.clone();
+
+            assert_eq!(model.animation, animation_before);
+            assert_eq!(
+                model
+                    .nodes
+                    .iter()
+                    .map(|node| (node.local_position, node.angles))
+                    .collect::<Vec<_>>(),
+                pose_before
+            );
+            if current != predicted && intermediate != current && intermediate != predicted {
+                return;
+            }
+
+            model
+                .render_frame(Manu3FrameRequest {
+                    cursor: CENTERED_CURSOR,
+                    animation_selector: u16::MIN,
+                })
+                .unwrap();
+        }
+
+        panic!("authored MANU3 animation produced no distinct between-tick geometry");
+    }
+
+    #[test]
     fn target_interpolation_uses_signed_wrapping_deltas() {
         const HALF_FRAME: f32 = 0.5;
         const CURRENT: [i16; 3] = [0, 100, i16::MAX - 7];

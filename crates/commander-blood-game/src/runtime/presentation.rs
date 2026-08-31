@@ -121,6 +121,7 @@ impl<'window> RuntimePresentationHost<'window> {
         runtime: &OriginalGameRuntime,
         bridge_frame: &BridgeSceneFrame,
         composition: RuntimeBridgeComposition,
+        manu3_visible: bool,
     ) -> Result<()> {
         // Frame-tail text and palette work occurs after the native chunky-copy
         // boundary, so refresh the modern texture immediately before drawing.
@@ -133,10 +134,11 @@ impl<'window> RuntimePresentationHost<'window> {
                 self.submit_indexed_frame(runtime)?;
             }
         }
-        let manu3_triangles = runtime
+        let all_manu3_triangles = runtime
             .manu3()
             .map(|model| model.render_triangles())
             .unwrap_or(&[]);
+        let manu3_triangles = select_manu3_triangles(all_manu3_triangles, manu3_visible);
         let renderer = self.renderer_mut()?;
         renderer
             .update_bridge_palette(runtime.live_palette())
@@ -195,6 +197,10 @@ impl<'window> RuntimePresentationHost<'window> {
             .as_mut()
             .context("wgpu renderer is being reconfigured")
     }
+}
+
+fn select_manu3_triangles(triangles: &[RenderTriangle], visible: bool) -> &[RenderTriangle] {
+    if visible { triangles } else { &[] }
 }
 
 fn main_game_renderer<'window>(
@@ -311,10 +317,19 @@ fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::native::manu3::raster::RenderVertex;
 
     const TEST_PALETTE_INDEX: u8 = 19;
     const TEST_COLOR: [u8; 3] = [63, 32, 0];
     const EXPANDED_TEST_COLOR: [u8; 4] = [255, 129, 0, 255];
+    const TEST_MANU3_TRIANGLE: RenderTriangle = RenderTriangle {
+        source_face: 0,
+        vertices: [RenderVertex {
+            screen: [0, 0],
+            texture: [0, 0],
+            depth: 1,
+        }; 3],
+    };
 
     #[test]
     fn runtime_frame_preserves_indices_and_expands_the_native_palette() {
@@ -363,5 +378,13 @@ mod tests {
             &rgba[RGBA_COMPONENT_COUNT * 2..RGBA_COMPONENT_COUNT * 3],
             &[0, 0, 0, 0]
         );
+    }
+
+    #[test]
+    fn suppressed_manu3_dispatch_cannot_reuse_stale_triangles() {
+        let triangles = [TEST_MANU3_TRIANGLE];
+
+        assert_eq!(select_manu3_triangles(&triangles, true), triangles);
+        assert!(select_manu3_triangles(&triangles, false).is_empty());
     }
 }

@@ -3163,6 +3163,7 @@ impl<'window> ModernGameServices<'window> {
             &self.runtime,
             bridge_frame,
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay,
+            true,
         )?;
         Ok(true)
     }
@@ -3243,15 +3244,10 @@ impl<'window> ModernGameServices<'window> {
         self.presentation.submit_indexed_frame(&self.runtime)
     }
 
-    /// Present current indexed artwork and the optional MANU3 overlay.
+    /// Present current indexed artwork without retaining the interactive MANU3 layer.
     pub fn present_artwork(&mut self) -> Result<()> {
         self.ensure_main_viewport()?;
-        let triangles = self
-            .runtime
-            .manu3()
-            .map(|model| model.render_triangles())
-            .unwrap_or(&[]);
-        self.presentation.present_artwork(triangles)
+        self.presentation.present_artwork(&[])
     }
 
     /// Advance the translated bridge steering, panorama, and point-cloud frame.
@@ -3782,11 +3778,15 @@ impl<'window> ModernGameServices<'window> {
             bridge_frame.steering.view_changed,
         );
         self.presentation
-            .present_frame(&self.runtime, bridge_frame, composition)
+            .present_frame(&self.runtime, bridge_frame, composition, true)
     }
 
     /// Present the most recently generated bridge frame.
-    pub fn present_current_bridge_frame(&mut self, indexed_ui_active: bool) -> Result<()> {
+    pub fn present_current_bridge_frame(
+        &mut self,
+        indexed_ui_active: bool,
+        manu3_visible: bool,
+    ) -> Result<()> {
         self.ensure_main_viewport()?;
         let frame = self
             .bridge_frame
@@ -3801,7 +3801,7 @@ impl<'window> ModernGameServices<'window> {
             frame.steering.view_changed,
         );
         self.presentation
-            .present_frame(&self.runtime, frame, composition)
+            .present_frame(&self.runtime, frame, composition, manu3_visible)
     }
 
     /// Drop the live bridge and its owned panorama during shutdown.
@@ -6186,7 +6186,7 @@ mod tests {
             }
         );
         services.submit_indexed_frame().unwrap();
-        services.present_current_bridge_frame(false).unwrap();
+        services.present_current_bridge_frame(false, true).unwrap();
 
         assert_eq!(services.presented_frame_count(), 2);
         services.runtime_mut().start_camera_transition();
