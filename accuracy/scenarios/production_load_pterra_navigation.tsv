@@ -29,3 +29,33 @@ wait 20
 wait 20
 click 201 93
 wait 20
+wait 20
+
+# Pull the executable-authored hyperjump lever after Pterra's location panel
+# has finished opening, then run the complete camera approach and return easing.
+click 250 125
+wait 1
+wait 1
+wait 1
+wait 1
+wait 1
+wait 5
+wait 5
+wait 5
+wait 5
+wait 5
+wait 5
+wait 5
+wait 5
+wait 5
+wait 5
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20

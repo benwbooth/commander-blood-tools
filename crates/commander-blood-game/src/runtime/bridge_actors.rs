@@ -85,12 +85,18 @@ impl RuntimeBridgeActors {
     /// Publish location-panel ownership to actor blockers and camera presentation.
     pub(super) fn set_location_panel_active(&mut self, active: bool) {
         self.location_panel.active = active;
+        self.location_panel.blocks_playback = active;
         self.camera.location_panel_active = active;
     }
 
-    /// Return whether native `nav_deferred_record_link` still owns a candidate.
-    pub(super) const fn navigation_deferred_record_pending(&self) -> bool {
-        self.hyperjump.deferred_record.is_some()
+    /// Import the shared navigation record before the recovered actor pass.
+    pub(super) fn set_navigation_deferred_record(&mut self, record: Option<ScriptObjectId>) {
+        self.hyperjump.deferred_record = record;
+    }
+
+    /// Export the shared navigation record after the recovered actor pass.
+    pub(super) const fn navigation_deferred_record(&self) -> Option<ScriptObjectId> {
+        self.hyperjump.deferred_record
     }
 
     pub(super) fn update(
@@ -192,6 +198,17 @@ mod tests {
         publish_bridge_seek_ui(&mut lifecycle, false);
         assert!(!lifecycle.navigation_ui_busy());
         assert!(lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn visible_location_panel_enables_the_native_hyperjump_second_pass() {
+        let mut actors = RuntimeBridgeActors::default();
+
+        actors.set_location_panel_active(true);
+
+        assert!(actors.location_panel.active);
+        assert!(actors.location_panel.blocks_playback);
+        assert!(actors.camera.location_panel_active);
     }
 }
 
@@ -425,6 +442,9 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         ) && let Some(record) = state.deferred_record
         {
             self.services.defer_ship_navigation_target(record);
+            // The shared type/link/value cell now belongs to the VM's deferred
+            // C1 queue. Do not retain a second native-link copy in flat state.
+            state.deferred_record = None;
             self.services.runtime_mut().start_camera_transition();
             self.lifecycle.navigation_transition_pending = true;
             self.lifecycle

@@ -3440,14 +3440,25 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         lifecycle: &mut GameLifecycleState,
     ) -> Result<NavActorSlotUpdateOutcome> {
+        let navigation_deferred_record = self
+            .navigation_chart
+            .as_ref()
+            .context("navigation chart state is already being updated")?
+            .deferred_record_link();
         let mut actors = self
             .bridge_actors
             .take()
             .context("bridge actor update is reentrant")?;
+        actors.set_navigation_deferred_record(navigation_deferred_record);
         let mut slots = std::mem::take(&mut self.nav_actor_slots);
         let outcome = actors.update(self, lifecycle, &mut slots);
+        let navigation_deferred_record = actors.navigation_deferred_record();
         self.nav_actor_slots = slots;
         self.bridge_actors = Some(actors);
+        self.navigation_chart
+            .as_mut()
+            .context("navigation chart state disappeared during actor update")?
+            .set_deferred_record_link(navigation_deferred_record);
         outcome.context("updating recovered bridge actors")
     }
 
@@ -3927,9 +3938,9 @@ impl<'window> ModernGameServices<'window> {
             PresentationBridgeMode::ThirdBand => "ThirdBand",
         });
         let hyperjump_deferred_record_pending = self
-            .bridge_actors
+            .navigation_chart
             .as_ref()
-            .is_some_and(RuntimeBridgeActors::navigation_deferred_record_pending);
+            .is_some_and(|chart| chart.deferred_record_link().is_some());
         let radio_slot = &self.nav_actor_slots[1];
         let panel_slot = &self.nav_actor_slots[2];
         let bridge_actor_slots = self

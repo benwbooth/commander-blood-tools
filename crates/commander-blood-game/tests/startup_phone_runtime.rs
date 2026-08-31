@@ -58,6 +58,13 @@ const SHIP_DESTINATION_CLICK: &str = "click 216 72";
 const PTERRA_TARGET_CLICK: &str = "click 80 88";
 const PTERRA_LOCATION_VIDEO: &str = "PL\\pterra10.hnm";
 const PTERRA_SCRUTER_VIDEO: &str = "PE\\scr20.hnm";
+const HYPERJUMP_LEVER_CLICK: &str = "click 250 125";
+const HYPERJUMP_ACTOR_SLOT: usize = 5;
+const NAV_ACTOR_ACTIVE_FLAG: u64 = 1;
+const HYPERJUMP_IDLE_RESOURCE: u64 = 18;
+const HYPERJUMP_VIDEO: &str = "SQ\\hyper_00.hnm";
+const HYPERSPACE_ACTIVE_LINE: u64 = 6;
+const HYPERJUMP_LEVER_POSITION: [i64; 2] = [250, 125];
 const OPTIONS_CANCEL_CLICK: &str = "sclick 100 125";
 const TEXT_OPTION_CLICK: &str = "sclick 100 68";
 const SEEDED_LOAD_PROFILE: u8 = 2;
@@ -1171,6 +1178,85 @@ fn production_runtime_vm_unlocks_pterra_and_opens_the_authored_navigation_chart(
         pterra_panel["semantic"]["navigation"]["chart"]["location_panel_active"],
         true
     );
+
+    let lever_click_index = records
+        .iter()
+        .position(|record| record["action"] == HYPERJUMP_LEVER_CLICK)
+        .expect("runtime trace omitted the authored hyperjump-lever click");
+    let lever_ready = records[..lever_click_index]
+        .iter()
+        .rev()
+        .find(|record| {
+            actor_slot(record, HYPERJUMP_ACTOR_SLOT)["flags"]
+                .as_u64()
+                .is_some_and(|flags| flags & NAV_ACTOR_ACTIVE_FLAG != u64::MIN)
+        })
+        .expect("Pterra's location panel never activated the authored hyperjump lever");
+    let lever_slot = actor_slot(lever_ready, HYPERJUMP_ACTOR_SLOT);
+    assert_eq!(lever_slot["resource"], HYPERJUMP_IDLE_RESOURCE);
+    assert!(
+        traced_hit_region_contains(&lever_slot["hit_region"], HYPERJUMP_LEVER_POSITION),
+        "the scripted lever click is outside its executable-authored hit rectangle: {lever_slot}"
+    );
+
+    let travel_records = &records[lever_click_index..];
+    let approach = travel_records
+        .iter()
+        .find(|record| record["semantic"]["navigation"]["camera"]["approach_active"] == true)
+        .unwrap_or_else(|| {
+            panic!(
+                "pulling the hyperjump lever never started the recovered camera approach: {:?}",
+                travel_records
+                    .iter()
+                    .map(|record| serde_json::json!({
+                        "action": record["action"],
+                        "input": record["semantic"]["input"],
+                        "chart": record["semantic"]["navigation"]["chart"],
+                        "camera": record["semantic"]["navigation"]["camera"],
+                        "bridge_frame": record["semantic"]["presentation"]["bridge_frame"],
+                        "bridge_mode": record["semantic"]["presentation"]["bridge_presentation_mode"],
+                        "deferred": record["semantic"]["presentation"]["hyperjump_deferred_record_pending"],
+                        "lever": actor_slot(record, HYPERJUMP_ACTOR_SLOT),
+                    }))
+                    .collect::<Vec<_>>()
+            )
+        });
+    assert_eq!(
+        approach["semantic"]["presentation"]["hyperjump_deferred_record_pending"], false,
+        "the C1 transfer left a duplicate native navigation link"
+    );
+
+    let hyperspace = travel_records
+        .iter()
+        .find(|record| record["semantic"]["video"]["active_resource"] == HYPERJUMP_VIDEO)
+        .expect("the camera approach never selected the executable-authored hyperspace stream");
+    assert_eq!(
+        hyperspace["semantic"]["vm"]["active_line"],
+        HYPERSPACE_ACTIVE_LINE
+    );
+    assert_eq!(
+        hyperspace["semantic"]["video"]["manu3_layer_allowed"], false,
+        "the independent hand layer was enabled over hyperspace"
+    );
+
+    let returned = travel_records
+        .iter()
+        .rev()
+        .find(|record| {
+            record["semantic"]["navigation"]["camera"]["approach_active"] == false
+                && record["semantic"]["presentation"]["hyperjump_deferred_record_pending"] == false
+        })
+        .expect("the recovered camera approach never completed its return easing");
+    assert_eq!(
+        returned["semantic"]["navigation"]["camera"]["camera_view_active"],
+        false
+    );
+    assert_eq!(returned["semantic"]["navigation"]["chart"]["active"], false);
+    assert_eq!(
+        presentation_u64(returned, "ui_flags") & MODAL_UI_FLAG,
+        u64::MIN,
+        "completed camera approach retained the native modal UI bit"
+    );
 }
 
 #[test]
@@ -1778,6 +1864,24 @@ fn save_load(record: &Value) -> &Value {
 
 fn input(record: &Value) -> &Value {
     &record["semantic"]["input"]
+}
+
+fn actor_slot(record: &Value, index: usize) -> &Value {
+    &presentation(record)["bridge_actor_slots"][index]
+}
+
+fn traced_hit_region_contains(region: &Value, point: [i64; 2]) -> bool {
+    let origin = region["origin"]
+        .as_array()
+        .expect("traced hit region has no origin");
+    let extent = region["extent"]
+        .as_array()
+        .expect("traced hit region has no extent");
+    (0..2).all(|axis| {
+        let origin = origin[axis].as_i64().unwrap();
+        let extent = extent[axis].as_i64().unwrap();
+        point[axis] >= origin && point[axis] <= origin + extent
+    })
 }
 
 fn console_u64(record: &Value, field: &str) -> u64 {

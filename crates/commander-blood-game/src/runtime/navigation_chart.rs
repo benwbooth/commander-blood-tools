@@ -100,6 +100,16 @@ impl RuntimeNavigationChart {
         self.state.panel.active || self.state.panel.selected_location.is_some()
     }
 
+    /// Return the canonical shared `nav_deferred_record_link` value.
+    pub(super) const fn deferred_record_link(&self) -> Option<ScriptObjectId> {
+        self.state.panel.deferred_record_link
+    }
+
+    /// Import a write to the shared `nav_deferred_record_link` value.
+    pub(super) fn set_deferred_record_link(&mut self, record: Option<ScriptObjectId>) {
+        self.state.panel.deferred_record_link = record;
+    }
+
     /// Return the current typed location and roster captured during chart work.
     pub(super) fn status_snapshot(&self) -> Option<RuntimeNavigationStatusSnapshot> {
         self.status_snapshot.clone()
