@@ -28,3 +28,8 @@ wait 20
 sclick 225 58
 wait 20
 wait 20
+# Bob's goodbye synchronously plays the complete CRYORAD refreeze sequence.
+# Do not spend the bridge-movement probes inside that blocking presentation.
+wait 100
+move 319 100
+move 0 100

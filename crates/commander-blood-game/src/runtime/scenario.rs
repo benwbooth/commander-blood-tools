@@ -70,11 +70,12 @@ pub(super) enum RuntimeScenarioKey {
     ArrowRight,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(super) struct RuntimeScenarioFrameInput {
     pub pointer_position: Option<[i16; 2]>,
     pub primary_pressed: bool,
     pub key: Option<RuntimeScenarioKey>,
+    pub teleport_target: Option<Box<[u8]>>,
     pub request_shutdown: bool,
 }
 
@@ -85,6 +86,7 @@ enum RuntimeScenarioActionKind {
     Key(RuntimeScenarioKey),
     Wait { frames: u16 },
     Park { edge_x: i16, target_frame: u16 },
+    Teleport { target: Box<[u8]> },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -178,22 +180,22 @@ impl RuntimeScenarioDriver {
             });
         };
         let mut input = RuntimeScenarioFrameInput::default();
-        let complete = match action.kind {
+        let complete = match &action.kind {
             RuntimeScenarioActionKind::Move { position } => {
-                input.pointer_position = Some(position);
+                input.pointer_position = Some(*position);
                 true
             }
             RuntimeScenarioActionKind::Click { position } => {
-                input.pointer_position = Some(position);
+                input.pointer_position = Some(*position);
                 input.primary_pressed = self.action_frame == u16::MIN;
                 self.action_frame + 1 >= CLICK_FRAME_COUNT
             }
             RuntimeScenarioActionKind::Key(key) => {
-                input.key = Some(key);
+                input.key = Some(*key);
                 true
             }
             RuntimeScenarioActionKind::Wait { frames } => {
-                self.action_frame + 1 >= cadence.frame_count(frames)
+                self.action_frame + 1 >= cadence.frame_count(*frames)
             }
             RuntimeScenarioActionKind::Park {
                 edge_x,
@@ -202,7 +204,7 @@ impl RuntimeScenarioDriver {
                 let current = current_bridge_frame.context(
                     "park action reached the runtime before a bridge frame was available",
                 )?;
-                let distance = current.abs_diff(target_frame);
+                let distance = current.abs_diff(*target_frame);
                 let circular_distance = distance.min(BRIDGE_VIEW_FRAME_COUNT - distance);
                 if circular_distance <= PARK_FRAME_TOLERANCE {
                     // The DOS steering routine recenters its virtual ring cursor
@@ -216,9 +218,13 @@ impl RuntimeScenarioDriver {
                         "park action could not reach bridge frame {target_frame}; stopped at {current}"
                     );
                 } else {
-                    input.pointer_position = Some([edge_x, LOGICAL_SCREEN_HEIGHT / 2]);
+                    input.pointer_position = Some([*edge_x, LOGICAL_SCREEN_HEIGHT / 2]);
                     false
                 }
+            }
+            RuntimeScenarioActionKind::Teleport { target } => {
+                input.teleport_target = Some(target.clone());
+                true
             }
         };
 
@@ -363,6 +369,14 @@ fn parse_action(line: &str, path: &Path, line_number: usize) -> Result<RuntimeSc
                 target_frame,
             }
         }
+        Some("teleport") => {
+            if fields.len() != 2 || fields[1].is_empty() {
+                return Err(fail("teleport action requires one exact object name"));
+            }
+            RuntimeScenarioActionKind::Teleport {
+                target: Box::from(fields[1].as_bytes()),
+            }
+        }
         Some(command) => return Err(fail(&format!("unsupported scenario command {command:?}"))),
         None => return Err(fail("empty scenario action")),
     };
@@ -448,6 +462,17 @@ mod tests {
         let error = parse_action("poke 1234 ff", Path::new("scenario.tsv"), 7).unwrap_err();
         assert!(error.to_string().contains("scenario.tsv:7"));
         assert!(error.to_string().contains("unsupported scenario command"));
+    }
+
+    #[test]
+    fn teleport_publishes_one_exact_typed_object_name() {
+        let action = parse_action("teleport Pterra", Path::new("scenario.tsv"), 3).unwrap();
+        assert_eq!(
+            action.kind,
+            RuntimeScenarioActionKind::Teleport {
+                target: Box::from(&b"Pterra"[..]),
+            }
+        );
     }
 
     #[test]

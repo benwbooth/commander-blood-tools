@@ -201,7 +201,7 @@ impl<'window> RuntimePlatformHost<'window> {
                             RuntimeScenarioCadence::GameLoop
                         },
                     )?;
-                self.apply_game_scenario_input(services, input);
+                self.apply_game_scenario_input(services, input)?;
             }
         }
         Ok(services.dispatch_lifecycle_input(state))
@@ -234,7 +234,7 @@ impl<'window> RuntimePlatformHost<'window> {
         if let Some(scenario) = self.scenario.as_mut() {
             let input = scenario.advance(None, RuntimeScenarioCadence::BlockingPresentation)?;
             platform_shutdown |= input.request_shutdown;
-            self.apply_alien_scenario_input(services, input);
+            self.apply_alien_scenario_input(services, input)?;
         }
         let key_events = services
             .input_mut()
@@ -253,7 +253,7 @@ impl<'window> RuntimePlatformHost<'window> {
         &mut self,
         services: &mut ModernGameServices<'window>,
         input: RuntimeScenarioFrameInput,
-    ) {
+    ) -> Result<()> {
         if !self.pointer_position_locked
             && let Some(position) = input.pointer_position
         {
@@ -261,25 +261,28 @@ impl<'window> RuntimePlatformHost<'window> {
             self.logical_pointer = position.map(f32::from);
             self.pointer_inside_window = true;
         }
-        self.apply_scenario_buttons_and_key(services, input);
+        self.apply_scenario_buttons_and_key(services, input)
     }
 
     fn apply_alien_scenario_input(
         &mut self,
         services: &mut ModernGameServices<'window>,
         input: RuntimeScenarioFrameInput,
-    ) {
+    ) -> Result<()> {
         if let Some(position) = input.pointer_position {
             self.alien_pointer = Some(map_logical_to_alien_driver(position));
         }
-        self.apply_scenario_buttons_and_key(services, input);
+        self.apply_scenario_buttons_and_key(services, input)
     }
 
     fn apply_scenario_buttons_and_key(
         &mut self,
         services: &mut ModernGameServices<'window>,
         input: RuntimeScenarioFrameInput,
-    ) {
+    ) -> Result<()> {
+        if let Some(target) = input.teleport_target.as_deref() {
+            services.teleport_arche_to_navigation_target(target)?;
+        }
         self.pointer_buttons = if input.primary_pressed {
             PointerButtons::from_bits(PointerButton::Primary as u16)
         } else {
@@ -291,6 +294,7 @@ impl<'window> RuntimePlatformHost<'window> {
         if input.request_shutdown {
             services.input_mut().request_shutdown();
         }
+        Ok(())
     }
 
     /// Center the overlay's virtual mouse driver without moving the real cursor.

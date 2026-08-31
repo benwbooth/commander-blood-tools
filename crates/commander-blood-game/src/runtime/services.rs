@@ -21,15 +21,15 @@ use crate::native::bloodprg::{
     BridgePageTarget, BridgePaletteAdjustment, BridgeScene, BridgeSceneFrame, BridgeSceneInput,
     BridgeScreenInitializationBackend, BridgeScreenInitializationState, BridgeSpriteCommitOutcome,
     BridgeSpriteRasterOutcome, BridgeSteeringInteraction, BridgeSteeringOutcome,
-    CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
-    ChoiceListFrame, ChoiceListHandAnimation, ChoiceListHandRequest, ChoiceListPointer,
-    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
-    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
-    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
-    InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction, InputCancellationOutcome,
-    InputCancellationState, LoadedSoundBank, Manu3AnimationSelector, Manu3HandFrameContext,
-    Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NameAreaEffectOutcome, NavActorSlot,
-    NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
+    CameraNavigationOutcome, CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState,
+    ChoiceListConfig, ChoiceListFrame, ChoiceListHandAnimation, ChoiceListHandRequest,
+    ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
+    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
+    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
+    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
+    InputCancellationOutcome, InputCancellationState, LoadedSoundBank, Manu3AnimationSelector,
+    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NameAreaEffectOutcome,
+    NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
     PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
     PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
     PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
@@ -38,17 +38,18 @@ use crate::native::bloodprg::{
     PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
     RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SaveLoadMenuPhase,
     SceneTransitionState, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
-    ScriptFrameOutcome, ScriptObjectFlag, ScriptPresentationEntity, ScriptPresentationScanState,
-    ScriptProfileId, ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
-    ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipPresentationOutcome,
-    ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
-    SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TextPresentationState,
+    ScriptFieldSelector, ScriptFrameOutcome, ScriptObjectFlag, ScriptPresentationEntity,
+    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
+    ScriptShipNavigationMode, ScriptTravelActionPhase, ShipDepthTransitionOutcome,
+    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
+    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage,
+    SpeakerGateAction, StartupPreparationOutcome, TextPresentationState,
     clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
     increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
     prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
-    reveal_inline_menu_step, stop_cd_audio, update_manu3_hand_frame,
-    update_presentation_bridge_mode, update_presentation_hover,
+    resolve_navigation_position, reveal_inline_menu_step, set_object_flag, stop_cd_audio,
+    update_manu3_hand_frame, update_presentation_bridge_mode, update_presentation_hover,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -103,9 +104,12 @@ const SHIP_PRESENTATION_HUD_FLAG: u16 = 8;
 const BRIDGE_REDRAW_REQUESTED: u8 = 1;
 const SHIP_NAVIGATION_STATUS_LINE: u16 = 3;
 const NAVIGATION_PALETTE_TRANSITION_INCREMENT: u16 = 10;
+const NAVIGATION_ACCESS_COUNTER_WORD_INDEX: usize = 10;
+const TELEPORT_NAVIGATION_ACCESS_COUNT: u16 = 1;
 const FIRST_SHIP_PROJECTION_ENTITY: u16 = 21;
 const AFTER_LAST_SHIP_PROJECTION_ENTITY: u16 = BRIDGE_SPRITE_ENTITY_COUNT as u16;
 const FIRST_TRANSITION_ENTITY: u16 = 20;
+const CAMERA_NAVIGATION_STATUS_ENTITY_INDEX: usize = 31;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
 const NAME_AREA_PALETTE_FIRST: usize = 224;
 const NAME_AREA_PALETTE_AFTER_LAST: usize = 240;
@@ -137,6 +141,10 @@ struct RandomDrawAudit {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct BridgePointerAudit {
     interaction: BridgeSteeringInteraction,
+    horizontal_delta: i32,
+    frame_before: u16,
+    frame_after: u16,
+    view_changed: bool,
     before: [i16; 2],
     after: [i16; 2],
 }
@@ -173,6 +181,30 @@ impl AudioPlaybackRoute {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct AudioPlaybackAudit {
+    source_output_sample_count: u16,
+    source_byte_count_consumed: usize,
+    mixed_sample_count: usize,
+}
+
+impl AudioPlaybackAudit {
+    fn from_outcome(outcome: &AudioPlaybackOutcome) -> Self {
+        let AudioPlaybackOutcome::StreamMix(report) = outcome else {
+            return Self::default();
+        };
+        Self {
+            source_output_sample_count: report.source_output_sample_count,
+            source_byte_count_consumed: report.source_byte_count_consumed,
+            mixed_sample_count: report
+                .operations
+                .iter()
+                .map(|operation| operation.sample_count)
+                .sum(),
+        }
+    }
+}
+
 const fn random_draw_delta(before: u8, after: u8) -> u64 {
     after.wrapping_sub(before) as u64
 }
@@ -194,6 +226,7 @@ pub struct ModernGameServices<'window> {
     audio_events: AudioEventState,
     audio_event_history: Vec<AudioClipRequest>,
     audio_playback_routes: Vec<AudioPlaybackRoute>,
+    audio_playback_audits: Vec<AudioPlaybackAudit>,
     bridge_scene: Option<BridgeScene>,
     bridge_frame: Option<BridgeSceneFrame>,
     bridge_pointer_audit: Option<BridgePointerAudit>,
@@ -204,6 +237,7 @@ pub struct ModernGameServices<'window> {
     bridge_actors: Option<RuntimeBridgeActors>,
     bridge_console: Option<RuntimeBridgeConsole>,
     camera_navigation: Option<RuntimeCameraNavigation>,
+    camera_navigation_audit: Option<CameraNavigationOutcome>,
     navigation_chart: Option<RuntimeNavigationChart>,
     navigation_status: Option<RuntimeNavigationStatus>,
     presentation_screen: Option<RuntimePresentationScreen>,
@@ -268,25 +302,34 @@ fn latch_script_finale_completion(
 fn audio_event_trace(
     history: &[AudioClipRequest],
     playback_routes: &[AudioPlaybackRoute],
+    playback_audits: &[AudioPlaybackAudit],
 ) -> (usize, Vec<serde_json::Value>) {
     debug_assert_eq!(history.len(), playback_routes.len());
+    debug_assert_eq!(history.len(), playback_audits.len());
     let mut streamed_clip_count = usize::MIN;
     let events = history
         .iter()
         .zip(playback_routes)
-        .map(|(request, route)| match request {
+        .zip(playback_audits)
+        .map(|((request, route), audit)| match request {
             AudioClipRequest::StreamedDialogue { index } => {
                 streamed_clip_count += 1;
                 serde_json::json!({
                     "kind": "streamed_dialogue",
                     "index": index,
                     "route": route.trace_name(),
+                    "source_output_sample_count": audit.source_output_sample_count,
+                    "source_byte_count_consumed": audit.source_byte_count_consumed,
+                    "mixed_sample_count": audit.mixed_sample_count,
                 })
             }
             AudioClipRequest::VoiceReaction { bank_index } => serde_json::json!({
                 "kind": "voice_reaction",
                 "index": bank_index,
                 "route": route.trace_name(),
+                "source_output_sample_count": audit.source_output_sample_count,
+                "source_byte_count_consumed": audit.source_byte_count_consumed,
+                "mixed_sample_count": audit.mixed_sample_count,
             }),
         })
         .collect();
@@ -331,6 +374,7 @@ impl<'window> ModernGameServices<'window> {
             },
             audio_event_history: Vec::new(),
             audio_playback_routes: Vec::new(),
+            audio_playback_audits: Vec::new(),
             bridge_scene: None,
             bridge_frame: None,
             bridge_pointer_audit: None,
@@ -345,6 +389,7 @@ impl<'window> ModernGameServices<'window> {
             bridge_actors: Some(RuntimeBridgeActors::default()),
             bridge_console: Some(bridge_console),
             camera_navigation: Some(RuntimeCameraNavigation::default()),
+            camera_navigation_audit: None,
             navigation_chart: Some(RuntimeNavigationChart::default()),
             navigation_status: Some(RuntimeNavigationStatus::default()),
             presentation_screen: Some(presentation_screen),
@@ -978,6 +1023,8 @@ impl<'window> ModernGameServices<'window> {
         self.audio_event_history.push(request);
         self.audio_playback_routes
             .push(AudioPlaybackRoute::from_outcome(&outcome));
+        self.audio_playback_audits
+            .push(AudioPlaybackAudit::from_outcome(&outcome));
         Ok(())
     }
 
@@ -1002,6 +1049,7 @@ impl<'window> ModernGameServices<'window> {
         profile: ScriptProfileId,
     ) -> Result<ScriptProfileLoadOutcome> {
         let outcome = self.scripts.load_profile(&mut self.runtime, profile)?;
+        self.camera_navigation_audit = None;
         self.ship_hud = Some(RuntimeShipHud::default());
         self.ship_navigation = Some(RuntimeShipNavigation::default());
         self.scene_transition = Some(RuntimeSceneTransition::default());
@@ -1472,6 +1520,101 @@ impl<'window> ModernGameServices<'window> {
             .with_context(|| format!("Arche navigation target {target:?} is absent"))?
             .kind;
         Ok((target, kind))
+    }
+
+    /// Move Arche to one typed world for deterministic production scenarios.
+    pub(super) fn teleport_arche_to_navigation_target(
+        &mut self,
+        target_name: &[u8],
+    ) -> Result<ScriptObjectId> {
+        let profile = self
+            .runtime
+            .current_profile_mut()
+            .context("scenario teleport requires a loaded BloodScript profile")?;
+        let arche = profile
+            .builtins()
+            .archetype
+            .context("loaded BloodScript profile has no Arche object")?;
+        let target = profile
+            .directory()
+            .find_active_object(target_name)
+            .with_context(|| {
+                format!(
+                    "scenario teleport target {:?} is not an authored object",
+                    String::from_utf8_lossy(target_name)
+                )
+            })?;
+        let target_kind = profile
+            .state()
+            .object(target)
+            .with_context(|| format!("scenario teleport target {target:?} has no VAR record"))?
+            .kind;
+        if !matches!(
+            target_kind,
+            ScriptObjectKind::CelestialBody | ScriptObjectKind::NavigationEntity
+        ) {
+            bail!(
+                "scenario teleport target {:?} has unsupported navigation kind {target_kind:?}",
+                String::from_utf8_lossy(target_name)
+            );
+        }
+        let arche_kind = profile
+            .state()
+            .object(arche)
+            .context("loaded BloodScript Arche has no VAR record")?
+            .kind;
+        let link_offset = crate::native::bloodprg::script_field_offset(
+            arche_kind,
+            ScriptFieldSelector::HOLDER_OR_LOCATION,
+        )
+        .context("loaded BloodScript Arche has no navigation-link field")?;
+        let link = profile
+            .state()
+            .object_word(arche, link_offset / std::mem::size_of::<u16>())
+            .context("loaded BloodScript Arche navigation link is truncated")?;
+        let encoded_target = profile
+            .directory()
+            .object(target)
+            .context("scenario teleport target has no directory entry")?
+            .value;
+        let access_count = profile
+            .state()
+            .object_word(target, NAVIGATION_ACCESS_COUNTER_WORD_INDEX)
+            .context("scenario teleport target has no access counter")?;
+        let source_position = resolve_navigation_position(
+            profile.state(),
+            target,
+            arche,
+            u16::try_from(link_offset).context("Arche navigation-link offset exceeds a word")?,
+        )
+        .context("resolving scenario teleport target position")?;
+        let position = profile
+            .state()
+            .word_pair(source_position)
+            .context("scenario teleport target position is unreadable")?;
+        let arche_position_offset = crate::native::bloodprg::script_field_offset(
+            arche_kind,
+            ScriptFieldSelector::NAVIGATION_POSITION,
+        )
+        .context("loaded BloodScript Arche has no navigation-position field")?;
+        let arche_position = profile
+            .state()
+            .object_word_pair(arche, arche_position_offset / std::mem::size_of::<u16>())
+            .context("loaded BloodScript Arche navigation position is truncated")?;
+        let state = profile.state_mut();
+        if !state.set_word(link, encoded_target)
+            || !state.set_word_pair(arche_position, position)
+            || !state.set_word(access_count, TELEPORT_NAVIGATION_ACCESS_COUNT)
+            || !set_object_flag(state, target, ScriptObjectFlag::InPlay, true)
+        {
+            bail!("scenario teleport could not publish typed navigation state");
+        }
+        self.camera_navigation_audit = None;
+        self.ship_hud = Some(RuntimeShipHud::default());
+        self.ship_navigation = Some(RuntimeShipNavigation::default());
+        self.reset_ship_hud()
+            .context("rebuilding ship artwork after scenario teleport")?;
+        Ok(target)
     }
 
     /// Return the current typed ship target selected by script or HUD state.
@@ -3113,13 +3256,20 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         input: BridgeSceneInput,
     ) -> Result<BridgeSteeringOutcome> {
-        let (outcome, cursor_x) = {
+        let (outcome, cursor_x, frame_before, frame_after) = {
             let scene = self
                 .bridge_scene
                 .as_mut()
                 .context("bridge scene has not been initialized")?;
+            let frame_before = scene.steering().view_frame;
             let outcome = scene.update_steering(input);
-            (outcome, scene.steering().cursor_ring_position as i16)
+            let steering = scene.steering();
+            (
+                outcome,
+                steering.cursor_ring_position as i16,
+                frame_before,
+                steering.view_frame,
+            )
         };
         let pointer_before = self.input.pointer_sample();
         let pointer = bridge_pointer_sample(pointer_before, cursor_x, input.interaction);
@@ -3127,6 +3277,10 @@ impl<'window> ModernGameServices<'window> {
             .publish_logical_pointer(pointer.position, pointer.buttons);
         self.bridge_pointer_audit = Some(BridgePointerAudit {
             interaction: input.interaction,
+            horizontal_delta: input.horizontal_delta,
+            frame_before,
+            frame_after,
+            view_changed: outcome.view_changed,
             before: pointer_before.position,
             after: pointer.position,
         });
@@ -3281,6 +3435,9 @@ impl<'window> ModernGameServices<'window> {
             .context("camera navigation update is reentrant")?;
         let mut slot = self.nav_actor_slots[3];
         let outcome = navigation.update(self, lifecycle, &mut slot);
+        if let Ok(outcome) = outcome.as_ref() {
+            self.camera_navigation_audit = Some(*outcome);
+        }
         self.nav_actor_slots[3] = slot;
         self.camera_navigation = Some(navigation);
         outcome
@@ -3801,6 +3958,37 @@ impl<'window> ModernGameServices<'window> {
             .navigation_chart
             .as_ref()
             .map(RuntimeNavigationChart::semantic_trace_snapshot);
+        let ship_hud = self
+            .ship_hud
+            .as_ref()
+            .map(RuntimeShipHud::semantic_trace_snapshot);
+        let camera_target =
+            self.current_arche_navigation_target()
+                .ok()
+                .and_then(|(record, kind)| {
+                    profile
+                        .and_then(|profile| profile.directory().object(record))
+                        .map(|entry| {
+                            serde_json::json!({
+                                "record": record.index(),
+                                "name": String::from_utf8_lossy(entry.name()),
+                                "kind": format!("{kind:?}"),
+                            })
+                        })
+                });
+        let camera_region =
+            self.runtime.bridge_sprite_entities()[CAMERA_NAVIGATION_STATUS_ENTITY_INDEX];
+        let camera_navigation = serde_json::json!({
+            "outcome": self.camera_navigation_audit.map(|outcome| format!("{outcome:?}")),
+            "camera_view_active": self.bridge_camera_view_active(),
+            "approach_active": self.runtime.camera_approach().transition_pending,
+            "target": camera_target,
+            "status_region": {
+                "active": camera_region.flags.is_active(),
+                "position": [camera_region.draw_position.x, camera_region.draw_position.y],
+                "extent": [camera_region.extent.width, camera_region.extent.height],
+            },
+        });
         let navigation_target = self
             .scripts
             .action_state()
@@ -3816,7 +4004,9 @@ impl<'window> ModernGameServices<'window> {
             });
         let navigation = serde_json::json!({
             "chart": navigation_chart,
+            "camera": camera_navigation,
             "target": navigation_target,
+            "ship_hud": ship_hud,
             "ship_mode": format!("{:?}", self.scripts.action_state().ship_navigation_mode),
             "travel_phase": format!("{:?}", self.scripts.action_state().travel_phase),
         });
@@ -3937,8 +4127,11 @@ impl<'window> ModernGameServices<'window> {
             "owned_dialogue_hold_complete": text.dialogue_hold_complete,
             "owned_dialogue_hold_countdown": text.dialogue_hold_countdown,
         });
-        let (streamed_clip_count, audio_event_history) =
-            audio_event_trace(&self.audio_event_history, &self.audio_playback_routes);
+        let (streamed_clip_count, audio_event_history) = audio_event_trace(
+            &self.audio_event_history,
+            &self.audio_playback_routes,
+            &self.audio_playback_audits,
+        );
         let streamed_sound_bank = self
             .scripts
             .backend()
@@ -4145,11 +4338,21 @@ impl<'window> ModernGameServices<'window> {
                 "previous_buttons": previous_buttons.bits(),
                 "primary_pressed": u8::from(pointer_edges.primary_pressed || lifecycle.primary_pointer_pressed),
                 "press_pending": lifecycle.pointer_press_pending,
+                "pointer_lock": {
+                    "pause": lifecycle.pause_hud_active,
+                    "explicit": lifecycle.pointer_position_locked,
+                    "navigation_ui_busy": lifecycle.navigation_ui_busy(),
+                    "modal_ui_busy": lifecycle.modal_ui_busy(),
+                },
                 "bridge_steering": self.bridge_pointer_audit.map(|audit| serde_json::json!({
                     "interaction": match audit.interaction {
                         BridgeSteeringInteraction::Free => "free",
                         BridgeSteeringInteraction::MenuEngaged => "menu_engaged",
                     },
+                    "horizontal_delta": audit.horizontal_delta,
+                    "frame_before": audit.frame_before,
+                    "frame_after": audit.frame_after,
+                    "view_changed": audit.view_changed,
                     "before": audit.before,
                     "after": audit.after,
                 })),
@@ -4898,14 +5101,23 @@ mod tests {
             },
         ];
         let routes = [AudioPlaybackRoute::StreamMixed, AudioPlaybackRoute::Direct];
+        let audits = [
+            AudioPlaybackAudit {
+                source_output_sample_count: 100,
+                source_byte_count_consumed: 50,
+                mixed_sample_count: 99,
+            },
+            AudioPlaybackAudit::default(),
+        ];
 
-        let (streamed_clip_count, events) = audio_event_trace(&history, &routes);
+        let (streamed_clip_count, events) = audio_event_trace(&history, &routes, &audits);
 
         assert_eq!(streamed_clip_count, EXPECTED_STREAMED_CLIP_COUNT);
         assert_eq!(events.len(), history.len());
         assert_eq!(events[DIALOGUE_EVENT_INDEX]["kind"], "streamed_dialogue");
         assert_eq!(events[DIALOGUE_EVENT_INDEX]["index"], DIALOGUE_CLIP_INDEX);
         assert_eq!(events[DIALOGUE_EVENT_INDEX]["route"], "stream_mixed");
+        assert_eq!(events[DIALOGUE_EVENT_INDEX]["mixed_sample_count"], 99);
         assert_eq!(events[VOICE_EVENT_INDEX]["kind"], "voice_reaction");
         assert_eq!(events[VOICE_EVENT_INDEX]["index"], VOICE_BANK_INDEX);
         assert_eq!(events[VOICE_EVENT_INDEX]["route"], "direct");

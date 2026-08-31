@@ -51,6 +51,52 @@ impl Default for RuntimeShipHud {
 }
 
 impl RuntimeShipHud {
+    /// Capture cross-frame ship-HUD ownership for deterministic production traces.
+    pub(super) fn semantic_trace_snapshot(&self) -> serde_json::Value {
+        let coordinator = self.coordinator.as_ref().map(|state| {
+            serde_json::json!({
+                "initialized": state.initialized,
+                "initialization_pending": state.initialization_pending,
+                "target_list_phase": state.target_list.phase,
+                "presentable_targets": state
+                    .presentable_targets
+                    .iter()
+                    .map(|target| target.index())
+                    .collect::<Vec<_>>(),
+                "current_target": state.current_target.index(),
+                "scene_dispatch_blocked": state.scene_dispatch_blocked,
+                "active_line": state.active_line,
+                "depth_band_enabled": state.depth_band_enabled,
+                "exit_pending": state.exit_pending,
+                "depth_opening": state.depth_opening,
+                "depth_step": state.depth_step,
+                "text_display_active": state.text_display_active,
+                "text_reveal_complete": state.text_reveal_complete,
+                "ship_active_flags": state.ship_active_flags,
+            })
+        });
+        let selector = self.selector.as_ref().map(|state| {
+            serde_json::json!({
+                "phase": state.phase,
+                "transition_step": state.transition_step,
+                "transition_total_steps": state.transition_total_steps,
+                "fallback_active": state.fallback_active,
+                "current_target": state.current_target.index(),
+                "depth_opening_flags": state.depth_opening_flags,
+                "depth_step": state.depth_step,
+            })
+        });
+        serde_json::json!({
+            "coordinator": coordinator,
+            "selector": selector,
+            "selector_targets": self
+                .selector_targets
+                .iter()
+                .map(|target| target.index())
+                .collect::<Vec<_>>(),
+        })
+    }
+
     /// Borrow the recovered coordinator state after its first update.
     pub fn coordinator(&self) -> Option<&ShipHudCoordinatorState<ScriptObjectId>> {
         self.coordinator.as_ref()

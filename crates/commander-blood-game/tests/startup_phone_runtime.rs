@@ -41,6 +41,8 @@ const SAVE_OPTION_CLICK: &str = "sclick 100 95";
 const LOAD_OPTION_CLICK: &str = "sclick 100 106";
 const SAVE_CANCEL_CLICK: &str = "sclick 100 151";
 const LOAD_FIRST_SLOT_CLICK: &str = "sclick 100 40";
+const PTERRA_TELEPORT: &str = "teleport Pterra";
+const SHIP_DESTINATION_CLICK: &str = "click 216 72";
 const OPTIONS_CANCEL_CLICK: &str = "sclick 100 125";
 const TEXT_OPTION_CLICK: &str = "sclick 100 68";
 const SEEDED_LOAD_PROFILE: u8 = 2;
@@ -99,7 +101,10 @@ const BOB_THAW_VIDEO: &str = "sq\\cryogel.hnm";
 const BOB_IDLE_VIDEO: &str = "PE\\aabob.hnm";
 const BOB_FIRST_TALK_VIDEO: &str = "PE\\bobc.hnm";
 const BOB_SECOND_TALK_VIDEO: &str = "PE\\bobd.hnm";
+const BOB_HONK_CHATTER_PREFIX: &str = "Yes sir, Cap'n Bob";
 const BOB_GOODBYE_CLICK: &str = "sclick 225 58";
+const BOB_POINTER_LEFT_MOVE: &str = "move 0 100";
+const BOB_POINTER_RIGHT_MOVE: &str = "move 319 100";
 const RESIDENT_LAST_CLIP_INDEX: u64 = 16;
 const BOB_FIRST_CONTACT_PROMPT: [&str; 9] = [
     "What",
@@ -376,6 +381,12 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
         post_answer_audio.first().unwrap()["route"],
         STREAM_MIXED_AUDIO_ROUTE,
         "the radio completion boing was requested but not mixed into the live audio stream"
+    );
+    assert!(
+        post_answer_audio.first().unwrap()["mixed_sample_count"]
+            .as_u64()
+            .is_some_and(|count| count > 0),
+        "the radio completion boing selected clip 2 but mixed zero audible samples"
     );
     assert!(
         post_answer_audio
@@ -666,6 +677,20 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
         })
     }));
 
+    let honk_chatter = bob_records
+        .iter()
+        .find(|record| {
+            presentation_u64(record, "text_display_active") != u64::MIN
+                && record["semantic"]["subtitle"]
+                    .as_str()
+                    .is_some_and(|subtitle| subtitle.starts_with(BOB_HONK_CHATTER_PREFIX))
+        })
+        .expect("Bob's opening Honk response produced chatter without its authored subtitle");
+    assert_eq!(
+        honk_chatter["semantic"]["video"]["active_resource"], BOB_IDLE_VIDEO,
+        "Honk's text-only response did not return Bob to his authored idle clip"
+    );
+
     let goodbye = bob_records
         .iter()
         .find(|record| record["action"] == BOB_GOODBYE_CLICK)
@@ -676,12 +701,35 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
     );
 
     let goodbye_settled = bob_records
-        .last()
-        .expect("Bob's goodbye scenario produced no settled record");
+        .iter()
+        .find(|record| record["action"] == BOB_POINTER_LEFT_MOVE)
+        .expect("Bob's goodbye never returned control to the bridge pointer");
     assert!(!presentation_flag(goodbye_settled, "word_choice_active"));
     assert_eq!(
         presentation(goodbye_settled)["rendered_word_choices"],
         serde_json::json!([])
+    );
+    let left_steering = &goodbye_settled["semantic"]["input"]["bridge_steering"];
+    let left_delta = left_steering["horizontal_delta"]
+        .as_i64()
+        .expect("left-move trace omitted its horizontal delta");
+    assert!(
+        left_delta < 0 && left_steering["view_changed"] == true,
+        "Bob's goodbye did not release leftward bridge steering: {left_steering}; lock: {}; console: {}",
+        goodbye_settled["semantic"]["input"]["pointer_lock"],
+        goodbye_settled["semantic"]["bridge_console"],
+    );
+    let pointer_right = bob_records
+        .iter()
+        .find(|record| record["action"] == BOB_POINTER_RIGHT_MOVE)
+        .expect("Bob's goodbye scenario omitted the rightward pointer move");
+    let right_steering = &pointer_right["semantic"]["input"]["bridge_steering"];
+    let right_delta = right_steering["horizontal_delta"]
+        .as_i64()
+        .expect("right-move trace omitted its horizontal delta");
+    assert!(
+        right_delta > 0 && right_steering["view_changed"] == true,
+        "Bob's goodbye did not release rightward bridge steering: {right_steering}"
     );
 }
 
@@ -992,6 +1040,88 @@ fn production_runtime_vm_unlocks_pterra_and_opens_the_authored_navigation_chart(
         pterra_panel["semantic"]["navigation"]["chart"]["location_panel_active"],
         true
     );
+}
+
+#[test]
+fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera_path() {
+    let Some(records) = run_production_scenario_with_setup(
+        "accuracy/scenarios/production_load_pterra_ship_navigation.tsv",
+        "production-load-pterra-ship-navigation.jsonl",
+        seed_authentic_pterra_unlock_save,
+    ) else {
+        return;
+    };
+
+    let slot_index = records
+        .iter()
+        .position(|record| record["action"] == LOAD_FIRST_SLOT_CLICK)
+        .expect("runtime trace omitted the authored first save-slot click");
+    let unlocked = records[slot_index..]
+        .iter()
+        .find(|record| record["semantic"]["script2"]["pterra_in_play"] == true)
+        .expect("SCRIPT2 proc init never marked Pterra as known");
+    let pterra_record = unlocked["semantic"]["script2"]["pterra_record"]
+        .as_u64()
+        .expect("SCRIPT2 did not expose Pterra's typed object identity");
+    let teleport_index = records
+        .iter()
+        .position(|record| record["action"] == PTERRA_TELEPORT)
+        .expect("runtime trace omitted the typed Pterra teleport");
+    assert_eq!(
+        records[teleport_index]["semantic"]["navigation"]["camera"]["target"]["record"],
+        pterra_record,
+        "the typed teleport did not publish Pterra as Arche's navigation target"
+    );
+    let destination_ready = records[teleport_index..]
+        .iter()
+        .find(|record| {
+            record["semantic"]["navigation"]["camera"]["status_region"]["active"] == true
+                && record["semantic"]["navigation"]["camera"]["camera_view_active"] == false
+        })
+        .expect("Pterra's recovered ship-view artwork never exposed its destination region");
+    assert_ne!(
+        destination_ready["semantic"]["navigation"]["camera"]["status_region"]["extent"],
+        serde_json::json!([0, 0]),
+        "Pterra's recovered destination region has no extent"
+    );
+
+    let selected_index = records
+        .iter()
+        .position(|record| record["action"] == SHIP_DESTINATION_CLICK)
+        .expect("runtime trace omitted the ship destination-region click");
+    let ship_records = &records[selected_index..];
+    let ship_hud = ship_records
+        .iter()
+        .find(|record| {
+            record["semantic"]["navigation"]["ship_mode"] == "Active"
+                && record["semantic"]["navigation"]["ship_hud"]["coordinator"]["initialized"]
+                    == true
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "the destination region never entered the authored ship HUD: {:?}",
+                records[teleport_index..]
+                    .iter()
+                    .map(|record| {
+                        serde_json::json!({
+                            "action": record["action"],
+                            "input": record["semantic"]["input"],
+                            "bridge_frame": record["semantic"]["presentation"]["bridge_frame"],
+                            "navigation": record["semantic"]["navigation"],
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            )
+        });
+    assert!(
+        ship_hud["semantic"]["navigation"]["ship_hud"]["coordinator"]["presentable_targets"]
+            .as_array()
+            .expect("ship HUD presentable targets are not an array")
+            .iter()
+            .any(|record| record.as_u64() == Some(pterra_record)),
+        "the production ship HUD omitted Pterra from its recovered target list"
+    );
+    assert_ne!(presentation_u64(ship_hud, "ship_flags"), u64::MIN);
 }
 
 #[test]
