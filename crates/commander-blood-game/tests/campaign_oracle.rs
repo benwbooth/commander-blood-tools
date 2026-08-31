@@ -1214,6 +1214,8 @@ fn run_contact_path(
             && !selector_topics.is_empty()
             && ((published_topics == selector_topics)
                 || (snapshot.word_offsets.is_empty()
+                    && !scripts.presentation_scan_state().start_locked)
+                || (snapshot.word_offsets.is_empty()
                     && bas_count_at_topic_selection
                         .is_some_and(|before| observed_bas_offsets.len() > before)))
         {
