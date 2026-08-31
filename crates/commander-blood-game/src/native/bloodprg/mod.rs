@@ -14,6 +14,8 @@ mod audio_bank;
 mod audio_events;
 mod audio_playback;
 mod audio_stream;
+#[cfg(test)]
+mod bob_first_contact_oracle;
 mod bridge_console;
 mod bridge_frame;
 mod bridge_input;
