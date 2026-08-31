@@ -88,11 +88,6 @@ impl RuntimeBridgeActors {
         self.camera.location_panel_active = active;
     }
 
-    /// Publish the navigation candidate written to native `nav_deferred_record_link`.
-    pub(super) fn publish_navigation_deferred_record(&mut self, record: ScriptObjectId) {
-        self.hyperjump.deferred_record = Some(record);
-    }
-
     /// Return whether native `nav_deferred_record_link` still owns a candidate.
     pub(super) const fn navigation_deferred_record_pending(&self) -> bool {
         self.hyperjump.deferred_record.is_some()

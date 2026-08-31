@@ -55,7 +55,9 @@ const ASCII_LOWERCASE_P: u64 = 112;
 const LOAD_FIRST_SLOT_CLICK: &str = "sclick 100 40";
 const PTERRA_TELEPORT: &str = "teleport Pterra";
 const SHIP_DESTINATION_CLICK: &str = "click 216 72";
-const ARK_TARGET_CLICK: &str = "click 80 99";
+const PTERRA_TARGET_CLICK: &str = "click 80 88";
+const PTERRA_LOCATION_VIDEO: &str = "PL\\pterra10.hnm";
+const PTERRA_SCRUTER_VIDEO: &str = "PE\\scr20.hnm";
 const OPTIONS_CANCEL_CLICK: &str = "sclick 100 125";
 const TEXT_OPTION_CLICK: &str = "sclick 100 68";
 const SEEDED_LOAD_PROFILE: u8 = 2;
@@ -1315,15 +1317,66 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         );
     }
 
-    let ark_click_index = records
+    let pterra_click_index = records
         .iter()
-        .position(|record| record["action"] == ARK_TARGET_CLICK)
-        .expect("runtime trace omitted the rendered ARK target click");
-    let ark_queued = records[ark_click_index..]
+        .position(|record| record["action"] == PTERRA_TARGET_CLICK)
+        .expect("runtime trace omitted the rendered Pterra target click");
+    let pterra_queued = records[pterra_click_index..]
         .iter()
-        .find(|record| record["semantic"]["navigation"]["target"]["name"] == "Ark")
-        .expect("clicking ARK never published the authored ship navigation target");
-    assert_eq!(ark_queued["semantic"]["navigation"]["ship_mode"], "Active");
+        .find(|record| record["semantic"]["navigation"]["target"]["name"] == PTERRA_NAME)
+        .expect("clicking Pterra never published the authored ship navigation target");
+    assert_eq!(
+        pterra_queued["semantic"]["navigation"]["ship_mode"],
+        "Active"
+    );
+
+    let pterra_video_records = records[pterra_click_index..]
+        .iter()
+        .filter(|record| {
+            matches!(
+                record["semantic"]["video"]["active_resource"].as_str(),
+                Some(PTERRA_LOCATION_VIDEO | PTERRA_SCRUTER_VIDEO)
+            )
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        !pterra_video_records.is_empty(),
+        "Pterra selection never entered either authored planet-video stream"
+    );
+    for resource in [PTERRA_LOCATION_VIDEO, PTERRA_SCRUTER_VIDEO] {
+        assert!(
+            pterra_video_records.iter().any(|record| {
+                record["semantic"]["video"]["active_resource"].as_str() == Some(resource)
+            }),
+            "Pterra travel never presented authored stream {resource}"
+        );
+    }
+    let retained_bridge_palette = pterra_queued["semantic"]["video"]["bridge_palette_hash"]
+        .as_str()
+        .expect("Pterra selection did not expose the retained bridge palette hash");
+    for record in pterra_video_records {
+        assert_eq!(
+            record["semantic"]["video"]["manu3_layer_allowed"], false,
+            "the independent wgpu MANU3 layer was enabled over a Pterra video: {record}"
+        );
+        assert_eq!(
+            record["semantic"]["video"]["bridge_palette_hash"], retained_bridge_palette,
+            "an HNM-local palette escaped into the retained RGBA bridge surface: {record}"
+        );
+    }
+    for record in &records[pterra_click_index..] {
+        assert_eq!(
+            record["semantic"]["video"]["bridge_palette_hash"], retained_bridge_palette,
+            "Pterra playback changed the retained RGBA bridge palette after a stream boundary: {record}"
+        );
+    }
+    assert!(
+        records[pterra_click_index..].iter().any(|record| {
+            record["semantic"]["presentation"]["active_actor_presentation"]["name"]
+                == SCRUTER_JO_NAME
+        }),
+        "the shared C4 deferred record never entered the authored Scruter Jo travel sequence"
+    );
 }
 
 #[test]

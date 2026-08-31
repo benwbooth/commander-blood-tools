@@ -172,7 +172,7 @@ impl RuntimeShipNavigation {
             import_description_text_state(&mut state, services.text_presentation());
         }
         if let Some(target) = state.deferred_navigation_record.take() {
-            services.publish_ship_navigation_deferred_record(target)?;
+            services.publish_ship_navigation_deferred_record(target);
         }
         if native_outcome == ShipNavigationOutcome::ResetToBridge {
             services.request_ship_hud_reinitialization()?;

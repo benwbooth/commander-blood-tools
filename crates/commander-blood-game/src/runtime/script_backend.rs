@@ -1887,6 +1887,29 @@ mod tests {
     }
 
     #[test]
+    fn main_loop_hold_release_replaces_stale_text_owner_state() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        scripts.dispatch.text_presentation.subtitle_display_active = true;
+        scripts.dispatch.text_presentation.hold_ready = false;
+
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.active = true;
+        lifecycle.presentation.subtitle_display_active = false;
+        lifecycle.presentation.hold_ready = true;
+
+        scripts.prepare_lifecycle_frame(&lifecycle);
+
+        assert!(!scripts.text_presentation().subtitle_display_active);
+        assert!(scripts.text_presentation().hold_ready);
+        assert!(scripts.presentation_scan_state().hold_ready);
+    }
+
+    #[test]
     fn presentation_palette_dirty_is_a_one_shot_runtime_alias() {
         let Some(paths) = original_data_paths() else {
             return;

@@ -1478,17 +1478,14 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.defer_actor_presentation(target);
     }
 
-    /// Publish the C4 navigation candidate to both consumers of its native shared link.
-    pub(super) fn publish_ship_navigation_deferred_record(
-        &mut self,
-        target: ScriptObjectId,
-    ) -> Result<()> {
+    /// Publish the typed C4 candidate consumed by the next VM scan.
+    ///
+    /// The executable addresses this cell as both `DS:6768/676A` and
+    /// `GS:6768/676A`. The VM scan runs before bridge actors on the following
+    /// frame, so a C4 written by ship navigation is consumed as an actor
+    /// presentation rather than retained by the hyperjump actor.
+    pub(super) fn publish_ship_navigation_deferred_record(&mut self, target: ScriptObjectId) {
         self.scripts.defer_actor_presentation(target);
-        self.bridge_actors
-            .as_mut()
-            .context("bridge actor state is already being updated")?
-            .publish_navigation_deferred_record(target);
-        Ok(())
     }
 
     /// Publish the complete deferred C6 action emitted by black-hole presentation.
@@ -3074,6 +3071,15 @@ impl<'window> ModernGameServices<'window> {
 
     /// Refresh main-loop presentation writes before a scene transition clones script state.
     pub(super) fn prepare_scene_transition_presentation(&mut self, lifecycle: &GameLifecycleState) {
+        self.scripts.prepare_lifecycle_frame(lifecycle);
+    }
+
+    /// Broadcast main-loop writes to the typed owners that consume the frame tail.
+    ///
+    /// BLOODPRG stored these fields once. The flat port keeps specialized text,
+    /// scan, and ship state, so main-loop ownership changes must reach those
+    /// copies before any frame-tail coordinator imports them.
+    pub(super) fn prepare_frame_tail_presentation(&mut self, lifecycle: &GameLifecycleState) {
         self.scripts.prepare_lifecycle_frame(lifecycle);
     }
 

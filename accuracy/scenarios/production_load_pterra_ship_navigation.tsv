@@ -30,6 +30,8 @@ click 216 72
 wait 40
 wait 40
 wait 40
-click 80 99
-wait 20
-wait 20
+click 80 88
+wait 50
+wait 50
+wait 50
+wait 50

@@ -412,6 +412,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         state: &mut GameLifecycleState,
     ) -> Result<()> {
         self.current_scene_link = link;
+        self.services.prepare_frame_tail_presentation(state);
         let pointer = self.services.input().pointer_sample();
         let retained_word_choice_owner =
             self.services.presentation_word_choice_phase()? != PresentationWordChoicePhase::Closed;
