@@ -15,6 +15,10 @@ use serde_json::Value;
 const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
 const REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE: &str = "CBLOOD_REQUIRE_ACCURACY_TESTS";
 const DISPLAY_ENVIRONMENT_VARIABLES: [&str; 2] = ["DISPLAY", "WAYLAND_DISPLAY"];
+const SDL_AUDIO_DISK_OUTPUT_FILE_ENVIRONMENT_VARIABLE: &str = "SDL_AUDIO_DISK_OUTPUT_FILE";
+const SDL_AUDIO_DISK_TIMESCALE_ENVIRONMENT_VARIABLE: &str = "SDL_AUDIO_DISK_TIMESCALE";
+const SDL_AUDIO_DISK_TIMESCALE: &str = "10";
+const SDL_AUDIO_F32_SAMPLE_BYTE_COUNT: usize = size_of::<f32>();
 const INTRO_ESCAPE_KEY: &str = "key 1";
 const OPENING_VIDEO: &str = "sq\\mind.HNM";
 const FIRST_STARTUP_VIDEO: &str = "SQ\\cliptoot.hnm";
@@ -280,7 +284,7 @@ fn production_runtime_escape_cancels_the_opening_and_enters_script1() {
 
 #[test]
 fn production_runtime_completes_the_authored_startup_phone_call() {
-    let Some(records) = run_production_scenario(
+    let Some((records, sdl_audio_output)) = run_production_scenario_with_sdl_audio_capture(
         "accuracy/scenarios/startup_phone_complete.tsv",
         "startup-phone.jsonl",
     ) else {
@@ -432,6 +436,7 @@ fn production_runtime_completes_the_authored_startup_phone_call() {
         1,
         "radio actor completion clip did not fire exactly once"
     );
+    assert_audible_sdl_callback_output(&sdl_audio_output);
     let greeting_audio = &post_answer_audio[1..];
     assert!(!greeting_audio.is_empty());
     assert!(
@@ -1282,11 +1287,40 @@ fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value
     run_production_scenario_with_setup(scenario, trace_name, |_, _| Ok(()))
 }
 
+fn run_production_scenario_with_sdl_audio_capture(
+    scenario: &str,
+    trace_name: &str,
+) -> Option<(Vec<Value>, Box<[u8]>)> {
+    run_production_scenario_internal(scenario, trace_name, |_, _| Ok(()), true).map(|output| {
+        (
+            output.records,
+            output
+                .sdl_audio_output
+                .expect("SDL audio capture run omitted its disk output"),
+        )
+    })
+}
+
 fn run_production_scenario_with_setup(
     scenario: &str,
     trace_name: &str,
     setup: impl FnOnce(&Path, &Path) -> anyhow::Result<()>,
 ) -> Option<Vec<Value>> {
+    run_production_scenario_internal(scenario, trace_name, setup, false)
+        .map(|output| output.records)
+}
+
+struct ProductionScenarioOutput {
+    records: Vec<Value>,
+    sdl_audio_output: Option<Box<[u8]>>,
+}
+
+fn run_production_scenario_internal(
+    scenario: &str,
+    trace_name: &str,
+    setup: impl FnOnce(&Path, &Path) -> anyhow::Result<()>,
+    capture_sdl_audio: bool,
+) -> Option<ProductionScenarioOutput> {
     let asset_cache = configured_runtime_asset_cache()?;
     if !DISPLAY_ENVIRONMENT_VARIABLES
         .iter()
@@ -1302,10 +1336,12 @@ fn run_production_scenario_with_setup(
     let root = workspace_root();
     let temporary = TemporaryRoot::create();
     let trace_path = temporary.0.join(trace_name);
+    let sdl_audio_output_path = temporary.0.join("sdl-audio.raw");
     let writable_path = temporary.0.join("writable");
     setup(&asset_cache, &writable_path).unwrap();
     let scenario_path = root.join(scenario);
-    let output = Command::new(env!("CARGO_BIN_EXE_commander-blood"))
+    let mut command = Command::new(env!("CARGO_BIN_EXE_commander-blood"));
+    command
         .arg("--write-data")
         .arg(&writable_path)
         .arg("--scenario")
@@ -1314,10 +1350,22 @@ fn run_production_scenario_with_setup(
         .arg(&trace_path)
         .arg("--oracle-packed-second")
         .arg(DOS_ORACLE_PACKED_SECOND.to_string())
-        .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, asset_cache)
-        .env("SDL_AUDIODRIVER", "dummy")
-        .output()
-        .unwrap();
+        .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, asset_cache);
+    if capture_sdl_audio {
+        command
+            .env("SDL_AUDIODRIVER", "disk")
+            .env(
+                SDL_AUDIO_DISK_OUTPUT_FILE_ENVIRONMENT_VARIABLE,
+                &sdl_audio_output_path,
+            )
+            .env(
+                SDL_AUDIO_DISK_TIMESCALE_ENVIRONMENT_VARIABLE,
+                SDL_AUDIO_DISK_TIMESCALE,
+            );
+    } else {
+        command.env("SDL_AUDIODRIVER", "dummy");
+    }
+    let output = command.output().unwrap();
     assert!(
         output.status.success(),
         "production scenario {} failed:\nstdout:\n{}\nstderr:\n{}",
@@ -1325,7 +1373,45 @@ fn run_production_scenario_with_setup(
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
-    Some(load_trace(&trace_path))
+    let sdl_audio_output = capture_sdl_audio.then(|| {
+        std::fs::read(&sdl_audio_output_path).unwrap_or_else(|error| {
+            panic!(
+                "reading SDL callback output {}: {error}",
+                sdl_audio_output_path.display()
+            )
+        })
+    });
+    Some(ProductionScenarioOutput {
+        records: load_trace(&trace_path),
+        sdl_audio_output: sdl_audio_output.map(Vec::into_boxed_slice),
+    })
+}
+
+fn assert_audible_sdl_callback_output(encoded: &[u8]) {
+    assert!(!encoded.is_empty(), "SDL callback wrote no process audio");
+    let samples = encoded.chunks_exact(SDL_AUDIO_F32_SAMPLE_BYTE_COUNT);
+    assert!(
+        samples.remainder().is_empty(),
+        "SDL callback output is not aligned to f32 samples"
+    );
+    let mut audible_sample_count = usize::MIN;
+    for encoded_sample in samples {
+        let sample = f32::from_le_bytes(encoded_sample.try_into().unwrap());
+        assert!(
+            sample.is_finite(),
+            "SDL callback emitted a non-finite sample"
+        );
+        assert!(
+            (-1.0..=1.0).contains(&sample),
+            "SDL callback sample {sample} exceeds normalized f32 range"
+        );
+        audible_sample_count += usize::from(sample != 0.0);
+    }
+    assert_ne!(
+        audible_sample_count,
+        usize::MIN,
+        "the phone process selected and mixed TB.SND clip 2, but SDL received only silence"
+    );
 }
 
 fn seed_original_save(asset_cache: &Path, writable_path: &Path, profile: u8) -> anyhow::Result<()> {
