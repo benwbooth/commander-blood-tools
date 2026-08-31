@@ -261,6 +261,18 @@ impl<'window> RuntimePlatformHost<'window> {
             self.logical_pointer = position.map(f32::from);
             self.pointer_inside_window = true;
         }
+        if let Some(relative_motion) = input.relative_pointer_motion {
+            let (width, height) = self.window.size();
+            apply_runtime_pointer_motion(
+                &mut self.alien_pointer,
+                &mut self.logical_pointer,
+                &mut self.bridge_horizontal_delta,
+                &mut self.pointer_inside_window,
+                self.pointer_position_locked,
+                [width as f32, height as f32],
+                relative_motion.map(|component| component as f32),
+            );
+        }
         self.apply_scenario_buttons_and_key(services, input)
     }
 
@@ -380,21 +392,15 @@ impl<'window> RuntimePlatformHost<'window> {
                         continue;
                     }
                     let (width, height) = self.window.size();
-                    let output_size = [width as f32, height as f32];
-                    if let Some(pointer) = &mut self.alien_pointer {
-                        let delta = map_motion_to_alien_driver(output_size, [xrel, yrel]);
-                        pointer[0] = (pointer[0] + delta[0]).clamp(0.0, ALIEN_DRIVER_WIDTH);
-                        pointer[1] = (pointer[1] + delta[1]).clamp(0.0, ALIEN_DRIVER_HEIGHT);
-                    } else {
-                        self.pointer_inside_window = true;
-                        apply_bridge_pointer_motion(
-                            &mut self.logical_pointer,
-                            &mut self.bridge_horizontal_delta,
-                            self.pointer_position_locked,
-                            output_size,
-                            [xrel, yrel],
-                        );
-                    }
+                    apply_runtime_pointer_motion(
+                        &mut self.alien_pointer,
+                        &mut self.logical_pointer,
+                        &mut self.bridge_horizontal_delta,
+                        &mut self.pointer_inside_window,
+                        self.pointer_position_locked,
+                        [width as f32, height as f32],
+                        [xrel, yrel],
+                    );
                 }
                 Event::MouseButtonDown {
                     window_id: event_window_id,
@@ -793,6 +799,31 @@ fn apply_bridge_pointer_motion(
     *horizontal_delta += delta[0];
     logical_pointer[0] = (logical_pointer[0] + delta[0]).clamp(0.0, LOGICAL_SCREEN_WIDTH - 1.0);
     logical_pointer[1] = (logical_pointer[1] + delta[1]).clamp(0.0, LOGICAL_SCREEN_HEIGHT - 1.0);
+}
+
+fn apply_runtime_pointer_motion(
+    alien_pointer: &mut Option<[f32; 2]>,
+    logical_pointer: &mut [f32; 2],
+    bridge_horizontal_delta: &mut f32,
+    pointer_inside_window: &mut bool,
+    pointer_position_locked: bool,
+    output_size: [f32; 2],
+    relative_motion: [f32; 2],
+) {
+    if let Some(pointer) = alien_pointer {
+        let delta = map_motion_to_alien_driver(output_size, relative_motion);
+        pointer[0] = (pointer[0] + delta[0]).clamp(0.0, ALIEN_DRIVER_WIDTH);
+        pointer[1] = (pointer[1] + delta[1]).clamp(0.0, ALIEN_DRIVER_HEIGHT);
+    } else {
+        *pointer_inside_window = true;
+        apply_bridge_pointer_motion(
+            logical_pointer,
+            bridge_horizontal_delta,
+            pointer_position_locked,
+            output_size,
+            relative_motion,
+        );
+    }
 }
 
 fn map_motion_to_logical(output_size: [f32; 2], motion: [f32; 2]) -> [f32; 2] {

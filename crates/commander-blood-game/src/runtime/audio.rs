@@ -540,9 +540,18 @@ struct RuntimeAudioCallback {
     output_samples: Vec<f32>,
 }
 
-impl AudioCallback<f32> for RuntimeAudioCallback {
-    fn callback(&mut self, stream: &mut AudioStream, requested: i32) {
-        let requested = usize::try_from(requested).unwrap_or(usize::MIN);
+impl RuntimeAudioCallback {
+    fn new(shared: Arc<Mutex<SharedAudioState>>) -> Self {
+        Self {
+            shared,
+            unsigned_samples: Vec::new(),
+            foreground_samples: Vec::new(),
+            output_samples: Vec::new(),
+        }
+    }
+
+    /// Render the exact host-rate `f32` slice passed to SDL by the callback.
+    fn render_for_sdl(&mut self, requested: usize) -> &[f32] {
         self.unsigned_samples
             .resize(requested, UNSIGNED_PCM_SILENCE);
         self.foreground_samples
@@ -578,7 +587,15 @@ impl AudioCallback<f32> for RuntimeAudioCallback {
         {
             *destination = (f32::from(sample) - UNSIGNED_PCM_SCALE) / UNSIGNED_PCM_SCALE;
         }
-        if let Err(error) = stream.put_data_f32(&self.output_samples) {
+        &self.output_samples
+    }
+}
+
+impl AudioCallback<f32> for RuntimeAudioCallback {
+    fn callback(&mut self, stream: &mut AudioStream, requested: i32) {
+        let requested = usize::try_from(requested).unwrap_or(usize::MIN);
+        let submission = self.render_for_sdl(requested);
+        if let Err(error) = stream.put_data_f32(submission) {
             lock_shared(&self.shared).callback_error = Some(error.to_string());
         }
     }
@@ -594,12 +611,7 @@ impl RuntimeAudioHost {
     /// Open and resume the default SDL3 playback stream.
     pub fn open(audio: &AudioSubsystem) -> Result<Self> {
         let shared = Arc::new(Mutex::new(SharedAudioState::default()));
-        let callback = RuntimeAudioCallback {
-            shared: Arc::clone(&shared),
-            unsigned_samples: Vec::new(),
-            foreground_samples: Vec::new(),
-            output_samples: Vec::new(),
-        };
+        let callback = RuntimeAudioCallback::new(Arc::clone(&shared));
         let spec = AudioSpec {
             freq: Some(RUNTIME_AUDIO_OUTPUT_RATE_HZ as i32),
             channels: Some(RUNTIME_AUDIO_CHANNEL_COUNT),
@@ -874,6 +886,8 @@ mod tests {
     const HALF_OUTPUT_RATE_HZ: u32 = TEST_OUTPUT_RATE_HZ / 2;
     const TEST_STREAM_RATE_HZ: u32 = 11_111;
     const TEST_STREAM_RATE_CODE: u8 = 166;
+    const PHONE_COMPLETION_CLIP_INDEX: u16 = 2;
+    const RESIDENT_DRIVER_TAIL_BYTE_COUNT: usize = SND_CLIP_HEADER_BYTE_COUNT - 1;
 
     #[test]
     fn foreground_is_averaged_over_music_in_the_unsigned_domain() {
@@ -1080,6 +1094,53 @@ mod tests {
         );
     }
 
+    #[test]
+    fn phone_completion_boing_reaches_non_silent_f32_callback_submission() {
+        let shared = Arc::new(Mutex::new(SharedAudioState::default()));
+        let mut stream_payload = vec![UNSIGNED_PCM_SILENCE; AUDIO_STREAM_PAGE_BYTE_COUNT];
+        stream_payload[SND_CLIP_RATE_CODE_INDEX] = TEST_STREAM_RATE_CODE;
+        let encoded_stream = encoded_voc_stream(&stream_payload);
+        let effect_samples = [u8::MAX, u8::MIN, 192, 64, UNSIGNED_PCM_SILENCE];
+        let resident_effects =
+            resident_bank_with_clip(usize::from(PHONE_COMPLETION_CLIP_INDEX), &effect_samples);
+        let mut resident_effects_memory = resident_effects.payload().to_vec();
+        resident_effects_memory.extend([UNSIGNED_PCM_SILENCE; RESIDENT_DRIVER_TAIL_BYTE_COUNT]);
+        let streamed_dialogue = empty_bank();
+
+        let outcome = {
+            let mut state = lock_shared(&shared);
+            state
+                .music_stream
+                .load(&encoded_stream, RUNTIME_AUDIO_OUTPUT_RATE_HZ)
+                .unwrap();
+            state.music_stream.start().unwrap();
+            state
+                .music_stream
+                .update_clip(
+                    AudioClipRequest::VoiceReaction {
+                        bank_index: PHONE_COMPLETION_CLIP_INDEX,
+                    },
+                    AudioPlaybackBanks {
+                        resident_effects: &resident_effects,
+                        resident_effects_memory: &resident_effects_memory,
+                        streamed_dialogue: &streamed_dialogue,
+                    },
+                )
+                .unwrap()
+        };
+        assert!(matches!(
+            outcome,
+            AudioPlaybackOutcome::StreamMix(report)
+                if report.status == AudioMixStatus::Mixed
+                    && report.operations.iter().map(|operation| operation.sample_count).sum::<usize>() > 0
+        ));
+
+        let mut callback = RuntimeAudioCallback::new(shared);
+        let submission = callback.render_for_sdl(8);
+        assert_eq!(&submission[..4], &[0.4921875, -0.5, 0.25, -0.25]);
+        assert!(submission.iter().any(|sample| *sample != 0.0));
+    }
+
     fn encoded_voc_stream(payload: &[u8]) -> Vec<u8> {
         let mut encoded = vec![u8::MIN; CREATIVE_VOICE_FILE_HEADER_BYTE_COUNT];
         encoded.extend_from_slice(payload);
@@ -1102,6 +1163,32 @@ mod tests {
         encoded.extend_from_slice(&0_u32.to_le_bytes());
         encoded.extend_from_slice(&(clip.len() as u32).to_le_bytes());
         encoded.extend_from_slice(&clip);
+        SndBank::decode(&encoded).unwrap()
+    }
+
+    fn resident_bank_with_clip(index: usize, samples: &[u8]) -> SndBank {
+        let clip_count = index + 1;
+        let mut payload = Vec::new();
+        let mut offsets = Vec::with_capacity(clip_count + 1);
+        for clip_index in 0..clip_count {
+            offsets.push(payload.len());
+            let mut clip = vec![u8::MIN; SND_CLIP_HEADER_BYTE_COUNT];
+            clip[SND_CLIP_RATE_CODE_INDEX] = TEST_STREAM_RATE_CODE;
+            if clip_index == index {
+                clip.extend_from_slice(samples);
+            } else {
+                clip.push(UNSIGNED_PCM_SILENCE);
+            }
+            payload.extend_from_slice(&clip);
+        }
+        offsets.push(payload.len());
+
+        let mut encoded = (clip_count as u16).to_le_bytes().to_vec();
+        encoded.extend_from_slice(&[u8::MIN; 2]);
+        for offset in offsets {
+            encoded.extend_from_slice(&(offset as u32).to_le_bytes());
+        }
+        encoded.extend_from_slice(&payload);
         SndBank::decode(&encoded).unwrap()
     }
 

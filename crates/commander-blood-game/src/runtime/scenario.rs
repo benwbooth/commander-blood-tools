@@ -73,6 +73,7 @@ pub(super) enum RuntimeScenarioKey {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(super) struct RuntimeScenarioFrameInput {
     pub pointer_position: Option<[i16; 2]>,
+    pub relative_pointer_motion: Option<[i32; 2]>,
     pub primary_pressed: bool,
     pub key: Option<RuntimeScenarioKey>,
     pub teleport_target: Option<Box<[u8]>>,
@@ -82,6 +83,7 @@ pub(super) struct RuntimeScenarioFrameInput {
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum RuntimeScenarioActionKind {
     Move { position: [i16; 2] },
+    Motion { relative: [i32; 2] },
     Click { position: [i16; 2] },
     Key(RuntimeScenarioKey),
     Wait { frames: u16 },
@@ -183,6 +185,10 @@ impl RuntimeScenarioDriver {
         let complete = match &action.kind {
             RuntimeScenarioActionKind::Move { position } => {
                 input.pointer_position = Some(*position);
+                true
+            }
+            RuntimeScenarioActionKind::Motion { relative } => {
+                input.relative_pointer_motion = Some(*relative);
                 true
             }
             RuntimeScenarioActionKind::Click { position } => {
@@ -303,10 +309,25 @@ fn parse_action(line: &str, path: &Path, line_number: usize) -> Result<RuntimeSc
         }
         Ok([x, y])
     };
+    let relative_motion = |fields: &[&str]| -> Result<[i32; 2]> {
+        if fields.len() != 3 {
+            return Err(fail("motion action requires relative x and y"));
+        }
+        let x = fields[1]
+            .parse::<i32>()
+            .map_err(|_| fail("invalid relative pointer x motion"))?;
+        let y = fields[2]
+            .parse::<i32>()
+            .map_err(|_| fail("invalid relative pointer y motion"))?;
+        Ok([x, y])
+    };
 
     let kind = match fields.first().copied() {
         Some("move") => RuntimeScenarioActionKind::Move {
             position: position(&fields)?,
+        },
+        Some("motion") => RuntimeScenarioActionKind::Motion {
+            relative: relative_motion(&fields)?,
         },
         Some("click" | "sclick") => RuntimeScenarioActionKind::Click {
             position: position(&fields)?,
@@ -471,6 +492,17 @@ mod tests {
             action.kind,
             RuntimeScenarioActionKind::Teleport {
                 target: Box::from(&b"Pterra"[..]),
+            }
+        );
+    }
+
+    #[test]
+    fn motion_publishes_one_signed_relative_pointer_delta() {
+        let action = parse_action("motion -320 7", Path::new("scenario.tsv"), 4).unwrap();
+        assert_eq!(
+            action.kind,
+            RuntimeScenarioActionKind::Motion {
+                relative: [-320, 7],
             }
         );
     }

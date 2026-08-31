@@ -103,8 +103,8 @@ const BOB_FIRST_TALK_VIDEO: &str = "PE\\bobc.hnm";
 const BOB_SECOND_TALK_VIDEO: &str = "PE\\bobd.hnm";
 const BOB_HONK_CHATTER_PREFIX: &str = "Yes sir, Cap'n Bob";
 const BOB_GOODBYE_CLICK: &str = "sclick 225 58";
-const BOB_POINTER_LEFT_MOVE: &str = "move 0 100";
-const BOB_POINTER_RIGHT_MOVE: &str = "move 319 100";
+const BOB_POINTER_LEFT_MOVE: &str = "motion -2560 0";
+const BOB_POINTER_RIGHT_MOVE: &str = "motion 1280 0";
 const RESIDENT_LAST_CLIP_INDEX: u64 = 16;
 const BOB_FIRST_CONTACT_PROMPT: [&str; 9] = [
     "What",
