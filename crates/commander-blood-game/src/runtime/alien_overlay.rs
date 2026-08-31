@@ -16,6 +16,7 @@ const ALIEN_DRIVER_WIDTH: u32 = 640;
 const ALIEN_DRIVER_HEIGHT: u32 = 1_024;
 const ALIEN_OVERLAY_TRIGGER: u8 = 1;
 const SHIP_SEQUENCE_ACTIVE: u16 = 1;
+const COMPLETED_OVERLAY_INCREMENT: u64 = 1;
 const ALIEN_SOUND_BANK_NAME: &[u8] = b"3D.snd";
 const BRIDGE_SOUND_BANK_NAME: &[u8] = b"tb.snd";
 
@@ -120,12 +121,45 @@ pub fn run_runtime_alien_overlay<Host: RuntimeAlienOverlayFrameHost>(
 pub struct RuntimeAlienOverlayCycle {
     state: AlienOverlayCycleState,
     frame_clock: u32,
+    completed_overlays: RuntimeAlienOverlayCompletionCounts,
+}
+
+/// Process-level execution witnesses for the three original XDB overlays.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeAlienOverlayCompletionCounts {
+    amer: u64,
+    croolis: u64,
+    scrut: u64,
+}
+
+impl RuntimeAlienOverlayCompletionCounts {
+    /// Number of completed invocations for one original overlay kind.
+    pub const fn count(self, overlay: AlienXdbKind) -> u64 {
+        match overlay {
+            AlienXdbKind::Amer => self.amer,
+            AlienXdbKind::Croolis => self.croolis,
+            AlienXdbKind::Scrut => self.scrut,
+        }
+    }
+
+    fn record(&mut self, overlay: AlienXdbKind) {
+        match overlay {
+            AlienXdbKind::Amer => record_amer_overlay_completion(self),
+            AlienXdbKind::Croolis => record_croolis_overlay_completion(self),
+            AlienXdbKind::Scrut => record_scrut_overlay_completion(self),
+        }
+    }
 }
 
 impl RuntimeAlienOverlayCycle {
     /// Borrow the recovered coordinator state for diagnostics and regression tests.
     pub const fn state(&self) -> &AlienOverlayCycleState {
         &self.state
+    }
+
+    /// Return process-level completion counts used by production fidelity gates.
+    pub const fn completed_overlays(&self) -> RuntimeAlienOverlayCompletionCounts {
+        self.completed_overlays
     }
 
     /// Consume and run a pending overlay, restoring bridge resources before returning.
@@ -161,11 +195,29 @@ impl RuntimeAlienOverlayCycle {
         services.write_alien_timing_scale(self.state.shared.timing_scale)?;
         lifecycle.presentation.sequence_active =
             self.state.shared.sequence_flags & SHIP_SEQUENCE_ACTIVE != u16::MIN;
-        if matches!(&result, Ok(AlienOverlayCycleOutcome::Ran { .. })) {
+        if let Ok(AlienOverlayCycleOutcome::Ran { overlay, .. }) = &result {
+            self.completed_overlays.record(*overlay);
             services.publish_alien_overlay_bridge_restoration();
         }
         result
     }
+}
+
+// Keep one meaningful coverage symbol per original XDB component. Shared Rust
+// routines cannot otherwise prove which species actually ran in a process.
+#[inline(never)]
+fn record_amer_overlay_completion(counts: &mut RuntimeAlienOverlayCompletionCounts) {
+    counts.amer = counts.amer.wrapping_add(COMPLETED_OVERLAY_INCREMENT);
+}
+
+#[inline(never)]
+fn record_croolis_overlay_completion(counts: &mut RuntimeAlienOverlayCompletionCounts) {
+    counts.croolis = counts.croolis.wrapping_add(COMPLETED_OVERLAY_INCREMENT);
+}
+
+#[inline(never)]
+fn record_scrut_overlay_completion(counts: &mut RuntimeAlienOverlayCompletionCounts) {
+    counts.scrut = counts.scrut.wrapping_add(COMPLETED_OVERLAY_INCREMENT);
 }
 
 struct RuntimeAlienOverlayCycleBackend<'services, 'window, 'platform, 'clock> {

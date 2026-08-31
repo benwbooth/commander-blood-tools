@@ -1,0 +1,4 @@
+component	rust_path	rust_symbol
+xdb_amer	crates/commander-blood-game/src/runtime/alien_overlay.rs	record_amer_overlay_completion
+xdb_croolis	crates/commander-blood-game/src/runtime/alien_overlay.rs	record_croolis_overlay_completion
+xdb_scrut	crates/commander-blood-game/src/runtime/alien_overlay.rs	record_scrut_overlay_completion

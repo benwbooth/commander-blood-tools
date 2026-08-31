@@ -77,6 +77,7 @@ pub(super) struct RuntimeScenarioFrameInput {
     pub primary_pressed: bool,
     pub key: Option<RuntimeScenarioKey>,
     pub teleport_target: Option<Box<[u8]>>,
+    pub trigger_alien_overlay: bool,
     pub request_shutdown: bool,
 }
 
@@ -89,6 +90,7 @@ enum RuntimeScenarioActionKind {
     Wait { frames: u16 },
     Park { edge_x: i16, target_frame: u16 },
     Teleport { target: Box<[u8]> },
+    TriggerAlienOverlay,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -230,6 +232,10 @@ impl RuntimeScenarioDriver {
             }
             RuntimeScenarioActionKind::Teleport { target } => {
                 input.teleport_target = Some(target.clone());
+                true
+            }
+            RuntimeScenarioActionKind::TriggerAlienOverlay => {
+                input.trigger_alien_overlay = true;
                 true
             }
         };
@@ -398,6 +404,12 @@ fn parse_action(line: &str, path: &Path, line_number: usize) -> Result<RuntimeSc
                 target: Box::from(fields[1].as_bytes()),
             }
         }
+        Some("alien") => {
+            if fields.len() != 1 {
+                return Err(fail("alien action takes no arguments"));
+            }
+            RuntimeScenarioActionKind::TriggerAlienOverlay
+        }
         Some(command) => return Err(fail(&format!("unsupported scenario command {command:?}"))),
         None => return Err(fail("empty scenario action")),
     };
@@ -494,6 +506,12 @@ mod tests {
                 target: Box::from(&b"Pterra"[..]),
             }
         );
+    }
+
+    #[test]
+    fn alien_action_requests_the_next_recovered_round_robin_overlay() {
+        let action = parse_action("alien", Path::new("scenario.tsv"), 5).unwrap();
+        assert_eq!(action.kind, RuntimeScenarioActionKind::TriggerAlienOverlay);
     }
 
     #[test]

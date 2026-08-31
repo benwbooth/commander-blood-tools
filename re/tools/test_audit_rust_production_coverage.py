@@ -69,6 +69,46 @@ end_of_record
         self.assertEqual(result[0]["execution_count"], 0)
         self.assertEqual(result[0]["instrumented_instances"], 1)
 
+    def test_shared_symbols_require_the_original_component_witness(self) -> None:
+        workspace = Path("/workspace")
+        lcov = """\
+SF:/workspace/crates/game/src/native/alien/shared.rs
+FNDA:9,_RNvAlienSceneRuntime4step
+end_of_record
+SF:/workspace/crates/game/src/runtime/alien_overlay.rs
+FNDA:1,_RNv30record_amer_overlay_completion
+FNDA:0,_RNv33record_croolis_overlay_completion
+end_of_record
+"""
+        rows = [
+            {
+                "component": component,
+                "entry": "0x0000a3",
+                "function": f"{component}_main",
+                "rust_path": "crates/game/src/native/alien/shared.rs",
+                "rust_symbol": "AlienSceneRuntime::step",
+            }
+            for component in ("xdb_amer", "xdb_croolis")
+        ]
+        witnesses = {
+            "xdb_amer": (
+                "crates/game/src/runtime/alien_overlay.rs",
+                "record_amer_overlay_completion",
+            ),
+            "xdb_croolis": (
+                "crates/game/src/runtime/alien_overlay.rs",
+                "record_croolis_overlay_completion",
+            ),
+        }
+
+        result = audit.audit_rows(rows, audit.load_lcov(lcov, workspace), witnesses)
+
+        self.assertEqual(result[0]["execution_count"], 9)
+        self.assertEqual(result[0]["component_witness_execution_count"], 1)
+        self.assertEqual(result[1]["raw_execution_count"], 9)
+        self.assertEqual(result[1]["execution_count"], 0)
+        self.assertEqual(result[1]["component_witness_execution_count"], 0)
+
     def test_expected_coverage_fails_only_for_baseline_routines_that_dropped_out(self) -> None:
         routines = [
             {"component": "bloodprg", "entry": "0x000001", "execution_count": 7},
@@ -94,6 +134,19 @@ end_of_record
 
             with self.assertRaisesRegex(ValueError, "duplicate component/entry"):
                 audit.read_expected_coverage(path)
+
+    def test_component_witness_manifest_rejects_duplicate_components(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "witnesses.tsv"
+            path.write_text(
+                "component\trust_path\trust_symbol\n"
+                "xdb_amer\tamer.rs\trecord_amer\n"
+                "xdb_amer\tamer.rs\trecord_amer_again\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "duplicate component witness"):
+                audit.read_component_witnesses(path)
 
 
 if __name__ == "__main__":

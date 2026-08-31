@@ -295,6 +295,9 @@ impl<'window> RuntimePlatformHost<'window> {
         if let Some(target) = input.teleport_target.as_deref() {
             services.teleport_arche_to_navigation_target(target)?;
         }
+        if input.trigger_alien_overlay {
+            services.trigger_alien_overlay_for_scenario()?;
+        }
         self.pointer_buttons = if input.primary_pressed {
             PointerButtons::from_bits(PointerButton::Primary as u16)
         } else {

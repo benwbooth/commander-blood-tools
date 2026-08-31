@@ -65,6 +65,8 @@ const SCRUTER_JO_POST_OVERLAY_VIDEO: &str = "PE\\scr21.hnm";
 const SCRUTER_JO_RECOVERY_VIDEO: &str = "PE\\scr22.hnm";
 const SCRUTER_JO_FIRST_CONTACT_SUBTITLE: &str = "I've reprogrammed him";
 const NEXT_ALIEN_OVERLAY_AFTER_AMER: &str = "Croolis";
+const NEXT_ALIEN_OVERLAY_AFTER_SCRUT: &str = "Amer";
+const COMPLETED_ALIEN_OVERLAY_COUNT: u64 = 1;
 const AUTHENTIC_GAME1_SAVE: &str = "accuracy/cblood_install/cblood/GAME1.SAV";
 const HONK_WORD_CHOICES: [&str; 9] = [
     "bye_bye",
@@ -1354,6 +1356,20 @@ fn production_runtime_runs_scruter_jo_alien_overlay_and_restores_the_bridge() {
     assert_eq!(
         overlay_return["semantic"]["audio"]["streamed_sound_bank"],
         SCRUTER_JO_SOUND_BANK
+    );
+
+    let completed_round_robin = scruter_records
+        .iter()
+        .find(|record| {
+            let counts = &record["semantic"]["alien_overlay"]["completed_overlays"];
+            ["Amer", "Croolis", "Scrut"]
+                .iter()
+                .all(|overlay| counts[*overlay].as_u64() == Some(COMPLETED_ALIEN_OVERLAY_COUNT))
+        })
+        .expect("the production process did not complete the three-XDB round robin");
+    assert_eq!(
+        completed_round_robin["semantic"]["alien_overlay"]["next_overlay"],
+        NEXT_ALIEN_OVERLAY_AFTER_SCRUT
     );
 }
 

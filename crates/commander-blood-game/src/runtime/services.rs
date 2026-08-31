@@ -3,7 +3,7 @@
 use std::ops::Range;
 
 use anyhow::{Context, Result, bail};
-use commander_blood_formats::alien::AlienAsset;
+use commander_blood_formats::alien::{AlienAsset, AlienXdbKind};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
 use commander_blood_formats::descript::{DescriptBackgroundSlot, DescriptCharacterBackground};
@@ -1759,6 +1759,11 @@ impl<'window> ModernGameServices<'window> {
             .context("presentation screen is already being updated")?
             .set_alien_overlay_flags(armed, pending);
         Ok(())
+    }
+
+    /// Request the next recovered round-robin XDB from a deterministic scenario.
+    pub(super) fn trigger_alien_overlay_for_scenario(&mut self) -> Result<()> {
+        self.set_alien_overlay_flags(true, true)
     }
 
     pub(super) fn read_alien_timing_scale(&self) -> Result<u16> {
@@ -4383,6 +4388,7 @@ impl<'window> ModernGameServices<'window> {
             .ok()
             .map(|overlay| {
                 let state = overlay.state();
+                let completed = overlay.completed_overlays();
                 let (armed, trigger_pending) = self
                     .presentation_screen
                     .as_ref()
@@ -4392,6 +4398,11 @@ impl<'window> ModernGameServices<'window> {
                     "armed": armed,
                     "trigger_pending": trigger_pending,
                     "next_overlay": format!("{:?}", state.next_overlay),
+                    "completed_overlays": {
+                        "Amer": completed.count(AlienXdbKind::Amer),
+                        "Croolis": completed.count(AlienXdbKind::Croolis),
+                        "Scrut": completed.count(AlienXdbKind::Scrut),
+                    },
                     "timing_scale": state.shared.timing_scale,
                     "sequence_flags": state.shared.sequence_flags,
                     "palette_dirty": state.palette_dirty,

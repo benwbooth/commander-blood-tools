@@ -44,6 +44,14 @@ wait 20
 wait 5
 wait 5
 wait 5
+alien
+wait 5
+key 1
+wait 5
+alien
+wait 5
+key 1
+wait 5
 wait 5
 wait 5
 wait 5
