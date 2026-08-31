@@ -1,6 +1,11 @@
 const LOGICAL_WIDTH: f32 = 320.0;
 const LOGICAL_HEIGHT: f32 = 200.0;
 const FULLSCREEN_TRIANGLE_SCALE: f32 = 2.0;
+const SRGB_LINEAR_THRESHOLD: f32 = 0.04045;
+const SRGB_LINEAR_DIVISOR: f32 = 12.92;
+const SRGB_CURVE_OFFSET: f32 = 0.055;
+const SRGB_CURVE_SCALE: f32 = 1.055;
+const SRGB_CURVE_EXPONENT: f32 = 2.4;
 
 @group(0) @binding(0)
 var panorama: texture_2d<f32>;
@@ -27,11 +32,29 @@ fn logical_to_clip(screen: vec2<f32>) -> vec2<f32> {
     );
 }
 
+fn srgb_channel_to_linear(channel: f32) -> f32 {
+    if channel <= SRGB_LINEAR_THRESHOLD {
+        return channel / SRGB_LINEAR_DIVISOR;
+    }
+    return pow(
+        (channel + SRGB_CURVE_OFFSET) / SRGB_CURVE_SCALE,
+        SRGB_CURVE_EXPONENT,
+    );
+}
+
+fn srgb_to_linear(color: vec3<f32>) -> vec3<f32> {
+    return vec3<f32>(
+        srgb_channel_to_linear(color.r),
+        srgb_channel_to_linear(color.g),
+        srgb_channel_to_linear(color.b),
+    );
+}
+
 @vertex
 fn vs_star(input: StarVertexInput) -> ColorVertexOutput {
     var output: ColorVertexOutput;
     output.position = vec4<f32>(logical_to_clip(input.screen), 0.0, 1.0);
-    output.color = input.color;
+    output.color = vec4<f32>(srgb_to_linear(input.color.rgb), input.color.a);
     return output;
 }
 

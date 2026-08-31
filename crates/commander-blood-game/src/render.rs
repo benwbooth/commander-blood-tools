@@ -131,12 +131,7 @@ impl<'window> Renderer<'window> {
         .context("creating wgpu device")?;
 
         let capabilities = surface.get_capabilities(&adapter);
-        let format = capabilities
-            .formats
-            .iter()
-            .copied()
-            .find(wgpu::TextureFormat::is_srgb)
-            .unwrap_or(capabilities.formats[BASE_MIP_LEVEL as usize]);
+        let format = select_surface_format(&capabilities.formats)?;
         let (width, height) = window.size_in_pixels();
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -540,50 +535,76 @@ impl<'window> Renderer<'window> {
         viewport: (f32, f32, f32, f32),
         artwork_pass: ArtworkPass,
     ) {
-        let overlay = artwork_pass == ArtworkPass::TransparentOverlay;
-        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some(if overlay {
-                "Commander Blood indexed overlay pass"
+        encode_artwork_pass(
+            encoder,
+            target,
+            viewport,
+            if artwork_pass == ArtworkPass::TransparentOverlay {
+                &self.overlay_pipeline
             } else {
-                "Commander Blood artwork pass"
-            }),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: target,
-                resolve_target: None,
-                depth_slice: None,
-                ops: wgpu::Operations {
-                    load: if overlay {
-                        wgpu::LoadOp::Load
-                    } else {
-                        wgpu::LoadOp::Clear(wgpu::Color::BLACK)
-                    },
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None,
-            timestamp_writes: None,
-            occlusion_query_set: None,
-            multiview_mask: None,
-        });
-        pass.set_viewport(
-            viewport.0,
-            viewport.1,
-            viewport.2,
-            viewport.3,
-            MINIMUM_DEPTH,
-            MAXIMUM_DEPTH,
-        );
-        pass.set_pipeline(if overlay {
-            &self.overlay_pipeline
-        } else {
-            &self.pipeline
-        });
-        pass.set_bind_group(IMAGE_TEXTURE_BINDING, &self.image_bind_group, &[]);
-        pass.draw(
-            u32::MIN..FULLSCREEN_QUAD_VERTEX_COUNT,
-            u32::MIN..SINGLE_TEXTURE_LAYER,
+                &self.pipeline
+            },
+            &self.image_bind_group,
+            artwork_pass,
         );
     }
+}
+
+fn select_surface_format(formats: &[wgpu::TextureFormat]) -> Result<wgpu::TextureFormat> {
+    formats
+        .iter()
+        .copied()
+        .find(wgpu::TextureFormat::is_srgb)
+        .context("Commander Blood requires an sRGB presentation surface for exact VGA colors")
+}
+
+fn encode_artwork_pass(
+    encoder: &mut wgpu::CommandEncoder,
+    target: &wgpu::TextureView,
+    viewport: (f32, f32, f32, f32),
+    pipeline: &wgpu::RenderPipeline,
+    bind_group: &wgpu::BindGroup,
+    artwork_pass: ArtworkPass,
+) {
+    let overlay = artwork_pass == ArtworkPass::TransparentOverlay;
+    let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        label: Some(if overlay {
+            "Commander Blood indexed overlay pass"
+        } else {
+            "Commander Blood artwork pass"
+        }),
+        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+            view: target,
+            resolve_target: None,
+            depth_slice: None,
+            ops: wgpu::Operations {
+                load: if overlay {
+                    wgpu::LoadOp::Load
+                } else {
+                    wgpu::LoadOp::Clear(wgpu::Color::BLACK)
+                },
+                store: wgpu::StoreOp::Store,
+            },
+        })],
+        depth_stencil_attachment: None,
+        timestamp_writes: None,
+        occlusion_query_set: None,
+        multiview_mask: None,
+    });
+    pass.set_viewport(
+        viewport.0,
+        viewport.1,
+        viewport.2,
+        viewport.3,
+        MINIMUM_DEPTH,
+        MAXIMUM_DEPTH,
+    );
+    pass.set_pipeline(pipeline);
+    pass.set_bind_group(IMAGE_TEXTURE_BINDING, bind_group, &[]);
+    pass.draw(
+        u32::MIN..FULLSCREEN_QUAD_VERTEX_COUNT,
+        u32::MIN..SINGLE_TEXTURE_LAYER,
+    );
 }
 
 const fn artwork_pass(
@@ -957,6 +978,11 @@ mod tests {
     const OFFSCREEN_VIEWPORTS: [(u32, u32); 2] = [(640, 360), (256, 384)];
     const MINIMUM_VISIBLE_HAND_PIXELS: usize = 16;
     const CENTERED_CURSOR: CursorPosition = CursorPosition { x: 160, y: 100 };
+    const DAC_LEVEL_COUNT: u32 = 64;
+    const DAC_TEST_HEIGHT: u32 = 1;
+    const DAC_TEST_PALETTE_OFFSET: u8 = 1;
+    const OVERLAY_PALETTE_INDEX: u8 = 65;
+    const OVERLAY_STRIDE: usize = 5;
 
     fn original_file(candidates: &[&str]) -> Option<PathBuf> {
         candidates
@@ -1040,10 +1066,103 @@ mod tests {
     }
 
     #[test]
+    fn surface_format_selection_requires_srgb_encoding() {
+        assert_eq!(
+            select_surface_format(&[
+                wgpu::TextureFormat::Rgba8Unorm,
+                wgpu::TextureFormat::Bgra8UnormSrgb,
+                wgpu::TextureFormat::Rgba8UnormSrgb,
+            ])
+            .unwrap(),
+            wgpu::TextureFormat::Bgra8UnormSrgb
+        );
+        assert!(
+            select_surface_format(&[
+                wgpu::TextureFormat::Rgba8Unorm,
+                wgpu::TextureFormat::Bgra8Unorm,
+            ])
+            .is_err()
+        );
+        assert!(select_surface_format(&[]).is_err());
+    }
+
+    #[test]
+    fn srgb_artwork_and_overlay_match_every_cpu_expanded_dac_level() {
+        let (device, queue) = required_offscreen_device();
+        let mut palette = [[u8::MIN; 3]; PALETTE_ENTRY_COUNT as usize];
+        let indexed = (u8::MIN..DAC_LEVEL_COUNT as u8)
+            .map(|dac_level| {
+                let palette_index = dac_level + DAC_TEST_PALETTE_OFFSET;
+                palette[usize::from(palette_index)] = [
+                    dac_level,
+                    VGA_DAC_CHANNEL_MAXIMUM as u8 - dac_level,
+                    dac_level.wrapping_mul(17) % DAC_LEVEL_COUNT as u8,
+                ];
+                palette_index
+            })
+            .collect::<Vec<_>>();
+        palette[usize::from(OVERLAY_PALETTE_INDEX)] = [17, 31, 47];
+        let base_rgba = indexed_frame_rgba(&indexed, &palette).unwrap();
+        let overlay_color = indexed_frame_rgba(&[OVERLAY_PALETTE_INDEX], &palette).unwrap();
+        let mut overlay_rgba = vec![u8::MIN; base_rgba.len()];
+        let mut expected = base_rgba.clone();
+        for pixel_index in (0..indexed.len()).step_by(OVERLAY_STRIDE) {
+            let byte_index = pixel_index * RGBA_COMPONENT_COUNT;
+            overlay_rgba[byte_index..byte_index + RGBA_COMPONENT_COUNT]
+                .copy_from_slice(&overlay_color);
+            expected[byte_index..byte_index + RGBA_COMPONENT_COUNT].copy_from_slice(&overlay_color);
+        }
+
+        let srgb = render_offscreen_artwork_layers(
+            &device,
+            &queue,
+            OFFSCREEN_FORMAT,
+            DAC_LEVEL_COUNT,
+            DAC_TEST_HEIGHT,
+            &[
+                (&base_rgba, ArtworkPass::OpaqueBase),
+                (&overlay_rgba, ArtworkPass::TransparentOverlay),
+            ],
+        );
+        assert_eq!(srgb, expected);
+
+        let bgra_srgb = render_offscreen_artwork_layers(
+            &device,
+            &queue,
+            wgpu::TextureFormat::Bgra8UnormSrgb,
+            DAC_LEVEL_COUNT,
+            DAC_TEST_HEIGHT,
+            &[
+                (&base_rgba, ArtworkPass::OpaqueBase),
+                (&overlay_rgba, ArtworkPass::TransparentOverlay),
+            ],
+        );
+        let mut expected_bgra = expected.clone();
+        for pixel in expected_bgra.chunks_exact_mut(RGBA_COMPONENT_COUNT) {
+            pixel.swap(0, 2);
+        }
+        assert_eq!(bgra_srgb, expected_bgra);
+
+        let linear = render_offscreen_artwork_layers(
+            &device,
+            &queue,
+            wgpu::TextureFormat::Rgba8Unorm,
+            DAC_LEVEL_COUNT,
+            DAC_TEST_HEIGHT,
+            &[(&base_rgba, ArtworkPass::OpaqueBase)],
+        );
+        assert_ne!(linear, base_rgba);
+    }
+
+    #[test]
     fn original_manu3_renders_nonblank_inside_wide_and_portrait_viewports() {
         let Some(executable_path) = original_file(&[
             "output/_tmp_iso/BLOODPRG.EXE",
             "../../output/_tmp_iso/BLOODPRG.EXE",
+            "output/_tmp_iso/resources/BLOODPRG.EXE",
+            "../../output/_tmp_iso/resources/BLOODPRG.EXE",
+            "re/bin/BLOODPRG.EXE",
+            "../../re/bin/BLOODPRG.EXE",
         ]) else {
             return;
         };
@@ -1089,6 +1208,214 @@ mod tests {
         for (width, height) in OFFSCREEN_VIEWPORTS {
             assert_offscreen_hand_pixels(&device, &queue, &palette, &model, width, height);
         }
+    }
+
+    fn required_offscreen_device() -> (wgpu::Device, wgpu::Queue) {
+        let instance =
+            wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
+        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            force_fallback_adapter: false,
+            compatible_surface: None,
+        }))
+        .expect("an offscreen adapter is required to verify final RGBA presentation");
+        pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+            label: Some("artwork color-parity offscreen device"),
+            required_features: wgpu::Features::empty(),
+            required_limits: wgpu::Limits::default(),
+            memory_hints: wgpu::MemoryHints::Performance,
+            experimental_features: wgpu::ExperimentalFeatures::disabled(),
+            trace: wgpu::Trace::Off,
+        }))
+        .expect("creating the artwork color-parity offscreen device")
+    }
+
+    fn render_offscreen_artwork_layers(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        target_format: wgpu::TextureFormat,
+        width: u32,
+        height: u32,
+        layers: &[(&[u8], ArtworkPass)],
+    ) -> Vec<u8> {
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("offscreen artwork bind group layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: IMAGE_TEXTURE_BINDING,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: IMAGE_SAMPLER_BINDING,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("offscreen artwork nearest-neighbor sampler"),
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+            ..Default::default()
+        });
+        let extent = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+        };
+        let layer_resources = layers
+            .iter()
+            .map(|(rgba, _)| {
+                assert_eq!(
+                    rgba.len(),
+                    width as usize * height as usize * RGBA_COMPONENT_COUNT
+                );
+                let texture = device.create_texture(&wgpu::TextureDescriptor {
+                    label: Some("offscreen sRGB artwork layer"),
+                    size: extent,
+                    mip_level_count: MIP_LEVEL_COUNT,
+                    sample_count: SINGLE_SAMPLE_COUNT,
+                    dimension: wgpu::TextureDimension::D2,
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                    view_formats: &[],
+                });
+                queue.write_texture(
+                    wgpu::TexelCopyTextureInfo {
+                        texture: &texture,
+                        mip_level: BASE_MIP_LEVEL,
+                        origin: wgpu::Origin3d::ZERO,
+                        aspect: wgpu::TextureAspect::All,
+                    },
+                    rgba,
+                    wgpu::TexelCopyBufferLayout {
+                        offset: u64::MIN,
+                        bytes_per_row: Some(width * RGBA_BYTES_PER_PIXEL),
+                        rows_per_image: Some(height),
+                    },
+                    extent,
+                );
+                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("offscreen artwork bind group"),
+                    layout: &bind_group_layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: IMAGE_TEXTURE_BINDING,
+                            resource: wgpu::BindingResource::TextureView(
+                                &texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                            ),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: IMAGE_SAMPLER_BINDING,
+                            resource: wgpu::BindingResource::Sampler(&sampler),
+                        },
+                    ],
+                });
+                (texture, bind_group)
+            })
+            .collect::<Vec<_>>();
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("offscreen artwork color-parity shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("artwork.wgsl"))),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("offscreen artwork pipeline layout"),
+            bind_group_layouts: &[Some(&bind_group_layout)],
+            immediate_size: u32::MIN,
+        });
+        let opaque_pipeline = create_artwork_pipeline(
+            device,
+            &pipeline_layout,
+            &shader,
+            target_format,
+            "offscreen opaque artwork pipeline",
+            None,
+        );
+        let overlay_pipeline = create_artwork_pipeline(
+            device,
+            &pipeline_layout,
+            &shader,
+            target_format,
+            "offscreen overlay artwork pipeline",
+            Some(wgpu::BlendState::ALPHA_BLENDING),
+        );
+        let output = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("offscreen artwork color target"),
+            size: extent,
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: target_format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
+        let bytes_per_row = width * RGBA_BYTES_PER_PIXEL;
+        assert_eq!(bytes_per_row % wgpu::COPY_BYTES_PER_ROW_ALIGNMENT, u32::MIN);
+        let readback = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("offscreen artwork readback"),
+            size: u64::from(bytes_per_row) * u64::from(height),
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("offscreen artwork encoder"),
+        });
+        let viewport = (0.0, 0.0, width as f32, height as f32);
+        for ((_, bind_group), (_, artwork_pass)) in layer_resources.iter().zip(layers) {
+            encode_artwork_pass(
+                &mut encoder,
+                &output_view,
+                viewport,
+                if *artwork_pass == ArtworkPass::TransparentOverlay {
+                    &overlay_pipeline
+                } else {
+                    &opaque_pipeline
+                },
+                bind_group,
+                *artwork_pass,
+            );
+        }
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: &output,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &readback,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: u64::MIN,
+                    bytes_per_row: Some(bytes_per_row),
+                    rows_per_image: Some(height),
+                },
+            },
+            extent,
+        );
+        queue.submit([encoder.finish()]);
+
+        let (sender, receiver) = std::sync::mpsc::channel();
+        readback
+            .slice(..)
+            .map_async(wgpu::MapMode::Read, move |result| {
+                sender.send(result).unwrap();
+            });
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+        receiver.recv().unwrap().unwrap();
+        let pixels = readback.slice(..).get_mapped_range();
+        let owned_pixels = pixels.to_vec();
+        drop(pixels);
+        readback.unmap();
+        owned_pixels
     }
 
     fn assert_offscreen_hand_pixels(
@@ -1212,6 +1539,11 @@ mod tests {
         receiver.recv().unwrap().unwrap();
         let pixels = readback.slice(..).get_mapped_range();
         let (viewport_x, viewport_y, viewport_width, viewport_height) = viewport;
+        let palette_rgba = indexed_palette_rgba(palette).unwrap();
+        let palette_colors = palette_rgba
+            .chunks_exact(RGBA_BYTES_PER_PIXEL as usize)
+            .map(|entry| <[u8; RGBA_COMPONENT_COUNT]>::try_from(entry).unwrap())
+            .collect::<std::collections::BTreeSet<_>>();
         let mut visible_pixel_count = usize::MIN;
         for (index, pixel) in pixels
             .chunks_exact(RGBA_BYTES_PER_PIXEL as usize)
@@ -1225,6 +1557,10 @@ mod tests {
             let pixel_y = (index as u32 / width) as f32;
             assert!(pixel_x >= viewport_x && pixel_x < viewport_x + viewport_width);
             assert!(pixel_y >= viewport_y && pixel_y < viewport_y + viewport_height);
+            assert!(
+                palette_colors.contains(&<[u8; RGBA_COMPONENT_COUNT]>::try_from(pixel).unwrap()),
+                "MANU3 output color {pixel:?} is not an exact CPU-expanded palette entry"
+            );
         }
         let screen_bounds = model
             .render_triangles()
@@ -1245,7 +1581,6 @@ mod tests {
                     )
                 },
             );
-        let palette_rgba = indexed_palette_rgba(palette).unwrap();
         let nonblack_palette_entries = palette_rgba
             .chunks_exact(RGBA_BYTES_PER_PIXEL as usize)
             .filter(|entry| entry[..3] != [u8::MIN; 3])

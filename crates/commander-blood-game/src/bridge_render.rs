@@ -533,7 +533,7 @@ mod tests {
     use super::*;
     use crate::native::bloodprg::{
         BRIDGE_SPRITE_ENTITY_COUNT, BridgeScene, BridgeSceneInput, BridgeSpriteEntity,
-        ShipProjectionResources,
+        ShipPlottedPoint, ShipPointRecord, ShipProjectedPoint, ShipProjectionResources,
     };
     use crate::native::random::BloodPrng;
     use crate::render::aspect_fit_viewport;
@@ -558,6 +558,12 @@ mod tests {
     const RED_RGBA_COLOR: [u8; RGBA_COMPONENT_COUNT] = [u8::MAX, u8::MIN, u8::MIN, u8::MAX];
     const GREEN_RGBA_COLOR: [u8; RGBA_COMPONENT_COUNT] = [u8::MIN, u8::MAX, u8::MIN, u8::MAX];
     const BLUE_RGBA_COLOR: [u8; RGBA_COMPONENT_COUNT] = [u8::MIN, u8::MIN, u8::MAX, u8::MAX];
+    const DAC_LEVEL_COUNT: usize = 64;
+    const STAR_COLOR_PALETTE_OFFSET: u8 = 1;
+    const STAR_COLOR_TEST_Y: u16 = 10;
+    const STAR_COLOR_OUTPUT_WIDTH: u32 = 640;
+    const STAR_COLOR_OUTPUT_HEIGHT: u32 = 480;
+    const VISIBLE_TEST_DEPTH: u16 = 1;
 
     #[test]
     fn original_bridge_renders_nonblank_inside_wide_and_portrait_viewports() {
@@ -611,6 +617,90 @@ mod tests {
             renderer.actor_colors[usize::from(OBJECT_SAMPLE_PALETTE_INDEX)],
             RED_RGBA_COLOR
         );
+    }
+
+    #[test]
+    fn procedural_stars_round_trip_every_cpu_expanded_dac_level_on_srgb_targets() {
+        let Some(executable_path) = original_file("BLOODPRG.EXE") else {
+            return;
+        };
+        let Some(panorama_path) = original_file("TB.BIG") else {
+            return;
+        };
+        let executable = std::fs::read(executable_path).unwrap();
+        let resources =
+            ShipProjectionResources::from(decode_bloodprg_bridge_resources(&executable).unwrap());
+        let panorama =
+            BridgePanoramaArchive::decode(std::fs::read(panorama_path).unwrap().into_boxed_slice())
+                .unwrap();
+        let mut random = BloodPrng::default();
+        random.seed_from_clock_register(TEST_CLOCK_BYTE);
+        let mut scene = BridgeScene::new(panorama, resources, &mut random).unwrap();
+        let mut sprite_entities = [BridgeSpriteEntity::default(); BRIDGE_SPRITE_ENTITY_COUNT];
+        let mut frame = scene
+            .render_frame(BridgeSceneInput::default(), &mut sprite_entities)
+            .unwrap();
+        frame.panorama_pixels.fill(u8::MIN);
+        frame.object_sprite_pixels.fill(u8::MIN);
+        frame.actor_sprite_pixels.fill(u8::MIN);
+
+        let mut palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        let mut stars = Vec::with_capacity(DAC_LEVEL_COUNT);
+        for dac_level in u8::MIN..DAC_LEVEL_COUNT as u8 {
+            let palette_index = dac_level + STAR_COLOR_PALETTE_OFFSET;
+            palette[usize::from(palette_index)] = [
+                dac_level,
+                VGA_DAC_CHANNEL_MAXIMUM as u8 - dac_level,
+                dac_level.wrapping_mul(17) % DAC_LEVEL_COUNT as u8,
+            ];
+            let screen_x = u16::from(dac_level);
+            stars.push(ShipPlottedPoint {
+                projection: ShipProjectedPoint {
+                    source_index: usize::from(dac_level),
+                    camera_relative_point: ShipPointRecord::default(),
+                    screen: [screen_x, STAR_COLOR_TEST_Y],
+                    depth: VISIBLE_TEST_DEPTH,
+                },
+                framebuffer_index: usize::from(STAR_COLOR_TEST_Y) * PANORAMA_FRAME_WIDTH
+                    + usize::from(screen_x),
+                palette_index,
+            });
+        }
+        frame.starfield.plotted = stars.into_boxed_slice();
+        let expected_colors = palette_rgba(&palette).unwrap();
+        let Some((device, queue)) = offscreen_device() else {
+            return;
+        };
+        let pixels = render_offscreen_bridge(
+            &device,
+            &queue,
+            &palette,
+            &frame,
+            STAR_COLOR_OUTPUT_WIDTH,
+            STAR_COLOR_OUTPUT_HEIGHT,
+        );
+        let viewport = aspect_fit_viewport(
+            STAR_COLOR_OUTPUT_WIDTH,
+            STAR_COLOR_OUTPUT_HEIGHT,
+            ORIGINAL_ASPECT_WIDTH,
+            ORIGINAL_ASPECT_HEIGHT,
+        );
+
+        for dac_level in u8::MIN..DAC_LEVEL_COUNT as u8 {
+            let palette_index = dac_level + STAR_COLOR_PALETTE_OFFSET;
+            let sample_x = (viewport.0
+                + (f32::from(dac_level) + 0.5) * viewport.2 / PANORAMA_FRAME_WIDTH as f32)
+                .floor() as usize;
+            let sample_y = (viewport.1
+                + (f32::from(STAR_COLOR_TEST_Y) + 0.5) * viewport.3 / PANORAMA_FRAME_HEIGHT as f32)
+                .floor() as usize;
+            let pixel_index = sample_y * STAR_COLOR_OUTPUT_WIDTH as usize + sample_x;
+            assert_eq!(
+                rgba_at(&pixels, pixel_index),
+                expected_colors[usize::from(palette_index)],
+                "procedural star color diverged at VGA DAC level {dac_level}"
+            );
+        }
     }
 
     #[test]
