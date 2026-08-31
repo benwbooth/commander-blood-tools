@@ -47,6 +47,7 @@ const SAVE_CANCEL_CLICK: &str = "sclick 100 151";
 const LOAD_FIRST_SLOT_CLICK: &str = "sclick 100 40";
 const PTERRA_TELEPORT: &str = "teleport Pterra";
 const SHIP_DESTINATION_CLICK: &str = "click 216 72";
+const ARK_TARGET_CLICK: &str = "click 80 99";
 const OPTIONS_CANCEL_CLICK: &str = "sclick 100 125";
 const TEXT_OPTION_CLICK: &str = "sclick 100 68";
 const SEEDED_LOAD_PROFILE: u8 = 2;
@@ -1195,6 +1196,79 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         "the production ship HUD omitted Pterra from its recovered target list"
     );
     assert_ne!(presentation_u64(ship_hud, "ship_flags"), u64::MIN);
+
+    let selector = ship_records
+        .iter()
+        .filter_map(|record| {
+            record["semantic"]["navigation"]["ship_target_selector"]
+                .as_object()
+                .map(|_| &record["semantic"]["navigation"]["ship_target_selector"])
+        })
+        .find(|selector| {
+            selector["rows"]
+                .as_array()
+                .is_some_and(|rows| !rows.is_empty())
+        })
+        .expect("the Pterra ship HUD never rendered its target selector rows");
+    let rows = selector["rows"]
+        .as_array()
+        .expect("ship target selector rows are not an array");
+    let mut previous_default_color = Value::Null;
+    let default_color_timeline = records
+        .iter()
+        .enumerate()
+        .filter_map(|(index, record)| {
+            let color = record["semantic"]["video"]["console_palette"][8].clone();
+            if color == previous_default_color {
+                return None;
+            }
+            previous_default_color = color.clone();
+            Some(serde_json::json!({
+                "index": index,
+                "action": record["action"],
+                "color": color,
+                "active_resource": record["semantic"]["video"]["active_resource"],
+                "navigation": record["semantic"]["navigation"],
+            }))
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        rows.len(),
+        3,
+        "the Pterra target selector must contain PTERRA, ARK, and CANCEL"
+    );
+    assert!(
+        rows.iter().any(|row| row["kind"] == "Item(1)"),
+        "the Pterra target selector omitted ARK"
+    );
+    assert!(
+        rows.iter().any(|row| row["kind"] == "Cancel"),
+        "the Pterra target selector omitted CANCEL"
+    );
+    for row in rows {
+        assert_ne!(
+            row["rgb"],
+            serde_json::json!([0, 0, 0]),
+            "the Pterra target selector mapped {:?} to black: {selector}; palette timeline: {default_color_timeline:?}",
+            row["kind"]
+        );
+        assert_ne!(
+            row["matching_rect_pixels"].as_u64().unwrap_or_default(),
+            u64::MIN,
+            "the Pterra target selector did not rasterize {:?}: {selector}",
+            row["kind"]
+        );
+    }
+
+    let ark_click_index = records
+        .iter()
+        .position(|record| record["action"] == ARK_TARGET_CLICK)
+        .expect("runtime trace omitted the rendered ARK target click");
+    let ark_queued = records[ark_click_index..]
+        .iter()
+        .find(|record| record["semantic"]["navigation"]["target"]["name"] == "Ark")
+        .expect("clicking ARK never published the authored ship navigation target");
+    assert_eq!(ark_queued["semantic"]["navigation"]["ship_mode"], "Active");
 }
 
 #[test]

@@ -45,7 +45,7 @@ use crate::native::bloodprg::{
     ScriptShipNavigationMode, ScriptTravelActionPhase, ShipDepthTransitionOutcome,
     ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
     ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage,
-    SpeakerGateAction, StartupPreparationOutcome, TextPresentationState,
+    SpeakerGateAction, StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE, TextPresentationState,
     clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
     increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
@@ -1847,9 +1847,11 @@ impl<'window> ModernGameServices<'window> {
         self.runtime.initialize_back_buffer()
     }
 
-    /// Capture the HUD palette and restore the modern bridge camera origin.
+    /// Select and draw the current HUD artwork, capture its palette, and reset the camera.
     pub fn snapshot_navigation_hud_palette_and_camera(&mut self) -> Result<()> {
-        self.runtime.snapshot_ship_hud_palette();
+        self.runtime
+            .reset_ship_hud()
+            .context("drawing current-position HUD artwork before its palette snapshot")?;
         self.bridge_scene
             .as_mut()
             .context("navigation reset requires an initialized bridge scene")?
@@ -4014,6 +4016,38 @@ impl<'window> ModernGameServices<'window> {
             .ship_hud
             .as_ref()
             .map(RuntimeShipHud::semantic_trace_snapshot);
+        let ship_target_selector = self
+            .ship_target_selector
+            .as_ref()
+            .and_then(RuntimeShipTargetSelector::last_frame)
+            .map(|frame| {
+                let pixels = self.runtime.front_buffer().pixels();
+                let palette = self.runtime.live_palette();
+                let rows = frame
+                    .rows
+                    .iter()
+                    .map(|row| {
+                        serde_json::json!({
+                            "kind": format!("{:?}", row.kind),
+                            "position": row.position,
+                            "color": row.color,
+                            "rgb": palette[usize::from(row.color)],
+                            "matching_rect_pixels": indexed_color_count_in_rect(
+                                pixels,
+                                frame.rect,
+                                row.color,
+                            ),
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                serde_json::json!({
+                    "rect": {
+                        "origin": frame.rect.origin,
+                        "size": frame.rect.size,
+                    },
+                    "rows": rows,
+                })
+            });
         let camera_target =
             self.current_arche_navigation_target()
                 .ok()
@@ -4059,6 +4093,7 @@ impl<'window> ModernGameServices<'window> {
             "camera": camera_navigation,
             "target": navigation_target,
             "ship_hud": ship_hud,
+            "ship_target_selector": ship_target_selector,
             "ship_mode": format!("{:?}", self.scripts.action_state().ship_navigation_mode),
             "travel_phase": format!("{:?}", self.scripts.action_state().travel_phase),
         });
@@ -4469,6 +4504,9 @@ impl<'window> ModernGameServices<'window> {
                 "source_open_or_draining": self.presentation_player.source_open_or_draining(),
                 "screen_hash": screen_hash,
                 "palette_hash": fnv1a64(&palette_bytes),
+                "console_palette": &self.runtime.live_palette()
+                    [usize::from(BRIDGE_CONSOLE_TINT_FIRST)
+                        ..usize::from(BRIDGE_CONSOLE_TINT_FIRST) + TINT_PALETTE_BANK_SIZE],
                 "palette_transition": {
                     "percent": palette_transition.percent,
                     "increment": palette_transition.increment,
@@ -4564,6 +4602,31 @@ fn indexed_layer_metrics(pixels: &[u8]) -> serde_json::Value {
         "bounds": (nonzero_count != usize::MIN).then_some([minimum, maximum]),
         "palette_indices": palette_indices,
     })
+}
+
+fn indexed_color_count_in_rect(
+    pixels: &[u8],
+    rect: crate::native::bloodprg::ChoiceListRect,
+    color: u8,
+) -> usize {
+    let left = i32::from(rect.origin[0]).clamp(0, LOGICAL_FRAMEBUFFER_WIDTH as i32) as usize;
+    let top = i32::from(rect.origin[1]).clamp(0, LOGICAL_FRAMEBUFFER_HEIGHT as i32) as usize;
+    let right = (i32::from(rect.origin[0]) + i32::from(rect.size[0]))
+        .clamp(0, LOGICAL_FRAMEBUFFER_WIDTH as i32) as usize;
+    let bottom = (i32::from(rect.origin[1]) + i32::from(rect.size[1]))
+        .clamp(0, LOGICAL_FRAMEBUFFER_HEIGHT as i32) as usize;
+    if left >= right || top >= bottom {
+        return usize::MIN;
+    }
+
+    (top..bottom)
+        .map(|y| {
+            pixels[y * LOGICAL_FRAMEBUFFER_WIDTH + left..y * LOGICAL_FRAMEBUFFER_WIDTH + right]
+                .iter()
+                .filter(|pixel| **pixel == color)
+                .count()
+        })
+        .sum()
 }
 
 fn indexed_region_metrics(

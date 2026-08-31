@@ -23,12 +23,13 @@ use crate::native::bloodprg::{
     PresentationChoiceNumber, PresentationLineBackend, PresentationResourceId, RasterPoint,
     RasterRectOutcome, ResourceId, ScriptPresentationEntity, ScriptProfileId,
     ScriptProfileLoadOutcome, ScriptProfileManager, ShipDepthBandLayout, ShipHudState,
-    ShipViewArtworkSelection, ShipViewEntityId, activate_bridge_sprite_from_retained_framebuffer,
-    advance_bridge_sprite_state, build_banked_tint_table, build_palette_blend_remap_table,
-    build_pause_hud_refresh, commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display,
-    copy_work_surface_span, decode_chart_back_buffer, decode_orx_back_buffer, decode_pbm_image,
-    draw_main_font_text, draw_planar_square_caps_text, draw_presentation_choice_number,
-    draw_small_font_text, fill_display_band, fill_framebuffer_rect, mark_bridge_sprite_range_dirty,
+    ShipViewArtworkSelection, ShipViewEntityId, TINT_PALETTE_BANK_SIZE,
+    activate_bridge_sprite_from_retained_framebuffer, advance_bridge_sprite_state,
+    build_banked_tint_table, build_palette_blend_remap_table, build_pause_hud_refresh,
+    commit_bridge_sprite_dirty_range, copy_dirty_regions_to_display, copy_work_surface_span,
+    decode_chart_back_buffer, decode_orx_back_buffer, decode_pbm_image, draw_main_font_text,
+    draw_planar_square_caps_text, draw_presentation_choice_number, draw_small_font_text,
+    fill_display_band, fill_framebuffer_rect, mark_bridge_sprite_range_dirty,
     measure_game_text_width, populate_bridge_sprite_from_cache, rasterize_bridge_sprite_range,
     remap_framebuffer_rect, select_ship_view_artwork, update_bridge_sprite_extent,
     update_bridge_sprite_position, update_name_area_effect,
@@ -212,6 +213,14 @@ impl OriginalGameRuntime {
     /// Mutably borrow the live native six-bit palette.
     pub fn live_palette_mut(&mut self) -> &mut IndexedGamePalette {
         &mut self.live_palette
+    }
+
+    /// Restore the executable-authored grayscale bank reserved by shared list widgets.
+    pub fn restore_bridge_console_palette(&mut self) {
+        let first = usize::from(BRIDGE_CONSOLE_TINT_FIRST);
+        let after_last = first + TINT_PALETTE_BANK_SIZE;
+        self.live_palette[first..after_last]
+            .copy_from_slice(&self.data.default_vga_palette()[first..after_last]);
     }
 
     /// Persistent typed bridge-frame coordinator state.
@@ -1335,6 +1344,34 @@ mod tests {
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(PathBuf);
+
+    #[test]
+    fn shared_choice_lists_restore_only_the_reserved_console_palette_bank() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        let first = usize::from(BRIDGE_CONSOLE_TINT_FIRST);
+        let after_last = first + TINT_PALETTE_BANK_SIZE;
+        let expected = runtime.data().default_vga_palette()[first..after_last].to_vec();
+        runtime
+            .live_palette_mut()
+            .fill([u8::MIN; RGB_COMPONENT_COUNT]);
+
+        runtime.restore_bridge_console_palette();
+
+        assert!(
+            runtime.live_palette()[..first]
+                .iter()
+                .all(|color| *color == [u8::MIN; RGB_COMPONENT_COUNT])
+        );
+        assert_eq!(&runtime.live_palette()[first..after_last], expected);
+        assert!(
+            runtime.live_palette()[after_last..]
+                .iter()
+                .all(|color| *color == [u8::MIN; RGB_COMPONENT_COUNT])
+        );
+    }
 
     impl TemporaryRoot {
         fn create() -> Self {

@@ -33,6 +33,7 @@ const NAVIGATION_TRIGGER_TRANSITION_STEPS: u8 = 6;
 const NAVIGATION_REMAP_PERCENT: u8 = 50;
 const NAVIGATION_REMAP_TARGET: [u8; 3] = [u8::MIN; 3];
 const NAVIGATION_SELECTION_SOUND_CLIP: u8 = u8::MIN;
+const NO_TEXT_SELECTION: i8 = -1;
 const INITIAL_CHOICE_TARGET_RECT: ChoiceListRect = ChoiceListRect {
     origin: [100, 0],
     size: [0, 120],
@@ -452,6 +453,9 @@ fn publish_text_selection(
 }
 
 fn import_text_selection(selection: Option<i8>) -> Result<Option<usize>> {
+    if selection == Some(NO_TEXT_SELECTION) {
+        return Ok(None);
+    }
     selection
         .map(|line| {
             usize::try_from(line)
@@ -894,6 +898,10 @@ mod tests {
 
         assert_eq!(native, Some(5));
         assert_eq!(export_text_selection(native).unwrap(), selected);
+        assert_eq!(
+            import_text_selection(Some(NO_TEXT_SELECTION)).unwrap(),
+            None
+        );
         assert!(import_text_selection(Some(-2)).is_err());
         assert!(export_text_selection(Some(usize::from(i8::MAX as u8) + 1)).is_err());
     }

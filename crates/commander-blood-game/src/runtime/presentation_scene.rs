@@ -13,9 +13,9 @@ use crate::native::bloodprg::{
     PresentationPresentPolicy, PresentationQueueServiceOutcome, PresentationResourceId,
     PresentationSceneDescriptor, PresentationSceneDispatchContext, PresentationSceneDispatchHost,
     PresentationSceneDispatchOutcome, PresentationSceneDispatchState,
-    PresentationSceneQueueService, PresentationSceneSource, ShipHudPaletteSnapshot,
-    build_palette_blend_remap_table, decode_pbm_image, dispatch_presentation_scene,
-    fill_back_buffer_band, fill_display_band,
+    PresentationSceneQueueService, PresentationSceneSource, SCENE_PALETTE_CLEAR_COLOR_COUNT,
+    ShipHudPaletteSnapshot, build_palette_blend_remap_table, decode_pbm_image,
+    dispatch_presentation_scene, fill_back_buffer_band, fill_display_band,
 };
 
 use super::{ModernGameServices, RuntimePresentationBackground};
@@ -263,7 +263,8 @@ fn publish_loaded_scene_palette(
     scene_palette: &IndexedGamePalette,
     shared_live_palette: &mut IndexedGamePalette,
 ) {
-    *shared_live_palette = *scene_palette;
+    shared_live_palette[..SCENE_PALETTE_CLEAR_COLOR_COUNT]
+        .copy_from_slice(&scene_palette[..SCENE_PALETTE_CLEAR_COLOR_COUNT]);
 }
 
 #[cfg(test)]
@@ -284,9 +285,17 @@ mod tests {
         let scene_palette =
             std::array::from_fn(|index| [index as u8, (index / 2) as u8, (index / 3) as u8]);
         let mut shared_live_palette = [[63; RGB_COMPONENT_COUNT]; 256];
+        let expected_tail = shared_live_palette[SCENE_PALETTE_CLEAR_COLOR_COUNT..].to_vec();
 
         publish_loaded_scene_palette(&scene_palette, &mut shared_live_palette);
 
-        assert_eq!(shared_live_palette, scene_palette);
+        assert_eq!(
+            &shared_live_palette[..SCENE_PALETTE_CLEAR_COLOR_COUNT],
+            &scene_palette[..SCENE_PALETTE_CLEAR_COLOR_COUNT]
+        );
+        assert_eq!(
+            &shared_live_palette[SCENE_PALETTE_CLEAR_COLOR_COUNT..],
+            expected_tail
+        );
     }
 }

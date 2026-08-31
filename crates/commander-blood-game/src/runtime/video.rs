@@ -466,6 +466,7 @@ mod tests {
     const TEST_VIDEO_RESOURCE: &[u8] = b"SQ\\LOGO01.HNM";
     const OPENING_VIDEO_RESOURCE: &[u8] = b"SQ\\MIND.HNM";
     const CLIPTOOT_VIDEO_RESOURCE: &[u8] = b"SQ\\CLIPTOOT.HNM";
+    const PTERRA_VIDEO_RESOURCE: &[u8] = b"PL\\PTERRA10.HNM";
     const HNM_FILENAME_SUFFIX: &[u8] = b".HNM";
     const SHIPPED_HNM_RESOURCE_COUNT: usize = 701;
     const MAXIMUM_TEST_SERVICE_CALLS: usize = 10_000;
@@ -530,6 +531,34 @@ mod tests {
 
         publish_shared_live_palette(true, &stream, &mut shared);
         assert_eq!(shared[TEST_PALETTE_INDEX], VIDEO_PALETTE_COLOR);
+    }
+
+    #[test]
+    fn pterra_initial_palette_record_preserves_the_reserved_high_bank() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let initial = *data.default_vga_palette();
+        let mut runtime = OriginalGameRuntime::new(data);
+        *runtime.live_palette_mut() = initial;
+        let request =
+            RuntimePresentationRequest::new(BloodResourceName::new(PTERRA_VIDEO_RESOURCE).unwrap());
+
+        RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+
+        let changed = initial[192..]
+            .iter()
+            .zip(&runtime.live_palette()[192..])
+            .enumerate()
+            .filter_map(|(relative, (before, after))| {
+                (before != after).then_some((relative + 192, *before, *after))
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            changed.is_empty(),
+            "Pterra's initial HNM palette record changed reserved colors: {changed:?}"
+        );
     }
 
     #[test]

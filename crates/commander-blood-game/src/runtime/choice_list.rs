@@ -96,6 +96,7 @@ impl RuntimeChoiceListBackend<'_> {
         pointer: ChoiceListPointer,
         current_hand_animation: u16,
     ) -> RuntimeChoiceListBackend<'runtime> {
+        runtime.restore_bridge_console_palette();
         RuntimeChoiceListBackend {
             runtime,
             fonts,
