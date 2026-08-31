@@ -3839,6 +3839,12 @@ impl<'window> ModernGameServices<'window> {
             .replace('\r', " ")
             .trim()
             .to_owned();
+        let subtitle_raster = self
+            .subtitle_reveal
+            .as_ref()
+            .map(|reveal| reveal.raster_audit(&self.runtime, text))
+            .transpose()?
+            .flatten();
         let pointer = self.input.pointer_sample();
         let pointer_edges = self.input.pointer_button_edges();
         let previous_buttons = self.input.previous_pointer_buttons();
@@ -4372,6 +4378,10 @@ impl<'window> ModernGameServices<'window> {
                 "events": audio_event_history,
             },
             "subtitle": subtitle,
+            "subtitle_raster": subtitle_raster.map(|audit| serde_json::json!({
+                "expected_pixel_count": audit.expected_pixel_count,
+                "matching_pixel_count": audit.matching_pixel_count,
+            })),
             "persistent": {
                 "state_array_hash": state_array_hash,
                 "character_slots_hash": character_slots_hash,

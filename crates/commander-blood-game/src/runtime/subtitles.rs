@@ -5,10 +5,10 @@ use anyhow::{Context, Result};
 use crate::native::bloodprg::{
     BridgeSpriteRect, FontPoint, GameTimerState, PaletteRemapTable, PresentationTextOrigin,
     RasterPoint, RasterSpanPaint, SubtitleFrameDraw, SubtitleFramePrimitive,
-    SubtitleFramePrimitiveKind, SubtitleRevealLine, SubtitleRevealOutcome, SubtitleRevealRenderer,
-    SubtitleRevealState, TextPresentationState, build_palette_blend_remap_table,
-    draw_planar_horizontal_span, draw_planar_vertical_span, draw_subtitle_reveal_line,
-    update_subtitle_reveal,
+    SubtitleFramePrimitiveKind, SubtitleRevealLine, SubtitleRevealOutcome, SubtitleRevealPhase,
+    SubtitleRevealRenderer, SubtitleRevealState, TextPresentationState,
+    build_palette_blend_remap_table, draw_planar_horizontal_span, draw_planar_vertical_span,
+    draw_subtitle_reveal_line, update_subtitle_reveal,
 };
 
 use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime};
@@ -67,6 +67,12 @@ pub struct RuntimeSubtitleReveal {
     state: SubtitleRevealState,
     remap_table: PaletteRemapTable,
     remap_palette: Option<crate::native::bloodprg::IndexedGamePalette>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) struct SubtitleRasterAudit {
+    pub expected_pixel_count: usize,
+    pub matching_pixel_count: usize,
 }
 
 impl RuntimeSubtitleReveal {
@@ -168,6 +174,52 @@ impl RuntimeSubtitleReveal {
         self.state.opening_frame_pulse = timer.subtitle_opening_frame_pulse != u16::MIN;
     }
 
+    /// Compare the current recovered glyph draw against the live indexed framebuffer.
+    pub(super) fn raster_audit(
+        &self,
+        runtime: &OriginalGameRuntime,
+        presentation: &TextPresentationState,
+    ) -> Result<Option<SubtitleRasterAudit>> {
+        if self.state.phase != SubtitleRevealPhase::Text
+            || presentation.subtitle_reveal_cursor.is_none()
+        {
+            return Ok(None);
+        }
+
+        let mut state = self.state;
+        state.reveal_delay = 1;
+        let mut presentation = presentation.clone();
+        let mut expected = vec![u8::MIN; LOGICAL_FRAMEBUFFER_WIDTH * LOGICAL_FRAMEBUFFER_HEIGHT];
+        let fonts = runtime.data().font_resources();
+        let mut renderer = SubtitleRasterAuditRenderer {
+            pixels: &mut expected,
+            fonts,
+            deferred_error: None,
+        };
+        let outcome =
+            update_subtitle_reveal(&mut presentation, &mut state, &[], &[], &mut renderer)
+                .context("reconstructing the current subtitle glyph raster")?;
+        renderer.finish()?;
+        if !matches!(outcome, SubtitleRevealOutcome::TextFrame { .. }) {
+            return Ok(None);
+        }
+
+        let actual = runtime.front_buffer().pixels();
+        let mut expected_pixel_count = usize::MIN;
+        let mut matching_pixel_count = usize::MIN;
+        for (expected, actual) in expected.iter().copied().zip(actual.iter().copied()) {
+            if expected == u8::MIN {
+                continue;
+            }
+            expected_pixel_count += 1;
+            matching_pixel_count += usize::from(expected == actual);
+        }
+        Ok(Some(SubtitleRasterAudit {
+            expected_pixel_count,
+            matching_pixel_count,
+        }))
+    }
+
     fn refresh_remap_table(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
         if self.remap_palette.as_ref() == Some(runtime.live_palette()) {
             return Ok(());
@@ -240,32 +292,73 @@ impl SubtitleRevealRenderer for RuntimeSubtitleRenderer<'_, '_> {
     }
 
     fn draw_subtitle_line(&mut self, line: SubtitleRevealLine<'_>) {
-        let mut terminated = Vec::with_capacity(line.text.len().saturating_add(1));
-        terminated.extend_from_slice(line.text);
-        terminated.push(CARRIAGE_RETURN);
-        let reveal_cursor = i64::try_from(line.reveal_cursor)
-            .unwrap_or(i64::MAX)
-            .saturating_sub(i64::try_from(line.byte_offset).unwrap_or(i64::MAX));
-        let reveal_cursor = i32::try_from(reveal_cursor).unwrap_or_else(|_| {
-            if reveal_cursor.is_negative() {
-                i32::MIN
-            } else {
-                i32::MAX
-            }
-        });
-        let result = draw_subtitle_reveal_line(
+        let result = draw_runtime_subtitle_line(
             self.runtime.front_buffer_mut().pixels_mut(),
             self.fonts,
-            &terminated,
-            FontPoint {
-                x: i32::from(line.position[0]),
-                y: i32::from(line.position[1]),
-            },
-            reveal_cursor,
+            line,
         )
         .context("drawing a progressively revealed subtitle line");
         self.record(result);
     }
+}
+
+struct SubtitleRasterAuditRenderer<'pixels, 'resources> {
+    pixels: &'pixels mut [u8],
+    fonts: &'resources commander_blood_formats::bloodprg::BloodprgFontResources,
+    deferred_error: Option<anyhow::Error>,
+}
+
+impl SubtitleRasterAuditRenderer<'_, '_> {
+    fn finish(self) -> Result<()> {
+        match self.deferred_error {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
+    }
+}
+
+impl SubtitleRevealRenderer for SubtitleRasterAuditRenderer<'_, '_> {
+    fn draw_frame_primitive(&mut self, _draw: SubtitleFrameDraw) {}
+
+    fn draw_subtitle_line(&mut self, line: SubtitleRevealLine<'_>) {
+        if self.deferred_error.is_some() {
+            return;
+        }
+        self.deferred_error = draw_runtime_subtitle_line(self.pixels, self.fonts, line)
+            .context("reconstructing a progressively revealed subtitle line")
+            .err();
+    }
+}
+
+fn draw_runtime_subtitle_line(
+    pixels: &mut [u8],
+    fonts: &commander_blood_formats::bloodprg::BloodprgFontResources,
+    line: SubtitleRevealLine<'_>,
+) -> Result<()> {
+    let mut terminated = Vec::with_capacity(line.text.len().saturating_add(1));
+    terminated.extend_from_slice(line.text);
+    terminated.push(CARRIAGE_RETURN);
+    let reveal_cursor = i64::try_from(line.reveal_cursor)
+        .unwrap_or(i64::MAX)
+        .saturating_sub(i64::try_from(line.byte_offset).unwrap_or(i64::MAX));
+    let reveal_cursor = i32::try_from(reveal_cursor).unwrap_or_else(|_| {
+        if reveal_cursor.is_negative() {
+            i32::MIN
+        } else {
+            i32::MAX
+        }
+    });
+    draw_subtitle_reveal_line(
+        pixels,
+        fonts,
+        &terminated,
+        FontPoint {
+            x: i32::from(line.position[0]),
+            y: i32::from(line.position[1]),
+        },
+        reveal_cursor,
+    )?;
+    Ok(())
 }
 
 #[cfg(test)]

@@ -690,6 +690,19 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
         honk_chatter["semantic"]["video"]["active_resource"], BOB_IDLE_VIDEO,
         "Honk's text-only response did not return Bob to his authored idle clip"
     );
+    let subtitle_raster = &honk_chatter["semantic"]["subtitle_raster"];
+    let expected_subtitle_pixels = subtitle_raster["expected_pixel_count"]
+        .as_u64()
+        .expect("Bob's Honk response omitted its recovered subtitle raster");
+    assert!(
+        expected_subtitle_pixels > 0,
+        "Bob's Honk response produced no visible recovered subtitle glyph pixels"
+    );
+    assert_eq!(
+        subtitle_raster["matching_pixel_count"].as_u64(),
+        Some(expected_subtitle_pixels),
+        "Bob's Honk response did not preserve the recovered subtitle glyphs in the live framebuffer"
+    );
 
     let goodbye = bob_records
         .iter()
