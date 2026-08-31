@@ -9,7 +9,9 @@ use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_b
 use commander_blood_formats::descript::{DescriptBackgroundSlot, DescriptCharacterBackground};
 use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
-use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind, ScriptWordId};
+use commander_blood_formats::script::{
+    ScriptDictionary, ScriptObjectId, ScriptObjectKind, ScriptWordId,
+};
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
@@ -118,6 +120,13 @@ const PRIMARY_PRESENTATION_ACTOR_SLOT: usize = 0;
 const SECONDARY_PRESENTATION_ACTOR_SLOT: usize = 2;
 const DISABLED_PRESENTATION_HIT_RECT: PresentationHitRectangle =
     PresentationHitRectangle::new([-1; 2], [-1; 2]);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct InlineMenuRasterAudit {
+    expected_pixel_count: usize,
+    matching_pixel_count: usize,
+    mismatch_samples: Vec<[usize; 4]>,
+}
 const BRIDGE_ACTOR_PALETTE_COLOR_COUNT: usize = 192;
 const CAMERA_PAGE_SHIP_ACTIVE_RESULT: u16 = 21;
 const CAMERA_PAGE_TOGGLE_BIT: u16 = 2;
@@ -249,6 +258,7 @@ pub struct ModernGameServices<'window> {
     alien_overlay: Option<RuntimeAlienOverlayCycle>,
     ship_target_selector: Option<RuntimeShipTargetSelector>,
     choice_list_style: RuntimeChoiceListStyle,
+    inline_menu_visible_word_count: usize,
     subtitle_reveal: Option<RuntimeSubtitleReveal>,
     palette_transition: RuntimePaletteTransition,
     bridge_palette: IndexedGamePalette,
@@ -401,6 +411,7 @@ impl<'window> ModernGameServices<'window> {
             alien_overlay: Some(RuntimeAlienOverlayCycle::default()),
             ship_target_selector: Some(RuntimeShipTargetSelector::default()),
             choice_list_style: RuntimeChoiceListStyle::default(),
+            inline_menu_visible_word_count: usize::MIN,
             subtitle_reveal: Some(RuntimeSubtitleReveal::new(initial_text_speed_step)),
             palette_transition: RuntimePaletteTransition::default(),
             bridge_palette,
@@ -2629,6 +2640,10 @@ impl<'window> ModernGameServices<'window> {
         )
         .context("advancing the recovered inline menu reveal")?;
         metrics.finish()?;
+        self.inline_menu_visible_word_count = match &outcome {
+            InlineMenuRevealOutcome::Frame(frame) => frame.placements.len(),
+            InlineMenuRevealOutcome::Gated(_) => usize::MIN,
+        };
 
         if let InlineMenuRevealOutcome::Frame(frame) = &outcome {
             for placement in &frame.placements {
@@ -3918,7 +3933,9 @@ impl<'window> ModernGameServices<'window> {
             .iter()
             .map(|(_word, label)| label.clone())
             .collect::<Vec<_>>();
-        let revealed_menu_word_count = text.menu_reveal_count.min(inline_menu_entries.len());
+        let revealed_menu_word_count = self
+            .inline_menu_visible_word_count
+            .min(inline_menu_entries.len());
         let revealed_menu_word_ids = inline_menu_word_ids[..revealed_menu_word_count].to_vec();
         let revealed_menu_words = inline_menu_words[..revealed_menu_word_count].to_vec();
         let inline_menu_trace = serde_json::json!({
@@ -3926,8 +3943,20 @@ impl<'window> ModernGameServices<'window> {
             "words": inline_menu_words,
             "revealed_word_ids": revealed_menu_word_ids,
             "revealed_words": revealed_menu_words,
-            "reveal_count": text.menu_reveal_count,
+            "reveal_count": revealed_menu_word_count,
+            "next_reveal_count": text.menu_reveal_count,
         });
+        let inline_menu_raster = profile
+            .map(|profile| {
+                audit_inline_menu_raster(
+                    &self.runtime,
+                    profile.dictionary(),
+                    text,
+                    revealed_menu_word_count,
+                )
+            })
+            .transpose()?
+            .flatten();
         let bridge_console = self
             .bridge_console
             .as_ref()
@@ -4383,6 +4412,11 @@ impl<'window> ModernGameServices<'window> {
                 "expected_pixel_count": audit.expected_pixel_count,
                 "matching_pixel_count": audit.matching_pixel_count,
             })),
+            "inline_menu_raster": inline_menu_raster.map(|audit| serde_json::json!({
+                "expected_pixel_count": audit.expected_pixel_count,
+                "matching_pixel_count": audit.matching_pixel_count,
+                "mismatch_samples": audit.mismatch_samples,
+            })),
             "persistent": {
                 "state_array_hash": state_array_hash,
                 "character_slots_hash": character_slots_hash,
@@ -4552,6 +4586,85 @@ fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
             *destination = source;
         }
     }
+}
+
+fn audit_inline_menu_raster(
+    runtime: &OriginalGameRuntime,
+    dictionary: &ScriptDictionary,
+    text: &TextPresentationState,
+    visible_word_count: usize,
+) -> Result<Option<InlineMenuRasterAudit>> {
+    if text.menu_words.is_empty()
+        || visible_word_count == usize::MIN
+        || (!text.menu_deferred && !text.hold_ready)
+    {
+        return Ok(None);
+    }
+
+    let fonts = runtime.data().font_resources();
+    let mut presentation = text.clone();
+    presentation.menu_reveal_count = visible_word_count;
+    presentation.dialogue_hold_countdown = 1;
+    let mut metrics = RuntimeInlineMenuMetrics::new(fonts);
+    let outcome = reveal_inline_menu_step(&mut presentation, dictionary, true, 1, &mut metrics)
+        .context("reconstructing the current inline-dialogue layout")?;
+    metrics.finish()?;
+    let InlineMenuRevealOutcome::Frame(frame) = outcome else {
+        return Ok(None);
+    };
+    if frame.placements.is_empty() {
+        return Ok(None);
+    }
+
+    let mut expected = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+    for placement in frame.placements {
+        let word = dictionary.word(placement.word).with_context(|| {
+            format!(
+                "inline-dialogue raster word {} is absent from the loaded dictionary",
+                placement.word.index()
+            )
+        })?;
+        draw_planar_dialogue_text(
+            &mut expected,
+            fonts,
+            word,
+            FontPoint {
+                x: i32::from(placement.position[0]),
+                y: i32::from(placement.position[1]),
+            },
+            FULL_LOGICAL_FONT_BAND,
+            placement.color,
+        )
+        .context("reconstructing an inline-dialogue glyph raster")?;
+    }
+
+    let mut expected_pixel_count = usize::MIN;
+    let mut matching_pixel_count = usize::MIN;
+    let mut mismatch_samples = Vec::new();
+    for (index, (expected, actual)) in expected
+        .into_iter()
+        .zip(runtime.front_buffer().pixels().iter().copied())
+        .enumerate()
+    {
+        if expected == u8::MIN {
+            continue;
+        }
+        expected_pixel_count += 1;
+        matching_pixel_count += usize::from(expected == actual);
+        if expected != actual && mismatch_samples.len() < 64 {
+            mismatch_samples.push([
+                index % LOGICAL_FRAMEBUFFER_WIDTH,
+                index / LOGICAL_FRAMEBUFFER_WIDTH,
+                usize::from(expected),
+                usize::from(actual),
+            ]);
+        }
+    }
+    Ok(Some(InlineMenuRasterAudit {
+        expected_pixel_count,
+        matching_pixel_count,
+        mismatch_samples,
+    }))
 }
 
 const fn select_bridge_composition(

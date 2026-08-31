@@ -101,6 +101,31 @@ const BOB_THAW_VIDEO: &str = "sq\\cryogel.hnm";
 const BOB_IDLE_VIDEO: &str = "PE\\aabob.hnm";
 const BOB_FIRST_TALK_VIDEO: &str = "PE\\bobc.hnm";
 const BOB_SECOND_TALK_VIDEO: &str = "PE\\bobd.hnm";
+const BOB_FIRST_TALK_WORDS: [&str; 12] = [
+    "HONK",
+    "!",
+    "You",
+    "worthless",
+    "heap",
+    "of",
+    "wires",
+    "...",
+    "Are",
+    "you",
+    "working",
+    "?",
+];
+const BOB_SECOND_TALK_WORDS: [&str; 9] = [
+    "What",
+    "do",
+    "you",
+    "want",
+    "to",
+    "know",
+    ",",
+    "Commander",
+    "?",
+];
 const BOB_TEXT_ONLY_CHATTER_PREFIX: &str = "Yes sir, Cap'n Bob";
 const BOB_TEXT_ONLY_CHATTER_BYTES: &[u8] =
     b"Yes sir, Cap'n Bob sir!... Just \rgetting the multiplexers toned up... \r\r";
@@ -636,17 +661,40 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
             .is_some_and(|count| count > 0),
         "Bob's decoded first-talk frame resolved entirely through black palette entries"
     );
+    assert_eq!(
+        presentation(first_talk)["inline_menu"]["words"],
+        serde_json::json!(BOB_FIRST_TALK_WORDS),
+        "Bob's bobc.hnm line lost or corrupted its authored SCRIPT2 dialogue words"
+    );
+    assert!(
+        presentation(first_talk)["inline_menu"]["reveal_count"]
+            .as_u64()
+            .is_some_and(|count| count > 0),
+        "Bob's bobc.hnm line played without revealing any authored dialogue text"
+    );
+    assert_inline_menu_raster(first_talk, "Bob's bobc.hnm line");
 
     assert!(
         bob_records
             .iter()
             .any(|record| { record["semantic"]["video"]["active_resource"] == BOB_IDLE_VIDEO })
     );
-    assert!(
-        bob_records.iter().any(|record| {
-            record["semantic"]["video"]["active_resource"] == BOB_SECOND_TALK_VIDEO
-        })
+    let second_talk = bob_records
+        .iter()
+        .find(|record| record["semantic"]["video"]["active_resource"] == BOB_SECOND_TALK_VIDEO)
+        .expect("Bob's second authored talk clip never played");
+    assert_eq!(
+        presentation(second_talk)["inline_menu"]["words"],
+        serde_json::json!(BOB_SECOND_TALK_WORDS),
+        "Bob's bobd.hnm line lost or corrupted its authored SCRIPT2 dialogue words"
     );
+    assert!(
+        presentation(second_talk)["inline_menu"]["reveal_count"]
+            .as_u64()
+            .is_some_and(|count| count > 0),
+        "Bob's bobd.hnm line played without revealing any authored dialogue text"
+    );
+    assert_inline_menu_raster(second_talk, "Bob's bobd.hnm line");
 
     let waiting = bob_records
         .iter()
@@ -1462,6 +1510,19 @@ fn presentation_u64(record: &Value, path: &str) -> u64 {
         .fold(presentation(record), |value, field| &value[field])
         .as_u64()
         .unwrap()
+}
+
+fn assert_inline_menu_raster(record: &Value, label: &str) {
+    let audit = &record["semantic"]["inline_menu_raster"];
+    let expected = audit["expected_pixel_count"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("{label} omitted its recovered inline-dialogue raster"));
+    assert!(expected > 0, "{label} produced no visible glyph pixels");
+    assert_eq!(
+        audit["matching_pixel_count"].as_u64(),
+        Some(expected),
+        "{label} did not preserve its recovered dialogue glyphs in the live framebuffer"
+    );
 }
 
 fn hand_selector(record: &Value) -> u64 {

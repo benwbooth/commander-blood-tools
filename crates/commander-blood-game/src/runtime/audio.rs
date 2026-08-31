@@ -874,11 +874,14 @@ fn pc_speaker_tone_clip() -> Result<RuntimePcmClip> {
 
 #[cfg(test)]
 mod tests {
+    use std::path::{Path, PathBuf};
+
     use super::*;
     use commander_blood_formats::snd::SndBank;
+    use sha2::{Digest, Sha256};
 
     use crate::native::bloodprg::{
-        AUDIO_STREAM_PAGE_BYTE_COUNT, AudioClipRequest, AudioMixStatus,
+        AUDIO_STREAM_PAGE_BYTE_COUNT, AudioClipRequest, AudioMixOperation, AudioMixStatus,
         CREATIVE_VOICE_FILE_HEADER_BYTE_COUNT,
     };
 
@@ -887,7 +890,27 @@ mod tests {
     const TEST_STREAM_RATE_HZ: u32 = 11_111;
     const TEST_STREAM_RATE_CODE: u8 = 166;
     const PHONE_COMPLETION_CLIP_INDEX: u16 = 2;
-    const RESIDENT_DRIVER_TAIL_BYTE_COUNT: usize = SND_CLIP_HEADER_BYTE_COUNT - 1;
+    const SHIPPED_BRIDGE_SOUND_BANK_BYTE_COUNT: usize = 30_960;
+    const SHIPPED_BRIDGE_SOUND_BANK_CLIP_COUNT: u16 = 17;
+    const SHIPPED_BRIDGE_SOUND_BANK_SHA256: &str =
+        "8823a3f57c9075e21b36a147a00b9248b729da8316cf76018a8abe526867fb8f";
+    const PHONE_COMPLETION_CLIP_START: usize = 3_683;
+    const PHONE_COMPLETION_CLIP_END: usize = 6_114;
+    const PHONE_COMPLETION_CLIP_HEADER: [u8; SND_CLIP_HEADER_BYTE_COUNT] =
+        [1, 122, 9, 0, TEST_STREAM_RATE_CODE, 0];
+    const PHONE_COMPLETION_CLIP_SHA256: &str =
+        "5d1a3f368242b2e05d909325f0069b1091caee4324be47a3090f06dc4d83a89c";
+    const PHONE_COMPLETION_PCM_SHA256: &str =
+        "597f5daf1f52a87343cb983959b06a4495220c85b003b55d5dd806366532a6cb";
+    const PHONE_COMPLETION_PCM_SAMPLE_COUNT: usize = 2_425;
+    const PHONE_COMPLETION_NON_SILENT_SAMPLE_COUNT: usize = 2_371;
+    const PHONE_COMPLETION_MIX_OUTPUT_SAMPLE_COUNT: u16 = 2_430;
+    const PHONE_COMPLETION_MIXED_SAMPLE_COUNT: usize = 2_429;
+    const PHONE_COMPLETION_SDL_PREFIX: [f32; 24] = [
+        -0.0234375, -0.0234375, -0.0234375, -0.0234375, -0.0234375, 0.421875, 0.421875, 0.421875,
+        0.421875, -0.375, -0.375, -0.375, -0.375, -0.0625, -0.0625, -0.0625, -0.0625, -0.0625,
+        0.4375, 0.4375, 0.4375, 0.4375, -0.328125, -0.328125,
+    ];
 
     #[test]
     fn foreground_is_averaged_over_music_in_the_unsigned_domain() {
@@ -1095,23 +1118,76 @@ mod tests {
     }
 
     #[test]
-    fn phone_completion_boing_reaches_non_silent_f32_callback_submission() {
+    fn shipped_phone_completion_boing_decodes_mixes_and_reaches_sdl_in_order() {
+        let Some(bank_path) = shipped_bridge_sound_bank_path() else {
+            assert!(
+                std::env::var_os("CBLOOD_REQUIRE_ACCURACY_TESTS").is_none(),
+                "CBLOOD_REQUIRE_ACCURACY_TESTS=1 requires the shipped SN/TB.SND bank"
+            );
+            return;
+        };
+        let encoded_bank = std::fs::read(&bank_path)
+            .unwrap_or_else(|error| panic!("reading {}: {error}", bank_path.display()));
+        assert_eq!(encoded_bank.len(), SHIPPED_BRIDGE_SOUND_BANK_BYTE_COUNT);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&encoded_bank)),
+            SHIPPED_BRIDGE_SOUND_BANK_SHA256
+        );
+
+        let resident_effects = SndBank::decode(&encoded_bank).unwrap();
+        assert_eq!(
+            resident_effects.header().clip_count,
+            SHIPPED_BRIDGE_SOUND_BANK_CLIP_COUNT
+        );
+        assert_eq!(
+            resident_effects.offsets()[usize::from(PHONE_COMPLETION_CLIP_INDEX)],
+            PHONE_COMPLETION_CLIP_START
+        );
+        assert_eq!(
+            resident_effects.offsets()[usize::from(PHONE_COMPLETION_CLIP_INDEX) + 1],
+            PHONE_COMPLETION_CLIP_END
+        );
+
+        let shipped_clip = resident_effects
+            .clip(usize::from(PHONE_COMPLETION_CLIP_INDEX))
+            .unwrap();
+        assert_eq!(
+            &shipped_clip.encoded()[..SND_CLIP_HEADER_BYTE_COUNT],
+            &PHONE_COMPLETION_CLIP_HEADER
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(shipped_clip.encoded())),
+            PHONE_COMPLETION_CLIP_SHA256
+        );
+        assert_eq!(shipped_clip.sample_rate_hz(), Some(TEST_STREAM_RATE_HZ));
+        let shipped_pcm = shipped_clip.pcm().unwrap();
+        assert_eq!(shipped_pcm.len(), PHONE_COMPLETION_PCM_SAMPLE_COUNT);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(shipped_pcm)),
+            PHONE_COMPLETION_PCM_SHA256
+        );
+        assert_eq!(
+            shipped_pcm
+                .iter()
+                .filter(|sample| **sample != UNSIGNED_PCM_SILENCE)
+                .count(),
+            PHONE_COMPLETION_NON_SILENT_SAMPLE_COUNT
+        );
+        let decoded_clip = RuntimePcmClip::from_snd_clip(shipped_clip).unwrap();
+        assert_eq!(decoded_clip.sample_rate_hz(), TEST_STREAM_RATE_HZ);
+        assert_eq!(decoded_clip.samples(), shipped_pcm);
+
         let shared = Arc::new(Mutex::new(SharedAudioState::default()));
         let mut stream_payload = vec![UNSIGNED_PCM_SILENCE; AUDIO_STREAM_PAGE_BYTE_COUNT];
         stream_payload[SND_CLIP_RATE_CODE_INDEX] = TEST_STREAM_RATE_CODE;
         let encoded_stream = encoded_voc_stream(&stream_payload);
-        let effect_samples = [u8::MAX, u8::MIN, 192, 64, UNSIGNED_PCM_SILENCE];
-        let resident_effects =
-            resident_bank_with_clip(usize::from(PHONE_COMPLETION_CLIP_INDEX), &effect_samples);
-        let mut resident_effects_memory = resident_effects.payload().to_vec();
-        resident_effects_memory.extend([UNSIGNED_PCM_SILENCE; RESIDENT_DRIVER_TAIL_BYTE_COUNT]);
         let streamed_dialogue = empty_bank();
 
         let outcome = {
             let mut state = lock_shared(&shared);
             state
                 .music_stream
-                .load(&encoded_stream, RUNTIME_AUDIO_OUTPUT_RATE_HZ)
+                .load(&encoded_stream, TEST_STREAM_RATE_HZ)
                 .unwrap();
             state.music_stream.start().unwrap();
             state
@@ -1122,7 +1198,7 @@ mod tests {
                     },
                     AudioPlaybackBanks {
                         resident_effects: &resident_effects,
-                        resident_effects_memory: &resident_effects_memory,
+                        resident_effects_memory: resident_effects.payload(),
                         streamed_dialogue: &streamed_dialogue,
                     },
                 )
@@ -1132,12 +1208,17 @@ mod tests {
             outcome,
             AudioPlaybackOutcome::StreamMix(report)
                 if report.status == AudioMixStatus::Mixed
-                    && report.operations.iter().map(|operation| operation.sample_count).sum::<usize>() > 0
+                    && report.source_output_sample_count == PHONE_COMPLETION_MIX_OUTPUT_SAMPLE_COUNT
+                    && report.source_byte_count_consumed == PHONE_COMPLETION_MIXED_SAMPLE_COUNT
+                    && report.operations.as_ref() == [AudioMixOperation {
+                        buffer_index: 0,
+                        sample_count: PHONE_COMPLETION_MIXED_SAMPLE_COUNT,
+                    }]
         ));
 
         let mut callback = RuntimeAudioCallback::new(shared);
-        let submission = callback.render_for_sdl(8);
-        assert_eq!(&submission[..4], &[0.4921875, -0.5, 0.25, -0.25]);
+        let submission = callback.render_for_sdl(PHONE_COMPLETION_SDL_PREFIX.len());
+        assert_eq!(submission, PHONE_COMPLETION_SDL_PREFIX);
         assert!(submission.iter().any(|sample| *sample != 0.0));
     }
 
@@ -1166,30 +1247,21 @@ mod tests {
         SndBank::decode(&encoded).unwrap()
     }
 
-    fn resident_bank_with_clip(index: usize, samples: &[u8]) -> SndBank {
-        let clip_count = index + 1;
-        let mut payload = Vec::new();
-        let mut offsets = Vec::with_capacity(clip_count + 1);
-        for clip_index in 0..clip_count {
-            offsets.push(payload.len());
-            let mut clip = vec![u8::MIN; SND_CLIP_HEADER_BYTE_COUNT];
-            clip[SND_CLIP_RATE_CODE_INDEX] = TEST_STREAM_RATE_CODE;
-            if clip_index == index {
-                clip.extend_from_slice(samples);
-            } else {
-                clip.push(UNSIGNED_PCM_SILENCE);
-            }
-            payload.extend_from_slice(&clip);
+    fn shipped_bridge_sound_bank_path() -> Option<PathBuf> {
+        let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut candidates = Vec::new();
+        if let Some(root) = std::env::var_os("CBLOOD_ORIGINAL_ARCHIVE_ROOT") {
+            candidates.push(PathBuf::from(root).join("resources/SN/TB.SND"));
         }
-        offsets.push(payload.len());
-
-        let mut encoded = (clip_count as u16).to_le_bytes().to_vec();
-        encoded.extend_from_slice(&[u8::MIN; 2]);
-        for offset in offsets {
-            encoded.extend_from_slice(&(offset as u32).to_le_bytes());
+        if let Some(root) = std::env::var_os("CBLOOD_ASSET_CACHE") {
+            candidates.push(PathBuf::from(root).join("resources/SN/TB.SND"));
         }
-        encoded.extend_from_slice(&payload);
-        SndBank::decode(&encoded).unwrap()
+        candidates.extend([
+            workspace_root.join("output/_tmp_iso/resources/SN/TB.SND"),
+            workspace_root.join("commander-blood-audio/_tmp_iso/resources/SN/TB.SND"),
+            workspace_root.join("accuracy/cblood_install/cblood/resources/SN/TB.SND"),
+        ]);
+        candidates.into_iter().find(|path| path.is_file())
     }
 
     fn empty_bank() -> SndBank {

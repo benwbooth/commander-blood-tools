@@ -327,7 +327,10 @@ impl<'window> RuntimePlatformHost<'window> {
     fn pump_events(&mut self, services: &mut ModernGameServices<'window>) -> bool {
         let window_id = self.window.id();
         let mut platform_shutdown = false;
-        for event in self.events.poll_iter() {
+        while let Some(event) = self.events.poll_event() {
+            if self.consume_mouse_motion_event(&event) {
+                continue;
+            }
             match event {
                 Event::Quit { .. } => {
                     services.input_mut().request_shutdown();
@@ -381,26 +384,6 @@ impl<'window> RuntimePlatformHost<'window> {
                 } if event_window_id == window_id => {
                     self.pointer_inside_window = false;
                     self.pointer_buttons = PointerButtons::NONE;
-                }
-                Event::MouseMotion {
-                    window_id: event_window_id,
-                    xrel,
-                    yrel,
-                    ..
-                } if event_window_id == window_id => {
-                    if self.scenario.is_none() && !self.mouse_capture_requested {
-                        continue;
-                    }
-                    let (width, height) = self.window.size();
-                    apply_runtime_pointer_motion(
-                        &mut self.alien_pointer,
-                        &mut self.logical_pointer,
-                        &mut self.bridge_horizontal_delta,
-                        &mut self.pointer_inside_window,
-                        self.pointer_position_locked,
-                        [width as f32, height as f32],
-                        [xrel, yrel],
-                    );
                 }
                 Event::MouseButtonDown {
                     window_id: event_window_id,
@@ -462,6 +445,43 @@ impl<'window> RuntimePlatformHost<'window> {
             }
         }
         platform_shutdown
+    }
+
+    /// Consume a production SDL relative-motion event through the recovered input gate.
+    ///
+    /// The DOS main loop continues polling during actor presentations (UI bit
+    /// `0x0004`), but retains the previous position while navigation owns UI bit
+    /// `0x0008`. Relative capture therefore stays enabled across either state;
+    /// only logical movement is suppressed while `pointer_position_locked` is true.
+    fn consume_mouse_motion_event(&mut self, event: &Event) -> bool {
+        let Event::MouseMotion {
+            window_id,
+            xrel,
+            yrel,
+            ..
+        } = event
+        else {
+            return false;
+        };
+        if *window_id != self.window.id()
+            || self.scenario.is_some()
+            || !self.mouse_capture_requested
+            || !self.window_focused
+        {
+            return true;
+        }
+
+        let (width, height) = self.window.size();
+        apply_runtime_pointer_motion(
+            &mut self.alien_pointer,
+            &mut self.logical_pointer,
+            &mut self.bridge_horizontal_delta,
+            &mut self.pointer_inside_window,
+            self.pointer_position_locked,
+            [width as f32, height as f32],
+            [*xrel, *yrel],
+        );
+        true
     }
 
     /// Publish the window-relative host pointer into the recovered input sampler.
@@ -862,6 +882,7 @@ fn map_logical_to_alien_driver(position: [i16; 2]) -> [f32; 2] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sdl3::mouse::MouseState;
 
     const WIDESCREEN_OUTPUT: [f32; 2] = [1_920.0, 1_080.0];
     const WIDESCREEN_VIEWPORT_WIDTH: f32 = 1_440.0;
@@ -1084,6 +1105,149 @@ mod tests {
 
         state.pointer_position_locked = true;
         assert!(lifecycle_pointer_locked(&state));
+    }
+
+    #[test]
+    fn queued_sdl_motion_survives_bob_presentation_and_true_lock_release() {
+        const OUTPUT_WIDTH: u32 = 640;
+        const OUTPUT_HEIGHT: u32 = 400;
+        const MOTION_X: f32 = 64.0;
+
+        let sdl = sdl3::init().expect("SDL must initialize for the production input test");
+        let video = sdl
+            .video()
+            .expect("SDL video must initialize for the production input test");
+        let window = video
+            .window(
+                "Commander Blood production mouse test",
+                OUTPUT_WIDTH,
+                OUTPUT_HEIGHT,
+            )
+            .position_centered()
+            .build()
+            .expect("the production input test needs a real SDL window");
+        let event_subsystem = sdl
+            .event()
+            .expect("the production input test needs the SDL event queue");
+        let events = sdl
+            .event_pump()
+            .expect("the production input test needs an SDL event pump");
+        let mut platform = RuntimePlatformHost::new(&window, sdl.mouse(), events);
+        drain_sdl_events(&mut platform);
+
+        assert!(platform.mouse_capture_requested);
+        assert!(platform.window_focused);
+        assert!(platform.mouse.relative_mouse_mode(&window));
+
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_modal_ui_busy(true);
+        assert!(lifecycle.modal_ui_busy());
+        assert!(
+            !lifecycle_pointer_locked(&lifecycle),
+            "recovered actor-presentation UI bit 0x0004 does not freeze DOS mouse polling"
+        );
+        platform.synchronize_pointer_lock(
+            lifecycle_pointer_locked(&lifecycle),
+            INITIAL_LOGICAL_POINTER,
+        );
+        dispatch_queued_mouse_motion(&mut platform, &event_subsystem, window.id(), MOTION_X);
+        let during_bob = platform.logical_pointer();
+        assert!(during_bob[0] > INITIAL_LOGICAL_POINTER[0]);
+        assert!(platform.take_bridge_horizontal_delta() > 0);
+        assert!(platform.mouse.relative_mouse_mode(&window));
+
+        lifecycle.set_modal_ui_busy(false);
+        platform.synchronize_pointer_lock(lifecycle_pointer_locked(&lifecycle), during_bob);
+        dispatch_queued_mouse_motion(&mut platform, &event_subsystem, window.id(), -MOTION_X);
+        assert!(platform.logical_pointer()[0] < during_bob[0]);
+        assert!(platform.take_bridge_horizontal_delta() < 0);
+
+        let before_navigation_lock = platform.logical_pointer();
+        lifecycle.set_navigation_ui_busy(true);
+        platform
+            .synchronize_pointer_lock(lifecycle_pointer_locked(&lifecycle), before_navigation_lock);
+        dispatch_queued_mouse_motion(&mut platform, &event_subsystem, window.id(), MOTION_X);
+        assert_eq!(platform.logical_pointer(), before_navigation_lock);
+        assert_eq!(platform.take_bridge_horizontal_delta(), 0);
+        assert!(
+            platform.mouse.relative_mouse_mode(&window),
+            "logical lock must not release production SDL capture"
+        );
+
+        lifecycle.set_navigation_ui_busy(false);
+        platform
+            .synchronize_pointer_lock(lifecycle_pointer_locked(&lifecycle), before_navigation_lock);
+        dispatch_queued_mouse_motion(&mut platform, &event_subsystem, window.id(), MOTION_X);
+        assert!(platform.logical_pointer()[0] > before_navigation_lock[0]);
+        assert!(platform.take_bridge_horizontal_delta() > 0);
+
+        let admitted_position = platform.logical_pointer();
+        dispatch_queued_mouse_motion(
+            &mut platform,
+            &event_subsystem,
+            window.id().wrapping_add(1),
+            MOTION_X,
+        );
+        assert_eq!(platform.logical_pointer(), admitted_position);
+        assert_eq!(platform.take_bridge_horizontal_delta(), 0);
+
+        platform.mouse_capture_requested = false;
+        platform.mouse.set_relative_mouse_mode(&window, false);
+        assert!(!platform.mouse.relative_mouse_mode(&window));
+        dispatch_queued_mouse_motion(&mut platform, &event_subsystem, window.id(), MOTION_X);
+        assert_eq!(platform.logical_pointer(), admitted_position);
+        assert_eq!(platform.take_bridge_horizontal_delta(), 0);
+
+        platform.mouse_capture_requested = true;
+        platform.mouse.set_relative_mouse_mode(&window, true);
+        assert!(platform.mouse.relative_mouse_mode(&window));
+        platform.window_focused = false;
+        platform.mouse.set_relative_mouse_mode(&window, false);
+        assert!(!platform.mouse.relative_mouse_mode(&window));
+        dispatch_queued_mouse_motion(&mut platform, &event_subsystem, window.id(), MOTION_X);
+        assert_eq!(platform.logical_pointer(), admitted_position);
+        assert_eq!(platform.take_bridge_horizontal_delta(), 0);
+    }
+
+    fn dispatch_queued_mouse_motion(
+        platform: &mut RuntimePlatformHost<'_>,
+        event_subsystem: &sdl3::EventSubsystem,
+        window_id: u32,
+        xrel: f32,
+    ) {
+        drain_sdl_events(platform);
+        event_subsystem
+            .push_event(Event::MouseMotion {
+                timestamp: 0,
+                window_id,
+                which: 0,
+                mousestate: MouseState::from_sdl_state(0),
+                x: 0.0,
+                y: 0.0,
+                xrel,
+                yrel: 0.0,
+            })
+            .expect("the synthetic SDL motion must enter SDL's real event queue");
+
+        let mut observed = false;
+        while let Some(event) = platform.events.poll_event() {
+            if let Event::MouseMotion {
+                window_id: observed_window_id,
+                xrel: observed_xrel,
+                ..
+            } = &event
+                && *observed_window_id == window_id
+                && *observed_xrel == xrel
+            {
+                observed = true;
+            }
+            platform.consume_mouse_motion_event(&event);
+        }
+        assert!(observed, "SDL did not return the queued MouseMotion event");
+    }
+
+    fn drain_sdl_events(platform: &mut RuntimePlatformHost<'_>) {
+        while platform.events.poll_event().is_some() {}
     }
 
     #[test]
