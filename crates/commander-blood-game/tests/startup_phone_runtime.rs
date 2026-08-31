@@ -44,6 +44,14 @@ const HONK_CLICK: &str = "click 230 88";
 const SAVE_OPTION_CLICK: &str = "sclick 100 95";
 const LOAD_OPTION_CLICK: &str = "sclick 100 106";
 const SAVE_CANCEL_CLICK: &str = "sclick 100 151";
+const MOVE_PREVIOUS_KEY: &str = "key 72";
+const MOVE_NEXT_KEY: &str = "key 80";
+const ACCEPT_KEY: &str = "key 28";
+const TEXT_A_KEY: &str = "key 30 97";
+const PAUSE_KEY: &str = "key 25 112";
+const ASCII_CARRIAGE_RETURN: u64 = 13;
+const ASCII_LOWERCASE_A: u64 = 97;
+const ASCII_LOWERCASE_P: u64 = 112;
 const LOAD_FIRST_SLOT_CLICK: &str = "sclick 100 40";
 const PTERRA_TELEPORT: &str = "teleport Pterra";
 const SHIP_DESTINATION_CLICK: &str = "click 216 72";
@@ -904,6 +912,33 @@ fn production_runtime_opens_and_closes_the_authored_save_and_load_menus() {
     assert_eq!(save_load(interactive)["selected_slot"], 0);
     assert_eq!(save_load(interactive)["active_slot"], 0);
 
+    let move_next = save_records
+        .iter()
+        .find(|record| record["action"] == MOVE_NEXT_KEY)
+        .expect("save menu never dispatched the recovered move-next key");
+    assert_eq!(save_load(move_next)["selected_slot"], 1);
+    assert_eq!(save_load(move_next)["active_slot"], 1);
+
+    let move_previous = save_records
+        .iter()
+        .find(|record| record["action"] == MOVE_PREVIOUS_KEY)
+        .expect("save menu never dispatched the recovered move-previous key");
+    assert_eq!(save_load(move_previous)["selected_slot"], 0);
+    assert_eq!(save_load(move_previous)["active_slot"], 0);
+
+    let text = save_records
+        .iter()
+        .find(|record| record["action"] == TEXT_A_KEY)
+        .expect("save menu never dispatched the recovered text-byte key");
+    assert_eq!(input(text)["text_byte"], ASCII_LOWERCASE_A);
+
+    let save_pause_key = save_records
+        .iter()
+        .find(|record| record["action"] == PAUSE_KEY)
+        .expect("save menu never dispatched the recovered P key");
+    assert_eq!(input(save_pause_key)["text_byte"], ASCII_LOWERCASE_P);
+    assert_eq!(input(save_pause_key)["paused"], false);
+
     let cancel_index = records
         .iter()
         .position(|record| record["action"] == SAVE_CANCEL_CLICK)
@@ -919,6 +954,17 @@ fn production_runtime_opens_and_closes_the_authored_save_and_load_menus() {
         u64::MIN,
         "save CANCEL row left the shared modal UI bit latched"
     );
+
+    let pause_records = records
+        .iter()
+        .filter(|record| record["action"] == PAUSE_KEY)
+        .collect::<Vec<_>>();
+    assert_eq!(pause_records.len(), 3);
+    assert_eq!(input(pause_records[0])["paused"], false);
+    assert_eq!(input(pause_records[1])["paused"], true);
+    assert_eq!(input(pause_records[2])["paused"], false);
+    assert_eq!(input(pause_records[1])["text_byte"], ASCII_LOWERCASE_P);
+    assert_eq!(input(pause_records[2])["text_byte"], ASCII_LOWERCASE_P);
 
     let load_index = records
         .iter()
@@ -943,6 +989,13 @@ fn production_runtime_opens_and_closes_the_authored_save_and_load_menus() {
         })
         .expect("load menu never completed its recovered opening transition");
     assert_eq!(save_load(interactive)["selected_slot"], 0);
+
+    let accept = load_records
+        .iter()
+        .find(|record| record["action"] == ACCEPT_KEY)
+        .expect("load menu never dispatched the recovered Enter key");
+    assert_eq!(input(accept)["text_byte"], ASCII_CARRIAGE_RETURN);
+    assert_eq!(save_load(accept)["active"], true);
 
     let closed = load_records
         .iter()
@@ -1668,6 +1721,10 @@ fn console(record: &Value) -> &Value {
 
 fn save_load(record: &Value) -> &Value {
     &record["semantic"]["save_load"]
+}
+
+fn input(record: &Value) -> &Value {
+    &record["semantic"]["input"]
 }
 
 fn console_u64(record: &Value, field: &str) -> u64 {

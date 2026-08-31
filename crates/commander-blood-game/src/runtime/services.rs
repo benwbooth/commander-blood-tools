@@ -4436,6 +4436,8 @@ impl<'window> ModernGameServices<'window> {
                 "previous_buttons": previous_buttons.bits(),
                 "primary_pressed": u8::from(pointer_edges.primary_pressed || lifecycle.primary_pointer_pressed),
                 "press_pending": lifecycle.pointer_press_pending,
+                "text_byte": self.input.dispatch_state().text_byte,
+                "paused": self.input.dispatch_state().paused,
                 "pointer_lock": {
                     "pause": lifecycle.pause_hud_active,
                     "explicit": lifecycle.pointer_position_locked,

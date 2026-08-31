@@ -345,6 +345,10 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
 
     fn refresh_pause_hud(&mut self, state: &mut GameLifecycleState) -> Result<()> {
         self.services.refresh_pause_hud(state.pause_hud_active)?;
+        if state.pause_hud_active {
+            self.platform
+                .record_scenario_frame_boundary(&mut self.services, state)?;
+        }
         Ok(())
     }
 

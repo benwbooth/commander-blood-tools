@@ -16,20 +16,35 @@ wait 20
 wait 20
 wait 20
 wait 20
+
 click 230 160
 wait 20
 sclick 100 95
 wait 20
+
+# Exercise the executable keyboard handlers while SAVE owns input. Down and Up
+# move the editable slot, printable bytes reach the editor, and P remains a text
+# byte without toggling pause while save_request_active is set.
+key 80
+key 72
+key 30 97
+key 25 112
 sclick 100 151
 wait 10
 
+# Outside SAVE, the same P handler toggles pause in both directions.
+key 25 112
+key 25 112
+
 # Reopen OPTIONS and exercise the sibling LOAD owner through the same authored
-# list transition and CANCEL row.
+# list transition and CANCEL row. Enter still publishes carriage return, but the
+# original LOAD path does not treat it as a row selection.
 park 316 45
 wait 10
 click 230 160
 wait 20
 sclick 100 106
 wait 20
+key 28
 sclick 100 151
 wait 10
