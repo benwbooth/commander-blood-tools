@@ -88,6 +88,16 @@ impl RuntimeBridgeActors {
         self.camera.location_panel_active = active;
     }
 
+    /// Publish the navigation candidate written to native `nav_deferred_record_link`.
+    pub(super) fn publish_navigation_deferred_record(&mut self, record: ScriptObjectId) {
+        self.hyperjump.deferred_record = Some(record);
+    }
+
+    /// Return whether native `nav_deferred_record_link` still owns a candidate.
+    pub(super) const fn navigation_deferred_record_pending(&self) -> bool {
+        self.hyperjump.deferred_record.is_some()
+    }
+
     pub(super) fn update(
         &mut self,
         services: &mut ModernGameServices<'_>,
@@ -403,16 +413,9 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         slots: &[NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     ) -> Result<()> {
         let enabled = self.mode == Some(PresentationBridgeMode::Outer);
-        let deferred_record =
-            (enabled && self.hyperjump.deferred_record.is_none() && line.flags.ready)
-                .then(|| self.services.current_ship_navigation_target())
-                .transpose()?;
         let mut state = std::mem::take(self.hyperjump);
         let mut playback = std::mem::take(self.playback);
         playback.busy = seek.requested;
-        if deferred_record.is_some() {
-            state.deferred_record = deferred_record;
-        }
         let outcome = update_hyperjump_presentation_actor(
             enabled,
             slot_has_state(&slots[BLACK_HOLE_ACTOR_SLOT]),

@@ -95,10 +95,11 @@ impl<'window> RuntimePresentationHost<'window> {
         &mut self,
         runtime: &OriginalGameRuntime,
         bridge_frame: &BridgeSceneFrame,
+        bridge_palette: &IndexedGamePalette,
     ) -> Result<()> {
         let rgba = bridge_indexed_overlay_rgba(
             runtime.front_buffer().pixels(),
-            runtime.live_palette(),
+            bridge_palette,
             bridge_frame,
         )?;
         self.renderer_ref()?
@@ -120,6 +121,7 @@ impl<'window> RuntimePresentationHost<'window> {
         &mut self,
         runtime: &OriginalGameRuntime,
         bridge_frame: &BridgeSceneFrame,
+        bridge_palette: &IndexedGamePalette,
         composition: RuntimeBridgeComposition,
         manu3_visible: bool,
     ) -> Result<()> {
@@ -127,7 +129,7 @@ impl<'window> RuntimePresentationHost<'window> {
         // boundary, so refresh the modern texture immediately before drawing.
         match composition {
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay => {
-                self.submit_bridge_indexed_overlay(runtime, bridge_frame)?;
+                self.submit_bridge_indexed_overlay(runtime, bridge_frame, bridge_palette)?;
             }
             RuntimeBridgeComposition::IndexedFramebuffer
             | RuntimeBridgeComposition::BridgeScene => {
@@ -141,8 +143,8 @@ impl<'window> RuntimePresentationHost<'window> {
         let manu3_triangles = select_manu3_triangles(all_manu3_triangles, manu3_visible);
         let renderer = self.renderer_mut()?;
         renderer
-            .update_bridge_palette(runtime.live_palette())
-            .context("refreshing bridge colors from the live DESCRIPT palette")?;
+            .update_bridge_palette(bridge_palette)
+            .context("refreshing bridge colors from the retained bridge palette")?;
         match composition {
             RuntimeBridgeComposition::IndexedFramebuffer => {
                 renderer.render(manu3_triangles, None, None)

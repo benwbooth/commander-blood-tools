@@ -1478,6 +1478,19 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.defer_actor_presentation(target);
     }
 
+    /// Publish the C4 navigation candidate to both consumers of its native shared link.
+    pub(super) fn publish_ship_navigation_deferred_record(
+        &mut self,
+        target: ScriptObjectId,
+    ) -> Result<()> {
+        self.scripts.defer_actor_presentation(target);
+        self.bridge_actors
+            .as_mut()
+            .context("bridge actor state is already being updated")?
+            .publish_navigation_deferred_record(target);
+        Ok(())
+    }
+
     /// Publish the complete deferred C6 action emitted by black-hole presentation.
     pub(super) fn defer_ship_travel_target(&mut self, target: ScriptObjectId) {
         self.scripts.defer_travel_target(target);
@@ -3184,6 +3197,7 @@ impl<'window> ModernGameServices<'window> {
         self.presentation.present_frame(
             &self.runtime,
             bridge_frame,
+            &self.bridge_palette,
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay,
             true,
         )?;
@@ -3791,16 +3805,22 @@ impl<'window> ModernGameServices<'window> {
     /// Present one translated bridge scene frame and optional MANU3 overlay.
     pub fn present_bridge_frame(&mut self, bridge_frame: &BridgeSceneFrame) -> Result<()> {
         self.ensure_main_viewport()?;
+        let presentation_stream_retained = self.presentation_player.has_stream();
         let composition = select_bridge_composition(
-            self.presentation_player.has_stream(),
+            presentation_stream_retained,
             self.presentation_screen
                 .as_ref()
                 .is_some_and(|screen| screen.state().active()),
             false,
             bridge_frame.steering.view_changed,
         );
-        self.presentation
-            .present_frame(&self.runtime, bridge_frame, composition, true)
+        self.presentation.present_frame(
+            &self.runtime,
+            bridge_frame,
+            &self.bridge_palette,
+            composition,
+            manu3_layer_visible(true, presentation_stream_retained),
+        )
     }
 
     /// Present the most recently generated bridge frame.
@@ -3810,20 +3830,26 @@ impl<'window> ModernGameServices<'window> {
         manu3_visible: bool,
     ) -> Result<()> {
         self.ensure_main_viewport()?;
+        let presentation_stream_retained = self.presentation_player.has_stream();
         let frame = self
             .bridge_frame
             .as_ref()
             .context("no rendered bridge frame is ready")?;
         let composition = select_bridge_composition(
-            self.presentation_player.has_stream(),
+            presentation_stream_retained,
             self.presentation_screen
                 .as_ref()
                 .is_some_and(|screen| screen.state().active()),
             indexed_ui_active,
             frame.steering.view_changed,
         );
-        self.presentation
-            .present_frame(&self.runtime, frame, composition, manu3_visible)
+        self.presentation.present_frame(
+            &self.runtime,
+            frame,
+            &self.bridge_palette,
+            composition,
+            manu3_layer_visible(manu3_visible, presentation_stream_retained),
+        )
     }
 
     /// Drop the live bridge and its owned panorama during shutdown.
@@ -3888,8 +3914,38 @@ impl<'window> ModernGameServices<'window> {
         let current_bridge_frame = self.current_bridge_view_frame().unwrap_or(u16::MIN);
         let bridge_seek_requested = self.bridge_seek_requested().unwrap_or(false);
         let bridge_seek_target = self.bridge_seek_target_arc().unwrap_or(u16::MIN);
+        let bridge_presentation_mode = self.bridge_presentation_mode.map(|mode| match mode {
+            PresentationBridgeMode::Outer => "Outer",
+            PresentationBridgeMode::FirstBand => "FirstBand",
+            PresentationBridgeMode::SecondBand => "SecondBand",
+            PresentationBridgeMode::ThirdBand => "ThirdBand",
+        });
+        let hyperjump_deferred_record_pending = self
+            .bridge_actors
+            .as_ref()
+            .is_some_and(RuntimeBridgeActors::navigation_deferred_record_pending);
         let radio_slot = &self.nav_actor_slots[1];
         let panel_slot = &self.nav_actor_slots[2];
+        let bridge_actor_slots = self
+            .nav_actor_slots
+            .iter()
+            .enumerate()
+            .map(|(index, slot)| {
+                serde_json::json!({
+                    "index": index,
+                    "flags": slot.flags.executable_flags(),
+                    "target_arc": slot.target_arc,
+                    "hit_region": slot.hit_region.map(|region| serde_json::json!({
+                        "origin": region.origin(),
+                        "extent": region.extent(),
+                    })),
+                    "resource": slot.line.resource.get(),
+                    "terminal_frame": slot.line.terminal_frame,
+                    "frame": slot.line.frame,
+                    "position": slot.line.position,
+                })
+            })
+            .collect::<Vec<_>>();
         let presentation_screen = self
             .presentation_screen
             .as_ref()
@@ -4164,6 +4220,12 @@ impl<'window> ModernGameServices<'window> {
             .flatten()
             .copied()
             .collect();
+        let bridge_palette_bytes = self
+            .bridge_palette
+            .iter()
+            .flatten()
+            .copied()
+            .collect::<Vec<_>>();
         let bridge_layers = self.bridge_frame.as_ref().map(|frame| {
             serde_json::json!({
                 "panorama_hash": fnv1a64(&frame.panorama_pixels),
@@ -4315,7 +4377,7 @@ impl<'window> ModernGameServices<'window> {
             "music": descript_assets.music().map(|name| String::from_utf8_lossy(name.as_bytes()).into_owned()),
             "backgrounds": descript_backgrounds,
         });
-        let presentation_trace = serde_json::json!({
+        let mut presentation_trace = serde_json::json!({
             "ui_flags": lifecycle.low_ui_state_word(),
             "actor_transition": u8::from(lifecycle.profile_change_blockers.navigation_actor_transition_active),
             "bridge_frame": current_bridge_frame as i16,
@@ -4383,6 +4445,37 @@ impl<'window> ModernGameServices<'window> {
             },
             "waiting_for_input": waiting_for_input,
         });
+        presentation_trace
+            .as_object_mut()
+            .expect("presentation trace is an object")
+            .insert(
+                "bridge_actor_slots".to_owned(),
+                serde_json::Value::Array(bridge_actor_slots),
+            );
+        let presentation_trace = presentation_trace
+            .as_object_mut()
+            .expect("presentation trace is an object");
+        presentation_trace.insert(
+            "bridge_presentation_mode".to_owned(),
+            bridge_presentation_mode
+                .map(serde_json::Value::from)
+                .unwrap_or(serde_json::Value::Null),
+        );
+        presentation_trace.insert(
+            "hyperjump_deferred_record_pending".to_owned(),
+            serde_json::Value::from(hyperjump_deferred_record_pending),
+        );
+        presentation_trace.insert(
+            "ship_scene".to_owned(),
+            serde_json::json!({
+                "active_line": crate::native::bloodprg::decode_active_presentation_line(
+                    self.ship_presentation.active_line,
+                ),
+                "bridge_redraw_pending": self.ship_presentation.bridge_redraw_pending,
+                "presentation_gate": self.ship_presentation.presentation_gate,
+                "dispatch_blocked": self.ship_presentation.scene_dispatch_blocked,
+            }),
+        );
         let alien_overlay_trace = self
             .runtime_alien_overlay()
             .ok()
@@ -4517,6 +4610,8 @@ impl<'window> ModernGameServices<'window> {
                 "source_open_or_draining": self.presentation_player.source_open_or_draining(),
                 "screen_hash": screen_hash,
                 "palette_hash": fnv1a64(&palette_bytes),
+                "bridge_palette_hash": fnv1a64(&bridge_palette_bytes),
+                "manu3_layer_allowed": !self.presentation_player.has_stream(),
                 "console_palette": &self.runtime.live_palette()
                     [usize::from(BRIDGE_CONSOLE_TINT_FIRST)
                         ..usize::from(BRIDGE_CONSOLE_TINT_FIRST) + TINT_PALETTE_BANK_SIZE],
@@ -4792,6 +4887,17 @@ const fn select_bridge_composition(
     } else {
         RuntimeBridgeComposition::BridgeScene
     }
+}
+
+/// The native HNM page owns the display while its stream is retained.
+///
+/// MANU3 state still advances through its recovered dispatcher, but the modern
+/// renderer must not append that independently rendered layer over a video page.
+const fn manu3_layer_visible(
+    recovered_hand_visible: bool,
+    presentation_stream_retained: bool,
+) -> bool {
+    recovered_hand_visible && !presentation_stream_retained
 }
 
 struct RuntimeBridgeScreenBackend<'services, 'window> {
@@ -5220,6 +5326,14 @@ mod tests {
             select_bridge_composition(false, false, false, false),
             RuntimeBridgeComposition::BridgeScene
         );
+    }
+
+    #[test]
+    fn retained_hnm_page_owns_the_display_over_manu3() {
+        assert!(manu3_layer_visible(true, false));
+        assert!(!manu3_layer_visible(true, true));
+        assert!(!manu3_layer_visible(false, false));
+        assert!(!manu3_layer_visible(false, true));
     }
 
     #[test]
