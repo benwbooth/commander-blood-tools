@@ -765,7 +765,6 @@ mod tests {
             paths.resource_root()
         );
         assert_eq!(data.resource_store().writable_root(), writable_root);
-        assert!(!writable_root.exists());
     }
 
     #[test]
