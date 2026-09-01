@@ -1442,6 +1442,10 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         .expect("Pterra selection did not expose the retained bridge palette hash");
     for record in pterra_video_records {
         assert_eq!(
+            record["semantic"]["video"]["display_frame_owned"], true,
+            "an active Pterra stream did not own its displayed frame: {record}"
+        );
+        assert_eq!(
             record["semantic"]["video"]["manu3_layer_allowed"], false,
             "the independent wgpu MANU3 layer was enabled over a Pterra video: {record}"
         );

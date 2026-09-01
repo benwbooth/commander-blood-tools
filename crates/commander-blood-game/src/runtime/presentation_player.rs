@@ -19,6 +19,7 @@ pub struct RuntimePresentationPlayer {
     catalog: RuntimePresentationCatalog,
     shared_idle_video: Option<Box<[u8]>>,
     active_stream: Option<RuntimePresentationStream>,
+    retained_display_palette: Option<IndexedGamePalette>,
 }
 
 impl RuntimePresentationPlayer {
@@ -28,6 +29,7 @@ impl RuntimePresentationPlayer {
             catalog: RuntimePresentationCatalog::new(initial),
             shared_idle_video: None,
             active_stream: None,
+            retained_display_palette: None,
         }
     }
 
@@ -67,7 +69,8 @@ impl RuntimePresentationPlayer {
     ) -> Result<Option<PresentationResourceSequenceOutcome>> {
         // The DOS resource switch closes the current queue file before opening
         // every newly requested line, even when the prior line has not drained.
-        self.active_stream = None;
+        // Its displayed page remains visible if the replacement cannot open.
+        self.finish();
         let mut request = self
             .catalog
             .request(line)
@@ -94,6 +97,7 @@ impl RuntimePresentationPlayer {
             timer_tick,
             render_snapshot_suppressed,
         )?;
+        self.retained_display_palette = None;
         self.active_stream = Some(stream);
         Ok(Some(outcome))
     }
@@ -177,6 +181,28 @@ impl RuntimePresentationPlayer {
         self.active_stream.is_some()
     }
 
+    /// Return whether an HNM page still owns the visible indexed surface.
+    ///
+    /// The native display keeps the final decoded page after the resource queue
+    /// closes. Modern rendering must retain that page's already-resolved colors
+    /// until bridge, scene, or panel drawing explicitly replaces it.
+    pub const fn owns_display_frame(&self) -> bool {
+        self.active_stream.is_some() || self.retained_display_palette.is_some()
+    }
+
+    /// Return the color table that resolves the currently visible HNM page.
+    pub fn display_palette(&self) -> Option<&IndexedGamePalette> {
+        self.active_stream
+            .as_ref()
+            .map(RuntimePresentationStream::display_palette)
+            .or(self.retained_display_palette.as_ref())
+    }
+
+    /// Release a completed HNM page after another recovered display owner writes.
+    pub fn release_retained_display_frame(&mut self) -> bool {
+        self.retained_display_palette.take().is_some()
+    }
+
     /// Return whether the recovered queue status still owns or drains a source.
     pub fn source_open_or_draining(&self) -> bool {
         self.active_stream
@@ -224,7 +250,11 @@ impl RuntimePresentationPlayer {
 
     /// Release the active stream after completion or explicit cancellation.
     pub fn finish(&mut self) -> Option<RuntimePresentationStream> {
-        self.active_stream.take()
+        let stream = self.active_stream.take()?;
+        if stream.presented_frame_count() != u64::MIN {
+            self.retained_display_palette = Some(*stream.display_palette());
+        }
+        Some(stream)
     }
 
     /// Snapshot the active stream cursor used by the native Escape handler.
@@ -306,6 +336,7 @@ mod tests {
             .unwrap();
         assert!(initial.initial_present.frame_presented);
         assert!(player.has_stream());
+        assert!(player.owns_display_frame());
         assert!(player.source_open_or_draining());
         assert_eq!(player.decoded_frame_count(), INITIAL_DECODED_FRAME_COUNT);
         assert_eq!(
@@ -316,9 +347,16 @@ mod tests {
                 .as_bytes(),
             b"sq\\mind.HNM"
         );
+        let retained_palette = *player.display_palette().unwrap();
         assert!(player.finish().is_some());
         assert!(!player.has_stream());
         assert!(!player.source_open_or_draining());
+        assert!(player.owns_display_frame());
+        runtime.live_palette_mut().fill([63; 3]);
+        assert_eq!(player.display_palette(), Some(&retained_palette));
+        assert!(player.release_retained_display_frame());
+        assert!(!player.owns_display_frame());
+        assert!(player.display_palette().is_none());
     }
 
     #[test]

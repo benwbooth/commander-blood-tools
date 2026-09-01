@@ -346,6 +346,11 @@ impl RuntimePresentationStream {
         &self.palette.render_snapshot
     }
 
+    /// Palette that resolves the currently retained indexed HNM page to RGB.
+    pub const fn display_palette(&self) -> &IndexedGamePalette {
+        &self.palette.live
+    }
+
     pub(crate) fn queue_metrics(&self) -> Result<RuntimePresentationQueueMetrics> {
         Ok(RuntimePresentationQueueMetrics {
             entry_metric: u16::try_from(self.stream.entry_metric)
@@ -460,6 +465,8 @@ mod tests {
     use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
     use sha2::{Digest, Sha256};
 
+    use crate::render::indexed_frame_rgba;
+
     use super::super::{OriginalGameData, OriginalGameDataPaths};
     use super::*;
 
@@ -559,6 +566,34 @@ mod tests {
             changed.is_empty(),
             "Pterra's initial HNM palette record changed reserved colors: {changed:?}"
         );
+    }
+
+    #[test]
+    fn pterra_true_color_frame_is_independent_of_later_global_palette_changes() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let request =
+            RuntimePresentationRequest::new(BloodResourceName::new(PTERRA_VIDEO_RESOURCE).unwrap());
+        let (stream, initial) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+        assert!(initial.initial_present.frame_presented);
+
+        let retained_indices = runtime.front_buffer().pixels().to_vec();
+        let expected_rgba =
+            indexed_frame_rgba(&retained_indices, stream.display_palette()).unwrap();
+        runtime
+            .live_palette_mut()
+            .fill([u8::MIN; RGB_COMPONENT_COUNT]);
+
+        let retained_rgba =
+            indexed_frame_rgba(&retained_indices, stream.display_palette()).unwrap();
+        let incorrectly_recolored =
+            indexed_frame_rgba(&retained_indices, runtime.live_palette()).unwrap();
+        assert_eq!(retained_rgba, expected_rgba);
+        assert_ne!(incorrectly_recolored, expected_rgba);
     }
 
     #[test]

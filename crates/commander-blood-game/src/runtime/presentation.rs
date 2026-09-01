@@ -74,9 +74,13 @@ impl<'window> RuntimePresentationHost<'window> {
         }
     }
 
-    /// Upload the runtime's complete indexed frame and current VGA palette.
-    pub fn submit_indexed_frame(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
-        self.submit_frame(runtime.front_buffer(), runtime.live_palette())
+    /// Resolve and upload the runtime's complete indexed frame as true-color RGBA.
+    pub fn submit_indexed_frame(
+        &mut self,
+        runtime: &OriginalGameRuntime,
+        display_palette: &IndexedGamePalette,
+    ) -> Result<()> {
+        self.submit_frame(runtime.front_buffer(), display_palette)
     }
 
     /// Upload one complete logical frame supplied by startup or presentation code.
@@ -122,6 +126,7 @@ impl<'window> RuntimePresentationHost<'window> {
         runtime: &OriginalGameRuntime,
         bridge_frame: &BridgeSceneFrame,
         bridge_palette: &IndexedGamePalette,
+        indexed_display_palette: &IndexedGamePalette,
         composition: RuntimeBridgeComposition,
         manu3_visible: bool,
     ) -> Result<()> {
@@ -133,7 +138,7 @@ impl<'window> RuntimePresentationHost<'window> {
             }
             RuntimeBridgeComposition::IndexedFramebuffer
             | RuntimeBridgeComposition::BridgeScene => {
-                self.submit_indexed_frame(runtime)?;
+                self.submit_indexed_frame(runtime, indexed_display_palette)?;
             }
         }
         let all_manu3_triangles = runtime

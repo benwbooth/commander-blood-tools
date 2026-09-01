@@ -135,6 +135,7 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
         image: &DescriptBackgroundSlot,
         scene_palette: &mut IndexedGamePalette,
     ) -> Result<()> {
+        self.services.release_retained_presentation_frame();
         let Some(background) = self.services.script_backend().backgrounds().get(*image) else {
             // The executable initializes all four FD path slots with placeholder
             // names. Its scene dispatcher ignores PBM load failure, retaining the
@@ -224,6 +225,7 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
     }
 
     fn clear_display_band(&mut self, rows: Range<usize>, color: u8) -> Result<()> {
+        self.services.release_retained_presentation_frame();
         fill_display_band(
             self.services.runtime_mut().front_buffer_mut().pixels_mut(),
             rows.start,

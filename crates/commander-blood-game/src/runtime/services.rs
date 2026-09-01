@@ -2224,6 +2224,7 @@ impl<'window> ModernGameServices<'window> {
         ship_active: bool,
         transition_pending: bool,
     ) -> Result<()> {
+        self.presentation_player.release_retained_display_frame();
         let panorama_frame = self.bridge_view_frame()? as u16;
         let mut screen_state = std::mem::take(&mut self.bridge_screen);
         screen_state.screen_rebuild_pending = true;
@@ -2639,6 +2640,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Clear the recovered full-screen travel redraw surface.
     pub fn clear_ship_travel_display(&mut self) {
+        self.presentation_player.release_retained_display_frame();
         self.runtime.clear_ship_travel_display();
     }
 
@@ -3040,6 +3042,11 @@ impl<'window> ModernGameServices<'window> {
         self.presentation_player.finish().is_some()
     }
 
+    /// Release a completed HNM page when another recovered display owner writes.
+    pub(super) fn release_retained_presentation_frame(&mut self) -> bool {
+        self.presentation_player.release_retained_display_frame()
+    }
+
     /// Release every presentation owner retained across lifecycle frames.
     pub fn finish_runtime_presentations(&mut self) -> Result<()> {
         self.finish_presentation_sequence();
@@ -3195,7 +3202,9 @@ impl<'window> ModernGameServices<'window> {
         if self.runtime.draw_pause_hud(active)?.is_none() {
             return Ok(false);
         }
-        self.presentation.submit_indexed_frame(&self.runtime)?;
+        let indexed_display_palette = self.indexed_display_palette();
+        self.presentation
+            .submit_indexed_frame(&self.runtime, &indexed_display_palette)?;
         let bridge_frame = self
             .bridge_frame
             .as_ref()
@@ -3204,8 +3213,9 @@ impl<'window> ModernGameServices<'window> {
             &self.runtime,
             bridge_frame,
             &self.bridge_palette,
+            &indexed_display_palette,
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay,
-            true,
+            !self.presentation_player.owns_display_frame(),
         )?;
         Ok(true)
     }
@@ -3281,9 +3291,18 @@ impl<'window> ModernGameServices<'window> {
         self.presentation.resize(width, height);
     }
 
-    /// Upload the complete current indexed frame and live VGA palette.
+    fn indexed_display_palette(&self) -> IndexedGamePalette {
+        self.presentation_player
+            .display_palette()
+            .copied()
+            .unwrap_or(*self.runtime.live_palette())
+    }
+
+    /// Resolve the complete current indexed frame into the owned true-color surface.
     pub fn submit_indexed_frame(&mut self) -> Result<()> {
-        self.presentation.submit_indexed_frame(&self.runtime)
+        let indexed_display_palette = self.indexed_display_palette();
+        self.presentation
+            .submit_indexed_frame(&self.runtime, &indexed_display_palette)
     }
 
     /// Present current indexed artwork without retaining the interactive MANU3 layer.
@@ -3626,6 +3645,9 @@ impl<'window> ModernGameServices<'window> {
         refresh_live_palette: bool,
         target: BridgePageTarget,
     ) -> Result<&BridgeSceneFrame> {
+        if target == BridgePageTarget::Primary && !self.presentation_player.has_stream() {
+            self.presentation_player.release_retained_display_frame();
+        }
         {
             let Self {
                 runtime,
@@ -3822,9 +3844,10 @@ impl<'window> ModernGameServices<'window> {
     /// Present one translated bridge scene frame and optional MANU3 overlay.
     pub fn present_bridge_frame(&mut self, bridge_frame: &BridgeSceneFrame) -> Result<()> {
         self.ensure_main_viewport()?;
-        let presentation_stream_retained = self.presentation_player.has_stream();
+        let presentation_frame_owned = self.presentation_player.owns_display_frame();
+        let indexed_display_palette = self.indexed_display_palette();
         let composition = select_bridge_composition(
-            presentation_stream_retained,
+            presentation_frame_owned,
             self.presentation_screen
                 .as_ref()
                 .is_some_and(|screen| screen.state().active()),
@@ -3835,8 +3858,9 @@ impl<'window> ModernGameServices<'window> {
             &self.runtime,
             bridge_frame,
             &self.bridge_palette,
+            &indexed_display_palette,
             composition,
-            manu3_layer_visible(true, presentation_stream_retained),
+            manu3_layer_visible(true, presentation_frame_owned),
         )
     }
 
@@ -3847,13 +3871,14 @@ impl<'window> ModernGameServices<'window> {
         manu3_visible: bool,
     ) -> Result<()> {
         self.ensure_main_viewport()?;
-        let presentation_stream_retained = self.presentation_player.has_stream();
+        let presentation_frame_owned = self.presentation_player.owns_display_frame();
+        let indexed_display_palette = self.indexed_display_palette();
         let frame = self
             .bridge_frame
             .as_ref()
             .context("no rendered bridge frame is ready")?;
         let composition = select_bridge_composition(
-            presentation_stream_retained,
+            presentation_frame_owned,
             self.presentation_screen
                 .as_ref()
                 .is_some_and(|screen| screen.state().active()),
@@ -3864,8 +3889,9 @@ impl<'window> ModernGameServices<'window> {
             &self.runtime,
             frame,
             &self.bridge_palette,
+            &indexed_display_palette,
             composition,
-            manu3_layer_visible(manu3_visible, presentation_stream_retained),
+            manu3_layer_visible(manu3_visible, presentation_frame_owned),
         )
     }
 
@@ -4218,15 +4244,16 @@ impl<'window> ModernGameServices<'window> {
             });
         let screen_hash = fnv1a64(self.runtime.front_buffer().pixels());
         let palette_transition = self.palette_transition.state();
+        let indexed_display_palette = self.indexed_display_palette();
         let presentation_content = serde_json::json!({
             "front": indexed_region_metrics(
                 self.runtime.front_buffer().pixels(),
-                self.runtime.live_palette(),
+                &indexed_display_palette,
                 PRESENTATION_CONTENT_FIRST_ROW..PRESENTATION_CONTENT_AFTER_LAST_ROW,
             ),
             "back": indexed_region_metrics(
                 self.runtime.back_buffer().pixels(),
-                self.runtime.live_palette(),
+                &indexed_display_palette,
                 PRESENTATION_CONTENT_FIRST_ROW..PRESENTATION_CONTENT_AFTER_LAST_ROW,
             ),
         });
@@ -4237,6 +4264,11 @@ impl<'window> ModernGameServices<'window> {
             .flatten()
             .copied()
             .collect();
+        let display_palette_bytes = indexed_display_palette
+            .iter()
+            .flatten()
+            .copied()
+            .collect::<Vec<_>>();
         let bridge_palette_bytes = self
             .bridge_palette
             .iter()
@@ -4627,8 +4659,10 @@ impl<'window> ModernGameServices<'window> {
                 "source_open_or_draining": self.presentation_player.source_open_or_draining(),
                 "screen_hash": screen_hash,
                 "palette_hash": fnv1a64(&palette_bytes),
+                "display_palette_hash": fnv1a64(&display_palette_bytes),
                 "bridge_palette_hash": fnv1a64(&bridge_palette_bytes),
-                "manu3_layer_allowed": !self.presentation_player.has_stream(),
+                "display_frame_owned": self.presentation_player.owns_display_frame(),
+                "manu3_layer_allowed": !self.presentation_player.owns_display_frame(),
                 "console_palette": &self.runtime.live_palette()
                     [usize::from(BRIDGE_CONSOLE_TINT_FIRST)
                         ..usize::from(BRIDGE_CONSOLE_TINT_FIRST) + TINT_PALETTE_BANK_SIZE],
@@ -4888,14 +4922,14 @@ fn visible_inline_menu_word_count(
 }
 
 const fn select_bridge_composition(
-    presentation_stream_active: bool,
+    presentation_frame_owned: bool,
     presentation_panel_active: bool,
     indexed_ui_active: bool,
     bridge_view_changed: bool,
 ) -> RuntimeBridgeComposition {
     if presentation_panel_active {
         RuntimeBridgeComposition::IndexedFramebuffer
-    } else if presentation_stream_active {
+    } else if presentation_frame_owned {
         RuntimeBridgeComposition::IndexedFramebuffer
     } else if indexed_ui_active {
         RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay
@@ -4906,15 +4940,13 @@ const fn select_bridge_composition(
     }
 }
 
-/// The native HNM page owns the display while its stream is retained.
+/// A native HNM page owns the display until recovered drawing replaces it.
 ///
 /// MANU3 state still advances through its recovered dispatcher, but the modern
-/// renderer must not append that independently rendered layer over a video page.
-const fn manu3_layer_visible(
-    recovered_hand_visible: bool,
-    presentation_stream_retained: bool,
-) -> bool {
-    recovered_hand_visible && !presentation_stream_retained
+/// renderer must not append that independent layer over an active or completed
+/// video page.
+const fn manu3_layer_visible(recovered_hand_visible: bool, presentation_frame_owned: bool) -> bool {
+    recovered_hand_visible && !presentation_frame_owned
 }
 
 struct RuntimeBridgeScreenBackend<'services, 'window> {
