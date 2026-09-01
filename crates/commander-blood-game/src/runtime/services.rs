@@ -317,6 +317,13 @@ fn latch_script_finale_completion(
         finale_requested && active_line_before.is_some() && active_line_after.is_none();
 }
 
+fn canonical_trace_active_line(
+    lifecycle_line: Option<u16>,
+    presentation_screen_line: Option<u16>,
+) -> Option<u16> {
+    lifecycle_line.or(presentation_screen_line)
+}
+
 fn audio_event_trace(
     history: &[AudioClipRequest],
     playback_routes: &[AudioPlaybackRoute],
@@ -4044,6 +4051,12 @@ impl<'window> ModernGameServices<'window> {
             .presentation_screen
             .as_ref()
             .map(|screen| screen.state());
+        let trace_active_line = canonical_trace_active_line(
+            lifecycle.presentation.active_line,
+            self.presentation_screen
+                .as_ref()
+                .and_then(|screen| screen.scene_state().presentation.active_line),
+        );
         let presentation_screen_active =
             presentation_screen.is_some_and(PresentationScreenState::active);
         let waiting_for_input = lifecycle.presentation.word_choice_active
@@ -4620,7 +4633,7 @@ impl<'window> ModernGameServices<'window> {
                 "profile_request": lifecycle.pending_profile.map(|profile| i16::from(profile.value())).unwrap_or(-1),
                 "execution_enabled": u8::from(lifecycle.vm_execution_enabled),
                 "resource_handles": assets,
-                "active_line": lifecycle.presentation.active_line,
+                "active_line": trace_active_line,
                 "displayed_line": self.ship_presentation.active_line,
             },
             "presentation": presentation_trace,
@@ -5583,6 +5596,13 @@ mod tests {
             cancellation.resources,
             PresentationResourceCursor::default()
         );
+    }
+
+    #[test]
+    fn semantic_trace_falls_back_to_the_active_presentation_screen_line() {
+        assert_eq!(canonical_trace_active_line(Some(7), Some(2)), Some(7));
+        assert_eq!(canonical_trace_active_line(None, Some(2)), Some(2));
+        assert_eq!(canonical_trace_active_line(None, None), None);
     }
 
     #[test]
