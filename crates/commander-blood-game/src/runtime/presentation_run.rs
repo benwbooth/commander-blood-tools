@@ -31,13 +31,14 @@ pub fn run_runtime_presentation<'window>(
     link_target: u16,
     services: &mut ModernGameServices<'window>,
     platform: &mut RuntimePlatformHost<'window>,
+    input_state: &mut GameLifecycleState,
     timer: &mut GameTimerState,
     startup_timer_runtime: &mut ScriptRuntime,
 ) -> Result<RuntimePresentationRunOutcome> {
     let mut host = RuntimePresentationRunHost {
         services,
         platform,
-        input_state: GameLifecycleState::default(),
+        input_state,
         timer,
         startup_timer_runtime,
         active_policy: None,
@@ -58,6 +59,9 @@ pub fn run_runtime_presentation<'window>(
         }
         other => bail!("presentation runner has no recovered blocking loop for line {other}"),
     };
+    if line.get() == OPENING_PRESENTATION_LINE {
+        import_blocking_presentation_input(&state, host.input_state);
+    }
     Ok(RuntimePresentationRunOutcome {
         exit,
         shutdown_requested: host.input_state.exit_requested,
@@ -67,7 +71,7 @@ pub fn run_runtime_presentation<'window>(
 struct RuntimePresentationRunHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
     platform: &'services mut RuntimePlatformHost<'window>,
-    input_state: GameLifecycleState,
+    input_state: &'services mut GameLifecycleState,
     timer: &'services mut GameTimerState,
     startup_timer_runtime: &'services mut ScriptRuntime,
     active_policy: Option<PresentationPresentPolicy>,
@@ -282,5 +286,24 @@ mod tests {
         lifecycle.exit_requested = true;
         export_blocking_presentation_stop_gate(&mut run, &lifecycle);
         assert_eq!(run.input_stop_gate, PRESENTATION_GATE_ACTIVE);
+    }
+
+    #[test]
+    fn line_zero_teardown_returns_the_lifecycle_to_an_inactive_scene() {
+        let run = PresentationRunState {
+            active_line: None,
+            input_stop_gate: u8::MIN,
+            presentation_gate: u8::MIN,
+            plane_blit_crop_enabled: true,
+            resource_vertical_offset: u16::MIN,
+        };
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.active_line = Some(OPENING_PRESENTATION_LINE);
+        lifecycle.presentation.c2_presentation_gate = true;
+
+        import_blocking_presentation_input(&run, &mut lifecycle);
+
+        assert_eq!(lifecycle.presentation.active_line, None);
+        assert!(!lifecycle.presentation.c2_presentation_gate);
     }
 }

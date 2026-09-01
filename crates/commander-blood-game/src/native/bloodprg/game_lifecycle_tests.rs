@@ -177,8 +177,15 @@ impl GameLifecycleHost for OracleHost {
     plain_host_call!(load_initial_audio_resource, "load_initial_audio_resource");
     plain_host_call!(randomize_ship_point_cloud, "ship_3d_point_cloud_randomize");
 
-    fn run_initial_presentation(&mut self, link: GameSceneLink) -> Result<(), Self::Error> {
+    fn run_initial_presentation(
+        &mut self,
+        link: GameSceneLink,
+        state: &mut GameLifecycleState,
+    ) -> Result<(), Self::Error> {
         assert_eq!(link, GameSceneLink::Initial);
+        assert!(state.presentation_mode);
+        assert!(state.presentation_interface_active());
+        assert_eq!(state.pending_profile, Some(ScriptProfileId::INITIAL));
         self.call("presentation_line_zero_run");
         Ok(())
     }
@@ -291,7 +298,11 @@ impl GameLifecycleHost for OracleHost {
     plain_host_call!(finish_presentations, "presentation_update_1fb2");
     plain_host_call!(stop_audio, "snd_driver_call");
 
-    fn run_final_presentation(&mut self, _link: GameSceneLink) -> Result<(), Self::Error> {
+    fn run_final_presentation(
+        &mut self,
+        _link: GameSceneLink,
+        _state: &mut GameLifecycleState,
+    ) -> Result<(), Self::Error> {
         self.call("presentation_line_one_stream_run");
         Ok(())
     }

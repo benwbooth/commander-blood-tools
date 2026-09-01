@@ -224,6 +224,70 @@ class PortTraceComparisonTests(unittest.TestCase):
         self.assertEqual(report["status"], "equivalent")
         self.assertEqual(report["indexed_rgb_comparisons"], 0)
 
+    def test_normalizes_unloaded_resource_profiles_across_memory_models(self) -> None:
+        original = [record(0)]
+        original[0]["semantic"]["vm"]["resource_handles"] = [0, 0, 0, 0, 0]
+        modern = copy.deepcopy(original)
+        modern[0]["semantic"]["vm"]["resource_profile"] = None
+        modern[0]["semantic"]["vm"]["resource_handles"] = []
+
+        report = compare_port.compare_port_records(
+            original, modern, start_action=0, bridge_frame_tolerance=2
+        )
+
+        self.assertEqual(report["status"], "equivalent")
+
+    def test_minimum_indexed_rgb_comparisons_rejects_empty_coverage(self) -> None:
+        original = [record(0)]
+        modern = copy.deepcopy(original)
+        modern[0]["semantic"]["video"]["indexed_frame_authoritative"] = False
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_indexed_rgb=True,
+            minimum_indexed_rgb_comparisons=1,
+        )
+
+        self.assertEqual(report["status"], "diverged")
+        self.assertEqual(report["indexed_rgb_comparisons"], 0)
+        self.assertEqual(
+            report["first_divergence"]["differences"][0]["path"],
+            "coverage.indexed_rgb_comparisons",
+        )
+
+    def test_minimum_indexed_rgb_comparisons_accepts_real_coverage(self) -> None:
+        original = [record(0)]
+        modern = copy.deepcopy(original)
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_indexed_rgb=True,
+            minimum_indexed_rgb_comparisons=1,
+        )
+
+        self.assertEqual(report["status"], "equivalent")
+        self.assertEqual(report["indexed_rgb_comparisons"], 1)
+
+    def test_hidden_bridge_frame_is_ignored_during_full_screen_opening(self) -> None:
+        original = [record(0, frame=90)]
+        modern = copy.deepcopy(original)
+        modern[0]["semantic"]["presentation"]["bridge_frame"] = 179
+        original[0]["semantic"]["vm"]["active_line"] = 0
+        modern[0]["semantic"]["vm"]["active_line"] = 0
+
+        report = compare_port.compare_port_records(
+            original, modern, start_action=0, bridge_frame_tolerance=2
+        )
+
+        self.assertEqual(report["status"], "equivalent")
+        self.assertEqual(report["hidden_bridge_frame_records"], 1)
+
     def test_required_indexed_hash_rejects_an_old_original_trace(self) -> None:
         original = [record(0)]
         del original[0]["semantic"]["video"]["logical_indexed_rgb_hash"]

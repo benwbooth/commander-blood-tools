@@ -49,6 +49,7 @@ OPTIONAL_EXACT_PATHS = frozenset(
     )
 )
 OPTIONAL_SENTINEL_PATHS = frozenset(("vm.resource_profile", "vm.active_line"))
+UNLOADED_RESOURCE_PROFILE = "unloaded"
 BRIDGE_FRAME_COUNT = 180
 FATAL_LIVENESS = frozenset(("guest_stopped", "input_not_consumed"))
 
@@ -106,6 +107,15 @@ def normalize(path: str, value: Any) -> Any:
     return value
 
 
+def normalized_value(record: dict[str, Any], path: str) -> Any:
+    value = value_at(record, path)
+    if path == "vm.resource_profile":
+        handles = record.get("semantic", {}).get("vm", {}).get("resource_handles")
+        if isinstance(handles, list) and all(handle == 0 for handle in handles):
+            return UNLOADED_RESOURCE_PROFILE
+    return normalize(path, value)
+
+
 def circular_distance(left: int, right: int, modulus: int) -> int:
     distance = abs(left - right) % modulus
     return min(distance, modulus - distance)
@@ -144,6 +154,13 @@ def game_frame_delta(
     return current - previous
 
 
+def opening_page_owns_display(record: dict[str, Any]) -> bool:
+    return (
+        normalize("vm.active_line", value_at(record, "vm.active_line")) == 0
+        and value_at(record, "video").get("indexed_frame_authoritative") is True
+    )
+
+
 def compare_port_records(
     original: list[dict[str, Any]],
     modern: list[dict[str, Any]],
@@ -151,8 +168,11 @@ def compare_port_records(
     start_action: int,
     bridge_frame_tolerance: int,
     require_indexed_rgb: bool = False,
+    minimum_indexed_rgb_comparisons: int = 0,
     require_game_frame_clock: bool = False,
 ) -> dict[str, Any]:
+    if minimum_indexed_rgb_comparisons < 0:
+        raise ValueError("minimum indexed RGB comparisons must be nonnegative")
     original_by_action = {record["action_index"]: record for record in original}
     modern_by_action = {record["action_index"]: record for record in modern}
     action_indices = sorted(
@@ -165,6 +185,7 @@ def compare_port_records(
         "bridge_frame_tolerance": bridge_frame_tolerance,
         "compared_records": 0,
         "indexed_rgb_comparisons": 0,
+        "minimum_indexed_rgb_comparisons": minimum_indexed_rgb_comparisons,
         "indexed_rgb_missing_records": 0,
         "indexed_rgb_unaligned_records": 0,
         "indexed_display_rgb_comparisons": 0,
@@ -174,6 +195,7 @@ def compare_port_records(
         "game_frame_missing_records": 0,
         "game_frame_unaligned_records": 0,
         "game_frame_deltas": [],
+        "hidden_bridge_frame_records": 0,
         "first_divergence": None,
         "render_observations": render_observations(modern, start_action),
     }
@@ -265,8 +287,8 @@ def compare_port_records(
                     not has_value(expected, path) or not has_value(actual, path)
                 ):
                     continue
-                expected_value = normalize(path, value_at(expected, path))
-                actual_value = normalize(path, value_at(actual, path))
+                expected_value = normalized_value(expected, path)
+                actual_value = normalized_value(actual, path)
                 if expected_value != actual_value:
                     differences.append(
                         {
@@ -285,20 +307,23 @@ def compare_port_records(
                         "modern": modern_ui,
                     }
                 )
-            original_frame = int(value_at(expected, "presentation.bridge_frame"))
-            modern_frame = int(value_at(actual, "presentation.bridge_frame"))
-            frame_distance = circular_distance(
-                original_frame, modern_frame, BRIDGE_FRAME_COUNT
-            )
-            if frame_distance > bridge_frame_tolerance:
-                differences.append(
-                    {
-                        "path": "semantic.presentation.bridge_frame",
-                        "original": original_frame,
-                        "modern": modern_frame,
-                        "circular_distance": frame_distance,
-                    }
+            if opening_page_owns_display(expected) and opening_page_owns_display(actual):
+                report["hidden_bridge_frame_records"] += 1
+            else:
+                original_frame = int(value_at(expected, "presentation.bridge_frame"))
+                modern_frame = int(value_at(actual, "presentation.bridge_frame"))
+                frame_distance = circular_distance(
+                    original_frame, modern_frame, BRIDGE_FRAME_COUNT
                 )
+                if frame_distance > bridge_frame_tolerance:
+                    differences.append(
+                        {
+                            "path": "semantic.presentation.bridge_frame",
+                            "original": original_frame,
+                            "modern": modern_frame,
+                            "circular_distance": frame_distance,
+                        }
+                    )
             modern_video = actual["semantic"]["video"]
             original_video = expected["semantic"]["video"]
             if modern_video.get("indexed_frame_authoritative") is True:
@@ -378,6 +403,27 @@ def compare_port_records(
                 "differences": differences,
             }
             break
+    if (
+        report["status"] == "equivalent"
+        and report["indexed_rgb_comparisons"]
+        < report["minimum_indexed_rgb_comparisons"]
+    ):
+        report["status"] = "diverged"
+        report["first_divergence"] = {
+            "action_index": None,
+            "action": None,
+            "differences": [
+                {
+                    "path": "coverage.indexed_rgb_comparisons",
+                    "original": f">={minimum_indexed_rgb_comparisons}",
+                    "modern": report["indexed_rgb_comparisons"],
+                    "reason": (
+                        "runtime trace produced fewer aligned indexed RGB "
+                        "comparisons than required"
+                    ),
+                }
+            ],
+        }
     return report
 
 
@@ -430,6 +476,12 @@ def parse_args() -> argparse.Namespace:
         help="fail when an aligned indexed frame lacks a logical or stable display RGB hash",
     )
     parser.add_argument(
+        "--minimum-indexed-rgb-comparisons",
+        type=int,
+        default=0,
+        help="fail unless at least this many aligned indexed RGB frames are compared",
+    )
+    parser.add_argument(
         "--require-game-frame-clock",
         action="store_true",
         help="fail when an action delta lacks an exact native or Rust game-frame clock",
@@ -441,12 +493,15 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if args.minimum_indexed_rgb_comparisons < 0:
+        raise SystemExit("--minimum-indexed-rgb-comparisons must be nonnegative")
     report = compare_port_records(
         load_trace(args.original),
         load_trace(args.modern),
         start_action=args.start_action,
         bridge_frame_tolerance=args.bridge_frame_tolerance,
         require_indexed_rgb=args.require_indexed_rgb,
+        minimum_indexed_rgb_comparisons=args.minimum_indexed_rgb_comparisons,
         require_game_frame_clock=args.require_game_frame_clock,
     )
     rendered = json.dumps(report, indent=2) + "\n"

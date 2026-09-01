@@ -291,12 +291,17 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             .initialize_bridge_scene(self.packed_clock_seed)
     }
 
-    fn run_initial_presentation(&mut self, link: GameSceneLink) -> Result<()> {
+    fn run_initial_presentation(
+        &mut self,
+        link: GameSceneLink,
+        state: &mut GameLifecycleState,
+    ) -> Result<()> {
         run_runtime_presentation(
             OPENING_PRESENTATION_LINE,
             native_scene_link_target(link),
             &mut self.services,
             &mut self.platform,
+            state,
             &mut self.timer,
             &mut self.startup_timer_runtime,
         )
@@ -561,12 +566,17 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         self.services.stop_audio()
     }
 
-    fn run_final_presentation(&mut self, link: GameSceneLink) -> Result<()> {
+    fn run_final_presentation(
+        &mut self,
+        link: GameSceneLink,
+        state: &mut GameLifecycleState,
+    ) -> Result<()> {
         run_runtime_presentation(
             CREDITS_PRESENTATION_LINE,
             native_scene_link_target(link),
             &mut self.services,
             &mut self.platform,
+            state,
             &mut self.timer,
             &mut self.startup_timer_runtime,
         )

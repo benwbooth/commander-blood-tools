@@ -430,7 +430,11 @@ pub trait GameLifecycleHost {
     /// Seed and randomize the bridge point cloud.
     fn randomize_ship_point_cloud(&mut self) -> Result<(), Self::Error>;
     /// Run the opening presentation.
-    fn run_initial_presentation(&mut self, link: GameSceneLink) -> Result<(), Self::Error>;
+    fn run_initial_presentation(
+        &mut self,
+        link: GameSceneLink,
+        state: &mut GameLifecycleState,
+    ) -> Result<(), Self::Error>;
     /// Load the default bridge sound bank.
     fn load_default_sound_bank(&mut self) -> Result<(), Self::Error>;
     /// Decode and initialize the bridge back buffer.
@@ -525,7 +529,11 @@ pub trait GameLifecycleHost {
     /// Stop the modern audio driver.
     fn stop_audio(&mut self) -> Result<(), Self::Error>;
     /// Run the final streamed presentation.
-    fn run_final_presentation(&mut self, link: GameSceneLink) -> Result<(), Self::Error>;
+    fn run_final_presentation(
+        &mut self,
+        link: GameSceneLink,
+        state: &mut GameLifecycleState,
+    ) -> Result<(), Self::Error>;
     /// Remove a transient voice resource if one exists.
     fn remove_transient_voice(&mut self) -> Result<(), Self::Error>;
     /// Remove a transient music resource if one exists.
@@ -569,7 +577,7 @@ pub fn run_game_lifecycle<Host: GameLifecycleHost>(
 ) -> Result<GameLifecycleOutcome, GameLifecycleError<Host::Error>> {
     let mut session = GameSession::default();
     let runtime = run_game_runtime(state, host, &mut session);
-    let shutdown = shutdown_game(host, session, runtime.is_ok());
+    let shutdown = shutdown_game(state, host, session, runtime.is_ok());
 
     match (runtime, shutdown) {
         (Ok(exit), Ok(())) => Ok(GameLifecycleOutcome {
@@ -609,11 +617,11 @@ fn run_game_runtime<Host: GameLifecycleHost>(
     state.presentation_mode = true;
     state.set_presentation_interface_active(true);
     state.navigation_rebuild_pending = true;
+    state.pending_profile = Some(ScriptProfileId::INITIAL);
     host.randomize_ship_point_cloud()?;
-    host.run_initial_presentation(session.scene_link)?;
+    host.run_initial_presentation(session.scene_link, state)?;
     host.load_default_sound_bank()?;
     host.initialize_back_buffer()?;
-    state.pending_profile = Some(ScriptProfileId::INITIAL);
 
     loop {
         host.dispatch_input(state)?;
@@ -838,6 +846,7 @@ fn finish_presentation_audio_latches(state: &mut GameLifecycleState) {
 }
 
 fn shutdown_game<Host: GameLifecycleHost>(
+    state: &mut GameLifecycleState,
     host: &mut Host,
     session: GameSession,
     run_final_presentation: bool,
@@ -845,7 +854,7 @@ fn shutdown_game<Host: GameLifecycleHost>(
     host.finish_presentations()?;
     host.stop_audio()?;
     if run_final_presentation {
-        host.run_final_presentation(session.scene_link)?;
+        host.run_final_presentation(session.scene_link, state)?;
     }
     host.stop_audio()?;
     if session.panorama_opened {
