@@ -135,7 +135,8 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
         image: &DescriptBackgroundSlot,
         scene_palette: &mut IndexedGamePalette,
     ) -> Result<()> {
-        self.services.release_retained_presentation_frame();
+        // PBM preparation writes only the back buffer; display ownership changes
+        // when a later queue present, clear, or bridge draw reaches the front.
         let Some(background) = self.services.script_backend().backgrounds().get(*image) else {
             // The executable initializes all four FD path slots with placeholder
             // names. Its scene dispatcher ignores PBM load failure, retaining the

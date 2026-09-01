@@ -19,7 +19,7 @@ pub struct RuntimePresentationPlayer {
     catalog: RuntimePresentationCatalog,
     shared_idle_video: Option<Box<[u8]>>,
     active_stream: Option<RuntimePresentationStream>,
-    retained_display_palette: Option<IndexedGamePalette>,
+    retained_display_rgba: Option<Box<[u8]>>,
 }
 
 impl RuntimePresentationPlayer {
@@ -29,7 +29,7 @@ impl RuntimePresentationPlayer {
             catalog: RuntimePresentationCatalog::new(initial),
             shared_idle_video: None,
             active_stream: None,
-            retained_display_palette: None,
+            retained_display_rgba: None,
         }
     }
 
@@ -97,7 +97,7 @@ impl RuntimePresentationPlayer {
             timer_tick,
             render_snapshot_suppressed,
         )?;
-        self.retained_display_palette = None;
+        self.retained_display_rgba = None;
         self.active_stream = Some(stream);
         Ok(Some(outcome))
     }
@@ -187,20 +187,27 @@ impl RuntimePresentationPlayer {
     /// closes. Modern rendering must retain that page's already-resolved colors
     /// until bridge, scene, or panel drawing explicitly replaces it.
     pub const fn owns_display_frame(&self) -> bool {
-        self.active_stream.is_some() || self.retained_display_palette.is_some()
+        self.active_stream.is_some() || self.retained_display_rgba.is_some()
     }
 
-    /// Return the color table that resolves the currently visible HNM page.
-    pub fn display_palette(&self) -> Option<&IndexedGamePalette> {
+    /// Return the decoder-local palette for the active HNM stream.
+    pub fn active_display_palette(&self) -> Option<&IndexedGamePalette> {
         self.active_stream
             .as_ref()
             .map(RuntimePresentationStream::display_palette)
-            .or(self.retained_display_palette.as_ref())
+    }
+
+    /// Return the true-color HNM page that currently owns the display.
+    pub fn display_rgba(&self) -> Option<&[u8]> {
+        self.active_stream
+            .as_ref()
+            .map(RuntimePresentationStream::display_rgba)
+            .or(self.retained_display_rgba.as_deref())
     }
 
     /// Release a completed HNM page after another recovered display owner writes.
     pub fn release_retained_display_frame(&mut self) -> bool {
-        self.retained_display_palette.take().is_some()
+        self.retained_display_rgba.take().is_some()
     }
 
     /// Return whether the recovered queue status still owns or drains a source.
@@ -252,7 +259,7 @@ impl RuntimePresentationPlayer {
     pub fn finish(&mut self) -> Option<RuntimePresentationStream> {
         let stream = self.active_stream.take()?;
         if stream.presented_frame_count() != u64::MIN {
-            self.retained_display_palette = Some(*stream.display_palette());
+            self.retained_display_rgba = Some(Box::from(stream.display_rgba()));
         }
         Some(stream)
     }
@@ -347,16 +354,16 @@ mod tests {
                 .as_bytes(),
             b"sq\\mind.HNM"
         );
-        let retained_palette = *player.display_palette().unwrap();
+        let retained_rgba = player.display_rgba().unwrap().to_vec();
         assert!(player.finish().is_some());
         assert!(!player.has_stream());
         assert!(!player.source_open_or_draining());
         assert!(player.owns_display_frame());
         runtime.live_palette_mut().fill([63; 3]);
-        assert_eq!(player.display_palette(), Some(&retained_palette));
+        assert_eq!(player.display_rgba(), Some(retained_rgba.as_slice()));
         assert!(player.release_retained_display_frame());
         assert!(!player.owns_display_frame());
-        assert!(player.display_palette().is_none());
+        assert!(player.display_rgba().is_none());
     }
 
     #[test]

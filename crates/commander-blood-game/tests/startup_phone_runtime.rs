@@ -1440,7 +1440,7 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
     let retained_bridge_palette = pterra_queued["semantic"]["video"]["bridge_palette_hash"]
         .as_str()
         .expect("Pterra selection did not expose the retained bridge palette hash");
-    for record in pterra_video_records {
+    for record in &pterra_video_records {
         assert_eq!(
             record["semantic"]["video"]["display_frame_owned"], true,
             "an active Pterra stream did not own its displayed frame: {record}"
@@ -1452,6 +1452,10 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         assert_eq!(
             record["semantic"]["video"]["bridge_palette_hash"], retained_bridge_palette,
             "an HNM-local palette escaped into the retained RGBA bridge surface: {record}"
+        );
+        assert!(
+            record["semantic"]["video"]["display_rgba_hash"].is_string(),
+            "an active Pterra HNM page was retained as indexed palette state instead of true-color RGBA: {record}"
         );
     }
     for record in &records[pterra_click_index..] {

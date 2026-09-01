@@ -16,6 +16,7 @@ use crate::native::bloodprg::{
     PresentationResourceStreamState, PresentationSourceLease, PresentationSourceRange,
     load_presentation_resource_sequence, presentation_resource_enabled, service_presentation_queue,
 };
+use crate::render::indexed_frame_rgba;
 
 use super::OriginalGameRuntime;
 
@@ -124,6 +125,7 @@ pub struct RuntimePresentationStream {
     clock: PresentationQueueClock,
     link_cursor: PresentationQueueLinkCursor,
     decode_staging: Box<[u8]>,
+    display_rgba: Box<[u8]>,
     finished: bool,
     presented_frame_count: u64,
 }
@@ -163,6 +165,7 @@ impl RuntimePresentationStream {
             clock: PresentationQueueClock::default(),
             link_cursor: PresentationQueueLinkCursor::default(),
             decode_staging: zeroed_presentation_buffer(),
+            display_rgba: Box::default(),
             finished: false,
             presented_frame_count: u64::MIN,
         };
@@ -206,6 +209,7 @@ impl RuntimePresentationStream {
                 .wrapping_add(PRESENTED_FRAME_INCREMENT);
         }
         *runtime.live_palette_mut() = player.palette.live;
+        player.resolve_display_rgba(runtime.front_buffer().pixels())?;
         Ok((player, outcome))
     }
 
@@ -305,6 +309,7 @@ impl RuntimePresentationStream {
             &self.palette,
             runtime.live_palette_mut(),
         );
+        self.resolve_display_rgba(runtime.front_buffer().pixels())?;
         Ok(RuntimePresentationStepOutcome {
             queue,
             stream_finished: self.finished,
@@ -349,6 +354,18 @@ impl RuntimePresentationStream {
     /// Palette that resolves the currently retained indexed HNM page to RGB.
     pub const fn display_palette(&self) -> &IndexedGamePalette {
         &self.palette.live
+    }
+
+    /// True-color page produced from the current indexed HNM frame and its local palette.
+    pub fn display_rgba(&self) -> &[u8] {
+        &self.display_rgba
+    }
+
+    fn resolve_display_rgba(&mut self, indexed_pixels: &[u8]) -> Result<()> {
+        self.display_rgba = indexed_frame_rgba(indexed_pixels, &self.palette.live)
+            .context("resolving the current HNM display page to true-color RGBA")?
+            .into_boxed_slice();
+        Ok(())
     }
 
     pub(crate) fn queue_metrics(&self) -> Result<RuntimePresentationQueueMetrics> {
@@ -464,8 +481,6 @@ mod tests {
 
     use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
     use sha2::{Digest, Sha256};
-
-    use crate::render::indexed_frame_rgba;
 
     use super::super::{OriginalGameData, OriginalGameDataPaths};
     use super::*;
@@ -592,18 +607,14 @@ mod tests {
             RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
         assert!(initial.initial_present.frame_presented);
 
-        let retained_indices = runtime.front_buffer().pixels().to_vec();
-        let expected_rgba =
-            indexed_frame_rgba(&retained_indices, stream.display_palette()).unwrap();
+        let expected_rgba = stream.display_rgba().to_vec();
         runtime
             .live_palette_mut()
             .fill([u8::MIN; RGB_COMPONENT_COUNT]);
 
-        let retained_rgba =
-            indexed_frame_rgba(&retained_indices, stream.display_palette()).unwrap();
         let incorrectly_recolored =
-            indexed_frame_rgba(&retained_indices, runtime.live_palette()).unwrap();
-        assert_eq!(retained_rgba, expected_rgba);
+            indexed_frame_rgba(runtime.front_buffer().pixels(), runtime.live_palette()).unwrap();
+        assert_eq!(stream.display_rgba(), expected_rgba);
         assert_ne!(incorrectly_recolored, expected_rgba);
     }
 

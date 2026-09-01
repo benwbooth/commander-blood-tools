@@ -65,7 +65,7 @@ use super::choice_list::{
 use super::input::INITIAL_LOGICAL_POINTER;
 use super::navigation_chart::RuntimeNavigationChart;
 use super::navigation_status::RuntimeNavigationStatus;
-use super::presentation::RuntimeBridgeComposition;
+use super::presentation::{RuntimeBridgeComposition, RuntimeDisplayFrame};
 use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
 use super::scene_transition::SCENE_TRANSITION_IMAGE_RESOURCE;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
@@ -3203,8 +3203,7 @@ impl<'window> ModernGameServices<'window> {
             return Ok(false);
         }
         let indexed_display_palette = self.indexed_display_palette();
-        self.presentation
-            .submit_indexed_frame(&self.runtime, &indexed_display_palette)?;
+        self.submit_indexed_frame()?;
         let bridge_frame = self
             .bridge_frame
             .as_ref()
@@ -3213,7 +3212,10 @@ impl<'window> ModernGameServices<'window> {
             &self.runtime,
             bridge_frame,
             &self.bridge_palette,
-            &indexed_display_palette,
+            RuntimeDisplayFrame {
+                indexed_palette: &indexed_display_palette,
+                presentation_rgba: self.presentation_player.display_rgba(),
+            },
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay,
             !self.presentation_player.owns_display_frame(),
         )?;
@@ -3293,16 +3295,24 @@ impl<'window> ModernGameServices<'window> {
 
     fn indexed_display_palette(&self) -> IndexedGamePalette {
         self.presentation_player
-            .display_palette()
+            .active_display_palette()
             .copied()
             .unwrap_or(*self.runtime.live_palette())
     }
 
-    /// Resolve the complete current indexed frame into the owned true-color surface.
+    /// Upload the current display owner without re-resolving an HNM page globally.
     pub fn submit_indexed_frame(&mut self) -> Result<()> {
-        let indexed_display_palette = self.indexed_display_palette();
-        self.presentation
-            .submit_indexed_frame(&self.runtime, &indexed_display_palette)
+        let Self {
+            presentation,
+            presentation_player,
+            runtime,
+            ..
+        } = self;
+        if let Some(rgba) = presentation_player.display_rgba() {
+            presentation.submit_rgba_frame(rgba)
+        } else {
+            presentation.submit_indexed_frame(runtime, runtime.live_palette())
+        }
     }
 
     /// Present current indexed artwork without retaining the interactive MANU3 layer.
@@ -3858,7 +3868,10 @@ impl<'window> ModernGameServices<'window> {
             &self.runtime,
             bridge_frame,
             &self.bridge_palette,
-            &indexed_display_palette,
+            RuntimeDisplayFrame {
+                indexed_palette: &indexed_display_palette,
+                presentation_rgba: self.presentation_player.display_rgba(),
+            },
             composition,
             manu3_layer_visible(true, presentation_frame_owned),
         )
@@ -3889,7 +3902,10 @@ impl<'window> ModernGameServices<'window> {
             &self.runtime,
             frame,
             &self.bridge_palette,
-            &indexed_display_palette,
+            RuntimeDisplayFrame {
+                indexed_palette: &indexed_display_palette,
+                presentation_rgba: self.presentation_player.display_rgba(),
+            },
             composition,
             manu3_layer_visible(manu3_visible, presentation_frame_owned),
         )
@@ -4246,6 +4262,7 @@ impl<'window> ModernGameServices<'window> {
         let queue_metrics = self.presentation_player.queue_metrics()?;
         let palette_transition = self.palette_transition.state();
         let indexed_display_palette = self.indexed_display_palette();
+        let display_rgba_hash = self.presentation_player.display_rgba().map(fnv1a64);
         let indexed_rgb_hash = indexed_rgb_hash(
             self.runtime.front_buffer().pixels(),
             &indexed_display_palette,
@@ -4675,6 +4692,7 @@ impl<'window> ModernGameServices<'window> {
                 })),
                 "palette_hash": fnv1a64(&palette_bytes),
                 "display_palette_hash": fnv1a64(&display_palette_bytes),
+                "display_rgba_hash": display_rgba_hash,
                 "indexed_rgb_hash": indexed_rgb_hash,
                 "indexed_frame_authoritative": indexed_frame_authoritative,
                 "bridge_palette_hash": fnv1a64(&bridge_palette_bytes),

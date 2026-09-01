@@ -26,6 +26,12 @@ pub(super) enum RuntimeBridgeComposition {
     BridgeSceneWithIndexedOverlay,
 }
 
+/// Color inputs for one complete indexed or already-resolved display page.
+pub(super) struct RuntimeDisplayFrame<'frame> {
+    pub indexed_palette: &'frame IndexedGamePalette,
+    pub presentation_rgba: Option<&'frame [u8]>,
+}
+
 const RGBA_COMPONENT_COUNT: usize = 4;
 const OPAQUE_ALPHA: u8 = u8::MAX;
 
@@ -83,6 +89,13 @@ impl<'window> RuntimePresentationHost<'window> {
         self.submit_frame(runtime.front_buffer(), display_palette)
     }
 
+    /// Upload one already-resolved true-color logical display page.
+    pub fn submit_rgba_frame(&mut self, rgba: &[u8]) -> Result<()> {
+        self.renderer_ref()?
+            .upload_rgba_frame(rgba)
+            .context("uploading translated true-color game frame")
+    }
+
     /// Upload one complete logical frame supplied by startup or presentation code.
     pub fn submit_frame(
         &mut self,
@@ -126,7 +139,7 @@ impl<'window> RuntimePresentationHost<'window> {
         runtime: &OriginalGameRuntime,
         bridge_frame: &BridgeSceneFrame,
         bridge_palette: &IndexedGamePalette,
-        indexed_display_palette: &IndexedGamePalette,
+        display: RuntimeDisplayFrame<'_>,
         composition: RuntimeBridgeComposition,
         manu3_visible: bool,
     ) -> Result<()> {
@@ -138,7 +151,11 @@ impl<'window> RuntimePresentationHost<'window> {
             }
             RuntimeBridgeComposition::IndexedFramebuffer
             | RuntimeBridgeComposition::BridgeScene => {
-                self.submit_indexed_frame(runtime, indexed_display_palette)?;
+                if let Some(rgba) = display.presentation_rgba {
+                    self.submit_rgba_frame(rgba)?;
+                } else {
+                    self.submit_indexed_frame(runtime, display.indexed_palette)?;
+                }
             }
         }
         let all_manu3_triangles = runtime
