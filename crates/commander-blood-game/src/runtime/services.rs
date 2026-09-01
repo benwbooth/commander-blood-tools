@@ -1874,7 +1874,7 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
-    /// Flatten the first 192 live VGA colors copied by bridge actor 2.
+    /// Flatten the first 192 live colors copied by bridge actor 2.
     pub(super) fn bridge_actor_live_palette(
         &self,
     ) -> [u8; BRIDGE_ACTOR_PALETTE_COLOR_COUNT * RGB_COMPONENT_COUNT] {
@@ -1903,6 +1903,12 @@ impl<'window> ModernGameServices<'window> {
         {
             color.copy_from_slice(source);
         }
+    }
+
+    /// Make a decoded scene's colors the initial mapping for the next HNM page.
+    pub(super) fn stage_next_presentation_source_colors(&mut self, colors: IndexedGamePalette) {
+        self.presentation_player
+            .stage_next_stream_source_colors(colors);
     }
 
     /// Configure the original bridge-panorama-to-black full-palette transition.
@@ -2482,8 +2488,14 @@ impl<'window> ModernGameServices<'window> {
         Ok(manu3_layer_visible(
             recovered_hand_visible,
             self.presentation_player.owns_display_frame(),
-            state.presentation.ship_active,
+            self.ship_video_owns_display(),
         ))
+    }
+
+    /// Return whether a full-screen ship or camera-approach video owns MANU3's page.
+    fn ship_video_owns_display(&self) -> bool {
+        self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN
+            || self.runtime.camera_approach().transition_pending
     }
 
     /// Reproject the current MANU3 pose for a visual-only host refresh.
@@ -3231,7 +3243,7 @@ impl<'window> ModernGameServices<'window> {
             manu3_layer_visible(
                 true,
                 self.presentation_player.owns_display_frame(),
-                self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN,
+                self.ship_video_owns_display(),
             ),
         )?;
         Ok(true)
@@ -3891,7 +3903,7 @@ impl<'window> ModernGameServices<'window> {
             manu3_layer_visible(
                 true,
                 presentation_frame_owned,
-                self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN,
+                self.ship_video_owns_display(),
             ),
         )
     }
@@ -3929,7 +3941,7 @@ impl<'window> ModernGameServices<'window> {
             manu3_layer_visible(
                 manu3_visible,
                 presentation_frame_owned,
-                self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN,
+                self.ship_video_owns_display(),
             ),
         )
     }
@@ -4721,7 +4733,7 @@ impl<'window> ModernGameServices<'window> {
                 "bridge_palette_hash": fnv1a64(&bridge_palette_bytes),
                 "display_frame_owned": self.presentation_player.owns_display_frame(),
                 "manu3_layer_allowed": !self.presentation_player.owns_display_frame()
-                    || self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG == u16::MIN,
+                    || !self.ship_video_owns_display(),
                 "console_palette": &self.runtime.live_palette()
                     [usize::from(BRIDGE_CONSOLE_TINT_FIRST)
                         ..usize::from(BRIDGE_CONSOLE_TINT_FIRST) + TINT_PALETTE_BANK_SIZE],
@@ -5016,18 +5028,18 @@ const fn select_bridge_composition(
     }
 }
 
-/// Ship-owned HNM pages replace the VGA page on which MANU3 would be visible.
+/// Full-screen ship HNM pages replace the page on which MANU3 would be visible.
 ///
 /// Embedded bridge and phone videos remain in the ordinary bridge composition,
 /// where the recovered frame tail draws MANU3 after the indexed presentation.
-/// The native ship-active bit distinguishes those paths without resource-name
-/// or modern renderer heuristics.
+/// Ship presentation and camera-approach ownership distinguish those paths
+/// without resource-name or modern renderer heuristics.
 const fn manu3_layer_visible(
     recovered_hand_visible: bool,
     presentation_frame_owned: bool,
-    ship_presentation_active: bool,
+    ship_video_owns_display: bool,
 ) -> bool {
-    recovered_hand_visible && !(presentation_frame_owned && ship_presentation_active)
+    recovered_hand_visible && !(presentation_frame_owned && ship_video_owns_display)
 }
 
 struct RuntimeBridgeScreenBackend<'services, 'window> {
@@ -5459,7 +5471,7 @@ mod tests {
     }
 
     #[test]
-    fn only_ship_owned_hnm_pages_occlude_manu3() {
+    fn only_full_screen_ship_hnm_pages_occlude_manu3() {
         assert!(manu3_layer_visible(true, false, false));
         assert!(manu3_layer_visible(true, false, true));
         assert!(manu3_layer_visible(true, true, false));

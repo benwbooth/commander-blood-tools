@@ -126,6 +126,13 @@ GRAPHICS_SCREEN_BUFFER_OFFSET = 0x521D
 GRAPHICS_DISPLAY_BUFFER_OFFSET = 0x5221
 GRAPHICS_BACK_BUFFER_OFFSET = 0x5229
 GRAPHICS_SURFACE_BYTES = 320 * 200
+GAME_LIVE_PALETTE_OFFSET = 0x5251
+GAME_PALETTE_TRANSITION_TARGET_OFFSET = 0x5551
+GAME_RENDER_PALETTE_SNAPSHOT_OFFSET = 0x5851
+GAME_PALETTE_CONTROL_OFFSET = 0x5B51
+GAME_PALETTE_CONTROL_BYTES = 8
+GAME_BRIDGE_PANORAMA_PALETTE_OFFSET = 0x5B58
+GAME_PALETTE_BYTES = 256 * 3
 GRAPHICS_POINTER_OFFSETS = (
     ("work_surface", GRAPHICS_WORK_SURFACE_OFFSET),
     ("draw_framebuffer", GRAPHICS_DRAW_FRAMEBUFFER_OFFSET),
@@ -1888,7 +1895,8 @@ def linear_surface_summary(data: bytes) -> dict[str, object]:
 
 
 def snapshot_linear_surfaces(mem, guest_base: int, game_segment: int,
-                             capture_dir: Path | None = None) \
+                             capture_dir: Path | None = None,
+                             capture_prefix: str = "pterra-marker") \
         -> dict[str, object]:
     surfaces: dict[str, object] = {}
     game = game_segment * 16
@@ -1911,7 +1919,7 @@ def snapshot_linear_surfaces(mem, guest_base: int, game_segment: int,
                     "surface aliases the GAME_DATA locator anchor")
             if capture_dir is not None:
                 capture_dir.mkdir(parents=True, exist_ok=True)
-                path = capture_dir / f"pterra-marker-{name}.bin"
+                path = capture_dir / f"{capture_prefix}-{name}.bin"
                 path.write_bytes(data)
                 entry["capture"] = str(path)
         else:
@@ -1920,10 +1928,44 @@ def snapshot_linear_surfaces(mem, guest_base: int, game_segment: int,
     return surfaces
 
 
+def game_palette_summary(data: bytes) -> dict[str, object]:
+    if len(data) != GAME_PALETTE_BYTES:
+        raise ValueError("a game palette must contain exactly 768 bytes")
+    return {
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "byte_count": len(data),
+        "unique_component_count": len(set(data)),
+        "nonzero_component_count": sum(component != 0 for component in data),
+        "maximum_component": max(data),
+        "bytes": data.hex(),
+    }
+
+
+def snapshot_game_color_state(mem, guest_base: int, game_segment: int) \
+        -> dict[str, object]:
+    game = game_segment * 16
+    palettes = {}
+    for name, offset in (
+        ("live", GAME_LIVE_PALETTE_OFFSET),
+        ("transition_target", GAME_PALETTE_TRANSITION_TARGET_OFFSET),
+        ("render_snapshot", GAME_RENDER_PALETTE_SNAPSHOT_OFFSET),
+        ("bridge_panorama", GAME_BRIDGE_PANORAMA_PALETTE_OFFSET),
+    ):
+        palettes[name] = game_palette_summary(read_guest(
+            mem, guest_base, game + offset, GAME_PALETTE_BYTES))
+    return {
+        "palettes": palettes,
+        "control": read_guest(
+            mem, guest_base, game + GAME_PALETTE_CONTROL_OFFSET,
+            GAME_PALETTE_CONTROL_BYTES).hex(),
+    }
+
+
 def snapshot_guest(mem, guest_base: int, anchor: int,
                    cpu_addresses: dict[str, int], marker: Path | None,
                    profile: dict[str, object] | None,
-                   surface_capture_dir: Path | None = None) \
+                   surface_capture_dir: Path | None = None,
+                   surface_capture_prefix: str = "pterra-marker") \
         -> dict[str, object]:
     state = read_cpu_state(mem, cpu_addresses)
     game_segment = (anchor - guest_base) // 16
@@ -1959,9 +2001,12 @@ def snapshot_guest(mem, guest_base: int, anchor: int,
     snapshot["back_buffer_area"] = read_guest(
         mem, guest_base, game_segment * 16 + 0x5219,
         0x5240 - 0x5219).hex()
+    snapshot["color_state"] = snapshot_game_color_state(
+        mem, guest_base, game_segment)
     if marker is not None:
         snapshot["linear_surfaces"] = snapshot_linear_surfaces(
-            mem, guest_base, game_segment, surface_capture_dir)
+            mem, guest_base, game_segment, surface_capture_dir,
+            surface_capture_prefix)
     if marker is not None:
         snapshot["marker"] = str(marker)
     if profile is not None:
@@ -3546,7 +3591,10 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     pter_last_progress_at = pter_reached_at
                     pter_snapshot = snapshot_guest(
                         mem, guest_base, anchor, cpu_addresses,
-                        hit, last_profile)
+                        hit, last_profile,
+                        guest_snapshot.parent
+                        if guest_snapshot is not None else None,
+                        "pterra-entry")
                     print(
                         "state: entered SCRIPT2 proc pter; driving the full "
                         "dialogue and choice sequence",
@@ -3770,8 +3818,11 @@ def capture_state_pterra(db: subprocess.Popen[bytes], libc, marker: Path,
                     else:
                         pter_sustained = True
                         post_pter_snapshot = snapshot_guest(
-                            mem, guest_base, anchor, cpu_addresses,
-                            hit, last_profile)
+                            mem, guest_base, anchor, cpu_addresses, hit,
+                            last_profile,
+                            guest_snapshot.parent
+                            if guest_snapshot is not None else None,
+                            "pterra-post")
                         post_pter_snapshot["duration_seconds"] = \
                             post_pter_seconds
                         post_pter_snapshot["distinct_cpu_states"] = len(progress)

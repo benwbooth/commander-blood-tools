@@ -21,6 +21,7 @@ pub struct RuntimePresentationPlayer {
     shared_idle_video: Option<Box<[u8]>>,
     active_stream: Option<RuntimePresentationStream>,
     retained_display: Option<RetainedPresentationFrame>,
+    next_stream_source_colors: Option<IndexedGamePalette>,
 }
 
 struct RetainedPresentationFrame {
@@ -54,6 +55,7 @@ impl RuntimePresentationPlayer {
             shared_idle_video: None,
             active_stream: None,
             retained_display: None,
+            next_stream_source_colors: None,
         }
     }
 
@@ -95,8 +97,8 @@ impl RuntimePresentationPlayer {
         // every newly requested line, even when the prior line has not drained.
         // Its displayed page remains visible if the replacement cannot open.
         let source_colors = self
-            .display_palette()
-            .copied()
+            .next_stream_source_colors
+            .or_else(|| self.display_palette().copied())
             .unwrap_or(*runtime.live_palette());
         self.finish();
         let mut request = self
@@ -126,6 +128,7 @@ impl RuntimePresentationPlayer {
             timer_tick,
             render_snapshot_suppressed,
         )?;
+        self.next_stream_source_colors = None;
         self.retained_display = None;
         self.active_stream = Some(stream);
         Ok(Some(outcome))
@@ -266,6 +269,15 @@ impl RuntimePresentationPlayer {
         }
     }
 
+    /// Stage the color mapping established by a new scene background.
+    ///
+    /// The background is decoded into the back page while the prior RGBA video
+    /// remains visible. Its colors nevertheless become the initial decoder
+    /// mapping when the next HNM presents that page.
+    pub fn stage_next_stream_source_colors(&mut self, colors: IndexedGamePalette) {
+        self.next_stream_source_colors = Some(colors);
+    }
+
     /// Release a completed HNM page after another recovered display owner writes.
     pub fn release_retained_display_frame(&mut self) -> bool {
         self.retained_display.take().is_some()
@@ -381,6 +393,7 @@ mod tests {
     const INITIAL_DECODED_FRAME_COUNT: u64 = 1;
     const INHERITED_COLOR_INDEX: usize = 250;
     const INHERITED_VIDEO_COLOR: [u8; 3] = [5, 7, 11];
+    const STAGED_SCENE_COLOR: [u8; 3] = [17, 19, 23];
 
     #[test]
     fn opening_line_runs_through_the_catalog_and_flat_stream() {
@@ -491,7 +504,7 @@ mod tests {
     }
 
     #[test]
-    fn replacement_stream_inherits_video_colors_without_contaminating_game_colors() {
+    fn replacement_stream_prefers_new_scene_colors_over_preceding_video_colors() {
         let Some(data) = original_data() else {
             return;
         };
@@ -538,6 +551,33 @@ mod tests {
             runtime.live_palette(),
             &game_colors,
             "chained HNM colors escaped into flat game rendering"
+        );
+
+        let mut scene_colors = game_colors;
+        scene_colors[INHERITED_COLOR_INDEX] = STAGED_SCENE_COLOR;
+        player.stage_next_stream_source_colors(scene_colors);
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                u16::MIN,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            player.display_palette().unwrap()[INHERITED_COLOR_INDEX],
+            STAGED_SCENE_COLOR,
+            "a new scene inherited the preceding HNM's colors instead of its decoded background"
+        );
+        assert!(player.next_stream_source_colors.is_none());
+        assert_eq!(
+            runtime.live_palette(),
+            &game_colors,
+            "staged HNM source colors contaminated flat game rendering"
         );
     }
 

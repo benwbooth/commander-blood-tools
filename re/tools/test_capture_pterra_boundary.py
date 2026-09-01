@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import io
+import hashlib
 import importlib.util
+import io
 import os
 import struct
 import sys
@@ -109,6 +110,73 @@ class CaptureHelperTests(unittest.TestCase):
     def test_linear_surface_summary_rejects_wrong_size(self) -> None:
         with self.assertRaisesRegex(ValueError, "320x200"):
             capture.linear_surface_summary(b"short")
+
+    def test_color_snapshot_retains_native_palette_bytes(self) -> None:
+        memory = bytearray(0x100000)
+        game_segment = 0x1000
+        game = game_segment * 16
+        palettes = {
+            "live": (capture.GAME_LIVE_PALETTE_OFFSET, 7),
+            "transition_target": (
+                capture.GAME_PALETTE_TRANSITION_TARGET_OFFSET, 17),
+            "render_snapshot": (
+                capture.GAME_RENDER_PALETTE_SNAPSHOT_OFFSET, 29),
+            "bridge_panorama": (
+                capture.GAME_BRIDGE_PANORAMA_PALETTE_OFFSET, 43),
+        }
+        expected = {}
+        for name, (offset, seed) in palettes.items():
+            data = bytes(
+                (index * 13 + seed) % 64
+                for index in range(capture.GAME_PALETTE_BYTES)
+            )
+            memory[game + offset:game + offset + len(data)] = data
+            expected[name] = data
+        control = bytes.fromhex("010203040506072b")
+        memory[
+            game + capture.GAME_PALETTE_CONTROL_OFFSET:
+            game + capture.GAME_PALETTE_CONTROL_OFFSET + len(control)
+        ] = control
+        expected["bridge_panorama"] = bytes((control[-1],)) + expected[
+            "bridge_panorama"][1:]
+
+        state = capture.snapshot_game_color_state(
+            io.BytesIO(memory), 0, game_segment)
+
+        self.assertEqual(state["control"], control.hex())
+        for name, data in expected.items():
+            summary = state["palettes"][name]
+            self.assertEqual(summary["bytes"], data.hex())
+            self.assertEqual(summary["sha256"], hashlib.sha256(data).hexdigest())
+            self.assertLessEqual(summary["maximum_component"], 63)
+
+    def test_surface_capture_uses_boundary_specific_prefix(self) -> None:
+        memory = bytearray(0x100000)
+        game_segment = 0x1000
+        game = game_segment * 16
+        display_segment = 0x2000
+        back_buffer_segment = 0x3000
+        for pointer_offset, segment in (
+            (capture.GRAPHICS_DISPLAY_BUFFER_OFFSET, display_segment),
+            (capture.GRAPHICS_BACK_BUFFER_OFFSET, back_buffer_segment),
+        ):
+            struct.pack_into("<HH", memory, game + pointer_offset, 0, segment)
+            start = segment * 16
+            memory[start:start + capture.GRAPHICS_SURFACE_BYTES] = bytes(
+                (index + segment) & 0xFF
+                for index in range(capture.GRAPHICS_SURFACE_BYTES)
+            )
+        with tempfile.TemporaryDirectory() as directory:
+            surfaces = capture.snapshot_linear_surfaces(
+                io.BytesIO(memory), 0, game_segment, Path(directory),
+                "pterra-post")
+            self.assertEqual(
+                Path(surfaces["display"]["capture"]).name,
+                "pterra-post-display.bin")
+            self.assertEqual(
+                Path(surfaces["back_buffer"]["capture"]).name,
+                "pterra-post-back_buffer.bin")
+            self.assertTrue(Path(surfaces["display"]["capture"]).is_file())
 
     def test_graphics_pointer_monitor_accepts_known_surface_swaps(self) \
             -> None:

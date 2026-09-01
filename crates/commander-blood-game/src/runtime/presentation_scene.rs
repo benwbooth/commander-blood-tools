@@ -166,6 +166,9 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
             scene_palette,
             self.services.runtime_mut().live_palette_mut(),
         );
+        let source_colors = *self.services.runtime().live_palette();
+        self.services
+            .stage_next_presentation_source_colors(source_colors);
         Ok(())
     }
 
