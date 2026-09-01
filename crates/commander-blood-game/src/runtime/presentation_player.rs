@@ -7,6 +7,7 @@ use crate::native::bloodprg::{
     DescriptPresentationAssets, IndexedGamePalette, InputCancellationBackend,
     PresentationPresentPolicy, PresentationQueueClockGates, PresentationResourceCursor,
     PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneSource,
+    clear_scene_palette_entries,
 };
 use crate::render::indexed_frame_rgba;
 
@@ -45,6 +46,11 @@ impl RetainedPresentationFrame {
             .context("resolving the retained HNM page to true-color RGBA")?
             .into_boxed_slice();
         Ok(())
+    }
+
+    fn clear_scene_source_colors(&mut self) -> Result<()> {
+        clear_scene_palette_entries(&mut self.source_colors);
+        self.resolve_rgba()
     }
 }
 
@@ -294,6 +300,20 @@ impl RuntimePresentationPlayer {
         self.next_stream_source_colors = Some(colors);
     }
 
+    /// Broadcast the native shared low-color clear to every video color owner.
+    pub fn clear_scene_source_colors(&mut self) -> Result<()> {
+        if let Some(stream) = self.active_stream.as_mut() {
+            stream.clear_scene_source_colors()?;
+        }
+        if let Some(frame) = self.retained_display.as_mut() {
+            frame.clear_scene_source_colors()?;
+        }
+        if let Some(colors) = self.next_stream_source_colors.as_mut() {
+            clear_scene_palette_entries(colors);
+        }
+        Ok(())
+    }
+
     /// Release a completed HNM page after another recovered display owner writes.
     pub fn release_retained_display_frame(&mut self) -> bool {
         let released = self.retained_display.take().is_some();
@@ -414,6 +434,8 @@ mod tests {
     const CHARACTER_IDLE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(8);
     const INITIAL_DECODED_FRAME_COUNT: u64 = 1;
     const SCENE_COLOR_INDEX: usize = 100;
+    const FIRST_PRESERVED_COLOR_INDEX: usize =
+        crate::native::bloodprg::SCENE_PALETTE_CLEAR_COLOR_COUNT;
     const INHERITED_COLOR_INDEX: usize = 250;
     const INHERITED_VIDEO_COLOR: [u8; 3] = [5, 7, 11];
     const STAGED_SCENE_COLOR: [u8; 3] = [17, 19, 23];
@@ -621,6 +643,90 @@ mod tests {
             runtime.live_palette(),
             &game_colors,
             "staged HNM source colors contaminated flat game rendering"
+        );
+    }
+
+    #[test]
+    fn native_scene_clear_updates_all_video_color_owners_without_global_state() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        let game_colors = *runtime.live_palette();
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                u16::MIN,
+                false,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+
+        let indexed_pixels = player
+            .active_stream
+            .as_ref()
+            .unwrap()
+            .display_indices()
+            .to_vec();
+        let visible_scene_color_index = indexed_pixels
+            .iter()
+            .copied()
+            .map(usize::from)
+            .find(|index| (1..FIRST_PRESERVED_COLOR_INDEX).contains(index))
+            .expect("the opening frame has no visible low scene color");
+        let mut source_colors = *player.display_palette().unwrap();
+        source_colors[visible_scene_color_index] = STAGED_SCENE_COLOR;
+        source_colors[INHERITED_COLOR_INDEX] = INHERITED_VIDEO_COLOR;
+        *player.display_palette_mut().unwrap() = source_colors;
+        player.refresh_display_rgba(&indexed_pixels).unwrap();
+        let rgba_before_clear = player.display_rgba().unwrap().to_vec();
+        player.stage_next_stream_source_colors(source_colors);
+
+        player.clear_scene_source_colors().unwrap();
+
+        assert!(
+            player.display_palette().unwrap()[..FIRST_PRESERVED_COLOR_INDEX]
+                .iter()
+                .all(|color| *color == [u8::MIN; 3])
+        );
+        assert_eq!(
+            player.display_palette().unwrap()[INHERITED_COLOR_INDEX],
+            INHERITED_VIDEO_COLOR
+        );
+        let staged_colors = player.next_stream_source_colors.unwrap();
+        assert!(
+            staged_colors[..FIRST_PRESERVED_COLOR_INDEX]
+                .iter()
+                .all(|color| *color == [u8::MIN; 3])
+        );
+        assert_eq!(staged_colors[INHERITED_COLOR_INDEX], INHERITED_VIDEO_COLOR);
+        assert_ne!(player.display_rgba().unwrap(), rgba_before_clear);
+
+        *player.display_palette_mut().unwrap() = source_colors;
+        player.refresh_display_rgba(&indexed_pixels).unwrap();
+        assert!(player.finish());
+        let retained_rgba_before_clear = player.display_rgba().unwrap().to_vec();
+        player.stage_next_stream_source_colors(source_colors);
+        player.clear_scene_source_colors().unwrap();
+        assert!(
+            player.display_palette().unwrap()[..FIRST_PRESERVED_COLOR_INDEX]
+                .iter()
+                .all(|color| *color == [u8::MIN; 3])
+        );
+        assert_eq!(
+            player.display_palette().unwrap()[INHERITED_COLOR_INDEX],
+            INHERITED_VIDEO_COLOR
+        );
+        assert_ne!(player.display_rgba().unwrap(), retained_rgba_before_clear);
+        assert_eq!(
+            runtime.live_palette(),
+            &game_colors,
+            "decoder-local scene clearing contaminated renderer-owned game colors"
         );
     }
 

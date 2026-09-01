@@ -14,7 +14,8 @@ use crate::native::bloodprg::{
     PresentationResourceOpenError, PresentationResourceProvider,
     PresentationResourceSequenceContext, PresentationResourceSequenceOutcome,
     PresentationResourceStreamState, PresentationSourceLease, PresentationSourceRange,
-    load_presentation_resource_sequence, presentation_resource_enabled, service_presentation_queue,
+    clear_scene_palette_entries, load_presentation_resource_sequence,
+    presentation_resource_enabled, service_presentation_queue,
 };
 use crate::render::indexed_frame_rgba;
 
@@ -391,7 +392,17 @@ impl RuntimePresentationStream {
     /// Resolve the latest legacy indexed page into the renderer-owned RGBA surface.
     pub fn resolve_display_rgba(&mut self, indexed_pixels: &[u8]) -> Result<()> {
         self.display_indices = Box::from(indexed_pixels);
-        self.display_rgba = indexed_frame_rgba(indexed_pixels, &self.palette.live)
+        self.resolve_retained_display_rgba()
+    }
+
+    /// Apply the native low scene-color clear to this stream's private mapping.
+    pub fn clear_scene_source_colors(&mut self) -> Result<()> {
+        clear_scene_palette_entries(&mut self.palette.live);
+        self.resolve_retained_display_rgba()
+    }
+
+    fn resolve_retained_display_rgba(&mut self) -> Result<()> {
+        self.display_rgba = indexed_frame_rgba(&self.display_indices, &self.palette.live)
             .context("resolving the current HNM display page to true-color RGBA")?
             .into_boxed_slice();
         Ok(())

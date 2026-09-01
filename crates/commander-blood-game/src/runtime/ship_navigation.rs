@@ -705,7 +705,8 @@ impl ShipNavigationHost<ScriptObjectId> for RuntimeShipNavigationBackend<'_, '_,
     }
 
     fn clear_scene_palette(&mut self) {
-        self.services.clear_navigation_scene_palette();
+        let result = self.services.clear_navigation_scene_palette();
+        self.record(result, ());
     }
 
     fn initialize_bridge_back_buffer(&mut self) {

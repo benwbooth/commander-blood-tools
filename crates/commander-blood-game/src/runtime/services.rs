@@ -1862,8 +1862,11 @@ impl<'window> ModernGameServices<'window> {
     }
 
     /// Clear only the 192 scene colors, preserving the bridge console palette tail.
-    pub fn clear_navigation_scene_palette(&mut self) {
+    pub fn clear_navigation_scene_palette(&mut self) -> Result<()> {
         clear_scene_palette_entries(self.runtime.live_palette_mut());
+        self.presentation_player
+            .clear_scene_source_colors()
+            .context("clearing decoder-local navigation scene colors")
     }
 
     /// Decode CHART.FD into the retained background without presenting it early.
