@@ -491,6 +491,17 @@ mod tests {
         "d147b06b531c26aa2e57565f57c286df48658b2116472855a0067fd0fe786d97";
     const MIND_ORACLE_BACK_BUFFER_SHA256: &str =
         "4f7988030a00d082fe445e00a2ac5dab502300ff1b80e8592dd569867b60ef74";
+    const MIND_FIRST_ACTION_DISPLAY_FRAME: u64 = 122;
+    const MIND_FIRST_ACTION_DISPLAY_HASH: &str = "f60b6847044b71de";
+    const MIND_FIRST_ACTION_DISPLAY_RGB_HASH: &str = "6894f0c2f97a5caf";
+    const MIND_FIRST_ACTION_LOGICAL_FRAME: u64 = 123;
+    const MIND_FIRST_ACTION_LOGICAL_HASH: &str = "f7f6a4473cfe6f67";
+    const MIND_FIRST_ACTION_LOGICAL_RGB_HASH: &str = "7baca932bf4c149e";
+    const MIND_SECOND_ACTION_FRAME: u64 = 242;
+    const MIND_SECOND_ACTION_HASH: &str = "f825996090b5cb13";
+    const MIND_SECOND_ACTION_RGB_HASH: &str = "58e5176c3944a09b";
+    const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
+    const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
     const PRESENTATION_PALETTE_COLOR_COUNT: usize = 128;
     const LOGICAL_FRAMEBUFFER_WIDTH: usize = 320;
     const CONTENT_PANEL_TOP: usize = 10;
@@ -737,6 +748,77 @@ mod tests {
 
         assert!(stream.is_finished());
         assert_eq!(stream.presented_frame_count(), MIND_EXPECTED_FRAME_COUNT);
+    }
+
+    #[test]
+    fn opening_frames_match_dos_logical_and_display_action_boundaries() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut request = RuntimePresentationRequest::new(
+            BloodResourceName::new(OPENING_VIDEO_RESOURCE).unwrap(),
+        );
+        request.entry_policy.skip_back_buffer_present = true;
+        request.present_policy.skip_back_buffer_present = true;
+        request.present_policy.unclamped_rows = true;
+        let (mut stream, initial) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+        assert!(initial.initial_present.frame_presented);
+
+        let hash = |bytes: &[u8]| {
+            let mut hash = 0xcbf29ce484222325u64;
+            for byte in bytes {
+                hash ^= u64::from(*byte);
+                hash = hash.wrapping_mul(0x100000001b3);
+            }
+            format!("{hash:016x}")
+        };
+        let rgb_hash = |pixels: &[u8], palette: &IndexedGamePalette| {
+            let mut hash = 0xcbf29ce484222325u64;
+            for palette_index in pixels {
+                for component in palette[usize::from(*palette_index)] {
+                    let expanded = (u16::from(component) * EIGHT_BIT_CHANNEL_MAXIMUM
+                        / VGA_DAC_CHANNEL_MAXIMUM) as u8;
+                    hash ^= u64::from(expanded);
+                    hash = hash.wrapping_mul(0x100000001b3);
+                }
+            }
+            format!("{hash:016x}")
+        };
+        for timer_tick in 1..=242 {
+            stream
+                .service_frame(
+                    &mut runtime,
+                    timer_tick,
+                    timer_tick,
+                    PresentationQueueClockGates::default(),
+                    false,
+                )
+                .unwrap();
+            let expected = match stream.presented_frame_count() {
+                MIND_FIRST_ACTION_DISPLAY_FRAME => Some((
+                    MIND_FIRST_ACTION_DISPLAY_HASH,
+                    MIND_FIRST_ACTION_DISPLAY_RGB_HASH,
+                )),
+                MIND_FIRST_ACTION_LOGICAL_FRAME => Some((
+                    MIND_FIRST_ACTION_LOGICAL_HASH,
+                    MIND_FIRST_ACTION_LOGICAL_RGB_HASH,
+                )),
+                MIND_SECOND_ACTION_FRAME => {
+                    Some((MIND_SECOND_ACTION_HASH, MIND_SECOND_ACTION_RGB_HASH))
+                }
+                _ => None,
+            };
+            if let Some((expected_indices, expected_rgb)) = expected {
+                assert_eq!(hash(runtime.front_buffer().pixels()), expected_indices);
+                assert_eq!(
+                    rgb_hash(runtime.front_buffer().pixels(), runtime.live_palette()),
+                    expected_rgb
+                );
+            }
+        }
     }
 
     #[test]

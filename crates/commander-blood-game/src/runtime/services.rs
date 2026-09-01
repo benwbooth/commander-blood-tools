@@ -4243,6 +4243,7 @@ impl<'window> ModernGameServices<'window> {
                 })
             });
         let screen_hash = fnv1a64(self.runtime.front_buffer().pixels());
+        let queue_metrics = self.presentation_player.queue_metrics()?;
         let palette_transition = self.palette_transition.state();
         let indexed_display_palette = self.indexed_display_palette();
         let indexed_rgb_hash = indexed_rgb_hash(
@@ -4664,6 +4665,14 @@ impl<'window> ModernGameServices<'window> {
                 "decoded_frame_count": self.presentation_player.decoded_frame_count(),
                 "source_open_or_draining": self.presentation_player.source_open_or_draining(),
                 "screen_hash": screen_hash,
+                "logical_display_hash": screen_hash,
+                "logical_indexed_rgb_hash": indexed_rgb_hash,
+                "queue_metrics": queue_metrics.map(|metrics| serde_json::json!({
+                    "entry_metric": metrics.entry_metric,
+                    "read_wrap_index": metrics.read_wrap_index,
+                    "sequence_index": metrics.sequence_index,
+                    "frame_presented": true,
+                })),
                 "palette_hash": fnv1a64(&palette_bytes),
                 "display_palette_hash": fnv1a64(&display_palette_bytes),
                 "indexed_rgb_hash": indexed_rgb_hash,

@@ -177,8 +177,11 @@ python3 -P re/tools/compare_port_runtime_traces.py \
 ```
 
 The comparator checks recovered VM, presentation, subtitle, and bridge-frame
-state. New original and Rust traces also resolve indexed presentation pages
-through their display palettes and compare the resulting RGB hashes exactly.
+state. New original and Rust traces resolve each logical indexed presentation
+page through its display palette and compare the resulting RGB hashes at the
+same recovered HNM queue sequence. The DOS VGA display page is checked
+separately only when it matches the logical page, because an action boundary
+can land after the next page is decoded but before the hardware page flip.
 Independent true-color bridge and 3D layers remain temporal-stasis observations
 because they do not have a byte-identical DOS VGA representation.
 

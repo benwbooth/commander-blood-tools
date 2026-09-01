@@ -40,8 +40,14 @@ def record(action_index: int, frame: int = 45) -> dict:
             "subtitle": "WAIT COMMANDER ...",
             "video": {
                 "screen_hash": f"screen-{action_index}",
+                "logical_display_hash": f"screen-{action_index}",
                 "indexed_rgb_hash": f"rgb-{action_index}",
+                "logical_indexed_rgb_hash": f"rgb-{action_index}",
                 "indexed_frame_authoritative": True,
+                "queue_metrics": {
+                    "sequence_index": action_index,
+                    "read_wrap_index": action_index,
+                },
                 "bridge_layers": {"sprite_hash": f"sprite-{action_index}"},
             },
         },
@@ -97,10 +103,10 @@ class PortTraceComparisonTests(unittest.TestCase):
         )
         self.assertEqual(observations["modern_distinct_bridge_actor_sprite_hashes"], 2)
 
-    def test_reports_authoritative_indexed_rgb_divergence(self) -> None:
+    def test_reports_authoritative_logical_indexed_rgb_divergence(self) -> None:
         original = [record(0), record(1)]
         modern = copy.deepcopy(original)
-        modern[1]["semantic"]["video"]["indexed_rgb_hash"] = "wrong-rgb"
+        modern[1]["semantic"]["video"]["logical_indexed_rgb_hash"] = "wrong-rgb"
 
         report = compare_port.compare_port_records(
             original,
@@ -114,14 +120,75 @@ class PortTraceComparisonTests(unittest.TestCase):
         self.assertEqual(report["indexed_rgb_comparisons"], 2)
         self.assertEqual(
             report["first_divergence"]["differences"][0]["path"],
+            "semantic.video.logical_indexed_rgb_hash",
+        )
+
+    def test_unaligned_queue_sequences_do_not_compare_different_frames(self) -> None:
+        original = [record(0), record(1)]
+        modern = copy.deepcopy(original)
+        modern[1]["semantic"]["video"]["queue_metrics"]["sequence_index"] = 17
+        modern[1]["semantic"]["video"]["logical_indexed_rgb_hash"] = "later-frame"
+        modern[1]["semantic"]["video"]["indexed_rgb_hash"] = "later-display"
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_indexed_rgb=True,
+        )
+
+        self.assertEqual(report["status"], "equivalent")
+        self.assertEqual(report["indexed_rgb_comparisons"], 1)
+        self.assertEqual(report["indexed_rgb_unaligned_records"], 1)
+
+    def test_reports_stable_indexed_display_rgb_divergence(self) -> None:
+        original = [record(0)]
+        modern = copy.deepcopy(original)
+        modern[0]["semantic"]["video"]["indexed_rgb_hash"] = "wrong-display"
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_indexed_rgb=True,
+        )
+
+        self.assertEqual(report["status"], "diverged")
+        self.assertEqual(report["indexed_display_rgb_comparisons"], 1)
+        self.assertEqual(
+            report["first_divergence"]["differences"][0]["path"],
             "semantic.video.indexed_rgb_hash",
         )
+
+    def test_skips_in_flight_dos_display_page_but_compares_logical_rgb(self) -> None:
+        original = [record(0)]
+        original[0]["semantic"]["video"]["screen_hash"] = "previous-page"
+        original[0]["semantic"]["video"]["indexed_rgb_hash"] = "previous-rgb"
+        modern = [record(0)]
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_indexed_rgb=True,
+        )
+
+        self.assertEqual(report["status"], "equivalent")
+        self.assertEqual(report["indexed_rgb_comparisons"], 1)
+        self.assertEqual(report["indexed_display_rgb_comparisons"], 0)
+        self.assertEqual(report["indexed_display_in_flight_records"], 1)
 
     def test_ignores_indexed_hash_for_true_color_bridge_composition(self) -> None:
         original = [record(0)]
         modern = copy.deepcopy(original)
         modern[0]["semantic"]["video"]["indexed_frame_authoritative"] = False
         modern[0]["semantic"]["video"]["indexed_rgb_hash"] = "bridge-layer-rgb"
+        modern[0]["semantic"]["video"]["logical_indexed_rgb_hash"] = (
+            "bridge-layer-rgb"
+        )
 
         report = compare_port.compare_port_records(
             original,
@@ -136,7 +203,7 @@ class PortTraceComparisonTests(unittest.TestCase):
 
     def test_required_indexed_hash_rejects_an_old_original_trace(self) -> None:
         original = [record(0)]
-        del original[0]["semantic"]["video"]["indexed_rgb_hash"]
+        del original[0]["semantic"]["video"]["logical_indexed_rgb_hash"]
         modern = [record(0)]
 
         report = compare_port.compare_port_records(
@@ -151,7 +218,7 @@ class PortTraceComparisonTests(unittest.TestCase):
         self.assertEqual(report["indexed_rgb_missing_records"], 1)
         self.assertEqual(
             report["first_divergence"]["differences"][0]["reason"],
-            "authoritative indexed frame lacks an RGB oracle hash",
+            "authoritative indexed frame lacks a logical RGB oracle hash",
         )
 
 

@@ -17,12 +17,13 @@ const MAXIMUM_PARK_FRAME_COUNT: u16 = 600;
 /// A post-intro phone capture advances the native PIT low word by 51 ticks.
 /// Six translated eight-tick frames are the closest whole-frame equivalent.
 const CLICK_FRAME_COUNT: u16 = 6;
-/// One runtime_boot wait unit advances about two recovered blocking-presentation loops.
-///
-/// The clean-boot oracle's palette hashes at waits 50 and 100 match Rust's MIND
-/// frames 100 and 200 exactly. Keeping this conversion explicit makes the same
-/// checked-in action timeline meaningful in the flat runtime.
-const PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT: u16 = 2;
+/// The clean DOS oracle reaches MIND sequence 123 after its first 50-unit wait
+/// and sequence 242 after the second. A DOS wait is an emulated CPU-instruction
+/// budget, so only these same-resource boundaries have an exact frame mapping.
+const OPENING_FIRST_ORACLE_WAIT_UNITS: u16 = 50;
+const OPENING_FIRST_PRESENTATION_FRAME_COUNT: u16 = 123;
+const OPENING_SECOND_PRESENTATION_FRAME_COUNT: u16 = 119;
+const PRESENTATION_FALLBACK_FRAMES_PER_WAIT_UNIT: u16 = 2;
 /// Two runtime_boot wait units advance nine recovered ordinary game loops.
 ///
 /// Direct call-count tracing around `name_area_palette_effect_update` proves that
@@ -41,7 +42,7 @@ impl RuntimeScenarioCadence {
     const fn frame_count(self, wait_units: u16) -> u16 {
         match self {
             Self::BlockingPresentation => {
-                wait_units.saturating_mul(PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT)
+                wait_units.saturating_mul(PRESENTATION_FALLBACK_FRAMES_PER_WAIT_UNIT)
             }
             Self::GameLoop => {
                 let numerator = wait_units as u32 * GAME_FRAMES_PER_TWO_ORACLE_WAIT_UNITS;
@@ -170,6 +171,30 @@ impl RuntimeScenarioDriver {
         Ok(())
     }
 
+    fn wait_frame_count(&self, cadence: RuntimeScenarioCadence, wait_units: u16) -> u16 {
+        if cadence != RuntimeScenarioCadence::BlockingPresentation {
+            return cadence.frame_count(wait_units);
+        }
+        let previous_wait_units = self.actions[..self.action_index]
+            .iter()
+            .rev()
+            .take_while(|action| matches!(action.kind, RuntimeScenarioActionKind::Wait { .. }))
+            .map(|action| match action.kind {
+                RuntimeScenarioActionKind::Wait { frames } => u32::from(frames),
+                _ => unreachable!("take_while retained only wait actions"),
+            })
+            .fold(u32::MIN, u32::saturating_add);
+        match (previous_wait_units, wait_units) {
+            (0, OPENING_FIRST_ORACLE_WAIT_UNITS) => OPENING_FIRST_PRESENTATION_FRAME_COUNT,
+            (units, OPENING_FIRST_ORACLE_WAIT_UNITS)
+                if units == u32::from(OPENING_FIRST_ORACLE_WAIT_UNITS) =>
+            {
+                OPENING_SECOND_PRESENTATION_FRAME_COUNT
+            }
+            _ => cadence.frame_count(wait_units),
+        }
+    }
+
     /// Advance exactly one translated game or blocking-presentation frame.
     pub(super) fn advance(
         &mut self,
@@ -203,7 +228,7 @@ impl RuntimeScenarioDriver {
                 true
             }
             RuntimeScenarioActionKind::Wait { frames } => {
-                self.action_frame + 1 >= cadence.frame_count(*frames)
+                self.action_frame + 1 >= self.wait_frame_count(cadence, *frames)
             }
             RuntimeScenarioActionKind::Park {
                 edge_x,
@@ -527,7 +552,8 @@ mod tests {
 
     #[test]
     fn oracle_wait_units_use_the_calibrated_presentation_clock_conversion() {
-        let action = parse_action("wait 1", Path::new("scenario.tsv"), 1).unwrap();
+        let first = parse_action("wait 50", Path::new("scenario.tsv"), 1).unwrap();
+        let second = parse_action("wait 50", Path::new("scenario.tsv"), 2).unwrap();
         let trace_path = std::env::temp_dir().join(format!(
             "commander-blood-wait-{}-{}.jsonl",
             std::process::id(),
@@ -535,7 +561,7 @@ mod tests {
         ));
         let mut driver = RuntimeScenarioDriver {
             scenario_path: PathBuf::from("scenario.tsv"),
-            actions: vec![action],
+            actions: vec![first, second],
             trace: BufWriter::new(File::create(&trace_path).unwrap()),
             action_index: 0,
             action_frame: 0,
@@ -544,18 +570,25 @@ mod tests {
             frame_count: 0,
         };
 
-        let expected_frames = RuntimeScenarioCadence::BlockingPresentation.frame_count(1);
-        assert_eq!(expected_frames, PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT);
-        for _ in u16::MIN..expected_frames - 1 {
+        let first_boundary =
+            driver.wait_frame_count(RuntimeScenarioCadence::BlockingPresentation, 50);
+        assert_eq!(first_boundary, 123);
+        for _ in u16::MIN..first_boundary {
             driver
                 .advance(None, RuntimeScenarioCadence::BlockingPresentation)
                 .unwrap();
-            assert_eq!(driver.action_index, 0);
         }
-        driver
-            .advance(None, RuntimeScenarioCadence::BlockingPresentation)
-            .unwrap();
         assert_eq!(driver.action_index, 1);
+
+        let second_span = driver.wait_frame_count(RuntimeScenarioCadence::BlockingPresentation, 50);
+        assert_eq!(second_span, 119);
+        for _ in u16::MIN..second_span {
+            driver
+                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+                .unwrap();
+        }
+        assert_eq!(driver.action_index, 2);
+
         let _ = std::fs::remove_file(trace_path);
     }
 

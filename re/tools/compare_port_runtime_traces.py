@@ -109,6 +109,14 @@ def circular_distance(left: int, right: int, modulus: int) -> int:
     return min(distance, modulus - distance)
 
 
+def presentation_sequence(video: dict[str, Any]) -> int | None:
+    metrics = video.get("queue_metrics")
+    if not isinstance(metrics, dict):
+        return None
+    sequence = metrics.get("sequence_index")
+    return int(sequence) if sequence is not None else None
+
+
 def compare_port_records(
     original: list[dict[str, Any]],
     modern: list[dict[str, Any]],
@@ -130,6 +138,10 @@ def compare_port_records(
         "compared_records": 0,
         "indexed_rgb_comparisons": 0,
         "indexed_rgb_missing_records": 0,
+        "indexed_rgb_unaligned_records": 0,
+        "indexed_display_rgb_comparisons": 0,
+        "indexed_display_rgb_missing_records": 0,
+        "indexed_display_in_flight_records": 0,
         "first_divergence": None,
         "render_observations": render_observations(modern, start_action),
     }
@@ -214,29 +226,72 @@ def compare_port_records(
             modern_video = actual["semantic"]["video"]
             original_video = expected["semantic"]["video"]
             if modern_video.get("indexed_frame_authoritative") is True:
-                original_rgb_hash = original_video.get("indexed_rgb_hash")
-                modern_rgb_hash = modern_video.get("indexed_rgb_hash")
+                original_rgb_hash = original_video.get("logical_indexed_rgb_hash")
+                modern_rgb_hash = modern_video.get("logical_indexed_rgb_hash")
+                original_sequence = presentation_sequence(original_video)
+                modern_sequence = presentation_sequence(modern_video)
                 if original_rgb_hash is None or modern_rgb_hash is None:
                     report["indexed_rgb_missing_records"] += 1
                     if require_indexed_rgb:
                         differences.append(
                             {
-                                "path": "semantic.video.indexed_rgb_hash",
+                                "path": "semantic.video.logical_indexed_rgb_hash",
                                 "original": original_rgb_hash,
                                 "modern": modern_rgb_hash,
-                                "reason": "authoritative indexed frame lacks an RGB oracle hash",
+                                "reason": "authoritative indexed frame lacks a logical RGB oracle hash",
                             }
                         )
+                elif (
+                    original_sequence is None
+                    or modern_sequence is None
+                    or original_sequence != modern_sequence
+                ):
+                    report["indexed_rgb_unaligned_records"] += 1
                 else:
                     report["indexed_rgb_comparisons"] += 1
                     if original_rgb_hash != modern_rgb_hash:
                         differences.append(
                             {
-                                "path": "semantic.video.indexed_rgb_hash",
+                                "path": "semantic.video.logical_indexed_rgb_hash",
                                 "original": original_rgb_hash,
                                 "modern": modern_rgb_hash,
                             }
                         )
+
+                    original_screen_hash = original_video.get("screen_hash")
+                    original_logical_hash = original_video.get("logical_display_hash")
+                    if (
+                        original_screen_hash is not None
+                        and original_screen_hash == original_logical_hash
+                    ):
+                        original_display_rgb_hash = original_video.get("indexed_rgb_hash")
+                        modern_display_rgb_hash = modern_video.get("indexed_rgb_hash")
+                        if (
+                            original_display_rgb_hash is None
+                            or modern_display_rgb_hash is None
+                        ):
+                            report["indexed_display_rgb_missing_records"] += 1
+                            if require_indexed_rgb:
+                                differences.append(
+                                    {
+                                        "path": "semantic.video.indexed_rgb_hash",
+                                        "original": original_display_rgb_hash,
+                                        "modern": modern_display_rgb_hash,
+                                        "reason": "stable indexed display lacks an RGB oracle hash",
+                                    }
+                                )
+                        else:
+                            report["indexed_display_rgb_comparisons"] += 1
+                            if original_display_rgb_hash != modern_display_rgb_hash:
+                                differences.append(
+                                    {
+                                        "path": "semantic.video.indexed_rgb_hash",
+                                        "original": original_display_rgb_hash,
+                                        "modern": modern_display_rgb_hash,
+                                    }
+                                )
+                    else:
+                        report["indexed_display_in_flight_records"] += 1
 
         report["compared_records"] += 1
         if differences:
@@ -280,7 +335,9 @@ def render_observations(
         "modern_distinct_bridge_actor_sprite_hashes": len(set(actor_sprite_hashes)),
         "note": (
             "Raw screen and split-layer hashes remain temporal-stasis observations. "
-            "Authoritative indexed pages are compared separately after exact RGB expansion."
+            "Authoritative logical indexed pages are compared after exact RGB expansion "
+            "at aligned HNM queue sequences; DOS display pages are compared only after "
+            "a completed page flip."
         ),
     }
 
@@ -294,7 +351,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--require-indexed-rgb",
         action="store_true",
-        help="fail when an indexed Rust frame lacks an original RGB hash",
+        help="fail when an aligned indexed frame lacks a logical or stable display RGB hash",
     )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report-only", action="store_true")

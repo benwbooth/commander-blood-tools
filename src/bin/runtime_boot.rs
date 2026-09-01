@@ -20,6 +20,14 @@ const PRNG_COUNTER_OFFSET: u32 = 0x0af2;
 const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
 const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
 const VGA_PALETTE_BYTE_COUNT: usize = PALETTE_ENTRY_COUNT * RGB_COMPONENT_COUNT;
+const LOGICAL_FRAMEBUFFER_BYTE_COUNT: u32 = 320 * 200;
+const PRESENTATION_READ_WRAP_INDEX_OFFSET: u32 = 0x0d60;
+const PRESENTATION_ENTRY_METRIC_OFFSET: u32 = 0x0daf;
+const PRESENTATION_SEQUENCE_INDEX_OFFSET: u32 = 0x131c;
+const PRESENTATION_FRAME_PRESENTED_OFFSET: u32 = 0x0db8;
+const GRAPHICS_DISPLAY_BUFFER_POINTER_OFFSET: u32 = 0x5221;
+const GRAPHICS_DRAW_PAGE_OFFSET: u32 = 0x5219;
+const GRAPHICS_SCREEN_PAGE_OFFSET: u32 = 0x521d;
 
 fn game_data_segment(rt: &Runtime) -> Result<u16, String> {
     let conventional = &rt.m.mem[..0xa0000];
@@ -105,6 +113,17 @@ fn runtime_bytes(rt: &Runtime, segment: u16, offset: u32, length: u32) -> Vec<u8
         .collect()
 }
 
+fn runtime_far_buffer(
+    rt: &Runtime,
+    game_segment: u16,
+    pointer_offset: u32,
+    length: u32,
+) -> Option<Vec<u8>> {
+    let offset = read_word(rt, game_segment, pointer_offset);
+    let segment = read_word(rt, game_segment, pointer_offset + size_of::<u16>() as u32);
+    (segment != u16::MIN).then(|| runtime_bytes(rt, segment, u32::from(offset), length))
+}
+
 fn presentation_progress_key(rt: &Runtime, game_segment: u16) -> [u16; 8] {
     [
         u16::from(rt.m.read8(game_segment, 0x27d7)),
@@ -185,6 +204,15 @@ fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value
         .map(|(_, length, rate)| serde_json::json!([length, rate]))
         .collect();
     let screen = rt.screen_indices();
+    let logical_display = runtime_far_buffer(
+        rt,
+        game_segment,
+        GRAPHICS_DISPLAY_BUFFER_POINTER_OFFSET,
+        LOGICAL_FRAMEBUFFER_BYTE_COUNT,
+    );
+    let logical_indexed_rgb_hash = logical_display
+        .as_deref()
+        .map(|pixels| indexed_rgb_hash(pixels, &rt.dac));
 
     serde_json::json!({
         "vm": {
@@ -257,9 +285,21 @@ fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value
         "assets": opened_files,
         "video": {
             "screen_hash": fnv1a64(&screen),
+            "logical_display_hash": logical_display.as_deref().map(fnv1a64),
+            "logical_indexed_rgb_hash": logical_indexed_rgb_hash,
             "palette_hash": fnv1a64(&rt.dac),
             "indexed_rgb_hash": indexed_rgb_hash(&screen, &rt.dac),
             "indexed_frame_authoritative": true,
+            "queue_metrics": {
+                "entry_metric": read_word(rt, game_segment, PRESENTATION_ENTRY_METRIC_OFFSET),
+                "read_wrap_index": read_word(rt, game_segment, PRESENTATION_READ_WRAP_INDEX_OFFSET),
+                "sequence_index": read_word(rt, game_segment, PRESENTATION_SEQUENCE_INDEX_OFFSET),
+                "frame_presented": rt.m.read8(game_segment, PRESENTATION_FRAME_PRESENTED_OFFSET),
+            },
+            "vga_pages": {
+                "draw_offset": read_word(rt, game_segment, GRAPHICS_DRAW_PAGE_OFFSET) as i16,
+                "screen_offset": read_word(rt, game_segment, GRAPHICS_SCREEN_PAGE_OFFSET) as i16,
+            },
         },
     })
 }
@@ -5452,6 +5492,18 @@ fn main() {
             rt.write_ppm(&out.join(format!("vs_{step:03}.ppm")))
                 .unwrap();
             std::fs::write(out.join(format!("vs_{step:03}.idx")), rt.screen_indices()).unwrap();
+            if let Some(logical_display) = runtime_far_buffer(
+                &rt,
+                g,
+                GRAPHICS_DISPLAY_BUFFER_POINTER_OFFSET,
+                LOGICAL_FRAMEBUFFER_BYTE_COUNT,
+            ) {
+                std::fs::write(
+                    out.join(format!("vs_{step:03}.logical.idx")),
+                    logical_display,
+                )
+                .unwrap();
+            }
             let after_progress = presentation_progress_key(&rt, g);
             let waiting_after = word_choice_waiting_for_input(&rt, g);
             let liveness = if guest_end.is_some() {
