@@ -115,6 +115,7 @@ def compare_port_records(
     *,
     start_action: int,
     bridge_frame_tolerance: int,
+    require_indexed_rgb: bool = False,
 ) -> dict[str, Any]:
     original_by_action = {record["action_index"]: record for record in original}
     modern_by_action = {record["action_index"]: record for record in modern}
@@ -127,6 +128,8 @@ def compare_port_records(
         "start_action": start_action,
         "bridge_frame_tolerance": bridge_frame_tolerance,
         "compared_records": 0,
+        "indexed_rgb_comparisons": 0,
+        "indexed_rgb_missing_records": 0,
         "first_divergence": None,
         "render_observations": render_observations(modern, start_action),
     }
@@ -208,6 +211,32 @@ def compare_port_records(
                         "circular_distance": frame_distance,
                     }
                 )
+            modern_video = actual["semantic"]["video"]
+            original_video = expected["semantic"]["video"]
+            if modern_video.get("indexed_frame_authoritative") is True:
+                original_rgb_hash = original_video.get("indexed_rgb_hash")
+                modern_rgb_hash = modern_video.get("indexed_rgb_hash")
+                if original_rgb_hash is None or modern_rgb_hash is None:
+                    report["indexed_rgb_missing_records"] += 1
+                    if require_indexed_rgb:
+                        differences.append(
+                            {
+                                "path": "semantic.video.indexed_rgb_hash",
+                                "original": original_rgb_hash,
+                                "modern": modern_rgb_hash,
+                                "reason": "authoritative indexed frame lacks an RGB oracle hash",
+                            }
+                        )
+                else:
+                    report["indexed_rgb_comparisons"] += 1
+                    if original_rgb_hash != modern_rgb_hash:
+                        differences.append(
+                            {
+                                "path": "semantic.video.indexed_rgb_hash",
+                                "original": original_rgb_hash,
+                                "modern": modern_rgb_hash,
+                            }
+                        )
 
         report["compared_records"] += 1
         if differences:
@@ -250,8 +279,8 @@ def render_observations(
         ),
         "modern_distinct_bridge_actor_sprite_hashes": len(set(actor_sprite_hashes)),
         "note": (
-            "Modern rendering uses split true-color layers, so hashes are reported "
-            "for temporal-stasis checks and are not compared to DOS VGA hashes."
+            "Raw screen and split-layer hashes remain temporal-stasis observations. "
+            "Authoritative indexed pages are compared separately after exact RGB expansion."
         ),
     }
 
@@ -262,6 +291,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("modern", type=Path)
     parser.add_argument("--start-action", type=int, default=0)
     parser.add_argument("--bridge-frame-tolerance", type=int, default=2)
+    parser.add_argument(
+        "--require-indexed-rgb",
+        action="store_true",
+        help="fail when an indexed Rust frame lacks an original RGB hash",
+    )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report-only", action="store_true")
     return parser.parse_args()
@@ -274,6 +308,7 @@ def main() -> int:
         load_trace(args.modern),
         start_action=args.start_action,
         bridge_frame_tolerance=args.bridge_frame_tolerance,
+        require_indexed_rgb=args.require_indexed_rgb,
     )
     rendered = json.dumps(report, indent=2) + "\n"
     if args.output:

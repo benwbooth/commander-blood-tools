@@ -4245,6 +4245,12 @@ impl<'window> ModernGameServices<'window> {
         let screen_hash = fnv1a64(self.runtime.front_buffer().pixels());
         let palette_transition = self.palette_transition.state();
         let indexed_display_palette = self.indexed_display_palette();
+        let indexed_rgb_hash = indexed_rgb_hash(
+            self.runtime.front_buffer().pixels(),
+            &indexed_display_palette,
+        );
+        let indexed_frame_authoritative =
+            self.presentation_player.owns_display_frame() || presentation_screen_active;
         let presentation_content = serde_json::json!({
             "front": indexed_region_metrics(
                 self.runtime.front_buffer().pixels(),
@@ -4660,6 +4666,8 @@ impl<'window> ModernGameServices<'window> {
                 "screen_hash": screen_hash,
                 "palette_hash": fnv1a64(&palette_bytes),
                 "display_palette_hash": fnv1a64(&display_palette_bytes),
+                "indexed_rgb_hash": indexed_rgb_hash,
+                "indexed_frame_authoritative": indexed_frame_authoritative,
                 "bridge_palette_hash": fnv1a64(&bridge_palette_bytes),
                 "display_frame_owned": self.presentation_player.owns_display_frame(),
                 "manu3_layer_allowed": !self.presentation_player.owns_display_frame(),
@@ -4724,11 +4732,28 @@ impl<'window> ModernGameServices<'window> {
     }
 }
 
+const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
+const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
+
 fn fnv1a64(bytes: &[u8]) -> String {
     let mut hash = 0xcbf29ce484222325u64;
     for byte in bytes {
         hash ^= u64::from(*byte);
         hash = hash.wrapping_mul(0x100000001b3);
+    }
+    format!("{hash:016x}")
+}
+
+fn indexed_rgb_hash(indexed_pixels: &[u8], palette: &IndexedGamePalette) -> String {
+    let mut hash = 0xcbf29ce484222325u64;
+    for palette_index in indexed_pixels {
+        for component in palette[usize::from(*palette_index)] {
+            debug_assert!(u16::from(component) <= VGA_DAC_CHANNEL_MAXIMUM);
+            let expanded =
+                (u16::from(component) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8;
+            hash ^= u64::from(expanded);
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
     }
     format!("{hash:016x}")
 }
@@ -5383,6 +5408,16 @@ mod tests {
         assert!(!manu3_layer_visible(true, true));
         assert!(!manu3_layer_visible(false, false));
         assert!(!manu3_layer_visible(false, true));
+    }
+
+    #[test]
+    fn indexed_rgb_trace_hash_resolves_the_display_palette_to_true_color() {
+        let mut palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        palette[1] = [63, 32, 1];
+        assert_eq!(
+            indexed_rgb_hash(&[1, u8::MIN], &palette),
+            fnv1a64(&[255, 129, 4, 0, 0, 0])
+        );
     }
 
     #[test]

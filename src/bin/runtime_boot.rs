@@ -6,6 +6,7 @@
 //! Environment mirrors the DOSBox-X oracle: C: = accuracy/cdrive (writable, game saves in
 //! C:\cblood\), D: = output/_tmp_iso (the CD), CWD = D:\, launch args from BLOOD.BAT.
 
+use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_tools::recomp::runtime::{RunEnd, Runtime};
 use std::io::Write as _;
 use std::path::PathBuf;
@@ -16,6 +17,9 @@ const PRNG_SEED_OFFSET: u32 = 0x0aee;
 const PRNG_MIX_LOW_OFFSET: u32 = 0x0af0;
 const PRNG_MIX_HIGH_OFFSET: u32 = 0x0af1;
 const PRNG_COUNTER_OFFSET: u32 = 0x0af2;
+const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
+const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
+const VGA_PALETTE_BYTE_COUNT: usize = PALETTE_ENTRY_COUNT * RGB_COMPONENT_COUNT;
 
 fn game_data_segment(rt: &Runtime) -> Result<u16, String> {
     let conventional = &rt.m.mem[..0xa0000];
@@ -62,6 +66,37 @@ fn fnv1a64(bytes: &[u8]) -> String {
         hash = hash.wrapping_mul(0x100000001b3);
     }
     format!("{hash:016x}")
+}
+
+fn indexed_rgb_hash(indexed_pixels: &[u8], palette: &[u8; VGA_PALETTE_BYTE_COUNT]) -> String {
+    let mut hash = 0xcbf29ce484222325u64;
+    for palette_index in indexed_pixels {
+        let first_component = usize::from(*palette_index) * RGB_COMPONENT_COUNT;
+        for component in &palette[first_component..first_component + RGB_COMPONENT_COUNT] {
+            debug_assert!(u16::from(*component) <= VGA_DAC_CHANNEL_MAXIMUM);
+            let expanded =
+                (u16::from(*component) * EIGHT_BIT_CHANNEL_MAXIMUM / VGA_DAC_CHANNEL_MAXIMUM) as u8;
+            hash ^= u64::from(expanded);
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+    }
+    format!("{hash:016x}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn indexed_rgb_trace_hash_matches_the_modern_true_color_expansion() {
+        let mut palette = [u8::MIN; VGA_PALETTE_BYTE_COUNT];
+        palette[RGB_COMPONENT_COUNT..RGB_COMPONENT_COUNT * 2].copy_from_slice(&[63, 32, 1]);
+
+        assert_eq!(
+            indexed_rgb_hash(&[1, u8::MIN], &palette),
+            fnv1a64(&[255, 129, 4, 0, 0, 0])
+        );
+    }
 }
 
 fn runtime_bytes(rt: &Runtime, segment: u16, offset: u32, length: u32) -> Vec<u8> {
@@ -223,6 +258,8 @@ fn semantic_trace_snapshot(rt: &Runtime, game_segment: u16) -> serde_json::Value
         "video": {
             "screen_hash": fnv1a64(&screen),
             "palette_hash": fnv1a64(&rt.dac),
+            "indexed_rgb_hash": indexed_rgb_hash(&screen, &rt.dac),
+            "indexed_frame_authoritative": true,
         },
     })
 }

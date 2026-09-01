@@ -173,12 +173,14 @@ Compare the action-aligned original and modern traces with:
 python3 -P re/tools/compare_port_runtime_traces.py \
   output/startup-phone-current/original/semantic-trace.jsonl \
   output/rust-startup-phone.jsonl \
-  --start-action 5 --report-only
+  --start-action 5 --require-indexed-rgb --report-only
 ```
 
 The comparator checks recovered VM, presentation, subtitle, and bridge-frame
-state. True-color Rust render hashes are reported only as temporal-stasis
-signals because they are intentionally not byte-comparable with DOS VGA pages.
+state. New original and Rust traces also resolve indexed presentation pages
+through their display palettes and compare the resulting RGB hashes exactly.
+Independent true-color bridge and 3D layers remain temporal-stasis observations
+because they do not have a byte-identical DOS VGA representation.
 
 The complete startup-phone scenario also has an invariant verifier for the
 answer flick, Izwalito inset animation, authored word choice, and SCRIPT2

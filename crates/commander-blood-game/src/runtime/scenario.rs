@@ -19,9 +19,9 @@ const MAXIMUM_PARK_FRAME_COUNT: u16 = 600;
 const CLICK_FRAME_COUNT: u16 = 6;
 /// One runtime_boot wait unit advances about two recovered blocking-presentation loops.
 ///
-/// The clean-boot oracle's 150-unit opening span reaches the authored terminal
-/// frame of the 263-frame MIND.HNM stream. Keeping this conversion explicit
-/// makes the same checked-in action timeline meaningful in the flat runtime.
+/// The clean-boot oracle's palette hashes at waits 50 and 100 match Rust's MIND
+/// frames 100 and 200 exactly. Keeping this conversion explicit makes the same
+/// checked-in action timeline meaningful in the flat runtime.
 const PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT: u16 = 2;
 /// Two runtime_boot wait units advance nine recovered ordinary game loops.
 ///
@@ -544,10 +544,14 @@ mod tests {
             frame_count: 0,
         };
 
-        driver
-            .advance(None, RuntimeScenarioCadence::BlockingPresentation)
-            .unwrap();
-        assert_eq!(driver.action_index, 0);
+        let expected_frames = RuntimeScenarioCadence::BlockingPresentation.frame_count(1);
+        assert_eq!(expected_frames, PRESENTATION_TICKS_PER_ORACLE_WAIT_UNIT);
+        for _ in u16::MIN..expected_frames - 1 {
+            driver
+                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+                .unwrap();
+            assert_eq!(driver.action_index, 0);
+        }
         driver
             .advance(None, RuntimeScenarioCadence::BlockingPresentation)
             .unwrap();
