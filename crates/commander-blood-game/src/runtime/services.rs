@@ -2137,10 +2137,16 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         state: &mut GameLifecycleState,
     ) -> Result<RuntimePaletteTransitionOutcome> {
-        let outcome = self
-            .palette_transition
-            .update(self.runtime.live_palette_mut(), state)
-            .context("advancing the recovered palette transition")?;
+        let outcome =
+            if let Some(display_colors) = self.presentation_player.display_palette_mut() {
+                self.palette_transition.update(display_colors, state)
+            } else {
+                self.palette_transition
+                    .update(self.runtime.live_palette_mut(), state)
+            }
+            .context("advancing the recovered color transition")?;
+        self.presentation_player
+            .refresh_display_rgba(self.runtime.front_buffer().pixels())?;
         self.ship_presentation.transition_percent = self.palette_transition.state().percent;
         Ok(outcome)
     }
@@ -2460,7 +2466,7 @@ impl<'window> ModernGameServices<'window> {
     /// Advance MANU3 from current lifecycle gates and the sampled logical pointer.
     pub fn update_lifecycle_manu3(&mut self, state: &GameLifecycleState) -> Result<bool> {
         let pointer = self.input.pointer_sample().position;
-        self.update_manu3_hand(Manu3HandFrameContext {
+        let recovered_hand_visible = self.update_manu3_hand(Manu3HandFrameContext {
             presentation_mode_active: state.presentation_mode,
             hud_refresh_active: state.pause_hud_active,
             ship_scene_dispatch_blocked: self.ship_presentation.scene_dispatch_blocked,
@@ -2472,7 +2478,11 @@ impl<'window> ModernGameServices<'window> {
                 x: pointer[0],
                 y: pointer[1],
             },
-        })
+        })?;
+        Ok(manu3_layer_visible(
+            recovered_hand_visible,
+            self.presentation_player.owns_display_frame(),
+        ))
     }
 
     /// Reproject the current MANU3 pose for a visual-only host refresh.
@@ -3039,7 +3049,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Release the retained presentation source after completion or cancellation.
     pub fn finish_presentation_sequence(&mut self) -> bool {
-        self.presentation_player.finish().is_some()
+        self.presentation_player.finish()
     }
 
     /// Release a completed HNM page when another recovered display owner writes.
@@ -3295,7 +3305,7 @@ impl<'window> ModernGameServices<'window> {
 
     fn indexed_display_palette(&self) -> IndexedGamePalette {
         self.presentation_player
-            .active_display_palette()
+            .display_palette()
             .copied()
             .unwrap_or(*self.runtime.live_palette())
     }

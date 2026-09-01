@@ -1430,12 +1430,25 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         "Pterra selection never entered either authored planet-video stream"
     );
     for resource in [PTERRA_LOCATION_VIDEO, PTERRA_SCRUTER_VIDEO] {
-        assert!(
-            pterra_video_records.iter().any(|record| {
+        let resource_records = pterra_video_records
+            .iter()
+            .filter(|record| {
                 record["semantic"]["video"]["active_resource"].as_str() == Some(resource)
-            }),
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            !resource_records.is_empty(),
             "Pterra travel never presented authored stream {resource}"
         );
+        let flat_game_color_hash = resource_records[0]["semantic"]["video"]["palette_hash"]
+            .as_str()
+            .expect("an active Pterra stream omitted the flat game color hash");
+        for record in resource_records {
+            assert_eq!(
+                record["semantic"]["video"]["palette_hash"], flat_game_color_hash,
+                "HNM-local color records escaped into flat game colors during {resource}: {record}"
+            );
+        }
     }
     let retained_bridge_palette = pterra_queued["semantic"]["video"]["bridge_palette_hash"]
         .as_str()

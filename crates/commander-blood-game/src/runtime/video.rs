@@ -125,6 +125,7 @@ pub struct RuntimePresentationStream {
     clock: PresentationQueueClock,
     link_cursor: PresentationQueueLinkCursor,
     decode_staging: Box<[u8]>,
+    display_indices: Box<[u8]>,
     display_rgba: Box<[u8]>,
     finished: bool,
     presented_frame_count: u64,
@@ -165,6 +166,7 @@ impl RuntimePresentationStream {
             clock: PresentationQueueClock::default(),
             link_cursor: PresentationQueueLinkCursor::default(),
             decode_staging: zeroed_presentation_buffer(),
+            display_indices: Box::default(),
             display_rgba: Box::default(),
             finished: false,
             presented_frame_count: u64::MIN,
@@ -208,7 +210,6 @@ impl RuntimePresentationStream {
                 .presented_frame_count
                 .wrapping_add(PRESENTED_FRAME_INCREMENT);
         }
-        *runtime.live_palette_mut() = player.palette.live;
         player.resolve_display_rgba(runtime.front_buffer().pixels())?;
         Ok((player, outcome))
     }
@@ -264,7 +265,6 @@ impl RuntimePresentationStream {
         if let Some(link_target) = link_target {
             self.import_service_link_target(link_target);
         }
-        import_shared_live_palette(runtime.live_palette(), &mut self.palette);
         let (display_buffer, back_buffer) = runtime.presentation_buffers_mut();
         let mut presenter = FlatPresentationEntryPresenter {
             display_buffer,
@@ -304,11 +304,6 @@ impl RuntimePresentationStream {
                 .wrapping_add(PRESENTED_FRAME_INCREMENT);
         }
         self.finished |= queue_finished(&queue);
-        publish_shared_live_palette(
-            queue_applied_palette(&queue),
-            &self.palette,
-            runtime.live_palette_mut(),
-        );
         self.resolve_display_rgba(runtime.front_buffer().pixels())?;
         Ok(RuntimePresentationStepOutcome {
             queue,
@@ -356,12 +351,24 @@ impl RuntimePresentationStream {
         &self.palette.live
     }
 
+    /// Mutably borrow HNM-local source colors for recovered presentation fades.
+    pub fn display_palette_mut(&mut self) -> &mut IndexedGamePalette {
+        &mut self.palette.live
+    }
+
+    /// Indexed source page retained only to resolve legacy HNM colors to RGBA.
+    pub fn display_indices(&self) -> &[u8] {
+        &self.display_indices
+    }
+
     /// True-color page produced from the current indexed HNM frame and its local palette.
     pub fn display_rgba(&self) -> &[u8] {
         &self.display_rgba
     }
 
-    fn resolve_display_rgba(&mut self, indexed_pixels: &[u8]) -> Result<()> {
+    /// Resolve the latest legacy indexed page into the renderer-owned RGBA surface.
+    pub fn resolve_display_rgba(&mut self, indexed_pixels: &[u8]) -> Result<()> {
+        self.display_indices = Box::from(indexed_pixels);
         self.display_rgba = indexed_frame_rgba(indexed_pixels, &self.palette.live)
             .context("resolving the current HNM display page to true-color RGBA")?
             .into_boxed_slice();
@@ -426,30 +433,6 @@ fn queue_presented_frame(outcome: &PresentationQueueServiceOutcome) -> bool {
     )
 }
 
-fn queue_applied_palette(outcome: &PresentationQueueServiceOutcome) -> bool {
-    matches!(
-        outcome,
-        PresentationQueueServiceOutcome::Active {
-            palette: Some(_),
-            ..
-        }
-    )
-}
-
-fn import_shared_live_palette(shared: &IndexedGamePalette, stream: &mut PresentationPaletteState) {
-    stream.live = *shared;
-}
-
-fn publish_shared_live_palette(
-    palette_applied: bool,
-    stream: &PresentationPaletteState,
-    shared: &mut IndexedGamePalette,
-) {
-    if palette_applied {
-        *shared = stream.live;
-    }
-}
-
 fn refill_finished(refill: &PresentationQueueRefillOutcome) -> bool {
     matches!(
         refill,
@@ -479,7 +462,7 @@ mod tests {
     use std::collections::BTreeSet;
     use std::path::{Path, PathBuf};
 
-    use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
+    use commander_blood_formats::lbm::RGB_COMPONENT_COUNT;
     use sha2::{Digest, Sha256};
 
     use super::super::{OriginalGameData, OriginalGameDataPaths};
@@ -493,10 +476,7 @@ mod tests {
     const SHIPPED_HNM_RESOURCE_COUNT: usize = 701;
     const MAXIMUM_TEST_SERVICE_CALLS: usize = 10_000;
     const MINIMUM_EXPECTED_FRAME_COUNT: u64 = 2;
-    const TEST_PALETTE_INDEX: usize = 17;
     const TEST_SEQUENCE_INDEX: u16 = 37;
-    const EXTERNAL_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [3, 5, 7];
-    const VIDEO_PALETTE_COLOR: [u8; RGB_COMPONENT_COUNT] = [11, 13, 17];
     const MIND_ORACLE_FRAME_INDEX: u16 = 30;
     const MIND_ORACLE_READ_WRAP_INDEX: u16 = MIND_ORACLE_FRAME_INDEX + 1;
     const MIND_EXPECTED_FRAME_COUNT: u64 = 263;
@@ -550,20 +530,29 @@ mod tests {
     }
 
     #[test]
-    fn stream_palette_only_publishes_when_a_palette_record_was_applied() {
-        let mut shared = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
-        shared[TEST_PALETTE_INDEX] = EXTERNAL_PALETTE_COLOR;
-        let mut stream = PresentationPaletteState::default();
+    fn hnm_color_records_remain_local_to_the_true_color_video_surface() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let runtime_colors = *runtime.live_palette();
+        let request =
+            RuntimePresentationRequest::new(BloodResourceName::new(TEST_VIDEO_RESOURCE).unwrap());
+        let (mut stream, _) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
 
-        import_shared_live_palette(&shared, &mut stream);
-        assert_eq!(stream.live[TEST_PALETTE_INDEX], EXTERNAL_PALETTE_COLOR);
-
-        stream.live[TEST_PALETTE_INDEX] = VIDEO_PALETTE_COLOR;
-        publish_shared_live_palette(false, &stream, &mut shared);
-        assert_eq!(shared[TEST_PALETTE_INDEX], EXTERNAL_PALETTE_COLOR);
-
-        publish_shared_live_palette(true, &stream, &mut shared);
-        assert_eq!(shared[TEST_PALETTE_INDEX], VIDEO_PALETTE_COLOR);
+        assert_eq!(runtime.live_palette(), &runtime_colors);
+        stream
+            .service_frame(
+                &mut runtime,
+                u16::MIN,
+                1,
+                PresentationQueueClockGates::default(),
+                false,
+            )
+            .unwrap();
+        assert_eq!(runtime.live_palette(), &runtime_colors);
     }
 
     #[test]
@@ -578,11 +567,12 @@ mod tests {
         let request =
             RuntimePresentationRequest::new(BloodResourceName::new(PTERRA_VIDEO_RESOURCE).unwrap());
 
-        RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+        let (stream, _) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
 
         let changed = initial[192..]
             .iter()
-            .zip(&runtime.live_palette()[192..])
+            .zip(&stream.display_palette()[192..])
             .enumerate()
             .filter_map(|(relative, (before, after))| {
                 (before != after).then_some((relative + 192, *before, *after))
@@ -591,6 +581,11 @@ mod tests {
         assert!(
             changed.is_empty(),
             "Pterra's initial HNM palette record changed reserved colors: {changed:?}"
+        );
+        assert_eq!(
+            runtime.live_palette(),
+            &initial,
+            "Pterra's decoder-local colors escaped into the flat game surface"
         );
     }
 
@@ -708,7 +703,7 @@ mod tests {
         assert_eq!(
             format!(
                 "{:x}",
-                Sha256::digest(runtime.live_palette().as_flattened())
+                Sha256::digest(stream.display_palette().as_flattened())
             ),
             MIND_ORACLE_LIVE_PALETTE_SHA256
         );
@@ -721,7 +716,7 @@ mod tests {
             MIND_ORACLE_BACK_BUFFER_SHA256
         );
         assert!(
-            runtime.live_palette()[PRESENTATION_PALETTE_COLOR_COUNT..]
+            stream.display_palette()[PRESENTATION_PALETTE_COLOR_COUNT..]
                 .iter()
                 .flatten()
                 .all(|component| *component == u8::MIN)
@@ -825,7 +820,7 @@ mod tests {
             if let Some((expected_indices, expected_rgb)) = expected {
                 assert_eq!(hash(runtime.front_buffer().pixels()), expected_indices);
                 assert_eq!(
-                    rgb_hash(runtime.front_buffer().pixels(), runtime.live_palette()),
+                    rgb_hash(runtime.front_buffer().pixels(), stream.display_palette()),
                     expected_rgb
                 );
             }

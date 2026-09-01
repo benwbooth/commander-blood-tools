@@ -8,6 +8,7 @@ use crate::native::bloodprg::{
     PresentationPresentPolicy, PresentationQueueClockGates, PresentationResourceCursor,
     PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneSource,
 };
+use crate::render::indexed_frame_rgba;
 
 use super::{
     OriginalGameRuntime, RuntimePresentationCatalog, RuntimePresentationStepOutcome,
@@ -19,7 +20,30 @@ pub struct RuntimePresentationPlayer {
     catalog: RuntimePresentationCatalog,
     shared_idle_video: Option<Box<[u8]>>,
     active_stream: Option<RuntimePresentationStream>,
-    retained_display_rgba: Option<Box<[u8]>>,
+    retained_display: Option<RetainedPresentationFrame>,
+}
+
+struct RetainedPresentationFrame {
+    indexed_pixels: Box<[u8]>,
+    source_colors: IndexedGamePalette,
+    rgba: Box<[u8]>,
+}
+
+impl RetainedPresentationFrame {
+    fn from_stream(stream: &RuntimePresentationStream) -> Self {
+        Self {
+            indexed_pixels: Box::from(stream.display_indices()),
+            source_colors: *stream.display_palette(),
+            rgba: Box::from(stream.display_rgba()),
+        }
+    }
+
+    fn resolve_rgba(&mut self) -> Result<()> {
+        self.rgba = indexed_frame_rgba(&self.indexed_pixels, &self.source_colors)
+            .context("resolving the retained HNM page to true-color RGBA")?
+            .into_boxed_slice();
+        Ok(())
+    }
 }
 
 impl RuntimePresentationPlayer {
@@ -29,7 +53,7 @@ impl RuntimePresentationPlayer {
             catalog: RuntimePresentationCatalog::new(initial),
             shared_idle_video: None,
             active_stream: None,
-            retained_display_rgba: None,
+            retained_display: None,
         }
     }
 
@@ -97,7 +121,7 @@ impl RuntimePresentationPlayer {
             timer_tick,
             render_snapshot_suppressed,
         )?;
-        self.retained_display_rgba = None;
+        self.retained_display = None;
         self.active_stream = Some(stream);
         Ok(Some(outcome))
     }
@@ -187,14 +211,31 @@ impl RuntimePresentationPlayer {
     /// closes. Modern rendering must retain that page's already-resolved colors
     /// until bridge, scene, or panel drawing explicitly replaces it.
     pub const fn owns_display_frame(&self) -> bool {
-        self.active_stream.is_some() || self.retained_display_rgba.is_some()
+        self.active_stream.is_some() || self.retained_display.is_some()
     }
 
-    /// Return the decoder-local palette for the active HNM stream.
-    pub fn active_display_palette(&self) -> Option<&IndexedGamePalette> {
+    /// Return legacy source colors used only to resolve the current HNM page.
+    pub fn display_palette(&self) -> Option<&IndexedGamePalette> {
         self.active_stream
             .as_ref()
             .map(RuntimePresentationStream::display_palette)
+            .or_else(|| {
+                self.retained_display
+                    .as_ref()
+                    .map(|frame| &frame.source_colors)
+            })
+    }
+
+    /// Mutably borrow decoder-local colors for a recovered video fade.
+    pub fn display_palette_mut(&mut self) -> Option<&mut IndexedGamePalette> {
+        self.active_stream
+            .as_mut()
+            .map(RuntimePresentationStream::display_palette_mut)
+            .or_else(|| {
+                self.retained_display
+                    .as_mut()
+                    .map(|frame| &mut frame.source_colors)
+            })
     }
 
     /// Return the true-color HNM page that currently owns the display.
@@ -202,12 +243,27 @@ impl RuntimePresentationPlayer {
         self.active_stream
             .as_ref()
             .map(RuntimePresentationStream::display_rgba)
-            .or(self.retained_display_rgba.as_deref())
+            .or_else(|| {
+                self.retained_display
+                    .as_ref()
+                    .map(|frame| frame.rgba.as_ref())
+            })
+    }
+
+    /// Re-resolve the current video page after subtitles or a local color fade.
+    pub fn refresh_display_rgba(&mut self, active_indexed_pixels: &[u8]) -> Result<()> {
+        if let Some(stream) = self.active_stream.as_mut() {
+            stream.resolve_display_rgba(active_indexed_pixels)
+        } else if let Some(frame) = self.retained_display.as_mut() {
+            frame.resolve_rgba()
+        } else {
+            Ok(())
+        }
     }
 
     /// Release a completed HNM page after another recovered display owner writes.
     pub fn release_retained_display_frame(&mut self) -> bool {
-        self.retained_display_rgba.take().is_some()
+        self.retained_display.take().is_some()
     }
 
     /// Return whether the recovered queue status still owns or drains a source.
@@ -256,12 +312,14 @@ impl RuntimePresentationPlayer {
     }
 
     /// Release the active stream after completion or explicit cancellation.
-    pub fn finish(&mut self) -> Option<RuntimePresentationStream> {
-        let stream = self.active_stream.take()?;
+    pub fn finish(&mut self) -> bool {
+        let Some(stream) = self.active_stream.take() else {
+            return false;
+        };
         if stream.presented_frame_count() != u64::MIN {
-            self.retained_display_rgba = Some(Box::from(stream.display_rgba()));
+            self.retained_display = Some(RetainedPresentationFrame::from_stream(&stream));
         }
-        Some(stream)
+        true
     }
 
     /// Snapshot the active stream cursor used by the native Escape handler.
@@ -355,12 +413,20 @@ mod tests {
             b"sq\\mind.HNM"
         );
         let retained_rgba = player.display_rgba().unwrap().to_vec();
-        assert!(player.finish().is_some());
+        let runtime_colors = *runtime.live_palette();
+        assert!(player.finish());
         assert!(!player.has_stream());
         assert!(!player.source_open_or_draining());
         assert!(player.owns_display_frame());
-        runtime.live_palette_mut().fill([63; 3]);
         assert_eq!(player.display_rgba(), Some(retained_rgba.as_slice()));
+        player.display_palette_mut().unwrap().fill([63, 0, 0]);
+        player.refresh_display_rgba(&[]).unwrap();
+        assert_ne!(player.display_rgba(), Some(retained_rgba.as_slice()));
+        assert_eq!(
+            runtime.live_palette(),
+            &runtime_colors,
+            "a retained HNM color transition contaminated flat game colors"
+        );
         assert!(player.release_retained_display_frame());
         assert!(!player.owns_display_frame());
         assert!(player.display_rgba().is_none());
