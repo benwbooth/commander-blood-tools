@@ -116,6 +116,8 @@ pub(super) struct RuntimeScenarioDriver {
     pending_trace: Option<CompletedRuntimeScenarioAction>,
     initial_trace_written: bool,
     frame_count: u64,
+    game_frame_count: u64,
+    presentation_frame_count: u64,
 }
 
 impl RuntimeScenarioDriver {
@@ -146,6 +148,8 @@ impl RuntimeScenarioDriver {
             pending_trace: None,
             initial_trace_written: false,
             frame_count: u64::MIN,
+            game_frame_count: u64::MIN,
+            presentation_frame_count: u64::MIN,
         })
     }
 
@@ -202,6 +206,14 @@ impl RuntimeScenarioDriver {
         cadence: RuntimeScenarioCadence,
     ) -> Result<RuntimeScenarioFrameInput> {
         self.frame_count = self.frame_count.wrapping_add(1);
+        match cadence {
+            RuntimeScenarioCadence::GameLoop => {
+                self.game_frame_count = self.game_frame_count.wrapping_add(1);
+            }
+            RuntimeScenarioCadence::BlockingPresentation => {
+                self.presentation_frame_count = self.presentation_frame_count.wrapping_add(1);
+            }
+        }
         let Some(action) = self.actions.get(self.action_index) else {
             return Ok(RuntimeScenarioFrameInput {
                 request_shutdown: true,
@@ -297,6 +309,10 @@ impl RuntimeScenarioDriver {
             "phase": phase,
             "action": action,
             "steps": self.frame_count,
+            "clock": {
+                "game_frame_sequence": self.game_frame_count,
+                "presentation_frame_sequence": self.presentation_frame_count,
+            },
             "machine": {
                 "memory_model": "flat",
             },
@@ -497,6 +513,8 @@ mod tests {
             pending_trace: None,
             initial_trace_written: false,
             frame_count: 0,
+            game_frame_count: 0,
+            presentation_frame_count: 0,
         };
 
         for frame in u16::MIN..CLICK_FRAME_COUNT {
@@ -512,6 +530,11 @@ mod tests {
         }
         assert_eq!(driver.action_index, 1);
         assert!(driver.pending_trace.is_some());
+        assert_eq!(driver.game_frame_count, 0);
+        assert_eq!(
+            driver.presentation_frame_count,
+            u64::from(CLICK_FRAME_COUNT)
+        );
         let _ = std::fs::remove_file(trace_path);
     }
 
@@ -568,6 +591,8 @@ mod tests {
             pending_trace: None,
             initial_trace_written: false,
             frame_count: 0,
+            game_frame_count: 0,
+            presentation_frame_count: 0,
         };
 
         let first_boundary =
@@ -588,6 +613,11 @@ mod tests {
                 .unwrap();
         }
         assert_eq!(driver.action_index, 2);
+        assert_eq!(driver.game_frame_count, 0);
+        assert_eq!(
+            driver.presentation_frame_count,
+            u64::from(first_boundary + second_span)
+        );
 
         let _ = std::fs::remove_file(trace_path);
     }
@@ -609,6 +639,8 @@ mod tests {
             pending_trace: None,
             initial_trace_written: false,
             frame_count: 0,
+            game_frame_count: 0,
+            presentation_frame_count: 0,
         };
 
         let expected_frames = RuntimeScenarioCadence::GameLoop.frame_count(1);
@@ -624,6 +656,8 @@ mod tests {
             .advance(None, RuntimeScenarioCadence::GameLoop)
             .unwrap();
         assert_eq!(driver.action_index, 1);
+        assert_eq!(driver.game_frame_count, u64::from(expected_frames));
+        assert_eq!(driver.presentation_frame_count, 0);
         let _ = std::fs::remove_file(trace_path);
     }
 }

@@ -17,6 +17,8 @@ const PRNG_SEED_OFFSET: u32 = 0x0aee;
 const PRNG_MIX_LOW_OFFSET: u32 = 0x0af0;
 const PRNG_MIX_HIGH_OFFSET: u32 = 0x0af1;
 const PRNG_COUNTER_OFFSET: u32 = 0x0af2;
+const BLOODPRG_MAIN_RELATIVE_SEGMENT: u16 = 0x008b;
+const BLOODPRG_MAIN_FRAME_BOUNDARY_IP: u16 = 0x0428;
 const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
 const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
 const VGA_PALETTE_BYTE_COUNT: usize = PALETTE_ENTRY_COUNT * RGB_COMPONENT_COUNT;
@@ -28,6 +30,28 @@ const PRESENTATION_FRAME_PRESENTED_OFFSET: u32 = 0x0db8;
 const GRAPHICS_DISPLAY_BUFFER_POINTER_OFFSET: u32 = 0x5221;
 const GRAPHICS_DRAW_PAGE_OFFSET: u32 = 0x5219;
 const GRAPHICS_SCREEN_PAGE_OFFSET: u32 = 0x521d;
+
+fn arm_main_game_frame_watch(runtime: &mut Runtime) -> (u16, u16) {
+    let watch = (
+        runtime
+            .executable_image_segment()
+            .wrapping_add(BLOODPRG_MAIN_RELATIVE_SEGMENT),
+        BLOODPRG_MAIN_FRAME_BOUNDARY_IP,
+    );
+    runtime.cpu.exec_watch.clear();
+    runtime.cpu.exec_hits.clear();
+    runtime.cpu.exec_watch.push(watch);
+    watch
+}
+
+fn main_game_frame_sequence(runtime: &Runtime, watch: (u16, u16)) -> u64 {
+    runtime
+        .cpu
+        .exec_hits
+        .iter()
+        .find(|hit| (hit.0, hit.1) == watch)
+        .map_or(u64::MIN, |hit| hit.3)
+}
 
 fn game_data_segment(rt: &Runtime) -> Result<u16, String> {
     let conventional = &rt.m.mem[..0xa0000];
@@ -5178,6 +5202,7 @@ fn main() {
             }
             std::io::BufWriter::new(std::fs::File::create(path).expect("create semantic trace"))
         });
+        let main_game_frame_watch = arm_main_game_frame_watch(&mut rt);
         let mut guest_end: Option<String> = None;
         write_trace_record(
             &mut trace_output,
@@ -5189,6 +5214,9 @@ fn main() {
                 "phase": "initial",
                 "action": null,
                 "steps": rt.cpu.steps,
+                "clock": {
+                    "game_frame_sequence": main_game_frame_sequence(&rt, main_game_frame_watch),
+                },
                 "machine": {
                     "cs": rt.cpu.cs,
                     "ip": rt.cpu.ip,
@@ -5525,6 +5553,12 @@ fn main() {
                     "phase": "after",
                     "action": line.trim(),
                     "steps": rt.cpu.steps,
+                    "clock": {
+                        "game_frame_sequence": main_game_frame_sequence(
+                            &rt,
+                            main_game_frame_watch,
+                        ),
+                    },
                     "machine": {
                         "cs": rt.cpu.cs,
                         "ip": rt.cpu.ip,

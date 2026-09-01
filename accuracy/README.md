@@ -173,7 +173,7 @@ Compare the action-aligned original and modern traces with:
 python3 -P re/tools/compare_port_runtime_traces.py \
   output/startup-phone-current/original/semantic-trace.jsonl \
   output/rust-startup-phone.jsonl \
-  --start-action 5 --require-indexed-rgb --report-only
+  --start-action 5 --require-indexed-rgb --require-game-frame-clock --report-only
 ```
 
 The comparator checks recovered VM, presentation, subtitle, and bridge-frame
@@ -182,6 +182,10 @@ page through its display palette and compare the resulting RGB hashes at the
 same recovered HNM queue sequence. The DOS VGA display page is checked
 separately only when it matches the logical page, because an action boundary
 can land after the next page is decoded but before the hardware page flip.
+The trace also records the exact BLOODPRG main-loop boundary. PRNG and
+name-area-effect cursor state are compared only when the preceding action ran
+the same number of game frames in both runtimes; fixed DOS instruction budgets
+can otherwise complete fewer loops than the Rust scenario's calibrated wait.
 Independent true-color bridge and 3D layers remain temporal-stasis observations
 because they do not have a byte-identical DOS VGA representation.
 

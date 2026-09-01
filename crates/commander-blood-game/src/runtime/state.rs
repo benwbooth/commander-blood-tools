@@ -1318,6 +1318,7 @@ mod tests {
         ResourceLoadStatus, SHIP_OBJECT_ANCHOR_COUNT, ShipCameraPosition, ShipObjectAnchor,
         ShipProjectionMatrix, project_ship_object_sprites_against_source_extent,
     };
+    use crate::native::random::BloodPrng;
 
     use super::super::{OriginalGameData, OriginalGameDataPaths, VGA_BIOS_FONT_8X8};
     use super::*;
@@ -1341,6 +1342,19 @@ mod tests {
     const NATURAL_OBJECT_DEPTH: u16 = 1_024;
     const Q15_UNIT: i32 = 32_768;
     const EXPECTED_PROJECTED_SHIP_OBJECT_COUNT: usize = 1;
+    const DOS_TRACE_INTERVAL_GAME_FRAMES: usize = 43;
+    const DOS_TRACE_INITIAL_EFFECT_SEQUENCE: usize = 7;
+    const DOS_TRACE_INITIAL_EFFECT_FRAME: usize = 6;
+    const DOS_TRACE_INITIAL_EFFECT_FRAMES_REMAINING: u8 = 9;
+    const DOS_TRACE_FINAL_EFFECT_SEQUENCE: usize = 2;
+    const DOS_TRACE_FINAL_EFFECT_FRAME: usize = 8;
+    const DOS_TRACE_INITIAL_RANDOM_SEED: u16 = 10_023;
+    const DOS_TRACE_INITIAL_RANDOM_MIX_LOW: u8 = 151;
+    const DOS_TRACE_INITIAL_RANDOM_MIX_HIGH: u8 = 105;
+    const DOS_TRACE_INITIAL_RANDOM_COUNTER: u8 = 202;
+    const DOS_TRACE_FINAL_RANDOM_MIX_LOW: u8 = 161;
+    const DOS_TRACE_FINAL_RANDOM_MIX_HIGH: u8 = 152;
+    const DOS_TRACE_FINAL_RANDOM_COUNTER: u8 = 208;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(PathBuf);
@@ -1743,6 +1757,60 @@ mod tests {
 
         assert_ne!(sprite_layer.pixels(), sprite_before);
         assert_eq!(runtime.front_buffer().pixels(), front_before);
+    }
+
+    #[test]
+    fn name_area_effect_matches_the_dos_trace_after_an_exact_game_frame_interval() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        runtime.name_area_effect = NameAreaEffectState {
+            active: true,
+            restart_requested: false,
+            sequence_index: DOS_TRACE_INITIAL_EFFECT_SEQUENCE,
+            frame_index: DOS_TRACE_INITIAL_EFFECT_FRAME,
+            frames_remaining: DOS_TRACE_INITIAL_EFFECT_FRAMES_REMAINING,
+            operation:
+                commander_blood_formats::name_area_effect::NameAreaEffectOperation::CycleForward,
+        };
+        let mut random = BloodPrng {
+            seed: DOS_TRACE_INITIAL_RANDOM_SEED,
+            mix_low: DOS_TRACE_INITIAL_RANDOM_MIX_LOW,
+            mix_high: DOS_TRACE_INITIAL_RANDOM_MIX_HIGH,
+            counter: DOS_TRACE_INITIAL_RANDOM_COUNTER,
+        };
+        let mut framebuffer = IndexedFramebuffer::new();
+
+        for _ in usize::MIN..DOS_TRACE_INTERVAL_GAME_FRAMES {
+            runtime
+                .advance_name_area_effect_on(framebuffer.pixels_mut(), &mut |count| {
+                    usize::from(
+                        random.next(
+                            u16::try_from(count)
+                                .expect("the shipped name-area sequence count fits a word"),
+                        ),
+                    )
+                })
+                .unwrap();
+        }
+
+        assert_eq!(
+            runtime.name_area_effect,
+            NameAreaEffectState {
+                active: true,
+                restart_requested: false,
+                sequence_index: DOS_TRACE_FINAL_EFFECT_SEQUENCE,
+                frame_index: DOS_TRACE_FINAL_EFFECT_FRAME,
+                frames_remaining: u8::MIN,
+                operation:
+                    commander_blood_formats::name_area_effect::NameAreaEffectOperation::FadeBackward,
+            }
+        );
+        assert_eq!(random.seed, DOS_TRACE_INITIAL_RANDOM_SEED);
+        assert_eq!(random.mix_low, DOS_TRACE_FINAL_RANDOM_MIX_LOW);
+        assert_eq!(random.mix_high, DOS_TRACE_FINAL_RANDOM_MIX_HIGH);
+        assert_eq!(random.counter, DOS_TRACE_FINAL_RANDOM_COUNTER);
     }
 
     fn original_game_data() -> Option<OriginalGameData> {

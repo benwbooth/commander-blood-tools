@@ -11,11 +11,20 @@ sys.path.insert(0, str(Path(__file__).parent))
 import compare_port_runtime_traces as compare_port
 
 
-def record(action_index: int, frame: int = 45) -> dict:
+def record(
+    action_index: int, frame: int = 45, game_frame_sequence: int | None = None
+) -> dict:
     return {
         "schema": 1,
         "action_index": action_index,
         "action": "wait 10" if action_index else None,
+        "clock": {
+            "game_frame_sequence": (
+                action_index * 10
+                if game_frame_sequence is None
+                else game_frame_sequence
+            )
+        },
         "guest_end": None,
         "liveness": "progress",
         "semantic": {
@@ -38,6 +47,20 @@ def record(action_index: int, frame: int = 45) -> dict:
                 "waiting_for_input": False,
             },
             "subtitle": "WAIT COMMANDER ...",
+            "random": {
+                "seed": 10023,
+                "mix_low": action_index,
+                "mix_high": action_index + 1,
+                "counter": action_index + 2,
+            },
+            "name_area_effect": {
+                "active": True,
+                "restart_requested": False,
+                "sequence_index": 7,
+                "frame_index": action_index,
+                "operation": 2,
+                "frames_remaining": 9,
+            },
             "video": {
                 "screen_hash": f"screen-{action_index}",
                 "logical_display_hash": f"screen-{action_index}",
@@ -219,6 +242,99 @@ class PortTraceComparisonTests(unittest.TestCase):
         self.assertEqual(
             report["first_divergence"]["differences"][0]["reason"],
             "authoritative indexed frame lacks a logical RGB oracle hash",
+        )
+
+    def test_reports_temporal_divergence_when_game_frame_deltas_align(self) -> None:
+        original = [record(0), record(1)]
+        modern = copy.deepcopy(original)
+        modern[1]["semantic"]["random"]["counter"] = 99
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_game_frame_clock=True,
+        )
+
+        self.assertEqual(report["status"], "diverged")
+        self.assertEqual(report["game_frame_comparisons"], 2)
+        self.assertEqual(
+            report["first_divergence"]["differences"][0]["path"],
+            "semantic.random.counter",
+        )
+
+    def test_skips_temporal_state_when_game_frame_deltas_are_unaligned(self) -> None:
+        original = [record(0), record(1)]
+        modern = copy.deepcopy(original)
+        modern[1]["clock"]["game_frame_sequence"] = 11
+        modern[1]["semantic"]["random"]["mix_low"] = 91
+        modern[1]["semantic"]["name_area_effect"]["frame_index"] = 4
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_game_frame_clock=True,
+        )
+
+        self.assertEqual(report["status"], "equivalent")
+        self.assertEqual(report["game_frame_comparisons"], 2)
+        self.assertEqual(report["game_frame_unaligned_records"], 1)
+        self.assertEqual(
+            report["game_frame_deltas"],
+            [
+                {"action_index": 0, "original": 0, "modern": 0, "status": "aligned"},
+                {
+                    "action_index": 1,
+                    "original": 10,
+                    "modern": 11,
+                    "status": "unaligned",
+                },
+            ],
+        )
+
+    def test_non_temporal_state_still_compares_when_game_frames_are_unaligned(self) -> None:
+        original = [record(0), record(1)]
+        modern = copy.deepcopy(original)
+        modern[1]["clock"]["game_frame_sequence"] = 11
+        modern[1]["semantic"]["name_area_effect"]["active"] = False
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_game_frame_clock=True,
+        )
+
+        self.assertEqual(report["status"], "diverged")
+        self.assertEqual(report["game_frame_unaligned_records"], 1)
+        self.assertEqual(
+            report["first_divergence"]["differences"][0]["path"],
+            "semantic.name_area_effect.active",
+        )
+
+    def test_required_game_frame_clock_rejects_an_old_trace(self) -> None:
+        original = [record(0), record(1)]
+        modern = copy.deepcopy(original)
+        del modern[1]["clock"]
+
+        report = compare_port.compare_port_records(
+            original,
+            modern,
+            start_action=0,
+            bridge_frame_tolerance=2,
+            require_game_frame_clock=True,
+        )
+
+        self.assertEqual(report["status"], "diverged")
+        self.assertEqual(report["game_frame_missing_records"], 1)
+        self.assertEqual(report["game_frame_deltas"][1]["status"], "missing")
+        self.assertEqual(
+            report["first_divergence"]["differences"][0]["reason"],
+            "action delta lacks an exact game-frame clock",
         )
 
 

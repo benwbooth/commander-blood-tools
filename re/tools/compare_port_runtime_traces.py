@@ -21,16 +21,18 @@ EXACT_PATHS = (
     "presentation.text_display_active",
     "presentation.waiting_for_input",
     "random.seed",
+    "name_area_effect.active",
+    "name_area_effect.restart_requested",
+    "subtitle",
+)
+TEMPORAL_EXACT_PATHS = (
     "random.mix_low",
     "random.mix_high",
     "random.counter",
-    "name_area_effect.active",
-    "name_area_effect.restart_requested",
     "name_area_effect.sequence_index",
     "name_area_effect.frame_index",
     "name_area_effect.operation",
     "name_area_effect.frames_remaining",
-    "subtitle",
 )
 OPTIONAL_EXACT_PATHS = frozenset(
     (
@@ -117,6 +119,31 @@ def presentation_sequence(video: dict[str, Any]) -> int | None:
     return int(sequence) if sequence is not None else None
 
 
+def game_frame_sequence(record: dict[str, Any]) -> int | None:
+    clock = record.get("clock")
+    if not isinstance(clock, dict):
+        return None
+    sequence = clock.get("game_frame_sequence")
+    if not isinstance(sequence, int) or isinstance(sequence, bool):
+        return None
+    return sequence
+
+
+def game_frame_delta(
+    records_by_action: dict[int, dict[str, Any]], action_index: int
+) -> int | None:
+    current = game_frame_sequence(records_by_action[action_index])
+    if current is None:
+        return None
+    previous_indices = [index for index in records_by_action if index < action_index]
+    if not previous_indices:
+        return current
+    previous = game_frame_sequence(records_by_action[max(previous_indices)])
+    if previous is None:
+        return None
+    return current - previous
+
+
 def compare_port_records(
     original: list[dict[str, Any]],
     modern: list[dict[str, Any]],
@@ -124,6 +151,7 @@ def compare_port_records(
     start_action: int,
     bridge_frame_tolerance: int,
     require_indexed_rgb: bool = False,
+    require_game_frame_clock: bool = False,
 ) -> dict[str, Any]:
     original_by_action = {record["action_index"]: record for record in original}
     modern_by_action = {record["action_index"]: record for record in modern}
@@ -142,6 +170,10 @@ def compare_port_records(
         "indexed_display_rgb_comparisons": 0,
         "indexed_display_rgb_missing_records": 0,
         "indexed_display_in_flight_records": 0,
+        "game_frame_comparisons": 0,
+        "game_frame_missing_records": 0,
+        "game_frame_unaligned_records": 0,
+        "game_frame_deltas": [],
         "first_divergence": None,
         "render_observations": render_observations(modern, start_action),
     }
@@ -184,7 +216,51 @@ def compare_port_records(
                             "modern": actual.get("liveness"),
                         }
                     )
-            for path in EXACT_PATHS:
+            original_game_frame_delta = game_frame_delta(
+                original_by_action, action_index
+            )
+            modern_game_frame_delta = game_frame_delta(modern_by_action, action_index)
+            temporal_paths = TEMPORAL_EXACT_PATHS
+            if (
+                original_game_frame_delta is None
+                or modern_game_frame_delta is None
+            ):
+                report["game_frame_missing_records"] += 1
+                report["game_frame_deltas"].append(
+                    {
+                        "action_index": action_index,
+                        "original": original_game_frame_delta,
+                        "modern": modern_game_frame_delta,
+                        "status": "missing",
+                    }
+                )
+                if require_game_frame_clock:
+                    differences.append(
+                        {
+                            "path": "clock.game_frame_sequence",
+                            "original": original_game_frame_delta,
+                            "modern": modern_game_frame_delta,
+                            "reason": "action delta lacks an exact game-frame clock",
+                        }
+                    )
+                    temporal_paths = ()
+            else:
+                report["game_frame_comparisons"] += 1
+                game_frames_aligned = (
+                    original_game_frame_delta == modern_game_frame_delta
+                )
+                report["game_frame_deltas"].append(
+                    {
+                        "action_index": action_index,
+                        "original": original_game_frame_delta,
+                        "modern": modern_game_frame_delta,
+                        "status": "aligned" if game_frames_aligned else "unaligned",
+                    }
+                )
+                if not game_frames_aligned:
+                    report["game_frame_unaligned_records"] += 1
+                    temporal_paths = ()
+            for path in (*EXACT_PATHS, *temporal_paths):
                 if path in OPTIONAL_EXACT_PATHS and (
                     not has_value(expected, path) or not has_value(actual, path)
                 ):
@@ -353,6 +429,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="fail when an aligned indexed frame lacks a logical or stable display RGB hash",
     )
+    parser.add_argument(
+        "--require-game-frame-clock",
+        action="store_true",
+        help="fail when an action delta lacks an exact native or Rust game-frame clock",
+    )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report-only", action="store_true")
     return parser.parse_args()
@@ -366,6 +447,7 @@ def main() -> int:
         start_action=args.start_action,
         bridge_frame_tolerance=args.bridge_frame_tolerance,
         require_indexed_rgb=args.require_indexed_rgb,
+        require_game_frame_clock=args.require_game_frame_clock,
     )
     rendered = json.dumps(report, indent=2) + "\n"
     if args.output:
