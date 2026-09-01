@@ -76,6 +76,8 @@ cargo test \
   -- \
   --test-threads=1
 
+re/tools/run_startup_phone_temporal_oracle.sh
+
 COVERAGE_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/cblood-production-coverage.XXXXXX")
 printf 'Instrumenting all production campaigns under %s\n' "$COVERAGE_ROOT"
 CARGO_TARGET_DIR="$COVERAGE_ROOT/target" \

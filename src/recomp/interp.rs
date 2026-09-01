@@ -63,6 +63,11 @@ pub struct Cpu {
     /// its (first_step, hit_count) is recorded in `exec_hits`. Tiny set → cheap linear scan.
     pub exec_watch: Vec<(u16, u16)>,
     pub exec_hits: Vec<(u16, u16, u64, u64)>,
+    /// Stop before executing a watched instruction. The resume marker prevents
+    /// the same boundary from being counted twice when execution continues.
+    exec_watch_break_enabled: bool,
+    exec_watch_break_pending: Option<(u16, u16)>,
+    exec_watch_break_resume: Option<(u16, u16)>,
     /// Linear-address execution watch (`cs*16+ip`), so a routine is caught regardless of
     /// which cs:ip decomposition reaches it — resolves segment-relocation ambiguity that a
     /// plain (cs,ip) watch can miss. Each hit records (linear, first_step, count).
@@ -312,10 +317,23 @@ impl Cpu {
             si_trace_log: Vec::new(),
             exec_watch: Vec::new(),
             exec_hits: Vec::new(),
+            exec_watch_break_enabled: false,
+            exec_watch_break_pending: None,
+            exec_watch_break_resume: None,
             exec_watch_linear: Vec::new(),
             exec_watch_dump_regs: false,
             exec_hits_linear: Vec::new(),
         }
+    }
+
+    /// Enable exact stops before instructions listed in [`Self::exec_watch`].
+    pub fn set_exec_watch_break(&mut self, enabled: bool) {
+        self.exec_watch_break_enabled = enabled;
+    }
+
+    /// Take the exact execution boundary that stopped the previous run.
+    pub fn take_exec_watch_break(&mut self) -> Option<(u16, u16)> {
+        self.exec_watch_break_pending.take()
     }
 
     /// Run until an [`Exit`] or `max_steps` instructions.
@@ -331,10 +349,19 @@ impl Cpu {
             if !self.exec_watch.is_empty() {
                 let (cs, ip) = (self.cs, self.ip);
                 if self.exec_watch.iter().any(|&(c, i)| c == cs && i == ip) {
-                    let step = self.steps;
-                    match self.exec_hits.iter_mut().find(|h| h.0 == cs && h.1 == ip) {
-                        Some(h) => h.3 += 1,
-                        None => self.exec_hits.push((cs, ip, step, 1)),
+                    if self.exec_watch_break_resume == Some((cs, ip)) {
+                        self.exec_watch_break_resume = None;
+                    } else {
+                        let step = self.steps;
+                        match self.exec_hits.iter_mut().find(|h| h.0 == cs && h.1 == ip) {
+                            Some(h) => h.3 += 1,
+                            None => self.exec_hits.push((cs, ip, step, 1)),
+                        }
+                        if self.exec_watch_break_enabled {
+                            self.exec_watch_break_pending = Some((cs, ip));
+                            self.exec_watch_break_resume = Some((cs, ip));
+                            return Exit::StepLimit;
+                        }
                     }
                 }
             }
@@ -2191,5 +2218,39 @@ impl Cpu {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn execution_watch_break_stops_once_before_each_boundary() {
+        let mut machine = Machine::new();
+        machine.mem[0] = 0x40; // inc ax
+        machine.mem[1] = 0xeb; // jmp short -3
+        machine.mem[2] = 0xfd;
+        let mut cpu = Cpu::new(0, 0);
+        cpu.exec_watch.push((0, 0));
+        cpu.set_exec_watch_break(true);
+
+        assert_eq!(cpu.run(&mut machine, 8), Exit::StepLimit);
+        assert_eq!(cpu.take_exec_watch_break(), Some((0, 0)));
+        assert_eq!(cpu.steps, 0);
+        assert_eq!(machine.regs.ax(), 0);
+        assert_eq!(cpu.exec_hits, vec![(0, 0, 0, 1)]);
+
+        assert_eq!(cpu.run(&mut machine, 2), Exit::StepLimit);
+        assert_eq!(cpu.take_exec_watch_break(), None);
+        assert_eq!(cpu.steps, 2);
+        assert_eq!(machine.regs.ax(), 1);
+        assert_eq!((cpu.cs, cpu.ip), (0, 0));
+        assert_eq!(cpu.exec_hits, vec![(0, 0, 0, 1)]);
+
+        assert_eq!(cpu.run(&mut machine, 8), Exit::StepLimit);
+        assert_eq!(cpu.take_exec_watch_break(), Some((0, 0)));
+        assert_eq!(cpu.steps, 2);
+        assert_eq!(cpu.exec_hits, vec![(0, 0, 0, 2)]);
     }
 }

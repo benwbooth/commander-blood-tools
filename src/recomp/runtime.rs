@@ -60,6 +60,8 @@ pub enum RunEnd {
     Exited(u8),
     /// The step budget given to `run` was consumed (normal for incremental boots).
     StepBudget,
+    /// Execution reached one exact diagnostic watch boundary before executing it.
+    ExecWatch { cs: u16, ip: u16 },
     /// Something the runtime can't service yet — the message carries full context to fix it.
     Fatal(String),
 }
@@ -1114,7 +1116,11 @@ impl Runtime {
             let budget = (max_steps - self.cpu.steps).min(4096);
             self.exit_counts[4] += 1;
             match self.cpu.run(&mut self.m, budget) {
-                Exit::StepLimit => {}
+                Exit::StepLimit => {
+                    if let Some((cs, ip)) = self.cpu.take_exec_watch_break() {
+                        return RunEnd::ExecWatch { cs, ip };
+                    }
+                }
                 Exit::Int { vector } => {
                     self.exit_counts[2] += 1;
                     self.cpu.deliver_int(&mut self.m, vector)
@@ -1236,7 +1242,7 @@ impl Runtime {
         // Fast-forward past boot (normal run, planar VGA).
         while self.exit_code.is_none() && self.cpu.steps < skip {
             match self.run(skip) {
-                RunEnd::StepBudget | RunEnd::Exited(_) => break,
+                RunEnd::StepBudget | RunEnd::ExecWatch { .. } | RunEnd::Exited(_) => break,
                 RunEnd::Fatal(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
             }
         }

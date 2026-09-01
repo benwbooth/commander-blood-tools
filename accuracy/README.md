@@ -189,6 +189,20 @@ can otherwise complete fewer loops than the Rust scenario's calibrated wait.
 Independent true-color bridge and 3D layers remain temporal-stasis observations
 because they do not have a byte-identical DOS VGA representation.
 
+The fail-closed temporal oracle uses `frames` to stop both implementations at
+the recovered end of `bloodprg_main` and `frameclick` to hold the phone orb for
+one complete game loop before five released loops. It compares all 47 aligned
+checkpoints across presentation ownership, PRNG state, and every transient
+name-area effect frame:
+
+```sh
+nix develop -c re/tools/run_startup_phone_temporal_oracle.sh
+```
+
+Unlike the legacy `click` action, `frameclick` does not estimate DOS progress
+from an instruction budget. It requires a preceding `frames` action so the
+button press begins at an exact shared game-loop boundary.
+
 The complete startup-phone scenario also has an invariant verifier for the
 answer flick, Izwalito inset animation, authored word choice, and SCRIPT2
 handoff:

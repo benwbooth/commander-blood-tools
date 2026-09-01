@@ -36,6 +36,9 @@ fn run_tick(rt: &mut Runtime) -> Result<bool, String> {
     let target = rt.cpu.steps + STEPS_PER_SECOND * 55 / 1000;
     match rt.run(target) {
         RunEnd::StepBudget => Ok(true),
+        RunEnd::ExecWatch { cs, ip } => Err(format!(
+            "unexpected diagnostic execution watch at {cs:04x}:{ip:04x}"
+        )),
         RunEnd::Exited(c) => {
             eprintln!("game exited with code {c}");
             Ok(false)

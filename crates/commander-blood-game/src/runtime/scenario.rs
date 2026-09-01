@@ -102,6 +102,9 @@ enum RuntimeScenarioActionKind {
     Wait {
         frames: u16,
     },
+    ExactGameFrames {
+        frames: u16,
+    },
     Park {
         edge_x: i16,
         target_frame: u16,
@@ -271,6 +274,12 @@ impl RuntimeScenarioDriver {
             RuntimeScenarioActionKind::Wait { frames } => {
                 self.action_frame + 1 >= self.wait_frame_count(cadence, *frames)
             }
+            RuntimeScenarioActionKind::ExactGameFrames { frames } => {
+                if cadence != RuntimeScenarioCadence::GameLoop {
+                    bail!("frames action requires ordinary game-loop cadence");
+                }
+                self.action_frame + 1 >= *frames
+            }
             RuntimeScenarioActionKind::Park {
                 edge_x,
                 target_frame,
@@ -405,7 +414,7 @@ fn parse_action(line: &str, path: &Path, line_number: usize) -> Result<RuntimeSc
         Some("motion") => RuntimeScenarioActionKind::Motion {
             relative: relative_motion(&fields)?,
         },
-        Some("click" | "sclick") => RuntimeScenarioActionKind::Click {
+        Some("click" | "sclick" | "frameclick") => RuntimeScenarioActionKind::Click {
             position: position(&fields)?,
         },
         Some("contact") => {
@@ -457,6 +466,18 @@ fn parse_action(line: &str, path: &Path, line_number: usize) -> Result<RuntimeSc
                 return Err(fail("wait frame count must be positive"));
             }
             RuntimeScenarioActionKind::Wait { frames }
+        }
+        Some("frames") => {
+            if fields.len() != 2 {
+                return Err(fail("frames action requires one game-frame count"));
+            }
+            let frames = fields[1]
+                .parse::<u16>()
+                .map_err(|_| fail("invalid game-frame count"))?;
+            if frames == u16::MIN {
+                return Err(fail("game-frame count must be positive"));
+            }
+            RuntimeScenarioActionKind::ExactGameFrames { frames }
         }
         Some("park") => {
             if fields.len() != 3 {
@@ -583,6 +604,17 @@ mod tests {
     }
 
     #[test]
+    fn frame_synchronized_click_uses_the_same_six_frame_input_shape() {
+        let action = parse_action("frameclick 125 118", Path::new("scenario.tsv"), 1).unwrap();
+        assert_eq!(
+            action.kind,
+            RuntimeScenarioActionKind::Click {
+                position: [125, 118],
+            }
+        );
+    }
+
+    #[test]
     fn unknown_commands_are_errors_instead_of_silent_no_ops() {
         let error = parse_action("poke 1234 ff", Path::new("scenario.tsv"), 7).unwrap_err();
         assert!(error.to_string().contains("scenario.tsv:7"));
@@ -702,6 +734,63 @@ mod tests {
         assert_eq!(driver.action_index, 1);
         assert_eq!(driver.game_frame_count, u64::from(expected_frames));
         assert_eq!(driver.presentation_frame_count, 0);
+        let _ = std::fs::remove_file(trace_path);
+    }
+
+    #[test]
+    fn exact_frame_action_uses_only_the_ordinary_game_loop_clock() {
+        let action = parse_action("frames 3", Path::new("scenario.tsv"), 1).unwrap();
+        assert_eq!(
+            action.kind,
+            RuntimeScenarioActionKind::ExactGameFrames { frames: 3 }
+        );
+        let trace_path = std::env::temp_dir().join(format!(
+            "commander-blood-exact-frames-{}-{}.jsonl",
+            std::process::id(),
+            std::thread::current().name().unwrap_or("exact-frames")
+        ));
+        let mut driver = RuntimeScenarioDriver {
+            scenario_path: PathBuf::from("scenario.tsv"),
+            actions: vec![action.clone()],
+            trace: BufWriter::new(File::create(&trace_path).unwrap()),
+            action_index: 0,
+            action_frame: 0,
+            pending_trace: None,
+            initial_trace_written: false,
+            frame_count: 0,
+            game_frame_count: 0,
+            presentation_frame_count: 0,
+        };
+
+        for completed_frames in 1..=3 {
+            driver
+                .advance(None, RuntimeScenarioCadence::GameLoop)
+                .unwrap();
+            assert_eq!(driver.game_frame_count, completed_frames);
+            assert_eq!(driver.action_index, usize::from(completed_frames == 3));
+        }
+        assert_eq!(driver.presentation_frame_count, 0);
+
+        let mut blocking_driver = RuntimeScenarioDriver {
+            scenario_path: PathBuf::from("scenario.tsv"),
+            actions: vec![action],
+            trace: BufWriter::new(File::create(&trace_path).unwrap()),
+            action_index: 0,
+            action_frame: 0,
+            pending_trace: None,
+            initial_trace_written: false,
+            frame_count: 0,
+            game_frame_count: 0,
+            presentation_frame_count: 0,
+        };
+        assert!(
+            blocking_driver
+                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+                .unwrap_err()
+                .to_string()
+                .contains("ordinary game-loop cadence")
+        );
+        assert!(parse_action("frames 0", Path::new("scenario.tsv"), 2).is_err());
         let _ = std::fs::remove_file(trace_path);
     }
 }

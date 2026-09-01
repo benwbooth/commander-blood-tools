@@ -19,6 +19,9 @@ const PRNG_MIX_HIGH_OFFSET: u32 = 0x0af1;
 const PRNG_COUNTER_OFFSET: u32 = 0x0af2;
 const BLOODPRG_MAIN_RELATIVE_SEGMENT: u16 = 0x008b;
 const BLOODPRG_MAIN_FRAME_BOUNDARY_IP: u16 = 0x0428;
+const EXACT_GAME_FRAME_STEP_GUARD: u64 = 50_000_000;
+const EXACT_CLICK_PRESSED_GAME_FRAMES: u64 = 1;
+const EXACT_CLICK_RELEASED_GAME_FRAMES: u64 = 5;
 const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
 const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
 const VGA_PALETTE_BYTE_COUNT: usize = PALETTE_ENTRY_COUNT * RGB_COMPONENT_COUNT;
@@ -332,9 +335,49 @@ fn run_trace_target(rt: &mut Runtime, target: u64, guest_end: &mut Option<String
     if guest_end.is_some() {
         return;
     }
-    if let end @ (RunEnd::Exited(_) | RunEnd::Fatal(_)) = rt.run(target) {
+    if let end @ (RunEnd::Exited(_) | RunEnd::ExecWatch { .. } | RunEnd::Fatal(_)) = rt.run(target)
+    {
         *guest_end = Some(format!("{end:?}"));
     }
+}
+
+fn run_exact_game_frames(
+    rt: &mut Runtime,
+    watch: (u16, u16),
+    frames: u64,
+    step_guard: u64,
+    guest_end: &mut Option<String>,
+) {
+    if guest_end.is_some() {
+        return;
+    }
+    let target_sequence = main_game_frame_sequence(rt, watch).saturating_add(frames);
+    rt.cpu.set_exec_watch_break(true);
+    while main_game_frame_sequence(rt, watch) < target_sequence {
+        let deadline = rt.cpu.steps.saturating_add(step_guard);
+        match rt.run(deadline) {
+            RunEnd::ExecWatch { cs, ip } if (cs, ip) == watch => {}
+            RunEnd::ExecWatch { cs, ip } => {
+                *guest_end = Some(format!(
+                    "UnexpectedExecWatch({cs:04x}:{ip:04x}, expected {:04x}:{:04x})",
+                    watch.0, watch.1
+                ));
+                break;
+            }
+            RunEnd::StepBudget => {
+                *guest_end = Some(format!(
+                    "ExactGameFrameTimeout(sequence={}, target={target_sequence})",
+                    main_game_frame_sequence(rt, watch)
+                ));
+                break;
+            }
+            end @ (RunEnd::Exited(_) | RunEnd::Fatal(_)) => {
+                *guest_end = Some(format!("{end:?}"));
+                break;
+            }
+        }
+    }
+    rt.cpu.set_exec_watch_break(false);
 }
 
 fn write_trace_record(
@@ -5165,7 +5208,8 @@ fn main() {
         // write one settled frame (PPM + raw indices) per step into boot_frames/vs_*.
         // The port runs the same scenario via `verify_port`; tools/verify_compare.py
         // scores every step. Scenario line format (TSV):
-        //   move <x> <y> | click <x> <y> | key <scancode> | wait <frames>
+        //   move <x> <y> | click <x> <y> | key <scancode> | wait <units>
+        //   frames <game-frame-count>
         // Coordinates are SCREEN coords; the ring correction is applied here.
         // VERIFYSTATE overrides the resume state (default: the clean hub).
         let state_path =
@@ -5290,7 +5334,9 @@ fn main() {
         let text = std::fs::read_to_string(&scenario).expect("scenario file");
         let scaled_steps = |steps: u64| steps.saturating_mul(cpu_multiplier);
         let settle = scaled_steps(1_500_000);
+        let exact_game_frame_step_guard = scaled_steps(EXACT_GAME_FRAME_STEP_GUARD);
         let mut step = 0usize;
+        let mut at_exact_game_frame_boundary = false;
         for line in text.lines() {
             let toks: Vec<&str> = line.split_whitespace().collect();
             if toks.is_empty() || toks[0].starts_with('#') {
@@ -5298,7 +5344,11 @@ fn main() {
             }
             let before_progress = presentation_progress_key(&rt, g);
             let waiting_before = word_choice_waiting_for_input(&rt, g);
-            let input_action = matches!(toks[0], "click" | "sclick" | "key" | "drag" | "hold");
+            let input_action = matches!(
+                toks[0],
+                "click" | "sclick" | "frameclick" | "key" | "drag" | "hold"
+            );
+            let settle_after_action = !matches!(toks[0], "frames" | "frameclick");
             match toks[0] {
                 "move" => {
                     let (sx, sy): (i32, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
@@ -5328,6 +5378,35 @@ fn main() {
                     let target = rt.cpu.steps + scaled_steps(300_000);
                     run_trace_target(&mut rt, target, &mut guest_end);
                     rt.mouse_release(0);
+                }
+                // frameclick <x> <y>: press for one complete recovered game loop,
+                // release for five, and stop at the same end-of-loop boundary as
+                // the Rust scenario click. A preceding `frames` action is required
+                // so the press cannot begin partway through a DOS frame.
+                "frameclick" => {
+                    assert!(
+                        at_exact_game_frame_boundary,
+                        "frameclick requires a preceding frames action"
+                    );
+                    let (sx, sy): (i32, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
+                    let ring = (sx + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(ring, sy);
+                    rt.mouse_press(0);
+                    run_exact_game_frames(
+                        &mut rt,
+                        main_game_frame_watch,
+                        EXACT_CLICK_PRESSED_GAME_FRAMES,
+                        exact_game_frame_step_guard,
+                        &mut guest_end,
+                    );
+                    rt.mouse_release(0);
+                    run_exact_game_frames(
+                        &mut rt,
+                        main_game_frame_watch,
+                        EXACT_CLICK_RELEASED_GAME_FRAMES,
+                        exact_game_frame_step_guard,
+                        &mut guest_end,
+                    );
                 }
                 "key" => {
                     // key <scancode> [ascii] — the ASCII byte reaches BIOS-buffer
@@ -5371,6 +5450,19 @@ fn main() {
                         let target = rt.cpu.steps + scaled_steps(frames * 1_850_000);
                         run_trace_target(&mut rt, target, &mut guest_end);
                     }
+                }
+                // frames <count>: stop at the exact recovered end-of-main-loop
+                // boundary instead of estimating elapsed frames from CPU steps.
+                "frames" => {
+                    let frames: u64 = toks[1].parse().unwrap();
+                    assert!(frames != u64::MIN, "frames action must be positive");
+                    run_exact_game_frames(
+                        &mut rt,
+                        main_game_frame_watch,
+                        frames,
+                        exact_game_frame_step_guard,
+                        &mut guest_end,
+                    );
                 }
                 // poke <gs-off-hex> <byte-hex>: write one byte into the engine's
                 // DS globals — oracle drive tooling (e.g. arm the pending-C4
@@ -5474,8 +5566,12 @@ fn main() {
                 }
                 _ => {}
             }
-            let target = rt.cpu.steps + settle;
-            run_trace_target(&mut rt, target, &mut guest_end);
+            if settle_after_action {
+                let target = rt.cpu.steps + settle;
+                run_trace_target(&mut rt, target, &mut guest_end);
+            }
+            at_exact_game_frame_boundary =
+                matches!(toks[0], "frames" | "frameclick") && guest_end.is_none();
             // DSDUMP=<off>,<off>...: print gs bytes per step (pose, flags...).
             if let Ok(spec) = std::env::var("DSDUMP") {
                 let mut line = format!("DS step {step}:");
