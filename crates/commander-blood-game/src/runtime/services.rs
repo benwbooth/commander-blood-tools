@@ -1785,6 +1785,11 @@ impl<'window> ModernGameServices<'window> {
         self.set_alien_overlay_flags(true, true)
     }
 
+    /// Satisfy one binary-derived D1 entry immediately before a scenario click.
+    pub(super) fn prepare_contact_for_scenario(&mut self, procedure_offset: usize) -> Result<()> {
+        super::contact_scenario::prepare_contact_for_scenario(&mut self.runtime, procedure_offset)
+    }
+
     pub(super) fn read_alien_timing_scale(&self) -> Result<u16> {
         let profile = self
             .runtime

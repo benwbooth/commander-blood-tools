@@ -292,6 +292,9 @@ impl<'window> RuntimePlatformHost<'window> {
         services: &mut ModernGameServices<'window>,
         input: RuntimeScenarioFrameInput,
     ) -> Result<()> {
+        if let Some(procedure_offset) = input.contact_procedure_offset {
+            services.prepare_contact_for_scenario(procedure_offset)?;
+        }
         if let Some(target) = input.teleport_target.as_deref() {
             services.teleport_arche_to_navigation_target(target)?;
         }

@@ -1,6 +1,10 @@
 use std::collections::BTreeSet;
 use std::convert::Infallible;
+use std::mem::size_of;
 use std::ops::Range;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bas::ScriptBasInstruction;
@@ -15,16 +19,17 @@ use commander_blood_formats::script::{
 };
 use commander_blood_game::native::bloodprg::{
     GameLifecycleState, GameSceneLink, GameTimerContext, GameTimerState, IndexedGamePalette,
-    LoadedScriptProfile, OriginalSaveGame, PresentationPresentPolicy, PresentationRequestFlags,
-    PresentationResourceId, PresentationSceneDescriptor, PresentationSceneDispatchContext,
-    PresentationSceneDispatchHost, PresentationSceneDispatchOutcome,
-    PresentationSceneDispatchState, PresentationSceneQueueService, PresentationSceneSource,
-    ResourceLoadStatus, SCRIPT_PROFILE_RESOURCE_COUNT, SHIP_HUD_PALETTE_COLOR_COUNT,
-    ScriptActionRecord, ScriptClock, ScriptEnvironmentActivity, ScriptFieldSelector,
-    ScriptObjectFlag, ScriptProfileId, ScriptProfileResourceKind,
-    ScriptRecordStateNavigationContext, SequenceRequestContext, advance_game_timer_tick,
-    dispatch_presentation_scene, object_has_flag, presentation_line_for_text_selector,
-    script_field_offset, set_object_flag, update_game_presentation_ownership,
+    LoadedScriptProfile, OriginalSaveGame, OriginalSaveSlotDirectory, PresentationPresentPolicy,
+    PresentationRequestFlags, PresentationResourceId, PresentationSceneDescriptor,
+    PresentationSceneDispatchContext, PresentationSceneDispatchHost,
+    PresentationSceneDispatchOutcome, PresentationSceneDispatchState,
+    PresentationSceneQueueService, PresentationSceneSource, ResourceLoadStatus,
+    SCRIPT_PROFILE_RESOURCE_COUNT, SHIP_HUD_PALETTE_COLOR_COUNT, ScriptActionRecord, ScriptClock,
+    ScriptEnvironmentActivity, ScriptFieldSelector, ScriptObjectFlag, ScriptProfileId,
+    ScriptProfileResourceKind, ScriptRecordStateNavigationContext, SequenceRequestContext,
+    advance_game_timer_tick, dispatch_presentation_scene, object_has_flag,
+    presentation_line_for_text_selector, script_field_offset, set_object_flag,
+    update_game_presentation_ownership,
 };
 use commander_blood_game::native::random::BloodPrng;
 use commander_blood_game::runtime::{
@@ -32,6 +37,7 @@ use commander_blood_game::runtime::{
     RuntimePresentationCatalog, RuntimeScriptSystem, initialize_and_restore_original_save_game,
 };
 use serde::Deserialize;
+use serde_json::Value;
 
 const CONTACT_MANIFEST_JSON: &str =
     include_str!("../../../re/vm/contact-manifest/contact-manifest.json");
@@ -47,6 +53,22 @@ const PROFILE_RESOURCE_NAME_PREFIX: &str = "script";
 const AUTHENTIC_SAVE_FILENAMES: &[&str] = &["GAME1.SAV", "game1.sav"];
 const ASSET_CACHE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
 const REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE: &str = "CBLOOD_REQUIRE_ACCURACY_TESTS";
+const DISPLAY_ENVIRONMENT_VARIABLES: [&str; 2] = ["DISPLAY", "WAYLAND_DISPLAY"];
+const PRODUCTION_CONTACT_SCENARIO: &str = "accuracy/scenarios/production_seeded_contact.tsv";
+const PRODUCTION_CONTACT_TRACE: &str = "production-seeded-contact.jsonl";
+const PRODUCTION_CONTACT_SCRIPT: &str = "SCRIPT2";
+const PRODUCTION_CONTACT_PROCEDURE: &str = "Cryomorn2";
+const PRODUCTION_CONTACT_PROCEDURE_OFFSET: usize = 0x6a7a;
+const PRODUCTION_CONTACT_NAME: &str = "Morning_Oil";
+const PRODUCTION_CONTACT_SELECTION_ACTION: &str = "contact 100 89 0x6a7a";
+const DOS_ORACLE_PACKED_SECOND: u8 = 39;
+const ORIGINAL_SAVE_DIRECTORY_RESOURCE: &[u8] = b"BLOOD.SAV";
+const PRODUCTION_CONTACT_DOS_SUBTITLES: [&str; 4] = [
+    "Ahhh... Morning Oil, veteran of the Great Croolis War, reporting for duty. I greet you and say thank you also...",
+    "You gave me back my life... Ah! I feel quite lubrified, I must say! Recharged batteries too, eh?",
+    "My gratitude knows no bounds, noble ones. And I just love your ship. Not a model I'm familiar with...",
+    "Ahh, if only you'd seen the SPIDER4000 I piloted... Such invigorating combat... BABOOOM... VRRRRRRR CHAKA CHAKA CHAKA...",
+];
 const PROCEDURE_ENTRY_BIAS: usize = 1;
 const OBJECT_FLAGS_WORD_INDEX: usize = 1;
 const CONTACT_COUNTDOWN_TIMER_INDEX: u8 = 1;
@@ -108,6 +130,7 @@ const ORACLE_CLOCK: ScriptClock = ScriptClock {
     day: 2,
     month: 1,
 };
+static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
 #[derive(Debug, Deserialize)]
 struct ContactManifest {
@@ -154,6 +177,33 @@ struct ContactEntrySnapshot {
     selected_line: Option<i8>,
     word_offsets: Vec<u16>,
     subtitle: String,
+}
+
+struct TemporaryRoot(PathBuf);
+
+impl TemporaryRoot {
+    fn create() -> Self {
+        let sequence = TEMPORARY_ROOT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-contact-campaign-{}-{sequence}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&path).unwrap();
+        Self(path)
+    }
+}
+
+impl Drop for TemporaryRoot {
+    fn drop(&mut self) {
+        if std::thread::panicking() {
+            eprintln!(
+                "preserving failed production contact campaign at {}",
+                self.0.display()
+            );
+            return;
+        }
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -638,6 +688,300 @@ fn every_recovered_contact_completes_every_authored_choice_path() {
         uncovered.is_empty() && uncovered_choices.is_empty(),
         "recovered contact paths left rendered COD texts uncovered: {uncovered:#?}; choice edges: {uncovered_choices:#?}"
     );
+}
+
+#[test]
+fn production_runtime_reaches_the_binary_derived_morning_oil_contact() {
+    let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON).unwrap();
+    let scenario = manifest
+        .procedures
+        .iter()
+        .find(|scenario| {
+            scenario.script == PRODUCTION_CONTACT_SCRIPT
+                && scenario.procedure == PRODUCTION_CONTACT_PROCEDURE
+                && scenario.procedure_offset == PRODUCTION_CONTACT_PROCEDURE_OFFSET
+        })
+        .expect("the contact census lost the selected production campaign");
+    let Some(asset_cache) = configured_process_asset_cache() else {
+        return;
+    };
+    if !DISPLAY_ENVIRONMENT_VARIABLES
+        .iter()
+        .any(|variable| std::env::var_os(variable).is_some())
+    {
+        assert!(
+            !accuracy_tests_are_required(),
+            "{REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE}=1 requires DISPLAY or WAYLAND_DISPLAY"
+        );
+        return;
+    }
+
+    let temporary = TemporaryRoot::create();
+    let writable = temporary.0.join("writable");
+    seed_manifest_contact_save(&manifest, scenario, &asset_cache, &writable);
+    let trace_path = temporary.0.join(PRODUCTION_CONTACT_TRACE);
+    let root = workspace_root();
+    let output = Command::new(env!("CARGO_BIN_EXE_commander-blood"))
+        .arg("--write-data")
+        .arg(&writable)
+        .arg("--scenario")
+        .arg(root.join(PRODUCTION_CONTACT_SCENARIO))
+        .arg("--trace")
+        .arg(&trace_path)
+        .arg("--oracle-packed-second")
+        .arg(DOS_ORACLE_PACKED_SECOND.to_string())
+        .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, &asset_cache)
+        .env("SDL_AUDIODRIVER", "dummy")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "production contact campaign failed:\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let records = load_process_trace(&trace_path);
+
+    let contacts = records
+        .iter()
+        .find(|record| record["semantic"]["bridge_console"]["selected"] == "contacts")
+        .expect("the seeded production campaign never opened CONTACTS");
+    assert_eq!(
+        contacts["semantic"]["bridge_console"]["choice_labels"],
+        serde_json::json!([PRODUCTION_CONTACT_NAME]),
+        "the original-format save did not expose only the selected aboard contact"
+    );
+    let selection_index = records
+        .iter()
+        .position(|record| record["action"] == PRODUCTION_CONTACT_SELECTION_ACTION)
+        .expect("the production trace omitted the contact selection click");
+    let contact_records = &records[selection_index..];
+    assert!(contact_records.iter().any(|record| {
+        record["semantic"]["descript"]["active_object"]["name"] == PRODUCTION_CONTACT_NAME
+    }));
+
+    let mut next_record = usize::MIN;
+    for dos_subtitle in PRODUCTION_CONTACT_DOS_SUBTITLES {
+        let expected = scenario
+            .texts
+            .iter()
+            .find(|text| normalize_text(text.subtitle.as_bytes()) == dos_subtitle)
+            .unwrap_or_else(|| {
+                panic!(
+                    "the binary-derived contact manifest does not contain DOS checkpoint {dos_subtitle:?}"
+                )
+            });
+        let relative_index = contact_records[next_record..]
+            .iter()
+            .position(|record| trace_rendered_contact_text(record).as_deref() == Some(dos_subtitle))
+            .unwrap_or_else(|| {
+                panic!(
+                    "production contact omitted rendered DOS text {dos_subtitle:?}; observed {:?}",
+                    contact_records
+                        .iter()
+                        .filter_map(trace_rendered_contact_text)
+                        .collect::<Vec<_>>()
+                )
+            });
+        let record_index = next_record + relative_index;
+        let record = &contact_records[record_index];
+        assert_eq!(
+            record["semantic"]["descript"]["active_object"]["name"], PRODUCTION_CONTACT_NAME,
+            "the rendered dialogue was published under the wrong DESCRIPT owner"
+        );
+        if !matches!(expected.voice_selector, u8::MIN | u8::MAX) {
+            let line_records = &contact_records[next_record..=record_index];
+            let expected_line = u64::from(expected.voice_selector) + 9;
+            assert!(
+                line_records.iter().any(|record| {
+                    record["semantic"]["vm"]["active_line"].as_u64() == Some(expected_line)
+                        && record["semantic"]["video"]["active_resource"].is_string()
+                }),
+                "voice selector {} did not reach authored presentation line {expected_line}",
+                expected.voice_selector
+            );
+            let prior_audio_event_count = contact_records
+                .get(next_record.saturating_sub(1))
+                .map_or(usize::MIN, streamed_dialogue_event_count);
+            assert!(
+                streamed_dialogue_event_count(record) > prior_audio_event_count,
+                "voice selector {} produced no new deterministic streamed-dialogue event",
+                expected.voice_selector
+            );
+            assert_eq!(
+                record["semantic"]["audio"]["streamed_sound_bank"],
+                record["semantic"]["descript"]["sound_bank"],
+                "dialogue audio did not use the active actor's DESCRIPT bank"
+            );
+        }
+        next_record = record_index + 1;
+    }
+}
+
+fn seed_manifest_contact_save(
+    manifest: &ContactManifest,
+    scenario: &ContactScenario,
+    asset_cache: &Path,
+    writable: &Path,
+) {
+    std::fs::create_dir_all(writable).unwrap();
+    let paths = OriginalGameDataPaths::from_root(asset_cache).unwrap();
+    let data = OriginalGameData::load_with_writable_root(paths, writable).unwrap();
+    let directory_name = BloodResourceName::new(ORIGINAL_SAVE_DIRECTORY_RESOURCE).unwrap();
+    let directory =
+        OriginalSaveSlotDirectory::decode(&data.resource_store().load(&directory_name).unwrap())
+            .unwrap();
+    std::fs::write(writable.join("BLOOD.SAV"), directory.encode()).unwrap();
+
+    let mut runtime = OriginalGameRuntime::new(data);
+    runtime.load_profile(profile_id(&scenario.script)).unwrap();
+    let selected_procedure = configure_contact_entry(manifest, scenario, &mut runtime);
+    let profile = runtime.current_profile_mut().unwrap();
+    let selected = object_at_source_offset(profile, scenario.contact_object_offset);
+    let fallback = profile
+        .builtins()
+        .archetype
+        .or(profile.builtins().player)
+        .expect("the selected profile has no non-aboard relation object");
+    let contact_objects = manifest
+        .procedures
+        .iter()
+        .filter(|candidate| candidate.script == scenario.script)
+        .map(|candidate| object_at_source_offset(profile, candidate.contact_object_offset))
+        .collect::<BTreeSet<_>>();
+    for object in contact_objects {
+        let kind = profile.state().object(object).unwrap().kind;
+        let field_offset = script_field_offset(kind, ScriptFieldSelector::HOLDER_OR_LOCATION)
+            .expect("a contact object has no holder/location field");
+        let field = profile
+            .state()
+            .object_word(object, field_offset / size_of::<u16>())
+            .expect("a contact holder/location field is outside VAR");
+        profile
+            .execution_parts()
+            .record_state
+            .record_fields
+            .set_value(
+                field,
+                if object == selected {
+                    ScriptRecordValue::Aboard
+                } else {
+                    ScriptRecordValue::Object(fallback)
+                },
+            );
+    }
+    let selected_kind = profile.state().object(selected).unwrap().kind;
+    let action_offset = script_field_offset(selected_kind, ScriptFieldSelector::ACTION)
+        .expect("the selected contact has no action field");
+    let action_slot = profile
+        .state()
+        .object_word_triple(selected, action_offset / size_of::<u16>())
+        .expect("the selected contact action field is outside VAR");
+    profile
+        .execution_parts()
+        .record_state
+        .action_records
+        .set_record(action_slot, ScriptActionRecord::Empty);
+    profile
+        .procedures_mut()
+        .set_enabled(selected_procedure, false)
+        .unwrap();
+    assert_eq!(
+        profile.directory().object(selected).unwrap().name(),
+        PRODUCTION_CONTACT_NAME.as_bytes()
+    );
+    let save = OriginalSaveGame::capture(profile).unwrap();
+    std::fs::write(writable.join("GAME1.SAV"), save.encode()).unwrap();
+}
+
+fn configured_process_asset_cache() -> Option<PathBuf> {
+    let Some(path) = std::env::var_os(ASSET_CACHE_ENVIRONMENT_VARIABLE).map(PathBuf::from) else {
+        assert!(
+            !accuracy_tests_are_required(),
+            "{REQUIRE_ACCURACY_TESTS_ENVIRONMENT_VARIABLE}=1 requires {ASSET_CACHE_ENVIRONMENT_VARIABLE}"
+        );
+        return None;
+    };
+    assert!(
+        path.is_dir(),
+        "configured Commander Blood asset cache does not exist: {}",
+        path.display()
+    );
+    Some(path)
+}
+
+fn workspace_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn load_process_trace(path: &Path) -> Vec<Value> {
+    let source = std::fs::read_to_string(path).unwrap();
+    let records = source
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect::<Vec<_>>();
+    assert!(
+        !records.is_empty(),
+        "production runtime wrote an empty trace"
+    );
+    records
+}
+
+fn trace_rendered_contact_text(record: &Value) -> Option<String> {
+    let subtitle = record["semantic"]["subtitle"].as_str()?;
+    if !subtitle.is_empty() && trace_raster_matches(&record["semantic"]["subtitle_raster"]) {
+        return Some(normalize_text(subtitle.as_bytes()));
+    }
+
+    let menu = &record["semantic"]["presentation"]["inline_menu"];
+    let words = menu["words"].as_array()?;
+    let revealed_words = menu["revealed_words"].as_array()?;
+    if words.is_empty()
+        || words != revealed_words
+        || !trace_raster_matches(&record["semantic"]["inline_menu_raster"])
+    {
+        return None;
+    }
+    let words = words
+        .iter()
+        .map(Value::as_str)
+        .collect::<Option<Vec<_>>>()?;
+    let mut text = String::new();
+    for (index, word) in words.iter().enumerate() {
+        text.push_str(word);
+        if words.get(index + 1).is_some_and(|next| {
+            !next
+                .as_bytes()
+                .first()
+                .is_some_and(|byte| matches!(byte, b',' | b'.' | b'?' | b'!' | b':'))
+        }) {
+            text.push(' ');
+        }
+    }
+    Some(normalize_text(text.as_bytes()))
+}
+
+fn trace_raster_matches(raster: &Value) -> bool {
+    let Some(expected) = raster["expected_pixel_count"].as_u64() else {
+        return false;
+    };
+    expected != u64::MIN
+        && raster["matching_pixel_count"].as_u64() == Some(expected)
+        && raster["mismatch_samples"]
+            .as_array()
+            .is_some_and(Vec::is_empty)
+}
+
+fn streamed_dialogue_event_count(record: &Value) -> usize {
+    record["semantic"]["audio"]["events"]
+        .as_array()
+        .map_or(usize::MIN, |events| {
+            events
+                .iter()
+                .filter(|event| event["kind"] == "streamed_dialogue")
+                .count()
+        })
 }
 
 fn run_contact_variants(

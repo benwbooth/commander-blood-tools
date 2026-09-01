@@ -78,19 +78,37 @@ pub(super) struct RuntimeScenarioFrameInput {
     pub primary_pressed: bool,
     pub key: Option<RuntimeScenarioKey>,
     pub teleport_target: Option<Box<[u8]>>,
+    pub contact_procedure_offset: Option<usize>,
     pub trigger_alien_overlay: bool,
     pub request_shutdown: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum RuntimeScenarioActionKind {
-    Move { position: [i16; 2] },
-    Motion { relative: [i32; 2] },
-    Click { position: [i16; 2] },
+    Move {
+        position: [i16; 2],
+    },
+    Motion {
+        relative: [i32; 2],
+    },
+    Click {
+        position: [i16; 2],
+    },
+    ContactClick {
+        position: [i16; 2],
+        procedure_offset: usize,
+    },
     Key(RuntimeScenarioKey),
-    Wait { frames: u16 },
-    Park { edge_x: i16, target_frame: u16 },
-    Teleport { target: Box<[u8]> },
+    Wait {
+        frames: u16,
+    },
+    Park {
+        edge_x: i16,
+        target_frame: u16,
+    },
+    Teleport {
+        target: Box<[u8]>,
+    },
     TriggerAlienOverlay,
 }
 
@@ -233,6 +251,17 @@ impl RuntimeScenarioDriver {
             RuntimeScenarioActionKind::Click { position } => {
                 input.pointer_position = Some(*position);
                 input.primary_pressed = self.action_frame == u16::MIN;
+                self.action_frame + 1 >= CLICK_FRAME_COUNT
+            }
+            RuntimeScenarioActionKind::ContactClick {
+                position,
+                procedure_offset,
+            } => {
+                input.pointer_position = Some(*position);
+                input.primary_pressed = self.action_frame == u16::MIN;
+                if self.action_frame == u16::MIN {
+                    input.contact_procedure_offset = Some(*procedure_offset);
+                }
                 self.action_frame + 1 >= CLICK_FRAME_COUNT
             }
             RuntimeScenarioActionKind::Key(key) => {
@@ -379,6 +408,21 @@ fn parse_action(line: &str, path: &Path, line_number: usize) -> Result<RuntimeSc
         Some("click" | "sclick") => RuntimeScenarioActionKind::Click {
             position: position(&fields)?,
         },
+        Some("contact") => {
+            if fields.len() != 4 {
+                return Err(fail(
+                    "contact action requires x, y, and a hexadecimal COD procedure offset",
+                ));
+            }
+            let procedure_offset = fields[3]
+                .strip_prefix("0x")
+                .and_then(|value| usize::from_str_radix(value, 16).ok())
+                .ok_or_else(|| fail("contact procedure offset must use 0x hexadecimal syntax"))?;
+            RuntimeScenarioActionKind::ContactClick {
+                position: position(&fields[..3])?,
+                procedure_offset,
+            }
+        }
         Some("key") => {
             if !(2..=3).contains(&fields.len()) {
                 return Err(fail(

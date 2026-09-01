@@ -10,6 +10,7 @@ mod camera_approach;
 mod camera_navigation;
 mod choice_list;
 mod confirm_dialog;
+mod contact_scenario;
 mod game_lifecycle;
 mod input;
 mod navigation_chart;
