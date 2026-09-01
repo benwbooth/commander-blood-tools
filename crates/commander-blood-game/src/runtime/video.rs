@@ -139,14 +139,36 @@ impl RuntimePresentationStream {
         timer_tick: u16,
         render_snapshot_suppressed: bool,
     ) -> Result<(Self, PresentationResourceSequenceOutcome)> {
+        let source_colors = *runtime.live_palette();
+        Self::load_with_source_colors(
+            runtime,
+            request,
+            source_colors,
+            timer_tick,
+            render_snapshot_suppressed,
+        )
+    }
+
+    /// Open one HNM stream with colors inherited from the preceding display owner.
+    ///
+    /// The DOS DAC naturally persisted across chained HNM resources. The flat
+    /// renderer keeps that continuity inside the video decoder instead of
+    /// publishing video-local colors into game or bridge state.
+    pub(super) fn load_with_source_colors(
+        runtime: &mut OriginalGameRuntime,
+        request: RuntimePresentationRequest,
+        source_colors: IndexedGamePalette,
+        timer_tick: u16,
+        render_snapshot_suppressed: bool,
+    ) -> Result<(Self, PresentationResourceSequenceOutcome)> {
         let descriptor = PresentationResourceDescriptor {
             flags: request.descriptor_flags,
             filename: request.resource_name,
             cached_range: None,
         };
         let mut palette = PresentationPaletteState {
-            live: *runtime.live_palette(),
-            render_snapshot: *runtime.live_palette(),
+            live: source_colors,
+            render_snapshot: source_colors,
             dirty: false,
         };
         let provider = RuntimePresentationProvider {

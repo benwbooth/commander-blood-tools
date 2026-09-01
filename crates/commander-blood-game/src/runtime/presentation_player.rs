@@ -94,6 +94,10 @@ impl RuntimePresentationPlayer {
         // The DOS resource switch closes the current queue file before opening
         // every newly requested line, even when the prior line has not drained.
         // Its displayed page remains visible if the replacement cannot open.
+        let source_colors = self
+            .display_palette()
+            .copied()
+            .unwrap_or(*runtime.live_palette());
         self.finish();
         let mut request = self
             .catalog
@@ -115,9 +119,10 @@ impl RuntimePresentationPlayer {
         request.present_policy = policy;
         request.entry_policy.draw_via_back_buffer = policy.draw_via_back_buffer;
         request.entry_policy.skip_back_buffer_present = policy.skip_back_buffer_present;
-        let (stream, outcome) = RuntimePresentationStream::load(
+        let (stream, outcome) = RuntimePresentationStream::load_with_source_colors(
             runtime,
             request,
+            source_colors,
             timer_tick,
             render_snapshot_suppressed,
         )?;
@@ -374,6 +379,8 @@ mod tests {
         PresentationResourceId::new(2);
     const CHARACTER_IDLE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(8);
     const INITIAL_DECODED_FRAME_COUNT: u64 = 1;
+    const INHERITED_COLOR_INDEX: usize = 250;
+    const INHERITED_VIDEO_COLOR: [u8; 3] = [5, 7, 11];
 
     #[test]
     fn opening_line_runs_through_the_catalog_and_flat_stream() {
@@ -481,6 +488,57 @@ mod tests {
         assert!(player.has_stream());
         assert_eq!(player.decoded_frame_count(), INITIAL_DECODED_FRAME_COUNT);
         assert_ne!(player.active_resource_name(), Some(&description_resource));
+    }
+
+    #[test]
+    fn replacement_stream_inherits_video_colors_without_contaminating_game_colors() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        let game_colors = *runtime.live_palette();
+        let mut preceding_colors = game_colors;
+        preceding_colors[INHERITED_COLOR_INDEX] = INHERITED_VIDEO_COLOR;
+        let request = super::super::RuntimePresentationRequest::new(
+            commander_blood_formats::archive::BloodResourceName::new(b"PL\\PTERRA10.HNM").unwrap(),
+        );
+        let (preceding_stream, _) = RuntimePresentationStream::load_with_source_colors(
+            &mut runtime,
+            request,
+            preceding_colors,
+            u16::MIN,
+            false,
+        )
+        .unwrap();
+        assert_eq!(
+            preceding_stream.display_palette()[INHERITED_COLOR_INDEX],
+            INHERITED_VIDEO_COLOR
+        );
+        player.active_stream = Some(preceding_stream);
+
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                u16::MIN,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            player.display_palette().unwrap()[INHERITED_COLOR_INDEX],
+            INHERITED_VIDEO_COLOR,
+            "a chained HNM stream lost the color state owned by its predecessor"
+        );
+        assert_eq!(
+            runtime.live_palette(),
+            &game_colors,
+            "chained HNM colors escaped into flat game rendering"
+        );
     }
 
     #[test]

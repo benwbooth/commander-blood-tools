@@ -2482,6 +2482,7 @@ impl<'window> ModernGameServices<'window> {
         Ok(manu3_layer_visible(
             recovered_hand_visible,
             self.presentation_player.owns_display_frame(),
+            state.presentation.ship_active,
         ))
     }
 
@@ -3227,7 +3228,11 @@ impl<'window> ModernGameServices<'window> {
                 presentation_rgba: self.presentation_player.display_rgba(),
             },
             RuntimeBridgeComposition::BridgeSceneWithIndexedOverlay,
-            !self.presentation_player.owns_display_frame(),
+            manu3_layer_visible(
+                true,
+                self.presentation_player.owns_display_frame(),
+                self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN,
+            ),
         )?;
         Ok(true)
     }
@@ -3883,7 +3888,11 @@ impl<'window> ModernGameServices<'window> {
                 presentation_rgba: self.presentation_player.display_rgba(),
             },
             composition,
-            manu3_layer_visible(true, presentation_frame_owned),
+            manu3_layer_visible(
+                true,
+                presentation_frame_owned,
+                self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN,
+            ),
         )
     }
 
@@ -3917,7 +3926,11 @@ impl<'window> ModernGameServices<'window> {
                 presentation_rgba: self.presentation_player.display_rgba(),
             },
             composition,
-            manu3_layer_visible(manu3_visible, presentation_frame_owned),
+            manu3_layer_visible(
+                manu3_visible,
+                presentation_frame_owned,
+                self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN,
+            ),
         )
     }
 
@@ -4707,7 +4720,8 @@ impl<'window> ModernGameServices<'window> {
                 "indexed_frame_authoritative": indexed_frame_authoritative,
                 "bridge_palette_hash": fnv1a64(&bridge_palette_bytes),
                 "display_frame_owned": self.presentation_player.owns_display_frame(),
-                "manu3_layer_allowed": !self.presentation_player.owns_display_frame(),
+                "manu3_layer_allowed": !self.presentation_player.owns_display_frame()
+                    || self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG == u16::MIN,
                 "console_palette": &self.runtime.live_palette()
                     [usize::from(BRIDGE_CONSOLE_TINT_FIRST)
                         ..usize::from(BRIDGE_CONSOLE_TINT_FIRST) + TINT_PALETTE_BANK_SIZE],
@@ -5002,13 +5016,18 @@ const fn select_bridge_composition(
     }
 }
 
-/// A native HNM page owns the display until recovered drawing replaces it.
+/// Ship-owned HNM pages replace the VGA page on which MANU3 would be visible.
 ///
-/// MANU3 state still advances through its recovered dispatcher, but the modern
-/// renderer must not append that independent layer over an active or completed
-/// video page.
-const fn manu3_layer_visible(recovered_hand_visible: bool, presentation_frame_owned: bool) -> bool {
-    recovered_hand_visible && !presentation_frame_owned
+/// Embedded bridge and phone videos remain in the ordinary bridge composition,
+/// where the recovered frame tail draws MANU3 after the indexed presentation.
+/// The native ship-active bit distinguishes those paths without resource-name
+/// or modern renderer heuristics.
+const fn manu3_layer_visible(
+    recovered_hand_visible: bool,
+    presentation_frame_owned: bool,
+    ship_presentation_active: bool,
+) -> bool {
+    recovered_hand_visible && !(presentation_frame_owned && ship_presentation_active)
 }
 
 struct RuntimeBridgeScreenBackend<'services, 'window> {
@@ -5440,11 +5459,13 @@ mod tests {
     }
 
     #[test]
-    fn retained_hnm_page_owns_the_display_over_manu3() {
-        assert!(manu3_layer_visible(true, false));
-        assert!(!manu3_layer_visible(true, true));
-        assert!(!manu3_layer_visible(false, false));
-        assert!(!manu3_layer_visible(false, true));
+    fn only_ship_owned_hnm_pages_occlude_manu3() {
+        assert!(manu3_layer_visible(true, false, false));
+        assert!(manu3_layer_visible(true, false, true));
+        assert!(manu3_layer_visible(true, true, false));
+        assert!(!manu3_layer_visible(true, true, true));
+        assert!(!manu3_layer_visible(false, false, false));
+        assert!(!manu3_layer_visible(false, true, true));
     }
 
     #[test]

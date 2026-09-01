@@ -676,6 +676,10 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
         .find(|record| record["semantic"]["video"]["active_resource"] == BOB_FIRST_TALK_VIDEO)
         .expect("Bob's first authored talk clip never played");
     assert_eq!(
+        first_talk["semantic"]["video"]["manu3_layer_allowed"], true,
+        "Bob's embedded phone video incorrectly occluded the interactive MANU3 hand"
+    );
+    assert_eq!(
         presentation(first_talk)["active_actor_presentation"]["name"],
         BOB_NAME
     );
@@ -708,6 +712,10 @@ fn production_runtime_reaches_bob_first_contact_with_complete_audio_and_media() 
         .iter()
         .find(|record| record["semantic"]["video"]["active_resource"] == BOB_SECOND_TALK_VIDEO)
         .expect("Bob's second authored talk clip never played");
+    assert_eq!(
+        second_talk["semantic"]["video"]["manu3_layer_allowed"], true,
+        "Bob's embedded phone video incorrectly occluded the interactive MANU3 hand"
+    );
     assert_eq!(
         presentation(second_talk)["inline_menu"]["words"],
         serde_json::json!(BOB_SECOND_TALK_WORDS),
