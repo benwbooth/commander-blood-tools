@@ -5,8 +5,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::instruction::ScriptRecordValue;
+use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT, decode_lbm};
 use commander_blood_game::native::bloodprg::{
-    OriginalSaveGame, OriginalSaveSlotDirectory, ScriptFieldSelector, ScriptProfileId,
+    OriginalSaveGame, OriginalSaveSlotDirectory, PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT,
+    SCENE_PALETTE_CLEAR_COLOR_COUNT, ScriptFieldSelector, ScriptProfileId,
     original_save_state_block_byte_count, script_field_offset,
 };
 use commander_blood_game::runtime::{OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime};
@@ -57,7 +59,18 @@ const PTERRA_TELEPORT: &str = "teleport Pterra";
 const SHIP_DESTINATION_CLICK: &str = "click 216 72";
 const PTERRA_TARGET_CLICK: &str = "click 80 88";
 const PTERRA_LOCATION_VIDEO: &str = "PL\\pterra10.hnm";
+const PTERRA_SCRUTER_APPROACH_VIDEO: &str = "PE\\scr02.hnm";
 const PTERRA_SCRUTER_VIDEO: &str = "PE\\scr20.hnm";
+const PTERRA_SCENE_IMAGE: &[u8] = b"FD\\pterra1f.lbm";
+const PTERRA_DOS_MARKER_LOW_COLOR_FNV: &str = "336b81698be4fca5";
+const PTERRA_DOS_SETTLED_LOW_COLOR_FNV: &str = "602f7fd2f3730b6e";
+const PTERRA_LOCATION_ENTRY_METRIC: u64 = 257;
+const FIRST_PTERRA_SCENE_COLOR: usize = PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT + 1;
+const VGA_COLOR_COMPONENT_SHIFT: u32 = 2;
+const HEX_DIGITS_PER_BYTE: usize = 2;
+const HEX_RADIX: u32 = 16;
+const FNV1A64_OFFSET_BASIS: u64 = 0xcbf29ce484222325;
+const FNV1A64_PRIME: u64 = 0x100000001b3;
 const HYPERJUMP_LEVER_CLICK: &str = "click 250 125";
 const HYPERJUMP_ACTOR_SLOT: usize = 5;
 const NAV_ACTOR_ACTIVE_FLAG: u64 = 1;
@@ -1429,7 +1442,7 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         .filter(|record| {
             matches!(
                 record["semantic"]["video"]["active_resource"].as_str(),
-                Some(PTERRA_LOCATION_VIDEO | PTERRA_SCRUTER_VIDEO)
+                Some(PTERRA_LOCATION_VIDEO | PTERRA_SCRUTER_APPROACH_VIDEO | PTERRA_SCRUTER_VIDEO)
             )
         })
         .collect::<Vec<_>>();
@@ -1437,7 +1450,11 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         !pterra_video_records.is_empty(),
         "Pterra selection never entered either authored planet-video stream"
     );
-    for resource in [PTERRA_LOCATION_VIDEO, PTERRA_SCRUTER_VIDEO] {
+    for resource in [
+        PTERRA_LOCATION_VIDEO,
+        PTERRA_SCRUTER_APPROACH_VIDEO,
+        PTERRA_SCRUTER_VIDEO,
+    ] {
         let resource_records = pterra_video_records
             .iter()
             .filter(|record| {
@@ -1455,6 +1472,53 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
             assert_eq!(
                 record["semantic"]["video"]["palette_hash"], flat_game_color_hash,
                 "HNM-local color records escaped into flat game colors during {resource}: {record}"
+            );
+        }
+    }
+    let low_color_byte_count = PRESENTATION_PALETTE_SNAPSHOT_COLOR_COUNT * RGB_COMPONENT_COUNT;
+    let pterra_oracle_frame = pterra_video_records
+        .iter()
+        .find(|record| {
+            if record["semantic"]["video"]["active_resource"].as_str()
+                != Some(PTERRA_LOCATION_VIDEO)
+                || record["semantic"]["video"]["queue_metrics"]["entry_metric"].as_u64()
+                    != Some(PTERRA_LOCATION_ENTRY_METRIC)
+            {
+                return false;
+            }
+            let Some(encoded) = record["semantic"]["video"]["display_color_bytes"].as_str() else {
+                return false;
+            };
+            let colors = decode_hexadecimal_bytes(encoded);
+            matches!(
+                fnv1a64(&colors[..low_color_byte_count]).as_str(),
+                PTERRA_DOS_MARKER_LOW_COLOR_FNV | PTERRA_DOS_SETTLED_LOW_COLOR_FNV
+            )
+        })
+        .expect("Pterra travel omitted both captured DOS low-color states");
+    assert_eq!(
+        pterra_oracle_frame["semantic"]["video"]["manu3_layer_allowed"], false,
+        "the independent MANU3 layer covered a DOS-matched Pterra frame"
+    );
+
+    let pterra_scene_colors = load_pterra_scene_colors();
+    for record in pterra_video_records.iter().filter(|record| {
+        matches!(
+            record["semantic"]["video"]["active_resource"].as_str(),
+            Some(PTERRA_SCRUTER_APPROACH_VIDEO | PTERRA_SCRUTER_VIDEO)
+        )
+    }) {
+        let colors = decode_hexadecimal_bytes(
+            record["semantic"]["video"]["display_color_bytes"]
+                .as_str()
+                .expect("a Pterra Scruter frame omitted its decoder-local RGB mapping"),
+        );
+        for color_index in FIRST_PTERRA_SCENE_COLOR..SCENE_PALETTE_CLEAR_COLOR_COUNT {
+            let first_component = color_index * RGB_COMPONENT_COUNT;
+            assert_eq!(
+                &colors[first_component..first_component + RGB_COMPONENT_COUNT],
+                &pterra_scene_colors[color_index],
+                "Pterra scene color {color_index} changed after the planet video boundary"
             );
         }
     }
@@ -1873,6 +1937,49 @@ fn load_trace(path: &Path) -> Vec<Value> {
         "production runtime wrote an empty trace"
     );
     records
+}
+
+fn load_pterra_scene_colors() -> [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT] {
+    let asset_cache = configured_runtime_asset_cache()
+        .expect("Pterra scene-color verification requires the configured asset cache");
+    let paths = OriginalGameDataPaths::from_root(asset_cache)
+        .expect("resolving original game paths for Pterra scene-color verification");
+    let data = OriginalGameData::load(paths)
+        .expect("loading original game data for Pterra scene-color verification");
+    let resource = BloodResourceName::new(PTERRA_SCENE_IMAGE)
+        .expect("the authored Pterra scene path is a valid resource name");
+    let encoded = data
+        .resource_store()
+        .load(&resource)
+        .expect("loading the authored Pterra scene image");
+    let image = decode_lbm(&encoded).expect("decoding the authored Pterra scene image");
+    image
+        .palette
+        .map(|color| color.map(|component| component >> VGA_COLOR_COMPONENT_SHIFT))
+}
+
+fn decode_hexadecimal_bytes(encoded: &str) -> Vec<u8> {
+    assert!(
+        encoded.len().is_multiple_of(HEX_DIGITS_PER_BYTE),
+        "hexadecimal trace value has an incomplete byte"
+    );
+    encoded
+        .as_bytes()
+        .chunks_exact(HEX_DIGITS_PER_BYTE)
+        .map(|byte| {
+            let byte = std::str::from_utf8(byte).expect("hexadecimal trace bytes are ASCII");
+            u8::from_str_radix(byte, HEX_RADIX).expect("trace value contains invalid hexadecimal")
+        })
+        .collect()
+}
+
+fn fnv1a64(bytes: &[u8]) -> String {
+    let mut hash = FNV1A64_OFFSET_BASIS;
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(FNV1A64_PRIME);
+    }
+    format!("{hash:016x}")
 }
 
 fn profile(record: &Value) -> Option<u64> {

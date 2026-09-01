@@ -162,13 +162,8 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
             )
             .context("decoding a DESCRIPT presentation background")?;
         }
-        publish_loaded_scene_palette(
-            scene_palette,
-            self.services.runtime_mut().live_palette_mut(),
-        );
-        let source_colors = *self.services.runtime().live_palette();
         self.services
-            .stage_next_presentation_source_colors(source_colors);
+            .stage_next_presentation_scene_colors(scene_palette);
         Ok(())
     }
 
@@ -265,7 +260,7 @@ fn queue_presented_frame(outcome: &PresentationQueueServiceOutcome) -> bool {
     )
 }
 
-fn publish_loaded_scene_palette(
+pub(super) fn publish_loaded_scene_palette(
     scene_palette: &IndexedGamePalette,
     shared_live_palette: &mut IndexedGamePalette,
 ) {

@@ -43,11 +43,11 @@ use crate::native::bloodprg::{
     ScriptFieldSelector, ScriptFrameOutcome, ScriptObjectFlag, ScriptPresentationEntity,
     ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
     ScriptShipNavigationMode, ScriptTravelActionPhase, ShipDepthTransitionOutcome,
-    ShipHudInitializationContext, ShipPresentationOutcome, ShipPresentationState,
-    ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage,
-    SpeakerGateAction, StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE, TextPresentationState,
-    clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
-    increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
+    ShipHudInitializationContext, ShipHudPaletteSnapshot, ShipPresentationOutcome,
+    ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
+    SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE,
+    TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
+    fill_display_band, increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
     prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
     resolve_navigation_position, reveal_inline_menu_step, set_object_flag, stop_cd_audio,
@@ -66,6 +66,7 @@ use super::input::INITIAL_LOGICAL_POINTER;
 use super::navigation_chart::RuntimeNavigationChart;
 use super::navigation_status::RuntimeNavigationStatus;
 use super::presentation::{RuntimeBridgeComposition, RuntimeDisplayFrame};
+use super::presentation_scene::publish_loaded_scene_palette;
 use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
 use super::scene_transition::SCENE_TRANSITION_IMAGE_RESOURCE;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
@@ -99,6 +100,7 @@ const MENU_WIDTH_PROBE_COLOR: u8 = u8::MIN;
 const CHOICE_LIST_SELECTION_SOUND_CLIP: u8 = u8::MIN;
 const NO_BRIDGE_HORIZONTAL_MOTION: i32 = 0;
 const SHIP_HUD_PALETTE_TRANSITION_INCREMENT: u16 = 10;
+const SHIP_HUD_TRANSITION_TARGET_TAIL_BYTE_COUNT: usize = 64;
 const NAVIGATION_BACKGROUND_SLOT: u8 = 1;
 const SHIP_NAVIGATION_ACTIVE_FLAGS: u16 = 9;
 const SHIP_PRESENTATION_ACTIVE_FLAG: u16 = 1;
@@ -1912,7 +1914,23 @@ impl<'window> ModernGameServices<'window> {
         }
     }
 
-    /// Make a decoded scene's colors the initial mapping for the next HNM page.
+    /// Merge a limited PBM color update into the mapping inherited by the next HNM.
+    pub(super) fn stage_next_presentation_scene_colors(
+        &mut self,
+        scene_colors: &IndexedGamePalette,
+    ) {
+        let mut source_colors = self
+            .presentation_player
+            .display_palette()
+            .copied()
+            .unwrap_or(*self.runtime.live_palette());
+        publish_loaded_scene_palette(scene_colors, &mut source_colors);
+        *self.runtime.live_palette_mut() = source_colors;
+        self.presentation_player
+            .stage_next_stream_source_colors(source_colors);
+    }
+
+    /// Preserve the true-color mapping owned by the display before a full-screen fade.
     pub(super) fn stage_next_presentation_source_colors(&mut self, colors: IndexedGamePalette) {
         self.presentation_player
             .stage_next_stream_source_colors(colors);
@@ -2020,10 +2038,16 @@ impl<'window> ModernGameServices<'window> {
 
     /// Configure the original black-to-HUD-tail palette transition.
     pub fn configure_ship_hud_palette_transition(&mut self) -> Result<()> {
-        let source = *self.runtime.live_palette();
-        let mut target = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
-        target[SCENE_PALETTE_CLEAR_COLOR_COUNT] =
-            self.runtime.ship_hud().palette_snapshot[usize::MIN];
+        // dlg_line_id_scene_dispatch has already presented the first HNM frame
+        // here. In DOS that decoder updated live_palette before 0x00B079 copied
+        // it to the transition source; the flat renderer keeps those colors
+        // local to the already-resolved video page.
+        let source = self
+            .presentation_player
+            .display_palette()
+            .copied()
+            .unwrap_or(*self.runtime.live_palette());
+        let target = ship_hud_transition_target(&self.runtime.ship_hud().palette_snapshot);
         let last = u8::try_from(SCENE_PALETTE_CLEAR_COLOR_COUNT)
             .context("ship HUD palette boundary exceeds an indexed palette")?;
         self.palette_transition
@@ -2492,10 +2516,13 @@ impl<'window> ModernGameServices<'window> {
                 y: pointer[1],
             },
         })?;
+        if self.ship_video_owns_display() {
+            self.presentation_player.latch_display_occludes_manu3();
+        }
         Ok(manu3_layer_visible(
             recovered_hand_visible,
             self.presentation_player.owns_display_frame(),
-            self.ship_video_owns_display(),
+            self.presentation_display_occludes_manu3(),
         ))
     }
 
@@ -2503,6 +2530,12 @@ impl<'window> ModernGameServices<'window> {
     fn ship_video_owns_display(&self) -> bool {
         self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN
             || self.runtime.camera_approach().transition_pending
+    }
+
+    /// Combine retained true-color ownership with a phase activated after stream open.
+    fn presentation_display_occludes_manu3(&self) -> bool {
+        self.presentation_player.owns_display_frame()
+            && (self.presentation_player.display_occludes_manu3() || self.ship_video_owns_display())
     }
 
     /// Reproject the current MANU3 pose for a visual-only host refresh.
@@ -2988,6 +3021,7 @@ impl<'window> ModernGameServices<'window> {
         timer_tick: u16,
         render_snapshot_suppressed: bool,
     ) -> Result<Option<PresentationResourceSequenceOutcome>> {
+        let occludes_manu3 = self.ship_video_owns_display();
         let outcome = self.presentation_player.load(
             &mut self.runtime,
             line,
@@ -2995,6 +3029,7 @@ impl<'window> ModernGameServices<'window> {
             policy,
             timer_tick,
             render_snapshot_suppressed,
+            occludes_manu3,
         )?;
         if outcome
             .as_ref()
@@ -3250,7 +3285,7 @@ impl<'window> ModernGameServices<'window> {
             manu3_layer_visible(
                 true,
                 self.presentation_player.owns_display_frame(),
-                self.ship_video_owns_display(),
+                self.presentation_display_occludes_manu3(),
             ),
         )?;
         Ok(true)
@@ -3910,7 +3945,7 @@ impl<'window> ModernGameServices<'window> {
             manu3_layer_visible(
                 true,
                 presentation_frame_owned,
-                self.ship_video_owns_display(),
+                self.presentation_display_occludes_manu3(),
             ),
         )
     }
@@ -3948,7 +3983,7 @@ impl<'window> ModernGameServices<'window> {
             manu3_layer_visible(
                 manu3_visible,
                 presentation_frame_owned,
-                self.ship_video_owns_display(),
+                self.presentation_display_occludes_manu3(),
             ),
         )
     }
@@ -4341,6 +4376,8 @@ impl<'window> ModernGameServices<'window> {
             .flatten()
             .copied()
             .collect::<Vec<_>>();
+        let game_color_bytes = hexadecimal_bytes(&palette_bytes);
+        let display_color_bytes = hexadecimal_bytes(&display_palette_bytes);
         let bridge_palette_bytes = self
             .bridge_palette
             .iter()
@@ -4627,7 +4664,7 @@ impl<'window> ModernGameServices<'window> {
             })
             .unwrap_or(serde_json::Value::Null);
 
-        Ok(serde_json::json!({
+        let mut snapshot = serde_json::json!({
             "vm": {
                 "resource_profile": profile_id,
                 "profile_request": lifecycle.pending_profile.map(|profile| i16::from(profile.value())).unwrap_or(-1),
@@ -4745,8 +4782,7 @@ impl<'window> ModernGameServices<'window> {
                 "indexed_frame_authoritative": indexed_frame_authoritative,
                 "bridge_palette_hash": fnv1a64(&bridge_palette_bytes),
                 "display_frame_owned": self.presentation_player.owns_display_frame(),
-                "manu3_layer_allowed": !self.presentation_player.owns_display_frame()
-                    || !self.ship_video_owns_display(),
+                "manu3_layer_allowed": !self.presentation_display_occludes_manu3(),
                 "console_palette": &self.runtime.live_palette()
                     [usize::from(BRIDGE_CONSOLE_TINT_FIRST)
                         ..usize::from(BRIDGE_CONSOLE_TINT_FIRST) + TINT_PALETTE_BANK_SIZE],
@@ -4760,7 +4796,10 @@ impl<'window> ModernGameServices<'window> {
                 "content_region": presentation_content,
                 "bridge_layers": bridge_layers,
             },
-        }))
+        });
+        snapshot["video"]["game_color_bytes"] = serde_json::Value::String(game_color_bytes);
+        snapshot["video"]["display_color_bytes"] = serde_json::Value::String(display_color_bytes);
+        Ok(snapshot)
     }
 
     /// Core owned game state used by translated script and scene systems.
@@ -4810,6 +4849,32 @@ impl<'window> ModernGameServices<'window> {
 
 const VGA_DAC_CHANNEL_MAXIMUM: u16 = 63;
 const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
+const HEX_CHARACTERS_PER_BYTE: usize = 2;
+
+fn ship_hud_transition_target(snapshot: &ShipHudPaletteSnapshot) -> IndexedGamePalette {
+    let mut target = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+    let first_tail_byte = SCENE_PALETTE_CLEAR_COLOR_COUNT * RGB_COMPONENT_COUNT;
+    for (destination, source) in target
+        .iter_mut()
+        .flatten()
+        .skip(first_tail_byte)
+        .take(SHIP_HUD_TRANSITION_TARGET_TAIL_BYTE_COUNT)
+        .zip(snapshot.iter().flatten())
+    {
+        *destination = *source;
+    }
+    target
+}
+
+fn hexadecimal_bytes(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+
+    let mut encoded = String::with_capacity(bytes.len() * HEX_CHARACTERS_PER_BYTE);
+    for byte in bytes {
+        write!(&mut encoded, "{byte:02x}").expect("writing to a String cannot fail");
+    }
+    encoded
+}
 
 fn fnv1a64(bytes: &[u8]) -> String {
     let mut hash = 0xcbf29ce484222325u64;
@@ -5050,9 +5115,9 @@ const fn select_bridge_composition(
 const fn manu3_layer_visible(
     recovered_hand_visible: bool,
     presentation_frame_owned: bool,
-    ship_video_owns_display: bool,
+    presentation_occludes_manu3: bool,
 ) -> bool {
-    recovered_hand_visible && !(presentation_frame_owned && ship_video_owns_display)
+    recovered_hand_visible && !(presentation_frame_owned && presentation_occludes_manu3)
 }
 
 struct RuntimeBridgeScreenBackend<'services, 'window> {
@@ -5500,6 +5565,31 @@ mod tests {
         assert_eq!(
             indexed_rgb_hash(&[1, u8::MIN], &palette),
             fnv1a64(&[255, 129, 4, 0, 0, 0])
+        );
+    }
+
+    #[test]
+    fn ship_hud_transition_target_copies_the_native_raw_byte_tail() {
+        let snapshot = std::array::from_fn(|index| [index as u8; RGB_COMPONENT_COUNT]);
+        let target = ship_hud_transition_target(&snapshot);
+        let target_bytes = target.iter().flatten().copied().collect::<Vec<_>>();
+        let snapshot_bytes = snapshot.iter().flatten().copied().collect::<Vec<_>>();
+        let first_tail_byte = SCENE_PALETTE_CLEAR_COLOR_COUNT * RGB_COMPONENT_COUNT;
+        let after_tail_byte = first_tail_byte + SHIP_HUD_TRANSITION_TARGET_TAIL_BYTE_COUNT;
+
+        assert!(
+            target_bytes[..first_tail_byte]
+                .iter()
+                .all(|byte| *byte == u8::MIN)
+        );
+        assert_eq!(
+            &target_bytes[first_tail_byte..after_tail_byte],
+            &snapshot_bytes[..SHIP_HUD_TRANSITION_TARGET_TAIL_BYTE_COUNT]
+        );
+        assert!(
+            target_bytes[after_tail_byte..]
+                .iter()
+                .all(|byte| *byte == u8::MIN)
         );
     }
 

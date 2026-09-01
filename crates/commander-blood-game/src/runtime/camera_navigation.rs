@@ -102,16 +102,22 @@ impl RuntimeCameraNavigation {
                     .state
                     .palette_transition()
                     .context("camera navigation started without a palette transition")?;
+                let fade_source = expand_palette(&transition.source);
+                let pre_fade_display_colors = expand_palette(&transition.target);
                 services
                     .palette_transition_mut()
                     .configure(RuntimePaletteTransitionConfig {
-                        source: expand_palette(&transition.source),
-                        target: expand_palette(&transition.target),
+                        source: fade_source,
+                        target: pre_fade_display_colors,
                         initial_percent: u16::from(transition.percent),
                         increment: u16::from(transition.increment),
                         colors: transition.first_color..=transition.last_color,
                     })
                     .context("configuring camera-navigation palette transition")?;
+                // The HNM palette decoder owns a distinct color snapshot in the
+                // executable. Preserve the pre-fade bridge mapping for the
+                // upcoming planet stream without exposing VGA state globally.
+                services.stage_next_presentation_source_colors(pre_fade_display_colors);
                 services.runtime_mut().front_buffer_mut().clear(u8::MIN);
                 let ship = services.ship_presentation_state_mut();
                 ship.flags = SHIP_DESTINATION_ENTRY_FLAGS;

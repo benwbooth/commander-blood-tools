@@ -22,6 +22,7 @@ pub struct RuntimePresentationPlayer {
     active_stream: Option<RuntimePresentationStream>,
     retained_display: Option<RetainedPresentationFrame>,
     next_stream_source_colors: Option<IndexedGamePalette>,
+    display_occludes_manu3: bool,
 }
 
 struct RetainedPresentationFrame {
@@ -56,6 +57,7 @@ impl RuntimePresentationPlayer {
             active_stream: None,
             retained_display: None,
             next_stream_source_colors: None,
+            display_occludes_manu3: false,
         }
     }
 
@@ -92,6 +94,7 @@ impl RuntimePresentationPlayer {
         policy: PresentationPresentPolicy,
         timer_tick: u16,
         render_snapshot_suppressed: bool,
+        occludes_manu3: bool,
     ) -> Result<Option<PresentationResourceSequenceOutcome>> {
         // The DOS resource switch closes the current queue file before opening
         // every newly requested line, even when the prior line has not drained.
@@ -130,6 +133,7 @@ impl RuntimePresentationPlayer {
         )?;
         self.next_stream_source_colors = None;
         self.retained_display = None;
+        self.display_occludes_manu3 = occludes_manu3;
         self.active_stream = Some(stream);
         Ok(Some(outcome))
     }
@@ -222,6 +226,18 @@ impl RuntimePresentationPlayer {
         self.active_stream.is_some() || self.retained_display.is_some()
     }
 
+    /// Return whether the retained true-color page replaces MANU3's display page.
+    pub const fn display_occludes_manu3(&self) -> bool {
+        self.owns_display_frame() && self.display_occludes_manu3
+    }
+
+    /// Retain full-screen ownership discovered after the stream was opened.
+    pub fn latch_display_occludes_manu3(&mut self) {
+        if self.owns_display_frame() {
+            self.display_occludes_manu3 = true;
+        }
+    }
+
     /// Return legacy source colors used only to resolve the current HNM page.
     pub fn display_palette(&self) -> Option<&IndexedGamePalette> {
         self.active_stream
@@ -280,7 +296,11 @@ impl RuntimePresentationPlayer {
 
     /// Release a completed HNM page after another recovered display owner writes.
     pub fn release_retained_display_frame(&mut self) -> bool {
-        self.retained_display.take().is_some()
+        let released = self.retained_display.take().is_some();
+        if released {
+            self.display_occludes_manu3 = false;
+        }
+        released
     }
 
     /// Return whether the recovered queue status still owns or drains a source.
@@ -335,6 +355,8 @@ impl RuntimePresentationPlayer {
         };
         if stream.presented_frame_count() != u64::MIN {
             self.retained_display = Some(RetainedPresentationFrame::from_stream(&stream));
+        } else {
+            self.display_occludes_manu3 = false;
         }
         true
     }
@@ -391,6 +413,7 @@ mod tests {
         PresentationResourceId::new(2);
     const CHARACTER_IDLE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(8);
     const INITIAL_DECODED_FRAME_COUNT: u64 = 1;
+    const SCENE_COLOR_INDEX: usize = 100;
     const INHERITED_COLOR_INDEX: usize = 250;
     const INHERITED_VIDEO_COLOR: [u8; 3] = [5, 7, 11];
     const STAGED_SCENE_COLOR: [u8; 3] = [17, 19, 23];
@@ -416,12 +439,14 @@ mod tests {
                 policy,
                 u16::MIN,
                 false,
+                true,
             )
             .unwrap()
             .unwrap();
         assert!(initial.initial_present.frame_presented);
         assert!(player.has_stream());
         assert!(player.owns_display_frame());
+        assert!(player.display_occludes_manu3());
         assert!(player.source_open_or_draining());
         assert_eq!(player.decoded_frame_count(), INITIAL_DECODED_FRAME_COUNT);
         assert_eq!(
@@ -438,6 +463,7 @@ mod tests {
         assert!(!player.has_stream());
         assert!(!player.source_open_or_draining());
         assert!(player.owns_display_frame());
+        assert!(player.display_occludes_manu3());
         assert_eq!(player.display_rgba(), Some(retained_rgba.as_slice()));
         player.display_palette_mut().unwrap().fill([63, 0, 0]);
         player.refresh_display_rgba(&[]).unwrap();
@@ -449,6 +475,7 @@ mod tests {
         );
         assert!(player.release_retained_display_frame());
         assert!(!player.owns_display_frame());
+        assert!(!player.display_occludes_manu3());
         assert!(player.display_rgba().is_none());
     }
 
@@ -480,6 +507,7 @@ mod tests {
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
+                false,
             )
             .unwrap()
             .unwrap();
@@ -494,6 +522,7 @@ mod tests {
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
+                false,
             )
             .unwrap()
             .unwrap();
@@ -504,7 +533,7 @@ mod tests {
     }
 
     #[test]
-    fn replacement_stream_prefers_new_scene_colors_over_preceding_video_colors() {
+    fn replacement_stream_merges_new_scene_colors_with_the_reserved_video_bank() {
         let Some(data) = original_data() else {
             return;
         };
@@ -538,6 +567,7 @@ mod tests {
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
+                false,
             )
             .unwrap()
             .unwrap();
@@ -554,8 +584,20 @@ mod tests {
         );
 
         let mut scene_colors = game_colors;
-        scene_colors[INHERITED_COLOR_INDEX] = STAGED_SCENE_COLOR;
-        player.stage_next_stream_source_colors(scene_colors);
+        scene_colors[SCENE_COLOR_INDEX] = STAGED_SCENE_COLOR;
+        let mut merged_colors = *player.display_palette().unwrap();
+        merged_colors[..crate::native::bloodprg::SCENE_PALETTE_CLEAR_COLOR_COUNT].copy_from_slice(
+            &scene_colors[..crate::native::bloodprg::SCENE_PALETTE_CLEAR_COLOR_COUNT],
+        );
+        player.stage_next_stream_source_colors(merged_colors);
+        assert_eq!(
+            player.next_stream_source_colors.unwrap()[SCENE_COLOR_INDEX],
+            STAGED_SCENE_COLOR
+        );
+        assert_eq!(
+            player.next_stream_source_colors.unwrap()[INHERITED_COLOR_INDEX],
+            INHERITED_VIDEO_COLOR
+        );
         player
             .load(
                 &mut runtime,
@@ -564,14 +606,15 @@ mod tests {
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
+                false,
             )
             .unwrap()
             .unwrap();
 
         assert_eq!(
             player.display_palette().unwrap()[INHERITED_COLOR_INDEX],
-            STAGED_SCENE_COLOR,
-            "a new scene inherited the preceding HNM's colors instead of its decoded background"
+            INHERITED_VIDEO_COLOR,
+            "a limited PBM update discarded the preceding HNM's reserved color bank"
         );
         assert!(player.next_stream_source_colors.is_none());
         assert_eq!(
@@ -611,6 +654,7 @@ mod tests {
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
+                false,
             )
             .unwrap()
             .unwrap();
@@ -640,6 +684,7 @@ mod tests {
                 PresentationSceneSource::Owned,
                 PresentationPresentPolicy::default(),
                 u16::MIN,
+                false,
                 false,
             )
             .unwrap();
@@ -678,6 +723,7 @@ mod tests {
                 PresentationPresentPolicy::default(),
                 u16::MIN,
                 false,
+                false,
             )
             .unwrap();
 
@@ -707,6 +753,7 @@ mod tests {
                 PresentationSceneSource::Owned,
                 PresentationPresentPolicy::default(),
                 u16::MIN,
+                false,
                 false,
             )
             .unwrap()
