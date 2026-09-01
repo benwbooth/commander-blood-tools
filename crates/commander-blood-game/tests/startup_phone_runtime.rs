@@ -94,6 +94,12 @@ const SCRUTER_JO_FIRST_CONTACT_SUBTITLE: &str = "I've reprogrammed him";
 const NEXT_ALIEN_OVERLAY_AFTER_AMER: &str = "Croolis";
 const NEXT_ALIEN_OVERLAY_AFTER_SCRUT: &str = "Amer";
 const COMPLETED_ALIEN_OVERLAY_COUNT: u64 = 1;
+const FIRST_ALIEN_INVOCATION_SEQUENCE: u64 = 1;
+const AUTHENTIC_ALIEN_OVERLAY_SEQUENCE: [(&str, &str); 3] = [
+    ("Amer", "AMER.XDB"),
+    ("Croolis", "CROOLIS.XDB"),
+    ("Scrut", "SCRUT.XDB"),
+];
 const AUTHENTIC_GAME1_SAVE: &str = "accuracy/cblood_install/cblood/GAME1.SAV";
 const HONK_WORD_CHOICES: [&str; 9] = [
     "bye_bye",
@@ -1632,6 +1638,106 @@ fn production_runtime_runs_scruter_jo_alien_overlay_and_restores_the_bridge() {
         completed_round_robin["semantic"]["alien_overlay"]["next_overlay"],
         NEXT_ALIEN_OVERLAY_AFTER_SCRUT
     );
+    let invocations = completed_round_robin["semantic"]["alien_overlay"]["invocations"]
+        .as_array()
+        .expect("the completed alien round robin omitted per-XDB invocation evidence");
+    assert_eq!(
+        invocations.len(),
+        AUTHENTIC_ALIEN_OVERLAY_SEQUENCE.len(),
+        "the production process did not retain one live invocation for each shipped XDB"
+    );
+    for (index, (invocation, (expected_overlay, expected_resource))) in invocations
+        .iter()
+        .zip(AUTHENTIC_ALIEN_OVERLAY_SEQUENCE)
+        .enumerate()
+    {
+        assert_eq!(invocation["overlay"], expected_overlay);
+        assert_eq!(invocation["resource"], expected_resource);
+        assert_eq!(
+            invocation["sequence"].as_u64(),
+            Some(FIRST_ALIEN_INVOCATION_SEQUENCE + index as u64),
+            "the production XDB round robin ran out of recovered order: {invocations:?}"
+        );
+        let input_frames = invocation["input_frames"]
+            .as_u64()
+            .expect("a live alien invocation omitted its input frame count");
+        let presented_frames = invocation["presented_frames"]
+            .as_u64()
+            .expect("a live alien invocation omitted its presented frame count");
+        let paced_frames = invocation["paced_frames"]
+            .as_u64()
+            .expect("a live alien invocation omitted its pacing frame count");
+        assert_ne!(
+            input_frames,
+            u64::MIN,
+            "{expected_overlay} consumed no input"
+        );
+        assert_eq!(
+            presented_frames, input_frames,
+            "{expected_overlay} dropped a recovered XDB frame"
+        );
+        assert_eq!(
+            paced_frames, input_frames,
+            "{expected_overlay} bypassed recovered frame pacing"
+        );
+        invocation["sound_callbacks"]
+            .as_u64()
+            .unwrap_or_else(|| panic!("{expected_overlay} omitted its sound callback count"));
+        assert_eq!(invocation["resources_released"], true);
+        assert_eq!(invocation["coordinator_restored"], true);
+        let restoration = &invocation["restoration"];
+        for required_call in [
+            "alien_sound_bank_loaded",
+            "cd_audio_started",
+            "cd_audio_stopped",
+            "bridge_sound_bank_loaded",
+            "sound_header_restored",
+            "manu3_reloaded",
+            "transition_row_cleared",
+        ] {
+            assert_eq!(
+                restoration[required_call], true,
+                "{expected_overlay} skipped mandatory coordinator call {required_call}"
+            );
+        }
+        match invocation["graphics_tail"].as_str() {
+            Some("Sequence") => {
+                assert_eq!(restoration["sequence_back_buffer_restored"], true);
+            }
+            Some("SceneImage") => {
+                assert_eq!(restoration["bridge_back_buffer_initialized"], true);
+                assert_eq!(restoration["scene_image_reloaded"], true);
+            }
+            tail => panic!("{expected_overlay} returned through unknown graphics tail {tail:?}"),
+        }
+    }
+
+    for completed_count in 1..=AUTHENTIC_ALIEN_OVERLAY_SEQUENCE.len() {
+        let restored = scruter_records
+            .iter()
+            .find(|record| {
+                record["semantic"]["alien_overlay"]["invocations"]
+                    .as_array()
+                    .is_some_and(|invocations| invocations.len() == completed_count)
+            })
+            .unwrap_or_else(|| {
+                panic!("no trace record followed alien invocation {completed_count}")
+            });
+        assert_eq!(restored["semantic"]["alien_overlay"]["armed"], false);
+        assert_eq!(
+            restored["semantic"]["alien_overlay"]["trigger_pending"],
+            false
+        );
+        assert_eq!(restored["semantic"]["alien_overlay"]["palette_dirty"], true);
+        assert_eq!(
+            restored["semantic"]["alien_overlay"]["plane_band_enabled"],
+            true
+        );
+        assert_eq!(
+            restored["semantic"]["audio"]["streamed_sound_bank"], SCRUTER_JO_SOUND_BANK,
+            "alien invocation {completed_count} did not restore Scruter Jo's audio owner"
+        );
+    }
 }
 
 fn run_production_scenario(scenario: &str, trace_name: &str) -> Option<Vec<Value>> {

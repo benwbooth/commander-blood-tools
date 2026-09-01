@@ -4648,6 +4648,45 @@ impl<'window> ModernGameServices<'window> {
             .map(|overlay| {
                 let state = overlay.state();
                 let completed = overlay.completed_overlays();
+                let mut invocations = overlay
+                    .invocation_audits()
+                    .iter()
+                    .flatten()
+                    .copied()
+                    .collect::<Vec<_>>();
+                invocations.sort_unstable_by_key(|invocation| invocation.sequence());
+                let invocations = invocations
+                    .into_iter()
+                    .map(|invocation| {
+                        let outcome = invocation.outcome();
+                        let tail = invocation.tail();
+                        let restoration = invocation.restoration();
+                        serde_json::json!({
+                            "sequence": invocation.sequence(),
+                            "overlay": format!("{:?}", invocation.overlay()),
+                            "resource": invocation.resource_name(),
+                            "input_frames": outcome.input_frames,
+                            "presented_frames": outcome.presented_frames,
+                            "paced_frames": outcome.paced_frames,
+                            "sound_callbacks": outcome.sound_callbacks,
+                            "resources_released": outcome.resources_released,
+                            "graphics_tail": format!("{tail:?}"),
+                            "restoration": {
+                                "alien_sound_bank_loaded": restoration.alien_sound_bank_loaded,
+                                "cd_audio_started": restoration.cd_audio_started,
+                                "cd_audio_stopped": restoration.cd_audio_stopped,
+                                "bridge_sound_bank_loaded": restoration.bridge_sound_bank_loaded,
+                                "sound_header_restored": restoration.sound_header_restored,
+                                "manu3_reloaded": restoration.manu3_reloaded,
+                                "transition_row_cleared": restoration.transition_row_cleared,
+                                "sequence_back_buffer_restored": restoration.sequence_back_buffer_restored,
+                                "bridge_back_buffer_initialized": restoration.bridge_back_buffer_initialized,
+                                "scene_image_reloaded": restoration.scene_image_reloaded,
+                            },
+                            "coordinator_restored": restoration.complete_for_tail(tail),
+                        })
+                    })
+                    .collect::<Vec<_>>();
                 let (armed, trigger_pending) = self
                     .presentation_screen
                     .as_ref()
@@ -4662,6 +4701,7 @@ impl<'window> ModernGameServices<'window> {
                         "Croolis": completed.count(AlienXdbKind::Croolis),
                         "Scrut": completed.count(AlienXdbKind::Scrut),
                     },
+                    "invocations": invocations,
                     "timing_scale": state.shared.timing_scale,
                     "sequence_flags": state.shared.sequence_flags,
                     "palette_dirty": state.palette_dirty,

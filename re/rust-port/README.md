@@ -77,10 +77,12 @@ test runs may still skip copyrighted-data scenarios explicitly.
 The gate also rebuilds the production executable with LLVM coverage and runs
 all process-level campaigns in `startup_phone_runtime`. These cover intro
 cancellation, both Izwalito branches, Bob's first contact, every bridge-console
-handler, save/load, and Pterra navigation. `production-campaign-covered.tsv`
-records the 228 recovered routines exercised by those paths. The audit compares
-routine presence, not compiler-dependent execution counts, and fails if a
-baseline routine stops executing.
+handler, save/load, Pterra navigation, and Scruter Jo's complete
+AMER/CROOLIS/SCRUT round robin with audio, MANU3, and bridge restoration.
+`production-campaign-covered.tsv` records the 300 recovered routines exercised
+by the union of those paths. The audit compares routine presence, not
+compiler-dependent execution counts, and fails if a baseline routine stops
+executing.
 
 The real-data acceptance suite restores an authentic save, reloads every script
 profile and companion resource set, enters and completes an authored path for

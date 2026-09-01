@@ -6,8 +6,8 @@ use commander_blood_formats::alien::{AlienAsset, AlienXdbKind};
 use crate::native::alien::{AlienMouseSample, AlienSceneFrame, AlienSceneRuntime};
 use crate::native::bloodprg::{
     AlienOverlayCycleHost, AlienOverlayCycleOutcome, AlienOverlayCycleState,
-    AlienOverlaySharedState, AlienOverlaySoundBank, GameLifecycleState, LoadedSoundBank,
-    PointerButtons, run_alien_overlay_cycle,
+    AlienOverlayGraphicsTail, AlienOverlaySharedState, AlienOverlaySoundBank, GameLifecycleState,
+    LoadedSoundBank, PointerButtons, run_alien_overlay_cycle,
 };
 
 use super::{ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformHost};
@@ -19,6 +19,7 @@ const SHIP_SEQUENCE_ACTIVE: u16 = 1;
 const COMPLETED_OVERLAY_INCREMENT: u64 = 1;
 const ALIEN_SOUND_BANK_NAME: &[u8] = b"3D.snd";
 const BRIDGE_SOUND_BANK_NAME: &[u8] = b"tb.snd";
+const ALIEN_OVERLAY_KIND_COUNT: usize = 3;
 
 /// Mouse and keyboard input consumed by one recovered alien main-loop frame.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -56,6 +57,105 @@ pub struct RuntimeAlienOverlayOutcome {
     pub frame_clock: u32,
     /// Number of full 3D frames submitted during this invocation.
     pub presented_frames: u64,
+    /// Number of synchronous input samples consumed by the XDB main loop.
+    pub input_frames: u64,
+    /// Number of recovered frame budgets consumed by the XDB main loop.
+    pub paced_frames: u64,
+    /// Number of authored `3D.SND` callbacks dispatched by the XDB.
+    pub sound_callbacks: u64,
+    /// Whether both the virtual input driver and temporary GPU renderer released.
+    pub resources_released: bool,
+}
+
+/// Persistent process-oracle evidence for one completed XDB invocation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RuntimeAlienOverlayInvocationAudit {
+    sequence: u64,
+    overlay: AlienXdbKind,
+    outcome: RuntimeAlienOverlayOutcome,
+    tail: AlienOverlayGraphicsTail,
+    restoration: RuntimeAlienOverlayRestorationAudit,
+}
+
+/// Mandatory audio, MANU3, and framebuffer calls completed around one XDB.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeAlienOverlayRestorationAudit {
+    /// The temporary `SN\3D.SND` bank was decoded and installed.
+    pub alien_sound_bank_loaded: bool,
+    /// The optional encounter CD start gate was serviced.
+    pub cd_audio_started: bool,
+    /// The optional encounter CD stop gate was serviced.
+    pub cd_audio_stopped: bool,
+    /// The normal `SN\TB.SND` bridge bank was decoded and installed.
+    pub bridge_sound_bank_loaded: bool,
+    /// The pre-overlay resident sound header was restored.
+    pub sound_header_restored: bool,
+    /// The MANU3 hand model was reloaded after releasing the XDB renderer.
+    pub manu3_reloaded: bool,
+    /// The native transition row was cleared before bridge composition resumed.
+    pub transition_row_cleared: bool,
+    /// The active ship-sequence back buffer was restored when that tail was selected.
+    pub sequence_back_buffer_restored: bool,
+    /// The ordinary bridge back buffer was initialized when that tail was selected.
+    pub bridge_back_buffer_initialized: bool,
+    /// The current scene image was reloaded when the ordinary bridge tail was selected.
+    pub scene_image_reloaded: bool,
+}
+
+impl RuntimeAlienOverlayRestorationAudit {
+    /// Whether every mandatory call for the selected recovered tail completed.
+    pub const fn complete_for_tail(self, tail: AlienOverlayGraphicsTail) -> bool {
+        let common_complete = self.alien_sound_bank_loaded
+            && self.cd_audio_started
+            && self.cd_audio_stopped
+            && self.bridge_sound_bank_loaded
+            && self.sound_header_restored
+            && self.manu3_reloaded
+            && self.transition_row_cleared;
+        common_complete
+            && match tail {
+                AlienOverlayGraphicsTail::Sequence => self.sequence_back_buffer_restored,
+                AlienOverlayGraphicsTail::SceneImage => {
+                    self.bridge_back_buffer_initialized && self.scene_image_reloaded
+                }
+            }
+    }
+}
+
+impl RuntimeAlienOverlayInvocationAudit {
+    /// Monotonic completion order within this game process.
+    pub const fn sequence(self) -> u64 {
+        self.sequence
+    }
+
+    /// Original XDB selected and decoded for this invocation.
+    pub const fn overlay(self) -> AlienXdbKind {
+        self.overlay
+    }
+
+    /// Authored archive resource selected for this invocation.
+    pub const fn resource_name(self) -> &'static str {
+        match self.overlay {
+            AlienXdbKind::Amer => "AMER.XDB",
+            AlienXdbKind::Croolis => "CROOLIS.XDB",
+            AlienXdbKind::Scrut => "SCRUT.XDB",
+        }
+    }
+
+    /// Frame, callback, and cleanup evidence returned by the live host.
+    pub const fn outcome(self) -> RuntimeAlienOverlayOutcome {
+        self.outcome
+    }
+
+    /// Graphics tail selected from the callback-mutated ship-sequence flag.
+    pub const fn tail(self) -> AlienOverlayGraphicsTail {
+        self.tail
+    }
+
+    /// Mandatory coordinator calls observed around the live XDB invocation.
+    pub const fn restoration(self) -> RuntimeAlienOverlayRestorationAudit {
+        self.restoration
+    }
 }
 
 /// Platform services needed while BLOODPRG is synchronously inside an alien XDB.
@@ -85,8 +185,12 @@ pub fn run_runtime_alien_overlay<Host: RuntimeAlienOverlayFrameHost>(
     let mut runtime = AlienSceneRuntime::enter(asset, timing_scale, frame_clock);
     let run_result = (|| {
         let mut presented_frames = u64::MIN;
+        let mut input_frames = u64::MIN;
+        let mut paced_frames = u64::MIN;
+        let mut sound_callbacks = u64::MIN;
         while runtime.is_running() {
             let input = host.poll_frame()?;
+            input_frames = input_frames.wrapping_add(1);
             let step = runtime
                 .step(input.mouse, &input.key_events)
                 .context("advancing the recovered alien XDB main loop")?;
@@ -96,18 +200,27 @@ pub fn run_runtime_alien_overlay<Host: RuntimeAlienOverlayFrameHost>(
             }
             if let Some(callback) = step.callback {
                 host.play_sound_clip(callback.event, callback.clock)?;
+                sound_callbacks = sound_callbacks.wrapping_add(1);
             }
             host.pace_frame()?;
+            paced_frames = paced_frames.wrapping_add(1);
         }
         Ok(RuntimeAlienOverlayOutcome {
             timing_scale: runtime.timing_scale(),
             frame_clock: runtime.frame_clock(),
             presented_frames,
+            input_frames,
+            paced_frames,
+            sound_callbacks,
+            resources_released: false,
         })
     })();
     let finish_result = host.finish_overlay();
     match (run_result, finish_result) {
-        (Ok(outcome), Ok(())) => Ok(outcome),
+        (Ok(mut outcome), Ok(())) => {
+            outcome.resources_released = true;
+            Ok(outcome)
+        }
         (Err(error), Ok(())) => Err(error),
         (Ok(_), Err(error)) => Err(error.context("releasing alien-overlay GPU resources")),
         (Err(error), Err(finish_error)) => Err(error.context(format!(
@@ -122,6 +235,8 @@ pub struct RuntimeAlienOverlayCycle {
     state: AlienOverlayCycleState,
     frame_clock: u32,
     completed_overlays: RuntimeAlienOverlayCompletionCounts,
+    invocation_sequence: u64,
+    invocation_audits: [Option<RuntimeAlienOverlayInvocationAudit>; ALIEN_OVERLAY_KIND_COUNT],
 }
 
 /// Process-level execution witnesses for the three original XDB overlays.
@@ -162,6 +277,13 @@ impl RuntimeAlienOverlayCycle {
         self.completed_overlays
     }
 
+    /// Return the most recent successful live invocation for each shipped XDB.
+    pub const fn invocation_audits(
+        &self,
+    ) -> &[Option<RuntimeAlienOverlayInvocationAudit>; ALIEN_OVERLAY_KIND_COUNT] {
+        &self.invocation_audits
+    }
+
     /// Consume and run a pending overlay, restoring bridge resources before returning.
     pub fn run<'window>(
         &mut self,
@@ -181,12 +303,16 @@ impl RuntimeAlienOverlayCycle {
         }
         self.state.shared.timing_scale = services.read_alien_timing_scale()?;
 
+        let mut invocation_outcome = None;
+        let mut restoration = RuntimeAlienOverlayRestorationAudit::default();
         let result = {
             let mut host = RuntimeAlienOverlayCycleBackend {
                 services,
                 platform,
                 loaded_asset: None,
                 frame_clock: &mut self.frame_clock,
+                invocation_outcome: &mut invocation_outcome,
+                restoration: &mut restoration,
             };
             run_alien_overlay_cycle(&mut self.state, &mut host)
         };
@@ -195,7 +321,18 @@ impl RuntimeAlienOverlayCycle {
         services.write_alien_timing_scale(self.state.shared.timing_scale)?;
         lifecycle.presentation.sequence_active =
             self.state.shared.sequence_flags & SHIP_SEQUENCE_ACTIVE != u16::MIN;
-        if let Ok(AlienOverlayCycleOutcome::Ran { overlay, .. }) = &result {
+        if let Ok(AlienOverlayCycleOutcome::Ran { overlay, tail }) = &result {
+            let outcome = invocation_outcome
+                .context("alien-overlay coordinator returned without live invocation evidence")?;
+            self.invocation_sequence = self.invocation_sequence.wrapping_add(1);
+            self.invocation_audits[alien_overlay_index(*overlay)] =
+                Some(RuntimeAlienOverlayInvocationAudit {
+                    sequence: self.invocation_sequence,
+                    overlay: *overlay,
+                    outcome,
+                    tail: *tail,
+                    restoration,
+                });
             self.completed_overlays.record(*overlay);
             services.publish_alien_overlay_bridge_restoration();
         }
@@ -225,6 +362,8 @@ struct RuntimeAlienOverlayCycleBackend<'services, 'window, 'platform, 'clock> {
     platform: &'platform mut RuntimePlatformHost<'window>,
     loaded_asset: Option<(AlienXdbKind, AlienAsset)>,
     frame_clock: &'clock mut u32,
+    invocation_outcome: &'clock mut Option<RuntimeAlienOverlayOutcome>,
+    restoration: &'clock mut RuntimeAlienOverlayRestorationAudit,
 }
 
 impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
@@ -233,6 +372,12 @@ impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
 
     fn load_alien_overlay(&mut self, overlay: AlienXdbKind) -> Result<()> {
         let asset = self.services.runtime().load_alien_overlay(overlay)?;
+        if asset.kind != overlay {
+            bail!(
+                "loaded {:?} data for requested {overlay:?} overlay",
+                asset.kind
+            );
+        }
         self.loaded_asset = Some((overlay, asset));
         Ok(())
     }
@@ -260,11 +405,22 @@ impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
                     "loading temporary sound bank {}",
                     String::from_utf8_lossy(name)
                 )
-            })
+            })?;
+        match bank {
+            AlienOverlaySoundBank::AlienScene => {
+                self.restoration.alien_sound_bank_loaded = true;
+            }
+            AlienOverlaySoundBank::Bridge => {
+                self.restoration.bridge_sound_bank_loaded = true;
+            }
+        }
+        Ok(())
     }
 
     fn start_cd_audio(&mut self) -> Result<()> {
-        self.services.start_encounter_cd_audio()
+        self.services.start_encounter_cd_audio()?;
+        self.restoration.cd_audio_started = true;
+        Ok(())
     }
 
     fn run_alien_overlay(
@@ -287,38 +443,60 @@ impl AlienOverlayCycleHost for RuntimeAlienOverlayCycleBackend<'_, '_, '_, '_> {
             run_runtime_alien_overlay(asset, shared.timing_scale, *self.frame_clock, &mut host)?;
         shared.timing_scale = outcome.timing_scale;
         *self.frame_clock = outcome.frame_clock;
+        *self.invocation_outcome = Some(outcome);
         Ok(())
     }
 
     fn stop_cd_audio(&mut self) -> Result<()> {
-        self.services.stop_encounter_cd_audio()
+        self.services.stop_encounter_cd_audio()?;
+        self.restoration.cd_audio_stopped = true;
+        Ok(())
     }
 
     fn restore_sound_header(&mut self, header: Self::SoundHeader) -> Result<()> {
         self.services.restore_resident_sound_bank(header);
+        self.restoration.sound_header_restored = true;
         Ok(())
     }
 
     fn reload_manu3(&mut self) -> Result<()> {
         match self.services.load_manu3_overlay()? {
-            RuntimeAssetLoadStatus::LoadedNow | RuntimeAssetLoadStatus::AlreadyLoaded => Ok(()),
+            RuntimeAssetLoadStatus::LoadedNow | RuntimeAssetLoadStatus::AlreadyLoaded => {}
         }
+        self.restoration.manu3_reloaded = true;
+        Ok(())
     }
 
     fn clear_transition_row(&mut self) -> Result<()> {
-        self.services.clear_alien_overlay_transition_frame()
+        self.services.clear_alien_overlay_transition_frame()?;
+        self.restoration.transition_row_cleared = true;
+        Ok(())
     }
 
     fn clear_sequence_back_buffer(&mut self) -> Result<()> {
-        self.services.restore_sequence_back_buffer()
+        self.services.restore_sequence_back_buffer()?;
+        self.restoration.sequence_back_buffer_restored = true;
+        Ok(())
     }
 
     fn initialize_back_buffer(&mut self) -> Result<()> {
-        self.services.initialize_back_buffer().map(|_| ())
+        self.services.initialize_back_buffer()?;
+        self.restoration.bridge_back_buffer_initialized = true;
+        Ok(())
     }
 
     fn reload_scene_image(&mut self) -> Result<()> {
-        self.services.reload_alien_return_scene_image()
+        self.services.reload_alien_return_scene_image()?;
+        self.restoration.scene_image_reloaded = true;
+        Ok(())
+    }
+}
+
+const fn alien_overlay_index(overlay: AlienXdbKind) -> usize {
+    match overlay {
+        AlienXdbKind::Amer => 0,
+        AlienXdbKind::Croolis => 1,
+        AlienXdbKind::Scrut => 2,
     }
 }
 
@@ -546,6 +724,10 @@ mod tests {
         assert_eq!(host.pace_count, 1);
         assert_eq!(host.finish_count, 1);
         assert_eq!(outcome.presented_frames, 1);
+        assert_eq!(outcome.input_frames, 1);
+        assert_eq!(outcome.paced_frames, 1);
+        assert_eq!(outcome.sound_callbacks, u64::MIN);
+        assert!(outcome.resources_released);
         assert_eq!(outcome.frame_clock, 1_008);
     }
 
@@ -584,6 +766,10 @@ mod tests {
             assert_eq!(host.finish_count, 1);
             assert!(host.sound_callbacks > usize::MIN);
             assert_eq!(outcome.presented_frames, DRIVEN_FRAME_COUNT as u64);
+            assert_eq!(outcome.input_frames, DRIVEN_FRAME_COUNT as u64);
+            assert_eq!(outcome.paced_frames, DRIVEN_FRAME_COUNT as u64);
+            assert_eq!(outcome.sound_callbacks, host.sound_callbacks as u64);
+            assert!(outcome.resources_released);
         }
     }
 }
