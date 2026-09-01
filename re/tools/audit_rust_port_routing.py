@@ -128,6 +128,31 @@ def read_dispositions(path: pathlib.Path) -> dict[tuple[str, str], RoutingDispos
 
 
 def validate_evidence_reference(reference: str, root: pathlib.Path) -> None:
+    path_text, anchor_separator, anchor = reference.partition("#")
+    if anchor_separator:
+        if not path_text or not anchor:
+            raise ValueError(
+                f"invalid anchored evidence reference {reference!r}; expected path#source-fragment"
+            )
+        path = root / path_text
+        if not path.is_file():
+            raise ValueError(f"evidence path does not exist: {path_text}")
+        matches = [
+            line
+            for line, text in enumerate(
+                path.read_text(encoding="utf-8", errors="replace").splitlines(),
+                start=1,
+            )
+            if anchor in text
+        ]
+        if not matches:
+            raise ValueError(f"evidence anchor is absent: {reference}")
+        if len(matches) != 1:
+            raise ValueError(
+                f"evidence anchor is ambiguous at lines {matches}: {reference}"
+            )
+        return
+
     path_text, separator, line_text = reference.rpartition(":")
     if not separator or not line_text.isdecimal() or int(line_text) < 1:
         raise ValueError(f"invalid evidence reference {reference!r}; expected path:line")

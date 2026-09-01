@@ -15,6 +15,7 @@ from audit_rust_port_routing import (
     retained,
     source_module,
     source_routed,
+    validate_evidence_reference,
     validate_dispositions,
     without_function_body,
 )
@@ -191,6 +192,24 @@ class RustPortRoutingAuditTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "evidence path does not exist"):
                 validate_dispositions({missing.key: missing}, [routine], [routine], root)
+
+    def test_anchored_evidence_requires_one_stable_source_match(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root / "proof.rs").write_text(
+                "fn translated_owner() {}\nfn other() {}\n",
+                encoding="utf-8",
+            )
+            validate_evidence_reference("proof.rs#fn translated_owner", root)
+            with self.assertRaisesRegex(ValueError, "anchor is absent"):
+                validate_evidence_reference("proof.rs#fn missing_owner", root)
+
+            (root / "ambiguous.rs").write_text(
+                "fn owner() {}\nfn owner() {}\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "anchor is ambiguous"):
+                validate_evidence_reference("ambiguous.rs#fn owner", root)
 
 
 if __name__ == "__main__":
