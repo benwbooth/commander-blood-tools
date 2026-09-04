@@ -7,6 +7,10 @@ oracle coverage and documentation.
 
 ## Completion status
 
+For the current integration-review findings, verification limits, and ordered
+completion gates, see [the fidelity completion plan](../../docs/fidelity-completion-plan.md)
+and [the source/test inventory](../../docs/fidelity-inventory-2026-09-04.md).
+
 All 521 recovered native routines are accounted for by the checked coverage
 ledgers: 474 routines have documented complete Rust implementations and 47 DOS
 memory, hardware, or authored no-operation adapters have documented

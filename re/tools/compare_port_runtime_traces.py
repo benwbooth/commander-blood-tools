@@ -154,6 +154,33 @@ def game_frame_delta(
     return current - previous
 
 
+def index_trace(
+    records: list[dict[str, Any]], side: str
+) -> dict[int, dict[str, Any]]:
+    """Reject ambiguous captures before action-keyed comparison can discard data."""
+    indexed = {}
+    previous_action = -1
+    previous_frame = -1
+    for position, record in enumerate(records):
+        action = record.get("action_index")
+        if type(action) is not int or action <= previous_action:
+            raise ValueError(
+                f"{side} record {position}: action_index must be a nonnegative, "
+                f"strictly increasing integer (got {action!r} after {previous_action})"
+            )
+        frame = game_frame_sequence(record)
+        if frame is not None:
+            if frame < 0 or frame < previous_frame:
+                raise ValueError(
+                    f"{side} action {action}: game_frame_sequence is negative or moved backwards "
+                    f"({previous_frame} -> {frame})"
+                )
+            previous_frame = frame
+        indexed[action] = record
+        previous_action = action
+    return indexed
+
+
 def opening_page_owns_display(record: dict[str, Any]) -> bool:
     return (
         normalize("vm.active_line", value_at(record, "vm.active_line")) == 0
@@ -170,11 +197,14 @@ def compare_port_records(
     require_indexed_rgb: bool = False,
     minimum_indexed_rgb_comparisons: int = 0,
     require_game_frame_clock: bool = False,
+    minimum_compared_records: int = 1,
 ) -> dict[str, Any]:
+    if minimum_compared_records < 1:
+        raise ValueError("minimum compared records must be positive")
     if minimum_indexed_rgb_comparisons < 0:
         raise ValueError("minimum indexed RGB comparisons must be nonnegative")
-    original_by_action = {record["action_index"]: record for record in original}
-    modern_by_action = {record["action_index"]: record for record in modern}
+    original_by_action = index_trace(original, "original")
+    modern_by_action = index_trace(modern, "modern")
     action_indices = sorted(
         set(original_by_action) | set(modern_by_action)
     )
@@ -184,6 +214,8 @@ def compare_port_records(
         "start_action": start_action,
         "bridge_frame_tolerance": bridge_frame_tolerance,
         "compared_records": 0,
+        "minimum_compared_records": minimum_compared_records,
+        "require_game_frame_clock": require_game_frame_clock,
         "indexed_rgb_comparisons": 0,
         "minimum_indexed_rgb_comparisons": minimum_indexed_rgb_comparisons,
         "indexed_rgb_missing_records": 0,
@@ -282,10 +314,28 @@ def compare_port_records(
                 if not game_frames_aligned:
                     report["game_frame_unaligned_records"] += 1
                     temporal_paths = ()
+                    if require_game_frame_clock:
+                        differences.append(
+                            {
+                                "path": "clock.game_frame_sequence",
+                                "original": original_game_frame_delta,
+                                "modern": modern_game_frame_delta,
+                                "reason": "action consumed different numbers of game frames",
+                            }
+                        )
             for path in (*EXACT_PATHS, *temporal_paths):
                 if path in OPTIONAL_EXACT_PATHS and (
                     not has_value(expected, path) or not has_value(actual, path)
                 ):
+                    if require_game_frame_clock:
+                        differences.append(
+                            {
+                                "path": f"semantic.{path}",
+                                "original": has_value(expected, path),
+                                "modern": has_value(actual, path),
+                                "reason": "required temporal comparison field is missing",
+                            }
+                        )
                     continue
                 expected_value = normalized_value(expected, path)
                 actual_value = normalized_value(actual, path)
@@ -403,27 +453,24 @@ def compare_port_records(
                 "differences": differences,
             }
             break
-    if (
-        report["status"] == "equivalent"
-        and report["indexed_rgb_comparisons"]
-        < report["minimum_indexed_rgb_comparisons"]
+    for metric, minimum in (
+        ("compared_records", minimum_compared_records),
+        ("indexed_rgb_comparisons", minimum_indexed_rgb_comparisons),
     ):
-        report["status"] = "diverged"
-        report["first_divergence"] = {
-            "action_index": None,
-            "action": None,
-            "differences": [
-                {
-                    "path": "coverage.indexed_rgb_comparisons",
-                    "original": f">={minimum_indexed_rgb_comparisons}",
-                    "modern": report["indexed_rgb_comparisons"],
-                    "reason": (
-                        "runtime trace produced fewer aligned indexed RGB "
-                        "comparisons than required"
-                    ),
-                }
-            ],
-        }
+        if report["status"] == "equivalent" and report[metric] < minimum:
+            report["status"] = "diverged"
+            report["first_divergence"] = {
+                "action_index": None,
+                "action": None,
+                "differences": [
+                    {
+                        "path": f"coverage.{metric}",
+                        "original": f">={minimum}",
+                        "modern": report[metric],
+                        "reason": "runtime trace produced fewer comparisons than required",
+                    }
+                ],
+            }
     return report
 
 
@@ -471,6 +518,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start-action", type=int, default=0)
     parser.add_argument("--bridge-frame-tolerance", type=int, default=2)
     parser.add_argument(
+        "--minimum-compared-records",
+        type=int,
+        default=1,
+        help="fail unless at least this many action records are compared",
+    )
+    parser.add_argument(
         "--require-indexed-rgb",
         action="store_true",
         help="fail when an aligned indexed frame lacks a logical or stable display RGB hash",
@@ -484,7 +537,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--require-game-frame-clock",
         action="store_true",
-        help="fail when an action delta lacks an exact native or Rust game-frame clock",
+        help=(
+            "require matching native/Rust game-frame deltas and all temporal state fields; "
+            "missing clocks or unaligned frames fail instead of skipping comparisons"
+        ),
     )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--report-only", action="store_true")
@@ -493,6 +549,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if args.minimum_compared_records < 1:
+        raise SystemExit("--minimum-compared-records must be positive")
     if args.minimum_indexed_rgb_comparisons < 0:
         raise SystemExit("--minimum-indexed-rgb-comparisons must be nonnegative")
     report = compare_port_records(
@@ -503,6 +561,7 @@ def main() -> int:
         require_indexed_rgb=args.require_indexed_rgb,
         minimum_indexed_rgb_comparisons=args.minimum_indexed_rgb_comparisons,
         require_game_frame_clock=args.require_game_frame_clock,
+        minimum_compared_records=args.minimum_compared_records,
     )
     rendered = json.dumps(report, indent=2) + "\n"
     if args.output:

@@ -340,7 +340,7 @@ class PortTraceComparisonTests(unittest.TestCase):
             modern,
             start_action=0,
             bridge_frame_tolerance=2,
-            require_game_frame_clock=True,
+            require_game_frame_clock=False,
         )
 
         self.assertEqual(report["status"], "equivalent")
@@ -370,7 +370,7 @@ class PortTraceComparisonTests(unittest.TestCase):
             modern,
             start_action=0,
             bridge_frame_tolerance=2,
-            require_game_frame_clock=True,
+            require_game_frame_clock=False,
         )
 
         self.assertEqual(report["status"], "diverged")
@@ -400,6 +400,84 @@ class PortTraceComparisonTests(unittest.TestCase):
             report["first_divergence"]["differences"][0]["reason"],
             "action delta lacks an exact game-frame clock",
         )
+
+    def test_required_game_frame_clock_rejects_timing_drift(self) -> None:
+        original = [record(0), record(1)]
+        modern = copy.deepcopy(original)
+        modern[1]["clock"]["game_frame_sequence"] = 11
+        modern[1]["semantic"]["random"]["counter"] = 999
+
+        report = compare_port.compare_port_records(
+            original, modern, start_action=0, bridge_frame_tolerance=2,
+            require_game_frame_clock=True,
+        )
+
+        self.assertEqual(report["status"], "diverged")
+        difference = report["first_divergence"]["differences"][0]
+        self.assertEqual(difference["path"], "clock.game_frame_sequence")
+        self.assertEqual((difference["original"], difference["modern"]), (10, 11))
+
+    def test_required_clock_cannot_hide_missing_temporal_state(self) -> None:
+        for path in sorted(compare_port.OPTIONAL_EXACT_PATHS):
+            for side in ("original", "modern"):
+                with self.subTest(path=path, side=side):
+                    original, modern = [record(0)], [record(0)]
+                    target = original if side == "original" else modern
+                    owner, field = path.split(".")
+                    del target[0]["semantic"][owner][field]
+                    report = compare_port.compare_port_records(
+                        original, modern, start_action=0, bridge_frame_tolerance=2,
+                        require_game_frame_clock=True,
+                    )
+                    self.assertEqual(report["status"], "diverged")
+                    self.assertEqual(
+                        report["first_divergence"]["differences"][0]["path"],
+                        f"semantic.{path}",
+                    )
+
+    def test_empty_comparison_is_not_equivalence(self) -> None:
+        for records, start_action in (([], 0), ([record(0)], 99)):
+            with self.subTest(start_action=start_action):
+                report = compare_port.compare_port_records(
+                    records, records, start_action=start_action, bridge_frame_tolerance=2,
+                )
+                self.assertEqual(report["status"], "diverged")
+                self.assertEqual(report["compared_records"], 0)
+
+    def test_identically_truncated_traces_fail_required_record_count(self) -> None:
+        report = compare_port.compare_port_records(
+            [record(0)], [record(0)], start_action=0, bridge_frame_tolerance=2,
+            minimum_compared_records=2,
+        )
+        self.assertEqual(report["status"], "diverged")
+        self.assertEqual(
+            report["first_divergence"]["differences"][0]["path"],
+            "coverage.compared_records",
+        )
+
+    def test_comparison_rejects_duplicate_or_reordered_action_indices(self) -> None:
+        for actions in ([0, 1, 1], [1, 0], [-1], [True], ["0"]):
+            for side in ("original", "modern"):
+                with self.subTest(actions=actions, side=side):
+                    malformed = []
+                    for index in actions:
+                        item = record(0)
+                        item["action_index"] = index
+                        malformed.append(item)
+                    original = malformed if side == "original" else [record(0)]
+                    modern = malformed if side == "modern" else [record(0)]
+                    with self.assertRaisesRegex(ValueError, "action_index"):
+                        compare_port.compare_port_records(
+                            original, modern, start_action=0, bridge_frame_tolerance=2,
+                        )
+
+    def test_comparison_rejects_backwards_frame_clocks(self) -> None:
+        backwards = [record(0, game_frame_sequence=10), record(1, game_frame_sequence=9)]
+        with self.assertRaisesRegex(ValueError, "game_frame_sequence"):
+            compare_port.compare_port_records(
+                backwards, backwards, start_action=0, bridge_frame_tolerance=2,
+                require_game_frame_clock=True,
+            )
 
 
 if __name__ == "__main__":
