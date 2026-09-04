@@ -502,6 +502,8 @@ mod tests {
     use super::*;
 
     const TEST_VIDEO_RESOURCE: &[u8] = b"SQ\\LOGO01.HNM";
+    const SCRUTER_IDLE_VIDEO_RESOURCE: &[u8] = b"PE\\SCR20.HNM";
+    const SCRUTER_IDLE_FRAME_COUNT: u64 = 31;
     const OPENING_VIDEO_RESOURCE: &[u8] = b"SQ\\MIND.HNM";
     const CLIPTOOT_VIDEO_RESOURCE: &[u8] = b"SQ\\CLIPTOOT.HNM";
     const PTERRA_VIDEO_RESOURCE: &[u8] = b"PL\\PTERRA10.HNM";
@@ -858,6 +860,49 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn scruter_idle_queue_presents_changing_images() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        // DESCRIPT: Scruter_Jo uses scr20 over front; line eight is shared-cache
+        // playback with the scene's content-panel vertical offset.
+        let mut request = RuntimePresentationRequest::new(
+            BloodResourceName::new(SCRUTER_IDLE_VIDEO_RESOURCE).unwrap(),
+        );
+        request.present_policy.vertical_offset = CONTENT_PANEL_TOP;
+        let (mut stream, _) =
+            RuntimePresentationStream::load(&mut runtime, request, u16::MIN, false).unwrap();
+        let mut hashes = BTreeSet::new();
+        hashes.insert(format!(
+            "{:x}",
+            Sha256::digest(runtime.front_buffer().pixels())
+        ));
+        for timer_tick in 1..=MAXIMUM_TEST_SERVICE_CALLS {
+            stream
+                .service_frame(
+                    &mut runtime,
+                    u16::MIN,
+                    timer_tick as u16,
+                    PresentationQueueClockGates::default(),
+                    false,
+                )
+                .unwrap();
+            hashes.insert(format!(
+                "{:x}",
+                Sha256::digest(runtime.front_buffer().pixels())
+            ));
+            if stream.is_finished() {
+                break;
+            }
+        }
+        assert!(stream.is_finished());
+        assert_eq!(stream.presented_frame_count(), SCRUTER_IDLE_FRAME_COUNT);
+        assert_eq!(hashes.len() as u64, SCRUTER_IDLE_FRAME_COUNT);
     }
 
     #[test]

@@ -658,7 +658,7 @@ impl ShipNavigationHost<ScriptObjectId> for RuntimeShipNavigationBackend<'_, '_,
     }
 
     fn update_bridge_steering(&mut self) {
-        let result = self.services.render_ship_hud_bridge_frame();
+        let result = self.services.update_ship_presentation_steering();
         self.record(result, ());
     }
 

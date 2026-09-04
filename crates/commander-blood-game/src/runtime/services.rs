@@ -2020,10 +2020,14 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
-    /// Advance bridge steering while the ship target list owns interaction.
-    pub fn render_ship_hud_bridge_frame(&mut self) -> Result<()> {
+    /// Run the steering-only callback shared by ship HUD and navigation.
+    ///
+    /// Both C callers invoke `bridge_steer_update`, which touches camera/input
+    /// state but not image buffers. Drawing here would replace the HNM frame
+    /// dispatched immediately before the navigation callback.
+    pub fn update_ship_presentation_steering(&mut self) -> Result<()> {
         let pointer = self.input.pointer_sample();
-        self.render_bridge_frame(BridgeSceneInput {
+        self.update_bridge_steering(BridgeSceneInput {
             horizontal_delta: NO_BRIDGE_HORIZONTAL_MOTION,
             pointer_buttons: pointer.buttons.bits(),
             interaction: BridgeSteeringInteraction::MenuEngaged,
@@ -5925,6 +5929,19 @@ mod tests {
         services.initialize_audio(&audio).unwrap();
         services.load_initial_cartography_resource().unwrap();
         services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
+        let front_before_steering = services.runtime().front_buffer().pixels().to_vec();
+        let back_before_steering = services.runtime().back_buffer().pixels().to_vec();
+        let colors_before_steering = *services.runtime().live_palette();
+        services.update_ship_presentation_steering().unwrap();
+        assert!(
+            services.runtime().front_buffer().pixels() == front_before_steering,
+            "the ship steering adapter must not overwrite the active video or HUD"
+        );
+        assert!(
+            services.runtime().back_buffer().pixels() == back_before_steering,
+            "the ship steering adapter must not overwrite the retained background"
+        );
+        assert_eq!(*services.runtime().live_palette(), colors_before_steering);
         assert_eq!(
             services.bridge_view_frame().unwrap(),
             crate::native::bloodprg::INITIAL_BRIDGE_VIEW_FRAME as i16
