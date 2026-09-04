@@ -12,7 +12,7 @@ use crate::native::bloodprg::{
     update_camera_navigation,
 };
 
-use super::{ModernGameServices, RuntimePaletteTransitionConfig};
+use super::{ModernGameServices, RuntimePaletteTransitionConfig, RuntimePaletteTransitionSurface};
 
 const ACCESS_COUNTER_WORD_INDEX: usize = 10;
 const STATUS_REGION_ENTITY_INDEX: usize = 31;
@@ -107,6 +107,7 @@ impl RuntimeCameraNavigation {
                 services
                     .palette_transition_mut()
                     .configure(RuntimePaletteTransitionConfig {
+                        surface: RuntimePaletteTransitionSurface::PresentationFrame,
                         source: fade_source,
                         target: pre_fade_display_colors,
                         initial_percent: u16::from(transition.percent),

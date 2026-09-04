@@ -17,9 +17,21 @@ const INITIAL_DIRTY_FLAGS: u8 = u8::MIN;
 const PALETTE_UPLOAD_REQUESTED: u8 = 1;
 const EMPTY_PALETTE: IndexedGamePalette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
 
+/// True-color surface whose legacy source colors a recovered fade modifies.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePaletteTransitionSurface {
+    /// Indexed game artwork that is resolved when the bridge or UI is submitted.
+    #[default]
+    GameFrame,
+    /// Decoder-local colors for an already isolated true-color HNM page.
+    PresentationFrame,
+}
+
 /// Complete typed inputs for one recovered zero-to-100 palette transition.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimePaletteTransitionConfig {
+    /// Surface that owns the transition output for its complete lifetime.
+    pub surface: RuntimePaletteTransitionSurface,
     /// Palette approached as the transition percentage increases.
     pub source: IndexedGamePalette,
     /// Palette shown at transition percentage zero.
@@ -47,6 +59,7 @@ pub struct RuntimePaletteTransition {
     source: IndexedGamePalette,
     target: IndexedGamePalette,
     state: PaletteTransitionState,
+    surface: RuntimePaletteTransitionSurface,
 }
 
 impl Default for RuntimePaletteTransition {
@@ -61,6 +74,7 @@ impl Default for RuntimePaletteTransition {
                 last: INITIAL_TRANSITION_COLOR,
                 dirty_flags: INITIAL_DIRTY_FLAGS,
             },
+            surface: RuntimePaletteTransitionSurface::GameFrame,
         }
     }
 }
@@ -69,6 +83,11 @@ impl RuntimePaletteTransition {
     /// Borrow the current recovered progress, range, and dirty state.
     pub const fn state(&self) -> &PaletteTransitionState {
         &self.state
+    }
+
+    /// Surface selected when the current transition was configured.
+    pub const fn surface(&self) -> RuntimePaletteTransitionSurface {
+        self.surface
     }
 
     /// Synchronize progress written by the recovered ship-depth compositor.
@@ -109,6 +128,7 @@ impl RuntimePaletteTransition {
         self.state.increment = config.increment;
         self.state.first = *config.colors.start();
         self.state.last = *config.colors.end();
+        self.surface = config.surface;
         Ok(())
     }
 
@@ -249,6 +269,7 @@ mod tests {
         let mut transition = RuntimePaletteTransition::default();
         transition
             .configure(RuntimePaletteTransitionConfig {
+                surface: RuntimePaletteTransitionSurface::GameFrame,
                 source,
                 target,
                 initial_percent: TEST_INITIAL_PERCENT,

@@ -50,6 +50,7 @@ pub use game_lifecycle::RuntimeGameLifecycleHost;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
 pub use palette_transition::{
     RuntimePaletteTransition, RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome,
+    RuntimePaletteTransitionSurface,
 };
 pub use platform::{
     GAME_FRAME_DURATION, PRESENTATION_FRAME_DURATION, RECOVERED_FRAME_BUDGET, RuntimePlatformHost,

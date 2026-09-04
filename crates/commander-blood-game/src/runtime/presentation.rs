@@ -40,6 +40,7 @@ pub struct RuntimePresentationHost<'window> {
     window: &'window Window,
     renderer: Option<Renderer<'window>>,
     presented_frame_count: u64,
+    last_manu3_triangle_count: usize,
 }
 
 impl<'window> RuntimePresentationHost<'window> {
@@ -53,6 +54,7 @@ impl<'window> RuntimePresentationHost<'window> {
             window,
             renderer: Some(renderer),
             presented_frame_count: u64::MIN,
+            last_manu3_triangle_count: usize::MIN,
         })
     }
 
@@ -63,6 +65,7 @@ impl<'window> RuntimePresentationHost<'window> {
             window,
             renderer: Some(renderer),
             presented_frame_count: u64::MIN,
+            last_manu3_triangle_count: usize::MIN,
         })
     }
 
@@ -129,6 +132,7 @@ impl<'window> RuntimePresentationHost<'window> {
         self.renderer_mut()?
             .render(manu3_triangles, None, None)
             .context("presenting translated artwork frame")?;
+        self.last_manu3_triangle_count = manu3_triangles.len();
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
         Ok(())
     }
@@ -179,6 +183,7 @@ impl<'window> RuntimePresentationHost<'window> {
             }
         }
         .context("presenting translated game frame")?;
+        self.last_manu3_triangle_count = manu3_triangles.len();
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
         Ok(())
     }
@@ -194,6 +199,7 @@ impl<'window> RuntimePresentationHost<'window> {
         self.renderer_mut()?
             .render(&[], Some(frame), None)
             .context("presenting translated alien-overlay frame")?;
+        self.last_manu3_triangle_count = usize::MIN;
         self.presented_frame_count = self.presented_frame_count.wrapping_add(1);
         Ok(())
     }
@@ -208,6 +214,11 @@ impl<'window> RuntimePresentationHost<'window> {
     /// Number of frames submitted to the window surface.
     pub const fn presented_frame_count(&self) -> u64 {
         self.presented_frame_count
+    }
+
+    /// Number of MANU3 triangles submitted by the most recent GPU frame.
+    pub const fn last_manu3_triangle_count(&self) -> usize {
+        self.last_manu3_triangle_count
     }
 
     fn renderer_ref(&self) -> Result<&Renderer<'window>> {

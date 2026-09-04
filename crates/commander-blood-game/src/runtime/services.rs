@@ -75,13 +75,14 @@ use super::{
     LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, LOGICAL_FRAMEBUFFER_WIDTH,
     OriginalGameData, OriginalGameRuntime, RuntimeAlienOverlayCycle, RuntimeAssetLoadStatus,
     RuntimeAudioHost, RuntimeConfirmDialog, RuntimeInputHost, RuntimePaletteTransition,
-    RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome, RuntimePlatformHost,
-    RuntimePresentationCatalog, RuntimePresentationHost, RuntimePresentationPlayer,
-    RuntimePresentationQueueMetrics, RuntimePresentationScreen, RuntimePresentationStepOutcome,
-    RuntimePresentationWordChoice, RuntimeSaveLoad, RuntimeSceneTransition, RuntimeScriptBackend,
-    RuntimeScriptCommand, RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation,
-    RuntimeShipTargetSelection, RuntimeShipTargetSelector, RuntimeSubtitleReveal,
-    VGA_BIOS_FONT_8X8, initialize_and_restore_original_save_game,
+    RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome,
+    RuntimePaletteTransitionSurface, RuntimePlatformHost, RuntimePresentationCatalog,
+    RuntimePresentationHost, RuntimePresentationPlayer, RuntimePresentationQueueMetrics,
+    RuntimePresentationScreen, RuntimePresentationStepOutcome, RuntimePresentationWordChoice,
+    RuntimeSaveLoad, RuntimeSceneTransition, RuntimeScriptBackend, RuntimeScriptCommand,
+    RuntimeScriptSystem, RuntimeShipHud, RuntimeShipNavigation, RuntimeShipTargetSelection,
+    RuntimeShipTargetSelector, RuntimeSubtitleReveal, VGA_BIOS_FONT_8X8,
+    initialize_and_restore_original_save_game,
 };
 
 const MUSIC_RESOURCE_DIRECTORY: &[u8] = b"MU\\";
@@ -1933,7 +1934,6 @@ impl<'window> ModernGameServices<'window> {
             .copied()
             .unwrap_or(*self.runtime.live_palette());
         publish_loaded_scene_palette(scene_colors, &mut source_colors);
-        *self.runtime.live_palette_mut() = source_colors;
         self.presentation_player
             .stage_next_stream_source_colors(source_colors);
     }
@@ -1948,6 +1948,7 @@ impl<'window> ModernGameServices<'window> {
     pub fn configure_navigation_bridge_palette_transition(&mut self) -> Result<()> {
         self.palette_transition
             .configure(RuntimePaletteTransitionConfig {
+                surface: RuntimePaletteTransitionSurface::GameFrame,
                 source: self.bridge_palette,
                 target: [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
                 initial_percent: u16::MIN,
@@ -2064,6 +2065,7 @@ impl<'window> ModernGameServices<'window> {
             .context("ship HUD palette boundary exceeds an indexed palette")?;
         self.palette_transition
             .configure(RuntimePaletteTransitionConfig {
+                surface: RuntimePaletteTransitionSurface::PresentationFrame,
                 source,
                 target,
                 initial_percent: u16::MIN,
@@ -2186,14 +2188,13 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         state: &mut GameLifecycleState,
     ) -> Result<RuntimePaletteTransitionOutcome> {
-        let outcome =
-            if let Some(display_colors) = self.presentation_player.display_palette_mut() {
-                self.palette_transition.update(display_colors, state)
-            } else {
-                self.palette_transition
-                    .update(self.runtime.live_palette_mut(), state)
-            }
-            .context("advancing the recovered color transition")?;
+        let outcome = update_owned_palette_transition(
+            &mut self.palette_transition,
+            self.presentation_player.display_palette_mut(),
+            self.runtime.live_palette_mut(),
+            state,
+        )
+        .context("advancing the recovered color transition")?;
         self.presentation_player
             .refresh_display_rgba(self.runtime.front_buffer().pixels())?;
         self.ship_presentation.transition_percent = self.palette_transition.state().percent;
@@ -4851,6 +4852,10 @@ impl<'window> ModernGameServices<'window> {
         });
         snapshot["video"]["game_color_bytes"] = serde_json::Value::String(game_color_bytes);
         snapshot["video"]["display_color_bytes"] = serde_json::Value::String(display_color_bytes);
+        snapshot["video"]["manu3_submitted_triangle_count"] =
+            serde_json::Value::from(self.presentation.last_manu3_triangle_count());
+        snapshot["video"]["palette_transition"]["surface"] =
+            serde_json::Value::String(format!("{:?}", self.palette_transition.surface()));
         Ok(snapshot)
     }
 
@@ -4949,6 +4954,29 @@ fn indexed_rgb_hash(indexed_pixels: &[u8], palette: &IndexedGamePalette) -> Stri
         }
     }
     format!("{hash:016x}")
+}
+
+fn update_owned_palette_transition(
+    transition: &mut RuntimePaletteTransition,
+    presentation_colors: Option<&mut IndexedGamePalette>,
+    game_colors: &mut IndexedGamePalette,
+    state: &mut GameLifecycleState,
+) -> Result<RuntimePaletteTransitionOutcome> {
+    match transition.surface() {
+        RuntimePaletteTransitionSurface::GameFrame => transition.update(game_colors, state),
+        RuntimePaletteTransitionSurface::PresentationFrame => {
+            if let Some(presentation_colors) = presentation_colors {
+                transition.update(presentation_colors, state)
+            } else {
+                // Interpolation is source/target based, so a released HNM can
+                // retire native timing and input latches without redirecting
+                // its remaining colors into game artwork.
+                let mut discarded_colors = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+                transition.update(&mut discarded_colors, state)
+            }
+        }
+    }
+    .map_err(Into::into)
 }
 
 fn indexed_layer_metrics(pixels: &[u8]) -> serde_json::Value {
@@ -5538,6 +5566,95 @@ mod tests {
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const SCRIPT_RADIO_CLIP_COUNTDOWN: u16 = 2;
+
+    fn test_surface_fade(surface: RuntimePaletteTransitionSurface) -> RuntimePaletteTransition {
+        let mut transition = RuntimePaletteTransition::default();
+        transition
+            .configure(RuntimePaletteTransitionConfig {
+                surface,
+                source: [[60, 30, 10]; PALETTE_ENTRY_COUNT],
+                target: [[0; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
+                initial_percent: 0,
+                increment: 20,
+                colors: 0..=1,
+            })
+            .unwrap();
+        transition
+    }
+
+    #[test]
+    fn presentation_fade_cannot_recolor_game_artwork() {
+        let mut transition = test_surface_fade(RuntimePaletteTransitionSurface::PresentationFrame);
+        let original_game_colors = [[5, 20, 40]; PALETTE_ENTRY_COUNT];
+        let mut game_colors = original_game_colors;
+        let mut display_colors = [[63; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        update_owned_palette_transition(
+            &mut transition,
+            Some(&mut display_colors),
+            &mut game_colors,
+            &mut GameLifecycleState::default(),
+        )
+        .unwrap();
+        assert_eq!(game_colors, original_game_colors);
+        assert_eq!(display_colors[0], [12, 6, 2]);
+        assert_eq!(display_colors[1], [12, 6, 2]);
+        assert_eq!(display_colors[2], [63; RGB_COMPONENT_COUNT]);
+    }
+
+    #[test]
+    fn game_fade_cannot_be_redirected_into_a_retained_video() {
+        let mut transition = test_surface_fade(RuntimePaletteTransitionSurface::GameFrame);
+        let mut game_colors = [[5, 20, 40]; PALETTE_ENTRY_COUNT];
+        let original_display_colors = [[63; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
+        let mut display_colors = original_display_colors;
+        update_owned_palette_transition(
+            &mut transition,
+            Some(&mut display_colors),
+            &mut game_colors,
+            &mut GameLifecycleState::default(),
+        )
+        .unwrap();
+        assert_eq!(display_colors, original_display_colors);
+        assert_eq!(game_colors[0], [12, 6, 2]);
+        assert_eq!(game_colors[1], [12, 6, 2]);
+        assert_eq!(game_colors[2], [5, 20, 40]);
+    }
+
+    #[test]
+    fn released_video_fade_retires_without_recoloring_the_next_scene() {
+        let mut transition = test_surface_fade(RuntimePaletteTransitionSurface::PresentationFrame);
+        let original_game_colors = [[5, 20, 40]; PALETTE_ENTRY_COUNT];
+        let mut game_colors = original_game_colors;
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.primary_pointer_pressed = true;
+        lifecycle.secondary_pointer_pressed = true;
+        lifecycle.pointer_press_pending = 1;
+        for expected_percent in [20, 40, 60, 80, 100] {
+            let outcome = update_owned_palette_transition(
+                &mut transition,
+                None,
+                &mut game_colors,
+                &mut lifecycle,
+            )
+            .unwrap();
+            assert_eq!(transition.state().percent, expected_percent);
+            assert!(outcome.upload_requested);
+            assert_eq!(game_colors, original_game_colors);
+        }
+        assert!(!lifecycle.primary_pointer_pressed);
+        // palette_upload_if_dirty (0x00178b) clears primary/pending, not secondary.
+        assert!(lifecycle.secondary_pointer_pressed);
+        assert_eq!(lifecycle.pointer_press_pending, 0);
+        let outcome = update_owned_palette_transition(
+            &mut transition,
+            None,
+            &mut game_colors,
+            &mut lifecycle,
+        )
+        .unwrap();
+        assert!(outcome.interpolation.is_none());
+        assert_eq!(game_colors, original_game_colors);
+    }
 
     #[test]
     fn authored_finale_latches_only_when_its_active_line_finishes() {

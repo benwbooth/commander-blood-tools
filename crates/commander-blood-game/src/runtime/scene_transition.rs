@@ -13,7 +13,10 @@ use crate::native::bloodprg::{
 };
 
 use super::game_lifecycle::bridge_steering_interaction;
-use super::{ModernGameServices, RuntimePaletteTransitionConfig, RuntimePlatformHost};
+use super::{
+    ModernGameServices, RuntimePaletteTransitionConfig, RuntimePaletteTransitionSurface,
+    RuntimePlatformHost,
+};
 
 pub(super) const SCENE_TRANSITION_IMAGE_RESOURCE: &[u8] = b"FRIGO.FD";
 
@@ -206,6 +209,11 @@ impl RuntimeSceneTransition {
         services
             .palette_transition_mut()
             .configure(RuntimePaletteTransitionConfig {
+                surface: if presentation_image_loaded {
+                    RuntimePaletteTransitionSurface::PresentationFrame
+                } else {
+                    RuntimePaletteTransitionSurface::GameFrame
+                },
                 source: self.palettes.source,
                 target: self.palettes.target,
                 initial_percent: u16::from(self.palettes.transition.percent),

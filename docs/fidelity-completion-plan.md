@@ -40,12 +40,15 @@ Every behavior fix needs:
 - `runtime/platform.rs` uses fixed timer ticks and bypasses pacing/interpolation
   for scenarios; interactive play uses monotonic elapsed time and render-only
   refreshes. Existing scripted passes do not validate those live paths.
-- `startup_phone_runtime.rs::run_production_scenario_internal` still waits on an
-  unbounded child process and deletes temporary traces on return. Failure
-  retention and per-scenario watchdogs must extend beyond the startup oracle.
-- The inherited Pterra/alien changes remain uncommitted and unverified. They
-  must be judged against source-backed phase/ownership contracts, not accepted
-  because a new assertion describes the implementation's own state.
+- `startup_phone_runtime.rs::run_production_scenario_internal` now uses a bounded
+  child-process runner. Captures remain under `output/fidelity` after either
+  process failure or later assertion failure. Each includes stdout/stderr,
+  input hashes, the scenario, and an immutable copy of initial writable saves.
+  `CBLOOD_SCENARIO_TIMEOUT_SECONDS` sets a positive timeout (default 600 seconds);
+  `CBLOOD_FIDELITY_ARTIFACT_ROOT` overrides the output directory.
+- The inherited deep-alien scenario changes remain unverified. The Pterra
+  follow-up below checks authored phase/ownership contracts; a test expecting
+  the implementation's own state is not independent evidence.
 
 ## Execution order
 
@@ -115,3 +118,72 @@ tests (6), startup-trace-verifier tests (3), and Rust port-ledger tests (4) pass
 The full asset-backed campaign gate was not rerun for this initial review;
 inherited Pterra and alien scenario changes still need investigation. No game
 behavior fix is claimed by these verification-tool changes.
+
+## Pterra follow-up contracts
+
+The retained failing run
+`output/fidelity/production-load-pterra-ship-navigation.jsonl-1788553823477111919-3509850-0/`
+exited normally, then failed its expectation that all video activity would stop.
+That expectation was unsupported: `re/vm/profiles/script2.blood` proc `pter`
+waits for eight identity-code choices; `re/descript/DESCRIPT.descript` assigns
+`scr20.hnm` to Scruter Jo's idle slot; `bloodprg_main`'s
+`presentation_ownership` block restarts the default line (8) while waiting.
+The replacement assertion checks the eight exact choices, rendered prompt
+glyphs, continuing idle animation, and isolated scene colors. It does not force
+the game to stop the authored idle video merely to satisfy a test.
+
+The fade ownership tests separately check game vs video output, color-range
+boundaries, and release during a pending fade. The C oracle for input cleanup is
+`func_00178b_palette_upload_if_dirty.c`: primary and pending latches clear;
+secondary remains unchanged. Retiring a video fade must preserve those timing
+and input side effects without writing its colors into the next scene.
+
+The existing `manu3_submitted_triangle_count` trace is the most recent completed
+draw, whereas semantic snapshots occur before the next draw. It is supporting
+evidence, not a same-frame GPU image comparison. Final GPU readback and broader
+original/Rust Pterra differential coverage remain required.
+
+## Confirmed steering adapter mismatch
+
+`ship_3d_navigation_update` calls the state-only `bridge_steer_update`, then
+returns while `vm_presentation_active` is set. It may copy the back buffer only
+after that gate (`re/source/bloodprg/candidates/seg_0a9a/func_00b34e_ship_3d_navigation_update.c`,
+lines 162-169). Original instructions at `0x00B493` through `0x00B4A4` confirm
+the call, gate and conditional copy. The steering routine itself has no drawing
+calls; its only interrupts update the mouse position.
+
+The Rust HUD/navigation callback instead called `render_bridge_frame`, replacing
+the whole front buffer after the HNM queue presented it. The failed Pterra trace
+at `output/fidelity/production-load-pterra-ship-navigation.jsonl-1788554823913073260-3543905-0/`
+retains diagnostic queue/tail hashes: distinct `scr20` images become the same
+tail image, `30a4db763f35c506`. Temporary diagnostic logging was removed after
+localizing the overwrite. `update_ship_presentation_steering` now changes only
+steering/input state, preserving both image buffers and their source colors.
+
+| C caller | Rust adapter | Steering-only audit |
+| --- | --- | --- |
+| `ship_3d_navigation_update` | `runtime/ship_navigation.rs` | Fixed: removed whole-bridge redraw |
+| `ship_3d_hud_init` | `runtime/ship_hud.rs` | Fixed: same shared callback |
+| `scene_transition_step` | `runtime/scene_transition.rs::update_bridge` | Already state-only |
+| `bridge_render_frame` | `runtime/bridge_frame.rs::update_steering` | Already state-only; drawing is a separate callback |
+
+The service-level buffer-preservation assertion failed before this change and
+passed afterward. All 31 `SCR20.HNM` payloads and transparent rectangle outputs
+match the original DOS decoder (`compare_hnm_decoder_corpus.py`, ordinary and
+`--rect` modes); the isolated runtime queue presents all 31 distinct images.
+Those decoder comparisons use controlled initial buffers, not a full original
+Pterra campaign. The enabled game-library suite passed 856 tests; four tests
+were ignored, with the SDL/wgpu service test additionally run explicitly under
+an isolated Xvfb display.
+
+The production Pterra scenario passed with six distinct final RGBA hashes at
+identity-choice checkpoints 34-39, instead of the six identical images seen
+before the fix. It also checked the prompt glyphs, exact choice list, retained
+bridge colors and absence of submitted MANU3 geometry over video. Artifacts:
+`output/fidelity/production-load-pterra-ship-navigation.jsonl-1788555042305390638-3549005-0/`.
+The adjacent Bob first-contact scenario passed with its existing media/audio
+assertions:
+`output/fidelity/production-bob-first-contact.jsonl-1788555074396230085-3560201-0/`.
+These are seeded/scripted Rust production runs, not full audiovisual parity or
+interactive wall-clock validation. The deep-alien scenario changes remain
+outside this verified/committed change set.

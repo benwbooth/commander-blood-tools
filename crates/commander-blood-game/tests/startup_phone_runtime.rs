@@ -65,6 +65,9 @@ const PTERRA_TARGET_CLICK: &str = "click 80 88";
 const PTERRA_LOCATION_VIDEO: &str = "PL\\pterra10.hnm";
 const PTERRA_SCRUTER_APPROACH_VIDEO: &str = "PE\\scr02.hnm";
 const PTERRA_SCRUTER_VIDEO: &str = "PE\\scr20.hnm";
+const PTERRA_IDENTITY_CHOICES: [&str; 8] = [
+    "robyx", "code", "ulikan", "69", "exxos", "electret", "666", "9",
+];
 const PTERRA_DOS_MARKER_LOW_COLOR_FNV: &str = "336b81698be4fca5";
 const PTERRA_DOS_SETTLED_LOW_COLOR_FNV: &str = "602f7fd2f3730b6e";
 const PTERRA_LOCATION_ENTRY_METRIC: u64 = 257;
@@ -1499,6 +1502,14 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
             "the independent wgpu MANU3 layer was enabled over a Pterra video: {record}"
         );
         assert_eq!(
+            record["semantic"]["video"]["manu3_submitted_triangle_count"], 0,
+            "the renderer submitted MANU3 geometry over a Pterra video: {record}"
+        );
+        assert_eq!(
+            record["semantic"]["video"]["palette_transition"]["surface"], "PresentationFrame",
+            "a Pterra fade targeted the game surface instead of its true-color video page: {record}"
+        );
+        assert_eq!(
             record["semantic"]["video"]["bridge_palette_hash"], retained_bridge_palette,
             "an HNM-local palette escaped into the retained RGBA bridge surface: {record}"
         );
@@ -1513,6 +1524,60 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
             "Pterra playback changed the retained RGBA bridge palette after a stream boundary: {record}"
         );
     }
+    // SCRIPT2 proc pter waits for this choice; DESCRIPT assigns scr20 as
+    // Scruter Jo's idle stream. The C lifecycle restarts line 8 while waiting,
+    // so a closed video source is not a valid completion condition here.
+    let identity_choices = records[pterra_click_index..]
+        .iter()
+        .filter(|record| {
+            record["semantic"]["presentation"]["waiting_for_input"] == true
+                && record["semantic"]["presentation"]["rendered_word_choices"]
+                    == serde_json::json!(PTERRA_IDENTITY_CHOICES)
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        identity_choices.len() >= 2,
+        "Pterra never reached a stable identity-code choice"
+    );
+    let post_video_choice = identity_choices.last().unwrap();
+    assert_eq!(
+        post_video_choice["semantic"]["video"]["active_resource"], PTERRA_SCRUTER_VIDEO,
+        "the identity choice did not play Scruter Jo's authored idle video"
+    );
+    assert_eq!(
+        post_video_choice["semantic"]["presentation"]["inline_menu"]["revealed_words"],
+        serde_json::json!(["You", "give", "identity", "code", ":"]),
+    );
+    assert_inline_menu_raster(post_video_choice, "Pterra identity-code prompt");
+    let idle_frame_hashes = identity_choices
+        .iter()
+        .map(|record| {
+            record["semantic"]["video"]["display_rgba_hash"]
+                .as_str()
+                .expect("the identity-code screen omitted its true-color image hash")
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    assert!(
+        idle_frame_hashes.len() > 1,
+        "Scruter Jo's idle video froze during the choice"
+    );
+    assert_eq!(
+        post_video_choice["semantic"]["video"]["palette_transition"]["surface"],
+        "PresentationFrame",
+        "the post-video Pterra page redirected its fade into game colors"
+    );
+    assert_eq!(
+        post_video_choice["semantic"]["video"]["manu3_layer_allowed"], false,
+        "the post-video Pterra choice page exposed the independent hand layer"
+    );
+    assert_eq!(
+        post_video_choice["semantic"]["video"]["manu3_submitted_triangle_count"], 0,
+        "the renderer submitted MANU3 geometry over the post-video Pterra choice page"
+    );
+    assert!(
+        post_video_choice["semantic"]["video"]["display_rgba_hash"].is_string(),
+        "the post-video Pterra choice page lost its retained true-color surface"
+    );
     assert!(
         records[pterra_click_index..].iter().any(|record| {
             record["semantic"]["presentation"]["active_actor_presentation"]["name"]
