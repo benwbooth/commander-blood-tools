@@ -1,7 +1,11 @@
 use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::atomic::{AtomicU64, Ordering};
+
+#[path = "support/scenario_artifacts.rs"]
+mod scenario_artifacts;
+#[path = "support/scenario_process.rs"]
+mod scenario_process;
 
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::instruction::ScriptRecordValue;
@@ -253,28 +257,6 @@ const BRIDGE_CONSOLE_PROBES: [BridgeConsoleProbe; 4] = [
         presentation_target: None,
     },
 ];
-
-static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
-
-struct TemporaryRoot(PathBuf);
-
-impl TemporaryRoot {
-    fn create() -> Self {
-        let sequence = TEMPORARY_ROOT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-        let path = std::env::temp_dir().join(format!(
-            "commander-blood-startup-phone-runtime-{}-{sequence}",
-            std::process::id()
-        ));
-        std::fs::create_dir_all(&path).unwrap();
-        Self(path)
-    }
-}
-
-impl Drop for TemporaryRoot {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.0);
-    }
-}
 
 #[test]
 fn production_runtime_escape_cancels_the_opening_and_enters_script1() {
@@ -1791,7 +1773,7 @@ fn run_production_scenario_internal(
     }
 
     let root = workspace_root();
-    let temporary = TemporaryRoot::create();
+    let temporary = scenario_artifacts::ScenarioArtifacts::create(&root, trace_name).unwrap();
     let trace_path = temporary.0.join(trace_name);
     let sdl_audio_output_path = temporary.0.join("sdl-audio.raw");
     let writable_path = temporary.0.join("writable");
@@ -1807,7 +1789,7 @@ fn run_production_scenario_internal(
         .arg(&trace_path)
         .arg("--oracle-packed-second")
         .arg(DOS_ORACLE_PACKED_SECOND.to_string())
-        .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, asset_cache);
+        .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, &asset_cache);
     if capture_sdl_audio {
         command
             .env("SDL_AUDIODRIVER", "disk")
@@ -1822,13 +1804,25 @@ fn run_production_scenario_internal(
     } else {
         command.env("SDL_AUDIODRIVER", "dummy");
     }
-    let output = command.output().unwrap();
+    let timeout = scenario_artifacts::timeout().unwrap();
+    temporary
+        .record_inputs(&command, &scenario_path, &asset_cache, &writable_path, timeout)
+        .unwrap();
+    let output = scenario_process::run(&mut command, &temporary.0, timeout).unwrap();
+    std::fs::write(
+        temporary.0.join("process-result.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "status": output.status.to_string(),
+            "timed_out": output.timed_out,
+        })).unwrap(),
+    ).unwrap();
     assert!(
-        output.status.success(),
-        "production scenario {} failed:\nstdout:\n{}\nstderr:\n{}",
+        output.status.success() && !output.timed_out,
+        "production scenario {} failed ({}, timed out: {}); artifacts: {}",
         scenario_path.display(),
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+        output.status,
+        output.timed_out,
+        temporary.0.display(),
     );
     let sdl_audio_output = capture_sdl_audio.then(|| {
         std::fs::read(&sdl_audio_output_path).unwrap_or_else(|error| {
