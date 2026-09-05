@@ -78,6 +78,9 @@ tests; those internals must not become the production scene model.
 - Isolated Xvfb screenshots under `output/fidelity/rgb-ui-pterra-PfVYYe/`
   show colored scene content retained underneath darkened menu backgrounds.
   This is visual inspection, not a matched-frame original-DOS comparison.
+- `frame-180.png` also shows stale green status text overlapping the white
+  Scruter prompt. Those status/subtitle pixels are still on the indexed path;
+  this observed defect remains open. The RGB choice panel itself is independent.
 - The RGB UI hashes remain stable while Bob/Scruter idle video frames advance.
   Production tests use scripted pacing; live monitor-refresh interpolation was
   checked through clock/animation unit tests, not a new manual playtest.

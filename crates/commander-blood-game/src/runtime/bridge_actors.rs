@@ -171,15 +171,18 @@ impl RuntimeBridgeActors {
         services.set_bridge_actor_redraw_requested(self.playback.redraw_requested)?;
         // Native UI bit 2 is both the actor redraw latch and the bridge menu clamp.
         lifecycle.set_modal_ui_busy(self.playback.redraw_requested);
-        services.set_ship_travel_actor_ready(
-            slots[BLACK_HOLE_ACTOR_SLOT].flags.executable_flags() == ACTIVE_ONLY_SLOT_FLAGS,
-        );
+        services.set_ship_travel_actor_ready(travel_actor_ready(slots));
         Ok(outcome)
     }
 }
 
 fn publish_bridge_seek_ui(lifecycle: &mut GameLifecycleState, requested: bool) {
     lifecycle.set_navigation_ui_busy(requested);
+}
+
+// C6 consumes nav_actor_0_busy at GS:0x2A7B, the slot-4 flag byte.
+fn travel_actor_ready(slots: &[NavActorSlot; NAV_ACTOR_SLOT_COUNT]) -> bool {
+    slots[BLACK_HOLE_ACTOR_SLOT].flags.executable_flags() == ACTIVE_ONLY_SLOT_FLAGS
 }
 
 #[cfg(test)]
@@ -209,6 +212,22 @@ mod tests {
         assert!(actors.location_panel.active);
         assert!(actors.location_panel.blocks_playback);
         assert!(actors.camera.location_panel_active);
+    }
+
+    #[test]
+    fn black_hole_active_publishes_travel_actor_busy() {
+        let mut slots = [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT];
+        slots[BLACK_HOLE_ACTOR_SLOT].flags.active = true;
+
+        assert!(travel_actor_ready(&slots));
+    }
+
+    #[test]
+    fn hyperjump_active_does_not_publish_travel_actor_busy() {
+        let mut slots = [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT];
+        slots[HYPERJUMP_ACTOR_SLOT].flags.active = true;
+
+        assert!(!travel_actor_ready(&slots));
     }
 }
 
