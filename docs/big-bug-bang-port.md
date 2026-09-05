@@ -79,7 +79,51 @@ wrapper does not expose. Those source files and the wrapper are unchanged in
 this slice. Keep this as a separate test-ownership repair; do not disable tests
 or count the failed workspace-wide gate as passing.
 
-## Next Native Ownership Work
+### Sequel Records and Profile Ownership
+
+The formats crate now decodes sequel VAR records with an explicit dialect:
+actors own 74 bytes and locations 26, versus Commander's 72 and 24. All 17
+original VAR, DEB and DIC images round-trip exactly, with 184 objects per
+profile. Their entire active-object directory prefix is identical, not just
+the first few entries. Original field-table comparisons cover all 22 selector
+rows and nine shipped object kinds. The inherited 21 rows match Commander;
+the additional row selects the actor word at byte 72. Its gameplay meaning
+is not yet established, so the API does not invent a semantic name.
+
+The resource cache can decode the sequel's 155-name catalog. The profile
+manager can decode all 17 native rows and carry the dialect into code and
+state decoding. It retains synchronized live VAR and timers across noninitial
+sequel switches, releases the four other companions, and reloads initial VAR
+when returning to profile zero. Repeating the initial selection retains live
+VAR but resets timers, matching the native release/cache/reset conditions.
+An out-of-catalog identity is rejected before changing the active profile.
+Retained state requires matching active-object directories; a mismatch errors
+instead of rebinding objects under different identities.
+
+Synthetic, well-formed companion files test the real manager's resource and
+timer lifecycle, including modified live state and repeated selections. These
+are isolated test fixtures, not substitutes for the sequel's missing files.
+The corpus and native-table tests require local original assets and are
+explicitly ignored unless requested:
+
+```sh
+nix develop -c cargo test -p commander-blood-formats --lib -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib sequel_ -- --include-ignored
+```
+
+This implements loader components, **not production sequel startup**. Game
+selection and dialect-aware runtime profile requests remain unwired, and the
+strict BAS loader still rejects missing or unsupported dialogue data.
+
+Verification for the record/profile slice (2026-09-05): 108 formats tests passed
+with ignored corpus tests enabled, all four sequel-specific game tests passed
+with original-table tests enabled, and the full game library passed 884 tests
+with seven ignored (including the two separately run sequel table tests).
+`cargo check -p commander-blood-game --all-targets` passed. These commands ran
+in the current working tree; unrelated in-progress runtime changes were not
+included in this commit.
+
+## Native Ownership Evidence and Open Questions
 
 Inspection of the sequel loader at file 0x5820 established a different load
 order: VAR, DEB, COD, BAS, DIC. The name catalog starts at file 0xED94;
@@ -101,19 +145,24 @@ native failed-load and actual conversation-entry paths before defining the
 meaning of missing BAS resources; do not synthesize empty files or assume that
 the shipped SCRIPT2.BAS is used with the current profile dictionary.
 
-The first three examined DEB files have the same 184 active-object prefix.
-Their first records are baby1 (offset 0, kind 64), baby (20, kind 64), blood
-(40, kind 1), and internet (74, kind 2). Actor-to-actor boundaries elsewhere
-advance by 74 bytes, whereas the current Commander decoder assigns actors 72
-bytes. Recover and verify the complete sequel object-size/field matrix before
-binding native gameplay operations or persistent profile state.
+The call to the old-style conversation scanner at 0x5E66 is gated by actor
+field selector 2 (byte 26), presentation context and object flags. Trace its
+reachable callers and field writes before deciding which BAS resources matter;
+initial field values alone cannot prove that conversations are unreachable.
+
+SCRIPT2.VAR has an extra trailing word named `time` at byte 8368. The initial
+VAR image is only 8368 bytes, yet the native loader retains it when selecting
+noninitial profiles. Allocation ownership and the first read/write of that
+extra word remain unresolved. Do not copy the second profile's defaults or
+silently zero-extend the initial state without native evidence.
 
 ## Remaining Completion Requirements
 
 - Recover D4-D7 effects and compare inherited VM handlers, including skip,
   state, presentation and conversation semantics. Add native oracle coverage.
-- Implement game/version identity, correct resource catalogs, 17-profile
-  loading, persistent sequel state, object layouts and missing-resource behavior.
+- Wire game/version identity and the recovered sequel catalogs/layouts into
+  production startup and runtime profile changes; resolve missing-resource
+  behavior and the extra SCRIPT2 state word before claiming complete loading.
 - Recover the actual conversation representation and produce readable,
   hand-editable French source with byte-exact COD/BAS/DEB/DIC/VAR/DESCRIPT
   reproduction where those resources are active. No raw fallback as completion.

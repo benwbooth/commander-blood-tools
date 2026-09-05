@@ -3,6 +3,8 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
+use crate::code::ScriptDialect;
+
 const DIRECTORY_ENTRY_SIZE: usize = 20;
 const DIRECTORY_NAME_CAPACITY: usize = 16;
 const DIRECTORY_VALUE_FIELD: usize = 16;
@@ -238,6 +240,21 @@ impl ScriptObjectKind {
             Self::InventoryItem => 24,
         }
     }
+
+    /// Return this game's owned VAR record extent.
+    ///
+    /// Sequel DEB object boundaries add one word to actors and locations.
+    /// BLOOD2PG's added field-selector row at 0x16A68 addresses actor byte 72.
+    /// WorldState retains the compiler-injected `tblood` word at byte 36 in
+    /// both games, matching the established runtime's ownership convention.
+    pub const fn record_size_for_dialect(self, dialect: ScriptDialect) -> usize {
+        match (dialect, self) {
+            (ScriptDialect::BigBugBang, Self::Actor | Self::Location) => {
+                self.record_size() + WORD_SIZE
+            }
+            _ => self.record_size(),
+        }
+    }
 }
 
 /// One owned state object decoded from a VAR image.
@@ -266,12 +283,18 @@ impl ScriptStateObject {
 /// Complete decoded VAR state image partitioned into typed objects and trailing data.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScriptState {
+    dialect: ScriptDialect,
     objects: Vec<ScriptStateObject>,
     trailing_source_offset: usize,
     trailing_data: Box<[u8]>,
 }
 
 impl ScriptState {
+    /// Return the native layout used to bind this state's owned records.
+    pub const fn dialect(&self) -> ScriptDialect {
+        self.dialect
+    }
+
     /// Return every state object in active-directory order.
     pub fn objects(&self) -> &[ScriptStateObject] {
         &self.objects
@@ -935,6 +958,15 @@ pub fn decode_script_state(
     data: &[u8],
     directory: &ScriptDirectory,
 ) -> Result<ScriptState, ScriptDataError> {
+    decode_script_state_for_dialect(data, directory, ScriptDialect::CommanderBlood)
+}
+
+/// Decode VAR records with the explicitly selected game's fixed record sizes.
+pub fn decode_script_state_for_dialect(
+    data: &[u8],
+    directory: &ScriptDirectory,
+    dialect: ScriptDialect,
+) -> Result<ScriptState, ScriptDataError> {
     let mut objects = Vec::new();
     let mut cursor = usize::MIN;
     for (object, entry) in directory.active_objects() {
@@ -960,7 +992,7 @@ pub fn decode_script_state(
                 object,
                 kind: kind_word,
             })?;
-        let end = cursor.saturating_add(kind.record_size());
+        let end = cursor.saturating_add(kind.record_size_for_dialect(dialect));
         if end > data.len() {
             return Err(ScriptDataError::TruncatedStateObject {
                 object,
@@ -977,6 +1009,7 @@ pub fn decode_script_state(
         cursor = end;
     }
     Ok(ScriptState {
+        dialect,
         objects,
         trailing_source_offset: cursor,
         trailing_data: Box::from(&data[cursor..]),
@@ -1066,5 +1099,70 @@ mod tests {
                 kind: u16::MAX,
             }
         );
+    }
+
+    #[test]
+    fn sequel_record_extensions_are_owned_without_changing_commander_layout() {
+        let mut directory_bytes = [0; DIRECTORY_ENTRY_SIZE * 2];
+        directory_bytes[..5].copy_from_slice(b"actor");
+        directory_bytes[DIRECTORY_KIND_FIELD] = 1;
+        directory_bytes[DIRECTORY_ENTRY_SIZE..DIRECTORY_ENTRY_SIZE + 5].copy_from_slice(b"place");
+        directory_bytes[DIRECTORY_ENTRY_SIZE + DIRECTORY_VALUE_FIELD] = 74;
+        directory_bytes[DIRECTORY_ENTRY_SIZE + DIRECTORY_KIND_FIELD] = 1;
+        let directory = decode_script_directory(&directory_bytes).unwrap();
+        let mut bytes = [0; 100];
+        bytes[0] = 2;
+        bytes[74] = 128;
+        bytes[72..74].copy_from_slice(&1234u16.to_le_bytes());
+        bytes[98..100].copy_from_slice(&5678u16.to_le_bytes());
+        let state =
+            decode_script_state_for_dialect(&bytes, &directory, ScriptDialect::BigBugBang).unwrap();
+        assert_eq!(state.dialect(), ScriptDialect::BigBugBang);
+        assert_eq!(state.objects()[0].bytes().len(), 74);
+        assert_eq!(state.objects()[1].bytes().len(), 26);
+        assert_eq!(
+            state.resolve_word_source_offset(72).unwrap().object(),
+            Some(ScriptObjectId(0))
+        );
+        assert_eq!(
+            state.resolve_word_source_offset(98).unwrap().object(),
+            Some(ScriptObjectId(1))
+        );
+        assert_eq!(state.encode(), bytes);
+        assert!(matches!(
+            decode_script_state(&bytes, &directory),
+            Err(ScriptDataError::NonContiguousStateObject {
+                expected: 72,
+                actual: 74,
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang disc files under output/big-bug-bang/disc"]
+    fn every_big_bug_bang_state_directory_and_dictionary_round_trips() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+        let mut active_prefix = None;
+        for profile in 1..=17 {
+            let deb = std::fs::read(root.join(format!("SCRIPT{profile}.DEB"))).unwrap();
+            let var = std::fs::read(root.join(format!("SCRIPT{profile}.VAR"))).unwrap();
+            let dic = std::fs::read(root.join(format!("SCRIPT{profile}.DIC"))).unwrap();
+            let directory = decode_script_directory(&deb).unwrap();
+            let dictionary = decode_script_dictionary(&dic).unwrap();
+            let state =
+                decode_script_state_for_dialect(&var, &directory, ScriptDialect::BigBugBang)
+                    .unwrap_or_else(|error| panic!("SCRIPT{profile}: {error}"));
+            assert_eq!(state.objects().len(), 184);
+            assert_eq!(state.encode(), var);
+            assert_eq!(dictionary.encode(), dic);
+            assert_eq!(directory.encode(), deb);
+            let prefix = deb[..184 * DIRECTORY_ENTRY_SIZE].to_vec();
+            assert_eq!(
+                active_prefix.get_or_insert_with(|| prefix.clone()),
+                &prefix,
+                "SCRIPT{profile} persistent object identity"
+            );
+        }
     }
 }

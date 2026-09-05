@@ -729,5 +729,6 @@ pub use timer::{
 pub use vm::{
     ScriptFieldSelector, ScriptObjectFlag, active_objects_in_play, count_positive_operands,
     increment_object_access_counters, object_before_threshold, object_has_flag,
-    resolve_dictionary_object, script_field_offset, set_object_flag,
+    resolve_dictionary_object, script_field_offset, script_field_offset_for_dialect,
+    set_object_flag,
 };

@@ -18,6 +18,8 @@ use super::sprite_geometry::{
 pub const BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET: usize = 0x00CDF4;
 /// Number of resource names authored in the original executable.
 pub const ORIGINAL_RESOURCE_COUNT: usize = 95;
+const BLOOD2PG_RESOURCE_CATALOG_FILE_OFFSET: usize = 0xED94;
+const BIG_BUG_BANG_RESOURCE_COUNT: usize = 155;
 /// Paragraph-size rounding applied to original resource allocations.
 pub const ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT: usize = 16;
 
@@ -64,8 +66,28 @@ impl OriginalResourceCatalog {
     /// The file position is serialized-format evidence only. Runtime lookups use
     /// [`ResourceId`] and ordinary owned collections.
     pub fn decode_bloodprg(executable: &[u8]) -> Result<Self, ResourceCacheError> {
-        let required = BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET
-            + ORIGINAL_RESOURCE_COUNT * RESOURCE_NAME_FIELD_SIZE;
+        Self::decode_name_table(
+            executable,
+            BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET,
+            ORIGINAL_RESOURCE_COUNT,
+        )
+    }
+
+    /// Decode the sequel's 155 names, immediately preceding its 17 profile rows.
+    pub fn decode_blood2pg(executable: &[u8]) -> Result<Self, ResourceCacheError> {
+        Self::decode_name_table(
+            executable,
+            BLOOD2PG_RESOURCE_CATALOG_FILE_OFFSET,
+            BIG_BUG_BANG_RESOURCE_COUNT,
+        )
+    }
+
+    fn decode_name_table(
+        executable: &[u8],
+        table_offset: usize,
+        count: usize,
+    ) -> Result<Self, ResourceCacheError> {
+        let required = table_offset + count * RESOURCE_NAME_FIELD_SIZE;
         if executable.len() < required {
             return Err(ResourceCacheError::ExecutableTooShort {
                 required,
@@ -73,10 +95,9 @@ impl OriginalResourceCatalog {
             });
         }
 
-        let mut names = Vec::with_capacity(ORIGINAL_RESOURCE_COUNT);
-        for resource_index in 0..ORIGINAL_RESOURCE_COUNT {
-            let start =
-                BLOODPRG_RESOURCE_CATALOG_FILE_OFFSET + resource_index * RESOURCE_NAME_FIELD_SIZE;
+        let mut names = Vec::with_capacity(count);
+        for resource_index in 0..count {
+            let start = table_offset + resource_index * RESOURCE_NAME_FIELD_SIZE;
             let field = &executable[start..start + RESOURCE_NAME_FIELD_SIZE];
             let name_length = field.iter().position(|byte| *byte == u8::MIN).ok_or(
                 ResourceCacheError::UnterminatedCatalogName {

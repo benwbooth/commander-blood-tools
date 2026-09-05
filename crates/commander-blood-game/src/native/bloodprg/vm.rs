@@ -1,5 +1,6 @@
 //! Typed helper logic used by the BloodScript runtime.
 
+use commander_blood_formats::code::ScriptDialect;
 use commander_blood_formats::script::{
     ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptObjectKind, ScriptState, ScriptWordId,
 };
@@ -7,6 +8,8 @@ use commander_blood_formats::script::{
 const MAXIMUM_ORIGINAL_OPERAND_COUNT: usize = u16::MAX as usize;
 const POSITIVE_OPERAND_BOUNDARY: i16 = 0;
 const FIELD_SELECTOR_COUNT: usize = 21;
+const SEQUEL_ACTOR_EXTENSION_SELECTOR: u8 = 21;
+const SEQUEL_ACTOR_EXTENSION_OFFSET: usize = 72;
 const OBJECT_KIND_COUNT: usize = 9;
 const OBJECT_FLAGS_BYTE_OFFSET: usize = 2;
 const OBJECT_ACCESS_COUNTER_BYTE_OFFSET: usize = 20;
@@ -97,6 +100,16 @@ impl ScriptFieldSelector {
         }
     }
 
+    /// Validate a selector using the chosen game's native field-matrix extent.
+    pub const fn new_for_dialect(value: u8, dialect: ScriptDialect) -> Option<Self> {
+        if matches!(dialect, ScriptDialect::BigBugBang) && value == SEQUEL_ACTOR_EXTENSION_SELECTOR
+        {
+            Some(Self(value))
+        } else {
+            Self::new(value)
+        }
+    }
+
     /// Return the selector's zero-based matrix row.
     pub const fn index(self) -> usize {
         self.0 as usize
@@ -109,7 +122,23 @@ impl ScriptFieldSelector {
 /// Absent matrix cells return `None`; signed table bytes and arbitrary selector
 /// indexing from malformed machine state are outside the shipped data domain.
 pub fn script_field_offset(kind: ScriptObjectKind, selector: ScriptFieldSelector) -> Option<usize> {
-    let offset = FIELD_OFFSETS[selector.index()][object_kind_index(kind)];
+    script_field_offset_for_dialect(kind, selector, ScriptDialect::CommanderBlood)
+}
+
+/// Resolve the sequel's additional field without changing inherited selector rows.
+///
+/// BLOOD2PG.EXE 0x6633 resolves through file 0x16918. Its first 21 rows are
+/// byte-identical to Commander's matrix; row 21 adds the actor's final word.
+pub fn script_field_offset_for_dialect(
+    kind: ScriptObjectKind,
+    selector: ScriptFieldSelector,
+    dialect: ScriptDialect,
+) -> Option<usize> {
+    if selector.0 == SEQUEL_ACTOR_EXTENSION_SELECTOR {
+        return (dialect == ScriptDialect::BigBugBang && kind == ScriptObjectKind::Actor)
+            .then_some(SEQUEL_ACTOR_EXTENSION_OFFSET);
+    }
+    let offset = FIELD_OFFSETS.get(selector.index())?[object_kind_index(kind)];
     (offset != u8::MIN).then_some(usize::from(offset))
 }
 
@@ -421,6 +450,60 @@ mod tests {
                     expected,
                     "selector {selector_index}, kind {kind:?}"
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn sequel_actor_extension_cannot_address_a_commander_record() {
+        let selector = ScriptFieldSelector::new_for_dialect(
+            SEQUEL_ACTOR_EXTENSION_SELECTOR,
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        assert!(ScriptFieldSelector::new(SEQUEL_ACTOR_EXTENSION_SELECTOR).is_none());
+        assert_eq!(script_field_offset(ScriptObjectKind::Actor, selector), None);
+        assert_eq!(
+            script_field_offset_for_dialect(
+                ScriptObjectKind::Actor,
+                selector,
+                ScriptDialect::BigBugBang
+            ),
+            Some(SEQUEL_ACTOR_EXTENSION_OFFSET)
+        );
+        assert_eq!(
+            script_field_offset_for_dialect(
+                ScriptObjectKind::Location,
+                selector,
+                ScriptDialect::BigBugBang
+            ),
+            None
+        );
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang executable under output/big-bug-bang/disc"]
+    fn sequel_field_matrix_matches_all_native_rows_and_shipped_kinds() {
+        const SEQUEL_FIELD_TABLE_FILE_OFFSET: usize = 0x16918;
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE");
+        let executable = std::fs::read(path).unwrap();
+        for row in 0..=SEQUEL_ACTOR_EXTENSION_SELECTOR {
+            let selector =
+                ScriptFieldSelector::new_for_dialect(row, ScriptDialect::BigBugBang).unwrap();
+            for kind in SHIPPED_OBJECT_KINDS {
+                let native_offset = executable[SEQUEL_FIELD_TABLE_FILE_OFFSET
+                    + usize::from(row) * ORIGINAL_FIELD_TABLE_KIND_COUNT
+                    + kind.mask().trailing_zeros() as usize];
+                let expected = (native_offset != 0).then_some(usize::from(native_offset));
+                assert_eq!(
+                    script_field_offset_for_dialect(kind, selector, ScriptDialect::BigBugBang),
+                    expected,
+                    "selector {row}, kind {kind:?}"
+                );
+                assert!(expected.is_none_or(
+                    |offset| offset < kind.record_size_for_dialect(ScriptDialect::BigBugBang)
+                ));
             }
         }
     }

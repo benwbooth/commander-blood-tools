@@ -8,7 +8,8 @@ use std::mem::size_of;
 
 use commander_blood_formats::bas::{ScriptBas, ScriptBasError, decode_script_bas};
 use commander_blood_formats::code::{
-    ScriptCode, ScriptCodeError, ScriptCodeOffset, ScriptToken, decode_script_code,
+    ScriptCode, ScriptCodeError, ScriptCodeOffset, ScriptDialect, ScriptToken,
+    decode_script_code_for_dialect,
 };
 use commander_blood_formats::instruction::{
     DecodedScriptInstruction, ScriptInstructionError, decode_complete_script_instruction,
@@ -16,7 +17,8 @@ use commander_blood_formats::instruction::{
 };
 use commander_blood_formats::script::{
     ScriptDataError, ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptState,
-    ScriptSymbolKind, decode_script_dictionary, decode_script_directory, decode_script_state,
+    ScriptSymbolKind, decode_script_dictionary, decode_script_directory,
+    decode_script_state_for_dialect,
 };
 
 use crate::assets::OriginalResourceStore;
@@ -37,6 +39,9 @@ pub use record_state::{ScriptProfileRecordState, ScriptProfileRecordStateError};
 pub const BLOODPRG_SCRIPT_PROFILE_TABLE_FILE_OFFSET: usize = 0x00D3E4;
 /// Number of playable script profiles shipped by Commander Blood.
 pub const ORIGINAL_SCRIPT_PROFILE_COUNT: usize = 5;
+const BIG_BUG_BANG_SCRIPT_PROFILE_COUNT: usize = 17;
+const BLOOD2PG_SCRIPT_PROFILE_TABLE_FILE_OFFSET: usize = 0xF744;
+const SEQUEL_NATIVE_RESOURCE_ORDER: [usize; SCRIPT_PROFILE_RESOURCE_COUNT] = [2, 3, 0, 4, 1];
 /// Number of companion files loaded for each script profile.
 pub const SCRIPT_PROFILE_RESOURCE_COUNT: usize = 5;
 
@@ -65,7 +70,16 @@ impl ScriptProfileId {
 
     /// Validate a numeric profile identity against the five shipped profiles.
     pub const fn new(value: u8) -> Option<Self> {
-        if value < ORIGINAL_SCRIPT_PROFILE_COUNT as u8 {
+        Self::new_for_dialect(value, ScriptDialect::CommanderBlood)
+    }
+
+    /// Validate a profile against the selected game's authored profile domain.
+    pub const fn new_for_dialect(value: u8, dialect: ScriptDialect) -> Option<Self> {
+        let count = match dialect {
+            ScriptDialect::CommanderBlood => ORIGINAL_SCRIPT_PROFILE_COUNT,
+            ScriptDialect::BigBugBang => BIG_BUG_BANG_SCRIPT_PROFILE_COUNT,
+        };
+        if (value as usize) < count {
             Some(Self(value))
         } else {
             None
@@ -130,7 +144,8 @@ impl ScriptProfileResources {
 /// Resource-ID matrix recovered from the original executable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OriginalScriptProfileCatalog {
-    profiles: [ScriptProfileResources; ORIGINAL_SCRIPT_PROFILE_COUNT],
+    dialect: ScriptDialect,
+    profiles: Box<[ScriptProfileResources]>,
 }
 
 impl OriginalScriptProfileCatalog {
@@ -172,10 +187,49 @@ impl OriginalScriptProfileCatalog {
         }
 
         Ok(Self {
-            profiles: profiles
-                .try_into()
-                .expect("decoded exactly five playable script profiles"),
+            dialect: ScriptDialect::CommanderBlood,
+            profiles: profiles.into_boxed_slice(),
         })
+    }
+
+    /// Decode the sequel's native VAR/DEB/COD/BAS/DIC rows into semantic roles.
+    pub fn decode_blood2pg(executable: &[u8]) -> Result<Self, ScriptProfileError> {
+        let row_bytes = SCRIPT_PROFILE_RESOURCE_COUNT * SERIALIZED_RESOURCE_ID_SIZE;
+        let sentinel = BLOOD2PG_SCRIPT_PROFILE_TABLE_FILE_OFFSET
+            + BIG_BUG_BANG_SCRIPT_PROFILE_COUNT * row_bytes;
+        let required = sentinel + SERIALIZED_RESOURCE_ID_SIZE;
+        if executable.len() < required {
+            return Err(ScriptProfileError::ExecutableTooShort {
+                required,
+                actual: executable.len(),
+            });
+        }
+        if executable[sentinel..required] != [0, 0] {
+            return Err(ScriptProfileError::InvalidProfileSentinel);
+        }
+        let profiles = (0..BIG_BUG_BANG_SCRIPT_PROFILE_COUNT)
+            .map(|profile| {
+                let start = BLOOD2PG_SCRIPT_PROFILE_TABLE_FILE_OFFSET + profile * row_bytes;
+                let resources = SEQUEL_NATIVE_RESOURCE_ORDER.map(|native_index| {
+                    let offset = start + native_index * SERIALIZED_RESOURCE_ID_SIZE;
+                    ResourceId::new(u16::from_le_bytes(
+                        executable[offset..offset + SERIALIZED_RESOURCE_ID_SIZE]
+                            .try_into()
+                            .unwrap(),
+                    ))
+                });
+                ScriptProfileResources { resources }
+            })
+            .collect();
+        Ok(Self {
+            dialect: ScriptDialect::BigBugBang,
+            profiles,
+        })
+    }
+
+    /// Native VM and state-layout dialect carried by this catalog.
+    pub const fn dialect(&self) -> ScriptDialect {
+        self.dialect
     }
 
     /// Return one playable profile's resource IDs.
@@ -463,7 +517,7 @@ pub struct ScriptProfileLoadOutcome {
     pub profile_changed: bool,
     /// Number of prior profile resources removed before loading.
     pub released_resources: usize,
-    /// Fresh-or-resident result for each file in native load order.
+    /// Fresh-or-resident result for each file in semantic resource-kind order.
     pub resource_statuses: [ResourceLoadStatus; SCRIPT_PROFILE_RESOURCE_COUNT],
 }
 
@@ -498,6 +552,37 @@ impl ScriptProfileManager {
         store: &OriginalResourceStore,
         resources: &OriginalResourceCatalog,
     ) -> Result<ScriptProfileLoadOutcome, ScriptProfileError> {
+        let mut profile_resources = *self
+            .catalog
+            .profiles
+            .get(profile.index())
+            .ok_or(ScriptProfileError::ProfileOutsideCatalog { profile })?;
+        let skip_state_resource = self.catalog.dialect == ScriptDialect::BigBugBang
+            && profile != ScriptProfileId::INITIAL;
+        // Native cache hits retain live VAR bytes, including a repeated initial
+        // profile selection. Only switching back to profile zero reloads VAR.
+        let retain_state = skip_state_resource
+            || (self.catalog.dialect == ScriptDialect::BigBugBang
+                && self
+                    .current
+                    .as_ref()
+                    .is_some_and(|current| current.id == profile));
+        let retained_state = if retain_state {
+            let current = self
+                .current
+                .as_ref()
+                .ok_or(ScriptProfileError::MissingPersistentState)?;
+            profile_resources.resources[ScriptProfileResourceKind::State.index()] =
+                current.resources.resource(ScriptProfileResourceKind::State);
+            Some((
+                current
+                    .synchronized_state()
+                    .map_err(ScriptProfileError::RecordState)?,
+                current.directory.clone(),
+            ))
+        } else {
+            None
+        };
         let previous_runtime = self.current.as_ref().map(|current| current.runtime.clone());
         let retained_sequence_slots = self
             .current
@@ -516,6 +601,11 @@ impl ScriptProfileManager {
                         .resources
                         .all()
                         .into_iter()
+                        .filter(|resource| {
+                            !retain_state
+                                || *resource
+                                    != current.resources.resource(ScriptProfileResourceKind::State)
+                        })
                         .filter(|resource| cache.release(*resource))
                         .count()
                 })
@@ -524,20 +614,34 @@ impl ScriptProfileManager {
             usize::MIN
         };
 
-        let profile_resources = self.catalog.profile(profile);
         let mut resource_statuses =
             [ResourceLoadStatus::AlreadyLoaded; SCRIPT_PROFILE_RESOURCE_COUNT];
         for (index, resource) in profile_resources.all().into_iter().enumerate() {
+            if skip_state_resource && index == ScriptProfileResourceKind::State.index() {
+                continue;
+            }
             resource_statuses[index] = cache
                 .load_by_id(store, resources, resource)
                 .map_err(ScriptProfileError::Resource)?;
         }
 
-        let mut loaded = decode_loaded_profile(profile, profile_resources, cache)?;
+        let mut loaded = decode_loaded_profile(
+            profile,
+            profile_resources,
+            cache,
+            self.catalog.dialect,
+            retained_state,
+        )?;
         if let Some(previous_runtime) = &previous_runtime {
-            loaded
-                .runtime
-                .preserve_timer_save_reserved_bytes(previous_runtime);
+            if skip_state_resource {
+                loaded
+                    .runtime
+                    .restore_timer_save_block(&previous_runtime.encode_timer_save_block());
+            } else {
+                loaded
+                    .runtime
+                    .preserve_timer_save_reserved_bytes(previous_runtime);
+            }
         }
         loaded.sequence_slots = retained_sequence_slots;
         self.current = Some(loaded);
@@ -573,6 +677,15 @@ pub enum ScriptProfileDataKind {
 /// Invalid profile matrix, resource operation, or companion image.
 #[derive(Debug)]
 pub enum ScriptProfileError {
+    /// A valid identity from another game exceeds this catalog's profile domain.
+    ProfileOutsideCatalog {
+        /// Requested identity that is not authored by this catalog.
+        profile: ScriptProfileId,
+    },
+    /// Noninitial sequel profiles require the already-loaded live VAR image.
+    MissingPersistentState,
+    /// A new profile changes the identities or boundaries of retained state objects.
+    IncompatiblePersistentDirectory,
     /// The executable ends before the matrix and sentinel are complete.
     ExecutableTooShort {
         /// Minimum required executable byte count.
@@ -612,10 +725,7 @@ pub enum ScriptProfileError {
 
 impl fmt::Display for ScriptProfileError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            formatter,
-            "invalid Commander Blood script profile: {self:?}"
-        )
+        write!(formatter, "invalid BloodScript profile: {self:?}")
     }
 }
 
@@ -639,6 +749,8 @@ fn decode_loaded_profile(
     profile: ScriptProfileId,
     resources: ScriptProfileResources,
     cache: &OriginalResourceCache,
+    dialect: ScriptDialect,
+    retained_state: Option<(ScriptState, ScriptDirectory)>,
 ) -> Result<LoadedScriptProfile, ScriptProfileError> {
     let directory_bytes = loaded_resource(
         cache,
@@ -658,10 +770,10 @@ fn decode_loaded_profile(
             kind: ScriptProfileDataKind::Dictionary,
             source,
         })?;
-    let code = decode_script_code(loaded_resource(
-        cache,
-        resources.resource(ScriptProfileResourceKind::Code),
-    )?)
+    let code = decode_script_code_for_dialect(
+        loaded_resource(cache, resources.resource(ScriptProfileResourceKind::Code))?,
+        dialect,
+    )
     .map_err(ScriptProfileError::Code)?;
     let procedure_gates = code
         .tokens()
@@ -680,14 +792,26 @@ fn decode_loaded_profile(
         &dictionary,
     )
     .map_err(ScriptProfileError::Dialogue)?;
-    let state = decode_script_state(
-        loaded_resource(cache, resources.resource(ScriptProfileResourceKind::State))?,
-        &directory,
-    )
-    .map_err(|source| ScriptProfileError::Data {
-        kind: ScriptProfileDataKind::State,
-        source,
-    })?;
+    let state = if let Some((state, previous_directory)) = retained_state {
+        if state.dialect() != dialect
+            || !previous_directory
+                .active_objects()
+                .eq(directory.active_objects())
+        {
+            return Err(ScriptProfileError::IncompatiblePersistentDirectory);
+        }
+        state
+    } else {
+        decode_script_state_for_dialect(
+            loaded_resource(cache, resources.resource(ScriptProfileResourceKind::State))?,
+            &directory,
+            dialect,
+        )
+        .map_err(|source| ScriptProfileError::Data {
+            kind: ScriptProfileDataKind::State,
+            source,
+        })?
+    };
     let instructions = code
         .tokens()
         .iter()
@@ -827,6 +951,183 @@ mod tests {
             FINAL_PROFILE_RESOURCES
         );
         assert!(ScriptProfileId::new(ORIGINAL_SCRIPT_PROFILE_COUNT as u8).is_none());
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang executable under output/big-bug-bang/disc"]
+    fn sequel_profile_catalog_resolves_every_native_resource_role() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+        let executable = std::fs::read(root.join("BLOOD2PG.EXE")).unwrap();
+        let names = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_blood2pg(&executable).unwrap();
+        assert_eq!(names.len(), 155);
+        assert_eq!(catalog.profiles.len(), BIG_BUG_BANG_SCRIPT_PROFILE_COUNT);
+        assert_eq!(catalog.dialect(), ScriptDialect::BigBugBang);
+        for number in 0..BIG_BUG_BANG_SCRIPT_PROFILE_COUNT {
+            let id = ScriptProfileId::new_for_dialect(number as u8, catalog.dialect()).unwrap();
+            for (kind, extension) in [
+                (ScriptProfileResourceKind::Code, "cod"),
+                (ScriptProfileResourceKind::Dialogue, "bas"),
+                (ScriptProfileResourceKind::State, "var"),
+                (ScriptProfileResourceKind::Dictionary, "dic"),
+                (ScriptProfileResourceKind::Directory, "deb"),
+            ] {
+                assert_eq!(
+                    names
+                        .name(catalog.profile(id).resource(kind))
+                        .unwrap()
+                        .as_bytes(),
+                    format!("script{}.{extension}", number + 1).as_bytes()
+                );
+            }
+        }
+        let mut truncated = executable[..BLOOD2PG_SCRIPT_PROFILE_TABLE_FILE_OFFSET].to_vec();
+        assert!(matches!(
+            OriginalScriptProfileCatalog::decode_blood2pg(&truncated),
+            Err(ScriptProfileError::ExecutableTooShort { .. })
+        ));
+        truncated = executable;
+        let sentinel = BLOOD2PG_SCRIPT_PROFILE_TABLE_FILE_OFFSET
+            + BIG_BUG_BANG_SCRIPT_PROFILE_COUNT
+                * SCRIPT_PROFILE_RESOURCE_COUNT
+                * SERIALIZED_RESOURCE_ID_SIZE;
+        truncated[sentinel] = 1;
+        assert!(matches!(
+            OriginalScriptProfileCatalog::decode_blood2pg(&truncated),
+            Err(ScriptProfileError::InvalidProfileSentinel)
+        ));
+    }
+
+    #[test]
+    fn sequel_profile_switches_retain_live_var_and_timers_until_returning_to_initial() {
+        use commander_blood_formats::archive::BloodResourceName;
+        use commander_blood_formats::instruction::ScriptTimerSlot;
+        const INITIAL_WORD: u16 = 100;
+        const MUTATED_WORD: u16 = 4321;
+        const TIMER_VALUE: u16 = 37;
+        const PLAYER_RECORD_SIZE: usize = 34;
+        const TEST_WORD_OFFSET: u16 = PLAYER_RECORD_SIZE as u16;
+        const DIRECTORY_ENTRY_SIZE: usize = 20;
+        const DIRECTORY_KIND_OFFSET: usize = 18;
+        let root = TemporaryProfileRoot::create();
+        let mut names = Vec::new();
+        for profile in 1..=2 {
+            for extension in ["COD", "BAS", "VAR", "DIC", "DEB"] {
+                let name = format!("SCRIPT{profile}.{extension}");
+                // Minimal well-formed input programs exercise the real loader.
+                // These fixtures do not stand in for missing production BAS files.
+                let bytes = match extension {
+                    "COD" | "BAS" => vec![u8::MAX],
+                    "VAR" => {
+                        let mut bytes = vec![0; PLAYER_RECORD_SIZE];
+                        bytes[0] = 1; // Player record kind.
+                        bytes.extend_from_slice(&(INITIAL_WORD + profile - 1).to_le_bytes());
+                        bytes
+                    }
+                    "DIC" => vec![0],
+                    "DEB" => {
+                        let mut bytes = vec![0; DIRECTORY_ENTRY_SIZE * 2];
+                        bytes[..5].copy_from_slice(b"blood");
+                        bytes[DIRECTORY_KIND_OFFSET] = 1; // Object directory entry.
+                        bytes
+                    }
+                    _ => unreachable!("fixed fixture companion list"),
+                };
+                std::fs::write(root.0.join(&name), bytes).unwrap();
+                names.push(BloodResourceName::new(name.as_bytes()).unwrap());
+            }
+        }
+        let catalog = OriginalScriptProfileCatalog {
+            dialect: ScriptDialect::BigBugBang,
+            profiles: (0..2)
+                .map(|profile| ScriptProfileResources {
+                    resources: std::array::from_fn(|index| {
+                        ResourceId::new((profile * SCRIPT_PROFILE_RESOURCE_COUNT + index) as u16)
+                    }),
+                })
+                .collect(),
+        };
+        let resources = OriginalResourceCatalog::new(names);
+        let store = OriginalResourceStore::new(root.0.clone(), None, [], true);
+        let mut manager = ScriptProfileManager::new(catalog);
+        let mut cache = OriginalResourceCache::new();
+        let timer = ScriptTimerSlot::decode(0).unwrap();
+        assert!(matches!(
+            manager.select(SECOND_PROFILE, &mut cache, &store, &resources),
+            Err(ScriptProfileError::MissingPersistentState)
+        ));
+        manager
+            .select(FIRST_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        let loaded = manager.current_mut().unwrap();
+        let word = loaded
+            .state
+            .resolve_word_source_offset(TEST_WORD_OFFSET)
+            .unwrap();
+        assert!(loaded.state.set_word(word, MUTATED_WORD));
+        loaded.runtime.assign_timer(timer, TIMER_VALUE);
+        let live_resource = loaded.resources.resource(ScriptProfileResourceKind::State);
+        let outside_catalog =
+            ScriptProfileId::new_for_dialect(2, ScriptDialect::BigBugBang).unwrap();
+        assert!(matches!(
+            manager.select(outside_catalog, &mut cache, &store, &resources),
+            Err(ScriptProfileError::ProfileOutsideCatalog { .. })
+        ));
+        assert_eq!(manager.current().unwrap().id(), FIRST_PROFILE);
+        assert_eq!(
+            manager.current().unwrap().state.word(word),
+            Some(MUTATED_WORD)
+        );
+        assert!(cache.is_loaded(live_resource));
+        let skipped_resource = manager
+            .catalog
+            .profile(SECOND_PROFILE)
+            .resource(ScriptProfileResourceKind::State);
+        let outcome = manager
+            .select(SECOND_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        assert_eq!(outcome.released_resources, 4);
+        assert!(cache.is_loaded(live_resource));
+        assert!(!cache.is_loaded(skipped_resource));
+        for _ in 0..2 {
+            let loaded = manager.current().unwrap();
+            assert_eq!(loaded.state.dialect(), ScriptDialect::BigBugBang);
+            assert_eq!(loaded.state.word(word), Some(MUTATED_WORD));
+            assert_eq!(loaded.runtime.timer(timer), TIMER_VALUE);
+            assert_eq!(
+                loaded.resources.resource(ScriptProfileResourceKind::State),
+                live_resource
+            );
+            manager
+                .select(SECOND_PROFILE, &mut cache, &store, &resources)
+                .unwrap();
+        }
+        manager
+            .select(FIRST_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        assert_eq!(
+            manager.current().unwrap().state.word(word),
+            Some(INITIAL_WORD)
+        );
+        assert_eq!(manager.current().unwrap().runtime.timer(timer), u16::MAX);
+        manager
+            .current_mut()
+            .unwrap()
+            .state
+            .set_word(word, MUTATED_WORD);
+        manager
+            .current_mut()
+            .unwrap()
+            .runtime
+            .assign_timer(timer, TIMER_VALUE);
+        manager
+            .select(FIRST_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        assert_eq!(
+            manager.current().unwrap().state.word(word),
+            Some(MUTATED_WORD)
+        );
+        assert_eq!(manager.current().unwrap().runtime.timer(timer), u16::MAX);
     }
 
     #[test]
