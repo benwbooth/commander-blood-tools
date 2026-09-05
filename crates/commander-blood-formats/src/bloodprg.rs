@@ -645,7 +645,25 @@ fn decode_menu_label(
     executable: &[u8],
     label_offset: usize,
 ) -> Result<Box<[u8]>, BloodprgBridgeMenuTextError> {
-    let file_offset = BLOODPRG_DATA_FILE_OFFSET + label_offset;
+    decode_menu_label_at_data(executable, BLOODPRG_DATA_FILE_OFFSET, label_offset)
+}
+
+/// Decode the original sequel inventory chooser's fixed cancel label.
+pub fn decode_big_bug_bang_inventory_cancel_label(
+    executable: &[u8],
+) -> Result<Box<[u8]>, BloodprgBridgeMenuTextError> {
+    if executable.get(..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
+        return Err(BloodprgBridgeMenuTextError::InvalidExecutableSignature);
+    }
+    decode_menu_label_at_data(executable, 0xF7F0, 0x179)
+}
+
+fn decode_menu_label_at_data(
+    executable: &[u8],
+    data_file_offset: usize,
+    label_offset: usize,
+) -> Result<Box<[u8]>, BloodprgBridgeMenuTextError> {
+    let file_offset = data_file_offset + label_offset;
     let available = executable
         .get(file_offset..)
         .ok_or(BloodprgBridgeMenuTextError::LabelPointerOutsideExecutable { label_offset })?;
@@ -1956,6 +1974,32 @@ mod tests {
                 list_offset: OPTION_MENU_POINTER_LIST_DATA_OFFSET,
                 actual: u16::MIN,
             })
+        );
+    }
+
+    #[test]
+    fn sequel_inventory_cancel_label_checks_signature_extent_and_termination() {
+        assert!(matches!(
+            decode_big_bug_bang_inventory_cancel_label(&[]),
+            Err(BloodprgBridgeMenuTextError::InvalidExecutableSignature)
+        ));
+        assert!(matches!(
+            decode_big_bug_bang_inventory_cancel_label(b"MZ"),
+            Err(BloodprgBridgeMenuTextError::LabelPointerOutsideExecutable { .. })
+        ));
+        let mut bytes = vec![0; 0xF7F0 + 0x179];
+        bytes[..2].copy_from_slice(b"MZ");
+        bytes.extend_from_slice(b"ANNULER");
+        assert!(matches!(
+            decode_big_bug_bang_inventory_cancel_label(&bytes),
+            Err(BloodprgBridgeMenuTextError::MissingLabelTerminator { .. })
+        ));
+        bytes.push(0);
+        assert_eq!(
+            decode_big_bug_bang_inventory_cancel_label(&bytes)
+                .unwrap()
+                .as_ref(),
+            b"ANNULER"
         );
     }
 

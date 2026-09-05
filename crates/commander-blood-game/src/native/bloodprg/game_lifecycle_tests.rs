@@ -11,6 +11,47 @@ const ONE_FRAME_POINTER_PRESS_LATCH: u8 = 1;
 const COUNTDOWN_WITH_ZERO_LOW_BYTE: u16 = 256;
 
 #[test]
+fn inventory_chooser_submission_order_matches_the_sequel_main_loop() {
+    #[derive(Deserialize)]
+    struct Order {
+        presented: bool,
+        inventory: bool,
+        events: Vec<String>,
+    }
+    let cases: Vec<Order> = include_str!(
+        "../../../../../re/tools/oracle_vectors/big_bug_bang_inventory_choice_order.jsonl"
+    )
+    .lines()
+    .map(|line| serde_json::from_str(line).unwrap())
+    .collect();
+    assert_eq!(cases.len(), 4);
+    for case in cases {
+        let mut host = OracleHost {
+            scenario: Scenario::default(),
+            input_dispatches: 0,
+            pending_profiles_at_input: Vec::new(),
+            calls: Vec::new(),
+            chatter_at_audio: Vec::new(),
+            fail_bridge_render: false,
+        };
+        let mut state = GameLifecycleState::default();
+        state.frame_presented = case.presented;
+        state.presentation.inventory_line_pending = case.inventory;
+        run_frame_tail(&mut state, GameSceneLink::Initial, &mut host).unwrap();
+        let events = host
+            .calls
+            .iter()
+            .filter_map(|call| match *call {
+                "presentation_ready_gate" => Some("chooser"),
+                "chunky_to_planar_framebuffer" => Some("submit"),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(events, case.events);
+    }
+}
+
+#[test]
 fn text_only_selector_selects_character_idle_line() {
     let mut state = GameLifecycleState::default();
     state.presentation.active = true;

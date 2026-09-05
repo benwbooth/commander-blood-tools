@@ -1,5 +1,7 @@
 //! Typed bridge choice-list layout, interaction, and render planning.
 
+use commander_blood_formats::code::ScriptDialect;
+
 /// Horizontal padding surrounding the widest choice label.
 pub const CHOICE_LIST_WIDTH_PADDING: u16 = 20;
 /// Vertical distance between adjacent choice rows.
@@ -162,13 +164,34 @@ pub fn update_choice_list<Backend: ChoiceListBackend>(
     state: &mut ChoiceListState,
     backend: &mut Backend,
 ) -> ChoiceListFrame {
+    update_choice_list_for_dialect(
+        labels,
+        config,
+        state,
+        backend,
+        ScriptDialect::CommanderBlood,
+    )
+}
+
+/// Update the shared list with the executable's fixed cancel-row width.
+pub fn update_choice_list_for_dialect<Backend: ChoiceListBackend>(
+    labels: &[&[u8]],
+    config: ChoiceListConfig<'_>,
+    state: &mut ChoiceListState,
+    backend: &mut Backend,
+    dialect: ScriptDialect,
+) -> ChoiceListFrame {
+    let cancel_width = match dialect {
+        ScriptDialect::CommanderBlood => CANCEL_CONTENT_WIDTH,
+        ScriptDialect::BigBugBang => 71,
+    };
     let mut row_extent = if config.cancel_label.is_some() {
         CANCEL_EXTRA_HEIGHT
     } else {
         u16::MIN
     };
     let mut max_width = if config.cancel_label.is_some() {
-        CANCEL_CONTENT_WIDTH
+        cancel_width
     } else {
         DEFAULT_CONTENT_WIDTH
     };
@@ -182,7 +205,7 @@ pub fn update_choice_list<Backend: ChoiceListBackend>(
         row_extent = row_extent.wrapping_add(CHOICE_LIST_ROW_PITCH);
     }
     if config.cancel_label.is_some() {
-        measured_widths.push(CANCEL_CONTENT_WIDTH);
+        measured_widths.push(cancel_width);
     }
     if !config.preserve_individual_widths {
         measured_widths.fill(max_width);

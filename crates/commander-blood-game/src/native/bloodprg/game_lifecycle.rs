@@ -161,6 +161,8 @@ pub struct GamePresentationScheduler {
     pub word_buffer_nonempty: bool,
     /// Progressive word selection is active.
     pub word_choice_active: bool,
+    /// A saved sequel inventory line routes its chooser after base-frame submission.
+    pub inventory_line_pending: bool,
     /// The final dialogue hold was armed.
     pub dialogue_hold_complete: bool,
     /// Remaining frames in the dialogue hold.
@@ -208,6 +210,7 @@ impl Default for GamePresentationScheduler {
             hold_ready: false,
             word_buffer_nonempty: false,
             word_choice_active: false,
+            inventory_line_pending: false,
             dialogue_hold_complete: false,
             dialogue_hold_countdown: u16::MIN,
             request_flags: PresentationRequestFlags::default(),
@@ -822,10 +825,13 @@ fn run_frame_tail<Host: GameLifecycleHost>(
     host.update_save_load(state)?;
     host.update_presentation_choice(state)?;
     finish_presentation_audio_latches(state);
-    if state.frame_presented {
+    if state.frame_presented && !state.presentation.inventory_line_pending {
         host.mark_presentation_ready(state)?;
     }
     host.submit_indexed_frame()?;
+    if state.presentation.inventory_line_pending {
+        host.mark_presentation_ready(state)?;
+    }
     host.reveal_inline_menu(state)?;
     host.update_subtitles(state)?;
     host.update_manu3(state)?;

@@ -1,0 +1,4 @@
+{"events": ["submit"], "inventory": false, "presented": false}
+{"events": ["submit", "chooser"], "inventory": true, "presented": false}
+{"events": ["chooser", "submit"], "inventory": false, "presented": true}
+{"events": ["submit", "chooser"], "inventory": true, "presented": true}

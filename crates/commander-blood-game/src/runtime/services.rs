@@ -1395,6 +1395,11 @@ impl<'window> ModernGameServices<'window> {
         self.choice_list_style.preserve_individual_widths = preserve;
     }
 
+    /// Publish the shared cancel-row flag owned by the active chooser.
+    pub(super) fn set_choice_list_cancel_entry(&mut self, enabled: bool) {
+        self.choice_list_style.extra_cancel_entry = enabled;
+    }
+
     /// Publish the shared list-layout values written by bridge-console activation.
     pub(super) fn activate_bridge_console_list_style(&mut self) {
         self.choice_list_style = RuntimeChoiceListStyle::BRIDGE_CONSOLE;
@@ -3230,6 +3235,16 @@ impl<'window> ModernGameServices<'window> {
     ) -> Result<()> {
         self.scripts
             .complete_lifecycle_word_choice(&mut self.runtime, state, concept)
+    }
+
+    /// Publish an object choice or inventory cancellation after panel closing.
+    pub fn complete_inventory_choice(
+        &mut self,
+        object: Option<ScriptObjectId>,
+        state: &mut GameLifecycleState,
+    ) -> Result<()> {
+        self.scripts
+            .complete_lifecycle_inventory_choice(&mut self.runtime, state, object)
     }
 
     /// Drain ordered renderer, audio, camera, and HUD commands from BloodScript.

@@ -333,12 +333,13 @@ The original handlers in both games also clear the alternate concept while armin
 resume, before rejection gates; the shared Rust handler now does so. Runtime
 choice readiness includes object choices without converting them to dictionary IDs.
 
-Displaying object names, connecting UI selection and finishing descriptor/audio
-processing remain unfinished. Production sequel loading stays disabled until
-this complete flow and the profile lifecycle are integrated and verified.
+Object-name display and UI selection/cancellation are now connected through the
+shared chooser, as detailed below. Descriptor/audio processing and the profile
+lifecycle remain unfinished. Production sequel loading stays disabled until
+the complete flow is integrated and verified.
 
-Verification: all 122 formats tests pass with original-corpus tests enabled;
-the game library passes 920 tests with 13 ignored under a private X server.
+Verification: all 123 formats tests pass with original-corpus tests enabled;
+the game library passes 925 tests with 15 ignored under a private X server.
 The authored inventory test (46 cases) and numeric-menu oracle test (59 cases)
 also pass when explicitly enabled. Regenerated condition, transfer, synthetic A6
 and authored A6 fixtures are byte-identical to the checked-in vectors.
@@ -363,6 +364,96 @@ nix develop -c python3 -P re/tools/text_record_condition_oracle.py \
   re/bin/BLOODPRG.EXE output/big-bug-bang/disc/BLOOD2PG.EXE \
   re/tools/oracle_vectors/text_record_condition.jsonl
 nix develop -c cargo test -p commander-blood-game --lib native::bloodprg::presentation::tests
+```
+
+#### Inventory Choice Panel
+
+`PresentationChoiceId` distinguishes dictionary concepts from inventory objects
+through panel opening, selection, closing and script publication. The runtime
+resolves inventory labels from the offered VAR records' bounded name fields
+(bytes 4..20), preserving order and duplicate entries. All 425 authored inventory
+records across the seventeen profiles have valid names: 25 distinct labels,
+including a CP437 accented name. These are not DEB symbol names or DIC words;
+English localization must translate display names without renaming object IDs.
+
+`big_bug_bang_inventory_choice_oracle.py` executes the complete original chooser
+0x9B45..0x9C5D with list 0x958A, transition 0x20CE, width 0x344D, planar text
+0x37A8 and background remap 0x3F13. Eleven sequences cover waiting, selection,
+cancellation, wide/accented labels, full sixteen-item rosters and two ordinary
+dictionary-choice controls. No callee is
+patched. The original disabled-sound input gate naturally avoids device playback.
+These captures verify control, layout and helper order, not planar VGA pixels or
+audible playback.
+
+The opening layout has no cancel row. On later updates the inventory branch sets
+the cancel flag; interactive layout adds the row with a minimum content width of
+71, compared with Commander's 55. The current rectangle is recomputed for this
+layout and retained for closing. The cancel label is decoded from the verified
+sequel executable, not borrowed from Commander resources.
+
+The sequel chooser pauses script execution when opening and re-enables it on
+selection (before closing finishes). This also applies to ordinary sequel word
+choices; Commander's chooser does not write the VM latch. Lifecycle imports now
+refresh both this latch and the current modal UI bit when reopening a panel.
+
+Rust matches every captured frame's rectangle, transition step and background
+region, row text/position/color, phase and completion latches using original font
+resources and the real translated transition helper. RGB text coverage is also
+checked against the translated font rasterizer, including nonblank and panel-bound
+checks. UI completion clears the pending choices but retains the saved line and
+resume for an object selection; cancellation clears those and the alternate
+concept without transferring an item. A subsequent frame dispatch test uses the
+same typed completion operation before the native-referenced transfer.
+
+Four additional native captures execute main-loop 0x1384..0x13AF and the complete
+base-frame conversion helper 0x434B. Inventory choices run after base submission,
+even without the ordinary frame-presented flag. Dictionary choices remain before
+submission and retain that flag's gate. The shared lifecycle now follows this
+ordering, and profile changes reset the cached inventory-line owner.
+
+The modern UI binding is implemented, but live sequel startup remains guarded;
+these tests do not establish end-to-end gameplay or the pending descriptor/audio
+continuation. All eleven inventory-filtered tests pass with original-asset tests
+enabled, and repeated native captures are byte-identical. Reproduce the native
+panel and ordering captures with:
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_inventory_choice_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_inventory_choice.jsonl \
+  --order-output re/tools/oracle_vectors/big_bug_bang_inventory_choice_order.jsonl
+nix develop -c cargo test -p commander-blood-game --lib inventory -- --include-ignored
+```
+
+#### Pre-Frame Occupancy While Paused
+
+The sequel calls 0x6038 before testing its VM enable bit at 0x5A9C. Commander
+tests its enable bit before preparing state. The shared frame runner now respects
+that distinction even for an empty COD program: a paused sequel frame prepares
+state without executing instructions or post-scan handlers.
+
+The sequel preparation pass first clears location flag 4 and the occupant word
+at byte 24. It then normalizes actor position flags through the original holder
+and coordinate semantics. Each actor with flag 4 and a nonnegative direct
+location holder sets that location's flag 4 and occupant word. Nested holders
+do not count as direct occupancy, and the last qualifying actor in directory
+order wins. This is separate from the aboard-inventory roster, which this pass
+does not rebuild. Commander retains its actor-only updates. Typed validation
+failures leave both actor and location state unchanged.
+
+`big_bug_bang_state_processor_oracle.py` executes the complete original helper
+and unmodified 0x67B8/0x6633 callees in 21 synthetic cases. Seven enter the paused
+frame at 0x5A99 after resource binding and execute its real return epilogue.
+Rust compares complete VAR images, covering transient-flag gates, stale occupancy,
+last-writer order, direct versus nested holders, zero/sentinel parents and
+world/arche coordinate matching. The fixtures regenerate byte-for-byte. These
+are component captures, not proof of initialized full-game state.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_state_processor_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_state_processor.jsonl
+nix develop -c cargo test -p commander-blood-game --lib actor_position_state
 ```
 
 ### Authored Text Corpus Audit
@@ -421,7 +512,7 @@ valid, and do not count current typed acceptance as recovery of numeric text.
 The typed decoder now consumes marker 1 and its VAR operand together, only in
 the sequel dialect. All 58 authored operands resolve to owned state words,
 including the seven formerly incorrect successes above. The corpus test now
-accepts all 6921 A6 tokens, including all 46 inventory-marker tokens. All 122
+accepts all 6921 A6 tokens, including all 46 inventory-marker tokens. All 123
 formats tests pass with original corpus checks enabled.
 
 ### Numeric Menu Renderer

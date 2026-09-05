@@ -2,9 +2,9 @@
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::bloodprg::{
-    BloodprgBridgeResources, BloodprgFontResources, decode_blood2pg_bridge_resources,
-    decode_blood2pg_font_resources, decode_bloodprg_bridge_resources,
-    decode_bloodprg_font_resources,
+    BloodprgBridgeResources, BloodprgFontResources, decode_big_bug_bang_inventory_cancel_label,
+    decode_blood2pg_bridge_resources, decode_blood2pg_font_resources,
+    decode_bloodprg_bridge_resources, decode_bloodprg_font_resources,
 };
 use commander_blood_formats::code::ScriptDialect;
 use serde::{Deserialize, Serialize};
@@ -106,6 +106,16 @@ impl GameVariant {
             Self::BigBugBang => decode_blood2pg_font_resources(executable),
         }
         .context("decoding game font resources")
+    }
+
+    /// Resolve the sequel's object-chooser cancel text from its verified build.
+    pub fn decode_inventory_cancel_label(self, executable: &[u8]) -> Result<Box<[u8]>> {
+        if self != Self::BigBugBang {
+            bail!("object-backed inventory choices require Big Bug Bang resources");
+        }
+        self.validate_native_build(executable)?;
+        decode_big_bug_bang_inventory_cancel_label(executable)
+            .context("decoding inventory cancellation text")
     }
 
     /// Decode typed bridge projection tables and initial navigation actor records.

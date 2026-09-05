@@ -105,6 +105,7 @@ pub struct RuntimeScriptSystem {
     dispatch: ScriptDispatchState,
     service: ScriptExecutionService<RuntimeScriptBackend>,
     presentation_word_buffer_nonempty: bool,
+    presentation_inventory_line_pending: bool,
 }
 
 impl RuntimeScriptSystem {
@@ -114,6 +115,7 @@ impl RuntimeScriptSystem {
             dispatch: ScriptDispatchState::default(),
             service: ScriptExecutionService::new(RuntimeScriptBackend::new(data, clock)),
             presentation_word_buffer_nonempty: false,
+            presentation_inventory_line_pending: false,
         }
     }
 
@@ -127,6 +129,7 @@ impl RuntimeScriptSystem {
         self.dispatch.reset_for_profile_change();
         self.service.reset_for_profile_change();
         self.presentation_word_buffer_nonempty = false;
+        self.presentation_inventory_line_pending = false;
         self.service.backend_mut().bind_profile(
             runtime
                 .current_profile()
@@ -160,11 +163,12 @@ impl RuntimeScriptSystem {
             &mut self.service,
         )
         .map_err(|error| anyhow!("executing BloodScript frame: {error:?}"))?;
-        self.presentation_word_buffer_nonempty = runtime
+        let selector = runtime
             .current_profile()
             .context("BloodScript profile disappeared after execution")?
-            .selector_state()
-            .has_pending_presentation_choices();
+            .selector_state();
+        self.presentation_word_buffer_nonempty = selector.has_pending_presentation_choices();
+        self.presentation_inventory_line_pending = selector.inventory().saved_line().is_some();
         Ok(outcome)
     }
 
@@ -274,6 +278,7 @@ impl RuntimeScriptSystem {
         target.text_menu_pending = text.menu_pending;
         target.text_selector = text.selected_line;
         target.word_buffer_nonempty = self.presentation_word_buffer_nonempty;
+        target.inventory_line_pending = self.presentation_inventory_line_pending;
         target.dialogue_hold_countdown = text.dialogue_hold_countdown;
         target.sequence_active = self.dispatch.record_clear_presentation.sequence_active;
         publish_script_active_line_to_lifecycle(&self.dispatch, target);
@@ -379,6 +384,11 @@ impl RuntimeScriptSystem {
             .expect("loaded profile remains available while completing a choice")
             .selector_state_mut()
             .replace_presentation_words([]);
+        self.clear_completed_choice_presentation();
+        Ok(())
+    }
+
+    fn clear_completed_choice_presentation(&mut self) {
         self.presentation_word_buffer_nonempty = false;
         {
             let presentation = self.service.presentation_state_mut();
@@ -392,7 +402,33 @@ impl RuntimeScriptSystem {
         text.request_flags.clear_text_request();
         text.menu_words = Box::new([]);
         text.menu_word_count = usize::MIN;
-        Ok(())
+    }
+
+    /// Complete an object choice or cancellation without entering the DIC domain.
+    pub fn complete_lifecycle_inventory_choice(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        lifecycle: &mut GameLifecycleState,
+        object: Option<ScriptObjectId>,
+    ) -> Result<()> {
+        self.prepare_lifecycle_frame(lifecycle);
+        let parts = runtime
+            .current_profile_mut()
+            .context("completing an inventory choice requires a loaded profile")?
+            .execution_parts();
+        anyhow::ensure!(
+            parts.state.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang,
+            "inventory selection requires the sequel dialect"
+        );
+        parts
+            .selector_state
+            .inventory_mut()
+            .complete_choice(object, parts.runtime)?;
+        parts.selector_state.replace_presentation_words([]);
+        self.presentation_inventory_line_pending =
+            parts.selector_state.inventory().saved_line().is_some();
+        self.clear_completed_choice_presentation();
+        self.finish_lifecycle_frame(lifecycle)
     }
 
     /// Complete a word choice without exporting stale copies of other lifecycle globals.

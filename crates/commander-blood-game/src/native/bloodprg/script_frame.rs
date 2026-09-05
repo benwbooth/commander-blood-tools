@@ -340,6 +340,10 @@ fn execute_script_frame_inner<Host: FrameHost>(
     host: &mut Host,
 ) -> Result<ScriptFrameOutcome, ScriptFrameError<Host::Error>> {
     if !execution_enabled {
+        // BLOOD2 5A99 prepares actors before testing 6B7E; Commander gates first.
+        if code.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang {
+            host.prepare_script_state(runtime)?;
+        }
         return Ok(ScriptFrameOutcome {
             end: ScriptFrameEnd::ExecutionDisabled,
             next_instruction: None,
@@ -611,6 +615,34 @@ mod tests {
                 event => Some(event),
             })
             .collect()
+    }
+
+    #[test]
+    fn paused_sequel_frames_prepare_state_without_executing_cod_or_post_scan() {
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            for count in [0, 1] {
+                let mut bytes = vec![TEST_OPCODE; count];
+                bytes.push(END_OPCODE);
+                let code = decode_script_code_for_dialect(&bytes, dialect).unwrap();
+                assert_eq!(code.dialect(), dialect);
+                let mut runtime = ScriptRuntime::new();
+                let before = runtime.clone();
+                let mut host = RecordingHost::default();
+                let outcome = execute_script_frame(&code, false, &mut runtime, &mut host).unwrap();
+                assert_eq!(outcome.end, ScriptFrameEnd::ExecutionDisabled);
+                assert_eq!(outcome.executed_instructions, 0);
+                assert_eq!(runtime, before);
+                assert_eq!(
+                    host.events,
+                    if dialect == ScriptDialect::BigBugBang {
+                        vec!["state_processor"]
+                    } else {
+                        Vec::new()
+                    }
+                );
+            }
+        }
     }
 
     #[test]

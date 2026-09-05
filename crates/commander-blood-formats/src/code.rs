@@ -287,11 +287,17 @@ impl ScriptToken {
 /// Complete losslessly framed COD program.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScriptCode {
+    dialect: ScriptDialect,
     tokens: Vec<ScriptToken>,
     end_marker_offset: ScriptCodeOffset,
 }
 
 impl ScriptCode {
+    /// Return the owning dialect even when the program contains only its end marker.
+    pub const fn dialect(&self) -> ScriptDialect {
+        self.dialect
+    }
+
     /// Return every token in authored byte order.
     pub fn tokens(&self) -> &[ScriptToken] {
         &self.tokens
@@ -532,6 +538,7 @@ pub fn decode_script_code_for_dialect(
                 });
             }
             return Ok(ScriptCode {
+                dialect,
                 tokens,
                 end_marker_offset: ScriptCodeOffset(cursor),
             });

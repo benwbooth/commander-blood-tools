@@ -5,7 +5,7 @@ use commander_blood_formats::script::{ScriptDictionary, ScriptWordId};
 
 use crate::native::bloodprg::{
     ChoiceListBackend, ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect,
-    FramebufferTransitionState, GameLifecycleState, PresentationWordChoice,
+    FramebufferTransitionState, GameLifecycleState, PresentationChoiceId, PresentationWordChoice,
     PresentationWordChoiceBackend, PresentationWordChoiceContext, PresentationWordChoiceOutcome,
     PresentationWordChoicePhase, PresentationWordChoiceState, RasterPoint, TransitionRect,
     WORD_CHOICE_TRANSITION_STEPS, advance_framebuffer_rect_transition,
@@ -49,6 +49,7 @@ impl RuntimePresentationWordChoice {
         self.import_lifecycle_state(services, lifecycle)?;
         let interface_active_before_update = self.state.interface_active;
         let phase_before_update = self.state.phase;
+        let inventory_before_update = self.state.inventory_cancel_label.is_some();
         if self.state.phase == PresentationWordChoicePhase::Closed {
             self.transition = FramebufferTransitionState {
                 total_steps: WORD_CHOICE_TRANSITION_STEPS as u8,
@@ -95,18 +96,31 @@ impl RuntimePresentationWordChoice {
         {
             services.activate_presentation_word_choice_style();
         }
+        if inventory_before_update && !matches!(outcome, PresentationWordChoiceOutcome::Gated(_)) {
+            services.set_choice_list_cancel_entry(
+                phase_before_update != PresentationWordChoicePhase::Closed
+                    && self.state.inventory_cancel_label.is_some(),
+            );
+        }
 
         match &outcome {
             PresentationWordChoiceOutcome::AwaitingSelection(frame) => {
                 self.draw_frame(services, frame)?;
             }
-            PresentationWordChoiceOutcome::Selected { frame, .. } => {
+            PresentationWordChoiceOutcome::Selected { frame, .. }
+            | PresentationWordChoiceOutcome::CancelSelected(frame) => {
                 self.transition.current_step = u8::MIN;
                 services.play_loaded_sound_bank_clip(CHOICE_LIST_SELECTION_SOUND_CLIP)?;
                 self.draw_frame(services, frame)?;
             }
-            PresentationWordChoiceOutcome::Completed(word) => {
+            PresentationWordChoiceOutcome::Completed(PresentationChoiceId::Dictionary(word)) => {
                 services.complete_word_choice(*word, lifecycle)?;
+            }
+            PresentationWordChoiceOutcome::Completed(PresentationChoiceId::Inventory(object)) => {
+                services.complete_inventory_choice(Some(*object), lifecycle)?;
+            }
+            PresentationWordChoiceOutcome::Cancelled => {
+                services.complete_inventory_choice(None, lifecycle)?;
             }
             PresentationWordChoiceOutcome::Gated(_)
             | PresentationWordChoiceOutcome::Opening
@@ -121,11 +135,8 @@ impl RuntimePresentationWordChoice {
         services: &ModernGameServices<'window>,
         lifecycle: &GameLifecycleState,
     ) -> Result<()> {
-        self.state.active = lifecycle.presentation.word_choice_active;
-        self.state.presentation_deferred = lifecycle.presentation.menu_deferred;
-        self.state.text_display_active = lifecycle.presentation.subtitle_display_active;
-        self.state.dialogue_hold_complete = lifecycle.presentation.dialogue_hold_complete;
-        self.state.request_pending = lifecycle.presentation.request_flags.text_request_pending();
+        import_lifecycle_latches(&mut self.state, lifecycle);
+        self.state.dialect = services.runtime().data().game().script_dialect();
         if !self.state.active
             || self.state.phase != PresentationWordChoicePhase::Closed
             || !self.state.choices.is_empty()
@@ -137,10 +148,40 @@ impl RuntimePresentationWordChoice {
             .runtime()
             .current_profile()
             .context("dialogue choices require a loaded BloodScript profile")?;
-        self.state.choices = decode_pending_presentation_choices(
-            profile.dictionary(),
-            profile.selector_state().pending_presentation_words(),
-        )?;
+        if !profile.selector_state().inventory().choices().is_empty() {
+            anyhow::ensure!(
+                profile
+                    .selector_state()
+                    .pending_presentation_words()
+                    .is_empty(),
+                "inventory choices cannot alias a simultaneous dictionary choice list"
+            );
+            self.state.inventory_cancel_label = Some(
+                services
+                    .runtime()
+                    .data()
+                    .game()
+                    .decode_inventory_cancel_label(services.runtime().data().executable())?,
+            );
+            self.state.choices = profile
+                .selector_state()
+                .inventory()
+                .presentation_choices(profile.state())?;
+        } else {
+            anyhow::ensure!(
+                profile.selector_state().inventory().saved_line().is_none()
+                    || profile
+                        .selector_state()
+                        .pending_presentation_words()
+                        .is_empty(),
+                "dictionary choices cannot use a retained inventory-line owner"
+            );
+            self.state.inventory_cancel_label = None;
+            self.state.choices = decode_pending_presentation_choices(
+                profile.dictionary(),
+                profile.selector_state().pending_presentation_words(),
+            )?;
+        }
         Ok(())
     }
 
@@ -155,7 +196,12 @@ impl RuntimePresentationWordChoice {
             .iter()
             .map(|choice| choice.label.as_ref())
             .collect::<Vec<_>>();
-        draw_choice_list_rows(services.runtime_mut(), &labels, None, frame)
+        draw_choice_list_rows(
+            services.runtime_mut(),
+            &labels,
+            self.state.inventory_cancel_label.as_deref(),
+            frame,
+        )
     }
 }
 
@@ -164,10 +210,24 @@ fn publish_lifecycle_state(
     state: &PresentationWordChoiceState,
     interface_active_before_update: bool,
 ) {
+    lifecycle.vm_execution_enabled = state.vm_execution_enabled;
     lifecycle.presentation.word_choice_active = state.active;
     if !interface_active_before_update && state.interface_active {
         lifecycle.set_modal_ui_busy(true);
     }
+}
+
+fn import_lifecycle_latches(
+    state: &mut PresentationWordChoiceState,
+    lifecycle: &GameLifecycleState,
+) {
+    state.interface_active = lifecycle.modal_ui_busy();
+    state.vm_execution_enabled = lifecycle.vm_execution_enabled;
+    state.active = lifecycle.presentation.word_choice_active;
+    state.presentation_deferred = lifecycle.presentation.menu_deferred;
+    state.text_display_active = lifecycle.presentation.subtitle_display_active;
+    state.dialogue_hold_complete = lifecycle.presentation.dialogue_hold_complete;
+    state.request_pending = lifecycle.presentation.request_flags.text_request_pending();
 }
 
 fn decode_pending_presentation_choices(
@@ -265,9 +325,12 @@ mod tests {
             decode_pending_presentation_choices(&dictionary, &[explanations, game]).unwrap();
 
         assert_eq!(choices.len(), 2);
-        assert_eq!(choices[0].word, explanations);
+        assert_eq!(
+            choices[0].identity,
+            PresentationChoiceId::Dictionary(explanations)
+        );
         assert_eq!(choices[0].label.as_ref(), b"explanations");
-        assert_eq!(choices[1].word, game);
+        assert_eq!(choices[1].identity, PresentationChoiceId::Dictionary(game));
         assert_eq!(choices[1].label.as_ref(), b"game");
     }
 
@@ -312,6 +375,26 @@ mod tests {
         publish_lifecycle_state(&mut lifecycle, &state, true);
         assert!(!lifecycle.presentation.word_choice_active);
         assert!(lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn reopening_imports_the_current_modal_bit_and_vm_latch() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.word_choice_active = true;
+        lifecycle.vm_execution_enabled = true;
+        let mut state = PresentationWordChoiceState {
+            interface_active: true,
+            ..Default::default()
+        };
+        import_lifecycle_latches(&mut state, &lifecycle);
+        assert!(!state.interface_active);
+        assert!(state.vm_execution_enabled);
+        // A new opening latches the modal bit even after a previous chooser did so.
+        state.interface_active = true;
+        state.vm_execution_enabled = false;
+        publish_lifecycle_state(&mut lifecycle, &state, false);
+        assert!(lifecycle.modal_ui_busy());
+        assert!(!lifecycle.vm_execution_enabled);
     }
 
     #[test]

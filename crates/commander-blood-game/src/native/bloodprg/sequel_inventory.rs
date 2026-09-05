@@ -49,6 +49,10 @@ pub enum SequelInventoryError {
     DescriptorPending,
     /// The saved recipient cannot be encoded in the original VAR word.
     UnencodableRecipient(ScriptObjectId),
+    /// The fixed object-name field has no bounded native terminator.
+    UnterminatedName(ScriptObjectId),
+    /// The native choice buffer is empty, so completion is gated.
+    NoPendingChoice,
 }
 
 impl fmt::Display for SequelInventoryError {
@@ -127,6 +131,57 @@ impl SequelInventoryState {
             return Err(SequelInventoryError::NotOffered(object));
         }
         self.selected = Some(object);
+        Ok(())
+    }
+
+    /// Resolve the VAR names used by the native object-choice renderer at 0x9B7B.
+    pub fn presentation_choices(
+        &self,
+        state: &ScriptState,
+    ) -> Result<Vec<super::PresentationWordChoice>, SequelInventoryError> {
+        if state.dialect() != ScriptDialect::BigBugBang {
+            return Err(SequelInventoryError::WrongDialect);
+        }
+        self.choices
+            .iter()
+            .map(|id| {
+                let object = state
+                    .object(*id)
+                    .ok_or(SequelInventoryError::MissingObject(*id))?;
+                if object.kind != ScriptObjectKind::InventoryItem {
+                    return Err(SequelInventoryError::NotInventory(*id));
+                }
+                let name = &object.bytes()[4..20];
+                let end = name
+                    .iter()
+                    .position(|byte| *byte == 0)
+                    .ok_or(SequelInventoryError::UnterminatedName(*id))?;
+                Ok(super::PresentationWordChoice::inventory(*id, &name[..end]))
+            })
+            .collect()
+    }
+
+    /// Publish the UI result after closing, matching 0x9C1D..0x9C53.
+    pub fn complete_choice(
+        &mut self,
+        selected: Option<ScriptObjectId>,
+        runtime: &mut ScriptRuntime,
+    ) -> Result<(), SequelInventoryError> {
+        if self.descriptor_lookup.is_some() {
+            return Err(SequelInventoryError::DescriptorPending);
+        }
+        if self.choices.is_empty() {
+            return Err(SequelInventoryError::NoPendingChoice);
+        }
+        if let Some(object) = selected {
+            self.select(object)?;
+        } else {
+            self.selected = None;
+            self.saved_line = None;
+            runtime.clear_alternate_resume_state();
+        }
+        runtime.take_selected_concept();
+        self.choices.clear();
         Ok(())
     }
 
@@ -662,6 +717,169 @@ mod tests {
             record_condition_operand: None,
             words: Box::new([]),
         })
+    }
+
+    #[test]
+    fn inventory_ui_completion_matches_native_selection_and_cancellation_without_transfer() {
+        #[derive(Deserialize)]
+        struct UiVector {
+            inventory: bool,
+            labels: Vec<Vec<u8>>,
+            selection: Option<usize>,
+            frames: Vec<UiFrame>,
+        }
+        #[derive(Deserialize)]
+        struct UiFrame {
+            selected: u16,
+            saved_line: u16,
+            alternate: u16,
+            resume: u8,
+            choices_head: u16,
+        }
+        let vectors: Vec<UiVector> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_inventory_choice.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        let full = conditions()
+            .into_iter()
+            .find(|row| row.name == "full")
+            .unwrap();
+        for vector in vectors {
+            if !vector.inventory {
+                continue;
+            }
+            let Some(selection) = vector.selection else {
+                continue;
+            };
+            let (mut state, ids, full_roster) = fixture(&full);
+            let offered = full_roster
+                .slots()
+                .iter()
+                .flatten()
+                .take(vector.labels.len())
+                .copied()
+                .collect::<Vec<_>>();
+            for (id, label) in offered.iter().zip(&vector.labels) {
+                for (index, byte) in label.iter().copied().enumerate() {
+                    let field = state.object_byte(*id, 4 + index).unwrap();
+                    assert!(state.set_byte(field, byte));
+                }
+            }
+            let before = state.clone();
+            let mut slots = [None; 16];
+            for (slot, id) in slots.iter_mut().zip(&offered) {
+                *slot = Some(*id);
+            }
+            let roster = AboardObjectRoster::from_test_slots(slots);
+            let mut owner = SequelInventoryState::default();
+            let mut runtime = runtime();
+            let dictionary = decode_script_dictionary(b"ALTERNATE\0").unwrap();
+            runtime.set_alternate_concept(Some(dictionary.words().next().unwrap().0));
+            owner
+                .offer(
+                    SequelInventoryLine {
+                        instruction: ScriptCodeOffset::new(0x1231),
+                        recipient: ids[&0x780],
+                    },
+                    &roster,
+                    &state,
+                    &mut runtime,
+                    &mut TextPresentationState::default(),
+                )
+                .unwrap();
+            let choices = owner.presentation_choices(&state).unwrap();
+            for (index, choice) in choices.iter().enumerate() {
+                assert_eq!(
+                    choice.identity,
+                    super::super::PresentationChoiceId::Inventory(offered[index])
+                );
+                assert_eq!(choice.label.as_ref(), vector.labels[index]);
+            }
+            let selected = offered.get(selection).copied();
+            owner.complete_choice(selected, &mut runtime).unwrap();
+            let native = vector.frames.last().unwrap();
+            assert_eq!(owner.selected(), selected);
+            assert_eq!(
+                native.selected,
+                selected.map_or(0, |_| (0x104 + selection * 32) as u16)
+            );
+            assert_eq!(
+                owner
+                    .saved_line()
+                    .map_or(0, |line| line.instruction.index() + 3),
+                usize::from(native.saved_line)
+            );
+            assert_eq!(runtime.alternate_concept().is_some(), native.alternate != 0);
+            assert_eq!(runtime.selector_resume_active(), native.resume == 2);
+            assert_eq!(native.choices_head, 0);
+            assert!(owner.choices().is_empty());
+            assert_eq!(runtime.selected_concept(), None);
+            assert_eq!(state, before);
+            assert_eq!(roster.slots(), &slots);
+            let snapshot = owner.clone();
+            assert_eq!(
+                owner.complete_choice(None, &mut runtime),
+                Err(SequelInventoryError::NoPendingChoice)
+            );
+            assert_eq!(owner, snapshot);
+            owner.choices = offered.clone();
+            for offset in 4..20 {
+                let field = state.object_byte(offered[0], offset).unwrap();
+                assert!(state.set_byte(field, b'X'));
+            }
+            assert_eq!(
+                owner.presentation_choices(&state),
+                Err(SequelInventoryError::UnterminatedName(offered[0]))
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "requires every original sequel VAR and DEB image"]
+    fn all_authored_inventory_names_are_bounded_var_labels_not_dictionary_words() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let mut count = 0;
+        let mut labels = std::collections::BTreeSet::new();
+        for profile in 1..=17 {
+            let directory = decode_script_directory(
+                &std::fs::read(root.join(format!("SCRIPT{profile}.DEB"))).unwrap(),
+            )
+            .unwrap();
+            let state = decode_script_state_for_dialect(
+                &std::fs::read(root.join(format!("SCRIPT{profile}.VAR"))).unwrap(),
+                &directory,
+                ScriptDialect::BigBugBang,
+            )
+            .unwrap();
+            let inventory = SequelInventoryState {
+                choices: state
+                    .objects()
+                    .iter()
+                    .filter(|object| object.kind == ScriptObjectKind::InventoryItem)
+                    .map(|object| object.id)
+                    .collect(),
+                ..Default::default()
+            };
+            for choice in inventory.presentation_choices(&state).unwrap() {
+                let super::super::PresentationChoiceId::Inventory(id) = choice.identity else {
+                    panic!("object identity lost");
+                };
+                let record = state.object(id).unwrap();
+                assert_eq!(
+                    choice.label.as_ref(),
+                    &record.bytes()[4..4 + choice.label.len()]
+                );
+                assert_eq!(record.bytes()[4 + choice.label.len()], 0);
+                assert!(!choice.label.is_empty());
+                labels.insert(choice.label);
+                count += 1;
+            }
+        }
+        assert_eq!(count, 425);
+        assert_eq!(labels.len(), 25);
     }
 
     #[test]

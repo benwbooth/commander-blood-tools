@@ -945,7 +945,12 @@ mod tests {
             &slots
         );
         assert!(runtime.selector_resume_active());
-        dispatcher.selector.inventory_mut().select(item).unwrap();
+        dispatcher
+            .selector
+            .inventory_mut()
+            .complete_choice(Some(item), &mut runtime)
+            .unwrap();
+        assert!(!dispatcher.selector.has_pending_presentation_choices());
         dispatcher.commit_selected_concept(&mut runtime).unwrap();
         dispatcher.prepare_script_state(&mut runtime).unwrap();
         assert_eq!(selector.history(), &history);

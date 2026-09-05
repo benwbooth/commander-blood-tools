@@ -256,7 +256,7 @@ pub use choice_list::{
     CHOICE_LIST_ROW_PITCH, CHOICE_LIST_WIDTH_PADDING, ChoiceListBackend, ChoiceListConfig,
     ChoiceListFrame, ChoiceListHandAnimation, ChoiceListHandRequest, ChoiceListPointer,
     ChoiceListPresentation, ChoiceListRect, ChoiceListRow, ChoiceListRowKind, ChoiceListState,
-    update_choice_list,
+    update_choice_list, update_choice_list_for_dialect,
 };
 pub use clock::{ScriptClockDate, decode_script_clock_date, decode_script_clock_hour};
 pub use confirm_dialog::{
@@ -501,10 +501,14 @@ pub use presentation_stream::{
     PresentationResourceSwitchOutcome, PresentationSourceRange, switch_presentation_resource,
 };
 pub use presentation_word_choice::{
-    PresentationWordChoice, PresentationWordChoiceBackend, PresentationWordChoiceContext,
-    PresentationWordChoiceGate, PresentationWordChoiceOutcome, PresentationWordChoicePhase,
-    PresentationWordChoiceState, WORD_CHOICE_TRANSITION_STEPS, update_presentation_word_choice,
+    PresentationChoiceId, PresentationWordChoice, PresentationWordChoiceBackend,
+    PresentationWordChoiceContext, PresentationWordChoiceGate, PresentationWordChoiceOutcome,
+    PresentationWordChoicePhase, PresentationWordChoiceState, WORD_CHOICE_TRANSITION_STEPS,
+    update_presentation_word_choice,
 };
+
+#[cfg(test)]
+mod sequel_inventory_choice_oracle;
 pub use procedure::{
     SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT, ScriptProcedureStateError, ScriptProcedureStates,
     apply_procedure_activation, apply_procedure_patch_stream, build_procedure_patch_stream,

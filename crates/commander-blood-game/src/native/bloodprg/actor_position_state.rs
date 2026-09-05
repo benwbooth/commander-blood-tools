@@ -2,7 +2,10 @@
 
 use std::fmt;
 
-use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind, ScriptState};
+use commander_blood_formats::code::ScriptDialect;
+use commander_blood_formats::script::{
+    ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference,
+};
 
 use super::{PresentationRequestFlags, ScriptNavigationError, resolve_navigation_position};
 
@@ -10,6 +13,8 @@ const OBJECT_FLAGS_WORD_INDEX: usize = 1;
 const POSITION_MATCH_FLAG: u16 = 0x0010;
 const POST_UPDATE_FLAG: u16 = 0x8000;
 const TRANSIENT_ACTOR_FLAGS: u16 = POSITION_MATCH_FLAG | POST_UPDATE_FLAG;
+const OCCUPIED_FLAG: u16 = 4;
+const SEQUEL_OCCUPANT_WORD_INDEX: usize = 12;
 
 /// Runtime inputs controlling one actor-position normalization pass.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -40,6 +45,11 @@ pub struct ActorPositionStateOutcome {
 /// Invalid typed state encountered before actor updates could be committed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ActorPositionStateError {
+    /// A sequel actor or location lacks its fixed relationship word.
+    MissingRelationship {
+        /// Object with the malformed record.
+        object: ScriptObjectId,
+    },
     /// An actor's fixed header does not contain its flags word.
     MissingFlags {
         /// Actor with the malformed record.
@@ -70,7 +80,8 @@ impl From<ScriptNavigationError> for ActorPositionStateError {
 
 /// Normalize every actor's transient flags against current navigation positions.
 ///
-/// This translates `vm_state_processor` at BLOODPRG file offset `0x005A74`.
+/// This translates `vm_state_processor` at BLOODPRG file offset `0x005A74`
+/// and BLOOD2PG `0x6038`, including the sequel's location occupancy rebuild.
 /// Stable object identities and typed coordinate pairs replace the original
 /// directory walk and record-address rebinding.
 pub fn update_actor_position_states(
@@ -85,6 +96,27 @@ pub fn update_actor_position_states(
         .collect::<Vec<_>>();
     let mut updates = Vec::with_capacity(actor_ids.len());
     let mut outcome = ActorPositionStateOutcome::default();
+    let sequel = state.dialect() == ScriptDialect::BigBugBang;
+    if sequel {
+        for location in state
+            .objects()
+            .iter()
+            .filter(|o| o.kind == ScriptObjectKind::Location)
+        {
+            let flags = state
+                .object_word(location.id, OBJECT_FLAGS_WORD_INDEX)
+                .ok_or(ActorPositionStateError::MissingFlags {
+                    object: location.id,
+                })?;
+            let occupant = state
+                .object_word(location.id, SEQUEL_OCCUPANT_WORD_INDEX)
+                .ok_or(ActorPositionStateError::MissingRelationship {
+                    object: location.id,
+                })?;
+            updates.push((flags, state.word(flags).unwrap() & !OCCUPIED_FLAG));
+            updates.push((occupant, 0));
+        }
+    }
 
     for actor in actor_ids {
         let flags_field = state
@@ -113,6 +145,35 @@ pub fn update_actor_position_states(
         }
         outcome.processed_actors += 1;
         updates.push((flags_field, flags));
+        if sequel && flags & OCCUPIED_FLAG != 0 {
+            let parent = state
+                .object_word(actor, SEQUEL_OCCUPANT_WORD_INDEX)
+                .ok_or(ActorPositionStateError::MissingRelationship { object: actor })?;
+            if state.word(parent).unwrap() & 0x8000 == 0 {
+                let Some(ScriptStateObjectReference::Object(location)) =
+                    state.object_reference(parent)
+                else {
+                    return Err(ActorPositionStateError::MissingRelationship { object: actor });
+                };
+                if state.object(location).unwrap().kind == ScriptObjectKind::Location {
+                    let location_flags = state
+                        .object_word(location, OBJECT_FLAGS_WORD_INDEX)
+                        .ok_or(ActorPositionStateError::MissingFlags { object: location })?;
+                    let occupant = state
+                        .object_word(location, SEQUEL_OCCUPANT_WORD_INDEX)
+                        .ok_or(ActorPositionStateError::MissingRelationship { object: location })?;
+                    updates.push((
+                        location_flags,
+                        state.word(location_flags).unwrap() | OCCUPIED_FLAG,
+                    ));
+                    // Writes remain in directory order: the last qualifying actor wins.
+                    updates.push((
+                        occupant,
+                        state.object(actor).unwrap().source_offset() as u16,
+                    ));
+                }
+            }
+        }
     }
 
     for (field, flags) in updates {
@@ -432,5 +493,80 @@ mod tests {
             Err(ActorPositionStateError::Navigation(_))
         ));
         assert_eq!(fixture.state, before);
+    }
+
+    #[test]
+    fn sequel_pre_frame_matches_original_occupancy_and_paused_vectors() {
+        use commander_blood_formats::script::decode_script_state_for_dialect;
+
+        #[derive(Deserialize)]
+        struct Vector {
+            name: String,
+            directory: Vec<u8>,
+            state_before: Vec<u8>,
+            state_after: Vec<u8>,
+            request: u8,
+            text: u8,
+            post: u16,
+            offsets: BTreeMap<String, u16>,
+            paused: bool,
+            calls: Vec<u16>,
+        }
+        let vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_state_processor.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str::<Vector>(line).unwrap())
+        .collect::<Vec<_>>();
+        assert_eq!(vectors.len(), 21);
+        assert_eq!(vectors.iter().filter(|v| v.paused).count(), 7);
+        for vector in vectors {
+            let directory = decode_script_directory(&vector.directory).unwrap();
+            let mut state = decode_script_state_for_dialect(
+                &vector.state_before,
+                &directory,
+                ScriptDialect::BigBugBang,
+            )
+            .unwrap();
+            let expected = decode_script_state_for_dialect(
+                &vector.state_after,
+                &directory,
+                ScriptDialect::BigBugBang,
+            )
+            .unwrap();
+            let id = |name: &str| directory.find_active_object(name.as_bytes()).unwrap();
+            let context = ActorPositionStateContext {
+                request_flags: PresentationRequestFlags::decode(vector.request),
+                text_display_active: vector.text & 1 != 0,
+                honk: Some(id("Honk")),
+                post_update: (vector.post == vector.offsets["Honk"]).then(|| id("Honk")),
+                world: id("orxx"),
+                arche: id("arche"),
+            };
+            let outcome = update_actor_position_states(&mut state, context).unwrap();
+            assert_eq!(state, expected, "{}", vector.name);
+            assert_eq!(outcome.processed_actors, 3, "{}", vector.name);
+            assert_eq!(
+                vector
+                    .calls
+                    .iter()
+                    .filter(|&&address| address == 0x6038)
+                    .count(),
+                1
+            );
+            assert!(vector.calls.contains(&0x67B8));
+            assert!(vector.calls.contains(&0x6633));
+            let parent = state
+                .object_word(id("nested"), SEQUEL_OCCUPANT_WORD_INDEX)
+                .unwrap();
+            assert!(state.set_word(parent, 0x1234));
+            let before_error = state.clone();
+            assert!(update_actor_position_states(&mut state, context).is_err());
+            assert_eq!(
+                state, before_error,
+                "{} partial occupancy update",
+                vector.name
+            );
+        }
     }
 }

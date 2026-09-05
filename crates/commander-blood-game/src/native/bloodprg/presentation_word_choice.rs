@@ -1,10 +1,11 @@
 //! Typed dialogue word-choice opening, selection, and closing flow.
 
-use commander_blood_formats::script::ScriptWordId;
+use commander_blood_formats::code::ScriptDialect;
+use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
 
 use super::{
     ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListRect, ChoiceListState,
-    update_choice_list,
+    update_choice_list_for_dialect,
 };
 
 /// Number of original interpolation steps used by the dialogue choice panel.
@@ -12,11 +13,20 @@ pub const WORD_CHOICE_TRANSITION_STEPS: u16 = 4;
 
 const WORD_CHOICE_CENTER_X: i16 = 225;
 
-/// One interned dialogue concept and its decoded display label.
+/// Choice identity in the active profile, with no dictionary/object aliasing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PresentationChoiceId {
+    /// An ordinary interned dialogue concept.
+    Dictionary(ScriptWordId),
+    /// A sequel inventory object whose name comes from VAR.
+    Inventory(ScriptObjectId),
+}
+
+/// One dialogue choice and its decoded display label.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PresentationWordChoice {
-    /// Stable identity in the decoded script dictionary.
-    pub word: ScriptWordId,
+    /// Stable dictionary or object identity in the active profile.
+    pub identity: PresentationChoiceId,
     /// Owned original game-font label.
     pub label: Box<[u8]>,
 }
@@ -25,7 +35,15 @@ impl PresentationWordChoice {
     /// Build one typed dialogue choice.
     pub fn new(word: ScriptWordId, label: impl Into<Box<[u8]>>) -> Self {
         Self {
-            word,
+            identity: PresentationChoiceId::Dictionary(word),
+            label: label.into(),
+        }
+    }
+
+    /// Build an object-backed choice without inventing a dictionary word.
+    pub fn inventory(object: ScriptObjectId, label: impl Into<Box<[u8]>>) -> Self {
+        Self {
+            identity: PresentationChoiceId::Inventory(object),
             label: label.into(),
         }
     }
@@ -69,6 +87,10 @@ pub struct PresentationWordChoiceContext {
 /// Flat owned state for one dialogue word-choice request.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PresentationWordChoiceState {
+    /// Executable dialect owning this chooser's VM-latch behavior and layout.
+    pub dialect: ScriptDialect,
+    /// The sequel pauses the VM on opening and re-enables it on selection.
+    pub vm_execution_enabled: bool,
     /// Whether BloodScript currently requests a word choice.
     pub active: bool,
     /// Semantic panel lifecycle.
@@ -81,10 +103,12 @@ pub struct PresentationWordChoiceState {
     pub current_rect: ChoiceListRect,
     /// Opening target with x and width resolved from the measured list.
     pub animation_target: ChoiceListRect,
-    /// Word selected while the panel closes.
-    pub selected_word: Option<ScriptWordId>,
-    /// Word published back to BloodScript after closing.
-    pub published_word: Option<ScriptWordId>,
+    /// Choice selected while the panel closes; `None` for inventory cancellation.
+    pub selected_word: Option<PresentationChoiceId>,
+    /// Choice published back to BloodScript after closing.
+    pub published_word: Option<PresentationChoiceId>,
+    /// Original cancel label for the sequel's object chooser; absent for concepts.
+    pub inventory_cancel_label: Option<Box<[u8]>>,
     /// Shared UI bit latched when the panel opens.
     ///
     /// Native completion leaves this set for the following bridge owner to clear.
@@ -121,17 +145,21 @@ pub enum PresentationWordChoiceOutcome {
     Opening,
     /// The list remains open without a selection.
     AwaitingSelection(ChoiceListFrame),
-    /// One interned word was selected and closing began.
+    /// One typed choice was selected and closing began.
     Selected {
-        /// Interned concept selected by the player.
-        word: ScriptWordId,
+        /// Dictionary or object identity selected by the player.
+        word: PresentationChoiceId,
         /// Final interactive list frame drawn before closing.
         frame: ChoiceListFrame,
     },
     /// Closing interpolation remains in progress.
     Closing,
     /// The selected word was published and the word-presentation latches cleared.
-    Completed(ScriptWordId),
+    Completed(PresentationChoiceId),
+    /// The inventory cancel row was clicked; closing begins before cancellation.
+    CancelSelected(ChoiceListFrame),
+    /// Closing completed without selecting an inventory object.
+    Cancelled,
 }
 
 /// Update one dialogue word-choice request.
@@ -166,9 +194,18 @@ pub fn update_presentation_word_choice<Backend: PresentationWordChoiceBackend>(
         .map(|choice| choice.label.as_ref())
         .collect::<Vec<_>>();
     if state.phase == PresentationWordChoicePhase::Closed {
+        if state.dialect == ScriptDialect::BigBugBang {
+            state.vm_execution_enabled = false;
+        }
         state.interface_active = true;
-        state.current_rect =
-            update_choice_list(&labels, choice_list_config(true), &mut state.list, backend).rect;
+        state.current_rect = update_choice_list_for_dialect(
+            &labels,
+            choice_list_config(true, None),
+            &mut state.list,
+            backend,
+            state.dialect,
+        )
+        .rect;
         state.animation_target = ChoiceListRect {
             origin: [
                 state.current_rect.origin[0],
@@ -187,18 +224,35 @@ pub fn update_presentation_word_choice<Backend: PresentationWordChoiceBackend>(
     }
 
     if state.phase == PresentationWordChoicePhase::Selecting {
-        let frame =
-            update_choice_list(&labels, choice_list_config(false), &mut state.list, backend);
+        let frame = update_choice_list_for_dialect(
+            &labels,
+            choice_list_config(false, state.inventory_cancel_label.as_deref()),
+            &mut state.list,
+            backend,
+            state.dialect,
+        );
+        state.current_rect = frame.rect;
+        if frame.cancelled {
+            if state.dialect == ScriptDialect::BigBugBang {
+                state.vm_execution_enabled = true;
+            }
+            state.selected_word = None;
+            state.phase = PresentationWordChoicePhase::Closing;
+            return PresentationWordChoiceOutcome::CancelSelected(frame);
+        }
         let Some(index) = frame.selected_item else {
             return PresentationWordChoiceOutcome::AwaitingSelection(frame);
         };
         let Some(choice) = state.choices.get(index) else {
             return PresentationWordChoiceOutcome::AwaitingSelection(frame);
         };
-        state.selected_word = Some(choice.word);
+        state.selected_word = Some(choice.identity);
+        if state.dialect == ScriptDialect::BigBugBang {
+            state.vm_execution_enabled = true;
+        }
         state.phase = PresentationWordChoicePhase::Closing;
         return PresentationWordChoiceOutcome::Selected {
-            word: choice.word,
+            word: choice.identity,
             frame,
         };
     }
@@ -207,25 +261,34 @@ pub fn update_presentation_word_choice<Backend: PresentationWordChoiceBackend>(
         return PresentationWordChoiceOutcome::Closing;
     }
 
-    let selected_word = state
-        .selected_word
-        .expect("closing word-choice state always owns a selected word");
-    state.published_word = Some(selected_word);
+    let selected_word = state.selected_word;
+    assert!(
+        selected_word.is_some() || state.inventory_cancel_label.is_some(),
+        "closing concept choice always owns a selected word"
+    );
+    state.published_word = selected_word;
     state.active = false;
     state.phase = PresentationWordChoicePhase::Closed;
     state.choices.clear();
+    state.inventory_cancel_label = None;
     state.presentation_deferred = false;
     state.text_display_active = false;
     state.dialogue_hold_complete = false;
     state.request_pending = false;
-    PresentationWordChoiceOutcome::Completed(selected_word)
+    match selected_word {
+        Some(choice) => PresentationWordChoiceOutcome::Completed(choice),
+        None => PresentationWordChoiceOutcome::Cancelled,
+    }
 }
 
-const fn choice_list_config(layout_only: bool) -> ChoiceListConfig<'static> {
+const fn choice_list_config(
+    layout_only: bool,
+    cancel_label: Option<&[u8]>,
+) -> ChoiceListConfig<'_> {
     ChoiceListConfig {
         center_x: WORD_CHOICE_CENTER_X,
         preserve_individual_widths: false,
-        cancel_label: None,
+        cancel_label,
         layout_only,
     }
 }
@@ -296,8 +359,8 @@ mod tests {
                 active: vector.word_choice_gate_before & 1 != 0,
                 phase: phase_from_native(vector.phase_before),
                 choices,
-                selected_word: Some(words[0]),
-                published_word: Some(words[1]),
+                selected_word: Some(PresentationChoiceId::Dictionary(words[0])),
+                published_word: Some(PresentationChoiceId::Dictionary(words[1])),
                 interface_active: vector.phase_before != u8::MIN,
                 presentation_deferred: true,
                 text_display_active: true,
@@ -324,7 +387,7 @@ mod tests {
             if let PresentationWordChoiceOutcome::Selected { word, .. } = outcome {
                 assert_eq!(
                     Some(word),
-                    native_selection.map(|index| words[index]),
+                    native_selection.map(|index| PresentationChoiceId::Dictionary(words[index])),
                     "{}",
                     vector.name
                 );
@@ -394,6 +457,8 @@ mod tests {
             PresentationWordChoiceOutcome::Selected { .. } => status == "selected",
             PresentationWordChoiceOutcome::Closing => status == "closing_incomplete",
             PresentationWordChoiceOutcome::Completed(_) => status == "complete",
+            PresentationWordChoiceOutcome::CancelSelected(_)
+            | PresentationWordChoiceOutcome::Cancelled => false,
         }
     }
 
