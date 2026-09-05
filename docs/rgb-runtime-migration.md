@@ -46,6 +46,64 @@ This intentionally preserves authored content and timing, not transient DOS
 display-page artifacts. Dialogue subtitles are covered below; panel effects
 remain to be migrated.
 
+## Location-panel artwork
+
+The 42 world-artwork table entries now resolve their first sprite frames to
+immutable RGBA images at startup. The native resource cache remains only as
+geometry metadata for the location-panel entity. Loading that metadata no
+longer publishes the planet's source colors into the game palette.
+
+`func_009083_location_info_panel_dispatch.c` still controls opening, closing,
+text, and draw order; `entity_draw_full` controls its position and extent. The
+RGB sampler preserves the recovered scaler's truncated 16.16 coordinates and
+transparent-zero coverage. Main-font styles 238 and 254 are imported once;
+panel text preserves the C routine's space advance, skipped characters, and
+draw-width accounting. The rectangle dims RGB directly instead of selecting
+nearest palette colors. The adjacent transition entity remains a legacy
+background operation; this is not a whole-navigation RGB migration.
+
+## Travel ownership fixes
+
+The manual trace `output/fidelity/manual-playtest-63QX9M/frames.jsonl` showed
+line 6 decoding at frames 2574-2662 while the final indexed display hash stayed
+constant. Rust's bridge preparation copied the bridge base onto the movie's
+primary page after the camera FSM dispatched it. C's
+`func_0078d0_presentation_mode_dispatch.c` only handles hover, not that copy.
+Modern bridge layers may still be prepared, but an active camera/ship movie
+now retains its primary page, including the previous pixels needed by deltas.
+
+The same trace retained line 6 after camera return and replayed it at frame
+3412 on Orxx. The camera adapter now preserves the scene dispatcher's completed
+line clear instead of overwriting it with the pre-callback value.
+
+At frame 4125 the planet target list was open, with scene dispatch blocked,
+but a Rust full-screen-video latch suppressed all hand geometry. C's
+`func_001610_manu3_hand_frame_dispatch.c` explicitly permits the hand during
+that blocked-dispatch menu. The target menu now overrides video occlusion;
+travel playback and subsequent full-screen dialogue retain their own gates.
+
+Verification for these changes:
+
+- Library suite: 881 passed, five optional tests ignored. The optional
+  `real_services_run_the_complete_available_startup_slice` was then explicitly
+  run in isolated SDL/wgpu and passed, including page preservation across bridge
+  preparation and the completed camera line clear.
+- All 42 world-art entries were compared pixel-for-pixel with the recovered
+  scaled blitter at five sizes/positions, including clipping. Loading panel
+  metadata under an adversarial all-red game palette leaves that palette alone.
+  Main-font pixels/widths and RGB dimming also have focused regression tests.
+- The complete lever/navigation scenario passed with 66 distinct display pages
+  over 89 hyperspace game frames. The live trace, RGB planet-panel screenshot,
+  and two visibly different hyperspace screenshots are retained in
+  `output/fidelity/production-load-pterra-navigation.jsonl-1788585272963245012-1054908-0/`.
+- The full Pterra ship-navigation scenario also passed: all 501 recorded target
+  menu frames submitted hand geometry, and selecting Pterra reached Scruter's
+  identity-code choices. Its trace and `planet-menu-hand.png` are retained in
+  `output/fidelity/production-load-pterra-ship-navigation.jsonl-1788585490096845185-1061521-0/`.
+- These checks exercise Rust production rendering with original assets and
+  recovered-C contracts. They are not a new matched-frame original-DOS capture
+  or proof of whole-game parity.
+
 ## Remaining work (not migrated)
 
 | Owner | Indexed dependency still present | Required replacement |

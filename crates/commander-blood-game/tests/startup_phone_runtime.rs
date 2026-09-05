@@ -1349,6 +1349,15 @@ fn production_runtime_vm_unlocks_pterra_and_opens_the_authored_navigation_chart(
         hyperspace["semantic"]["video"]["manu3_layer_allowed"], false,
         "the independent hand layer was enabled over hyperspace"
     );
+    let displayed_movie_frames = travel_records
+        .iter()
+        .filter(|record| record["semantic"]["video"]["active_resource"] == HYPERJUMP_VIDEO)
+        .filter_map(|record| record["semantic"]["video"]["logical_display_hash"].as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    assert!(
+        displayed_movie_frames.len() > 1,
+        "hyperspace advanced its decoder but the visible display page stayed frozen"
+    );
 
     let returned = travel_records
         .iter()
@@ -1363,6 +1372,11 @@ fn production_runtime_vm_unlocks_pterra_and_opens_the_authored_navigation_chart(
         false
     );
     assert_eq!(returned["semantic"]["navigation"]["chart"]["active"], false);
+    assert!(
+        returned["semantic"]["vm"]["active_line"].is_null(),
+        "camera completion re-published line six for a later unrelated click"
+    );
+    assert!(returned["semantic"]["video"]["active_resource"].is_null());
     assert_eq!(
         presentation_u64(returned, "ui_flags") & MODAL_UI_FLAG,
         u64::MIN,
@@ -1450,6 +1464,25 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         "the production ship HUD omitted Pterra from its recovered target list"
     );
     assert_ne!(presentation_u64(ship_hud, "ship_flags"), u64::MIN);
+
+    let interactive_menu = ship_records
+        .iter()
+        .find(|record| {
+            record["semantic"]["navigation"]["ship_hud"]["coordinator"]["scene_dispatch_blocked"]
+                == true
+                && record["semantic"]["navigation"]["ship_target_selector"]["rows"]
+                    .as_array()
+                    .is_some_and(|rows| !rows.is_empty())
+                && record["semantic"]["video"]["manu3_submitted_triangle_count"]
+                    .as_u64()
+                    .unwrap_or(0)
+                    > 0
+        })
+        .expect("the planet target menu never rendered its interactive MANU3 cursor");
+    assert_eq!(
+        interactive_menu["semantic"]["video"]["manu3_layer_allowed"],
+        true
+    );
 
     let selector = ship_records
         .iter()
@@ -2007,6 +2040,24 @@ fn run_production_scenario_internal(
             | "accuracy/scenarios/production_bob_first_contact.tsv"
     ) {
         assert_continuous_rgb_ui(&load_trace(&temporary.0.join("frames.jsonl")), scenario);
+    }
+    if scenario == "accuracy/scenarios/production_load_pterra_navigation.tsv" {
+        let frames = load_trace(&temporary.0.join("frames.jsonl"));
+        let movie_frames = frames
+            .iter()
+            .filter(|record| record["semantic"]["video"]["active_resource"] == HYPERJUMP_VIDEO)
+            .collect::<Vec<_>>();
+        let displayed_pages = movie_frames
+            .iter()
+            .filter_map(|record| record["semantic"]["video"]["logical_display_hash"].as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+        // Every ordinary game frame is recorded, not only the five action checkpoints.
+        assert!(
+            displayed_pages.len() > movie_frames.len() / 2,
+            "most hyperspace frames were lost between decoding and display: {} pages / {} frames",
+            displayed_pages.len(),
+            movie_frames.len()
+        );
     }
     Some(ProductionScenarioOutput {
         records: load_trace(&trace_path),

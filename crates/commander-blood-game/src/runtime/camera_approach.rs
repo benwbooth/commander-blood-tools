@@ -66,6 +66,13 @@ pub(super) fn update_runtime_camera_approach<'window>(
         }
     };
 
+    if outcome == Some(CameraApproachOutcome::PresentationCompleted) {
+        // The C scene dispatcher clears vm_active_line when the queue drains.
+        // Preserve that callback write instead of re-publishing phase-three's
+        // line six from the camera state after the callback returns.
+        state.active_line = services.ship_presentation_state().active_line;
+    }
+
     if outcome == Some(CameraApproachOutcome::HyperspaceQueued) {
         record_result(
             &mut integration_error,

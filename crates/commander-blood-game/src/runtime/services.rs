@@ -2534,12 +2534,21 @@ impl<'window> ModernGameServices<'window> {
 
     /// Return whether a full-screen ship or camera-approach video owns MANU3's page.
     fn ship_video_owns_display(&self) -> bool {
-        self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN
+        (self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != u16::MIN
+            && !self.ship_presentation.scene_dispatch_blocked)
             || self.runtime.camera_approach().transition_pending
     }
 
     /// Combine retained true-color ownership with a phase activated after stream open.
     fn presentation_display_occludes_manu3(&self) -> bool {
+        // ship_3d_hud_init blocks scene dispatch while the target list is open.
+        // manu3_hand_frame_dispatch explicitly bypasses the presentation-request
+        // delay in that state: a retained planet frame must not hide its cursor.
+        if ship_target_menu_owns_pointer(&self.ship_presentation)
+            && !self.runtime.camera_approach().transition_pending
+        {
+            return false;
+        }
         self.presentation_player.owns_display_frame()
             && (self.presentation_player.display_occludes_manu3() || self.ship_video_owns_display())
     }
@@ -3722,6 +3731,9 @@ impl<'window> ModernGameServices<'window> {
         refresh_live_palette: bool,
         target: BridgePageTarget,
     ) -> Result<&BridgeSceneFrame> {
+        let movie_owns_primary_page = self.presentation_player.has_stream()
+            && (self.runtime.camera_approach().transition_pending
+                || self.ship_presentation.flags & SHIP_PRESENTATION_ACTIVE_FLAG != 0);
         if target == BridgePageTarget::Primary && !self.presentation_player.has_stream() {
             self.presentation_player.release_retained_display_frame();
         }
@@ -3763,10 +3775,15 @@ impl<'window> ModernGameServices<'window> {
         self.rasterize_bridge_frame_sprite_range(
             FIRST_SHIP_PROJECTION_ENTITY..AFTER_LAST_SHIP_PROJECTION_ENTITY,
         )?;
-        let mut indexed_bridge_base = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
-        self.compose_current_bridge_work_surface(&mut indexed_bridge_base)?;
-        let (front, back) = self.runtime.presentation_buffers_mut();
-        selected_bridge_page_mut(front, back, target).copy_from_slice(&indexed_bridge_base);
+        // C's presentation_mode_dispatch only updates hover state. Preparing
+        // modern bridge layers must not overwrite the movie drawn earlier by
+        // camera_fsm_state_gate, nor the previous page used by its delta decoder.
+        if target != BridgePageTarget::Primary || !movie_owns_primary_page {
+            let mut indexed_bridge_base = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+            self.compose_current_bridge_work_surface(&mut indexed_bridge_base)?;
+            let (front, back) = self.runtime.presentation_buffers_mut();
+            selected_bridge_page_mut(front, back, target).copy_from_slice(&indexed_bridge_base);
+        }
         Ok(self
             .bridge_frame
             .as_ref()
@@ -5249,6 +5266,11 @@ const fn manu3_layer_visible(
     recovered_hand_visible && !(presentation_frame_owned && presentation_occludes_manu3)
 }
 
+/// The destination list blocks scene dispatch until selection or cancellation.
+const fn ship_target_menu_owns_pointer(ship: &ShipPresentationState) -> bool {
+    ship.flags & SHIP_PRESENTATION_ACTIVE_FLAG != 0 && ship.scene_dispatch_blocked
+}
+
 struct RuntimeBridgeScreenBackend<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
     ship_active: bool,
@@ -5774,6 +5796,17 @@ mod tests {
         assert!(!manu3_layer_visible(true, true, true));
         assert!(!manu3_layer_visible(false, false, false));
         assert!(!manu3_layer_visible(false, true, true));
+    }
+
+    #[test]
+    fn ship_target_list_returns_pointer_ownership_while_scene_dispatch_is_blocked() {
+        let mut ship = ShipPresentationState::default();
+        ship.flags = SHIP_PRESENTATION_ACTIVE_FLAG;
+        assert!(!ship_target_menu_owns_pointer(&ship));
+        ship.scene_dispatch_blocked = true;
+        assert!(ship_target_menu_owns_pointer(&ship));
+        ship.flags = 0;
+        assert!(!ship_target_menu_owns_pointer(&ship));
     }
 
     #[test]
@@ -6933,6 +6966,7 @@ mod tests {
         services.runtime_mut().start_camera_transition();
         let mut hyperspace_queued = false;
         let mut camera_transition_completed = false;
+        let mut verified_movie_frames = 0;
         for _ in usize::MIN..MAXIMUM_CAMERA_TRANSITION_FRAMES {
             let outcome = update_runtime_camera_approach(
                 &mut services,
@@ -6940,12 +6974,23 @@ mod tests {
                 &mut lifecycle,
             )
             .unwrap();
+            let movie_page = (services.presentation_player.has_stream()
+                && services.runtime().camera_approach().transition_pending)
+                .then(|| services.runtime().front_buffer().pixels().to_vec());
             services
                 .render_bridge_frame(BridgeSceneInput {
                     interaction: BridgeSteeringInteraction::MenuEngaged,
                     ..BridgeSceneInput::default()
                 })
                 .unwrap();
+            if let Some(movie_page) = movie_page {
+                assert_eq!(
+                    services.runtime().front_buffer().pixels(),
+                    movie_page,
+                    "bridge preparation overwrote the hyperspace decoder's display page"
+                );
+                verified_movie_frames += 1;
+            }
             match outcome {
                 Some(crate::native::bloodprg::CameraApproachOutcome::HyperspaceQueued) => {
                     hyperspace_queued = true;
@@ -6959,6 +7004,12 @@ mod tests {
         }
         assert!(hyperspace_queued);
         assert!(camera_transition_completed);
+        assert!(verified_movie_frames > 1);
+        assert_eq!(lifecycle.presentation.active_line, None);
+        assert_eq!(
+            services.ship_presentation_state().active_line,
+            crate::native::bloodprg::NO_PRESENTATION_LINE
+        );
         assert_eq!(
             services
                 .presentation_catalog()
