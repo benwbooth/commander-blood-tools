@@ -245,7 +245,7 @@ separator, but not this 65534 dynamic-object marker. It must gain an explicit,
 dialect-aware representation alongside the actual selection/transfer state and
 UI routing. Do not invent dictionary entries, substitute all actors for the
 native candidate table, or enable sequel production loading with this flow
-missing. Authored marker reachability and the later presentation calls remain
+missing. Authored execution reachability and the later presentation calls remain
 to be verified before calling the whole A6 path recovered.
 
 ```sh
@@ -254,6 +254,68 @@ nix develop -c python3 -P re/tools/text_record_condition_oracle.py \
   re/tools/oracle_vectors/text_record_condition.jsonl
 nix develop -c cargo test -p commander-blood-game --lib native::bloodprg::presentation::tests
 ```
+
+### Authored Text Corpus Audit
+
+The offline `audit_sequel_text` formats example frames all seventeen COD files
+with the existing lossless sequel parser, then reports A6 markers, flags, byte
+positions and typed-decoder errors as structured JSON. It does not scan for raw
+opcode bytes or claim that every framed instruction executes. BAS is outside
+this audit's scope. It consumes the original loose resource import, not English
+translations or generated substitute scripts.
+
+```sh
+nix develop -c cargo run -p commander-blood-formats --example audit_sequel_text -- \
+  output/big-bug-bang/imported-assets/resources > output/big-bug-bang/text-audit.json
+```
+
+The original corpus has 6921 framed A6 tokens. The current dictionary-only typed
+decoder accepts 6824 and rejects 97. Those numbers are a diagnostic snapshot,
+**not a fidelity gate**: even accepted tokens can have wrong semantics.
+
+There are 46 inventory markers in profiles 3 through 17. Every occurrence has
+flags 32816 (`0x8030`), with marker 65534 at byte 12 relative to the A6 token.
+Counts by profile, including the initial two zero-count profiles, are:
+`0, 0, 4, 3, 2, 2, 3, 9, 3, 1, 3, 2, 3, 3, 3, 3, 2`.
+The existing ordered sixteen-slot `AboardObjectRoster` is the appropriate
+ownership model to investigate for this path, rather than a new global list.
+
+The audit also found 58 marker-1 numeric substitutions. The sequel A6 spoken
+path at 0x6D58 recognizes word 1, reads a word from the VAR image at the following
+operand (0x6D66..0x6D6D), and calls signed decimal formatting at 0x2832..0x286A.
+That helper checks the sign, emits a minus when needed and divides by ten.
+The current dictionary-only decoder instead attempts DIC resolution for both
+the marker and its operand. This explains the other 51 errors, but also hides
+seven incorrect successes where the VAR operand coincides with a DIC entry:
+
+| Profile | COD Token Byte | VAR Operand |
+| --- | --- | --- |
+| 4 | 16696 | 1724 |
+| 4 | 16785 | 1724 |
+| 6 | 11908 | 392 |
+| 11 | 15221 | 2538 |
+| 14 | 2683 | 466 |
+| 14 | 7627 | 540 |
+| 17 | 3629 | 1798 |
+
+All numeric occurrences have flags 32768 except one with 32776; none explicitly
+sets spoken flag 32. That is not proof that an inherited spoken-mode latch is
+unreachable. Menu rendering needs its own assembly comparison and oracle.
+The spoken path notably leaves SI at the VAR operand before dictionary-based
+lookahead (0x6DA9), so it must not be rewritten as a guessed generic interpolation
+loop. Runtime read ownership, spacing and cursor behavior must be verified.
+Several numeric operands exceed their profile's DIC extent, while others land
+inside unrelated strings. Do not pad the dictionary to make these reads appear
+valid, and do not count current typed acceptance as recovery of numeric text.
+
+This slice adds an audit tool and establishes authored occurrences and remaining
+translation gaps. It does not yet implement the numeric or inventory text path.
+Verification: the JSON report was generated from all seventeen imported COD/DIC
+pairs; a structured check confirmed that every one of the 97 decoder failures
+belongs to a numeric- or inventory-marker token. Formats all-targets testing
+passed all 119 library tests with original corpus checks enabled and compiled
+the example test target (which has no unit tests). Game-library tests were not
+rerun for this audit-only slice; runtime code is unchanged.
 
 ### Explicit COD Dialects
 
