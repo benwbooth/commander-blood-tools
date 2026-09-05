@@ -1,29 +1,19 @@
-//! Flat-framebuffer host for the recovered progressive subtitle renderer.
+//! RGB overlay host for the recovered progressive subtitle renderer.
 
 use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, FontPoint, GameTimerState, PaletteRemapTable, PresentationTextOrigin,
-    RasterPoint, RasterSpanPaint, SubtitleFrameDraw, SubtitleFramePrimitive,
+    FontPoint, GameTimerState, PresentationTextOrigin, SubtitleFrameDraw, SubtitleFramePrimitive,
     SubtitleFramePrimitiveKind, SubtitleRevealLine, SubtitleRevealOutcome, SubtitleRevealPhase,
-    SubtitleRevealRenderer, SubtitleRevealState, TextPresentationState,
-    build_palette_blend_remap_table, draw_planar_horizontal_span, draw_planar_vertical_span,
-    draw_subtitle_reveal_line, update_subtitle_reveal,
+    SubtitleRevealRenderer, SubtitleRevealState, TextPresentationState, draw_subtitle_reveal_line,
+    update_subtitle_reveal,
 };
 
 use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime};
 
 const SUBTITLE_TEXT_ORIGIN: [u16; 2] = [10, 8];
-const DARK_FRAME_REMAP_PERCENT: u8 = 50;
-const BLACK_BLEND_TARGET: [u8; 3] = [u8::MIN; 3];
 const SECONDARY_FRAME_FIRST_PRIMITIVE: usize = 8;
 const CARRIAGE_RETURN: u8 = b'\r';
-const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
-    left: 0,
-    right: LOGICAL_FRAMEBUFFER_WIDTH as i32,
-    top: 0,
-    bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32,
-};
 
 // SS:0x5E6F through the 0xFFFF terminator in BLOODPRG.EXE. The secondary
 // frame starts at SS:0x5EAF, so it is the final eight entries of this table.
@@ -62,11 +52,10 @@ const fn vertical(origin: [u16; 2], extent: u16) -> SubtitleFramePrimitive {
     }
 }
 
-/// Persistent timers and palette remap used by the lifecycle subtitle callback.
+/// Persistent timers used by the lifecycle subtitle callback.
 pub struct RuntimeSubtitleReveal {
     state: SubtitleRevealState,
-    remap_table: PaletteRemapTable,
-    remap_palette: Option<crate::native::bloodprg::IndexedGamePalette>,
+    text_drawn: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -79,13 +68,12 @@ impl RuntimeSubtitleReveal {
     /// Construct subtitle timing from the step decoded out of `BLOODPRG.EXE`.
     pub fn new(initial_text_speed_step: u16) -> Self {
         Self {
+            text_drawn: false,
             state: SubtitleRevealState {
                 text_speed_step: initial_text_speed_step,
                 text_origin: SUBTITLE_TEXT_ORIGIN,
                 ..SubtitleRevealState::default()
             },
-            remap_table: [u8::MIN; 256],
-            remap_palette: None,
         }
     }
     /// Borrow the exact reveal phase, timer, origin, and host gates.
@@ -131,12 +119,8 @@ impl RuntimeSubtitleReveal {
         runtime: &mut OriginalGameRuntime,
         presentation: &mut TextPresentationState,
     ) -> Result<SubtitleRevealOutcome> {
-        self.refresh_remap_table(runtime)?;
-        let fonts = runtime.data().font_resources().clone();
         let mut renderer = RuntimeSubtitleRenderer {
             runtime,
-            fonts: &fonts,
-            remap_table: &self.remap_table,
             deferred_error: None,
         };
         let outcome = update_subtitle_reveal(
@@ -148,6 +132,7 @@ impl RuntimeSubtitleReveal {
         )
         .context("advancing the recovered subtitle reveal")?;
         renderer.finish()?;
+        self.text_drawn = matches!(outcome, SubtitleRevealOutcome::TextFrame { .. });
         Ok(outcome)
     }
 
@@ -174,13 +159,14 @@ impl RuntimeSubtitleReveal {
         self.state.opening_frame_pulse = timer.subtitle_opening_frame_pulse != u16::MIN;
     }
 
-    /// Compare the current recovered glyph draw against the live indexed framebuffer.
+    /// Compare the native glyph raster against the RGB layer actually composited.
     pub(super) fn raster_audit(
         &self,
         runtime: &OriginalGameRuntime,
         presentation: &TextPresentationState,
     ) -> Result<Option<SubtitleRasterAudit>> {
-        if self.state.phase != SubtitleRevealPhase::Text
+        if !self.text_drawn
+            || self.state.phase != SubtitleRevealPhase::Text
             || presentation.subtitle_reveal_cursor.is_none()
         {
             return Ok(None);
@@ -204,46 +190,30 @@ impl RuntimeSubtitleReveal {
             return Ok(None);
         }
 
-        let actual = runtime.front_buffer().pixels();
+        let actual = runtime.ui_overlay_rgba();
         let mut expected_pixel_count = usize::MIN;
         let mut matching_pixel_count = usize::MIN;
-        for (expected, actual) in expected.iter().copied().zip(actual.iter().copied()) {
+        for (expected, actual) in expected.iter().copied().zip(actual.chunks_exact(4)) {
             if expected == u8::MIN {
                 continue;
             }
             expected_pixel_count += 1;
-            matching_pixel_count += usize::from(expected == actual);
+            matching_pixel_count +=
+                usize::from(runtime.data().dialogue_ui_assets.color(expected)? == actual);
         }
         Ok(Some(SubtitleRasterAudit {
             expected_pixel_count,
             matching_pixel_count,
         }))
     }
-
-    fn refresh_remap_table(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
-        if self.remap_palette.as_ref() == Some(runtime.live_palette()) {
-            return Ok(());
-        }
-        build_palette_blend_remap_table(
-            runtime.live_palette(),
-            &mut self.remap_table,
-            DARK_FRAME_REMAP_PERCENT,
-            BLACK_BLEND_TARGET,
-        )
-        .context("building the subtitle-frame darkening table")?;
-        self.remap_palette = Some(*runtime.live_palette());
-        Ok(())
-    }
 }
 
-struct RuntimeSubtitleRenderer<'runtime, 'resources> {
+struct RuntimeSubtitleRenderer<'runtime> {
     runtime: &'runtime mut OriginalGameRuntime,
-    fonts: &'resources commander_blood_formats::bloodprg::BloodprgFontResources,
-    remap_table: &'resources PaletteRemapTable,
     deferred_error: Option<anyhow::Error>,
 }
 
-impl RuntimeSubtitleRenderer<'_, '_> {
+impl RuntimeSubtitleRenderer<'_> {
     fn record<T>(&mut self, result: Result<T>) {
         if self.deferred_error.is_none()
             && let Err(error) = result
@@ -260,44 +230,14 @@ impl RuntimeSubtitleRenderer<'_, '_> {
     }
 }
 
-impl SubtitleRevealRenderer for RuntimeSubtitleRenderer<'_, '_> {
+impl SubtitleRevealRenderer for RuntimeSubtitleRenderer<'_> {
     fn draw_frame_primitive(&mut self, draw: SubtitleFrameDraw) {
-        let paint = if draw.remap {
-            RasterSpanPaint::Remap(self.remap_table)
-        } else {
-            RasterSpanPaint::Solid(draw.color)
-        };
-        let start = RasterPoint {
-            x: i32::from(draw.primitive.origin[0]),
-            y: i32::from(draw.primitive.origin[1]),
-        };
-        let result = match draw.primitive.kind {
-            SubtitleFramePrimitiveKind::Horizontal => draw_planar_horizontal_span(
-                self.runtime.front_buffer_mut().pixels_mut(),
-                LOGICAL_DISPLAY_CLIP,
-                start,
-                draw.primitive.extent,
-                paint,
-            ),
-            SubtitleFramePrimitiveKind::Vertical => draw_planar_vertical_span(
-                self.runtime.front_buffer_mut().pixels_mut(),
-                LOGICAL_DISPLAY_CLIP,
-                start,
-                draw.primitive.extent,
-                paint,
-            ),
-        }
-        .context("drawing a recovered subtitle-frame primitive");
+        let result = self.runtime.draw_dialogue_frame(draw);
         self.record(result);
     }
 
     fn draw_subtitle_line(&mut self, line: SubtitleRevealLine<'_>) {
-        let result = draw_runtime_subtitle_line(
-            self.runtime.front_buffer_mut().pixels_mut(),
-            self.fonts,
-            line,
-        )
-        .context("drawing a progressively revealed subtitle line");
+        let result = self.runtime.draw_dialogue_line(line);
         self.record(result);
     }
 }
@@ -539,17 +479,49 @@ mod tests {
             subtitle.update(&mut runtime, &mut presentation).unwrap(),
             SubtitleRevealOutcome::OpeningFrame { .. }
         ));
-        assert!(runtime.front_buffer().pixels().contains(&u8::MAX));
+        let bright = runtime.data().dialogue_ui_assets.color(u8::MAX).unwrap();
+        assert!(
+            runtime
+                .ui_overlay_rgba()
+                .chunks_exact(4)
+                .any(|pixel| pixel == bright)
+        );
 
         subtitle.state.phase = crate::native::bloodprg::SubtitleRevealPhase::Text;
         presentation.subtitle_reveal_cursor = Some(presentation.subtitle_text.len());
         subtitle.update(&mut runtime, &mut presentation).unwrap();
+        assert!(runtime.ui_overlay_rgba().chunks_exact(4).any(|pixel| {
+            pixel
+                == runtime
+                    .data()
+                    .dialogue_ui_assets
+                    .color(REVEALED_SUBTITLE_COLOR)
+                    .unwrap()
+        }));
         assert!(
             runtime
                 .front_buffer()
                 .pixels()
-                .contains(&REVEALED_SUBTITLE_COLOR)
+                .iter()
+                .all(|&pixel| pixel == TEST_BACKGROUND_INDEX)
         );
+        // A video EOF retains a pre-text RGB page. UI must remain independent
+        // of that page, and a new video palette must not recolor the text.
+        let overlay = runtime.ui_overlay_rgba().to_vec();
+        runtime.front_buffer_mut().pixels_mut().fill(0);
+        runtime.live_palette_mut().fill([63, 0, 0]);
+        assert_eq!(runtime.ui_overlay_rgba(), overlay);
+        let audit = subtitle
+            .raster_audit(&runtime, &presentation)
+            .unwrap()
+            .unwrap();
+        assert!(audit.expected_pixel_count > 0);
+        assert_eq!(audit.expected_pixel_count, audit.matching_pixel_count);
+        runtime.clear_ui_overlay();
+        presentation.subtitle_display_active = false;
+        presentation.hold_ready = false;
+        subtitle.update(&mut runtime, &mut presentation).unwrap();
+        assert!(runtime.ui_overlay_rgba().iter().all(|&byte| byte == 0));
     }
 
     #[test]
@@ -594,12 +566,14 @@ mod tests {
         assert!(!presentation.menu_deferred);
         assert!(!presentation.hold_ready);
         assert!(!subtitle.state.display_mode);
-        assert!(
-            runtime
-                .front_buffer()
-                .pixels()
-                .contains(&REVEALED_SUBTITLE_COLOR)
-        );
+        assert!(runtime.ui_overlay_rgba().chunks_exact(4).any(|pixel| {
+            pixel
+                == runtime
+                    .data()
+                    .dialogue_ui_assets
+                    .color(REVEALED_SUBTITLE_COLOR)
+                    .unwrap()
+        }));
     }
 
     fn read_executable_word(bytes: &[u8], offset: usize) -> u16 {

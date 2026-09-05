@@ -322,6 +322,7 @@ fn production_runtime_retains_the_intro_caption_until_its_blank_cue() {
     );
     let caption = &title_frames[0]["semantic"]["sequence_caption"];
     assert!(caption["opaque_pixels"].as_u64().unwrap() > 0);
+    let title_ui_hash = title_frames[0]["semantic"]["rgb_ui"]["rgba_hash"].clone();
     for frame in title_frames {
         let semantic = &frame["semantic"];
         assert_eq!(
@@ -329,8 +330,13 @@ fn production_runtime_retains_the_intro_caption_until_its_blank_cue() {
             "caption blinked or changed color"
         );
         assert_eq!(
-            semantic["rgb_ui"]["rgba_hash"], caption["rgba_hash"],
-            "the retained caption was not copied to the presented RGB UI"
+            semantic["rgb_ui"]["rgba_hash"], title_ui_hash,
+            "the retained caption or channel mask changed in the presented RGB UI"
+        );
+        assert!(
+            semantic["rgb_ui"]["opaque_pixels"].as_u64().unwrap()
+                > caption["opaque_pixels"].as_u64().unwrap(),
+            "the channel mask was omitted from the RGB UI"
         );
     }
     let blank = clip_frames
@@ -1995,10 +2001,57 @@ fn run_production_scenario_internal(
             )
         })
     });
+    if matches!(
+        scenario,
+        "accuracy/scenarios/production_intro_caption.tsv"
+            | "accuracy/scenarios/production_bob_first_contact.tsv"
+    ) {
+        assert_continuous_rgb_ui(&load_trace(&temporary.0.join("frames.jsonl")), scenario);
+    }
     Some(ProductionScenarioOutput {
         records: load_trace(&trace_path),
         sdl_audio_output: sdl_audio_output.map(Vec::into_boxed_slice),
     })
+}
+
+fn assert_continuous_rgb_ui(frames: &[Value], scenario: &str) {
+    let mut checked = [0; 3];
+    let mut checked_between_clips = 0;
+    for frame in frames.iter().filter(|frame| frame["boundary"] == "game") {
+        for (slot, key) in ["subtitle_raster", "inline_menu_raster", "channel_mask"]
+            .into_iter()
+            .enumerate()
+        {
+            let audit = &frame["semantic"][key];
+            if !audit["expected_pixel_count"]
+                .as_u64()
+                .is_some_and(|count| count > 0)
+            {
+                continue;
+            }
+            assert_eq!(
+                audit["expected_pixel_count"], audit["matching_pixel_count"],
+                "{key} lost RGB pixels at frame {} in {scenario}",
+                frame["frame"]
+            );
+            checked[slot] += 1;
+            if slot < 2 && frame["semantic"]["video"]["active_resource"].is_null() {
+                checked_between_clips += 1;
+            }
+        }
+    }
+    if scenario.ends_with("production_bob_first_contact.tsv") {
+        assert!(
+            checked[0] > 0 && checked[1] > 0,
+            "Bob/Honk RGB captions were not exercised"
+        );
+        assert!(
+            checked_between_clips > 0,
+            "no subtitle frame exercised retained-video ownership"
+        );
+    } else {
+        assert!(checked[2] > 0, "intro never composited the channel mask");
+    }
 }
 
 fn assert_audible_sdl_callback_output(encoded: &[u8]) {

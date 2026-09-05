@@ -1,5 +1,8 @@
 //! RGB UI assets imported once, and a palette-free logical overlay.
 
+use crate::native::bloodprg::{
+    PresentationChoiceNumber, SubtitleRevealLine, draw_presentation_choice_number,
+};
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::bloodprg::BloodprgFontResources;
 
@@ -16,6 +19,204 @@ const CAPTION_GLYPH_SIZE: usize = 8;
 const CAPTION_FIRST_ROW_BIT: u8 = 128;
 /// DESCRIPT's centered subtitle style, resolved only while importing assets.
 pub(crate) const SEQUENCE_CAPTION_COLOR: usize = 239;
+
+const SUBTITLE_GLYPH_SIZE: usize = 8;
+const SUBTITLE_COLOR_INDICES: [usize; 3] = [255, 254, 253];
+const SKIPPED_GLYPH_BIT: u8 = 128;
+const CHANNEL_COLOR_INDEX: usize = 254;
+const CHANNEL_CANVAS: [usize; 2] = [320, 200];
+const INLINE_DIALOGUE_COLOR: usize = 239;
+const INLINE_DIALOGUE_CLIP_HEIGHT: i32 = 10;
+
+/// Precolored progressive-dialogue glyphs and channel masks, imported once.
+pub(crate) struct DialogueUiAssets {
+    character_map: Box<[u8]>,
+    glyphs: Vec<[Box<[u8]>; 3]>,
+    colors: [[u8; 4]; 3],
+    channels: Vec<Box<[u8]>>,
+    inline_font: SequenceCaptionFont,
+    inline_character_map: Box<[u8]>,
+    inline_advances: Box<[u8]>,
+    inline_color: [u8; 4],
+}
+
+impl DialogueUiAssets {
+    pub(crate) fn import(fonts: &BloodprgFontResources, source: &[[u8; 3]; 256]) -> Result<Self> {
+        let mut colors = [[0; RGBA_COMPONENTS]; 3];
+        for (slot, index) in SUBTITLE_COLOR_INDICES.into_iter().enumerate() {
+            let color = source[index];
+            if color.iter().any(|&component| component > 63) {
+                bail!("dialogue UI source contains an invalid DAC component");
+            }
+            let rgb = color.map(|component| (component << 2) | (component >> 4));
+            colors[slot] = [rgb[0], rgb[1], rgb[2], OPAQUE];
+        }
+        if !fonts
+            .subtitle_glyphs
+            .len()
+            .is_multiple_of(SUBTITLE_GLYPH_SIZE)
+        {
+            bail!("subtitle font contains an incomplete glyph");
+        }
+        let glyphs = fonts
+            .subtitle_glyphs
+            .chunks_exact(SUBTITLE_GLYPH_SIZE)
+            .map(|rows| {
+                colors.map(|color| {
+                    let mut rgba =
+                        vec![0; SUBTITLE_GLYPH_SIZE * SUBTITLE_GLYPH_SIZE * RGBA_COMPONENTS];
+                    for (y, &bits) in rows.iter().enumerate() {
+                        for x in 0..SUBTITLE_GLYPH_SIZE {
+                            if bits & (CAPTION_FIRST_ROW_BIT >> x) != 0 {
+                                let offset = (y * SUBTITLE_GLYPH_SIZE + x) * RGBA_COMPONENTS;
+                                rgba[offset..offset + RGBA_COMPONENTS].copy_from_slice(&color);
+                            }
+                        }
+                    }
+                    rgba.into_boxed_slice()
+                })
+            })
+            .collect();
+        let mut channels = Vec::new();
+        for index in 0..PresentationChoiceNumber::COUNT {
+            let choice = PresentationChoiceNumber::from_index(index as u8).unwrap();
+            let mut mask = vec![0; CHANNEL_CANVAS[0] * CHANNEL_CANVAS[1]];
+            draw_presentation_choice_number(choice, &mut mask)
+                .map_err(|error| anyhow::anyhow!("importing channel mask: {error:?}"))?;
+            channels.push(
+                mask.into_iter()
+                    .flat_map(|pixel| {
+                        if usize::from(pixel) == CHANNEL_COLOR_INDEX {
+                            colors[1]
+                        } else {
+                            [0; RGBA_COMPONENTS]
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            );
+        }
+        let mut inline_rows = [[0; 8]; 256];
+        if !fonts.main_glyphs.len().is_multiple_of(SUBTITLE_GLYPH_SIZE)
+            || fonts.main_glyphs.len() > inline_rows.len() * SUBTITLE_GLYPH_SIZE
+        {
+            bail!("invalid main dialogue font size");
+        }
+        for (target, rows) in inline_rows
+            .iter_mut()
+            .zip(fonts.main_glyphs.chunks_exact(SUBTITLE_GLYPH_SIZE))
+        {
+            target.copy_from_slice(rows);
+        }
+        let inline_font = SequenceCaptionFont::import(&inline_rows, source[INLINE_DIALOGUE_COLOR])?;
+        let rgb =
+            source[INLINE_DIALOGUE_COLOR].map(|component| (component << 2) | (component >> 4));
+        Ok(Self {
+            character_map: Box::from(fonts.subtitle_character_map.as_slice()),
+            glyphs,
+            colors,
+            channels,
+            inline_font,
+            inline_character_map: Box::from(fonts.main_character_map.as_slice()),
+            inline_advances: Box::from(fonts.main_advances.as_slice()),
+            inline_color: [rgb[0], rgb[1], rgb[2], OPAQUE],
+        })
+    }
+
+    pub(crate) fn color(&self, authored: u8) -> Result<[u8; 4]> {
+        if usize::from(authored) == INLINE_DIALOGUE_COLOR {
+            return Ok(self.inline_color);
+        }
+        SUBTITLE_COLOR_INDICES
+            .iter()
+            .position(|&index| index == usize::from(authored))
+            .map(|slot| self.colors[slot])
+            .context("unknown dialogue UI color")
+    }
+
+    pub(crate) fn draw_channel(
+        &self,
+        overlay: &mut RgbaUiOverlay,
+        choice: PresentationChoiceNumber,
+    ) {
+        overlay.blit_image(&self.channels[choice.index()], CHANNEL_CANVAS, [0, 0]);
+    }
+
+    pub(crate) fn draw_word(
+        &self,
+        overlay: &mut RgbaUiOverlay,
+        text: &[u8],
+        origin: [i32; 2],
+        color: u8,
+    ) -> Result<()> {
+        if usize::from(color) != INLINE_DIALOGUE_COLOR {
+            bail!("unknown inline dialogue style {color}");
+        }
+        if origin[1] <= -INLINE_DIALOGUE_CLIP_HEIGHT || origin[1] >= CHANNEL_CANVAS[1] as i32 {
+            return Ok(());
+        }
+        let mut x = origin[0];
+        for &character in text.iter().take_while(|&&byte| byte != 0) {
+            let index = *self
+                .inline_character_map
+                .get(usize::from(character))
+                .context("inline dialogue byte outside font map")?;
+            let advance = *self
+                .inline_advances
+                .get(usize::from(index))
+                .context("inline dialogue references missing glyph")?
+                as i8 as i32;
+            overlay.blit_image(
+                &self.inline_font.glyphs[usize::from(index)],
+                [SUBTITLE_GLYPH_SIZE; 2],
+                [x, origin[1]],
+            );
+            x = x.saturating_add(advance);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn draw_line(
+        &self,
+        overlay: &mut RgbaUiOverlay,
+        line: SubtitleRevealLine<'_>,
+    ) -> Result<()> {
+        for (position, &character) in line.text.iter().enumerate() {
+            let Some(distance) = line
+                .reveal_cursor
+                .checked_sub(line.byte_offset.saturating_add(position))
+            else {
+                break;
+            };
+            // C tests the low byte of the reveal distance, including its wrap.
+            let style = match distance as u8 {
+                0 => 0,
+                1 => 1,
+                _ => 2,
+            };
+            let index = *self
+                .character_map
+                .get(usize::from(character))
+                .context("subtitle byte outside font map")?;
+            if index & SKIPPED_GLYPH_BIT != 0 {
+                continue;
+            }
+            let glyph = self
+                .glyphs
+                .get(usize::from(index))
+                .context("subtitle references missing glyph")?;
+            let x = i32::from(line.position[0]).saturating_add(
+                i32::try_from(position.saturating_mul(SUBTITLE_GLYPH_SIZE)).unwrap_or(i32::MAX),
+            );
+            overlay.blit_image(
+                &glyph[style],
+                [SUBTITLE_GLYPH_SIZE; 2],
+                [x, i32::from(line.position[1])],
+            );
+        }
+        Ok(())
+    }
+}
 
 /// Precolored BIOS glyphs used by DESCRIPT captions, independent of video colors.
 pub(crate) struct SequenceCaptionFont {
@@ -218,6 +419,10 @@ impl RgbaUiOverlay {
     /// A translucent black rectangle replaces C's nearest-color darkening map.
     /// Repeated preparation in one game frame does not accumulate extra dimming.
     pub(crate) fn darken_rect(&mut self, origin: [i32; 2], size: [u16; 2]) {
+        self.fill_rect(origin, size, [0, 0, 0, DARKEN_ALPHA]);
+    }
+
+    pub(crate) fn fill_rect(&mut self, origin: [i32; 2], size: [u16; 2], color: [u8; 4]) {
         let left = origin[0].clamp(0, self.width as i32) as usize;
         let top = origin[1].clamp(0, self.height as i32) as usize;
         let right = origin[0]
@@ -229,12 +434,7 @@ impl RgbaUiOverlay {
         for y in top..bottom {
             for x in left..right {
                 let offset = (y * self.width + x) * RGBA_COMPONENTS;
-                self.pixels[offset..offset + RGBA_COMPONENTS].copy_from_slice(&[
-                    0,
-                    0,
-                    0,
-                    DARKEN_ALPHA,
-                ]);
+                self.pixels[offset..offset + RGBA_COMPONENTS].copy_from_slice(&color);
             }
         }
     }
@@ -267,6 +467,92 @@ impl RgbaUiOverlay {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rgb_dialogue_glyphs_and_channel_masks_match_native_rasters() {
+        use crate::native::bloodprg::{
+            FontPoint, FontVerticalBand, draw_planar_dialogue_text, draw_subtitle_reveal_line,
+        };
+        let fonts = commander_blood_formats::bloodprg::decode_bloodprg_font_resources(
+            include_bytes!("../../../re/bin/BLOODPRG.EXE"),
+        )
+        .unwrap();
+        let mut colors = [[17, 31, 47]; 256];
+        colors[255] = [63, 63, 63];
+        colors[254] = [40, 30, 20];
+        colors[253] = [10, 20, 30];
+        let assets = DialogueUiAssets::import(&fonts, &colors).unwrap();
+        let mut ui = RgbaUiOverlay::new(320, 200);
+        let mut reference = vec![0; 320 * 200];
+        let assert_raster = |ui: &RgbaUiOverlay, reference: &[u8]| {
+            for (&index, pixel) in reference.iter().zip(ui.pixels().chunks_exact(4)) {
+                if index == 0 {
+                    assert_eq!(pixel, [0; 4]);
+                } else {
+                    assert_eq!(pixel, assets.color(index).unwrap());
+                }
+            }
+        };
+        for byte in 1..fonts.subtitle_character_map.len() {
+            if byte == usize::from(b'\r') {
+                continue;
+            }
+            for cursor in [0, 1, 2, 256, 257] {
+                reference.fill(0);
+                ui.clear();
+                let text = [byte as u8];
+                let original = draw_subtitle_reveal_line(
+                    &mut reference,
+                    &fonts,
+                    &[byte as u8, b'\r'],
+                    FontPoint { x: 20, y: 20 },
+                    cursor as i32,
+                );
+                let modern = assets.draw_line(
+                    &mut ui,
+                    SubtitleRevealLine {
+                        text: &text,
+                        byte_offset: 7,
+                        reveal_cursor: cursor + 7,
+                        position: [20, 20],
+                    },
+                );
+                assert_eq!(modern.is_ok(), original.is_ok(), "subtitle byte {byte}");
+                if modern.is_ok() {
+                    assert_raster(&ui, &reference);
+                }
+            }
+        }
+        for byte in 1..fonts.main_character_map.len() {
+            reference.fill(0);
+            ui.clear();
+            let text = [byte as u8, byte as u8, 0];
+            let original = draw_planar_dialogue_text(
+                &mut reference,
+                &fonts,
+                &text,
+                FontPoint { x: 20, y: 20 },
+                FontVerticalBand {
+                    top: 0,
+                    bottom: 199,
+                },
+                INLINE_DIALOGUE_COLOR as u8,
+            );
+            let modern = assets.draw_word(&mut ui, &text, [20, 20], INLINE_DIALOGUE_COLOR as u8);
+            assert_eq!(modern.is_ok(), original.is_ok(), "inline byte {byte}");
+            if modern.is_ok() {
+                assert_raster(&ui, &reference);
+            }
+        }
+        for index in 0..PresentationChoiceNumber::COUNT {
+            reference.fill(0);
+            ui.clear();
+            let choice = PresentationChoiceNumber::from_index(index as u8).unwrap();
+            draw_presentation_choice_number(choice, &mut reference).unwrap();
+            assets.draw_channel(&mut ui, choice);
+            assert_raster(&ui, &reference);
+        }
+    }
 
     #[test]
     fn imported_caption_font_matches_every_original_bios_glyph() {

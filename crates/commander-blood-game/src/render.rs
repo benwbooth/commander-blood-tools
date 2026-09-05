@@ -1510,6 +1510,42 @@ mod tests {
             ];
         overlay[..4].copy_from_slice(&[u8::MIN, u8::MIN, u8::MIN, 128]);
         overlay[4..8].copy_from_slice(&[37, 181, 223, OPAQUE_ALPHA]);
+        let fonts = commander_blood_formats::bloodprg::decode_bloodprg_font_resources(
+            include_bytes!("../../../re/bin/BLOODPRG.EXE"),
+        )
+        .unwrap();
+        let assets = crate::ui::DialogueUiAssets::import(&fonts, &[[17, 31, 47]; 256]).unwrap();
+        let mut dialogue =
+            crate::ui::RgbaUiOverlay::new(UI_OVERLAY_WIDTH as usize, UI_OVERLAY_HEIGHT as usize);
+        assets
+            .draw_word(&mut dialogue, b"Bob", [30, 8], 239)
+            .unwrap();
+        assets
+            .draw_word(&mut dialogue, b"Morlock", [60, 8], 239)
+            .unwrap();
+        assets
+            .draw_line(
+                &mut dialogue,
+                crate::native::bloodprg::SubtitleRevealLine {
+                    text: b"Honk",
+                    byte_offset: 0,
+                    reveal_cursor: 3,
+                    position: [30, 40],
+                },
+            )
+            .unwrap();
+        assets.draw_channel(
+            &mut dialogue,
+            crate::native::bloodprg::PresentationChoiceNumber::One,
+        );
+        for (pixel, text) in overlay
+            .chunks_exact_mut(4)
+            .zip(dialogue.pixels().chunks_exact(4))
+        {
+            if text[3] != 0 {
+                pixel.copy_from_slice(text);
+            }
+        }
         renderer.upload(&queue, &overlay).unwrap();
 
         for (scene_name, base_color) in [
@@ -1622,6 +1658,20 @@ mod tests {
                     .all(|(actual, expected)| { actual.abs_diff(expected) <= 1 }),
                 "{scene_name} changed beneath a transparent-zero UI pixel"
             );
+            for (actual, expected) in pixels
+                .chunks_exact(4)
+                .zip(dialogue.pixels().chunks_exact(4))
+            {
+                if expected[3] == OPAQUE_ALPHA {
+                    assert!(
+                        actual
+                            .iter()
+                            .zip(expected)
+                            .all(|(a, b)| a.abs_diff(*b) <= 1),
+                        "{scene_name} dropped or recolored a dialogue/channel pixel"
+                    );
+                }
+            }
             drop(pixels);
             readback.unmap();
         }

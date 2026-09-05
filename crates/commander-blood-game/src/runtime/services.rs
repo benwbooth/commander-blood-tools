@@ -2756,18 +2756,9 @@ impl<'window> ModernGameServices<'window> {
                         placement.word.index()
                     )
                 })?;
-                draw_planar_dialogue_text(
-                    self.runtime.front_buffer_mut().pixels_mut(),
-                    &fonts,
-                    text,
-                    FontPoint {
-                        x: i32::from(placement.position[0]),
-                        y: i32::from(placement.position[1]),
-                    },
-                    FULL_LOGICAL_FONT_BAND,
-                    placement.color,
-                )
-                .context("drawing an inline menu word")?;
+                self.runtime
+                    .draw_dialogue_word(text, placement.position.map(i32::from), placement.color)
+                    .context("drawing an inline menu word")?;
             }
         }
         Ok(outcome)
@@ -4000,6 +3991,13 @@ impl<'window> ModernGameServices<'window> {
     /// Retained sequence text is a final RGB layer, not a side effect of the
     /// native panel update. That update can be skipped while a scene dispatches.
     pub(super) fn compose_presentation_ui(&mut self) {
+        if let Some(channel) = self
+            .presentation_screen
+            .as_ref()
+            .and_then(RuntimePresentationScreen::channel_overlay)
+        {
+            self.runtime.draw_sequence_caption_overlay(channel);
+        }
         if let Some(caption) = self
             .presentation_screen
             .as_ref()
@@ -4870,6 +4868,12 @@ impl<'window> ModernGameServices<'window> {
             },
         });
         snapshot["rgb_ui"] = rgb_ui;
+        snapshot["channel_mask"] = self
+            .presentation_screen
+            .as_ref()
+            .and_then(RuntimePresentationScreen::channel_overlay)
+            .map(|overlay| audit_opaque_ui_pixels(overlay.pixels(), self.runtime.ui_overlay_rgba()))
+            .unwrap_or(serde_json::Value::Null);
         snapshot["sequence_caption"] = self
             .presentation_screen
             .as_ref()
@@ -5105,6 +5109,18 @@ fn overlay_nonzero_indices(destination: &mut [u8], source: &[u8]) {
     }
 }
 
+fn audit_opaque_ui_pixels(expected: &[u8], actual: &[u8]) -> serde_json::Value {
+    let mut expected_pixel_count = 0;
+    let mut matching_pixel_count = 0;
+    for (expected, actual) in expected.chunks_exact(4).zip(actual.chunks_exact(4)) {
+        if expected[3] == 255 {
+            expected_pixel_count += 1;
+            matching_pixel_count += usize::from(expected == actual);
+        }
+    }
+    serde_json::json!({ "expected_pixel_count": expected_pixel_count, "matching_pixel_count": matching_pixel_count })
+}
+
 fn audit_inline_menu_raster(
     runtime: &OriginalGameRuntime,
     dictionary: &ScriptDictionary,
@@ -5160,20 +5176,21 @@ fn audit_inline_menu_raster(
     let mut mismatch_samples = Vec::new();
     for (index, (expected, actual)) in expected
         .into_iter()
-        .zip(runtime.front_buffer().pixels().iter().copied())
+        .zip(runtime.ui_overlay_rgba().chunks_exact(4))
         .enumerate()
     {
         if expected == u8::MIN {
             continue;
         }
         expected_pixel_count += 1;
-        matching_pixel_count += usize::from(expected == actual);
-        if expected != actual && mismatch_samples.len() < 64 {
+        let matches = runtime.data().dialogue_ui_assets.color(expected)? == actual;
+        matching_pixel_count += usize::from(matches);
+        if !matches && mismatch_samples.len() < 64 {
             mismatch_samples.push([
                 index % LOGICAL_FRAMEBUFFER_WIDTH,
                 index / LOGICAL_FRAMEBUFFER_WIDTH,
                 usize::from(expected),
-                usize::from(actual),
+                usize::from(actual[3]),
             ]);
         }
     }

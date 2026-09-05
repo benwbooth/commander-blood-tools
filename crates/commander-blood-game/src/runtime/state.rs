@@ -206,6 +206,45 @@ impl OriginalGameRuntime {
         self.ui_overlay.blit_overlay(caption);
     }
 
+    pub(super) fn draw_dialogue_line(
+        &mut self,
+        line: crate::native::bloodprg::SubtitleRevealLine<'_>,
+    ) -> Result<()> {
+        self.data
+            .dialogue_ui_assets
+            .draw_line(&mut self.ui_overlay, line)
+    }
+
+    pub(super) fn draw_dialogue_word(
+        &mut self,
+        text: &[u8],
+        origin: [i32; 2],
+        color: u8,
+    ) -> Result<()> {
+        self.data
+            .dialogue_ui_assets
+            .draw_word(&mut self.ui_overlay, text, origin, color)
+    }
+
+    pub(super) fn draw_dialogue_frame(
+        &mut self,
+        draw: crate::native::bloodprg::SubtitleFrameDraw,
+    ) -> Result<()> {
+        use crate::native::bloodprg::SubtitleFramePrimitiveKind;
+        let origin = draw.primitive.origin.map(i32::from);
+        let size = match draw.primitive.kind {
+            SubtitleFramePrimitiveKind::Horizontal => [draw.primitive.extent, 1],
+            SubtitleFramePrimitiveKind::Vertical => [1, draw.primitive.extent],
+        };
+        if draw.remap {
+            self.ui_overlay.darken_rect(origin, size);
+        } else {
+            let color = self.data.dialogue_ui_assets.color(draw.color)?;
+            self.ui_overlay.fill_rect(origin, size, color);
+        }
+        Ok(())
+    }
+
     /// Allocate the flat runtime around one validated original data set.
     pub fn new(data: OriginalGameData) -> Self {
         let profiles = ScriptProfileManager::new(data.script_profile_catalog().clone());

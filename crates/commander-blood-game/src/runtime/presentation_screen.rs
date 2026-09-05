@@ -48,6 +48,7 @@ pub struct RuntimePresentationScreen {
     console_tint: PaletteRemapTable,
     scene_frame_presented_output: Option<bool>,
     caption: RetainedSequenceCaption,
+    channel: RgbaUiOverlay,
 }
 
 pub(super) struct RuntimeSceneTransitionDispatchContext<'state> {
@@ -77,6 +78,10 @@ impl RuntimePresentationScreen {
             console_tint,
             scene_frame_presented_output: None,
             caption: RetainedSequenceCaption::new(),
+            channel: RgbaUiOverlay::new(
+                super::LOGICAL_FRAMEBUFFER_WIDTH,
+                super::LOGICAL_FRAMEBUFFER_HEIGHT,
+            ),
         })
     }
 
@@ -109,6 +114,13 @@ impl RuntimePresentationScreen {
     /// coordinator bypassed `screen_mode_update` on this game frame.
     pub(super) fn caption_overlay(&self) -> Option<&RgbaUiOverlay> {
         (self.state.active() && self.state.scene_status().queued).then_some(&self.caption.overlay)
+    }
+
+    pub(super) fn channel_overlay(&self) -> Option<&RgbaUiOverlay> {
+        (self.state.active()
+            && (self.state.scene_status().queued
+                || self.state.phase() == PresentationPanelPhase::Active))
+            .then_some(&self.channel)
     }
 
     /// Return the armed and pending flags consumed by the alien-overlay coordinator.
@@ -265,6 +277,7 @@ impl RuntimePresentationScreen {
             secondary_presentation_mode,
             deferred_error: None,
             caption: &mut self.caption,
+            channel: &mut self.channel,
         };
         let outcome =
             update_presentation_screen(&mut self.state, &records, queued_scene_link, &mut backend);
@@ -343,6 +356,7 @@ struct RuntimePresentationScreenBackend<'services, 'window> {
     secondary_presentation_mode: bool,
     deferred_error: Option<anyhow::Error>,
     caption: &'services mut RetainedSequenceCaption,
+    channel: &'services mut RgbaUiOverlay,
 }
 
 impl RuntimePresentationScreenBackend<'_, '_> {
@@ -475,6 +489,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
     fn load_descript(&mut self, record: &Self::RecordName) -> Result<PresentationDescriptPlan> {
         self.check_deferred_error()?;
         self.caption.overlay.clear();
+        self.channel.clear();
         let application = self
             .services
             .apply_presentation_description(record)?
@@ -577,16 +592,17 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
     }
 
     fn draw_choice_number(&mut self, choice: PresentationChoiceNumber) {
-        let result = self
-            .services
-            .runtime_mut()
-            .draw_presentation_choice(choice)
-            .map(|_| ());
-        self.record_error(result);
+        self.channel.clear();
+        self.services
+            .runtime()
+            .data()
+            .dialogue_ui_assets
+            .draw_channel(self.channel, choice);
     }
 
     fn cancel_scene_presentation(&mut self) {
         self.caption.overlay.clear();
+        self.channel.clear();
         if release_scene_presentation(self.scene_state) {
             self.services.finish_presentation_sequence();
         }

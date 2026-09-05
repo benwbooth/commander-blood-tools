@@ -43,7 +43,8 @@ without advancing the cue clock. Blank cues, record/video replacement,
 cancellation, closing, and sequence completion clear it.
 
 This intentionally preserves authored content and timing, not transient DOS
-display-page artifacts. It does not migrate dialogue subtitles or panel effects.
+display-page artifacts. Dialogue subtitles are covered below; panel effects
+remain to be migrated.
 
 ## Remaining work (not migrated)
 
@@ -53,7 +54,7 @@ display-page artifacts. It does not migrate dialogue subtitles or panel effects.
 | `bridge_render.rs`, bridge scene inputs | Panorama/actor indices resolved with bridge colors | RGB panorama frames and sprite layers, direct RGB vertex/material colors |
 | `runtime/video.rs`, `presentation_player.rs` | Live HNM decoding, index-backed retained pages and inherited color state | Context-complete imported RGB video layers plus coverage and timing metadata |
 | `runtime/ship_navigation.rs`, `ship_hud.rs` | Legacy navigation dimming/depth-band and scene preparation | RGB backgrounds, masks, depth transitions, and explicit composition |
-| `runtime/subtitles.rs`, panel effects in `presentation_screen.rs` | Dialogue subtitle raster and panel effects write indexed pixels | Imported RGB dialogue fonts, retained dialogue overlays, RGB noise/fades |
+| Panel effects in `presentation_screen.rs` | Panel rectangle/noise effects still write indexed pixels | RGB noise/fades; the text and channel masks are already independent RGB overlays |
 | `runtime/palette_transition.rs` and screen effects | Color-range operations rather than visual layer effects | Explicit RGB layer fades, with the same C timing and ownership |
 
 The existing `video-v1` cache is not a complete solution: production
@@ -172,3 +173,54 @@ not treated as a performance benchmark.
   4,117 recorded frames, 799 with `PL\\pterra10.hnm` active, zero paused frames.
   This does not reproduce the user's manual freeze. Intro camera/click-release
   and caption/blank/click-cancellation regressions also passed separately.
+
+## Channel and dialogue overlays
+
+The next manual run exposed a different text path from the DESCRIPT title:
+the selected channel number, Honk's character-reveal subtitle, and Bob's
+word-reveal dialogue still wrote to the indexed front page. An HNM EOF retains
+its RGB image during scene dispatch, before the frame-tail text draw. The
+retained-page refresh deliberately does not read the front page. Thus correct
+indexed glyphs could coexist with missing displayed glyphs between looping
+clips; indexed-buffer audits could not detect this.
+
+These three UI paths now use precolored glyph/mask assets imported at startup,
+then compose through the independent RGB UI texture. The native subtitle and
+word planners still own timing, wrapping, reveal colors, completion, and hold
+state. The channel mask is retained across decoder waits and skipped panel
+updates; scene cancellation clears it. Subtitle corner darkening uses alpha
+over the displayed RGB background instead of an indexed nearest-color remap.
+
+References:
+
+- `func_0079e5_screen_mode_update.c`: conditional frame-ready channel draw.
+- `func_007cb4_selected_mask_overlay.c`: six channel masks and placement.
+- `func_0093f5_subtitle_reveal_pump.c`: subtitle phases and draw-after-update.
+- `func_003630_subtitle_reveal_draw_wrapper.c`: progressive glyph colors.
+- Native `menu_reveal.rs` and `draw_planar_dialogue_text`: inline dialogue
+  placements, signed advances, and exact main-font coverage.
+
+The native indexed rasterizers remain independent reference implementations,
+not production text destinations. Their audits now compare glyphs to the RGB
+UI texture; channel-mask coverage is also exposed in `--live-trace`. The intro
+and Bob/Honk scenarios assert pixel coverage on every logged game frame,
+including frames with retained video ownership and no active stream. The GPU
+UI test also reads back actual imported dialogue glyphs and the channel mask
+over both artwork and bridge-like backgrounds. These are targeted regressions,
+not a claim that every game path is accurate or palette-free yet.
+
+Verification for this slice (2026-09-04):
+
+- Library: 877 passed, five ignored, including actual-glyph GPU readback.
+- Intro continuous-frame regression passed; 543 frames recorded, 375 with a
+  visible channel mask, no channel-coverage mismatches. Artifacts:
+  `output/fidelity/production-intro-caption.jsonl-1788582962196615119-754960-0/`.
+- Bob/Honk regression passed through hang-up and restored bridge control.
+  It checked 498 inline-dialogue frames, 120 progressive-subtitle frames, and
+  159 text-bearing frames without an active video stream; no glyph mismatches.
+  Artifacts:
+  `output/fidelity/production-bob-first-contact.jsonl-1788582997799985026-771730-0/`.
+- The SDL X11 window exposes the approved 256 by 256 blue-hand icon and
+  `commander-blood` application class. Matching local desktop/icon entries were
+  installed and KDE's application cache refreshed. Nix installation metadata
+  was evaluated, but the full Nix package was not rebuilt in this slice.
