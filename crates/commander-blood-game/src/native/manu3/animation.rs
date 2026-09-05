@@ -295,6 +295,13 @@ impl Manu3Animation {
         self.construct_tweens()
     }
 
+    /// Preview the next authored target values without changing this animation.
+    pub(crate) fn preview_next_targets(&self) -> Result<Vec<i16>, AnimationError> {
+        let mut predicted = self.clone();
+        predicted.step_tweens()?;
+        Ok(predicted.targets)
+    }
+
     /// Activate every script command assigned to the current phase as recovered
     /// routine `xdb_manu3_tween_constructor` does at file offset `0x01df`.
     pub fn construct_tweens(&mut self) -> Result<(), AnimationError> {
@@ -676,5 +683,24 @@ mod tests {
                 yaw: TEST_VIEW_YAW.wrapping_sub(expected_cursor_delta),
             })
         );
+    }
+
+    #[test]
+    fn previewing_next_targets_does_not_advance_authoritative_animation() {
+        const TARGET: i16 = 10;
+        const FRAME_COUNT: u8 = 2;
+        let sequences = std::array::from_fn(|_| {
+            TweenScript::new(vec![
+                TweenSpecification::new(FRAME_COUNT, u8::MIN, usize::MIN, TARGET),
+                TweenSpecification::end(),
+            ])
+        });
+        let library = AnimationLibrary::new(sequences);
+        let mut animation = Manu3Animation::new(1, vec![0]);
+        animation.select_animation(0, &library).unwrap();
+        let before = animation.clone();
+
+        assert_eq!(animation.preview_next_targets().unwrap(), vec![5]);
+        assert_eq!(animation, before);
     }
 }

@@ -31,7 +31,7 @@ const NANOSECONDS_PER_SECOND: u64 = 1_000_000_000;
 const PIT_TICK_SCALED_UNITS: u128 = GAME_TIMER_DIVISOR as u128 * NANOSECONDS_PER_SECOND as u128;
 const MEASURED_GAME_FRAME_MILLISECONDS: u64 = 46;
 const MEASURED_PRESENTATION_FRAME_MILLISECONDS: u64 = 68;
-const MODERN_VISUAL_REFRESH_HZ: u64 = 60;
+const DEFAULT_VISUAL_REFRESH_HZ: f64 = 60.0;
 const MINIMUM_SURFACE_DIMENSION: u32 = 1;
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: f32 = 3.0;
@@ -73,7 +73,7 @@ pub const PRESENTATION_FRAME_DURATION: Duration =
 
 /// Render-only refresh interval used between recovered C simulation ticks.
 pub const VISUAL_FRAME_DURATION: Duration =
-    Duration::from_nanos(NANOSECONDS_PER_SECOND / MODERN_VISUAL_REFRESH_HZ);
+    Duration::from_nanos(NANOSECONDS_PER_SECOND / DEFAULT_VISUAL_REFRESH_HZ as u64);
 
 /// SDL-facing state owned by the production game lifecycle host.
 pub struct RuntimePlatformHost<'window> {
@@ -574,23 +574,47 @@ impl<'window> RuntimePlatformHost<'window> {
             self.frame_clock.finish_frame();
             return Ok(None);
         }
+        let frame_duration = if services.presentation_stream_active() {
+            PRESENTATION_FRAME_DURATION
+        } else {
+            GAME_FRAME_DURATION
+        };
+        let now = Instant::now();
         let remaining = self
             .frame_clock
-            .remaining(Instant::now(), GAME_FRAME_DURATION)
+            .remaining(now, frame_duration)
             .context("visual refresh started without a game frame budget")?;
-        if remaining <= VISUAL_FRAME_DURATION {
+        let visual_refresh_duration = visual_refresh_duration(self.window);
+        let until_refresh = self
+            .frame_clock
+            .remaining_to_visual_refresh(now, visual_refresh_duration)
+            .context("visual refresh scheduled without a game frame budget")?;
+        if until_refresh >= remaining {
             if !remaining.is_zero() {
                 thread::sleep(remaining);
             }
             self.frame_clock.finish_frame();
             return Ok(None);
         }
-        thread::sleep(VISUAL_FRAME_DURATION);
+        if !until_refresh.is_zero() {
+            thread::sleep(until_refresh);
+        }
+        let refresh_now = Instant::now();
+        if self
+            .frame_clock
+            .remaining(refresh_now, frame_duration)
+            .is_some_and(|remaining| remaining.is_zero())
+        {
+            self.frame_clock.finish_frame();
+            return Ok(None);
+        }
         self.pump_events(services);
         let fraction = self
             .frame_clock
-            .elapsed_fraction(Instant::now(), GAME_FRAME_DURATION)
+            .elapsed_fraction(refresh_now, frame_duration)
             .context("visual interpolation started without a game frame budget")?;
+        self.frame_clock
+            .schedule_next_visual_refresh(refresh_now, visual_refresh_duration);
         Ok(Some(fraction))
     }
 
@@ -673,6 +697,7 @@ impl Drop for RuntimePlatformHost<'_> {
 #[derive(Default)]
 struct GameFrameClock {
     started_at: Option<Instant>,
+    next_visual_refresh_at: Option<Instant>,
 }
 
 #[derive(Default)]
@@ -717,6 +742,7 @@ impl GamePitClock {
 impl GameFrameClock {
     fn begin_frame(&mut self, now: Instant) {
         self.started_at = Some(now);
+        self.next_visual_refresh_at = None;
     }
 
     fn remaining(&self, now: Instant, duration: Duration) -> Option<Duration> {
@@ -734,8 +760,49 @@ impl GameFrameClock {
         })
     }
 
+    fn remaining_to_visual_refresh(
+        &mut self,
+        now: Instant,
+        visual_refresh_duration: Duration,
+    ) -> Option<Duration> {
+        let started_at = self.started_at?;
+        let deadline = self
+            .next_visual_refresh_at
+            .get_or_insert(started_at + visual_refresh_duration);
+        Some(deadline.saturating_duration_since(now))
+    }
+
+    fn schedule_next_visual_refresh(&mut self, now: Instant, visual_refresh_duration: Duration) {
+        if self.started_at.is_some() {
+            self.next_visual_refresh_at = Some(now + visual_refresh_duration);
+        }
+    }
+
     fn finish_frame(&mut self) {
         self.started_at = None;
+        self.next_visual_refresh_at = None;
+    }
+}
+
+fn visual_refresh_duration(window: &Window) -> Duration {
+    let refresh_rate = window
+        .get_display()
+        .ok()
+        .and_then(|display| display.get_mode().ok())
+        .map(|mode| mode.refresh_rate)
+        .unwrap_or(DEFAULT_VISUAL_REFRESH_HZ as f32);
+    visual_refresh_duration_for_rate(refresh_rate)
+}
+
+fn visual_refresh_duration_for_rate(refresh_rate: f32) -> Duration {
+    if !refresh_rate.is_finite() || refresh_rate <= 0.0 {
+        return VISUAL_FRAME_DURATION;
+    }
+    let duration = Duration::from_secs_f64(1.0 / f64::from(refresh_rate));
+    if duration.is_zero() {
+        Duration::from_nanos(1)
+    } else {
+        duration
     }
 }
 
@@ -994,6 +1061,37 @@ mod tests {
     }
 
     #[test]
+    fn visual_refresh_deadlines_do_not_advance_the_simulation_clock() {
+        let start = Instant::now();
+        let sample = start + Duration::from_millis(8);
+        let mut clock = GameFrameClock::default();
+        clock.begin_frame(start);
+        let simulation_remaining = clock.remaining(sample, GAME_FRAME_DURATION);
+
+        assert_eq!(
+            clock.remaining_to_visual_refresh(sample, Duration::from_millis(5)),
+            Some(Duration::ZERO)
+        );
+        clock.schedule_next_visual_refresh(sample, Duration::from_millis(5));
+
+        assert_eq!(
+            clock.remaining_to_visual_refresh(
+                sample + Duration::from_millis(1),
+                Duration::from_millis(5)
+            ),
+            Some(Duration::from_millis(4))
+        );
+        assert_eq!(
+            clock.remaining(sample, GAME_FRAME_DURATION),
+            simulation_remaining
+        );
+        assert_eq!(
+            clock.elapsed_fraction(sample, GAME_FRAME_DURATION),
+            Some(8.0 / 46.0)
+        );
+    }
+
+    #[test]
     fn relative_mouse_motion_scales_through_the_letterboxed_viewport() {
         assert_eq!(
             map_motion_to_logical(
@@ -1008,15 +1106,56 @@ mod tests {
     }
 
     #[test]
+    fn movie_visual_refreshes_preserve_the_full_presentation_budget() {
+        let start = Instant::now();
+        let refresh = Duration::from_secs_f64(1.0 / 240.0);
+        let mut clock = GameFrameClock::default();
+        clock.begin_frame(start);
+        for ordinal in 1..=16 {
+            let now = start + refresh * ordinal;
+            assert_eq!(
+                clock.remaining_to_visual_refresh(now, refresh),
+                Some(Duration::ZERO)
+            );
+            clock.schedule_next_visual_refresh(now, refresh);
+            assert_eq!(
+                clock.remaining(now, PRESENTATION_FRAME_DURATION),
+                Some(PRESENTATION_FRAME_DURATION - refresh * ordinal)
+            );
+            let fraction = clock
+                .elapsed_fraction(now, PRESENTATION_FRAME_DURATION)
+                .unwrap();
+            assert!(fraction > 0.0 && fraction < 1.0);
+        }
+        assert_eq!(
+            clock.remaining(
+                start + PRESENTATION_FRAME_DURATION,
+                PRESENTATION_FRAME_DURATION
+            ),
+            Some(Duration::ZERO)
+        );
+    }
+
+    #[test]
     fn visual_refresh_rate_does_not_change_recovered_simulation_rate() {
         assert_eq!(
             VISUAL_FRAME_DURATION,
-            Duration::from_nanos(NANOSECONDS_PER_SECOND / MODERN_VISUAL_REFRESH_HZ)
+            Duration::from_nanos(NANOSECONDS_PER_SECOND / DEFAULT_VISUAL_REFRESH_HZ as u64)
         );
         assert!(VISUAL_FRAME_DURATION < GAME_FRAME_DURATION);
         assert_eq!(
             GAME_FRAME_DURATION.as_millis(),
             MEASURED_GAME_FRAME_MILLISECONDS as u128
+        );
+    }
+
+    #[test]
+    fn monitor_refresh_rate_can_raise_visual_refresh_frequency() {
+        assert!(visual_refresh_duration_for_rate(144.0) < VISUAL_FRAME_DURATION);
+        assert_eq!(visual_refresh_duration_for_rate(0.0), VISUAL_FRAME_DURATION);
+        assert_eq!(
+            visual_refresh_duration_for_rate(f32::NAN),
+            VISUAL_FRAME_DURATION
         );
     }
 

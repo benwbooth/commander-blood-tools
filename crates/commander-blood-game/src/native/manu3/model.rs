@@ -274,10 +274,9 @@ impl Manu3Model {
         cursor: CursorPosition,
         fraction: f32,
     ) -> Result<(), Manu3ModelError> {
-        let mut predicted = self.animation.clone();
-        predicted.step_tweens()?;
+        let predicted_targets = self.animation.preview_next_targets()?;
         let interpolated =
-            interpolate_targets(self.animation.targets(), predicted.targets(), fraction);
+            interpolate_targets(self.animation.targets(), &predicted_targets, fraction);
         self.apply_target_values(&interpolated);
         let result = self.project_current_pose(cursor);
         self.apply_animation_targets();
