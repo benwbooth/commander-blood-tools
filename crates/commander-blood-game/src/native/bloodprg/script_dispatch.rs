@@ -40,8 +40,8 @@ use super::script_profile::{
 };
 use super::script_selector::{ScriptSelectionError, ScriptSelectorState, commit_selected_concept};
 use super::sequel_growth::{
-    SequelGrowthError, SequelSettlementContext, SequelSettlementState, SequelSimulationContext,
-    apply_sequel_growth, apply_sequel_settlement,
+    SequelConflictState, SequelGrowthError, SequelSettlementContext, SequelSettlementState,
+    SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth, apply_sequel_settlement,
 };
 use super::sequence::{
     PresentationResourceLine, SequencePresentationState, SequenceRequestContext,
@@ -78,8 +78,10 @@ pub struct ScriptDispatchState {
     pub record_clear_presentation: ScriptRecordClearPresentationState,
     /// D2 request retained until the main loop completes profile replacement.
     pub profile_request: ScriptProfileRequestSlot,
-    /// Shared range-search override owned by the sequel's settlement handler.
+    /// Shared range-search override used by sequel settlement and conflict.
     pub sequel_settlement: SequelSettlementState,
+    /// Last attack rate published by D4, including query/suppressed updates.
+    pub sequel_conflict: SequelConflictState,
     /// Last write to the single shared `vm_active_line` during this VM frame.
     pending_active_line_write: Option<u16>,
 }
@@ -206,7 +208,7 @@ pub trait ScriptDispatchHost {
         None
     }
 
-    /// Supply the sequel's additional named-object bindings for settlement.
+    /// Supply the sequel's additional named-object bindings for settlement/conflict.
     fn sequel_settlement_context(&self) -> Option<SequelSettlementContext> {
         None
     }
@@ -451,6 +453,22 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     context,
                     &mut self.dispatch.sequel_settlement,
                     self.state,
+                )
+                .map_err(ScriptDispatchError::SequelGrowth)?
+            }
+            DecodedScriptInstruction::SequelConflict(operation) => {
+                let context = self
+                    .host
+                    .sequel_settlement_context()
+                    .ok_or(ScriptDispatchError::MissingSequelSimulationContext)?;
+                refresh_from_var = true;
+                apply_sequel_conflict(
+                    *operation,
+                    context,
+                    &mut self.dispatch.sequel_conflict,
+                    &mut self.dispatch.sequel_settlement,
+                    self.state,
+                    runtime,
                 )
                 .map_err(ScriptDispatchError::SequelGrowth)?
             }
@@ -1070,7 +1088,8 @@ mod tests {
     }
 
     #[test]
-    fn sequel_settlement_dispatch_matches_native_cases_and_requires_bindings() {
+    fn sequel_simulation_dispatch_matches_native_cases_and_requires_bindings() {
+        const FAILURE_TARGET: usize = 384;
         use commander_blood_formats::bas::decode_script_bas;
         use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
         use commander_blood_formats::instruction::decode_complete_script_instruction;
@@ -1088,13 +1107,23 @@ mod tests {
             query_mode: u8,
             range_override_before: u8,
             range_override_after: u8,
+            attack_rate_before: Option<u16>,
+            attack_rate_after: Option<u16>,
+            query_mode_after: Option<u8>,
+            #[serde(default)]
+            branch_taken: bool,
+            #[serde(default)]
+            divide_error: bool,
         }
         let dictionary = decode_script_dictionary(&[]).unwrap();
         let dialogue = decode_script_bas(&[u8::MAX], &dictionary).unwrap();
         let mut count = 0;
-        for line in
-            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_settlement.jsonl")
-                .lines()
+        for line in [
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_settlement.jsonl"),
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_conflict.jsonl"),
+        ]
+        .into_iter()
+        .flat_map(str::lines)
         {
             let vector: Oracle = serde_json::from_str(line).unwrap();
             let directory = decode_script_directory(&vector.directory).unwrap();
@@ -1133,7 +1162,7 @@ mod tests {
                         .unwrap();
                 let mut runtime = ScriptRuntime::new();
                 if vector.query_mode != 0 {
-                    runtime.begin_root_guard(token.end_offset());
+                    runtime.begin_root_guard(ScriptCodeOffset::new(FAILURE_TARGET));
                 }
                 let mut procedures = super::super::ScriptProcedureStates::default();
                 let mut selector = ScriptSelectorState::default();
@@ -1141,6 +1170,8 @@ mod tests {
                 let mut dispatch = ScriptDispatchState::default();
                 dispatch.sequel_settlement.range_override_active =
                     vector.range_override_before != 0;
+                dispatch.sequel_conflict.attack_rate =
+                    vector.attack_rate_before.unwrap_or_default();
                 let mut host = TraversalHost {
                     builtins,
                     scans: 0,
@@ -1164,11 +1195,39 @@ mod tests {
                 }
                 .execute_instruction(token, &instructions[0], &mut runtime);
                 if bound {
-                    assert!(result.is_ok(), "{}: {result:?}", vector.name);
+                    if vector.divide_error {
+                        assert!(
+                            matches!(
+                                result,
+                                Err(ScriptDispatchError::SequelGrowth(
+                                    SequelGrowthError::ConflictOverflow { .. }
+                                ))
+                            ),
+                            "{}: {result:?}",
+                            vector.name
+                        );
+                    } else {
+                        assert_eq!(
+                            result,
+                            Ok(ScriptFrameStep::continue_at(if vector.branch_taken {
+                                ScriptCodeOffset::new(FAILURE_TARGET)
+                            } else {
+                                token.end_offset()
+                            })),
+                            "{}",
+                            vector.name
+                        );
+                    }
                     assert_eq!(state.encode(), vector.state_after, "{}", vector.name);
                     assert_eq!(
                         u8::from(dispatch.sequel_settlement.range_override_active),
                         vector.range_override_after,
+                        "{}",
+                        vector.name
+                    );
+                    assert_eq!(
+                        dispatch.sequel_conflict.attack_rate,
+                        vector.attack_rate_after.unwrap_or_default(),
                         "{}",
                         vector.name
                     );
@@ -1184,12 +1243,23 @@ mod tests {
                         u8::from(dispatch.sequel_settlement.range_override_active),
                         vector.range_override_before
                     );
+                    assert_eq!(
+                        dispatch.sequel_conflict.attack_rate,
+                        vector.attack_rate_before.unwrap_or_default()
+                    );
                 }
-                assert_eq!(runtime.query_mode(), vector.query_mode != 0);
+                assert_eq!(
+                    runtime.query_mode(),
+                    if bound {
+                        vector.query_mode_after.unwrap_or(vector.query_mode) != 0
+                    } else {
+                        vector.query_mode != 0
+                    }
+                );
             }
             count += 1;
         }
-        assert_eq!(count, 100);
+        assert_eq!(count, 224);
     }
 
     #[test]

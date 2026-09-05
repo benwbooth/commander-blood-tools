@@ -618,8 +618,8 @@ pub use selected_mask::{
     PresentationChoiceMaskError, PresentationChoiceNumber, draw_presentation_choice_number,
 };
 pub use sequel_growth::{
-    SequelGrowthError, SequelSettlementContext, SequelSettlementState, SequelSimulationContext,
-    apply_sequel_growth, apply_sequel_settlement,
+    SequelConflictState, SequelGrowthError, SequelSettlementContext, SequelSettlementState,
+    SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth, apply_sequel_settlement,
 };
 pub use sequence::{
     PresentationResourceLine, SequencePresentationState, SequenceRequestContext,

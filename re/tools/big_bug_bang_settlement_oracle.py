@@ -13,7 +13,7 @@ from pathlib import Path
 import random
 import struct
 
-from unicorn import Uc, UC_ARCH_X86, UC_MODE_16, UC_HOOK_CODE
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_16, UC_HOOK_CODE, UC_HOOK_INTR
 from unicorn.x86_const import (
     UC_X86_REG_CS, UC_X86_REG_DS, UC_X86_REG_ES, UC_X86_REG_GS,
     UC_X86_REG_SS, UC_X86_REG_SP, UC_X86_REG_SI, UC_X86_REG_IP,
@@ -63,6 +63,12 @@ BODIES = [608, 638, 668, 698, 728]
 ARCHE = 758
 STATE_SIZE = ARCHE + 36
 HANDLER_ENTRIES = [HANDLER, 0x706E, 0x6F17, 0x6F52, 0x67B8, 0x6633, 0x8103, 0x685D]
+CONFLICT_HANDLER = 0x70CD
+ATTACK_RATE = 0x6B70
+INITIAL_ATTACK_RATE = 444
+GUARD_DEPTH = 0x6C2C
+GUARD_TARGET = 0x6C04
+FAILURE_SCRIPT_OFFSET = 384
 
 
 def word(data, offset, value):
@@ -106,8 +112,9 @@ def fixture():
     return state, bytes(directory)
 
 
-def run(executable, name, state, directory, group=1, countdown=0, query=0, override=0):
-    token = struct.pack("<BH", 0xD5, group)
+def run(executable, name, state, directory, group=1, countdown=0, query=0, override=0, attack_rate=None):
+    conflict = attack_rate is not None
+    token = struct.pack("<BHH", 0xD4, group, attack_rate) if conflict else struct.pack("<BH", 0xD5, group)
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 1048576)
     machine.mem_write(0, executable)
@@ -120,6 +127,10 @@ def run(executable, name, state, directory, group=1, countdown=0, query=0, overr
         word(globals_before, offset, value)
     globals_before[QUERY_MODE] = query
     globals_before[RANGE_OVERRIDE] = override
+    if conflict:
+        word(globals_before, ATTACK_RATE, INITIAL_ATTACK_RATE)
+        word(globals_before, GUARD_DEPTH, 2 if query else 0)
+        word(globals_before, GUARD_TARGET, FAILURE_SCRIPT_OFFSET)
     globals_before[FIELD_TABLE:FIELD_TABLE + 352] = executable[FIELD_TABLE_FILE:FIELD_TABLE_FILE + 352]
     machine.mem_write(GLOBAL_SEGMENT * 16, bytes(globals_before))
     machine.mem_write(STATE_SEGMENT * 16, bytes(state))
@@ -134,17 +145,37 @@ def run(executable, name, state, directory, group=1, countdown=0, query=0, overr
                             (UC_X86_REG_SI, SCRIPT_OFFSET + 1)]:
         machine.reg_write(register, value)
     called = set()
+    entries = [CONFLICT_HANDLER, 0x724E, 0x697A, *HANDLER_ENTRIES[1:]] if conflict else HANDLER_ENTRIES
 
     def instruction(_cpu, address, _size, _context):
-        if address in HANDLER_ENTRIES:
+        if address in entries:
             called.add(address)
 
     machine.hook_add(UC_HOOK_CODE, instruction)
-    machine.emu_start(HANDLER, RETURN_IP, count=50000)
-    assert machine.reg_read(UC_X86_REG_IP) == RETURN_IP, f"{name}: handler failed to return"
-    assert machine.reg_read(UC_X86_REG_SI) == SCRIPT_OFFSET + len(token), name
+    interrupts = []
+
+    def interrupt(cpu, number, _context):
+        interrupts.append(number)
+        cpu.emu_stop()
+
+    machine.hook_add(UC_HOOK_INTR, interrupt)
+    machine.emu_start(CONFLICT_HANDLER if conflict else HANDLER, RETURN_IP, count=50000)
+    assert interrupts in ([], [0]) and (conflict or not interrupts), (name, interrupts)
+    branch_taken = conflict and machine.reg_read(UC_X86_REG_SI) == FAILURE_SCRIPT_OFFSET
+    if not interrupts:
+        assert machine.reg_read(UC_X86_REG_IP) == RETURN_IP, f"{name}: handler failed to return"
+        assert machine.reg_read(UC_X86_REG_SI) == (FAILURE_SCRIPT_OFFSET if branch_taken else SCRIPT_OFFSET + len(token)), name
     globals_after = bytearray(machine.mem_read(GLOBAL_SEGMENT * 16, len(globals_before)))
     override_after = globals_after[RANGE_OVERRIDE]
+    extra = {}
+    if conflict:
+        extra = {"attack_rate_before": INITIAL_ATTACK_RATE,
+                 "attack_rate_after": struct.unpack_from("<H", globals_after, ATTACK_RATE)[0],
+                 "query_mode_after": globals_after[QUERY_MODE],
+                 "guard_depth_after": struct.unpack_from("<H", globals_after, GUARD_DEPTH)[0],
+                 "branch_taken": branch_taken, "divide_error": bool(interrupts)}
+        for start, length in [(ATTACK_RATE, 2), (QUERY_MODE, 1), (GUARD_DEPTH, 2)]:
+            globals_after[start:start + length] = globals_before[start:start + length]
     for start, end in [(0x2E03, 0x2F63), (0x6C2E, 0x6E00), (RANGE_OVERRIDE, RANGE_OVERRIDE + 1)]:
         globals_after[start:end] = globals_before[start:end]
     assert globals_after == globals_before, f"{name}: unexpected global write"
@@ -153,7 +184,7 @@ def run(executable, name, state, directory, group=1, countdown=0, query=0, overr
             "range_override_before": override, "range_override_after": override_after,
             "directory": list(directory), "state_before": list(state),
             "state_after": list(machine.mem_read(STATE_SEGMENT * 16, len(state))),
-            "native_handlers_called": sorted(called)}
+            "native_handlers_called": sorted(called), **extra}
 
 
 def vectors(executable):

@@ -211,6 +211,76 @@ current worktree; unrelated Commander runtime edits remain outside this commit.
 These checks do not establish production sequel startup or initialized-game
 simulation parity.
 
+### D4 Conflict
+
+The D4 handler (file 0x70CD-0x724D) now has a typed Rust implementation and
+production instruction dispatch. All 33 authored occurrences are in
+SCRIPT2.COD. Its group mask and attack rate are unsigned immediate words.
+The rate is retained even when the countdown suppresses execution or the
+instruction runs as a query.
+
+The recovered behavior is:
+
+1. Select participating actors with the shared 0x706E helper. In query mode,
+   any engaged actor succeeds; no engaged actor consumes the enclosing failed
+   guard and clears query mode. Queries do not apply damage or acquire targets.
+2. Unengaged actors require signed quantity at least 100, aggressiveness at
+   least 200 and relief below 800. Search maximum-range locations in directory
+   order, not nearest-first. A qualifying location's word at byte 24 identifies
+   the opposing actor. Require opposing groups, in-play/participating flags and
+   signed target quantity greater than 50. Link the opponents and mark engaged;
+   an existing target back-reference is not overwritten.
+3. Clamp relief and growth balance only from above. Compute aggression and
+   damage with the original word wrapping, unsigned division and signed clamps.
+   A word-DIV overflow reports an error with all earlier writes preserved,
+   including completed updates to earlier actors.
+4. Disengage when source quantity is at most ten, or damage lowers the target
+   below ten. Clear the source's engagement and opponent link. If the target
+   points back at the source, search for a replacement. With none, clear the
+   target's engagement and relocate matching active descendants to the nearest
+   free location within the current search range. Unlike settlement, retreat
+   does not initialize quantities, balances or destination occupancy flags.
+
+The replacement helper at 0x724E tests flag value 2, not Actor kind. Its byte-72
+read on a non-actor record can alias a word in a following record. A native
+oracle case establishes this behavior. Rust resolves that serialized position
+to a checked owned state word; it neither invents an actor-only filter nor
+emulates segmented memory. The extra actor word at byte 72 is now identified
+as the opponent link by its reads and writes in this handler.
+
+`re/tools/big_bug_bang_conflict_oracle.py` reuses the settlement runner and
+executes the original handler and nine helper entries without replacing calls.
+Its 124 synthetic cases include acquisition thresholds, existing back-references,
+replacement candidates, non-actor aliasing, retreat range, both sides updating,
+countdown gates, 18 failed guards and 13 divide errors. Rust compares the full
+VAR buffer, attack rate, range override, query state and guard result. The
+combined production-dispatch regression covers all 224 settlement/conflict
+cases and rejects absent host bindings without silently substituting defaults.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_conflict_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_conflict.jsonl
+nix develop -c cargo test -p commander-blood-formats sequel_conflict -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib sequel_ -- --include-ignored
+```
+
+These are component-level native comparisons, not initialized-game captures.
+They do not establish full gameplay parity or production sequel startup. In
+particular, the original scratch candidate-list bounds and repeated updates
+still need verification with authored state after script initialization.
+
+Verification for the conflict slice (2026-09-05): all 114 formats tests passed
+with original-corpus tests enabled; all nine sequel game tests passed with
+original-table tests enabled. The full game library passed 889 tests with seven
+ignored using `--test-threads=1`. Its first, concurrent run terminated with
+SIGSEGV; the cause has not been established or fixed. Do not report that run as
+passing. Game all-targets checking and workspace library/binary checking passed.
+Both settlement and conflict fixtures regenerate byte-for-byte from the
+original executable; the settlement fixture is unchanged. Tests used the
+current worktree, including unrelated Commander runtime edits that remain
+outside this commit.
+
 ### Sequel Records and Profile Ownership
 
 The formats crate now decodes sequel VAR records with an explicit dialect:
@@ -219,8 +289,9 @@ original VAR, DEB and DIC images round-trip exactly, with 184 objects per
 profile. Their entire active-object directory prefix is identical, not just
 the first few entries. Original field-table comparisons cover all 22 selector
 rows and nine shipped object kinds. The inherited 21 rows match Commander;
-the additional row selects the actor word at byte 72. Its gameplay meaning
-is not yet established, so the API does not invent a semantic name.
+the additional row selects the actor word at byte 72. The D4 recovery above
+identifies that word as the opponent link; the generic format API retains its
+field-index representation.
 
 The resource cache can decode the sequel's 155-name catalog. The profile
 manager can decode all 17 native rows and carry the dialect into code and
@@ -290,7 +361,7 @@ silently zero-extend the initial state without native evidence.
 
 ## Remaining Completion Requirements
 
-- Recover D4 and D7 effects and compare inherited VM handlers, including
+- Recover D7 effects and compare inherited VM handlers, including
   skip, state, presentation and conversation semantics. Integrate the native
   simulation countdown lifecycle required by D4-D6. Add native oracle coverage.
 - Wire game/version identity and the recovered sequel catalogs/layouts into
