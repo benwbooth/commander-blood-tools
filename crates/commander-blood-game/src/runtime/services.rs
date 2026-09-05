@@ -3273,6 +3273,7 @@ impl<'window> ModernGameServices<'window> {
         if self.runtime.draw_pause_hud(active)?.is_none() {
             return Ok(false);
         }
+        self.compose_presentation_ui();
         let indexed_display_palette = self.indexed_display_palette();
         self.submit_indexed_frame()?;
         let bridge_frame = self
@@ -3929,6 +3930,7 @@ impl<'window> ModernGameServices<'window> {
     /// Present one translated bridge scene frame and optional MANU3 overlay.
     pub fn present_bridge_frame(&mut self, bridge_frame: &BridgeSceneFrame) -> Result<()> {
         self.ensure_main_viewport()?;
+        self.compose_presentation_ui();
         let presentation_frame_owned = self.presentation_player.owns_display_frame();
         let indexed_display_palette = self.indexed_display_palette();
         let composition = select_bridge_composition(
@@ -3963,6 +3965,7 @@ impl<'window> ModernGameServices<'window> {
         manu3_visible: bool,
     ) -> Result<()> {
         self.ensure_main_viewport()?;
+        self.compose_presentation_ui();
         let presentation_frame_owned = self.presentation_player.owns_display_frame();
         let indexed_display_palette = self.indexed_display_palette();
         let frame = self
@@ -3992,6 +3995,18 @@ impl<'window> ModernGameServices<'window> {
                 self.presentation_display_occludes_manu3(),
             ),
         )
+    }
+
+    /// Retained sequence text is a final RGB layer, not a side effect of the
+    /// native panel update. That update can be skipped while a scene dispatches.
+    pub(super) fn compose_presentation_ui(&mut self) {
+        if let Some(caption) = self
+            .presentation_screen
+            .as_ref()
+            .and_then(RuntimePresentationScreen::caption_overlay)
+        {
+            self.runtime.draw_sequence_caption_overlay(caption);
+        }
     }
 
     /// Drop the live bridge and its owned panorama during shutdown.

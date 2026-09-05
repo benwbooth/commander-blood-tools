@@ -262,6 +262,39 @@ const BRIDGE_CONSOLE_PROBES: [BridgeConsoleProbe; 4] = [
 ];
 
 #[test]
+fn production_runtime_locks_intro_camera_but_releases_it_after_cancellation() {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/production_intro_camera.tsv",
+        "production-intro-camera.jsonl",
+    ) else {
+        return;
+    };
+    let clip_frames: Vec<_> = records
+        .iter()
+        .filter(|record| record["semantic"]["video"]["active_resource"] == FIRST_STARTUP_VIDEO)
+        .collect();
+    assert!(clip_frames.len() >= 8, "missing intro camera checkpoints");
+    let initial_heading = &clip_frames[0]["semantic"]["presentation"]["bridge_frame"];
+    for frame in clip_frames {
+        assert_eq!(
+            &frame["semantic"]["presentation"]["bridge_frame"], initial_heading,
+            "intro camera moved at {}: {}",
+            frame["action"], frame["semantic"]["input"]
+        );
+    }
+    let cancelled = records
+        .iter()
+        .rposition(|record| record["action"] == "click 160 170")
+        .unwrap();
+    assert!(
+        records[cancelled + 1..]
+            .iter()
+            .any(|frame| frame["semantic"]["input"]["bridge_steering"]["view_changed"] == true),
+        "camera remained locked after cancellation"
+    );
+}
+
+#[test]
 fn production_runtime_retains_the_intro_caption_until_its_blank_cue() {
     let Some(records) = run_production_scenario(
         "accuracy/scenarios/production_intro_caption.tsv",
@@ -312,8 +345,12 @@ fn production_runtime_retains_the_intro_caption_until_its_blank_cue() {
     let cancelled = records
         .iter()
         .rev()
-        .find(|record| record["action"] == INTRO_ESCAPE_KEY)
+        .find(|record| record["action"] == "click 160 170")
         .expect("missing caption cancellation checkpoint");
+    assert!(
+        cancelled["semantic"]["video"]["active_resource"].is_null(),
+        "the cancellation checkpoint did not stop the video"
+    );
     assert_eq!(
         cancelled["semantic"]["sequence_caption"]["opaque_pixels"],
         0

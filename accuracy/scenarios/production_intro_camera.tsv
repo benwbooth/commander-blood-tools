@@ -1,0 +1,23 @@
+# Move the virtual pointer in both directions while CLIPTOOT owns the panel.
+wait 50
+key 1
+wait 10
+wait 10
+motion -1200 0
+wait 2
+motion 2400 0
+wait 2
+motion -2400 0
+wait 2
+motion 2400 0
+wait 2
+motion -2400 0
+wait 2
+motion 2400 0
+wait 2
+click 160 170
+wait 20
+motion -1200 0
+wait 2
+motion 2400 0
+wait 2

@@ -43,5 +43,5 @@ wait 2
 wait 2
 wait 2
 wait 2
-key 1
+click 160 170
 wait 2

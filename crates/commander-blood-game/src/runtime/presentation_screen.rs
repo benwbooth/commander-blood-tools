@@ -12,11 +12,11 @@ use crate::native::bloodprg::{
     PresentationSceneDispatchOutcome, PresentationSceneDispatchState, PresentationSceneStatus,
     PresentationScreenBackend, PresentationScreenOutcome, PresentationScreenState, RasterNoiseMode,
     RasterPoint, RasterSpanPaint, SceneTransitionLine, SceneTransitionPhase, SceneTransitionState,
-    ScriptPresentationScanState, SequenceSubtitlePlayback, SequenceSubtitleRenderer,
-    ShipPresentationState, build_banked_tint_table, decode_active_presentation_line,
-    draw_framebuffer_noise_rect, draw_rect_outline, encode_active_presentation_line,
-    fill_framebuffer_rect, present_sequence_subtitle, remap_framebuffer_rect,
-    update_presentation_screen,
+    ScriptPresentationScanState, SequenceSubtitleOutcome, SequenceSubtitlePlayback,
+    SequenceSubtitleRenderer, ShipPresentationState, build_banked_tint_table,
+    decode_active_presentation_line, draw_framebuffer_noise_rect, draw_rect_outline,
+    encode_active_presentation_line, fill_framebuffer_rect, present_sequence_subtitle,
+    remap_framebuffer_rect, update_presentation_screen,
 };
 
 use super::game_lifecycle::native_scene_link_target;
@@ -103,6 +103,12 @@ impl RuntimePresentationScreen {
     /// Retained caption pixels for production fidelity traces.
     pub(super) fn caption_rgba(&self) -> &[u8] {
         self.caption.overlay.pixels()
+    }
+
+    /// Resolve caption ownership at composition time, even when the bridge
+    /// coordinator bypassed `screen_mode_update` on this game frame.
+    pub(super) fn caption_overlay(&self) -> Option<&RgbaUiOverlay> {
+        (self.state.active() && self.state.scene_status().queued).then_some(&self.caption.overlay)
     }
 
     /// Return the armed and pending flags consumed by the alien-overlay coordinator.
@@ -267,12 +273,6 @@ impl RuntimePresentationScreen {
             (Ok(_), Some(error)) => Err(error),
             (Ok(outcome), None) => {
                 backend.caption.finish_frame(outcome);
-                if outcome == PresentationScreenOutcome::WaitingForScene {
-                    backend
-                        .services
-                        .runtime_mut()
-                        .draw_sequence_caption_overlay(&backend.caption.overlay);
-                }
                 Ok(outcome)
             }
         }
@@ -558,7 +558,8 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
             .to_vec();
         let visible_frame = match self.services.presentation_queue_metrics() {
             Ok(Some(metrics)) => metrics.sequence_index,
-            Ok(None) => u16::MIN,
+            // A temporarily unavailable queue clock is not an authored blank cue.
+            Ok(None) => return,
             Err(error) => {
                 self.record_error(Err(
                     error.context("reading the presentation subtitle sequence")
@@ -650,15 +651,18 @@ impl RetainedSequenceCaption {
         playback: &mut SequenceSubtitlePlayback,
         visible_frame: u16,
     ) -> Result<()> {
-        self.overlay.clear();
         let mut renderer = RuntimeSequenceSubtitleRenderer {
             font,
             overlay: &mut self.overlay,
             visible_frame,
+            began_drawing: false,
         };
-        present_sequence_subtitle(subtitles, playback, &mut renderer)
-            .context("drawing a DESCRIPT sequence subtitle")
-            .map(|_| ())
+        let outcome = present_sequence_subtitle(subtitles, playback, &mut renderer)
+            .context("drawing a DESCRIPT sequence subtitle")?;
+        if outcome == SequenceSubtitleOutcome::Finished {
+            self.overlay.clear();
+        }
+        Ok(())
     }
 
     fn finish_frame(&mut self, outcome: PresentationScreenOutcome) {
@@ -672,6 +676,7 @@ struct RuntimeSequenceSubtitleRenderer<'assets> {
     font: &'assets SequenceCaptionFont,
     overlay: &'assets mut RgbaUiOverlay,
     visible_frame: u16,
+    began_drawing: bool,
 }
 
 impl SequenceSubtitleRenderer for RuntimeSequenceSubtitleRenderer<'_> {
@@ -689,6 +694,12 @@ impl SequenceSubtitleRenderer for RuntimeSequenceSubtitleRenderer<'_> {
         );
         u8::try_from(line.text.len())
             .context("DESCRIPT sequence subtitle line exceeds the BIOS byte limit")?;
+        // The C planner's Waiting result draws nothing. Retain the last cue
+        // until a real replacement (including the empty cue) is submitted.
+        if !self.began_drawing {
+            self.overlay.clear();
+            self.began_drawing = true;
+        }
         self.font
             .draw_text(self.overlay, line.text, line.position.map(i32::from));
         Ok(())
@@ -736,6 +747,7 @@ mod tests {
             font: &font,
             overlay: &mut caption.overlay,
             visible_frame: 1,
+            began_drawing: false,
         };
         renderer
             .draw_centered_line(CenteredSequenceSubtitleLine {
@@ -785,6 +797,12 @@ mod tests {
         caption.update(&font, &cues, &mut playback, 31).unwrap();
         let title = caption.overlay.pixels().to_vec();
         assert!(title.chunks_exact(4).any(|pixel| pixel[3] == 255));
+        caption.update(&font, &cues, &mut playback, 0).unwrap();
+        assert_eq!(
+            caption.overlay.pixels(),
+            title,
+            "waiting for a queue clock erased the cue"
+        );
         // The video/front/back pages may change while the caption remains owned
         // by the sequence. A render refresh must not rerun the cue planner.
         for _ in 0..120 {
@@ -802,6 +820,48 @@ mod tests {
         ui.clear();
         ui.blit_overlay(&caption.overlay);
         assert!(ui.pixels().iter().all(|&byte| byte == 0));
+    }
+
+    #[test]
+    fn final_composition_retains_caption_when_the_panel_update_is_bypassed() {
+        let mut screen = RuntimePresentationScreen::new([[0; 3]; 256]).unwrap();
+        screen.state.set_active(true);
+        screen.state.set_scene_status(PresentationSceneStatus {
+            queued: true,
+            frame_presented: true,
+        });
+        let font = SequenceCaptionFont::import(&VGA_BIOS_FONT_8X8, [63; 3]).unwrap();
+        let cues = [DescriptSequenceSubtitle::new(
+            1,
+            Box::from(b"Commander BLOOD  V 1.0".as_slice()),
+        )];
+        screen
+            .caption
+            .update(&font, &cues, screen.state.subtitle_playback_mut(), 1)
+            .unwrap();
+        let expected = screen.caption_rgba().to_vec();
+        let mut ui = RgbaUiOverlay::new(320, 200);
+        // SceneDispatched/Inactive are bridge-coordinator early returns, not
+        // caption-end events. Final composition must still recover the layer.
+        for _ in 0..120 {
+            ui.clear();
+            screen.state.set_scene_status(PresentationSceneStatus {
+                queued: true,
+                frame_presented: false,
+            });
+            ui.blit_overlay(screen.caption_overlay().unwrap());
+            assert_eq!(ui.pixels(), expected);
+        }
+        screen
+            .state
+            .set_scene_status(PresentationSceneStatus::default());
+        assert!(screen.caption_overlay().is_none());
+        screen.state.set_scene_status(PresentationSceneStatus {
+            queued: true,
+            frame_presented: false,
+        });
+        screen.state.set_active(false);
+        assert!(screen.caption_overlay().is_none());
     }
 
     #[test]
@@ -833,6 +893,8 @@ mod tests {
         for replacement in [&cues[..], &[]] {
             caption.update(&font, &cues, &mut playback, 1).unwrap();
             playback.restart();
+            // Loading a different DESCRIPT/video explicitly releases the old cue.
+            caption.overlay.clear();
             caption
                 .update(&font, replacement, &mut playback, 0)
                 .unwrap();

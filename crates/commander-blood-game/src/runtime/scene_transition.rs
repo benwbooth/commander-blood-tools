@@ -381,7 +381,11 @@ impl SceneTransitionHost for RuntimeSceneTransitionHost<'_, '_, '_, '_> {
         self.services.update_bridge_steering(BridgeSceneInput {
             horizontal_delta: self.platform.take_bridge_horizontal_delta(),
             pointer_buttons: pointer.buttons.bits(),
-            interaction: bridge_steering_interaction(self.lifecycle, retained_word_choice_owner),
+            interaction: bridge_steering_interaction(
+                self.lifecycle,
+                retained_word_choice_owner,
+                self.services.presentation_screen_state()?.active(),
+            ),
         })?;
         Ok(())
     }

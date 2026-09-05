@@ -37,9 +37,12 @@ pub(super) const fn native_scene_link_target(link: GameSceneLink) -> u16 {
 pub(super) fn bridge_steering_interaction(
     state: &GameLifecycleState,
     retained_word_choice_owner: bool,
+    presentation_screen_active: bool,
 ) -> BridgeSteeringInteraction {
     let presentation = &state.presentation;
-    if state.modal_ui_busy()
+    if state.presentation_mode
+        || presentation_screen_active
+        || state.modal_ui_busy()
         || retained_word_choice_owner
         || presentation.active
         || presentation.word_choice_active
@@ -422,6 +425,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         let pointer = self.services.input().pointer_sample();
         let retained_word_choice_owner =
             self.services.presentation_word_choice_phase()? != PresentationWordChoicePhase::Closed;
+        let presentation_screen_active = self.services.presentation_screen_state()?.active();
         run_runtime_bridge_frame(
             &mut self.services,
             state,
@@ -429,7 +433,11 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             BridgeSceneInput {
                 horizontal_delta: self.platform.take_bridge_horizontal_delta(),
                 pointer_buttons: pointer.buttons.bits(),
-                interaction: bridge_steering_interaction(state, retained_word_choice_owner),
+                interaction: bridge_steering_interaction(
+                    state,
+                    retained_word_choice_owner,
+                    presentation_screen_active,
+                ),
             },
             self.timer.navigation_animation_phase,
         )?;
@@ -525,6 +533,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         self.services
             .update_lifecycle_palette_transition(state)
             .map(|_| ())?;
+        self.services.compose_presentation_ui();
         self.platform
             .record_scenario_frame_boundary(&mut self.services, state)
     }
@@ -652,35 +661,55 @@ mod tests {
     fn every_typed_presentation_owner_constrains_bridge_steering() {
         let mut state = GameLifecycleState::default();
         assert_eq!(
-            bridge_steering_interaction(&state, false),
+            bridge_steering_interaction(&state, false, false),
             BridgeSteeringInteraction::Free
         );
         state.presentation.menu_word_source = GameMenuWordSource::PresentationBuffer;
         state.presentation.menu_deferred = true;
         assert_eq!(
-            bridge_steering_interaction(&state, false),
+            bridge_steering_interaction(&state, false, false),
             BridgeSteeringInteraction::MenuEngaged
         );
 
         state.presentation.menu_deferred = false;
         state.presentation.word_choice_active = true;
         assert_eq!(
-            bridge_steering_interaction(&state, false),
+            bridge_steering_interaction(&state, false, false),
             BridgeSteeringInteraction::MenuEngaged
         );
 
         state.presentation.word_choice_active = false;
         state.set_modal_ui_busy(true);
         assert_eq!(
-            bridge_steering_interaction(&state, false),
+            bridge_steering_interaction(&state, false, false),
             BridgeSteeringInteraction::MenuEngaged
         );
         assert!(RuntimeGameLifecycleHost::indexed_bridge_ui_active(&state));
 
         state.set_modal_ui_busy(false);
         assert_eq!(
-            bridge_steering_interaction(&state, true),
+            bridge_steering_interaction(&state, true, false),
             BridgeSteeringInteraction::MenuEngaged
+        );
+    }
+
+    #[test]
+    fn panel_and_startup_ownership_lock_steering_without_transient_ui_flags() {
+        let mut state = GameLifecycleState::default();
+        assert!(!state.modal_ui_busy());
+        assert_eq!(
+            bridge_steering_interaction(&state, false, true),
+            BridgeSteeringInteraction::MenuEngaged
+        );
+        state.presentation_mode = true;
+        assert_eq!(
+            bridge_steering_interaction(&state, false, false),
+            BridgeSteeringInteraction::MenuEngaged
+        );
+        state.presentation_mode = false;
+        assert_eq!(
+            bridge_steering_interaction(&state, false, false),
+            BridgeSteeringInteraction::Free
         );
     }
 
