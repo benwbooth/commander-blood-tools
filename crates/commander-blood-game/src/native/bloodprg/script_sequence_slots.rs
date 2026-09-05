@@ -69,7 +69,7 @@ impl ScriptSequenceSlots {
         let name_bytes = name.as_bytes();
         value.serialized_field[..name_bytes.len()].copy_from_slice(name_bytes);
         value.serialized_field[name_bytes.len()] = u8::MIN;
-        value.name = Some(name);
+        value.name = (!name_bytes.is_empty()).then_some(name);
     }
 
     /// Explicitly clear all six names and their retained fixed-field bytes.
@@ -199,9 +199,10 @@ mod tests {
                 let expected_length = vector.copied_byte_count - 1;
                 let mut slots = ScriptSequenceSlots::default();
                 slots.assign(assignment);
+                let expected = vec![b'x'; expected_length];
                 assert_eq!(
-                    slots.name(slot).unwrap().as_bytes(),
-                    vec![b'x'; expected_length],
+                    slots.name(slot).map(ScriptSequenceSlotName::as_bytes),
+                    (!expected.is_empty()).then_some(expected.as_slice()),
                     "{}",
                     vector.name
                 );

@@ -320,6 +320,18 @@ impl RuntimeScriptSystem {
         &self.dispatch.sequence_presentation
     }
 
+    /// Shared sequel CC/D7 controls, separate from the inherited A8 finale.
+    pub(crate) const fn sequel_presentation_control(
+        &self,
+    ) -> crate::native::bloodprg::SequelPresentationControl {
+        self.dispatch.sequel_presentation
+    }
+
+    /// Consume CC before panel callbacks, so later script writes remain pending.
+    pub(crate) fn consume_sequel_presentation_choice(&mut self) {
+        self.dispatch.sequel_presentation.requested_choice = None;
+    }
+
     /// Drain A8's low-byte clear of the mouse-idle timer alias at native address `0x0B3B`.
     pub fn take_mouse_idle_low_byte_clear_request(&mut self) -> bool {
         self.dispatch

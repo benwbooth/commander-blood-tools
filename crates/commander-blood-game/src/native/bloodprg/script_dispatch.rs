@@ -43,6 +43,7 @@ use super::sequel_growth::{
     SequelConflictState, SequelGrowthError, SequelSettlementContext, SequelSettlementState,
     SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth, apply_sequel_settlement,
 };
+use super::sequel_presentation::{SequelPresentationControl, assign_presentation_sequence};
 use super::sequence::{
     PresentationResourceLine, SequencePresentationState, SequenceRequestContext,
     load_sequence_request, offer_topic_if_presentation_active,
@@ -82,6 +83,8 @@ pub struct ScriptDispatchState {
     pub sequel_settlement: SequelSettlementState,
     /// Last attack rate published by D4, including query/suppressed updates.
     pub sequel_conflict: SequelConflictState,
+    /// Sequel CC/D7 controls shared with the panel and retained across profiles.
+    pub sequel_presentation: SequelPresentationControl,
     /// Last write to the single shared `vm_active_line` during this VM frame.
     pending_active_line_write: Option<u16>,
 }
@@ -103,11 +106,13 @@ impl ScriptDispatchState {
         self.pending_active_line_write.take()
     }
 
-    /// Reset state owned by one loaded profile while preserving the session PRNG.
+    /// Reset profile state, preserving the session PRNG and sequel panel controls.
     pub fn reset_for_profile_change(&mut self) {
         let random = self.random;
+        let sequel_presentation = self.sequel_presentation;
         *self = Self::default();
         self.random = random;
+        self.sequel_presentation = sequel_presentation;
     }
 
     /// Publish the canonical post-scan globals to every translated opcode owner.
@@ -472,6 +477,10 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 )
                 .map_err(ScriptDispatchError::SequelGrowth)?
             }
+            DecodedScriptInstruction::SequelEnding => {
+                self.dispatch.sequel_presentation.begin_ending();
+                ScriptControl::Continue
+            }
             DecodedScriptInstruction::DirectRecord(operation) => {
                 commit_to_var = !runtime.query_mode();
                 apply_direct_record_operation(
@@ -619,7 +628,12 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 .evaluate_date_guard(*guard, runtime)
                 .map_err(ScriptDispatchError::Runtime)?,
             DecodedScriptInstruction::SequenceSlotAssignment(assignment) => {
-                self.sequence_slots.assign(assignment.clone());
+                assign_presentation_sequence(
+                    assignment.clone(),
+                    self.state.dialect(),
+                    self.sequence_slots,
+                    &mut self.dispatch.sequel_presentation,
+                );
                 ScriptControl::Continue
             }
             DecodedScriptInstruction::Transfer(transfer) => {
@@ -1084,6 +1098,112 @@ mod tests {
                 );
                 assert_eq!(runtime.query_mode(), query);
             }
+        }
+    }
+
+    #[test]
+    fn sequel_panel_dispatch_preserves_query_and_session_controls() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::{
+            ScriptSequenceSlot, decode_complete_script_instruction,
+        };
+        use commander_blood_formats::script::{
+            ScriptObjectKind, decode_script_dictionary, decode_script_directory,
+            decode_script_state_for_dialect,
+        };
+        const DIRECTORY_ENTRY_BYTES: usize = 20;
+        const DIRECTORY_KIND: usize = 18;
+        const GUARD_TARGET: usize = 30;
+        let mut directory_bytes = [0; DIRECTORY_ENTRY_BYTES * 2];
+        directory_bytes[..5].copy_from_slice(b"blood");
+        directory_bytes[DIRECTORY_KIND] = 1;
+        let directory = decode_script_directory(&directory_bytes).unwrap();
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let dialogue = decode_script_bas(&[u8::MAX], &dictionary).unwrap();
+        let mut var = vec![0; ScriptObjectKind::Player.record_size()];
+        var[..2].copy_from_slice(&ScriptObjectKind::Player.mask().to_le_bytes());
+        let builtins = ScriptProfileBuiltins {
+            player: directory.find_active_object(b"blood"),
+            ..ScriptProfileBuiltins::default()
+        };
+        for query in [false, true] {
+            let mut state =
+                decode_script_state_for_dialect(&var, &directory, ScriptDialect::BigBugBang)
+                    .unwrap();
+            let code = decode_script_code_for_dialect(
+                b"\xcc\x03end\0\0\xd7\xff",
+                ScriptDialect::BigBugBang,
+            )
+            .unwrap();
+            let instructions: Vec<_> = code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() != u8::MAX)
+                .map(|token| {
+                    decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                        .unwrap()
+                })
+                .collect();
+            assert_eq!(instructions.len(), 2);
+            let mut records =
+                ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+                    .unwrap();
+            let mut runtime = ScriptRuntime::new();
+            if query {
+                runtime.begin_root_guard(ScriptCodeOffset::new(GUARD_TARGET));
+            }
+            let mut procedures = super::super::ScriptProcedureStates::default();
+            let mut selector = ScriptSelectorState::default();
+            let mut slots = super::super::ScriptSequenceSlots::default();
+            let mut dispatch = ScriptDispatchState::default();
+            let mut host = TraversalHost {
+                builtins,
+                scans: 0,
+                simulation: None,
+                settlement: None,
+            };
+            for (token, instruction) in code.tokens().iter().zip(&instructions) {
+                let result = Dispatcher {
+                    code: &code,
+                    instructions: &instructions,
+                    dialogue: &dialogue,
+                    state: &mut state,
+                    dictionary: &dictionary,
+                    directory: &directory,
+                    builtins,
+                    procedures: &mut procedures,
+                    selector: &mut selector,
+                    sequence_slots: &mut slots,
+                    records: &mut records,
+                    dispatch: &mut dispatch,
+                    host: &mut host,
+                }
+                .execute_instruction(token, instruction, &mut runtime);
+                assert_eq!(result, Ok(ScriptFrameStep::continue_at(token.end_offset())));
+            }
+            let slot = ScriptSequenceSlot::decode(3).unwrap();
+            assert_eq!(slots.name(slot).unwrap().as_bytes(), b"end");
+            assert_eq!(
+                dispatch.sequel_presentation,
+                SequelPresentationControl {
+                    ending_active: true,
+                    requested_choice: Some(slot)
+                }
+            );
+            assert!(
+                !dispatch.sequence_presentation.finale_requested,
+                "D7 is not A8 fin.*"
+            );
+            assert_eq!(state.encode(), var);
+            assert_eq!(runtime.query_mode(), query);
+            assert_eq!(
+                runtime.current_guard_target(),
+                query.then_some(ScriptCodeOffset::new(GUARD_TARGET))
+            );
+            let expected = dispatch.sequel_presentation;
+            dispatch.reset_for_profile_change();
+            assert_eq!(dispatch.sequel_presentation, expected);
         }
     }
 

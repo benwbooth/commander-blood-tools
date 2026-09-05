@@ -626,6 +626,10 @@ impl RadioActorBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl PanelCloseActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn sequel_panel_control(&self) -> Option<crate::native::bloodprg::SequelPresentationControl> {
+        self.services.sequel_presentation_control()
+    }
+
     fn request_panel_close_hand_animation(&mut self) {
         self.services
             .request_manu3_animation(Manu3AnimationSelector::PanelClose);

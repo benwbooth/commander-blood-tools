@@ -281,6 +281,79 @@ original executable; the settlement fixture is unchanged. Tests used the
 current worktree, including unrelated Commander runtime edits that remain
 outside this commit.
 
+### D7 Ending and Changed CC Selection
+
+The sequel's D7 at file 0x6E67 sets the ending latch at GS:0x6B73, in both
+normal and query mode. This is **not** the inherited A8 `fin.*` latch at
+GS:0x6B93. D7 itself does not request media or immediate shutdown. All four
+authored D7 instructions are in SCRIPT2.COD.
+
+CC at 0x69E6 retains the bounded sequence-name copy but adds a zero-based
+selection request at 0x69ED. Commander CC only copies the name. All 97 sequel
+CC instructions decode into the existing six-slot domain. Both new controls
+survive the profile reset at 0x588F-0x5903, whose cleared ranges exclude them.
+Empty CC names now disable their slot in the shared owned representation,
+matching both the native first-byte test and the existing save restore path.
+
+The Rust dispatcher now handles D7 and publishes CC's additional request only
+for the sequel dialect. A separate `SequelPresentationControl` carries this
+state into the existing production panel and ready-actor handlers:
+
+- At queued-scene entry (0x8C14), a pending CC choice takes precedence over D7
+  and mouse input. Without a pending choice, D7 suppresses ordinary primary
+  input. Empty record slots have a separate native input path and are not
+  unconditionally locked by this flag.
+- A pending choice is consumed at panel initialization or queued-scene entry,
+  not during inactive/opening/closing phases. Initialization selects that
+  channel directly. Queued-scene entry selects it before the ordinary input
+  path, which increments it unless reverse-closing. This native ordering is
+  preserved rather than treating both paths as a direct channel change.
+- When the full scene list completes (0x8C75), reverse/startup mode returns to
+  transition. Otherwise an ordinary list closes; D7 instead publishes the
+  next-frame shutdown request. Finishing an intermediate scene is not enough.
+- The ready panel actor (0x92E4) selects its hand animation then stops for D7
+  when no CC request exists. An explicit CC selection bypasses that gate and
+  the animation selection. Disabled/not-ready actor behavior remains intact.
+
+CC consumption is published before media callbacks, avoiding a stale end-of-
+frame snapshot overwriting a new request. Commander receives no sequel control
+context and keeps its established panel behavior.
+
+`re/tools/big_bug_bang_presentation_oracle.py` executes original CC and D7
+instructions and the three decision blocks above. Its 66 synthetic cases
+compare instruction effects, retained slot bytes, query preservation and
+branch destinations. The decision probes deliberately stop before external
+media calls; they are **not** full original panel/actor execution or playback
+parity tests. The runner checks all global writes and rejects writes outside
+that region; it uses the VM's shared SS/data layout for BP-relative globals.
+Rust tests additionally cover typed production dispatch, profile-reset
+retention, panel request consumption, multi-line completion and actor effects.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_presentation_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_presentation.jsonl
+nix develop -c cargo test -p commander-blood-formats --lib every_authored_sequel_panel_control_decodes -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib sequel_ -- --include-ignored
+```
+
+This is not a complete sequel presentation port. In particular, CC's automatic
+activation of a currently inactive panel at 0x8A48 and the related actor path
+at 0x91F5 remain to be translated. Initialized native captures must verify
+that activation, authored ending lists, callback ordering and all media effects.
+Sequel startup is still blocked by the unresolved loading work below, not
+enabled by these component changes.
+
+Verification for this slice (2026-09-05): all 115 formats tests passed with
+original corpus tests enabled; all 13 sequel tests passed with original table
+tests enabled. The full game library passed 893 tests with seven ignored,
+serially under a private Xvfb display (`SDL_VIDEODRIVER=x11`, Wayland unset),
+including SDL input and GPU tests without using the real desktop. Game
+all-targets checking and workspace library/binary checking passed. The 66-case
+native presentation fixture regenerates byte-for-byte. Tests used the current
+worktree; unrelated Commander runtime edits remain outside this commit. The
+earlier concurrent-suite SIGSEGV has not been diagnosed by a serial pass.
+
 ### Sequel Records and Profile Ownership
 
 The formats crate now decodes sequel VAR records with an explicit dialect:
@@ -361,7 +434,7 @@ silently zero-extend the initial state without native evidence.
 
 ## Remaining Completion Requirements
 
-- Recover D7 effects and compare inherited VM handlers, including
+- Complete CC automatic panel activation and compare inherited VM handlers, including
   skip, state, presentation and conversation semantics. Integrate the native
   simulation countdown lifecycle required by D4-D6. Add native oracle coverage.
 - Wire game/version identity and the recovered sequel catalogs/layouts into

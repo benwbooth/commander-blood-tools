@@ -105,6 +105,7 @@ mod script_sequence_slots;
 mod script_service;
 mod selected_mask;
 mod sequel_growth;
+mod sequel_presentation;
 mod sequence;
 mod sequence_subtitles;
 mod ship_depth;
@@ -620,6 +621,10 @@ pub use selected_mask::{
 pub use sequel_growth::{
     SequelConflictState, SequelGrowthError, SequelSettlementContext, SequelSettlementState,
     SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth, apply_sequel_settlement,
+};
+pub use sequel_presentation::{
+    SequelPanelActorAction, SequelPanelCompletion, SequelPresentationControl,
+    assign_presentation_sequence,
 };
 pub use sequence::{
     PresentationResourceLine, SequencePresentationState, SequenceRequestContext,

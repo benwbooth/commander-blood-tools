@@ -63,6 +63,7 @@ const MULTIPLY_DIVIDE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + (BYTE_SIZE + WORD_
 const SEQUEL_GROWTH_OPCODE: u8 = 0xD6;
 const SEQUEL_SETTLEMENT_OPCODE: u8 = 0xD5;
 const SEQUEL_CONFLICT_OPCODE: u8 = 0xD4;
+const SEQUEL_ENDING_OPCODE: u8 = 0xD7;
 const SEQUEL_CONFLICT_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const SEQUEL_SETTLEMENT_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
 const SEQUEL_GROWTH_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
@@ -804,6 +805,8 @@ pub enum DecodedScriptInstruction {
     SequelSettlement(ScriptSequelSettlementOperation),
     /// Big Bug Bang D4 conflict acquisition, damage and disengagement.
     SequelConflict(ScriptSequelConflictOperation),
+    /// Big Bug Bang D7 latches the non-cancellable panel-ending flow.
+    SequelEnding,
 }
 
 /// Immediate group mask and unsigned attack rate consumed by D4 at 0x70CD.
@@ -1116,6 +1119,10 @@ pub fn decode_complete_script_instruction(
         }
         SEQUEL_CONFLICT_OPCODE if token.dialect() == ScriptDialect::BigBugBang => {
             DecodedScriptInstruction::SequelConflict(decode_script_sequel_conflict(token)?)
+        }
+        SEQUEL_ENDING_OPCODE if token.dialect() == ScriptDialect::BigBugBang => {
+            require_size(token, OPCODE_SIZE)?;
+            DecodedScriptInstruction::SequelEnding
         }
         _ => {
             return Err(ScriptInstructionError::UntranslatedOpcode {
@@ -2132,6 +2139,71 @@ mod tests {
             .join("../..")
             .join("accuracy/cblood_install/cblood")
             .join(name)
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang COD images under output/big-bug-bang/disc"]
+    fn every_authored_sequel_panel_control_decodes() {
+        use crate::code::decode_script_code_for_dialect;
+        use crate::script::{
+            decode_script_dictionary, decode_script_directory, decode_script_state_for_dialect,
+        };
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+        let directory = decode_script_directory(&[]).unwrap();
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let state =
+            decode_script_state_for_dialect(&[], &directory, ScriptDialect::BigBugBang).unwrap();
+        let mut counts = Vec::new();
+        for profile in 1..=17 {
+            let bytes = std::fs::read(root.join(format!("SCRIPT{profile}.COD"))).unwrap();
+            let code = decode_script_code_for_dialect(&bytes, ScriptDialect::BigBugBang).unwrap();
+            let mut count = [0, 0];
+            for token in code.tokens() {
+                match token.opcode().byte() {
+                    SEQUEL_ENDING_OPCODE => {
+                        assert_eq!(
+                            decode_complete_script_instruction(
+                                token,
+                                &state,
+                                &directory,
+                                &dictionary
+                            )
+                            .unwrap(),
+                            DecodedScriptInstruction::SequelEnding
+                        );
+                        count[0] += 1;
+                    }
+                    SEQUENCE_SLOT_ASSIGNMENT_OPCODE => {
+                        decode_script_sequence_slot_assignment(token).unwrap();
+                        count[1] += 1;
+                    }
+                    _ => {}
+                }
+            }
+            counts.push(count);
+        }
+        assert_eq!(
+            counts,
+            [
+                [0, 0],
+                [4, 55],
+                [0, 0],
+                [0, 2],
+                [0, 2],
+                [0, 12],
+                [0, 1],
+                [0, 0],
+                [0, 3],
+                [0, 0],
+                [0, 5],
+                [0, 1],
+                [0, 3],
+                [0, 11],
+                [0, 0],
+                [0, 0],
+                [0, 2]
+            ]
+        );
     }
 
     #[test]

@@ -1,6 +1,9 @@
 //! Bridge presentation panel phase machine and subsystem coordination.
 
-use super::{PresentationChoiceNumber, SequenceSubtitlePlayback};
+use super::{
+    PresentationChoiceNumber, SequelPanelCompletion, SequelPresentationControl,
+    SequenceSubtitlePlayback,
+};
 
 const PANEL_FILL_COLOR: u8 = 224;
 const PANEL_FRAME_COLOR: u8 = 239;
@@ -258,6 +261,8 @@ pub struct PresentationScreenState {
     completion_audio_pending: bool,
     choice_change_animation_requested: bool,
     reverse_resource_variant_restored: bool,
+    sequel_control: Option<SequelPresentationControl>,
+    shutdown_requested: bool,
 }
 
 impl Default for PresentationScreenState {
@@ -281,11 +286,45 @@ impl Default for PresentationScreenState {
             completion_audio_pending: false,
             choice_change_animation_requested: false,
             reverse_resource_variant_restored: false,
+            sequel_control: None,
+            shutdown_requested: false,
         }
     }
 }
 
 impl PresentationScreenState {
+    /// Import sequel CC/D7 state; Commander leaves this absent.
+    pub fn set_sequel_control(&mut self, control: Option<SequelPresentationControl>) {
+        self.sequel_control = control;
+    }
+
+    /// Export the remaining request after this panel has had a chance to consume it.
+    pub const fn sequel_control(&self) -> Option<SequelPresentationControl> {
+        self.sequel_control
+    }
+
+    /// Whether this entry path consumes an explicit script selection before
+    /// invoking media callbacks. Inactive and opening/closing phases retain it.
+    pub fn consumes_script_choice_on_entry(&self) -> bool {
+        self.active && (self.scene_status.queued || self.phase == PresentationPanelPhase::Begin)
+    }
+
+    /// Consume the sequel's scene-list-completed shutdown write.
+    pub fn take_shutdown_requested(&mut self) -> bool {
+        std::mem::take(&mut self.shutdown_requested)
+    }
+
+    fn consume_script_choice(&mut self) {
+        if let Some(slot) = self
+            .sequel_control
+            .as_mut()
+            .and_then(|control| control.requested_choice.take())
+        {
+            self.selected_choice = PresentationChoiceNumber::from_index(slot.index() as u8)
+                .expect("script slot and presentation choice have the same six-slot domain");
+        }
+    }
+
     /// Set whether the bridge presentation panel owns this frame.
     pub fn set_active(&mut self, active: bool) {
         self.active = active;
@@ -538,7 +577,15 @@ pub fn update_presentation_screen<Backend: PresentationScreenBackend>(
         return Ok(PresentationScreenOutcome::Inactive);
     }
     if state.scene_status.queued {
-        if state.accept_input_requested() {
+        let accept = state
+            .sequel_control
+            .map_or(state.accept_input_requested(), |control| {
+                control.accepts_queued_input(state.primary_pressed)
+            });
+        if accept {
+            // Native 0x8C14 replaces the choice before entering the ordinary
+            // input path, which then increments it unless reverse-closing.
+            state.consume_script_choice();
             return Ok(accept_input(state, backend));
         }
         return dispatch_and_pump(
@@ -551,6 +598,7 @@ pub fn update_presentation_screen<Backend: PresentationScreenBackend>(
     match state.phase {
         PresentationPanelPhase::Begin => {
             state.selected_choice = PresentationChoiceNumber::One;
+            state.consume_script_choice();
             state.phase = PresentationPanelPhase::Opening(PresentationPanelStep::One);
             state.text_origin = PresentationTextOrigin::Opening;
             state.panel_hover_restore_requested = true;
@@ -671,6 +719,15 @@ fn dispatch_and_pump<Backend: PresentationScreenBackend>(
             state.current_scene_line = None;
             state.screen_rebuild_pending = true;
             state.phase = PresentationPanelPhase::Transition(PresentationTransitionFrame::One);
+            if let Some(control) = state.sequel_control {
+                match control.completion(state.reverse) {
+                    SequelPanelCompletion::Close => {
+                        state.phase = PresentationPanelPhase::Closing(PresentationPanelStep::Six)
+                    }
+                    SequelPanelCompletion::Shutdown => state.shutdown_requested = true,
+                    SequelPanelCompletion::Transition => {}
+                }
+            }
             return Ok(PresentationScreenOutcome::SceneLinesCompleted);
         };
         state.next_scene_line += 1;
@@ -870,6 +927,131 @@ mod tests {
         fn reset_ship_camera(&mut self) {
             self.record("ship_3d_hud_palette_snapshot_and_camera_reset");
         }
+    }
+
+    #[test]
+    fn sequel_panel_respects_ending_selection_and_whole_list_completion() {
+        use commander_blood_formats::instruction::ScriptSequenceSlot;
+        let records = std::array::from_fn(|_| None::<Box<[u8]>>);
+        for ending in [false, true] {
+            for pending in [None, ScriptSequenceSlot::decode(3)] {
+                for primary in [false, true] {
+                    let control = SequelPresentationControl {
+                        ending_active: ending,
+                        requested_choice: pending,
+                    };
+                    let mut state = PresentationScreenState::default();
+                    state.set_active(true);
+                    state.set_phase(PresentationPanelPhase::Active);
+                    state.set_sequel_control(Some(control));
+                    state.set_primary_pressed(primary);
+                    state.set_scene_status(PresentationSceneStatus {
+                        queued: true,
+                        frame_presented: true,
+                    });
+                    let mut backend = oracle_backend("queued_scene_waits_without_frame");
+                    let result = update_presentation_screen(
+                        &mut state,
+                        &records,
+                        &QUEUED_SCENE_LINK,
+                        &mut backend,
+                    )
+                    .unwrap();
+                    let accepts = control.accepts_queued_input(primary);
+                    assert_eq!(result == PresentationScreenOutcome::InputAccepted, accepts);
+                    assert_eq!(
+                        backend
+                            .calls
+                            .iter()
+                            .any(|call| call.name == "presentation_update_1fb2"),
+                        accepts
+                    );
+                    assert!(!state.take_shutdown_requested());
+                    assert_eq!(state.sequel_control().unwrap().requested_choice, None);
+                    if pending.is_some() {
+                        assert_eq!(
+                            state.selected_choice().index(),
+                            3,
+                            "queued CC selects then advances the channel"
+                        );
+                    }
+                }
+            }
+            for reverse in [false, true] {
+                let mut state = PresentationScreenState::default();
+                state.set_active(true);
+                state.set_reverse(reverse);
+                state.set_phase(PresentationPanelPhase::Active);
+                state.set_sequel_control(Some(SequelPresentationControl {
+                    ending_active: ending,
+                    requested_choice: None,
+                }));
+                state.scene_lines = vec![Box::from(&b"LAST"[..])];
+                state.set_scene_status(PresentationSceneStatus {
+                    queued: true,
+                    frame_presented: false,
+                });
+                let mut backend = oracle_backend("queued_scene_waits_without_frame");
+                backend.dispatch_results = VecDeque::from([
+                    PresentationSceneStatus::default(),
+                    PresentationSceneStatus {
+                        queued: true,
+                        frame_presented: true,
+                    },
+                ]);
+                assert_eq!(
+                    update_presentation_screen(
+                        &mut state,
+                        &records,
+                        &QUEUED_SCENE_LINK,
+                        &mut backend
+                    )
+                    .unwrap(),
+                    PresentationScreenOutcome::WaitingForScene
+                );
+                assert!(
+                    !state.take_shutdown_requested(),
+                    "another scene line still owns the panel"
+                );
+                assert_eq!(
+                    update_presentation_screen(
+                        &mut state,
+                        &records,
+                        &QUEUED_SCENE_LINK,
+                        &mut backend
+                    )
+                    .unwrap(),
+                    PresentationScreenOutcome::SceneLinesCompleted
+                );
+                assert_eq!(state.take_shutdown_requested(), ending && !reverse);
+                assert!(
+                    !state.take_shutdown_requested(),
+                    "shutdown is a one-shot output"
+                );
+                assert_eq!(
+                    state.phase(),
+                    if !reverse && !ending {
+                        PresentationPanelPhase::Closing(PresentationPanelStep::Six)
+                    } else {
+                        PresentationPanelPhase::Transition(PresentationTransitionFrame::One)
+                    }
+                );
+            }
+        }
+        let mut state = PresentationScreenState::default();
+        state.set_active(true);
+        state.set_sequel_control(Some(SequelPresentationControl {
+            ending_active: true,
+            requested_choice: ScriptSequenceSlot::decode(5),
+        }));
+        let mut backend = oracle_backend("phase_zero_initializes");
+        update_presentation_screen(&mut state, &records, &QUEUED_SCENE_LINK, &mut backend).unwrap();
+        assert_eq!(
+            state.selected_choice().index(),
+            4,
+            "Begin consumes CC without incrementing it"
+        );
+        assert_eq!(state.sequel_control().unwrap().requested_choice, None);
     }
 
     #[test]

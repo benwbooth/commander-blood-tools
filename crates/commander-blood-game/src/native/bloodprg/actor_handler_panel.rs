@@ -2,7 +2,7 @@
 
 use super::{
     PresentationLine, PresentationLineFlags, PresentationLineOutcome, PresentationLinePlayback,
-    PresentationLineStepper,
+    PresentationLineStepper, SequelPanelActorAction, SequelPresentationControl,
 };
 
 /// Actor-presentation state published while the panel-close line plays.
@@ -36,6 +36,11 @@ pub struct PanelCloseActorState {
 
 /// Line, queue, and entity services used by the panel-close actor.
 pub trait PanelCloseActorBackend: PresentationLineStepper {
+    /// Sequel-only CC/D7 controls; absent for Commander.
+    fn sequel_panel_control(&self) -> Option<SequelPresentationControl> {
+        None
+    }
+
     /// Request the panel-close hand animation through the shared selector.
     fn request_panel_close_hand_animation(&mut self);
 
@@ -53,6 +58,8 @@ pub trait PanelCloseActorBackend: PresentationLineStepper {
 /// Terminal path taken by one panel-close actor update.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PanelCloseActorOutcome {
+    /// D7 blocks a ready actor without an explicit CC screen request.
+    EndingBlocked,
     /// Secondary panel mode is disabled.
     Disabled,
     /// The line is present but not ready.
@@ -81,8 +88,17 @@ pub fn update_panel_close_actor<Backend: PanelCloseActorBackend>(
 
     line.flags.present = true;
     let outcome = if line.flags.ready {
-        state.presentation = PanelCloseActorPresentation::Presenting;
-        backend.request_panel_close_hand_animation();
+        let action = backend.sequel_panel_control().map_or(
+            SequelPanelActorAction::Ordinary,
+            SequelPresentationControl::actor_action,
+        );
+        if action != SequelPanelActorAction::ScriptSelection {
+            state.presentation = PanelCloseActorPresentation::Presenting;
+            backend.request_panel_close_hand_animation();
+        }
+        if action == SequelPanelActorAction::EndingBlocked {
+            return Ok(PanelCloseActorOutcome::EndingBlocked);
+        }
         if state.panel_active && backend.begin_panel_close_if_open() {
             if state.scene_queued {
                 backend.finalize_scene_presentation();
@@ -154,6 +170,7 @@ mod tests {
 
     #[derive(Default)]
     struct OracleBackend {
+        sequel: Option<SequelPresentationControl>,
         line_called: bool,
         completed: bool,
         finalizer_called: bool,
@@ -180,6 +197,10 @@ mod tests {
     }
 
     impl PanelCloseActorBackend for OracleBackend {
+        fn sequel_panel_control(&self) -> Option<SequelPresentationControl> {
+            self.sequel
+        }
+
         fn request_panel_close_hand_animation(&mut self) {
             self.hand_animation_requested = true;
         }
@@ -198,6 +219,54 @@ mod tests {
 
         fn reset_presentation_entity(&mut self) {
             self.entity_called = true;
+        }
+    }
+
+    #[test]
+    fn sequel_ending_blocks_ready_actor_but_not_an_explicit_script_selection() {
+        use commander_blood_formats::instruction::ScriptSequenceSlot;
+        for ending in [false, true] {
+            for pending in [None, ScriptSequenceSlot::decode(3)] {
+                let mut line = PresentationLine {
+                    flags: decode_line_flags(12),
+                    resource: PresentationResourceId::new(1),
+                    terminal_frame: 4,
+                    frame: 1,
+                    position: [0, 0],
+                };
+                let mut state = PanelCloseActorState {
+                    panel_active: true,
+                    scene_queued: true,
+                    mouse_primary_pressed: true,
+                    mouse_press_pending: true,
+                    ..PanelCloseActorState::default()
+                };
+                let mut playback = PresentationLinePlayback::default();
+                let mut backend = OracleBackend {
+                    sequel: Some(SequelPresentationControl {
+                        ending_active: ending,
+                        requested_choice: pending,
+                    }),
+                    ..OracleBackend::default()
+                };
+                let result = update_panel_close_actor(
+                    true,
+                    &mut line,
+                    &mut playback,
+                    &mut state,
+                    &mut backend,
+                )
+                .unwrap();
+                let blocked = ending && pending.is_none();
+                assert_eq!(result == PanelCloseActorOutcome::EndingBlocked, blocked);
+                assert!(line.flags.present);
+                assert_eq!(backend.line_called, !blocked);
+                assert_eq!(backend.finalizer_called, !blocked);
+                assert_eq!(backend.hand_animation_requested, pending.is_none());
+                assert_eq!(state.mouse_primary_pressed, blocked);
+                assert_eq!(state.mouse_press_pending, blocked);
+                assert_eq!(state.completion_latched, !blocked);
+            }
         }
     }
 

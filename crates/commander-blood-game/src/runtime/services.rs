@@ -2367,6 +2367,19 @@ impl<'window> ModernGameServices<'window> {
         Ok(outcome)
     }
 
+    /// Expose sequel controls only when the loaded state has the sequel dialect.
+    pub(crate) fn sequel_presentation_control(
+        &self,
+    ) -> Option<crate::native::bloodprg::SequelPresentationControl> {
+        self.runtime
+            .current_profile()
+            .filter(|profile| {
+                profile.state().dialect()
+                    == commander_blood_formats::code::ScriptDialect::BigBugBang
+            })
+            .map(|_| self.scripts.sequel_presentation_control())
+    }
+
     /// Advance the bridge presentation panel from live script and pointer state.
     pub fn update_presentation_screen(
         &mut self,
@@ -2389,6 +2402,14 @@ impl<'window> ModernGameServices<'window> {
         let finale_requested = self.scripts.sequence_presentation().finale_requested;
         screen
             .state_mut()
+            .set_sequel_control(self.sequel_presentation_control());
+        if screen.state().sequel_control().is_some()
+            && screen.state().consumes_script_choice_on_entry()
+        {
+            self.scripts.consume_sequel_presentation_choice();
+        }
+        screen
+            .state_mut()
             .set_primary_pressed(primary_pointer_pressed);
         let outcome = screen.update(
             self,
@@ -2397,6 +2418,7 @@ impl<'window> ModernGameServices<'window> {
             scruter_jo_record,
         );
         let presentation_text_origin = screen.state().text_origin();
+        self.script_finale_shutdown_pending |= screen.state_mut().take_shutdown_requested();
         latch_script_finale_completion(
             &mut self.script_finale_shutdown_pending,
             finale_requested,
