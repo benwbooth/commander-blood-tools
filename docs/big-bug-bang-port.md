@@ -60,7 +60,7 @@ An explicit `CBLOOD_DATA` source is now resolved before default cached Commander
 data, so a requested game is not silently replaced by the cached one.
 
 Production path loading explicitly rejects a sequel manifest before calling
-Commander-only font/presentation decoders or starting media conversion. The new
+remaining Commander-only presentation decoders or starting media conversion. The new
 native catalog selection is used by the existing Commander loader and by the
 sequel imported-profile integration test. The rest of the sequel runtime still
 needs connecting; rejecting it is not counted as game support.
@@ -88,17 +88,20 @@ production one-frame run against this imported tree returned the explicit
 not-yet-integrated sequel runtime error before opening SDL. That negative check
 verifies the guard, not gameplay.
 
-### Sequel Font and Projection Table Audit
+### Sequel Fonts and Bridge Tables
 
 Native references and direct original-binary comparisons establish the following
-table locations. These are next-step decoder inputs, **not yet connected sequel
-font rendering**. All offsets below refer to the analyzed `BLOOD2PG.EXE` file;
+table locations. Game-specific decoders now read these into owned, flat tables;
+the font tables feed the existing RGB glyph importer in integration tests.
+This does **not** establish complete sequel UI behavior or enable its production
+loader. All offsets below refer to the analyzed `BLOOD2PG.EXE` file;
 its global-data base is file 0xF7F0.
 
 | Table | Map/Start | Advances | Glyphs | Extent |
 | --- | --- | --- | --- | --- |
 | Bridge anchors | 0x14AC9 | n/a | n/a | 66 consumed bytes, identical to Commander |
 | Bridge trigonometry | 0x14B05 | n/a | n/a | 180 four-byte samples, identical to Commander |
+| Navigation actors | 0x124AB | n/a | n/a | Six 24-byte records with sequel resource IDs/flags |
 | Small font | 0x1709E | n/a | 0x1711E | 128 map bytes, 42 five-row glyphs |
 | Subtitle font | 0x171F0 | n/a | 0x172D8 | 232 map bytes, 66 eight-row glyphs |
 | Square font | 0x174E8 | 0x175D0 | 0x17602 | 232 map bytes, 49 reachable glyphs |
@@ -115,8 +118,69 @@ The sequel map maxima, excluding sentinel 255, independently confirm reachable
 glyph indices 41, 65, 48 and 86 respectively. Commander has only 176 entries in
 its proportional maps and 55/48/86 subtitle/square/main glyphs. Simply relocating
 its fixed arrays would omit sequel characters. The font audit also found changed
-main-font advances; port their actual values rather than assuming shared glyph
-bitmaps imply identical text layout. No sequel font runtime oracle was run yet.
+main-font advances. The decoder preserves their actual values rather than assuming
+shared glyph bitmaps imply identical text layout. Main glyphs 69/71 advance by
+5/8 respectively in the sequel, versus 8/5 in Commander. Variable-sized owned
+font tables retain each game's exact dimensions; they neither truncate sequel
+characters nor pad Commander tables. The small font remains identical.
+
+Native text measurement indexes advances even for map sentinel 255 and subtracts
+two with unsigned 16-bit wrapping. Import retains the original 256-byte lookup
+region for each measurement face. This is serialized lookup data, not an emulated
+memory space. Display advances remain separate, signed-byte glyph tables.
+
+`re/tools/big_bug_bang_font_width_oracle.py` executes the **complete original**
+procedure at file 0x344D through its far return at 0x3485, with original font
+tables and synthetic strings. No native call is replaced. It guards the executable
+SHA-256, execution range, register preservation, source/data immutability, and
+stack-write range. Its 492 vectors cover both faces, every input byte 1 through
+231, empty/NUL-terminated text, extended characters, and width overflow. The Rust
+measurement test matches all 492 original results. The vectors contain synthetic
+strings and measured widths, not original executable code or glyph bitmaps.
+
+Separate RGB integration tests compare imported glyph coverage, subtitle reveal,
+and channel masks against our **C-derived Rust raster functions** for all mapped
+sequel characters. They include byte 225, beyond Commander's map, and all 89
+mapped square-cap characters. These are not original-sequel framebuffer captures
+and must not be presented as equivalent evidence. Native-table tests additionally
+verify the bridge anchors, trigonometry and all six actor records against original
+bytes. Actor resource IDs are 17, 13, 15, 16, 19 and 18; reusing Commander's IDs
+would be incorrect even though the projection tables match.
+
+The assembly comparison also found an **unported destination-selection branch**
+in the sequel planar square-cap routine (entry 0x37A8). At 0x37D0 it loads the
+destination from GS:0x55E9, tests word GS:0x6B94, and, when zero, selects GS:0x55ED
+instead. Commander has only the first-buffer selection. The host meaning and
+caller lifecycle of this selector still require investigation; glyph/width tests
+do not validate that routing. The sequel planar-main entry is 0x38FC.
+
+`GameVariant` selects and fingerprint-checks both new decoders, and the Commander
+runtime now accesses fonts/bridge tables through that same identity boundary.
+The sequel production-loader guard remains in place until remaining presentation,
+menu and host-state behavior is implemented from evidence.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_font_width_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  output/big-bug-bang/font-width-verified.jsonl
+cmp re/tools/oracle_vectors/big_bug_bang_font_width.jsonl \
+  output/big-bug-bang/font-width-verified.jsonl
+nix develop -c cargo test -p commander-blood-formats --lib -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib native::bloodprg::font::tests -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib ui::tests -- --include-ignored
+```
+
+Original-disc font/bridge tests are explicitly ignored by default and were
+enabled for this verification. Missing original assets are not counted as a pass.
+
+Verification for this slice (2026-09-05): regenerated all 492 width vectors and
+compared the output byte-for-byte with the saved fixture. All 119 formats library
+tests passed with original corpus checks enabled. All ten native font tests and
+eight UI-filtered tests passed with ignored checks explicitly enabled. The full
+game library passed 912 tests, with 11 ignored, serially on a fresh private Xvfb
+display; its server was reaped afterward. Game all-targets checking passed.
+Existing unrelated Commander runtime edits were present during these checks but
+are excluded from this checkpoint. No full-game sequel parity claim follows.
 
 ### Explicit COD Dialects
 

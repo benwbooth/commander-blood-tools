@@ -119,13 +119,13 @@ impl DialogueUiAssets {
         let rgb =
             source[INLINE_DIALOGUE_COLOR].map(|component| (component << 2) | (component >> 4));
         Ok(Self {
-            character_map: Box::from(fonts.subtitle_character_map.as_slice()),
+            character_map: fonts.subtitle_character_map.clone(),
             glyphs,
             colors,
             channels,
             inline_font,
-            inline_character_map: Box::from(fonts.main_character_map.as_slice()),
-            inline_advances: Box::from(fonts.main_advances.as_slice()),
+            inline_character_map: fonts.main_character_map.clone(),
+            inline_advances: fonts.main_advances.clone(),
             inline_color: [rgb[0], rgb[1], rgb[2], OPAQUE],
             panel_fonts,
         })
@@ -408,7 +408,7 @@ impl ChoiceUiAssets {
             })
             .collect::<Result<Vec<_>>>()?;
         Ok(Self {
-            character_map: Box::from(fonts.square_caps_character_map.as_slice()),
+            character_map: fonts.square_caps_character_map.clone(),
             glyphs,
             text_colors: colors,
         })
@@ -603,18 +603,22 @@ mod tests {
 
     #[test]
     fn rgb_dialogue_glyphs_and_channel_masks_match_native_rasters() {
-        use crate::native::bloodprg::{
-            FontPoint, FontVerticalBand, draw_planar_dialogue_text, draw_subtitle_reveal_line,
-        };
         let fonts = commander_blood_formats::bloodprg::decode_bloodprg_font_resources(
             include_bytes!("../../../re/bin/BLOODPRG.EXE"),
         )
         .unwrap();
+        assert_dialogue_font_rasters(&fonts);
+    }
+
+    fn assert_dialogue_font_rasters(fonts: &BloodprgFontResources) {
+        use crate::native::bloodprg::{
+            FontPoint, FontVerticalBand, draw_planar_dialogue_text, draw_subtitle_reveal_line,
+        };
         let mut colors = [[17, 31, 47]; 256];
         colors[255] = [63, 63, 63];
         colors[254] = [40, 30, 20];
         colors[253] = [10, 20, 30];
-        let assets = DialogueUiAssets::import(&fonts, &colors).unwrap();
+        let assets = DialogueUiAssets::import(fonts, &colors).unwrap();
         let mut ui = RgbaUiOverlay::new(320, 200);
         let mut reference = vec![0; 320 * 200];
         let assert_raster = |ui: &RgbaUiOverlay, reference: &[u8]| {
@@ -636,7 +640,7 @@ mod tests {
                 let text = [byte as u8];
                 let original = draw_subtitle_reveal_line(
                     &mut reference,
-                    &fonts,
+                    fonts,
                     &[byte as u8, b'\r'],
                     FontPoint { x: 20, y: 20 },
                     cursor as i32,
@@ -662,7 +666,7 @@ mod tests {
             let text = [byte as u8, byte as u8, 0];
             let original = draw_planar_dialogue_text(
                 &mut reference,
-                &fonts,
+                fonts,
                 &text,
                 FontPoint { x: 20, y: 20 },
                 FontVerticalBand {
@@ -721,15 +725,23 @@ mod tests {
     #[test]
     #[ignore = "requires the original BLOODPRG.EXE font data"]
     fn every_imported_square_cap_glyph_matches_the_c_raster_coverage() {
-        use crate::native::bloodprg::{FontPoint, FontVerticalBand, draw_square_caps_text};
         use commander_blood_formats::bloodprg::decode_bloodprg_font_resources;
         let executable =
             std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../re/bin/BLOODPRG.EXE");
         let bytes =
             std::fs::read(executable).expect("original executable font fixture is required");
         let fonts = decode_bloodprg_font_resources(&bytes).unwrap();
+        const SUPPORTED_SQUARE_CAP_CHARACTERS: usize = 86;
+        assert_eq!(
+            assert_square_font_rasters(&fonts),
+            SUPPORTED_SQUARE_CAP_CHARACTERS
+        );
+    }
+
+    fn assert_square_font_rasters(fonts: &BloodprgFontResources) -> usize {
+        use crate::native::bloodprg::{FontPoint, FontVerticalBand, draw_square_caps_text};
         let colors = [[17, 31, 47]; 256];
-        let assets = ChoiceUiAssets::import(&fonts, &colors).unwrap();
+        let assets = ChoiceUiAssets::import(fonts, &colors).unwrap();
         let mut overlay = RgbaUiOverlay::new(320, 200);
         let mut reference = vec![0; 320 * 200];
         let mut checked = 0;
@@ -746,7 +758,7 @@ mod tests {
                 .unwrap();
             draw_square_caps_text(
                 &mut reference,
-                &fonts,
+                fonts,
                 &text,
                 FontPoint { x: 20, y: 20 },
                 FontVerticalBand {
@@ -764,8 +776,32 @@ mod tests {
             }
             checked += 1;
         }
-        const SUPPORTED_SQUARE_CAP_CHARACTERS: usize = 86;
-        assert_eq!(checked, SUPPORTED_SQUARE_CAP_CHARACTERS);
+        checked
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang fonts under output/big-bug-bang/disc"]
+    fn sequel_expanded_fonts_survive_rgb_import_and_c_derived_rasterization() {
+        let executable = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE");
+        let bytes = std::fs::read(executable).unwrap();
+        let fonts = crate::game::GameVariant::BigBugBang
+            .decode_fonts(&bytes)
+            .unwrap();
+        assert_eq!(fonts.subtitle_character_map.len(), 232);
+        assert_dialogue_font_rasters(&fonts);
+        assert_eq!(assert_square_font_rasters(&fonts), 89);
+
+        // The final square/main glyphs are mapped by byte 225, beyond all
+        // Commander proportional maps. They must remain visible after import.
+        let colors = [[17, 31, 47]; 256];
+        let assets = DialogueUiAssets::import(&fonts, &colors).unwrap();
+        let mut ui = RgbaUiOverlay::new(320, 200);
+        let width = assets
+            .draw_main_line(&mut ui, &[225], [20, 20], PANEL_TEXT_COLORS[0] as u8)
+            .unwrap();
+        assert_eq!(width, u16::from(fonts.main_advances[86]));
+        assert!(ui.pixels().chunks_exact(4).any(|pixel| pixel[3] != 0));
     }
 
     #[test]

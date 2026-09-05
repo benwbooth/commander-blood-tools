@@ -5,7 +5,7 @@ use std::ops::Range;
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::alien::{AlienAsset, AlienXdbKind};
 use commander_blood_formats::archive::BloodResourceName;
-use commander_blood_formats::bloodprg::{BloodprgFontResources, decode_bloodprg_bridge_resources};
+use commander_blood_formats::bloodprg::BloodprgFontResources;
 use commander_blood_formats::descript::{DescriptBackgroundSlot, DescriptCharacterBackground};
 use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
@@ -488,7 +488,11 @@ impl<'window> ModernGameServices<'window> {
         self.runtime
             .rebuild_bridge_sprite_remap_tables()
             .context("building bridge sprite remap tables")?;
-        let resources = decode_bloodprg_bridge_resources(self.runtime.data().executable())
+        let resources = self
+            .runtime
+            .data()
+            .game()
+            .decode_bridge_resources(self.runtime.data().executable())
             .context("decoding bridge projection resources")?;
         let nav_actor_slots = resources
             .nav_actor_records

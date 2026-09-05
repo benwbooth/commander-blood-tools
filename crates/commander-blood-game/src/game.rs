@@ -1,6 +1,11 @@
 //! Game identity shared by asset imports, script dialects and persistent storage.
 
 use anyhow::{Context, Result, bail};
+use commander_blood_formats::bloodprg::{
+    BloodprgBridgeResources, BloodprgFontResources, decode_blood2pg_bridge_resources,
+    decode_blood2pg_font_resources, decode_bloodprg_bridge_resources,
+    decode_bloodprg_font_resources,
+};
 use commander_blood_formats::code::ScriptDialect;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -75,7 +80,7 @@ impl GameVariant {
 
     /// Decode this game's executable-resident resource identities.
     pub fn decode_resource_catalog(self, executable: &[u8]) -> Result<OriginalResourceCatalog> {
-        self.validate_catalog_build(executable)?;
+        self.validate_native_build(executable)?;
         match self {
             Self::CommanderBlood => OriginalResourceCatalog::decode_bloodprg(executable),
             Self::BigBugBang => OriginalResourceCatalog::decode_blood2pg(executable),
@@ -85,7 +90,7 @@ impl GameVariant {
 
     /// Decode this game's executable-resident profile table and VM dialect.
     pub fn decode_profile_catalog(self, executable: &[u8]) -> Result<OriginalScriptProfileCatalog> {
-        self.validate_catalog_build(executable)?;
+        self.validate_native_build(executable)?;
         match self {
             Self::CommanderBlood => OriginalScriptProfileCatalog::decode_bloodprg(executable),
             Self::BigBugBang => OriginalScriptProfileCatalog::decode_blood2pg(executable),
@@ -93,14 +98,34 @@ impl GameVariant {
         .context("decoding game script-profile catalog")
     }
 
-    fn validate_catalog_build(self, executable: &[u8]) -> Result<()> {
+    /// Decode the game's complete font maps, advances, and glyph bitmaps.
+    pub fn decode_fonts(self, executable: &[u8]) -> Result<BloodprgFontResources> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_font_resources(executable),
+            Self::BigBugBang => decode_blood2pg_font_resources(executable),
+        }
+        .context("decoding game font resources")
+    }
+
+    /// Decode typed bridge projection tables and initial navigation actor records.
+    pub fn decode_bridge_resources(self, executable: &[u8]) -> Result<BloodprgBridgeResources> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_bridge_resources(executable),
+            Self::BigBugBang => decode_blood2pg_bridge_resources(executable),
+        }
+        .context("decoding game bridge resources")
+    }
+
+    fn validate_native_build(self, executable: &[u8]) -> Result<()> {
         // Preserve Commander's existing decoder contract. Only one sequel build
         // has been analyzed; a filename alone cannot authorize its fixed offsets.
         if self == Self::BigBugBang {
             let actual = format!("{:x}", Sha256::digest(executable));
             if actual != SUPPORTED_SEQUEL_EXECUTABLE_SHA256 {
                 bail!(
-                    "unrecognized Big Bug Bang executable SHA-256 {actual}; native catalog offsets are not verified for this build"
+                    "unrecognized Big Bug Bang executable SHA-256 {actual}; native table offsets are not verified for this build"
                 );
             }
         }
@@ -151,6 +176,12 @@ mod tests {
         assert!(
             GameVariant::BigBugBang
                 .decode_profile_catalog(&bytes)
+                .is_err()
+        );
+        assert!(GameVariant::BigBugBang.decode_fonts(&bytes).is_err());
+        assert!(
+            GameVariant::BigBugBang
+                .decode_bridge_resources(&bytes)
                 .is_err()
         );
     }

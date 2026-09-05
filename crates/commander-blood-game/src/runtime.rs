@@ -93,8 +93,8 @@ use commander_blood_formats::bloodprg::{
     BloodprgBridgeMenuText, BloodprgConfirmDialogRegions, BloodprgFontResources,
     BloodprgHyperspaceResources, BloodprgNavigationResources, BloodprgPresentationCatalog,
     decode_bloodprg_bridge_menu_text, decode_bloodprg_confirm_dialog_regions,
-    decode_bloodprg_font_resources, decode_bloodprg_hyperspace_resources,
-    decode_bloodprg_navigation_resources, decode_bloodprg_presentation_catalog,
+    decode_bloodprg_hyperspace_resources, decode_bloodprg_navigation_resources,
+    decode_bloodprg_presentation_catalog,
 };
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
@@ -440,7 +440,10 @@ impl OriginalGameData {
             .context("decoding camera-travel hyperspace resources")?;
         let navigation_resources = decode_bloodprg_navigation_resources(&executable)
             .context("decoding navigation labels and radial-wipe endpoints")?;
-        let font_resources = decode_bloodprg_font_resources(&executable)
+        let font_resources = paths
+            .manifest()
+            .game
+            .decode_fonts(&executable)
             .context("decoding original executable font resources")?;
         let presentation_catalog = decode_bloodprg_presentation_catalog(&executable)
             .context("decoding executable presentation-line catalog")?;
@@ -524,6 +527,11 @@ impl OriginalGameData {
     /// Paths owning this loaded data set.
     pub const fn paths(&self) -> &OriginalGameDataPaths {
         &self.paths
+    }
+
+    /// Game identity owning these resources and their native executable layout.
+    pub const fn game(&self) -> GameVariant {
+        self.paths.manifest.game
     }
 
     /// Original executable bytes retained as serialized tables, not executable memory.

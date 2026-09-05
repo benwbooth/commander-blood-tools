@@ -193,11 +193,11 @@ pub fn measure_game_text_width(
 ) -> Result<u16, GameFontError> {
     let (character_map, measurement_advances) = match face {
         GameFontFace::SquareCaps => (
-            fonts.square_caps_character_map.as_slice(),
+            fonts.square_caps_character_map.as_ref(),
             fonts.square_caps_measurement_advances.as_slice(),
         ),
         GameFontFace::Main => (
-            fonts.main_character_map.as_slice(),
+            fonts.main_character_map.as_ref(),
             fonts.main_measurement_advances.as_slice(),
         ),
     };
@@ -816,12 +816,61 @@ fn apply_writes(framebuffer: &mut [u8], writes: &[(usize, u8)]) {
 
 #[cfg(test)]
 mod tests {
+    use commander_blood_formats::bloodprg::decode_bloodprg_font_resources;
     use serde::Deserialize;
     use sha2::{Digest, Sha256};
 
     use super::*;
-    use commander_blood_formats::bloodprg::decode_bloodprg_font_resources;
 
+    #[derive(Deserialize)]
+    struct SequelWidthOracle {
+        name: String,
+        face: String,
+        text: Vec<u8>,
+        width: u16,
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang fonts under output/big-bug-bang/disc"]
+    fn sequel_text_width_matches_complete_native_procedure_vectors() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE");
+        let bytes = std::fs::read(path).unwrap();
+        let fonts = crate::game::GameVariant::BigBugBang
+            .decode_fonts(&bytes)
+            .unwrap();
+        let vectors: Vec<SequelWidthOracle> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_font_width.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(vectors.len(), 492);
+        let mut face_counts = [0; 2];
+        let mut covered_characters = [[false; 232]; 2];
+        for vector in vectors {
+            let (face, index) = match vector.face.as_str() {
+                "square_caps" => (GameFontFace::SquareCaps, 0),
+                "main" => (GameFontFace::Main, 1),
+                other => panic!("unknown native font face {other}"),
+            };
+            face_counts[index] += 1;
+            if let [character] = vector.text.as_slice() {
+                covered_characters[index][usize::from(*character)] = true;
+            }
+            assert_eq!(
+                measure_game_text_width(&vector.text, face, &fonts).unwrap(),
+                vector.width,
+                "{}",
+                vector.name
+            );
+        }
+        assert_eq!(face_counts, [246, 246]);
+        assert!(
+            covered_characters
+                .iter()
+                .all(|face| face[1..].iter().all(|&covered| covered))
+        );
+    }
     const TEXT_WIDTH_ORACLE_COUNT: usize = 21;
     const BIOS_DRAW_ORACLE_COUNT: usize = 8;
     const BIOS_DRAW_EXACT_HASH_COUNT: usize = 5;

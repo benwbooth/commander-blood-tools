@@ -25,6 +25,14 @@ pub const BLOODPRG_MAIN_FONT_GLYPH_COUNT: usize = 86;
 pub const BLOODPRG_SUBTITLE_FONT_GLYPH_COUNT: usize = 55;
 /// Number of compact small-font glyphs embedded in the executable.
 pub const BLOODPRG_SMALL_FONT_GLYPH_COUNT: usize = 42;
+/// Byte-to-glyph entries in each sequel proportional/subtitle map.
+pub const BLOOD2PG_PROPORTIONAL_FONT_CHARACTER_COUNT: usize = 232;
+/// Reachable square-cap glyphs in the sequel, including its extra character.
+pub const BLOOD2PG_SQUARE_CAPS_GLYPH_COUNT: usize = 49;
+/// Reachable main dialogue glyphs in the sequel.
+pub const BLOOD2PG_MAIN_FONT_GLYPH_COUNT: usize = 87;
+/// Eight-row subtitle glyphs in the sequel.
+pub const BLOOD2PG_SUBTITLE_FONT_GLYPH_COUNT: usize = 66;
 /// Number of presentation-line templates indexed by the native scene dispatcher.
 pub const BLOODPRG_PRESENTATION_LINE_COUNT: usize = 45;
 /// Number of authored line IDs allowed to exceed the ordinary 130-row presentation band.
@@ -107,9 +115,11 @@ const SQUARE_CAPS_GLYPH_DATA_OFFSET: usize = 0x7442;
 const MAIN_FONT_CHARACTER_MAP_DATA_OFFSET: usize = 0x7802;
 const MAIN_FONT_ADVANCE_DATA_OFFSET: usize = 0x78B2;
 const MAIN_FONT_GLYPH_DATA_OFFSET: usize = 0x7908;
+#[cfg(test)]
 const SQUARE_CAPS_GLYPH_BYTE_COUNT: usize =
     BLOODPRG_SQUARE_CAPS_GLYPH_COUNT * SQUARE_CAPS_GLYPH_HEIGHT * SQUARE_CAPS_ROW_BYTE_COUNT;
 const MAIN_FONT_GLYPH_BYTE_COUNT: usize = BLOODPRG_MAIN_FONT_GLYPH_COUNT * MAIN_FONT_GLYPH_HEIGHT;
+#[cfg(test)]
 const SUBTITLE_FONT_GLYPH_BYTE_COUNT: usize =
     BLOODPRG_SUBTITLE_FONT_GLYPH_COUNT * SUBTITLE_FONT_GLYPH_HEIGHT;
 const SMALL_FONT_GLYPH_BYTE_COUNT: usize =
@@ -117,6 +127,11 @@ const SMALL_FONT_GLYPH_BYTE_COUNT: usize =
 const PROJECTION_ANCHOR_FILE_OFFSET: usize =
     BLOODPRG_DATA_FILE_OFFSET + BRIDGE_PROJECTION_ANCHOR_DATA_OFFSET;
 const TRIGONOMETRY_FILE_OFFSET: usize = BLOODPRG_DATA_FILE_OFFSET + BRIDGE_TRIGONOMETRY_DATA_OFFSET;
+// Native sequel projector 0xB337, matrix builder 0xB058 and actor dispatcher
+// use these independently recovered positions, not a universal relocation delta.
+const BLOOD2PG_PROJECTION_ANCHOR_FILE_OFFSET: usize = 0x14AC9;
+const BLOOD2PG_TRIGONOMETRY_FILE_OFFSET: usize = 0x14B05;
+const BLOOD2PG_NAV_ACTOR_RECORDS_FILE_OFFSET: usize = 0x124AB;
 const NAV_ACTOR_RECORDS_FILE_OFFSET: usize =
     BLOODPRG_DATA_FILE_OFFSET + NAV_ACTOR_RECORDS_DATA_OFFSET;
 const CONFIRM_DIALOG_YES_REGION_FILE_OFFSET: usize =
@@ -142,10 +157,67 @@ const MAIN_FONT_CHARACTER_MAP_FILE_OFFSET: usize =
 const MAIN_FONT_ADVANCE_FILE_OFFSET: usize =
     BLOODPRG_DATA_FILE_OFFSET + MAIN_FONT_ADVANCE_DATA_OFFSET;
 const MAIN_FONT_GLYPH_FILE_OFFSET: usize = BLOODPRG_DATA_FILE_OFFSET + MAIN_FONT_GLYPH_DATA_OFFSET;
+#[cfg(test)]
 const REQUIRED_EXECUTABLE_LENGTH: usize = TRIGONOMETRY_FILE_OFFSET
     + BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT * TRIGONOMETRY_SAMPLE_BYTE_COUNT;
 const FONT_REQUIRED_EXECUTABLE_LENGTH: usize =
     MAIN_FONT_GLYPH_FILE_OFFSET + MAIN_FONT_GLYPH_BYTE_COUNT;
+
+struct ExecutableFontLayout {
+    small_map: usize,
+    small_glyphs: usize,
+    proportional_map_count: usize,
+    subtitle_map: usize,
+    subtitle_glyphs: usize,
+    subtitle_glyph_count: usize,
+    square_map: usize,
+    square_advances: usize,
+    square_glyphs: usize,
+    square_glyph_count: usize,
+    main_map: usize,
+    main_advances: usize,
+    main_glyphs: usize,
+    main_glyph_count: usize,
+    required_length: usize,
+}
+
+const COMMANDER_FONT_LAYOUT: ExecutableFontLayout = ExecutableFontLayout {
+    small_map: SMALL_FONT_CHARACTER_MAP_FILE_OFFSET,
+    small_glyphs: SMALL_FONT_GLYPH_FILE_OFFSET,
+    proportional_map_count: BLOODPRG_PROPORTIONAL_FONT_CHARACTER_COUNT,
+    subtitle_map: SUBTITLE_FONT_CHARACTER_MAP_FILE_OFFSET,
+    subtitle_glyphs: SUBTITLE_FONT_GLYPH_FILE_OFFSET,
+    subtitle_glyph_count: BLOODPRG_SUBTITLE_FONT_GLYPH_COUNT,
+    square_map: SQUARE_CAPS_CHARACTER_MAP_FILE_OFFSET,
+    square_advances: SQUARE_CAPS_ADVANCE_FILE_OFFSET,
+    square_glyphs: SQUARE_CAPS_GLYPH_FILE_OFFSET,
+    square_glyph_count: BLOODPRG_SQUARE_CAPS_GLYPH_COUNT,
+    main_map: MAIN_FONT_CHARACTER_MAP_FILE_OFFSET,
+    main_advances: MAIN_FONT_ADVANCE_FILE_OFFSET,
+    main_glyphs: MAIN_FONT_GLYPH_FILE_OFFSET,
+    main_glyph_count: BLOODPRG_MAIN_FONT_GLYPH_COUNT,
+    required_length: FONT_REQUIRED_EXECUTABLE_LENGTH,
+};
+
+// Font data referenced by the sequel renderers at 0x3486, 0x3512, 0x39BE
+// and 0x3A78; the dual-width routine at 0x344D uses the same maps/advances.
+const SEQUEL_FONT_LAYOUT: ExecutableFontLayout = ExecutableFontLayout {
+    small_map: 0x1709E,
+    small_glyphs: 0x1711E,
+    proportional_map_count: BLOOD2PG_PROPORTIONAL_FONT_CHARACTER_COUNT,
+    subtitle_map: 0x171F0,
+    subtitle_glyphs: 0x172D8,
+    subtitle_glyph_count: BLOOD2PG_SUBTITLE_FONT_GLYPH_COUNT,
+    square_map: 0x174E8,
+    square_advances: 0x175D0,
+    square_glyphs: 0x17602,
+    square_glyph_count: BLOOD2PG_SQUARE_CAPS_GLYPH_COUNT,
+    main_map: 0x179D6,
+    main_advances: 0x17ABE,
+    main_glyphs: 0x17B16,
+    main_glyph_count: BLOOD2PG_MAIN_FONT_GLYPH_COUNT,
+    required_length: 0x17B16 + BLOOD2PG_MAIN_FONT_GLYPH_COUNT * MAIN_FONT_GLYPH_HEIGHT,
+};
 const PRESENTATION_REQUIRED_EXECUTABLE_LENGTH: usize =
     BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_DESCRIPTOR_DATA_END_OFFSET;
 const CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH: usize =
@@ -907,7 +979,9 @@ pub struct BloodprgConfirmDialogRegions {
     pub no: BloodprgHitRectangle,
 }
 
-/// Complete font maps, advances, and glyph bitmaps embedded in `BLOODPRG.EXE`.
+/// Complete executable font maps, advances, and glyph bitmaps for either game.
+/// Variable-sized tables retain their exact authored size, without padding a
+/// Commander table or truncating the sequel's additional characters.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BloodprgFontResources {
     /// Byte-to-glyph map used by the compact five-row font.
@@ -915,25 +989,25 @@ pub struct BloodprgFontResources {
     /// Five one-byte rows for every compact glyph.
     pub small_glyphs: [u8; SMALL_FONT_GLYPH_BYTE_COUNT],
     /// Byte-to-glyph map used by the fixed-width subtitle console font.
-    pub subtitle_character_map: [u8; BLOODPRG_PROPORTIONAL_FONT_CHARACTER_COUNT],
+    pub subtitle_character_map: Box<[u8]>,
     /// Eight one-byte rows for every subtitle glyph.
-    pub subtitle_glyphs: [u8; SUBTITLE_FONT_GLYPH_BYTE_COUNT],
+    pub subtitle_glyphs: Box<[u8]>,
     /// Byte-to-glyph map used by the square-cap UI font.
-    pub square_caps_character_map: [u8; BLOODPRG_PROPORTIONAL_FONT_CHARACTER_COUNT],
+    pub square_caps_character_map: Box<[u8]>,
     /// Signed-byte pen advances indexed by square-cap glyph number.
-    pub square_caps_advances: [u8; BLOODPRG_SQUARE_CAPS_GLYPH_COUNT],
+    pub square_caps_advances: Box<[u8]>,
     /// Complete unsigned lookup region consumed by dual-font measurement.
     pub square_caps_measurement_advances: [u8; BLOODPRG_FONT_MEASUREMENT_ADVANCE_COUNT],
     /// Ten big-endian two-byte rows for every square-cap glyph.
-    pub square_caps_glyphs: [u8; SQUARE_CAPS_GLYPH_BYTE_COUNT],
+    pub square_caps_glyphs: Box<[u8]>,
     /// Byte-to-glyph map used by the main dialogue font.
-    pub main_character_map: [u8; BLOODPRG_PROPORTIONAL_FONT_CHARACTER_COUNT],
+    pub main_character_map: Box<[u8]>,
     /// Signed-byte pen advances indexed by main-font glyph number.
-    pub main_advances: [u8; BLOODPRG_MAIN_FONT_GLYPH_COUNT],
+    pub main_advances: Box<[u8]>,
     /// Complete unsigned lookup region consumed by dual-font measurement.
     pub main_measurement_advances: [u8; BLOODPRG_FONT_MEASUREMENT_ADVANCE_COUNT],
     /// Eight one-byte rows for every main-font glyph.
-    pub main_glyphs: [u8; MAIN_FONT_GLYPH_BYTE_COUNT],
+    pub main_glyphs: Box<[u8]>,
 }
 
 /// Malformed or truncated executable font resources.
@@ -1034,10 +1108,41 @@ pub fn decode_bloodprg_confirm_dialog_regions(
 pub fn decode_bloodprg_bridge_resources(
     executable: &[u8],
 ) -> Result<BloodprgBridgeResources, BloodprgBridgeResourceError> {
-    if executable.len() < REQUIRED_EXECUTABLE_LENGTH {
+    decode_bridge_resources_at(
+        executable,
+        PROJECTION_ANCHOR_FILE_OFFSET,
+        TRIGONOMETRY_FILE_OFFSET,
+        NAV_ACTOR_RECORDS_FILE_OFFSET,
+    )
+}
+
+/// Decode bridge tables for the analyzed `BLOOD2PG.EXE` layout.
+/// The caller must identify the executable build before choosing this decoder.
+pub fn decode_blood2pg_bridge_resources(
+    executable: &[u8],
+) -> Result<BloodprgBridgeResources, BloodprgBridgeResourceError> {
+    decode_bridge_resources_at(
+        executable,
+        BLOOD2PG_PROJECTION_ANCHOR_FILE_OFFSET,
+        BLOOD2PG_TRIGONOMETRY_FILE_OFFSET,
+        BLOOD2PG_NAV_ACTOR_RECORDS_FILE_OFFSET,
+    )
+}
+
+fn decode_bridge_resources_at(
+    executable: &[u8],
+    anchor_base: usize,
+    trig_base: usize,
+    actors_base: usize,
+) -> Result<BloodprgBridgeResources, BloodprgBridgeResourceError> {
+    let required = (anchor_base
+        + BLOODPRG_BRIDGE_PROJECTION_ANCHOR_COUNT * PROJECTION_ANCHOR_BYTE_COUNT)
+        .max(trig_base + BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT * TRIGONOMETRY_SAMPLE_BYTE_COUNT)
+        .max(actors_base + BLOODPRG_NAV_ACTOR_RECORD_COUNT * NAV_ACTOR_RECORD_BYTE_COUNT);
+    if executable.len() < required {
         return Err(BloodprgBridgeResourceError::TruncatedExecutable {
             actual: executable.len(),
-            required: REQUIRED_EXECUTABLE_LENGTH,
+            required,
         });
     }
     if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
@@ -1047,7 +1152,7 @@ pub fn decode_bloodprg_bridge_resources(
     let mut projection_anchors =
         [BloodprgBridgeAnchor::default(); BLOODPRG_BRIDGE_PROJECTION_ANCHOR_COUNT];
     for (index, anchor) in projection_anchors.iter_mut().enumerate() {
-        let position = PROJECTION_ANCHOR_FILE_OFFSET + index * PROJECTION_ANCHOR_BYTE_COUNT;
+        let position = anchor_base + index * PROJECTION_ANCHOR_BYTE_COUNT;
         anchor.position = std::array::from_fn(|component| {
             read_unsigned_word(executable, position + component * WORD_BYTE_COUNT)
         });
@@ -1056,13 +1161,13 @@ pub fn decode_bloodprg_bridge_resources(
     let mut trigonometry =
         [BloodprgBridgeTrigonometrySample::default(); BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT];
     for (index, sample) in trigonometry.iter_mut().enumerate() {
-        let position = TRIGONOMETRY_FILE_OFFSET + index * TRIGONOMETRY_SAMPLE_BYTE_COUNT;
+        let position = trig_base + index * TRIGONOMETRY_SAMPLE_BYTE_COUNT;
         sample.cosine = read_signed_word(executable, position);
         sample.sine = read_signed_word(executable, position + WORD_BYTE_COUNT);
     }
 
     let nav_actor_records = std::array::from_fn(|index| {
-        let position = NAV_ACTOR_RECORDS_FILE_OFFSET + index * NAV_ACTOR_RECORD_BYTE_COUNT;
+        let position = actors_base + index * NAV_ACTOR_RECORD_BYTE_COUNT;
         let transition_resource_id = read_unsigned_word(
             executable,
             position + NAV_ACTOR_TRANSITION_RESOURCE_FIELD_OFFSET,
@@ -1109,38 +1214,54 @@ pub fn decode_bloodprg_bridge_resources(
 pub fn decode_bloodprg_font_resources(
     executable: &[u8],
 ) -> Result<BloodprgFontResources, BloodprgFontResourceError> {
-    if executable.len() < FONT_REQUIRED_EXECUTABLE_LENGTH {
+    decode_font_resources_at(executable, &COMMANDER_FONT_LAYOUT)
+}
+
+/// Decode the sequel's expanded font maps, glyphs, and native width lookups.
+/// The caller must identify the executable build before choosing this decoder.
+pub fn decode_blood2pg_font_resources(
+    executable: &[u8],
+) -> Result<BloodprgFontResources, BloodprgFontResourceError> {
+    decode_font_resources_at(executable, &SEQUEL_FONT_LAYOUT)
+}
+
+fn decode_font_resources_at(
+    executable: &[u8],
+    layout: &ExecutableFontLayout,
+) -> Result<BloodprgFontResources, BloodprgFontResourceError> {
+    if executable.len() < layout.required_length {
         return Err(BloodprgFontResourceError::TruncatedExecutable {
             actual: executable.len(),
-            required: FONT_REQUIRED_EXECUTABLE_LENGTH,
+            required: layout.required_length,
         });
     }
     if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
         return Err(BloodprgFontResourceError::InvalidExecutableSignature);
     }
 
+    let owned = |start, count| Box::from(&executable[start..start + count]);
     Ok(BloodprgFontResources {
-        small_character_map: read_byte_array(executable, SMALL_FONT_CHARACTER_MAP_FILE_OFFSET),
-        small_glyphs: read_byte_array(executable, SMALL_FONT_GLYPH_FILE_OFFSET),
-        subtitle_character_map: read_byte_array(
-            executable,
-            SUBTITLE_FONT_CHARACTER_MAP_FILE_OFFSET,
+        small_character_map: read_byte_array(executable, layout.small_map),
+        small_glyphs: read_byte_array(executable, layout.small_glyphs),
+        subtitle_character_map: owned(layout.subtitle_map, layout.proportional_map_count),
+        subtitle_glyphs: owned(
+            layout.subtitle_glyphs,
+            layout.subtitle_glyph_count * SUBTITLE_FONT_GLYPH_HEIGHT,
         ),
-        subtitle_glyphs: read_byte_array(executable, SUBTITLE_FONT_GLYPH_FILE_OFFSET),
-        square_caps_character_map: read_byte_array(
-            executable,
-            SQUARE_CAPS_CHARACTER_MAP_FILE_OFFSET,
+        square_caps_character_map: owned(layout.square_map, layout.proportional_map_count),
+        square_caps_advances: owned(layout.square_advances, layout.square_glyph_count),
+        square_caps_measurement_advances: read_byte_array(executable, layout.square_advances),
+        square_caps_glyphs: owned(
+            layout.square_glyphs,
+            layout.square_glyph_count * SQUARE_CAPS_GLYPH_HEIGHT * SQUARE_CAPS_ROW_BYTE_COUNT,
         ),
-        square_caps_advances: read_byte_array(executable, SQUARE_CAPS_ADVANCE_FILE_OFFSET),
-        square_caps_measurement_advances: read_byte_array(
-            executable,
-            SQUARE_CAPS_ADVANCE_FILE_OFFSET,
+        main_character_map: owned(layout.main_map, layout.proportional_map_count),
+        main_advances: owned(layout.main_advances, layout.main_glyph_count),
+        main_measurement_advances: read_byte_array(executable, layout.main_advances),
+        main_glyphs: owned(
+            layout.main_glyphs,
+            layout.main_glyph_count * MAIN_FONT_GLYPH_HEIGHT,
         ),
-        square_caps_glyphs: read_byte_array(executable, SQUARE_CAPS_GLYPH_FILE_OFFSET),
-        main_character_map: read_byte_array(executable, MAIN_FONT_CHARACTER_MAP_FILE_OFFSET),
-        main_advances: read_byte_array(executable, MAIN_FONT_ADVANCE_FILE_OFFSET),
-        main_measurement_advances: read_byte_array(executable, MAIN_FONT_ADVANCE_FILE_OFFSET),
-        main_glyphs: read_byte_array(executable, MAIN_FONT_GLYPH_FILE_OFFSET),
     })
 }
 
@@ -1338,26 +1459,29 @@ mod tests {
         let resources = decode_bloodprg_font_resources(executable).unwrap();
 
         assert_eq!(
-            resources.square_caps_advances,
-            resources.square_caps_measurement_advances[..BLOODPRG_SQUARE_CAPS_GLYPH_COUNT]
+            resources.square_caps_advances.as_ref(),
+            &resources.square_caps_measurement_advances[..BLOODPRG_SQUARE_CAPS_GLYPH_COUNT]
         );
         assert_eq!(
-            resources.main_advances,
-            resources.main_measurement_advances[..BLOODPRG_MAIN_FONT_GLYPH_COUNT]
+            resources.main_advances.as_ref(),
+            &resources.main_measurement_advances[..BLOODPRG_MAIN_FONT_GLYPH_COUNT]
         );
         assert_ne!(
             resources.small_glyphs,
             [u8::MIN; SMALL_FONT_GLYPH_BYTE_COUNT]
         );
         assert_ne!(
-            resources.subtitle_glyphs,
-            [u8::MIN; SUBTITLE_FONT_GLYPH_BYTE_COUNT]
+            resources.subtitle_glyphs.as_ref(),
+            &[u8::MIN; SUBTITLE_FONT_GLYPH_BYTE_COUNT]
         );
         assert_ne!(
-            resources.square_caps_glyphs,
-            [u8::MIN; SQUARE_CAPS_GLYPH_BYTE_COUNT]
+            resources.square_caps_glyphs.as_ref(),
+            &[u8::MIN; SQUARE_CAPS_GLYPH_BYTE_COUNT]
         );
-        assert_ne!(resources.main_glyphs, [u8::MIN; MAIN_FONT_GLYPH_BYTE_COUNT]);
+        assert_ne!(
+            resources.main_glyphs.as_ref(),
+            &[u8::MIN; MAIN_FONT_GLYPH_BYTE_COUNT]
+        );
     }
 
     #[test]
@@ -1384,6 +1508,172 @@ mod tests {
             decode_bloodprg_font_resources(&invalid_signature),
             Err(BloodprgFontResourceError::InvalidExecutableSignature)
         );
+    }
+
+    #[test]
+    fn sequel_font_decoder_rejects_short_or_non_executable_inputs() {
+        let required = SEQUEL_FONT_LAYOUT.required_length;
+        for count in [0, required - 1] {
+            assert_eq!(
+                decode_blood2pg_font_resources(&vec![0; count]),
+                Err(BloodprgFontResourceError::TruncatedExecutable {
+                    actual: count,
+                    required
+                })
+            );
+        }
+        assert_eq!(
+            decode_blood2pg_font_resources(&vec![0; required]),
+            Err(BloodprgFontResourceError::InvalidExecutableSignature)
+        );
+    }
+
+    #[test]
+    fn sequel_bridge_decoder_checks_the_complete_relocated_range() {
+        let required = BLOOD2PG_TRIGONOMETRY_FILE_OFFSET
+            + BLOODPRG_BRIDGE_TRIGONOMETRY_SAMPLE_COUNT * TRIGONOMETRY_SAMPLE_BYTE_COUNT;
+        for count in [0, required - 1] {
+            assert_eq!(
+                decode_blood2pg_bridge_resources(&vec![0; count]),
+                Err(BloodprgBridgeResourceError::TruncatedExecutable {
+                    actual: count,
+                    required
+                })
+            );
+        }
+        assert_eq!(
+            decode_blood2pg_bridge_resources(&vec![0; required]),
+            Err(BloodprgBridgeResourceError::InvalidExecutableSignature)
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang executable under output/big-bug-bang/disc"]
+    fn sequel_font_tables_include_every_authored_map_entry_and_glyph() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE");
+        let executable = std::fs::read(path).unwrap();
+        let fonts = decode_blood2pg_font_resources(&executable).unwrap();
+        let commander =
+            decode_bloodprg_font_resources(include_bytes!("../../../re/bin/BLOODPRG.EXE")).unwrap();
+        assert_eq!(fonts.small_character_map, commander.small_character_map);
+        assert_eq!(fonts.small_glyphs, commander.small_glyphs);
+        for (map, glyphs, glyph_count, glyph_bytes, map_file, glyph_file) in [
+            (
+                &fonts.subtitle_character_map,
+                &fonts.subtitle_glyphs,
+                66,
+                8,
+                0x171F0,
+                0x172D8,
+            ),
+            (
+                &fonts.square_caps_character_map,
+                &fonts.square_caps_glyphs,
+                49,
+                20,
+                0x174E8,
+                0x17602,
+            ),
+            (
+                &fonts.main_character_map,
+                &fonts.main_glyphs,
+                87,
+                8,
+                0x179D6,
+                0x17B16,
+            ),
+        ] {
+            assert_eq!(map.len(), 232);
+            assert_eq!(glyphs.len(), glyph_count * glyph_bytes);
+            assert_eq!(map.as_ref(), &executable[map_file..map_file + 232]);
+            assert_eq!(
+                glyphs.as_ref(),
+                &executable[glyph_file..glyph_file + glyph_count * glyph_bytes]
+            );
+            assert_eq!(
+                map.iter().copied().filter(|&index| index != 255).max(),
+                Some((glyph_count - 1) as u8)
+            );
+            assert!(
+                map.iter()
+                    .all(|&index| index == 255 || usize::from(index) < glyph_count)
+            );
+        }
+        assert_eq!(
+            fonts.square_caps_advances.as_ref(),
+            &executable[0x175D0..0x175D0 + 49]
+        );
+        assert_eq!(
+            fonts.main_advances.as_ref(),
+            &executable[0x17ABE..0x17ABE + 87]
+        );
+        assert_eq!(
+            fonts.square_caps_measurement_advances,
+            executable[0x175D0..0x175D0 + 256]
+        );
+        assert_eq!(
+            fonts.main_measurement_advances,
+            executable[0x17ABE..0x17ABE + 256]
+        );
+        assert_eq!(fonts.main_advances[69], 5);
+        assert_eq!(fonts.main_advances[71], 8);
+        assert_eq!(commander.main_advances[69], 8);
+        assert_eq!(commander.main_advances[71], 5);
+        assert_eq!(
+            &fonts.subtitle_glyphs[..commander.subtitle_glyphs.len()],
+            commander.subtitle_glyphs.as_ref()
+        );
+        assert_eq!(
+            &fonts.square_caps_glyphs[..commander.square_caps_glyphs.len()],
+            commander.square_caps_glyphs.as_ref()
+        );
+        assert_eq!(
+            &fonts.main_glyphs[..commander.main_glyphs.len()],
+            commander.main_glyphs.as_ref()
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang executable under output/big-bug-bang/disc"]
+    fn sequel_bridge_tables_match_native_layout_without_commander_resource_ids() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE");
+        let executable = std::fs::read(path).unwrap();
+        let sequel = decode_blood2pg_bridge_resources(&executable).unwrap();
+        let commander =
+            decode_bloodprg_bridge_resources(include_bytes!("../../../re/bin/BLOODPRG.EXE"))
+                .unwrap();
+        assert_eq!(sequel.projection_anchors, commander.projection_anchors);
+        assert_eq!(sequel.trigonometry, commander.trigonometry);
+        assert_eq!(
+            sequel.nav_actor_records.map(|actor| actor.resource_id),
+            [17, 13, 15, 16, 19, 18]
+        );
+        assert_eq!(
+            sequel.nav_actor_records.map(|actor| actor.flags),
+            [1, 1, 9, 1, 0, 0]
+        );
+        assert_eq!(
+            sequel.nav_actor_records.map(|actor| actor.target_arc),
+            [0, 90, 180, 270, 0, 0]
+        );
+        for (index, actor) in sequel.nav_actor_records.iter().enumerate() {
+            let raw = &executable[0x124AB + index * 24..0x124AB + (index + 1) * 24];
+            let word = |offset| u16::from_le_bytes([raw[offset], raw[offset + 1]]);
+            assert_eq!(
+                actor.transition_resource_id,
+                (word(4) != u16::MAX).then_some(word(4))
+            );
+            assert_eq!(actor.terminal_frame, word(6));
+            assert_eq!(actor.frame, word(8));
+            assert_eq!(
+                actor.hit_rectangle.origin,
+                [word(12) as i16, word(14) as i16]
+            );
+            assert_eq!(actor.hit_rectangle.size, [word(16) as i16, word(18) as i16]);
+            assert_eq!(actor.draw_position, [word(20), word(22)]);
+        }
     }
 
     #[test]
