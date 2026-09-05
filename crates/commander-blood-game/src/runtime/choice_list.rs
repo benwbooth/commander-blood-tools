@@ -1,27 +1,14 @@
-//! Flat-framebuffer renderer for the recovered bridge choice-list planner.
+//! RGB overlay renderer for the recovered bridge choice-list planner.
 
 use anyhow::{Context, Result};
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListHandRequest,
-    ChoiceListPointer, ChoiceListRect, ChoiceListRowKind, ChoiceListState, FontPoint,
-    FontVerticalBand, GameFontFace, PaletteRemapTable, RasterPoint, build_banked_tint_table,
-    draw_square_caps_text, measure_game_text_width, remap_framebuffer_rect, update_choice_list,
+    ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListHandRequest, ChoiceListPointer,
+    ChoiceListRect, ChoiceListRowKind, ChoiceListState, GameFontFace, RasterPoint,
+    measure_game_text_width, update_choice_list,
 };
 
-use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, OriginalGameRuntime};
-
-const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
-const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
-    left: 0,
-    right: LOGICAL_FRAMEBUFFER_WIDTH as i32,
-    top: 0,
-    bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32,
-};
-const FULL_LOGICAL_FONT_BAND: FontVerticalBand = FontVerticalBand {
-    top: 0,
-    bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32 - 1,
-};
+use super::OriginalGameRuntime;
 
 /// Canonical values of the three mutable globals controlling list layout.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -66,12 +53,8 @@ pub(super) fn prepare_choice_list_frame(
     current_hand_animation: u16,
 ) -> Result<(ChoiceListFrame, Vec<ChoiceListHandRequest>)> {
     let fonts = runtime.data().font_resources().clone();
-    let mut tint = [u8::MIN; 256];
-    build_banked_tint_table(runtime.live_palette(), &mut tint, BRIDGE_CONSOLE_TINT_FIRST)
-        .context("building the bridge choice-list tint table")?;
-
     let mut backend =
-        RuntimeChoiceListBackend::new(runtime, &fonts, &tint, pointer, current_hand_animation);
+        RuntimeChoiceListBackend::new(runtime, &fonts, pointer, current_hand_animation);
     let frame = update_choice_list(labels, config, state, &mut backend);
     backend.finish()?;
     let hand_requests = backend.take_hand_requests();
@@ -81,7 +64,6 @@ pub(super) fn prepare_choice_list_frame(
 pub(super) struct RuntimeChoiceListBackend<'runtime> {
     runtime: &'runtime mut OriginalGameRuntime,
     fonts: &'runtime commander_blood_formats::bloodprg::BloodprgFontResources,
-    tint: &'runtime PaletteRemapTable,
     pointer: ChoiceListPointer,
     current_hand_animation: u16,
     hand_requests: Vec<ChoiceListHandRequest>,
@@ -92,15 +74,12 @@ impl RuntimeChoiceListBackend<'_> {
     pub(super) fn new<'runtime>(
         runtime: &'runtime mut OriginalGameRuntime,
         fonts: &'runtime commander_blood_formats::bloodprg::BloodprgFontResources,
-        tint: &'runtime PaletteRemapTable,
         pointer: ChoiceListPointer,
         current_hand_animation: u16,
     ) -> RuntimeChoiceListBackend<'runtime> {
-        runtime.restore_bridge_console_palette();
         RuntimeChoiceListBackend {
             runtime,
             fonts,
-            tint,
             pointer,
             current_hand_animation,
             hand_requests: Vec::new(),
@@ -131,18 +110,9 @@ impl RuntimeChoiceListBackend<'_> {
         std::mem::take(&mut self.hand_requests)
     }
 
-    pub(super) fn remap_region(&mut self, origin: RasterPoint, width: u16, height: u16) {
-        let result = remap_framebuffer_rect(
-            self.runtime.front_buffer_mut().pixels_mut(),
-            LOGICAL_DISPLAY_CLIP,
-            origin,
-            width,
-            height,
-            self.tint,
-        )
-        .context("remapping a bridge choice-list transition region")
-        .map(|_| ());
-        self.record_error(result);
+    pub(super) fn darken_region(&mut self, origin: RasterPoint, width: u16, height: u16) {
+        self.runtime
+            .darken_ui_rect([origin.x, origin.y], [width, height]);
     }
 }
 
@@ -162,20 +132,8 @@ impl ChoiceListBackend for RuntimeChoiceListBackend<'_> {
     }
 
     fn prepare_background(&mut self, rect: ChoiceListRect) {
-        let result = remap_framebuffer_rect(
-            self.runtime.front_buffer_mut().pixels_mut(),
-            LOGICAL_DISPLAY_CLIP,
-            RasterPoint {
-                x: i32::from(rect.origin[0]),
-                y: i32::from(rect.origin[1]),
-            },
-            rect.size[0],
-            rect.size[1],
-            self.tint,
-        )
-        .context("remapping the bridge choice-list background")
-        .map(|_| ());
-        self.record_error(result);
+        self.runtime
+            .darken_ui_rect(rect.origin.map(i32::from), rect.size);
     }
 
     fn pointer(&mut self) -> ChoiceListPointer {
@@ -196,7 +154,6 @@ impl ChoiceListBackend for RuntimeChoiceListBackend<'_> {
 
 pub(super) fn draw_choice_list_rows(
     runtime: &mut OriginalGameRuntime,
-    fonts: &commander_blood_formats::bloodprg::BloodprgFontResources,
     labels: &[&[u8]],
     cancel_label: Option<&[u8]>,
     frame: &ChoiceListFrame,
@@ -211,18 +168,9 @@ pub(super) fn draw_choice_list_rows(
                 cancel_label.context("choice-list emitted a cancel row without a label")?
             }
         };
-        draw_square_caps_text(
-            runtime.front_buffer_mut().pixels_mut(),
-            fonts,
-            label,
-            FontPoint {
-                x: i32::from(row.position[0]),
-                y: i32::from(row.position[1]),
-            },
-            FULL_LOGICAL_FONT_BAND,
-            row.color,
-        )
-        .context("drawing a bridge choice-list row")?;
+        runtime
+            .draw_choice_text(label, row.position.map(i32::from), row.color.try_into()?)
+            .context("drawing a bridge choice-list row")?;
     }
     Ok(())
 }
@@ -260,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    fn original_fonts_and_palette_render_an_interactive_choice_frame() {
+    fn imported_rgb_choices_preserve_c_layout_without_recoloring_the_scene() {
         let Ok(paths) = OriginalGameDataPaths::discover(None) else {
             return;
         };
@@ -283,11 +231,17 @@ mod tests {
             u16::MIN,
         )
         .unwrap();
+        assert_eq!(layout.rect.origin, [100, 85]);
+        assert_eq!(layout.rect.size, [120, 30]);
+        assert!(runtime.ui_overlay_rgba().iter().all(|&byte| byte == 0));
 
         runtime
             .front_buffer_mut()
             .pixels_mut()
             .fill(TEST_BACKGROUND_INDEX);
+        // A later video changing its legacy colors must not recolor imported UI.
+        runtime.live_palette_mut().fill([63, 0, 0]);
+        let colors_before = *runtime.live_palette();
         let config = ChoiceListConfig {
             center_x: TEST_CENTER_X,
             preserve_individual_widths: false,
@@ -314,13 +268,62 @@ mod tests {
         assert_eq!(frame.rows.len(), labels.len());
 
         let fonts = runtime.data().font_resources().clone();
-        draw_choice_list_rows(&mut runtime, &fonts, &labels, None, &frame).unwrap();
+        draw_choice_list_rows(&mut runtime, &labels, None, &frame).unwrap();
         assert!(
             runtime
                 .front_buffer()
                 .pixels()
                 .iter()
-                .any(|pixel| *pixel != TEST_BACKGROUND_INDEX)
+                .all(|pixel| *pixel == TEST_BACKGROUND_INDEX)
         );
+        assert_eq!(runtime.live_palette(), &colors_before);
+        let overlay = runtime.ui_overlay_rgba().to_vec();
+        assert!(overlay.chunks_exact(4).any(|pixel| pixel == [0, 0, 0, 128]));
+        assert!(overlay.chunks_exact(4).any(|pixel| pixel[3] == 255));
+
+        // Compare every glyph pixel with the independently oracle-tested C font raster.
+        let mut reference = vec![0; super::super::LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        for (row, label) in frame.rows.iter().zip(labels) {
+            crate::native::bloodprg::draw_square_caps_text(
+                &mut reference,
+                &fonts,
+                label,
+                crate::native::bloodprg::FontPoint {
+                    x: i32::from(row.position[0]),
+                    y: i32::from(row.position[1]),
+                },
+                crate::native::bloodprg::FontVerticalBand {
+                    top: 0,
+                    bottom: 199,
+                },
+                row.color,
+            )
+            .unwrap();
+        }
+        for (&style, pixel) in reference.iter().zip(overlay.chunks_exact(4)) {
+            if style == 0 {
+                assert_ne!(pixel[3], 255);
+                continue;
+            }
+            let color = runtime.data().default_vga_palette()[usize::from(style)];
+            assert_eq!(
+                pixel,
+                [
+                    (color[0] << 2) | (color[0] >> 4),
+                    (color[1] << 2) | (color[1] >> 4),
+                    (color[2] << 2) | (color[2] >> 4),
+                    255
+                ]
+            );
+        }
+
+        runtime.clear_ui_overlay();
+        runtime.live_palette_mut().fill([0, 63, 0]);
+        let mut backend =
+            RuntimeChoiceListBackend::new(&mut runtime, &fonts, ChoiceListPointer::default(), 0);
+        backend.prepare_background(frame.rect);
+        drop(backend);
+        draw_choice_list_rows(&mut runtime, &labels, None, &frame).unwrap();
+        assert_eq!(runtime.ui_overlay_rgba(), overlay);
     }
 }

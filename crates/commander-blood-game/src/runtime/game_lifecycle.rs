@@ -129,6 +129,7 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
     }
 
     fn advance_frame_timers(&mut self, state: &mut GameLifecycleState) -> Result<()> {
+        self.services.runtime_mut().clear_ui_overlay();
         let elapsed_ticks = self.platform.take_game_timer_ticks();
         arm_requested_speaker_pulse(state, &mut self.timer);
         let (chatter_cooldown, dialogue_delay) = self.services.audio_event_timer_counters();

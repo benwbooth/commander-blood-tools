@@ -18,4 +18,5 @@ pub mod native;
 pub mod render;
 pub mod runtime;
 mod script_rebuild;
+mod ui;
 mod video_import;

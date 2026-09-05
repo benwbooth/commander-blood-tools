@@ -2121,14 +2121,7 @@ impl<'window> ModernGameServices<'window> {
         if frame.selected_item.is_some() || frame.cancelled {
             self.play_loaded_sound_bank_clip(CHOICE_LIST_SELECTION_SOUND_CLIP)?;
         }
-        let fonts = self.runtime.data().font_resources().clone();
-        draw_choice_list_rows(
-            &mut self.runtime,
-            &fonts,
-            labels,
-            config.cancel_label,
-            &frame,
-        )?;
+        draw_choice_list_rows(&mut self.runtime, labels, config.cancel_label, &frame)?;
         Ok(frame)
     }
 
@@ -4237,21 +4230,25 @@ impl<'window> ModernGameServices<'window> {
             .as_ref()
             .and_then(RuntimeShipTargetSelector::last_frame)
             .map(|frame| {
-                let pixels = self.runtime.front_buffer().pixels();
-                let palette = self.runtime.live_palette();
+                let pixels = self.runtime.ui_overlay_rgba();
                 let rows = frame
                     .rows
                     .iter()
                     .map(|row| {
+                        let rgba = self.runtime.choice_text_color(
+                            row.color
+                                .try_into()
+                                .expect("choice planner emits a known text style"),
+                        );
                         serde_json::json!({
                             "kind": format!("{:?}", row.kind),
                             "position": row.position,
                             "color": row.color,
-                            "rgb": palette[usize::from(row.color)],
-                            "matching_rect_pixels": indexed_color_count_in_rect(
+                            "rgb": &rgba[..3],
+                            "matching_rect_pixels": rgba_color_count_in_rect(
                                 pixels,
                                 frame.rect,
-                                row.color,
+                                rgba,
                             ),
                         })
                     })
@@ -4717,6 +4714,13 @@ impl<'window> ModernGameServices<'window> {
             })
             .unwrap_or(serde_json::Value::Null);
 
+        let rgb_ui = serde_json::json!({
+            "rgba_hash": fnv1a64(self.runtime.ui_overlay_rgba()),
+            "visible_pixels": self.runtime.ui_overlay_rgba().chunks_exact(4)
+                .filter(|pixel| pixel[3] != 0).count(),
+            "opaque_pixels": self.runtime.ui_overlay_rgba().chunks_exact(4)
+                .filter(|pixel| pixel[3] == 255).count(),
+        });
         let mut snapshot = serde_json::json!({
             "vm": {
                 "resource_profile": profile_id,
@@ -4850,6 +4854,7 @@ impl<'window> ModernGameServices<'window> {
                 "bridge_layers": bridge_layers,
             },
         });
+        snapshot["rgb_ui"] = rgb_ui;
         snapshot["video"]["game_color_bytes"] = serde_json::Value::String(game_color_bytes);
         snapshot["video"]["display_color_bytes"] = serde_json::Value::String(display_color_bytes);
         snapshot["video"]["manu3_submitted_triangle_count"] =
@@ -5009,10 +5014,10 @@ fn indexed_layer_metrics(pixels: &[u8]) -> serde_json::Value {
     })
 }
 
-fn indexed_color_count_in_rect(
+fn rgba_color_count_in_rect(
     pixels: &[u8],
     rect: crate::native::bloodprg::ChoiceListRect,
-    color: u8,
+    color: [u8; 4],
 ) -> usize {
     let left = i32::from(rect.origin[0]).clamp(0, LOGICAL_FRAMEBUFFER_WIDTH as i32) as usize;
     let top = i32::from(rect.origin[1]).clamp(0, LOGICAL_FRAMEBUFFER_HEIGHT as i32) as usize;
@@ -5026,9 +5031,10 @@ fn indexed_color_count_in_rect(
 
     (top..bottom)
         .map(|y| {
-            pixels[y * LOGICAL_FRAMEBUFFER_WIDTH + left..y * LOGICAL_FRAMEBUFFER_WIDTH + right]
-                .iter()
-                .filter(|pixel| **pixel == color)
+            pixels[(y * LOGICAL_FRAMEBUFFER_WIDTH + left) * 4
+                ..(y * LOGICAL_FRAMEBUFFER_WIDTH + right) * 4]
+                .chunks_exact(4)
+                .filter(|pixel| *pixel == color)
                 .count()
         })
         .sum()

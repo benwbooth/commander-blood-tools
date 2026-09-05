@@ -2,7 +2,6 @@
 
 use anyhow::{Context, Result};
 use commander_blood_formats::bloodprg::BloodprgBridgeMenuText;
-use commander_blood_formats::lbm::PALETTE_ENTRY_COUNT;
 use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
@@ -15,9 +14,9 @@ use crate::native::bloodprg::{
     Manu3AnimationSelector, MusicOptionLabel, OptionMenuChoice, OptionMenuOutcome, OptionMenuState,
     PresentationChoiceItem, PresentationChoiceOutcome, PresentationChoiceState, RasterPoint,
     TransitionRect, activate_horn_choice, activate_radio_choice,
-    advance_framebuffer_rect_transition, build_banked_tint_table, navigation_actor_targets,
-    update_bridge_console_dispatch, update_choice_list, update_contact_choice,
-    update_navigation_target_choice, update_option_menu, update_presentation_choice,
+    advance_framebuffer_rect_transition, navigation_actor_targets, update_bridge_console_dispatch,
+    update_choice_list, update_contact_choice, update_navigation_target_choice, update_option_menu,
+    update_presentation_choice,
 };
 
 use super::choice_list::{RuntimeChoiceListBackend, draw_choice_list_rows};
@@ -25,7 +24,6 @@ use super::{ModernGameServices, OriginalGameRuntime};
 
 const BRIDGE_CONSOLE_SELECTION_CLIP: u8 = 4;
 const PANEL_TRANSITION_STEP_COUNT: u8 = 10;
-const CONSOLE_TINT_FIRST_INDEX: u8 = 224;
 const PRESENTATION_CHOICE_ACTIVE_FLAG: u8 = 1;
 const PRESENTATION_CHOICE_LAYOUT_PHASE: u8 = 1;
 const PRESENTATION_CHOICE_TRANSITION_PHASE: u8 = 1 << 1;
@@ -223,13 +221,11 @@ impl RuntimeBridgeConsole {
             cancel_label: &cancel_label,
         };
         let fonts = services.runtime().data().font_resources().clone();
-        let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services, primary_pointer_pressed);
         let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeBridgeChoiceBackend::new(
             services.runtime_mut(),
             &fonts,
-            &tint,
             pointer,
             current_hand_animation,
             &mut self.transition,
@@ -277,13 +273,11 @@ impl RuntimeBridgeConsole {
             cancel_label: &cancel_label,
         };
         let fonts = services.runtime().data().font_resources().clone();
-        let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services, primary_pointer_pressed);
         let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeBridgeChoiceBackend::new(
             services.runtime_mut(),
             &fonts,
-            &tint,
             pointer,
             current_hand_animation,
             &mut self.transition,
@@ -321,13 +315,11 @@ impl RuntimeBridgeConsole {
     ) -> Result<()> {
         let record = required_builtin(services, |builtins| builtins.menu, "menu")?;
         let fonts = services.runtime().data().font_resources().clone();
-        let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services, primary_pointer_pressed);
         let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeBridgeChoiceBackend::new(
             services.runtime_mut(),
             &fonts,
-            &tint,
             pointer,
             current_hand_animation,
             &mut self.transition,
@@ -368,13 +360,11 @@ impl RuntimeBridgeConsole {
             .cancel_label()
             .into();
         let fonts = services.runtime().data().font_resources().clone();
-        let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services, lifecycle.primary_pointer_pressed);
         let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeBridgeChoiceBackend::new(
             services.runtime_mut(),
             &fonts,
-            &tint,
             pointer,
             current_hand_animation,
             &mut self.transition,
@@ -447,13 +437,11 @@ impl RuntimeBridgeConsole {
             .cancel_label()
             .into();
         let fonts = services.runtime().data().font_resources().clone();
-        let tint = choice_tint(services.runtime())?;
         let pointer = choice_pointer(services, primary_pointer_pressed);
         let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeChoiceListBackend::new(
             services.runtime_mut(),
             &fonts,
-            &tint,
             pointer,
             current_hand_animation,
         );
@@ -495,7 +483,7 @@ impl RuntimeBridgeConsole {
             transition_rect(self.text_speed.animation_target),
         )?;
         if let PresentationChoiceOutcome::Transitioning { region, .. } = outcome {
-            backend.remap_region(
+            backend.darken_region(
                 RasterPoint {
                     x: i32::from(region.x),
                     y: i32::from(region.y),
@@ -626,19 +614,12 @@ impl RuntimeBridgeChoiceBackend<'_> {
     fn new<'runtime>(
         runtime: &'runtime mut OriginalGameRuntime,
         fonts: &'runtime commander_blood_formats::bloodprg::BloodprgFontResources,
-        tint: &'runtime [u8; PALETTE_ENTRY_COUNT],
         pointer: ChoiceListPointer,
         current_hand_animation: u16,
         transition: &'runtime mut FramebufferTransitionState,
     ) -> RuntimeBridgeChoiceBackend<'runtime> {
         RuntimeBridgeChoiceBackend {
-            list: RuntimeChoiceListBackend::new(
-                runtime,
-                fonts,
-                tint,
-                pointer,
-                current_hand_animation,
-            ),
+            list: RuntimeChoiceListBackend::new(runtime, fonts, pointer, current_hand_animation),
             transition,
             effects: RuntimeBridgeBackendEffects::default(),
         }
@@ -691,7 +672,7 @@ impl BridgeChoiceBackend for RuntimeBridgeChoiceBackend<'_> {
             transition_rect(target),
         ) {
             Ok(Some(region)) => {
-                self.list.remap_region(
+                self.list.darken_region(
                     RasterPoint {
                         x: i32::from(region.x),
                         y: i32::from(region.y),
@@ -879,21 +860,13 @@ fn activate_quit_confirmation(lifecycle: &mut GameLifecycleState, navigation_cho
     lifecycle.set_modal_ui_busy(true);
 }
 
-fn choice_tint(runtime: &OriginalGameRuntime) -> Result<[u8; PALETTE_ENTRY_COUNT]> {
-    let mut tint = [u8::MIN; PALETTE_ENTRY_COUNT];
-    build_banked_tint_table(runtime.live_palette(), &mut tint, CONSOLE_TINT_FIRST_INDEX)
-        .context("building the bridge-console tint table")?;
-    Ok(tint)
-}
-
 fn draw_runtime_choice_rows(
     services: &mut ModernGameServices<'_>,
     labels: &[&[u8]],
     cancel_label: Option<&[u8]>,
     frame: &ChoiceListFrame,
 ) -> Result<()> {
-    let fonts = services.runtime().data().font_resources().clone();
-    draw_choice_list_rows(services.runtime_mut(), &fonts, labels, cancel_label, frame)
+    draw_choice_list_rows(services.runtime_mut(), labels, cancel_label, frame)
 }
 
 fn apply_console_palette(runtime: &mut OriginalGameRuntime, plan: BridgeConsolePalettePlan) {

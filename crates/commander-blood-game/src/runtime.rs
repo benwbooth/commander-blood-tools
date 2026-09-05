@@ -344,6 +344,7 @@ pub struct OriginalGameData {
     hyperspace_resources: BloodprgHyperspaceResources,
     navigation_resources: BloodprgNavigationResources,
     font_resources: BloodprgFontResources,
+    choice_ui_assets: crate::ui::ChoiceUiAssets,
     presentation_catalog: BloodprgPresentationCatalog,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
     name_area_effect_sequences: Box<[NameAreaEffectSequence]>,
@@ -425,6 +426,9 @@ impl OriginalGameData {
             .context("decoding executable presentation-line catalog")?;
         let default_vga_palette = decode_bloodprg_default_vga_palette(&executable)
             .context("decoding original default palette")?;
+        let choice_ui_assets =
+            crate::ui::ChoiceUiAssets::import(&font_resources, &default_vga_palette)
+                .context("importing RGB choice-list font assets")?;
         let name_area_effect_sequences = decode_bloodprg_name_area_effect_sequences(&executable)
             .context("decoding executable name-area effect sequences")?;
         let world_artwork_layout = decode_bloodprg_world_artwork_layout(&executable)
@@ -466,6 +470,7 @@ impl OriginalGameData {
             hyperspace_resources,
             navigation_resources,
             font_resources,
+            choice_ui_assets,
             presentation_catalog,
             default_vga_palette,
             name_area_effect_sequences,

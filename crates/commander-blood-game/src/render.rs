@@ -1,6 +1,7 @@
 //! wgpu presentation of original artwork and recovered native 3D scenes.
 
 use std::borrow::Cow;
+use std::cell::Cell;
 
 use anyhow::{Context, Result};
 use bytemuck::{Pod, Zeroable};
@@ -38,6 +39,11 @@ const ORIGINAL_DISPLAY_ASPECT_WIDTH: u32 = 4;
 const ORIGINAL_DISPLAY_ASPECT_HEIGHT: u32 = 3;
 const MANU3_TEXTURE_BINDING: u32 = 0;
 const MANU3_VERTEX_COUNT_PER_FACE: usize = 3;
+const UI_OVERLAY_WIDTH: u32 = 320;
+const UI_OVERLAY_HEIGHT: u32 = 200;
+const UI_COMPOSITE_BASE_BINDING: u32 = 0;
+const UI_COMPOSITE_OVERLAY_BINDING: u32 = 1;
+const UI_COMPOSITE_SAMPLER_BINDING: u32 = 2;
 #[cfg(test)]
 const PALETTE_ENTRY_COUNT: u32 = 256;
 const DEPTH_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
@@ -77,6 +83,18 @@ struct Manu3Renderer {
     depth_view: wgpu::TextureView,
 }
 
+struct UiCompositeRenderer {
+    surface_format: wgpu::TextureFormat,
+    pipeline: wgpu::RenderPipeline,
+    base_only_pipeline: wgpu::RenderPipeline,
+    bind_group_layout: wgpu::BindGroupLayout,
+    sampler: wgpu::Sampler,
+    bind_group: wgpu::BindGroup,
+    base_texture: wgpu::Texture,
+    base_view: wgpu::TextureView,
+    overlay_texture: wgpu::Texture,
+}
+
 /// GPU state for aspect-correct presentation of decoded 2D and 3D content.
 pub struct Renderer<'window> {
     surface: wgpu::Surface<'window>,
@@ -89,6 +107,8 @@ pub struct Renderer<'window> {
     image_texture: wgpu::Texture,
     image_width: u32,
     image_height: u32,
+    ui_composite: UiCompositeRenderer,
+    ui_overlay_active: Cell<bool>,
     manu3: Option<Manu3Renderer>,
     alien: Option<AlienRenderer>,
     bridge: Option<BridgeRenderer>,
@@ -248,6 +268,7 @@ impl<'window> Renderer<'window> {
             "indexed artwork overlay pipeline",
             Some(wgpu::BlendState::ALPHA_BLENDING),
         );
+        let ui_composite = UiCompositeRenderer::new(&device, format, config.width, config.height);
         let manu3 = manu3_model
             .map(|model| {
                 let palette = manu3_palette.context("MANU3 rendering requires authored colors")?;
@@ -279,6 +300,8 @@ impl<'window> Renderer<'window> {
             image_texture,
             image_width: image.width,
             image_height: image.height,
+            ui_composite,
+            ui_overlay_active: Cell::new(false),
             manu3,
             alien,
             bridge,
@@ -293,6 +316,8 @@ impl<'window> Renderer<'window> {
         self.config.width = width;
         self.config.height = height;
         self.surface.configure(&self.device, &self.config);
+        self.ui_composite
+            .resize(&self.device, self.config.width, self.config.height);
         if let Some(manu3) = &mut self.manu3 {
             manu3.resize(&self.device, width, height);
         }
@@ -373,6 +398,18 @@ impl<'window> Renderer<'window> {
             },
         );
         Ok(())
+    }
+
+    /// Upload the complete independent 320x200 RGBA UI overlay for the next frame.
+    pub fn upload_ui_overlay(&self, rgba: &[u8]) -> Result<()> {
+        let active = self.ui_composite.upload(&self.queue, rgba)?;
+        self.ui_overlay_active.set(active);
+        Ok(())
+    }
+
+    /// Disable the previously uploaded UI without touching the GPU texture.
+    pub(crate) fn clear_ui_overlay(&mut self) {
+        self.ui_overlay_active.set(false);
     }
 
     /// Present artwork or one base scene, followed by the optional MANU3 model.
@@ -461,6 +498,7 @@ impl<'window> Renderer<'window> {
             anyhow::bail!("alien and bridge frames cannot be presented together");
         }
         let base_scene_present = alien_frame.is_some() || bridge_frame.is_some();
+        let base_view = &self.ui_composite.base_view;
         if let Some(alien_frame) = alien_frame {
             let alien = self
                 .alien
@@ -469,7 +507,7 @@ impl<'window> Renderer<'window> {
             alien.encode(
                 &self.queue,
                 &mut encoder,
-                &view,
+                base_view,
                 (x, y, width, height),
                 alien_frame,
             )?;
@@ -481,14 +519,20 @@ impl<'window> Renderer<'window> {
             bridge.encode(
                 &self.queue,
                 &mut encoder,
-                &view,
+                base_view,
                 (x, y, width, height),
                 bridge_frame,
             )?;
         }
         if let Some(artwork_pass) = artwork_pass(base_scene_present, base_scene_artwork) {
-            self.encode_artwork(&mut encoder, &view, (x, y, width, height), artwork_pass);
+            self.encode_artwork(&mut encoder, base_view, (x, y, width, height), artwork_pass);
         }
+        self.ui_composite.encode(
+            &mut encoder,
+            &view,
+            (x, y, width, height),
+            self.ui_overlay_active.get(),
+        );
         if manu3_vertex_count != u32::MIN {
             let manu3 = self
                 .manu3
@@ -657,6 +701,302 @@ fn create_artwork_pipeline(
         multiview_mask: None,
         cache: None,
     })
+}
+
+fn create_ui_composite_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+    label: &'static str,
+    fragment_entry_point: &'static str,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some(label),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vs_main"),
+            buffers: &[],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some(fragment_entry_point),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            cull_mode: None,
+            ..Default::default()
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
+}
+
+impl UiCompositeRenderer {
+    fn new(
+        device: &wgpu::Device,
+        surface_format: wgpu::TextureFormat,
+        width: u32,
+        height: u32,
+    ) -> Self {
+        let base_texture = create_base_texture(device, surface_format, width, height);
+        let base_view = base_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let overlay_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("independent RGBA UI overlay"),
+            size: ui_overlay_extent(),
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("UI composite bind group layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: UI_COMPOSITE_BASE_BINDING,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: UI_COMPOSITE_OVERLAY_BINDING,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: UI_COMPOSITE_SAMPLER_BINDING,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("UI composite nearest sampler"),
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+            ..Default::default()
+        });
+        let bind_group = create_ui_composite_bind_group(
+            device,
+            &bind_group_layout,
+            &base_view,
+            &overlay_texture,
+            &sampler,
+        );
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("RGBA UI composite shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("ui_composite.wgsl"))),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("RGBA UI composite pipeline layout"),
+            bind_group_layouts: &[Some(&bind_group_layout)],
+            immediate_size: u32::MIN,
+        });
+        let pipeline = create_ui_composite_pipeline(
+            device,
+            &pipeline_layout,
+            &shader,
+            surface_format,
+            "RGBA UI composite pipeline",
+            "fs_main",
+        );
+        let base_only_pipeline = create_ui_composite_pipeline(
+            device,
+            &pipeline_layout,
+            &shader,
+            surface_format,
+            "RGBA base-only composite pipeline",
+            "fs_base",
+        );
+        Self {
+            surface_format,
+            pipeline,
+            base_only_pipeline,
+            bind_group_layout,
+            sampler,
+            bind_group,
+            base_texture,
+            base_view,
+            overlay_texture,
+        }
+    }
+
+    fn resize(&mut self, device: &wgpu::Device, width: u32, height: u32) {
+        self.base_texture = create_base_texture(device, self.surface_format, width, height);
+        self.base_view = self
+            .base_texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        self.bind_group = create_ui_composite_bind_group(
+            device,
+            &self.bind_group_layout,
+            &self.base_view,
+            &self.overlay_texture,
+            &self.sampler,
+        );
+    }
+
+    fn upload(&self, queue: &wgpu::Queue, rgba: &[u8]) -> Result<bool> {
+        let expected = usize::try_from(UI_OVERLAY_WIDTH)
+            .ok()
+            .and_then(|width| {
+                usize::try_from(UI_OVERLAY_HEIGHT)
+                    .ok()
+                    .and_then(|height| width.checked_mul(height))
+            })
+            .and_then(|pixels| pixels.checked_mul(RGBA_COMPONENT_COUNT))
+            .context("UI overlay dimensions exceed the host collection limit")?;
+        if rgba.len() != expected {
+            anyhow::bail!(
+                "UI overlay has {} bytes; 320x200 RGBA requires {expected}",
+                rgba.len()
+            );
+        }
+        let active = rgba
+            .chunks_exact(RGBA_COMPONENT_COUNT)
+            .any(|pixel| pixel[3] != TRANSPARENT_ALPHA);
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &self.overlay_texture,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: u64::MIN,
+                bytes_per_row: Some(UI_OVERLAY_WIDTH * RGBA_BYTES_PER_PIXEL),
+                rows_per_image: Some(UI_OVERLAY_HEIGHT),
+            },
+            ui_overlay_extent(),
+        );
+        Ok(active)
+    }
+
+    fn encode(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        target: &wgpu::TextureView,
+        viewport: (f32, f32, f32, f32),
+        overlay_active: bool,
+    ) {
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("RGBA UI composite pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: target,
+                resolve_target: None,
+                depth_slice: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+            multiview_mask: None,
+        });
+        pass.set_viewport(
+            viewport.0,
+            viewport.1,
+            viewport.2,
+            viewport.3,
+            MINIMUM_DEPTH,
+            MAXIMUM_DEPTH,
+        );
+        pass.set_pipeline(if overlay_active {
+            &self.pipeline
+        } else {
+            &self.base_only_pipeline
+        });
+        pass.set_bind_group(0, &self.bind_group, &[]);
+        pass.draw(
+            u32::MIN..FULLSCREEN_QUAD_VERTEX_COUNT,
+            u32::MIN..SINGLE_TEXTURE_LAYER,
+        );
+    }
+}
+
+fn create_base_texture(
+    device: &wgpu::Device,
+    format: wgpu::TextureFormat,
+    width: u32,
+    height: u32,
+) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("surface-sized sRGB presentation base"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+        },
+        mip_level_count: MIP_LEVEL_COUNT,
+        sample_count: SINGLE_SAMPLE_COUNT,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+            | wgpu::TextureUsages::TEXTURE_BINDING
+            | wgpu::TextureUsages::COPY_DST,
+        view_formats: &[],
+    })
+}
+
+fn create_ui_composite_bind_group(
+    device: &wgpu::Device,
+    layout: &wgpu::BindGroupLayout,
+    base_view: &wgpu::TextureView,
+    overlay_texture: &wgpu::Texture,
+    sampler: &wgpu::Sampler,
+) -> wgpu::BindGroup {
+    let overlay_view = overlay_texture.create_view(&wgpu::TextureViewDescriptor::default());
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("RGBA UI composite bind group"),
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: UI_COMPOSITE_BASE_BINDING,
+                resource: wgpu::BindingResource::TextureView(base_view),
+            },
+            wgpu::BindGroupEntry {
+                binding: UI_COMPOSITE_OVERLAY_BINDING,
+                resource: wgpu::BindingResource::TextureView(&overlay_view),
+            },
+            wgpu::BindGroupEntry {
+                binding: UI_COMPOSITE_SAMPLER_BINDING,
+                resource: wgpu::BindingResource::Sampler(sampler),
+            },
+        ],
+    })
+}
+
+const fn ui_overlay_extent() -> wgpu::Extent3d {
+    wgpu::Extent3d {
+        width: UI_OVERLAY_WIDTH,
+        height: UI_OVERLAY_HEIGHT,
+        depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+    }
 }
 
 /// Expand one complete indexed frame from native six-bit VGA values to RGBA.
@@ -1152,6 +1492,337 @@ mod tests {
             &[(&base_rgba, ArtworkPass::OpaqueBase)],
         );
         assert_ne!(linear, base_rgba);
+    }
+
+    #[test]
+    fn ui_overlay_composite_darkens_srgb_base_and_draws_opaque_text() {
+        let (device, queue) = required_offscreen_device();
+        let renderer = UiCompositeRenderer::new(
+            &device,
+            OFFSCREEN_FORMAT,
+            UI_OVERLAY_WIDTH,
+            UI_OVERLAY_HEIGHT,
+        );
+        let mut overlay =
+            vec![
+                u8::MIN;
+                UI_OVERLAY_WIDTH as usize * UI_OVERLAY_HEIGHT as usize * RGBA_COMPONENT_COUNT
+            ];
+        overlay[..4].copy_from_slice(&[u8::MIN, u8::MIN, u8::MIN, 128]);
+        overlay[4..8].copy_from_slice(&[37, 181, 223, OPAQUE_ALPHA]);
+        renderer.upload(&queue, &overlay).unwrap();
+
+        for (scene_name, base_color) in [
+            ("opaque artwork", [96, 160, 224]),
+            ("bridge-like scene", [18, 172, 94]),
+        ] {
+            let mut base = vec![u8::MIN; overlay.len()];
+            for pixel in base.chunks_exact_mut(RGBA_COMPONENT_COUNT) {
+                pixel[..3].copy_from_slice(&base_color);
+                pixel[3] = OPAQUE_ALPHA;
+            }
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &renderer.base_texture,
+                    mip_level: BASE_MIP_LEVEL,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                &base,
+                wgpu::TexelCopyBufferLayout {
+                    offset: u64::MIN,
+                    bytes_per_row: Some(UI_OVERLAY_WIDTH * RGBA_BYTES_PER_PIXEL),
+                    rows_per_image: Some(UI_OVERLAY_HEIGHT),
+                },
+                ui_overlay_extent(),
+            );
+            let output = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("UI composite test output"),
+                size: ui_overlay_extent(),
+                mip_level_count: MIP_LEVEL_COUNT,
+                sample_count: SINGLE_SAMPLE_COUNT,
+                dimension: wgpu::TextureDimension::D2,
+                format: OFFSCREEN_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            });
+            let bytes_per_row = UI_OVERLAY_WIDTH * RGBA_BYTES_PER_PIXEL;
+            let readback = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("UI composite test readback"),
+                size: u64::from(bytes_per_row) * u64::from(UI_OVERLAY_HEIGHT),
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                mapped_at_creation: false,
+            });
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("UI composite test encoder"),
+            });
+            let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
+            renderer.encode(
+                &mut encoder,
+                &output_view,
+                (0.0, 0.0, UI_OVERLAY_WIDTH as f32, UI_OVERLAY_HEIGHT as f32),
+                true,
+            );
+            encoder.copy_texture_to_buffer(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &output,
+                    mip_level: BASE_MIP_LEVEL,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &readback,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: u64::MIN,
+                        bytes_per_row: Some(bytes_per_row),
+                        rows_per_image: Some(UI_OVERLAY_HEIGHT),
+                    },
+                },
+                ui_overlay_extent(),
+            );
+            queue.submit([encoder.finish()]);
+
+            let (sender, receiver) = std::sync::mpsc::channel();
+            readback
+                .slice(..)
+                .map_async(wgpu::MapMode::Read, move |result| {
+                    sender.send(result).unwrap();
+                });
+            device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+            receiver.recv().unwrap().unwrap();
+            let pixels = readback.slice(..).get_mapped_range();
+            let darkened = &pixels[..RGBA_COMPONENT_COUNT];
+            let expected_darkened =
+                base_color.map(|channel| ((u16::from(channel) * 127 + 127) / 255) as u8);
+            for (actual, expected) in darkened[..3].iter().zip(expected_darkened) {
+                assert!(
+                    actual.abs_diff(expected) <= 2,
+                    "{scene_name} sRGB darkening changed a channel by {}",
+                    actual.abs_diff(expected)
+                );
+            }
+            let retains_hue_order = if scene_name == "opaque artwork" {
+                darkened[0] < darkened[1] && darkened[1] < darkened[2]
+            } else {
+                darkened[0] < darkened[2] && darkened[2] < darkened[1]
+            };
+            assert!(retains_hue_order, "{scene_name} changed the base hue order");
+            let text = &pixels[RGBA_COMPONENT_COUNT..RGBA_COMPONENT_COUNT * 2];
+            assert!(
+                text[..3]
+                    .iter()
+                    .zip([37, 181, 223])
+                    .all(|(actual, expected)| { actual.abs_diff(expected) <= 1 })
+            );
+            let clear = &pixels[RGBA_COMPONENT_COUNT * 2..RGBA_COMPONENT_COUNT * 3];
+            assert!(
+                clear[..3]
+                    .iter()
+                    .zip(base_color)
+                    .all(|(actual, expected)| { actual.abs_diff(expected) <= 1 }),
+                "{scene_name} changed beneath a transparent-zero UI pixel"
+            );
+            drop(pixels);
+            readback.unmap();
+        }
+    }
+
+    #[test]
+    fn ui_overlay_composite_resizes_surface_base_and_preserves_aspect_fit() {
+        let (device, queue) = required_offscreen_device();
+        let mut renderer = UiCompositeRenderer::new(&device, OFFSCREEN_FORMAT, 640, 360);
+        let mut overlay =
+            vec![
+                u8::MIN;
+                UI_OVERLAY_WIDTH as usize * UI_OVERLAY_HEIGHT as usize * RGBA_COMPONENT_COUNT
+            ];
+        let darken_index = ((100 * UI_OVERLAY_WIDTH as usize) + 160) * RGBA_COMPONENT_COUNT;
+        overlay[darken_index..darken_index + RGBA_COMPONENT_COUNT].copy_from_slice(&[
+            u8::MIN,
+            u8::MIN,
+            u8::MIN,
+            128,
+        ]);
+        let text_index = ((100 * UI_OVERLAY_WIDTH as usize) + 161) * RGBA_COMPONENT_COUNT;
+        overlay[text_index..text_index + RGBA_COMPONENT_COUNT].copy_from_slice(&[
+            37,
+            181,
+            223,
+            OPAQUE_ALPHA,
+        ]);
+        renderer.upload(&queue, &overlay).unwrap();
+
+        for (case_index, (width, height)) in [(640, 360), (256, 384)].into_iter().enumerate() {
+            if case_index != 0 {
+                renderer.resize(&device, width, height);
+            }
+            let base_color = [96, 160, 224];
+            let mut base = vec![u8::MIN; width as usize * height as usize * RGBA_COMPONENT_COUNT];
+            let viewport = aspect_fit_viewport(width, height, UI_OVERLAY_WIDTH, UI_OVERLAY_HEIGHT);
+            let viewport_left = viewport.0.floor() as u32;
+            let viewport_top = viewport.1.floor() as u32;
+            let viewport_right = (viewport.0 + viewport.2).ceil() as u32;
+            let viewport_bottom = (viewport.1 + viewport.3).ceil() as u32;
+            for y in viewport_top..viewport_bottom {
+                for x in viewport_left..viewport_right {
+                    let index = (y as usize * width as usize + x as usize) * RGBA_COMPONENT_COUNT;
+                    base[index..index + 3].copy_from_slice(&base_color);
+                    base[index + 3] = OPAQUE_ALPHA;
+                }
+            }
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &renderer.base_texture,
+                    mip_level: BASE_MIP_LEVEL,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                &base,
+                wgpu::TexelCopyBufferLayout {
+                    offset: u64::MIN,
+                    bytes_per_row: Some(width * RGBA_BYTES_PER_PIXEL),
+                    rows_per_image: Some(height),
+                },
+                wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+                },
+            );
+            let pixels =
+                render_ui_composite_output(&device, &queue, &renderer, width, height, true);
+            let origin_pixel = logical_overlay_pixel(viewport, 0, 0, width, height);
+            let origin = pixel_at(&pixels, width, origin_pixel.0, origin_pixel.1);
+            assert!(
+                origin[..3]
+                    .iter()
+                    .zip(base_color)
+                    .all(|(actual, expected)| actual.abs_diff(expected) <= 1)
+            );
+            let darken_pixel = logical_overlay_pixel(viewport, 160, 100, width, height);
+            let darkened = pixel_at(&pixels, width, darken_pixel.0, darken_pixel.1);
+            let expected_darkened =
+                base_color.map(|channel| ((u16::from(channel) * 127 + 127) / 255) as u8);
+            assert!(
+                darkened[..3]
+                    .iter()
+                    .zip(expected_darkened)
+                    .all(|(actual, expected)| actual.abs_diff(expected) <= 2)
+            );
+            let text_pixel = logical_overlay_pixel(viewport, 161, 100, width, height);
+            let text = pixel_at(&pixels, width, text_pixel.0, text_pixel.1);
+            assert!(
+                text[..3]
+                    .iter()
+                    .zip([37, 181, 223])
+                    .all(|(actual, expected)| actual.abs_diff(expected) <= 1)
+            );
+            let cleared =
+                render_ui_composite_output(&device, &queue, &renderer, width, height, false);
+            let cleared_pixel = pixel_at(&cleared, width, darken_pixel.0, darken_pixel.1);
+            assert!(
+                cleared_pixel[..3]
+                    .iter()
+                    .zip(base_color)
+                    .all(|(actual, expected)| actual.abs_diff(expected) <= 1)
+            );
+        }
+    }
+
+    fn render_ui_composite_output(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        renderer: &UiCompositeRenderer,
+        width: u32,
+        height: u32,
+        overlay_active: bool,
+    ) -> Vec<u8> {
+        let extent = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+        };
+        let output = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("resized UI composite test output"),
+            size: extent,
+            mip_level_count: MIP_LEVEL_COUNT,
+            sample_count: SINGLE_SAMPLE_COUNT,
+            dimension: wgpu::TextureDimension::D2,
+            format: OFFSCREEN_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let bytes_per_row = width * RGBA_BYTES_PER_PIXEL;
+        assert_eq!(bytes_per_row % wgpu::COPY_BYTES_PER_ROW_ALIGNMENT, u32::MIN);
+        let readback = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("resized UI composite test readback"),
+            size: u64::from(bytes_per_row) * u64::from(height),
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("resized UI composite test encoder"),
+        });
+        let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
+        renderer.encode(
+            &mut encoder,
+            &output_view,
+            aspect_fit_viewport(width, height, UI_OVERLAY_WIDTH, UI_OVERLAY_HEIGHT),
+            overlay_active,
+        );
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: &output,
+                mip_level: BASE_MIP_LEVEL,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &readback,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: u64::MIN,
+                    bytes_per_row: Some(bytes_per_row),
+                    rows_per_image: Some(height),
+                },
+            },
+            extent,
+        );
+        queue.submit([encoder.finish()]);
+        let (sender, receiver) = std::sync::mpsc::channel();
+        readback
+            .slice(..)
+            .map_async(wgpu::MapMode::Read, move |result| {
+                sender.send(result).unwrap();
+            });
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+        receiver.recv().unwrap().unwrap();
+        let pixels = readback.slice(..).get_mapped_range().to_vec();
+        readback.unmap();
+        pixels
+    }
+
+    fn logical_overlay_pixel(
+        viewport: (f32, f32, f32, f32),
+        logical_x: u32,
+        logical_y: u32,
+        width: u32,
+        height: u32,
+    ) -> (u32, u32) {
+        (
+            (viewport.0 + (logical_x as f32 + 0.5) * viewport.2 / UI_OVERLAY_WIDTH as f32)
+                .floor()
+                .clamp(0.0, width.saturating_sub(1) as f32) as u32,
+            (viewport.1 + (logical_y as f32 + 0.5) * viewport.3 / UI_OVERLAY_HEIGHT as f32)
+                .floor()
+                .clamp(0.0, height.saturating_sub(1) as f32) as u32,
+        )
+    }
+
+    fn pixel_at(pixels: &[u8], width: u32, x: u32, y: u32) -> [u8; RGBA_COMPONENT_COUNT] {
+        let index = (y as usize * width as usize + x as usize) * RGBA_COMPONENT_COUNT;
+        pixels[index..index + RGBA_COMPONENT_COUNT]
+            .try_into()
+            .unwrap()
     }
 
     #[test]

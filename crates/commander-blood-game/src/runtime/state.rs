@@ -142,6 +142,7 @@ pub struct OriginalGameRuntime {
     live_palette: IndexedGamePalette,
     front_buffer: IndexedFramebuffer,
     back_buffer: IndexedFramebuffer,
+    ui_overlay: crate::ui::RgbaUiOverlay,
     manu3: Option<Manu3Model>,
     bridge_panorama: Option<BridgePanoramaArchive>,
     save_slots: Option<OriginalSaveSlotDirectory>,
@@ -173,6 +174,34 @@ impl fmt::Debug for OriginalGameRuntime {
 }
 
 impl OriginalGameRuntime {
+    /// Clear transient RGB UI once per simulation frame, not per visual refresh.
+    pub(super) fn clear_ui_overlay(&mut self) {
+        self.ui_overlay.clear();
+    }
+
+    pub(super) fn ui_overlay_rgba(&self) -> &[u8] {
+        self.ui_overlay.pixels()
+    }
+
+    pub(super) fn darken_ui_rect(&mut self, origin: [i32; 2], size: [u16; 2]) {
+        self.ui_overlay.darken_rect(origin, size);
+    }
+
+    pub(super) fn draw_choice_text(
+        &mut self,
+        label: &[u8],
+        origin: [i32; 2],
+        style: crate::ui::ChoiceTextStyle,
+    ) -> Result<()> {
+        self.data
+            .choice_ui_assets
+            .draw_text(&mut self.ui_overlay, label, origin, style)
+    }
+
+    pub(super) fn choice_text_color(&self, style: crate::ui::ChoiceTextStyle) -> [u8; 4] {
+        self.data.choice_ui_assets.text_color(style)
+    }
+
     /// Allocate the flat runtime around one validated original data set.
     pub fn new(data: OriginalGameData) -> Self {
         let profiles = ScriptProfileManager::new(data.script_profile_catalog().clone());
@@ -183,6 +212,10 @@ impl OriginalGameRuntime {
             resource_cache: OriginalResourceCache::new(),
             profiles,
             live_palette,
+            ui_overlay: crate::ui::RgbaUiOverlay::new(
+                LOGICAL_FRAMEBUFFER_WIDTH,
+                LOGICAL_FRAMEBUFFER_HEIGHT,
+            ),
             front_buffer: IndexedFramebuffer::new(),
             back_buffer: IndexedFramebuffer::new(),
             manu3: None,

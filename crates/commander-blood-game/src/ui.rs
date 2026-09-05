@@ -1,0 +1,282 @@
+//! RGB UI assets imported once, and a palette-free logical overlay.
+
+use anyhow::{Context, Result, bail};
+use commander_blood_formats::bloodprg::BloodprgFontResources;
+
+const GLYPH_WIDTH: usize = 16;
+const GLYPH_HEIGHT: usize = 10;
+const GLYPH_ROW_BYTES: usize = 2;
+const GLYPH_BYTES: usize = GLYPH_HEIGHT * GLYPH_ROW_BYTES;
+const RGBA_COMPONENTS: usize = 4;
+const OPAQUE: u8 = 255;
+const TRANSPARENT: u8 = 0;
+const DARKEN_ALPHA: u8 = 128;
+const FIRST_ROW_BIT: u16 = 1 << (GLYPH_WIDTH - 1);
+
+/// Semantic styles emitted by the recovered choice-list planner.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum ChoiceTextStyle {
+    Normal,
+    Hovered,
+    Pressed,
+}
+
+impl TryFrom<u8> for ChoiceTextStyle {
+    type Error = anyhow::Error;
+
+    fn try_from(authored_style: u8) -> Result<Self> {
+        match authored_style {
+            232 => Ok(Self::Normal),
+            239 => Ok(Self::Hovered),
+            254 => Ok(Self::Pressed),
+            _ => bail!("unrecognized choice text style {authored_style}"),
+        }
+    }
+}
+
+impl ChoiceTextStyle {
+    const fn slot(self) -> usize {
+        match self {
+            Self::Normal => 0,
+            Self::Hovered => 1,
+            Self::Pressed => 2,
+        }
+    }
+}
+
+struct RgbaGlyph {
+    advance: i32,
+    images: [Box<[u8]>; 3],
+}
+
+/// Immutable, precolored glyph images. No live color table is retained.
+pub(crate) struct ChoiceUiAssets {
+    character_map: Box<[u8]>,
+    glyphs: Vec<RgbaGlyph>,
+    text_colors: [[u8; 4]; 3],
+}
+
+impl ChoiceUiAssets {
+    /// Import the executable font and its three authored text colors at startup.
+    pub(crate) fn import(
+        fonts: &BloodprgFontResources,
+        source_colors: &[[u8; 3]; 256],
+    ) -> Result<Self> {
+        let mut colors = [[TRANSPARENT; RGBA_COMPONENTS]; 3];
+        for (slot, source_index) in [232, 239, 254].into_iter().enumerate() {
+            let source = source_colors[source_index];
+            if source.iter().any(|&component| component > 63) {
+                bail!("choice font source contains an invalid DAC component");
+            }
+            colors[slot] = [
+                (source[0] << 2) | (source[0] >> 4),
+                (source[1] << 2) | (source[1] >> 4),
+                (source[2] << 2) | (source[2] >> 4),
+                OPAQUE,
+            ];
+        }
+        if !fonts.square_caps_glyphs.len().is_multiple_of(GLYPH_BYTES) {
+            bail!("square-cap font contains an incomplete glyph");
+        }
+        let glyphs = fonts
+            .square_caps_glyphs
+            .chunks_exact(GLYPH_BYTES)
+            .enumerate()
+            .map(|(index, encoded)| {
+                let advance = *fonts
+                    .square_caps_advances
+                    .get(index)
+                    .context("square-cap glyph has no pen advance")?
+                    as i8 as i32;
+                let images = colors.map(|color| {
+                    let mut rgba = vec![TRANSPARENT; GLYPH_WIDTH * GLYPH_HEIGHT * RGBA_COMPONENTS];
+                    for (y, row) in encoded.chunks_exact(GLYPH_ROW_BYTES).enumerate() {
+                        let bits = u16::from_be_bytes([row[0], row[1]]);
+                        for x in 0..GLYPH_WIDTH {
+                            if bits & (FIRST_ROW_BIT >> x) != 0 {
+                                let offset = (y * GLYPH_WIDTH + x) * RGBA_COMPONENTS;
+                                rgba[offset..offset + RGBA_COMPONENTS].copy_from_slice(&color);
+                            }
+                        }
+                    }
+                    rgba.into_boxed_slice()
+                });
+                Ok(RgbaGlyph { advance, images })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(Self {
+            character_map: Box::from(fonts.square_caps_character_map.as_slice()),
+            glyphs,
+            text_colors: colors,
+        })
+    }
+
+    pub(crate) fn text_color(&self, style: ChoiceTextStyle) -> [u8; 4] {
+        self.text_colors[style.slot()]
+    }
+
+    pub(crate) fn draw_text(
+        &self,
+        overlay: &mut RgbaUiOverlay,
+        text: &[u8],
+        origin: [i32; 2],
+        style: ChoiceTextStyle,
+    ) -> Result<()> {
+        let mut pen_x = origin[0];
+        for &character in text.iter().take_while(|&&byte| byte != 0) {
+            let index = *self
+                .character_map
+                .get(usize::from(character))
+                .context("choice text byte is outside the imported font")?;
+            let glyph = self
+                .glyphs
+                .get(usize::from(index))
+                .context("choice text refers to a missing imported glyph")?;
+            overlay.blit_glyph(&glyph.images[style.slot()], [pen_x, origin[1]]);
+            pen_x = pen_x.saturating_add(glyph.advance);
+        }
+        Ok(())
+    }
+}
+
+/// Independent UI pixels retained across visual refreshes, reset once per game frame.
+pub(crate) struct RgbaUiOverlay {
+    width: usize,
+    height: usize,
+    pixels: Box<[u8]>,
+}
+
+impl RgbaUiOverlay {
+    pub(crate) fn new(width: usize, height: usize) -> Self {
+        Self {
+            width,
+            height,
+            pixels: vec![TRANSPARENT; width * height * RGBA_COMPONENTS].into_boxed_slice(),
+        }
+    }
+
+    pub(crate) fn pixels(&self) -> &[u8] {
+        &self.pixels
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.pixels.fill(TRANSPARENT);
+    }
+
+    /// A translucent black rectangle replaces C's nearest-color darkening map.
+    /// Repeated preparation in one game frame does not accumulate extra dimming.
+    pub(crate) fn darken_rect(&mut self, origin: [i32; 2], size: [u16; 2]) {
+        let left = origin[0].clamp(0, self.width as i32) as usize;
+        let top = origin[1].clamp(0, self.height as i32) as usize;
+        let right = origin[0]
+            .saturating_add(i32::from(size[0]))
+            .clamp(0, self.width as i32) as usize;
+        let bottom = origin[1]
+            .saturating_add(i32::from(size[1]))
+            .clamp(0, self.height as i32) as usize;
+        for y in top..bottom {
+            for x in left..right {
+                let offset = (y * self.width + x) * RGBA_COMPONENTS;
+                self.pixels[offset..offset + RGBA_COMPONENTS].copy_from_slice(&[
+                    0,
+                    0,
+                    0,
+                    DARKEN_ALPHA,
+                ]);
+            }
+        }
+    }
+
+    fn blit_glyph(&mut self, rgba: &[u8], origin: [i32; 2]) {
+        for y in 0..GLYPH_HEIGHT {
+            for x in 0..GLYPH_WIDTH {
+                let source = (y * GLYPH_WIDTH + x) * RGBA_COMPONENTS;
+                if rgba[source + RGBA_COMPONENTS - 1] == TRANSPARENT {
+                    continue;
+                }
+                let dx = origin[0].saturating_add(x as i32);
+                let dy = origin[1].saturating_add(y as i32);
+                if dx < 0 || dy < 0 || dx >= self.width as i32 || dy >= self.height as i32 {
+                    continue;
+                }
+                let destination = (dy as usize * self.width + dx as usize) * RGBA_COMPONENTS;
+                self.pixels[destination..destination + RGBA_COMPONENTS]
+                    .copy_from_slice(&rgba[source..source + RGBA_COMPONENTS]);
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "requires the original BLOODPRG.EXE font data"]
+    fn every_imported_square_cap_glyph_matches_the_c_raster_coverage() {
+        use crate::native::bloodprg::{FontPoint, FontVerticalBand, draw_square_caps_text};
+        use commander_blood_formats::bloodprg::decode_bloodprg_font_resources;
+        let executable =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../re/bin/BLOODPRG.EXE");
+        let bytes =
+            std::fs::read(executable).expect("original executable font fixture is required");
+        let fonts = decode_bloodprg_font_resources(&bytes).unwrap();
+        let colors = [[17, 31, 47]; 256];
+        let assets = ChoiceUiAssets::import(&fonts, &colors).unwrap();
+        let mut overlay = RgbaUiOverlay::new(320, 200);
+        let mut reference = vec![0; 320 * 200];
+        let mut checked = 0;
+        for character in 1..fonts.square_caps_character_map.len() {
+            let glyph = usize::from(fonts.square_caps_character_map[character]);
+            if glyph >= assets.glyphs.len() {
+                continue;
+            }
+            let text = [character as u8];
+            overlay.clear();
+            reference.fill(0);
+            assets
+                .draw_text(&mut overlay, &text, [20, 20], ChoiceTextStyle::Hovered)
+                .unwrap();
+            draw_square_caps_text(
+                &mut reference,
+                &fonts,
+                &text,
+                FontPoint { x: 20, y: 20 },
+                FontVerticalBand {
+                    top: 0,
+                    bottom: 199,
+                },
+                1,
+            )
+            .unwrap();
+            for (&coverage, rgba) in reference.iter().zip(overlay.pixels().chunks_exact(4)) {
+                assert_eq!(rgba[3] != 0, coverage != 0, "glyph for byte {character}");
+                if coverage != 0 {
+                    assert_eq!(rgba, [69, 125, 190, 255]);
+                }
+            }
+            checked += 1;
+        }
+        const SUPPORTED_SQUARE_CAP_CHARACTERS: usize = 86;
+        assert_eq!(checked, SUPPORTED_SQUARE_CAP_CHARACTERS);
+    }
+
+    #[test]
+    fn darkening_is_clipped_idempotent_and_cleared_without_touching_scene_pixels() {
+        let mut overlay = RgbaUiOverlay::new(4, 3);
+        overlay.darken_rect([-1, 1], [3, 4]);
+        let once = overlay.pixels().to_vec();
+        overlay.darken_rect([-1, 1], [3, 4]);
+        assert_eq!(overlay.pixels(), once);
+        for (index, pixel) in overlay.pixels().chunks_exact(4).enumerate() {
+            let expected = if index / 4 >= 1 && index % 4 < 2 {
+                [0, 0, 0, 128]
+            } else {
+                [0; 4]
+            };
+            assert_eq!(pixel, expected);
+        }
+        overlay.clear();
+        assert!(overlay.pixels().iter().all(|&byte| byte == 0));
+    }
+}

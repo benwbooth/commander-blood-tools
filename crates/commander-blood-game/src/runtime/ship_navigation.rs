@@ -554,7 +554,7 @@ impl RuntimeShipNavigationBackend<'_, '_, '_, '_> {
         };
         let frame = update_choice_list(&labels, config, self.choice_list, &mut backend);
         if !layout_only {
-            draw_choice_list_rows(&mut *backend.runtime, &fonts, &labels, cancel_label, &frame)?;
+            draw_choice_list_rows(&mut *backend.runtime, &labels, cancel_label, &frame)?;
         }
         backend.finish()?;
         let hand_requests = backend.take_hand_requests();

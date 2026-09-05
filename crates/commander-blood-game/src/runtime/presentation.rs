@@ -129,6 +129,7 @@ impl<'window> RuntimePresentationHost<'window> {
 
     /// Present indexed artwork without a 3D base scene.
     pub fn present_artwork(&mut self, manu3_triangles: &[RenderTriangle]) -> Result<()> {
+        self.renderer_mut()?.clear_ui_overlay();
         self.renderer_mut()?
             .render(manu3_triangles, None, None)
             .context("presenting translated artwork frame")?;
@@ -147,6 +148,8 @@ impl<'window> RuntimePresentationHost<'window> {
         composition: RuntimeBridgeComposition,
         manu3_visible: bool,
     ) -> Result<()> {
+        self.renderer_ref()?
+            .upload_ui_overlay(runtime.ui_overlay_rgba())?;
         // Frame-tail text and palette work occurs after the native chunky-copy
         // boundary, so refresh the modern texture immediately before drawing.
         match composition {
@@ -196,6 +199,7 @@ impl<'window> RuntimePresentationHost<'window> {
 
     /// Present one full-screen alien frame without indexed UI or MANU3 layers.
     pub fn present_alien_overlay_frame(&mut self, frame: &AlienSceneFrame) -> Result<()> {
+        self.renderer_mut()?.clear_ui_overlay();
         self.renderer_mut()?
             .render(&[], Some(frame), None)
             .context("presenting translated alien-overlay frame")?;

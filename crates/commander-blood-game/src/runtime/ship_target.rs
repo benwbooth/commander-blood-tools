@@ -7,17 +7,15 @@ use commander_blood_formats::script::{
 
 use crate::native::bloodprg::{
     ChoiceListConfig, ChoiceListFrame, ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect,
-    ChoiceListState, FramebufferTransitionState, PaletteRemapTable, RasterPoint,
-    ScriptFieldSelector, ShipTargetListPass, ShipTargetListSelection, ShipTargetListSource,
-    ShipTargetSelectionHost, ShipTargetSelectionOutcome, ShipTargetSelectionState, TransitionRect,
-    advance_framebuffer_rect_transition, build_banked_tint_table, script_field_offset,
-    select_ship_target,
+    ChoiceListState, FramebufferTransitionState, RasterPoint, ScriptFieldSelector,
+    ShipTargetListPass, ShipTargetListSelection, ShipTargetListSource, ShipTargetSelectionHost,
+    ShipTargetSelectionOutcome, ShipTargetSelectionState, TransitionRect,
+    advance_framebuffer_rect_transition, script_field_offset, select_ship_target,
 };
 
 use super::OriginalGameRuntime;
 use super::choice_list::{RuntimeChoiceListBackend, draw_choice_list_rows};
 
-const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
 const TARGET_LIST_CENTER_X: i16 = 80;
 const TARGET_TRANSITION_CENTER_Y: i16 = 100;
 const COLLAPSED_TARGET_EXTENT: i16 = 0;
@@ -106,18 +104,8 @@ impl RuntimeShipTargetSelector {
             .context("ship target selection requires a loaded BloodScript profile")?;
         let labels = target_labels(profile.directory(), presentable_targets)?;
         let fonts = runtime.data().font_resources().clone();
-        let mut tint: PaletteRemapTable = [u8::MIN; 256];
-        build_banked_tint_table(runtime.live_palette(), &mut tint, BRIDGE_CONSOLE_TINT_FIRST)
-            .context("building the ship target-list tint table")?;
         let mut backend = RuntimeShipTargetBackend {
-            list: RuntimeChoiceListBackend::new(
-                runtime,
-                &fonts,
-                &tint,
-                pointer,
-                current_hand_animation,
-            ),
-            fonts: &fonts,
+            list: RuntimeChoiceListBackend::new(runtime, &fonts, pointer, current_hand_animation),
             labels: &labels,
             choice_list: &mut self.choice_list,
             current_rect: &mut self.current_rect,
@@ -160,7 +148,6 @@ fn target_labels(
 
 struct RuntimeShipTargetBackend<'runtime, 'state> {
     list: RuntimeChoiceListBackend<'runtime>,
-    fonts: &'runtime commander_blood_formats::bloodprg::BloodprgFontResources,
     labels: &'state [Box<[u8]>],
     choice_list: &'state mut ChoiceListState,
     current_rect: &'state mut ChoiceListRect,
@@ -211,13 +198,8 @@ impl ShipTargetSelectionHost for RuntimeShipTargetBackend<'_, '_> {
         );
         *self.current_rect = frame.rect;
         if pass == ShipTargetListPass::Interactive {
-            let draw = draw_choice_list_rows(
-                self.list.runtime_mut(),
-                self.fonts,
-                &labels,
-                Some(CANCEL_LABEL),
-                &frame,
-            );
+            let draw =
+                draw_choice_list_rows(self.list.runtime_mut(), &labels, Some(CANCEL_LABEL), &frame);
             self.list.record_error(draw);
         }
 
@@ -264,7 +246,7 @@ impl ShipTargetSelectionHost for RuntimeShipTargetBackend<'_, '_> {
         );
         *current_step = u16::from(transition.current_step);
         if let Some(region) = region {
-            self.list.remap_region(
+            self.list.darken_region(
                 RasterPoint {
                     x: i32::from(region.x),
                     y: i32::from(region.y),

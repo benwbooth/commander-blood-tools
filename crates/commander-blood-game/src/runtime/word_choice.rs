@@ -5,17 +5,16 @@ use commander_blood_formats::script::{ScriptDictionary, ScriptWordId};
 
 use crate::native::bloodprg::{
     ChoiceListBackend, ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect,
-    FramebufferTransitionState, GameLifecycleState, PaletteRemapTable, PresentationWordChoice,
+    FramebufferTransitionState, GameLifecycleState, PresentationWordChoice,
     PresentationWordChoiceBackend, PresentationWordChoiceContext, PresentationWordChoiceOutcome,
     PresentationWordChoicePhase, PresentationWordChoiceState, RasterPoint, TransitionRect,
-    WORD_CHOICE_TRANSITION_STEPS, advance_framebuffer_rect_transition, build_banked_tint_table,
+    WORD_CHOICE_TRANSITION_STEPS, advance_framebuffer_rect_transition,
     update_presentation_word_choice,
 };
 
 use super::ModernGameServices;
 use super::choice_list::{RuntimeChoiceListBackend, draw_choice_list_rows};
 
-const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
 const COLLAPSED_CHOICE_LIST_X: i16 = 0;
 const COLLAPSED_CHOICE_LIST_Y: i16 = 100;
 const COLLAPSED_CHOICE_LIST_WIDTH: u16 = u16::MIN;
@@ -58,20 +57,12 @@ impl RuntimePresentationWordChoice {
         }
 
         let fonts = services.runtime().data().font_resources().clone();
-        let mut tint: PaletteRemapTable = [u8::MIN; 256];
-        build_banked_tint_table(
-            services.runtime().live_palette(),
-            &mut tint,
-            BRIDGE_CONSOLE_TINT_FIRST,
-        )
-        .context("building the dialogue choice-list tint table")?;
         let pointer = services.input().pointer_sample().position;
         let current_hand_animation = services.manu3_hand_state().current_animation;
         let mut backend = RuntimeWordChoiceBackend {
             list: RuntimeChoiceListBackend::new(
                 services.runtime_mut(),
                 &fonts,
-                &tint,
                 ChoiceListPointer {
                     position: pointer,
                     primary_pressed: lifecycle.primary_pointer_pressed,
@@ -107,12 +98,12 @@ impl RuntimePresentationWordChoice {
 
         match &outcome {
             PresentationWordChoiceOutcome::AwaitingSelection(frame) => {
-                self.draw_frame(services, &fonts, frame)?;
+                self.draw_frame(services, frame)?;
             }
             PresentationWordChoiceOutcome::Selected { frame, .. } => {
                 self.transition.current_step = u8::MIN;
                 services.play_loaded_sound_bank_clip(CHOICE_LIST_SELECTION_SOUND_CLIP)?;
-                self.draw_frame(services, &fonts, frame)?;
+                self.draw_frame(services, frame)?;
             }
             PresentationWordChoiceOutcome::Completed(word) => {
                 services.complete_word_choice(*word, lifecycle)?;
@@ -156,7 +147,6 @@ impl RuntimePresentationWordChoice {
     fn draw_frame<'window>(
         &self,
         services: &mut ModernGameServices<'window>,
-        fonts: &commander_blood_formats::bloodprg::BloodprgFontResources,
         frame: &crate::native::bloodprg::ChoiceListFrame,
     ) -> Result<()> {
         let labels = self
@@ -165,7 +155,7 @@ impl RuntimePresentationWordChoice {
             .iter()
             .map(|choice| choice.label.as_ref())
             .collect::<Vec<_>>();
-        draw_choice_list_rows(services.runtime_mut(), fonts, &labels, None, frame)
+        draw_choice_list_rows(services.runtime_mut(), &labels, None, frame)
     }
 }
 
@@ -240,7 +230,7 @@ impl PresentationWordChoiceBackend for RuntimeWordChoiceBackend<'_, '_> {
         .context("advancing a dialogue choice-list transition");
         match result {
             Ok(Some(region)) => {
-                self.list.remap_region(
+                self.list.darken_region(
                     RasterPoint {
                         x: i32::from(region.x),
                         y: i32::from(region.y),
