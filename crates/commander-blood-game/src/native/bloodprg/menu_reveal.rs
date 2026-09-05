@@ -3,7 +3,7 @@
 use std::fmt;
 
 use commander_blood_formats::instruction::ScriptTextWord;
-use commander_blood_formats::script::{ScriptDictionary, ScriptWordId};
+use commander_blood_formats::script::{ScriptDictionary, ScriptState, ScriptWordId};
 
 use super::TextPresentationState;
 
@@ -17,17 +17,17 @@ const MENU_COLOR: u8 = 239;
 /// Width provider used by the backend-independent menu layout step.
 pub trait InlineMenuTextMetrics {
     /// Return the width left by rendering one visible word in the main font.
-    fn rendered_width(&mut self, word: ScriptWordId, text: &[u8]) -> u16;
+    fn rendered_width(&mut self, text: &[u8]) -> u16;
 
     /// Return the width of the following word in the lookahead font.
-    fn lookahead_width(&mut self, word: Option<(ScriptWordId, &[u8])>) -> u16;
+    fn lookahead_width(&mut self, text: Option<&[u8]>) -> u16;
 }
 
 /// One word that the renderer must draw for the current reveal frame.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InlineMenuWordPlacement {
-    /// Interned dictionary word to draw.
-    pub word: ScriptWordId,
+    /// Text resolved for this frame, including live numeric substitutions.
+    pub text: Box<[u8]>,
     /// Wrapped original pixel coordinates.
     pub position: [u16; 2],
     /// Width reported by the main-font renderer.
@@ -72,6 +72,11 @@ pub enum InlineMenuRevealOutcome {
 pub enum InlineMenuRevealError {
     /// A menu word belongs to another dictionary.
     UnknownDictionaryWord(ScriptWordId),
+    /// A numeric substitution cannot be bound to an owned VAR word.
+    InvalidStateNumber {
+        /// Serialized VAR byte position that could not be resolved.
+        source_offset: u16,
+    },
     /// The authored operand count cannot participate in native 16-bit timing.
     WordCountOutOfRange {
         /// Unrepresentable owned word count.
@@ -95,6 +100,7 @@ impl std::error::Error for InlineMenuRevealError {}
 pub fn reveal_inline_menu_step<M: InlineMenuTextMetrics>(
     presentation: &mut TextPresentationState,
     dictionary: &ScriptDictionary,
+    state: Option<&ScriptState>,
     owner_matches: bool,
     word_delay: u16,
     metrics: &mut M,
@@ -116,37 +122,56 @@ pub fn reveal_inline_menu_step<M: InlineMenuTextMetrics>(
     let mut x = MENU_LEFT;
     let mut y = MENU_TOP;
     let mut cursor = usize::MIN;
+    let mut encoded_cursor = usize::MIN;
 
     loop {
         let Some(current) = presentation.menu_words.get(cursor).copied() else {
             return complete_menu(presentation, placements, x, y, word_delay);
         };
-        let ScriptTextWord::Dictionary(word) = current else {
-            return complete_menu(presentation, placements, x, y, word_delay);
+        let text = match current {
+            ScriptTextWord::Dictionary(word) => dictionary
+                .word(word)
+                .ok_or(InlineMenuRevealError::UnknownDictionaryWord(word))?,
+            ScriptTextWord::StateNumber(number) => {
+                let source_offset = number.source_offset();
+                let value = state
+                    .and_then(|state| {
+                        state
+                            .resolve_word_source_offset(source_offset)
+                            .and_then(|field| state.word(field))
+                    })
+                    .ok_or(InlineMenuRevealError::InvalidStateNumber { source_offset })?;
+                presentation.menu_number_text =
+                    (value as i16).to_string().into_bytes().into_boxed_slice();
+                &presentation.menu_number_text
+            }
+            ScriptTextWord::SectionSeparator => {
+                return complete_menu(presentation, placements, x, y, word_delay);
+            }
         };
-        let text = dictionary
-            .word(word)
-            .ok_or(InlineMenuRevealError::UnknownDictionaryWord(word))?;
-        let width = metrics.rendered_width(word, text);
+        let width = metrics.rendered_width(text);
         placements.push(InlineMenuWordPlacement {
-            word,
+            text: Box::from(text),
             position: [x, y],
             width,
             color: MENU_COLOR,
         });
 
         cursor = cursor.saturating_add(1);
+        encoded_cursor += current.encoded_word_count();
         let next = match presentation.menu_words.get(cursor).copied() {
-            Some(ScriptTextWord::Dictionary(next)) => Some((
-                next,
+            Some(ScriptTextWord::Dictionary(next)) => Some(
                 dictionary
                     .word(next)
                     .ok_or(InlineMenuRevealError::UnknownDictionaryWord(next))?,
-            )),
+            ),
+            // Native lookahead reads DIC slot 1 before the next substitution
+            // formats its value. Reuse the last number; do not read ahead in VAR.
+            Some(ScriptTextWord::StateNumber(_)) => Some(presentation.menu_number_text.as_ref()),
             Some(ScriptTextWord::SectionSeparator) | None => None,
         };
         if next
-            .and_then(|(_word, text)| text.first().copied())
+            .and_then(|text| text.first().copied())
             .is_some_and(is_attached_punctuation)
         {
             x = x.wrapping_add(width);
@@ -159,7 +184,7 @@ pub fn reveal_inline_menu_step<M: InlineMenuTextMetrics>(
             }
         }
 
-        if cursor >= presentation.menu_reveal_count {
+        if encoded_cursor >= presentation.menu_reveal_count {
             let reveal_advanced = presentation.dialogue_hold_countdown == u16::MIN;
             if reveal_advanced {
                 presentation.menu_reveal_count = presentation.menu_reveal_count.saturating_add(1);
@@ -218,6 +243,190 @@ mod tests {
     const ORACLE_VECTOR_COUNT: usize = 16;
     const NATIVE_MENU_OWNER: u16 = 26_544;
     const FLAT_NONZERO_BASE_CURSOR: [u16; 2] = [29, MENU_TOP];
+
+    #[derive(Deserialize)]
+    struct NumericMenuOracle {
+        name: String,
+        menu: Vec<u16>,
+        numbers: std::collections::BTreeMap<u16, i16>,
+        reveal: usize,
+        countdown: u16,
+        delay: u16,
+        scratch: Vec<u8>,
+        output: NumericMenuOutput,
+    }
+
+    #[derive(Deserialize)]
+    struct NumericMenuOutput {
+        draws: Vec<NumericMenuDraw>,
+        x: u16,
+        y: u16,
+        reveal: usize,
+        countdown: u16,
+        complete: bool,
+        scratch: Vec<u8>,
+    }
+
+    #[derive(Deserialize)]
+    struct NumericMenuDraw {
+        text: Vec<u8>,
+        position: [u16; 2],
+        width: u16,
+    }
+
+    struct SequelFontMetrics {
+        fonts: commander_blood_formats::bloodprg::BloodprgFontResources,
+        surface: Vec<u8>,
+    }
+
+    impl InlineMenuTextMetrics for SequelFontMetrics {
+        fn rendered_width(&mut self, text: &[u8]) -> u16 {
+            use crate::native::bloodprg::{FontPoint, FontVerticalBand, draw_planar_dialogue_text};
+            draw_planar_dialogue_text(
+                &mut self.surface,
+                &self.fonts,
+                text,
+                FontPoint { x: 0, y: 0 },
+                FontVerticalBand {
+                    top: 0,
+                    bottom: 199,
+                },
+                239,
+            )
+            .unwrap()
+            .draw_width
+        }
+
+        fn lookahead_width(&mut self, text: Option<&[u8]>) -> u16 {
+            use crate::native::bloodprg::{GameFontFace, measure_game_text_width};
+            measure_game_text_width(text.unwrap_or_default(), GameFontFace::Main, &self.fonts)
+                .unwrap()
+        }
+    }
+
+    #[test]
+    #[ignore = "requires original sequel fonts and loose SCRIPT1 state"]
+    fn sequel_numeric_menu_matches_complete_original_renderer_and_helpers() {
+        use commander_blood_formats::code::ScriptDialect;
+        use commander_blood_formats::instruction::ScriptTextStateNumber;
+        use commander_blood_formats::script::{
+            decode_script_directory, decode_script_state_for_dialect,
+        };
+        let root =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang");
+        let executable = std::fs::read(root.join("disc/BLOOD2PG.EXE")).unwrap();
+        let fonts = crate::game::GameVariant::BigBugBang
+            .decode_fonts(&executable)
+            .unwrap();
+        let resources = root.join("imported-assets/resources");
+        let directory =
+            decode_script_directory(&std::fs::read(resources.join("SCRIPT1.DEB")).unwrap())
+                .unwrap();
+        let original_state = decode_script_state_for_dialect(
+            &std::fs::read(resources.join("SCRIPT1.VAR")).unwrap(),
+            &directory,
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        let vectors: Vec<NumericMenuOracle> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_menu_number.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(vectors.len(), 59);
+        let mut dictionary_bytes = vec![0; 128];
+        for (offset, value) in [
+            (16, b"VALUE".as_slice()),
+            (32, b","),
+            (48, b"NEXT"),
+            (64, b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+            (96, b"."),
+        ] {
+            dictionary_bytes[offset..offset + value.len()].copy_from_slice(value);
+        }
+        let dictionary = decode_script_dictionary(&dictionary_bytes).unwrap();
+        let mut metrics = SequelFontMetrics {
+            fonts,
+            surface: vec![0; 320 * 200],
+        };
+        for vector in vectors {
+            let mut state = original_state.clone();
+            for (offset, value) in &vector.numbers {
+                let field = state.resolve_word_source_offset(*offset).unwrap();
+                assert!(state.set_word(field, *value as u16));
+            }
+            let mut words = Vec::new();
+            let mut encoded = vector.menu.iter();
+            while let Some(word) = encoded.next() {
+                words.push(if *word == 1 {
+                    ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(
+                        *encoded.next().unwrap(),
+                    ))
+                } else {
+                    ScriptTextWord::Dictionary(dictionary.resolve_source_offset(*word).unwrap())
+                });
+            }
+            let mut presentation = TextPresentationState {
+                menu_deferred: true,
+                menu_words: words.into_boxed_slice(),
+                menu_word_count: vector.menu.len(),
+                menu_reveal_count: vector.reveal,
+                dialogue_hold_countdown: vector.countdown,
+                menu_number_text: vector.scratch.into_boxed_slice(),
+                ..Default::default()
+            };
+            let outcome = reveal_inline_menu_step(
+                &mut presentation,
+                &dictionary,
+                Some(&state),
+                true,
+                vector.delay,
+                &mut metrics,
+            )
+            .unwrap();
+            let InlineMenuRevealOutcome::Frame(frame) = outcome else {
+                panic!("{}: gated", vector.name)
+            };
+            assert_eq!(
+                frame.placements.len(),
+                vector.output.draws.len(),
+                "{}",
+                vector.name
+            );
+            for (actual, expected) in frame.placements.iter().zip(&vector.output.draws) {
+                assert_eq!(actual.text.as_ref(), expected.text, "{}", vector.name);
+                assert_eq!(actual.position, expected.position, "{}", vector.name);
+                assert_eq!(actual.width, expected.width, "{}", vector.name);
+            }
+            assert_eq!(
+                frame.cursor,
+                [vector.output.x, vector.output.y],
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                presentation.menu_reveal_count, vector.output.reveal,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                presentation.dialogue_hold_countdown, vector.output.countdown,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                presentation.dialogue_hold_complete, vector.output.complete,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                presentation.menu_number_text.as_ref(),
+                vector.output.scratch,
+                "{}",
+                vector.name
+            );
+        }
+    }
     const FLAT_SPLIT_STATE_CURSOR: [u16; 2] = [22, MENU_TOP];
 
     #[derive(Deserialize)]
@@ -266,11 +475,11 @@ mod tests {
     }
 
     impl InlineMenuTextMetrics for OracleMetrics {
-        fn rendered_width(&mut self, _word: ScriptWordId, _text: &[u8]) -> u16 {
+        fn rendered_width(&mut self, _text: &[u8]) -> u16 {
             self.rendered_widths.pop_front().unwrap()
         }
 
-        fn lookahead_width(&mut self, _word: Option<(ScriptWordId, &[u8])>) -> u16 {
+        fn lookahead_width(&mut self, _word: Option<&[u8]>) -> u16 {
             self.lookahead_widths.pop_front().unwrap()
         }
     }
@@ -306,6 +515,7 @@ mod tests {
             let outcome = reveal_inline_menu_step(
                 &mut presentation,
                 &dictionary,
+                None,
                 vector.gates.owner == NATIVE_MENU_OWNER,
                 case.delay,
                 &mut metrics,

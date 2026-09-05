@@ -61,6 +61,8 @@ pub enum TextConditionError {
     MissingHistory,
     /// A condition requires a `0xFFFF` section that is absent.
     MissingWordSection,
+    /// Numeric words in condition sections require a separately recovered path.
+    UnverifiedNumericConditionSection,
 }
 
 impl fmt::Display for TextConditionError {
@@ -100,7 +102,11 @@ pub fn evaluate_text_conditions(
         }
     }
 
-    let sections = word_sections(&text.words);
+    let sections = if text.control.uses_history_condition() || text.control.arms_resume() {
+        word_sections(&text.words)?
+    } else {
+        Vec::new()
+    };
     if text.control.uses_history_condition() {
         let history = history.ok_or(TextConditionError::MissingHistory)?;
         let candidates = sections
@@ -134,7 +140,7 @@ pub fn evaluate_text_conditions(
     Ok(true)
 }
 
-fn word_sections(words: &[ScriptTextWord]) -> Vec<Vec<ScriptWordId>> {
+fn word_sections(words: &[ScriptTextWord]) -> Result<Vec<Vec<ScriptWordId>>, TextConditionError> {
     let mut sections = vec![Vec::new()];
     for word in words {
         match *word {
@@ -143,9 +149,12 @@ fn word_sections(words: &[ScriptTextWord]) -> Vec<Vec<ScriptWordId>> {
                 .expect("one section always exists")
                 .push(word),
             ScriptTextWord::SectionSeparator => sections.push(Vec::new()),
+            ScriptTextWord::StateNumber(_) => {
+                return Err(TextConditionError::UnverifiedNumericConditionSection);
+            }
         }
     }
-    sections
+    Ok(sections)
 }
 
 fn recent_words_are_listed(history: &ScriptWordHistory, candidates: &[ScriptWordId]) -> bool {

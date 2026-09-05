@@ -2627,6 +2627,9 @@ fn contact_snapshot(
         .map(|word| match word {
             ScriptTextWord::Dictionary(word) => profile.dictionary().source_offset(*word).unwrap(),
             ScriptTextWord::SectionSeparator => u16::MAX,
+            ScriptTextWord::StateNumber(_) => {
+                panic!("Commander oracle cannot contain a sequel number")
+            }
         })
         .collect::<Vec<_>>();
     ContactEntrySnapshot {
@@ -2685,6 +2688,9 @@ fn matching_bas_text_offset(
                             profile.dictionary().source_offset(*word).unwrap()
                         }
                         ScriptTextWord::SectionSeparator => u16::MAX,
+                        ScriptTextWord::StateNumber(_) => {
+                            panic!("Commander oracle cannot contain a sequel number")
+                        }
                     })
                     .eq(actual.word_offsets.iter().copied())
             };
@@ -2726,6 +2732,9 @@ fn post_separator_script_offsets(
         .filter_map(|word| match word {
             ScriptTextWord::Dictionary(word) => profile.dictionary().source_offset(*word),
             ScriptTextWord::SectionSeparator => None,
+            ScriptTextWord::StateNumber(_) => {
+                panic!("Commander oracle cannot contain a sequel number")
+            }
         })
         .collect()
 }
@@ -2737,6 +2746,9 @@ fn normalized_script_words(profile: &LoadedScriptProfile, words: &[ScriptTextWor
         .filter_map(|word| match word {
             ScriptTextWord::Dictionary(word) => Some(*word),
             ScriptTextWord::SectionSeparator => None,
+            ScriptTextWord::StateNumber(_) => {
+                panic!("Commander oracle cannot contain a sequel number")
+            }
         })
         .collect::<Vec<_>>();
     let mut text = Vec::new();
@@ -2780,6 +2792,9 @@ fn contact_choice_words(
             ScriptTextWord::SectionSeparator => {
                 panic!("contact choice list contains a second section separator")
             }
+            ScriptTextWord::StateNumber(_) => {
+                panic!("Commander oracle cannot contain a sequel number")
+            }
         })
         .collect()
 }
@@ -2794,6 +2809,9 @@ fn presentation_dictionary_words(
         .filter_map(|word| match word {
             ScriptTextWord::Dictionary(word) => Some(*word),
             ScriptTextWord::SectionSeparator => None,
+            ScriptTextWord::StateNumber(_) => {
+                panic!("Commander oracle cannot contain a sequel number")
+            }
         })
         .collect()
 }

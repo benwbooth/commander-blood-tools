@@ -164,9 +164,9 @@ pub struct TextPresentationState {
     pub subtitle_reveal_cursor: Option<usize>,
     /// The main presentation loop has not yet consumed the new menu.
     pub menu_pending: bool,
-    /// Number of leading menu words before the first section separator.
+    /// Number of encoded menu words before the first section separator.
     pub menu_word_count: usize,
-    /// Number of menu words currently exposed by progressive reveal.
+    /// Encoded-word reveal limit; a sequel number consumes two words.
     pub menu_reveal_count: usize,
     /// Frames remaining before the next menu word or completion transition.
     pub dialogue_hold_countdown: u16,
@@ -178,6 +178,8 @@ pub struct TextPresentationState {
     pub subtitle_text: Box<[u8]>,
     /// Interned words and authored section separators used by the menu renderer.
     pub menu_words: Box<[ScriptTextWord]>,
+    /// Last formatted sequel number, retained for the native lookahead behavior.
+    pub menu_number_text: Box<[u8]>,
 }
 
 impl Default for TextPresentationState {
@@ -202,6 +204,7 @@ impl Default for TextPresentationState {
             condition_presentation_words: Box::new([]),
             subtitle_text: Box::new([]),
             menu_words: Box::new([]),
+            menu_number_text: Box::new([]),
         }
     }
 }
@@ -261,6 +264,8 @@ pub enum TextHandlerError {
     Condition(TextConditionError),
     /// A word identity did not belong to the supplied dictionary.
     UnknownDictionaryWord(ScriptWordId),
+    /// The sequel's distinct spoken-number cursor path is not yet verified.
+    UnverifiedSpokenStateNumber,
 }
 
 impl fmt::Display for TextHandlerError {
@@ -526,8 +531,9 @@ pub fn handle_text_instruction(
         presentation.menu_pending = true;
         presentation.menu_word_count = menu_words
             .iter()
-            .take_while(|word| matches!(word, ScriptTextWord::Dictionary(_)))
-            .count();
+            .take_while(|word| !matches!(word, ScriptTextWord::SectionSeparator))
+            .map(|word| word.encoded_word_count())
+            .sum();
         presentation.menu_reveal_count = usize::MIN;
         presentation.dialogue_hold_countdown = u16::MIN;
         presentation.dialogue_hold_complete = false;
@@ -560,12 +566,20 @@ fn assemble_subtitle(
     words: &[ScriptTextWord],
     dictionary: &ScriptDictionary,
 ) -> Result<Box<[u8]>, TextHandlerError> {
+    if words
+        .iter()
+        .take_while(|word| !matches!(word, ScriptTextWord::SectionSeparator))
+        .any(|word| matches!(word, ScriptTextWord::StateNumber(_)))
+    {
+        return Err(TextHandlerError::UnverifiedSpokenStateNumber);
+    }
     let spoken_words: Vec<ScriptWordId> = words
         .iter()
         .take_while(|word| matches!(word, ScriptTextWord::Dictionary(_)))
         .filter_map(|word| match word {
             ScriptTextWord::Dictionary(word) => Some(*word),
             ScriptTextWord::SectionSeparator => None,
+            ScriptTextWord::StateNumber(_) => unreachable!("numeric subtitles were rejected"),
         })
         .collect();
     let mut output = Vec::new();
@@ -1000,6 +1014,9 @@ mod tests {
         let expected_choices = [first_choice, second_choice].map(|word| match word {
             ScriptTextWord::Dictionary(word) => word,
             ScriptTextWord::SectionSeparator => unreachable!(),
+            ScriptTextWord::StateNumber(_) => {
+                unreachable!("fixture contains only dictionary choices")
+            }
         });
         assert_eq!(selector.pending_presentation_words(), expected_choices);
         assert_eq!(

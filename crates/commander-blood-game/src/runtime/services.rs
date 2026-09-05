@@ -1005,7 +1005,7 @@ impl<'window> ModernGameServices<'window> {
             .dictionary();
         words
             .iter()
-            .take_while(|word| matches!(word, ScriptTextWord::Dictionary(_)))
+            .take_while(|word| !matches!(word, ScriptTextWord::SectionSeparator))
             .map(|word| match word {
                 ScriptTextWord::Dictionary(word) => {
                     dictionary.word(*word).map(Box::from).with_context(|| {
@@ -1013,6 +1013,7 @@ impl<'window> ModernGameServices<'window> {
                     })
                 }
                 ScriptTextWord::SectionSeparator => unreachable!("section separators terminate"),
+                ScriptTextWord::StateNumber(_) => bail!("sequel numeric chatter hashing has not been verified against the native audio routine"),
             })
             .collect()
     }
@@ -2765,6 +2766,9 @@ impl<'window> ModernGameServices<'window> {
         let outcome = reveal_inline_menu_step(
             self.scripts.text_presentation_mut(),
             &dictionary,
+            self.runtime
+                .current_profile()
+                .map(|profile| profile.state()),
             owner_matches,
             word_delay,
             &mut metrics,
@@ -2785,14 +2789,12 @@ impl<'window> ModernGameServices<'window> {
 
         if let InlineMenuRevealOutcome::Frame(frame) = &outcome {
             for placement in &frame.placements {
-                let text = dictionary.word(placement.word).with_context(|| {
-                    format!(
-                        "inline menu word {} is absent from the loaded dictionary",
-                        placement.word.index()
-                    )
-                })?;
                 self.runtime
-                    .draw_dialogue_word(text, placement.position.map(i32::from), placement.color)
+                    .draw_dialogue_word(
+                        &placement.text,
+                        placement.position.map(i32::from),
+                        placement.color,
+                    )
                     .context("drawing an inline menu word")?;
             }
         }
@@ -4223,14 +4225,28 @@ impl<'window> ModernGameServices<'window> {
             .map(|profile| {
                 text.menu_words
                     .iter()
-                    .take(text.menu_word_count)
+                    .take_while(|word| !matches!(word, ScriptTextWord::SectionSeparator))
                     .filter_map(|word| match word {
                         ScriptTextWord::Dictionary(word) => {
                             profile.dictionary().word(*word).map(|label| {
-                                (word.index(), String::from_utf8_lossy(label).into_owned())
+                                (
+                                    Some(word.index()),
+                                    String::from_utf8_lossy(label).into_owned(),
+                                )
                             })
                         }
                         ScriptTextWord::SectionSeparator => None,
+                        ScriptTextWord::StateNumber(number) => Some((
+                            None,
+                            profile
+                                .state()
+                                .resolve_word_source_offset(number.source_offset())
+                                .and_then(|field| profile.state().word(field))
+                                .map(|value| (value as i16).to_string())
+                                .unwrap_or_else(|| {
+                                    format!("unresolved VAR number {}", number.source_offset())
+                                }),
+                        )),
                     })
                     .collect::<Vec<_>>()
             })
@@ -5207,11 +5223,23 @@ fn audit_inline_menu_raster(
 
     let fonts = runtime.data().font_resources();
     let mut presentation = text.clone();
-    presentation.menu_reveal_count = visible_word_count;
+    presentation.menu_reveal_count = text
+        .menu_words
+        .iter()
+        .take(visible_word_count)
+        .map(|word| word.encoded_word_count())
+        .sum();
     presentation.dialogue_hold_countdown = 1;
     let mut metrics = RuntimeInlineMenuMetrics::new(fonts);
-    let outcome = reveal_inline_menu_step(&mut presentation, dictionary, true, 1, &mut metrics)
-        .context("reconstructing the current inline-dialogue layout")?;
+    let outcome = reveal_inline_menu_step(
+        &mut presentation,
+        dictionary,
+        runtime.current_profile().map(|profile| profile.state()),
+        true,
+        1,
+        &mut metrics,
+    )
+    .context("reconstructing the current inline-dialogue layout")?;
     metrics.finish()?;
     let InlineMenuRevealOutcome::Frame(frame) = outcome else {
         return Ok(None);
@@ -5222,16 +5250,10 @@ fn audit_inline_menu_raster(
 
     let mut expected = vec![u8::MIN; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
     for placement in frame.placements {
-        let word = dictionary.word(placement.word).with_context(|| {
-            format!(
-                "inline-dialogue raster word {} is absent from the loaded dictionary",
-                placement.word.index()
-            )
-        })?;
         draw_planar_dialogue_text(
             &mut expected,
             fonts,
-            word,
+            &placement.text,
             FontPoint {
                 x: i32::from(placement.position[0]),
                 y: i32::from(placement.position[1]),
@@ -5642,7 +5664,7 @@ impl<'fonts> RuntimeInlineMenuMetrics<'fonts> {
 }
 
 impl InlineMenuTextMetrics for RuntimeInlineMenuMetrics<'_> {
-    fn rendered_width(&mut self, _word: ScriptWordId, text: &[u8]) -> u16 {
+    fn rendered_width(&mut self, text: &[u8]) -> u16 {
         self.scratch.fill(u8::MIN);
         let result = draw_planar_dialogue_text(
             &mut self.scratch,
@@ -5657,11 +5679,10 @@ impl InlineMenuTextMetrics for RuntimeInlineMenuMetrics<'_> {
         self.record_width(result)
     }
 
-    fn lookahead_width(&mut self, word: Option<(ScriptWordId, &[u8])>) -> u16 {
-        let result = word.map_or(Ok(u16::MIN), |(_word, text)| {
-            measure_game_text_width(text, GameFontFace::Main, self.fonts)
-                .context("measuring inline menu lookahead")
-        });
+    fn lookahead_width(&mut self, text: Option<&[u8]>) -> u16 {
+        let result =
+            measure_game_text_width(text.unwrap_or_default(), GameFontFace::Main, self.fonts)
+                .context("measuring inline menu lookahead");
         self.record_width(result)
     }
 }
@@ -6107,11 +6128,11 @@ mod tests {
             decode_bloodprg_font_resources(include_bytes!("../../../../re/bin/BLOODPRG.EXE"))
                 .unwrap();
         let dictionary = decode_script_dictionary(b"YES\0").unwrap();
-        let (word, text) = dictionary.words().next().unwrap();
+        let (_word, text) = dictionary.words().next().unwrap();
         let mut metrics = RuntimeInlineMenuMetrics::new(&fonts);
 
-        let rendered = metrics.rendered_width(word, text);
-        let lookahead = metrics.lookahead_width(Some((word, text)));
+        let rendered = metrics.rendered_width(text);
+        let lookahead = metrics.lookahead_width(Some(text));
 
         assert_ne!(rendered, u16::MIN);
         assert_ne!(lookahead, u16::MIN);

@@ -126,6 +126,7 @@ const TEXT_SKIP_COUNT_SHIFT: u32 = 12;
 const TEXT_SKIP_COUNT_MASK: u16 = 0x0007;
 const TEXT_WORD_SECTION_SEPARATOR: u16 = u16::MAX;
 const TEXT_WORD_TERMINATOR: u16 = u16::MIN;
+const SEQUEL_TEXT_STATE_NUMBER: u16 = 1;
 const FIRST_SEQUENCE_SLOT: u8 = 1;
 const SEQUENCE_SLOT_COUNT: u8 = 6;
 const LAST_SEQUENCE_SLOT: u8 = FIRST_SEQUENCE_SLOT + SEQUENCE_SLOT_COUNT - 1;
@@ -247,8 +248,37 @@ impl ScriptTextControl {
 pub enum ScriptTextWord {
     /// Interned word from the companion DIC image.
     Dictionary(ScriptWordId),
+    /// Sequel marker 1 followed by a serialized VAR byte position.
+    /// Resolve against owned script state when drawing, not against the DIC image.
+    StateNumber(ScriptTextStateNumber),
     /// Authored `0xFFFF` boundary between spoken, condition, or menu sections.
     SectionSeparator,
+}
+
+/// Serialized source field for a live signed-decimal text substitution.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptTextStateNumber(u16);
+
+impl ScriptTextStateNumber {
+    /// Retain the authored VAR byte index until a profile's state is bound.
+    pub const fn decode(source_offset: u16) -> Self {
+        Self(source_offset)
+    }
+
+    /// Source index used by the owned VAR field resolver and script encoder.
+    pub const fn source_offset(self) -> u16 {
+        self.0
+    }
+}
+
+impl ScriptTextWord {
+    /// Number of serialized words consumed by this semantic text element.
+    pub const fn encoded_word_count(self) -> usize {
+        match self {
+            Self::StateNumber(_) => 2,
+            Self::Dictionary(_) | Self::SectionSeparator => 1,
+        }
+    }
 }
 
 /// Complete typed structure of one A6 text/presentation instruction.
@@ -1192,6 +1222,14 @@ pub fn decode_script_text(
         }
         if word == TEXT_WORD_SECTION_SEPARATOR {
             words.push(ScriptTextWord::SectionSeparator);
+            continue;
+        }
+        if token.dialect() == ScriptDialect::BigBugBang && word == SEQUEL_TEXT_STATE_NUMBER {
+            let source_offset = read_text_word(token, cursor)?;
+            cursor += WORD_SIZE;
+            words.push(ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(
+                source_offset,
+            )));
             continue;
         }
         let dictionary_word = dictionary.resolve_source_offset(word).ok_or(
@@ -2213,6 +2251,102 @@ mod tests {
                 [0, 2]
             ]
         );
+    }
+
+    #[test]
+    fn numeric_text_marker_is_sequel_only_and_requires_a_complete_operand() {
+        use crate::code::decode_script_code_for_dialect;
+        let dictionary = decode_script_dictionary(b"\0ONE\0").unwrap();
+        let bytes = [
+            TEXT_OPCODE,
+            0,
+            0,
+            0,
+            0,
+            128,
+            1,
+            0,
+            1,
+            0,
+            0,
+            0,
+            CODE_END_MARKER,
+        ];
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            let code = decode_script_code_for_dialect(&bytes, dialect).unwrap();
+            let text = decode_script_text(&code.tokens()[0], &dictionary).unwrap();
+            if dialect == ScriptDialect::BigBugBang {
+                assert_eq!(
+                    text.words.as_ref(),
+                    &[ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(
+                        1
+                    ))]
+                );
+                assert_eq!(text.words[0].encoded_word_count(), 2);
+            } else {
+                assert_eq!(text.words.len(), 2);
+                assert!(
+                    text.words
+                        .iter()
+                        .all(|word| matches!(word, ScriptTextWord::Dictionary(_)))
+                );
+            }
+        }
+        let bytes = [TEXT_OPCODE, 0, 0, 0, 0, 128, 1, 0, 0, 0, CODE_END_MARKER];
+        let code = decode_script_code_for_dialect(&bytes, ScriptDialect::BigBugBang).unwrap();
+        assert!(decode_script_text(&code.tokens()[0], &dictionary).is_err());
+    }
+
+    #[test]
+    #[ignore = "requires original sequel loose resources"]
+    fn every_authored_sequel_numeric_text_operand_resolves() {
+        use crate::code::decode_script_code_for_dialect;
+        use crate::script::{decode_script_directory, decode_script_state_for_dialect};
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let mut numbers = 0;
+        let mut accepted = 0;
+        let mut inventory = 0;
+        for profile in 1..=17 {
+            let read =
+                |suffix| std::fs::read(root.join(format!("SCRIPT{profile}.{suffix}"))).unwrap();
+            let directory = decode_script_directory(&read("DEB")).unwrap();
+            let dictionary = decode_script_dictionary(&read("DIC")).unwrap();
+            let state = decode_script_state_for_dialect(
+                &read("VAR"),
+                &directory,
+                ScriptDialect::BigBugBang,
+            )
+            .unwrap();
+            let code =
+                decode_script_code_for_dialect(&read("COD"), ScriptDialect::BigBugBang).unwrap();
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == TEXT_OPCODE)
+            {
+                match decode_script_text(token, &dictionary) {
+                    Ok(text) => {
+                        accepted += 1;
+                        for word in text.words.iter() {
+                            if let ScriptTextWord::StateNumber(number) = word {
+                                let field = state
+                                    .resolve_word_source_offset(number.source_offset())
+                                    .unwrap();
+                                assert!(state.word(field).is_some());
+                                numbers += 1;
+                            }
+                        }
+                    }
+                    Err(ScriptInstructionError::InvalidDictionaryOffset {
+                        dictionary_offset: 65534,
+                        ..
+                    }) => inventory += 1,
+                    Err(error) => panic!("profile {profile}: {error:?}"),
+                }
+            }
+        }
+        assert_eq!((accepted, inventory, numbers), (6875, 46, 58));
     }
 
     #[test]

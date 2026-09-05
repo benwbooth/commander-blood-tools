@@ -301,6 +301,9 @@ fn script2_bob_text_media_audio_and_continuation_match_authored_bytes() {
         .and_then(|word| match word {
             ScriptTextWord::Dictionary(word) => profile.dictionary().word(*word),
             ScriptTextWord::SectionSeparator => None,
+            ScriptTextWord::StateNumber(_) => {
+                panic!("Commander fixture cannot contain a sequel number")
+            }
         });
     assert_eq!(choice_word, Some(&b"bye_bye"[..]));
 

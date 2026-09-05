@@ -848,6 +848,9 @@ mod tests {
                         .filter_map(|word| match word {
                             ScriptTextWord::Dictionary(word) => Some(*word),
                             ScriptTextWord::SectionSeparator => None,
+                            ScriptTextWord::StateNumber(_) => {
+                                panic!("Commander fixture cannot contain a sequel number")
+                            }
                         })
                         .collect::<Vec<_>>();
                     if dispatch
@@ -1133,6 +1136,9 @@ mod tests {
                 .filter_map(|word| match word {
                     ScriptTextWord::Dictionary(word) => Some(*word),
                     ScriptTextWord::SectionSeparator => None,
+                    ScriptTextWord::StateNumber(_) => {
+                        panic!("Commander fixture cannot contain a sequel number")
+                    }
                 })
                 .collect::<Vec<_>>();
             assert!(
@@ -1279,6 +1285,9 @@ mod tests {
             .filter_map(|word| match word {
                 ScriptTextWord::Dictionary(word) => Some(*word),
                 ScriptTextWord::SectionSeparator => None,
+                ScriptTextWord::StateNumber(_) => {
+                    panic!("Commander fixture cannot contain a sequel number")
+                }
             })
             .collect()
     }

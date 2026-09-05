@@ -269,8 +269,8 @@ nix develop -c cargo run -p commander-blood-formats --example audit_sequel_text 
   output/big-bug-bang/imported-assets/resources > output/big-bug-bang/text-audit.json
 ```
 
-The original corpus has 6921 framed A6 tokens. The current dictionary-only typed
-decoder accepts 6824 and rejects 97. Those numbers are a diagnostic snapshot,
+The original corpus has 6921 framed A6 tokens. The earlier dictionary-only typed
+decoder accepted 6824 and rejected 97. Those numbers are a diagnostic snapshot,
 **not a fidelity gate**: even accepted tokens can have wrong semantics.
 
 There are 46 inventory markers in profiles 3 through 17. Every occurrence has
@@ -284,7 +284,7 @@ The audit also found 58 marker-1 numeric substitutions. The sequel A6 spoken
 path at 0x6D58 recognizes word 1, reads a word from the VAR image at the following
 operand (0x6D66..0x6D6D), and calls signed decimal formatting at 0x2832..0x286A.
 That helper checks the sign, emits a minus when needed and divides by ten.
-The current dictionary-only decoder instead attempts DIC resolution for both
+The earlier dictionary-only decoder instead attempted DIC resolution for both
 the marker and its operand. This explains the other 51 errors, but also hides
 seven incorrect successes where the VAR operand coincides with a DIC entry:
 
@@ -300,7 +300,7 @@ seven incorrect successes where the VAR operand coincides with a DIC entry:
 
 All numeric occurrences have flags 32768 except one with 32776; none explicitly
 sets spoken flag 32. That is not proof that an inherited spoken-mode latch is
-unreachable. Menu rendering needs its own assembly comparison and oracle.
+unreachable. The numeric menu comparison is described below.
 The spoken path notably leaves SI at the VAR operand before dictionary-based
 lookahead (0x6DA9), so it must not be rewritten as a guessed generic interpolation
 loop. Runtime read ownership, spacing and cursor behavior must be verified.
@@ -308,14 +308,37 @@ Several numeric operands exceed their profile's DIC extent, while others land
 inside unrelated strings. Do not pad the dictionary to make these reads appear
 valid, and do not count current typed acceptance as recovery of numeric text.
 
-This slice adds an audit tool and establishes authored occurrences and remaining
-translation gaps. It does not yet implement the numeric or inventory text path.
-Verification: the JSON report was generated from all seventeen imported COD/DIC
-pairs; a structured check confirmed that every one of the 97 decoder failures
-belongs to a numeric- or inventory-marker token. Formats all-targets testing
-passed all 119 library tests with original corpus checks enabled and compiled
-the example test target (which has no unit tests). Game-library tests were not
-rerun for this audit-only slice; runtime code is unchanged.
+The typed decoder now consumes marker 1 and its VAR operand together, only in
+the sequel dialect. All 58 authored operands resolve to owned state words,
+including the seven formerly incorrect successes above. The corpus test now
+accepts 6875 A6 tokens and rejects only the 46 inventory-marker tokens. All 121
+formats tests pass with original corpus checks enabled.
+
+### Numeric Menu Renderer
+
+`re/tools/big_bug_bang_menu_number_oracle.py` executes the original menu renderer
+at 0x82C6 through 0x83E1, signed formatter, main-font drawing helper and width
+helper without replacing callees. The checked-in 59 vectors compare text,
+positions, widths, cursor, reveal counter, countdown, completion and DIC scratch
+content against the Rust renderer. They cover signed extrema, zero, adjacent
+numbers, punctuation, wrapping, partial reveal and retained scratch text.
+This is a control/layout oracle, not a VGA-pixel oracle: planar hardware is not
+emulated by this harness.
+
+The renderer resolves each numeric operand from live VAR state and formats it as
+signed decimal. Native reveal limits count encoded words, so marker plus operand
+consume two positions. Lookahead to a number uses the previous scratch string
+before formatting the next number; the Rust presentation owns that string and
+the existing profile-change reset clears it. Normal menu publication retains it.
+
+Spoken numeric text, numeric condition sections and numeric chatter hashing
+return explicit errors until their distinct native paths are recovered. The
+production sequel guard remains in place. These component checks do not prove
+complete sequel dialogue, inventory selection, or playable startup.
+
+Shared-engine verification: all-targets game check passes; the game-library
+suite passes 913 tests with 12 ignored under a private X server. The ignored
+numeric-menu test is run separately and passes all 59 native vectors.
 
 ### Explicit COD Dialects
 
