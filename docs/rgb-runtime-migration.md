@@ -145,6 +145,8 @@ game frame and blocking-video boundary, with monotonic frame/time metadata. It
 does not enable scripted input or substitute the scenario clock. It also works
 alongside `--scenario ... --trace ...` with separate output paths. Production
 scenario tests now retain `frames.jsonl` in addition to action checkpoints.
+Tracing adds CPU and file-I/O overhead and should be enabled for diagnosis,
+not treated as a performance benchmark.
 
 - Library after these changes: 875 passed, five ignored.
 - Real-time SDL/wgpu run (no scenario driver):
@@ -165,3 +167,8 @@ scenario tests now retain `frames.jsonl` in addition to action checkpoints.
   is the single `GO` word plus sentinel; DS:253B is an empty trigger list.
   Those Rust lists already match the shipped executable. Pterra's inline VAR
   name also matches the directory label. No speculative menu changes were made.
+- Final updated-build Pterra regression passed with continuous tracing at
+  `output/fidelity/production-load-pterra-ship-navigation.jsonl-1788570158559742277-182269-0/`:
+  4,117 recorded frames, 799 with `PL\\pterra10.hnm` active, zero paused frames.
+  This does not reproduce the user's manual freeze. Intro camera/click-release
+  and caption/blank/click-cancellation regressions also passed separately.
