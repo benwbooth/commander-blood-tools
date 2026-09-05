@@ -3,8 +3,8 @@
 use std::fmt;
 
 use commander_blood_formats::instruction::{
-    ScriptBitFlagOperation, ScriptSharedBitOperation, ScriptSharedStateOperation,
-    ScriptStateOperand, ScriptStateOperator,
+    ScriptBitFlagOperation, ScriptMultiplyDivideOperation, ScriptSharedBitOperation,
+    ScriptSharedStateOperation, ScriptStateOperand, ScriptStateOperator,
 };
 use commander_blood_formats::script::{ScriptState, ScriptStateByte, ScriptStateWord};
 
@@ -25,6 +25,13 @@ pub enum ScriptStateOperationError {
     },
     /// A failed query had no procedure or nested guard destination.
     Control(ScriptRuntimeError),
+    /// Native unsigned DIV would raise a divide error before storing a result.
+    DivisionByZero,
+    /// Native unsigned DIV cannot represent the quotient in a 16-bit word.
+    QuotientOverflow {
+        /// Full mathematical quotient, retained for diagnostics.
+        quotient: u32,
+    },
 }
 
 impl fmt::Display for ScriptStateOperationError {
@@ -34,6 +41,36 @@ impl fmt::Display for ScriptStateOperationError {
 }
 
 impl std::error::Error for ScriptStateOperationError {}
+
+/// Apply Big Bug Bang's D3 handler without segmented memory or register emulation.
+///
+/// Original: BLOOD2PG.EXE 0x7408-0x744A. Unlike the shared comparison handlers,
+/// D3 writes even in query mode and does not consume a branch. Resolve aliased
+/// operands before the sole write, and preserve state on a native divide error.
+pub fn apply_multiply_divide_operation(
+    operation: ScriptMultiplyDivideOperation,
+    state: &mut ScriptState,
+) -> Result<ScriptControl, ScriptStateOperationError> {
+    let read_operand = |operand| match operand {
+        ScriptStateOperand::Immediate(value) => Ok(value),
+        ScriptStateOperand::StateWord(word) => read_state_word(state, word),
+    };
+    let current = read_state_word(state, operation.target)?;
+    let multiplier = read_operand(operation.multiplier)?;
+    let divisor = read_operand(operation.divisor)?;
+    let product = u32::from(current) * u32::from(multiplier);
+    let quotient = product
+        .checked_div(u32::from(divisor))
+        .ok_or(ScriptStateOperationError::DivisionByZero)?;
+    let updated = u16::try_from(quotient)
+        .map_err(|_| ScriptStateOperationError::QuotientOverflow { quotient })?;
+    if !state.set_word(operation.target, updated) {
+        return Err(ScriptStateOperationError::MissingStateWord {
+            word: operation.target,
+        });
+    }
+    Ok(ScriptControl::Continue)
+}
 
 /// Apply `vm_op_shared_state_marker` to typed object or trailing-state words.
 pub fn apply_shared_state_operation(
@@ -191,6 +228,69 @@ mod tests {
     const SHARED_STATE_VECTOR_COUNT: usize = 20;
     const SHARED_BIT_VECTOR_COUNT: usize = 14;
     const BIT_FLAG_VECTOR_COUNT: usize = 14;
+
+    #[derive(Deserialize)]
+    struct MultiplyDivideOracle {
+        name: String,
+        query_mode: u8,
+        token: Vec<u8>,
+        state_before: Vec<u8>,
+        state_after: Vec<u8>,
+        divide_error: bool,
+    }
+
+    #[test]
+    fn big_bug_bang_multiply_divide_matches_original_machine_code() {
+        use commander_blood_formats::code::{
+            ScriptDialect, ScriptTokenDecoder, decode_script_token,
+        };
+        use commander_blood_formats::instruction::{
+            DecodedScriptInstruction, decode_complete_script_instruction,
+        };
+        use commander_blood_formats::script::decode_script_dictionary;
+
+        const VECTOR_COUNT: usize = 114;
+        const BEGIN_QUERY: [u8; 3] = [0xA0, 0, 0];
+        let directory = decode_script_directory(&[]).unwrap();
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_multiply_divide.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str::<MultiplyDivideOracle>(line).unwrap())
+        .collect::<Vec<_>>();
+        assert_eq!(vectors.len(), VECTOR_COUNT);
+        for vector in vectors {
+            let mut state = decode_script_state(&vector.state_before, &directory).unwrap();
+            let mut decoder = ScriptTokenDecoder::new(ScriptDialect::BigBugBang);
+            if vector.query_mode != 0 {
+                decode_script_token(&BEGIN_QUERY, ScriptCodeOffset::new(0), &mut decoder).unwrap();
+            }
+            let token =
+                decode_script_token(&vector.token, ScriptCodeOffset::new(0), &mut decoder).unwrap();
+            let DecodedScriptInstruction::MultiplyDivide(operation) =
+                decode_complete_script_instruction(&token, &state, &directory, &dictionary)
+                    .unwrap()
+            else {
+                panic!("{}: wrong dispatch", vector.name)
+            };
+            let result = apply_multiply_divide_operation(operation, &mut state);
+            if vector.divide_error {
+                assert!(
+                    matches!(
+                        result,
+                        Err(ScriptStateOperationError::DivisionByZero
+                            | ScriptStateOperationError::QuotientOverflow { .. })
+                    ),
+                    "{}: {result:?}",
+                    vector.name
+                );
+            } else {
+                assert_eq!(result, Ok(ScriptControl::Continue), "{}", vector.name);
+            }
+            assert_eq!(state.encode(), vector.state_after, "{}", vector.name);
+        }
+    }
 
     #[derive(Deserialize)]
     struct SharedStateOracle {

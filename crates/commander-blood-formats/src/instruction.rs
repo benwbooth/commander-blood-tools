@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use crate::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptOpcode, ScriptToken};
+use crate::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptDialect, ScriptOpcode, ScriptToken};
 use crate::script::{
     ScriptDictionary, ScriptDirectory, ScriptObjectId, ScriptProcedureId, ScriptState,
     ScriptStateByte, ScriptStateWord, ScriptStateWordPair, ScriptStateWordTriple, ScriptWordId,
@@ -58,6 +58,8 @@ const ALTERNATE_CONCEPT_CLEAR_OPCODE: u8 = 0xCF;
 const TRAVEL_ACTIVITY_GUARD_OPCODE: u8 = 0xD0;
 const CONTACT_ACTIVITY_GUARD_OPCODE: u8 = 0xD1;
 const PROFILE_REQUEST_OPCODE: u8 = 0xD2;
+const MULTIPLY_DIVIDE_OPCODE: u8 = 0xD3;
+const MULTIPLY_DIVIDE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + (BYTE_SIZE + WORD_SIZE) * 2;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
 const BYTE_SIZE: usize = 1;
@@ -788,6 +790,23 @@ pub enum DecodedScriptInstruction {
     Environment(ScriptEnvironmentInstruction),
     /// D2 script-profile replacement request.
     ProfileRequest(ScriptProfileRequest),
+    /// Big Bug Bang D3 unsigned multiply/divide assignment, including in query mode.
+    MultiplyDivide(ScriptMultiplyDivideOperation),
+}
+
+/// Big Bug Bang's native D3 update: target = (target * multiplier) / divisor.
+///
+/// BLOOD2PG.EXE file 0x7408 reads all operands before writing. The product is
+/// 32-bit; division must fault, not wrap or saturate, when the quotient exceeds
+/// a word. C0 and C2 operand modes reference VAR words; other modes are immediate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptMultiplyDivideOperation {
+    /// Destination in owned flat profile state.
+    pub target: ScriptStateWord,
+    /// Unsigned multiplication operand, resolved before any write.
+    pub multiplier: ScriptStateOperand,
+    /// Unsigned division operand, resolved before any write.
+    pub divisor: ScriptStateOperand,
 }
 
 /// Failure while converting a framed token into known instruction semantics.
@@ -1048,6 +1067,9 @@ pub fn decode_complete_script_instruction(
         }
         PROFILE_REQUEST_OPCODE => {
             DecodedScriptInstruction::ProfileRequest(decode_script_profile_request(token)?)
+        }
+        MULTIPLY_DIVIDE_OPCODE if token.dialect() == ScriptDialect::BigBugBang => {
+            DecodedScriptInstruction::MultiplyDivide(decode_script_multiply_divide(token, state)?)
         }
         _ => {
             return Err(ScriptInstructionError::UntranslatedOpcode {
@@ -1386,6 +1408,36 @@ pub fn decode_script_shared_state_operation(
         target,
         operator,
         operand,
+    })
+}
+
+/// Bind the sequel's D3 operands to typed VAR words without evaluating them early.
+pub fn decode_script_multiply_divide(
+    token: &ScriptToken,
+    state: &ScriptState,
+) -> Result<ScriptMultiplyDivideOperation, ScriptInstructionError> {
+    if token.dialect() != ScriptDialect::BigBugBang
+        || token.opcode().byte() != MULTIPLY_DIVIDE_OPCODE
+    {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, MULTIPLY_DIVIDE_SIZE)?;
+    let bytes = token.encoded_bytes();
+    let operand = |offset| {
+        let value = read_word(bytes, offset + BYTE_SIZE);
+        match bytes[offset] {
+            INDIRECT_STATE_MODE_A | INDIRECT_STATE_MODE_B => {
+                resolve_state_word(token, state, value).map(ScriptStateOperand::StateWord)
+            }
+            _ => Ok(ScriptStateOperand::Immediate(value)),
+        }
+    };
+    Ok(ScriptMultiplyDivideOperation {
+        target: resolve_state_word(token, state, read_word(bytes, OPCODE_SIZE))?,
+        multiplier: operand(OPCODE_SIZE + WORD_SIZE)?,
+        divisor: operand(OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + WORD_SIZE)?,
     })
 }
 
@@ -1981,6 +2033,52 @@ mod tests {
             .join("../..")
             .join("accuracy/cblood_install/cblood")
             .join(name)
+    }
+
+    #[test]
+    fn multiply_divide_requires_the_sequel_dialect_and_valid_state_words() {
+        use crate::code::{ScriptTokenDecoder, decode_script_token};
+        use crate::script::decode_script_dictionary;
+        let directory = decode_script_directory(&[]).unwrap();
+        let state = decode_script_state(&[0; 8], &directory).unwrap();
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let commander = decode_script_token(
+            &[MULTIPLY_DIVIDE_OPCODE, 0, 0],
+            ScriptCodeOffset::new(0),
+            &mut ScriptTokenDecoder::default(),
+        )
+        .unwrap();
+        assert!(matches!(
+            decode_complete_script_instruction(&commander, &state, &directory, &dictionary),
+            Err(ScriptInstructionError::UntranslatedOpcode { .. })
+        ));
+        for operand_index in [1, 4, 7] {
+            let mut bytes = [
+                MULTIPLY_DIVIDE_OPCODE,
+                2,
+                0,
+                INDIRECT_STATE_MODE_A,
+                4,
+                0,
+                INDIRECT_STATE_MODE_B,
+                6,
+                0,
+            ];
+            bytes[operand_index] = 8;
+            let token = decode_script_token(
+                &bytes,
+                ScriptCodeOffset::new(0),
+                &mut ScriptTokenDecoder::new(ScriptDialect::BigBugBang),
+            )
+            .unwrap();
+            assert!(matches!(
+                decode_script_multiply_divide(&token, &state),
+                Err(ScriptInstructionError::InvalidStateWord {
+                    encoded_offset: 8,
+                    ..
+                })
+            ));
+        }
     }
 
     fn typed_object_record_fixture(

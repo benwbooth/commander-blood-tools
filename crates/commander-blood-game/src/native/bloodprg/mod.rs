@@ -703,8 +703,8 @@ pub use startup_prepare::{
     StartupWritableResourceId, prepare_startup_writable_resources,
 };
 pub use state::{
-    ScriptStateOperationError, apply_bit_flag_operation, apply_shared_bit_operation,
-    apply_shared_state_operation,
+    ScriptStateOperationError, apply_bit_flag_operation, apply_multiply_divide_operation,
+    apply_shared_bit_operation, apply_shared_state_operation,
 };
 pub use subtitle_reveal::{
     SubtitleFrameDraw, SubtitleFramePrimitive, SubtitleFramePrimitiveKind, SubtitleRevealError,

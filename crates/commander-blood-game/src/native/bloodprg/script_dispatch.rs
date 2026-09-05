@@ -44,8 +44,8 @@ use super::sequence::{
     load_sequence_request, offer_topic_if_presentation_active,
 };
 use super::state::{
-    ScriptStateOperationError, apply_bit_flag_operation, apply_shared_bit_operation,
-    apply_shared_state_operation,
+    ScriptStateOperationError, apply_bit_flag_operation, apply_multiply_divide_operation,
+    apply_shared_bit_operation, apply_shared_state_operation,
 };
 use super::{
     PendingScriptProfileRequest, ScriptControl, ScriptFrameEnd, ScriptPresentationScanState,
@@ -401,6 +401,11 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
             DecodedScriptInstruction::SharedState(operation) => {
                 refresh_from_var = !runtime.query_mode();
                 apply_shared_state_operation(*operation, self.state, runtime)
+                    .map_err(ScriptDispatchError::State)?
+            }
+            DecodedScriptInstruction::MultiplyDivide(operation) => {
+                refresh_from_var = true;
+                apply_multiply_divide_operation(*operation, self.state)
                     .map_err(ScriptDispatchError::State)?
             }
             DecodedScriptInstruction::DirectRecord(operation) => {

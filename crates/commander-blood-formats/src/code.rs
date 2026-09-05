@@ -21,6 +21,39 @@ const WORD_SIZE: usize = 2;
 const TEXT_HEADER_SIZE: usize = 5;
 const MAXIMUM_FORWARD_TOKEN_LENGTH: usize = i8::MAX as usize + OPCODE_SIZE;
 const DESCRIPTOR_COUNT: usize = u8::MAX as usize - FIRST_OPCODE as usize + OPCODE_SIZE;
+const LAST_SHARED_OPCODE: u8 = 0xD2;
+const LAST_BIG_BUG_BANG_OPCODE: u8 = 0xD7;
+const BIG_BUG_BANG_EXTENSION_LENGTHS: [u8; 5] = [9, 5, 3, 5, 1];
+
+/// Native instruction dialect selected by the game, not guessed from operands.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ScriptDialect {
+    /// Commander Blood's original descriptor window, including observed data tails.
+    #[default]
+    CommanderBlood,
+    /// Big Bug Bang's A0-D7 instructions. Unrecovered adjacent-data reads fail closed.
+    BigBugBang,
+}
+
+impl ScriptDialect {
+    fn descriptor(self, opcode: u8) -> Option<(u8, u8)> {
+        match self {
+            Self::CommanderBlood => {
+                Some(OBSERVABLE_DESCRIPTORS[usize::from(opcode - FIRST_OPCODE)])
+            }
+            Self::BigBugBang if opcode <= LAST_SHARED_OPCODE => {
+                Some(OBSERVABLE_DESCRIPTORS[usize::from(opcode - FIRST_OPCODE)])
+            }
+            Self::BigBugBang if opcode <= LAST_BIG_BUG_BANG_OPCODE => {
+                // BLOOD2PG.EXE skip table at file 0x16AEA, D3-D7 pairs.
+                let length =
+                    BIG_BUG_BANG_EXTENSION_LENGTHS[usize::from(opcode - LAST_SHARED_OPCODE - 1)];
+                Some((length, length))
+            }
+            Self::BigBugBang => None,
+        }
+    }
+}
 
 /// Bytes observed by the original unbounded descriptor lookup for byte values
 /// `0xA0..=0xFF`.
@@ -177,11 +210,21 @@ pub enum ScriptDecodingMode {
 /// Minimal parser state carried between adjacent COD tokens.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ScriptTokenDecoder {
+    dialect: ScriptDialect,
     mode: ScriptDecodingMode,
     scan_variable_blocks: bool,
 }
 
 impl ScriptTokenDecoder {
+    /// Start framing an explicitly selected native dialect in normal mode.
+    pub const fn new(dialect: ScriptDialect) -> Self {
+        Self {
+            dialect,
+            mode: ScriptDecodingMode::Normal,
+            scan_variable_blocks: false,
+        }
+    }
+
     /// Return the current descriptor-length mode.
     pub const fn mode(self) -> ScriptDecodingMode {
         self.mode
@@ -196,6 +239,7 @@ impl ScriptTokenDecoder {
 /// One losslessly framed COD token.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScriptToken {
+    dialect: ScriptDialect,
     source_offset: ScriptCodeOffset,
     opcode: ScriptOpcode,
     mode_before: ScriptDecodingMode,
@@ -204,6 +248,11 @@ pub struct ScriptToken {
 }
 
 impl ScriptToken {
+    /// Return the native dialect that established this token's boundaries.
+    pub const fn dialect(&self) -> ScriptDialect {
+        self.dialect
+    }
+
     /// Return this token's position in its source image.
     pub const fn source_offset(&self) -> ScriptCodeOffset {
         self.source_offset
@@ -379,7 +428,14 @@ pub fn decode_script_token(
         });
     };
 
-    let descriptor = OBSERVABLE_DESCRIPTORS[usize::from(opcode_byte - FIRST_OPCODE)];
+    let descriptor =
+        decoder
+            .dialect
+            .descriptor(opcode_byte)
+            .ok_or(ScriptCodeError::InvalidOpcode {
+                source_offset,
+                byte: opcode_byte,
+            })?;
     let mode_before = decoder.mode;
     let mut mode_after = mode_before;
     let mut prefix_size = usize::MIN;
@@ -444,6 +500,7 @@ pub fn decode_script_token(
 
     decoder.mode = mode_after;
     Ok(ScriptToken {
+        dialect: decoder.dialect,
         source_offset,
         opcode,
         mode_before,
@@ -454,7 +511,15 @@ pub fn decode_script_token(
 
 /// Decode a complete COD image ending in exactly one final marker.
 pub fn decode_script_code(data: &[u8]) -> Result<ScriptCode, ScriptCodeError> {
-    let mut decoder = ScriptTokenDecoder::default();
+    decode_script_code_for_dialect(data, ScriptDialect::CommanderBlood)
+}
+
+/// Decode a complete COD image using one game's native instruction boundaries.
+pub fn decode_script_code_for_dialect(
+    data: &[u8],
+    dialect: ScriptDialect,
+) -> Result<ScriptCode, ScriptCodeError> {
+    let mut decoder = ScriptTokenDecoder::new(dialect);
     let mut tokens = Vec::new();
     let mut cursor = usize::MIN;
     while let Some(&byte) = data.get(cursor) {
@@ -565,6 +630,78 @@ mod tests {
     }
 
     #[test]
+    fn big_bug_bang_extensions_have_native_widths_in_both_modes() {
+        for mode in [ScriptDecodingMode::Normal, ScriptDecodingMode::Query] {
+            for (index, length) in BIG_BUG_BANG_EXTENSION_LENGTHS.into_iter().enumerate() {
+                let opcode = LAST_SHARED_OPCODE + 1 + index as u8;
+                let mut data = vec![OPTIONAL_PREFIX_OPCODE; usize::from(length)];
+                data[0] = opcode;
+                let mut decoder = ScriptTokenDecoder::new(ScriptDialect::BigBugBang);
+                decoder.mode = mode;
+                let token =
+                    decode_script_token(&data, ScriptCodeOffset::new(0), &mut decoder).unwrap();
+                assert_eq!(token.encoded_bytes(), data);
+                assert_eq!(token.dialect(), ScriptDialect::BigBugBang);
+                assert_eq!(decoder.mode(), mode);
+                for truncated in 1..data.len() {
+                    assert!(matches!(
+                        decode_script_token(
+                            &data[..truncated],
+                            ScriptCodeOffset::new(0),
+                            &mut decoder
+                        ),
+                        Err(ScriptCodeError::TruncatedToken { .. })
+                    ));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn sequel_does_not_reuse_commanders_adjacent_descriptor_data() {
+        let mut decoder = ScriptTokenDecoder::new(ScriptDialect::BigBugBang);
+        for opcode in LAST_BIG_BUG_BANG_OPCODE + 1..END_MARKER {
+            assert!(matches!(
+                decode_script_token(&[opcode, 0, 0], ScriptCodeOffset::new(0), &mut decoder),
+                Err(ScriptCodeError::InvalidOpcode { .. })
+            ));
+        }
+        assert_eq!(
+            ScriptTokenDecoder::default(),
+            ScriptTokenDecoder::new(ScriptDialect::CommanderBlood)
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang disc extracted under output/big-bug-bang/disc"]
+    fn big_bug_bang_original_corpus_round_trips_with_native_descriptors() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+        let executable = std::fs::read(root.join("BLOOD2PG.EXE")).unwrap();
+        const SEQUEL_DESCRIPTOR_FILE_OFFSET: usize = 0x16AEA;
+        for opcode in FIRST_OPCODE..=LAST_BIG_BUG_BANG_OPCODE {
+            let pair = ScriptDialect::BigBugBang.descriptor(opcode).unwrap();
+            let offset =
+                SEQUEL_DESCRIPTOR_FILE_OFFSET + usize::from(opcode - FIRST_OPCODE) * WORD_SIZE;
+            assert_eq!(
+                &executable[offset..offset + WORD_SIZE],
+                &[pair.0, pair.1],
+                "opcode {opcode:02x}"
+            );
+        }
+        for profile in 1..=17 {
+            let data = std::fs::read(root.join(format!("SCRIPT{profile}.COD"))).unwrap();
+            let code = decode_script_code_for_dialect(&data, ScriptDialect::BigBugBang)
+                .unwrap_or_else(|error| panic!("SCRIPT{profile}: {error}"));
+            assert_eq!(code.encode(), data, "SCRIPT{profile}");
+            eprintln!(
+                "SCRIPT{profile}: {} tokens, {} bytes",
+                code.tokens().len(),
+                data.len()
+            );
+        }
+    }
+
+    #[test]
     fn mode_prefix_and_terminated_forms_match_the_recovered_decoder() {
         let mut decoder = ScriptTokenDecoder::default();
         let enter_query =
@@ -655,6 +792,7 @@ mod tests {
 
         for vector in vectors {
             let mut decoder = ScriptTokenDecoder {
+                dialect: ScriptDialect::CommanderBlood,
                 mode: decoding_mode(vector.query_mode_before),
                 scan_variable_blocks: vector.block_scan_flags != u8::MIN,
             };
