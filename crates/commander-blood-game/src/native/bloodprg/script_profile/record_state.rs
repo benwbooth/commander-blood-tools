@@ -84,7 +84,7 @@ pub struct ScriptProfileRecordState {
 }
 
 impl ScriptProfileRecordState {
-    pub(super) fn recover(
+    pub(in crate::native::bloodprg) fn recover(
         instructions: &[DecodedScriptInstruction],
         state: &ScriptState,
         dictionary: &ScriptDictionary,

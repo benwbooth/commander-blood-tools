@@ -79,6 +79,68 @@ wrapper does not expose. Those source files and the wrapper are unchanged in
 this slice. Keep this as a separate test-ownership repair; do not disable tests
 or count the failed workspace-wide gate as passing.
 
+### D6 Actor Growth
+
+The native D6 handler (file 0x728B-0x7366) and its selection helper
+(0x706E-0x70CC) now have a flat, typed Rust implementation. The decoder treats
+both operands as immediate words: a group mask and a signed growth rate.
+All 39 authored occurrences are in SCRIPT2.COD; the other 16 profiles have none.
+
+The helper selects actors in directory order with intersecting group flags,
+both in-play/participating flags, an active location, and a location other than
+the specially bound `Trashlando`. The handler clamps aggressiveness even for
+engaged actors, then skips their growth update. Other selected actors receive
+the recovered pressure, growth-balance and quantity arithmetic. These names
+describe the observed calculations, not recovered original source identifiers.
+
+Important native details preserved by the Rust implementation:
+
+- Query mode does not suppress updates or consume a branch.
+- Pressure relief has an upper clamp but no lower clamp.
+- The balance calculation wraps at 16 bits before its signed clamp.
+- Negative balance halves the unsigned quantity. Nonnegative balance uses two
+  low-32-bit signed products followed by division of a zero-extended numerator:
+  the native code explicitly clears EDX before IDIV. Replacing this with ordinary
+  signed mathematical division changes negative-rate behavior.
+- Growth has a minimum increment of one, including when its rate is zero.
+- Final quantity addition wraps at 16 bits before a signed minimum of five.
+- A word-DIV overflow preserves earlier actor updates and preceding clamps on
+  the faulting actor. It is not an all-or-nothing state transaction.
+
+`re/tools/big_bug_bang_growth_oracle.py` executes the complete original handler
+and helper without replacing calls. Its 126 synthetic input/output vectors
+cover selection, inactive locations, the excluded location, engaged actors,
+both query modes, countdown gating, integer boundaries, negative rates and
+18 divide faults. Tests compare the full VAR buffer, including partial fault
+effects. The oracle also checks that the directory and all seeded globals are
+unchanged. Neither game machine code nor original authored state is included
+in the committed vectors.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_growth_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_growth.jsonl
+nix develop -c cargo test -p commander-blood-formats sequel_growth -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib sequel_growth
+```
+
+Production typed dispatch now handles D6 but requires an explicit
+`SequelSimulationContext` from its host. Missing context is an error, not a
+synthetic zero countdown. Tests exercise that dispatch boundary, clock gating
+and query-mode writes. **The production sequel host is not yet implemented.**
+The native main loop decrements GS:0x0CC6 at 0x10CA and reloads it from
+GS:0x0CC4 at 0x5B46 after script/presentation processing. Those loop phases and
+the speed-selection control still need integrating with the sequel runtime;
+the handler must not run independently at the renderer's presentation rate.
+
+Verification for this slice (2026-09-05): 110 formats tests passed with original
+corpus tests explicitly enabled; 886 game-library tests passed with seven
+unrelated/platform and original-table tests ignored. Game all-targets checking
+and workspace library/binary checking passed. The original-handler vectors were
+regenerated and compared byte-for-byte. These checks used the current worktree;
+unrelated runtime edits remain outside the commit. This is D6 component and
+dispatch verification, not a sequel playthrough or timing-parity claim.
+
 ### Sequel Records and Profile Ownership
 
 The formats crate now decodes sequel VAR records with an explicit dialect:
@@ -158,8 +220,9 @@ silently zero-extend the initial state without native evidence.
 
 ## Remaining Completion Requirements
 
-- Recover D4-D7 effects and compare inherited VM handlers, including skip,
-  state, presentation and conversation semantics. Add native oracle coverage.
+- Recover D4, D5 and D7 effects and compare inherited VM handlers, including
+  skip, state, presentation and conversation semantics. Integrate the native
+  simulation countdown lifecycle required by D4-D6. Add native oracle coverage.
 - Wire game/version identity and the recovered sequel catalogs/layouts into
   production startup and runtime profile changes; resolve missing-resource
   behavior and the extra SCRIPT2 state word before claiming complete loading.

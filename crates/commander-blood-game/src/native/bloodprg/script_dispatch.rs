@@ -39,6 +39,7 @@ use super::script_profile::{
     ScriptProfileRecordState, ScriptProfileRecordStateError,
 };
 use super::script_selector::{ScriptSelectionError, ScriptSelectorState, commit_selected_concept};
+use super::sequel_growth::{SequelGrowthError, SequelSimulationContext, apply_sequel_growth};
 use super::sequence::{
     PresentationResourceLine, SequencePresentationState, SequenceRequestContext,
     load_sequence_request, offer_topic_if_presentation_active,
@@ -192,6 +193,14 @@ pub trait ScriptDispatchHost {
     /// Return current hour, day, and month for CA/CB.
     fn clock(&self) -> ScriptClock;
 
+    /// Supply the sequel's main-loop countdown and bound Trashlando identity.
+    ///
+    /// Commander hosts have no sequel simulation clock. A sequel instruction
+    /// without this context errors rather than running at presentation speed.
+    fn sequel_simulation_context(&self) -> Option<SequelSimulationContext> {
+        None
+    }
+
     /// Return current UI gates for an A8 sequence request.
     fn sequence_context(&self) -> SequenceRequestContext;
 
@@ -228,6 +237,10 @@ pub enum ScriptDispatchError<HostError> {
     InvalidLegacyYieldSignal,
     /// A shared VAR operation failed.
     State(ScriptStateOperationError),
+    /// A sequel instruction was dispatched without its native clock/object bindings.
+    MissingSequelSimulationContext,
+    /// Sequel actor-state arithmetic or relationship binding failed.
+    SequelGrowth(SequelGrowthError),
     /// A procedure identity was invalid.
     Procedure(ScriptProcedureStateError),
     /// A direct record, pair, or transfer operation failed.
@@ -407,6 +420,15 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 refresh_from_var = true;
                 apply_multiply_divide_operation(*operation, self.state)
                     .map_err(ScriptDispatchError::State)?
+            }
+            DecodedScriptInstruction::SequelGrowth(operation) => {
+                let context = self
+                    .host
+                    .sequel_simulation_context()
+                    .ok_or(ScriptDispatchError::MissingSequelSimulationContext)?;
+                refresh_from_var = true;
+                apply_sequel_growth(*operation, context, self.state)
+                    .map_err(ScriptDispatchError::SequelGrowth)?
             }
             DecodedScriptInstruction::DirectRecord(operation) => {
                 commit_to_var = !runtime.query_mode();
@@ -715,6 +737,7 @@ mod tests {
     struct TraversalHost {
         builtins: ScriptProfileBuiltins,
         scans: usize,
+        simulation: Option<SequelSimulationContext>,
     }
 
     impl ScriptDispatchHost for TraversalHost {
@@ -741,6 +764,10 @@ mod tests {
                 day: 2,
                 month: 1,
             }
+        }
+
+        fn sequel_simulation_context(&self) -> Option<SequelSimulationContext> {
+            self.simulation
         }
 
         fn sequence_context(&self) -> SequenceRequestContext {
@@ -876,6 +903,143 @@ mod tests {
     }
 
     #[test]
+    fn sequel_growth_dispatch_requires_clock_context_and_updates_in_query_mode() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_complete_script_instruction;
+        use commander_blood_formats::script::{
+            ScriptObjectKind, decode_script_dictionary, decode_script_directory,
+            decode_script_state_for_dialect,
+        };
+        const DIRECTORY_ENTRY_SIZE: usize = 20;
+        const DIRECTORY_VALUE_OFFSET: usize = 16;
+        const DIRECTORY_KIND_OFFSET: usize = 18;
+        const FLAGS_OFFSET: usize = 2;
+        const GROUP_OFFSET: usize = 20;
+        const QUANTITY_OFFSET: usize = 22;
+        const BALANCE_OFFSET: usize = 52;
+        const RELIEF_OFFSET: usize = 56;
+        const INITIAL_QUANTITY: u16 = 500;
+        const UPDATED_QUANTITY: u16 = 524;
+        let actor_offset = ScriptObjectKind::Player.record_size();
+        let excluded_offset = actor_offset
+            + ScriptObjectKind::Actor.record_size_for_dialect(ScriptDialect::BigBugBang);
+        let mut bytes = vec![
+            0;
+            excluded_offset
+                + ScriptObjectKind::Location
+                    .record_size_for_dialect(ScriptDialect::BigBugBang)
+        ];
+        let mut directory_bytes = vec![0; DIRECTORY_ENTRY_SIZE * 4];
+        for (index, (name, offset, kind)) in [
+            ("blood", 0, ScriptObjectKind::Player),
+            ("actor", actor_offset, ScriptObjectKind::Actor),
+            ("Trashlando", excluded_offset, ScriptObjectKind::Location),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            bytes[offset..offset + 2].copy_from_slice(&kind.mask().to_le_bytes());
+            bytes[offset + FLAGS_OFFSET] = 5;
+            let entry = &mut directory_bytes
+                [index * DIRECTORY_ENTRY_SIZE..(index + 1) * DIRECTORY_ENTRY_SIZE];
+            entry[..name.len()].copy_from_slice(name.as_bytes());
+            entry[DIRECTORY_VALUE_OFFSET..DIRECTORY_KIND_OFFSET]
+                .copy_from_slice(&(offset as u16).to_le_bytes());
+            entry[DIRECTORY_KIND_OFFSET] = 1;
+        }
+        for (offset, value) in [
+            (GROUP_OFFSET, 1u16),
+            (QUANTITY_OFFSET, INITIAL_QUANTITY),
+            (BALANCE_OFFSET, 500),
+            (RELIEF_OFFSET, 500),
+        ] {
+            bytes[actor_offset + offset..actor_offset + offset + 2]
+                .copy_from_slice(&value.to_le_bytes());
+        }
+        let directory = decode_script_directory(&directory_bytes).unwrap();
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let dialogue = decode_script_bas(&[u8::MAX], &dictionary).unwrap();
+        let code = decode_script_code_for_dialect(
+            &[0xD6, 1, 0, 10, 0, u8::MAX],
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        let token = &code.tokens()[0];
+        let builtins = ScriptProfileBuiltins {
+            player: directory.find_active_object(b"blood"),
+            ..ScriptProfileBuiltins::default()
+        };
+        let excluded_location = directory.find_active_object(b"Trashlando").unwrap();
+        for query in [false, true] {
+            for countdown in [None, Some(0), Some(1)] {
+                let mut state =
+                    decode_script_state_for_dialect(&bytes, &directory, ScriptDialect::BigBugBang)
+                        .unwrap();
+                let instruction =
+                    decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                        .unwrap();
+                let instructions = [instruction];
+                let mut records =
+                    ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+                        .unwrap();
+                let mut runtime = ScriptRuntime::new();
+                if query {
+                    runtime.begin_root_guard(token.end_offset());
+                }
+                let mut procedures = super::super::ScriptProcedureStates::default();
+                let mut selector = ScriptSelectorState::default();
+                let mut slots = super::super::ScriptSequenceSlots::default();
+                let mut dispatch = ScriptDispatchState::default();
+                let mut host = TraversalHost {
+                    builtins,
+                    scans: 0,
+                    simulation: countdown.map(|countdown| SequelSimulationContext {
+                        countdown,
+                        excluded_location,
+                    }),
+                };
+                let result = Dispatcher {
+                    code: &code,
+                    instructions: &instructions,
+                    dialogue: &dialogue,
+                    state: &mut state,
+                    dictionary: &dictionary,
+                    directory: &directory,
+                    builtins,
+                    procedures: &mut procedures,
+                    selector: &mut selector,
+                    sequence_slots: &mut slots,
+                    records: &mut records,
+                    dispatch: &mut dispatch,
+                    host: &mut host,
+                }
+                .execute_instruction(token, &instructions[0], &mut runtime);
+                if countdown.is_none() {
+                    assert_eq!(
+                        result,
+                        Err(ScriptDispatchError::MissingSequelSimulationContext)
+                    );
+                } else {
+                    assert!(result.is_ok(), "{result:?}");
+                }
+                let quantity = state
+                    .resolve_word_source_offset((actor_offset + QUANTITY_OFFSET) as u16)
+                    .unwrap();
+                assert_eq!(
+                    state.word(quantity),
+                    Some(if countdown == Some(0) {
+                        UPDATED_QUANTITY
+                    } else {
+                        INITIAL_QUANTITY
+                    })
+                );
+                assert_eq!(runtime.query_mode(), query);
+            }
+        }
+    }
+
+    #[test]
     fn every_shipped_profile_enters_exhaustive_dispatch_with_coherent_var_state() {
         let Some(root) = original_data_root() else {
             return;
@@ -896,6 +1060,7 @@ mod tests {
             let mut host = TraversalHost {
                 builtins: profile.builtins(),
                 scans: 0,
+                simulation: None,
             };
 
             let outcome = execute_loaded_script_frame(profile, true, &mut dispatch, &mut host)
