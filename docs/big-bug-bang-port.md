@@ -212,8 +212,9 @@ serially on a fresh private Xvfb display, which was reaped afterward. Game
 all-targets checking passed. These checks include the same unrelated local
 Commander runtime edits, not staged with this repair.
 
-The following **unported** sequel paths were established by assembly inspection,
-not native end-to-end runtime tests:
+The following **unported** sequel paths were established by assembly inspection.
+The condition and audio-gated transfer paths now have native component captures
+described below; full presentation and authored execution remain unverified:
 
 - A6 entry 0x6C89 saves its current selector-byte position to GS:0x6B4E.
   Its condition helper 0x6B28, on the resume/post-list path, recognizes the
@@ -240,13 +241,62 @@ not native end-to-end runtime tests:
   destination (0x37D5). The two page offsets are swapped at 0x43ED..0x43F7.
   Fixing only the font destination would omit the underlying interaction.
 
-The current typed `ScriptTextWord` supports dictionary words and the 65535
-separator, but not this 65534 dynamic-object marker. It must gain an explicit,
+The current typed `ScriptTextWord` supports dictionary words, numeric operands
+and the 65535 separator, but not this 65534 dynamic-object marker. It must gain an explicit,
 dialect-aware representation alongside the actual selection/transfer state and
 UI routing. Do not invent dictionary entries, substitute all actors for the
 native candidate table, or enable sequel production loading with this flow
 missing. Authored execution reachability and the later presentation calls remain
 to be verified before calling the whole A6 path recovered.
+
+#### Native Inventory Condition and Transfer Captures
+
+`re/tools/big_bug_bang_inventory_condition_oracle.py` executes the complete
+condition procedure 0x6B28..0x6C44 with authored controls `0x8030`, including
+the real bytewise separator scanner 0x68A5 and inventory helper 0x6C45..0x6C88.
+Its 22 vectors cover empty inventory, every one of the sixteen roster slots,
+full and mixed rosters, raw kind-mask filtering, and duplicate entries.
+
+The native result preserves slot order and duplicates, skips zeros, and returns
+VAR record offsets plus four as choices. An empty result clears resume and
+yield, returns carry clear, and **leaves the previous saved-line word intact**.
+Spoken mode is enabled before that rejection and remains enabled. A nonempty
+result sets yield and replaces the saved-line word. These are state effects,
+not just candidate-list filtering.
+
+Each valid inventory candidate then enters the complete selection procedure
+0x5C41..0x5D5C with its original removal and field-matrix helpers. The 82 captures
+exercise both native audio gates separately: global gate bit 0 at GS:0x2A33 and
+dialogue gate bit 1 at GS:0x6B80. No helper is replaced or skipped by the harness;
+these input gates naturally avoid the unresolved audio lookup at 0x8450.
+Raw combined-kind candidates are excluded from transfer captures because the
+field helper selects the least significant kind bit, unlike candidate filtering.
+
+The transfer removes the first matching roster slot only, writes the saved A6
+actor operand into selector 17 (inventory byte offset 20), sets object flag
+`0x40`, and sets the high control byte's `0x80` enable bit in the saved COD line.
+It clears selected and alternate concepts, saved line, resume and the pending
+choice-list head. Yield and spoken mode remain set. Unchanged-memory guards
+also establish that this branch does not append the selection to concept history.
+
+Both executable SHA and entered-code ranges are guarded; all writes must fall
+within explicit output or stack ranges, preserved registers are checked, and
+source/state/global bytes outside those outputs must remain unchanged. Two
+independent generator runs produced byte-identical fixtures:
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_inventory_condition_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_inventory_condition.jsonl \
+  re/tools/oracle_vectors/big_bug_bang_inventory_selection.jsonl
+```
+
+These fixtures are native references, not Rust parity tests yet. The next runtime
+change must represent object-backed selected and pending choices separately from
+`ScriptWordId`; `commit_selected_concept` currently assumes DIC encoding and
+history/BAS processing. The native inventory branch bypasses that processing.
+Production sequel loading stays disabled until this state flow, menu rendering,
+audio path and profile lifecycle are integrated and verified.
 
 ```sh
 nix develop -c python3 -P re/tools/text_record_condition_oracle.py \
