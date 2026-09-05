@@ -15,6 +15,109 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Game Identity and Loose-Asset Import
+
+The game executable now has a library-only, import-only mode for either game:
+
+```sh
+nix develop -c cargo run -p commander-blood-game --bin commander-blood -- \
+  --data output/big-bug-bang/disc \
+  --import-assets output/big-bug-bang/imported-assets
+```
+
+This extracts original resources into ordinary files, verifies their checksums,
+and exits without opening SDL or transcoding audio/video. It is preparation for
+the shared runtime, **not a playable sequel mode**.
+
+`GameVariant` owns each game's display name, storage namespace, executable/title
+filenames, script dialect, and native resource/profile catalog selection. Sequel
+catalog decoding requires the exact analyzed executable SHA-256. Importing a
+different executable revision does not imply that its native tables are supported.
+
+The importer detects the game from its main executable, rejecting a source with
+both main executables. Both games use `BLOOD.DAT`, so the archive filename cannot
+identify the game. Sequel companions are `BLOOD2PG.EXE`, `BLOOD2.LBM`, `TB.BIG`,
+and `DESCRIPT.DES`. Neither the sequel disc nor its archive contains `BLOOD.SAV`;
+the importer does not borrow or invent that template, or any missing BAS files.
+Commander's existing companion requirements are preserved in this slice.
+
+Manifest schema one gains an explicit `game` field. Existing manifests without
+it remain Commander imports, with required Commander companions still checked.
+This preserves existing media caches rather than forcing their regeneration.
+Reusing an import now checks game identity, executable fingerprint, and available
+source archive/loose-file fingerprints. Missing source archive data can still be
+served by its completed cache, as before; that path is not a new source comparison.
+A different game/build/content fails without replacing the destination. The game
+identity check also applies to damaged caches. Source/destination overlap is
+rejected before copying or replacing directories.
+
+Default writable/cache namespaces are distinct: `commander-blood` and
+`big-bug-bang`. Existing `CBLOOD_WRITE_DATA` and `CBLOOD_ASSET_CACHE` overrides retain
+their exact Commander meaning; sequel defaults beneath those overrides use a
+`big-bug-bang` child. Explicit path arguments remain exact caller-selected paths.
+This is path/import isolation, not a completed sequel save-format implementation.
+An explicit `CBLOOD_DATA` source is now resolved before default cached Commander
+data, so a requested game is not silently replaced by the cached one.
+
+Production path loading explicitly rejects a sequel manifest before calling
+Commander-only font/presentation decoders or starting media conversion. The new
+native catalog selection is used by the existing Commander loader and by the
+sequel imported-profile integration test. The rest of the sequel runtime still
+needs connecting; rejecting it is not counted as game support.
+
+The original-disc import integration test verifies every imported checksum, then
+constructs an archive-free resource store and loads the initial sequel profile
+through `ScriptProfileManager`. It verifies native COD ownership for missing BAS
+and exact initial VAR bytes. The original-disc dependency is marked ignored by
+default and was explicitly enabled when checking this slice.
+
+Verification for this slice (2026-09-05): all 14 import tests passed with the
+original-disc test explicitly enabled. The full game library passed 912 tests
+with nine ignored, serially on a freshly allocated private Xvfb display. Game
+all-targets checking passed. Checks ran with the existing unrelated Commander
+runtime edits, which remain outside this change.
+
+The CLI command above was also run with `DISPLAY` and `WAYLAND_DISPLAY` unset.
+It imported 1118 resources from 944 archive entries plus loose files, with all
+checksums verified. The resulting local manifest SHA-256 is
+`1bb7199d23d840629eadfe4a7df656eaa04b8e3bc66a278509ba22c617408617`;
+its archive hash matches the inspected original sequel disc. The output contains
+only `resources`, `companions`, and `manifest.json`: no fabricated BAS/save data
+or media transcodes. Original assets remain ignored by Git. Attempting a
+production one-frame run against this imported tree returned the explicit
+not-yet-integrated sequel runtime error before opening SDL. That negative check
+verifies the guard, not gameplay.
+
+### Sequel Font and Projection Table Audit
+
+Native references and direct original-binary comparisons establish the following
+table locations. These are next-step decoder inputs, **not yet connected sequel
+font rendering**. All offsets below refer to the analyzed `BLOOD2PG.EXE` file;
+its global-data base is file 0xF7F0.
+
+| Table | Map/Start | Advances | Glyphs | Extent |
+| --- | --- | --- | --- | --- |
+| Bridge anchors | 0x14AC9 | n/a | n/a | 66 consumed bytes, identical to Commander |
+| Bridge trigonometry | 0x14B05 | n/a | n/a | 180 four-byte samples, identical to Commander |
+| Small font | 0x1709E | n/a | 0x1711E | 128 map bytes, 42 five-row glyphs |
+| Subtitle font | 0x171F0 | n/a | 0x172D8 | 232 map bytes, 66 eight-row glyphs |
+| Square font | 0x174E8 | 0x175D0 | 0x17602 | 232 map bytes, 49 reachable glyphs |
+| Main font | 0x179D6 | 0x17ABE | 0x17B16 | 232 map bytes, 87 reachable glyphs |
+
+The bridge projector at file 0xB337 loads data offset 0x52D9 and a count of 11;
+the 11th consumed anchor overlaps the start of the trigonometry data, as in
+Commander. The matrix routine at 0xB058 loads trigonometry offset 0x5315.
+The dual-font measurement routine at 0x344D references square map/advance offsets
+0x7CF8/0x7DE0 and main offsets 0x81E6/0x82CE. The subtitle renderer at 0x39BE
+references 0x7A00/0x7AE8; the small renderer at 0x3A78 references 0x78AE/0x792E.
+
+The sequel map maxima, excluding sentinel 255, independently confirm reachable
+glyph indices 41, 65, 48 and 86 respectively. Commander has only 176 entries in
+its proportional maps and 55/48/86 subtitle/square/main glyphs. Simply relocating
+its fixed arrays would omit sequel characters. The font audit also found changed
+main-font advances; port their actual values rather than assuming shared glyph
+bitmaps imply identical text layout. No sequel font runtime oracle was run yet.
+
 ### Explicit COD Dialects
 
 `commander-blood-formats::code::ScriptDialect` selects the recovered instruction
@@ -636,8 +739,8 @@ Do not copy the second profile's defaults or silently zero-extend initial state.
 - Compare inherited VM handlers, including
   skip, state, presentation and conversation semantics. Integrate the native
   simulation countdown lifecycle required by D4-D6. Add native oracle coverage.
-- Wire game/version identity and the recovered sequel catalogs/layouts into
-  production startup and runtime profile changes; resolve missing-resource
+- Complete production startup and runtime profile changes using game identity
+  and the recovered sequel catalogs/layouts; resolve missing-resource
   behavior and the extra SCRIPT2 state word before claiming complete loading.
 - Recover the actual conversation representation and produce readable,
   hand-editable French source with byte-exact COD/BAS/DEB/DIC/VAR/DESCRIPT

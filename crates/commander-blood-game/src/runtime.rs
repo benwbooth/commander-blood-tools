@@ -108,9 +108,10 @@ use commander_blood_formats::world_art::{
 
 use crate::asset_import::{
     ASSET_MANIFEST_FILENAME, AssetImportOutcome, IMPORTED_ASSET_DIRECTORY_NAME,
-    ImportedAssetManifest, RESOURCE_DIRECTORY_NAME, import_original_assets,
+    ImportedAssetManifest, RESOURCE_DIRECTORY_NAME, detect_source_game, import_original_assets,
 };
 use crate::assets::OriginalResourceStore;
+use crate::game::GameVariant;
 use crate::media_import::NormalizedMediaStore;
 use crate::native::bloodprg::{
     ORIGINAL_SCRIPT_PROFILE_COUNT, OriginalResourceCache, OriginalResourceCatalog,
@@ -137,7 +138,6 @@ const ASSET_CACHE_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_ASSET_CACHE";
 const WRITABLE_DATA_ROOT_ENVIRONMENT_VARIABLE: &str = "CBLOOD_WRITE_DATA";
 const XDG_DATA_HOME_ENVIRONMENT_VARIABLE: &str = "XDG_DATA_HOME";
 const HOME_ENVIRONMENT_VARIABLE: &str = "HOME";
-const USER_DATA_DIRECTORY_NAME: &str = "commander-blood";
 const KNOWN_DATA_ROOTS: [&str; 3] = [
     "commander-blood-audio/_tmp_iso",
     "output/_tmp_iso",
@@ -177,22 +177,26 @@ impl OriginalGameDataPaths {
                 root.display()
             );
         }
-        let imported_root = discover_asset_cache_root(None)?;
+        let game = detect_source_game(&root)?;
+        let imported_root = discover_asset_cache_root_for_game(game, None)?;
         if ImportedAssetManifest::load(&imported_root).is_err() {
             eprintln!(
-                "Importing original Commander Blood assets into {}. This one-time operation may take several minutes.",
+                "Importing original {} assets into {}. This one-time operation may take several minutes.",
+                game.title(),
                 imported_root.display()
             );
         }
         let outcome = import_original_assets(&root, &imported_root).with_context(|| {
             format!(
-                "importing original Commander Blood assets from {}",
+                "importing original {} assets from {}",
+                game.title(),
                 root.display()
             )
         })?;
         if let AssetImportOutcome::Imported { resource_count } = outcome {
             eprintln!(
-                "Imported {resource_count} loose Commander Blood resources into {}.",
+                "Imported {resource_count} loose {} resources into {}.",
+                game.title(),
                 imported_root.display()
             );
         }
@@ -201,6 +205,14 @@ impl OriginalGameDataPaths {
 
     fn from_imported_root(root: PathBuf) -> Result<Self> {
         let manifest = ImportedAssetManifest::load(&root)?;
+        // Do not pass sequel bytes to Commander-only presentation/font decoders,
+        // or start expensive media conversion for a runtime not yet integrated.
+        if manifest.game != GameVariant::CommanderBlood {
+            bail!(
+                "{} assets are imported, but its production runtime tables and profile transitions are not yet integrated",
+                manifest.game.title()
+            );
+        }
         let media_store = NormalizedMediaStore::prepare(&root, &manifest)?;
 
         let paths = Self {
@@ -240,19 +252,16 @@ impl OriginalGameDataPaths {
         if let Some(root) = explicit_root {
             return Self::from_root(root);
         }
+        if let Some(root) = std::env::var_os(DATA_ROOT_ENVIRONMENT_VARIABLE) {
+            return Self::from_root(PathBuf::from(root));
+        }
 
         let imported_root = discover_asset_cache_root(None)?;
         if let Ok(paths) = Self::from_imported_root(imported_root) {
             return Ok(paths);
         }
 
-        let mut candidates = Vec::new();
-        if let Some(root) = std::env::var_os(DATA_ROOT_ENVIRONMENT_VARIABLE) {
-            candidates.push(PathBuf::from(root));
-        }
-        candidates.extend(KNOWN_DATA_ROOTS.map(PathBuf::from));
-
-        for root in candidates {
+        for root in KNOWN_DATA_ROOTS.map(PathBuf::from) {
             if let Ok(paths) = Self::from_root(root) {
                 return Ok(paths);
             }
@@ -410,9 +419,15 @@ impl OriginalGameData {
         let executable = std::fs::read(paths.executable())
             .with_context(|| format!("reading {}", paths.executable().display()))?
             .into_boxed_slice();
-        let resource_catalog = OriginalResourceCatalog::decode_bloodprg(&executable)
+        let resource_catalog = paths
+            .manifest()
+            .game
+            .decode_resource_catalog(&executable)
             .context("decoding original resource catalog")?;
-        let script_profile_catalog = OriginalScriptProfileCatalog::decode_bloodprg(&executable)
+        let script_profile_catalog = paths
+            .manifest()
+            .game
+            .decode_profile_catalog(&executable)
             .context("decoding BloodScript profile catalog")?;
         let writable_resource_catalog =
             StartupWritableResourceCatalog::decode_bloodprg(&executable)
@@ -665,35 +680,58 @@ impl OriginalGameData {
 
 /// Select the flat host directory that owns saves and startup-copied resources.
 pub fn discover_writable_data_root(explicit_root: Option<&Path>) -> Result<PathBuf> {
+    discover_writable_data_root_for_game(GameVariant::CommanderBlood, explicit_root)
+}
+
+/// Select a game's default writable namespace; explicit roots remain caller-owned.
+pub fn discover_writable_data_root_for_game(
+    game: GameVariant,
+    explicit_root: Option<&Path>,
+) -> Result<PathBuf> {
     if let Some(root) = explicit_root {
         return Ok(root.to_owned());
     }
     if let Some(root) = std::env::var_os(WRITABLE_DATA_ROOT_ENVIRONMENT_VARIABLE) {
-        return Ok(PathBuf::from(root));
+        return Ok(scoped_override_root(PathBuf::from(root), game));
     }
     if let Some(root) = std::env::var_os(XDG_DATA_HOME_ENVIRONMENT_VARIABLE) {
-        return Ok(PathBuf::from(root).join(USER_DATA_DIRECTORY_NAME));
+        return Ok(PathBuf::from(root).join(game.storage_name()));
     }
     if let Some(home) = std::env::var_os(HOME_ENVIRONMENT_VARIABLE) {
         return Ok(PathBuf::from(home)
             .join(".local")
             .join("share")
-            .join(USER_DATA_DIRECTORY_NAME));
+            .join(game.storage_name()));
     }
     Ok(std::env::current_dir()
         .context("resolving current directory for writable game data")?
-        .join(USER_DATA_DIRECTORY_NAME))
+        .join(game.storage_name()))
 }
 
 /// Select the versioned directory that owns immutable imported game assets.
 pub fn discover_asset_cache_root(explicit_root: Option<&Path>) -> Result<PathBuf> {
+    discover_asset_cache_root_for_game(GameVariant::CommanderBlood, explicit_root)
+}
+
+/// Select an isolated game cache without invalidating existing Commander imports.
+pub fn discover_asset_cache_root_for_game(
+    game: GameVariant,
+    explicit_root: Option<&Path>,
+) -> Result<PathBuf> {
     if let Some(root) = explicit_root {
         return Ok(root.to_owned());
     }
     if let Some(root) = std::env::var_os(ASSET_CACHE_ROOT_ENVIRONMENT_VARIABLE) {
-        return Ok(PathBuf::from(root));
+        return Ok(scoped_override_root(PathBuf::from(root), game));
     }
-    Ok(discover_writable_data_root(None)?.join(IMPORTED_ASSET_DIRECTORY_NAME))
+    Ok(discover_writable_data_root_for_game(game, None)?.join(IMPORTED_ASSET_DIRECTORY_NAME))
+}
+
+fn scoped_override_root(root: PathBuf, game: GameVariant) -> PathBuf {
+    match game {
+        GameVariant::CommanderBlood => root,
+        GameVariant::BigBugBang => root.join(game.storage_name()),
+    }
 }
 
 #[cfg(test)]
@@ -819,6 +857,27 @@ mod tests {
         assert_eq!(
             discover_asset_cache_root(Some(&writable_root)).unwrap(),
             writable_root
+        );
+    }
+
+    #[test]
+    fn legacy_environment_overrides_keep_sequel_data_in_a_child_namespace() {
+        let root = PathBuf::from("/example/game-data");
+        assert_eq!(
+            scoped_override_root(root.clone(), GameVariant::CommanderBlood),
+            root
+        );
+        assert_eq!(
+            scoped_override_root(root.clone(), GameVariant::BigBugBang),
+            root.join("big-bug-bang")
+        );
+        assert_eq!(
+            discover_asset_cache_root_for_game(GameVariant::BigBugBang, Some(&root)).unwrap(),
+            root
+        );
+        assert_eq!(
+            discover_writable_data_root_for_game(GameVariant::BigBugBang, Some(&root)).unwrap(),
+            root
         );
     }
 }

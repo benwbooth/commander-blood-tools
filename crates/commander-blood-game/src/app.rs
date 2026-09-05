@@ -56,6 +56,7 @@ const WINDOW_TITLE: &str = "Commander Blood - F10 releases mouse; click to recap
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
     data: Option<PathBuf>,
+    import_assets: Option<PathBuf>,
     write_data: Option<PathBuf>,
     asset: Option<PathBuf>,
     bloodprg: Option<PathBuf>,
@@ -101,6 +102,12 @@ impl Options {
                     options.data = Some(PathBuf::from(
                         arguments.next().context("--data requires a directory")?,
                     ));
+                }
+                "--import-assets" => {
+                    options.import_assets =
+                        Some(PathBuf::from(arguments.next().context(
+                            "--import-assets requires a destination directory",
+                        )?));
                 }
                 "--write-data" => {
                     options.write_data = Some(PathBuf::from(
@@ -196,6 +203,21 @@ impl Options {
                 bail!("--live-trace must differ from --scenario");
             }
         }
+        if options.import_assets.is_some() {
+            if options.data.is_none() {
+                bail!("--import-assets requires --data with an original installation directory");
+            }
+            if options.uses_diagnostic_overrides()
+                || options.write_data.is_some()
+                || options.frame_limit.is_some()
+                || options.scenario.is_some()
+                || options.trace.is_some()
+                || options.live_trace.is_some()
+                || options.oracle_packed_second.is_some()
+            {
+                bail!("--import-assets cannot be combined with game-run or diagnostic options");
+            }
+        }
         Ok(ParseOutcome::Run(options))
     }
 }
@@ -203,6 +225,9 @@ impl Options {
 fn print_usage() {
     println!(
         "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT] [--live-trace TRACE.JSONL] [--scenario ACTIONS.TSV --trace TRACE.JSONL [--oracle-packed-second BYTE]]\n\
+         \n\
+         Import only (both games): commander-blood --data SOURCE --import-assets DESTINATION\n\
+         This verifies loose assets without opening a window or transcoding media.\n\
          \n\
          CBLOOD_DATA may point to the original game-data directory.\n\
          CBLOOD_ASSET_CACHE may select the versioned imported loose-asset directory.\n\
@@ -220,6 +245,23 @@ pub fn run() -> Result<()> {
             return Ok(());
         }
     };
+    if let Some(destination) = options.import_assets.as_deref() {
+        let source = options
+            .data
+            .as_deref()
+            .context("asset import requires a source")?;
+        let outcome = crate::asset_import::import_original_assets(source, destination)?;
+        let manifest = crate::asset_import::ImportedAssetManifest::load(destination)?;
+        manifest
+            .validate(destination, true)
+            .context("verifying all imported asset checksums")?;
+        println!(
+            "{}: {outcome:?}; checksums verified at {}",
+            manifest.game.title(),
+            destination.display()
+        );
+        return Ok(());
+    }
     if !options.uses_diagnostic_overrides() {
         return run_production_game(&options);
     }
@@ -651,6 +693,34 @@ fn map_horizontal_delta_to_original(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn import_only_requires_source_and_rejects_runtime_flags() {
+        for arguments in [
+            vec!["--import-assets", "cache"],
+            vec![
+                "--data",
+                "disc",
+                "--import-assets",
+                "cache",
+                "--frames",
+                "1",
+            ],
+            vec!["--data", "disc", "--import-assets", "cache", "--bridge"],
+        ] {
+            assert!(Options::parse_arguments(arguments.into_iter().map(str::to_owned)).is_err());
+        }
+        let ParseOutcome::Run(options) = Options::parse_arguments(
+            ["--data", "disc", "--import-assets", "cache"]
+                .into_iter()
+                .map(str::to_owned),
+        )
+        .unwrap() else {
+            panic!("import arguments should not request help");
+        };
+        assert_eq!(options.data, Some(PathBuf::from("disc")));
+        assert_eq!(options.import_assets, Some(PathBuf::from("cache")));
+    }
 
     const WIDESCREEN_WIDTH: f32 = 1_920.0;
     const WIDESCREEN_HEIGHT: f32 = 1_080.0;

@@ -2,12 +2,15 @@
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
+use std::io::Read as _;
 use std::path::{Component, Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::{BloodArchive, BloodResourceName};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+
+use crate::game::GameVariant;
 
 pub(crate) const ASSET_MANIFEST_FILENAME: &str = "manifest.json";
 pub(crate) const IMPORTED_ASSET_DIRECTORY_NAME: &str = "assets-v1";
@@ -19,13 +22,7 @@ const ORIGINAL_ARCHIVE_FILENAME: &str = "BLOOD.DAT";
 const TEMPORARY_IMPORT_INFIX: &str = "import";
 const REPLACED_IMPORT_INFIX: &str = "replaced";
 const SHA256_BYTE_COUNT: usize = 32;
-const REQUIRED_COMPANION_FILENAMES: [&str; 5] = [
-    "BLOODPRG.EXE",
-    "BLOOD.LBM",
-    "TB.BIG",
-    "DESCRIPT.DES",
-    "BLOOD.SAV",
-];
+const HASH_READ_BUFFER_BYTES: usize = 65536;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -64,6 +61,9 @@ pub(crate) struct ImportedCompanionEntry {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub(crate) struct ImportedAssetManifest {
     pub(crate) schema_version: u32,
+    // Schema-one manifests predate sequel support and contain Commander inputs.
+    #[serde(default)]
+    pub(crate) game: GameVariant,
     pub(crate) source_archive_sha256: String,
     pub(crate) source_archive_byte_count: u64,
     pub(crate) source_archive_entry_count: usize,
@@ -73,6 +73,12 @@ pub(crate) struct ImportedAssetManifest {
 
 impl ImportedAssetManifest {
     pub(crate) fn load(root: &Path) -> Result<Self> {
+        let manifest = Self::read(root)?;
+        manifest.validate(root, false)?;
+        Ok(manifest)
+    }
+
+    fn read(root: &Path) -> Result<Self> {
         let manifest_path = root.join(ASSET_MANIFEST_FILENAME);
         let encoded = std::fs::read(&manifest_path).with_context(|| {
             format!(
@@ -86,7 +92,6 @@ impl ImportedAssetManifest {
                 manifest_path.display()
             )
         })?;
-        manifest.validate(root, false)?;
         Ok(manifest)
     }
 
@@ -140,13 +145,23 @@ impl ImportedAssetManifest {
                 &mut paths,
             )?;
         }
-        for required in REQUIRED_COMPANION_FILENAMES {
+        for required in self.game.required_companions() {
             if !companion_names
                 .iter()
                 .any(|candidate| candidate.eq_ignore_ascii_case(required))
             {
                 bail!("imported asset manifest is missing companion {required}");
             }
+        }
+        let other_game = match self.game {
+            GameVariant::CommanderBlood => GameVariant::BigBugBang,
+            GameVariant::BigBugBang => GameVariant::CommanderBlood,
+        };
+        if companion_names
+            .iter()
+            .any(|name| name.eq_ignore_ascii_case(other_game.executable_filename()))
+        {
+            bail!("imported asset manifest mixes native executables from both games");
         }
         Ok(())
     }
@@ -182,14 +197,82 @@ pub(crate) fn import_original_assets(
     source_root: &Path,
     destination_root: &Path,
 ) -> Result<AssetImportOutcome> {
-    if let Ok(manifest) = ImportedAssetManifest::load(destination_root) {
-        return Ok(AssetImportOutcome::Reused {
-            resource_count: manifest.resources.len(),
-        });
+    let game = detect_source_game(source_root)?;
+    let source_canonical = source_root
+        .canonicalize()
+        .context("resolving source installation")?;
+    let destination_canonical = resolve_destination(destination_root)?;
+    if source_canonical.starts_with(&destination_canonical)
+        || destination_canonical.starts_with(&source_canonical)
+    {
+        bail!("asset import source and destination must not overlap");
+    }
+    let source_executable = case_insensitive_child(source_root, game.executable_filename())?
+        .context("detected game executable disappeared")?;
+    let source_executable_hash =
+        sha256_hex(&std::fs::read(&source_executable).with_context(|| {
+            format!("reading source executable {}", source_executable.display())
+        })?);
+    // Check identity even if files in a different game's cache are damaged.
+    // A validation error must not turn into permission to replace that cache.
+    if destination_root.join(ASSET_MANIFEST_FILENAME).exists() {
+        let manifest = ImportedAssetManifest::read(destination_root)?;
+        if manifest.game != game {
+            bail!(
+                "asset cache {} belongs to {}, but the source is {}; choose a separate destination",
+                destination_root.display(),
+                manifest.game.title(),
+                game.title()
+            );
+        }
+        let executable = manifest
+            .companions
+            .iter()
+            .find(|entry| {
+                entry
+                    .filename
+                    .eq_ignore_ascii_case(game.executable_filename())
+            })
+            .context("imported game has no executable companion")?;
+        if executable.sha256 != source_executable_hash {
+            bail!(
+                "asset cache {} contains a different {} executable build; choose a separate destination",
+                destination_root.display(),
+                game.title()
+            );
+        }
+        if let Some(archive) = case_insensitive_child(source_root, ORIGINAL_ARCHIVE_FILENAME)? {
+            if sha256_file(&archive)? != manifest.source_archive_sha256 {
+                bail!(
+                    "asset cache {} contains a different source archive; choose a separate destination",
+                    destination_root.display()
+                );
+            }
+        }
+        for entry in manifest
+            .resources
+            .iter()
+            .filter(|entry| entry.origin == ImportedAssetOrigin::LooseFile)
+        {
+            if let Some(source) = case_insensitive_child(source_root, &entry.resource_name)? {
+                if sha256_file(&source)? != entry.sha256 {
+                    bail!(
+                        "asset cache {} differs from source resource {}; choose a separate destination",
+                        destination_root.display(),
+                        entry.resource_name
+                    );
+                }
+            }
+        }
+        if manifest.validate(destination_root, false).is_ok() {
+            return Ok(AssetImportOutcome::Reused {
+                resource_count: manifest.resources.len(),
+            });
+        }
     }
     if !source_root.is_dir() {
         bail!(
-            "Commander Blood import source is not a directory: {}",
+            "game import source is not a directory: {}",
             source_root.display()
         );
     }
@@ -197,7 +280,7 @@ pub(crate) fn import_original_assets(
     let archive_path = case_insensitive_child(source_root, ORIGINAL_ARCHIVE_FILENAME)?
         .with_context(|| {
             format!(
-                "Commander Blood import source has no {ORIGINAL_ARCHIVE_FILENAME}: {}",
+                "game import source has no {ORIGINAL_ARCHIVE_FILENAME}: {}",
                 source_root.display()
             )
         })?;
@@ -233,6 +316,7 @@ pub(crate) fn import_original_assets(
     })?;
 
     let import_result = build_import(
+        game,
         source_root,
         &temporary_root,
         &archive,
@@ -254,6 +338,7 @@ pub(crate) fn import_original_assets(
 }
 
 fn build_import(
+    game: GameVariant,
     source_root: &Path,
     temporary_root: &Path,
     archive: &BloodArchive,
@@ -327,11 +412,11 @@ fn build_import(
     }
     resources.sort_by(|left, right| left.resource_name.cmp(&right.resource_name));
 
-    let mut companions = Vec::with_capacity(REQUIRED_COMPANION_FILENAMES.len());
-    for filename in REQUIRED_COMPANION_FILENAMES {
+    let mut companions = Vec::with_capacity(game.required_companions().len());
+    for &filename in game.required_companions() {
         let source = case_insensitive_child(source_root, filename)?.with_context(|| {
             format!(
-                "Commander Blood import source is missing required companion {filename}: {}",
+                "game import source is missing required companion {filename}: {}",
                 source_root.display()
             )
         })?;
@@ -352,6 +437,7 @@ fn build_import(
 
     let manifest = ImportedAssetManifest {
         schema_version: IMPORTED_ASSET_SCHEMA_VERSION,
+        game,
         source_archive_sha256,
         source_archive_byte_count,
         source_archive_entry_count,
@@ -370,6 +456,63 @@ fn build_import(
         )
     })?;
     Ok(manifest)
+}
+
+/// Identify a source by its main executable name, never by the shared BLOOD.DAT name.
+/// This identifies the game, not whether the runtime supports that executable revision.
+pub(crate) fn detect_source_game(root: &Path) -> Result<GameVariant> {
+    if !root.is_dir() {
+        bail!("game import source is not a directory: {}", root.display());
+    }
+    let commander =
+        case_insensitive_child(root, GameVariant::CommanderBlood.executable_filename())?.is_some();
+    let sequel =
+        case_insensitive_child(root, GameVariant::BigBugBang.executable_filename())?.is_some();
+    match (commander, sequel) {
+        (true, false) => Ok(GameVariant::CommanderBlood),
+        (false, true) => Ok(GameVariant::BigBugBang),
+        (true, true) => bail!(
+            "game source {} contains both main executables; use separate game directories",
+            root.display()
+        ),
+        (false, false) => bail!(
+            "game source {} has neither BLOODPRG.EXE nor BLOOD2PG.EXE",
+            root.display()
+        ),
+    }
+}
+
+fn resolve_destination(path: &Path) -> Result<PathBuf> {
+    if path.exists() {
+        return path
+            .canonicalize()
+            .with_context(|| format!("resolving destination {}", path.display()));
+    }
+    let name = path
+        .file_name()
+        .context("asset destination must name a directory")?;
+    let parent = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    Ok(resolve_destination(parent)?.join(name))
+}
+
+fn sha256_file(path: &Path) -> Result<String> {
+    let mut file = std::fs::File::open(path)
+        .with_context(|| format!("opening source fingerprint input {}", path.display()))?;
+    let mut hash = Sha256::new();
+    let mut buffer = [0; HASH_READ_BUFFER_BYTES];
+    loop {
+        let count = file
+            .read(&mut buffer)
+            .with_context(|| format!("hashing source input {}", path.display()))?;
+        if count == 0 {
+            break;
+        }
+        hash.update(&buffer[..count]);
+    }
+    Ok(format!("{:x}", hash.finalize()))
 }
 
 fn write_resource(
@@ -612,13 +755,17 @@ mod tests {
     }
 
     fn write_source(source: &Path) {
+        write_source_for_game(source, GameVariant::CommanderBlood);
+    }
+
+    fn write_source_for_game(source: &Path, game: GameVariant) {
         let archive = archive_bytes(&[
             (r"SQ\INTRO.HNM", b"video"),
             (r"SN\TB.SND", b"sound"),
             ("DUP.DAT", b"archive wins"),
         ]);
         std::fs::write(source.join(ORIGINAL_ARCHIVE_FILENAME), archive).unwrap();
-        for filename in REQUIRED_COMPANION_FILENAMES {
+        for filename in game.required_companions() {
             std::fs::write(source.join(filename), filename.as_bytes()).unwrap();
         }
         std::fs::write(source.join("SCRIPT1.COD"), b"loose script").unwrap();
@@ -642,7 +789,7 @@ mod tests {
         assert_eq!(manifest.resources.len(), 9);
         assert_eq!(
             manifest.companions.len(),
-            REQUIRED_COMPANION_FILENAMES.len()
+            GameVariant::CommanderBlood.required_companions().len()
         );
         assert_eq!(
             std::fs::read(destination.join("resources/DUP.DAT")).unwrap(),
@@ -683,6 +830,251 @@ mod tests {
         std::fs::write(destination.join("resources/SQ/INTRO.HNM"), b"truncated").unwrap();
 
         assert!(ImportedAssetManifest::load(&destination).is_err());
+    }
+
+    #[test]
+    fn sequel_import_uses_its_own_executable_and_title_without_invented_saves() {
+        let source = TemporaryRoot::create("sequel-source");
+        let cache = TemporaryRoot::create("sequel-cache");
+        let destination = cache.0.join(IMPORTED_ASSET_DIRECTORY_NAME);
+        write_source_for_game(&source.0, GameVariant::BigBugBang);
+        import_original_assets(&source.0, &destination).unwrap();
+        let manifest = ImportedAssetManifest::load(&destination).unwrap();
+        assert_eq!(manifest.game, GameVariant::BigBugBang);
+        assert_eq!(manifest.companions.len(), 4);
+        assert!(
+            manifest
+                .companion_path(&destination, "BLOOD2PG.EXE")
+                .unwrap()
+                .is_file()
+        );
+        assert!(
+            manifest
+                .companion_path(&destination, "BLOOD2.LBM")
+                .unwrap()
+                .is_file()
+        );
+        assert!(!destination.join("companions/BLOODPRG.EXE").exists());
+        assert!(!destination.join("resources/BLOOD.SAV").exists());
+        assert!(!destination.join("resources/SCRIPT1.BAS").exists());
+        manifest.validate(&destination, true).unwrap();
+        let error = crate::runtime::OriginalGameDataPaths::from_root(&destination).unwrap_err();
+        assert!(
+            error.to_string().contains("production runtime tables"),
+            "{error:#}"
+        );
+    }
+
+    #[test]
+    fn requesting_other_game_preserves_existing_cache_in_both_directions() {
+        for (old, new) in [
+            (GameVariant::CommanderBlood, GameVariant::BigBugBang),
+            (GameVariant::BigBugBang, GameVariant::CommanderBlood),
+        ] {
+            let source = TemporaryRoot::create("other-game-source");
+            let other = TemporaryRoot::create("other-game-other-source");
+            let cache = TemporaryRoot::create("other-game-cache");
+            let destination = cache.0.join(IMPORTED_ASSET_DIRECTORY_NAME);
+            write_source_for_game(&source.0, old);
+            write_source_for_game(&other.0, new);
+            import_original_assets(&source.0, &destination).unwrap();
+            let manifest_path = destination.join(ASSET_MANIFEST_FILENAME);
+            let before = std::fs::read(&manifest_path).unwrap();
+            let error = import_original_assets(&other.0, &destination).unwrap_err();
+            assert!(error.to_string().contains("belongs to"), "{error:#}");
+            assert_eq!(std::fs::read(manifest_path).unwrap(), before);
+            assert_eq!(ImportedAssetManifest::load(&destination).unwrap().game, old);
+        }
+    }
+
+    #[test]
+    fn legacy_manifest_remains_commander_without_reimporting() {
+        let source = TemporaryRoot::create("legacy-game-source");
+        let cache = TemporaryRoot::create("legacy-game-cache");
+        let destination = cache.0.join(IMPORTED_ASSET_DIRECTORY_NAME);
+        write_source(&source.0);
+        import_original_assets(&source.0, &destination).unwrap();
+        let path = destination.join(ASSET_MANIFEST_FILENAME);
+        let mut json: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        json.as_object_mut().unwrap().remove("game");
+        std::fs::write(path, serde_json::to_vec(&json).unwrap()).unwrap();
+        assert_eq!(
+            ImportedAssetManifest::load(&destination).unwrap().game,
+            GameVariant::CommanderBlood
+        );
+        assert!(matches!(
+            import_original_assets(&source.0, &destination).unwrap(),
+            AssetImportOutcome::Reused { .. }
+        ));
+    }
+
+    #[test]
+    fn different_executable_build_is_not_silently_reused() {
+        let source = TemporaryRoot::create("build-source");
+        let cache = TemporaryRoot::create("build-cache");
+        let destination = cache.0.join(IMPORTED_ASSET_DIRECTORY_NAME);
+        write_source(&source.0);
+        import_original_assets(&source.0, &destination).unwrap();
+        std::fs::write(source.0.join("BLOODPRG.EXE"), b"another build").unwrap();
+        let error = import_original_assets(&source.0, &destination).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("different Commander Blood executable build")
+        );
+        assert_eq!(
+            std::fs::read(destination.join("companions/BLOODPRG.EXE")).unwrap(),
+            b"BLOODPRG.EXE"
+        );
+    }
+
+    #[test]
+    fn same_executable_cannot_reuse_different_archive_or_script_content() {
+        for resource in [ORIGINAL_ARCHIVE_FILENAME, "SCRIPT1.COD"] {
+            let source = TemporaryRoot::create("content-source");
+            let cache = TemporaryRoot::create("content-cache");
+            let destination = cache.0.join(IMPORTED_ASSET_DIRECTORY_NAME);
+            write_source(&source.0);
+            import_original_assets(&source.0, &destination).unwrap();
+            let path = source.0.join(resource);
+            let mut bytes = std::fs::read(&path).unwrap();
+            let last = bytes.last_mut().unwrap();
+            *last ^= 1;
+            std::fs::write(path, bytes).unwrap();
+            assert!(import_original_assets(&source.0, &destination).is_err());
+            ImportedAssetManifest::load(&destination)
+                .unwrap()
+                .validate(&destination, true)
+                .unwrap();
+        }
+    }
+
+    #[test]
+    fn source_detection_is_case_insensitive_and_rejects_ambiguity() {
+        let source = TemporaryRoot::create("identity-source");
+        assert!(detect_source_game(&source.0).is_err());
+        std::fs::write(source.0.join("blood2pg.exe"), b"sequel").unwrap();
+        assert_eq!(
+            detect_source_game(&source.0).unwrap(),
+            GameVariant::BigBugBang
+        );
+        std::fs::write(source.0.join("BLOODPRG.EXE"), b"commander").unwrap();
+        assert!(
+            detect_source_game(&source.0)
+                .unwrap_err()
+                .to_string()
+                .contains("both main executables")
+        );
+    }
+
+    #[test]
+    fn changing_manifest_game_cannot_relabel_a_commander_cache() {
+        let source = TemporaryRoot::create("relabel-source");
+        let cache = TemporaryRoot::create("relabel-cache");
+        let destination = cache.0.join(IMPORTED_ASSET_DIRECTORY_NAME);
+        write_source(&source.0);
+        import_original_assets(&source.0, &destination).unwrap();
+        let mut manifest = ImportedAssetManifest::load(&destination).unwrap();
+        manifest.game = GameVariant::BigBugBang;
+        assert!(manifest.validate(&destination, false).is_err());
+    }
+
+    #[test]
+    fn damaged_other_game_cache_is_not_replaced() {
+        let commander = TemporaryRoot::create("damaged-commander");
+        let sequel = TemporaryRoot::create("damaged-sequel");
+        let cache = TemporaryRoot::create("damaged-cache");
+        let destination = cache.0.join(IMPORTED_ASSET_DIRECTORY_NAME);
+        write_source(&commander.0);
+        write_source_for_game(&sequel.0, GameVariant::BigBugBang);
+        import_original_assets(&commander.0, &destination).unwrap();
+        std::fs::remove_file(destination.join("resources/SQ/INTRO.HNM")).unwrap();
+        let before = std::fs::read(destination.join(ASSET_MANIFEST_FILENAME)).unwrap();
+        let error = import_original_assets(&sequel.0, &destination).unwrap_err();
+        assert!(error.to_string().contains("belongs to"));
+        assert_eq!(
+            std::fs::read(destination.join(ASSET_MANIFEST_FILENAME)).unwrap(),
+            before
+        );
+    }
+
+    #[test]
+    fn import_cannot_replace_or_nest_inside_the_source_installation() {
+        let parent = TemporaryRoot::create("overlap-parent");
+        let source = parent.0.join("source");
+        std::fs::create_dir(&source).unwrap();
+        write_source(&source);
+        let before = std::fs::read(source.join(ORIGINAL_ARCHIVE_FILENAME)).unwrap();
+        for destination in [&source, &source.join("nested/cache"), &parent.0] {
+            assert!(
+                import_original_assets(&source, destination)
+                    .unwrap_err()
+                    .to_string()
+                    .contains("overlap")
+            );
+            assert_eq!(
+                std::fs::read(source.join(ORIGINAL_ARCHIVE_FILENAME)).unwrap(),
+                before
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang disc under output/big-bug-bang/disc"]
+    fn original_sequel_import_loads_its_authentic_initial_profile_from_loose_files() {
+        use crate::assets::OriginalResourceStore;
+        use crate::native::bloodprg::{
+            OriginalResourceCache, ScriptProfileId, ScriptProfileManager,
+        };
+
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+        let cache = TemporaryRoot::create("real-sequel-import");
+        let destination = cache.0.join(IMPORTED_ASSET_DIRECTORY_NAME);
+        import_original_assets(&source, &destination).unwrap();
+        let manifest = ImportedAssetManifest::load(&destination).unwrap();
+        manifest.validate(&destination, true).unwrap();
+        let executable = std::fs::read(
+            manifest
+                .companion_path(&destination, manifest.game.executable_filename())
+                .unwrap(),
+        )
+        .unwrap();
+        let resources = manifest.game.decode_resource_catalog(&executable).unwrap();
+        let catalog = manifest.game.decode_profile_catalog(&executable).unwrap();
+        assert_eq!(resources.len(), 155);
+        assert_eq!(catalog.dialect(), manifest.game.script_dialect());
+        let store = OriginalResourceStore::with_writable_root(
+            destination.join(RESOURCE_DIRECTORY_NAME),
+            cache.0.join("writable"),
+            None,
+            manifest.resource_names().unwrap(),
+            true,
+        );
+        let mut manager = ScriptProfileManager::new(catalog);
+        let initial = ScriptProfileId::new_for_dialect(0, manifest.game.script_dialect()).unwrap();
+        manager
+            .select(
+                initial,
+                &mut OriginalResourceCache::new(),
+                &store,
+                &resources,
+            )
+            .unwrap();
+        let profile = manager.current().unwrap();
+        assert_eq!(
+            profile.dialogue().encoded_bytes(),
+            std::fs::read(source.join("SCRIPT1.COD")).unwrap()
+        );
+        assert_eq!(
+            store
+                .load(&BloodResourceName::new(b"SCRIPT1.VAR").unwrap())
+                .unwrap()
+                .as_ref(),
+            std::fs::read(source.join("SCRIPT1.VAR")).unwrap()
+        );
+        assert!(!destination.join("resources/SCRIPT1.BAS").exists());
+        assert!(store.archive_entries().is_none());
     }
 
     #[test]
