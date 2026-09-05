@@ -119,6 +119,8 @@ const TEXT_CONDITIONAL_SKIP: u16 = 0x0008;
 const TEXT_RESUME_AND_POST_WORDS: u16 = 0x0010;
 const TEXT_SPOKEN_WORDS: u16 = 0x0020;
 const TEXT_HISTORY_CONDITION: u16 = 0x0040;
+const TEXT_FORCE_RECORD_ORDERING: u16 = 0x0080;
+const TEXT_RECORD_EQUALITY_DETAIL: u8 = 0x01;
 const TEXT_ACTIVE: u16 = 0x8000;
 const TEXT_SKIP_COUNT_SHIFT: u32 = 12;
 const TEXT_SKIP_COUNT_MASK: u16 = 0x0007;
@@ -201,6 +203,13 @@ impl ScriptTextControl {
     /// Return whether a record-field comparison operand precedes the word list.
     pub const fn uses_record_condition(self) -> bool {
         self.0 & TEXT_RECORD_CONDITION != u16::MIN
+    }
+
+    /// Select equality unless the low-byte ordering flag overrides it.
+    /// Both native condition routines test control bit 7 before detail bit 0.
+    pub const fn uses_record_equality(self) -> bool {
+        self.0 & TEXT_FORCE_RECORD_ORDERING == u16::MIN
+            && self.detail() & TEXT_RECORD_EQUALITY_DETAIL != u8::MIN
     }
 
     /// Return the number of following tokens skipped when the line is rejected.

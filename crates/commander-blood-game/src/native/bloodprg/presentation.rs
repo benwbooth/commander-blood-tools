@@ -7,7 +7,6 @@ use commander_blood_formats::script::ScriptWordId;
 
 const HISTORY_WORD_COUNT: usize = 8;
 const HISTORY_REQUIRED_MASK: u8 = 0x07;
-const RECORD_EQUALITY_DETAIL: u8 = 0x01;
 
 /// Fixed eight-word concept history used by A6 conditions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -91,7 +90,7 @@ pub fn evaluate_text_conditions(
         let operand = text
             .record_condition_operand
             .ok_or(TextConditionError::MissingRecordOperand)?;
-        let accepted = if text.control.detail() & RECORD_EQUALITY_DETAIL != u8::MIN {
+        let accepted = if text.control.uses_record_equality() {
             record_value == operand
         } else {
             (record_value as i16) > (operand as i16)
@@ -276,6 +275,49 @@ mod tests {
             };
             ScriptWordHistory::new(entries, next_index).unwrap()
         })
+    }
+
+    #[test]
+    fn record_comparison_matches_both_original_binaries_including_flag_priority() {
+        #[derive(Deserialize)]
+        struct RecordConditionOracle {
+            game: String,
+            flags: u16,
+            record: u16,
+            operand: u16,
+            accepted: bool,
+        }
+        let vectors: Vec<RecordConditionOracle> =
+            include_str!("../../../../../re/tools/oracle_vectors/text_record_condition.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(vectors.len(), 288);
+        let mut game_counts = [0; 2];
+        for vector in vectors {
+            let index = match vector.game.as_str() {
+                "commander" => 0,
+                "sequel" => 1,
+                other => panic!("unknown original game {other}"),
+            };
+            game_counts[index] += 1;
+            let mut effects = TextConditionEffects::default();
+            let accepted = evaluate_text_conditions(
+                &text(vector.flags, Some(vector.operand), Vec::new()),
+                None,
+                Some(vector.record),
+                None,
+                &mut effects,
+            )
+            .unwrap();
+            assert_eq!(
+                accepted, vector.accepted,
+                "{} flags={} record={} operand={}",
+                vector.game, vector.flags, vector.record, vector.operand
+            );
+            assert_eq!(effects, TextConditionEffects::default());
+        }
+        assert_eq!(game_counts, [144, 144]);
     }
 
     #[test]

@@ -150,9 +150,10 @@ would be incorrect even though the projection tables match.
 The assembly comparison also found an **unported destination-selection branch**
 in the sequel planar square-cap routine (entry 0x37A8). At 0x37D0 it loads the
 destination from GS:0x55E9, tests word GS:0x6B94, and, when zero, selects GS:0x55ED
-instead. Commander has only the first-buffer selection. The host meaning and
-caller lifecycle of this selector still require investigation; glyph/width tests
-do not validate that routing. The sequel planar-main entry is 0x38FC.
+instead. Commander has only one unconditional buffer selection. The sequel
+selector is linked to its dynamic inventory-choice flow, traced below;
+glyph/width tests do not validate that routing. The sequel planar-main entry
+is 0x38FC.
 
 `GameVariant` selects and fingerprint-checks both new decoders, and the Commander
 runtime now accesses fonts/bridge tables through that same identity boundary.
@@ -181,6 +182,78 @@ game library passed 912 tests, with 11 ignored, serially on a fresh private Xvfb
 display; its server was reaped afterward. Game all-targets checking passed.
 Existing unrelated Commander runtime edits were present during these checks but
 are excluded from this checkpoint. No full-game sequel parity claim follows.
+
+### A6 Condition Audit and Dynamic Inventory Choices
+
+Direct assembly comparison found an inherited Rust translation omission:
+both Commander at 0x636B and the sequel at 0x6B5A test the sign of the low control
+byte before testing detail bit zero. Control flag 128 overrides equality and
+requires signed `record > operand`. The recovered C `vm_condition_5` already
+preserves that priority; Rust previously selected equality whenever detail bit
+zero was set. `ScriptTextControl::uses_record_equality` now encodes the priority
+and is used by the shared condition evaluator for both games.
+
+`re/tools/text_record_condition_oracle.py` executes each original complete
+condition procedure with only record-condition controls enabled: Commander
+0x6339..0x6432 and sequel 0x6B28..0x6C44. It uses each executable's real field
+matrix, guards both SHA-256 values, checks preserved registers and source/data
+immutability, permits only the four stack-scratch bytes, and rejects execution
+outside the procedure. No callee is substituted. The 288 vectors cross all four
+equality/ordering flag combinations with signed boundary values. They do not
+cover the unentered PRNG, history, or menu branches of these procedures.
+
+The new Rust regression was run before the fix and failed at flags 388,
+record zero, operand zero: Rust returned true; the original returned false.
+This is a reproduced assembly/C-to-Rust discrepancy, not an inferred UI patch.
+After the fix all 288 comparisons pass, along with the existing condition
+vectors (five condition tests total). All 119 formats tests passed with corpus
+checks enabled; the complete game library passed 913 tests with 11 ignored,
+serially on a fresh private Xvfb display, which was reaped afterward. Game
+all-targets checking passed. These checks include the same unrelated local
+Commander runtime edits, not staged with this repair.
+
+The following **unported** sequel paths were established by assembly inspection,
+not native end-to-end runtime tests:
+
+- A6 entry 0x6C89 saves its current selector-byte position to GS:0x6B4E.
+  Its condition helper 0x6B28, on the resume/post-list path, recognizes the
+  special word 65534 at 0x6C10 and calls 0x6C45. A zero count clears the yield
+  and resume bytes and returns failure. A nonzero count copies the saved line
+  position to GS:0x6B94 and returns success.
+- The complete helper 0x6C45..0x6C88 scans GS:0x70E6 until word 65535, skips
+  zero slots, tests the VAR record kind for mask 1024 (`InventoryItem`), and
+  writes each selected record offset plus four to GS:0x6BDC. It terminates the
+  result with zero and returns the count in AL. These are object-backed names,
+  not DIC offsets and not ordinary actor records.
+- The original GS:0x70E6 table contains sixteen zero slots plus a 65535
+  terminator. Startup clears sixteen slots at 0x5890. The loader at 0x59FF
+  populates it from active directory entries whose selector-17 field is 65535.
+  Helpers 0x65E8 and 0x6606 remove or insert within those sixteen slots.
+- The ordinary concept-consumption routine at 0x5C41 has a sequel-specific
+  branch when resume bit two and GS:0x6B94 are both set. It clears that saved
+  line and pending presentation state, marks the saved COD line, removes the
+  chosen object from the sixteen-slot table, writes its selector-17 relationship
+  from the saved line operand, and sets record flag 64. Later presentation calls
+  in the same branch still need complete integration/oracle coverage.
+- GS:0x6B94 also selects UI call order in the main loop (0x138B/0x13A3),
+  background/text drawing paths (0x963E/0x970D/0x9754), and the planar text
+  destination (0x37D5). The two page offsets are swapped at 0x43ED..0x43F7.
+  Fixing only the font destination would omit the underlying interaction.
+
+The current typed `ScriptTextWord` supports dictionary words and the 65535
+separator, but not this 65534 dynamic-object marker. It must gain an explicit,
+dialect-aware representation alongside the actual selection/transfer state and
+UI routing. Do not invent dictionary entries, substitute all actors for the
+native candidate table, or enable sequel production loading with this flow
+missing. Authored marker reachability and the later presentation calls remain
+to be verified before calling the whole A6 path recovered.
+
+```sh
+nix develop -c python3 -P re/tools/text_record_condition_oracle.py \
+  re/bin/BLOODPRG.EXE output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/text_record_condition.jsonl
+nix develop -c cargo test -p commander-blood-game --lib native::bloodprg::presentation::tests
+```
 
 ### Explicit COD Dialects
 
