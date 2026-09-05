@@ -27,6 +27,24 @@ dialogue word list uses center x=225; the contact list uses x=100. Both center
 vertically at y=100. `func_008963_presentation_ready_gate.c` supplies the word
 list's four-step collapsed-to-open rectangle animation.
 
+## DESCRIPT sequence captions
+
+The bridge `present` sequence in `re/descript/DESCRIPT.descript` supplies the
+CLIPTOOT captions: the CRYO credit at frame 1, `Commander BLOOD  V 1.0` at
+frame 30, and an empty cue at frame 100. These are not MIND video pixels.
+
+The BIOS 8x8 font and authored subtitle color are now imported to immutable
+RGBA glyphs at startup. The recovered `list_walk_f18` planner still advances
+only when `screen_mode_update` reports a presented resource frame, including
+its draw-before-advance order. The resulting caption is retained separately
+and stamped onto the RGB UI every game frame, so decoder stalls and legacy
+front/back-page replacement cannot erase it. Render-only refreshes reuse it
+without advancing the cue clock. Blank cues, record/video replacement,
+cancellation, closing, and sequence completion clear it.
+
+This intentionally preserves authored content and timing, not transient DOS
+display-page artifacts. It does not migrate dialogue subtitles or panel effects.
+
 ## Remaining work (not migrated)
 
 | Owner | Indexed dependency still present | Required replacement |
@@ -35,7 +53,7 @@ list's four-step collapsed-to-open rectangle animation.
 | `bridge_render.rs`, bridge scene inputs | Panorama/actor indices resolved with bridge colors | RGB panorama frames and sprite layers, direct RGB vertex/material colors |
 | `runtime/video.rs`, `presentation_player.rs` | Live HNM decoding, index-backed retained pages and inherited color state | Context-complete imported RGB video layers plus coverage and timing metadata |
 | `runtime/ship_navigation.rs`, `ship_hud.rs` | Legacy navigation dimming/depth-band and scene preparation | RGB backgrounds, masks, depth transitions, and explicit composition |
-| `runtime/subtitles.rs`, `presentation_screen.rs` | Subtitle raster and panel effects write indexed pixels | Imported RGB fonts, retained cue overlays, RGB noise/fades |
+| `runtime/subtitles.rs`, panel effects in `presentation_screen.rs` | Dialogue subtitle raster and panel effects write indexed pixels | Imported RGB dialogue fonts, retained dialogue overlays, RGB noise/fades |
 | `runtime/palette_transition.rs` and screen effects | Color-range operations rather than visual layer effects | Explicit RGB layer fades, with the same C timing and ownership |
 
 The existing `video-v1` cache is not a complete solution: production
@@ -59,9 +77,10 @@ tests; those internals must not become the production scene model.
 - Run existing production phone/Bob/Pterra scenarios to protect interaction
   ordering, but label their coverage honestly: scripted pacing bypasses the
   live scheduler, and state traces do not establish full visual parity.
-- User reports of missing hyperspace, scene corruption, and blinking sequence
-  captions are not resolved by the choice-UI migration. They require aligned
-  RGB captures through their complete transitions.
+- User reports of missing hyperspace and scene corruption are not resolved by
+  these UI migrations. They require aligned RGB captures through their complete
+  transitions. Sequence-caption persistence has a dedicated regression scenario;
+  this is separate from a matched original-DOS video comparison.
 - C6's `nav_actor_0_busy` is the slot-4 flag byte, despite the misleading name.
   Rechecking its table binding rejected an earlier suggestion to use slot 5.
   The added actor regression does not claim to fix Pterra.
@@ -84,3 +103,23 @@ tests; those internals must not become the production scene model.
 - The RGB UI hashes remain stable while Bob/Scruter idle video frames advance.
   Production tests use scripted pacing; live monitor-refresh interpolation was
   checked through clock/animation unit tests, not a new manual playtest.
+
+### Sequence-caption follow-up, 2026-09-04
+
+- Library: 868 passed, five ignored. New tests check all BIOS glyph bytes
+  against the recovered font rasterizer, caption persistence over 120 UI
+  refreshes without cue advancement, and blank/exit/replacement clearing.
+- `production_runtime_retains_the_intro_caption_until_its_blank_cue` passed
+  twice with the actual game assets in an isolated SDL/wgpu display. The first
+  run retained 426 opaque title pixels with an identical RGBA hash across 12
+  checkpoints at sequence indices 35 through 99; frame 108 had zero caption
+  pixels, following the authored empty cue at frame 100.
+- Captures and traces from the final implementation are retained at
+  `output/fidelity/production-intro-caption.jsonl-1788568308106201159-35296-0/`.
+  `title-1.png` through `title-5.png` show the title over changing video frames.
+  The exact-white mask in the title rectangle (704x39 at 288,528 in the
+  1280x960 capture) has the same image signature in all five captures:
+  `22d3246cec7641b4c66b72b81d9022a833a44dfd9ec87a67612a7dd8ba1a4475`.
+- These are Rust production captures and scripted timing checks, not matched
+  original-DOS captures or proof of whole-game visual parity. The user's live
+  game session was not restarted or interacted with.

@@ -202,6 +202,10 @@ impl OriginalGameRuntime {
         self.data.choice_ui_assets.text_color(style)
     }
 
+    pub(super) fn draw_sequence_caption_overlay(&mut self, caption: &crate::ui::RgbaUiOverlay) {
+        self.ui_overlay.blit_overlay(caption);
+    }
+
     /// Allocate the flat runtime around one validated original data set.
     pub fn new(data: OriginalGameData) -> Self {
         let profiles = ScriptProfileManager::new(data.script_profile_catalog().clone());

@@ -262,6 +262,65 @@ const BRIDGE_CONSOLE_PROBES: [BridgeConsoleProbe; 4] = [
 ];
 
 #[test]
+fn production_runtime_retains_the_intro_caption_until_its_blank_cue() {
+    let Some(records) = run_production_scenario(
+        "accuracy/scenarios/production_intro_caption.tsv",
+        "production-intro-caption.jsonl",
+    ) else {
+        return;
+    };
+    let clip_frames: Vec<_> = records
+        .iter()
+        .filter(|record| record["semantic"]["video"]["active_resource"] == FIRST_STARTUP_VIDEO)
+        .collect();
+    let title_frames: Vec<_> = clip_frames
+        .iter()
+        .copied()
+        .filter(|record| {
+            record["semantic"]["video"]["queue_metrics"]["sequence_index"]
+                .as_u64()
+                .is_some_and(|frame| (32..100).contains(&frame))
+        })
+        .collect();
+    assert!(
+        title_frames.len() >= 6,
+        "not enough title checkpoints: {}",
+        title_frames.len()
+    );
+    let caption = &title_frames[0]["semantic"]["sequence_caption"];
+    assert!(caption["opaque_pixels"].as_u64().unwrap() > 0);
+    for frame in title_frames {
+        let semantic = &frame["semantic"];
+        assert_eq!(
+            &semantic["sequence_caption"], caption,
+            "caption blinked or changed color"
+        );
+        assert_eq!(
+            semantic["rgb_ui"]["rgba_hash"], caption["rgba_hash"],
+            "the retained caption was not copied to the presented RGB UI"
+        );
+    }
+    let blank = clip_frames
+        .iter()
+        .find(|record| {
+            record["semantic"]["video"]["queue_metrics"]["sequence_index"]
+                .as_u64()
+                .is_some_and(|frame| frame >= 102)
+        })
+        .expect("CLIPTOOT never reached the authored blank cue");
+    assert_eq!(blank["semantic"]["sequence_caption"]["opaque_pixels"], 0);
+    let cancelled = records
+        .iter()
+        .rev()
+        .find(|record| record["action"] == INTRO_ESCAPE_KEY)
+        .expect("missing caption cancellation checkpoint");
+    assert_eq!(
+        cancelled["semantic"]["sequence_caption"]["opaque_pixels"],
+        0
+    );
+}
+
+#[test]
 fn production_runtime_escape_cancels_the_opening_and_enters_script1() {
     let Some(records) = run_production_scenario(
         "accuracy/scenarios/production_intro_escape.tsv",

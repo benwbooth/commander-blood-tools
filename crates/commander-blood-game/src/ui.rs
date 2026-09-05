@@ -12,6 +12,54 @@ const OPAQUE: u8 = 255;
 const TRANSPARENT: u8 = 0;
 const DARKEN_ALPHA: u8 = 128;
 const FIRST_ROW_BIT: u16 = 1 << (GLYPH_WIDTH - 1);
+const CAPTION_GLYPH_SIZE: usize = 8;
+const CAPTION_FIRST_ROW_BIT: u8 = 128;
+/// DESCRIPT's centered subtitle style, resolved only while importing assets.
+pub(crate) const SEQUENCE_CAPTION_COLOR: usize = 239;
+
+/// Precolored BIOS glyphs used by DESCRIPT captions, independent of video colors.
+pub(crate) struct SequenceCaptionFont {
+    glyphs: Vec<Box<[u8]>>,
+}
+
+impl SequenceCaptionFont {
+    pub(crate) fn import(font: &[[u8; 8]; 256], source_color: [u8; 3]) -> Result<Self> {
+        if source_color.iter().any(|&component| component > 63) {
+            bail!("sequence caption source contains an invalid DAC component");
+        }
+        let rgb = source_color.map(|component| (component << 2) | (component >> 4));
+        let color = [rgb[0], rgb[1], rgb[2], OPAQUE];
+        let glyphs = font
+            .iter()
+            .map(|rows| {
+                let mut rgba =
+                    vec![TRANSPARENT; CAPTION_GLYPH_SIZE * CAPTION_GLYPH_SIZE * RGBA_COMPONENTS];
+                for (y, bits) in rows.iter().enumerate() {
+                    for x in 0..CAPTION_GLYPH_SIZE {
+                        if bits & (CAPTION_FIRST_ROW_BIT >> x) != 0 {
+                            let offset = (y * CAPTION_GLYPH_SIZE + x) * RGBA_COMPONENTS;
+                            rgba[offset..offset + RGBA_COMPONENTS].copy_from_slice(&color);
+                        }
+                    }
+                }
+                rgba.into_boxed_slice()
+            })
+            .collect();
+        Ok(Self { glyphs })
+    }
+
+    pub(crate) fn draw_text(&self, overlay: &mut RgbaUiOverlay, text: &[u8], origin: [i32; 2]) {
+        let mut pen_x = origin[0];
+        for &character in text.iter().take_while(|&&byte| byte != 0) {
+            overlay.blit_image(
+                &self.glyphs[usize::from(character)],
+                [CAPTION_GLYPH_SIZE; 2],
+                [pen_x, origin[1]],
+            );
+            pen_x = pen_x.saturating_add(CAPTION_GLYPH_SIZE as i32);
+        }
+    }
+}
 
 /// Semantic styles emitted by the recovered choice-list planner.
 #[derive(Clone, Copy, Debug)]
@@ -132,7 +180,11 @@ impl ChoiceUiAssets {
                 .glyphs
                 .get(usize::from(index))
                 .context("choice text refers to a missing imported glyph")?;
-            overlay.blit_glyph(&glyph.images[style.slot()], [pen_x, origin[1]]);
+            overlay.blit_image(
+                &glyph.images[style.slot()],
+                [GLYPH_WIDTH, GLYPH_HEIGHT],
+                [pen_x, origin[1]],
+            );
             pen_x = pen_x.saturating_add(glyph.advance);
         }
         Ok(())
@@ -187,10 +239,15 @@ impl RgbaUiOverlay {
         }
     }
 
-    fn blit_glyph(&mut self, rgba: &[u8], origin: [i32; 2]) {
-        for y in 0..GLYPH_HEIGHT {
-            for x in 0..GLYPH_WIDTH {
-                let source = (y * GLYPH_WIDTH + x) * RGBA_COMPONENTS;
+    /// Stamp retained opaque caption pixels, leaving transparent pixels untouched.
+    pub(crate) fn blit_overlay(&mut self, overlay: &Self) {
+        self.blit_image(overlay.pixels(), [overlay.width, overlay.height], [0, 0]);
+    }
+
+    fn blit_image(&mut self, rgba: &[u8], size: [usize; 2], origin: [i32; 2]) {
+        for y in 0..size[1] {
+            for x in 0..size[0] {
+                let source = (y * size[0] + x) * RGBA_COMPONENTS;
                 if rgba[source + RGBA_COMPONENTS - 1] == TRANSPARENT {
                     continue;
                 }
@@ -210,6 +267,37 @@ impl RgbaUiOverlay {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn imported_caption_font_matches_every_original_bios_glyph() {
+        use crate::native::bloodprg::{FontPoint, draw_bios_font_text};
+        use crate::runtime::VGA_BIOS_FONT_8X8;
+        let font = SequenceCaptionFont::import(&VGA_BIOS_FONT_8X8, [17, 31, 47]).unwrap();
+        let mut overlay = RgbaUiOverlay::new(320, 200);
+        let mut reference = vec![0; 320 * 200];
+        for character in u8::MIN..=u8::MAX {
+            overlay.clear();
+            reference.fill(0);
+            let text = [character, 0, b'X'];
+            font.draw_text(&mut overlay, &text, [20, 20]);
+            draw_bios_font_text(
+                &mut reference,
+                &VGA_BIOS_FONT_8X8,
+                &text,
+                FontPoint { x: 20, y: 20 },
+                1,
+                text.len() as u8,
+            )
+            .unwrap();
+            for (&coverage, rgba) in reference.iter().zip(overlay.pixels().chunks_exact(4)) {
+                assert_eq!(rgba[3] != 0, coverage != 0, "glyph for byte {character}");
+                if coverage != 0 {
+                    assert_eq!(rgba, [69, 125, 190, 255]);
+                }
+            }
+        }
+        assert!(SequenceCaptionFont::import(&VGA_BIOS_FONT_8X8, [64, 0, 0]).is_err());
+    }
 
     #[test]
     #[ignore = "requires the original BLOODPRG.EXE font data"]

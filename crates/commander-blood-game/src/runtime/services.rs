@@ -4855,6 +4855,17 @@ impl<'window> ModernGameServices<'window> {
             },
         });
         snapshot["rgb_ui"] = rgb_ui;
+        snapshot["sequence_caption"] = self
+            .presentation_screen
+            .as_ref()
+            .map(|screen| {
+                serde_json::json!({
+                    "rgba_hash": fnv1a64(screen.caption_rgba()),
+                    "opaque_pixels": screen.caption_rgba().chunks_exact(4)
+                        .filter(|pixel| pixel[3] == 255).count(),
+                })
+            })
+            .unwrap_or(serde_json::Value::Null);
         snapshot["video"]["game_color_bytes"] = serde_json::Value::String(game_color_bytes);
         snapshot["video"]["display_color_bytes"] = serde_json::Value::String(display_color_bytes);
         snapshot["video"]["manu3_submitted_triangle_count"] =

@@ -5,23 +5,23 @@ use commander_blood_formats::descript::DescriptBackgroundSlot;
 use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, CenteredSequenceSubtitleLine, DescriptMusicSelectionOutcome, FontPoint,
-    GameSceneLink, Manu3AnimationSelector, PaletteRemapTable, PresentationChoiceNumber,
-    PresentationDescriptPlan, PresentationMusicChange, PresentationPanelPhase,
-    PresentationRenderRegion, PresentationRenderTarget, PresentationResourceId,
-    PresentationSceneContext, PresentationSceneDispatchOutcome, PresentationSceneDispatchState,
-    PresentationSceneStatus, PresentationScreenBackend, PresentationScreenOutcome,
-    PresentationScreenState, RasterNoiseMode, RasterPoint, RasterSpanPaint, SceneTransitionLine,
-    SceneTransitionPhase, SceneTransitionState, ScriptPresentationScanState,
-    SequenceSubtitlePlayback, SequenceSubtitleRenderer, ShipPresentationState,
-    build_banked_tint_table, decode_active_presentation_line, draw_bios_font_text,
+    BridgeSpriteRect, CenteredSequenceSubtitleLine, DescriptMusicSelectionOutcome, GameSceneLink,
+    Manu3AnimationSelector, PaletteRemapTable, PresentationChoiceNumber, PresentationDescriptPlan,
+    PresentationMusicChange, PresentationPanelPhase, PresentationRenderRegion,
+    PresentationRenderTarget, PresentationResourceId, PresentationSceneContext,
+    PresentationSceneDispatchOutcome, PresentationSceneDispatchState, PresentationSceneStatus,
+    PresentationScreenBackend, PresentationScreenOutcome, PresentationScreenState, RasterNoiseMode,
+    RasterPoint, RasterSpanPaint, SceneTransitionLine, SceneTransitionPhase, SceneTransitionState,
+    ScriptPresentationScanState, SequenceSubtitlePlayback, SequenceSubtitleRenderer,
+    ShipPresentationState, build_banked_tint_table, decode_active_presentation_line,
     draw_framebuffer_noise_rect, draw_rect_outline, encode_active_presentation_line,
     fill_framebuffer_rect, present_sequence_subtitle, remap_framebuffer_rect,
     update_presentation_screen,
 };
 
 use super::game_lifecycle::native_scene_link_target;
-use super::{ModernGameServices, OriginalGameRuntime, RuntimePresentationScene, VGA_BIOS_FONT_8X8};
+use super::{ModernGameServices, RuntimePresentationScene};
+use crate::ui::{RgbaUiOverlay, SequenceCaptionFont};
 
 const LOGICAL_DISPLAY_CLIP: BridgeSpriteRect = BridgeSpriteRect {
     left: 0,
@@ -47,6 +47,7 @@ pub struct RuntimePresentationScreen {
     scene: RuntimePresentationScene,
     console_tint: PaletteRemapTable,
     scene_frame_presented_output: Option<bool>,
+    caption: RetainedSequenceCaption,
 }
 
 pub(super) struct RuntimeSceneTransitionDispatchContext<'state> {
@@ -75,6 +76,7 @@ impl RuntimePresentationScreen {
             scene: RuntimePresentationScene::new(initial_palette),
             console_tint,
             scene_frame_presented_output: None,
+            caption: RetainedSequenceCaption::new(),
         })
     }
 
@@ -96,6 +98,11 @@ impl RuntimePresentationScreen {
     /// Take the shared frame-ready write produced by this panel update, if any.
     pub fn take_scene_frame_presented_output(&mut self) -> Option<bool> {
         self.scene_frame_presented_output.take()
+    }
+
+    /// Retained caption pixels for production fidelity traces.
+    pub(super) fn caption_rgba(&self) -> &[u8] {
+        self.caption.overlay.pixels()
     }
 
     /// Return the armed and pending flags consumed by the alien-overlay coordinator.
@@ -251,13 +258,23 @@ impl RuntimePresentationScreen {
             scene_frame_presented_output: &mut self.scene_frame_presented_output,
             secondary_presentation_mode,
             deferred_error: None,
+            caption: &mut self.caption,
         };
         let outcome =
             update_presentation_screen(&mut self.state, &records, queued_scene_link, &mut backend);
         match (outcome, backend.deferred_error) {
             (Err(error), _) => Err(error),
             (Ok(_), Some(error)) => Err(error),
-            (Ok(outcome), None) => Ok(outcome),
+            (Ok(outcome), None) => {
+                backend.caption.finish_frame(outcome);
+                if outcome == PresentationScreenOutcome::WaitingForScene {
+                    backend
+                        .services
+                        .runtime_mut()
+                        .draw_sequence_caption_overlay(&backend.caption.overlay);
+                }
+                Ok(outcome)
+            }
         }
     }
 }
@@ -325,6 +342,7 @@ struct RuntimePresentationScreenBackend<'services, 'window> {
     scene_frame_presented_output: &'services mut Option<bool>,
     secondary_presentation_mode: bool,
     deferred_error: Option<anyhow::Error>,
+    caption: &'services mut RetainedSequenceCaption,
 }
 
 impl RuntimePresentationScreenBackend<'_, '_> {
@@ -456,6 +474,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
 
     fn load_descript(&mut self, record: &Self::RecordName) -> Result<PresentationDescriptPlan> {
         self.check_deferred_error()?;
+        self.caption.overlay.clear();
         let application = self
             .services
             .apply_presentation_description(record)?
@@ -503,6 +522,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
                 return Ok(PresentationSceneStatus::default());
             };
             self.services.select_descript_sequence_video(line)?;
+            self.caption.overlay.clear();
             self.scene_state.present_policy.vertical_offset = match context {
                 PresentationSceneContext::Queued(_) => {
                     self.scene_state.present_policy.vertical_offset
@@ -546,13 +566,12 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
                 return;
             }
         };
-        let mut renderer = RuntimeSequenceSubtitleRenderer {
-            runtime: self.services.runtime_mut(),
+        let result = self.caption.update(
+            &self.services.runtime().data().sequence_caption_font,
+            &subtitles,
+            playback,
             visible_frame,
-        };
-        let result = present_sequence_subtitle(&subtitles, playback, &mut renderer)
-            .context("drawing a DESCRIPT sequence subtitle")
-            .map(|_| ());
+        );
         self.record_error(result);
     }
 
@@ -566,6 +585,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
     }
 
     fn cancel_scene_presentation(&mut self) {
+        self.caption.overlay.clear();
         if release_scene_presentation(self.scene_state) {
             self.services.finish_presentation_sequence();
         }
@@ -607,8 +627,50 @@ fn presentation_context_link_target(context: &PresentationSceneContext<'_, GameS
     }
 }
 
-struct RuntimeSequenceSubtitleRenderer<'runtime> {
-    runtime: &'runtime mut OriginalGameRuntime,
+/// Cue advancement stays tied to decoded frames; its pixels survive page flips
+/// and game frames where the video decoder has nothing new to present.
+struct RetainedSequenceCaption {
+    overlay: RgbaUiOverlay,
+}
+
+impl RetainedSequenceCaption {
+    fn new() -> Self {
+        Self {
+            overlay: RgbaUiOverlay::new(
+                super::LOGICAL_FRAMEBUFFER_WIDTH,
+                super::LOGICAL_FRAMEBUFFER_HEIGHT,
+            ),
+        }
+    }
+
+    fn update(
+        &mut self,
+        font: &SequenceCaptionFont,
+        subtitles: &[commander_blood_formats::descript::DescriptSequenceSubtitle],
+        playback: &mut SequenceSubtitlePlayback,
+        visible_frame: u16,
+    ) -> Result<()> {
+        self.overlay.clear();
+        let mut renderer = RuntimeSequenceSubtitleRenderer {
+            font,
+            overlay: &mut self.overlay,
+            visible_frame,
+        };
+        present_sequence_subtitle(subtitles, playback, &mut renderer)
+            .context("drawing a DESCRIPT sequence subtitle")
+            .map(|_| ())
+    }
+
+    fn finish_frame(&mut self, outcome: PresentationScreenOutcome) {
+        if outcome != PresentationScreenOutcome::WaitingForScene {
+            self.overlay.clear();
+        }
+    }
+}
+
+struct RuntimeSequenceSubtitleRenderer<'assets> {
+    font: &'assets SequenceCaptionFont,
+    overlay: &'assets mut RgbaUiOverlay,
     visible_frame: u16,
 }
 
@@ -620,29 +682,17 @@ impl SequenceSubtitleRenderer for RuntimeSequenceSubtitleRenderer<'_> {
     }
 
     fn draw_centered_line(&mut self, line: CenteredSequenceSubtitleLine<'_>) -> Result<()> {
-        draw_sequence_subtitle_bios_line(self.runtime.front_buffer_mut().pixels_mut(), line)
+        anyhow::ensure!(
+            usize::from(line.color) == crate::ui::SEQUENCE_CAPTION_COLOR,
+            "unexpected DESCRIPT caption color {}",
+            line.color
+        );
+        u8::try_from(line.text.len())
+            .context("DESCRIPT sequence subtitle line exceeds the BIOS byte limit")?;
+        self.font
+            .draw_text(self.overlay, line.text, line.position.map(i32::from));
+        Ok(())
     }
-}
-
-fn draw_sequence_subtitle_bios_line(
-    framebuffer: &mut [u8],
-    line: CenteredSequenceSubtitleLine<'_>,
-) -> Result<()> {
-    let character_limit = u8::try_from(line.text.len())
-        .context("DESCRIPT sequence subtitle line exceeds the BIOS byte limit")?;
-    draw_bios_font_text(
-        framebuffer,
-        &VGA_BIOS_FONT_8X8,
-        line.text,
-        FontPoint {
-            x: i32::from(line.position[0]),
-            y: i32::from(line.position[1]),
-        },
-        line.color,
-        character_limit,
-    )
-    .context("drawing a DESCRIPT sequence subtitle through the BIOS 8x8 font")
-    .map(|_| ())
 }
 
 fn region_origin(region: PresentationRenderRegion) -> RasterPoint {
@@ -655,13 +705,15 @@ fn region_origin(region: PresentationRenderRegion) -> RasterPoint {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime::VGA_BIOS_FONT_8X8;
+    use commander_blood_formats::descript::DescriptSequenceSubtitle;
 
     const BIOS_GLYPH_WIDTH: usize = 8;
     const BIOS_GLYPH_HEIGHT: usize = 8;
     const BIOS_GLYPH_HIGHEST_BIT: u8 = 128;
     const TEST_SEQUENCE_CHARACTER: u8 = b'L';
     const TEST_SEQUENCE_POSITION: [u16; 2] = [16, 74];
-    const TEST_SEQUENCE_COLOR: u8 = 203;
+    const TEST_SEQUENCE_COLOR: [u8; 4] = [69, 125, 190, 255];
     const INITIAL_LINE: u16 = 42;
     const INITIAL_PRESENTATION_GATE: u16 = 257;
     const INITIAL_SCENE_GATE_FLAGS: u8 = 128;
@@ -678,16 +730,20 @@ mod tests {
 
     #[test]
     fn production_sequence_subtitle_uses_the_exact_bios_8x8_glyph() {
-        let mut framebuffer = vec![u8::MIN; crate::runtime::LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
-        draw_sequence_subtitle_bios_line(
-            &mut framebuffer,
-            CenteredSequenceSubtitleLine {
+        let font = SequenceCaptionFont::import(&VGA_BIOS_FONT_8X8, [17, 31, 47]).unwrap();
+        let mut caption = RetainedSequenceCaption::new();
+        let mut renderer = RuntimeSequenceSubtitleRenderer {
+            font: &font,
+            overlay: &mut caption.overlay,
+            visible_frame: 1,
+        };
+        renderer
+            .draw_centered_line(CenteredSequenceSubtitleLine {
                 text: &[TEST_SEQUENCE_CHARACTER],
                 position: TEST_SEQUENCE_POSITION,
-                color: TEST_SEQUENCE_COLOR,
-            },
-        )
-        .unwrap();
+                color: crate::ui::SEQUENCE_CAPTION_COLOR as u8,
+            })
+            .unwrap();
 
         let glyph = VGA_BIOS_FONT_8X8[usize::from(TEST_SEQUENCE_CHARACTER)];
         for (row, encoded) in glyph.into_iter().enumerate().take(BIOS_GLYPH_HEIGHT) {
@@ -696,16 +752,91 @@ mod tests {
                 let expected = if encoded & mask != u8::MIN {
                     TEST_SEQUENCE_COLOR
                 } else {
-                    u8::MIN
+                    [0; 4]
                 };
                 let x = usize::from(TEST_SEQUENCE_POSITION[0]) + column;
                 let y = usize::from(TEST_SEQUENCE_POSITION[1]) + row;
                 assert_eq!(
-                    framebuffer[y * crate::runtime::LOGICAL_FRAMEBUFFER_WIDTH + x],
+                    &caption.overlay.pixels()
+                        [(y * crate::runtime::LOGICAL_FRAMEBUFFER_WIDTH + x) * 4..][..4],
                     expected,
                     "BIOS glyph pixel differs at ({column}, {row})"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn caption_survives_refreshes_without_advancing_the_authored_cue_clock() {
+        let font = SequenceCaptionFont::import(&VGA_BIOS_FONT_8X8, [63; 3]).unwrap();
+        let cues = [
+            DescriptSequenceSubtitle::new(
+                1,
+                Box::from(b"CRYO Interactive Entertainment 1995".as_slice()),
+            ),
+            DescriptSequenceSubtitle::new(30, Box::from(b"Commander BLOOD  V 1.0".as_slice())),
+            DescriptSequenceSubtitle::new(100, Box::from(b"".as_slice())),
+        ];
+        let mut playback = SequenceSubtitlePlayback::default();
+        let mut caption = RetainedSequenceCaption::new();
+        let mut ui = RgbaUiOverlay::new(320, 200);
+        caption.update(&font, &cues, &mut playback, 30).unwrap();
+        assert_eq!(playback.cue_index(), 1, "C draws before advancing a cue");
+        caption.update(&font, &cues, &mut playback, 31).unwrap();
+        let title = caption.overlay.pixels().to_vec();
+        assert!(title.chunks_exact(4).any(|pixel| pixel[3] == 255));
+        // The video/front/back pages may change while the caption remains owned
+        // by the sequence. A render refresh must not rerun the cue planner.
+        for _ in 0..120 {
+            ui.clear();
+            caption.finish_frame(PresentationScreenOutcome::WaitingForScene);
+            ui.blit_overlay(&caption.overlay);
+            assert_eq!(ui.pixels(), title);
+            assert_eq!(playback.cue_index(), 1);
+        }
+        caption.update(&font, &cues, &mut playback, 100).unwrap();
+        assert_eq!(caption.overlay.pixels(), title);
+        assert_eq!(playback.cue_index(), 2);
+        caption.update(&font, &cues, &mut playback, 101).unwrap();
+        assert!(caption.overlay.pixels().iter().all(|&byte| byte == 0));
+        ui.clear();
+        ui.blit_overlay(&caption.overlay);
+        assert!(ui.pixels().iter().all(|&byte| byte == 0));
+    }
+
+    #[test]
+    fn caption_is_cleared_on_exit_and_replacement_with_a_future_or_missing_cue() {
+        let font = SequenceCaptionFont::import(&VGA_BIOS_FONT_8X8, [63; 3]).unwrap();
+        let cues = [DescriptSequenceSubtitle::new(
+            1,
+            Box::from(b"Title".as_slice()),
+        )];
+        let mut playback = SequenceSubtitlePlayback::default();
+        let mut caption = RetainedSequenceCaption::new();
+        for outcome in [
+            PresentationScreenOutcome::Inactive,
+            PresentationScreenOutcome::Initialized,
+            PresentationScreenOutcome::Animated,
+            PresentationScreenOutcome::WaitingForSelection,
+            PresentationScreenOutcome::SceneLinesCompleted,
+            PresentationScreenOutcome::InputAccepted,
+            PresentationScreenOutcome::Finalized,
+        ] {
+            caption.update(&font, &cues, &mut playback, 1).unwrap();
+            assert!(caption.overlay.pixels().iter().any(|&byte| byte != 0));
+            caption.finish_frame(outcome);
+            assert!(
+                caption.overlay.pixels().iter().all(|&byte| byte == 0),
+                "{outcome:?}"
+            );
+        }
+        for replacement in [&cues[..], &[]] {
+            caption.update(&font, &cues, &mut playback, 1).unwrap();
+            playback.restart();
+            caption
+                .update(&font, replacement, &mut playback, 0)
+                .unwrap();
+            assert!(caption.overlay.pixels().iter().all(|&byte| byte == 0));
         }
     }
 
