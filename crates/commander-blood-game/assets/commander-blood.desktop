@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Commander Blood
+Comment=Science-fiction adventure
+Exec=commander-blood
+Icon=commander-blood
+Terminal=false
+Categories=Game;AdventureGame;
+StartupWMClass=commander-blood

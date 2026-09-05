@@ -20,3 +20,4 @@ pub mod runtime;
 mod script_rebuild;
 mod ui;
 mod video_import;
+mod window_icon;

@@ -14,3 +14,19 @@ DOSBox Staging 0.82.2. Both produced this SHA-256 digest:
 
 Assemble `capture-vga-bios-font.asm` as a DOS `.COM` program and run it inside
 the reference emulator to reproduce the image.
+
+## Application icon
+
+`commander-blood.png` is the approved blue MANU3-style hand icon, generated
+from a screenshot of the actual imported hand model. It is new application
+artwork, not an extracted original game asset. The matching 256 by 256,
+eight-bit RGBA pixels in `commander-blood.rgba` are embedded in the executable
+so window creation needs neither an image codec nor an external command.
+The PNG and matching desktop entry are installed by the Nix package.
+
+To regenerate the embedded bytes after replacing the PNG:
+
+```sh
+nix develop -c magick crates/commander-blood-game/assets/commander-blood.png \
+  -depth 8 rgba:crates/commander-blood-game/assets/commander-blood.rgba
+```

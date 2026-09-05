@@ -344,9 +344,10 @@ pub fn run() -> Result<()> {
         None
     };
 
+    sdl3::hint::set("SDL_APP_ID", crate::window_icon::APPLICATION_ID);
     let sdl = sdl3::init().map_err(anyhow::Error::msg)?;
     let video = sdl.video().map_err(anyhow::Error::msg)?;
-    let window = video
+    let mut window = video
         .window(WINDOW_TITLE, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
         .position_centered()
         .resizable()
@@ -354,6 +355,7 @@ pub fn run() -> Result<()> {
         .metal_view()
         .build()
         .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    crate::window_icon::install(&mut window)?;
     let mut renderer = Renderer::new(
         &window,
         &image,
@@ -478,6 +480,7 @@ pub fn run() -> Result<()> {
 }
 
 fn run_production_game(options: &Options) -> Result<()> {
+    sdl3::hint::set("SDL_APP_ID", crate::window_icon::APPLICATION_ID);
     let paths = OriginalGameDataPaths::discover(options.data.as_deref())?;
     let data = match options.write_data.as_deref() {
         Some(writable_root) => OriginalGameData::load_with_writable_root(paths, writable_root)?,
@@ -491,7 +494,7 @@ fn run_production_game(options: &Options) -> Result<()> {
     let sdl = sdl3::init().map_err(anyhow::Error::msg)?;
     let video = sdl.video().map_err(anyhow::Error::msg)?;
     let audio = sdl.audio().map_err(anyhow::Error::msg)?;
-    let window = video
+    let mut window = video
         .window(WINDOW_TITLE, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
         .position_centered()
         .resizable()
@@ -499,6 +502,7 @@ fn run_production_game(options: &Options) -> Result<()> {
         .metal_view()
         .build()
         .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    crate::window_icon::install(&mut window)?;
     let events = sdl.event_pump().map_err(anyhow::Error::msg)?;
     video.text_input().start(&window);
 

@@ -176,6 +176,10 @@
             ];
             doCheck = false;
             postInstall = ''
+              install -Dm444 crates/commander-blood-game/assets/commander-blood.png \
+                "$out/share/icons/hicolor/256x256/apps/commander-blood.png"
+              install -Dm444 crates/commander-blood-game/assets/commander-blood.desktop \
+                "$out/share/applications/commander-blood.desktop"
               install -Dm444 re/descript/DESCRIPT.descript \
                 "$out/share/commander-blood/re/descript/DESCRIPT.descript"
               mkdir -p "$out/share/commander-blood/re/vm/profiles"
