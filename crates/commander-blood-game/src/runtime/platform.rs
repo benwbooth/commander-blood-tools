@@ -16,6 +16,7 @@ use crate::native::bloodprg::{
 };
 
 use super::input::INITIAL_LOGICAL_POINTER;
+use super::live_trace::{LiveTraceBoundary, LiveTraceWriter};
 use super::scenario::{
     RuntimeScenarioCadence, RuntimeScenarioDriver, RuntimeScenarioFrameInput, RuntimeScenarioKey,
 };
@@ -91,6 +92,8 @@ pub struct RuntimePlatformHost<'window> {
     window_focused: bool,
     alien_pointer: Option<[f32; 2]>,
     scenario: Option<RuntimeScenarioDriver>,
+    live_trace: Option<LiveTraceWriter>,
+    presentation_boundary_pending: bool,
 }
 
 impl<'window> RuntimePlatformHost<'window> {
@@ -121,6 +124,8 @@ impl<'window> RuntimePlatformHost<'window> {
             window_focused: true,
             alien_pointer: None,
             scenario: None,
+            live_trace: None,
+            presentation_boundary_pending: false,
         }
     }
 
@@ -136,6 +141,12 @@ impl<'window> RuntimePlatformHost<'window> {
         platform.pointer_inside_window = true;
         platform.scenario = Some(RuntimeScenarioDriver::load(scenario_path, trace_path)?);
         Ok(platform)
+    }
+
+    /// Enable flushed live semantic snapshots after platform construction.
+    pub fn enable_live_trace(&mut self, path: &Path) -> Result<()> {
+        self.live_trace = Some(LiveTraceWriter::create(path)?);
+        Ok(())
     }
 
     /// Pump pending SDL events and dispatch one translated input action.
@@ -167,6 +178,14 @@ impl<'window> RuntimePlatformHost<'window> {
         record_completed_boundary: bool,
     ) -> Result<Option<InputAction>> {
         self.frame_clock.begin_frame(Instant::now());
+        if self.presentation_boundary_pending {
+            self.record_live_trace_boundary(
+                services,
+                state,
+                LiveTraceBoundary::BlockingPresentation,
+            )?;
+            self.presentation_boundary_pending = false;
+        }
         self.synchronize_pointer_lock(
             lifecycle_pointer_locked(state),
             services.input().pointer_sample().position,
@@ -213,13 +232,23 @@ impl<'window> RuntimePlatformHost<'window> {
         services: &mut ModernGameServices<'window>,
         state: &mut GameLifecycleState,
     ) -> Result<()> {
-        let Some(scenario) = self.scenario.as_mut() else {
-            return Ok(());
+        let semantic = if self.scenario.is_some() || self.live_trace.is_some() {
+            Some(services.semantic_trace_snapshot(state)?)
+        } else {
+            None
         };
-        let semantic = services.semantic_trace_snapshot(state)?;
-        if scenario.record_due_boundaries(&semantic)? {
-            self.pointer_buttons = PointerButtons::NONE;
-            services.input_mut().request_shutdown();
+        if let Some(scenario) = self.scenario.as_mut() {
+            if scenario.record_due_boundaries(
+                semantic
+                    .as_ref()
+                    .expect("scenario boundary requested a semantic snapshot"),
+            )? {
+                self.pointer_buttons = PointerButtons::NONE;
+                services.input_mut().request_shutdown();
+            }
+        }
+        if let Some(semantic) = semantic {
+            self.record_live_trace(LiveTraceBoundary::Game, semantic)?;
         }
         Ok(())
     }
@@ -557,7 +586,9 @@ impl<'window> RuntimePlatformHost<'window> {
 
     /// Sleep for the unused portion of the measured DOS HNM presentation frame.
     pub fn pace_presentation_frame(&mut self) -> Result<()> {
-        self.pace_frame_for(PRESENTATION_FRAME_DURATION)
+        self.pace_frame_for(PRESENTATION_FRAME_DURATION)?;
+        self.presentation_boundary_pending = self.live_trace.is_some();
+        Ok(())
     }
 
     /// Wait for one render-only refresh opportunity inside the current game tick.
@@ -631,6 +662,27 @@ impl<'window> RuntimePlatformHost<'window> {
             thread::sleep(remaining);
         }
         self.frame_clock.finish_frame();
+        Ok(())
+    }
+
+    fn record_live_trace_boundary(
+        &mut self,
+        services: &ModernGameServices<'window>,
+        state: &GameLifecycleState,
+        boundary: LiveTraceBoundary,
+    ) -> Result<()> {
+        let semantic = services.semantic_trace_snapshot(state)?;
+        self.record_live_trace(boundary, semantic)
+    }
+
+    fn record_live_trace(
+        &mut self,
+        boundary: LiveTraceBoundary,
+        semantic: serde_json::Value,
+    ) -> Result<()> {
+        if let Some(trace) = self.live_trace.as_mut() {
+            trace.record(boundary, semantic)?;
+        }
         Ok(())
     }
 }

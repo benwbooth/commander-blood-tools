@@ -1948,6 +1948,8 @@ fn run_production_scenario_internal(
         .arg(&scenario_path)
         .arg("--trace")
         .arg(&trace_path)
+        .arg("--live-trace")
+        .arg(temporary.0.join("frames.jsonl"))
         .arg("--oracle-packed-second")
         .arg(DOS_ORACLE_PACKED_SECOND.to_string())
         .env(ASSET_CACHE_ENVIRONMENT_VARIABLE, &asset_cache);

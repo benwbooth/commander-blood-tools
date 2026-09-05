@@ -66,6 +66,7 @@ struct Options {
     frame_limit: Option<u64>,
     scenario: Option<PathBuf>,
     trace: Option<PathBuf>,
+    live_trace: Option<PathBuf>,
     oracle_packed_second: Option<u8>,
 }
 
@@ -85,8 +86,15 @@ impl Options {
     }
 
     fn parse() -> Result<ParseOutcome> {
+        Self::parse_arguments(std::env::args().skip(PROGRAM_NAME_ARGUMENT_COUNT))
+    }
+
+    fn parse_arguments<I>(arguments: I) -> Result<ParseOutcome>
+    where
+        I: IntoIterator<Item = String>,
+    {
         let mut options = Self::default();
-        let mut arguments = std::env::args().skip(PROGRAM_NAME_ARGUMENT_COUNT);
+        let mut arguments = arguments.into_iter();
         while let Some(argument) = arguments.next() {
             match argument.as_str() {
                 "--data" => {
@@ -118,6 +126,13 @@ impl Options {
                 "--trace" => {
                     options.trace = Some(PathBuf::from(
                         arguments.next().context("--trace requires a JSONL path")?,
+                    ));
+                }
+                "--live-trace" => {
+                    options.live_trace = Some(PathBuf::from(
+                        arguments
+                            .next()
+                            .context("--live-trace requires a JSONL path")?,
                     ));
                 }
                 "--oracle-packed-second" => {
@@ -165,13 +180,29 @@ impl Options {
         if options.oracle_packed_second.is_some() && options.scenario.is_none() {
             bail!("--oracle-packed-second requires --scenario");
         }
+        if let Some(live_trace) = options.live_trace.as_ref() {
+            if options
+                .trace
+                .as_ref()
+                .is_some_and(|trace| trace == live_trace)
+            {
+                bail!("--live-trace must differ from --trace");
+            }
+            if options
+                .scenario
+                .as_ref()
+                .is_some_and(|scenario| scenario == live_trace)
+            {
+                bail!("--live-trace must differ from --scenario");
+            }
+        }
         Ok(ParseOutcome::Run(options))
     }
 }
 
 fn print_usage() {
     println!(
-        "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT] [--scenario ACTIONS.TSV --trace TRACE.JSONL [--oracle-packed-second BYTE]]\n\
+        "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT] [--live-trace TRACE.JSONL] [--scenario ACTIONS.TSV --trace TRACE.JSONL [--oracle-packed-second BYTE]]\n\
          \n\
          CBLOOD_DATA may point to the original game-data directory.\n\
          CBLOOD_ASSET_CACHE may select the versioned imported loose-asset directory.\n\
@@ -472,12 +503,15 @@ fn run_production_game(options: &Options) -> Result<()> {
     video.text_input().start(&window);
 
     let services = ModernGameServices::new(&window, data, clock.script)?;
-    let platform = match (&options.scenario, &options.trace) {
+    let mut platform = match (&options.scenario, &options.trace) {
         (Some(scenario), Some(trace)) => {
             RuntimePlatformHost::new_scripted(&window, sdl.mouse(), events, scenario, trace)?
         }
         _ => RuntimePlatformHost::new(&window, sdl.mouse(), events),
     };
+    if let Some(path) = options.live_trace.as_deref() {
+        platform.enable_live_trace(path)?;
+    }
     let mut host = RuntimeGameLifecycleHost::new(
         services,
         platform,
@@ -703,5 +737,68 @@ mod tests {
             }
         );
         assert_eq!(sample.packed_second, LAST_CLOCK_SECOND_BCD);
+    }
+
+    #[test]
+    fn live_trace_is_independent_of_scripted_trace_options() {
+        let ParseOutcome::Run(options) = Options::parse_arguments(
+            ["--live-trace", "runtime.jsonl"]
+                .into_iter()
+                .map(str::to_owned),
+        )
+        .unwrap() else {
+            panic!("live trace options should select a run");
+        };
+        assert_eq!(options.live_trace, Some(PathBuf::from("runtime.jsonl")));
+        assert!(options.scenario.is_none());
+        assert!(options.trace.is_none());
+    }
+
+    #[test]
+    fn live_trace_requires_a_path() {
+        let error = match Options::parse_arguments(["--live-trace"].into_iter().map(str::to_owned))
+        {
+            Ok(_) => panic!("missing live trace path should fail"),
+            Err(error) => error,
+        };
+        assert!(
+            error
+                .to_string()
+                .contains("--live-trace requires a JSONL path")
+        );
+    }
+
+    #[test]
+    fn live_trace_rejects_script_input_and_output_path_collisions() {
+        for (arguments, expected) in [
+            (
+                vec![
+                    "--scenario",
+                    "scenario.tsv",
+                    "--trace",
+                    "same.jsonl",
+                    "--live-trace",
+                    "same.jsonl",
+                ],
+                "--live-trace must differ from --trace",
+            ),
+            (
+                vec![
+                    "--scenario",
+                    "same.jsonl",
+                    "--trace",
+                    "trace.jsonl",
+                    "--live-trace",
+                    "same.jsonl",
+                ],
+                "--live-trace must differ from --scenario",
+            ),
+        ] {
+            let error = match Options::parse_arguments(arguments.into_iter().map(str::to_owned)) {
+                Ok(_) => panic!("path collision should fail"),
+                Err(error) => error,
+            };
+            assert!(error.to_string().contains(expected));
+        }
     }
 }

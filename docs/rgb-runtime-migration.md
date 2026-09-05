@@ -123,3 +123,45 @@ tests; those internals must not become the production scene model.
 - These are Rust production captures and scripted timing checks, not matched
   original-DOS captures or proof of whole-game visual parity. The user's live
   game session was not restarted or interacted with.
+
+### Intermittent-frame and camera follow-up, 2026-09-04
+
+The user still observed one-frame caption gaps after that checkpoint-only
+verification. The caption is now composed at the frame output boundary as well
+as before diagnostic snapshots, even when the bridge coordinator bypasses the
+panel update. A missing queue clock no longer becomes frame zero; a planner
+`Waiting` result retains the old cue, matching C's no-draw return. Only a real
+replacement/blank cue or the presentation owner's termination removes it.
+
+Pointer steering also consults the startup and panel owners directly instead
+of depending solely on transient shared UI flags. Automatic scripted seeks
+remain permitted, including the initial turn to the TV. The camera scenario
+drives both screen edges and checks that free steering returns after a click
+closes the intro. The subtitle scenario now asserts that cancellation actually
+stops the video, not merely that its already-blank cue has no pixels.
+
+`--live-trace PATH.jsonl` records flushed semantic snapshots at every ordinary
+game frame and blocking-video boundary, with monotonic frame/time metadata. It
+does not enable scripted input or substitute the scenario clock. It also works
+alongside `--scenario ... --trace ...` with separate output paths. Production
+scenario tests now retain `frames.jsonl` in addition to action checkpoints.
+
+- Library after these changes: 875 passed, five ignored.
+- Real-time SDL/wgpu run (no scenario driver):
+  `output/fidelity/intro-realtime-OPATlw/`. Its 117 title-window game frames
+  retained the same caption and composed-UI hash; all intro headings were 90.
+  There were 27 nonzero mouse-motion frames, and all 27 captured screen images
+  had identical exact-white title masks. This samples displayed images rather
+  than claiming an exhaustive capture of every monitor refresh.
+- That isolated real-time run entered pause through an injected P key, logged
+  33 paused frames, and resumed through Escape. These inputs were sent only to
+  a dedicated Xvfb display, not the user's desktop.
+- Pterra navigation passed on the pre-follow-up build, with artifacts at
+  `output/fidelity/production-load-pterra-ship-navigation.jsonl-1788569034301571011-149123-0/`.
+  The user's reported Pterra freeze is not reproduced or declared fixed.
+  `PAUSE` is the separate pause HUD, not a destination-list label; the trace is
+  needed to determine why that state appeared during the user's run.
+- Binary recheck rejected proposed navigation-list changes: original DS:2537
+  is the single `GO` word plus sentinel; DS:253B is an empty trigger list.
+  Those Rust lists already match the shipped executable. Pterra's inline VAR
+  name also matches the directory label. No speculative menu changes were made.
