@@ -141,6 +141,76 @@ regenerated and compared byte-for-byte. These checks used the current worktree;
 unrelated runtime edits remain outside the commit. This is D6 component and
 dispatch verification, not a sequel playthrough or timing-parity claim.
 
+### D5 Settlement
+
+The D5 handler (file 0x7367-0x7407) now has a typed decoder and Rust
+implementation. All 30 authored occurrences are in SCRIPT2.COD. Its immediate
+group mask filters both source actors and relocated descendants; it is not a
+VAR reference and is not implicitly replaced by the source actor's group.
+
+The recovered path is:
+
+1. Skip while the shared simulation countdown is nonzero. Otherwise select
+   participating actors using the same 0x706E helper as D6.
+2. Enable the maximum-range override. Require signed source quantity at least
+   300 and a current location record.
+3. Search active locations within the native squared range of 250, excluding
+   the capitalized `Arche`. Choose the closest unoccupied location; ties retain
+   the first directory entry. Source position resolution uses lowercase `arche`
+   as its sentinel fallback. Candidate body coordinates are direct reads.
+4. Collect active actor descendants of the source location in depth-first
+   directory order, excluding `Honk`. This reuses the existing translated
+   navigation collector and position resolver, now covered against their
+   sequel counterparts in the complete D5 oracle.
+5. Move matching descendants except the source actor. Copy the source's relief,
+   assign quantity 10 and growth balance 1000. Only the first moved actor gets
+   the participation flag. Mark the destination occupied and write the source
+   actor into its new word at byte 24, not the first moved actor.
+6. Clear the range override after processing. Query mode still performs the
+   updates. A nonzero countdown preserves the previous override state.
+
+Distance subtraction/absolute value wraps at 16 bits and the summed squares
+are compared as signed 32-bit values, preserving the native overflow case.
+The temporary candidate lists are owned vectors of object identities, not DOS
+scratch-buffer or register emulation.
+
+`re/tools/big_bug_bang_settlement_oracle.py` executes the original handler and
+all seven helper entries it reaches: 0x706E, 0x6F17, 0x6F52, 0x67B8, 0x6633,
+0x8103 and 0x685D. None of the calls are replaced. Its 100 synthetic graph cases
+cover nested descendants, masks, source thresholds, flags, exclusions, equal
+distances, radius boundaries, signed overflow, query mode and countdowns.
+The fixture captures full VAR results and the observable range override;
+the oracle separately rejects unexpected global writes outside the recovered
+scratch areas. Reaching each helper is not a claim of covering every branch
+inside each helper.
+
+The same vectors pass through the production typed-dispatch implementation,
+including record refresh. Every vector also verifies that omitted settlement
+bindings produce an error without changing state. The production sequel host
+still needs to supply these bindings and the real main-loop countdown.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_settlement_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_settlement.jsonl
+nix develop -c cargo test -p commander-blood-formats sequel_settlement -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib sequel_settlement
+```
+
+An inspection of all 17 original initial VAR/DEB pairs found zero active
+actor candidates below location records before script initialization. Thus
+running D5 on those initial snapshots alone would be weak evidence. Native
+captures after initialization remain necessary for real-game state coverage,
+including candidate-list bounds and repeated simulation updates.
+
+Verification for this slice (2026-09-05): all 112 formats tests passed with
+original corpus tests enabled; game-library tests passed 888 with seven
+platform/original-table tests ignored. Game all-targets checking passed. The
+100 original-handler vectors regenerate byte-for-byte. Tests ran in the
+current worktree; unrelated Commander runtime edits remain outside this commit.
+These checks do not establish production sequel startup or initialized-game
+simulation parity.
+
 ### Sequel Records and Profile Ownership
 
 The formats crate now decodes sequel VAR records with an explicit dialect:
@@ -220,7 +290,7 @@ silently zero-extend the initial state without native evidence.
 
 ## Remaining Completion Requirements
 
-- Recover D4, D5 and D7 effects and compare inherited VM handlers, including
+- Recover D4 and D7 effects and compare inherited VM handlers, including
   skip, state, presentation and conversation semantics. Integrate the native
   simulation countdown lifecycle required by D4-D6. Add native oracle coverage.
 - Wire game/version identity and the recovered sequel catalogs/layouts into

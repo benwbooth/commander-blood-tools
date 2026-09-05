@@ -39,7 +39,10 @@ use super::script_profile::{
     ScriptProfileRecordState, ScriptProfileRecordStateError,
 };
 use super::script_selector::{ScriptSelectionError, ScriptSelectorState, commit_selected_concept};
-use super::sequel_growth::{SequelGrowthError, SequelSimulationContext, apply_sequel_growth};
+use super::sequel_growth::{
+    SequelGrowthError, SequelSettlementContext, SequelSettlementState, SequelSimulationContext,
+    apply_sequel_growth, apply_sequel_settlement,
+};
 use super::sequence::{
     PresentationResourceLine, SequencePresentationState, SequenceRequestContext,
     load_sequence_request, offer_topic_if_presentation_active,
@@ -75,6 +78,8 @@ pub struct ScriptDispatchState {
     pub record_clear_presentation: ScriptRecordClearPresentationState,
     /// D2 request retained until the main loop completes profile replacement.
     pub profile_request: ScriptProfileRequestSlot,
+    /// Shared range-search override owned by the sequel's settlement handler.
+    pub sequel_settlement: SequelSettlementState,
     /// Last write to the single shared `vm_active_line` during this VM frame.
     pending_active_line_write: Option<u16>,
 }
@@ -198,6 +203,11 @@ pub trait ScriptDispatchHost {
     /// Commander hosts have no sequel simulation clock. A sequel instruction
     /// without this context errors rather than running at presentation speed.
     fn sequel_simulation_context(&self) -> Option<SequelSimulationContext> {
+        None
+    }
+
+    /// Supply the sequel's additional named-object bindings for settlement.
+    fn sequel_settlement_context(&self) -> Option<SequelSettlementContext> {
         None
     }
 
@@ -429,6 +439,20 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 refresh_from_var = true;
                 apply_sequel_growth(*operation, context, self.state)
                     .map_err(ScriptDispatchError::SequelGrowth)?
+            }
+            DecodedScriptInstruction::SequelSettlement(operation) => {
+                let context = self
+                    .host
+                    .sequel_settlement_context()
+                    .ok_or(ScriptDispatchError::MissingSequelSimulationContext)?;
+                refresh_from_var = true;
+                apply_sequel_settlement(
+                    *operation,
+                    context,
+                    &mut self.dispatch.sequel_settlement,
+                    self.state,
+                )
+                .map_err(ScriptDispatchError::SequelGrowth)?
             }
             DecodedScriptInstruction::DirectRecord(operation) => {
                 commit_to_var = !runtime.query_mode();
@@ -738,6 +762,7 @@ mod tests {
         builtins: ScriptProfileBuiltins,
         scans: usize,
         simulation: Option<SequelSimulationContext>,
+        settlement: Option<SequelSettlementContext>,
     }
 
     impl ScriptDispatchHost for TraversalHost {
@@ -768,6 +793,10 @@ mod tests {
 
         fn sequel_simulation_context(&self) -> Option<SequelSimulationContext> {
             self.simulation
+        }
+
+        fn sequel_settlement_context(&self) -> Option<SequelSettlementContext> {
+            self.settlement
         }
 
         fn sequence_context(&self) -> SequenceRequestContext {
@@ -998,6 +1027,7 @@ mod tests {
                         countdown,
                         excluded_location,
                     }),
+                    settlement: None,
                 };
                 let result = Dispatcher {
                     code: &code,
@@ -1040,6 +1070,129 @@ mod tests {
     }
 
     #[test]
+    fn sequel_settlement_dispatch_matches_native_cases_and_requires_bindings() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_complete_script_instruction;
+        use commander_blood_formats::script::{
+            decode_script_dictionary, decode_script_directory, decode_script_state_for_dialect,
+        };
+        #[derive(serde::Deserialize)]
+        struct Oracle {
+            name: String,
+            token: Vec<u8>,
+            directory: Vec<u8>,
+            state_before: Vec<u8>,
+            state_after: Vec<u8>,
+            countdown: u16,
+            query_mode: u8,
+            range_override_before: u8,
+            range_override_after: u8,
+        }
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let dialogue = decode_script_bas(&[u8::MAX], &dictionary).unwrap();
+        let mut count = 0;
+        for line in
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_settlement.jsonl")
+                .lines()
+        {
+            let vector: Oracle = serde_json::from_str(line).unwrap();
+            let directory = decode_script_directory(&vector.directory).unwrap();
+            let builtins = ScriptProfileBuiltins {
+                player: directory.find_active_object(b"blood"),
+                ..ScriptProfileBuiltins::default()
+            };
+            let context = SequelSettlementContext {
+                simulation: SequelSimulationContext {
+                    countdown: vector.countdown,
+                    excluded_location: directory.find_active_object(b"Trashlando").unwrap(),
+                },
+                arche: directory.find_active_object(b"arche").unwrap(),
+                honk: directory.find_active_object(b"Honk").unwrap(),
+                excluded_destination: directory.find_active_object(b"Arche").unwrap(),
+            };
+            let mut code_bytes = vector.token.clone();
+            code_bytes.push(u8::MAX);
+            let code =
+                decode_script_code_for_dialect(&code_bytes, ScriptDialect::BigBugBang).unwrap();
+            let token = &code.tokens()[0];
+            for bound in [false, true] {
+                let mut state = decode_script_state_for_dialect(
+                    &vector.state_before,
+                    &directory,
+                    ScriptDialect::BigBugBang,
+                )
+                .unwrap();
+                let instructions =
+                    [
+                        decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                            .unwrap(),
+                    ];
+                let mut records =
+                    ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+                        .unwrap();
+                let mut runtime = ScriptRuntime::new();
+                if vector.query_mode != 0 {
+                    runtime.begin_root_guard(token.end_offset());
+                }
+                let mut procedures = super::super::ScriptProcedureStates::default();
+                let mut selector = ScriptSelectorState::default();
+                let mut slots = super::super::ScriptSequenceSlots::default();
+                let mut dispatch = ScriptDispatchState::default();
+                dispatch.sequel_settlement.range_override_active =
+                    vector.range_override_before != 0;
+                let mut host = TraversalHost {
+                    builtins,
+                    scans: 0,
+                    simulation: Some(context.simulation),
+                    settlement: bound.then_some(context),
+                };
+                let result = Dispatcher {
+                    code: &code,
+                    instructions: &instructions,
+                    dialogue: &dialogue,
+                    state: &mut state,
+                    dictionary: &dictionary,
+                    directory: &directory,
+                    builtins,
+                    procedures: &mut procedures,
+                    selector: &mut selector,
+                    sequence_slots: &mut slots,
+                    records: &mut records,
+                    dispatch: &mut dispatch,
+                    host: &mut host,
+                }
+                .execute_instruction(token, &instructions[0], &mut runtime);
+                if bound {
+                    assert!(result.is_ok(), "{}: {result:?}", vector.name);
+                    assert_eq!(state.encode(), vector.state_after, "{}", vector.name);
+                    assert_eq!(
+                        u8::from(dispatch.sequel_settlement.range_override_active),
+                        vector.range_override_after,
+                        "{}",
+                        vector.name
+                    );
+                } else {
+                    assert_eq!(
+                        result,
+                        Err(ScriptDispatchError::MissingSequelSimulationContext),
+                        "{}",
+                        vector.name
+                    );
+                    assert_eq!(state.encode(), vector.state_before, "{}", vector.name);
+                    assert_eq!(
+                        u8::from(dispatch.sequel_settlement.range_override_active),
+                        vector.range_override_before
+                    );
+                }
+                assert_eq!(runtime.query_mode(), vector.query_mode != 0);
+            }
+            count += 1;
+        }
+        assert_eq!(count, 100);
+    }
+
+    #[test]
     fn every_shipped_profile_enters_exhaustive_dispatch_with_coherent_var_state() {
         let Some(root) = original_data_root() else {
             return;
@@ -1061,6 +1214,7 @@ mod tests {
                 builtins: profile.builtins(),
                 scans: 0,
                 simulation: None,
+                settlement: None,
             };
 
             let outcome = execute_loaded_script_frame(profile, true, &mut dispatch, &mut host)

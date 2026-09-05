@@ -61,6 +61,8 @@ const PROFILE_REQUEST_OPCODE: u8 = 0xD2;
 const MULTIPLY_DIVIDE_OPCODE: u8 = 0xD3;
 const MULTIPLY_DIVIDE_SIZE: usize = OPCODE_SIZE + WORD_SIZE + (BYTE_SIZE + WORD_SIZE) * 2;
 const SEQUEL_GROWTH_OPCODE: u8 = 0xD6;
+const SEQUEL_SETTLEMENT_OPCODE: u8 = 0xD5;
+const SEQUEL_SETTLEMENT_SIZE: usize = OPCODE_SIZE + WORD_SIZE;
 const SEQUEL_GROWTH_SIZE: usize = OPCODE_SIZE + WORD_SIZE * 2;
 const INVERTED_CONDITION_PREFIX: u8 = GUARD_END_OPCODE;
 const OPCODE_SIZE: usize = 1;
@@ -796,6 +798,15 @@ pub enum DecodedScriptInstruction {
     MultiplyDivide(ScriptMultiplyDivideOperation),
     /// Big Bug Bang D6 group-filtered actor quantity and growth update.
     SequelGrowth(ScriptSequelGrowthOperation),
+    /// Big Bug Bang D5 relocation of matching actors to a nearby free location.
+    SequelSettlement(ScriptSequelSettlementOperation),
+}
+
+/// Immediate group mask consumed by BLOOD2PG.EXE's D5 handler at 0x7367.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ScriptSequelSettlementOperation {
+    /// Select source actors and relocating descendants by intersecting group bits.
+    pub group_mask: u16,
 }
 
 /// Two immediate operands consumed by BLOOD2PG.EXE's D6 handler at 0x728B.
@@ -1086,6 +1097,9 @@ pub fn decode_complete_script_instruction(
         }
         SEQUEL_GROWTH_OPCODE if token.dialect() == ScriptDialect::BigBugBang => {
             DecodedScriptInstruction::SequelGrowth(decode_script_sequel_growth(token)?)
+        }
+        SEQUEL_SETTLEMENT_OPCODE if token.dialect() == ScriptDialect::BigBugBang => {
+            DecodedScriptInstruction::SequelSettlement(decode_script_sequel_settlement(token)?)
         }
         _ => {
             return Err(ScriptInstructionError::UntranslatedOpcode {
@@ -1472,6 +1486,23 @@ pub fn decode_script_sequel_growth(
     Ok(ScriptSequelGrowthOperation {
         group_mask: read_word(bytes, OPCODE_SIZE),
         rate: read_word(bytes, OPCODE_SIZE + WORD_SIZE) as i16,
+    })
+}
+
+/// Decode the sequel's D5 group mask without treating it as a state reference.
+pub fn decode_script_sequel_settlement(
+    token: &ScriptToken,
+) -> Result<ScriptSequelSettlementOperation, ScriptInstructionError> {
+    if token.dialect() != ScriptDialect::BigBugBang
+        || token.opcode().byte() != SEQUEL_SETTLEMENT_OPCODE
+    {
+        return Err(ScriptInstructionError::UntranslatedOpcode {
+            opcode: token.opcode(),
+        });
+    }
+    require_size(token, SEQUEL_SETTLEMENT_SIZE)?;
+    Ok(ScriptSequelSettlementOperation {
+        group_mask: read_word(token.encoded_bytes(), OPCODE_SIZE),
     })
 }
 
@@ -2067,6 +2098,67 @@ mod tests {
             .join("../..")
             .join("accuracy/cblood_install/cblood")
             .join(name)
+    }
+
+    #[test]
+    fn sequel_settlement_mask_is_immediate_and_requires_its_dialect() {
+        use crate::code::{ScriptTokenDecoder, decode_script_token};
+        let bytes = [SEQUEL_SETTLEMENT_OPCODE, 0xC0, 0xC2];
+        let token = decode_script_token(
+            &bytes,
+            ScriptCodeOffset::new(0),
+            &mut ScriptTokenDecoder::new(ScriptDialect::BigBugBang),
+        )
+        .unwrap();
+        assert_eq!(
+            decode_script_sequel_settlement(&token).unwrap(),
+            ScriptSequelSettlementOperation { group_mask: 49856 }
+        );
+        assert!(
+            decode_script_token(
+                &bytes[..2],
+                ScriptCodeOffset::new(0),
+                &mut ScriptTokenDecoder::new(ScriptDialect::BigBugBang)
+            )
+            .is_err()
+        );
+        // A legacy adjacent-data descriptor fitting in this buffer is still
+        // not permission to interpret a Commander token as a sequel opcode.
+        let mut commander_bytes = [0; u8::MAX as usize + 1];
+        commander_bytes[..bytes.len()].copy_from_slice(&bytes);
+        let commander = decode_script_token(
+            &commander_bytes,
+            ScriptCodeOffset::new(0),
+            &mut ScriptTokenDecoder::default(),
+        )
+        .unwrap();
+        assert!(matches!(
+            decode_script_sequel_settlement(&commander),
+            Err(ScriptInstructionError::UntranslatedOpcode { .. })
+        ));
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang COD images under output/big-bug-bang/disc"]
+    fn every_authored_sequel_settlement_operation_decodes() {
+        use crate::code::decode_script_code_for_dialect;
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+        let mut counts = Vec::new();
+        for profile in 1..=17 {
+            let bytes = std::fs::read(root.join(format!("SCRIPT{profile}.COD"))).unwrap();
+            let code = decode_script_code_for_dialect(&bytes, ScriptDialect::BigBugBang).unwrap();
+            let mut count = 0;
+            for token in code
+                .tokens()
+                .iter()
+                .filter(|token| token.opcode().byte() == SEQUEL_SETTLEMENT_OPCODE)
+            {
+                decode_script_sequel_settlement(token).unwrap();
+                count += 1;
+            }
+            counts.push(count);
+        }
+        assert_eq!(counts, [0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     }
 
     #[test]

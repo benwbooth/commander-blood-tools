@@ -245,6 +245,7 @@ impl ScriptObjectKind {
     ///
     /// Sequel DEB object boundaries add one word to actors and locations.
     /// BLOOD2PG's added field-selector row at 0x16A68 addresses actor byte 72.
+    /// D5 stores a settlement's source actor in the location's new word at byte 24.
     /// WorldState retains the compiler-injected `tblood` word at byte 36 in
     /// both games, matching the established runtime's ownership convention.
     pub const fn record_size_for_dialect(self, dialect: ScriptDialect) -> usize {
