@@ -41,6 +41,11 @@ impl fmt::Display for AboardRosterError {
 impl std::error::Error for AboardRosterError {}
 
 impl AboardObjectRoster {
+    #[cfg(test)]
+    pub(super) fn from_test_slots(slots: [Option<ScriptObjectId>; ABOARD_OBJECT_CAPACITY]) -> Self {
+        Self { slots }
+    }
+
     /// Return roster entries in their stable authored priority order.
     pub fn slots(&self) -> &[Option<ScriptObjectId>; ABOARD_OBJECT_CAPACITY] {
         &self.slots

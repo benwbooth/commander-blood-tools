@@ -257,6 +257,8 @@ pub enum ScriptDispatchError<HostError> {
     MissingSequelSimulationContext,
     /// Sequel actor-state arithmetic or relationship binding failed.
     SequelGrowth(SequelGrowthError),
+    /// An object-backed inventory choice could not bind its typed transfer state.
+    SequelInventory(super::SequelInventoryError),
     /// A procedure identity was invalid.
     Procedure(ScriptProcedureStateError),
     /// A direct record, pair, or transfer operation failed.
@@ -692,6 +694,32 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
     }
 
     fn commit_selected_concept(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error> {
+        if self.selector.inventory().descriptor_lookup().is_some() {
+            return Err(ScriptDispatchError::SequelInventory(
+                super::SequelInventoryError::DescriptorPending,
+            ));
+        }
+        if self.selector.inventory().selected().is_some() {
+            self.selector
+                .inventory_mut()
+                .commit(
+                    self.state,
+                    self.records.record_runtime.aboard_objects_mut(),
+                    &mut self.records.record_fields,
+                    runtime,
+                    &mut self.dispatch.text_instructions,
+                    &self.dispatch.text_presentation,
+                    self.host.environment_activity().bridge_active,
+                )
+                .map_err(ScriptDispatchError::SequelInventory)?;
+            self.selector.replace_presentation_words([]);
+            if self.selector.inventory().descriptor_lookup().is_some() {
+                return Err(ScriptDispatchError::SequelInventory(
+                    super::SequelInventoryError::DescriptorPending,
+                ));
+            }
+            return Ok(());
+        }
         commit_selected_concept(
             runtime,
             self.dictionary,
@@ -794,6 +822,144 @@ mod tests {
         scans: usize,
         simulation: Option<SequelSimulationContext>,
         settlement: Option<SequelSettlementContext>,
+    }
+
+    #[test]
+    fn sequel_inventory_dispatch_bypasses_dictionary_history_and_preserves_roster_holes() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::{
+            ScriptLineRecordOffset, ScriptRecordValue, ScriptText, ScriptTextControl,
+        };
+        use commander_blood_formats::script::{
+            ScriptObjectKind, decode_script_dictionary, decode_script_directory,
+            decode_script_state_for_dialect,
+        };
+
+        let mut directory_bytes = Vec::new();
+        let mut state_bytes = Vec::new();
+        for (name, kind) in [
+            (b"blood".as_slice(), ScriptObjectKind::Player),
+            (b"item", ScriptObjectKind::InventoryItem),
+            (b"actor", ScriptObjectKind::Actor),
+        ] {
+            let mut entry = [0; 20];
+            entry[..name.len()].copy_from_slice(name);
+            entry[16..18].copy_from_slice(&(state_bytes.len() as u16).to_le_bytes());
+            entry[18..20].copy_from_slice(&1u16.to_le_bytes());
+            directory_bytes.extend(entry);
+            let mut record = vec![0; kind.record_size_for_dialect(ScriptDialect::BigBugBang)];
+            record[..2].copy_from_slice(&kind.mask().to_le_bytes());
+            if kind == ScriptObjectKind::InventoryItem {
+                record[20..22].copy_from_slice(&u16::MAX.to_le_bytes());
+            }
+            state_bytes.extend(record);
+        }
+        directory_bytes.extend([0; 20]);
+        let directory = decode_script_directory(&directory_bytes).unwrap();
+        let mut state =
+            decode_script_state_for_dialect(&state_bytes, &directory, ScriptDialect::BigBugBang)
+                .unwrap();
+        let player = directory.find_active_object(b"blood").unwrap();
+        let item = directory.find_active_object(b"item").unwrap();
+        let actor = directory.find_active_object(b"actor").unwrap();
+        let dictionary = decode_script_dictionary(b"PREVIOUS\0").unwrap();
+        let previous = dictionary.words().next().unwrap().0;
+        let dialogue = decode_script_bas(&[0xff], &dictionary).unwrap();
+        let code = decode_script_code_for_dialect(
+            &[
+                0xa6, 58, 0, 0, 0x30, 0, 100, 0, 0xff, 0xff, 0xfe, 0xff, 0, 0, 0xff,
+            ],
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        let builtins = ScriptProfileBuiltins {
+            player: Some(player),
+            ..Default::default()
+        };
+        let mut records =
+            ScriptProfileRecordState::recover(&[], &state, &dictionary, builtins).unwrap();
+        let mut slots = [None; 16];
+        slots[3] = Some(item);
+        slots[12] = Some(item);
+        *records.record_runtime.aboard_objects_mut() =
+            super::super::AboardObjectRoster::from_test_slots(slots);
+        let mut runtime = ScriptRuntime::default();
+        runtime.arm_resume(ScriptCodeOffset::new(100), 0);
+        assert!(runtime.activate_selector_resume());
+        let mut selector = ScriptSelectorState::default();
+        selector.history_mut().push(previous);
+        selector.replace_presentation_words([previous]);
+        let history = selector.history().clone();
+        let mut dispatch = ScriptDispatchState::default();
+        let line = super::super::SequelInventoryLine {
+            instruction: ScriptCodeOffset::new(0),
+            recipient: actor,
+        };
+        dispatch.text_instructions.insert(
+            line.instruction,
+            TextInstructionState::new(&ScriptText {
+                line_record: ScriptLineRecordOffset::decode(58),
+                presentation_selector: 0,
+                control: ScriptTextControl::decode(0x30),
+                resume_target: Some(ScriptCodeOffset::new(100)),
+                record_condition_operand: None,
+                words: Box::new([]),
+            }),
+        );
+        selector
+            .inventory_mut()
+            .offer(
+                line,
+                records.record_runtime.aboard_objects(),
+                &state,
+                &mut runtime,
+                &mut dispatch.text_presentation,
+            )
+            .unwrap();
+        selector.inventory_mut().select(item).unwrap();
+        let mut host = TraversalHost {
+            builtins,
+            scans: 0,
+            simulation: None,
+            settlement: None,
+        };
+        let mut procedures = super::super::ScriptProcedureStates::default();
+        let mut sequence_slots = super::super::ScriptSequenceSlots::default();
+        let mut dispatcher = Dispatcher {
+            code: &code,
+            instructions: &[],
+            dialogue: &dialogue,
+            state: &mut state,
+            dictionary: &dictionary,
+            directory: &directory,
+            builtins,
+            procedures: &mut procedures,
+            selector: &mut selector,
+            sequence_slots: &mut sequence_slots,
+            records: &mut records,
+            dispatch: &mut dispatch,
+            host: &mut host,
+        };
+        dispatcher.commit_selected_concept(&mut runtime).unwrap();
+        assert_eq!(selector.history(), &history);
+        assert!(selector.pending_presentation_words().is_empty());
+        assert_eq!(records.record_runtime.aboard_objects().slots()[3], None);
+        assert_eq!(
+            records.record_runtime.aboard_objects().slots()[12],
+            Some(item)
+        );
+        let holder = state.object_word(item, 10).unwrap();
+        assert_eq!(
+            records.record_fields.value(holder),
+            Some(ScriptRecordValue::Object(actor))
+        );
+        let mut synchronized = state.clone();
+        records
+            .commit_to_var(&mut synchronized, &directory, &dictionary)
+            .unwrap();
+        assert_eq!(synchronized, state);
+        assert!(dispatch.text_instructions[&line.instruction].is_active());
     }
 
     impl ScriptDispatchHost for TraversalHost {

@@ -106,6 +106,7 @@ mod script_sequence_slots;
 mod script_service;
 mod selected_mask;
 mod sequel_growth;
+mod sequel_inventory;
 mod sequel_presentation;
 mod sequence;
 mod sequence_subtitles;
@@ -624,6 +625,7 @@ pub use sequel_growth::{
     SequelConflictState, SequelGrowthError, SequelSettlementContext, SequelSettlementState,
     SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth, apply_sequel_settlement,
 };
+pub use sequel_inventory::{SequelInventoryError, SequelInventoryLine, SequelInventoryState};
 pub use sequel_presentation::{
     SequelPanelActivation, SequelPanelActivationState, SequelPanelActorAction,
     SequelPanelCompletion, SequelPresentationControl, activate_sequel_panel_request,

@@ -83,6 +83,7 @@ pub struct ScriptSelectorBranch {
 /// Owned dialogue-selector state associated with one loaded script profile.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ScriptSelectorState {
+    inventory: super::SequelInventoryState,
     history: ScriptConceptHistory,
     current_control: Option<ScriptWordId>,
     parent_control: Option<ScriptWordId>,
@@ -92,6 +93,16 @@ pub struct ScriptSelectorState {
 }
 
 impl ScriptSelectorState {
+    /// Borrow object-backed sequel choices, separate from dictionary history.
+    pub const fn inventory(&self) -> &super::SequelInventoryState {
+        &self.inventory
+    }
+
+    /// Mutably borrow the sequel choice owner for A6 and selection dispatch.
+    pub fn inventory_mut(&mut self) -> &mut super::SequelInventoryState {
+        &mut self.inventory
+    }
+
     /// Borrow the recent-concept history.
     pub const fn history(&self) -> &ScriptConceptHistory {
         &self.history
@@ -726,6 +737,7 @@ mod tests {
                 body: ScriptCodeOffset::new(INITIAL_BRANCH_BODY),
             };
             let mut state = ScriptSelectorState {
+                inventory: super::super::SequelInventoryState::default(),
                 history: ScriptConceptHistory::new(
                     [None; SCRIPT_CONCEPT_HISTORY_LENGTH],
                     insertion_index,

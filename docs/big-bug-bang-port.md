@@ -291,12 +291,37 @@ nix develop -c python3 -P re/tools/big_bug_bang_inventory_condition_oracle.py \
   re/tools/oracle_vectors/big_bug_bang_inventory_selection.jsonl
 ```
 
-These fixtures are native references, not Rust parity tests yet. The next runtime
-change must represent object-backed selected and pending choices separately from
-`ScriptWordId`; `commit_selected_concept` currently assumes DIC encoding and
-history/BAS processing. The native inventory branch bypasses that processing.
-Production sequel loading stays disabled until this state flow, menu rendering,
-audio path and profile lifecycle are integrated and verified.
+`SequelInventoryState`, owned by each profile's selector state, now represents
+saved A6/recipient identities and pending/selected objects without `ScriptWordId`.
+Its condition component matches the 20 native cases representable by the strict
+VAR decoder, and its gated transfer matches 80 cases. The two raw-kind condition
+vectors and two associated transfers contain invalid or combined record kinds;
+they remain native robustness references, not claimed Rust parity coverage.
+
+Dispatch routes a pending inventory selection before ordinary DIC encoding,
+history insertion and BAS processing. Transfer updates owned VAR and the derived
+relationship-field view directly. It does not rebuild the roster: reconstruction
+would compact holes and erase the native first-duplicate-only removal behavior.
+A dispatch regression checks unchanged concept history, retained duplicate slot,
+reactivated A6 state and exact VAR synchronization after transfer.
+
+The ungated operation retains an explicit descriptor-lookup continuation and
+the selected object, whose native clearing occurs after descriptor processing.
+Dispatch reports that unresolved continuation rather than inventing descriptor
+availability or silently continuing. Invalid selections, inactive resume,
+missing instruction state and wrong dialect have explicit rejection checks.
+
+This does **not** yet make authored inventory text executable: decoding marker
+65534, invoking the condition component from A6, displaying object names,
+connecting UI selection and finishing descriptor/presentation processing remain
+unfinished. The dispatch test seeds typed inventory state; it is not an authored
+A6 traversal test. Production sequel loading stays disabled until this complete
+flow and the profile lifecycle are integrated and verified.
+
+Verification for this typed-state checkpoint: game all-targets checking passes;
+the complete game-library suite passes 917 tests with 12 ignored, serially under
+a private X server. The four new inventory tests run without external assets.
+No full-game inventory-playability or independent-review claim follows.
 
 ```sh
 nix develop -c python3 -P re/tools/text_record_condition_oracle.py \
