@@ -90,6 +90,16 @@ impl ScriptProfileRecordState {
         dictionary: &ScriptDictionary,
         builtins: ScriptProfileBuiltins,
     ) -> Result<Self, ScriptProfileRecordStateError> {
+        Self::recover_with_roster(instructions, state, dictionary, builtins, None)
+    }
+
+    fn recover_with_roster(
+        instructions: &[DecodedScriptInstruction],
+        state: &ScriptState,
+        dictionary: &ScriptDictionary,
+        builtins: ScriptProfileBuiltins,
+        roster: Option<&super::super::AboardObjectRoster>,
+    ) -> Result<Self, ScriptProfileRecordStateError> {
         let player = builtins.player.ok_or_else(|| {
             ScriptProfileRecordStateError::new(
                 ScriptProfileRecordStateErrorDetail::MissingPlayerBinding,
@@ -178,7 +188,8 @@ impl ScriptProfileRecordState {
                 )
             })?;
             record_fields.set_value(*field, decode_record_value(raw, *domain, state, dictionary));
-            if raw == u16::MAX
+            if roster.is_none()
+                && raw == u16::MAX
                 && let Some(object) = field.object()
                 && !insert_aboard_object(record_runtime.aboard_objects_mut(), object)
             {
@@ -186,6 +197,10 @@ impl ScriptProfileRecordState {
                     ScriptProfileRecordStateErrorDetail::AboardRosterOverflow { object },
                 ));
             }
+        }
+
+        if let Some(roster) = roster {
+            *record_runtime.aboard_objects_mut() = roster.clone();
         }
 
         let mut transfer_records = ScriptTransferRecords::default();
@@ -258,7 +273,7 @@ impl ScriptProfileRecordState {
         dictionary: &ScriptDictionary,
         builtins: ScriptProfileBuiltins,
     ) -> Result<(), ScriptProfileRecordStateError> {
-        let recovered = Self::recover(instructions, state, dictionary, builtins)?;
+        let recovered = self.recover_for_refresh(instructions, state, dictionary, builtins)?;
         self.action_records = recovered.action_records.clone();
         self.transfer_records = recovered.transfer_records.clone();
         self.replace_record_fields_and_roster(&recovered);
@@ -272,7 +287,7 @@ impl ScriptProfileRecordState {
         dictionary: &ScriptDictionary,
         builtins: ScriptProfileBuiltins,
     ) -> Result<(), ScriptProfileRecordStateError> {
-        let recovered = Self::recover(instructions, state, dictionary, builtins)?;
+        let recovered = self.recover_for_refresh(instructions, state, dictionary, builtins)?;
         self.transfer_records = recovered.transfer_records.clone();
         self.replace_record_fields_and_roster(&recovered);
         Ok(())
@@ -285,6 +300,19 @@ impl ScriptProfileRecordState {
         dictionary: &ScriptDictionary,
     ) -> Result<(), ScriptProfileRecordStateError> {
         self.synchronize_into(state, directory, dictionary)
+    }
+
+    fn recover_for_refresh(
+        &self,
+        instructions: &[DecodedScriptInstruction],
+        state: &ScriptState,
+        dictionary: &ScriptDictionary,
+        builtins: ScriptProfileBuiltins,
+    ) -> Result<Self, ScriptProfileRecordStateError> {
+        // BLOOD2 6038 refreshes actor fields; 59FF rebuilds the roster only at load.
+        let roster = (state.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang)
+            .then(|| self.record_runtime.aboard_objects());
+        Self::recover_with_roster(instructions, state, dictionary, builtins, roster)
     }
 
     fn replace_record_fields_and_roster(&mut self, recovered: &Self) {

@@ -70,6 +70,8 @@ pub enum InlineMenuRevealOutcome {
 /// Invalid typed data supplied to the menu reveal step.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InlineMenuRevealError {
+    /// An authored object generator reached the ordinary word renderer unexpanded.
+    UnexpandedInventoryChoices,
     /// A menu word belongs to another dictionary.
     UnknownDictionaryWord(ScriptWordId),
     /// A numeric substitution cannot be bound to an owned VAR word.
@@ -129,6 +131,9 @@ pub fn reveal_inline_menu_step<M: InlineMenuTextMetrics>(
             return complete_menu(presentation, placements, x, y, word_delay);
         };
         let text = match current {
+            ScriptTextWord::InventoryChoices => {
+                return Err(InlineMenuRevealError::UnexpandedInventoryChoices);
+            }
             ScriptTextWord::Dictionary(word) => dictionary
                 .word(word)
                 .ok_or(InlineMenuRevealError::UnknownDictionaryWord(word))?,
@@ -160,6 +165,9 @@ pub fn reveal_inline_menu_step<M: InlineMenuTextMetrics>(
         cursor = cursor.saturating_add(1);
         encoded_cursor += current.encoded_word_count();
         let next = match presentation.menu_words.get(cursor).copied() {
+            Some(ScriptTextWord::InventoryChoices) => {
+                return Err(InlineMenuRevealError::UnexpandedInventoryChoices);
+            }
             Some(ScriptTextWord::Dictionary(next)) => Some(
                 dictionary
                     .word(next)

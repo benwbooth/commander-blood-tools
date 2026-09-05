@@ -1014,6 +1014,7 @@ impl<'window> ModernGameServices<'window> {
                 }
                 ScriptTextWord::SectionSeparator => unreachable!("section separators terminate"),
                 ScriptTextWord::StateNumber(_) => bail!("sequel numeric chatter hashing has not been verified against the native audio routine"),
+                ScriptTextWord::InventoryChoices => bail!("unexpanded inventory choices cannot be hashed as dictionary chatter"),
             })
             .collect()
     }
@@ -4236,6 +4237,9 @@ impl<'window> ModernGameServices<'window> {
                             })
                         }
                         ScriptTextWord::SectionSeparator => None,
+                        ScriptTextWord::InventoryChoices => {
+                            Some((None, "unexpanded inventory choices".to_owned()))
+                        }
                         ScriptTextWord::StateNumber(number) => Some((
                             None,
                             profile

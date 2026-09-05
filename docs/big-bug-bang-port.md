@@ -241,10 +241,10 @@ described below; full presentation and authored execution remain unverified:
   destination (0x37D5). The two page offsets are swapped at 0x43ED..0x43F7.
   Fixing only the font destination would omit the underlying interaction.
 
-The current typed `ScriptTextWord` supports dictionary words, numeric operands
-and the 65535 separator, but not this 65534 dynamic-object marker. It must gain an explicit,
-dialect-aware representation alongside the actual selection/transfer state and
-UI routing. Do not invent dictionary entries, substitute all actors for the
+The typed `ScriptTextWord::InventoryChoices` now represents marker 65534 only in
+the sequel dialect, alongside dictionary words, numeric operands and separators.
+A6 expands it through the owned roster and object-selection state; UI routing
+is still incomplete. Do not invent dictionary entries, substitute all actors for the
 native candidate table, or enable sequel production loading with this flow
 missing. Authored execution reachability and the later presentation calls remain
 to be verified before calling the whole A6 path recovered.
@@ -311,17 +311,52 @@ Dispatch reports that unresolved continuation rather than inventing descriptor
 availability or silently continuing. Invalid selections, inactive resume,
 missing instruction state and wrong dialect have explicit rejection checks.
 
-This does **not** yet make authored inventory text executable: decoding marker
-65534, invoking the condition component from A6, displaying object names,
-connecting UI selection and finishing descriptor/presentation processing remain
-unfinished. The dispatch test seeds typed inventory state; it is not an authored
-A6 traversal test. Production sequel loading stays disabled until this complete
-flow and the profile lifecycle are integrated and verified.
+Authored inventory A6 text now decodes and invokes the condition component after
+the native gates. The extended oracle executes 0x6C89 through its return at
+0x6E53 with all entered helpers intact: 27 synthetic captures cover publication,
+empty choices and five rejection gates. Rust matches the 25 cases representable
+by its strict VAR decoder. The two raw-kind cases remain native-only references.
 
-Verification for this typed-state checkpoint: game all-targets checking passes;
-the complete game-library suite passes 917 tests with 12 ignored, serially under
-a private X server. The four new inventory tests run without external assets.
-No full-game inventory-playability or independent-review claim follows.
+Another 46 captures execute every original inventory A6 occurrence using pinned
+COD/VAR/DEB/DIC images, with controlled actor action, shown flag and a one-item
+roster. Rust matches subtitle hashes, VAR effects, resume state and publication
+flags. These controlled handler checks do not prove gameplay reachability.
+
+The dispatch regression now decodes and executes a synthetic A6 through a complete
+frame before selection, checks duplicate choices, transfers the selected object,
+then prepares another frame. Sequel field refresh preserves the canonical roster,
+including holes and duplicates. Native pre-frame helper 0x6038 updates actor
+relationships; direct calls to roster reconstruction 0x59FF occur at 0x11A8
+(profile change) and 0x1FAF (load). Commander refresh behavior is unchanged.
+
+The original handlers in both games also clear the alternate concept while arming
+resume, before rejection gates; the shared Rust handler now does so. Runtime
+choice readiness includes object choices without converting them to dictionary IDs.
+
+Displaying object names, connecting UI selection and finishing descriptor/audio
+processing remain unfinished. Production sequel loading stays disabled until
+this complete flow and the profile lifecycle are integrated and verified.
+
+Verification: all 122 formats tests pass with original-corpus tests enabled;
+the game library passes 920 tests with 13 ignored under a private X server.
+The authored inventory test (46 cases) and numeric-menu oracle test (59 cases)
+also pass when explicitly enabled. Regenerated condition, transfer, synthetic A6
+and authored A6 fixtures are byte-identical to the checked-in vectors.
+No full-game inventory-playability or independent-review claim follows. Reproduce
+the complete text captures after generating the corpus audit:
+
+```sh
+nix develop -c cargo run -p commander-blood-formats --example audit_sequel_text -- \
+  output/big-bug-bang/imported-assets/resources > output/big-bug-bang/text-audit.json
+nix develop -c python3 -P re/tools/big_bug_bang_inventory_condition_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  output/big-bug-bang/inventory-condition-oracle.jsonl \
+  output/big-bug-bang/inventory-selection-oracle.jsonl \
+  --text-output re/tools/oracle_vectors/big_bug_bang_inventory_text.jsonl \
+  --resources output/big-bug-bang/imported-assets/resources \
+  --audit output/big-bug-bang/text-audit.json \
+  --authored-text-output re/tools/oracle_vectors/big_bug_bang_authored_inventory_text.jsonl
+```
 
 ```sh
 nix develop -c python3 -P re/tools/text_record_condition_oracle.py \
@@ -386,7 +421,7 @@ valid, and do not count current typed acceptance as recovery of numeric text.
 The typed decoder now consumes marker 1 and its VAR operand together, only in
 the sequel dialect. All 58 authored operands resolve to owned state words,
 including the seven formerly incorrect successes above. The corpus test now
-accepts 6875 A6 tokens and rejects only the 46 inventory-marker tokens. All 121
+accepts all 6921 A6 tokens, including all 46 inventory-marker tokens. All 122
 formats tests pass with original corpus checks enabled.
 
 ### Numeric Menu Renderer

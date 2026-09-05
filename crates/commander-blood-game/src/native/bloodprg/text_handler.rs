@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::instruction::{ScriptText, ScriptTextWord};
 use commander_blood_formats::script::{
     ScriptDictionary, ScriptObjectKind, ScriptState, ScriptWordId,
@@ -10,8 +11,9 @@ use commander_blood_formats::script::{
 use crate::native::random::BloodPrng;
 
 use super::{
-    ScriptActionRecord, ScriptFieldSelector, ScriptFrameFlow, ScriptRuntime, ScriptSelectorState,
-    ScriptWordHistory, TextConditionEffects, TextConditionError, evaluate_text_conditions,
+    AboardObjectRoster, ScriptActionRecord, ScriptFieldSelector, ScriptFrameFlow, ScriptRuntime,
+    ScriptSelectorState, ScriptWordHistory, SequelInventoryError, SequelInventoryLine,
+    SequelInventoryState, TextConditionEffects, TextConditionError, evaluate_text_conditions,
     script_field_offset,
 };
 
@@ -258,6 +260,12 @@ pub enum TextHandlerOutcome {
 /// Invalid typed state supplied to an A6 instruction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TextHandlerError {
+    /// The inventory generator was reached without the profile's roster owner.
+    MissingInventoryContext,
+    /// Inventory text controls or marker placement have no recovered native path.
+    UnverifiedInventoryText,
+    /// An object-backed condition could not resolve its owned inputs.
+    Inventory(SequelInventoryError),
     /// The resume flag was present without its decoded COD destination.
     MissingResumeTarget,
     /// An optional text condition lacked required typed input.
@@ -294,6 +302,11 @@ pub struct TextInstructionExecution {
 /// Invalid profile state encountered while binding A6 to its authored line record.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TextInstructionExecutionError {
+    /// The inventory recipient operand is not an owned VAR record boundary.
+    MissingInventoryRecipient {
+        /// Authored recipient byte position.
+        line_offset: usize,
+    },
     /// The encoded line position cannot address its flags word.
     MissingLineFlags {
         /// Authored byte position of the line record.
@@ -343,6 +356,7 @@ pub fn execute_text_instruction(
     script: &mut ScriptRuntime,
     random: &mut BloodPrng,
     presentation: &mut TextPresentationState,
+    inventory_context: Option<TextInventoryContext<'_>>,
 ) -> Result<TextInstructionExecution, TextInstructionExecutionError> {
     let line_offset = text.line_record.byte_offset();
     let flags_offset = line_offset
@@ -400,7 +414,33 @@ pub fn execute_text_instruction(
     };
     let history = (gate.is_none() && text.control.uses_history_condition())
         .then(|| selector.history().snapshot());
-    let outcome = handle_text_instruction(
+    let has_inventory = text.words.contains(&ScriptTextWord::InventoryChoices);
+    let inventory_context = if gate.is_none() && has_inventory {
+        inventory_context
+            .map(|context| -> Result<_, TextInstructionExecutionError> {
+                let recipient = state
+                    .objects()
+                    .iter()
+                    .find(|object| object.source_offset() == line_offset)
+                    .map(|object| object.id)
+                    .ok_or(TextInstructionExecutionError::MissingInventoryRecipient {
+                        line_offset,
+                    })?;
+                Ok(InventoryTextConditionContext {
+                    line: SequelInventoryLine {
+                        instruction: context.instruction,
+                        recipient,
+                    },
+                    roster: context.roster,
+                    state: &*state,
+                    inventory: selector.inventory_mut(),
+                })
+            })
+            .transpose()?
+    } else {
+        None
+    };
+    let outcome = handle_text_instruction_with_inventory(
         text,
         instruction_state,
         &mut line,
@@ -412,6 +452,7 @@ pub fn execute_text_instruction(
             record_value,
             history: history.as_ref(),
         },
+        inventory_context,
     )?;
 
     let published = matches!(
@@ -425,7 +466,10 @@ pub fn execute_text_instruction(
             selector.replace_presentation_words(
                 presentation.condition_presentation_words.iter().copied(),
             );
-            if matches!(outcome, TextHandlerOutcome::SubtitlePublished)
+            if has_inventory {
+                presentation.menu_words = Box::new([]);
+                presentation.menu_word_count = 0;
+            } else if matches!(outcome, TextHandlerOutcome::SubtitlePublished)
                 && !presentation.condition_presentation_words.is_empty()
             {
                 let choice_words = presentation
@@ -460,6 +504,45 @@ pub fn handle_text_instruction(
     presentation: &mut TextPresentationState,
     conditions: TextConditionInputs<'_>,
 ) -> Result<TextHandlerOutcome, TextHandlerError> {
+    handle_text_instruction_with_inventory(
+        text,
+        instruction_state,
+        line,
+        dictionary,
+        script,
+        presentation,
+        conditions,
+        None,
+    )
+}
+
+/// Profile-owned inputs for the sequel's dynamic object-choice generator.
+#[derive(Clone, Copy, Debug)]
+pub struct TextInventoryContext<'a> {
+    /// Current A6 instruction identity, retained until object selection.
+    pub instruction: ScriptCodeOffset,
+    /// Existing ordered aboard roster; do not reconstruct it from VAR here.
+    pub roster: &'a AboardObjectRoster,
+}
+
+struct InventoryTextConditionContext<'a> {
+    line: SequelInventoryLine,
+    roster: &'a AboardObjectRoster,
+    state: &'a ScriptState,
+    inventory: &'a mut SequelInventoryState,
+}
+
+#[allow(clippy::too_many_arguments)]
+fn handle_text_instruction_with_inventory(
+    text: &ScriptText,
+    instruction_state: &mut TextInstructionState,
+    line: &mut TextLineState,
+    dictionary: &ScriptDictionary,
+    script: &mut ScriptRuntime,
+    presentation: &mut TextPresentationState,
+    conditions: TextConditionInputs<'_>,
+    inventory_context: Option<InventoryTextConditionContext<'_>>,
+) -> Result<TextHandlerOutcome, TextHandlerError> {
     if let Some(skip_count) = text.control.rejection_skip_count() {
         script.arm_skip(skip_count);
     }
@@ -468,6 +551,7 @@ pub fn handle_text_instruction(
             .resume_target
             .ok_or(TextHandlerError::MissingResumeTarget)?;
         script.arm_resume(target, u16::MIN);
+        script.set_alternate_concept(None);
     }
 
     if let Some(gate) = text_handler_gate(*instruction_state, *line, presentation) {
@@ -475,7 +559,36 @@ pub fn handle_text_instruction(
     }
 
     let mut condition_effects = TextConditionEffects::default();
-    if !evaluate_text_conditions(
+    if text.words.contains(&ScriptTextWord::InventoryChoices) {
+        let section = text
+            .words
+            .iter()
+            .position(|word| *word == ScriptTextWord::SectionSeparator);
+        if text.control.bits() & 0x7FFF != 0x30
+            || !section.is_some_and(|index| {
+                !text.words[..index].contains(&ScriptTextWord::InventoryChoices)
+                    && text.words[index + 1..] == [ScriptTextWord::InventoryChoices]
+            })
+        {
+            return Err(TextHandlerError::UnverifiedInventoryText);
+        }
+        let context = inventory_context.ok_or(TextHandlerError::MissingInventoryContext)?;
+        if !context
+            .inventory
+            .offer(
+                context.line,
+                context.roster,
+                context.state,
+                script,
+                presentation,
+            )
+            .map_err(TextHandlerError::Inventory)?
+        {
+            return Ok(TextHandlerOutcome::ConditionRejected);
+        }
+        condition_effects.spoken_word_mode = true;
+        condition_effects.yield_requested = true;
+    } else if !evaluate_text_conditions(
         text,
         conditions.random_result,
         conditions.record_value,
@@ -580,6 +693,9 @@ fn assemble_subtitle(
             ScriptTextWord::Dictionary(word) => Some(*word),
             ScriptTextWord::SectionSeparator => None,
             ScriptTextWord::StateNumber(_) => unreachable!("numeric subtitles were rejected"),
+            ScriptTextWord::InventoryChoices => {
+                unreachable!("inventory marker is after the subtitle section")
+            }
         })
         .collect();
     let mut output = Vec::new();
@@ -919,6 +1035,83 @@ mod tests {
     }
 
     #[test]
+    fn resume_arming_clears_alternate_before_the_inactive_gate() {
+        let dictionary = dictionary();
+        let text = ScriptText {
+            line_record: ScriptLineRecordOffset::decode(0),
+            presentation_selector: 0,
+            control: ScriptTextControl::decode(0x30),
+            resume_target: Some(ScriptCodeOffset::new(100)),
+            record_condition_operand: None,
+            words: Box::new([]),
+        };
+        let mut script = ScriptRuntime::new();
+        script.set_alternate_concept(Some(dictionary.resolve_source_offset(0x100).unwrap()));
+        let outcome = handle_text_instruction(
+            &text,
+            &mut TextInstructionState::new(&text),
+            &mut TextLineState {
+                kind: TextLineKind::Presentation,
+                already_shown: false,
+            },
+            &dictionary,
+            &mut script,
+            &mut TextPresentationState::default(),
+            TextConditionInputs::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            outcome,
+            TextHandlerOutcome::Gated(TextHandlerGate::Inactive)
+        );
+        assert_eq!(script.alternate_concept(), None);
+        assert_eq!(script.resume_target(), Some(ScriptCodeOffset::new(100)));
+    }
+
+    #[test]
+    fn inventory_text_requires_context_and_rejects_unverified_marker_layouts() {
+        let dictionary = dictionary();
+        let mut text = ScriptText {
+            line_record: ScriptLineRecordOffset::decode(0),
+            presentation_selector: 0,
+            control: ScriptTextControl::decode(0x8030),
+            resume_target: Some(ScriptCodeOffset::new(100)),
+            record_condition_operand: None,
+            words: Box::new([
+                ScriptTextWord::SectionSeparator,
+                ScriptTextWord::InventoryChoices,
+            ]),
+        };
+        let run = |text: &ScriptText| {
+            handle_text_instruction(
+                text,
+                &mut TextInstructionState::new(text),
+                &mut TextLineState {
+                    kind: TextLineKind::Presentation,
+                    already_shown: false,
+                },
+                &dictionary,
+                &mut ScriptRuntime::new(),
+                &mut TextPresentationState::default(),
+                TextConditionInputs::default(),
+            )
+        };
+        assert_eq!(run(&text), Err(TextHandlerError::MissingInventoryContext));
+        text.words = Box::new([
+            ScriptTextWord::InventoryChoices,
+            ScriptTextWord::SectionSeparator,
+            ScriptTextWord::InventoryChoices,
+        ]);
+        assert_eq!(run(&text), Err(TextHandlerError::UnverifiedInventoryText));
+        text.words = Box::new([
+            ScriptTextWord::SectionSeparator,
+            ScriptTextWord::InventoryChoices,
+        ]);
+        text.control = ScriptTextControl::decode(0x8032);
+        assert_eq!(run(&text), Err(TextHandlerError::UnverifiedInventoryText));
+    }
+
+    #[test]
     fn production_a6_binding_reads_and_updates_the_authored_actor_record() {
         let dictionary = dictionary();
         let text = ScriptText {
@@ -945,6 +1138,7 @@ mod tests {
             &mut script,
             &mut random,
             &mut presentation,
+            None,
         )
         .unwrap();
         assert_eq!(execution.outcome, TextHandlerOutcome::MenuPublished);
@@ -961,6 +1155,7 @@ mod tests {
             &mut script,
             &mut random,
             &mut TextPresentationState::default(),
+            None,
         )
         .unwrap();
         assert_eq!(
@@ -1006,6 +1201,7 @@ mod tests {
             &mut ScriptRuntime::new(),
             &mut BloodPrng::default(),
             &mut presentation,
+            None,
         )
         .unwrap();
 
@@ -1014,7 +1210,7 @@ mod tests {
         let expected_choices = [first_choice, second_choice].map(|word| match word {
             ScriptTextWord::Dictionary(word) => word,
             ScriptTextWord::SectionSeparator => unreachable!(),
-            ScriptTextWord::StateNumber(_) => {
+            ScriptTextWord::StateNumber(_) | ScriptTextWord::InventoryChoices => {
                 unreachable!("fixture contains only dictionary choices")
             }
         });

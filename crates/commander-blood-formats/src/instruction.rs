@@ -127,6 +127,7 @@ const TEXT_SKIP_COUNT_MASK: u16 = 0x0007;
 const TEXT_WORD_SECTION_SEPARATOR: u16 = u16::MAX;
 const TEXT_WORD_TERMINATOR: u16 = u16::MIN;
 const SEQUEL_TEXT_STATE_NUMBER: u16 = 1;
+const SEQUEL_TEXT_INVENTORY_CHOICES: u16 = 0xFFFE;
 const FIRST_SEQUENCE_SLOT: u8 = 1;
 const SEQUENCE_SLOT_COUNT: u8 = 6;
 const LAST_SEQUENCE_SLOT: u8 = FIRST_SEQUENCE_SLOT + SEQUENCE_SLOT_COUNT - 1;
@@ -251,6 +252,8 @@ pub enum ScriptTextWord {
     /// Sequel marker 1 followed by a serialized VAR byte position.
     /// Resolve against owned script state when drawing, not against the DIC image.
     StateNumber(ScriptTextStateNumber),
+    /// Sequel marker `0xFFFE`: expand the aboard inventory in a resume section.
+    InventoryChoices,
     /// Authored `0xFFFF` boundary between spoken, condition, or menu sections.
     SectionSeparator,
 }
@@ -276,7 +279,7 @@ impl ScriptTextWord {
     pub const fn encoded_word_count(self) -> usize {
         match self {
             Self::StateNumber(_) => 2,
-            Self::Dictionary(_) | Self::SectionSeparator => 1,
+            Self::Dictionary(_) | Self::SectionSeparator | Self::InventoryChoices => 1,
         }
     }
 }
@@ -1230,6 +1233,10 @@ pub fn decode_script_text(
             words.push(ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(
                 source_offset,
             )));
+            continue;
+        }
+        if token.dialect() == ScriptDialect::BigBugBang && word == SEQUEL_TEXT_INVENTORY_CHOICES {
+            words.push(ScriptTextWord::InventoryChoices);
             continue;
         }
         let dictionary_word = dictionary.resolve_source_offset(word).ok_or(
@@ -2329,6 +2336,23 @@ mod tests {
                     Ok(text) => {
                         accepted += 1;
                         for word in text.words.iter() {
+                            if *word == ScriptTextWord::InventoryChoices {
+                                inventory += 1;
+                                assert_eq!(text.control.bits(), 0x8030);
+                                let section = text
+                                    .words
+                                    .iter()
+                                    .position(|word| *word == ScriptTextWord::SectionSeparator)
+                                    .unwrap();
+                                assert_eq!(
+                                    &text.words[section + 1..],
+                                    &[ScriptTextWord::InventoryChoices]
+                                );
+                                assert!(
+                                    state.objects().iter().any(|object| object.source_offset()
+                                        == text.line_record.byte_offset())
+                                );
+                            }
                             if let ScriptTextWord::StateNumber(number) = word {
                                 let field = state
                                     .resolve_word_source_offset(number.source_offset())
@@ -2338,15 +2362,51 @@ mod tests {
                             }
                         }
                     }
-                    Err(ScriptInstructionError::InvalidDictionaryOffset {
-                        dictionary_offset: 65534,
-                        ..
-                    }) => inventory += 1,
                     Err(error) => panic!("profile {profile}: {error:?}"),
                 }
             }
         }
-        assert_eq!((accepted, inventory, numbers), (6875, 46, 58));
+        assert_eq!((accepted, inventory, numbers), (6921, 46, 58));
+    }
+
+    #[test]
+    fn sequel_inventory_marker_does_not_change_commander_or_numeric_operand_decoding() {
+        use crate::code::decode_script_code_for_dialect;
+        let bytes = [
+            0xA6, 0, 0, 0, 0x30, 0x80, 16, 0, 255, 255, 254, 255, 0, 0, 255,
+        ];
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let sequel = decode_script_code_for_dialect(&bytes, ScriptDialect::BigBugBang).unwrap();
+        assert_eq!(
+            decode_script_text(&sequel.tokens()[0], &dictionary)
+                .unwrap()
+                .words
+                .as_ref(),
+            &[
+                ScriptTextWord::SectionSeparator,
+                ScriptTextWord::InventoryChoices
+            ]
+        );
+        let commander =
+            decode_script_code_for_dialect(&bytes, ScriptDialect::CommanderBlood).unwrap();
+        assert!(matches!(
+            decode_script_text(&commander.tokens()[0], &dictionary),
+            Err(ScriptInstructionError::InvalidDictionaryOffset {
+                dictionary_offset: 65534,
+                ..
+            })
+        ));
+        let bytes = [0xA6, 0, 0, 0, 0, 128, 1, 0, 254, 255, 0, 0, 255];
+        let sequel = decode_script_code_for_dialect(&bytes, ScriptDialect::BigBugBang).unwrap();
+        assert_eq!(
+            decode_script_text(&sequel.tokens()[0], &dictionary)
+                .unwrap()
+                .words
+                .as_ref(),
+            &[ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(
+                65534
+            ))]
+        );
     }
 
     #[test]

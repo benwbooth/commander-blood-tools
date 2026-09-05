@@ -159,6 +159,11 @@ impl ScriptSelectorState {
         &self.pending_presentation_words
     }
 
+    /// Whether the native choice buffer contains dictionary or object-backed entries.
+    pub fn has_pending_presentation_choices(&self) -> bool {
+        !self.pending_presentation_words.is_empty() || !self.inventory.choices().is_empty()
+    }
+
     /// Replace words prepared by the current text-presentation pass.
     pub fn replace_presentation_words(&mut self, words: impl IntoIterator<Item = ScriptWordId>) {
         self.pending_presentation_words.clear();

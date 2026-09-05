@@ -63,6 +63,8 @@ pub enum TextConditionError {
     MissingWordSection,
     /// Numeric words in condition sections require a separately recovered path.
     UnverifiedNumericConditionSection,
+    /// Object-backed choices must be expanded by the sequel inventory owner.
+    MissingInventoryContext,
 }
 
 impl fmt::Display for TextConditionError {
@@ -151,6 +153,9 @@ fn word_sections(words: &[ScriptTextWord]) -> Result<Vec<Vec<ScriptWordId>>, Tex
             ScriptTextWord::SectionSeparator => sections.push(Vec::new()),
             ScriptTextWord::StateNumber(_) => {
                 return Err(TextConditionError::UnverifiedNumericConditionSection);
+            }
+            ScriptTextWord::InventoryChoices => {
+                return Err(TextConditionError::MissingInventoryContext);
             }
         }
     }

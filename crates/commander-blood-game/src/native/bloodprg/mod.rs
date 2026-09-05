@@ -730,7 +730,7 @@ pub use text::{bounded_nul_byte_len, nul_terminated_byte_len, nul_terminated_byt
 pub use text_handler::{
     PresentationRequestFlags, TextConditionInputs, TextHandlerError, TextHandlerGate,
     TextHandlerOutcome, TextInstructionExecution, TextInstructionExecutionError,
-    TextInstructionState, TextLineKind, TextLineState, TextPresentationState,
+    TextInstructionState, TextInventoryContext, TextLineKind, TextLineState, TextPresentationState,
     execute_text_instruction, handle_text_instruction,
 };
 pub use text_scan::{

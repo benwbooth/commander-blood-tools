@@ -280,6 +280,7 @@ impl<Host: ScriptBasDispatchHost> ScriptBlockHandler for BasInstructionDispatche
                     runtime,
                     &mut self.dispatch.random,
                     &mut self.dispatch.text_presentation,
+                    None,
                 )
                 .map_err(ScriptBasDispatchError::Text)?;
                 #[cfg(test)]
@@ -848,7 +849,7 @@ mod tests {
                         .filter_map(|word| match word {
                             ScriptTextWord::Dictionary(word) => Some(*word),
                             ScriptTextWord::SectionSeparator => None,
-                            ScriptTextWord::StateNumber(_) => {
+                            ScriptTextWord::StateNumber(_) | ScriptTextWord::InventoryChoices => {
                                 panic!("Commander fixture cannot contain a sequel number")
                             }
                         })
@@ -1136,7 +1137,7 @@ mod tests {
                 .filter_map(|word| match word {
                     ScriptTextWord::Dictionary(word) => Some(*word),
                     ScriptTextWord::SectionSeparator => None,
-                    ScriptTextWord::StateNumber(_) => {
+                    ScriptTextWord::StateNumber(_) | ScriptTextWord::InventoryChoices => {
                         panic!("Commander fixture cannot contain a sequel number")
                     }
                 })
@@ -1285,7 +1286,7 @@ mod tests {
             .filter_map(|word| match word {
                 ScriptTextWord::Dictionary(word) => Some(*word),
                 ScriptTextWord::SectionSeparator => None,
-                ScriptTextWord::StateNumber(_) => {
+                ScriptTextWord::StateNumber(_) | ScriptTextWord::InventoryChoices => {
                     panic!("Commander fixture cannot contain a sequel number")
                 }
             })

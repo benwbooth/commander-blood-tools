@@ -392,6 +392,10 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     runtime,
                     &mut self.dispatch.random,
                     &mut self.dispatch.text_presentation,
+                    Some(super::TextInventoryContext {
+                        instruction: token.source_offset(),
+                        roster: self.records.record_runtime.aboard_objects(),
+                    }),
                 )
                 .map_err(ScriptDispatchError::Text)?;
                 return Ok(step_with_flow(token.end_offset(), execution.flow));
@@ -829,7 +833,7 @@ mod tests {
         use commander_blood_formats::bas::decode_script_bas;
         use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
         use commander_blood_formats::instruction::{
-            ScriptLineRecordOffset, ScriptRecordValue, ScriptText, ScriptTextControl,
+            ScriptRecordValue, decode_complete_script_instruction,
         };
         use commander_blood_formats::script::{
             ScriptObjectKind, decode_script_dictionary, decode_script_directory,
@@ -863,16 +867,30 @@ mod tests {
         let player = directory.find_active_object(b"blood").unwrap();
         let item = directory.find_active_object(b"item").unwrap();
         let actor = directory.find_active_object(b"actor").unwrap();
+        let action_offset = super::super::script_field_offset(
+            ScriptObjectKind::Actor,
+            super::super::ScriptFieldSelector::ACTION,
+        )
+        .unwrap();
+        let action = state.object_word(actor, action_offset / 2).unwrap();
+        state.set_word(action, 196);
         let dictionary = decode_script_dictionary(b"PREVIOUS\0").unwrap();
         let previous = dictionary.words().next().unwrap().0;
         let dialogue = decode_script_bas(&[0xff], &dictionary).unwrap();
         let code = decode_script_code_for_dialect(
             &[
-                0xa6, 58, 0, 0, 0x30, 0, 100, 0, 0xff, 0xff, 0xfe, 0xff, 0, 0, 0xff,
+                0xa6, 58, 0, 0, 0x30, 0x80, 14, 0, 0xff, 0xff, 0xfe, 0xff, 0, 0, 0xff,
             ],
             ScriptDialect::BigBugBang,
         )
         .unwrap();
+        let instructions = code
+            .tokens()
+            .iter()
+            .map(|token| {
+                decode_complete_script_instruction(token, &state, &directory, &dictionary).unwrap()
+            })
+            .collect::<Vec<_>>();
         let builtins = ScriptProfileBuiltins {
             player: Some(player),
             ..Default::default()
@@ -885,8 +903,6 @@ mod tests {
         *records.record_runtime.aboard_objects_mut() =
             super::super::AboardObjectRoster::from_test_slots(slots);
         let mut runtime = ScriptRuntime::default();
-        runtime.arm_resume(ScriptCodeOffset::new(100), 0);
-        assert!(runtime.activate_selector_resume());
         let mut selector = ScriptSelectorState::default();
         selector.history_mut().push(previous);
         selector.replace_presentation_words([previous]);
@@ -896,28 +912,6 @@ mod tests {
             instruction: ScriptCodeOffset::new(0),
             recipient: actor,
         };
-        dispatch.text_instructions.insert(
-            line.instruction,
-            TextInstructionState::new(&ScriptText {
-                line_record: ScriptLineRecordOffset::decode(58),
-                presentation_selector: 0,
-                control: ScriptTextControl::decode(0x30),
-                resume_target: Some(ScriptCodeOffset::new(100)),
-                record_condition_operand: None,
-                words: Box::new([]),
-            }),
-        );
-        selector
-            .inventory_mut()
-            .offer(
-                line,
-                records.record_runtime.aboard_objects(),
-                &state,
-                &mut runtime,
-                &mut dispatch.text_presentation,
-            )
-            .unwrap();
-        selector.inventory_mut().select(item).unwrap();
         let mut host = TraversalHost {
             builtins,
             scans: 0,
@@ -928,7 +922,7 @@ mod tests {
         let mut sequence_slots = super::super::ScriptSequenceSlots::default();
         let mut dispatcher = Dispatcher {
             code: &code,
-            instructions: &[],
+            instructions: &instructions,
             dialogue: &dialogue,
             state: &mut state,
             dictionary: &dictionary,
@@ -941,7 +935,19 @@ mod tests {
             dispatch: &mut dispatch,
             host: &mut host,
         };
+        let frame =
+            execute_decoded_script_frame(&code, &instructions, true, &mut runtime, &mut dispatcher)
+                .unwrap();
+        assert_eq!(frame.executed_instructions, 1);
+        assert_eq!(dispatcher.selector.inventory().choices(), &[item, item]);
+        assert_eq!(
+            dispatcher.records.record_runtime.aboard_objects().slots(),
+            &slots
+        );
+        assert!(runtime.selector_resume_active());
+        dispatcher.selector.inventory_mut().select(item).unwrap();
         dispatcher.commit_selected_concept(&mut runtime).unwrap();
+        dispatcher.prepare_script_state(&mut runtime).unwrap();
         assert_eq!(selector.history(), &history);
         assert!(selector.pending_presentation_words().is_empty());
         assert_eq!(records.record_runtime.aboard_objects().slots()[3], None);

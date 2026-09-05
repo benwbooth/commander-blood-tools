@@ -117,6 +117,10 @@ def main():
     parser.add_argument("executable", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("selection_output", type=Path)
+    parser.add_argument("--text-output", type=Path)
+    parser.add_argument("--resources", type=Path)
+    parser.add_argument("--audit", type=Path)
+    parser.add_argument("--authored-text-output", type=Path)
     args = parser.parse_args()
     executable = args.executable.read_bytes()
     assert hashlib.sha256(executable).hexdigest() == SHA256
@@ -147,6 +151,44 @@ def main():
                 selections.append(run_selection(executable, row, choice, audio_gate))
     args.selection_output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in selections))
     print(f"captured {len(selections)} complete native gated inventory selections")
+    if args.text_output:
+        text_rows = [run_text(executable, row) for row in rows]
+        single = next(row for row in rows if row["name"] == "single_slot_0")
+        text_rows.extend(run_text(executable, single, gate) for gate in
+                         ["inactive", "subtitle", "menu", "shown", "wrong_record"])
+        args.text_output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in text_rows))
+        print(f"captured {len(text_rows)} complete native inventory A6 handlers")
+    if args.authored_text_output:
+        assert args.resources and args.audit
+        authored_rows = []
+        for profile in json.loads(args.audit.read_text()):
+            if not profile["inventory_markers"]:
+                continue
+            images = {suffix: (args.resources / f"SCRIPT{profile['profile']}.{suffix}").read_bytes()
+                      for suffix in ["COD", "VAR", "DIC", "DEB"]}
+            inventory = None
+            for cursor in range(0, len(images["DEB"]) - 19, 20):
+                offset, kind = struct.unpack_from("<HH", images["DEB"], cursor + 16)
+                if kind != 1:
+                    break
+                if offset and struct.unpack_from("<H", images["VAR"], offset)[0] == 0x400:
+                    inventory = offset
+                    break
+            assert inventory is not None, profile["profile"]
+            for occurrence in profile["inventory_markers"]:
+                assert occurrence["flags"] == 0x8030 and occurrence["word_byte"] == 12
+                condition = {"name": f"SCRIPT{profile['profile']}:{occurrence['token_byte']}",
+                             "slots": [inventory] + [0] * 15, "kinds": []}
+                row = run_text(executable, condition, authored=(images, occurrence["token_byte"], inventory))
+                row["profile"] = profile["profile"]
+                row["token_byte"] = occurrence["token_byte"]
+                row["offered_object"] = inventory
+                row["image_sha256"] = {suffix: hashlib.sha256(data).hexdigest() for suffix, data in images.items()}
+                row["subtitle_sha256"] = hashlib.sha256(bytes(row.pop("subtitle"))).hexdigest()
+                authored_rows.append(row)
+        assert len(authored_rows) == 46
+        args.authored_text_output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in authored_rows))
+        print(f"captured {len(authored_rows)} original authored inventory A6 handlers")
 
 
 def run_selection(executable, condition, choice, audio_gate):
@@ -244,6 +286,154 @@ def run_selection(executable, condition, choice, audio_gate):
     assert after == before
     assert source_after == source
     assert state_after == state
+    assert cpu.mem_read(0, len(executable)) == executable
+    return result
+
+
+def run_text(executable, condition, gate="none", authored=None):
+    cpu = Uc(UC_ARCH_X86, UC_MODE_16)
+    cpu.mem_map(0, 0x70000)
+    cpu.mem_write(0, executable)
+    dictionary_base = 0x60000
+    source_origin = 0xFF if authored is None else authored[1]
+    line_offset = 0x700 if authored is None else struct.unpack_from("<H", authored[0]["COD"], source_origin + 1)[0]
+    before = bytearray(SIZE)
+    data = executable[0xF7F0:]
+    before[:len(data)] = data
+    struct.pack_into("<H", before, STACK, RETURN)
+    struct.pack_into("<HH", before, 0x6AEC, 0, STATE // 16)
+    struct.pack_into("<HH", before, 0x6AFC, 0, dictionary_base // 16)
+    struct.pack_into("<H", before, 0x6B94, 0x1234)
+    struct.pack_into("<H", before, 0x6B36, 32)
+    struct.pack_into("<H", before, 0x21F9, 85)
+    struct.pack_into("<H", before, 0x6228, 0x2222)
+    before[0x6B87] = 2
+    before[0x6B8A] = 9
+    before[0x6B8F] = 0
+    before[0xF49] = 0
+    before[0xF48] = 1
+    before[0x6B86] = int(gate == "menu")
+    before[0x6234] = int(gate == "subtitle")
+    before[0x6B92] = 1
+    before[0x6B80] = 0x40
+    before[0x2201] = 1
+    before[0x6BDC:0x6BDC + 34] = bytes(34)
+    before[0x1066:0x106B] = b"OLD\r\0"
+    struct.pack_into("<17H", before, 0x70E6, *condition["slots"], 65535)
+    cpu.mem_write(GLOBALS, bytes(before))
+    source = bytearray(SIZE)
+    control = 0x30 if gate == "inactive" else 0x8030
+    encoded = struct.pack("<BHbHH6H", 0xA6, line_offset, -3, control, 0x789,
+                          32, 48, 64, 65535, 65534, 0)
+    if authored is not None:
+        assert len(authored[0]["COD"]) <= SIZE
+        source[:len(authored[0]["COD"])] = authored[0]["COD"]
+        encoded = bytes(source[source_origin:source_origin + 16])
+        assert encoded[0] == 0xA6 and encoded[12:] == b"\xFE\xFF\0\0"
+    source[source_origin:source_origin + len(encoded)] = encoded
+    cpu.mem_write(SOURCE, bytes(source))
+    state = bytearray(SIZE)
+    for offset, kind in condition["kinds"]:
+        struct.pack_into("<H", state, offset, kind)
+    line_flags = 0x8020 if gate == "shown" else 0x20
+    if authored is not None:
+        assert len(authored[0]["VAR"]) <= SIZE
+        state[:len(authored[0]["VAR"])] = authored[0]["VAR"]
+        assert struct.unpack_from("<H", state, line_offset)[0] == 2
+        line_flags = struct.unpack_from("<H", state, line_offset + 2)[0] & ~0x8000
+        struct.pack_into("<H", state, authored[2] + 20, 65535)
+    else:
+        struct.pack_into("<H", state, line_offset, 2)
+    struct.pack_into("<H", state, line_offset + 2, line_flags)
+    action_offset = before[0x7128 + 19 * 16 + 1]
+    action = 195 if gate == "wrong_record" else 196
+    struct.pack_into("<H", state, line_offset + action_offset, action)
+    cpu.mem_write(STATE, bytes(state))
+    dictionary = bytearray(SIZE)
+    for offset, word in [(32, b"CHOISISSEZ"), (48, b"UN"), (64, b"OBJET")]:
+        dictionary[offset:offset + len(word) + 1] = word + b"\0"
+    if authored is not None:
+        assert len(authored[0]["DIC"]) <= SIZE
+        dictionary = bytearray(SIZE)
+        dictionary[:len(authored[0]["DIC"])] = authored[0]["DIC"]
+    cpu.mem_write(dictionary_base, bytes(dictionary))
+    registers = {
+        UC_X86_REG_CS: 0, UC_X86_REG_DS: SOURCE // 16, UC_X86_REG_ES: STATE // 16,
+        UC_X86_REG_GS: GLOBALS // 16, UC_X86_REG_SS: GLOBALS // 16,
+        UC_X86_REG_SP: STACK, UC_X86_REG_SI: source_origin + 1, UC_X86_REG_DI: 0x333,
+    }
+    for register, value in registers.items():
+        cpu.reg_write(register, value)
+    cpu.reg_write(UC_X86_REG_EFLAGS, 2)
+    global_outputs = [
+        (0x6B4E, 2), (0x6B87, 1), (0x6B36, 2), (0x6B4A, 2),
+        (0x21F9, 2), (0x6B8A, 1), (0x6B8F, 1), (0x6B94, 2),
+        (0x6BDC, 34), (0xF49, 1), (0xF48, 1), (0x6B86, 1),
+        (0x6234, 1), (0x6228, 2), (0x6B92, 1), (0x6B80, 1),
+        (0x1066, 128), (STACK - 32, 32),
+    ]
+    writable = [(GLOBALS + start, length) for start, length in global_outputs]
+    writable += [(SOURCE + source_origin + 5, 1), (STATE + line_offset + 2, 2)]
+    visited = set()
+
+    def instruction(_cpu, address, _size, _context):
+        assert any(start <= address < end for start, end in
+                   [(0x6B28, 0x6E0B), (0x6E4D, 0x6E67), (0x68A5, 0x68B5)]), hex(address)
+        visited.add(address)
+
+    def write(_cpu, _access, address, size, _value, _context):
+        assert any(start <= address < address + size <= start + length
+                   for start, length in writable), (hex(address), size)
+
+    cpu.hook_add(UC_HOOK_CODE, instruction)
+    cpu.hook_add(UC_HOOK_MEM_WRITE, write)
+    cpu.emu_start(0x6C89, RETURN, count=5000)
+    assert cpu.reg_read(UC_X86_REG_IP) == RETURN and 0x6E53 in visited
+    if gate == "none":
+        assert {0x6B28, 0x6C45, 0x68A5}.issubset(visited)
+    else:
+        assert 0x6B28 not in visited
+    registers[UC_X86_REG_SP] += 2
+    registers[UC_X86_REG_SI] = source_origin + len(encoded)
+    del registers[UC_X86_REG_ES]  # A6 deliberately retains its final working ES.
+    for register, value in registers.items():
+        assert cpu.reg_read(register) == value, (gate, register, cpu.reg_read(register), value)
+    after = bytearray(cpu.mem_read(GLOBALS, SIZE))
+    source_after = bytearray(cpu.mem_read(SOURCE, SIZE))
+    state_after = bytearray(cpu.mem_read(STATE, SIZE))
+    choices = []
+    for offset in range(0x6BDC, 0x6BDC + 34, 2):
+        value = struct.unpack_from("<H", after, offset)[0]
+        if value == 0:
+            break
+        choices.append(value)
+    else:
+        raise AssertionError("missing choice terminator")
+    result = {
+        "condition": condition["name"], "gate": gate, "encoded": list(encoded),
+        "line_flags_before": line_flags, "action": action,
+        "control": struct.unpack_from("<H", source_after, source_origin + 4)[0],
+        "line_flags": struct.unpack_from("<H", state_after, line_offset + 2)[0],
+        "choices": choices, "resume": after[0x6B87],
+        "resume_target": struct.unpack_from("<H", after, 0x6B4A)[0],
+        "alternate": struct.unpack_from("<H", after, 0x6B36)[0],
+        "saved_line": struct.unpack_from("<H", after, 0x6B94)[0],
+        "selector": struct.unpack_from("<h", after, 0x21F9)[0],
+        "yield": after[0x6B8A], "spoken": after[0x6B8F],
+        "voice": after[0xF49], "chatter": after[0xF48],
+        "menu_deferred": after[0x6B86], "subtitle_active": after[0x6234],
+        "hold_ready": after[0x6B92], "request_flags": after[0x6B80],
+        "subtitle_cursor": struct.unpack_from("<H", after, 0x6228)[0],
+        "subtitle": list(after[0x1066:0x10E6].split(b"\0", 1)[0]),
+    }
+    for start, length in global_outputs:
+        after[start:start + length] = before[start:start + length]
+    source_after[source_origin + 5] = source[source_origin + 5]
+    state_after[line_offset + 2:line_offset + 4] = state[line_offset + 2:line_offset + 4]
+    assert after == before
+    assert source_after == source
+    assert state_after == state
+    assert cpu.mem_read(dictionary_base, SIZE) == dictionary
     assert cpu.mem_read(0, len(executable)) == executable
     return result
 

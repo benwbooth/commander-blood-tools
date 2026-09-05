@@ -160,12 +160,11 @@ impl RuntimeScriptSystem {
             &mut self.service,
         )
         .map_err(|error| anyhow!("executing BloodScript frame: {error:?}"))?;
-        self.presentation_word_buffer_nonempty = !runtime
+        self.presentation_word_buffer_nonempty = runtime
             .current_profile()
             .context("BloodScript profile disappeared after execution")?
             .selector_state()
-            .pending_presentation_words()
-            .is_empty();
+            .has_pending_presentation_choices();
         Ok(outcome)
     }
 

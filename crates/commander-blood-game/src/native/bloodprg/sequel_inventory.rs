@@ -249,6 +249,348 @@ mod tests {
         pending_head: u16,
     }
 
+    #[derive(Deserialize)]
+    struct TextOracle {
+        condition: String,
+        gate: String,
+        encoded: Vec<u8>,
+        line_flags_before: u16,
+        action: u16,
+        control: u16,
+        line_flags: u16,
+        choices: Vec<u16>,
+        resume: u8,
+        resume_target: u16,
+        alternate: u16,
+        saved_line: u16,
+        selector: i16,
+        #[serde(rename = "yield")]
+        yield_signal: u8,
+        spoken: u8,
+        voice: u8,
+        chatter: u8,
+        menu_deferred: u8,
+        subtitle_active: u8,
+        hold_ready: u8,
+        request_flags: u8,
+        subtitle_cursor: u16,
+        #[serde(default)]
+        subtitle: Vec<u8>,
+    }
+
+    #[derive(Deserialize)]
+    struct AuthoredTextOracle {
+        profile: usize,
+        token_byte: usize,
+        offered_object: u16,
+        image_sha256: BTreeMap<String, String>,
+        subtitle_sha256: String,
+        #[serde(flatten)]
+        output: TextOracle,
+    }
+
+    fn assert_native_presentation(vector: &TextOracle, presentation: &TextPresentationState) {
+        assert_eq!(
+            presentation.selected_line.map(i16::from),
+            Some(vector.selector)
+        );
+        assert_eq!(presentation.yield_signal, vector.yield_signal);
+        assert_eq!(presentation.subtitle_word_list_mode, vector.spoken != 0);
+        assert_eq!(presentation.subtitle_voice_trigger, vector.voice != 0);
+        assert_eq!(presentation.dialogue_chatter_active, vector.chatter != 0);
+        assert_eq!(presentation.menu_deferred, vector.menu_deferred != 0);
+        assert_eq!(
+            presentation.subtitle_display_active,
+            vector.subtitle_active != 0
+        );
+        assert_eq!(presentation.hold_ready, vector.hold_ready != 0);
+        assert_eq!(presentation.request_flags.bits(), vector.request_flags);
+        assert_eq!(
+            presentation.subtitle_reveal_cursor.unwrap_or(0),
+            usize::from(vector.subtitle_cursor)
+        );
+    }
+
+    #[test]
+    fn sequel_inventory_complete_a6_matches_native_publication_and_gate_vectors() {
+        use super::super::{
+            ScriptFieldSelector, ScriptFrameFlow, ScriptResumePhase, ScriptSelectorState,
+            TextHandlerOutcome, TextInventoryContext, execute_text_instruction,
+            script_field_offset,
+        };
+        use commander_blood_formats::code::decode_script_code_for_dialect;
+        use commander_blood_formats::instruction::decode_script_text;
+        let conditions = conditions();
+        let vectors: Vec<TextOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_inventory_text.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), 27);
+        let mut dictionary_bytes = vec![0; 128];
+        for (offset, text) in [(32, b"CHOISISSEZ".as_slice()), (48, b"UN"), (64, b"OBJET")] {
+            dictionary_bytes[offset..offset + text.len()].copy_from_slice(text);
+        }
+        let dictionary = decode_script_dictionary(&dictionary_bytes).unwrap();
+        let mut checked = 0;
+        for vector in vectors {
+            if ["kind_mask", "no_inventory"].contains(&vector.condition.as_str()) {
+                continue;
+            }
+            let condition = conditions
+                .iter()
+                .find(|row| row.name == vector.condition)
+                .unwrap();
+            let (mut state, ids, roster) = fixture(condition);
+            let recipient = ids[&0x780];
+            let recipient_offset = state.object(recipient).unwrap().source_offset() as u16;
+            let flags = state.object_word(recipient, 1).unwrap();
+            state.set_word(flags, vector.line_flags_before);
+            let action_offset =
+                script_field_offset(ScriptObjectKind::Actor, ScriptFieldSelector::ACTION).unwrap();
+            let action = state.object_word(recipient, action_offset / 2).unwrap();
+            state.set_word(action, vector.action);
+            let mut expected_state = state.clone();
+            expected_state.set_word(flags, vector.line_flags);
+            let mut encoded = vector.encoded.clone();
+            // Normalize the native actor address to the fixture's owned identity.
+            encoded[1..3].copy_from_slice(&recipient_offset.to_le_bytes());
+            encoded.push(255);
+            let code = decode_script_code_for_dialect(&encoded, ScriptDialect::BigBugBang).unwrap();
+            let token = &code.tokens()[0];
+            let text = decode_script_text(token, &dictionary).unwrap();
+            let mut instruction = TextInstructionState::new(&text);
+            let mut runtime = runtime();
+            runtime.set_alternate_concept(Some(dictionary.resolve_source_offset(32).unwrap()));
+            let mut selector = ScriptSelectorState::default();
+            selector.inventory_mut().saved_line = Some(SequelInventoryLine {
+                instruction: ScriptCodeOffset::new(0x1234),
+                recipient,
+            });
+            let mut presentation = TextPresentationState {
+                selected_line: Some(85),
+                yield_signal: 9,
+                subtitle_reveal_cursor: Some(0x2222),
+                subtitle_text: Box::from(b"OLD\r".as_slice()),
+                dialogue_chatter_active: true,
+                menu_pending: true,
+                hold_ready: true,
+                menu_deferred: vector.gate == "menu",
+                subtitle_display_active: vector.gate == "subtitle",
+                request_flags: super::super::PresentationRequestFlags::decode(0x40),
+                ..Default::default()
+            };
+            let execution = execute_text_instruction(
+                &text,
+                &mut instruction,
+                &dictionary,
+                &mut state,
+                &mut selector,
+                &mut runtime,
+                &mut crate::native::random::BloodPrng::default(),
+                &mut presentation,
+                Some(TextInventoryContext {
+                    instruction: token.source_offset(),
+                    roster: &roster,
+                }),
+            )
+            .unwrap();
+            assert_eq!(
+                state, expected_state,
+                "{} {}",
+                vector.condition, vector.gate
+            );
+            assert_eq!(instruction.is_active(), vector.control & 0x8000 != 0);
+            assert_eq!(
+                selector.inventory().choices(),
+                vector
+                    .choices
+                    .iter()
+                    .map(|offset| ids[&(offset - 4)])
+                    .collect::<Vec<_>>()
+            );
+            assert_eq!(
+                selector.has_pending_presentation_choices(),
+                !vector.choices.is_empty()
+            );
+            let expected_instruction = if vector.saved_line == 0x102 {
+                token.source_offset()
+            } else {
+                ScriptCodeOffset::new(usize::from(vector.saved_line))
+            };
+            assert_eq!(
+                selector.inventory().saved_line().unwrap().instruction,
+                expected_instruction
+            );
+            assert_eq!(runtime.alternate_concept().is_none(), vector.alternate == 0);
+            match vector.resume {
+                0 => assert_eq!(runtime.resume_state(), None),
+                1 => {
+                    let resume = runtime.resume_state().unwrap();
+                    assert_eq!(resume.phase, ScriptResumePhase::LoopArmed);
+                    assert_eq!(resume.target.index(), usize::from(vector.resume_target));
+                }
+                other => panic!("unexpected native resume phase {other}"),
+            }
+            assert_native_presentation(&vector, &presentation);
+            assert_eq!(presentation.subtitle_text.as_ref(), vector.subtitle);
+            assert!(presentation.menu_pending);
+            let published = vector.voice != 0;
+            assert_eq!(
+                execution.outcome == TextHandlerOutcome::SubtitlePublished,
+                published
+            );
+            assert_eq!(
+                execution.flow,
+                if published {
+                    ScriptFrameFlow::SaveResumeCursor
+                } else {
+                    ScriptFrameFlow::Continue
+                }
+            );
+            checked += 1;
+        }
+        assert_eq!(checked, 25);
+    }
+
+    #[test]
+    #[ignore = "requires original sequel loose COD/VAR/DEB/DIC resources"]
+    fn sequel_inventory_all_authored_a6_subtitles_and_state_match_original_executable() {
+        use super::super::{
+            ScriptFieldSelector, ScriptFrameFlow, ScriptResumePhase, ScriptSelectorState,
+            TextHandlerOutcome, TextInventoryContext, execute_text_instruction,
+            insert_aboard_object, script_field_offset,
+        };
+        use commander_blood_formats::code::decode_script_code_for_dialect;
+        use commander_blood_formats::instruction::decode_script_text;
+        use sha2::{Digest, Sha256};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let vectors: Vec<AuthoredTextOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_authored_inventory_text.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), 46);
+        for vector in vectors {
+            let read = |suffix: &str| {
+                let bytes =
+                    std::fs::read(root.join(format!("SCRIPT{}.{suffix}", vector.profile))).unwrap();
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&bytes)),
+                    vector.image_sha256[suffix]
+                );
+                bytes
+            };
+            let directory = decode_script_directory(&read("DEB")).unwrap();
+            let dictionary = decode_script_dictionary(&read("DIC")).unwrap();
+            let mut state = decode_script_state_for_dialect(
+                &read("VAR"),
+                &directory,
+                ScriptDialect::BigBugBang,
+            )
+            .unwrap();
+            let code =
+                decode_script_code_for_dialect(&read("COD"), ScriptDialect::BigBugBang).unwrap();
+            let token = code
+                .tokens()
+                .iter()
+                .find(|token| token.source_offset().index() == vector.token_byte)
+                .unwrap();
+            assert_eq!(token.encoded_bytes(), vector.output.encoded);
+            let text = decode_script_text(token, &dictionary).unwrap();
+            let recipient = state
+                .objects()
+                .iter()
+                .find(|object| object.source_offset() == text.line_record.byte_offset())
+                .unwrap()
+                .id;
+            let offered = state
+                .objects()
+                .iter()
+                .find(|object| object.source_offset() == usize::from(vector.offered_object))
+                .unwrap()
+                .id;
+            let flags = state.object_word(recipient, 1).unwrap();
+            let holder = state.object_word(offered, 10).unwrap();
+            let action_offset =
+                script_field_offset(ScriptObjectKind::Actor, ScriptFieldSelector::ACTION).unwrap();
+            let action = state.object_word(recipient, action_offset / 2).unwrap();
+            state.set_word(flags, vector.output.line_flags_before);
+            state.set_word(action, vector.output.action);
+            state.set_word(holder, u16::MAX);
+            let mut expected_state = state.clone();
+            expected_state.set_word(flags, vector.output.line_flags);
+            let mut roster = AboardObjectRoster::default();
+            assert!(insert_aboard_object(&mut roster, offered));
+            let mut runtime = runtime();
+            runtime.set_alternate_concept(Some(dictionary.words().next().unwrap().0));
+            let mut selector = ScriptSelectorState::default();
+            let mut presentation = TextPresentationState {
+                selected_line: Some(85),
+                yield_signal: 9,
+                subtitle_reveal_cursor: Some(0x2222),
+                subtitle_text: Box::from(b"OLD\r".as_slice()),
+                dialogue_chatter_active: true,
+                menu_pending: true,
+                hold_ready: true,
+                request_flags: super::super::PresentationRequestFlags::decode(0x40),
+                ..Default::default()
+            };
+            let mut instruction = TextInstructionState::new(&text);
+            let execution = execute_text_instruction(
+                &text,
+                &mut instruction,
+                &dictionary,
+                &mut state,
+                &mut selector,
+                &mut runtime,
+                &mut crate::native::random::BloodPrng::default(),
+                &mut presentation,
+                Some(TextInventoryContext {
+                    instruction: token.source_offset(),
+                    roster: &roster,
+                }),
+            )
+            .unwrap();
+            assert_eq!(
+                execution.outcome,
+                TextHandlerOutcome::SubtitlePublished,
+                "{}",
+                vector.output.condition
+            );
+            assert_eq!(execution.flow, ScriptFrameFlow::SaveResumeCursor);
+            assert_eq!(state, expected_state);
+            assert_native_presentation(&vector.output, &presentation);
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&presentation.subtitle_text)),
+                vector.subtitle_sha256,
+                "{}",
+                vector.output.condition
+            );
+            assert_eq!(selector.inventory().choices(), &[offered]);
+            assert_eq!(vector.output.choices, [vector.offered_object + 4]);
+            let saved = selector.inventory().saved_line().unwrap();
+            assert_eq!(
+                saved.instruction.index() + 3,
+                usize::from(vector.output.saved_line)
+            );
+            assert_eq!(saved.recipient, recipient);
+            assert_eq!(instruction.is_active(), vector.output.control & 0x8000 != 0);
+            assert_eq!(runtime.alternate_concept(), None);
+            let resume = runtime.resume_state().unwrap();
+            assert_eq!(resume.phase, ScriptResumePhase::LoopArmed);
+            assert_eq!(
+                resume.target.index(),
+                usize::from(vector.output.resume_target)
+            );
+            assert!(selector.pending_presentation_words().is_empty());
+            assert!(presentation.menu_words.is_empty());
+        }
+    }
+
     fn conditions() -> Vec<Condition> {
         include_str!(
             "../../../../../re/tools/oracle_vectors/big_bug_bang_inventory_condition.jsonl"
