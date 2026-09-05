@@ -52,6 +52,9 @@ pub(super) struct RuntimeBridgeActors {
     black_hole: BlackHolePresentationActorState<ScriptObjectId>,
     hyperjump: HyperjumpPresentationActorState<ScriptObjectId>,
     location_panel: HyperjumpLocationPanelState,
+    /// Native sequel overview ownership; its separate controller is not the
+    /// ordinary location panel and must not borrow that panel's active flag.
+    pub(super) simulation_overview_active: bool,
 }
 
 impl RuntimeBridgeActors {
@@ -549,6 +552,12 @@ impl NavActorSlotBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl CameraPresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn sequel_presentation_control(
+        &self,
+    ) -> Option<crate::native::bloodprg::SequelPresentationControl> {
+        self.services.sequel_presentation_control()
+    }
+
     fn request_camera_hand_animation(&mut self) {
         self.services
             .request_manu3_animation(Manu3AnimationSelector::CameraOrHyperjump);

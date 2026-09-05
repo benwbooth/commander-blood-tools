@@ -623,7 +623,8 @@ pub use sequel_growth::{
     SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth, apply_sequel_settlement,
 };
 pub use sequel_presentation::{
-    SequelPanelActorAction, SequelPanelCompletion, SequelPresentationControl,
+    SequelPanelActivation, SequelPanelActivationState, SequelPanelActorAction,
+    SequelPanelCompletion, SequelPresentationControl, activate_sequel_panel_request,
     assign_presentation_sequence,
 };
 pub use sequence::{

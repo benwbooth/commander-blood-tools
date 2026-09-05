@@ -99,6 +99,11 @@ impl<RecordLink> Default for CameraPresentationActorState<RecordLink> {
 
 /// Line, page, audio, entity, and ship services used by the camera actor.
 pub trait CameraPresentationActorBackend: PresentationLineStepper {
+    /// Sequel controls; absent for Commander, with no choice for ordinary actions.
+    fn sequel_presentation_control(&self) -> Option<super::SequelPresentationControl> {
+        None
+    }
+
     /// Publish selector 10 through the shared MANU3 request word.
     fn request_camera_hand_animation(&mut self);
 
@@ -173,9 +178,14 @@ pub fn update_camera_presentation_actor<RecordLink, Backend: CameraPresentationA
 
     backend.mark_location_panel_entity_dirty();
     state.selected_location = None;
-    state.presentation = CameraActorPresentation::CameraView;
-    backend.request_camera_hand_animation();
-    state.mouse_primary_pressed = false;
+    if backend
+        .sequel_presentation_control()
+        .is_none_or(|control| control.camera_selects_hand())
+    {
+        state.presentation = CameraActorPresentation::CameraView;
+        backend.request_camera_hand_animation();
+        state.mouse_primary_pressed = false;
+    }
 
     let mut transition_requested = false;
     let line_outcome = backend.update_line(line, line_playback)?;
@@ -288,6 +298,7 @@ mod tests {
     }
 
     struct OracleBackend {
+        sequel: Option<super::super::SequelPresentationControl>,
         frame_after_helper: u16,
         helper_completed: bool,
         page_flip_outcome: CameraPageFlipOutcome,
@@ -314,6 +325,10 @@ mod tests {
     }
 
     impl CameraPresentationActorBackend for OracleBackend {
+        fn sequel_presentation_control(&self) -> Option<super::super::SequelPresentationControl> {
+            self.sequel
+        }
+
         fn request_camera_hand_animation(&mut self) {
             self.hand_animation_requested = true;
         }
@@ -370,6 +385,7 @@ mod tests {
                 screen_rebuild_pending: false,
             };
             let mut backend = OracleBackend {
+                sequel: None,
                 frame_after_helper: vector.frame_after_helper,
                 helper_completed: vector.line_helper_completed,
                 page_flip_outcome: decode_page_flip(vector.page_flip_result),
@@ -489,6 +505,96 @@ mod tests {
                 vector.name
             );
             assert_event_order(&backend.events, &vector.name);
+        }
+    }
+
+    #[test]
+    fn sequel_scripted_camera_exit_advances_without_replacing_hand_or_clearing_input() {
+        use super::super::{
+            NAV_ACTOR_SLOT_COUNT, NavActorSlot, SequelPanelActivation, SequelPanelActivationState,
+            SequelPresentationControl, activate_sequel_panel_request,
+        };
+        use commander_blood_formats::instruction::ScriptSequenceSlot;
+        for pending in [None, ScriptSequenceSlot::decode(2)] {
+            let control = SequelPresentationControl {
+                ending_active: true,
+                requested_choice: pending,
+            };
+            let mut activation = SequelPanelActivationState {
+                camera_view_active: true,
+                simulation_overview_active: true,
+                ..SequelPanelActivationState::default()
+            };
+            let mut slots = [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT];
+            if pending.is_some() {
+                assert_eq!(
+                    activate_sequel_panel_request(control, &mut activation, &mut slots),
+                    SequelPanelActivation::CameraExitRequested
+                );
+                assert!(!activation.simulation_overview_active);
+                assert_eq!(slots[0].flags.executable_flags(), 8);
+                assert_eq!(slots[2].flags.executable_flags(), 0);
+            }
+            let mut state = CameraPresentationActorState::<u16> {
+                camera_view_active: true,
+                mouse_primary_pressed: true,
+                ..CameraPresentationActorState::default()
+            };
+            let mut line = PresentationLine {
+                flags: decode_line_flags(9),
+                resource: PresentationResourceId::new(1),
+                terminal_frame: CAMERA_TRANSITION_FRAME,
+                frame: 1,
+                position: [0, 0],
+            };
+            let mut playback = PresentationLinePlayback::default();
+            let mut backend = OracleBackend {
+                sequel: Some(super::super::SequelPresentationControl {
+                    ending_active: true,
+                    requested_choice: pending,
+                }),
+                frame_after_helper: 8,
+                helper_completed: true,
+                page_flip_outcome: CameraPageFlipOutcome::KeepCurrentView,
+                hand_animation_requested: false,
+                events: Vec::new(),
+            };
+            let result = update_camera_presentation_actor(
+                true,
+                CameraPresentationBlockers::default(),
+                &mut line,
+                &mut playback,
+                &mut state,
+                &mut backend,
+            )
+            .unwrap();
+            assert_eq!(
+                result,
+                CameraPresentationActorOutcome::CameraViewDeactivated
+            );
+            assert!(backend.events.contains(&BackendEvent::LinePlayback));
+            assert!(backend.events.contains(&BackendEvent::ShipReset));
+            assert_eq!(backend.hand_animation_requested, pending.is_none());
+            assert_eq!(state.mouse_primary_pressed, pending.is_some());
+            assert_eq!(
+                state.presentation == CameraActorPresentation::CameraView,
+                pending.is_none()
+            );
+            assert!(state.screen_rebuild_pending);
+            if pending.is_some() {
+                activation.camera_view_active = state.camera_view_active;
+                assert_eq!(
+                    activate_sequel_panel_request(control, &mut activation, &mut slots),
+                    SequelPanelActivation::PanelRequested
+                );
+                assert_eq!(slots[2].flags.executable_flags(), 9);
+                assert!(activation.redraw_requested);
+                assert_eq!(
+                    activate_sequel_panel_request(control, &mut activation, &mut slots),
+                    SequelPanelActivation::Unchanged
+                );
+                assert_eq!(backend.sequel.unwrap().requested_choice, pending);
+            }
         }
     }
 

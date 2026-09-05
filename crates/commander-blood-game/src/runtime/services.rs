@@ -3562,6 +3562,34 @@ impl<'window> ModernGameServices<'window> {
         outcome
     }
 
+    /// Arm the sequel's scripted panel request before hover and actor updates.
+    pub(super) fn prepare_sequel_panel_activation(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<()> {
+        use crate::native::bloodprg::{SequelPanelActivationState, activate_sequel_panel_request};
+        let Some(control) = self.sequel_presentation_control() else {
+            return Ok(());
+        };
+        let mut state = SequelPanelActivationState {
+            panel_active: self.presentation_screen_state()?.active(),
+            camera_view_active: self.bridge_camera_view_active(),
+            simulation_overview_active: self
+                .bridge_actors
+                .as_ref()
+                .context("bridge actor state is already being updated")?
+                .simulation_overview_active,
+            redraw_requested: lifecycle.modal_ui_busy(),
+        };
+        activate_sequel_panel_request(control, &mut state, &mut self.nav_actor_slots);
+        self.bridge_actors
+            .as_mut()
+            .context("bridge actor state is already being updated")?
+            .simulation_overview_active = state.simulation_overview_active;
+        lifecycle.set_modal_ui_busy(state.redraw_requested);
+        Ok(())
+    }
+
     /// Advance all six executable-authored bridge actor slots in native order.
     pub fn update_runtime_bridge_actors(
         &mut self,

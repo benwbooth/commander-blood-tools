@@ -157,7 +157,10 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
         &mut self,
         _state: &mut crate::native::bloodprg::BridgeFrameState,
     ) -> Result<()> {
-        self.services.update_bridge_presentation_mode_bits()
+        self.services.update_bridge_presentation_mode_bits()?;
+        // BLOOD2PG calls 0x8A48 here, before geometry, hover and actor processing.
+        self.services
+            .prepare_sequel_panel_activation(self.lifecycle)
     }
 
     fn commit_sprite_geometry(

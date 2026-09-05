@@ -34,7 +34,7 @@ REVERSE = 0x2A80
 SHUTDOWN = 0x0D1D
 
 
-def run(executable, name, entry, stops, writes, values, token=b""):
+def run(executable, name, entry, stops, writes, values, token=b"", stack_scratch=0):
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
     machine.mem_map(0, 0x60000)
     machine.mem_write(0, executable)
@@ -68,6 +68,7 @@ def run(executable, name, entry, stops, writes, values, token=b""):
     changes = {str(offset): after[offset] for offset in writes}
     for offset in writes:
         after[offset] = before[offset]
+    after[STACK_TOP - stack_scratch:STACK_TOP] = before[STACK_TOP - stack_scratch:STACK_TOP]
     assert before == after, f"{name}: unexpected write outside declared output"
     return {"name": name, "input": {str(k): v for k, v in values.items()},
             "token": list(token), "destination": reached[0], "output": changes,

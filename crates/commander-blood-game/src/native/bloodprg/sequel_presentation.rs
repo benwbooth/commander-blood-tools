@@ -5,7 +5,58 @@
 use commander_blood_formats::code::ScriptDialect;
 use commander_blood_formats::instruction::{ScriptSequenceSlot, ScriptSequenceSlotAssignment};
 
-use super::ScriptSequenceSlots;
+use super::{NavActorSlot, ScriptSequenceSlots};
+
+const CAMERA_ACTOR_SLOT: usize = 0;
+const PANEL_ACTOR_SLOT: usize = 2;
+
+/// Inputs and output flags shared with the sequel's automatic panel opener.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SequelPanelActivationState {
+    /// Whether the panel already owns the bridge (native 0x2A81).
+    pub panel_active: bool,
+    /// Whether the chart/camera view must first be closed (native 0x2A25).
+    pub camera_view_active: bool,
+    /// Sequel simulation-overview mode (native 0x2A30), not a planet choice.
+    pub simulation_overview_active: bool,
+    /// Shared redraw/modal UI bit, preserved unless the panel is newly armed.
+    pub redraw_requested: bool,
+}
+
+/// The original helper arms an actor; it never fabricates a pointer event.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SequelPanelActivation {
+    /// No request, an already active panel, or an already armed panel actor.
+    Unchanged,
+    /// The camera actor was armed and simulation overview was disabled.
+    CameraExitRequested,
+    /// The panel actor was activated and armed, with a redraw request.
+    PanelRequested,
+}
+
+/// Complete CC activation helper at 0x8A48-0x8A7C, before sprite commit and hover.
+pub fn activate_sequel_panel_request(
+    control: SequelPresentationControl,
+    state: &mut SequelPanelActivationState,
+    slots: &mut [NavActorSlot; super::NAV_ACTOR_SLOT_COUNT],
+) -> SequelPanelActivation {
+    if control.requested_choice.is_none() || state.panel_active {
+        return SequelPanelActivation::Unchanged;
+    }
+    if state.camera_view_active {
+        slots[CAMERA_ACTOR_SLOT].flags.auto_seek = true;
+        state.simulation_overview_active = false;
+        return SequelPanelActivation::CameraExitRequested;
+    }
+    let panel = &mut slots[PANEL_ACTOR_SLOT];
+    if panel.flags.auto_seek {
+        return SequelPanelActivation::Unchanged;
+    }
+    state.redraw_requested = true;
+    panel.flags.active = true;
+    panel.flags.auto_seek = true;
+    SequelPanelActivation::PanelRequested
+}
 
 /// Session-owned sequel controls, retained across script-profile changes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -71,6 +122,12 @@ impl SequelPresentationControl {
             SequelPanelActorAction::Ordinary
         }
     }
+
+    /// At 0x91F5 a pending CC skips both the camera hand-selection write and
+    /// primary-input clear. It still advances the ordinary camera line.
+    pub const fn camera_selects_hand(self) -> bool {
+        self.requested_choice.is_none()
+    }
 }
 
 /// Apply the shared CC slot copy and the sequel's additional request write.
@@ -122,6 +179,105 @@ mod tests {
         } else {
             ScriptSequenceSlot::decode(value + 1)
         }
+    }
+
+    #[test]
+    fn sequel_panel_activation_matches_complete_native_helper_and_camera_gate() {
+        use super::super::NavActorSlotFlags;
+        const PANEL_ACTIVE: u16 = 0x2A81;
+        const CAMERA_ACTIVE: u16 = 0x2A25;
+        const OVERVIEW_ACTIVE: u16 = 0x2A30;
+        const CAMERA_FLAGS: u16 = 0x2CBB;
+        const PANEL_FLAGS: u16 = CAMERA_FLAGS + 48;
+        const UI_FLAGS: u16 = 0x2A33;
+        const HAND_SELECTOR: u16 = 0x0C2A;
+        const REDRAW_FLAG: u8 = 4;
+        const CAMERA_HAND_SELECTOR: u8 = 10;
+        let mut count = 0;
+        for line in include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_panel_activation.jsonl"
+        )
+        .lines()
+        {
+            let vector: Oracle = serde_json::from_str(line).unwrap();
+            let control = SequelPresentationControl {
+                ending_active: count % 2 != 0,
+                requested_choice: choice(vector.input[&PENDING_CHOICE]),
+            };
+            if vector.name.starts_with("activate_") {
+                let mut state = SequelPanelActivationState {
+                    panel_active: vector.input[&PANEL_ACTIVE] != 0,
+                    camera_view_active: vector.input[&CAMERA_ACTIVE] != 0,
+                    simulation_overview_active: vector.input[&OVERVIEW_ACTIVE] != 0,
+                    redraw_requested: vector.input[&UI_FLAGS] & REDRAW_FLAG != 0,
+                };
+                let mut slots = [NavActorSlot::default(); super::super::NAV_ACTOR_SLOT_COUNT];
+                for (index, slot) in slots.iter_mut().enumerate() {
+                    slot.target_arc = index as u16 + 1;
+                }
+                slots[CAMERA_ACTOR_SLOT].flags =
+                    NavActorSlotFlags::from_executable(vector.input[&CAMERA_FLAGS]);
+                slots[PANEL_ACTOR_SLOT].flags =
+                    NavActorSlotFlags::from_executable(vector.input[&PANEL_FLAGS]);
+                let before = slots;
+                activate_sequel_panel_request(control, &mut state, &mut slots);
+                assert_eq!(
+                    u8::from(state.simulation_overview_active),
+                    vector.output[&OVERVIEW_ACTIVE],
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    (vector.input[&UI_FLAGS] & !REDRAW_FLAG)
+                        | (u8::from(state.redraw_requested) * REDRAW_FLAG),
+                    vector.output[&UI_FLAGS],
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    slots[CAMERA_ACTOR_SLOT].flags.executable_flags(),
+                    vector.output[&CAMERA_FLAGS],
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    slots[PANEL_ACTOR_SLOT].flags.executable_flags(),
+                    vector.output[&PANEL_FLAGS],
+                    "{}",
+                    vector.name
+                );
+                slots[CAMERA_ACTOR_SLOT].flags = before[CAMERA_ACTOR_SLOT].flags;
+                slots[PANEL_ACTOR_SLOT].flags = before[PANEL_ACTOR_SLOT].flags;
+                assert_eq!(
+                    slots, before,
+                    "activation must not change other actor fields"
+                );
+                assert_eq!(state.panel_active, vector.input[&PANEL_ACTIVE] != 0);
+                assert_eq!(state.camera_view_active, vector.input[&CAMERA_ACTIVE] != 0);
+            } else if vector.name.starts_with("camera_") {
+                let selected = control.camera_selects_hand();
+                assert_eq!(
+                    if selected {
+                        CAMERA_HAND_SELECTOR
+                    } else {
+                        vector.input[&HAND_SELECTOR]
+                    },
+                    vector.output[&HAND_SELECTOR],
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    if selected { 0 } else { vector.input[&PRIMARY] },
+                    vector.output[&PRIMARY],
+                    "{}",
+                    vector.name
+                );
+            } else {
+                panic!("unhandled reference case {}", vector.name);
+            }
+            count += 1;
+        }
+        assert_eq!(count, 396);
     }
 
     #[test]
