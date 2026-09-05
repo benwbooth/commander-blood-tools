@@ -27,6 +27,8 @@ const CHANNEL_COLOR_INDEX: usize = 254;
 const CHANNEL_CANVAS: [usize; 2] = [320, 200];
 const INLINE_DIALOGUE_COLOR: usize = 239;
 const INLINE_DIALOGUE_CLIP_HEIGHT: i32 = 10;
+const PANEL_TEXT_COLORS: [usize; 2] = [238, 254];
+const MAIN_FONT_SPACE_ADVANCE: i32 = 6;
 
 /// Precolored progressive-dialogue glyphs and channel masks, imported once.
 pub(crate) struct DialogueUiAssets {
@@ -38,6 +40,7 @@ pub(crate) struct DialogueUiAssets {
     inline_character_map: Box<[u8]>,
     inline_advances: Box<[u8]>,
     inline_color: [u8; 4],
+    panel_fonts: [SequenceCaptionFont; 2],
 }
 
 impl DialogueUiAssets {
@@ -109,6 +112,10 @@ impl DialogueUiAssets {
             target.copy_from_slice(rows);
         }
         let inline_font = SequenceCaptionFont::import(&inline_rows, source[INLINE_DIALOGUE_COLOR])?;
+        let panel_fonts = [
+            SequenceCaptionFont::import(&inline_rows, source[PANEL_TEXT_COLORS[0]])?,
+            SequenceCaptionFont::import(&inline_rows, source[PANEL_TEXT_COLORS[1]])?,
+        ];
         let rgb =
             source[INLINE_DIALOGUE_COLOR].map(|component| (component << 2) | (component >> 4));
         Ok(Self {
@@ -120,6 +127,7 @@ impl DialogueUiAssets {
             inline_character_map: Box::from(fonts.main_character_map.as_slice()),
             inline_advances: Box::from(fonts.main_advances.as_slice()),
             inline_color: [rgb[0], rgb[1], rgb[2], OPAQUE],
+            panel_fonts,
         })
     }
 
@@ -174,6 +182,52 @@ impl DialogueUiAssets {
             x = x.saturating_add(advance);
         }
         Ok(())
+    }
+
+    /// `main_font_text_draw_display` differs from dialogue words: spaces advance
+    /// without contributing to draw_width, and high-bit glyph mappings are skipped.
+    pub(crate) fn draw_main_line(
+        &self,
+        overlay: &mut RgbaUiOverlay,
+        text: &[u8],
+        origin: [i32; 2],
+        color: u8,
+    ) -> Result<u16> {
+        let slot = PANEL_TEXT_COLORS
+            .iter()
+            .position(|&value| value == usize::from(color))
+            .context("unknown location-panel text style")?;
+        if origin[1] <= -(SUBTITLE_GLYPH_SIZE as i32) || origin[1] >= CHANNEL_CANVAS[1] as i32 {
+            return Ok(0);
+        }
+        let mut x = origin[0];
+        let mut width = 0u16;
+        for &character in text.iter().take_while(|&&byte| byte != 0) {
+            if character == b' ' {
+                x = x.saturating_add(MAIN_FONT_SPACE_ADVANCE);
+                continue;
+            }
+            let index = *self
+                .inline_character_map
+                .get(usize::from(character))
+                .context("panel text byte outside font map")?;
+            if index & SKIPPED_GLYPH_BIT != 0 {
+                continue;
+            }
+            let advance = *self
+                .inline_advances
+                .get(usize::from(index))
+                .context("panel text references missing glyph")? as i8
+                as i32;
+            overlay.blit_image(
+                &self.panel_fonts[slot].glyphs[usize::from(index)],
+                [SUBTITLE_GLYPH_SIZE; 2],
+                [x, origin[1]],
+            );
+            x = x.saturating_add(advance);
+            width = width.wrapping_add(advance as u16);
+        }
+        Ok(width)
     }
 
     pub(crate) fn draw_line(
@@ -422,6 +476,31 @@ impl RgbaUiOverlay {
         self.fill_rect(origin, size, [0, 0, 0, DARKEN_ALPHA]);
     }
 
+    /// Dim already drawn RGB artwork as well as the base page behind transparent pixels.
+    pub(crate) fn darken_composited_rect(&mut self, origin: [i32; 2], size: [u16; 2]) {
+        let left = origin[0].clamp(0, self.width as i32) as usize;
+        let top = origin[1].clamp(0, self.height as i32) as usize;
+        let right = origin[0]
+            .saturating_add(i32::from(size[0]))
+            .clamp(0, self.width as i32) as usize;
+        let bottom = origin[1]
+            .saturating_add(i32::from(size[1]))
+            .clamp(0, self.height as i32) as usize;
+        for y in top..bottom {
+            for x in left..right {
+                let offset = (y * self.width + x) * RGBA_COMPONENTS;
+                let pixel = &mut self.pixels[offset..offset + RGBA_COMPONENTS];
+                if pixel[3] == OPAQUE {
+                    for component in &mut pixel[..3] {
+                        *component /= 2;
+                    }
+                } else {
+                    pixel.copy_from_slice(&[0, 0, 0, DARKEN_ALPHA]);
+                }
+            }
+        }
+    }
+
     pub(crate) fn fill_rect(&mut self, origin: [i32; 2], size: [u16; 2], color: [u8; 4]) {
         let left = origin[0].clamp(0, self.width as i32) as usize;
         let top = origin[1].clamp(0, self.height as i32) as usize;
@@ -467,6 +546,60 @@ impl RgbaUiOverlay {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rgb_panel_text_matches_main_font_raster_and_width() {
+        use crate::native::bloodprg::{FontPoint, FontVerticalBand, draw_main_font_text};
+        let fonts = commander_blood_formats::bloodprg::decode_bloodprg_font_resources(
+            include_bytes!("../../../re/bin/BLOODPRG.EXE"),
+        )
+        .unwrap();
+        let colors = commander_blood_formats::palette::decode_bloodprg_default_vga_palette(
+            include_bytes!("../../../re/bin/BLOODPRG.EXE"),
+        )
+        .unwrap();
+        let assets = DialogueUiAssets::import(&fonts, &colors).unwrap();
+        for color in PANEL_TEXT_COLORS {
+            for y in [-8, 0, 25, 192, 200] {
+                let mut overlay = RgbaUiOverlay::new(320, 200);
+                let mut reference = vec![0; 320 * 200];
+                let expected = draw_main_font_text(
+                    &mut reference,
+                    &fonts,
+                    b"Planet Pterra",
+                    FontPoint { x: 110, y },
+                    FontVerticalBand {
+                        top: 0,
+                        bottom: 199,
+                    },
+                    color as u8,
+                )
+                .unwrap();
+                let width = assets
+                    .draw_main_line(&mut overlay, b"Planet Pterra", [110, y], color as u8)
+                    .unwrap();
+                assert_eq!(width, expected.draw_width);
+                for (&index, pixel) in reference.iter().zip(overlay.pixels().chunks_exact(4)) {
+                    let expected = if index == 0 {
+                        [0; 4]
+                    } else {
+                        let rgb =
+                            colors[usize::from(index)].map(|value| (value << 2) | (value >> 4));
+                        [rgb[0], rgb[1], rgb[2], 255]
+                    };
+                    assert_eq!(pixel, expected, "style {color} at row {y}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn panel_dimming_preserves_artwork_and_darkens_the_underlying_page() {
+        let mut overlay = RgbaUiOverlay::new(2, 1);
+        overlay.fill_rect([0, 0], [1, 1], [200, 100, 50, 255]);
+        overlay.darken_composited_rect([0, 0], [2, 1]);
+        assert_eq!(overlay.pixels(), &[100, 50, 25, 255, 0, 0, 0, DARKEN_ALPHA]);
+    }
 
     #[test]
     fn rgb_dialogue_glyphs_and_channel_masks_match_native_rasters() {

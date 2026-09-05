@@ -53,6 +53,8 @@ const SCRUT_RESOURCE_NAME: &[u8] = b"SCRUT.XDB";
 const SAVE_SLOT_DIRECTORY_RESOURCE_NAME: &[u8] = b"BLOOD.SAV";
 const STARTUP_CARTOGRAPHY_RESOURCE: ResourceId = ResourceId::new(44);
 const STARTUP_CARTOGRAPHY_RESOURCE_NAME: &[u8] = b"carte.spr";
+const LOCATION_PANEL_ENTITY: usize = 0;
+const LOCATION_PANEL_TRANSITION_ENTITY: u16 = 1;
 const PAUSE_HUD_CLEAR_COLOR: u8 = u8::MIN;
 const DIALOGUE_OVERLAY_ENTITY_INDEX: usize = 4;
 const NAME_AREA_EFFECT_ENTITY_INDEX: usize = 2;
@@ -735,24 +737,6 @@ impl OriginalGameRuntime {
         .context("publishing a navigation work-surface span")
     }
 
-    /// Apply the bridge's recovered 50-percent dark remap to one logical rectangle.
-    pub(super) fn remap_bridge_dark_region(
-        &mut self,
-        origin: RasterPoint,
-        width: u16,
-        height: u16,
-    ) -> Result<RasterRectOutcome> {
-        remap_framebuffer_rect(
-            self.front_buffer.pixels_mut(),
-            LOGICAL_DISPLAY_CLIP,
-            origin,
-            width,
-            height,
-            &self.bridge_dark_remap,
-        )
-        .context("remapping a navigation panel rectangle")
-    }
-
     /// Capture the current display as the source page for the ship-depth effect.
     pub fn capture_ship_depth_source(&mut self) {
         self.back_buffer.copy_from(&self.front_buffer);
@@ -1046,8 +1030,9 @@ impl OriginalGameRuntime {
         self.resource_cache.resolve(STARTUP_CARTOGRAPHY_RESOURCE)
     }
 
-    /// Load one palette-prefixed sprite into the flat resource cache.
+    /// Load panel geometry without publishing its source colors to the game surface.
     pub(super) fn load_cached_palette_sprite(&mut self, resource: ResourceId) -> Result<()> {
+        let mut source_colors = *self.data.default_vga_palette();
         let loaded = self
             .resource_cache
             .load_palette_resource(
@@ -1055,7 +1040,7 @@ impl OriginalGameRuntime {
                 self.data.resource_catalog(),
                 resource,
                 PaletteResourceTarget::Cached,
-                &mut self.live_palette,
+                &mut source_colors,
             )
             .with_context(|| format!("loading palette sprite resource {}", resource.value()))?;
         if !matches!(loaded.storage, PaletteResourceStorage::Cached(_)) {
@@ -1065,6 +1050,44 @@ impl OriginalGameRuntime {
             );
         }
         Ok(())
+    }
+
+    /// Keep the native dirty-range walk, but draw the planet from startup RGB assets.
+    pub(super) fn rasterize_location_panel(&mut self, include_transition: bool) -> Result<()> {
+        if include_transition {
+            self.rasterize_ship_entity_range_to_front(
+                LOCATION_PANEL_TRANSITION_ENTITY..LOCATION_PANEL_TRANSITION_ENTITY + 1,
+            )?;
+        }
+        let dispatch = crate::native::bloodprg::render_bridge_sprite_dirty_range(
+            &mut self.bridge_sprite_entities,
+            LOCATION_PANEL_ENTITY,
+            LOCATION_PANEL_ENTITY,
+            &self.bridge_dirty_regions.regions,
+        )?;
+        for request in &dispatch.draw_requests {
+            let mut entity = self.bridge_sprite_entities[request.entity_index];
+            entity.dirty_region = Some(request.dirty_region);
+            self.data
+                .world_artwork_assets
+                .draw(&mut self.ui_overlay, &entity)?;
+        }
+        Ok(())
+    }
+
+    pub(super) fn darken_location_panel(&mut self, origin: [i32; 2], size: [u16; 2]) {
+        self.ui_overlay.darken_composited_rect(origin, size);
+    }
+
+    pub(super) fn draw_location_panel_text(
+        &mut self,
+        text: &[u8],
+        origin: [i32; 2],
+        color: u8,
+    ) -> Result<u16> {
+        self.data
+            .dialogue_ui_assets
+            .draw_main_line(&mut self.ui_overlay, text, origin, color)
     }
 
     /// Populate one checked bridge sprite slot from a cached resource frame.

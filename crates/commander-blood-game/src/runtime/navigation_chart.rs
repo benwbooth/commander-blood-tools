@@ -16,15 +16,17 @@ use crate::native::bloodprg::{
     NavigationChartCopySpan, NavigationChartEntityDraw, NavigationChartEntityState,
     NavigationChartHand, NavigationChartMarkerEndpoint, NavigationChartObject,
     NavigationChartObjectKind, NavigationChartPickObject, NavigationChartPickOutcome,
-    NavigationChartPickState, NavigationStatusLabels, NavigationStatusLocationKind, RasterPoint,
-    RasterRectOutcome, ResourceId, ScriptFieldSelector, ScriptObjectFlag,
-    build_navigation_wipe_spans, copy_work_surface_span, navigation_chart_objects,
-    navigation_source_objects, object_has_flag, pick_navigation_chart_object,
-    resolve_navigation_position, script_field_offset, update_location_info_panel,
-    update_location_panel_geometry, update_navigation_camera,
+    NavigationChartPickState, NavigationStatusLabels, NavigationStatusLocationKind, ResourceId,
+    ScriptFieldSelector, ScriptObjectFlag, build_navigation_wipe_spans, copy_work_surface_span,
+    navigation_chart_objects, navigation_source_objects, object_has_flag,
+    pick_navigation_chart_object, resolve_navigation_position, script_field_offset,
+    update_location_info_panel, update_location_panel_geometry, update_navigation_camera,
 };
 
-use super::{LOGICAL_FRAMEBUFFER_PIXEL_COUNT, ModernGameServices, OriginalGameRuntime};
+use super::{
+    LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_PIXEL_COUNT, LOGICAL_FRAMEBUFFER_WIDTH,
+    ModernGameServices, OriginalGameRuntime,
+};
 
 const OBJECT_ACCESS_COUNTER_BYTE_OFFSET: usize = 20;
 const WORD_BYTE_COUNT: usize = size_of::<u16>();
@@ -32,8 +34,6 @@ const NAVIGATION_CHART_FIRST_TRANSITION_STEP: u8 = 8;
 const CHART_PRIMARY_ENTITY: usize = 0;
 const AFTER_CHART_PRIMARY_ENTITY: u16 = 1;
 const LOCATION_PANEL_ENTITY: usize = 0;
-const AFTER_LOCATION_PANEL_ENTITY: u16 = 1;
-const AFTER_LOCATION_PANEL_TRANSITION_ENTITY: u16 = 2;
 const LOCATION_PANEL_TARGET_RECT: LocationPanelRect = LocationPanelRect {
     x: 110,
     y: 25,
@@ -747,17 +747,19 @@ impl RuntimeLocationPanelBackend<'_, '_> {
     }
 
     fn remap_rect(&mut self, rect: LocationPanelRect) -> Result<()> {
-        let outcome = self.services.runtime_mut().remap_bridge_dark_region(
-            RasterPoint {
-                x: i32::from(rect.x),
-                y: i32::from(rect.y),
-            },
-            rect.width as u16,
-            rect.height as u16,
-        )?;
-        if outcome == RasterRectOutcome::Rejected {
+        if rect.x < 0
+            || rect.y < 0
+            || rect.width < 0
+            || rect.height < 0
+            || i32::from(rect.x) + i32::from(rect.width) > LOGICAL_FRAMEBUFFER_WIDTH as i32
+            || i32::from(rect.y) + i32::from(rect.height) > LOGICAL_FRAMEBUFFER_HEIGHT as i32
+        {
             bail!("navigation panel rectangle {rect:?} is outside the logical display");
         }
+        self.services.runtime_mut().darken_location_panel(
+            [i32::from(rect.x), i32::from(rect.y)],
+            [rect.width as u16, rect.height as u16],
+        );
         Ok(())
     }
 }
@@ -805,11 +807,7 @@ impl LocationInfoPanelHost<ResourceId, ScriptObjectId, BridgeSpriteExtent>
     }
 
     fn prepare_panel_palette(&mut self) {
-        let result = self
-            .services
-            .runtime_mut()
-            .rebuild_bridge_dark_remap_table();
-        self.record_callback(result);
+        // Source colors were resolved at startup; darkening is an RGB operation.
     }
 
     fn update_panel_geometry(
@@ -837,17 +835,10 @@ impl LocationInfoPanelHost<ResourceId, ScriptObjectId, BridgeSpriteExtent>
     }
 
     fn render_panel_sprites(&mut self, range: LocationPanelSpriteRange) {
-        let entities = match range {
-            LocationPanelSpriteRange::PanelOnly => 0..AFTER_LOCATION_PANEL_ENTITY,
-            LocationPanelSpriteRange::PanelAndTransition => {
-                0..AFTER_LOCATION_PANEL_TRANSITION_ENTITY
-            }
-        };
         let result = self
             .services
             .runtime_mut()
-            .rasterize_ship_entity_range_to_front(entities)
-            .map(|_| ());
+            .rasterize_location_panel(range == LocationPanelSpriteRange::PanelAndTransition);
         self.record_callback(result);
     }
 
@@ -868,18 +859,11 @@ impl LocationInfoPanelHost<ResourceId, ScriptObjectId, BridgeSpriteExtent>
     }
 
     fn draw_panel_text(&mut self, draw: LocationPanelTextDraw<'_>) -> u16 {
-        let result = self
-            .services
-            .runtime_mut()
-            .draw_main_font_line(
-                draw.text,
-                FontPoint {
-                    x: i32::from(draw.position[0]),
-                    y: i32::from(draw.position[1]),
-                },
-                draw.color,
-            )
-            .map(|outcome| outcome.draw_width);
+        let result = self.services.runtime_mut().draw_location_panel_text(
+            draw.text,
+            [i32::from(draw.position[0]), i32::from(draw.position[1])],
+            draw.color,
+        );
         self.record_callback(result).unwrap_or(u16::MIN)
     }
 

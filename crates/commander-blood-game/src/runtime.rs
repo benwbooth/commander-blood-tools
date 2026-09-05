@@ -39,6 +39,7 @@ mod state;
 mod subtitles;
 mod video;
 mod word_choice;
+mod world_artwork;
 
 pub use alien_overlay::{
     RuntimeAlienOverlayCycle, RuntimeAlienOverlayFrameHost, RuntimeAlienOverlayFrameInput,
@@ -348,6 +349,7 @@ pub struct OriginalGameData {
     choice_ui_assets: crate::ui::ChoiceUiAssets,
     sequence_caption_font: crate::ui::SequenceCaptionFont,
     dialogue_ui_assets: crate::ui::DialogueUiAssets,
+    world_artwork_assets: world_artwork::WorldArtworkAssets,
     presentation_catalog: BloodprgPresentationCatalog,
     default_vga_palette: [[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
     name_area_effect_sequences: Box<[NameAreaEffectSequence]>,
@@ -468,6 +470,14 @@ impl OriginalGameData {
         );
         resource_store.install_verified_overrides(verified_scripts.resources);
 
+        let world_artwork_assets = world_artwork::WorldArtworkAssets::import(
+            &resource_store,
+            &resource_catalog,
+            &world_artwork_layout,
+            &default_vga_palette,
+        )
+        .context("importing RGB location-panel artwork")?;
+
         Ok(Self {
             paths,
             executable,
@@ -484,6 +494,7 @@ impl OriginalGameData {
             choice_ui_assets,
             sequence_caption_font,
             dialogue_ui_assets,
+            world_artwork_assets,
             presentation_catalog,
             default_vga_palette,
             name_area_effect_sequences,
