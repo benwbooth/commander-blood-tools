@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use commander_blood_formats::bas::{ScriptBas, ScriptBasInstruction, ScriptBasToken};
+use commander_blood_formats::bas::{ScriptBasInstruction, ScriptBasToken};
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::instruction::{
     DecodedScriptInstruction, ScriptInstructionError, decode_script_record_clear_operation,
@@ -73,8 +73,8 @@ pub struct ScriptDialogueExecutionContext<'a> {
     pub selector_root: ScriptCodeOffset,
     /// Pre-bound COD instructions used to keep derived record stores coherent.
     pub instructions: &'a [DecodedScriptInstruction],
-    /// Active profile's decoded BAS image.
-    pub dialogue: &'a ScriptBas,
+    /// Dialogue resource to validate before traversing this response list.
+    pub dialogue: &'a dyn super::ScriptDialogueSource,
     /// Active VAR image.
     pub state: &'a mut ScriptState,
     /// Interned profile words.
@@ -1086,6 +1086,8 @@ mod tests {
     fn configure_dialogue_target(profile: &mut LoadedScriptProfile, target_offset: usize) {
         let target = profile
             .dialogue()
+            .decoded()
+            .unwrap()
             .tokens()
             .iter()
             .find(|token| token.source_offset().index() == target_offset)
@@ -1180,6 +1182,8 @@ mod tests {
     fn clear_published_dialogue(profile: &mut LoadedScriptProfile, published: ScriptCodeOffset) {
         let token = profile
             .dialogue()
+            .decoded()
+            .unwrap()
             .tokens()
             .iter()
             .find(|token| token.source_offset() == published)
@@ -1254,6 +1258,8 @@ mod tests {
     fn dialogue_text_at(profile: &LoadedScriptProfile, offset: usize) -> &ScriptText {
         let token = profile
             .dialogue()
+            .decoded()
+            .unwrap()
             .tokens()
             .iter()
             .find(|token| token.source_offset().index() == offset)

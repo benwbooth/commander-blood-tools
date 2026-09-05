@@ -3,7 +3,9 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
-use commander_blood_formats::bas::{ScriptBas, ScriptBasInstruction};
+#[cfg(test)]
+use commander_blood_formats::bas::ScriptBas;
+use commander_blood_formats::bas::ScriptBasInstruction;
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::script::{ScriptDictionary, ScriptWordId};
 
@@ -184,8 +186,10 @@ pub enum ScriptSelectionOutcome {
 }
 
 /// Invalid typed data encountered while committing a selected concept.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScriptSelectionError {
+    /// An entered response or menu resource failed dialogue decoding.
+    Dialogue(commander_blood_formats::bas::ScriptBasError),
     /// A resumed concept has no encoding in the active profile dictionary.
     MissingDictionaryEncoding {
         /// Concept that belongs to a different or malformed dictionary.
@@ -215,8 +219,10 @@ impl From<ScriptSelectorError> for ScriptSelectionError {
 }
 
 /// Malformed selector linkage rejected before executing a response body.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScriptSelectorError {
+    /// An entered selector resource failed dialogue decoding.
+    Dialogue(commander_blood_formats::bas::ScriptBasError),
     /// A selector root or next link does not identify a typed selector node.
     MissingNode {
         /// Rejected BAS source position.
@@ -243,10 +249,11 @@ impl std::error::Error for ScriptSelectorError {}
 /// A match returns the first typed token after the four-byte selector node;
 /// exhausting the linked list returns `None`.
 pub fn find_selector_body(
-    dialogue: &ScriptBas,
+    dialogue: &dyn super::ScriptDialogueSource,
     root: ScriptCodeOffset,
     selected: ScriptWordId,
 ) -> Result<Option<ScriptCodeOffset>, ScriptSelectorError> {
+    let dialogue = dialogue.decoded().map_err(ScriptSelectorError::Dialogue)?;
     let mut current = root;
     let mut visited = BTreeSet::new();
 
@@ -286,7 +293,7 @@ pub fn find_selector_body(
 pub fn commit_selected_concept(
     runtime: &mut ScriptRuntime,
     dictionary: &ScriptDictionary,
-    dialogue: &ScriptBas,
+    dialogue: &dyn super::ScriptDialogueSource,
     selector_root: Option<ScriptCodeOffset>,
     state: &mut ScriptSelectorState,
 ) -> Result<ScriptSelectionOutcome, ScriptSelectionError> {
@@ -307,6 +314,7 @@ pub fn commit_selected_concept(
         .transpose()?
         .flatten();
     let menu_activated = if let Some(body) = matched_body {
+        let dialogue = dialogue.decoded().map_err(ScriptSelectionError::Dialogue)?;
         let instruction = dialogue
             .tokens()
             .iter()
@@ -349,13 +357,14 @@ pub fn commit_selected_concept(
 /// A non-menu branch leaves both the existing choice list and offered topic
 /// unchanged. Typed vectors replace the native terminated output buffer.
 pub fn collect_selector_menu(
-    dialogue: &ScriptBas,
+    dialogue: &dyn super::ScriptDialogueSource,
     state: &mut ScriptSelectorState,
     offered_topic: &mut Option<ScriptWordId>,
 ) -> Result<bool, ScriptSelectionError> {
     let Some(branch) = state.current_branch else {
         return Ok(false);
     };
+    let dialogue = dialogue.decoded().map_err(ScriptSelectionError::Dialogue)?;
     let instruction = dialogue
         .tokens()
         .iter()

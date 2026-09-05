@@ -3,7 +3,6 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use commander_blood_formats::bas::ScriptBas;
 use commander_blood_formats::code::{ScriptCodeOffset, ScriptToken};
 use commander_blood_formats::instruction::DecodedScriptInstruction;
 use commander_blood_formats::script::{
@@ -156,8 +155,8 @@ pub struct ScriptPostScanContext<'a> {
     pub code: &'a commander_blood_formats::code::ScriptCode,
     /// Pre-bound COD instructions used to keep derived record stores coherent.
     pub instructions: &'a [DecodedScriptInstruction],
-    /// Active profile's decoded BAS image.
-    pub dialogue: &'a ScriptBas,
+    /// Dialogue resource, decoded only when a scan enters its structures.
+    pub dialogue: &'a dyn super::ScriptDialogueSource,
     /// Active VAR image.
     pub state: &'a mut ScriptState,
     /// Interned profile words.
@@ -329,7 +328,7 @@ pub fn execute_loaded_script_frame<Host: ScriptDispatchHost>(
 struct Dispatcher<'a, Host> {
     code: &'a commander_blood_formats::code::ScriptCode,
     instructions: &'a [DecodedScriptInstruction],
-    dialogue: &'a ScriptBas,
+    dialogue: &'a dyn super::ScriptDialogueSource,
     state: &'a mut ScriptState,
     dictionary: &'a ScriptDictionary,
     directory: &'a ScriptDirectory,

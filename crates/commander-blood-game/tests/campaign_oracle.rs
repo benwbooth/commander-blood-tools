@@ -457,7 +457,7 @@ fn declared_unreachable_history_signoffs_remain_preempted_by_bas_teardown() {
             ));
         }
 
-        let bas_exit_teardown = profile.dialogue().tokens().windows(2).any(|tokens| {
+        let bas_exit_teardown = profile.dialogue().decoded().unwrap().tokens().windows(2).any(|tokens| {
             let ScriptBasInstruction::Text(text) = tokens[usize::MIN].instruction() else {
                 return false;
             };
@@ -2659,40 +2659,53 @@ fn matching_bas_text_offset(
     profile: &LoadedScriptProfile,
     actual: &ContactEntrySnapshot,
 ) -> Option<usize> {
-    profile.dialogue().tokens().iter().find_map(|token| {
-        let ScriptBasInstruction::Text(text) = token.instruction() else {
-            return None;
-        };
-        if actual.selected_line != Some(text.presentation_selector) {
-            return None;
-        }
-        let matches = if !actual.subtitle.is_empty() {
-            normalized_script_words(profile, &text.words) == actual.subtitle
-                && (actual.word_offsets.is_empty()
-                    || post_separator_script_offsets(profile, &text.words) == actual.word_offsets)
-        } else {
-            text.words
-                .iter()
-                .map(|word| match word {
-                    ScriptTextWord::Dictionary(word) => {
-                        profile.dictionary().source_offset(*word).unwrap()
-                    }
-                    ScriptTextWord::SectionSeparator => u16::MAX,
-                })
-                .eq(actual.word_offsets.iter().copied())
-        };
-        matches.then_some(token.source_offset().index())
-    })
+    profile
+        .dialogue()
+        .decoded()
+        .unwrap()
+        .tokens()
+        .iter()
+        .find_map(|token| {
+            let ScriptBasInstruction::Text(text) = token.instruction() else {
+                return None;
+            };
+            if actual.selected_line != Some(text.presentation_selector) {
+                return None;
+            }
+            let matches = if !actual.subtitle.is_empty() {
+                normalized_script_words(profile, &text.words) == actual.subtitle
+                    && (actual.word_offsets.is_empty()
+                        || post_separator_script_offsets(profile, &text.words)
+                            == actual.word_offsets)
+            } else {
+                text.words
+                    .iter()
+                    .map(|word| match word {
+                        ScriptTextWord::Dictionary(word) => {
+                            profile.dictionary().source_offset(*word).unwrap()
+                        }
+                        ScriptTextWord::SectionSeparator => u16::MAX,
+                    })
+                    .eq(actual.word_offsets.iter().copied())
+            };
+            matches.then_some(token.source_offset().index())
+        })
 }
 
 fn bas_text_arms_selector_resume(profile: &LoadedScriptProfile, source_offset: usize) -> bool {
-    profile.dialogue().tokens().iter().any(|token| {
-        token.source_offset().index() == source_offset
-            && matches!(
-                token.instruction(),
-                ScriptBasInstruction::Text(text) if text.control.arms_resume()
-            )
-    })
+    profile
+        .dialogue()
+        .decoded()
+        .unwrap()
+        .tokens()
+        .iter()
+        .any(|token| {
+            token.source_offset().index() == source_offset
+                && matches!(
+                    token.instruction(),
+                    ScriptBasInstruction::Text(text) if text.control.arms_resume()
+                )
+        })
 }
 
 fn post_separator_offsets(offsets: &[u16]) -> &[u16] {

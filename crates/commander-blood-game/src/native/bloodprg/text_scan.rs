@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use commander_blood_formats::bas::{ScriptBas, ScriptBasInstruction};
+use commander_blood_formats::bas::ScriptBasInstruction;
 use commander_blood_formats::code::{ScriptCode, ScriptCodeOffset};
 use commander_blood_formats::instruction::DecodedScriptInstruction;
 use commander_blood_formats::script::{
@@ -68,8 +68,10 @@ impl ScriptTextActivationRegistry {
 }
 
 /// Invalid typed state supplied to the object text-activation pass.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScriptTextActivationError {
+    /// An entered object block's dialogue resource failed decoding.
+    Dialogue(commander_blood_formats::bas::ScriptBasError),
     /// The requested object does not exist in this decoded profile.
     MissingObject {
         /// Missing object identity.
@@ -166,7 +168,7 @@ pub struct ScriptObjectTextActivationOutcome {
 pub fn activate_profile_object_text(
     code: &ScriptCode,
     instructions: &[DecodedScriptInstruction],
-    dialogue: &ScriptBas,
+    dialogue: &dyn super::ScriptDialogueSource,
     state: &ScriptState,
     directory: &ScriptDirectory,
     object: ScriptObjectId,
@@ -214,6 +216,9 @@ pub fn activate_profile_object_text(
         .ok_or(ScriptTextActivationError::MissingObjectBlockField { object })?;
     let mut object_block_text_count = usize::MIN;
     if encoded_block_offset != u16::MIN {
+        let dialogue = dialogue
+            .decoded()
+            .map_err(ScriptTextActivationError::Dialogue)?;
         let source_offset = ScriptCodeOffset::new(usize::from(encoded_block_offset));
         let start = dialogue
             .tokens()
@@ -427,6 +432,8 @@ mod tests {
                 assert!(cod_text_states.values().all(|state| state.is_active()));
                 let active_bas_text_count = profile
                     .dialogue()
+                    .decoded()
+                    .unwrap()
                     .tokens()
                     .iter()
                     .filter(|token| {

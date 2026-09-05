@@ -334,7 +334,7 @@ fn census_profile(profile: &LoadedScriptProfile, data: &OriginalGameData) -> Vec
         ));
     }
 
-    for token in profile.dialogue().tokens() {
+    for token in profile.dialogue().decoded().unwrap().tokens() {
         let ScriptBasInstruction::Text(text) = token.instruction() else {
             continue;
         };
@@ -541,6 +541,8 @@ fn bas_text_owners(profile: &LoadedScriptProfile) -> BTreeMap<usize, Vec<(Script
         let selector_root = usize::from(handoff);
         let start = profile
             .dialogue()
+            .decoded()
+            .unwrap()
             .tokens()
             .binary_search_by_key(&selector_root, |token| token.source_offset().index())
             .unwrap_or_else(|_| {
@@ -551,7 +553,7 @@ fn bas_text_owners(profile: &LoadedScriptProfile) -> BTreeMap<usize, Vec<(Script
                 )
             });
         let mut terminated = false;
-        for token in &profile.dialogue().tokens()[start..] {
+        for token in &profile.dialogue().decoded().unwrap().tokens()[start..] {
             match token.instruction() {
                 ScriptBasInstruction::Text(_) => owners
                     .entry(token.source_offset().index())

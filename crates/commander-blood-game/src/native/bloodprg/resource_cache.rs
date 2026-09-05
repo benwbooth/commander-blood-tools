@@ -131,6 +131,8 @@ impl OriginalResourceCatalog {
 /// Whether a cache load read new bytes or reused the existing owned resource.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResourceLoadStatus {
+    /// An optional profile resource was absent or empty; no bytes were invented.
+    Unavailable,
     /// The requested bytes were loaded and inserted during this call.
     LoadedNow,
     /// The requested identifier was already resident.
@@ -1076,6 +1078,40 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn sequel_resource_sizes_match_complete_native_allocator_probes() {
+        #[derive(Deserialize)]
+        struct Allocation {
+            start_byte: usize,
+            allocated_bytes: usize,
+        }
+        #[derive(Deserialize)]
+        struct Vector {
+            requested_bytes: Option<Vec<usize>>,
+            allocations: Option<Vec<Allocation>>,
+        }
+        let mut count = 0;
+        for line in include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_profile_binding.jsonl"
+        )
+        .lines()
+        {
+            let vector: Vector = serde_json::from_str(line).unwrap();
+            let Some(sizes) = vector.requested_bytes else {
+                continue;
+            };
+            let mut total = 0;
+            for (requested, native) in sizes.into_iter().zip(vector.allocations.unwrap()) {
+                let rounded = rounded_allocation_byte_count(requested).unwrap();
+                assert_eq!(rounded, native.allocated_bytes);
+                assert_eq!(total, native.start_byte);
+                total += rounded;
+            }
+            count += 1;
+        }
+        assert_eq!(count, 8);
     }
 
     #[test]

@@ -374,7 +374,7 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
 struct PresentationAdapter<'a, Backend> {
     code: &'a commander_blood_formats::code::ScriptCode,
     instructions: &'a [commander_blood_formats::instruction::DecodedScriptInstruction],
-    dialogue: &'a commander_blood_formats::bas::ScriptBas,
+    dialogue: &'a dyn super::ScriptDialogueSource,
     dictionary: &'a commander_blood_formats::script::ScriptDictionary,
     directory: &'a commander_blood_formats::script::ScriptDirectory,
     builtins: super::ScriptProfileBuiltins,
@@ -536,7 +536,7 @@ struct ActionExternalHost<'a, Backend> {
     backend: &'a mut Backend,
     code: &'a commander_blood_formats::code::ScriptCode,
     instructions: &'a [commander_blood_formats::instruction::DecodedScriptInstruction],
-    dialogue: &'a commander_blood_formats::bas::ScriptBas,
+    dialogue: &'a dyn super::ScriptDialogueSource,
     directory: &'a commander_blood_formats::script::ScriptDirectory,
     cod_text_states:
         &'a mut std::collections::BTreeMap<ScriptCodeOffset, super::TextInstructionState>,

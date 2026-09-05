@@ -95,6 +95,7 @@ mod script_bas_dispatch;
 mod script_block;
 mod script_clock;
 mod script_control;
+mod script_dialogue;
 mod script_dispatch;
 mod script_environment;
 mod script_frame;
@@ -583,6 +584,7 @@ pub use script_control::{
     ScriptSelectorBlockContext, ScriptSelectorControlHost, execute_selector_control,
     execute_selector_control_with_host,
 };
+pub use script_dialogue::{ScriptDialogueSource, ScriptProfileDialogue};
 pub use script_dispatch::{
     ScriptDispatchError, ScriptDispatchHost, ScriptDispatchState, ScriptPostScanContext,
     ScriptPreFrameContext, execute_loaded_script_frame, frame_execution_was_disabled,

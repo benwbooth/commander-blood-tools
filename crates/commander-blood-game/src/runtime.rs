@@ -648,7 +648,7 @@ impl OriginalGameData {
             validations.push(ScriptProfileValidation {
                 profile,
                 code_token_count: loaded.code().tokens().len(),
-                dialogue_token_count: loaded.dialogue().tokens().len(),
+                dialogue_token_count: loaded.dialogue().decoded()?.tokens().len(),
                 dictionary_word_count: loaded.dictionary().len(),
                 directory_entry_count: loaded.directory().entries().len(),
             });

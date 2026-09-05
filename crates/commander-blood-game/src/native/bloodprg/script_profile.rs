@@ -6,7 +6,7 @@ use std::error::Error;
 use std::fmt;
 use std::mem::size_of;
 
-use commander_blood_formats::bas::{ScriptBas, ScriptBasError, decode_script_bas};
+use commander_blood_formats::bas::ScriptBasError;
 use commander_blood_formats::code::{
     ScriptCode, ScriptCodeError, ScriptCodeOffset, ScriptDialect, ScriptToken,
     decode_script_code_for_dialect,
@@ -28,9 +28,9 @@ use super::script_frame::{
 };
 use super::{
     OriginalResourceCache, OriginalResourceCatalog, ResourceCacheError, ResourceId,
-    ResourceLoadStatus, ScriptActionRecord, ScriptFieldSelector, ScriptProcedureStateError,
-    ScriptProcedureStates, ScriptRuntime, ScriptSelectorState, ScriptSequenceSlots,
-    script_field_offset,
+    ResourceLoadStatus, ScriptActionRecord, ScriptDialogueSource, ScriptFieldSelector,
+    ScriptProcedureStateError, ScriptProcedureStates, ScriptProfileDialogue, ScriptRuntime,
+    ScriptSelectorState, ScriptSequenceSlots, script_field_offset,
 };
 
 pub use record_state::{ScriptProfileRecordState, ScriptProfileRecordStateError};
@@ -42,6 +42,13 @@ pub const ORIGINAL_SCRIPT_PROFILE_COUNT: usize = 5;
 const BIG_BUG_BANG_SCRIPT_PROFILE_COUNT: usize = 17;
 const BLOOD2PG_SCRIPT_PROFILE_TABLE_FILE_OFFSET: usize = 0xF744;
 const SEQUEL_NATIVE_RESOURCE_ORDER: [usize; SCRIPT_PROFILE_RESOURCE_COUNT] = [2, 3, 0, 4, 1];
+const SEQUEL_LOAD_ORDER: [ScriptProfileResourceKind; SCRIPT_PROFILE_RESOURCE_COUNT] = [
+    ScriptProfileResourceKind::State,
+    ScriptProfileResourceKind::Directory,
+    ScriptProfileResourceKind::Code,
+    ScriptProfileResourceKind::Dialogue,
+    ScriptProfileResourceKind::Dictionary,
+];
 /// Number of companion files loaded for each script profile.
 pub const SCRIPT_PROFILE_RESOURCE_COUNT: usize = 5;
 
@@ -135,9 +142,34 @@ impl ScriptProfileResources {
         self.resources[kind.index()]
     }
 
-    /// Return all five IDs in native load order.
+    /// Return all five IDs in semantic resource-kind order.
     pub const fn all(self) -> [ResourceId; SCRIPT_PROFILE_RESOURCE_COUNT] {
         self.resources
+    }
+
+    /// Resolve resource ownership, including the sequel's retained preceding
+    /// binding on a cache miss. None means no resident resource supplied it.
+    fn resolve_owners(
+        self,
+        dialect: ScriptDialect,
+        resident: impl Fn(ResourceId) -> bool,
+    ) -> [Option<ResourceId>; SCRIPT_PROFILE_RESOURCE_COUNT] {
+        let mut owners = [None; SCRIPT_PROFILE_RESOURCE_COUNT];
+        if dialect == ScriptDialect::BigBugBang {
+            let mut preceding = None;
+            for kind in SEQUEL_LOAD_ORDER {
+                let resource = self.resource(kind);
+                if resident(resource) {
+                    preceding = Some(resource);
+                }
+                owners[kind.index()] = preceding;
+            }
+        } else {
+            for (index, resource) in self.resources.into_iter().enumerate() {
+                owners[index] = resident(resource).then_some(resource);
+            }
+        }
+        owners
     }
 }
 
@@ -278,14 +310,14 @@ impl ScriptProfileBuiltins {
     }
 }
 
-/// One completely decoded and independently owned BloodScript profile.
+/// Owned BloodScript profile with typed COD/state and an on-demand dialogue view.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LoadedScriptProfile {
     id: ScriptProfileId,
     resources: ScriptProfileResources,
     code: ScriptCode,
     instructions: Box<[DecodedScriptInstruction]>,
-    dialogue: ScriptBas,
+    dialogue: ScriptProfileDialogue,
     state: ScriptState,
     dictionary: ScriptDictionary,
     directory: ScriptDirectory,
@@ -303,8 +335,8 @@ pub struct LoadedScriptExecutionParts<'a> {
     pub code: &'a ScriptCode,
     /// Pre-bound semantic instruction parallel to each framed COD token.
     pub instructions: &'a [DecodedScriptInstruction],
-    /// Decoded BAS dialogue and menu program.
-    pub dialogue: &'a ScriptBas,
+    /// Dialogue resource, validated on entry to a dialogue path.
+    pub dialogue: &'a dyn ScriptDialogueSource,
     /// Mutable VAR object and trailing state.
     pub state: &'a mut ScriptState,
     /// Interned DIC words referenced by COD and BAS instructions.
@@ -359,8 +391,8 @@ impl LoadedScriptProfile {
         self.instructions.get(index)
     }
 
-    /// Borrow the decoded BAS dialogue and menu image.
-    pub const fn dialogue(&self) -> &ScriptBas {
+    /// Borrow the actual resource supplying dialogue data.
+    pub const fn dialogue(&self) -> &ScriptProfileDialogue {
         &self.dialogue
     }
 
@@ -545,6 +577,8 @@ impl ScriptProfileManager {
     /// bytes but still rebuilds decoded state and a fresh [`ScriptRuntime`]. The
     /// sequence-name fields and reserved half of the save block remain global,
     /// matching the native data region that profile selection does not clear.
+    /// The sequel instead retains live VAR across noninitial profiles, loads in
+    /// its own resource order, and permits absent BAS with the native COD binding.
     pub fn select(
         &mut self,
         profile: ScriptProfileId,
@@ -616,13 +650,39 @@ impl ScriptProfileManager {
 
         let mut resource_statuses =
             [ResourceLoadStatus::AlreadyLoaded; SCRIPT_PROFILE_RESOURCE_COUNT];
-        for (index, resource) in profile_resources.all().into_iter().enumerate() {
+        let order = if self.catalog.dialect == ScriptDialect::BigBugBang {
+            SEQUEL_LOAD_ORDER.map(ScriptProfileResourceKind::index)
+        } else {
+            std::array::from_fn(|index| index)
+        };
+        for index in order {
+            let resource = profile_resources.resources[index];
             if skip_state_resource && index == ScriptProfileResourceKind::State.index() {
                 continue;
             }
-            resource_statuses[index] = cache
-                .load_by_id(store, resources, resource)
-                .map_err(ScriptProfileError::Resource)?;
+            let optional_dialogue = self.catalog.dialect == ScriptDialect::BigBugBang
+                && index == ScriptProfileResourceKind::Dialogue.index();
+            if optional_dialogue {
+                let name = resources
+                    .name(resource)
+                    .ok_or(ScriptProfileError::MissingLoadedResource { resource })?;
+                let exists = store.resource_exists(name).map_err(|source| {
+                    ScriptProfileError::Resource(ResourceCacheError::ResourceRead {
+                        resource,
+                        source,
+                    })
+                })?;
+                if !exists {
+                    resource_statuses[index] = ResourceLoadStatus::Unavailable;
+                    continue;
+                }
+            }
+            resource_statuses[index] = match cache.load_by_id(store, resources, resource) {
+                Err(ResourceCacheError::EmptyResource(_)) if optional_dialogue => {
+                    ResourceLoadStatus::Unavailable
+                }
+                result => result.map_err(ScriptProfileError::Resource)?,
+            };
         }
 
         let mut loaded = decode_loaded_profile(
@@ -784,14 +844,20 @@ fn decode_loaded_profile(
         .map_err(ScriptProfileError::ProcedureInstruction)?;
     let procedures = ScriptProcedureStates::from_gates(&procedure_gates)
         .map_err(ScriptProfileError::ProcedureState)?;
-    let dialogue = decode_script_bas(
-        loaded_resource(
-            cache,
-            resources.resource(ScriptProfileResourceKind::Dialogue),
-        )?,
+    let requested_dialogue = resources.resource(ScriptProfileResourceKind::Dialogue);
+    let dialogue_resource = resources.resolve_owners(dialect, |resource| cache.is_loaded(resource))
+        [ScriptProfileResourceKind::Dialogue.index()]
+    .ok_or(ScriptProfileError::MissingLoadedResource {
+        resource: requested_dialogue,
+    })?;
+    let dialogue = ScriptProfileDialogue::new(
+        dialogue_resource,
+        loaded_resource(cache, dialogue_resource)?,
         &dictionary,
-    )
-    .map_err(ScriptProfileError::Dialogue)?;
+    );
+    if dialect == ScriptDialect::CommanderBlood {
+        dialogue.decoded().map_err(ScriptProfileError::Dialogue)?;
+    }
     let state = if let Some((state, previous_directory)) = retained_state {
         if state.dialect() != dialect
             || !previous_directory
@@ -951,6 +1017,192 @@ mod tests {
             FINAL_PROFILE_RESOURCES
         );
         assert!(ScriptProfileId::new(ORIGINAL_SCRIPT_PROFILE_COUNT as u8).is_none());
+    }
+
+    #[test]
+    fn sequel_profile_binding_owners_match_complete_native_resolver_loop() {
+        #[derive(Deserialize)]
+        struct Vector {
+            name: String,
+            resident: Option<[bool; 5]>,
+            resolved_resources: Option<[Option<u16>; 5]>,
+        }
+        let resources = ScriptProfileResources {
+            resources: [4, 5, 2, 6, 3].map(ResourceId::new),
+        };
+        let mut count = 0;
+        for line in include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_profile_binding.jsonl"
+        )
+        .lines()
+        {
+            let vector: Vector = serde_json::from_str(line).unwrap();
+            let Some(resident) = vector.resident else {
+                continue;
+            };
+            let owners = resources.resolve_owners(ScriptDialect::BigBugBang, |resource| {
+                resident[usize::from(resource.value() - 2)]
+            });
+            let expected = vector.resolved_resources.unwrap();
+            assert_eq!(
+                owners.map(|resource| resource.map(ResourceId::value)),
+                SEQUEL_NATIVE_RESOURCE_ORDER.map(|native_index| expected[native_index]),
+                "{}",
+                vector.name
+            );
+            let commander = resources.resolve_owners(ScriptDialect::CommanderBlood, |resource| {
+                resident[usize::from(resource.value() - 2)]
+            });
+            for (index, resource) in resources.all().into_iter().enumerate() {
+                assert_eq!(
+                    commander[index],
+                    resident[usize::from(resource.value() - 2)].then_some(resource)
+                );
+            }
+            count += 1;
+        }
+        assert_eq!(count, 32);
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang disc resources"]
+    fn sequel_initial_profile_loads_actual_cod_without_inventing_a_bas_file() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+        let executable = std::fs::read(root.join("BLOOD2PG.EXE")).unwrap();
+        let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_blood2pg(&executable).unwrap();
+        let mut manager = ScriptProfileManager::new(catalog);
+        let mut cache = OriginalResourceCache::new();
+        let store = OriginalResourceStore::new(root.clone(), None, [], true);
+        assert!(!root.join("SCRIPT1.BAS").exists());
+        let result = manager
+            .select(ScriptProfileId::INITIAL, &mut cache, &store, &resources)
+            .unwrap();
+        assert_eq!(
+            result.resource_statuses,
+            [
+                ResourceLoadStatus::LoadedNow,
+                ResourceLoadStatus::Unavailable,
+                ResourceLoadStatus::LoadedNow,
+                ResourceLoadStatus::LoadedNow,
+                ResourceLoadStatus::LoadedNow
+            ]
+        );
+        let profile = manager.current().unwrap();
+        assert_eq!(
+            profile.dialogue().resource(),
+            profile
+                .resources()
+                .resource(ScriptProfileResourceKind::Code)
+        );
+        assert_eq!(
+            profile.dialogue().encoded_bytes(),
+            std::fs::read(root.join("SCRIPT1.COD")).unwrap()
+        );
+        assert_eq!(
+            profile.state().encode(),
+            std::fs::read(root.join("SCRIPT1.VAR")).unwrap()
+        );
+        assert!(
+            profile.dialogue().decoded().is_err(),
+            "the COD alias must not turn into a fabricated empty BAS program"
+        );
+        assert!(
+            !cache.is_loaded(
+                profile
+                    .resources()
+                    .resource(ScriptProfileResourceKind::Dialogue)
+            )
+        );
+    }
+
+    #[test]
+    fn sequel_optional_bas_does_not_weaken_commander_or_required_resource_validation() {
+        use commander_blood_formats::archive::BloodResourceName;
+        let root = TemporaryProfileRoot::create();
+        let names = ["test.cod", "test.bas", "test.var", "test.dic", "test.deb"];
+        let resources = OriginalResourceCatalog::new(
+            names.map(|name| BloodResourceName::new(name.as_bytes()).unwrap()),
+        );
+        let mut player = vec![0; 34];
+        player[0] = 1;
+        let mut directory = vec![0; 40];
+        directory[..5].copy_from_slice(b"blood");
+        directory[18] = 1;
+        for (name, bytes) in [
+            ("test.cod", vec![255]),
+            ("test.var", player),
+            ("test.dic", vec![0]),
+            ("test.deb", directory),
+        ] {
+            std::fs::write(root.0.join(name), bytes).unwrap();
+        }
+        let store = OriginalResourceStore::new(root.0.clone(), None, [], true);
+        for bas in [None, Some(vec![]), Some(vec![159]), Some(vec![255])] {
+            match &bas {
+                Some(bytes) => std::fs::write(root.0.join("test.bas"), bytes).unwrap(),
+                None => assert!(!root.0.join("test.bas").exists()),
+            }
+            for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+                let catalog = OriginalScriptProfileCatalog {
+                    dialect,
+                    profiles: vec![ScriptProfileResources {
+                        resources: [0, 1, 2, 3, 4].map(ResourceId::new),
+                    }]
+                    .into(),
+                };
+                let mut manager = ScriptProfileManager::new(catalog);
+                let mut cache = OriginalResourceCache::new();
+                let outcome = manager.select(FIRST_PROFILE, &mut cache, &store, &resources);
+                if dialect == ScriptDialect::CommanderBlood && bas.as_deref() != Some(&[255]) {
+                    assert!(outcome.is_err(), "Commander must still require a valid BAS");
+                    continue;
+                }
+                let outcome = outcome.unwrap();
+                let available = bas.as_ref().is_some_and(|bytes| !bytes.is_empty());
+                let dialogue = manager.current().unwrap().dialogue();
+                assert_eq!(
+                    dialogue.resource(),
+                    ResourceId::new(if available { 1 } else { 0 })
+                );
+                assert_eq!(
+                    outcome.resource_statuses[ScriptProfileResourceKind::Dialogue.index()],
+                    if available {
+                        ResourceLoadStatus::LoadedNow
+                    } else {
+                        ResourceLoadStatus::Unavailable
+                    }
+                );
+                assert_eq!(
+                    dialogue.encoded_bytes(),
+                    if available {
+                        bas.as_deref().unwrap()
+                    } else {
+                        &[255]
+                    }
+                );
+                assert_eq!(dialogue.decoded().is_err(), bas.as_deref() == Some(&[159]));
+            }
+        }
+        // Only BAS absence is accepted: no code image may be fabricated.
+        std::fs::remove_file(root.0.join("test.cod")).unwrap();
+        let catalog = OriginalScriptProfileCatalog {
+            dialect: ScriptDialect::BigBugBang,
+            profiles: vec![ScriptProfileResources {
+                resources: [0, 1, 2, 3, 4].map(ResourceId::new),
+            }]
+            .into(),
+        };
+        assert!(
+            ScriptProfileManager::new(catalog)
+                .select(
+                    FIRST_PROFILE,
+                    &mut OriginalResourceCache::new(),
+                    &store,
+                    &resources
+                )
+                .is_err()
+        );
     }
 
     #[test]
@@ -1176,7 +1428,7 @@ mod tests {
                 );
             }
             assert_eq!(
-                loaded.dialogue().encode(),
+                loaded.dialogue().decoded().unwrap().encode(),
                 std::fs::read(root.join(format!("SCRIPT{file_number}.BAS"))).unwrap()
             );
             assert_eq!(

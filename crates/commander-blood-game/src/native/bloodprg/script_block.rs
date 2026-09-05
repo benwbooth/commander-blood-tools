@@ -91,6 +91,8 @@ pub struct ScriptBlockOutcome {
 /// Invalid typed block traversal or translated handler failure.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ScriptBlockError<HandlerError> {
+    /// The entered resource could not be decoded as a dialogue program.
+    Dialogue(commander_blood_formats::bas::ScriptBasError),
     /// No decoded BAS instruction begins at the requested source position.
     MissingInstruction {
         /// Missing serialized source position.
@@ -119,11 +121,12 @@ impl<HandlerError: fmt::Debug> std::error::Error for ScriptBlockError<HandlerErr
 /// Decoded instruction positions replace the original mutable byte cursor, and
 /// malformed bytes are rejected by the BAS decoder before execution begins.
 pub fn execute_script_block<Handler: ScriptBlockHandler>(
-    dialogue: &ScriptBas,
+    dialogue: &dyn super::ScriptDialogueSource,
     start: ScriptCodeOffset,
     runtime: &mut ScriptRuntime,
     handler: &mut Handler,
 ) -> Result<ScriptBlockOutcome, ScriptBlockError<Handler::Error>> {
+    let dialogue = dialogue.decoded().map_err(ScriptBlockError::Dialogue)?;
     let mut cursor = start;
     let mut executed_instructions = usize::MIN;
     let mut skipped_instructions = usize::MIN;

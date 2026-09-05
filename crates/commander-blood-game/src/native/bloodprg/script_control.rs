@@ -2,7 +2,9 @@
 
 use std::fmt;
 
-use commander_blood_formats::bas::{ScriptBas, ScriptBasInstruction};
+#[cfg(test)]
+use commander_blood_formats::bas::ScriptBas;
+use commander_blood_formats::bas::ScriptBasInstruction;
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::script::{
     ScriptDictionary, ScriptObjectId, ScriptState, ScriptWordId,
@@ -23,8 +25,8 @@ pub struct ScriptControlFlowContext<'a> {
     pub actor: ScriptObjectId,
     /// Active profile dictionary owning every selector concept.
     pub dictionary: &'a ScriptDictionary,
-    /// Active profile's fully decoded BAS dialogue image.
-    pub dialogue: &'a ScriptBas,
+    /// Active dialogue resource, validated before selector traversal.
+    pub dialogue: &'a dyn super::ScriptDialogueSource,
     /// First selector node in the actor's authored response list.
     pub selector_root: ScriptCodeOffset,
 }
@@ -79,8 +81,8 @@ pub enum ScriptControlFlowError<HandlerError> {
 
 /// Mutable state supplied while one selected BAS response body executes.
 pub struct ScriptSelectorBlockContext<'a> {
-    /// Active profile's fully decoded BAS dialogue image.
-    pub dialogue: &'a ScriptBas,
+    /// Active dialogue resource, validated before block execution.
+    pub dialogue: &'a dyn super::ScriptDialogueSource,
     /// First instruction of the selected response body.
     pub start: ScriptCodeOffset,
     /// Active VAR image.
@@ -262,10 +264,12 @@ impl<Handler: ScriptBlockHandler> ScriptSelectorControlHost
 }
 
 fn selector_at(
-    dialogue: &ScriptBas,
+    dialogue: &dyn super::ScriptDialogueSource,
     source_offset: ScriptCodeOffset,
 ) -> Result<ScriptWordId, ScriptSelectorError> {
     let token = dialogue
+        .decoded()
+        .map_err(ScriptSelectorError::Dialogue)?
         .tokens()
         .iter()
         .find(|token| token.source_offset() == source_offset)
