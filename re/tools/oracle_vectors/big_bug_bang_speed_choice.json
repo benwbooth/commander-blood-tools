@@ -1,0 +1,755 @@
+{
+  "cases": [
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 0,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 0,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 0,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 1,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 1,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 1,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 10,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 10,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 10,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 100,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 100,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 100,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 65535,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 65535,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 65535,
+      "result": 100,
+      "selected": 0,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 0,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 0,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 0,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 1,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 1,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 1,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 10,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 10,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 10,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 100,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 100,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 100,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 65535,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 65535,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 65535,
+      "result": 10,
+      "selected": 1,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 0,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 0,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 0,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 1,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 1,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 1,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 10,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 10,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 10,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 100,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 100,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 100,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 65535,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 65535,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 65535,
+      "result": 1,
+      "selected": 2,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 0,
+      "result": 0,
+      "selected": 3,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 0,
+      "result": 0,
+      "selected": 3,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 0,
+      "result": 0,
+      "selected": 3,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 1,
+      "result": 1,
+      "selected": 3,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 1,
+      "result": 1,
+      "selected": 3,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 1,
+      "result": 1,
+      "selected": 3,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 10,
+      "result": 10,
+      "selected": 3,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 10,
+      "result": 10,
+      "selected": 3,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 10,
+      "result": 10,
+      "selected": 3,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 100,
+      "result": 100,
+      "selected": 3,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 100,
+      "result": 100,
+      "selected": 3,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 100,
+      "result": 100,
+      "selected": 3,
+      "ui_flags": 255
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 0,
+      "previous": 65535,
+      "result": 65535,
+      "selected": 3,
+      "ui_flags": 4
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 161,
+      "previous": 65535,
+      "result": 65535,
+      "selected": 3,
+      "ui_flags": 165
+    },
+    {
+      "active": 0,
+      "final_ui_flags": 251,
+      "previous": 65535,
+      "result": 65535,
+      "selected": 3,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 0,
+      "result": 0,
+      "selected": -1,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 0,
+      "result": 0,
+      "selected": -1,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 0,
+      "result": 0,
+      "selected": -1,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 1,
+      "result": 1,
+      "selected": -1,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 1,
+      "result": 1,
+      "selected": -1,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 1,
+      "result": 1,
+      "selected": -1,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 10,
+      "result": 10,
+      "selected": -1,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 10,
+      "result": 10,
+      "selected": -1,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 10,
+      "result": 10,
+      "selected": -1,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 100,
+      "result": 100,
+      "selected": -1,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 100,
+      "result": 100,
+      "selected": -1,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 100,
+      "result": 100,
+      "selected": -1,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 65535,
+      "result": 65535,
+      "selected": -1,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 65535,
+      "result": 65535,
+      "selected": -1,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 65535,
+      "result": 65535,
+      "selected": -1,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 0,
+      "result": 0,
+      "selected": -32768,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 0,
+      "result": 0,
+      "selected": -32768,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 0,
+      "result": 0,
+      "selected": -32768,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 1,
+      "result": 1,
+      "selected": -32768,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 1,
+      "result": 1,
+      "selected": -32768,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 1,
+      "result": 1,
+      "selected": -32768,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 10,
+      "result": 10,
+      "selected": -32768,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 10,
+      "result": 10,
+      "selected": -32768,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 10,
+      "result": 10,
+      "selected": -32768,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 100,
+      "result": 100,
+      "selected": -32768,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 100,
+      "result": 100,
+      "selected": -32768,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 100,
+      "result": 100,
+      "selected": -32768,
+      "ui_flags": 255
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 4,
+      "previous": 65535,
+      "result": 65535,
+      "selected": -32768,
+      "ui_flags": 4
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 165,
+      "previous": 65535,
+      "result": 65535,
+      "selected": -32768,
+      "ui_flags": 165
+    },
+    {
+      "active": 1,
+      "final_ui_flags": 255,
+      "previous": 65535,
+      "result": 65535,
+      "selected": -32768,
+      "ui_flags": 255
+    }
+  ],
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "initial_value": 1,
+  "labels": [
+    [
+      76,
+      69,
+      78,
+      84
+    ],
+    [
+      78,
+      79,
+      82,
+      77,
+      65,
+      76
+    ],
+    [
+      82,
+      65,
+      80,
+      73,
+      68,
+      69
+    ]
+  ],
+  "values": [
+    100,
+    10,
+    1
+  ]
+}

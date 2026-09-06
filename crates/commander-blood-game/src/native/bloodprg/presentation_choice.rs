@@ -21,6 +21,8 @@ const FIRST_ORDINARY_CHOICE_RESULT: usize = 1;
 pub enum PresentationChoiceItem {
     /// The table position contains a text item.
     Selectable,
+    /// The table position publishes an explicit authored value (sequel speed menu).
+    Value(u16),
     /// The table position contains the native `0xFFFF` sentinel.
     Sentinel,
 }
@@ -158,6 +160,7 @@ pub fn update_presentation_choice(
         })?;
     let published_result = match item {
         PresentationChoiceItem::Sentinel => None,
+        PresentationChoiceItem::Value(value) => Some(*value),
         PresentationChoiceItem::Selectable if selected_index == SPECIAL_CHOICE_INDEX => {
             Some(SPECIAL_CHOICE_RESULT)
         }
@@ -198,6 +201,107 @@ mod tests {
     const INITIAL_RESULT: u16 = 30_583;
     const TEST_SOURCE: TransitionRect = TransitionRect::new(12, 24, 48, 64);
     const TEST_TARGET: TransitionRect = TransitionRect::new(6, 12, 24, 32);
+
+    #[derive(Deserialize)]
+    struct SpeedOracle {
+        executable_sha256: String,
+        values: [u16; 3],
+        labels: [Vec<u8>; 3],
+        initial_value: u16,
+        cases: Vec<SpeedCase>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SpeedCase {
+        selected: i16,
+        previous: u16,
+        ui_flags: u8,
+        result: u16,
+        active: u8,
+        final_ui_flags: u8,
+    }
+
+    #[test]
+    fn sequel_simulation_speed_matches_original_selection_tail() {
+        let oracle: SpeedOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_speed_choice.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            oracle.executable_sha256,
+            "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+        );
+        assert_eq!(oracle.values, [100, 10, 1]);
+        assert_eq!(oracle.initial_value, 1);
+        assert_eq!(
+            oracle.labels,
+            [b"LENT".to_vec(), b"NORMAL".to_vec(), b"RAPIDE".to_vec()]
+        );
+        assert_eq!(oracle.cases.len(), 90);
+        let mut items = oracle.values.map(PresentationChoiceItem::Value).to_vec();
+        items.push(PresentationChoiceItem::Sentinel);
+        for case in oracle.cases {
+            let mut state = PresentationChoiceState {
+                activation_flags: 1,
+                phase: 0,
+                transition: FramebufferTransitionState::default(),
+                layout_only: false,
+                ui_flags: case.ui_flags,
+                result: case.previous,
+            };
+            let outcome = update_presentation_choice(
+                &mut state,
+                &items,
+                usize::try_from(case.selected).ok(),
+                TEST_SOURCE,
+                TEST_TARGET,
+            )
+            .unwrap();
+            assert_eq!(state.result, case.result, "{case:?}");
+            assert_eq!(state.activation_flags, case.active, "{case:?}");
+            assert_eq!(state.ui_flags, case.final_ui_flags, "{case:?}");
+            if case.selected < 0 {
+                assert_eq!(
+                    outcome,
+                    PresentationChoiceOutcome::AwaitingSelection {
+                        layout_prepared: false
+                    }
+                );
+            } else {
+                assert_eq!(
+                    outcome,
+                    PresentationChoiceOutcome::Closed {
+                        layout_prepared: false,
+                        published_result: (case.selected < 3).then_some(case.result),
+                    }
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn explicit_value_overrides_special_text_speed_row() {
+        let mut state = PresentationChoiceState {
+            activation_flags: 1,
+            phase: 0,
+            transition: FramebufferTransitionState::default(),
+            layout_only: false,
+            ui_flags: 0,
+            result: 42,
+        };
+        let items = [PresentationChoiceItem::Value(0); 5];
+        let outcome =
+            update_presentation_choice(&mut state, &items, Some(4), TEST_SOURCE, TEST_TARGET)
+                .unwrap();
+        assert_eq!(state.result, 0);
+        assert_eq!(
+            outcome,
+            PresentationChoiceOutcome::Closed {
+                layout_prepared: false,
+                published_result: Some(0),
+            }
+        );
+    }
 
     #[derive(Deserialize)]
     struct ChoiceOracle {

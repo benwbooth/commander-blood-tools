@@ -946,6 +946,36 @@ GS:0x0CC4 at 0x5B46 after script/presentation processing. Those loop phases and
 the speed-selection control still need integrating with the sequel runtime;
 the handler must not run independently at the renderer's presentation rate.
 
+The simulation-speed selection tail is now recovered and component-tested.
+The menu at file `0x1D18` uses DS:`0x282B` for `LENT`, `NORMAL`, `RAPIDE`
+and a final `0xFFFF` cancel pointer. Its CS-relative table at file `0x1D12`
+contains `[100, 10, 1]`, written to DS:`0x0CC4` by the selected row. The
+executable's initial value is `1`. These are countdown reload values, not
+milliseconds or renderer frame rates. Cancel retains the old value and closes
+the modal; a negative selection retains the value and leaves the modal open.
+
+`PresentationChoiceItem::Value` allows the shared choice coordinator to publish
+these explicit values while preserving its existing text-speed row mapping.
+The guarded `big_bug_bang_speed_choice_oracle.py` runs original instructions
+at `0x1D6F..0x1D90` with the original CS base and no patched callbacks. Its 90
+cases cover every row, cancel, two negative selections, five previous values,
+and three UI flag combinations. Tests compare result, activation, UI flags,
+and the typed outcome. This captures only the selection tail, not the opening
+transition or the simulation loop. **The seven-command menu and simulation
+clock are still not connected to a production sequel host.**
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_speed_choice_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_speed_choice.json
+nix develop -c cargo test -p commander-blood-game --lib presentation_choice
+```
+
+The five focused tests pass, including the original Commander Blood choice
+vectors. A second speed capture and the existing startup-table capture are
+byte-identical to their checked-in fixtures after the harness's CS-aware exit
+check was added. These are component checks, not evidence of BBB playability.
+
 Verification for this slice (2026-09-05): 110 formats tests passed with original
 corpus tests explicitly enabled; 886 game-library tests passed with seven
 unrelated/platform and original-table tests ignored. Game all-targets checking

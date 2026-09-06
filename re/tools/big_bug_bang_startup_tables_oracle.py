@@ -54,7 +54,7 @@ def run(executable, start, end, writable=(), registers=None, visit=None, initial
     cpu.hook_add(UC_HOOK_CODE, instruction)
     cpu.hook_add(UC_HOOK_MEM_WRITE, write)
     cpu.emu_start(start - HEADER, end - HEADER, count=4096)
-    assert cpu.reg_read(UC_X86_REG_IP) == end - HEADER
+    assert cpu.reg_read(UC_X86_REG_IP) == end - HEADER - initial[UC_X86_REG_CS] * 16
     assert cpu.reg_read(UC_X86_REG_SP) == 0xFF00
     assert bytes(cpu.mem_read(0, len(module))) == module
     after = bytes(cpu.mem_read(GLOBALS, len(data)))
