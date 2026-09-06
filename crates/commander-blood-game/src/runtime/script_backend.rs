@@ -8,7 +8,7 @@ use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::descript::DescriptRecordKind;
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::instruction::ScriptRecordStateOperand;
-use commander_blood_formats::script::{ScriptObjectId, ScriptWordId};
+use commander_blood_formats::script::{ScriptDirectory, ScriptObjectId, ScriptWordId};
 
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
@@ -18,13 +18,14 @@ use crate::native::bloodprg::{
     LoadedSoundBank, OriginalSaveGame, ScriptAboardRecordContext, ScriptActionDescription,
     ScriptActionRecord, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
     ScriptDeferredRecord, ScriptDispatchState, ScriptEnvironmentActivity, ScriptExecutionBackend,
-    ScriptExecutionService, ScriptFieldSelector, ScriptFrameOutcome, ScriptPresentationEntity,
-    ScriptPresentationScanOutcome, ScriptPresentationScanState, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext, ScriptShipNavigationMode,
-    ScriptTransferContext, SequencePresentationState, SequenceRequestContext,
-    ShipPresentationState, SoundBankUsage, TextPresentationState, deferred_navigation_record,
-    execute_loaded_script_frame, load_sound_bank, lookup_and_apply_descript_record,
-    original_save_state_block_byte_count, script_field_offset,
+    ScriptExecutionService, ScriptFieldSelector, ScriptFrameEnd, ScriptFrameOutcome,
+    ScriptPresentationEntity, ScriptPresentationScanOutcome, ScriptPresentationScanState,
+    ScriptProfileId, ScriptProfileLoadOutcome, ScriptRecordStateNavigationContext,
+    ScriptShipNavigationMode, ScriptTransferContext, SequelSettlementContext,
+    SequelSimulationClock, SequelSimulationContext, SequencePresentationState,
+    SequenceRequestContext, ShipPresentationState, SoundBankUsage, TextPresentationState,
+    deferred_navigation_record, execute_loaded_script_frame, load_sound_bank,
+    lookup_and_apply_descript_record, original_save_state_block_byte_count, script_field_offset,
 };
 use crate::native::random::BloodPrng;
 
@@ -163,6 +164,7 @@ impl RuntimeScriptSystem {
             &mut self.service,
         )
         .map_err(|error| anyhow!("executing BloodScript frame: {error:?}"))?;
+        self.service.backend_mut().finish_script_pass(outcome.end);
         let selector = runtime
             .current_profile()
             .context("BloodScript profile disappeared after execution")?
@@ -718,6 +720,8 @@ pub struct RuntimeScriptBackend {
     idle_source: RuntimeIdleClipSource,
     environment_activity: ScriptEnvironmentActivity,
     clock: ScriptClock,
+    sequel_clock: Option<SequelSimulationClock>,
+    sequel_bindings: SequelSimulationBindings,
     sequence_context: SequenceRequestContext,
     navigation_context: Option<ScriptRecordStateNavigationContext>,
     action_runtime_state: ScriptActionRuntimeState,
@@ -727,12 +731,38 @@ pub struct RuntimeScriptBackend {
     commands: Vec<RuntimeScriptCommand>,
 }
 
+#[derive(Default)]
+struct SequelSimulationBindings {
+    excluded_location: Option<ScriptObjectId>,
+    arche: Option<ScriptObjectId>,
+    excluded_destination: Option<ScriptObjectId>,
+    honk: Option<ScriptObjectId>,
+}
+
 impl RuntimeScriptBackend {
     /// Clone immutable original-resource services into a persistent script backend.
     pub fn new(data: &OriginalGameData, clock: ScriptClock) -> Self {
-        let store = data.resource_store().clone();
+        Self::from_sources(
+            data.descript_database().clone(),
+            data.resource_store().clone(),
+            clock,
+            data.bridge_menu_text()
+                .sequel_controls()
+                .map(|controls| SequelSimulationClock {
+                    reload_value: controls.initial_speed,
+                    countdown: controls.initial_countdown,
+                }),
+        )
+    }
+
+    fn from_sources(
+        database: DescriptDatabase,
+        store: OriginalResourceStore,
+        clock: ScriptClock,
+        sequel_clock: Option<SequelSimulationClock>,
+    ) -> Self {
         Self {
-            database: data.descript_database().clone(),
+            database,
             object_names: BTreeMap::new(),
             assets: DescriptPresentationAssets::default(),
             backgrounds: DescriptBackgroundCache::default(),
@@ -741,6 +771,8 @@ impl RuntimeScriptBackend {
             idle_source: RuntimeIdleClipSource::new(store),
             environment_activity: ScriptEnvironmentActivity::default(),
             clock,
+            sequel_clock,
+            sequel_bindings: SequelSimulationBindings::default(),
             sequence_context: SequenceRequestContext::default(),
             navigation_context: None,
             action_runtime_state: ScriptActionRuntimeState::default(),
@@ -753,12 +785,50 @@ impl RuntimeScriptBackend {
 
     /// Bind stable profile object identities to their exact DEB names.
     pub fn bind_profile(&mut self, profile: &LoadedScriptProfile) {
-        self.object_names = profile
-            .directory()
+        self.bind_directory(profile.directory());
+    }
+
+    fn bind_directory(&mut self, directory: &ScriptDirectory) {
+        self.sequel_bindings = SequelSimulationBindings {
+            excluded_location: directory.find_active_object(b"Trashlando"),
+            arche: directory.find_active_object(b"arche"),
+            excluded_destination: directory.find_active_object(b"Arche"),
+            honk: directory.find_active_object(b"Honk"),
+        };
+        self.object_names = directory
             .active_objects()
             .map(|(object, entry)| (object, Box::from(entry.name())))
             .collect();
         self.active_description_object = None;
+    }
+
+    /// Advance the sequel's owned countdown once at the main-loop boundary.
+    pub fn begin_game_iteration(&mut self) {
+        if let Some(clock) = &mut self.sequel_clock {
+            clock.begin_iteration();
+        }
+    }
+
+    fn finish_script_pass(&mut self, end: ScriptFrameEnd) {
+        if end != ScriptFrameEnd::ExecutionDisabled
+            && let Some(clock) = &mut self.sequel_clock
+        {
+            clock.finish_enabled_script_pass();
+        }
+    }
+
+    /// Return the current sequel clock without inventing one for Commander Blood.
+    pub const fn sequel_simulation_clock(&self) -> Option<SequelSimulationClock> {
+        self.sequel_clock
+    }
+
+    /// Change the next reload without resetting the currently running countdown.
+    pub fn set_sequel_simulation_speed(&mut self, value: u16) -> Result<()> {
+        self.sequel_clock
+            .as_mut()
+            .context("simulation speed requires Big Bug Bang")?
+            .reload_value = value;
+        Ok(())
     }
 
     /// Apply one exact DESCRIPT record through real original-resource loaders.
@@ -914,6 +984,22 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
 
     fn clock(&self) -> ScriptClock {
         self.clock
+    }
+
+    fn sequel_simulation_context(&self) -> Option<SequelSimulationContext> {
+        Some(SequelSimulationContext {
+            countdown: self.sequel_clock?.countdown,
+            excluded_location: self.sequel_bindings.excluded_location?,
+        })
+    }
+
+    fn sequel_settlement_context(&self) -> Option<SequelSettlementContext> {
+        Some(SequelSettlementContext {
+            simulation: self.sequel_simulation_context()?,
+            arche: self.sequel_bindings.arche?,
+            excluded_destination: self.sequel_bindings.excluded_destination?,
+            honk: self.sequel_bindings.honk?,
+        })
     }
 
     fn sequence_context(&self) -> SequenceRequestContext {
@@ -1519,6 +1605,284 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires the original sequel executable, database and directories"]
+    fn sequel_clock_context_forwarding_uses_all_authored_directories() {
+        use crate::native::bloodprg::ScriptDispatchHost;
+        use commander_blood_formats::script::decode_script_directory;
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
+        let menu = crate::game::GameVariant::BigBugBang
+            .decode_bridge_menu_text(&executable)
+            .unwrap();
+        let controls = menu.sequel_controls().unwrap();
+        let database =
+            DescriptDatabase::parse(&std::fs::read(root.join("DESCRIPT.DES")).unwrap()).unwrap();
+        let store = OriginalResourceStore::new(root.clone(), None, [], true);
+        let backend = RuntimeScriptBackend::from_sources(
+            database,
+            store,
+            TEST_CLOCK,
+            Some(SequelSimulationClock {
+                reload_value: controls.initial_speed,
+                countdown: controls.initial_countdown,
+            }),
+        );
+        let mut service = ScriptExecutionService::new(backend);
+        assert!(service.sequel_simulation_context().is_none());
+        service
+            .backend_mut()
+            .set_sequel_simulation_speed(100)
+            .unwrap();
+        service
+            .backend_mut()
+            .finish_script_pass(ScriptFrameEnd::ExecutionDisabled);
+        assert_eq!(
+            service
+                .backend()
+                .sequel_simulation_clock()
+                .unwrap()
+                .countdown,
+            0
+        );
+        service
+            .backend_mut()
+            .finish_script_pass(ScriptFrameEnd::EndMarker);
+        let mut bound = 0;
+        for index in 1..=17u16 {
+            let directory = decode_script_directory(
+                &std::fs::read(root.join(format!("SCRIPT{index}.DEB"))).unwrap(),
+            )
+            .unwrap();
+            service.backend_mut().bind_directory(&directory);
+            service.backend_mut().begin_game_iteration();
+            let simulation = service.sequel_simulation_context();
+            assert_eq!(
+                simulation.map(|c| c.excluded_location),
+                directory.find_active_object(b"Trashlando")
+            );
+            if let Some(context) = simulation {
+                assert_eq!(context.countdown, 100 - index);
+            }
+            let expected = (|| {
+                Some(SequelSettlementContext {
+                    simulation: simulation?,
+                    arche: directory.find_active_object(b"arche")?,
+                    excluded_destination: directory.find_active_object(b"Arche")?,
+                    honk: directory.find_active_object(b"Honk")?,
+                })
+            })();
+            assert_eq!(service.sequel_settlement_context(), expected);
+            bound += usize::from(expected.is_some());
+        }
+        assert_eq!(bound, 17);
+        service
+            .backend_mut()
+            .set_sequel_simulation_speed(10)
+            .unwrap();
+        service
+            .backend_mut()
+            .finish_script_pass(ScriptFrameEnd::ResumeBoundary);
+        assert_eq!(
+            service
+                .backend()
+                .sequel_simulation_clock()
+                .unwrap()
+                .countdown,
+            83
+        );
+        for _ in 0..83 {
+            service.backend_mut().begin_game_iteration();
+        }
+        service
+            .backend_mut()
+            .finish_script_pass(ScriptFrameEnd::ResumeBoundary);
+        assert_eq!(
+            service
+                .backend()
+                .sequel_simulation_clock()
+                .unwrap()
+                .countdown,
+            10
+        );
+        service
+            .backend_mut()
+            .bind_directory(&decode_script_directory(&[]).unwrap());
+        assert!(service.sequel_simulation_context().is_none());
+        assert!(service.sequel_settlement_context().is_none());
+        assert_eq!(
+            service
+                .backend()
+                .sequel_simulation_clock()
+                .unwrap()
+                .countdown,
+            10
+        );
+        service.backend_mut().sequel_clock = None;
+        service.backend_mut().begin_game_iteration();
+        assert!(
+            service
+                .backend_mut()
+                .set_sequel_simulation_speed(1)
+                .is_err()
+        );
+    }
+
+    #[test]
+    #[ignore = "known incomplete profile transition: retained VAR does not own SCRIPT2's time word"]
+    fn sequel_simulation_clock_reaches_production_dispatch_with_profile_local_bindings() {
+        use crate::native::bloodprg::{
+            OriginalResourceCache, ScriptDispatchHost, ScriptProfileManager,
+        };
+        use commander_blood_formats::code::ScriptDialect;
+
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
+        let game = crate::game::GameVariant::BigBugBang;
+        let menu = game.decode_bridge_menu_text(&executable).unwrap();
+        let controls = menu.sequel_controls().unwrap();
+        let database =
+            DescriptDatabase::parse(&std::fs::read(root.join("DESCRIPT.DES")).unwrap()).unwrap();
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let backend = RuntimeScriptBackend::from_sources(
+            database,
+            store.clone(),
+            TEST_CLOCK,
+            Some(SequelSimulationClock {
+                reload_value: controls.initial_speed,
+                countdown: controls.initial_countdown,
+            }),
+        );
+        let mut service = ScriptExecutionService::new(backend);
+        assert!(
+            service.sequel_simulation_context().is_none(),
+            "no profile is bound yet"
+        );
+        let resources = game.decode_resource_catalog(&executable).unwrap();
+        let mut manager =
+            ScriptProfileManager::new(game.decode_profile_catalog(&executable).unwrap());
+        let mut cache = OriginalResourceCache::new();
+        let mut bound = 0;
+        service
+            .backend_mut()
+            .set_sequel_simulation_speed(100)
+            .unwrap();
+        service
+            .backend_mut()
+            .finish_script_pass(ScriptFrameEnd::ExecutionDisabled);
+        assert_eq!(
+            service
+                .backend()
+                .sequel_simulation_clock()
+                .unwrap()
+                .countdown,
+            0
+        );
+        service
+            .backend_mut()
+            .finish_script_pass(ScriptFrameEnd::EndMarker);
+        assert_eq!(
+            service
+                .backend()
+                .sequel_simulation_clock()
+                .unwrap()
+                .countdown,
+            100
+        );
+        for index in 0..17 {
+            let id = ScriptProfileId::new_for_dialect(index, ScriptDialect::BigBugBang).unwrap();
+            manager
+                .select(id, &mut cache, &store, &resources)
+                .unwrap_or_else(|error| panic!("profile {index}: {error:?}"));
+            let profile = manager.current().unwrap();
+            service.backend_mut().bind_profile(profile);
+            service.backend_mut().begin_game_iteration();
+            let expected_countdown = 99 - u16::from(index);
+            assert_eq!(
+                service
+                    .backend()
+                    .sequel_simulation_clock()
+                    .unwrap()
+                    .countdown,
+                expected_countdown
+            );
+            let directory = profile.directory();
+            let excluded = directory.find_active_object(b"Trashlando");
+            let simulation = service.sequel_simulation_context();
+            assert_eq!(
+                simulation.map(|c| c.excluded_location),
+                excluded,
+                "profile {index}"
+            );
+            if let Some(context) = simulation {
+                assert_eq!(context.countdown, expected_countdown);
+            }
+            let expected = (|| {
+                Some(SequelSettlementContext {
+                    simulation: simulation?,
+                    arche: directory.find_active_object(b"arche")?,
+                    excluded_destination: directory.find_active_object(b"Arche")?,
+                    honk: directory.find_active_object(b"Honk")?,
+                })
+            })();
+            assert_eq!(
+                service.sequel_settlement_context(),
+                expected,
+                "profile {index}"
+            );
+            bound += usize::from(expected.is_some());
+        }
+        assert!(
+            bound > 0,
+            "authored simulation profiles must have live bindings"
+        );
+        let remaining = service
+            .backend()
+            .sequel_simulation_clock()
+            .unwrap()
+            .countdown;
+        service
+            .backend_mut()
+            .set_sequel_simulation_speed(10)
+            .unwrap();
+        service
+            .backend_mut()
+            .finish_script_pass(ScriptFrameEnd::ResumeBoundary);
+        assert_eq!(
+            service
+                .backend()
+                .sequel_simulation_clock()
+                .unwrap()
+                .countdown,
+            remaining
+        );
+        for _ in 0..remaining {
+            service.backend_mut().begin_game_iteration();
+        }
+        service
+            .backend_mut()
+            .finish_script_pass(ScriptFrameEnd::ResumeBoundary);
+        assert_eq!(
+            service
+                .backend()
+                .sequel_simulation_clock()
+                .unwrap()
+                .countdown,
+            10
+        );
+        service.backend_mut().sequel_clock = None;
+        assert!(service.sequel_simulation_context().is_none());
+        assert!(service.sequel_settlement_context().is_none());
+        assert!(
+            service
+                .backend_mut()
+                .set_sequel_simulation_speed(1)
+                .is_err()
+        );
+    }
+
+    #[test]
     #[ignore = "requires the original sequel database, profile and object clips"]
     fn sequel_inventory_descriptor_runtime_backend_resolves_all_authored_clips() {
         use crate::native::bloodprg::ScriptDispatchHost;
@@ -1562,27 +1926,12 @@ mod tests {
                 assert!(request.resource_name.as_bytes().ends_with(b"xxxxxxxxxxxx"));
             }
         }
-        let backend = RuntimeScriptBackend {
-            database,
-            object_names: directory
-                .active_objects()
-                .map(|(id, entry)| (id, Box::from(entry.name())))
-                .collect(),
-            assets: DescriptPresentationAssets::default(),
-            backgrounds: DescriptBackgroundCache::default(),
-            background_source: RuntimeBackgroundSource::new(store.clone()),
-            sound_loader: RuntimeSoundBankLoader::new(store.clone()),
-            idle_source: RuntimeIdleClipSource::new(store.clone()),
-            environment_activity: ScriptEnvironmentActivity::default(),
-            clock: TEST_CLOCK,
-            sequence_context: SequenceRequestContext::default(),
-            navigation_context: None,
-            action_runtime_state: ScriptActionRuntimeState::default(),
-            presentation_interface_active: false,
-            active_description_object: None,
-            last_descript_application: None,
-            commands: Vec::new(),
-        };
+        let mut backend =
+            RuntimeScriptBackend::from_sources(database, store.clone(), TEST_CLOCK, None);
+        backend.object_names = directory
+            .active_objects()
+            .map(|(id, entry)| (id, Box::from(entry.name())))
+            .collect();
         let mut service = ScriptExecutionService::new(backend);
         let mut text = TextPresentationState::default();
         let mut count = 0;

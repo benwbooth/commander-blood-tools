@@ -51,6 +51,31 @@ const TARGET_MINIMUM_QUANTITY: i16 = 50;
 const DISENGAGE_QUANTITY: i16 = 10;
 const DAMAGE_DIVISOR: u32 = 5000;
 
+/// Simulation delay shared by the main loop, options menu and script passes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SequelSimulationClock {
+    /// Delay copied into the countdown after an enabled pass completes at zero.
+    pub reload_value: u16,
+    /// Remaining main-loop iterations before simulation handlers may update.
+    pub countdown: u16,
+}
+
+impl SequelSimulationClock {
+    /// Begin a main-loop iteration, including iterations that subsequently pause.
+    /// This is file `0x10CA..0x10D5`, not an interrupt-timer or renderer update.
+    pub fn begin_iteration(&mut self) {
+        self.countdown = self.countdown.saturating_sub(1);
+    }
+
+    /// Finish enabled script processing after its concept and presentation scans.
+    /// File `0x5B46..0x5B56` reloads zero only; disabled/error returns bypass it.
+    pub fn finish_enabled_script_pass(&mut self) {
+        if self.countdown == 0 {
+            self.countdown = self.reload_value;
+        }
+    }
+}
+
 /// Main-loop inputs shared by the sequel's simulation handlers.
 ///
 /// The native loop decrements the countdown at file 0x10CA and reloads it at
@@ -648,6 +673,42 @@ fn write(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn sequel_simulation_clock_matches_original_iteration_and_script_tail() {
+        #[derive(serde::Deserialize)]
+        struct Oracle {
+            executable_sha256: String,
+            cases: Vec<Case>,
+        }
+        #[derive(Debug, serde::Deserialize)]
+        struct Case {
+            reload: u16,
+            countdown: u16,
+            after_begin: u16,
+            after_finish: u16,
+        }
+        let oracle: Oracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_simulation_clock.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            oracle.executable_sha256,
+            "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+        );
+        assert_eq!(oracle.cases.len(), 40);
+        for case in oracle.cases {
+            let mut clock = super::SequelSimulationClock {
+                reload_value: case.reload,
+                countdown: case.countdown,
+            };
+            clock.begin_iteration();
+            assert_eq!(clock.countdown, case.after_begin, "{case:?}");
+            clock.finish_enabled_script_pass();
+            assert_eq!(clock.countdown, case.after_finish, "{case:?}");
+            assert_eq!(clock.reload_value, case.reload, "{case:?}");
+        }
+    }
+
     use commander_blood_formats::code::{
         ScriptCodeOffset, ScriptTokenDecoder, decode_script_token,
     };

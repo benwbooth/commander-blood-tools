@@ -628,7 +628,8 @@ pub use selected_mask::{
 };
 pub use sequel_growth::{
     SequelConflictState, SequelGrowthError, SequelSettlementContext, SequelSettlementState,
-    SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth, apply_sequel_settlement,
+    SequelSimulationClock, SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth,
+    apply_sequel_settlement,
 };
 pub use sequel_inventory::{SequelInventoryError, SequelInventoryLine, SequelInventoryState};
 pub use sequel_presentation::{

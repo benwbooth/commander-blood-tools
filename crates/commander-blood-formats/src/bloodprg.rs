@@ -574,6 +574,8 @@ pub struct BloodprgSequelMenuControls {
     pub speed_values: [u16; 3],
     /// Initial simulation countdown reload value, not a renderer frame rate.
     pub initial_speed: u16,
+    /// Initial remaining simulation delay in the executable data image.
+    pub initial_countdown: u16,
     /// Initial low-bit state of the travel-animation option.
     pub initial_travel_enabled: bool,
     /// Alternate label displayed when travel animations are enabled.
@@ -735,6 +737,7 @@ pub fn decode_blood2pg_bridge_menu_text(
                 read_unsigned_word(executable, 0x1D12 + index * 2)
             }),
             initial_speed: read_unsigned_word(executable, DATA + 0xCC4),
+            initial_countdown: read_unsigned_word(executable, DATA + 0xCC6),
             initial_travel_enabled: executable[DATA + 0xCF1] & 1 != 0,
             travel_on_label: decode_menu_label_at_data(executable, DATA, 0x27EF)?,
         }),

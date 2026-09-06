@@ -1010,9 +1010,48 @@ Production typed dispatch now handles D6 but requires an explicit
 synthetic zero countdown. Tests exercise that dispatch boundary, clock gating
 and query-mode writes. **The production sequel host is not yet implemented.**
 The native main loop decrements GS:0x0CC6 at 0x10CA and reloads it from
-GS:0x0CC4 at 0x5B46 after script/presentation processing. Those loop phases and
-the speed-selection control still need integrating with the sequel runtime;
-the handler must not run independently at the renderer's presentation rate.
+GS:0x0CC4 at 0x5B46 after script/presentation processing. The clock ownership and
+dispatch forwarding described below are now implemented; the interactive speed
+control and remaining sequel runtime still need connecting. The handler must
+not run independently at the renderer's presentation rate.
+
+`SequelSimulationClock` now owns the two initialized words and exactly models
+the original saturating decrement and zero-only reload. Forty unmodified-code
+captures cover zero, boundary values and maximum words; a repeated capture is
+byte-identical. `RuntimeGameLifecycleHost` advances the owned clock at the
+start of each main-loop iteration, before input and pause gates, not from the
+interrupt-timer tick count. `RuntimeScriptSystem` reloads after a successful
+enabled pass, including a resume-boundary finish. Disabled and error returns
+do not reload. Changing speed changes the next reload only.
+
+The production script backend retains this clock across profile binding and
+binds `Trashlando`, `arche`, `Arche`, and `Honk` from the current directory.
+`ScriptExecutionService` now forwards simulation and settlement contexts to
+D4-D6 instead of inheriting the absent-context default. Commander has no sequel
+clock; missing sequel bindings still return absent context and dispatch errors.
+An original-directory test checks all seventeen binding sets, clock changes,
+disabled/enabled pass boundaries, and clearing stale identities. This verifies
+the production backend/service boundary, not seventeen playable profiles.
+
+The full-profile acceptance test was also attempted and **still fails** on the
+transition from SCRIPT1 to SCRIPT2: `InvalidStateWord` at COD byte `0x5A97`,
+VAR byte `8368`. The retained first VAR does not own SCRIPT2's `time` word;
+the native allocation observations and remaining work below still apply.
+The failing acceptance test is retained with an explicit known-incomplete
+ignore reason. No zero extension, replacement VAR defaults, or fake state
+binding was added. Production startup remains guarded.
+The default game-library suite passes 937 tests with 23 ignored on a private
+Xvfb display, reaped afterward; that ignored count includes the known failing
+full-profile acceptance test. Game all-targets checking passes.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_simulation_clock_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_simulation_clock.json
+nix develop -c cargo test -p commander-blood-game --lib sequel_clock_context_forwarding -- --include-ignored
+# Acceptance gate, currently expected to expose the unresolved SCRIPT2 boundary:
+nix develop -c cargo test -p commander-blood-game --lib sequel_simulation_clock_reaches_production_dispatch -- --include-ignored
+```
 
 The simulation-speed selection tail is now recovered and component-tested.
 The menu at file `0x1D18` uses DS:`0x282B` for `LENT`, `NORMAL`, `RAPIDE`

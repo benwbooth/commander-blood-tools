@@ -1,0 +1,245 @@
+{
+  "cases": [
+    {
+      "after_begin": 0,
+      "after_finish": 0,
+      "countdown": 0,
+      "reload": 0
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 0,
+      "countdown": 1,
+      "reload": 0
+    },
+    {
+      "after_begin": 1,
+      "after_finish": 1,
+      "countdown": 2,
+      "reload": 0
+    },
+    {
+      "after_begin": 8,
+      "after_finish": 8,
+      "countdown": 9,
+      "reload": 0
+    },
+    {
+      "after_begin": 9,
+      "after_finish": 9,
+      "countdown": 10,
+      "reload": 0
+    },
+    {
+      "after_begin": 98,
+      "after_finish": 98,
+      "countdown": 99,
+      "reload": 0
+    },
+    {
+      "after_begin": 99,
+      "after_finish": 99,
+      "countdown": 100,
+      "reload": 0
+    },
+    {
+      "after_begin": 65534,
+      "after_finish": 65534,
+      "countdown": 65535,
+      "reload": 0
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 1,
+      "countdown": 0,
+      "reload": 1
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 1,
+      "countdown": 1,
+      "reload": 1
+    },
+    {
+      "after_begin": 1,
+      "after_finish": 1,
+      "countdown": 2,
+      "reload": 1
+    },
+    {
+      "after_begin": 8,
+      "after_finish": 8,
+      "countdown": 9,
+      "reload": 1
+    },
+    {
+      "after_begin": 9,
+      "after_finish": 9,
+      "countdown": 10,
+      "reload": 1
+    },
+    {
+      "after_begin": 98,
+      "after_finish": 98,
+      "countdown": 99,
+      "reload": 1
+    },
+    {
+      "after_begin": 99,
+      "after_finish": 99,
+      "countdown": 100,
+      "reload": 1
+    },
+    {
+      "after_begin": 65534,
+      "after_finish": 65534,
+      "countdown": 65535,
+      "reload": 1
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 10,
+      "countdown": 0,
+      "reload": 10
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 10,
+      "countdown": 1,
+      "reload": 10
+    },
+    {
+      "after_begin": 1,
+      "after_finish": 1,
+      "countdown": 2,
+      "reload": 10
+    },
+    {
+      "after_begin": 8,
+      "after_finish": 8,
+      "countdown": 9,
+      "reload": 10
+    },
+    {
+      "after_begin": 9,
+      "after_finish": 9,
+      "countdown": 10,
+      "reload": 10
+    },
+    {
+      "after_begin": 98,
+      "after_finish": 98,
+      "countdown": 99,
+      "reload": 10
+    },
+    {
+      "after_begin": 99,
+      "after_finish": 99,
+      "countdown": 100,
+      "reload": 10
+    },
+    {
+      "after_begin": 65534,
+      "after_finish": 65534,
+      "countdown": 65535,
+      "reload": 10
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 100,
+      "countdown": 0,
+      "reload": 100
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 100,
+      "countdown": 1,
+      "reload": 100
+    },
+    {
+      "after_begin": 1,
+      "after_finish": 1,
+      "countdown": 2,
+      "reload": 100
+    },
+    {
+      "after_begin": 8,
+      "after_finish": 8,
+      "countdown": 9,
+      "reload": 100
+    },
+    {
+      "after_begin": 9,
+      "after_finish": 9,
+      "countdown": 10,
+      "reload": 100
+    },
+    {
+      "after_begin": 98,
+      "after_finish": 98,
+      "countdown": 99,
+      "reload": 100
+    },
+    {
+      "after_begin": 99,
+      "after_finish": 99,
+      "countdown": 100,
+      "reload": 100
+    },
+    {
+      "after_begin": 65534,
+      "after_finish": 65534,
+      "countdown": 65535,
+      "reload": 100
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 65535,
+      "countdown": 0,
+      "reload": 65535
+    },
+    {
+      "after_begin": 0,
+      "after_finish": 65535,
+      "countdown": 1,
+      "reload": 65535
+    },
+    {
+      "after_begin": 1,
+      "after_finish": 1,
+      "countdown": 2,
+      "reload": 65535
+    },
+    {
+      "after_begin": 8,
+      "after_finish": 8,
+      "countdown": 9,
+      "reload": 65535
+    },
+    {
+      "after_begin": 9,
+      "after_finish": 9,
+      "countdown": 10,
+      "reload": 65535
+    },
+    {
+      "after_begin": 98,
+      "after_finish": 98,
+      "countdown": 99,
+      "reload": 65535
+    },
+    {
+      "after_begin": 99,
+      "after_finish": 99,
+      "countdown": 100,
+      "reload": 65535
+    },
+    {
+      "after_begin": 65534,
+      "after_finish": 65534,
+      "countdown": 65535,
+      "reload": 65535
+    }
+  ],
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+}

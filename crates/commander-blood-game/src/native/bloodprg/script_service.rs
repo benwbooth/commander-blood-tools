@@ -16,9 +16,9 @@ use super::{
     ScriptPresentationEntity, ScriptPresentationScanContext, ScriptPresentationScanError,
     ScriptPresentationScanHost, ScriptPresentationScanOutcome, ScriptPresentationScanState,
     ScriptRecordActionDispatchContext, ScriptRecordStateNavigationContext,
-    ScriptTextActivationError, ScriptTransferContext, SequenceRequestContext,
-    TextPresentationState, dispatch_script_action, execute_script_dialogue_control,
-    scan_script_presentations, update_actor_position_states,
+    ScriptTextActivationError, ScriptTransferContext, SequelSettlementContext,
+    SequelSimulationContext, SequenceRequestContext, TextPresentationState, dispatch_script_action,
+    execute_script_dialogue_control, scan_script_presentations, update_actor_position_states,
 };
 
 /// Runtime facts and external effects required by translated BloodScript logic.
@@ -35,6 +35,16 @@ pub trait ScriptExecutionBackend {
 
     /// Return the current game clock.
     fn clock(&self) -> ScriptClock;
+
+    /// Return the sequel clock and bound excluded location, absent for Commander.
+    fn sequel_simulation_context(&self) -> Option<SequelSimulationContext> {
+        None
+    }
+
+    /// Return the sequel settlement/conflict bindings, absent for Commander.
+    fn sequel_settlement_context(&self) -> Option<SequelSettlementContext> {
+        None
+    }
 
     /// Return the UI gates used by authored sequence requests.
     fn sequence_context(&self) -> SequenceRequestContext;
@@ -279,6 +289,14 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
 
     fn clock(&self) -> ScriptClock {
         self.backend.clock()
+    }
+
+    fn sequel_simulation_context(&self) -> Option<SequelSimulationContext> {
+        self.backend.sequel_simulation_context()
+    }
+
+    fn sequel_settlement_context(&self) -> Option<SequelSettlementContext> {
+        self.backend.sequel_settlement_context()
     }
 
     fn sequence_context(&self) -> SequenceRequestContext {

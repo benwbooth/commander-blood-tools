@@ -84,6 +84,7 @@ fn check(bytes: &[u8]) {
     );
     assert_eq!(controls.speed_values, [100, 10, 1]);
     assert_eq!(controls.initial_speed, 1);
+    assert_eq!(controls.initial_countdown, 0);
     assert!(!controls.initial_travel_enabled);
     assert_eq!(controls.travel_on_label.as_ref(), b"VOYAGE_ON");
 }
@@ -139,12 +140,14 @@ fn sequel_menu_tables_preserve_authored_speed_values_and_travel_low_bit() {
     let mut bytes = fixture();
     word(&mut bytes, 0x1D12, 1234);
     word(&mut bytes, DATA + 0xCC4, 5678);
+    word(&mut bytes, DATA + 0xCC6, 4321);
     for flags in [0, 1, 2, 3, 254, 255] {
         bytes[DATA + 0xCF1] = flags;
         let menu = decode_blood2pg_bridge_menu_text(&bytes).unwrap();
         let controls = menu.sequel_controls().unwrap();
         assert_eq!(controls.speed_values[0], 1234);
         assert_eq!(controls.initial_speed, 5678);
+        assert_eq!(controls.initial_countdown, 4321);
         assert_eq!(controls.initial_travel_enabled, flags & 1 != 0);
     }
 }

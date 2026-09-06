@@ -2906,6 +2906,18 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.backend_mut().set_clock(clock);
     }
 
+    /// Apply the sequel's once-per-main-loop countdown step before input/pause gates.
+    pub(super) fn begin_game_iteration(&mut self) {
+        self.scripts.backend_mut().begin_game_iteration();
+    }
+
+    /// Change the sequel simulation delay without restarting its current interval.
+    pub fn set_sequel_simulation_speed(&mut self, value: u16) -> Result<()> {
+        self.scripts
+            .backend_mut()
+            .set_sequel_simulation_speed(value)
+    }
+
     /// Execute one complete translated COD/BAS/presentation frame.
     pub fn execute_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         self.synchronize_script_action_runtime_state(u16::MIN)?;

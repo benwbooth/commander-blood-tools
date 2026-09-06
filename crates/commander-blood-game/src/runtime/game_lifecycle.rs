@@ -325,6 +325,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             state.exit_requested = true;
             return Ok(());
         }
+        self.services.begin_game_iteration();
         self.advance_frame_timers(state)?;
         if let Some(action) = self
             .platform
