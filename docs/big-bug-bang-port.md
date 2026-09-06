@@ -1631,6 +1631,59 @@ selection. The capture's 22 unit tests cover schedule validation, private-displa
 targeting, pointer bounds, capture-state validation, and the existing allocation
 checks. Original normal-input navigation into SCRIPT2 remains unverified.
 
+### Authored Translation Source
+
+`sequel_text_catalog` now exports every typed A6 instruction from the 17 authored
+COD resources, using the existing sequel decoder rather than scanning for text
+bytes. The catalog has 6,921 message sites and retains each site's profile/COD
+identity, line-record reference, presentation selector, control flags, resume
+target, and record-condition operand. Explicit sections preserve condition/menu
+boundaries. Their typed parts retain dictionary byte identities and original
+word bytes, plus 58 state-number and 46 inventory substitutions. The joined
+section `source` is a reading aid, not replacement executable text.
+
+```sh
+nix develop -c cargo run --bin sequel_text_catalog -- \
+  output/big-bug-bang/imported-assets/resources \
+  > output/big-bug-bang/authored-cod-text.json
+nix develop -c cargo test --bin sequel_text_catalog -- --include-ignored
+```
+
+The export records SHA-256 hashes of each COD/DIC pair. Independent validation
+matched its per-profile counts to the existing text audit and all 44,599 word
+references to their original dictionary bytes. The synthetic structure test and
+the opt-in original-corpus test both pass. Repeated exports are deterministic.
+`cargo check --workspace` and `cargo check -p commander-blood-tools
+-p commander-blood-game --all-targets` pass. Forcing `--workspace --all-targets`
+also builds the script compiler's embedded shared-source tests, which fail with
+17 unresolved-import/type errors. The same failure was reproduced in a clean
+detached worktree at pre-export commit `1d3b90a6`; the compiler already declares
+its unit tests owned by the tools crate. This change does not alter that setup.
+There are 2,614 sites with the spoken-text flag and 2,111 distinct first-section
+reading strings among those sites; these counts do not establish reachability
+or complete contextual utterances across multiple instructions.
+
+Five word occurrences in three messages contain byte `0xef`, outside the
+repository CP437 decoder's supported range. They remain explicit `\\xef` escapes
+with original bytes attached, not replacement characters or guessed corrections:
+`bbb.script6.cod.000023bc`, `bbb.script6.cod.00003aa0`, and
+`bbb.script12.cod.00001b9c`. An English editor must resolve these in context.
+
+This is authored COD translation source, **not completed English localization**.
+BAS dialogue, native UI/object display names, and media-embedded text are
+explicitly excluded in the output. Runtime localization, translated choice
+labels that preserve concept IDs, font/wrapping checks, and timing remain work.
+Generated original-text catalogs stay under ignored `output/`, not in the repo.
+
+The longer no-input reference, `startup-capture-15 --seconds 600 --interval 1`,
+completed 600 samples through 600.625 seconds, still only in profile 0. Its final
+screenshot returned to the TV narration about Terra also visible near startup;
+waiting alone did not reach the Honk start conversation. The extra word remained
+24930 in `script1.deb`. Capture JSON SHA-256:
+`63aabc44a9c7977145ca7e38d27f0b28b7ba4eb1935d26b2163a875d575f696b`.
+The next reference step is deliberate bridge navigation, not another longer
+no-input run. SCRIPT2 acceptance remains unresolved.
+
 ## Remaining Completion Requirements
 
 - Compare inherited VM handlers, including

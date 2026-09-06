@@ -17,6 +17,7 @@ commander-blood-formats = { path = "crates/commander-blood-formats" }
 cpal = "0.16"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.10"
 x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
 wgpu = "26"
 raw-window-handle = "0.6"

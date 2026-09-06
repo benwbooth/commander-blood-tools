@@ -344,6 +344,7 @@ dependencies = [
  "raw-window-handle",
  "serde",
  "serde_json",
+ "sha2",
  "wgpu 26.0.1",
  "x11rb",
 ]
