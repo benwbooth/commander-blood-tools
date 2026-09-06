@@ -101,11 +101,45 @@ def run_reset(executable, noise):
     return dict(input=fields(before), output=fields(after), written=sorted(written))
 
 
+def run_post_load(executable, profile):
+    cpu = Uc(UC_ARCH_X86, UC_MODE_16)
+    cpu.mem_map(0, 0x100000)
+    module = executable[HEADER:]
+    cpu.mem_write(0, module)
+    before = bytearray([0xA5] * 0x10000)
+    struct.pack_into("<H", before, 0x6B50, profile)
+    cpu.mem_write(GLOBALS, bytes(before))
+    cpu.reg_write(UC_X86_REG_CS, 0)
+    cpu.reg_write(UC_X86_REG_DS, GLOBALS // 16)
+    terminal = None
+
+    def instruction(machine, address, size, _context):
+        nonlocal terminal
+        position = address + HEADER
+        if position in (0x11B4, 0x11C6):
+            terminal = position
+            machine.emu_stop()
+        else:
+            assert 0x11AD <= position and position + size <= 0x11B4
+
+    def write(_machine, _access, address, _size, _value, _context):
+        raise AssertionError(f"unexpected post-load gate write at {address:#x}")
+
+    cpu.hook_add(UC_HOOK_CODE, instruction)
+    cpu.hook_add(UC_HOOK_MEM_WRITE, write)
+    cpu.emu_start(0x11AD - HEADER, 0x11C7 - HEADER, count=8)
+    assert terminal in (0x11B4, 0x11C6)
+    assert bytes(cpu.mem_read(0, len(module))) == module
+    assert bytes(cpu.mem_read(GLOBALS, len(before))) == before
+    return dict(profile=profile, refresh_navigation=terminal == 0x11B4)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("executable", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--reset-output", type=Path)
+    parser.add_argument("--post-load-output", type=Path)
     args = parser.parse_args()
     executable = args.executable.read_bytes()
     if hashlib.sha256(executable).hexdigest() != SHA256:
@@ -124,6 +158,11 @@ def main():
             for noise in (0, 1, 2, 127, 255):
                 output.write(json.dumps(run_reset(executable, noise), sort_keys=True, separators=(",", ":")) + "\n")
         print("verified 5 original profile-reset cases")
+    if args.post_load_output:
+        with args.post_load_output.open("x") as output:
+            for profile in range(17):
+                output.write(json.dumps(run_post_load(executable, profile), sort_keys=True, separators=(",", ":")) + "\n")
+        print("verified all 17 original post-load navigation gates")
 
 
 if __name__ == "__main__":

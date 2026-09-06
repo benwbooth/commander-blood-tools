@@ -684,10 +684,14 @@ fn run_game_runtime<Host: GameLifecycleHost>(
             state.vm_execution_enabled = true;
             let _ = host.run_vm(state)?;
             host.rebuild_record_state(state)?;
-            host.refresh_object_access(state)?;
-            host.reset_ship_hud(state)?;
-            state.navigation_rebuild_pending = true;
-            state.navigation_transition_pending = false;
+            if host.script_dialect() != ScriptDialect::BigBugBang
+                || profile == ScriptProfileId::INITIAL
+            {
+                host.refresh_object_access(state)?;
+                host.reset_ship_hud(state)?;
+                state.navigation_rebuild_pending = true;
+                state.navigation_transition_pending = false;
+            }
         }
 
         if !state.presentation.c2_presentation_gate {

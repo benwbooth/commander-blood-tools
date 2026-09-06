@@ -247,6 +247,7 @@ struct MainOracle {
 
 #[derive(Clone, Copy)]
 struct Scenario {
+    dialect: commander_blood_formats::code::ScriptDialect,
     panorama_opens: bool,
     frames: usize,
     pending_profile: Option<ScriptProfileId>,
@@ -276,6 +277,7 @@ struct Scenario {
 impl Default for Scenario {
     fn default() -> Self {
         Self {
+            dialect: commander_blood_formats::code::ScriptDialect::CommanderBlood,
             panorama_opens: true,
             frames: usize::MIN,
             pending_profile: None,
@@ -339,6 +341,10 @@ macro_rules! state_host_call {
 
 impl GameLifecycleHost for OracleHost {
     type Error = &'static str;
+
+    fn script_dialect(&self) -> commander_blood_formats::code::ScriptDialect {
+        self.scenario.dialect
+    }
 
     plain_host_call!(initialize_runtime_storage, "initialize_runtime_storage");
     plain_host_call!(
@@ -502,6 +508,67 @@ impl GameLifecycleHost for OracleHost {
     );
     plain_host_call!(delete_startup_transients, "startup_transient_files_delete");
     plain_host_call!(close_bridge_panorama, "close_bridge_panorama");
+}
+
+#[test]
+fn profile_post_load_calls_match_native_sequel_initial_only_navigation_refresh() {
+    use commander_blood_formats::code::ScriptDialect;
+    #[derive(Deserialize)]
+    struct Case {
+        profile: u8,
+        refresh_navigation: bool,
+    }
+    let lines =
+        include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_profile_post_load.jsonl");
+    assert_eq!(lines.lines().count(), 17);
+    for line in lines.lines() {
+        let case: Case = serde_json::from_str(line).unwrap();
+        for dialect in [ScriptDialect::BigBugBang, ScriptDialect::CommanderBlood] {
+            let Some(profile) = ScriptProfileId::new_for_dialect(case.profile, dialect) else {
+                continue;
+            };
+            let mut host = OracleHost {
+                scenario: Scenario {
+                    dialect,
+                    frames: 1,
+                    pending_profile: Some(profile),
+                    ..Scenario::default()
+                },
+                input_dispatches: 0,
+                pending_profiles_at_input: Vec::new(),
+                calls: Vec::new(),
+                chatter_at_audio: Vec::new(),
+                fail_bridge_render: false,
+            };
+            let mut state = GameLifecycleState::default();
+            state.navigation_transition_pending = true;
+            run_game_lifecycle(&mut state, &mut host).unwrap();
+            let start = host
+                .calls
+                .iter()
+                .position(|call| *call == "vm_resource_profile_select")
+                .unwrap();
+            let end = host
+                .calls
+                .iter()
+                .position(|call| *call == "bridge_render_frame")
+                .unwrap();
+            let refresh = dialect == ScriptDialect::CommanderBlood || case.refresh_navigation;
+            let mut expected = vec![
+                "vm_resource_profile_select",
+                "vm_run_wrapper",
+                "vm_record_state_proc",
+            ];
+            if refresh {
+                expected.extend([
+                    "object_heap_access",
+                    "ship_3d_hud_palette_snapshot_and_camera_reset",
+                ]);
+            }
+            assert_eq!(&host.calls[start..end], expected, "{dialect:?} {profile:?}");
+            assert_eq!(state.navigation_transition_pending, !refresh);
+        }
+    }
 }
 
 #[test]
