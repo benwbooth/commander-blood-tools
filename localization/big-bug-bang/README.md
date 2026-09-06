@@ -87,12 +87,15 @@ English prose sections also pass complete inline-font raster and screen-bound
 checks. A focused reveal test verifies translated completion timing and unchanged
 source IDs; an original-resource binding test checks stale-stream/profile fallback.
 The fixture explicitly prepares the actor-presentation gate; it is not evidence
-of reaching Honk from a new game. Actual cross-profile verification remains
-blocked: the SCRIPT1 -> SCRIPT2 shared-VAR transition fails at byte 8368, and
-starting SCRIPT2 without that preceding state is rejected as missing persistent
-state. These tests do not bypass either constraint. The ordinary-pointer PLAY
-run `output/big-bug-bang/modern-honk-play-02` now confirms that the same state-load
-error occurs after real menu selection and the opening English dialogue.
+of reaching Honk from a new game. The earlier ordinary-pointer PLAY run
+`output/big-bug-bang/modern-honk-play-02` failed during the shared-VAR transition
+at byte 8368. That loader rejection is now resolved using the native-captured
+read-only SCRIPT2.DEB prefix binding, without extending VAR. The repeated run
+`modern-honk-play-04` loads SCRIPT2 immediately after PLAY and reaches new French
+dialogue. Translation bindings correctly stop at the profile boundary rather
+than applying SCRIPT1 text to SCRIPT2 addresses. Starting SCRIPT2 without the
+preceding persistent state is still rejected. The attempted cryobox sequence
+has not yet reached Bob, so its translation remains without a live visual check.
 
 The game library regression suite passed 940 tests (25 ignored) with
 `--test-threads=1`. A parallel rerun terminated with SIGSEGV; its core dump placed

@@ -3,6 +3,8 @@
 use std::error::Error;
 use std::fmt;
 
+use commander_blood_formats::code::ScriptDialect;
+
 use super::{PresentationRequestFlags, ScriptProfileId};
 
 const PRIMARY_TEXT_REQUEST_PENDING: u8 = 1;
@@ -326,18 +328,37 @@ impl GameLifecycleState {
         self.ui_state.profile_change_blocked()
     }
 
-    fn profile_change_blocked(&self) -> bool {
+    /// Return whether this game's native gates defer a pending profile change.
+    pub fn profile_change_blocked_for_dialect(&self, dialect: ScriptDialect) -> bool {
         let blockers = self.profile_change_blockers;
-        self.presentation.active
-            || self.presentation.ship_active
-            || blockers.render_update_active
-            || self.presentation.menu_deferred
-            || self.presentation.subtitle_display_active
-            || blockers.navigation_choice_active
+        let shared = blockers.navigation_choice_active
             || blockers.save_active
             || blockers.load_active
             || blockers.navigation_transition_active
-            || blockers.navigation_actor_transition_active
+            || blockers.navigation_actor_transition_active;
+        shared
+            || (dialect == ScriptDialect::CommanderBlood
+                && (self.profile_ui_blocked()
+                    || self.presentation.active
+                    || self.presentation.ship_active
+                    || blockers.render_update_active
+                    || self.presentation.menu_deferred
+                    || self.presentation.subtitle_display_active))
+    }
+
+    /// Apply the sequel loader's writes to lifecycle-owned presentation globals.
+    pub fn reset_profile_presentation_for_dialect(&mut self, dialect: ScriptDialect) {
+        if dialect != ScriptDialect::BigBugBang {
+            return;
+        }
+        self.vm_execution_enabled = false;
+        let presentation = &mut self.presentation;
+        presentation.active = false;
+        presentation.menu_deferred = false;
+        presentation.subtitle_display_active = false;
+        presentation.word_choice_active = false;
+        presentation.start_locked = false;
+        presentation.request_flags = PresentationRequestFlags::default();
     }
 }
 
@@ -653,12 +674,12 @@ fn run_game_runtime<Host: GameLifecycleHost>(
         }
 
         if let Some(profile) = state.pending_profile
-            && !state.profile_ui_blocked()
-            && !state.profile_change_blocked()
+            && !state.profile_change_blocked_for_dialect(host.script_dialect())
         {
             if host.load_profile(profile, state)? == GameProfileLoadStatus::Failed {
                 return Ok(GameLifecycleExit::ProfileLoadFailed);
             }
+            state.reset_profile_presentation_for_dialect(host.script_dialect());
             state.pending_profile = None;
             state.vm_execution_enabled = true;
             let _ = host.run_vm(state)?;

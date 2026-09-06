@@ -48,10 +48,10 @@ impl ScriptProcedureId {
     }
 }
 
-/// Typed word within one owned script state object.
+/// Typed word within owned script state or an explicitly bound read-only alias.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ScriptStateWord {
-    owner: ScriptStateOwner,
+    owner: ScriptStateWordOwner,
     word_index: usize,
 }
 
@@ -75,23 +75,38 @@ enum ScriptStateOwner {
     TrailingState,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum ScriptStateWordOwner {
+    Owned(ScriptStateOwner),
+    ReadOnlyAlias(u16),
+}
+
 impl ScriptStateWord {
     /// Return the object that owns this word.
     pub const fn object(self) -> Option<ScriptObjectId> {
         match self.owner {
-            ScriptStateOwner::Object(object) => Some(object),
-            ScriptStateOwner::TrailingState => None,
+            ScriptStateWordOwner::Owned(ScriptStateOwner::Object(object)) => Some(object),
+            ScriptStateWordOwner::Owned(ScriptStateOwner::TrailingState)
+            | ScriptStateWordOwner::ReadOnlyAlias(_) => None,
         }
     }
 
-    /// Return the zero-based word index within the owning object.
+    /// Return the zero-based word index in its region, or zero for an external alias.
     pub const fn word_index(self) -> usize {
         self.word_index
     }
 
     /// Return whether this word belongs to the trailing profile-state block.
     pub const fn is_trailing_state(self) -> bool {
-        matches!(self.owner, ScriptStateOwner::TrailingState)
+        matches!(
+            self.owner,
+            ScriptStateWordOwner::Owned(ScriptStateOwner::TrailingState)
+        )
+    }
+
+    /// Return whether this word reads explicitly bound data outside the VAR image.
+    pub const fn is_read_only_alias(self) -> bool {
+        matches!(self.owner, ScriptStateWordOwner::ReadOnlyAlias(_))
     }
 }
 
@@ -281,16 +296,40 @@ impl ScriptStateObject {
     }
 }
 
-/// Complete decoded VAR state image partitioned into typed objects and trailing data.
+/// Decoded VAR image and separately bound, nonserialized read-only word aliases.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScriptState {
     dialect: ScriptDialect,
     objects: Vec<ScriptStateObject>,
     trailing_source_offset: usize,
     trailing_data: Box<[u8]>,
+    read_only_word_aliases: BTreeMap<u16, [u8; WORD_SIZE]>,
 }
 
 impl ScriptState {
+    /// Bind external bytes at an aligned VAR-relative word position outside VAR.
+    /// Aliases are read-only, cannot be widened, and are excluded from serialization.
+    pub fn bind_read_only_word_alias(
+        &mut self,
+        source_offset: u16,
+        bytes: [u8; WORD_SIZE],
+    ) -> bool {
+        let offset = usize::from(source_offset);
+        if !offset.is_multiple_of(WORD_SIZE)
+            || offset < self.trailing_source_offset + self.trailing_data.len()
+            || source_offset.checked_add(1).is_none()
+        {
+            return false;
+        }
+        self.read_only_word_aliases.insert(source_offset, bytes);
+        true
+    }
+
+    /// Drop profile-specific external bindings without changing the VAR image.
+    pub fn clear_read_only_word_aliases(&mut self) {
+        self.read_only_word_aliases.clear();
+    }
+
     /// Return the native layout used to bind this state's owned records.
     pub const fn dialect(&self) -> ScriptDialect {
         self.dialect
@@ -316,7 +355,7 @@ impl ScriptState {
         let byte_offset = word_index.checked_mul(WORD_SIZE)?;
         let word_end = byte_offset.checked_add(WORD_SIZE)?;
         (word_end <= state_object.bytes.len()).then_some(ScriptStateWord {
-            owner: ScriptStateOwner::Object(object),
+            owner: ScriptStateWordOwner::Owned(ScriptStateOwner::Object(object)),
             word_index,
         })
     }
@@ -364,7 +403,7 @@ impl ScriptState {
         })
     }
 
-    /// Resolve an encoded VAR byte position to an aligned owned object word.
+    /// Resolve an encoded VAR byte position to an owned word or explicit read-only alias.
     pub fn resolve_word_source_offset(&self, source_offset: u16) -> Option<ScriptStateWord> {
         let source_offset = usize::from(source_offset);
         self.objects
@@ -374,7 +413,7 @@ impl ScriptState {
                 let word_end = relative.checked_add(WORD_SIZE)?;
                 (relative.is_multiple_of(WORD_SIZE) && word_end <= object.bytes.len()).then_some(
                     ScriptStateWord {
-                        owner: ScriptStateOwner::Object(object.id),
+                        owner: ScriptStateWordOwner::Owned(ScriptStateOwner::Object(object.id)),
                         word_index: relative / WORD_SIZE,
                     },
                 )
@@ -384,41 +423,54 @@ impl ScriptState {
                 let word_end = relative.checked_add(WORD_SIZE)?;
                 (relative.is_multiple_of(WORD_SIZE) && word_end <= self.trailing_data.len())
                     .then_some(ScriptStateWord {
-                        owner: ScriptStateOwner::TrailingState,
+                        owner: ScriptStateWordOwner::Owned(ScriptStateOwner::TrailingState),
                         word_index: relative / WORD_SIZE,
+                    })
+            })
+            .or_else(|| {
+                let offset = u16::try_from(source_offset).ok()?;
+                self.read_only_word_aliases
+                    .contains_key(&offset)
+                    .then_some(ScriptStateWord {
+                        owner: ScriptStateWordOwner::ReadOnlyAlias(offset),
+                        word_index: 0,
                     })
             })
     }
 
-    /// Read one resolved object word.
+    /// Read one resolved owned word or explicitly bound external word.
     pub fn word(&self, field: ScriptStateWord) -> Option<u16> {
         let offset = field.word_index.checked_mul(WORD_SIZE)?;
         let bytes = match field.owner {
-            ScriptStateOwner::Object(object) => {
+            ScriptStateWordOwner::Owned(ScriptStateOwner::Object(object)) => {
                 self.object(object)?.bytes.get(offset..offset + WORD_SIZE)?
             }
-            ScriptStateOwner::TrailingState => {
+            ScriptStateWordOwner::Owned(ScriptStateOwner::TrailingState) => {
                 self.trailing_data.get(offset..offset + WORD_SIZE)?
+            }
+            ScriptStateWordOwner::ReadOnlyAlias(source_offset) => {
+                self.read_only_word_aliases.get(&source_offset)?
             }
         };
         Some(u16::from_le_bytes(bytes.try_into().ok()?))
     }
 
-    /// Assign one resolved object word.
+    /// Assign one resolved owned word, rejecting external read-only aliases.
     pub fn set_word(&mut self, field: ScriptStateWord, value: u16) -> bool {
         let Some(offset) = field.word_index.checked_mul(WORD_SIZE) else {
             return false;
         };
         let bytes = match field.owner {
-            ScriptStateOwner::Object(object) => {
+            ScriptStateWordOwner::Owned(ScriptStateOwner::Object(object)) => {
                 let Some(object) = self.objects.get_mut(object.index()) else {
                     return false;
                 };
                 object.bytes.get_mut(offset..offset + WORD_SIZE)
             }
-            ScriptStateOwner::TrailingState => {
+            ScriptStateWordOwner::Owned(ScriptStateOwner::TrailingState) => {
                 self.trailing_data.get_mut(offset..offset + WORD_SIZE)
             }
+            ScriptStateWordOwner::ReadOnlyAlias(_) => return false,
         };
         let Some(bytes) = bytes else { return false };
         bytes.copy_from_slice(&value.to_le_bytes());
@@ -543,8 +595,10 @@ impl ScriptState {
     /// Widen one word identity to a three-word record beginning at the same position.
     pub fn word_triple_starting_at(&self, field: ScriptStateWord) -> Option<ScriptStateWordTriple> {
         match field.owner {
-            ScriptStateOwner::Object(object) => self.object_word_triple(object, field.word_index),
-            ScriptStateOwner::TrailingState => {
+            ScriptStateWordOwner::Owned(ScriptStateOwner::Object(object)) => {
+                self.object_word_triple(object, field.word_index)
+            }
+            ScriptStateWordOwner::Owned(ScriptStateOwner::TrailingState) => {
                 let byte_offset = field.word_index.checked_mul(WORD_SIZE)?;
                 let record_end = byte_offset.checked_add(WORD_SIZE * 3)?;
                 (record_end <= self.trailing_data.len()).then_some(ScriptStateWordTriple {
@@ -552,6 +606,7 @@ impl ScriptState {
                     first_word_index: field.word_index,
                 })
             }
+            ScriptStateWordOwner::ReadOnlyAlias(_) => None,
         }
     }
 
@@ -1014,6 +1069,7 @@ pub fn decode_script_state_for_dialect(
         objects,
         trailing_source_offset: cursor,
         trailing_data: Box::from(&data[cursor..]),
+        read_only_word_aliases: BTreeMap::new(),
     })
 }
 
@@ -1033,6 +1089,40 @@ mod tests {
     const PROFILE_COUNT: usize = 5;
     const EXPECTED_DIRECTORY_COUNTS: [usize; PROFILE_COUNT] = [137, 342, 353, 244, 244];
     const EXPECTED_OBJECT_COUNTS: [usize; PROFILE_COUNT] = [122, 122, 130, 136, 130];
+
+    #[test]
+    fn external_word_alias_is_explicit_read_only_and_not_serialized() {
+        let directory = decode_script_directory(&[]).unwrap();
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            let bytes = [1, 2, 3, 4];
+            let mut state = decode_script_state_for_dialect(&bytes, &directory, dialect).unwrap();
+            assert!(state.resolve_word_source_offset(4).is_none());
+            assert!(!state.bind_read_only_word_alias(2, *b"ba"));
+            assert!(!state.bind_read_only_word_alias(3, *b"ba"));
+            assert!(!state.bind_read_only_word_alias(5, *b"ba"));
+            assert!(!state.bind_read_only_word_alias(u16::MAX, *b"ba"));
+            assert!(state.bind_read_only_word_alias(4, *b"ba"));
+            let field = state.resolve_word_source_offset(4).unwrap();
+            assert!(field.is_read_only_alias());
+            assert!(!field.is_trailing_state());
+            assert_eq!(field.object(), None);
+            assert_eq!(state.word(field), Some(u16::from_le_bytes(*b"ba")));
+            assert!(!state.set_word(field, 0));
+            assert!(state.resolve_byte_source_offset(4).is_none());
+            assert!(state.resolve_word_pair_source_offset(4).is_none());
+            assert!(state.resolve_word_triple_source_offset(4).is_none());
+            assert!(state.word_triple_starting_at(field).is_none());
+            assert!(state.resolve_word_source_offset(6).is_none());
+            assert_eq!(state.encode(), bytes);
+            assert!(state.bind_read_only_word_alias(4, *b"xy"));
+            assert_eq!(state.word(field), Some(u16::from_le_bytes(*b"xy")));
+            assert_eq!(state.clone().word(field), state.word(field));
+            state.clear_read_only_word_aliases();
+            assert_eq!(state.word(field), None);
+            assert!(state.resolve_word_source_offset(4).is_none());
+            assert_eq!(state.encode(), bytes);
+        }
+    }
 
     fn original_asset(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))

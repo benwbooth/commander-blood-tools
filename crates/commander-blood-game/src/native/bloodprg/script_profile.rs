@@ -55,6 +55,7 @@ pub const SCRIPT_PROFILE_RESOURCE_COUNT: usize = 5;
 const SERIALIZED_RESOURCE_ID_SIZE: usize = 2;
 const SENTINEL_PROFILE_COUNT: usize = 1;
 const PROCEDURE_GATE_OPCODE: u8 = 0xA9;
+const SEQUEL_RETAINED_VAR_BYTES: u16 = 8368;
 const BUILTIN_PLAYER_NAME: &[u8] = b"blood";
 const BUILTIN_WORLD_NAME: &[u8] = b"orxx";
 const BUILTIN_HORN_NAME: &[u8] = b"Honk";
@@ -862,7 +863,7 @@ fn decode_loaded_profile(
     if dialect == ScriptDialect::CommanderBlood {
         dialogue.decoded().map_err(ScriptProfileError::Dialogue)?;
     }
-    let state = if let Some((state, previous_directory)) = retained_state {
+    let mut state = if let Some((state, previous_directory)) = retained_state {
         if state.dialect() != dialect
             || !previous_directory
                 .active_objects()
@@ -882,6 +883,20 @@ fn decode_loaded_profile(
             source,
         })?
     };
+    state.clear_read_only_word_aliases();
+    // Native PLAY captures place SCRIPT2.DEB immediately after retained SCRIPT1.VAR.
+    // COD's scalar read at 0x5A97 addresses that directory prefix, not a VAR word.
+    if dialect == ScriptDialect::BigBugBang
+        && profile.value() == 1
+        && state.encode().len() == usize::from(SEQUEL_RETAINED_VAR_BYTES)
+        && let Some(prefix) = directory_bytes.first_chunk::<2>()
+    {
+        let bound = state.bind_read_only_word_alias(SEQUEL_RETAINED_VAR_BYTES, *prefix);
+        debug_assert!(
+            bound,
+            "aligned directory prefix must be outside retained VAR"
+        );
+    }
     let instructions = code
         .tokens()
         .iter()
@@ -1111,6 +1126,80 @@ mod tests {
             count += 1;
         }
         assert_eq!(count, 32);
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang disc resources"]
+    fn sequel_play_profile_binds_native_directory_read_without_extending_var() {
+        use commander_blood_formats::instruction::{ScriptStateOperand, ScriptStateOperator};
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+        let executable = std::fs::read(root.join("BLOOD2PG.EXE")).unwrap();
+        let directory_bytes = std::fs::read(root.join("SCRIPT2.DEB")).unwrap();
+        let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_blood2pg(&executable).unwrap();
+        let mut manager = ScriptProfileManager::new(catalog);
+        let mut cache = OriginalResourceCache::new();
+        let store = OriginalResourceStore::new(root, None, [], true);
+        assert!(matches!(
+            manager.select(SECOND_PROFILE, &mut cache, &store, &resources),
+            Err(ScriptProfileError::MissingPersistentState)
+        ));
+        manager
+            .select(FIRST_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        let before = manager
+            .current()
+            .unwrap()
+            .synchronized_state()
+            .unwrap()
+            .encode();
+        assert_eq!(before.len(), usize::from(SEQUEL_RETAINED_VAR_BYTES));
+        manager
+            .select(SECOND_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        let profile = manager.current_mut().unwrap();
+        assert_eq!(profile.state.encode(), before);
+        let instruction = profile
+            .instruction_at(ScriptCodeOffset::new(0x5A97))
+            .unwrap();
+        let DecodedScriptInstruction::SharedState(operation) = instruction else {
+            panic!("expected native time comparison, got {instruction:?}");
+        };
+        let operation = *operation;
+        let field = operation.target;
+        assert!(field.is_read_only_alias());
+        assert_eq!(operation.operator, ScriptStateOperator::GreaterThan);
+        assert_eq!(operation.operand, ScriptStateOperand::Immediate(19));
+        assert_eq!(
+            profile.state.word(field),
+            Some(u16::from_le_bytes(directory_bytes[..2].try_into().unwrap()))
+        );
+        assert_eq!(profile.state.word(field), Some(24930));
+        let mut runtime = ScriptRuntime::new();
+        runtime.begin_root_guard(ScriptCodeOffset::new(0));
+        assert_eq!(
+            super::super::apply_shared_state_operation(operation, &mut profile.state, &mut runtime)
+                .unwrap(),
+            super::super::ScriptControl::Continue
+        );
+        assert!(!profile.state.set_word(field, 0));
+        assert_eq!(profile.state.encode(), before);
+        manager
+            .select(SECOND_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        assert_eq!(manager.current().unwrap().state.word(field), Some(24930));
+        manager
+            .select(FIRST_PROFILE, &mut cache, &store, &resources)
+            .unwrap();
+        assert_eq!(manager.current().unwrap().state.word(field), None);
+        assert!(
+            manager
+                .current()
+                .unwrap()
+                .state
+                .resolve_word_source_offset(SEQUEL_RETAINED_VAR_BYTES)
+                .is_none()
+        );
     }
 
     #[test]

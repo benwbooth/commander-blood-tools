@@ -9,12 +9,55 @@ ship no external executable dependency. Test/oracle tools are separate from
 runtime dependencies.
 
 The objective is active and **not complete**. The verified Big Bug Bang build
-now plays its opening and enters the main loop; complete gameplay is not
+now plays its opening and loads SCRIPT2 after PLAY; complete gameplay is not
 established. The original-disc investigation is in
 `big-bug-bang-investigation.md`; its initial decoder limitations describe the
 state before the implementation below.
 
 ## Verified Implementation
+
+### SCRIPT2 Load and Native Transition Gate
+
+The retained-state loader now binds SCRIPT2's VAR-relative word 8368 to the first
+two bytes of the actual SCRIPT2.DEB resource. This is a distinct read-only word
+identity, not trailing VAR storage or a copied SCRIPT2.VAR default. It cannot be
+written, widened into a record, or serialized into a save image. Profile loading
+clears old aliases before binding the verified sequel layout; Commander and
+other layouts do not receive this binding. The original-resource loader test
+executes the decoded `time > 19` comparison, checks unchanged retained VAR bytes,
+rejects a write, and checks repeat loading and removal on return to SCRIPT1.
+
+The native main-loop gate at file `0x116D..0x118A` checks navigation choice,
+save, load, navigation transition, and actor transition. It does not use
+Commander's additional UI/presentation gates. The sequel now selects that rule
+after a successful VM pass. Lifecycle-owned presentation flags explicitly
+cleared by the native loader at `0x588F..0x5906` are also cleared before the new
+VM pass, preventing the old lifecycle snapshot from restoring them. Countdown,
+hold-ready/completion, and UI ownership retain their observed values. Commander
+keeps its previous gate and reset behavior.
+
+`re/tools/big_bug_bang_profile_gate_oracle.py` executes the unchanged native
+gate for 512 cases, including high-bit blockers and unrelated globals filled
+with zero or 255. It also captures five loader-reset cases. Regeneration is
+byte-identical. Rust checks every gate case against 256 combinations of the
+additional presentation/UI flags, for both dialects.
+
+Live run `modern-honk-play-03` first loaded SCRIPT2 at frame 2401 and exited
+normally after 5604 frame records. With the native gate/reset changes,
+`modern-honk-play-04` loaded it at frame 1104 immediately after PLAY and exited
+normally after 2010 records. Both retain SCRIPT1.VAR. The latter visibly reaches
+SCRIPT2's French instruction to visit the cryobox (`screen-013.png`). Its cryobox
+attempt ends during a static-TV presentation (`screen-020.png`), with semantic
+subtitle `WAIT COMMANDER ...`; it does not establish reaching Bob or completing
+the cryobox sequence. SCRIPT2 and the remaining profiles are still untranslated.
+Post-load navigation/counter/HUD ordering also needs further native comparison.
+
+Verification: 944 game-library tests and 116 format-library tests passed
+serially (30 and 10 ignored respectively); the original-resource SCRIPT2 loader
+test was run explicitly and passed; all-targets checking passed. Unrelated user
+worktree edits were present but are not included in this change. The older
+load-failure sections below describe superseded checkpoints, not a current
+SCRIPT2 rejection. Full gameplay and English localization remain incomplete.
 
 ### Native PLAY Transition and Adjacent Directory Ownership
 
@@ -44,14 +87,14 @@ the profile transition. Event-stream SHA-256:
 Final guest-dump SHA-256:
 `1d66443fa00d01c1f8a28da2ecddf6ab712fcf927c4d49552cd44cc9634e5841`.
 
-This supersedes the earlier lack of a live native SCRIPT2 ownership capture;
-it does not yet change the modern loader or prove execution of the particular
-COD condition. A future binding must derive the read from the actual adjacent
-directory bytes, preserve VAR serialization, and avoid making directory data
+This superseded the earlier lack of a live native SCRIPT2 ownership capture;
+the capture alone did not change the modern loader or prove execution of the particular
+COD condition. The binding described above derives the read from the actual adjacent
+directory bytes, preserves VAR serialization, and avoids making directory data
 writable script state. The original also transitions shortly after selecting
-PLAY, whereas the modern run continues a long HONK speech before attempting
-the load. That ordering difference remains unresolved, separately from the
-loader rejection. Full gameplay and English coverage are still incomplete.
+PLAY, whereas the earlier modern run continued a long HONK speech before
+attempting the load. The native gate correction above removes that delay in
+the repeated PLAY scenario. Full gameplay and English coverage are still incomplete.
 
 ### English Inline Prose and Live Transition Blocker
 

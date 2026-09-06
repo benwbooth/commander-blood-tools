@@ -11,6 +11,112 @@ const ONE_FRAME_POINTER_PRESS_LATCH: u8 = 1;
 const COUNTDOWN_WITH_ZERO_LOW_BYTE: u16 = 256;
 
 #[test]
+fn sequel_profile_change_gate_matches_native_without_commander_presentation_gates() {
+    use commander_blood_formats::code::ScriptDialect;
+    #[derive(Deserialize)]
+    struct Case {
+        requested: i16,
+        flags: [u8; 5],
+        load: bool,
+    }
+    let lines =
+        include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_profile_gate.jsonl");
+    assert_eq!(lines.lines().count(), 512);
+    for (index, line) in lines.lines().enumerate() {
+        let case: Case = serde_json::from_str(line).unwrap();
+        for ignored in 0..256 {
+            let flag = |bit| ignored & (1 << bit) != 0;
+            let mut state = GameLifecycleState::default();
+            state.pending_profile = u8::try_from(case.requested).ok().and_then(|request| {
+                ScriptProfileId::new_for_dialect(request, ScriptDialect::BigBugBang)
+            });
+            state.profile_change_blockers = GameProfileChangeBlockers {
+                navigation_choice_active: case.flags[0] != 0,
+                save_active: case.flags[1] != 0,
+                load_active: case.flags[2] != 0,
+                navigation_transition_active: case.flags[3] != 0,
+                navigation_actor_transition_active: case.flags[4] != 0,
+                render_update_active: flag(0),
+            };
+            state.presentation.active = flag(1);
+            state.presentation.ship_active = flag(2);
+            state.presentation.menu_deferred = flag(3);
+            state.presentation.subtitle_display_active = flag(4);
+            state.set_modal_ui_busy(flag(5));
+            state.set_navigation_ui_busy(flag(6));
+            if flag(7) {
+                state.set_low_ui_state_word(state.low_ui_state_word() | 2);
+            }
+            for dialect in [ScriptDialect::BigBugBang, ScriptDialect::CommanderBlood] {
+                let ready = state.pending_profile.is_some()
+                    && !state.profile_change_blocked_for_dialect(dialect);
+                let expected = case.load && (dialect == ScriptDialect::BigBugBang || ignored == 0);
+                assert_eq!(
+                    ready, expected,
+                    "case {index}, ignored={ignored}, {dialect:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn sequel_profile_reset_matches_native_clears_and_preserves_other_owners() {
+    use commander_blood_formats::code::ScriptDialect;
+    let lines =
+        include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_profile_reset.jsonl");
+    assert_eq!(lines.lines().count(), 5);
+    for line in lines.lines() {
+        let case: serde_json::Value = serde_json::from_str(line).unwrap();
+        for dialect in [ScriptDialect::BigBugBang, ScriptDialect::CommanderBlood] {
+            let input = &case["input"];
+            let expected = if dialect == ScriptDialect::BigBugBang {
+                &case["output"]
+            } else {
+                input
+            };
+            let mut state = GameLifecycleState::default();
+            let flag = |data: &serde_json::Value, name: &str| data[name].as_u64().unwrap() != 0;
+            let word = |data: &serde_json::Value, name: &str| data[name].as_u64().unwrap() as u16;
+            state.vm_execution_enabled = flag(input, "vm");
+            state.set_low_ui_state_word(word(input, "ui"));
+            let p = &mut state.presentation;
+            p.active = flag(input, "active");
+            p.menu_deferred = flag(input, "menu");
+            p.subtitle_display_active = flag(input, "subtitle");
+            p.word_choice_active = flag(input, "choice");
+            p.start_locked = flag(input, "locked");
+            p.request_flags = PresentationRequestFlags::decode(word(input, "request") as u8);
+            p.hold_ready = flag(input, "ready");
+            p.dialogue_hold_complete = flag(input, "complete");
+            p.dialogue_hold_countdown = word(input, "countdown");
+            p.word_buffer_nonempty = flag(input, "words");
+            p.ship_active = true;
+            p.c2_presentation_gate = true;
+            state.reset_profile_presentation_for_dialect(dialect);
+            let p = &state.presentation;
+            assert_eq!(state.vm_execution_enabled, flag(expected, "vm"));
+            assert_eq!(state.low_ui_state_word(), word(expected, "ui") & 15);
+            assert_eq!(p.active, flag(expected, "active"));
+            assert_eq!(p.menu_deferred, flag(expected, "menu"));
+            assert_eq!(p.subtitle_display_active, flag(expected, "subtitle"));
+            assert_eq!(p.word_choice_active, flag(expected, "choice"));
+            assert_eq!(p.start_locked, flag(expected, "locked"));
+            assert_eq!(
+                p.request_flags,
+                PresentationRequestFlags::decode(word(expected, "request") as u8)
+            );
+            assert_eq!(p.hold_ready, flag(expected, "ready"));
+            assert_eq!(p.dialogue_hold_complete, flag(expected, "complete"));
+            assert_eq!(p.dialogue_hold_countdown, word(expected, "countdown"));
+            assert_eq!(p.word_buffer_nonempty, flag(expected, "words"));
+            assert!(p.ship_active);
+            assert!(p.c2_presentation_gate);
+        }
+    }
+}
+
+#[test]
 fn sequel_text_hold_vm_resume_matches_native_vectors() {
     use commander_blood_formats::code::ScriptDialect;
     let lines =
