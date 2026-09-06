@@ -45,18 +45,28 @@ localization tests pass, including four live-number readouts and three inventory
 prompts. Game-package all-targets checking and 949 serial game-library tests pass
 (33 ignored). SCRIPT4 live English rendering
 and contextual review remain unverified.
-The other 13 COD profiles, BAS text, native UI, object names, and text embedded
+The other 13 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
 
-## Options Integration Blocker
+## Options and Saves
 
-Production `runtime/bridge_console.rs` currently passes BBB's seven option labels
-to the Commander Blood five-row `update_option_menu` handler. The existing native
-`update_sequel_option_menu` is not connected there. Consequently, by row index,
-Save dispatches Quit, Load and Quit have no action, simulation speed opens text
-speed, text speed toggles music, travel dispatches Save, and music dispatches Load.
-Do not treat the visible BBB menu as a working save/load interface. The two native
-sequel-options tests pass, but they do not test this production integration.
+Production `runtime/bridge_console.rs` now selects the recovered seven-row
+`update_sequel_option_menu` for BBB and retains the five-row Commander handler
+for Commander Blood. The two speed lists share the existing presentation-choice
+widget. Simulation choices publish the authored reload values 100, 10, and 1
+without resetting the current countdown; text speed remains independent.
+Travel state feeds the C1 dispatcher, destination activation, and hyperjump
+completion paths described below, not just its label.
+
+The options, both speed lists, and bridge-list Cancel labels have English
+display overrides. They apply only to decoded sequel controls and exact known
+source labels; other text passes through unchanged. Original menu row identities,
+speed values, and executable-decoded strings remain intact. The bridge's baked-in
+console artwork and other native UI are not translated by this change.
+
+Before this fix, BBB's seven labels were sent through the five-row handler:
+Save dispatched Quit, Load and Quit had no action, simulation speed opened text
+speed, text speed toggled music, travel dispatched Save, and music dispatched Load.
 
 `accuracy/scenarios/bbb_play_options.tsv` reaches the interactive list from
 ordinary startup input (resource profile 0). The capture
@@ -67,10 +77,55 @@ list opens. In `output/big-bug-bang/options-save-before-fix-01`, action 8 closes
 the list and `screen-022.png` visibly shows the Quit path's "ARE YOU SURE?"
 confirmation. The scenario does not accept that confirmation and exits normally
 after action 9, `wait 50`, without reaching the capture timeout. This is a
-reproduction of the defect, not a passing save-game test.
+reproduction of the old defect, not a passing save-game test. Replaying the Save
+route in `options-save-after-fix-01` instead opens the slot editor and exits
+normally; `screen-024.png` shows the empty first slot and Cancel.
 
-Before connecting the handler, travel state also needs its real runtime effects;
-a changed label alone would not implement the option. The hash-locked probe
+The first combined replay, `options-roundtrip-01`, wrote a save but failed while
+loading it: `NonContiguousStateObject { expected: 146, actual: 148 }`. Restore was
+still decoding BBB VAR with Commander record sizes. Save-header decoding also
+retained Commander's five-profile domain. Both restore paths now take the game's
+dialect explicitly; BBB's seventeen-profile domain does not relax Commander's
+domain or the transactional malformed-state checks.
+
+The real-resource codec test changes a flag, restores the captured save, and
+recaptures byte-identical data for **all 17 BBB profiles**. It also rejects an
+invalid object kind without changing the loaded state. This tests the port's
+capture/restore codec with real layouts, not original-DOS save interoperability
+or seventeen independently reached gameplay states.
+
+`accuracy/scenarios/bbb_play_options_roundtrip.tsv` completes in
+`output/big-bug-bang/options-roundtrip-02` without timeout (`game_exit 0`). It
+writes slot 0 named `ab` to a disposable writable root: `GAME1.SAV` is 9,008 bytes,
+and `BLOOD.SAV` is 320 bytes. After action 20 loads that slot, the trace reports one
+completed save and one completed load. These counters advance only after I/O
+and the production restore call succeed. Later actions verify simulation reload
+100, travel enabled, text delay 1, and Quit followed by No. The final action 45
+finishes at step 2,159 with VM enabled, profile 0, save/load inactive, and all
+pointer locks clear. Screens 017, 041, 050, and 055 show the English options,
+simulation list, text list, and Quit confirmation respectively. The native hand
+partly occludes the speed lists; its placement is not fixed here.
+
+This is a live startup-slot round trip, not proof of saving Daddy's later
+location, cross-profile gameplay restoration, or complete travel progression.
+The final build also synchronizes the submenu phase mirrors and initializes the
+menu's travel mirror from the decoded default; the capture predates those two
+state-bookkeeping changes (the captured BBB default is false).
+
+Verification passed: 954 serial game-library tests (37 ignored), all 11 bridge
+console tests including the original-executable label check, both new save
+checks including all 17 real profiles, and the three Rust travel checks covering
+all 46 native branch vectors. Game-package all-targets checking also passes.
+
+```sh
+nix develop -c cargo test -p commander-blood-game --lib sequel_save -- --include-ignored --test-threads=1
+nix develop -c cargo test -p commander-blood-game --lib runtime::bridge_console -- --include-ignored --test-threads=1
+nix develop -c cargo test -p commander-blood-game --lib sequel_travel -- --test-threads=1
+```
+
+### Native Travel Gates
+
+The hash-locked probe
 `re/tools/big_bug_bang_travel_option_oracle.py` executes unmodified original
 instructions and supplies 46 branch cases in
 `re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl`:
@@ -88,8 +143,8 @@ Two fresh executions passed and produced byte-identical fixtures. Instruction
 and write bounds reject unexpected behavior, and executable/object bytes are
 checked unchanged. These are **branch-entry** observations, not a complete native
 travel run: prerequisites are seeded and execution stops before resource work,
-palette preparation, bridge reset, and external calls. No runtime fix or
-save/load round-trip is claimed by this probe.
+palette preparation, bridge reset, and external calls. The standalone probe does
+not establish a complete runtime journey or save/load round trip.
 
 ```sh
 nix develop -c python -P re/tools/big_bug_bang_travel_option_oracle.py \

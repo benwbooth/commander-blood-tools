@@ -258,6 +258,7 @@ pub struct ModernGameServices<'window> {
     nav_actor_slots: [NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     bridge_actors: Option<RuntimeBridgeActors>,
     bridge_console: Option<RuntimeBridgeConsole>,
+    sequel_travel_enabled: Option<bool>,
     camera_navigation: Option<RuntimeCameraNavigation>,
     camera_navigation_audit: Option<CameraNavigationOutcome>,
     navigation_chart: Option<RuntimeNavigationChart>,
@@ -385,7 +386,14 @@ impl<'window> ModernGameServices<'window> {
     ) -> Result<Self> {
         let confirm_dialog = RuntimeConfirmDialog::new(*data.confirm_dialog_regions());
         let initial_text_speed_step = data.bridge_menu_text().initial_text_speed_step();
-        let bridge_console = RuntimeBridgeConsole::new(initial_text_speed_step);
+        let sequel_travel_enabled = data
+            .bridge_menu_text()
+            .sequel_controls()
+            .map(|controls| controls.initial_travel_enabled);
+        let bridge_console = RuntimeBridgeConsole::new(
+            initial_text_speed_step,
+            sequel_travel_enabled.unwrap_or(false),
+        );
         let scripts = RuntimeScriptSystem::new(&data, script_clock);
         let presentation_player = RuntimePresentationPlayer::new(data.presentation_catalog());
         let startup_palette = *data.default_vga_palette();
@@ -428,6 +436,7 @@ impl<'window> ModernGameServices<'window> {
             nav_actor_slots: [NavActorSlot::default(); NAV_ACTOR_SLOT_COUNT],
             bridge_actors: Some(RuntimeBridgeActors::default()),
             bridge_console: Some(bridge_console),
+            sequel_travel_enabled,
             camera_navigation: Some(RuntimeCameraNavigation::default()),
             camera_navigation_audit: None,
             navigation_chart: Some(RuntimeNavigationChart::default()),
@@ -1192,8 +1201,11 @@ impl<'window> ModernGameServices<'window> {
         data: &[u8],
         state: &mut GameLifecycleState,
     ) -> Result<()> {
-        let profile = OriginalSaveGame::decode_profile(data)
-            .context("decoding the saved BloodScript profile")?;
+        let profile = OriginalSaveGame::decode_profile_for_dialect(
+            data,
+            self.runtime.data().game().script_dialect(),
+        )
+        .context("decoding the saved BloodScript profile")?;
         self.load_script_profile(profile)?;
         initialize_and_restore_original_save_game(
             &mut self.scripts,
@@ -1541,6 +1553,10 @@ impl<'window> ModernGameServices<'window> {
     /// Publish the selected target as the complete deferred C1 navigation action.
     pub fn defer_ship_navigation_target(&mut self, target: ScriptObjectId) {
         self.scripts.defer_navigation_target(target);
+    }
+
+    pub(super) fn clear_ship_navigation_action(&mut self, target: Option<ScriptObjectId>) {
+        self.scripts.clear_navigation_action(target);
     }
 
     /// Write the selected ship-HUD target to the native `orxx` C1 action slot.
@@ -2968,6 +2984,28 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.backend_mut().begin_game_iteration();
     }
 
+    /// Read the reload delay independently of the current countdown.
+    pub(super) fn sequel_simulation_speed(&self) -> Result<u16> {
+        Ok(self
+            .scripts
+            .backend()
+            .sequel_simulation_clock()
+            .context("simulation speed requires the sequel clock")?
+            .reload_value)
+    }
+
+    pub(super) const fn sequel_travel_enabled(&self) -> Option<bool> {
+        self.sequel_travel_enabled
+    }
+
+    pub(super) fn set_sequel_travel_enabled(&mut self, enabled: bool) -> Result<()> {
+        *self
+            .sequel_travel_enabled
+            .as_mut()
+            .context("travel option requires the sequel")? = enabled;
+        Ok(())
+    }
+
     /// Change the sequel simulation delay without restarting its current interval.
     pub fn set_sequel_simulation_speed(&mut self, value: u16) -> Result<()> {
         self.scripts
@@ -3056,6 +3094,7 @@ impl<'window> ModernGameServices<'window> {
                 loaded_scene_vertical_offset,
                 clip_playback_state,
                 voc_playback_enabled,
+                sequel_travel_enabled: self.sequel_travel_enabled,
             });
         Ok(())
     }
@@ -4575,6 +4614,7 @@ impl<'window> ModernGameServices<'window> {
         });
         let save_load = self.save_load.as_ref().map(|save_load| {
             let state = save_load.state();
+            let (completed_saves, completed_loads) = save_load.completed_operations();
             let phase = match state.phase {
                 SaveLoadMenuPhase::Ready => "ready",
                 SaveLoadMenuPhase::LayoutPending => "layout_pending",
@@ -4582,6 +4622,8 @@ impl<'window> ModernGameServices<'window> {
             };
             serde_json::json!({
                 "active": state.is_active(),
+                "completed_saves": completed_saves,
+                "completed_loads": completed_loads,
                 "save_requested": state.requests.save,
                 "load_requested": state.requests.load,
                 "quick_save_requested": state.requests.quick_save,
@@ -5003,6 +5045,10 @@ impl<'window> ModernGameServices<'window> {
                 "resource_handles": assets,
                 "active_line": trace_active_line,
                 "displayed_line": self.ship_presentation.active_line,
+                "sequel_simulation_clock": self.scripts.backend().sequel_simulation_clock().map(|clock| {
+                    serde_json::json!({"reload_value": clock.reload_value, "countdown": clock.countdown})
+                }),
+                "sequel_travel_enabled": self.sequel_travel_enabled,
             },
             "presentation": presentation_trace,
             "alien_overlay": alien_overlay_trace,

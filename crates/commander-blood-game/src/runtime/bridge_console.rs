@@ -11,12 +11,13 @@ use crate::native::bloodprg::{
     BridgeRecordChoiceState, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame,
     ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect, ChoiceListState,
     FramebufferTransitionState, GameLifecycleState, ImmediateBridgeChoiceOutcome,
-    Manu3AnimationSelector, MusicOptionLabel, OptionMenuChoice, OptionMenuOutcome, OptionMenuState,
+    Manu3AnimationSelector, MusicOptionLabel, OptionMenuChoice, OptionMenuOutcome,
     PresentationChoiceItem, PresentationChoiceOutcome, PresentationChoiceState, RasterPoint,
-    TransitionRect, activate_horn_choice, activate_radio_choice,
-    advance_framebuffer_rect_transition, navigation_actor_targets, update_bridge_console_dispatch,
-    update_choice_list, update_contact_choice, update_navigation_target_choice, update_option_menu,
-    update_presentation_choice,
+    SequelOptionMenuChoice, SequelOptionMenuState, TransitionRect, activate_horn_choice,
+    activate_radio_choice, advance_framebuffer_rect_transition, navigation_actor_targets,
+    update_bridge_console_dispatch, update_choice_list, update_contact_choice,
+    update_navigation_target_choice, update_option_menu, update_presentation_choice,
+    update_sequel_option_menu,
 };
 
 use super::choice_list::{RuntimeChoiceListBackend, draw_choice_list_rows};
@@ -37,13 +38,13 @@ pub(super) struct RuntimeBridgeConsole {
     navigation: BridgeRecordChoiceState<ScriptObjectId>,
     contacts: BridgeRecordChoiceState<ScriptObjectId>,
     deferred: BridgeDeferredState<ScriptObjectId>,
-    options: OptionMenuState,
+    options: SequelOptionMenuState,
     text_speed: RuntimeTextSpeedMenu,
     transition: FramebufferTransitionState,
 }
 
 impl RuntimeBridgeConsole {
-    pub(super) fn new(initial_text_speed_step: u16) -> Self {
+    pub(super) fn new(initial_text_speed_step: u16, initial_travel_enabled: bool) -> Self {
         Self {
             console: BridgeConsoleState::default(),
             navigation: BridgeRecordChoiceState::default(),
@@ -52,7 +53,10 @@ impl RuntimeBridgeConsole {
                 record: None,
                 redraw_requested: false,
             },
-            options: OptionMenuState::default(),
+            options: SequelOptionMenuState {
+                travel_enabled: initial_travel_enabled,
+                ..Default::default()
+            },
             text_speed: RuntimeTextSpeedMenu::new(initial_text_speed_step),
             transition: FramebufferTransitionState::default(),
         }
@@ -72,11 +76,18 @@ impl RuntimeBridgeConsole {
             Some(BridgeConsoleChoice::Navigation) => record_choice_trace(&self.navigation.choices),
             Some(BridgeConsoleChoice::Contacts) => record_choice_trace(&self.contacts.choices),
             Some(BridgeConsoleChoice::Options) => {
-                let mut labels = option_labels(menu_text, self.options.music_label)
-                    .iter()
-                    .map(|label| String::from_utf8_lossy(label).into_owned())
-                    .collect::<Vec<_>>();
-                labels.push(String::from_utf8_lossy(menu_text.cancel_label()).into_owned());
+                let mut labels = option_labels(
+                    menu_text,
+                    self.options.common.music_label,
+                    self.options.travel_enabled,
+                )
+                .iter()
+                .map(|label| String::from_utf8_lossy(label).into_owned())
+                .collect::<Vec<_>>();
+                labels.push(
+                    String::from_utf8_lossy(&menu_label(menu_text, menu_text.cancel_label()))
+                        .into_owned(),
+                );
                 (Vec::new(), labels)
             }
             Some(BridgeConsoleChoice::Horn | BridgeConsoleChoice::Radio) | None => {
@@ -91,7 +102,9 @@ impl RuntimeBridgeConsole {
             "panel_target_y": self.console.panel_target_y,
             "choice_records": choice_records,
             "choice_labels": choice_labels,
-            "text_options_active": self.options.text_options_active,
+            "text_options_active": self.options.common.text_options_active,
+            "simulation_options_active": self.options.simulation_options_active,
+            "travel_enabled": self.options.travel_enabled,
         })
     }
 
@@ -104,7 +117,7 @@ impl RuntimeBridgeConsole {
         services: &mut ModernGameServices<'_>,
         lifecycle: &mut GameLifecycleState,
     ) -> Result<()> {
-        if self.options.text_options_active {
+        if self.speed_menu_active() {
             self.publish_interface_ownership(lifecycle);
             return Ok(());
         }
@@ -119,7 +132,7 @@ impl RuntimeBridgeConsole {
                 aboard_transfer_pending: lifecycle.presentation.c2_presentation_gate,
                 save_motion_active: lifecycle.profile_change_blockers.save_active,
                 load_motion_active: lifecycle.profile_change_blockers.load_active,
-                option_panel_active: self.options.text_options_active,
+                option_panel_active: self.speed_menu_active(),
                 sound_action_active: services.confirm_dialog_state().navigation_choice_gate
                     != u8::MIN,
                 presentation_active: lifecycle.presentation.active,
@@ -168,7 +181,7 @@ impl RuntimeBridgeConsole {
         services: &mut ModernGameServices<'_>,
         lifecycle: &mut GameLifecycleState,
     ) -> Result<()> {
-        if self.options.text_options_active {
+        if self.speed_menu_active() {
             import_text_speed_modal_ui(&mut self.text_speed.state, lifecycle);
             self.update_text_speed_menu(services, lifecycle.primary_pointer_pressed)?;
             export_text_speed_modal_ui(&self.text_speed.state, lifecycle);
@@ -209,12 +222,8 @@ impl RuntimeBridgeConsole {
         primary_pointer_pressed: bool,
     ) -> Result<()> {
         let choices = navigation_choices(services)?;
-        let cancel_label: Box<[u8]> = services
-            .runtime()
-            .data()
-            .bridge_menu_text()
-            .cancel_label()
-            .into();
+        let menu_text = services.runtime().data().bridge_menu_text();
+        let cancel_label = menu_label(menu_text, menu_text.cancel_label());
         let context = BridgeRecordChoiceContext {
             animation_target: selected_row_rect(self.console.panel_target_y),
             cancel_label: &cancel_label,
@@ -261,12 +270,8 @@ impl RuntimeBridgeConsole {
         primary_pointer_pressed: bool,
     ) -> Result<()> {
         let choices = contact_choices(services)?;
-        let cancel_label: Box<[u8]> = services
-            .runtime()
-            .data()
-            .bridge_menu_text()
-            .cancel_label()
-            .into();
+        let menu_text = services.runtime().data().bridge_menu_text();
+        let cancel_label = menu_label(menu_text, menu_text.cancel_label());
         let context = BridgeRecordChoiceContext {
             animation_target: selected_row_rect(self.console.panel_target_y),
             cancel_label: &cancel_label,
@@ -340,24 +345,27 @@ impl RuntimeBridgeConsole {
         lifecycle: &mut GameLifecycleState,
     ) -> Result<()> {
         let music_enabled = services.navigation_music_enabled()?;
-        self.options.music_supported = services.audio_is_initialized();
-        self.options.music_active = music_enabled;
-        self.options.music_label = if music_enabled {
+        let sequel = services.sequel_travel_enabled();
+        if let Some(enabled) = sequel {
+            self.options.travel_enabled = enabled;
+        }
+        self.options.primary_pointer_pressed = lifecycle.primary_pointer_pressed;
+        self.options.secondary_pointer_pressed = lifecycle.secondary_pointer_pressed;
+        self.options.common.music_supported = services.audio_is_initialized();
+        self.options.common.music_active = music_enabled;
+        self.options.common.music_label = if music_enabled {
             MusicOptionLabel::MusicOff
         } else {
             MusicOptionLabel::MusicOn
         };
         let labels = option_labels(
             services.runtime().data().bridge_menu_text(),
-            self.options.music_label,
+            self.options.common.music_label,
+            self.options.travel_enabled,
         );
         let label_refs = labels.iter().map(Box::as_ref).collect::<Vec<_>>();
-        let cancel_label: Box<[u8]> = services
-            .runtime()
-            .data()
-            .bridge_menu_text()
-            .cancel_label()
-            .into();
+        let menu_text = services.runtime().data().bridge_menu_text();
+        let cancel_label = menu_label(menu_text, menu_text.cancel_label());
         let fonts = services.runtime().data().font_resources().clone();
         let pointer = choice_pointer(services, lifecycle.primary_pointer_pressed);
         let current_hand_animation = services.manu3_hand_state().current_animation;
@@ -368,14 +376,33 @@ impl RuntimeBridgeConsole {
             current_hand_animation,
             &mut self.transition,
         );
-        let outcome = update_option_menu(
-            &label_refs,
-            &cancel_label,
-            selected_row_rect(self.console.panel_target_y),
-            &mut self.console,
-            &mut self.options,
-            &mut backend,
-        );
+        let outcome = if sequel.is_some() {
+            update_sequel_option_menu(
+                &label_refs,
+                &cancel_label,
+                selected_row_rect(self.console.panel_target_y),
+                &mut self.console,
+                &mut self.options,
+                &mut backend,
+            )
+        } else {
+            match update_option_menu(
+                &label_refs,
+                &cancel_label,
+                selected_row_rect(self.console.panel_target_y),
+                &mut self.console,
+                &mut self.options.common,
+                &mut backend,
+            ) {
+                OptionMenuOutcome::Inactive => OptionMenuOutcome::Inactive,
+                OptionMenuOutcome::Transitioning => OptionMenuOutcome::Transitioning,
+                OptionMenuOutcome::Cancelled => OptionMenuOutcome::Cancelled,
+                OptionMenuOutcome::Interactive(frame) => OptionMenuOutcome::Interactive(frame),
+                OptionMenuOutcome::Selected(choice) => {
+                    OptionMenuOutcome::Selected(SequelOptionMenuChoice::Common(choice))
+                }
+            }
+        };
         let effects = backend.effects();
         let hand_requests = backend.take_hand_requests();
         backend.finish()?;
@@ -385,28 +412,49 @@ impl RuntimeBridgeConsole {
         if let OptionMenuOutcome::Interactive(frame) = &outcome {
             draw_runtime_choice_rows(services, &label_refs, Some(&cancel_label), frame)?;
         }
-        if music_enabled != self.options.music_active {
-            services.set_navigation_music_enabled(self.options.music_active)?;
+        if music_enabled != self.options.common.music_active {
+            services.set_navigation_music_enabled(self.options.common.music_active)?;
         }
         apply_backend_effects(services, effects)?;
 
         if let OptionMenuOutcome::Selected(choice) = outcome {
+            let choice = match choice {
+                SequelOptionMenuChoice::SimulationSpeed => {
+                    self.text_speed.begin(
+                        services.sequel_simulation_speed()?,
+                        self.options.common.current_rect,
+                    );
+                    return Ok(());
+                }
+                SequelOptionMenuChoice::Travel => {
+                    services.set_sequel_travel_enabled(self.options.travel_enabled)?;
+                    return Ok(());
+                }
+                SequelOptionMenuChoice::Common(choice) => choice,
+            };
             match choice {
                 OptionMenuChoice::Text => {
-                    self.text_speed
-                        .begin(services.dialogue_word_delay()?, self.options.current_rect);
+                    self.text_speed.begin(
+                        services.dialogue_word_delay()?,
+                        self.options.common.current_rect,
+                    );
                 }
                 OptionMenuChoice::Music => {}
                 OptionMenuChoice::Save => {
-                    self.options.save_motion_requested = false;
+                    self.options.common.save_motion_requested = false;
                     services.request_save_menu()?;
                 }
                 OptionMenuChoice::Load => {
-                    self.options.load_motion_requested = false;
+                    self.options.common.load_motion_requested = false;
                     services.request_load_menu()?;
                 }
                 OptionMenuChoice::Quit => {
-                    self.options.quit_requested = false;
+                    self.options.common.quit_requested = false;
+                    if sequel.is_some() {
+                        lifecycle.primary_pointer_pressed = self.options.primary_pointer_pressed;
+                        lifecycle.secondary_pointer_pressed =
+                            self.options.secondary_pointer_pressed;
+                    }
                     activate_quit_confirmation(
                         lifecycle,
                         &mut services.confirm_dialog_state_mut().navigation_choice_gate,
@@ -422,19 +470,32 @@ impl RuntimeBridgeConsole {
         services: &mut ModernGameServices<'_>,
         primary_pointer_pressed: bool,
     ) -> Result<()> {
-        let labels = services
-            .runtime()
-            .data()
-            .bridge_menu_text()
-            .text_speed_labels()
-            .clone();
+        let text = services.runtime().data().bridge_menu_text();
+        let (labels, mut items) = if self.options.simulation_options_active {
+            let controls = text
+                .sequel_controls()
+                .context("simulation menu requires sequel controls")?;
+            (
+                controls.speed_labels.to_vec(),
+                controls
+                    .speed_values
+                    .into_iter()
+                    .map(PresentationChoiceItem::Value)
+                    .collect::<Vec<_>>(),
+            )
+        } else {
+            (
+                text.text_speed_labels().to_vec(),
+                vec![PresentationChoiceItem::Selectable; TEXT_SPEED_LABEL_COUNT],
+            )
+        };
+        items.push(PresentationChoiceItem::Sentinel);
+        let labels = labels
+            .iter()
+            .map(|label| menu_label(text, label))
+            .collect::<Vec<_>>();
         let label_refs = labels.iter().map(Box::as_ref).collect::<Vec<_>>();
-        let cancel_label: Box<[u8]> = services
-            .runtime()
-            .data()
-            .bridge_menu_text()
-            .cancel_label()
-            .into();
+        let cancel_label = menu_label(text, text.cancel_label());
         let fonts = services.runtime().data().font_resources().clone();
         let pointer = choice_pointer(services, primary_pointer_pressed);
         let current_hand_animation = services.manu3_hand_state().current_animation;
@@ -470,10 +531,8 @@ impl RuntimeBridgeConsole {
         let selected = frame.as_ref().and_then(|frame| {
             frame
                 .selected_item
-                .or_else(|| frame.cancelled.then_some(TEXT_SPEED_LABEL_COUNT))
+                .or_else(|| frame.cancelled.then_some(labels.len()))
         });
-        let mut items = [PresentationChoiceItem::Selectable; TEXT_SPEED_LABEL_COUNT + 1];
-        items[TEXT_SPEED_LABEL_COUNT] = PresentationChoiceItem::Sentinel;
         let outcome = update_presentation_choice(
             &mut self.text_speed.state,
             &items,
@@ -481,6 +540,11 @@ impl RuntimeBridgeConsole {
             transition_rect(self.text_speed.current_rect),
             transition_rect(self.text_speed.animation_target),
         )?;
+        if self.options.simulation_options_active {
+            self.options.simulation_options_phase = self.text_speed.state.phase;
+        } else {
+            self.options.text_options_phase = self.text_speed.state.phase;
+        }
         if let PresentationChoiceOutcome::Transitioning { region, .. } = outcome {
             backend.darken_region(
                 RasterPoint {
@@ -504,9 +568,14 @@ impl RuntimeBridgeConsole {
         } = outcome
         {
             if let Some(step) = published_result {
-                services.set_dialogue_word_delay(step)?;
+                if self.options.simulation_options_active {
+                    services.set_sequel_simulation_speed(step)?;
+                } else {
+                    services.set_dialogue_word_delay(step)?;
+                }
             }
-            self.options.text_options_active = false;
+            self.options.common.text_options_active = false;
+            self.options.simulation_options_active = false;
         }
         Ok(())
     }
@@ -528,8 +597,12 @@ impl RuntimeBridgeConsole {
         }
     }
 
+    fn speed_menu_active(&self) -> bool {
+        self.options.common.text_options_active || self.options.simulation_options_active
+    }
+
     fn publish_interface_ownership(&self, lifecycle: &mut GameLifecycleState) {
-        let active = self.console.selected.is_some() || self.options.text_options_active;
+        let active = self.console.selected.is_some() || self.speed_menu_active();
         lifecycle.profile_change_blockers.navigation_choice_active = active;
         lifecycle.set_navigation_ui_busy(self.console.interface_busy);
     }
@@ -763,12 +836,44 @@ fn required_builtin(
     select(profile.builtins()).with_context(|| format!("loaded profile has no {name} object"))
 }
 
-fn option_labels(text: &BloodprgBridgeMenuText, music_label: MusicOptionLabel) -> Vec<Box<[u8]>> {
+fn option_labels(
+    text: &BloodprgBridgeMenuText,
+    music_label: MusicOptionLabel,
+    travel_enabled: bool,
+) -> Vec<Box<[u8]>> {
     let mut labels = text.option_labels().to_vec();
     if music_label == MusicOptionLabel::MusicOn {
         labels[text.music_option_row()] = text.music_on_label().into();
     }
-    labels
+    if travel_enabled && let Some(controls) = text.sequel_controls() {
+        labels[2] = controls.travel_on_label.clone();
+    }
+    labels.iter().map(|label| menu_label(text, label)).collect()
+}
+
+fn menu_label(text: &BloodprgBridgeMenuText, label: &[u8]) -> Box<[u8]> {
+    if text.sequel_controls().is_none() {
+        return label.into();
+    }
+    // Only decoded sequel menu labels enter this display-only mapping.
+    let english: &[u8] = match label {
+        b"VITESSE" => b"SIMULATION_SPEED",
+        b"TEXTES" => b"TEXT_SPEED",
+        b"VOYAGE_OFF" => b"TRAVEL_OFF",
+        b"VOYAGE_ON" => b"TRAVEL_ON",
+        b"MUSIQUE_OFF" => b"MUSIC_OFF",
+        b"MUSIQUE_ON" => b"MUSIC_ON",
+        b"SAUVER" => b"SAVE",
+        b"CHARGER" => b"LOAD",
+        b"QUITTER" => b"QUIT",
+        b"ANNULER" => b"CANCEL",
+        b"TRES_RAPIDE" => b"VERY_FAST",
+        b"RAPIDE" => b"FAST",
+        b"LENT" => b"SLOW",
+        b"TRES_LENT" => b"VERY_SLOW",
+        _ => label,
+    };
+    english.into()
 }
 
 const fn bridge_console_choice_name(choice: BridgeConsoleChoice) -> &'static str {
@@ -901,15 +1006,21 @@ mod tests {
         let text = crate::game::GameVariant::BigBugBang
             .decode_bridge_menu_text(&bytes)
             .unwrap();
-        let enabled = option_labels(&text, MusicOptionLabel::MusicOff);
-        let disabled = option_labels(&text, MusicOptionLabel::MusicOn);
+        let enabled = option_labels(&text, MusicOptionLabel::MusicOff, false);
+        let disabled = option_labels(&text, MusicOptionLabel::MusicOn, false);
         assert_eq!(enabled.len(), 7);
-        assert_eq!(enabled[3].as_ref(), b"MUSIQUE_OFF");
-        assert_eq!(disabled[3].as_ref(), b"MUSIQUE_ON");
+        assert_eq!(enabled[3].as_ref(), b"MUSIC_OFF");
+        assert_eq!(disabled[3].as_ref(), b"MUSIC_ON");
         for row in [0, 1, 2, 4, 5, 6] {
             assert_eq!(enabled[row], disabled[row]);
         }
-        assert_eq!(text.option_labels(), enabled);
+        assert_eq!(text.option_labels()[3].as_ref(), b"MUSIQUE_OFF");
+        assert_eq!(text.option_labels()[2].as_ref(), b"VOYAGE_OFF");
+        let travel_on = option_labels(&text, MusicOptionLabel::MusicOff, true);
+        assert_eq!(travel_on[2].as_ref(), b"TRAVEL_ON");
+        for row in [0, 1, 3, 4, 5, 6] {
+            assert_eq!(enabled[row], travel_on[row]);
+        }
     }
 
     #[test]
@@ -982,7 +1093,7 @@ mod tests {
 
     #[test]
     fn interactive_console_keeps_profile_ownership_without_relocking_the_pointer() {
-        let mut console = RuntimeBridgeConsole::new(u16::MIN);
+        let mut console = RuntimeBridgeConsole::new(u16::MIN, false);
         console.console.selected = Some(BridgeConsoleChoice::Options);
         console.console.interface_active = true;
         console.console.interface_busy = false;

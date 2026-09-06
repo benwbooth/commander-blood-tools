@@ -76,6 +76,7 @@ impl CameraNavigationPaletteTransition {
 /// Mutable semantic state affected by a successful navigation-region poll.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CameraNavigationState {
+    sequel_travel_enabled: Option<bool>,
     camera_view_active: bool,
     approach_active: bool,
     presentation: CameraNavigationPresentation,
@@ -92,6 +93,11 @@ pub struct CameraNavigationState {
 }
 
 impl CameraNavigationState {
+    /// Select the sequel's travel gate, or the original game's availability gate.
+    pub fn set_sequel_travel_enabled(&mut self, enabled: Option<bool>) {
+        self.sequel_travel_enabled = enabled;
+    }
+
     /// Set whether the camera view already owns input.
     pub fn set_camera_view_active(&mut self, active: bool) {
         self.camera_view_active = active;
@@ -217,7 +223,7 @@ pub fn update_camera_navigation<Poll: CameraNavigationRegionPoll>(
     }
 
     state.presentation = CameraNavigationPresentation::DestinationSelected;
-    if location.access_count == u16::MIN {
+    if location.access_count == u16::MIN && state.sequel_travel_enabled != Some(true) {
         state.redraw_requested = true;
         if !slot.locked {
             slot.ready = true;
@@ -367,6 +373,56 @@ mod tests {
                 assert!(!state.hud_initialized());
             }
         }
+    }
+
+    #[test]
+    fn sequel_travel_arrival_matches_original_option_branches() {
+        let rows = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl"
+        );
+        let mut count = 0;
+        for row in rows
+            .lines()
+            .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        {
+            if row["gate"] != "arrival" {
+                continue;
+            }
+            count += 1;
+            let mut state = CameraNavigationState::default();
+            state.set_sequel_travel_enabled(Some(row["travel_flag"] == 1));
+            let mut location = CameraNavigationLocation {
+                kind: ScriptObjectKind::CelestialBody,
+                access_count: row["resource"].as_u64().unwrap() as u16,
+            };
+            let flags = row["line_flags"].as_u64().unwrap() as u8;
+            let mut slot = oracle_slot(flags);
+            let mut poll = OraclePoll {
+                called: false,
+                selected: true,
+                access_count_after: location.access_count,
+                slot_after: slot,
+            };
+            let outcome = update_camera_navigation(
+                &mut state,
+                &mut location,
+                &mut slot,
+                &[0; RGB_PALETTE_BYTES],
+                &mut poll,
+            );
+            assert_eq!(
+                outcome == CameraNavigationOutcome::TransitionStarted,
+                row["outcome"] == "prepare_palette",
+                "{row}"
+            );
+            assert_eq!(state.redraw_requested(), row["ui_flags"] == 0x85, "{row}");
+            assert_eq!(
+                slot.ready,
+                row["result_line_flags"].as_u64().unwrap() & 8 != 0,
+                "{row}"
+            );
+        }
+        assert_eq!(count, 16);
     }
 
     fn oracle_kind(kind: u16) -> ScriptObjectKind {

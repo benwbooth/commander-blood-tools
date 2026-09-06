@@ -53,6 +53,8 @@ impl RuntimeCameraNavigation {
             u16::MIN
         };
         let mut location = CameraNavigationLocation { kind, access_count };
+        self.state
+            .set_sequel_travel_enabled(services.sequel_travel_enabled());
         let mut slot = CameraNavigationSlot {
             locked: actor_slot.flags.locked,
             ready: actor_slot.flags.auto_seek,

@@ -3,7 +3,8 @@
 use std::error::Error;
 use std::fmt;
 
-use commander_blood_formats::script::{ScriptDataError, decode_script_state};
+use commander_blood_formats::code::ScriptDialect;
+use commander_blood_formats::script::{ScriptDataError, decode_script_state_for_dialect};
 
 use super::{
     LoadedScriptProfile, ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT, SAVE_SLOT_NAME_LENGTH,
@@ -176,6 +177,14 @@ pub struct OriginalSaveGame {
 impl OriginalSaveGame {
     /// Decode only the leading profile identity needed before loading its resources.
     pub fn decode_profile(data: &[u8]) -> Result<ScriptProfileId, OriginalSaveGameError> {
+        Self::decode_profile_for_dialect(data, ScriptDialect::CommanderBlood)
+    }
+
+    /// Validate the save's profile against the selected game's authored domain.
+    pub fn decode_profile_for_dialect(
+        data: &[u8],
+        dialect: ScriptDialect,
+    ) -> Result<ScriptProfileId, OriginalSaveGameError> {
         if data.len() < ORIGINAL_SAVE_PROFILE_BYTE_COUNT {
             return Err(OriginalSaveGameError::Truncated {
                 required: ORIGINAL_SAVE_PROFILE_BYTE_COUNT,
@@ -189,7 +198,7 @@ impl OriginalSaveGame {
         );
         u8::try_from(encoded_profile)
             .ok()
-            .and_then(ScriptProfileId::new)
+            .and_then(|value| ScriptProfileId::new_for_dialect(value, dialect))
             .ok_or(OriginalSaveGameError::InvalidProfile { encoded_profile })
     }
 
@@ -201,6 +210,15 @@ impl OriginalSaveGame {
     pub fn decode(
         data: &[u8],
         state_block_byte_count: usize,
+    ) -> Result<Self, OriginalSaveGameError> {
+        Self::decode_for_dialect(data, state_block_byte_count, ScriptDialect::CommanderBlood)
+    }
+
+    /// Decode a save using the explicit profile domain of its game.
+    pub fn decode_for_dialect(
+        data: &[u8],
+        state_block_byte_count: usize,
+        dialect: ScriptDialect,
     ) -> Result<Self, OriginalSaveGameError> {
         let required = ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT
             .checked_add(state_block_byte_count)
@@ -214,7 +232,7 @@ impl OriginalSaveGame {
             });
         }
 
-        let profile = Self::decode_profile(data)?;
+        let profile = Self::decode_profile_for_dialect(data, dialect)?;
         let timer_start = ORIGINAL_SAVE_PROFILE_BYTE_COUNT;
         let sequence_start = timer_start + SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT;
         let state_start = ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT;
@@ -278,8 +296,12 @@ impl OriginalSaveGame {
             });
         }
 
-        let state = decode_script_state(&self.state_block, profile.directory())
-            .map_err(OriginalSaveGameError::State)?;
+        let state = decode_script_state_for_dialect(
+            &self.state_block,
+            profile.directory(),
+            profile.state().dialect(),
+        )
+        .map_err(OriginalSaveGameError::State)?;
         let mut procedures = profile.procedures().clone();
         apply_procedure_patch_stream(
             &self.procedure_patch_stream,
@@ -565,6 +587,87 @@ mod tests {
         let recaptured = OriginalSaveGame::capture(&profile).unwrap();
 
         assert_eq!(recaptured.encode(), data);
+    }
+
+    #[test]
+    fn sequel_save_headers_use_the_seventeen_profile_domain() {
+        for number in 0..17u16 {
+            let header = number.to_le_bytes();
+            assert_eq!(
+                OriginalSaveGame::decode_profile_for_dialect(&header, ScriptDialect::BigBugBang)
+                    .unwrap()
+                    .value(),
+                number as u8
+            );
+            assert_eq!(
+                OriginalSaveGame::decode_profile(&header).is_ok(),
+                number < 5
+            );
+        }
+        for number in [17u16, 255, 256, u16::MAX] {
+            assert!(
+                OriginalSaveGame::decode_profile_for_dialect(
+                    &number.to_le_bytes(),
+                    ScriptDialect::BigBugBang
+                )
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang executable and resources"]
+    fn sequel_saves_restore_all_profile_layouts_without_losing_bytes() {
+        use super::super::{ScriptObjectFlag, object_has_flag, set_object_flag};
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang");
+        let executable = std::fs::read(root.join("disc/BLOOD2PG.EXE")).unwrap();
+        let game = crate::game::GameVariant::BigBugBang;
+        let resources = game.decode_resource_catalog(&executable).unwrap();
+        let catalog = game.decode_profile_catalog(&executable).unwrap();
+        let store =
+            OriginalResourceStore::new(root.join("imported-assets/resources"), None, [], true);
+        let mut manager = ScriptProfileManager::new(catalog);
+        let mut cache = OriginalResourceCache::new();
+        for number in 0..17 {
+            let id = ScriptProfileId::new_for_dialect(number, ScriptDialect::BigBugBang).unwrap();
+            manager.select(id, &mut cache, &store, &resources).unwrap();
+            let profile = manager.current_mut().unwrap();
+            let bytes = OriginalSaveGame::capture(profile).unwrap().encode();
+            let object = profile.state().objects()[0].id;
+            let active =
+                object_has_flag(profile.state(), object, ScriptObjectFlag::Active).unwrap();
+            assert!(set_object_flag(
+                profile.state_mut(),
+                object,
+                ScriptObjectFlag::Active,
+                !active
+            ));
+            assert_ne!(OriginalSaveGame::capture(profile).unwrap().encode(), bytes);
+            let size = original_save_state_block_byte_count(profile).unwrap();
+            let save =
+                OriginalSaveGame::decode_for_dialect(&bytes, size, ScriptDialect::BigBugBang)
+                    .unwrap();
+            save.restore_into(profile).unwrap();
+            assert_eq!(
+                OriginalSaveGame::capture(profile).unwrap().encode(),
+                bytes,
+                "profile {number}"
+            );
+
+            let mut malformed = bytes.clone();
+            malformed
+                [ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT..ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT + 2]
+                .copy_from_slice(&u16::MAX.to_le_bytes());
+            let corrupt =
+                OriginalSaveGame::decode_for_dialect(&malformed, size, ScriptDialect::BigBugBang)
+                    .unwrap();
+            assert!(corrupt.restore_into(profile).is_err());
+            assert_eq!(
+                OriginalSaveGame::capture(profile).unwrap().encode(),
+                bytes,
+                "invalid profile {number} state must be transactional"
+            );
+        }
     }
 
     #[test]

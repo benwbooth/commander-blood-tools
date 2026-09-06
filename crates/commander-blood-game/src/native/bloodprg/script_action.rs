@@ -48,6 +48,8 @@ pub enum ScriptTravelActionPhase {
 /// Canonical ship and camera state sampled immediately before one action scan.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ScriptActionRuntimeState {
+    /// Sequel travel switch; absent retains the Commander Blood phase gate.
+    pub sequel_travel_enabled: Option<bool>,
     /// Current phase of the ship-camera approach FSM formerly stored at `0x27DF`.
     pub camera_approach_phase: u8,
     /// Remaining navigation-chart wipe steps formerly stored at `0x278B`.
@@ -307,7 +309,10 @@ fn dispatch_navigation<Host: ScriptActionHost>(
         runtime,
         ..
     } = context;
-    if owner == arche && runtime.camera_approach_phase < 4 {
+    if runtime.sequel_travel_enabled != Some(true)
+        && owner == arche
+        && runtime.camera_approach_phase < 4
+    {
         return Ok(ScriptActionDispatch::default());
     }
 
@@ -1091,6 +1096,45 @@ mod tests {
             ),
             Some(false)
         );
+    }
+
+    #[test]
+    fn sequel_travel_dispatch_matches_original_option_branches() {
+        let rows = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl"
+        );
+        let mut count = 0;
+        for row in rows
+            .lines()
+            .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        {
+            if row["gate"] != "dispatch" {
+                continue;
+            }
+            count += 1;
+            let mut fixture = Fixture::new();
+            fixture.runtime.sequel_travel_enabled = Some(row["travel_flag"] == 1);
+            fixture.runtime.camera_approach_phase = row["phase"].as_u64().unwrap() as u8;
+            let owner = if row["same_target"] == true {
+                ARCHE_INDEX
+            } else {
+                PLAYER_INDEX
+            };
+            let target = fixture.objects[ANCHOR_INDEX];
+            let result = fixture
+                .dispatch(
+                    owner,
+                    ScriptActionRecord::Navigation(ScriptRecordStateOperand::Object(target)),
+                    &mut MockHost::default(),
+                )
+                .unwrap();
+            assert_eq!(
+                result == clear_dispatch(),
+                row["outcome"] == "dispatch_resource",
+                "{row}"
+            );
+        }
+        assert_eq!(count, 24);
     }
 
     #[test]

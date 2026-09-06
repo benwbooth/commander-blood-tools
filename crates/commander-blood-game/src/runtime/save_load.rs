@@ -44,6 +44,8 @@ pub struct RuntimeSaveLoad {
     current_rect: ChoiceListRect,
     target_rect: ChoiceListRect,
     pending_input: Option<InputAction>,
+    completed_saves: u64,
+    completed_loads: u64,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -60,6 +62,8 @@ impl Default for RuntimeSaveLoad {
             current_rect: ChoiceListRect::default(),
             target_rect: SAVE_LIST_TRANSITION_TARGET,
             pending_input: None,
+            completed_saves: 0,
+            completed_loads: 0,
         }
     }
 }
@@ -68,6 +72,11 @@ impl RuntimeSaveLoad {
     /// Borrow the recovered coordinator state.
     pub const fn state(&self) -> &SaveLoadMenuState {
         &self.state
+    }
+
+    /// Successful I/O and restore operations, independent of the current UI phase.
+    pub const fn completed_operations(&self) -> (u64, u64) {
+        (self.completed_saves, self.completed_loads)
     }
 
     /// Request the ordinary save-slot editor.
@@ -138,6 +147,15 @@ impl RuntimeSaveLoad {
             .context("loaded save-slot directory disappeared during update")? = directory;
         if let Some(data) = profiles.restore_data {
             services.restore_original_save_game(&data, lifecycle)?;
+        }
+        match outcome {
+            SaveLoadMenuOutcome::Saved { .. } => {
+                self.completed_saves = self.completed_saves.saturating_add(1)
+            }
+            SaveLoadMenuOutcome::Loaded { .. } => {
+                self.completed_loads = self.completed_loads.saturating_add(1)
+            }
+            _ => {}
         }
 
         lifecycle.profile_change_blockers.save_active = self.state.requests.save;
@@ -463,7 +481,14 @@ impl SaveProfileBackend for DeferredSaveProfileBackend {
     }
 
     fn restore_save_game(&mut self, data: &[u8]) -> Result<()> {
-        OriginalSaveGame::decode_profile(data).context("decoding saved profile identity")?;
+        let dialect = self
+            .profile_snapshot
+            .as_ref()
+            .context("cannot restore without a loaded BloodScript profile")?
+            .state()
+            .dialect();
+        OriginalSaveGame::decode_profile_for_dialect(data, dialect)
+            .context("decoding saved profile identity")?;
         self.restore_data = Some(Box::from(data));
         Ok(())
     }

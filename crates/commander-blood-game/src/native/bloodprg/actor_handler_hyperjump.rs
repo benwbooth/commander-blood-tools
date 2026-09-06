@@ -74,6 +74,11 @@ impl<RecordLink> Default for HyperjumpPresentationActorState<RecordLink> {
 
 /// Dynamic panel, camera, line, entity, and audio services used by this actor.
 pub trait HyperjumpPresentationActorBackend: PresentationLineStepper {
+    /// Sequel travel option and whether its deferred link names Arche itself.
+    fn sequel_travel_control(&self) -> Option<(bool, bool)> {
+        None
+    }
+
     /// Clear the current selector and request the hyperjump hand animation.
     fn restart_hyperjump_hand_animation(&mut self);
 
@@ -116,6 +121,8 @@ pub enum HyperjumpPresentationActorOutcome {
     Presenting,
     /// The first pass reached its terminal navigation state.
     NavigationQueued,
+    /// The sequel consumed the C1 kind and returned directly to the bridge.
+    BridgeReset,
     /// Second-pass completion cleared the consumed deferred record.
     Completed,
     /// Second-pass completion returned to panel-owned idle presentation.
@@ -160,6 +167,17 @@ pub fn update_hyperjump_presentation_actor<
             second_pass_prepared = true;
 
             if line.frame == CAMERA_TRANSITION_LINE_FRAME {
+                if let Some((true, same_target)) = backend.sequel_travel_control() {
+                    state.deferred_action = HyperjumpDeferredAction::Navigate;
+                    if same_target {
+                        state.deferred_action = HyperjumpDeferredAction::Unchanged;
+                        state.transition_pending = false;
+                        backend.mark_presentation_entity_dirty();
+                        backend.close_location_panel();
+                        line_playback.redraw_requested = true;
+                        return Ok(HyperjumpPresentationActorOutcome::BridgeReset);
+                    }
+                }
                 backend.start_camera_transition(CAMERA_VIEW_TRANSITION_STEPS);
             } else if !backend.camera_transition_active() {
                 line.flags = completed_transition();
@@ -168,6 +186,14 @@ pub fn update_hyperjump_presentation_actor<
                 backend.mark_presentation_entity_dirty();
                 backend.close_location_panel();
                 line_playback.redraw_requested = true;
+                if backend
+                    .sequel_travel_control()
+                    .is_some_and(|(enabled, _)| enabled)
+                {
+                    state.deferred_action = HyperjumpDeferredAction::Unchanged;
+                    state.transition_pending = false;
+                    return Ok(HyperjumpPresentationActorOutcome::BridgeReset);
+                }
                 return Ok(HyperjumpPresentationActorOutcome::NavigationQueued);
             }
         }
@@ -265,6 +291,7 @@ mod tests {
     }
 
     struct OracleBackend {
+        sequel: Option<(bool, bool)>,
         name: String,
         helper_results: Vec<bool>,
         helper_index: usize,
@@ -311,6 +338,10 @@ mod tests {
     }
 
     impl HyperjumpPresentationActorBackend for OracleBackend {
+        fn sequel_travel_control(&self) -> Option<(bool, bool)> {
+            self.sequel
+        }
+
         fn restart_hyperjump_hand_animation(&mut self) {
             self.hand_animation_restarted = true;
         }
@@ -377,6 +408,7 @@ mod tests {
                 redraw_requested: vector.ui_before & 4 != u8::MIN,
             };
             let mut backend = OracleBackend {
+                sequel: None,
                 name: vector.name.clone(),
                 helper_results: vector.helper_results.clone(),
                 helper_index: usize::MIN,
@@ -467,6 +499,95 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn sequel_travel_hyperjump_matches_original_option_branches() {
+        let rows = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl"
+        );
+        let mut count = 0;
+        for row in rows
+            .lines()
+            .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        {
+            let first_frame = row["gate"] == "first_frame";
+            if !first_frame && row["gate"] != "completion" {
+                continue;
+            }
+            count += 1;
+            let enabled = row["travel_flag"] == 1;
+            let mut state = HyperjumpPresentationActorState {
+                deferred_record: Some(TEST_DEFERRED_RECORD),
+                ..Default::default()
+            };
+            let mut line = PresentationLine {
+                flags: decode_line_flags(9),
+                resource: HYPERJUMP_IDLE_PRESENTATION_RESOURCE,
+                terminal_frame: 8,
+                frame: if first_frame { 1 } else { 2 },
+                position: [0; 2],
+            };
+            let mut playback = PresentationLinePlayback::default();
+            let mut backend = OracleBackend {
+                sequel: Some((enabled, row["same_target"] == true)),
+                name: String::new(),
+                helper_results: vec![false],
+                helper_index: 0,
+                panel: HyperjumpLocationPanelState {
+                    active: true,
+                    blocks_playback: true,
+                },
+                camera_steps_remaining: None,
+                hand_animation_restarted: false,
+                calls: Vec::new(),
+            };
+            let result = update_hyperjump_presentation_actor(
+                true,
+                false,
+                &mut line,
+                &mut playback,
+                &mut state,
+                &mut backend,
+            )
+            .unwrap();
+            let reset = row["outcome"] == "reset_bridge";
+            assert_eq!(
+                result == HyperjumpPresentationActorOutcome::BridgeReset,
+                reset,
+                "{row}"
+            );
+            assert_eq!(
+                state.deferred_record,
+                Some(TEST_DEFERRED_RECORD),
+                "reset retains the link"
+            );
+            if first_frame {
+                assert_eq!(
+                    backend.camera_steps_remaining,
+                    if reset { None } else { Some(8) },
+                    "{row}"
+                );
+                assert_eq!(
+                    state.deferred_action == HyperjumpDeferredAction::Navigate,
+                    enabled && !reset,
+                    "{row}"
+                );
+                assert_eq!(
+                    line.flags,
+                    decode_line_flags(9),
+                    "first frame preserves line flags"
+                );
+            } else {
+                assert_eq!(state.transition_pending, !reset, "{row}");
+                assert_eq!(
+                    line.flags,
+                    decode_line_flags(7),
+                    "completion publishes flags before the gate"
+                );
+            }
+        }
+        assert_eq!(count, 6);
     }
 
     #[derive(Clone, Copy)]

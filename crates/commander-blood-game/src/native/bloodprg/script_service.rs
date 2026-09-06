@@ -723,6 +723,7 @@ mod tests {
         fn action_runtime_state(&self) -> ScriptActionRuntimeState {
             ScriptActionRuntimeState {
                 camera_approach_phase: 4,
+                sequel_travel_enabled: None,
                 camera_view_transition_steps: u8::MIN,
                 ship_navigation_active: true,
                 loaded_scene_vertical_offset: u16::MIN,

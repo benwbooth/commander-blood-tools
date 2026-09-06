@@ -8,7 +8,7 @@ use crate::native::bloodprg::{
     BlackHolePresentationActorContext, BlackHolePresentationActorState,
     BlackHolePresentationBlockers, CameraPageFlipOutcome, CameraPresentationActorBackend,
     CameraPresentationActorOutcome, CameraPresentationActorState, CameraPresentationBlockers,
-    CameraViewAnimation, GameLifecycleState, HyperjumpLocationPanelState,
+    CameraViewAnimation, GameLifecycleState, HyperjumpDeferredAction, HyperjumpLocationPanelState,
     HyperjumpPresentationActorBackend, HyperjumpPresentationActorOutcome,
     HyperjumpPresentationActorState, Manu3AnimationSelector, NAV_ACTOR_SLOT_COUNT,
     NavActorBusyState, NavActorHandler, NavActorMouseState, NavActorSeekState, NavActorSlot,
@@ -152,6 +152,7 @@ impl RuntimeBridgeActors {
                 hyperjump: &mut self.hyperjump,
                 location_panel: &mut self.location_panel,
                 callback_error: None,
+                sequel_hyperjump_control: None,
             };
             update_nav_actor_slots(
                 busy,
@@ -247,6 +248,7 @@ struct RuntimeBridgeActorBackend<'state, 'window> {
     hyperjump: &'state mut HyperjumpPresentationActorState<ScriptObjectId>,
     location_panel: &'state mut HyperjumpLocationPanelState,
     callback_error: Option<anyhow::Error>,
+    sequel_hyperjump_control: Option<(bool, bool)>,
 }
 
 impl RuntimeBridgeActorBackend<'_, '_> {
@@ -448,6 +450,15 @@ impl RuntimeBridgeActorBackend<'_, '_> {
     ) -> Result<()> {
         let enabled = self.mode == Some(PresentationBridgeMode::Outer);
         let mut state = std::mem::take(self.hyperjump);
+        state.deferred_action = HyperjumpDeferredAction::Unchanged;
+        self.sequel_hyperjump_control = self.services.sequel_travel_enabled().map(|enabled| {
+            let arche = self
+                .services
+                .runtime()
+                .current_profile()
+                .and_then(|profile| profile.builtins().archetype);
+            (enabled, arche.is_some() && state.deferred_record == arche)
+        });
         let mut playback = std::mem::take(self.playback);
         playback.busy = seek.requested;
         let outcome = update_hyperjump_presentation_actor(
@@ -458,20 +469,48 @@ impl RuntimeBridgeActorBackend<'_, '_> {
             &mut state,
             self,
         );
-        if matches!(
-            outcome,
-            Ok(HyperjumpPresentationActorOutcome::NavigationQueued)
-        ) && let Some(record) = state.deferred_record
+        if matches!(outcome, Ok(HyperjumpPresentationActorOutcome::BridgeReset)) {
+            self.services
+                .clear_ship_navigation_action(state.deferred_record);
+            let mut approach = self.services.runtime_mut().take_camera_approach();
+            approach.transition_pending = false;
+            self.services
+                .runtime_mut()
+                .restore_camera_approach(approach);
+            self.services
+                .runtime_mut()
+                .set_camera_transition_pending(false);
+            self.camera.camera_view_active = false;
+            self.services.set_bridge_camera_view_active(false);
+            self.lifecycle.navigation_transition_pending = false;
+            self.lifecycle
+                .profile_change_blockers
+                .navigation_transition_active = false;
+            self.lifecycle.set_low_ui_state_word(0);
+            self.lifecycle.presentation.dialogue_hold_complete = false;
+            let ship = self.services.ship_presentation_state_mut();
+            ship.flags = 5;
+            ship.scene_dispatch_blocked = false;
+            ship.depth_offset = 0;
+            ship.depth_opening_flags = 0;
+            self.services.request_ship_hud_reinitialization()?;
+        } else if state.deferred_action == HyperjumpDeferredAction::Navigate
+            && let Some(record) = state.deferred_record
         {
             self.services.defer_ship_navigation_target(record);
             // The shared type/link/value cell now belongs to the VM's deferred
             // C1 queue. Do not retain a second native-link copy in flat state.
             state.deferred_record = None;
-            self.services.runtime_mut().start_camera_transition();
-            self.lifecycle.navigation_transition_pending = true;
-            self.lifecycle
-                .profile_change_blockers
-                .navigation_transition_active = true;
+            if matches!(
+                outcome,
+                Ok(HyperjumpPresentationActorOutcome::NavigationQueued)
+            ) {
+                self.services.runtime_mut().start_camera_transition();
+                self.lifecycle.navigation_transition_pending = true;
+                self.lifecycle
+                    .profile_change_blockers
+                    .navigation_transition_active = true;
+            }
         }
         *self.hyperjump = state;
         *self.playback = playback;
@@ -712,6 +751,10 @@ impl BlackHolePresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
 }
 
 impl HyperjumpPresentationActorBackend for RuntimeBridgeActorBackend<'_, '_> {
+    fn sequel_travel_control(&self) -> Option<(bool, bool)> {
+        self.sequel_hyperjump_control
+    }
+
     fn restart_hyperjump_hand_animation(&mut self) {
         self.services
             .restart_manu3_animation(Manu3AnimationSelector::CameraOrHyperjump);

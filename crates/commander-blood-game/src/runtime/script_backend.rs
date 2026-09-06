@@ -546,6 +546,13 @@ impl RuntimeScriptSystem {
         self.service.presentation_state_mut().deferred = deferred_navigation_record(target, true);
     }
 
+    /// Clear only the deferred action kind, preserving its separately owned link.
+    pub fn clear_navigation_action(&mut self, target: Option<ScriptObjectId>) {
+        self.service.presentation_state_mut().deferred = target
+            .map(ScriptDeferredRecord::RelatedOnly)
+            .unwrap_or_default();
+    }
+
     /// Queue the actionable C3 record emitted by bridge horn, target, and radio commands.
     pub fn defer_presentation_queue(&mut self, target: ScriptObjectId) {
         self.service.presentation_state_mut().deferred = ScriptDeferredRecord::Complete {
@@ -704,8 +711,9 @@ pub fn initialize_and_restore_original_save_game(
     lifecycle: &mut GameLifecycleState,
     data: &[u8],
 ) -> Result<()> {
-    let saved_profile =
-        OriginalSaveGame::decode_profile(data).context("decoding the saved BloodScript profile")?;
+    let dialect = runtime.data().game().script_dialect();
+    let saved_profile = OriginalSaveGame::decode_profile_for_dialect(data, dialect)
+        .context("decoding the saved BloodScript profile")?;
     let loaded_profile = runtime
         .current_profile()
         .context("save restoration requires a loaded BloodScript profile")?
@@ -730,7 +738,7 @@ pub fn initialize_and_restore_original_save_game(
             .context("saved profile initialization did not retain a profile")?,
     )
     .context("resolving the saved profile state allocation")?;
-    let save = OriginalSaveGame::decode(data, state_byte_count)
+    let save = OriginalSaveGame::decode_for_dialect(data, state_byte_count, dialect)
         .context("decoding the complete original save image")?;
     save.restore_into(
         runtime

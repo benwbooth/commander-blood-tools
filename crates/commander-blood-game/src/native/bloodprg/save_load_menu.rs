@@ -270,7 +270,8 @@ impl<Lifecycle: SavedProfileLifecycle> SaveProfileBackend
     }
 
     fn restore_save_game(&mut self, data: &[u8]) -> AnyResult<()> {
-        let profile_id = OriginalSaveGame::decode_profile(data)?;
+        let dialect = self.manager.dialect();
+        let profile_id = OriginalSaveGame::decode_profile_for_dialect(data, dialect)?;
         self.manager
             .select(profile_id, self.cache, self.store, self.resources)?;
         {
@@ -285,7 +286,7 @@ impl<Lifecycle: SavedProfileLifecycle> SaveProfileBackend
                 .current()
                 .context("initialized BloodScript profile disappeared")?,
         )?;
-        let save = OriginalSaveGame::decode(data, state_block_byte_count)?;
+        let save = OriginalSaveGame::decode_for_dialect(data, state_block_byte_count, dialect)?;
         let profile = self
             .manager
             .current_mut()

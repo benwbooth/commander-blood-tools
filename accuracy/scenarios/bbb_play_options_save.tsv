@@ -1,5 +1,5 @@
-# Big Bug Bang: select SAUVER in the seven-row options menu.
-# Regression route: this currently requests Quit instead of Save.
+# Big Bug Bang: select SAVE (authored SAUVER) in the seven-row options menu.
+# Regression route: opens the slot editor, not the Quit confirmation.
 wait 150
 click 160 150
 wait 20

@@ -566,6 +566,11 @@ pub struct ScriptProfileManager {
 }
 
 impl ScriptProfileManager {
+    /// Return the game's profile domain even before the first profile is loaded.
+    pub const fn dialect(&self) -> ScriptDialect {
+        self.catalog.dialect()
+    }
+
     /// Construct a manager from the executable's decoded profile matrix.
     pub const fn new(catalog: OriginalScriptProfileCatalog) -> Self {
         Self {

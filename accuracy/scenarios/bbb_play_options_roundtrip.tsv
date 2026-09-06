@@ -1,0 +1,46 @@
+# BBB: save/load a disposable startup slot and exercise the seven-row controls.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 104
+wait 10
+key 30 97
+wait 2
+key 48 98
+wait 2
+key 28 13
+wait 10
+click 230 152
+wait 10
+click 100 115
+wait 10
+click 100 43
+wait 60
+park 4 45
+wait 10
+click 230 152
+wait 10
+click 100 60
+wait 10
+click 100 82
+wait 10
+click 230 152
+wait 10
+click 100 82
+wait 10
+click 230 152
+wait 10
+click 100 71
+wait 10
+click 100 71
+wait 10
+click 230 152
+wait 10
+click 100 126
+wait 10
+click 190 110
+wait 10
