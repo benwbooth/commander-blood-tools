@@ -1977,5 +1977,11 @@ The native UI word's `0x20` panorama-band bit is represented separately by
 against Rust's low UI bits alone is not a valid state comparison.
 
 These observations do not establish cryobox interaction or whole-game parity.
-The next ordinary-input comparison must include the original test's return pan
-before selecting CRYOBOX and Daddy Gluxx.
+The corrected ordinary-input comparison is retained as
+`accuracy/scenarios/bbb_play_daddy.tsv`. The local `modern-play-daddy-01` run
+completed 2834 recorded frames: it returned to panorama frame 45, rendered the
+cryobox list with Daddy Gluxx, and closed the list after selection. It did not
+start Daddy's scene. The final frame still had profile 1 (SCRIPT2), no active
+actor or DESCRIPT object, and the subtitle `WAIT COMMANDER ...`; the native
+capture instead reaches profile 2 (SCRIPT3) and visibly presents Daddy. Thus
+the input path is a reproduced regression case, not a passing gameplay gate.
