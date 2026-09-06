@@ -16,6 +16,43 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Native PLAY Transition and Adjacent Directory Ownership
+
+Two bounded original-executable runs now reach HONK's `JOUER` choice and
+profile 1 (SCRIPT2) through private-X11 pointer input. The experiment reads
+guest memory through the existing capture inspector; it does not write guest
+state or force the profile. Both runs use the verified original executable,
+DOSBox-X normal CPU core at 30,000 cycles, and separate writable directories.
+The local experiment and raw captures remain ignored under
+`output/big-bug-bang/`; they are evidence, not a packaged regression harness.
+
+`native-play-02` first observed profile 1 at 348.068 seconds. The independent
+`native-play-04` run first observed it at 110.989 seconds and retained it through
+the 360.285-second final observation. Its 501 profile-1 observations all have
+consistent resource bindings and the same ownership result:
+
+- Retained SCRIPT1.VAR: handle 2, linear address 526960, allocation 8368 bytes.
+- Active SCRIPT2.DEB: handle 38, linear address 535328, allocation 11168 bytes.
+- VAR-relative byte 8368 therefore addresses SCRIPT2.DEB byte zero, outside VAR.
+- The two bytes read as 24930 (`0x6162`), the beginning of the directory name
+  `baby1`, not a separately initialized time variable.
+
+The second run's `after-05.png` visibly shows `QUE DESIREZ-VOUS?` and
+`JOUER` / `EXPLICATIONS`; its final image shows the forward bridge view after
+the profile transition. Event-stream SHA-256:
+`ca9824931bca045a7b3ff2d8653984394421c2de7b968a354fc5a363e085073f`.
+Final guest-dump SHA-256:
+`1d66443fa00d01c1f8a28da2ecddf6ab712fcf927c4d49552cd44cc9634e5841`.
+
+This supersedes the earlier lack of a live native SCRIPT2 ownership capture;
+it does not yet change the modern loader or prove execution of the particular
+COD condition. A future binding must derive the read from the actual adjacent
+directory bytes, preserve VAR serialization, and avoid making directory data
+writable script state. The original also transitions shortly after selecting
+PLAY, whereas the modern run continues a long HONK speech before attempting
+the load. That ordering difference remains unresolved, separately from the
+loader rejection. Full gameplay and English coverage are still incomplete.
+
 ### English Inline Prose and Live Transition Blocker
 
 The matching opening catalog now supplies display-only inline menu prose as well
