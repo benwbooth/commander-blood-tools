@@ -50,9 +50,10 @@ in media remain untranslated.
 
 ## Timed Sequence Captions
 
-`en/sequences.json` supplies 37 cues across `present`, `1ppit`, and `3ppit`,
-including the original blank cues. The verified DESCRIPT contains 706 sequence
-subtitle cues in total; the other 669 are not covered by this catalog.
+`en/sequences.json` supplies 67 cues across seven sequences: `present`, `1ppit`,
+`3ppit`, `4exploplane`, `5exploplane`, `7croolvent`, and `8incanthom`, including
+the original blank cues. The verified DESCRIPT contains 706 sequence subtitle
+cues in total; the other 639 are not covered by this catalog.
 The modern renderer selects English only for Big Bug Bang with the matching
 DESCRIPT SHA-256 hash and an exact match for the complete source cue stream.
 The source database, video/audio selection, cue ordering, frame thresholds, and
@@ -67,7 +68,9 @@ quality or live rendering.
 The rebuilt ordinary-input capture
 `output/big-bug-bang/english-sequences-daddy-01/screen-031.png` visibly renders
 "Terrible news has just come in over our teleprinters" on the TV news screen.
-This verifies the first `1ppit` cue in-game, not all 37 cues. Both sequence
+This verifies the first `1ppit` cue in-game, not all catalog cues. The four
+additional sequences' 30 cues pass source and layout checks but have not been
+verified in-game. Both sequence
 localization tests and all 13 presentation-screen tests pass; the serial
 game-library run passes 950 tests (34 ignored), and game-package all-targets
 checking passes.
@@ -108,6 +111,26 @@ the rest of SCRIPT3, or full-game progression.
 The real-resource SDL test confirms that a live handoff preserves contact state
 and record bindings while an explicit load clears them. Game-package all-targets
 checking passes, as do 950 serial game-library tests (35 ignored).
+
+## Daddy's Yes Branch
+
+`accuracy/scenarios/bbb_play_daddy_yes.tsv` selects the first dialogue's `yes`
+at logical `(185, 90)` and waits through the resulting conversation. The capture
+`output/big-bug-bang/english-daddy-yes-01` completes action 17 (`wait 200`) and
+exits normally without a timeout. Its trace reaches "something about a war and
+a bug... I'll check..." and the subsequent Petit Pit prank explanation. These
+follow the source SCRIPT3 `oui` branch at COD offset `0x0C61`.
+`screen-053.png` shows the taunting TV character; `screen-060.png` shows the next
+English question, "that's right, isn't it, Commander?...". The final frame
+has the VM enabled and awaits a new choice.
+
+That capture exposed the literal labels `good-that` / `not-that` at site
+`bbb.script3.cod.00000d6b`. They are now displayed as `right` / `wrong`, retaining
+the original two choice identities and order. All nine COD localization tests
+and source validation for all 779 SCRIPT3 sites pass after this correction;
+the new labels have not yet been visually rechecked. The separate 30-cue DESCRIPT
+addition was also made after starting this capture and is not live-verified by it.
+Later dialogue branches, teleportation, and whole-game progression remain open.
 
 ## COD Catalog Validation
 

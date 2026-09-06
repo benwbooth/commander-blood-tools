@@ -40,11 +40,49 @@
       {"frame": 130, "text": "Stay home... stock up on food"},
       {"frame": 190, "text": "PETIT PITEUX is with you..."}
     ],
+    "4exploplane": [
+      {"frame": 10, "text": "SPECIAL BULLETIN"},
+      {"frame": 20, "text": "HELLO!"},
+      {"frame": 30, "text": "BACK TO OUR SPACE REPORTER ON CELSIUS"},
+      {"frame": 60, "text": "THE HEAT IS ESPECIALLY OPPREEEESSIII..."},
+      {"frame": 100, "text": "HELLO! HELLO!... ..."},
+      {"frame": 160, "text": "VERY SAD NEWS: CELSIUS IS NO MORE"}
+    ],
+    "5exploplane": [
+      {"frame": 20, "text": "Disaster!"},
+      {"frame": 50, "text": "Commander BLOOD has given in to his basest instincts"},
+      {"frame": 85, "text": "Yet it was such a beautiful planet... Mr. BOB's pride and joy!"},
+      {"frame": 185, "text": "Well, all gone! Planet all gone! Blown up!"},
+      {"frame": 200, "text": "What a shame!"}
+    ],
+    "7croolvent": [
+      {"frame": 1, "text": "Our show, THE MYSTERY OBJECT!"},
+      {"frame": 20, "text": "Today's mystery object"},
+      {"frame": 50, "text": "is a very mysterious object"},
+      {"frame": 80, "text": "that looks like a fan"},
+      {"frame": 120, "text": "but isn't a fan"},
+      {"frame": 160, "text": "Otherwise it wouldn't be a mystery"},
+      {"frame": 190, "text": "It would be a fan!"},
+      {"frame": 225, "text": "Is it a murfalo mincer?"},
+      {"frame": 250, "text": "No! Wrong! It was a genetic multiplexer!"},
+      {"frame": 270, "text": "See you soon for another MYSTERY OBJECT!"}
+    ],
+    "8incanthom": [
+      {"frame": 1, "text": "Hello, pirate!"},
+      {"frame": 35, "text": "Look at that Tubular!"},
+      {"frame": 70, "text": "What a character, that Tubular!"},
+      {"frame": 115, "text": "Watch out, he has great powers..."},
+      {"frame": 150, "text": "Telepathy!"},
+      {"frame": 180, "text": "But beware of chaos, Pirate!"},
+      {"frame": 220, "text": "Chaos means..."},
+      {"frame": 250, "text": "DEATH!..."},
+      {"frame": 315, "text": "There! That's all! Gasping and pale..."}
+    ],
     "3ppit": [
       {"frame": 5, "text": "Attention, we have just intercepted"},
       {"frame": 60, "text": "a coded message from the migration services"},
       {"frame": 105, "text": "A migrant ship has been detected... Stay tuned"},
-      {"frame": 160, "text": "Remember: All gasping and pale when the hour strikes..."}
+      {"frame": 160, "text": "Remember: Gasping and pale when the hour strikes..."}
     ]
   }
 }
