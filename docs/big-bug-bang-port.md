@@ -1702,7 +1702,13 @@ no-input run. SCRIPT2 acceptance remains unresolved.
   checksum manifests so the games cannot contaminate each other's state.
 - Extract contextual complete messages and UI text into a stable localization
   catalog, translate French to English, preserve logical IDs, and verify English
-  rendering, wrapping, interaction and subtitle timing. Translation has not begun.
+  rendering, wrapping, interaction and subtitle timing. An English first pass now
+  covers the opening profile's 89 A6 sites in
+  `localization/big-bug-bang/en/script1.json`, with source-hash, site, section, and
+  choice-count validation. The runtime does not load it yet; the other 16 COD
+  profiles and the non-COD text remain untranslated. See
+  `localization/big-bug-bang/README.md` for the validation command and editorial
+  limitations.
 - Capture the original sequel in DOS and compare Rust behavior through startup,
   dialogue, travel, added gameplay and completion paths. Keep Commander regression
   coverage running alongside it. No whole-game parity claim from format tests.

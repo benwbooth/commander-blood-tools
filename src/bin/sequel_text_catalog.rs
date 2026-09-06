@@ -7,12 +7,101 @@ use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialec
 use commander_blood_formats::instruction::{ScriptText, ScriptTextWord, decode_script_text};
 use commander_blood_formats::script::{ScriptDictionary, decode_script_dictionary};
 use commander_blood_tools::font::cp437_string;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 const PROFILE_COUNT: usize = 17;
 const TEXT_OPCODE: u8 = 166;
 const CP437_DECODER_LIMIT: u8 = 176;
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DisplayTranslation {
+    format: String,
+    language: String,
+    profile: String,
+    cod_sha256: String,
+    dic_sha256: String,
+    messages: std::collections::BTreeMap<String, Vec<String>>,
+}
+
+fn validate_translation(catalog: &Catalog, translation: &DisplayTranslation) -> Result<()> {
+    ensure!(
+        translation.format == "bbb-cod-display-translation-v1",
+        "unsupported translation format"
+    );
+    ensure!(translation.language == "en", "expected English translation");
+    let profile = catalog
+        .profiles
+        .iter()
+        .find(|p| p.name == translation.profile)
+        .context("translation profile is absent from source catalog")?;
+    ensure!(
+        translation.cod_sha256 == profile.cod_sha256,
+        "COD hash mismatch"
+    );
+    ensure!(
+        translation.dic_sha256 == profile.dic_sha256,
+        "DIC hash mismatch"
+    );
+    ensure!(
+        translation.messages.len() == profile.messages.len(),
+        "translation must cover every profile text site exactly once"
+    );
+    for message in &profile.messages {
+        let sections = translation
+            .messages
+            .get(&message.id)
+            .with_context(|| format!("missing translation {}", message.id))?;
+        ensure!(
+            sections.len() == message.sections.len(),
+            "{}: section count mismatch",
+            message.id
+        );
+        for (index, (source, translated)) in message.sections.iter().zip(sections).enumerate() {
+            ensure!(
+                translated.is_ascii() && !translated.bytes().any(|b| b.is_ascii_control()),
+                "{} section {index}: expected printable ASCII",
+                message.id
+            );
+            ensure!(
+                source.parts.is_empty() == translated.is_empty(),
+                "{} section {index}: empty section mismatch",
+                message.id
+            );
+            // V1 keeps post-prose choices positional, one display token per original word.
+            if index > 0 {
+                ensure!(
+                    translated.split_whitespace().count() == source.parts.len(),
+                    "{} section {index}: choice count mismatch",
+                    message.id
+                );
+            }
+            let mut expected_markers = Vec::new();
+            for part in &source.parts {
+                match part {
+                    Part::StateNumber { state_byte } => {
+                        expected_markers.push(format!("<state:{state_byte}>"))
+                    }
+                    Part::InventoryChoices => {
+                        expected_markers.push("<inventory_choices>".to_owned())
+                    }
+                    Part::Word { .. } => (),
+                }
+            }
+            let markers: Vec<_> = translated
+                .split_whitespace()
+                .filter(|word| word.starts_with('<'))
+                .collect();
+            ensure!(
+                markers == expected_markers,
+                "{} section {index}: dynamic marker mismatch",
+                message.id
+            );
+        }
+    }
+    Ok(())
+}
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -198,14 +287,34 @@ fn export(root: &Path) -> Result<Catalog> {
 
 fn main() -> Result<()> {
     let mut args = std::env::args_os().skip(1);
-    let root = args
-        .next()
-        .context("usage: sequel_text_catalog <loose-resource-root>")?;
+    let root = args.next().context(
+        "usage: sequel_text_catalog <loose-resource-root> [--validate <translation.json>]",
+    )?;
+    let validation_path = match args.next() {
+        None => None,
+        Some(flag) => {
+            ensure!(flag == "--validate", "expected --validate");
+            Some(
+                args.next()
+                    .context("--validate requires a translation JSON path")?,
+            )
+        }
+    };
     ensure!(
         args.next().is_none(),
         "expected only the loose resource root"
     );
     let catalog = export(Path::new(&root))?;
+    if let Some(path) = validation_path {
+        let translation: DisplayTranslation = serde_json::from_slice(&std::fs::read(path)?)?;
+        validate_translation(&catalog, &translation)?;
+        eprintln!(
+            "Validated {} English text sites for {} (not a runtime rendering check)",
+            translation.messages.len(),
+            translation.profile
+        );
+        return Ok(());
+    }
     serde_json::to_writer_pretty(std::io::stdout().lock(), &catalog)?;
     Ok(())
 }
@@ -216,6 +325,48 @@ mod tests {
     use commander_blood_formats::instruction::{
         ScriptLineRecordOffset, ScriptTextControl, ScriptTextStateNumber,
     };
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn opening_english_translation_matches_original_resources() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let catalog = export(&root.join("output/big-bug-bang/imported-assets/resources")).unwrap();
+        let mut translation: DisplayTranslation = serde_json::from_str(include_str!(
+            "../../localization/big-bug-bang/en/script1.json"
+        ))
+        .unwrap();
+        validate_translation(&catalog, &translation).unwrap();
+        translation.cod_sha256.push('0');
+        assert!(
+            validate_translation(&catalog, &translation)
+                .unwrap_err()
+                .to_string()
+                .contains("COD hash")
+        );
+        translation.cod_sha256.pop();
+        let choice = &mut translation
+            .messages
+            .get_mut("bbb.script1.cod.00000727")
+            .unwrap()[1];
+        *choice = "PLAY".to_owned();
+        assert!(
+            validate_translation(&catalog, &translation)
+                .unwrap_err()
+                .to_string()
+                .contains("choice count")
+        );
+        translation
+            .messages
+            .get_mut("bbb.script1.cod.00000727")
+            .unwrap()[1] = "PLAY INSTRUCTIONS".to_owned();
+        translation.messages.remove("bbb.script1.cod.000006ed");
+        assert!(
+            validate_translation(&catalog, &translation)
+                .unwrap_err()
+                .to_string()
+                .contains("every profile text site")
+        );
+    }
 
     #[test]
     #[ignore = "requires the user's imported Big Bug Bang resources"]
