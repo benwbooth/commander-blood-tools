@@ -218,8 +218,32 @@ const SEQUEL_FONT_LAYOUT: ExecutableFontLayout = ExecutableFontLayout {
     main_glyph_count: BLOOD2PG_MAIN_FONT_GLYPH_COUNT,
     required_length: 0x17B16 + BLOOD2PG_MAIN_FONT_GLYPH_COUNT * MAIN_FONT_GLYPH_HEIGHT,
 };
+#[cfg(test)]
 const PRESENTATION_REQUIRED_EXECUTABLE_LENGTH: usize =
     BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_DESCRIPTOR_DATA_END_OFFSET;
+
+struct PresentationCatalogLayout {
+    data_file_offset: usize,
+    index_data_offset: usize,
+    descriptor_data_end: usize,
+    unclamped_ids_data_offset: usize,
+}
+
+const COMMANDER_PRESENTATION_LAYOUT: PresentationCatalogLayout = PresentationCatalogLayout {
+    data_file_offset: BLOODPRG_DATA_FILE_OFFSET,
+    index_data_offset: PRESENTATION_INDEX_DATA_OFFSET,
+    descriptor_data_end: PRESENTATION_DESCRIPTOR_DATA_END_OFFSET,
+    unclamped_ids_data_offset: UNCLAMPED_PRESENTATION_LINE_IDS_DATA_OFFSET,
+};
+
+// BLOOD2 B50A and B763 index 45 pointer pairs; B5C8 scans the first eight
+// effective line-mode entries. The last descriptor ends at the ship-state word.
+const SEQUEL_PRESENTATION_LAYOUT: PresentationCatalogLayout = PresentationCatalogLayout {
+    data_file_offset: 0xF7F0,
+    index_data_offset: 0x2203,
+    descriptor_data_end: 0x2745,
+    unclamped_ids_data_offset: 0x100C,
+};
 const CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH: usize =
     CONFIRM_DIALOG_NO_REGION_FILE_OFFSET + RECTANGLE_BYTE_COUNT;
 const MENU_TEXT_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
@@ -818,17 +842,32 @@ impl Error for BloodprgPresentationCatalogError {
 pub fn decode_bloodprg_presentation_catalog(
     executable: &[u8],
 ) -> Result<BloodprgPresentationCatalog, BloodprgPresentationCatalogError> {
-    if executable.len() < PRESENTATION_REQUIRED_EXECUTABLE_LENGTH {
+    decode_presentation_catalog(executable, &COMMANDER_PRESENTATION_LAYOUT)
+}
+
+/// Decode Big Bug Bang's own scene templates, including its different opening clip.
+pub fn decode_blood2pg_presentation_catalog(
+    executable: &[u8],
+) -> Result<BloodprgPresentationCatalog, BloodprgPresentationCatalogError> {
+    decode_presentation_catalog(executable, &SEQUEL_PRESENTATION_LAYOUT)
+}
+
+fn decode_presentation_catalog(
+    executable: &[u8],
+    layout: &PresentationCatalogLayout,
+) -> Result<BloodprgPresentationCatalog, BloodprgPresentationCatalogError> {
+    let required = layout.data_file_offset + layout.descriptor_data_end;
+    if executable.len() < required {
         return Err(BloodprgPresentationCatalogError::TruncatedExecutable {
             actual: executable.len(),
-            required: PRESENTATION_REQUIRED_EXECUTABLE_LENGTH,
+            required,
         });
     }
     if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
         return Err(BloodprgPresentationCatalogError::InvalidExecutableSignature);
     }
 
-    let index_file_offset = BLOODPRG_DATA_FILE_OFFSET + PRESENTATION_INDEX_DATA_OFFSET;
+    let index_file_offset = layout.data_file_offset + layout.index_data_offset;
     let descriptor_offsets: [usize; BLOODPRG_PRESENTATION_LINE_COUNT] =
         std::array::from_fn(|line| {
             let entry = index_file_offset + line * PRESENTATION_INDEX_ENTRY_BYTE_COUNT;
@@ -843,7 +882,7 @@ pub fn decode_bloodprg_presentation_catalog(
             read_unsigned_word(executable, entry + PRESENTATION_SCENE_IMAGE_OFFSET_FIELD)
         });
 
-    let descriptor_data_start = PRESENTATION_INDEX_DATA_OFFSET
+    let descriptor_data_start = layout.index_data_offset
         + BLOODPRG_PRESENTATION_LINE_COUNT * PRESENTATION_INDEX_ENTRY_BYTE_COUNT;
     let mut lines = Vec::with_capacity(BLOODPRG_PRESENTATION_LINE_COUNT);
     for line in 0..BLOODPRG_PRESENTATION_LINE_COUNT {
@@ -851,12 +890,12 @@ pub fn decode_bloodprg_presentation_catalog(
         let end = descriptor_offsets
             .get(line + 1)
             .copied()
-            .unwrap_or(PRESENTATION_DESCRIPTOR_DATA_END_OFFSET);
+            .unwrap_or(layout.descriptor_data_end);
         if start < descriptor_data_start
             || start
                 .checked_add(PRESENTATION_DESCRIPTOR_HEADER_BYTE_COUNT)
                 .is_none_or(|header_end| header_end >= end)
-            || end > PRESENTATION_DESCRIPTOR_DATA_END_OFFSET
+            || end > layout.descriptor_data_end
         {
             return Err(BloodprgPresentationCatalogError::InvalidDescriptorRange {
                 line,
@@ -866,7 +905,7 @@ pub fn decode_bloodprg_presentation_catalog(
         }
 
         let descriptor =
-            &executable[BLOODPRG_DATA_FILE_OFFSET + start..BLOODPRG_DATA_FILE_OFFSET + end];
+            &executable[layout.data_file_offset + start..layout.data_file_offset + end];
         let name_field = &descriptor[PRESENTATION_DESCRIPTOR_HEADER_BYTE_COUNT..];
         let name_length = name_field
             .iter()
@@ -876,8 +915,12 @@ pub fn decode_bloodprg_presentation_catalog(
             BloodResourceName::new(&name_field[..name_length]).map_err(|source| {
                 BloodprgPresentationCatalogError::InvalidResourceName { line, source }
             })?;
-        let initial_scene_image_name =
-            decode_presentation_scene_image_name(executable, line, scene_image_offsets[line])?;
+        let initial_scene_image_name = decode_presentation_scene_image_name(
+            executable,
+            layout.data_file_offset,
+            line,
+            scene_image_offsets[line],
+        )?;
         lines.push(BloodprgPresentationLineDescriptor {
             flags: descriptor[0],
             variant: descriptor[1],
@@ -890,10 +933,9 @@ pub fn decode_bloodprg_presentation_catalog(
         lines: lines
             .try_into()
             .expect("one descriptor is emitted for every presentation line"),
-        unclamped_line_ids: executable[BLOODPRG_DATA_FILE_OFFSET
-            + UNCLAMPED_PRESENTATION_LINE_IDS_DATA_OFFSET
-            ..BLOODPRG_DATA_FILE_OFFSET
-                + UNCLAMPED_PRESENTATION_LINE_IDS_DATA_OFFSET
+        unclamped_line_ids: executable[layout.data_file_offset + layout.unclamped_ids_data_offset
+            ..layout.data_file_offset
+                + layout.unclamped_ids_data_offset
                 + BLOODPRG_UNCLAMPED_PRESENTATION_LINE_COUNT]
             .try_into()
             .expect("the presentation catalog length check covers the line-mode table"),
@@ -902,6 +944,7 @@ pub fn decode_bloodprg_presentation_catalog(
 
 fn decode_presentation_scene_image_name(
     executable: &[u8],
+    data_file_offset: usize,
     line: usize,
     data_offset: u16,
 ) -> Result<Option<BloodResourceName>, BloodprgPresentationCatalogError> {
@@ -910,7 +953,7 @@ fn decode_presentation_scene_image_name(
     }
 
     let offset = usize::from(data_offset);
-    let file_offset = BLOODPRG_DATA_FILE_OFFSET
+    let file_offset = data_file_offset
         .checked_add(offset)
         .ok_or(BloodprgPresentationCatalogError::InvalidSceneImageOffset { line, offset })?;
     let field_end = file_offset
@@ -1853,6 +1896,139 @@ mod tests {
         assert_eq!(
             decode_bloodprg_presentation_catalog(&missing_terminator),
             Err(BloodprgPresentationCatalogError::MissingResourceNameTerminator { line: 0 })
+        );
+    }
+
+    #[derive(Deserialize)]
+    struct SequelPresentationOracle {
+        unclamped_line_ids: [u8; 8],
+        lines: Vec<SequelPresentationOracleLine>,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelPresentationOracleLine {
+        line: usize,
+        descriptor_offset: usize,
+        flags: u8,
+        variant: u8,
+        name: Vec<u8>,
+        scene_image_offset: u16,
+    }
+
+    fn sequel_presentation_oracle() -> SequelPresentationOracle {
+        serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/big_bug_bang_presentation_catalog.json"
+        ))
+        .unwrap()
+    }
+
+    fn check_sequel_presentation_catalog(catalog: &BloodprgPresentationCatalog) {
+        let oracle = sequel_presentation_oracle();
+        assert_eq!(oracle.lines.len(), BLOODPRG_PRESENTATION_LINE_COUNT);
+        assert_eq!(catalog.unclamped_line_ids(), &oracle.unclamped_line_ids);
+        for row in oracle.lines {
+            let line = catalog.line(row.line as u16).unwrap();
+            assert_eq!(line.flags(), row.flags, "line {}", row.line);
+            assert_eq!(line.variant(), row.variant, "line {}", row.line);
+            assert_eq!(
+                line.resource_name().as_bytes(),
+                row.name,
+                "line {}",
+                row.line
+            );
+            assert_eq!(row.scene_image_offset, u16::MAX);
+            assert!(line.initial_scene_image_name().is_none());
+        }
+        assert!(catalog.line(45).is_none());
+    }
+
+    fn sequel_presentation_fixture() -> Vec<u8> {
+        let layout = &SEQUEL_PRESENTATION_LAYOUT;
+        let mut bytes = vec![0; layout.data_file_offset + layout.descriptor_data_end];
+        bytes[..2].copy_from_slice(b"MZ");
+        let oracle = sequel_presentation_oracle();
+        let modes = layout.data_file_offset + layout.unclamped_ids_data_offset;
+        bytes[modes..modes + 8].copy_from_slice(&oracle.unclamped_line_ids);
+        for row in oracle.lines {
+            let entry = layout.data_file_offset + layout.index_data_offset + row.line * 4;
+            bytes[entry..entry + 2].copy_from_slice(&(row.descriptor_offset as u16).to_le_bytes());
+            bytes[entry + 2..entry + 4].copy_from_slice(&row.scene_image_offset.to_le_bytes());
+            let descriptor = layout.data_file_offset + row.descriptor_offset;
+            bytes[descriptor] = row.flags;
+            bytes[descriptor + 1] = row.variant;
+            bytes[descriptor + 2..descriptor + 2 + row.name.len()].copy_from_slice(&row.name);
+        }
+        bytes
+    }
+
+    #[test]
+    fn sequel_presentation_catalog_checks_bounds_names_and_relocated_scene_pointers() {
+        let fixture = sequel_presentation_fixture();
+        check_sequel_presentation_catalog(&decode_blood2pg_presentation_catalog(&fixture).unwrap());
+        for length in [0, fixture.len() - 1] {
+            assert_eq!(
+                decode_blood2pg_presentation_catalog(&fixture[..length]),
+                Err(BloodprgPresentationCatalogError::TruncatedExecutable {
+                    actual: length,
+                    required: fixture.len(),
+                })
+            );
+        }
+        let mut invalid = fixture.clone();
+        invalid[0] = 0;
+        assert_eq!(
+            decode_blood2pg_presentation_catalog(&invalid),
+            Err(BloodprgPresentationCatalogError::InvalidExecutableSignature)
+        );
+        let base = SEQUEL_PRESENTATION_LAYOUT.data_file_offset;
+        let entry = base + SEQUEL_PRESENTATION_LAYOUT.index_data_offset;
+        let first = usize::from(read_unsigned_word(&fixture, entry));
+        let second = usize::from(read_unsigned_word(&fixture, entry + 4));
+        let mut invalid = fixture.clone();
+        invalid[entry..entry + 2].copy_from_slice(&(second as u16).to_le_bytes());
+        assert!(matches!(
+            decode_blood2pg_presentation_catalog(&invalid),
+            Err(BloodprgPresentationCatalogError::InvalidDescriptorRange { line: 0, .. })
+        ));
+        let mut invalid = fixture.clone();
+        invalid[base + first + 2..base + second].fill(b'x');
+        assert_eq!(
+            decode_blood2pg_presentation_catalog(&invalid),
+            Err(BloodprgPresentationCatalogError::MissingResourceNameTerminator { line: 0 })
+        );
+        let mut invalid = fixture.clone();
+        invalid[entry + 2..entry + 4].copy_from_slice(&0xFFFEu16.to_le_bytes());
+        assert!(matches!(
+            decode_blood2pg_presentation_catalog(&invalid),
+            Err(BloodprgPresentationCatalogError::InvalidSceneImageOffset { line: 0, .. })
+        ));
+        let mut with_scene = fixture;
+        with_scene[entry + 2..entry + 4].copy_from_slice(&((first + 2) as u16).to_le_bytes());
+        assert_eq!(
+            decode_blood2pg_presentation_catalog(&with_scene)
+                .unwrap()
+                .lines()[0]
+                .initial_scene_image_name()
+                .unwrap()
+                .as_bytes(),
+            b"sq\\microfol.HNM"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang executable under output/big-bug-bang/disc"]
+    fn sequel_presentation_catalog_matches_every_original_native_selection() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE");
+        let executable = std::fs::read(path).unwrap();
+        let sequel = decode_blood2pg_presentation_catalog(&executable).unwrap();
+        check_sequel_presentation_catalog(&sequel);
+        let commander =
+            decode_bloodprg_presentation_catalog(include_bytes!("../../../re/bin/BLOODPRG.EXE"))
+                .unwrap();
+        assert_ne!(
+            sequel.lines()[0].resource_name(),
+            commander.lines()[0].resource_name()
         );
     }
 

@@ -94,7 +94,6 @@ use commander_blood_formats::bloodprg::{
     BloodprgHyperspaceResources, BloodprgNavigationResources, BloodprgPresentationCatalog,
     decode_bloodprg_bridge_menu_text, decode_bloodprg_confirm_dialog_regions,
     decode_bloodprg_hyperspace_resources, decode_bloodprg_navigation_resources,
-    decode_bloodprg_presentation_catalog,
 };
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
@@ -205,8 +204,8 @@ impl OriginalGameDataPaths {
 
     fn from_imported_root(root: PathBuf) -> Result<Self> {
         let manifest = ImportedAssetManifest::load(&root)?;
-        // Do not pass sequel bytes to Commander-only presentation/font decoders,
-        // or start expensive media conversion for a runtime not yet integrated.
+        // Other startup tables and profile transitions remain Commander-only;
+        // avoid media conversion until the sequel runtime is integrated.
         if manifest.game != GameVariant::CommanderBlood {
             bail!(
                 "{} assets are imported, but its production runtime tables and profile transitions are not yet integrated",
@@ -445,7 +444,10 @@ impl OriginalGameData {
             .game
             .decode_fonts(&executable)
             .context("decoding original executable font resources")?;
-        let presentation_catalog = decode_bloodprg_presentation_catalog(&executable)
+        let presentation_catalog = paths
+            .manifest()
+            .game
+            .decode_presentation_catalog(&executable)
             .context("decoding executable presentation-line catalog")?;
         let default_vga_palette = decode_bloodprg_default_vga_palette(&executable)
             .context("decoding original default palette")?;

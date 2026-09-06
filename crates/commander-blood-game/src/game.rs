@@ -2,9 +2,11 @@
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::bloodprg::{
-    BloodprgBridgeResources, BloodprgFontResources, decode_big_bug_bang_inventory_cancel_label,
-    decode_blood2pg_bridge_resources, decode_blood2pg_font_resources,
+    BloodprgBridgeResources, BloodprgFontResources, BloodprgPresentationCatalog,
+    decode_big_bug_bang_inventory_cancel_label, decode_blood2pg_bridge_resources,
+    decode_blood2pg_font_resources, decode_blood2pg_presentation_catalog,
     decode_bloodprg_bridge_resources, decode_bloodprg_font_resources,
+    decode_bloodprg_presentation_catalog,
 };
 use commander_blood_formats::code::ScriptDialect;
 use serde::{Deserialize, Serialize};
@@ -108,6 +110,19 @@ impl GameVariant {
         .context("decoding game font resources")
     }
 
+    /// Decode the game's initial scene filenames and stream flags.
+    pub fn decode_presentation_catalog(
+        self,
+        executable: &[u8],
+    ) -> Result<BloodprgPresentationCatalog> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_presentation_catalog(executable),
+            Self::BigBugBang => decode_blood2pg_presentation_catalog(executable),
+        }
+        .context("decoding game presentation catalog")
+    }
+
     /// Resolve the sequel's object-chooser cancel text from its verified build.
     pub fn decode_inventory_cancel_label(self, executable: &[u8]) -> Result<Box<[u8]>> {
         if self != Self::BigBugBang {
@@ -189,6 +204,11 @@ mod tests {
                 .is_err()
         );
         assert!(GameVariant::BigBugBang.decode_fonts(&bytes).is_err());
+        assert!(
+            GameVariant::BigBugBang
+                .decode_presentation_catalog(&bytes)
+                .is_err()
+        );
         assert!(
             GameVariant::BigBugBang
                 .decode_bridge_resources(&bytes)

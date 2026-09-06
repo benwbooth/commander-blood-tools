@@ -576,6 +576,45 @@ nix develop -c python3 -P re/tools/big_bug_bang_vm_yield_oracle.py \
 nix develop -c cargo test -p commander-blood-game --lib sequel_a6_outer_loop
 ```
 
+### Sequel Presentation Catalog
+
+The production data loader now routes presentation-table decoding through
+`GameVariant`. The sequel decoder reads its own 45 pointer pairs at data offset
+0x2203, descriptor slots at 0x22B7..0x2745, and the eight effective unclamped-line
+IDs at 0x100C. Its data base is file 0xF7F0. Native scene lookup at 0xB50A and
+descriptor selector 0xB763 use that index; the first descriptor follows exactly
+45 four-byte entries. The last descriptor ends before the ship-state word.
+The scene's nine-byte scan excludes the final match when CX reaches zero, so
+only the first eight entries are effective.
+
+`big_bug_bang_presentation_catalog_oracle.py` executes the original selector
+for every line without modifying its instructions or tables. Both synthetic
+malformed-input tests and an original-executable test cover the typed decoder.
+The existing runtime catalog keeps the authored flags, variant and dynamic
+filename slots. The sequel opens with `sq\\microfol.HNM`, not Commander's
+`sq\\mind.HNM`. All seven fixed names exist in the sequel resource store;
+the 38 original dynamic names remain unresolved until their native owners write
+them. The original-asset inventory test applies all 25 authored descriptions
+through this catalog and loads the resulting line-43 resource bytes.
+
+This is catalog and resource-binding verification, not HNM playback or startup
+parity. The loader guard remains: writable-resource, menu, navigation, palette,
+world-artwork and other startup tables still need sequel-specific integration.
+Scene-start policy, profile transitions and English localization are unfinished.
+
+Verification: two native captures were byte-identical across all 45 entries.
+All 125 format tests passed with original-asset checks enabled. All 14 inventory
+tests passed with ignored checks enabled, including the catalog resource bindings.
+The game library passed 929 tests with 17 ignored, serially on a fresh private
+Xvfb display, which was reaped afterward. Game all-targets checking passed.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_presentation_catalog_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_presentation_catalog.json
+nix develop -c cargo test -p commander-blood-formats presentation_catalog -- --include-ignored
+```
+
 ### Authored Text Corpus Audit
 
 The offline `audit_sequel_text` formats example frames all seventeen COD files

@@ -1541,7 +1541,27 @@ mod tests {
         let database = DescriptDatabase::parse(&bytes).unwrap();
         let directory =
             decode_script_directory(&std::fs::read(root.join("SCRIPT1.DEB")).unwrap()).unwrap();
+        let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
+        let initial = crate::game::GameVariant::BigBugBang
+            .decode_presentation_catalog(&executable)
+            .unwrap();
+        let mut catalog = crate::runtime::RuntimePresentationCatalog::new(&initial);
         let store = OriginalResourceStore::new(root, None, [], true);
+        for line in 0..45 {
+            let request = catalog
+                .request(crate::native::bloodprg::PresentationResourceId::new(line))
+                .unwrap();
+            assert_eq!(request.descriptor_flags, 0);
+            assert_eq!(request.variant, 16);
+            let fixed = [0, 1, 4, 5, 41, 42, 44].contains(&line);
+            assert_eq!(
+                store.resource_exists(&request.resource_name).unwrap(),
+                fixed
+            );
+            if !fixed {
+                assert!(request.resource_name.as_bytes().ends_with(b"xxxxxxxxxxxx"));
+            }
+        }
         let backend = RuntimeScriptBackend {
             database,
             object_names: directory
@@ -1590,7 +1610,19 @@ mod tests {
             );
             let resource =
                 prefixed_resource_name(OBJECT_VIDEO_RESOURCE_DIRECTORY, &vector.video).unwrap();
-            assert!(!store.load(&resource).unwrap().is_empty(), "{resource:?}");
+            catalog
+                .apply_descript_assets(service.backend().assets())
+                .unwrap();
+            let request = catalog
+                .request(crate::native::bloodprg::PresentationResourceId::new(43))
+                .unwrap();
+            assert_eq!(request.resource_name, resource);
+            assert_eq!(request.descriptor_flags, 0);
+            assert_eq!(request.variant, 16);
+            assert!(
+                !store.load(&request.resource_name).unwrap().is_empty(),
+                "{resource:?}"
+            );
             assert!(
                 !service
                     .backend()
