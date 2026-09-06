@@ -307,8 +307,8 @@ reactivated A6 state and exact VAR synchronization after transfer.
 
 The ungated operation retains an explicit descriptor-lookup continuation and
 the selected object, whose native clearing occurs after descriptor processing.
-Dispatch reports that unresolved continuation rather than inventing descriptor
-availability or silently continuing. Invalid selections, inactive resume,
+Dispatch now completes that lookup through the descriptor backend, as detailed
+below; an absent backend remains an explicit error. Invalid selections, inactive resume,
 missing instruction state and wrong dialect have explicit rejection checks.
 
 Authored inventory A6 text now decodes and invokes the condition component after
@@ -334,8 +334,8 @@ resume, before rejection gates; the shared Rust handler now does so. Runtime
 choice readiness includes object choices without converting them to dictionary IDs.
 
 Object-name display and UI selection/cancellation are now connected through the
-shared chooser, as detailed below. Descriptor/audio processing and the profile
-lifecycle remain unfinished. Production sequel loading stays disabled until
+shared chooser, as detailed below. Descriptor lookup is connected, but playback
+completion and the profile lifecycle remain unfinished. Production sequel loading stays disabled until
 the complete flow is integrated and verified.
 
 Verification: all 123 formats tests pass with original-corpus tests enabled;
@@ -412,8 +412,8 @@ submission and retain that flag's gate. The shared lifecycle now follows this
 ordering, and profile changes reset the cached inventory-line owner.
 
 The modern UI binding is implemented, but live sequel startup remains guarded;
-these tests do not establish end-to-end gameplay or the pending descriptor/audio
-continuation. All eleven inventory-filtered tests pass with original-asset tests
+these tests do not establish end-to-end gameplay or playback completion.
+The original eleven chooser/inventory tests pass with original-asset tests
 enabled, and repeated native captures are byte-identical. Reproduce the native
 panel and ordering captures with:
 
@@ -454,6 +454,51 @@ nix develop -c python3 -P re/tools/big_bug_bang_state_processor_oracle.py \
   output/big-bug-bang/disc/BLOOD2PG.EXE \
   re/tools/oracle_vectors/big_bug_bang_state_processor.jsonl
 nix develop -c cargo test -p commander-blood-game --lib actor_position_state
+```
+
+#### Inventory Descriptor Continuation
+
+The complete transfer at 0x5C41 now continues through DESCRIPT lookup at 0x8450
+using the selected object's bounded VAR name. Successful lookup applies the
+decoded commands, releases the presentation start lock, requests secondary
+presentation line 43 and pauses the VM. A completed miss clears the selection
+without requesting playback. A backend failure retains the continuation; retry
+does not repeat the transfer or remove a second duplicate roster entry. A missing
+host binding is an error, not a fabricated descriptor miss. Lifecycle publication
+consumes the VM write once so late text updates cannot replay it over a UI write.
+
+`big_bug_bang_inventory_descriptor_oracle.py` executes the complete transfer,
+lookup and every entered helper unchanged. Its explicit INT 21 boundary handles
+open/read/seek/close against owned database bytes. Twenty synthetic cases cover
+success, case-sensitive misses, missing files, both native gates, empty records,
+captions and accented names. Another 25 captures use all authored inventory
+descriptors from the hash-pinned DESCRIPT database. No descriptor result is
+substituted into native execution. Repeated captures are byte-identical.
+
+Rust dispatch and the real typed DES parser match all 45 cases. An additional
+original-asset test checks the concrete runtime backend's 25 object bindings,
+selected clip names and resource availability. All these records select HNM
+clips without loading an SND bank during lookup. The existing presentation
+catalog retains the previous clip when a record supplies no new object-video
+command; the per-record asset list is not the owner of that retained filename.
+
+Verification for this slice: the full game library suite passed 926 tests with
+17 ignored; all 14 inventory tests passed with original-asset tests enabled.
+The all-targets check passed, and all 45 regenerated native captures matched
+the checked-in vectors byte for byte.
+
+This is not playback completion or initialized gameplay proof. The sequel's
+native scene-completion path re-enables the VM at 0xB68D, and explicit stream
+teardown does so at 0xB75A. Those writes still need integration with the modern
+scene/lifecycle owners before enabling sequel startup. English localization is
+also unfinished. The production guard remains in place.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_inventory_descriptor_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_inventory_descriptor.jsonl \
+  --resources output/big-bug-bang/imported-assets/resources
+nix develop -c cargo test -p commander-blood-game --lib inventory -- --include-ignored
 ```
 
 ### Authored Text Corpus Audit

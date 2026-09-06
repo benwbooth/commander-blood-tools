@@ -311,6 +311,22 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
         self.selector_root
     }
 
+    fn lookup_inventory_description(
+        &mut self,
+        object: ScriptObjectId,
+        name: &[u8],
+        text: &mut TextPresentationState,
+    ) -> Result<Option<bool>, Self::Error> {
+        let description = self
+            .backend
+            .apply_action_description(object, name, text)
+            .map_err(ScriptExecutionServiceError::Backend)?;
+        if description.available {
+            self.presentation.start_locked = false;
+        }
+        Ok(Some(description.available))
+    }
+
     fn scan_presentation(&mut self, context: ScriptPostScanContext<'_>) -> Result<(), Self::Error> {
         let player = context
             .builtins

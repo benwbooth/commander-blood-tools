@@ -47,6 +47,8 @@ pub enum SequelInventoryError {
     NotInventory(ScriptObjectId),
     /// A previous transfer still needs its native descriptor continuation.
     DescriptorPending,
+    /// No transferred object is awaiting descriptor completion.
+    NoPendingDescriptor,
     /// The saved recipient cannot be encoded in the original VAR word.
     UnencodableRecipient(ScriptObjectId),
     /// The fixed object-name field has no bounded native terminator.
@@ -82,6 +84,30 @@ impl SequelInventoryState {
     /// Return the unresolved native descriptor continuation after a transfer.
     pub const fn descriptor_lookup(&self) -> Option<ScriptObjectId> {
         self.descriptor_lookup
+    }
+
+    /// Resolve the original VAR name passed to DESCRIPT by the transfer handler.
+    pub fn descriptor_name<'a>(
+        &self,
+        state: &'a ScriptState,
+    ) -> Result<&'a [u8], SequelInventoryError> {
+        if state.dialect() != ScriptDialect::BigBugBang {
+            return Err(SequelInventoryError::WrongDialect);
+        }
+        inventory_name(
+            state,
+            self.descriptor_lookup
+                .ok_or(SequelInventoryError::NoPendingDescriptor)?,
+        )
+    }
+
+    /// Clear the selection after a completed descriptor lookup, including a miss.
+    pub fn complete_descriptor_lookup(&mut self) -> Result<(), SequelInventoryError> {
+        if self.descriptor_lookup.take().is_none() {
+            return Err(SequelInventoryError::NoPendingDescriptor);
+        }
+        self.selected = None;
+        Ok(())
     }
 
     /// Publish the authored 0x8030 inventory condition after earlier A6 gates.
@@ -145,18 +171,10 @@ impl SequelInventoryState {
         self.choices
             .iter()
             .map(|id| {
-                let object = state
-                    .object(*id)
-                    .ok_or(SequelInventoryError::MissingObject(*id))?;
-                if object.kind != ScriptObjectKind::InventoryItem {
-                    return Err(SequelInventoryError::NotInventory(*id));
-                }
-                let name = &object.bytes()[4..20];
-                let end = name
-                    .iter()
-                    .position(|byte| *byte == 0)
-                    .ok_or(SequelInventoryError::UnterminatedName(*id))?;
-                Ok(super::PresentationWordChoice::inventory(*id, &name[..end]))
+                Ok(super::PresentationWordChoice::inventory(
+                    *id,
+                    inventory_name(state, *id)?,
+                ))
             })
             .collect()
     }
@@ -254,6 +272,21 @@ impl SequelInventoryState {
         }
         Ok(Some(selected))
     }
+}
+
+fn inventory_name(state: &ScriptState, id: ScriptObjectId) -> Result<&[u8], SequelInventoryError> {
+    let object = state
+        .object(id)
+        .ok_or(SequelInventoryError::MissingObject(id))?;
+    if object.kind != ScriptObjectKind::InventoryItem {
+        return Err(SequelInventoryError::NotInventory(id));
+    }
+    let name = &object.bytes()[4..20];
+    let end = name
+        .iter()
+        .position(|byte| *byte == 0)
+        .ok_or(SequelInventoryError::UnterminatedName(id))?;
+    Ok(&name[..end])
 }
 
 #[cfg(test)]

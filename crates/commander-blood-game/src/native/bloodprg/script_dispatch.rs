@@ -86,11 +86,14 @@ pub struct ScriptDispatchState {
     pub sequel_presentation: SequelPresentationControl,
     /// Last write to the single shared `vm_active_line` during this VM frame.
     pending_active_line_write: Option<u16>,
+    /// One-shot write consumed by the lifecycle without overwriting later UI changes.
+    pub(crate) pending_vm_execution_write: Option<bool>,
 }
 
 impl ScriptDispatchState {
     fn begin_frame(&mut self) {
         self.pending_active_line_write = None;
+        self.pending_vm_execution_write = None;
     }
 
     pub(crate) fn record_active_line_write(&mut self, line: u16) {
@@ -238,6 +241,17 @@ pub trait ScriptDispatchHost {
     /// Return the active BAS selector root used when committing a chosen concept.
     fn selector_root(&self) -> Option<ScriptCodeOffset>;
 
+    /// Apply an inventory object's DESCRIPT record; `None` means no host binding.
+    /// A bound host returns `Some(false)` for a completed lookup with no match.
+    fn lookup_inventory_description(
+        &mut self,
+        _object: commander_blood_formats::script::ScriptObjectId,
+        _name: &[u8],
+        _text: &mut TextPresentationState,
+    ) -> Result<Option<bool>, Self::Error> {
+        Ok(None)
+    }
+
     /// Run the recovered presentation/action scan after COD traversal.
     fn scan_presentation(&mut self, context: ScriptPostScanContext<'_>) -> Result<(), Self::Error>;
 }
@@ -255,6 +269,8 @@ pub enum ScriptDispatchError<HostError> {
     State(ScriptStateOperationError),
     /// A sequel instruction was dispatched without its native clock/object bindings.
     MissingSequelSimulationContext,
+    /// An ungated inventory transfer has no descriptor application backend.
+    MissingInventoryDescriptorHost,
     /// Sequel actor-state arithmetic or relationship binding failed.
     SequelGrowth(SequelGrowthError),
     /// An object-backed inventory choice could not bind its typed transfer state.
@@ -341,6 +357,38 @@ struct Dispatcher<'a, Host> {
     records: &'a mut ScriptProfileRecordState,
     dispatch: &'a mut ScriptDispatchState,
     host: &'a mut Host,
+}
+
+impl<Host: ScriptDispatchHost> Dispatcher<'_, Host> {
+    fn complete_inventory_description(&mut self) -> Result<(), ScriptDispatchError<Host::Error>> {
+        let Some(object) = self.selector.inventory().descriptor_lookup() else {
+            return Ok(());
+        };
+        let name = self
+            .selector
+            .inventory()
+            .descriptor_name(self.state)
+            .map_err(ScriptDispatchError::SequelInventory)?;
+        let found = self
+            .host
+            .lookup_inventory_description(object, name, &mut self.dispatch.text_presentation)
+            .map_err(ScriptDispatchError::Host)?
+            .ok_or(ScriptDispatchError::MissingInventoryDescriptorHost)?;
+        if found {
+            self.dispatch.pending_vm_execution_write = Some(false);
+            self.dispatch
+                .text_presentation
+                .request_flags
+                .request_secondary();
+            self.dispatch.record_active_line_write(
+                super::ScriptTransferPresentationLine::InventoryMoved.number(),
+            );
+        }
+        self.selector
+            .inventory_mut()
+            .complete_descriptor_lookup()
+            .map_err(ScriptDispatchError::SequelInventory)
+    }
 }
 
 impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
@@ -699,9 +747,7 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
 
     fn commit_selected_concept(&mut self, runtime: &mut ScriptRuntime) -> Result<(), Self::Error> {
         if self.selector.inventory().descriptor_lookup().is_some() {
-            return Err(ScriptDispatchError::SequelInventory(
-                super::SequelInventoryError::DescriptorPending,
-            ));
+            return self.complete_inventory_description();
         }
         if self.selector.inventory().selected().is_some() {
             self.selector
@@ -717,12 +763,7 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 )
                 .map_err(ScriptDispatchError::SequelInventory)?;
             self.selector.replace_presentation_words([]);
-            if self.selector.inventory().descriptor_lookup().is_some() {
-                return Err(ScriptDispatchError::SequelInventory(
-                    super::SequelInventoryError::DescriptorPending,
-                ));
-            }
-            return Ok(());
+            return self.complete_inventory_description();
         }
         commit_selected_concept(
             runtime,
@@ -807,6 +848,10 @@ pub fn selected_concept(runtime: &ScriptRuntime) -> Option<ScriptWordId> {
 pub const fn frame_execution_was_disabled(outcome: ScriptFrameOutcome) -> bool {
     matches!(outcome.end, ScriptFrameEnd::ExecutionDisabled)
 }
+
+#[cfg(test)]
+#[path = "sequel_inventory_descriptor_oracle.rs"]
+mod sequel_inventory_descriptor_oracle;
 
 #[cfg(test)]
 mod tests {

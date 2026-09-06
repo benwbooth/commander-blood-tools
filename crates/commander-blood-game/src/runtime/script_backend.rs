@@ -258,7 +258,7 @@ impl RuntimeScriptSystem {
     }
 
     /// Publish BloodScript writes to the recovered main-loop globals after a VM pass.
-    pub fn finish_lifecycle_frame(&self, lifecycle: &mut GameLifecycleState) -> Result<()> {
+    pub fn finish_lifecycle_frame(&mut self, lifecycle: &mut GameLifecycleState) -> Result<()> {
         let presentation = self.service.presentation_state();
         let target = &mut lifecycle.presentation;
         target.active = presentation.active;
@@ -288,6 +288,9 @@ impl RuntimeScriptSystem {
             .profile_request
             .pending_profile()
             .context("resolving BloodScript profile request")?;
+        if let Some(enabled) = self.dispatch.pending_vm_execution_write.take() {
+            lifecycle.vm_execution_enabled = enabled;
+        }
         Ok(())
     }
 
@@ -1485,7 +1488,11 @@ mod tests {
         let request = decode_script_profile_request(&code.tokens()[0]).unwrap();
         scripts.dispatch.profile_request.schedule(request);
 
+        lifecycle.vm_execution_enabled = true;
+        scripts.dispatch.pending_vm_execution_write = Some(false);
         scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
+        assert!(!lifecycle.vm_execution_enabled);
+        assert_eq!(scripts.dispatch.pending_vm_execution_write, None);
 
         assert!(!lifecycle.presentation.active);
         assert!(!lifecycle.presentation.c2_presentation_gate);
@@ -1505,6 +1512,96 @@ mod tests {
         assert_eq!(lifecycle.presentation.dialogue_hold_countdown, 4);
         assert!(lifecycle.profile_ui_blocked());
         assert_eq!(lifecycle.pending_profile, ScriptProfileId::new(2));
+        // A late renderer must not replay a consumed script pause over a UI write.
+        lifecycle.vm_execution_enabled = true;
+        scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
+        assert!(lifecycle.vm_execution_enabled);
+    }
+
+    #[test]
+    #[ignore = "requires the original sequel database, profile and object clips"]
+    fn sequel_inventory_descriptor_runtime_backend_resolves_all_authored_clips() {
+        use crate::native::bloodprg::ScriptDispatchHost;
+        use commander_blood_formats::script::decode_script_directory;
+        use serde::Deserialize;
+        use sha2::{Digest, Sha256};
+
+        #[derive(Deserialize)]
+        struct Vector {
+            #[serde(default)]
+            authored: bool,
+            name: Vec<u8>,
+            video: Vec<u8>,
+            database_sha256: Option<String>,
+        }
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let bytes = std::fs::read(root.join("DESCRIPT.DES")).unwrap();
+        let hash = format!("{:x}", Sha256::digest(&bytes));
+        let database = DescriptDatabase::parse(&bytes).unwrap();
+        let directory =
+            decode_script_directory(&std::fs::read(root.join("SCRIPT1.DEB")).unwrap()).unwrap();
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let backend = RuntimeScriptBackend {
+            database,
+            object_names: directory
+                .active_objects()
+                .map(|(id, entry)| (id, Box::from(entry.name())))
+                .collect(),
+            assets: DescriptPresentationAssets::default(),
+            backgrounds: DescriptBackgroundCache::default(),
+            background_source: RuntimeBackgroundSource::new(store.clone()),
+            sound_loader: RuntimeSoundBankLoader::new(store.clone()),
+            idle_source: RuntimeIdleClipSource::new(store.clone()),
+            environment_activity: ScriptEnvironmentActivity::default(),
+            clock: TEST_CLOCK,
+            sequence_context: SequenceRequestContext::default(),
+            navigation_context: None,
+            action_runtime_state: ScriptActionRuntimeState::default(),
+            presentation_interface_active: false,
+            active_description_object: None,
+            last_descript_application: None,
+            commands: Vec::new(),
+        };
+        let mut service = ScriptExecutionService::new(backend);
+        let mut text = TextPresentationState::default();
+        let mut count = 0;
+        for vector in include_str!(
+            "../../../../re/tools/oracle_vectors/big_bug_bang_inventory_descriptor.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str::<Vector>(line).unwrap())
+        .filter(|vector| vector.authored)
+        {
+            assert_eq!(vector.database_sha256.as_deref(), Some(hash.as_str()));
+            let object = directory.find_active_object(&vector.name).unwrap();
+            service.presentation_state_mut().start_locked = true;
+            assert_eq!(
+                service
+                    .lookup_inventory_description(object, &vector.name, &mut text)
+                    .unwrap(),
+                Some(true)
+            );
+            assert!(!service.presentation_state().start_locked);
+            assert_eq!(service.backend().active_description_object(), Some(object));
+            assert_eq!(
+                service.backend().assets().object_scene_video(),
+                Some(vector.video.as_slice())
+            );
+            let resource =
+                prefixed_resource_name(OBJECT_VIDEO_RESOURCE_DIRECTORY, &vector.video).unwrap();
+            assert!(!store.load(&resource).unwrap().is_empty(), "{resource:?}");
+            assert!(
+                !service
+                    .backend()
+                    .last_descript_application()
+                    .unwrap()
+                    .sound_bank_loaded()
+            );
+            assert!(service.backend().pending_commands().is_empty());
+            count += 1;
+        }
+        assert_eq!(count, 25);
     }
 
     #[test]
