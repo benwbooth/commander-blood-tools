@@ -4822,6 +4822,13 @@ impl<'window> ModernGameServices<'window> {
             },
             "waiting_for_input": waiting_for_input,
         });
+        presentation_trace["sequel_control"] = self
+            .sequel_presentation_control()
+            .map(|control| serde_json::json!({
+                "ending_active": control.ending_active,
+                "requested_choice": control.requested_choice.map(|choice| choice.index()),
+            }))
+            .unwrap_or(serde_json::Value::Null);
         presentation_trace
             .as_object_mut()
             .expect("presentation trace is an object")
