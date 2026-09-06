@@ -359,6 +359,16 @@ impl RuntimeScriptSystem {
         &self.dispatch.text_presentation
     }
 
+    pub(super) fn choice_display_labels(
+        &self,
+        words: &[commander_blood_formats::script::ScriptWordId],
+    ) -> Option<&[Box<[u8]>]> {
+        self.backend()
+            .english_subtitles
+            .as_ref()?
+            .choice_labels(self.dispatch.published_text_site?, words)
+    }
+
     /// Mutably borrow subtitle and inline-menu state for frame-tail rendering.
     pub fn text_presentation_mut(&mut self) -> &mut TextPresentationState {
         &mut self.dispatch.text_presentation

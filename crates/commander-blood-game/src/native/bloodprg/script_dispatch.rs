@@ -66,6 +66,8 @@ pub struct ScriptDispatchState {
     pub text_instructions: BTreeMap<ScriptCodeOffset, TextInstructionState>,
     /// Subtitle, menu, chatter, and presentation request state.
     pub text_presentation: TextPresentationState,
+    /// Source of the last accepted A6 presentation, for display-only localization.
+    pub published_text_site: Option<ScriptCodeOffset>,
     /// Topic and sequence request state.
     pub sequence_presentation: SequencePresentationState,
     /// Reference invalidated by B8/B9/BD pair writes.
@@ -466,6 +468,13 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     }),
                 )
                 .map_err(ScriptDispatchError::Text)?;
+                if matches!(
+                    execution.outcome,
+                    super::TextHandlerOutcome::SubtitlePublished
+                        | super::TextHandlerOutcome::MenuPublished
+                ) {
+                    self.dispatch.published_text_site = Some(token.source_offset());
+                }
                 if execution.outcome == super::TextHandlerOutcome::SubtitlePublished
                     && let Some(display) = self
                         .host
@@ -1161,6 +1170,7 @@ mod tests {
         dispatch.random.seed = 4_660;
         dispatch.random.counter = 9;
         dispatch.text_presentation.subtitle_display_active = true;
+        dispatch.published_text_site = Some(ScriptCodeOffset::new(0x727));
         dispatch.sequence_presentation.finale_requested = true;
 
         dispatch.reset_for_profile_change();
@@ -1168,6 +1178,7 @@ mod tests {
         assert_eq!(dispatch.random.seed, 4_660);
         assert_eq!(dispatch.random.counter, 9);
         assert_eq!(dispatch.text_presentation, TextPresentationState::default());
+        assert_eq!(dispatch.published_text_site, None);
         assert_eq!(
             dispatch.sequence_presentation,
             SequencePresentationState::default()
@@ -1736,6 +1747,10 @@ mod tests {
         let (raw_step, mut raw, raw_state, raw_runtime, raw_selector, _) = run(0x727, false, false);
         let (step, translated, state, runtime, selector, calls) = run(0x727, true, false);
         assert_eq!(calls, [ScriptCodeOffset::new(0x727)]);
+        assert_eq!(
+            translated.published_text_site,
+            Some(ScriptCodeOffset::new(0x727))
+        );
         assert_ne!(raw.text_presentation.subtitle_text, english);
         assert_eq!(translated.text_presentation.subtitle_text, english);
         assert_eq!(step, raw_step);
@@ -1749,8 +1764,13 @@ mod tests {
             run(0x727, true, true).5.is_empty(),
             "gated text must not call the translator"
         );
+        assert_eq!(run(0x727, true, true).1.published_text_site, None);
         let menu = run(0x977, true, false);
         assert!(menu.1.text_presentation.menu_deferred);
+        assert_eq!(
+            menu.1.published_text_site,
+            Some(ScriptCodeOffset::new(0x977))
+        );
         assert!(
             menu.5.is_empty(),
             "menu prose is not yet handled by the subtitle translator"

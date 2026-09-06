@@ -16,6 +16,30 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### English Opening Choices
+
+The retained dictionary-choice renderer now binds English labels to the accepted
+A6 source instruction and exact ordered dictionary IDs. Layout measures the new
+labels; completion still submits the original identity. The bundled opening
+catalog supplies all three static choice sections. Inventory choices, unknown
+sites, reordered word lists, and unmatched resources do not receive an override.
+Profile reset clears the last published site; gated text does not replace it.
+
+The ordinary-pointer run `output/big-bug-bang/modern-honk-play-01` reached the
+opening menu with rendered labels `PLAY`, `INSTRUCTIONS` and original selector
+words `JOUER`, `EXPLICATIONS`. Screenshot `screen-019.png` confirms the English
+labels. Clicking logical position (185, 94) completed the first choice and
+requested profile 1 (SCRIPT2), then continued English dialogue. The run exited
+normally after 2,004 trace records, still during that dialogue with the profile
+request pending. It did not establish a completed SCRIPT2 transition.
+
+Verification: all 941 enabled library tests passed serially (28 ignored), the
+four localization tests passed with original resources enabled, the isolated A6
+dispatch comparison passed, and all-targets checking passed. Source tests check
+all three choice sections and reject mismatched/reordered choices. Only the
+opening menu has a live visual/selection check in this slice; menu prose and the
+remaining profiles are still not translated at runtime.
+
 ### Text Hold Script Resume
 
 The sequel coordinator at BLOOD2PG file offsets `0x11D2..0x1280` writes the

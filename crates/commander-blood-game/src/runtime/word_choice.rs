@@ -181,6 +181,13 @@ impl RuntimePresentationWordChoice {
                 profile.dictionary(),
                 profile.selector_state().pending_presentation_words(),
             )?;
+            if let Some(labels) = services
+                .choice_display_labels(profile.selector_state().pending_presentation_words())
+            {
+                for (choice, label) in self.state.choices.iter_mut().zip(labels) {
+                    choice.label = label.clone();
+                }
+            }
         }
         Ok(())
     }

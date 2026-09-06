@@ -3,7 +3,7 @@
 `en/script1.json` contains an English editorial first pass for all 89 A6 text
 sites in the opening COD profile. It includes non-spoken sites, unchanged sound
 effects, and the three choice sections. The COD runtime backend now binds its
-subtitle sections for the matching opening profile. The normal game loader now
+subtitle sections and choice labels for the matching opening profile. The normal game loader now
 accepts the verified BBB build, but complete gameplay is not established, so this
 is not yet a playable English release.
 The other 16 COD profiles, BAS text, native UI, object names, and text embedded
@@ -47,9 +47,18 @@ with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.
 
+The retained choice renderer uses the last accepted A6 instruction as its display
+source. English labels are bound to that instruction and the exact ordered source
+dictionary IDs; missing sites, reordered choices, inventory lists, and unmatched
+resources keep their original labels. Rejected A6 calls do not change the source,
+and a profile reset clears it. Width measurement and drawing use the translated
+labels, while choice completion retains the original dictionary identity.
+
 There are 34 authored spoken-flag sites in this profile. Menu-only text (including
-Bob's recording and OLGA's dialogue) and choice labels still use the original
-renderer and remain French even though their translations are in the file.
+Bob's recording and OLGA's dialogue) still uses the original renderer and remains
+French even though its translation is in the file. The three dictionary-choice
+sections are now bound to English display labels; only the opening HONK menu has
+been reached and visually checked in the live runtime.
 
 Verification commands:
 
@@ -78,6 +87,6 @@ created a pipeline layout. The root cause is not established or fixed here;
 the serial pass does not prove parallel GPU-test stability. Workspace checking
 and the five targeted localization/dispatch checks passed.
 
-Remaining work includes menu prose and choice-label rendering, BAS/UI translation,
+Remaining work includes menu prose, BAS/UI translation,
 the other COD profiles, contextual editorial review, and actual playable startup
 and progression. No English voice acting or whole-game localization is claimed.

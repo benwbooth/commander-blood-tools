@@ -3236,6 +3236,13 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.backend()
     }
 
+    pub(super) fn choice_display_labels(
+        &self,
+        words: &[commander_blood_formats::script::ScriptWordId],
+    ) -> Option<&[Box<[u8]>]> {
+        self.scripts.choice_display_labels(words)
+    }
+
     pub(super) const fn presentation_scan_state(&self) -> &ScriptPresentationScanState {
         self.scripts.presentation_scan_state()
     }

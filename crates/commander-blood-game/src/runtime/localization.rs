@@ -1,9 +1,13 @@
-//! Display-only English COD subtitles, bound to the active original resources.
+//! Display-only English COD subtitles and choices, bound to original resources.
 
 use std::collections::BTreeMap;
 
 use anyhow::{Context, Result, ensure};
-use commander_blood_formats::code::{ScriptCodeOffset, ScriptDialect};
+use commander_blood_formats::code::{
+    ScriptCodeOffset, ScriptDialect, decode_script_code_for_dialect,
+};
+use commander_blood_formats::instruction::{ScriptTextWord, decode_script_text};
+use commander_blood_formats::script::{ScriptWordId, decode_script_dictionary};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -25,6 +29,7 @@ struct Translation {
 
 pub(super) struct SequelEnglishSubtitles {
     subtitles: BTreeMap<ScriptCodeOffset, Box<[u8]>>,
+    choices: BTreeMap<ScriptCodeOffset, (Vec<ScriptWordId>, Vec<Box<[u8]>>)>,
 }
 
 impl SequelEnglishSubtitles {
@@ -51,6 +56,9 @@ impl SequelEnglishSubtitles {
         {
             return Ok(None);
         }
+        let code = decode_script_code_for_dialect(cod, ScriptDialect::BigBugBang)?;
+        let dictionary = decode_script_dictionary(dic)?;
+        let mut choices = BTreeMap::new();
         let subtitles = translation
             .messages
             .into_iter()
@@ -66,14 +74,62 @@ impl SequelEnglishSubtitles {
                 let prose = sections
                     .first()
                     .context("English subtitle has no prose section")?;
+                if sections.len() > 1 {
+                    let token = code
+                        .tokens()
+                        .iter()
+                        .find(|token| token.source_offset().index() == offset)
+                        .context("English choice site is not an instruction boundary")?;
+                    let text = decode_script_text(token, &dictionary)?;
+                    let source = text
+                        .words
+                        .split(|word| *word == ScriptTextWord::SectionSeparator)
+                        .skip(1)
+                        .collect::<Vec<_>>();
+                    ensure!(
+                        source.len() == sections.len() - 1,
+                        "English choice section mismatch"
+                    );
+                    let mut words = Vec::new();
+                    let mut labels = Vec::new();
+                    for (source, translated) in source.into_iter().zip(sections.iter().skip(1)) {
+                        let translated = translated.split_whitespace().collect::<Vec<_>>();
+                        ensure!(
+                            source.len() == translated.len(),
+                            "English choice count mismatch"
+                        );
+                        for (word, label) in source.iter().zip(translated) {
+                            let ScriptTextWord::Dictionary(word) = word else {
+                                anyhow::bail!("English choice requires a static dictionary word");
+                            };
+                            ensure!(
+                                label.is_ascii()
+                                    && !label.bytes().any(|byte| byte.is_ascii_control()),
+                                "English choice requires printable ASCII"
+                            );
+                            words.push(*word);
+                            labels.push(label.as_bytes().into());
+                        }
+                    }
+                    choices.insert(ScriptCodeOffset::new(offset), (words, labels));
+                }
                 Ok((ScriptCodeOffset::new(offset), wrap_subtitle(prose)?))
             })
             .collect::<Result<_>>()?;
-        Ok(Some(Self { subtitles }))
+        Ok(Some(Self { subtitles, choices }))
     }
 
     pub(super) fn subtitle(&self, instruction: ScriptCodeOffset) -> Option<Box<[u8]>> {
         self.subtitles.get(&instruction).cloned()
+    }
+
+    pub(super) fn choice_labels(
+        &self,
+        instruction: ScriptCodeOffset,
+        words: &[ScriptWordId],
+    ) -> Option<&[Box<[u8]>]> {
+        let (expected, labels) = self.choices.get(&instruction)?;
+        (expected.as_slice() == words).then_some(labels.as_slice())
     }
 }
 
@@ -213,6 +269,39 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(catalog.subtitles.len(), 89);
+        assert_eq!(catalog.choices.len(), 3);
+        let dictionary = decode_script_dictionary(&dic).unwrap();
+        for (site, (words, labels)) in &catalog.choices {
+            assert_eq!(catalog.choice_labels(*site, words), Some(labels.as_slice()));
+            assert!(catalog.choice_labels(*site, &[]).is_none());
+            assert!(
+                catalog
+                    .choice_labels(ScriptCodeOffset::new(0), words)
+                    .is_none()
+            );
+            for word in words {
+                assert!(dictionary.word(*word).is_some());
+            }
+            if words.len() > 1 {
+                let reversed = words.iter().rev().copied().collect::<Vec<_>>();
+                assert!(catalog.choice_labels(*site, &reversed).is_none());
+            }
+        }
+        let (words, labels) = &catalog.choices[&ScriptCodeOffset::new(0x727)];
+        assert_eq!(
+            words
+                .iter()
+                .map(|word| dictionary.word(*word).unwrap())
+                .collect::<Vec<_>>(),
+            [b"JOUER".as_slice(), b"EXPLICATIONS".as_slice()]
+        );
+        assert_eq!(
+            labels
+                .iter()
+                .map(|label| label.as_ref())
+                .collect::<Vec<_>>(),
+            [b"PLAY".as_slice(), b"INSTRUCTIONS".as_slice()]
+        );
         assert_eq!(
             catalog
                 .subtitle(ScriptCodeOffset::new(0x6ed))
