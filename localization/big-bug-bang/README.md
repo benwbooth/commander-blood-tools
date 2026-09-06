@@ -14,7 +14,10 @@ catalog tests pass. The ordinary startup/PLAY capture
 `output/big-bug-bang/english-script2-play-02` reaches profile 1 and visibly renders
 "Go and look in the cryobox. Old Daddy is waiting for you there..."
 (`screen-028.png`). This verifies the first SCRIPT2 subtitle, not every site.
-The subsequent TV sequence still displays French text; contextual review and
+The subsequent TV sequence still displays French text. Its first news line is
+the frame-10 sequence subtitle in DESCRIPT's `1ppit` record, not text baked into
+the video. DESCRIPT timed captions need a separate display translation path that
+preserves cue timing. Contextual review and
 the remaining localization layers are unfinished.
 The integration run passed six localization tests with original resources,
 game-package all-targets checking, and 948 serial game-library tests (31 ignored).
@@ -27,6 +30,13 @@ Inventory sections preserve their generator marker and receive no static choice
 override: the live inventory remains authoritative. Item-name localization is
 still separate work. All eight localization tests pass with original resources;
 SCRIPT3 live English rendering and contextual review remain unverified.
+The rebuilt runtime capture `output/big-bug-bang/english-script3-play-01`
+completes every action in `accuracy/scenarios/bbb_play_daddy.tsv`, including the
+final `wait 100` (action index 15), and exits normally without the 360-second
+capture limit firing. The final trace reaches resource profile 2 / SCRIPT3.
+`screen-050.png` visibly shows the Daddy scene and its unchanged vocalization
+"Ageu rha... Mmmeuh". This verifies that bounded gameplay route, not English
+SCRIPT3 prose, later dialogue choices, or full-game progression.
 Game-package all-targets checking and 949 serial game-library tests pass
 (32 ignored) after this integration.
 `en/script4.json` supplies all 660 text sites in the fourth profile
