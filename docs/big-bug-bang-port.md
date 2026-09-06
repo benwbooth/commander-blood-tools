@@ -744,9 +744,8 @@ not a claim that all subsequent startup writes have been ported.
 All 135 formats tests pass with original-asset tests explicitly enabled,
 including direct checks of every menu label against the sequel executable,
 malformed pointers/sentinels/terminators, and preserved speed values/flag bits.
-The native command dispatcher remains five-command-only; production sequel
-startup remains guarded until that dispatcher and its runtime owners are
-connected. This change supplies data and correct label indexing, not an
+Production sequel startup remains guarded until the command dispatcher and
+its runtime owners are connected. This table change supplies data and correct label indexing, not an
 interactive seven-command menu or an English localization.
 The game all-targets check passes, as does the original-disc music-label test.
 The full library passes 934 tests with 21 ignored on a private Xvfb display,
@@ -768,6 +767,49 @@ nix develop -c python3 -P re/tools/big_bug_bang_navigation_tables_oracle.py \
 nix develop -c cargo test -p commander-blood-formats --test sequel_navigation_tables -- --include-ignored
 nix develop -c cargo test -p commander-blood-game --lib sequel_navigation_tables -- --include-ignored
 ```
+
+### Seven-Command Options Handler
+
+`update_sequel_option_menu` now implements the sequel's native command mapping
+using the shared list-widget and panel-transition code. Commander Blood keeps
+its existing five-command entry point and result type by default. The sequel
+returns separate typed speed/travel commands and the five shared actions.
+
+The command effects follow file `0x9A67..0x9B43`: simulation speed and text
+speed set their activation and layout phases; travel toggles independently of
+audio support; music is unchanged if support is absent; save/load activate
+their shared panel and respective motion request; quit clears both pointer
+button latches. Cancel closes without an action. A negative chooser result
+leaves the menu open. Typed row resolution rejects the original ABI's
+unreachable high-byte aliases.
+
+The guarded original-instruction fixture has 80 cases: all seven rows,
+cancel, two negative results, and every combination of music support, music
+state and travel state. Rust tests compare both submenu phases, activation,
+music/travel states, music label, save/load panel and motion flags, quit,
+pointer latches, menu/modal ownership, and stream-start requests. Separate
+tests check inactive ownership and transition waiting before action dispatch.
+
+Music startup is deliberately captured at the original DOS far-call boundary
+at `0x9AF9`; the post-driver branch resumes at `0x9B03` with the captured
+globals. No machine code is patched or callback stubs installed. This proves
+the request and menu effects, not DOS driver behavior or host audio playback.
+The three focused tests pass, including the existing Commander options oracle,
+and a repeated sequel capture is byte-identical.
+The game all-targets check passes. The full library passes 936 tests with 21
+ignored on a private Xvfb display, which was reaped after testing.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_options_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_options.json
+nix develop -c cargo test -p commander-blood-game --lib options_
+```
+
+This is native handler verification. `RuntimeBridgeConsole` still uses the
+Commander handler; it must exchange the sequel controls with the actual
+simulation clock, camera/travel consumers, speed submenus and lifecycle before
+production sequel startup can be enabled. English localization is also pending.
 
 ### Authored Text Corpus Audit
 

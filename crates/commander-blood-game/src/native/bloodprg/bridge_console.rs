@@ -636,7 +636,7 @@ pub struct OptionMenuState {
 
 /// Result of one options-handler update.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum OptionMenuOutcome {
+pub enum OptionMenuOutcome<Choice = OptionMenuChoice> {
     /// Options do not own the selected console command.
     Inactive,
     /// The options panel is still moving into place.
@@ -644,7 +644,7 @@ pub enum OptionMenuOutcome {
     /// The options panel remains interactive.
     Interactive(ChoiceListFrame),
     /// One authored option was applied and the panel closed.
-    Selected(OptionMenuChoice),
+    Selected(Choice),
     /// The executable-authored final cancel row closed the panel without an action.
     Cancelled,
 }
@@ -662,8 +662,155 @@ pub fn update_option_menu<Backend: BridgeChoiceBackend>(
     options: &mut OptionMenuState,
     backend: &mut Backend,
 ) -> OptionMenuOutcome {
+    let frame = match option_menu_frame(
+        labels,
+        cancel_label,
+        animation_target,
+        console,
+        options,
+        backend,
+    ) {
+        OptionMenuFrame::Inactive => return OptionMenuOutcome::Inactive,
+        OptionMenuFrame::Transitioning => return OptionMenuOutcome::Transitioning,
+        OptionMenuFrame::Ready(frame) => frame,
+    };
+    let Some(index) = frame.selected_item else {
+        if frame.cancelled {
+            close_console(console);
+            return OptionMenuOutcome::Cancelled;
+        }
+        return OptionMenuOutcome::Interactive(frame);
+    };
+    let Some(choice) = OptionMenuChoice::from_row(index) else {
+        return OptionMenuOutcome::Interactive(frame);
+    };
+    apply_option_choice(choice, options, backend);
+    close_console(console);
+    OptionMenuOutcome::Selected(choice)
+}
+
+/// The sequel's authored command order, with shared actions kept semantic.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SequelOptionMenuChoice {
+    /// Open the simulation-countdown speed list.
+    SimulationSpeed,
+    /// Toggle travel animations independently of music support.
+    Travel,
+    /// Execute an action also present in Commander Blood.
+    Common(OptionMenuChoice),
+}
+
+impl SequelOptionMenuChoice {
+    /// Resolve a sequel row without applying the original low-byte ABI aliases.
+    pub const fn from_row(row: usize) -> Option<Self> {
+        match row {
+            0 => Some(Self::SimulationSpeed),
+            1 => Some(Self::Common(OptionMenuChoice::Text)),
+            2 => Some(Self::Travel),
+            3 => Some(Self::Common(OptionMenuChoice::Music)),
+            4 => Some(Self::Common(OptionMenuChoice::Save)),
+            5 => Some(Self::Common(OptionMenuChoice::Load)),
+            6 => Some(Self::Common(OptionMenuChoice::Quit)),
+            _ => None,
+        }
+    }
+}
+
+/// State owned by the sequel options handler at file `0x9A11`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SequelOptionMenuState {
+    /// Shared list, music, text, save, load, and quit state.
+    pub common: OptionMenuState,
+    /// Whether the simulation-speed submenu owns the next choice update.
+    pub simulation_options_active: bool,
+    /// Simulation-speed list layout/transition phase byte.
+    pub simulation_options_phase: u8,
+    /// Text-speed list layout/transition phase byte.
+    pub text_options_phase: u8,
+    /// Current travel-animation flag; the travel label reports this value.
+    pub travel_enabled: bool,
+    /// Save/load panel activation shared by both motion requests.
+    pub save_panel_active: bool,
+    /// Shared primary button latch, cleared when requesting quit.
+    pub primary_pointer_pressed: bool,
+    /// Shared secondary button latch, cleared when requesting quit.
+    pub secondary_pointer_pressed: bool,
+}
+
+/// Update the sequel's seven-command menu using the shared choice widget.
+///
+/// The command tail at file `0x9A67..0x9B43` opens either speed list, toggles
+/// travel, and performs the five shared actions. Stream setup remains a host
+/// operation; no DOS driver entry points are retained in the runtime.
+pub fn update_sequel_option_menu<Backend: BridgeChoiceBackend>(
+    labels: &[&[u8]],
+    cancel_label: &[u8],
+    animation_target: ChoiceListRect,
+    console: &mut BridgeConsoleState,
+    options: &mut SequelOptionMenuState,
+    backend: &mut Backend,
+) -> OptionMenuOutcome<SequelOptionMenuChoice> {
+    let frame = match option_menu_frame(
+        labels,
+        cancel_label,
+        animation_target,
+        console,
+        &mut options.common,
+        backend,
+    ) {
+        OptionMenuFrame::Inactive => return OptionMenuOutcome::Inactive,
+        OptionMenuFrame::Transitioning => return OptionMenuOutcome::Transitioning,
+        OptionMenuFrame::Ready(frame) => frame,
+    };
+    let Some(index) = frame.selected_item else {
+        if frame.cancelled {
+            close_console(console);
+            return OptionMenuOutcome::Cancelled;
+        }
+        return OptionMenuOutcome::Interactive(frame);
+    };
+    let Some(choice) = SequelOptionMenuChoice::from_row(index) else {
+        return OptionMenuOutcome::Interactive(frame);
+    };
+    match choice {
+        SequelOptionMenuChoice::SimulationSpeed => {
+            options.simulation_options_active = true;
+            options.simulation_options_phase = 1;
+        }
+        SequelOptionMenuChoice::Travel => options.travel_enabled = !options.travel_enabled,
+        SequelOptionMenuChoice::Common(common) => {
+            apply_option_choice(common, &mut options.common, backend);
+            match common {
+                OptionMenuChoice::Text => options.text_options_phase = 1,
+                OptionMenuChoice::Save | OptionMenuChoice::Load => options.save_panel_active = true,
+                OptionMenuChoice::Quit => {
+                    options.primary_pointer_pressed = false;
+                    options.secondary_pointer_pressed = false;
+                }
+                OptionMenuChoice::Music => {}
+            }
+        }
+    }
+    close_console(console);
+    OptionMenuOutcome::Selected(choice)
+}
+
+enum OptionMenuFrame {
+    Inactive,
+    Transitioning,
+    Ready(ChoiceListFrame),
+}
+
+fn option_menu_frame<Backend: BridgeChoiceBackend>(
+    labels: &[&[u8]],
+    cancel_label: &[u8],
+    animation_target: ChoiceListRect,
+    console: &mut BridgeConsoleState,
+    options: &mut OptionMenuState,
+    backend: &mut Backend,
+) -> OptionMenuFrame {
     if console.selected != Some(BridgeConsoleChoice::Options) {
-        return OptionMenuOutcome::Inactive;
+        return OptionMenuFrame::Inactive;
     }
     let config = ChoiceListConfig {
         center_x: PANEL_CENTER_X,
@@ -677,7 +824,7 @@ pub fn update_option_menu<Backend: BridgeChoiceBackend>(
     }
     if console.panel_phase == BridgeChoicePanelPhase::Transitioning {
         if !backend.advance_panel_transition(options.current_rect, animation_target) {
-            return OptionMenuOutcome::Transitioning;
+            return OptionMenuFrame::Transitioning;
         }
         console.panel_phase = BridgeChoicePanelPhase::Interactive;
     }
@@ -690,16 +837,14 @@ pub fn update_option_menu<Backend: BridgeChoiceBackend>(
         &mut options.list,
         backend,
     );
-    let Some(index) = frame.selected_item else {
-        if frame.cancelled {
-            close_console(console);
-            return OptionMenuOutcome::Cancelled;
-        }
-        return OptionMenuOutcome::Interactive(frame);
-    };
-    let Some(choice) = OptionMenuChoice::from_row(index) else {
-        return OptionMenuOutcome::Interactive(frame);
-    };
+    OptionMenuFrame::Ready(frame)
+}
+
+fn apply_option_choice<Backend: BridgeChoiceBackend>(
+    choice: OptionMenuChoice,
+    options: &mut OptionMenuState,
+    backend: &mut Backend,
+) {
     match choice {
         OptionMenuChoice::Text => options.text_options_active = true,
         OptionMenuChoice::Music if options.music_supported && options.music_active => {
@@ -716,8 +861,6 @@ pub fn update_option_menu<Backend: BridgeChoiceBackend>(
         OptionMenuChoice::Load => options.load_motion_requested = true,
         OptionMenuChoice::Quit => options.quit_requested = true,
     }
-    close_console(console);
-    OptionMenuOutcome::Selected(choice)
 }
 
 fn close_console(console: &mut BridgeConsoleState) {
@@ -1151,6 +1294,192 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[derive(Deserialize)]
+    struct SequelOptionsOracle {
+        executable_sha256: String,
+        cases: Vec<SequelOptionsCase>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SequelOptionsCase {
+        selected: i16,
+        supported: bool,
+        music: bool,
+        travel: bool,
+        simulation_active: u8,
+        simulation_phase: u8,
+        text_active: u8,
+        text_phase: u8,
+        travel_after: bool,
+        music_after: bool,
+        music_label_off: bool,
+        save: bool,
+        load: bool,
+        panel: bool,
+        quit: bool,
+        primary: bool,
+        secondary: bool,
+        menu_open: bool,
+        modal: bool,
+        stream_starts: usize,
+    }
+
+    const SEQUEL_LABELS: [&[u8]; 7] = [
+        b"VITESSE",
+        b"TEXTES",
+        b"VOYAGE_OFF",
+        b"MUSIQUE_OFF",
+        b"SAUVER",
+        b"CHARGER",
+        b"QUITTER",
+    ];
+
+    #[test]
+    fn sequel_options_handler_matches_original_command_effects() {
+        let oracle: SequelOptionsOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_options.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            oracle.executable_sha256,
+            "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+        );
+        assert_eq!(oracle.cases.len(), 80);
+        for case in oracle.cases {
+            let selection = usize::try_from(case.selected).ok();
+            let mut backend = OracleBackend::for_selection(selection, true);
+            let mut console = selected_console(
+                BridgeConsoleChoice::Options,
+                BridgeChoicePanelPhase::Interactive,
+            );
+            let mut options = SequelOptionMenuState {
+                common: OptionMenuState {
+                    music_supported: case.supported,
+                    music_active: case.music,
+                    music_label: if case.music {
+                        MusicOptionLabel::MusicOff
+                    } else {
+                        MusicOptionLabel::MusicOn
+                    },
+                    ..OptionMenuState::default()
+                },
+                simulation_options_phase: 0x82,
+                text_options_phase: 0x41,
+                travel_enabled: case.travel,
+                primary_pointer_pressed: true,
+                secondary_pointer_pressed: true,
+                ..SequelOptionMenuState::default()
+            };
+            let outcome = update_sequel_option_menu(
+                &SEQUEL_LABELS,
+                b"ANNULER",
+                ANIMATION_TARGET,
+                &mut console,
+                &mut options,
+                &mut backend,
+            );
+            assert_eq!(
+                options.simulation_options_active,
+                case.simulation_active == 1,
+                "{case:?}"
+            );
+            assert_eq!(
+                options.simulation_options_phase, case.simulation_phase,
+                "{case:?}"
+            );
+            assert_eq!(
+                options.common.text_options_active,
+                case.text_active == 1,
+                "{case:?}"
+            );
+            assert_eq!(options.text_options_phase, case.text_phase, "{case:?}");
+            assert_eq!(options.travel_enabled, case.travel_after, "{case:?}");
+            assert_eq!(options.common.music_active, case.music_after, "{case:?}");
+            assert_eq!(
+                options.common.music_label == MusicOptionLabel::MusicOff,
+                case.music_label_off,
+                "{case:?}"
+            );
+            assert_eq!(options.common.save_motion_requested, case.save, "{case:?}");
+            assert_eq!(options.common.load_motion_requested, case.load, "{case:?}");
+            assert_eq!(options.save_panel_active, case.panel, "{case:?}");
+            assert_eq!(options.common.quit_requested, case.quit, "{case:?}");
+            assert_eq!(options.primary_pointer_pressed, case.primary, "{case:?}");
+            assert_eq!(
+                options.secondary_pointer_pressed, case.secondary,
+                "{case:?}"
+            );
+            assert_eq!(console.selected.is_some(), case.menu_open, "{case:?}");
+            assert_eq!(console.interface_active, case.modal, "{case:?}");
+            assert_eq!(backend.stream_starts, case.stream_starts, "{case:?}");
+            match selection {
+                None => assert!(
+                    matches!(outcome, OptionMenuOutcome::Interactive(_)),
+                    "{case:?}"
+                ),
+                Some(7) => assert_eq!(outcome, OptionMenuOutcome::Cancelled, "{case:?}"),
+                Some(row) => assert_eq!(
+                    outcome,
+                    OptionMenuOutcome::Selected(SequelOptionMenuChoice::from_row(row).unwrap()),
+                    "{case:?}"
+                ),
+            }
+        }
+    }
+
+    #[test]
+    fn sequel_options_wait_for_ownership_and_transition_before_applying_actions() {
+        let mut console = BridgeConsoleState::default();
+        let mut options = SequelOptionMenuState::default();
+        let mut backend = OracleBackend::for_selection(Some(0), false);
+        assert_eq!(
+            update_sequel_option_menu(
+                &SEQUEL_LABELS,
+                b"ANNULER",
+                ANIMATION_TARGET,
+                &mut console,
+                &mut options,
+                &mut backend
+            ),
+            OptionMenuOutcome::Inactive
+        );
+        assert_eq!(options, SequelOptionMenuState::default());
+        console = selected_console(
+            BridgeConsoleChoice::Options,
+            BridgeChoicePanelPhase::NeedsLayout,
+        );
+        assert_eq!(
+            update_sequel_option_menu(
+                &SEQUEL_LABELS,
+                b"ANNULER",
+                ANIMATION_TARGET,
+                &mut console,
+                &mut options,
+                &mut backend
+            ),
+            OptionMenuOutcome::Transitioning
+        );
+        assert!(!options.simulation_options_active);
+        assert_eq!(options.simulation_options_phase, 0);
+        backend.transition_complete = true;
+        assert_eq!(
+            update_sequel_option_menu(
+                &SEQUEL_LABELS,
+                b"ANNULER",
+                ANIMATION_TARGET,
+                &mut console,
+                &mut options,
+                &mut backend
+            ),
+            OptionMenuOutcome::Selected(SequelOptionMenuChoice::SimulationSpeed)
+        );
+        assert!(options.simulation_options_active);
+        assert_eq!(options.simulation_options_phase, 1);
+        for row in [7, 8, 128, 255, 256, usize::MAX] {
+            assert_eq!(SequelOptionMenuChoice::from_row(row), None);
         }
     }
 

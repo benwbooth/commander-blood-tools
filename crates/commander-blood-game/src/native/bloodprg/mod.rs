@@ -203,9 +203,10 @@ pub use bridge_console::{
     BridgeConsolePalettePlan, BridgeConsoleState, BridgeDeferredActionKind, BridgeDeferredRecord,
     BridgeDeferredState, BridgeRecordChoice, BridgeRecordChoiceContext, BridgeRecordChoiceOutcome,
     BridgeRecordChoiceState, ImmediateBridgeChoiceOutcome, MusicOptionLabel, OptionMenuChoice,
-    OptionMenuOutcome, OptionMenuState, Rgb6, activate_horn_choice, activate_radio_choice,
-    update_bridge_console_dispatch, update_contact_choice, update_navigation_target_choice,
-    update_option_menu,
+    OptionMenuOutcome, OptionMenuState, Rgb6, SequelOptionMenuChoice, SequelOptionMenuState,
+    activate_horn_choice, activate_radio_choice, update_bridge_console_dispatch,
+    update_contact_choice, update_navigation_target_choice, update_option_menu,
+    update_sequel_option_menu,
 };
 pub use bridge_frame::{
     BridgeActorPresentationState, BridgeFrameBackend, BridgeFrameOutcome, BridgeFrameState,
