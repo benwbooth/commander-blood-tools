@@ -39,8 +39,32 @@ pub struct StartupWritableResourceCatalog {
 impl StartupWritableResourceCatalog {
     /// Decode all 125 names and reject malformed executable data.
     pub fn decode_bloodprg(executable: &[u8]) -> Result<Self, StartupWritableCatalogError> {
-        let required = BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET
-            + STARTUP_WRITABLE_RESOURCE_COUNT * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
+        Self::decode_at(
+            executable,
+            BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET,
+            STARTUP_WRITABLE_RESOURCE_COUNT,
+        )
+    }
+
+    /// Decode the sequel's 152 names and the terminator tested at file 0x1947.
+    pub fn decode_blood2pg(executable: &[u8]) -> Result<Self, StartupWritableCatalogError> {
+        let end = 0xFA90 + 152 * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
+        match executable.get(end) {
+            Some(0) => Self::decode_at(executable, 0xFA90, 152),
+            Some(_) => Err(StartupWritableCatalogError::MissingTableTerminator { offset: end }),
+            None => Err(StartupWritableCatalogError::ExecutableTooShort {
+                required: end + 1,
+                actual: executable.len(),
+            }),
+        }
+    }
+
+    fn decode_at(
+        executable: &[u8],
+        offset: usize,
+        count: usize,
+    ) -> Result<Self, StartupWritableCatalogError> {
+        let required = offset + count * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
         if executable.len() < required {
             return Err(StartupWritableCatalogError::ExecutableTooShort {
                 required,
@@ -48,10 +72,9 @@ impl StartupWritableResourceCatalog {
             });
         }
 
-        let mut names = Vec::with_capacity(STARTUP_WRITABLE_RESOURCE_COUNT);
-        for resource_index in 0..STARTUP_WRITABLE_RESOURCE_COUNT {
-            let start = BLOODPRG_WRITABLE_RESOURCE_CATALOG_FILE_OFFSET
-                + resource_index * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
+        let mut names = Vec::with_capacity(count);
+        for resource_index in 0..count {
+            let start = offset + resource_index * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
             let field = &executable[start..start + WRITABLE_RESOURCE_NAME_FIELD_SIZE];
             let name_length = field.iter().position(|byte| *byte == u8::MIN).ok_or(
                 StartupWritableCatalogError::UnterminatedName {
@@ -95,12 +118,17 @@ impl StartupWritableResourceCatalog {
 /// Invalid executable bounds or malformed fixed-width startup name.
 #[derive(Debug)]
 pub enum StartupWritableCatalogError {
-    /// The executable ends before the complete 125-entry table.
+    /// The executable ends before the complete game-specific table.
     ExecutableTooShort {
         /// Minimum required byte count.
         required: usize,
         /// Actual executable byte count.
         actual: usize,
+    },
+    /// The byte following the sequel's complete table is not NUL.
+    MissingTableTerminator {
+        /// File offset of the expected terminator.
+        offset: usize,
     },
     /// One fixed-width name has no NUL terminator.
     UnterminatedName {
@@ -336,6 +364,271 @@ mod tests {
     const PALETTE_ENTRY_STEP: usize = 17;
     const PALETTE_CASE_STEP: usize = 29;
     const PALETTE_SEED: usize = 3;
+
+    #[derive(Deserialize)]
+    struct SequelCatalogOracle {
+        names: Vec<Vec<u8>>,
+        directory_enter_count: usize,
+    }
+
+    fn sequel_catalog_oracle() -> SequelCatalogOracle {
+        serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_writable_catalog.json"
+        ))
+        .unwrap()
+    }
+
+    fn sequel_catalog_fixture() -> Vec<u8> {
+        let mut bytes = vec![0; 0x10411];
+        for (index, name) in sequel_catalog_oracle().names.iter().enumerate() {
+            let start = 0xFA90 + index * 16;
+            bytes[start..start + name.len()].copy_from_slice(name);
+        }
+        bytes
+    }
+
+    #[test]
+    fn sequel_writable_catalog_matches_every_native_visit_and_duplicate() {
+        let oracle = sequel_catalog_oracle();
+        let catalog =
+            StartupWritableResourceCatalog::decode_blood2pg(&sequel_catalog_fixture()).unwrap();
+        assert_eq!(catalog.len(), 152);
+        assert_eq!(
+            catalog
+                .iter()
+                .map(|(_, name)| name.as_bytes().to_vec())
+                .collect::<Vec<_>>(),
+            oracle.names
+        );
+        let mut host = OracleHost {
+            graphics: Vec::new(),
+            mkdir_success: true,
+            missing: BTreeSet::new(),
+            probed: Vec::new(),
+            copied: Vec::new(),
+        };
+        let outcome =
+            prepare_startup_writable_resources(&catalog, &loading_palette(0), &mut host).unwrap();
+        assert_eq!(host.probed.len(), oracle.directory_enter_count);
+        assert_eq!(
+            host.probed
+                .iter()
+                .map(|(_, name)| name.clone())
+                .collect::<Vec<_>>(),
+            oracle.names
+        );
+        assert!(host.copied.is_empty());
+        assert!(outcome.diagnostics.is_empty());
+        assert_eq!(outcome.probed_resources, 152);
+        assert_eq!(oracle.names[6], oracle.names[7]);
+        assert_eq!(oracle.names[5], b"blood.sav");
+        assert_eq!(oracle.names[151], b"script17.dic");
+    }
+
+    #[test]
+    fn sequel_writable_catalog_rejects_missing_terminators_and_bad_names() {
+        let bytes = sequel_catalog_fixture();
+        for length in [0, 0xFA90, bytes.len() - 1] {
+            assert!(matches!(
+                StartupWritableResourceCatalog::decode_blood2pg(&bytes[..length]),
+                Err(StartupWritableCatalogError::ExecutableTooShort {
+                    required: 0x10411,
+                    ..
+                })
+            ));
+        }
+        let mut invalid = bytes.clone();
+        invalid[0x10410] = 1;
+        assert!(matches!(
+            StartupWritableResourceCatalog::decode_blood2pg(&invalid),
+            Err(StartupWritableCatalogError::MissingTableTerminator { offset: 0x10410 })
+        ));
+        let mut invalid = bytes.clone();
+        invalid[0xFA90..0xFAA0].fill(b'x');
+        assert!(matches!(
+            StartupWritableResourceCatalog::decode_blood2pg(&invalid),
+            Err(StartupWritableCatalogError::UnterminatedName { .. })
+        ));
+        let mut invalid = bytes;
+        invalid[0xFA90] = 0;
+        assert!(matches!(
+            StartupWritableResourceCatalog::decode_blood2pg(&invalid),
+            Err(StartupWritableCatalogError::InvalidName { .. })
+        ));
+    }
+
+    struct SequelResourceHost {
+        store: crate::assets::OriginalResourceStore,
+        graphics: OracleHost,
+    }
+
+    impl StartupPreparationHost for SequelResourceHost {
+        type Error = Infallible;
+
+        fn publish_loading_palette(
+            &mut self,
+            palette: &IndexedGamePalette,
+        ) -> Result<(), Self::Error> {
+            self.graphics.publish_loading_palette(palette)
+        }
+        fn clear_loading_frame(&mut self, color: u8) -> Result<(), Self::Error> {
+            self.graphics.clear_loading_frame(color)
+        }
+        fn draw_loading_text(&mut self, text: StartupLoadingText) -> Result<(), Self::Error> {
+            self.graphics.draw_loading_text(text)
+        }
+        fn present_loading_frame(&mut self) -> Result<(), Self::Error> {
+            self.graphics.present_loading_frame()
+        }
+        fn ensure_write_directory(&mut self) -> Result<(), StartupFilesystemFailure> {
+            std::fs::create_dir_all(self.store.writable_root()).map_err(|error| {
+                StartupFilesystemFailure::new(
+                    StartupFilesystemOperation::CreateWriteDirectory,
+                    error.to_string(),
+                )
+            })
+        }
+        fn writable_resource_exists(
+            &mut self,
+            resource: StartupWritableResourceId,
+            name: &BloodResourceName,
+        ) -> Result<bool, StartupFilesystemFailure> {
+            self.graphics
+                .probed
+                .push((resource.index(), name.as_bytes().to_vec()));
+            self.store.writable_resource_exists(name).map_err(|error| {
+                StartupFilesystemFailure::new(
+                    StartupFilesystemOperation::ProbeWritableResource,
+                    error.to_string(),
+                )
+            })
+        }
+        fn copy_resource_to_writable(
+            &mut self,
+            resource: StartupWritableResourceId,
+            name: &BloodResourceName,
+        ) -> Result<StartupResourceCopyOutcome, StartupFilesystemFailure> {
+            self.graphics
+                .copied
+                .push((resource.index(), name.as_bytes().to_vec()));
+            self.store
+                .copy_to_loose(name, name)
+                .map(|copied| {
+                    if copied {
+                        StartupResourceCopyOutcome::Copied
+                    } else {
+                        StartupResourceCopyOutcome::SkippedEmptySource
+                    }
+                })
+                .map_err(|error| {
+                    use crate::assets::OriginalResourceCopyOperation;
+                    let operation = match error.operation() {
+                        OriginalResourceCopyOperation::OpenSource => {
+                            StartupFilesystemOperation::OpenSourceResource
+                        }
+                        OriginalResourceCopyOperation::CreateDestination => {
+                            StartupFilesystemOperation::CreateDestinationResource
+                        }
+                        OriginalResourceCopyOperation::WriteDestination => {
+                            StartupFilesystemOperation::CopyResourceData
+                        }
+                    };
+                    StartupFilesystemFailure::new(operation, error.to_string())
+                })
+        }
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang executable and imported resources"]
+    fn sequel_writable_catalog_prepares_real_resources_without_borrowing_a_save() {
+        use crate::assets::OriginalResourceStore;
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
+        let game = crate::game::GameVariant::BigBugBang;
+        let catalog = game.decode_writable_resource_catalog(&executable).unwrap();
+        assert_eq!(
+            catalog
+                .iter()
+                .map(|(_, name)| name.as_bytes().to_vec())
+                .collect::<Vec<_>>(),
+            sequel_catalog_oracle().names
+        );
+        let palette = game.decode_default_vga_palette(&executable).unwrap();
+        let source = OriginalResourceStore::new(root.clone(), None, [], true);
+        let original = catalog
+            .iter()
+            .filter(|(id, _)| id.index() != 5)
+            .map(|(_, name)| (name.clone(), source.load(name).unwrap()))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        assert_eq!(original.len(), 150);
+        struct TemporaryRoot(std::path::PathBuf);
+        impl Drop for TemporaryRoot {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let path = std::env::temp_dir().join(format!(
+            "bbb-startup-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&path).unwrap();
+        let temporary = TemporaryRoot(path);
+        let store =
+            OriginalResourceStore::with_writable_root(root, temporary.0.clone(), None, [], true);
+        let preserved = BloodResourceName::new(b"script1.var").unwrap();
+        store
+            .write_loose(&preserved, b"existing player state")
+            .unwrap();
+        let mut host = SequelResourceHost {
+            store,
+            graphics: OracleHost {
+                graphics: Vec::new(),
+                mkdir_success: true,
+                missing: BTreeSet::new(),
+                probed: Vec::new(),
+                copied: Vec::new(),
+            },
+        };
+        let outcome = prepare_startup_writable_resources(&catalog, &palette, &mut host).unwrap();
+        assert_eq!(outcome.probed_resources, 152);
+        assert_eq!(outcome.copied_resources.len(), 149);
+        assert_eq!(outcome.diagnostics.len(), 1);
+        assert_eq!(outcome.diagnostics[0].resource.unwrap().index(), 5);
+        assert_eq!(
+            outcome.diagnostics[0].failure.operation,
+            StartupFilesystemOperation::OpenSourceResource
+        );
+        for (name, bytes) in &original {
+            assert_eq!(
+                source.load(name).unwrap(),
+                *bytes,
+                "source changed: {name:?}"
+            );
+            let expected = if *name == preserved {
+                b"existing player state".as_slice()
+            } else {
+                bytes.as_ref()
+            };
+            assert_eq!(
+                host.store.load_writable(name).unwrap().as_ref(),
+                expected,
+                "{name:?}"
+            );
+        }
+        let save = BloodResourceName::new(b"blood.sav").unwrap();
+        assert!(!host.store.writable_resource_exists(&save).unwrap());
+        assert!(source.load(&save).is_err());
+        let again = prepare_startup_writable_resources(&catalog, &palette, &mut host).unwrap();
+        assert!(again.copied_resources.is_empty());
+        assert_eq!(again.diagnostics.len(), 1);
+        assert_eq!(again.diagnostics[0].resource.unwrap().index(), 5);
+        assert_eq!(std::fs::read_dir(&temporary.0).unwrap().count(), 150);
+    }
 
     #[derive(Deserialize)]
     struct GraphicsCall {

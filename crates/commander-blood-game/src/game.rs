@@ -22,7 +22,9 @@ use commander_blood_formats::world_art::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::native::bloodprg::{OriginalResourceCatalog, OriginalScriptProfileCatalog};
+use crate::native::bloodprg::{
+    OriginalResourceCatalog, OriginalScriptProfileCatalog, StartupWritableResourceCatalog,
+};
 
 const SUPPORTED_SEQUEL_EXECUTABLE_SHA256: &str =
     "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834";
@@ -98,6 +100,19 @@ impl GameVariant {
             Self::BigBugBang => OriginalResourceCatalog::decode_blood2pg(executable),
         }
         .context("decoding game resource catalog")
+    }
+
+    /// Decode the exact ordered resource list visited during startup preparation.
+    pub fn decode_writable_resource_catalog(
+        self,
+        executable: &[u8],
+    ) -> Result<StartupWritableResourceCatalog> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => StartupWritableResourceCatalog::decode_bloodprg(executable),
+            Self::BigBugBang => StartupWritableResourceCatalog::decode_blood2pg(executable),
+        }
+        .context("decoding game writable-resource catalog")
     }
 
     /// Decode this game's executable-resident profile table and VM dialect.
@@ -250,6 +265,11 @@ mod tests {
                 .is_err()
         );
         assert!(GameVariant::BigBugBang.decode_fonts(&bytes).is_err());
+        assert!(
+            GameVariant::BigBugBang
+                .decode_writable_resource_catalog(&bytes)
+                .is_err()
+        );
         assert!(
             GameVariant::BigBugBang
                 .decode_default_vga_palette(&bytes)

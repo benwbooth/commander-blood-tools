@@ -598,7 +598,7 @@ them. The original-asset inventory test applies all 25 authored descriptions
 through this catalog and loads the resulting line-43 resource bytes.
 
 This is catalog and resource-binding verification, not HNM playback or startup
-parity. The loader guard remains: writable-resource, menu, navigation and other
+parity. The loader guard remains: menu, navigation and other
 startup tables still need sequel-specific integration.
 Scene-start policy, profile transitions and English localization are unfinished.
 
@@ -639,7 +639,7 @@ The formats integration test checks both a metadata-derived fixture and the
 original executable, plus malformed bounds, colors, pointers and terminators.
 These are startup data contracts, not a complete native screen-reset execution
 or proof of production sequel startup. The production guard remains enabled;
-writable-resource, menu, navigation and profile integration are still pending.
+menu, navigation and profile integration are still pending.
 
 Verification: both native captures were byte-identical. All 125 format unit
 tests and three startup-table integration tests passed with original-asset checks
@@ -656,6 +656,43 @@ nix develop -c python3 -P re/tools/big_bug_bang_startup_tables_oracle.py \
   re/tools/oracle_vectors/big_bug_bang_startup_tables.json
 nix develop -c cargo test -p commander-blood-formats --test sequel_startup_tables -- --include-ignored
 nix develop -c cargo test -p commander-blood-game --lib sequel_startup_tables -- --include-ignored
+```
+
+### Sequel Writable Startup Catalog
+
+The data loader now selects the writable-resource catalog by game identity.
+The original sequel loop starts at file 0x190C with SI = data 0x2A0, visits each
+16-byte filename, and stops when the next entry starts with NUL (0x1944..0x194C).
+Its table is file 0xFA90..0x10410: 152 visits, including two `bappel.spr` entries,
+with the final three entries belonging to profile 17. Commander retains its
+125-entry table and existing decoder contract.
+
+`big_bug_bang_writable_catalog_oracle.py` executes the unmodified traversal and
+directory helper with guarded writes. Its DOS boundary reports that every
+destination exists, so no copy code is entered. It captures all ordered names,
+152 directory-helper entries and the single actual directory change. This is
+an oracle for traversal, not a native copy or full startup oracle.
+
+The catalog deliberately retains `blood.sav`, even though the sequel source has
+no such file. Preparation must report that missing source locally, continue
+with later entries, and never borrow Commander's save. The asset-backed test
+uses the actual resource store and preparation coordinator with a filesystem
+adapter and recorded graphics calls, not the still-guarded production startup
+host. It checks copied bytes, source immutability, duplicate suppression,
+preservation of an existing `script1.var`, and an idempotent second pass.
+
+Verification: two native captures were byte-identical. All seven startup-focused
+tests passed with original assets enabled. The real-resource case copied 149
+files while preserving the preexisting state file, reported only missing
+`blood.sav`, and copied nothing on its second pass. The game library passed
+931 tests with 19 ignored on a private Xvfb display, which was reaped afterward.
+Game all-targets checking passed.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_writable_catalog_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_writable_catalog.json
+nix develop -c cargo test -p commander-blood-game --lib sequel_writable_catalog -- --include-ignored
 ```
 
 ### Authored Text Corpus Audit

@@ -423,9 +423,11 @@ impl OriginalGameData {
             .game
             .decode_profile_catalog(&executable)
             .context("decoding BloodScript profile catalog")?;
-        let writable_resource_catalog =
-            StartupWritableResourceCatalog::decode_bloodprg(&executable)
-                .context("decoding startup writable-resource catalog")?;
+        let writable_resource_catalog = paths
+            .manifest()
+            .game
+            .decode_writable_resource_catalog(&executable)
+            .context("decoding startup writable-resource catalog")?;
         let confirm_dialog_regions = decode_bloodprg_confirm_dialog_regions(&executable)
             .context("decoding confirmation-dialog hit regions")?;
         let bridge_menu_text = decode_bloodprg_bridge_menu_text(&executable)
