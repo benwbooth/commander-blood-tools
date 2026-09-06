@@ -143,6 +143,28 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.private_click({"DISPLAY": ":123"}, 789)
             run.assert_not_called()
 
+    def test_secondary_click_is_recorded_and_released_on_the_private_display(self):
+        env = {"DISPLAY": ":123"}
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture.subprocess, "run") as run, \
+                mock.patch.object(capture.time, "sleep"):
+            event = capture.private_click(env, 789, button=3)
+        self.assertEqual([call.args[0] for call in run.call_args_list], [
+            ["xdotool", "windowfocus", "--sync", "456"],
+            ["xdotool", "mousedown", "3"], ["xdotool", "mouseup", "3"],
+        ])
+        self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
+        self.assertEqual(event["kind"], "private_x11_secondary_click")
+        self.assertEqual(event["button"], 3)
+        self.assertFalse(event["guest_memory_written"])
+
+    def test_invalid_click_button_is_rejected_before_any_input(self):
+        with mock.patch.object(capture.subprocess, "check_output") as search:
+            for button in (0, 2, 4):
+                with self.assertRaises(ValueError):
+                    capture.private_click({"DISPLAY": ":123"}, 789, button=button)
+            search.assert_not_called()
+
     def test_positioned_click_records_coordinates_and_moves_only_private_pointer(self):
         env = {"DISPLAY": ":123"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
@@ -222,6 +244,7 @@ class StartupCaptureTests(unittest.TestCase):
 
     def test_cli_rejects_invalid_input_schedule_before_capture(self):
         for flags in (["--click-after", "60"],
+                      ["--click-button", "3"],
                       ["--relative-mouse"],
                       ["--click-after", "35", "--click-after", "20"],
                       ["--click-after", "35", "--click-after", "35"],

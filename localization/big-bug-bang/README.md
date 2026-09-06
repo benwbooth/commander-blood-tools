@@ -3,8 +3,9 @@
 `en/script1.json` contains an English editorial first pass for all 89 A6 text
 sites in the opening COD profile. It includes non-spoken sites, unchanged sound
 effects, and the three choice sections. The COD runtime backend now binds its
-subtitle sections for the matching opening profile. The normal game launcher
-still rejects BBB, so this is not yet a playable English release.
+subtitle sections for the matching opening profile. The normal game loader now
+accepts the verified BBB build, but complete gameplay is not established, so this
+is not yet a playable English release.
 The other 16 COD profiles, BAS text, native UI, object names, and text embedded
 in media remain untranslated.
 

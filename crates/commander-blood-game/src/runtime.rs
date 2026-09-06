@@ -198,20 +198,17 @@ impl OriginalGameDataPaths {
 
     fn from_imported_root(root: PathBuf) -> Result<Self> {
         let manifest = ImportedAssetManifest::load(&root)?;
-        // Other startup tables and profile transitions remain Commander-only;
-        // avoid media conversion until the sequel runtime is integrated.
-        if manifest.game != GameVariant::CommanderBlood {
-            bail!(
-                "{} assets are imported, but its production runtime tables and profile transitions are not yet integrated",
-                manifest.game.title()
-            );
-        }
+        let executable = manifest.companion_path(&root, manifest.game.executable_filename())?;
+        manifest.game.validate_native_build(
+            &std::fs::read(&executable)
+                .with_context(|| format!("reading {}", executable.display()))?,
+        )?;
         let media_store = NormalizedMediaStore::prepare(&root, &manifest)?;
 
         let paths = Self {
             resource_root: root.join(RESOURCE_DIRECTORY_NAME),
-            executable: manifest.companion_path(&root, ORIGINAL_EXECUTABLE_FILENAME)?,
-            title: manifest.companion_path(&root, ORIGINAL_TITLE_FILENAME)?,
+            executable,
+            title: manifest.companion_path(&root, manifest.game.title_filename())?,
             bridge_panorama: manifest.companion_path(&root, ORIGINAL_BRIDGE_PANORAMA_FILENAME)?,
             descript: manifest.companion_path(&root, ORIGINAL_DESCRIPT_FILENAME)?,
             manifest,
@@ -387,7 +384,7 @@ impl fmt::Debug for OriginalGameData {
 impl OriginalGameData {
     /// Read and validate the complete original game-data set using the host's user-data root.
     pub fn load(paths: OriginalGameDataPaths) -> Result<Self> {
-        let writable_root = discover_writable_data_root(None)?;
+        let writable_root = discover_writable_data_root_for_game(paths.manifest().game, None)?;
         Self::load_with_writable_root(paths, writable_root)
     }
 
@@ -397,16 +394,25 @@ impl OriginalGameData {
         writable_root: impl Into<PathBuf>,
     ) -> Result<Self> {
         let writable_root = writable_root.into();
-        let verified_scripts = prepare_verified_script_artifacts(
-            paths.descript(),
-            paths.resource_root(),
-            &writable_root,
-        )
-        .context("checking editable game-script sources")?;
-        if verified_scripts.rebuilt_unit_count != 0 {
+        // The editable source compiler currently owns Commander only. The sequel
+        // runs its original typed scripts; never compile Commander source over them.
+        let mut verified_scripts = match paths.manifest().game {
+            GameVariant::CommanderBlood => Some(
+                prepare_verified_script_artifacts(
+                    paths.descript(),
+                    paths.resource_root(),
+                    &writable_root,
+                )
+                .context("checking editable game-script sources")?,
+            ),
+            GameVariant::BigBugBang => None,
+        };
+        if let Some(scripts) = &verified_scripts
+            && scripts.rebuilt_unit_count != 0
+        {
             eprintln!(
                 "Rebuilt and byte-exactly verified {} newer game-script source unit(s).",
-                verified_scripts.rebuilt_unit_count
+                scripts.rebuilt_unit_count
             );
         }
         let executable = std::fs::read(paths.executable())
@@ -483,7 +489,10 @@ impl OriginalGameData {
             .game
             .decode_world_artwork_layout(&executable)
             .context("decoding executable world-artwork layout")?;
-        let descript_bytes = match verified_scripts.descript {
+        let descript_bytes = match verified_scripts
+            .as_mut()
+            .and_then(|scripts| scripts.descript.take())
+        {
             Some(bytes) => bytes,
             None => std::fs::read(paths.descript())
                 .with_context(|| format!("reading {}", paths.descript().display()))?
@@ -505,7 +514,9 @@ impl OriginalGameData {
             resource_names,
             true,
         );
-        resource_store.install_verified_overrides(verified_scripts.resources);
+        if let Some(scripts) = verified_scripts {
+            resource_store.install_verified_overrides(scripts.resources);
+        }
 
         let world_artwork_assets = world_artwork::WorldArtworkAssets::import(
             &resource_store,
@@ -768,6 +779,112 @@ mod tests {
     const ORIGINAL_DESCRIPT_RECORD_COUNT: usize = 145;
     const ORIGINAL_NAME_AREA_EFFECT_SEQUENCE_COUNT: usize = 10;
     const ORIGINAL_WORLD_ARTWORK_LAYOUT_COUNT: usize = 42;
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang assets and may generate lossless audio derivatives"]
+    fn sequel_bootstrap_uses_its_own_assets_and_native_empty_save_directory() {
+        struct TemporaryRoot(PathBuf);
+        impl Drop for TemporaryRoot {
+            fn drop(&mut self) {
+                let _ = std::fs::remove_dir_all(&self.0);
+            }
+        }
+        let source =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/imported-assets");
+        let paths = OriginalGameDataPaths::from_root(&source).unwrap();
+        assert_eq!(paths.manifest().game, GameVariant::BigBugBang);
+        assert!(paths.executable().ends_with("BLOOD2PG.EXE"));
+        assert!(paths.title().ends_with("BLOOD2.LBM"));
+        let temporary = TemporaryRoot(
+            std::env::temp_dir().join(format!(
+                "bbb-bootstrap-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            )),
+        );
+        std::fs::create_dir(&temporary.0).unwrap();
+        let data = OriginalGameData::load_with_writable_root(paths, &temporary.0).unwrap();
+        assert_eq!(data.game(), GameVariant::BigBugBang);
+        assert!(!temporary.0.join("compiled-scripts-v1").exists());
+        let cod = std::fs::read(source.join("resources/SCRIPT1.COD")).unwrap();
+        assert_eq!(
+            data.load_named_resource(b"SCRIPT1.COD").unwrap().as_ref(),
+            cod
+        );
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut scripts = RuntimeScriptSystem::new(
+            runtime.data(),
+            crate::native::bloodprg::ScriptClock {
+                hour: 12,
+                day: 1,
+                month: 1,
+            },
+        );
+        scripts
+            .load_profile(
+                &mut runtime,
+                crate::native::bloodprg::ScriptProfileId::INITIAL,
+            )
+            .unwrap();
+        runtime.load_manu3().unwrap();
+        runtime.open_bridge_panorama().unwrap();
+        let prepared = runtime
+            .prepare_startup_resources(&VGA_BIOS_FONT_8X8, |_, _| Ok(()))
+            .unwrap();
+        assert_eq!(prepared.diagnostics.len(), 1);
+        assert_eq!(prepared.diagnostics[0].resource.unwrap().index(), 5);
+        runtime.load_save_slot_directory().unwrap();
+        let expected = runtime
+            .data()
+            .game()
+            .decode_initial_save_directory(runtime.data().executable())
+            .unwrap();
+        assert_eq!(runtime.save_slots(), Some(&expected));
+        assert!(!temporary.0.join("BLOOD.SAV").exists());
+        assert_eq!(
+            runtime.load_save_slot_directory().unwrap(),
+            RuntimeAssetLoadStatus::AlreadyLoaded
+        );
+        runtime.save_slots_mut().unwrap().slots_mut()[0].set_display_name(
+            crate::native::bloodprg::SaveSlotName::from_bytes(*b"BBB SLOT       \0"),
+        );
+        let edited = runtime.save_slots().unwrap().clone();
+        assert_eq!(runtime.persist_save_slot_directory().unwrap(), 320);
+        let mut runtime = OriginalGameRuntime::new(runtime.into_data());
+        runtime.load_save_slot_directory().unwrap();
+        assert_eq!(
+            runtime.save_slots(),
+            Some(&edited),
+            "existing user slots must win over executable defaults"
+        );
+        let name = commander_blood_formats::archive::BloodResourceName::new(b"BLOOD.SAV").unwrap();
+        runtime
+            .data()
+            .resource_store()
+            .write_loose(&name, b"bad")
+            .unwrap();
+        let mut runtime = OriginalGameRuntime::new(runtime.into_data());
+        assert!(
+            runtime.load_save_slot_directory().is_err(),
+            "malformed user data must not be replaced with defaults"
+        );
+        assert_eq!(
+            runtime
+                .data()
+                .resource_store()
+                .load_writable(&name)
+                .unwrap()
+                .as_ref(),
+            b"bad"
+        );
+        assert_eq!(
+            std::fs::read(source.join("resources/SCRIPT1.COD")).unwrap(),
+            cod
+        );
+    }
 
     #[test]
     fn discovers_and_bootstraps_the_complete_original_data_set() {

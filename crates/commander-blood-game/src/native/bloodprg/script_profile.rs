@@ -283,7 +283,7 @@ pub struct ScriptProfileBuiltins {
     pub menu: Option<ScriptObjectId>,
     /// Archetype or current-position object named `arche`.
     pub archetype: Option<ScriptObjectId>,
-    /// Ark navigation object named `Ark`.
+    /// Ark navigation object named `Ark` in Commander or `Arche` in the sequel.
     pub ark: Option<ScriptObjectId>,
     /// Character object named `Scruter_Jo`, absent from profile one.
     pub scruter_jo: Option<ScriptObjectId>,
@@ -292,7 +292,7 @@ pub struct ScriptProfileBuiltins {
 }
 
 impl ScriptProfileBuiltins {
-    fn bind(directory: &ScriptDirectory) -> Self {
+    fn bind(directory: &ScriptDirectory, dialect: ScriptDialect) -> Self {
         let video_state_offset = directory.entries().iter().find_map(|entry| {
             (entry.kind == ScriptSymbolKind::StateLabel && entry.name() == BUILTIN_VIDEO_STATE_NAME)
                 .then_some(entry.value)
@@ -303,7 +303,11 @@ impl ScriptProfileBuiltins {
             horn: directory.find_active_object(BUILTIN_HORN_NAME),
             menu: directory.find_active_object(BUILTIN_MENU_NAME),
             archetype: directory.find_active_object(BUILTIN_ARCHETYPE_NAME),
-            ark: directory.find_active_object(BUILTIN_ARK_NAME),
+            // BLOOD2PG 0x5995 binds "Arche" to GS:0x6B28, the Ark role.
+            ark: directory.find_active_object(match dialect {
+                ScriptDialect::CommanderBlood => BUILTIN_ARK_NAME,
+                ScriptDialect::BigBugBang => b"Arche",
+            }),
             scruter_jo: directory.find_active_object(BUILTIN_SCRUTER_JO_NAME),
             video_state_offset,
         }
@@ -884,7 +888,7 @@ fn decode_loaded_profile(
         .map(|token| decode_complete_script_instruction(token, &state, &directory, &dictionary))
         .collect::<Result<Box<[_]>, _>>()
         .map_err(ScriptProfileError::Instruction)?;
-    let builtins = ScriptProfileBuiltins::bind(&directory);
+    let builtins = ScriptProfileBuiltins::bind(&directory, dialect);
     let record_state =
         ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
             .map_err(ScriptProfileError::RecordState)?;
@@ -993,6 +997,51 @@ mod tests {
 
     fn profile_id(value: u32) -> Option<ScriptProfileId> {
         u8::try_from(value).ok().and_then(ScriptProfileId::new)
+    }
+
+    #[test]
+    #[ignore = "requires original sequel resources and startup-capture-15"]
+    fn sequel_ark_binding_matches_native_startup() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang");
+        let directory = decode_script_directory(
+            &std::fs::read(root.join("imported-assets/resources/SCRIPT1.DEB")).unwrap(),
+        )
+        .unwrap();
+        let builtins = ScriptProfileBuiltins::bind(&directory, ScriptDialect::BigBugBang);
+        let ark = builtins.ark.unwrap();
+        assert_eq!(Some(ark), directory.find_active_object(b"Arche"));
+        assert_ne!(Some(ark), builtins.archetype);
+        assert!(
+            ScriptProfileBuiltins::bind(&directory, ScriptDialect::CommanderBlood)
+                .ark
+                .is_none()
+        );
+        let capture_root = root.join("startup-capture-15");
+        let capture: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(capture_root.join("capture.json")).unwrap())
+                .unwrap();
+        assert_eq!(
+            capture["executable_sha256"],
+            "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+        );
+        let mut checked = 0;
+        for sample in capture["samples"].as_array().unwrap() {
+            if sample["status"] != "profile_bound" {
+                continue;
+            }
+            let (Some(dump), Some(segment)) = (
+                sample["guest_dump"].as_str(),
+                sample["global_segment"].as_u64(),
+            ) else {
+                continue;
+            };
+            let guest = std::fs::read(capture_root.join(dump)).unwrap();
+            let start = segment as usize * 16 + 0x6B28;
+            let native = u16::from_le_bytes(guest[start..start + 2].try_into().unwrap());
+            assert_eq!(native, directory.object(ark).unwrap().value);
+            checked += 1;
+        }
+        assert_eq!(checked, 5);
     }
 
     #[test]

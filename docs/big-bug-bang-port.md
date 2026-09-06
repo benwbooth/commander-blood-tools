@@ -8,8 +8,9 @@ runtime memory flat and owned, reuse SDL3/wgpu and imported RGB assets, and
 ship no external executable dependency. Test/oracle tools are separate from
 runtime dependencies.
 
-The objective is active and **not complete**. Big Bug Bang cannot yet be launched
-through the production loader. The original-disc investigation is in
+The objective is active and **not complete**. The verified Big Bug Bang build
+now plays its opening and enters the main loop; complete gameplay is not
+established. The original-disc investigation is in
 `big-bug-bang-investigation.md`; its initial decoder limitations describe the
 state before the implementation below.
 
@@ -59,11 +60,13 @@ This is path/import isolation, not a completed sequel save-format implementation
 An explicit `CBLOOD_DATA` source is now resolved before default cached Commander
 data, so a requested game is not silently replaced by the cached one.
 
-Production path loading explicitly rejects a sequel manifest before calling
+At the import-only milestone, production path loading explicitly rejected a sequel manifest before calling
 remaining Commander-only presentation decoders or starting media conversion. The new
 native catalog selection is used by the existing Commander loader and by the
 sequel imported-profile integration test. The rest of the sequel runtime still
-needs connecting; rejecting it is not counted as game support.
+needed connecting; rejecting it was not counted as game support. The startup
+integration below supersedes that guard; earlier guard references in this log
+describe their respective historical milestones.
 
 The original-disc import integration test verifies every imported checksum, then
 constructs an archive-free resource store and loads the initial sequel profile
@@ -1684,6 +1687,58 @@ waiting alone did not reach the Honk start conversation. The extra word remained
 The next reference step is deliberate bridge navigation, not another longer
 no-input run. SCRIPT2 acceptance remains unresolved.
 
+## Production Loader and Native Save Defaults
+
+The production path now selects the executable and title from game identity,
+checks the analyzed sequel executable hash before media normalization, and uses
+the sequel's writable namespace by default. The SDL window title also identifies
+the selected game. Commander keeps its editable, byte-verified script compiler;
+BBB loads its original typed COD/DEB/DIC/VAR/DESCRIPT resources without compiling
+Commander sources over them. Editable sequel source remains unfinished.
+
+With no writable `BLOOD.SAV`, BBB retains the ten native slot records embedded
+at executable file offset `0x1206B` (GS:`0x287B`). This is not an invented empty
+file: the optional native loader returns without changing that table on open
+failure, and seven live startup snapshots match all 320 bytes. The modern
+fallback stays in memory until an actual save-directory write is requested.
+An existing user directory takes precedence; malformed user data remains an
+error and is not overwritten. Complete sequel save/load behavior is unverified.
+
+The real-asset bootstrap test loads the initial profile, MANU3, bridge panorama,
+and startup resources, then checks native default slots, explicit persistence,
+existing-data precedence, malformed-data preservation, and unchanged source COD.
+The only startup-copy diagnostic is the absent `BLOOD.SAV` resource. Both the
+bootstrap test and the native snapshot comparison pass when explicitly enabled.
+The game library passes 940 tests with 28 ignored using `--test-threads=1`;
+`cargo check --workspace` passes. The previously recorded parallel Vulkan crash
+is not resolved by these serial results.
+
+The captured secondary-click experiment (`startup-capture-17`, 65 seconds)
+verified private mouse capture but still ended in profile 0 on the TV sequence.
+It does not establish an exit from the opening or acceptance of SCRIPT2.
+
+The first windowed run exposed a Commander-only builtin name: navigation-chart
+setup required `Ark`, but BBB calls that object `Arche` (distinct from lowercase
+`arche`). Native file `0x5995` resolves the capitalized name and stores its value
+at GS:`0x6B28`. Binding is now dialect-specific. Five captured post-binding
+startup snapshots contain the expected value 4624; the two pre-binding snapshots
+still contain zero and are not used as completed-binding evidence.
+
+All 711 HNM resources have generated verified lossless WebM derivatives. The
+modern `modern-startup-04` smoke run exited successfully after 292 opening
+presentation frames and five main-loop frames in profile 0. Screenshots from
+the preceding run show changing opening-movie artwork. This is production
+startup evidence, not sustained gameplay, full audiovisual parity, save/load,
+or an English playthrough. The native builtin snapshot test is explicitly enabled
+alongside the other original-asset tests.
+
+The longer `modern-startup-05` run also exits successfully: 292 opening frames
+plus 600 main-loop frames, still in profile 0. `screen-013.png` shows the active
+character presentation and its `Hello!!!` caption. Its trace subtitle field only
+contains empty text and `WAIT COMMANDER ...`, so this run does not establish
+the English dialogue override in live play. Direct original/modern startup
+sequence comparison and deliberate navigation remain necessary.
+
 ## Remaining Completion Requirements
 
 - Compare inherited VM handlers, including
@@ -1708,7 +1763,8 @@ no-input run. SCRIPT2 acceptance remains unresolved.
   choice-count validation. The COD backend now substitutes English after accepted
   subtitle publication, preserving semantic/choice words and falling back on
   nonmatching resources. Menu-only prose and choice labels are not rendered in
-  English yet; the normal launcher still rejects BBB. The other 16 COD profiles
+  English yet; accepting BBB in the loader does not establish a playable English
+  release. The other 16 COD profiles
   and the non-COD text remain untranslated. See
   `localization/big-bug-bang/README.md` for the validation command and editorial
   limitations.

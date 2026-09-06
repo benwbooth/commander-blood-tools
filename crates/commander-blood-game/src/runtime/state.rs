@@ -1220,12 +1220,22 @@ impl OriginalGameRuntime {
         Ok(Some(refresh))
     }
 
-    /// Load and decode the exact writable `BLOOD.SAV` slot directory once.
+    /// Load user slots, retaining the sequel's executable defaults only when absent.
     pub fn load_save_slot_directory(&mut self) -> Result<RuntimeAssetLoadStatus> {
         if self.save_slots.is_some() {
             return Ok(RuntimeAssetLoadStatus::AlreadyLoaded);
         }
         let name = save_slot_directory_resource_name()?;
+        if self.data.game() == crate::game::GameVariant::BigBugBang
+            && !self.data.resource_store().writable_resource_exists(&name)?
+        {
+            self.save_slots = Some(
+                self.data
+                    .game()
+                    .decode_initial_save_directory(self.data.executable())?,
+            );
+            return Ok(RuntimeAssetLoadStatus::LoadedNow);
+        }
         let bytes = self
             .data
             .resource_store()

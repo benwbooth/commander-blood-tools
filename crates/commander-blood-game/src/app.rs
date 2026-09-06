@@ -228,11 +228,12 @@ fn print_usage() {
          \n\
          Import only (both games): commander-blood --data SOURCE --import-assets DESTINATION\n\
          This verifies loose assets without opening a window or transcoding media.\n\
+         --data selects the game from its executable or imported manifest.\n\
          \n\
          CBLOOD_DATA may point to the original game-data directory.\n\
          CBLOOD_ASSET_CACHE may select the versioned imported loose-asset directory.\n\
          CBLOOD_WRITE_DATA may point to the writable save-data directory.\n\
-         CBLOOD_SCRIPT_SOURCE may select an editable re script-source directory."
+         CBLOOD_SCRIPT_SOURCE may select an editable Commander Blood re source directory."
     );
 }
 
@@ -529,6 +530,10 @@ fn run_production_game(options: &Options) -> Result<()> {
         None => OriginalGameData::load(paths)?,
     };
     let data = crate::video_import::prepare_lossless_webm_derivatives(data)?;
+    let window_title = format!(
+        "{} - F10 releases mouse; click to recapture",
+        data.game().title()
+    );
     let mut clock = host_clock_sample()?;
     if let Some(packed_second) = options.oracle_packed_second {
         clock.packed_second = packed_second;
@@ -537,7 +542,7 @@ fn run_production_game(options: &Options) -> Result<()> {
     let video = sdl.video().map_err(anyhow::Error::msg)?;
     let audio = sdl.audio().map_err(anyhow::Error::msg)?;
     let mut window = video
-        .window(WINDOW_TITLE, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+        .window(&window_title, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
         .position_centered()
         .resizable()
         .high_pixel_density()

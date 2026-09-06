@@ -24,6 +24,8 @@ pub const ORIGINAL_SAVE_SLOT_RECORD_BYTE_COUNT: usize = SAVE_SLOT_NAME_LENGTH * 
 /// Exact byte count of the complete `BLOOD.SAV` slot directory.
 pub const ORIGINAL_SAVE_SLOT_DIRECTORY_BYTE_COUNT: usize =
     ORIGINAL_SAVE_SLOT_COUNT * ORIGINAL_SAVE_SLOT_RECORD_BYTE_COUNT;
+// Startup at BLOOD2PG file 0x1043 passes GS:0x287B to the optional file loader.
+const SEQUEL_INITIAL_SAVE_DIRECTORY_FILE_OFFSET: usize = 0x1206B;
 /// Fixed byte count preceding the profile-specific state and procedure blocks.
 pub const ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT: usize = ORIGINAL_SAVE_PROFILE_BYTE_COUNT
     + SCRIPT_TIMER_SAVE_BLOCK_BYTE_COUNT
@@ -68,6 +70,20 @@ pub struct OriginalSaveSlotDirectory {
 }
 
 impl OriginalSaveSlotDirectory {
+    /// Decode the executable-owned defaults retained when the sequel has no BLOOD.SAV.
+    pub fn decode_blood2pg_initial(
+        executable: &[u8],
+    ) -> Result<Self, OriginalSaveSlotDirectoryError> {
+        let start = SEQUEL_INITIAL_SAVE_DIRECTORY_FILE_OFFSET;
+        let bytes = executable
+            .get(start..start + ORIGINAL_SAVE_SLOT_DIRECTORY_BYTE_COUNT)
+            .ok_or(OriginalSaveSlotDirectoryError::InvalidByteCount {
+                expected: ORIGINAL_SAVE_SLOT_DIRECTORY_BYTE_COUNT,
+                actual: executable.len().saturating_sub(start),
+            })?;
+        Self::decode(bytes)
+    }
+
     /// Decode exactly ten fixed-width save-slot records.
     pub fn decode(data: &[u8]) -> Result<Self, OriginalSaveSlotDirectoryError> {
         if data.len() != ORIGINAL_SAVE_SLOT_DIRECTORY_BYTE_COUNT {
@@ -431,6 +447,55 @@ mod tests {
             .select(profile, &mut cache, &store, &resource_catalog)
             .unwrap();
         manager.current().unwrap().clone()
+    }
+
+    #[test]
+    #[ignore = "requires the original sequel executable and captured startup snapshots"]
+    fn sequel_initial_save_directory_matches_live_missing_file_startup() {
+        use sha2::{Digest, Sha256};
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang");
+        let executable = std::fs::read(root.join("disc/BLOOD2PG.EXE")).unwrap();
+        let directory = crate::game::GameVariant::BigBugBang
+            .decode_initial_save_directory(&executable)
+            .unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(directory.encode())),
+            "ee6edd76ecc5c2bb204661451de5c97a8971f8a0033ff6483345ec2027e1fc2b"
+        );
+        for (index, slot) in directory.slots().iter().enumerate() {
+            assert_eq!(
+                slot.filename_bytes().unwrap(),
+                format!("game{}.sav", index + 1).as_bytes()
+            );
+            assert_eq!(slot.display_name().bytes(), *b"               \0");
+        }
+        let capture_root = root.join("startup-capture-15");
+        let capture: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(capture_root.join("capture.json")).unwrap())
+                .unwrap();
+        assert_eq!(
+            capture["executable_sha256"],
+            format!("{:x}", Sha256::digest(&executable))
+        );
+        assert!(!capture_root.join("cdrive/cblood/blood.sav").exists());
+        assert!(!capture_root.join("cdrive/cblood/BLOOD.SAV").exists());
+        let mut checked = 0;
+        for sample in capture["samples"].as_array().unwrap() {
+            let (Some(dump), Some(segment)) = (
+                sample["guest_dump"].as_str(),
+                sample["global_segment"].as_u64(),
+            ) else {
+                continue;
+            };
+            let guest = std::fs::read(capture_root.join(dump)).unwrap();
+            let start = segment as usize * 16 + 0x287B;
+            assert_eq!(
+                &guest[start..start + ORIGINAL_SAVE_SLOT_DIRECTORY_BYTE_COUNT],
+                &directory.encode()
+            );
+            checked += 1;
+        }
+        assert_eq!(checked, 7);
     }
 
     #[test]

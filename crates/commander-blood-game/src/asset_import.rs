@@ -860,9 +860,12 @@ mod tests {
         manifest.validate(&destination, true).unwrap();
         let error = crate::runtime::OriginalGameDataPaths::from_root(&destination).unwrap_err();
         assert!(
-            error.to_string().contains("production runtime tables"),
+            error
+                .to_string()
+                .contains("unrecognized Big Bug Bang executable"),
             "{error:#}"
         );
+        assert!(!destination.join("media-v1").exists());
     }
 
     #[test]

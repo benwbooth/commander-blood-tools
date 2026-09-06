@@ -222,8 +222,10 @@ def private_mouse_locked(pid):
     return bool(value)
 
 
-def private_click(env, pid, position=None, capture_mouse=False):
+def private_click(env, pid, position=None, capture_mouse=False, button=1):
     """Click on the private display, optionally acquiring mouse capture first."""
+    if button not in (1, 3):
+        raise ValueError("private click button must be 1 (primary) or 3 (secondary)")
     if position is not None and (len(position) != 2 or
                                  not 0 <= position[0] < 800 or not 0 <= position[1] < 600):
         raise ValueError("click position must be inside the private 800x600 display")
@@ -245,12 +247,13 @@ def private_click(env, pid, position=None, capture_mouse=False):
         subprocess.run(["xdotool", "mousemove", str(position[0]), str(position[1])],
                        env=env, check=True, timeout=5)
         time.sleep(0.15)
-    subprocess.run(["xdotool", "mousedown", "1"], env=env, check=True, timeout=5)
+    subprocess.run(["xdotool", "mousedown", str(button)], env=env, check=True, timeout=5)
     try:
         time.sleep(0.15)
     finally:
-        subprocess.run(["xdotool", "mouseup", "1"], env=env, check=True, timeout=5)
-    return {"kind": "private_x11_primary_click", "window": windows[0], "display": env["DISPLAY"],
+        subprocess.run(["xdotool", "mouseup", str(button)], env=env, check=True, timeout=5)
+    return {"kind": "private_x11_primary_click" if button == 1 else "private_x11_secondary_click",
+            "button": button, "window": windows[0], "display": env["DISPLAY"],
             "pointer_moved": False if position is None else None,
             "pointer_move_requested": position is not None, "position": position,
             "mouse_capture_requested": capture_mouse,
@@ -332,7 +335,8 @@ def capture(args):
                              "mouse_capture_requested": args.relative_mouse and clicks_sent == 0}
                     report["input_events"].append(event)
                     event.update(private_click(env, game.pid, args.click_position,
-                                               args.relative_mouse and clicks_sent == 0), status="sent")
+                                               args.relative_mouse and clicks_sent == 0,
+                                               args.click_button), status="sent")
                     clicks_sent += 1
             subprocess.run(["import", "-window", "root", str(output / "screen.png")], env=env, check=True, timeout=10)
             report["outcome"] = "observed_profile" if any(s["status"] == "profile_bound" for s in report["samples"]) else "no_bound_profile_observed"
@@ -357,7 +361,9 @@ def main():
     parser.add_argument("--interval", type=positive_seconds, default=0.5)
     parser.add_argument("--cycles", type=int, default=30000)
     parser.add_argument("--click-after", type=positive_seconds, action="append", default=[],
-                        help="send a primary click at this elapsed time; repeat in increasing order")
+                        help="send a click at this elapsed time; repeat in increasing order")
+    parser.add_argument("--click-button", type=int, choices=(1, 3), default=1,
+                        help="X11 button: 1 is primary, 3 is secondary")
     parser.add_argument("--click-position", type=int, nargs=2, metavar=("X", "Y"),
                         help="optional root coordinates on the private 800x600 display")
     parser.add_argument("--relative-mouse", action="store_true",
@@ -368,6 +374,8 @@ def main():
         parser.error("cycles must be positive")
     if args.relative_mouse and not args.click_after:
         parser.error("relative-mouse requires click-after")
+    if args.click_button != 1 and not args.click_after:
+        parser.error("click-button requires click-after")
     if any(at >= args.seconds for at in args.click_after):
         parser.error("each click-after must occur before the capture ends")
     if any(left >= right for left, right in zip(args.click_after, args.click_after[1:])):

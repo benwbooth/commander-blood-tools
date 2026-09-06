@@ -28,7 +28,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::native::bloodprg::{
-    OriginalResourceCatalog, OriginalScriptProfileCatalog, StartupWritableResourceCatalog,
+    OriginalResourceCatalog, OriginalSaveSlotDirectory, OriginalScriptProfileCatalog,
+    StartupWritableResourceCatalog,
 };
 
 const SUPPORTED_SEQUEL_EXECUTABLE_SHA256: &str =
@@ -138,6 +139,19 @@ impl GameVariant {
             Self::BigBugBang => decode_blood2pg_font_resources(executable),
         }
         .context("decoding game font resources")
+    }
+
+    /// Read the sequel's native in-memory save slots when no user directory exists.
+    pub fn decode_initial_save_directory(
+        self,
+        executable: &[u8],
+    ) -> Result<OriginalSaveSlotDirectory> {
+        if self != Self::BigBugBang {
+            bail!("Commander Blood uses its imported save-slot directory");
+        }
+        self.validate_native_build(executable)?;
+        OriginalSaveSlotDirectory::decode_blood2pg_initial(executable)
+            .context("decoding Big Bug Bang initial save slots")
     }
 
     /// Decode the game's initial scene filenames and stream flags.
@@ -258,7 +272,7 @@ impl GameVariant {
         .context("decoding game bridge resources")
     }
 
-    fn validate_native_build(self, executable: &[u8]) -> Result<()> {
+    pub(crate) fn validate_native_build(self, executable: &[u8]) -> Result<()> {
         // Preserve Commander's existing decoder contract. Only one sequel build
         // has been analyzed; a filename alone cannot authorize its fixed offsets.
         if self == Self::BigBugBang {
