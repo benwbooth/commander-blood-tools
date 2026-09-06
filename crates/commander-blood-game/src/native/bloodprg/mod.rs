@@ -347,7 +347,8 @@ pub use manu3_hand::{
 };
 pub use menu_reveal::{
     InlineMenuRevealError, InlineMenuRevealFrame, InlineMenuRevealGate, InlineMenuRevealOutcome,
-    InlineMenuTextMetrics, InlineMenuWordPlacement, reveal_inline_menu_step,
+    InlineMenuTextMetrics, InlineMenuWordPlacement, reveal_inline_menu_display_step,
+    reveal_inline_menu_step,
 };
 pub use name_area_effect::{
     NameAreaEffectError, NameAreaEffectOutcome, NameAreaEffectState, update_name_area_effect,

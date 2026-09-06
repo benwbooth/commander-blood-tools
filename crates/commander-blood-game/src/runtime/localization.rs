@@ -30,6 +30,12 @@ struct Translation {
 pub(super) struct SequelEnglishSubtitles {
     subtitles: BTreeMap<ScriptCodeOffset, Box<[u8]>>,
     choices: BTreeMap<ScriptCodeOffset, (Vec<ScriptWordId>, Vec<Box<[u8]>>)>,
+    menus: BTreeMap<ScriptCodeOffset, InlineMenuTranslation>,
+}
+
+struct InlineMenuTranslation {
+    source: Box<[ScriptTextWord]>,
+    display: Box<[Box<[u8]>]>,
 }
 
 impl SequelEnglishSubtitles {
@@ -59,6 +65,7 @@ impl SequelEnglishSubtitles {
         let code = decode_script_code_for_dialect(cod, ScriptDialect::BigBugBang)?;
         let dictionary = decode_script_dictionary(dic)?;
         let mut choices = BTreeMap::new();
+        let mut menus = BTreeMap::new();
         let subtitles = translation
             .messages
             .into_iter()
@@ -74,13 +81,13 @@ impl SequelEnglishSubtitles {
                 let prose = sections
                     .first()
                     .context("English subtitle has no prose section")?;
+                let token = code
+                    .tokens()
+                    .iter()
+                    .find(|token| token.source_offset().index() == offset)
+                    .context("English text site is not an instruction boundary")?;
+                let text = decode_script_text(token, &dictionary)?;
                 if sections.len() > 1 {
-                    let token = code
-                        .tokens()
-                        .iter()
-                        .find(|token| token.source_offset().index() == offset)
-                        .context("English choice site is not an instruction boundary")?;
-                    let text = decode_script_text(token, &dictionary)?;
                     let source = text
                         .words
                         .split(|word| *word == ScriptTextWord::SectionSeparator)
@@ -113,10 +120,25 @@ impl SequelEnglishSubtitles {
                     }
                     choices.insert(ScriptCodeOffset::new(offset), (words, labels));
                 }
-                Ok((ScriptCodeOffset::new(offset), wrap_subtitle(prose)?))
+                let subtitle = wrap_subtitle(prose)?;
+                menus.insert(
+                    ScriptCodeOffset::new(offset),
+                    InlineMenuTranslation {
+                        source: text.words,
+                        display: prose
+                            .split_whitespace()
+                            .map(|word| Box::from(word.as_bytes()))
+                            .collect(),
+                    },
+                );
+                Ok((ScriptCodeOffset::new(offset), subtitle))
             })
             .collect::<Result<_>>()?;
-        Ok(Some(Self { subtitles, choices }))
+        Ok(Some(Self {
+            subtitles,
+            choices,
+            menus,
+        }))
     }
 
     pub(super) fn subtitle(&self, instruction: ScriptCodeOffset) -> Option<Box<[u8]>> {
@@ -130,6 +152,15 @@ impl SequelEnglishSubtitles {
     ) -> Option<&[Box<[u8]>]> {
         let (expected, labels) = self.choices.get(&instruction)?;
         (expected.as_slice() == words).then_some(labels.as_slice())
+    }
+
+    pub(super) fn menu_words(
+        &self,
+        instruction: ScriptCodeOffset,
+        source: &[ScriptTextWord],
+    ) -> Option<&[Box<[u8]>]> {
+        let menu = self.menus.get(&instruction)?;
+        (menu.source.as_ref() == source).then_some(menu.display.as_ref())
     }
 }
 
@@ -270,6 +301,21 @@ mod tests {
             .unwrap();
         assert_eq!(catalog.subtitles.len(), 89);
         assert_eq!(catalog.choices.len(), 3);
+        assert_eq!(catalog.menus.len(), 89);
+        for (site, menu) in &catalog.menus {
+            assert_eq!(
+                catalog.menu_words(*site, &menu.source),
+                Some(menu.display.as_ref())
+            );
+            assert!(
+                catalog
+                    .menu_words(ScriptCodeOffset::new(0), &menu.source)
+                    .is_none()
+            );
+            let mut changed = menu.source.to_vec();
+            changed.push(ScriptTextWord::SectionSeparator);
+            assert!(catalog.menu_words(*site, &changed).is_none());
+        }
         let dictionary = decode_script_dictionary(&dic).unwrap();
         for (site, (words, labels)) in &catalog.choices {
             assert_eq!(catalog.choice_labels(*site, words), Some(labels.as_slice()));
@@ -333,6 +379,84 @@ mod tests {
         let fonts = crate::game::GameVariant::BigBugBang
             .decode_fonts(&executable)
             .unwrap();
+        struct Metrics<'a>(&'a commander_blood_formats::bloodprg::BloodprgFontResources);
+        impl crate::native::bloodprg::InlineMenuTextMetrics for Metrics<'_> {
+            fn rendered_width(&mut self, text: &[u8]) -> u16 {
+                use crate::native::bloodprg::*;
+                draw_planar_dialogue_text(
+                    &mut vec![0; 320 * 200],
+                    self.0,
+                    text,
+                    FontPoint { x: 0, y: 0 },
+                    FontVerticalBand {
+                        top: 0,
+                        bottom: 199,
+                    },
+                    239,
+                )
+                .unwrap()
+                .draw_width
+            }
+            fn lookahead_width(&mut self, text: Option<&[u8]>) -> u16 {
+                use crate::native::bloodprg::*;
+                measure_game_text_width(text.unwrap_or_default(), GameFontFace::Main, self.0)
+                    .unwrap()
+            }
+        }
+        for (site, menu) in &catalog.menus {
+            use crate::native::bloodprg::*;
+            let mut presentation = TextPresentationState {
+                menu_deferred: true,
+                menu_words: menu.source.clone(),
+                menu_word_count: menu.source.len(),
+                menu_reveal_count: menu.display.len() + 1,
+                ..Default::default()
+            };
+            let InlineMenuRevealOutcome::Frame(frame) = reveal_inline_menu_display_step(
+                &mut presentation,
+                &dictionary,
+                None,
+                false,
+                2,
+                &mut Metrics(&fonts),
+                Some(&menu.display),
+            )
+            .unwrap() else {
+                panic!("translated menu is gated")
+            };
+            assert_eq!(frame.placements.len(), menu.display.len(), "{site:?}");
+            assert_eq!(presentation.menu_words, menu.source);
+            let mut pixels = vec![0; 320 * 200];
+            for placement in frame.placements {
+                assert!(
+                    placement.position[0] >= 10 && placement.position[0] + placement.width <= 320,
+                    "horizontal overflow at {site:?}: {placement:?}"
+                );
+                assert!(
+                    placement.position[1] <= 192,
+                    "vertical overflow at {site:?}"
+                );
+                draw_planar_dialogue_text(
+                    &mut pixels,
+                    &fonts,
+                    &placement.text,
+                    FontPoint {
+                        x: i32::from(placement.position[0]),
+                        y: i32::from(placement.position[1]),
+                    },
+                    FontVerticalBand {
+                        top: 0,
+                        bottom: 199,
+                    },
+                    placement.color,
+                )
+                .unwrap();
+            }
+            assert!(
+                pixels.iter().any(|pixel| *pixel != 0),
+                "blank translated menu at {site:?}"
+            );
+        }
         for (site, subtitle) in &catalog.subtitles {
             let mut pixels = vec![0; 320 * 200];
             for (line_index, line) in subtitle.split_inclusive(|b| *b == b'\r').enumerate() {

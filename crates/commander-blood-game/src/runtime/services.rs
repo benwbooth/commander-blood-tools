@@ -50,7 +50,7 @@ use crate::native::bloodprg::{
     fill_display_band, increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
     prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
-    resolve_navigation_position, reveal_inline_menu_step, set_object_flag, stop_cd_audio,
+    resolve_navigation_position, reveal_inline_menu_display_step, set_object_flag, stop_cd_audio,
     update_manu3_hand_frame, update_presentation_bridge_mode, update_presentation_hover,
 };
 use crate::native::manu3::animation::CursorPosition;
@@ -136,6 +136,7 @@ struct InlineMenuDrawSnapshot {
     menu_words: Box<[ScriptTextWord]>,
     menu_word_count: usize,
     visible_word_count: usize,
+    display_words: Option<Box<[Box<[u8]>]>>,
 }
 
 const BRIDGE_ACTOR_PALETTE_COLOR_COUNT: usize = 192;
@@ -2815,7 +2816,11 @@ impl<'window> ModernGameServices<'window> {
             .clone();
         let fonts = self.runtime.data().font_resources().clone();
         let mut metrics = RuntimeInlineMenuMetrics::new(&fonts);
-        let outcome = reveal_inline_menu_step(
+        let display_words = self
+            .scripts
+            .inline_menu_display_words()
+            .map(|words| words.to_vec().into_boxed_slice());
+        let outcome = reveal_inline_menu_display_step(
             self.scripts.text_presentation_mut(),
             &dictionary,
             self.runtime
@@ -2824,6 +2829,7 @@ impl<'window> ModernGameServices<'window> {
             owner_matches,
             word_delay,
             &mut metrics,
+            display_words.as_deref(),
         )
         .context("advancing the recovered inline menu reveal")?;
         metrics.finish()?;
@@ -2834,6 +2840,7 @@ impl<'window> ModernGameServices<'window> {
                     menu_words: text.menu_words.clone(),
                     menu_word_count: text.menu_word_count,
                     visible_word_count: frame.placements.len(),
+                    display_words,
                 })
             }
             InlineMenuRevealOutcome::Gated(_) => None,
@@ -4344,16 +4351,32 @@ impl<'window> ModernGameServices<'window> {
             .iter()
             .map(|(_word, label)| label.clone())
             .collect::<Vec<_>>();
+        let display_words = self.scripts.inline_menu_display_words();
+        let display_menu_words = display_words
+            .map(|words| {
+                words
+                    .iter()
+                    .map(|word| String::from_utf8_lossy(word).into_owned())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_else(|| inline_menu_words.clone());
         let revealed_menu_word_count = visible_inline_menu_word_count(
             self.inline_menu_draw_snapshot.as_ref(),
             text,
-            inline_menu_entries.len(),
+            display_menu_words.len(),
+            display_words,
         );
-        let revealed_menu_word_ids = inline_menu_word_ids[..revealed_menu_word_count].to_vec();
-        let revealed_menu_words = inline_menu_words[..revealed_menu_word_count].to_vec();
+        let revealed_menu_word_ids = if display_words.is_some() {
+            vec![None; revealed_menu_word_count]
+        } else {
+            inline_menu_word_ids[..revealed_menu_word_count].to_vec()
+        };
+        let revealed_menu_words = display_menu_words[..revealed_menu_word_count].to_vec();
         let inline_menu_trace = serde_json::json!({
             "word_ids": inline_menu_word_ids,
             "words": inline_menu_words,
+            "display_words": display_menu_words,
+            "localized": display_words.is_some(),
             "revealed_word_ids": revealed_menu_word_ids,
             "revealed_words": revealed_menu_words,
             "reveal_count": revealed_menu_word_count,
@@ -4366,6 +4389,7 @@ impl<'window> ModernGameServices<'window> {
                     profile.dictionary(),
                     text,
                     revealed_menu_word_count,
+                    display_words,
                 )
             })
             .transpose()?
@@ -5298,6 +5322,7 @@ fn audit_inline_menu_raster(
     dictionary: &ScriptDictionary,
     text: &TextPresentationState,
     visible_word_count: usize,
+    display_words: Option<&[Box<[u8]>]>,
 ) -> Result<Option<InlineMenuRasterAudit>> {
     if text.menu_words.is_empty()
         || visible_word_count == usize::MIN
@@ -5308,21 +5333,25 @@ fn audit_inline_menu_raster(
 
     let fonts = runtime.data().font_resources();
     let mut presentation = text.clone();
-    presentation.menu_reveal_count = text
-        .menu_words
-        .iter()
-        .take(visible_word_count)
-        .map(|word| word.encoded_word_count())
-        .sum();
+    presentation.menu_reveal_count = if display_words.is_some() {
+        visible_word_count
+    } else {
+        text.menu_words
+            .iter()
+            .take(visible_word_count)
+            .map(|word| word.encoded_word_count())
+            .sum()
+    };
     presentation.dialogue_hold_countdown = 1;
     let mut metrics = RuntimeInlineMenuMetrics::new(fonts);
-    let outcome = reveal_inline_menu_step(
+    let outcome = reveal_inline_menu_display_step(
         &mut presentation,
         dictionary,
         runtime.current_profile().map(|profile| profile.state()),
         true,
         1,
         &mut metrics,
+        display_words,
     )
     .context("reconstructing the current inline-dialogue layout")?;
     metrics.finish()?;
@@ -5383,11 +5412,13 @@ fn visible_inline_menu_word_count(
     snapshot: Option<&InlineMenuDrawSnapshot>,
     text: &TextPresentationState,
     available_word_count: usize,
+    display_words: Option<&[Box<[u8]>]>,
 ) -> usize {
     snapshot
         .filter(|snapshot| {
             snapshot.menu_words == text.menu_words
                 && snapshot.menu_word_count == text.menu_word_count
+                && snapshot.display_words.as_deref() == display_words
         })
         .map_or(usize::MIN, |snapshot| {
             snapshot.visible_word_count.min(available_word_count)
@@ -6237,14 +6268,33 @@ mod tests {
             menu_words: text.menu_words.clone(),
             menu_word_count: text.menu_word_count,
             visible_word_count: 1,
+            display_words: None,
         };
 
-        assert_eq!(visible_inline_menu_word_count(Some(&snapshot), &text, 1), 1);
+        assert_eq!(
+            visible_inline_menu_word_count(Some(&snapshot), &text, 1, None),
+            1
+        );
         text.menu_words = Box::new([ScriptTextWord::Dictionary(words[1])]);
         assert_eq!(
-            visible_inline_menu_word_count(Some(&snapshot), &text, 1),
+            visible_inline_menu_word_count(Some(&snapshot), &text, 1, None),
             0,
             "a post-draw text transition must not claim that its first word was already rasterized"
+        );
+        let english: Box<[Box<[u8]>]> = Box::new([Box::from(b"Translated".as_slice())]);
+        let translated_snapshot = InlineMenuDrawSnapshot {
+            menu_words: text.menu_words.clone(),
+            menu_word_count: text.menu_word_count,
+            visible_word_count: 1,
+            display_words: Some(english.clone()),
+        };
+        assert_eq!(
+            visible_inline_menu_word_count(Some(&translated_snapshot), &text, 1, Some(&english)),
+            1
+        );
+        assert_eq!(
+            visible_inline_menu_word_count(Some(&translated_snapshot), &text, 1, None),
+            0
         );
     }
 

@@ -16,6 +16,43 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### English Inline Prose and Live Transition Blocker
+
+The matching opening catalog now supplies display-only inline menu prose as well
+as subtitles and retained choice labels. Binding requires both the accepted A6
+instruction and its complete authored word stream. The shared layout/reveal
+routine accepts an optional display stream, leaving original dictionary words,
+VAR operands, and chatter inputs untouched. English word count controls only
+display reveal and completion timing. The original entry point supplies no
+override and retains its native comparison coverage.
+
+Trace snapshots retain the original word stream separately from displayed words
+and do not assign dictionary IDs to translated prose. Raster reconstruction uses
+the same bound display stream, and a changed stream cannot reuse a stale reveal
+snapshot. All 89 English prose sections pass inline-font raster and screen-bound
+checks; an original-resource runtime binding test covers Bob's first menu source
+(`0x977`) and rejects mismatched words and profile-reset state. Those are isolated
+checks, not live Bob/OLGA reachability.
+
+The longer ordinary-pointer PLAY run in ignored local
+`output/big-bug-bang/modern-honk-play-02` exited with game status 1 after 2,401
+trace records. It selected PLAY, continued the opening English dialogue, and
+attempted to load SCRIPT2. The actual load failed with `InvalidStateWord` at
+COD byte `0x5A97`, VAR byte `8368`. Thus the shared-state blocker described below
+is now reached through ordinary UI progression, not only an isolated loader call.
+No extra VAR word or neighboring-resource value has been fabricated to bypass it.
+
+A separate ordinary-pointer cryobox attempt (`modern-cryo-01`) opened an empty
+contact list in the initial profile and exited normally after 1,773 records.
+It did not reach Bob's recording, so the new prose path still lacks that live
+visual check. Full English gameplay remains incomplete.
+
+Verification: 942 library tests passed serially (29 ignored), all three menu
+reveal tests passed including native numeric-renderer comparisons, the four
+original-resource localization checks passed, the runtime menu-binding check
+passed, and all-targets checking passed. Existing unrelated worktree edits were
+present for the checks but are not part of this change.
+
 ### English Opening Choices
 
 The retained dictionary-choice renderer now binds English labels to the accepted

@@ -369,6 +369,13 @@ impl RuntimeScriptSystem {
             .choice_labels(self.dispatch.published_text_site?, words)
     }
 
+    pub(super) fn inline_menu_display_words(&self) -> Option<&[Box<[u8]>]> {
+        self.backend().english_subtitles.as_ref()?.menu_words(
+            self.dispatch.published_text_site?,
+            &self.dispatch.text_presentation.menu_words,
+        )
+    }
+
     /// Mutably borrow subtitle and inline-menu state for frame-tail rendering.
     pub fn text_presentation_mut(&mut self) -> &mut TextPresentationState {
         &mut self.dispatch.text_presentation
@@ -1362,6 +1369,60 @@ mod tests {
         scripts.import_random_state(random);
 
         assert_eq!(scripts.random_state(), random);
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn english_inline_menu_binding_is_profile_and_source_scoped() {
+        let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let paths = OriginalGameDataPaths::from_root(&source).unwrap();
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut runtime = OriginalGameRuntime::new(data);
+        scripts
+            .load_profile(&mut runtime, ScriptProfileId::INITIAL)
+            .unwrap();
+        let profile = runtime.current_profile().unwrap();
+        let site = commander_blood_formats::code::ScriptCodeOffset::new(0x977);
+        let token = profile
+            .code()
+            .tokens()
+            .iter()
+            .find(|token| token.source_offset() == site)
+            .unwrap();
+        let text =
+            commander_blood_formats::instruction::decode_script_text(token, profile.dictionary())
+                .unwrap();
+        // Exercise display binding after an accepted menu; this is not a reachability test.
+        scripts.dispatch.published_text_site = Some(site);
+        scripts.dispatch.text_presentation.menu_words = text.words.clone();
+        assert_eq!(
+            scripts
+                .inline_menu_display_words()
+                .unwrap()
+                .iter()
+                .map(|word| std::str::from_utf8(word).unwrap())
+                .collect::<Vec<_>>(),
+            [
+                "Hello",
+                "Commander.",
+                "This",
+                "is",
+                "a",
+                "recorded",
+                "message."
+            ]
+        );
+        assert_eq!(scripts.dispatch.text_presentation.menu_words, text.words);
+        scripts.dispatch.text_presentation.menu_words = Box::new([]);
+        assert!(scripts.inline_menu_display_words().is_none());
+        scripts.dispatch.text_presentation.menu_words = text.words;
+        scripts
+            .load_profile(&mut runtime, ScriptProfileId::INITIAL)
+            .unwrap();
+        assert!(scripts.inline_menu_display_words().is_none());
     }
 
     #[test]

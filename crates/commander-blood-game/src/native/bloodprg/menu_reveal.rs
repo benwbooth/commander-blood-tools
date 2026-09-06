@@ -107,6 +107,29 @@ pub fn reveal_inline_menu_step<M: InlineMenuTextMetrics>(
     word_delay: u16,
     metrics: &mut M,
 ) -> Result<InlineMenuRevealOutcome, InlineMenuRevealError> {
+    reveal_inline_menu_display_step(
+        presentation,
+        dictionary,
+        state,
+        owner_matches,
+        word_delay,
+        metrics,
+        None,
+    )
+}
+
+/// Reveal optional localized words using the same layout and completion rules.
+/// Authored words and dictionary identities remain unchanged; the display-word
+/// count controls reveal duration only when an override is supplied.
+pub fn reveal_inline_menu_display_step<M: InlineMenuTextMetrics>(
+    presentation: &mut TextPresentationState,
+    dictionary: &ScriptDictionary,
+    state: Option<&ScriptState>,
+    owner_matches: bool,
+    word_delay: u16,
+    metrics: &mut M,
+    display_words: Option<&[Box<[u8]>]>,
+) -> Result<InlineMenuRevealOutcome, InlineMenuRevealError> {
     if !presentation.menu_deferred {
         if !presentation.hold_ready {
             return Ok(InlineMenuRevealOutcome::Gated(
@@ -125,34 +148,43 @@ pub fn reveal_inline_menu_step<M: InlineMenuTextMetrics>(
     let mut y = MENU_TOP;
     let mut cursor = usize::MIN;
     let mut encoded_cursor = usize::MIN;
+    let word_count = display_words.map_or(presentation.menu_word_count, <[Box<[u8]>]>::len);
 
     loop {
-        let Some(current) = presentation.menu_words.get(cursor).copied() else {
-            return complete_menu(presentation, placements, x, y, word_delay);
-        };
-        let text = match current {
-            ScriptTextWord::InventoryChoices => {
-                return Err(InlineMenuRevealError::UnexpandedInventoryChoices);
-            }
-            ScriptTextWord::Dictionary(word) => dictionary
-                .word(word)
-                .ok_or(InlineMenuRevealError::UnknownDictionaryWord(word))?,
-            ScriptTextWord::StateNumber(number) => {
-                let source_offset = number.source_offset();
-                let value = state
-                    .and_then(|state| {
-                        state
-                            .resolve_word_source_offset(source_offset)
-                            .and_then(|field| state.word(field))
-                    })
-                    .ok_or(InlineMenuRevealError::InvalidStateNumber { source_offset })?;
-                presentation.menu_number_text =
-                    (value as i16).to_string().into_bytes().into_boxed_slice();
-                &presentation.menu_number_text
-            }
-            ScriptTextWord::SectionSeparator => {
-                return complete_menu(presentation, placements, x, y, word_delay);
-            }
+        let (text, encoded_word_count) = if let Some(words) = display_words {
+            let Some(word) = words.get(cursor) else {
+                return complete_menu(presentation, placements, x, y, word_delay, word_count);
+            };
+            (word.as_ref(), 1)
+        } else {
+            let Some(current) = presentation.menu_words.get(cursor).copied() else {
+                return complete_menu(presentation, placements, x, y, word_delay, word_count);
+            };
+            let text = match current {
+                ScriptTextWord::InventoryChoices => {
+                    return Err(InlineMenuRevealError::UnexpandedInventoryChoices);
+                }
+                ScriptTextWord::Dictionary(word) => dictionary
+                    .word(word)
+                    .ok_or(InlineMenuRevealError::UnknownDictionaryWord(word))?,
+                ScriptTextWord::StateNumber(number) => {
+                    let source_offset = number.source_offset();
+                    let value = state
+                        .and_then(|state| {
+                            state
+                                .resolve_word_source_offset(source_offset)
+                                .and_then(|field| state.word(field))
+                        })
+                        .ok_or(InlineMenuRevealError::InvalidStateNumber { source_offset })?;
+                    presentation.menu_number_text =
+                        (value as i16).to_string().into_bytes().into_boxed_slice();
+                    &presentation.menu_number_text
+                }
+                ScriptTextWord::SectionSeparator => {
+                    return complete_menu(presentation, placements, x, y, word_delay, word_count);
+                }
+            };
+            (text, current.encoded_word_count())
         };
         let width = metrics.rendered_width(text);
         placements.push(InlineMenuWordPlacement {
@@ -163,20 +195,26 @@ pub fn reveal_inline_menu_step<M: InlineMenuTextMetrics>(
         });
 
         cursor = cursor.saturating_add(1);
-        encoded_cursor += current.encoded_word_count();
-        let next = match presentation.menu_words.get(cursor).copied() {
-            Some(ScriptTextWord::InventoryChoices) => {
-                return Err(InlineMenuRevealError::UnexpandedInventoryChoices);
+        encoded_cursor += encoded_word_count;
+        let next = if let Some(words) = display_words {
+            words.get(cursor).map(|word| word.as_ref())
+        } else {
+            match presentation.menu_words.get(cursor).copied() {
+                Some(ScriptTextWord::InventoryChoices) => {
+                    return Err(InlineMenuRevealError::UnexpandedInventoryChoices);
+                }
+                Some(ScriptTextWord::Dictionary(next)) => Some(
+                    dictionary
+                        .word(next)
+                        .ok_or(InlineMenuRevealError::UnknownDictionaryWord(next))?,
+                ),
+                // Native lookahead reads DIC slot 1 before the next substitution
+                // formats its value. Reuse the last number; do not read ahead in VAR.
+                Some(ScriptTextWord::StateNumber(_)) => {
+                    Some(presentation.menu_number_text.as_ref())
+                }
+                Some(ScriptTextWord::SectionSeparator) | None => None,
             }
-            Some(ScriptTextWord::Dictionary(next)) => Some(
-                dictionary
-                    .word(next)
-                    .ok_or(InlineMenuRevealError::UnknownDictionaryWord(next))?,
-            ),
-            // Native lookahead reads DIC slot 1 before the next substitution
-            // formats its value. Reuse the last number; do not read ahead in VAR.
-            Some(ScriptTextWord::StateNumber(_)) => Some(presentation.menu_number_text.as_ref()),
-            Some(ScriptTextWord::SectionSeparator) | None => None,
         };
         if next
             .and_then(|text| text.first().copied())
@@ -214,14 +252,12 @@ fn complete_menu(
     x: u16,
     y: u16,
     word_delay: u16,
+    word_count: usize,
 ) -> Result<InlineMenuRevealOutcome, InlineMenuRevealError> {
     let completion_armed = !presentation.hold_ready && !presentation.dialogue_hold_complete;
     if completion_armed {
-        let word_count = u16::try_from(presentation.menu_word_count).map_err(|_| {
-            InlineMenuRevealError::WordCountOutOfRange {
-                count: presentation.menu_word_count,
-            }
-        })?;
+        let word_count = u16::try_from(word_count)
+            .map_err(|_| InlineMenuRevealError::WordCountOutOfRange { count: word_count })?;
         presentation.dialogue_hold_countdown = word_count
             .wrapping_mul(word_delay >> 1)
             .wrapping_add(MENU_WORD_GAP);
@@ -480,6 +516,73 @@ mod tests {
     struct OracleMetrics {
         rendered_widths: VecDeque<u16>,
         lookahead_widths: VecDeque<u16>,
+    }
+
+    #[test]
+    fn localized_words_reveal_to_their_own_length_without_replacing_source_ids() {
+        struct Metrics;
+        impl InlineMenuTextMetrics for Metrics {
+            fn rendered_width(&mut self, text: &[u8]) -> u16 {
+                text.len() as u16 * 6
+            }
+            fn lookahead_width(&mut self, text: Option<&[u8]>) -> u16 {
+                text.unwrap_or_default().len() as u16 * 6
+            }
+        }
+        let dictionary = decode_script_dictionary(b"Bonjour\0").unwrap();
+        let source = Box::new([ScriptTextWord::Dictionary(
+            dictionary.resolve_source_offset(0).unwrap(),
+        )]);
+        let display = [
+            Box::from(b"Hello".as_slice()),
+            Box::from(b"there".as_slice()),
+            Box::from(b"Commander.".as_slice()),
+        ];
+        let mut presentation = TextPresentationState {
+            menu_words: source.clone(),
+            menu_word_count: 1,
+            ..Default::default()
+        };
+        let before = presentation.clone();
+        assert!(matches!(
+            reveal_inline_menu_display_step(
+                &mut presentation,
+                &dictionary,
+                None,
+                false,
+                4,
+                &mut Metrics,
+                Some(&display)
+            )
+            .unwrap(),
+            InlineMenuRevealOutcome::Gated(_)
+        ));
+        assert_eq!(presentation, before);
+        presentation.menu_deferred = true;
+        for step in 0..=display.len() + 1 {
+            presentation.dialogue_hold_countdown = 0;
+            let InlineMenuRevealOutcome::Frame(frame) = reveal_inline_menu_display_step(
+                &mut presentation,
+                &dictionary,
+                None,
+                false,
+                4,
+                &mut Metrics,
+                Some(&display),
+            )
+            .unwrap() else {
+                panic!("accepted menu must reveal")
+            };
+            assert_eq!(frame.completion_armed, step == display.len() + 1);
+            assert_eq!(frame.placements.len(), step.max(1).min(display.len()));
+            assert_eq!(presentation.menu_words.as_ref(), source.as_ref());
+            assert_eq!(presentation.menu_word_count, 1);
+            for (placement, expected) in frame.placements.iter().zip(&display) {
+                assert_eq!(&placement.text, expected);
+            }
+        }
+        assert!(presentation.dialogue_hold_complete);
+        assert_eq!(presentation.dialogue_hold_countdown, 3 * 2 + 6);
     }
 
     impl InlineMenuTextMetrics for OracleMetrics {
