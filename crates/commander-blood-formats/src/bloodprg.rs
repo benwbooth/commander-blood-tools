@@ -244,17 +244,16 @@ const SEQUEL_PRESENTATION_LAYOUT: PresentationCatalogLayout = PresentationCatalo
     descriptor_data_end: 0x2745,
     unclamped_ids_data_offset: 0x100C,
 };
+#[cfg(test)]
 const CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH: usize =
     CONFIRM_DIALOG_NO_REGION_FILE_OFFSET + RECTANGLE_BYTE_COUNT;
 const MENU_TEXT_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
     + TEXT_SPEED_POINTER_LIST_DATA_OFFSET
     + (BLOODPRG_TEXT_SPEED_LABEL_COUNT + 1) * WORD_BYTE_COUNT;
+#[cfg(test)]
 const HYPERSPACE_RESOURCES_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
     + HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET
     + BLOODPRG_HYPERSPACE_SEQUENCE_COUNT * HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT;
-const NAVIGATION_RESOURCES_REQUIRED_EXECUTABLE_LENGTH: usize = BLOODPRG_DATA_FILE_OFFSET
-    + NAVIGATION_WIPE_ENDPOINTS_DATA_OFFSET
-    + BLOODPRG_NAVIGATION_WIPE_ENDPOINT_COUNT * NAVIGATION_WIPE_ENDPOINT_BYTE_COUNT;
 
 /// Authored title and roster labels used by navigation panels.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -348,17 +347,52 @@ impl Error for BloodprgNavigationResourcesError {}
 pub fn decode_bloodprg_navigation_resources(
     executable: &[u8],
 ) -> Result<BloodprgNavigationResources, BloodprgNavigationResourcesError> {
-    if executable.len() < NAVIGATION_RESOURCES_REQUIRED_EXECUTABLE_LENGTH {
+    decode_navigation_resources(
+        executable,
+        BLOODPRG_DATA_FILE_OFFSET,
+        NAVIGATION_WIPE_ENDPOINTS_DATA_OFFSET,
+        [
+            NAVIGATION_PLANET_LABEL_DATA_OFFSET,
+            NAVIGATION_SHIP_LABEL_DATA_OFFSET,
+            NAVIGATION_BLACK_HOLE_LABEL_DATA_OFFSET,
+            NAVIGATION_LIFE_SUPPORT_LABEL_DATA_OFFSET,
+            NAVIGATION_LABEL_DATA_END_OFFSET,
+        ],
+    )
+}
+
+/// Decode the sequel labels selected at 0x94CB and wipe table selected at 0xA028.
+pub fn decode_blood2pg_navigation_resources(
+    executable: &[u8],
+) -> Result<BloodprgNavigationResources, BloodprgNavigationResourcesError> {
+    decode_navigation_resources(
+        executable,
+        0xF7F0,
+        0x29E0,
+        [0x12D, 0x137, 0x142, 0x14E, 0x15C],
+    )
+}
+
+fn decode_navigation_resources(
+    executable: &[u8],
+    data_file_offset: usize,
+    wipe_offset: usize,
+    labels: [usize; 5],
+) -> Result<BloodprgNavigationResources, BloodprgNavigationResourcesError> {
+    let required = data_file_offset
+        + wipe_offset
+        + BLOODPRG_NAVIGATION_WIPE_ENDPOINT_COUNT * NAVIGATION_WIPE_ENDPOINT_BYTE_COUNT;
+    if executable.len() < required {
         return Err(BloodprgNavigationResourcesError::TruncatedExecutable {
             actual: executable.len(),
-            required: NAVIGATION_RESOURCES_REQUIRED_EXECUTABLE_LENGTH,
+            required,
         });
     }
     if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
         return Err(BloodprgNavigationResourcesError::InvalidExecutableSignature);
     }
 
-    let wipe_table = BLOODPRG_DATA_FILE_OFFSET + NAVIGATION_WIPE_ENDPOINTS_DATA_OFFSET;
+    let wipe_table = data_file_offset + wipe_offset;
     let wipe_endpoints = std::array::from_fn(|endpoint| {
         let position = wipe_table + endpoint * NAVIGATION_WIPE_ENDPOINT_BYTE_COUNT;
         std::array::from_fn(|component| {
@@ -366,26 +400,10 @@ pub fn decode_bloodprg_navigation_resources(
         })
     });
     let labels = BloodprgNavigationLabels {
-        planet: read_navigation_label(
-            executable,
-            NAVIGATION_PLANET_LABEL_DATA_OFFSET,
-            NAVIGATION_SHIP_LABEL_DATA_OFFSET,
-        )?,
-        ship: read_navigation_label(
-            executable,
-            NAVIGATION_SHIP_LABEL_DATA_OFFSET,
-            NAVIGATION_BLACK_HOLE_LABEL_DATA_OFFSET,
-        )?,
-        black_hole: read_navigation_label(
-            executable,
-            NAVIGATION_BLACK_HOLE_LABEL_DATA_OFFSET,
-            NAVIGATION_LIFE_SUPPORT_LABEL_DATA_OFFSET,
-        )?,
-        life_support: read_navigation_label(
-            executable,
-            NAVIGATION_LIFE_SUPPORT_LABEL_DATA_OFFSET,
-            NAVIGATION_LABEL_DATA_END_OFFSET,
-        )?,
+        planet: read_navigation_label(executable, data_file_offset, labels[0], labels[1])?,
+        ship: read_navigation_label(executable, data_file_offset, labels[1], labels[2])?,
+        black_hole: read_navigation_label(executable, data_file_offset, labels[2], labels[3])?,
+        life_support: read_navigation_label(executable, data_file_offset, labels[3], labels[4])?,
     };
     Ok(BloodprgNavigationResources {
         wipe_endpoints,
@@ -395,11 +413,11 @@ pub fn decode_bloodprg_navigation_resources(
 
 fn read_navigation_label(
     executable: &[u8],
+    data_file_offset: usize,
     label_offset: usize,
     label_end_offset: usize,
 ) -> Result<Box<[u8]>, BloodprgNavigationResourcesError> {
-    let field = &executable
-        [BLOODPRG_DATA_FILE_OFFSET + label_offset..BLOODPRG_DATA_FILE_OFFSET + label_end_offset];
+    let field = &executable[data_file_offset + label_offset..data_file_offset + label_end_offset];
     let length = field
         .iter()
         .position(|byte| *byte == u8::MIN)
@@ -472,17 +490,35 @@ impl Error for BloodprgHyperspaceResourcesError {}
 pub fn decode_bloodprg_hyperspace_resources(
     executable: &[u8],
 ) -> Result<BloodprgHyperspaceResources, BloodprgHyperspaceResourcesError> {
-    if executable.len() < HYPERSPACE_RESOURCES_REQUIRED_EXECUTABLE_LENGTH {
+    decode_hyperspace_resources(
+        executable,
+        BLOODPRG_DATA_FILE_OFFSET + HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET,
+    )
+}
+
+/// Decode the sequel clip slots indexed and copied by BLOOD2PG at 0x9D14.
+pub fn decode_blood2pg_hyperspace_resources(
+    executable: &[u8],
+) -> Result<BloodprgHyperspaceResources, BloodprgHyperspaceResourcesError> {
+    decode_hyperspace_resources(executable, 0x11960)
+}
+
+fn decode_hyperspace_resources(
+    executable: &[u8],
+    table_file_offset: usize,
+) -> Result<BloodprgHyperspaceResources, BloodprgHyperspaceResourcesError> {
+    let required = table_file_offset
+        + BLOODPRG_HYPERSPACE_SEQUENCE_COUNT * HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT;
+    if executable.len() < required {
         return Err(BloodprgHyperspaceResourcesError::TruncatedExecutable {
             actual: executable.len(),
-            required: HYPERSPACE_RESOURCES_REQUIRED_EXECUTABLE_LENGTH,
+            required,
         });
     }
     if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
         return Err(BloodprgHyperspaceResourcesError::InvalidExecutableSignature);
     }
 
-    let table_file_offset = BLOODPRG_DATA_FILE_OFFSET + HYPERSPACE_SEQUENCE_NAMES_DATA_OFFSET;
     let names = (0..BLOODPRG_HYPERSPACE_SEQUENCE_COUNT)
         .map(|sequence| {
             let start = table_file_offset + sequence * HYPERSPACE_SEQUENCE_NAME_FIELD_BYTE_COUNT;
@@ -1144,10 +1180,30 @@ impl Error for BloodprgConfirmDialogResourceError {}
 pub fn decode_bloodprg_confirm_dialog_regions(
     executable: &[u8],
 ) -> Result<BloodprgConfirmDialogRegions, BloodprgConfirmDialogResourceError> {
-    if executable.len() < CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH {
+    decode_confirm_dialog_regions(
+        executable,
+        CONFIRM_DIALOG_YES_REGION_FILE_OFFSET,
+        CONFIRM_DIALOG_NO_REGION_FILE_OFFSET,
+    )
+}
+
+/// Decode the sequel's OUI/NON regions selected at file 0x16E3 and 0x16F3.
+pub fn decode_blood2pg_confirm_dialog_regions(
+    executable: &[u8],
+) -> Result<BloodprgConfirmDialogRegions, BloodprgConfirmDialogResourceError> {
+    decode_confirm_dialog_regions(executable, 0x11F97, 0x11F9F)
+}
+
+fn decode_confirm_dialog_regions(
+    executable: &[u8],
+    yes_offset: usize,
+    no_offset: usize,
+) -> Result<BloodprgConfirmDialogRegions, BloodprgConfirmDialogResourceError> {
+    let required = no_offset + RECTANGLE_BYTE_COUNT;
+    if executable.len() < required {
         return Err(BloodprgConfirmDialogResourceError::TruncatedExecutable {
             actual: executable.len(),
-            required: CONFIRM_DIALOG_REQUIRED_EXECUTABLE_LENGTH,
+            required,
         });
     }
     if executable.get(MZ_SIGNATURE_FILE_OFFSET..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
@@ -1155,8 +1211,8 @@ pub fn decode_bloodprg_confirm_dialog_regions(
     }
 
     Ok(BloodprgConfirmDialogRegions {
-        yes: read_hit_rectangle(executable, CONFIRM_DIALOG_YES_REGION_FILE_OFFSET),
-        no: read_hit_rectangle(executable, CONFIRM_DIALOG_NO_REGION_FILE_OFFSET),
+        yes: read_hit_rectangle(executable, yes_offset),
+        no: read_hit_rectangle(executable, no_offset),
     })
 }
 

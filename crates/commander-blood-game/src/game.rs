@@ -2,10 +2,14 @@
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::bloodprg::{
-    BloodprgBridgeResources, BloodprgFontResources, BloodprgPresentationCatalog,
+    BloodprgBridgeResources, BloodprgConfirmDialogRegions, BloodprgFontResources,
+    BloodprgHyperspaceResources, BloodprgNavigationResources, BloodprgPresentationCatalog,
     decode_big_bug_bang_inventory_cancel_label, decode_blood2pg_bridge_resources,
-    decode_blood2pg_font_resources, decode_blood2pg_presentation_catalog,
-    decode_bloodprg_bridge_resources, decode_bloodprg_font_resources,
+    decode_blood2pg_confirm_dialog_regions, decode_blood2pg_font_resources,
+    decode_blood2pg_hyperspace_resources, decode_blood2pg_navigation_resources,
+    decode_blood2pg_presentation_catalog, decode_bloodprg_bridge_resources,
+    decode_bloodprg_confirm_dialog_regions, decode_bloodprg_font_resources,
+    decode_bloodprg_hyperspace_resources, decode_bloodprg_navigation_resources,
     decode_bloodprg_presentation_catalog,
 };
 use commander_blood_formats::code::ScriptDialect;
@@ -148,6 +152,45 @@ impl GameVariant {
         .context("decoding game presentation catalog")
     }
 
+    /// Decode the game's confirmation hit regions.
+    pub fn decode_confirm_dialog_regions(
+        self,
+        executable: &[u8],
+    ) -> Result<BloodprgConfirmDialogRegions> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_confirm_dialog_regions(executable),
+            Self::BigBugBang => decode_blood2pg_confirm_dialog_regions(executable),
+        }
+        .context("decoding game confirmation hit regions")
+    }
+
+    /// Decode the game's authored hyperspace filenames.
+    pub fn decode_hyperspace_resources(
+        self,
+        executable: &[u8],
+    ) -> Result<BloodprgHyperspaceResources> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_hyperspace_resources(executable),
+            Self::BigBugBang => decode_blood2pg_hyperspace_resources(executable),
+        }
+        .context("decoding game hyperspace resources")
+    }
+
+    /// Decode the game's navigation labels and wipe geometry.
+    pub fn decode_navigation_resources(
+        self,
+        executable: &[u8],
+    ) -> Result<BloodprgNavigationResources> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_navigation_resources(executable),
+            Self::BigBugBang => decode_blood2pg_navigation_resources(executable),
+        }
+        .context("decoding game navigation resources")
+    }
+
     /// Decode the game's unexpanded six-bit default palette.
     pub fn decode_default_vga_palette(self, executable: &[u8]) -> Result<[[u8; 3]; 256]> {
         self.validate_native_build(executable)?;
@@ -265,6 +308,21 @@ mod tests {
                 .is_err()
         );
         assert!(GameVariant::BigBugBang.decode_fonts(&bytes).is_err());
+        assert!(
+            GameVariant::BigBugBang
+                .decode_confirm_dialog_regions(&bytes)
+                .is_err()
+        );
+        assert!(
+            GameVariant::BigBugBang
+                .decode_hyperspace_resources(&bytes)
+                .is_err()
+        );
+        assert!(
+            GameVariant::BigBugBang
+                .decode_navigation_resources(&bytes)
+                .is_err()
+        );
         assert!(
             GameVariant::BigBugBang
                 .decode_writable_resource_catalog(&bytes)

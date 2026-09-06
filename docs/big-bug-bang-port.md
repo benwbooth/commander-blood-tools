@@ -598,8 +598,8 @@ them. The original-asset inventory test applies all 25 authored descriptions
 through this catalog and loads the resulting line-43 resource bytes.
 
 This is catalog and resource-binding verification, not HNM playback or startup
-parity. The loader guard remains: menu, navigation and other
-startup tables still need sequel-specific integration.
+parity. The loader guard remains: the bridge-menu table and runtime/profile
+transitions still need sequel-specific integration.
 Scene-start policy, profile transitions and English localization are unfinished.
 
 Verification: two native captures were byte-identical across all 45 entries.
@@ -693,6 +693,54 @@ nix develop -c python3 -P re/tools/big_bug_bang_writable_catalog_oracle.py \
   output/big-bug-bang/disc/BLOOD2PG.EXE \
   re/tools/oracle_vectors/big_bug_bang_writable_catalog.json
 nix develop -c cargo test -p commander-blood-game --lib sequel_writable_catalog -- --include-ignored
+```
+
+### Sequel Navigation And Confirmation Tables
+
+Game identity now selects confirmation hit regions, hyperspace names and
+navigation labels/wipe geometry. The original sequel consumers establish:
+
+- Confirmation calls at file 0x16E3 and 0x16F3 select data 0x27A7 and 0x27AF.
+  Their rectangles are `[115,105,30,10]` and `[175,105,30,10]`, different from
+  Commander's regions. The native pressed-pointer tester at 0x93F7..0x9424
+  supplies 64 boundary cases, checked against the runtime's actual hit adapter.
+- Hyperspace selection at 0x9D14..0x9D2F indexes eight 16-byte slots at data
+  0x2170 (file 0x11960), masks the sequence counter by seven, increments it as
+  a wrapping word, and copies the selected name into the presentation slot.
+- Navigation label copies at 0x94E3 and 0x9504 consume the French prefixes at
+  data 0x012D, 0x0137, 0x0142 and 0x014E. The wipe selector at 0xA028 addresses
+  nine coordinate pairs at data 0x29E0 (file 0x121D0); the line routine reads
+  both components at 0xAB10..0xAB16.
+
+The guarded native capture records those hit results, four label byte strings,
+nine endpoints and eleven travel selections including counter wrap. The
+original-asset runtime test feeds the decoded clip names into the real camera
+coordinator and presentation catalog, then loads every selected clip's bytes.
+This checks selection and resource binding, not HNM playback, the complete
+camera/navigation workflow, or the confirmation dialog's rendered labels.
+
+The remaining bridge-menu table cannot use Commander's five-command model.
+The sequel list at data 0x27B9 has seven commands: `VITESSE`, `TEXTES`,
+`VOYAGE_OFF`, `MUSIQUE_OFF`, `SAUVER`, `CHARGER`, `QUITTER`. Native selection at
+0x9A6D..0x9B38 separately opens simulation-speed and text-speed controls and
+toggles travel and music. The loader still rejects production sequel startup
+until this model and the remaining runtime/profile contracts are integrated.
+The French bytes are preserved source data, not completed English localization.
+
+Verification: repeated navigation captures were byte-identical, and regenerating
+the earlier visual-table capture after the shared harness extension also produced
+identical output. All 125 format unit tests and six format integration tests
+passed with original-asset checks enabled. Both focused runtime tests passed,
+including all 64 hit cases and 11 travel/resource selections. The game library
+passed 932 tests with 20 ignored on a private Xvfb display, reaped afterward.
+Game all-targets checking passed.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_navigation_tables_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_navigation_tables.json
+nix develop -c cargo test -p commander-blood-formats --test sequel_navigation_tables -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib sequel_navigation_tables -- --include-ignored
 ```
 
 ### Authored Text Corpus Audit

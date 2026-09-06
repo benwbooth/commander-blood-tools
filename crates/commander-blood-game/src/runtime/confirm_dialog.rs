@@ -169,6 +169,59 @@ mod tests {
     };
 
     #[test]
+    fn sequel_navigation_tables_match_native_confirmation_boundaries() {
+        #[derive(serde::Deserialize)]
+        struct Oracle {
+            regions: Vec<Region>,
+        }
+        #[derive(serde::Deserialize)]
+        struct Region {
+            origin: [i16; 2],
+            size: [i16; 2],
+            cases: Vec<Case>,
+        }
+        #[derive(serde::Deserialize)]
+        struct Case {
+            point: [i16; 2],
+            pressed: bool,
+            hit: bool,
+        }
+        let oracle: Oracle = serde_json::from_str(include_str!(
+            "../../../../re/tools/oracle_vectors/big_bug_bang_navigation_tables.json"
+        ))
+        .unwrap();
+        let mut executable = vec![0; 0x11FA7];
+        executable[..2].copy_from_slice(b"MZ");
+        for (index, region) in oracle.regions.iter().enumerate() {
+            for (field, value) in region.origin.iter().chain(&region.size).enumerate() {
+                let offset = 0x11F97 + index * 8 + field * 2;
+                executable[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
+            }
+        }
+        let decoded =
+            commander_blood_formats::bloodprg::decode_blood2pg_confirm_dialog_regions(&executable)
+                .unwrap();
+        for (actual, expected) in [decoded.yes, decoded.no].into_iter().zip(oracle.regions) {
+            assert_eq!(expected.cases.len(), 32);
+            for case in expected.cases {
+                assert_eq!(
+                    hit(
+                        PrimaryPointerSample {
+                            primary_pressed: case.pressed,
+                            position: case.point
+                        },
+                        actual
+                    ),
+                    case.hit,
+                    "region {actual:?}, point {:?}, pressed {}",
+                    case.point,
+                    case.pressed
+                );
+            }
+        }
+    }
+
+    #[test]
     fn inactive_dialog_starts_without_navigation_or_pointer_state() {
         let dialog = RuntimeConfirmDialog::new(TEST_REGIONS);
         assert_eq!(dialog.state().navigation_choice_gate, u8::MIN);

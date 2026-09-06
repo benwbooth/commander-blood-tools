@@ -20,7 +20,7 @@ DATA_FILE = 0xF7F0
 GLOBALS = 0x30000
 
 
-def run(executable, start, end, writable=(), registers=None, visit=None):
+def run(executable, start, end, writable=(), registers=None, visit=None, initial_data=()):
     cpu = Uc(UC_ARCH_X86, UC_MODE_16)
     cpu.mem_map(0, 0x100000)
     module = executable[HEADER:]
@@ -28,6 +28,9 @@ def run(executable, start, end, writable=(), registers=None, visit=None):
     source = executable[DATA_FILE:]
     assert len(source) <= len(data)
     data[:len(source)] = source
+    for offset, value in initial_data:
+        assert 0 <= offset <= offset + len(value) <= len(data)
+        data[offset:offset + len(value)] = value
     cpu.mem_write(0, module)
     cpu.mem_write(GLOBALS, bytes(data))
     initial = {UC_X86_REG_CS: 0, UC_X86_REG_DS: GLOBALS // 16,

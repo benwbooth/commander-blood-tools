@@ -413,6 +413,77 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires original Big Bug Bang executable and imported hyperspace clips"]
+    fn sequel_navigation_tables_queue_every_native_travel_selection() {
+        #[derive(Deserialize)]
+        struct Oracle {
+            hyperspace: Vec<Travel>,
+        }
+        #[derive(Deserialize)]
+        struct Travel {
+            index: u16,
+            next_index: u16,
+            name: Vec<u8>,
+        }
+        let oracle: Oracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_navigation_tables.json"
+        ))
+        .unwrap();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
+        let game = crate::game::GameVariant::BigBugBang;
+        let resources = game.decode_hyperspace_resources(&executable).unwrap();
+        let regions = game.decode_confirm_dialog_regions(&executable).unwrap();
+        assert_eq!(regions.yes.origin, [115, 105]);
+        assert_eq!(regions.no.origin, [175, 105]);
+        let navigation = game.decode_navigation_resources(&executable).unwrap();
+        assert_eq!(navigation.labels().planet(), b"PLANETE: ");
+        assert_eq!(navigation.labels().ship(), b"VAISSEAU: ");
+        assert_eq!(navigation.labels().black_hole(), b"TROU NOIR: ");
+        assert_eq!(navigation.labels().life_support(), b"VIE PRESENTE:");
+        let initial = game.decode_presentation_catalog(&executable).unwrap();
+        let mut catalog = crate::runtime::RuntimePresentationCatalog::new(&initial);
+        let store = crate::assets::OriginalResourceStore::new(root, None, [], true);
+        assert_eq!(oracle.hyperspace.len(), 11);
+        for vector in oracle.hyperspace {
+            let mut state = CameraApproachState {
+                phase: 3,
+                hyperspace_sequence_index: vector.index,
+                ..Default::default()
+            };
+            let mut host = OracleHost {
+                calls: Vec::new(),
+                completed_gate: None,
+            };
+            let outcome = update_camera_approach(
+                &mut state,
+                CameraApproachContext {
+                    scene_link: &0u16,
+                    hyperspace_resources: resources.sequence_names(),
+                },
+                &mut host,
+            )
+            .unwrap();
+            assert_eq!(outcome, CameraApproachOutcome::HyperspaceQueued);
+            assert_eq!(state.hyperspace_resource.as_ref(), vector.name);
+            assert_eq!(state.hyperspace_sequence_index, vector.next_index);
+            assert_eq!(state.active_line, 6);
+            catalog
+                .select_hyperspace_video(&state.hyperspace_resource)
+                .unwrap();
+            let request = catalog
+                .request(super::super::PresentationResourceId::new(6))
+                .unwrap();
+            assert!(
+                !store.load(&request.resource_name).unwrap().is_empty(),
+                "{:?}",
+                request.resource_name
+            );
+        }
+    }
+
+    #[test]
     fn every_original_camera_approach_vector_matches() {
         let json = include_str!("../../../../../re/tools/oracle_vectors/func_8a4e_natural.json")
             .replace("\"final\":", "\"final_state\":");
