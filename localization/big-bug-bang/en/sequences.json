@@ -78,6 +78,39 @@
       {"frame": 250, "text": "DEATH!..."},
       {"frame": 315, "text": "There! That's all! Gasping and pale..."}
     ],
+    "9scrutbox": [
+      {"frame": 1, "text": "Wow! Scrutinize that helmet, pirate!"},
+      {"frame": 35, "text": "Are you going to fill our universe with SCRUTERS?!"},
+      {"frame": 70, "text": "I'd gladly turn it into scrap metal!"},
+      {"frame": 135, "text": "DEATH TO THE SCRUTERS!"},
+      {"frame": 185, "text": "JOIN THEIR RANKS AND GIVE UP YOUR EYES"},
+      {"frame": 215, "text": "Mind you, that Scruter helmet is great!"}
+    ],
+    "10hachoir": [
+      {"frame": 1, "text": "Hello, pirate! I've got a scoop!"},
+      {"frame": 35, "text": "You know the Murfalos..."},
+      {"frame": 75, "text": "Well, they started out as CROOLIS!"},
+      {"frame": 190, "text": "CROOLIS mutated through genetic multiplexing"},
+      {"frame": 235, "text": "To make them a little smarter..."},
+      {"frame": 280, "text": "A little less violent..."},
+      {"frame": 330, "text": "A little kinder..."},
+      {"frame": 370, "text": "A little less C..."},
+      {"frame": 390, "text": "CROOLIS!"},
+      {"frame": 410, "text": "It worked, didn't it? They don't atomize anyone!"}
+    ],
+    "11izwalexplo": [
+      {"frame": 20, "text": "TELEPLATO!"},
+      {"frame": 40, "text": "The IZWAL was born in the ZEN mind"},
+      {"frame": 90, "text": "It ran through the neural corridors,"},
+      {"frame": 130, "text": "passed through the bionium gate"},
+      {"frame": 175, "text": "But what did it discover there?"},
+      {"frame": 235, "text": "That the IZWAL is a prisoner in the cave"},
+      {"frame": 320, "text": "It won't get out! No, it won't!"},
+      {"frame": 410, "text": "How can we get it out of the cave?"},
+      {"frame": 465, "text": "How can we break its chains?"},
+      {"frame": 525, "text": "Through violence?"},
+      {"frame": 560, "text": "Or through wisdom?"}
+    ],
     "3ppit": [
       {"frame": 5, "text": "Attention, we have just intercepted"},
       {"frame": 60, "text": "a coded message from the migration services"},

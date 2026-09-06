@@ -50,10 +50,11 @@ in media remain untranslated.
 
 ## Timed Sequence Captions
 
-`en/sequences.json` supplies 67 cues across seven sequences: `present`, `1ppit`,
-`3ppit`, `4exploplane`, `5exploplane`, `7croolvent`, and `8incanthom`, including
+`en/sequences.json` supplies 94 cues across ten sequences: `present`, `1ppit`,
+`3ppit`, `4exploplane`, `5exploplane`, `7croolvent`, `8incanthom`,
+`9scrutbox`, `10hachoir`, and `11izwalexplo`, including
 the original blank cues. The verified DESCRIPT contains 706 sequence subtitle
-cues in total; the other 639 are not covered by this catalog.
+cues in total; the other 612 are not covered by this catalog.
 The modern renderer selects English only for Big Bug Bang with the matching
 DESCRIPT SHA-256 hash and an exact match for the complete source cue stream.
 The source database, video/audio selection, cue ordering, frame thresholds, and
@@ -131,6 +132,29 @@ and source validation for all 779 SCRIPT3 sites pass after this correction;
 the new labels have not yet been visually rechecked. The separate 30-cue DESCRIPT
 addition was also made after starting this capture and is not live-verified by it.
 Later dialogue branches, teleportation, and whole-game progression remain open.
+
+## Daddy's Right-Label Replay
+
+`accuracy/scenarios/bbb_play_daddy_right.tsv` extends the yes replay with a
+first-row click at `(185, 90)` and another 200-tick wait. The capture
+`output/big-bug-bang/english-daddy-right-01` exits normally without a timeout.
+`screen-059.png` shows the corrected menu (partly covered by the native hand);
+the trace records displayed `right` / `wrong` with original selector IDs
+281 / 283. Action 18 closes that selector. At action 19, frame 4635, the VM
+is enabled in profile 2 and awaits `annoyed` / `cool` at the English question
+"are you annoyed, Commander?..." (`screen-071.png`).
+
+This proves progression after the first-row click, not native branch parity.
+The trace reaches "and what's this, then?..." (COD `0x0DB1`), but does not
+reach the `bien_ça`-guarded line at `0x0D8C`. The source choice spelling and
+guard identity need comparison with the original runtime before treating this
+as the verified affirmative branch. No selector or guard semantics were changed.
+
+The additional 27 timed captions for `9scrutbox`, `10hachoir`, and
+`11izwalexplo` pass authentic-resource binding and original line-layout checks.
+They were added after this capture started and are not live-verified by it.
+The rebuilt executable includes all 94 cues. The serial library suite passes
+950 tests with 35 ignored. Teleportation and whole-game progression remain open.
 
 ## COD Catalog Validation
 
