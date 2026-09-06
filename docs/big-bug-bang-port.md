@@ -1980,8 +1980,18 @@ These observations do not establish cryobox interaction or whole-game parity.
 The corrected ordinary-input comparison is retained as
 `accuracy/scenarios/bbb_play_daddy.tsv`. The local `modern-play-daddy-01` run
 completed 2834 recorded frames: it returned to panorama frame 45, rendered the
-cryobox list with Daddy Gluxx, and closed the list after selection. It did not
-start Daddy's scene. The final frame still had profile 1 (SCRIPT2), no active
-actor or DESCRIPT object, and the subtitle `WAIT COMMANDER ...`; the native
-capture instead reaches profile 2 (SCRIPT3) and visibly presents Daddy. Thus
-the input path is a reproduced regression case, not a passing gameplay gate.
+cryobox list with Daddy Gluxx, and closed the list after a click at (100, 100).
+That click selected cancellation, not Daddy: the single contact occupies
+y=89..99 and the cancel row begins at y=100. The native helper's nominal
+(100, 100) motion actually settled at y=99. The retained scenario now uses
+(100, 94), inside the contact row, and the boundary is covered by a focused
+choice-list test. The earlier run's failure to start Daddy does not establish
+a scene-handoff defect.
+
+The corrected `modern-play-daddy-02` capture completed normally with 2834
+recorded frames. Its final state has profile 2 (SCRIPT3) and active actor
+`Daddy_Gluxx` (record 44). Screenshot `screen-026.png` visibly renders Daddy's
+scene and the caption `Ageu rla... Mmeuh`. This verifies the ordinary-input
+opening, PLAY, TV completion, return-pan and first cryobox-contact path. It
+does not verify later dialogue, travel, completion, or the remaining English
+translation.

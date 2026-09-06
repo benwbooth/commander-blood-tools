@@ -496,6 +496,33 @@ mod tests {
     }
 
     #[test]
+    fn single_contact_and_cancel_have_distinct_adjacent_hit_rows() {
+        for (y, selected_item, cancelled) in [
+            (94, Some(0), false),
+            (99, Some(0), false),
+            (100, None, true),
+        ] {
+            let mut backend = backend_for("single_contact", 1, 0);
+            backend.pointer = pointer([100, y], true);
+            let frame = update_choice_list_for_dialect(
+                &[b"Daddy_Gluxx"],
+                ChoiceListConfig {
+                    center_x: 100,
+                    preserve_individual_widths: true,
+                    cancel_label: Some(b"ANNULER"),
+                    layout_only: false,
+                },
+                &mut ChoiceListState::default(),
+                &mut backend,
+                ScriptDialect::BigBugBang,
+            );
+            assert_eq!(frame.rect.origin[1], 85);
+            assert_eq!(frame.selected_item, selected_item, "y={y}");
+            assert_eq!(frame.cancelled, cancelled, "y={y}");
+        }
+    }
+
+    #[test]
     fn idle_list_without_a_cancel_row_is_not_cancelled() {
         let labels = [b"LABEL".as_slice()];
         let mut backend = backend_for("idle_without_cancel", labels.len(), u16::MIN);
