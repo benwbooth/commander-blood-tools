@@ -56,14 +56,33 @@ pub struct NameAreaEffectSequence {
 pub fn decode_bloodprg_name_area_effect_sequences(
     executable: &[u8],
 ) -> Option<Box<[NameAreaEffectSequence]>> {
+    decode_name_area_effect_sequences(
+        executable,
+        DATA_IMAGE_FILE_OFFSET,
+        SEQUENCE_POINTER_TABLE_FILE_OFFSET,
+    )
+}
+
+/// Decode the sequel's ten sequences selected by BLOOD2PG at file 0x9DFA.
+pub fn decode_blood2pg_name_area_effect_sequences(
+    executable: &[u8],
+) -> Option<Box<[NameAreaEffectSequence]>> {
+    decode_name_area_effect_sequences(executable, 0xF7F0, 0x12281)
+}
+
+fn decode_name_area_effect_sequences(
+    executable: &[u8],
+    data_file_offset: usize,
+    pointer_table_file_offset: usize,
+) -> Option<Box<[NameAreaEffectSequence]>> {
     let pointer_bytes = executable.get(
-        SEQUENCE_POINTER_TABLE_FILE_OFFSET
-            ..SEQUENCE_POINTER_TABLE_FILE_OFFSET.checked_add(SEQUENCE_COUNT * FRAME_FIELD_SIZE)?,
+        pointer_table_file_offset
+            ..pointer_table_file_offset.checked_add(SEQUENCE_COUNT * FRAME_FIELD_SIZE)?,
     )?;
     let mut sequences = Vec::with_capacity(SEQUENCE_COUNT);
     for pointer in pointer_bytes.chunks_exact(FRAME_FIELD_SIZE) {
         let source_offset = usize::from(u16::from_le_bytes(pointer.try_into().ok()?));
-        let sequence_start = DATA_IMAGE_FILE_OFFSET.checked_add(source_offset)?;
+        let sequence_start = data_file_offset.checked_add(source_offset)?;
         let header = executable.get(sequence_start..sequence_start + SEQUENCE_HEADER_SIZE)?;
         let operation = NameAreaEffectOperation::decode(header[0]);
         let frame_count = usize::from(header[1]);

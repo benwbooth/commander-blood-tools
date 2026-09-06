@@ -162,6 +162,103 @@ mod tests {
     use crate::runtime::{OriginalGameData, OriginalGameDataPaths, OriginalGameRuntime};
 
     #[test]
+    #[ignore = "requires original Big Bug Bang executable and imported resources"]
+    fn sequel_startup_tables_import_all_world_artwork_with_native_colors() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
+        let game = crate::game::GameVariant::BigBugBang;
+        let catalog = game.decode_resource_catalog(&executable).unwrap();
+        let layout = game.decode_world_artwork_layout(&executable).unwrap();
+        let defaults = game.decode_default_vga_palette(&executable).unwrap();
+        let effects = game.decode_name_area_effect_sequences(&executable).unwrap();
+        assert_eq!(effects.len(), 10);
+        assert_eq!(
+            effects
+                .iter()
+                .map(|effect| effect.frames.len())
+                .sum::<usize>(),
+            64
+        );
+        let fonts = game.decode_fonts(&executable).unwrap();
+        crate::ui::ChoiceUiAssets::import(&fonts, &defaults).unwrap();
+        crate::ui::DialogueUiAssets::import(&fonts, &defaults).unwrap();
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let assets = WorldArtworkAssets::import(&store, &catalog, &layout, &defaults).unwrap();
+        assert_eq!(layout.len(), 42);
+        let unique = layout
+            .iter()
+            .map(|row| row.resource_id)
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(assets.0.len(), unique.len());
+        let mut cache = OriginalResourceCache::new();
+        for row in &layout {
+            let resource = ResourceId::new(row.resource_id);
+            let mut colors = defaults;
+            cache
+                .load_palette_resource(
+                    &store,
+                    &catalog,
+                    resource,
+                    PaletteResourceTarget::Cached,
+                    &mut colors,
+                )
+                .unwrap();
+            let mut entities = [BridgeSpriteEntity::default()];
+            assert!(
+                populate_bridge_sprite_from_cache(
+                    &cache,
+                    &mut entities,
+                    0,
+                    resource,
+                    BridgeSpritePosition::default(),
+                    0,
+                )
+                .unwrap()
+            );
+            let mut entity = entities[0];
+            entity.draw_position = BridgeSpritePosition { x: 25, y: 20 };
+            entity.extent = BridgeSpriteExtent {
+                width: 73,
+                height: 49,
+            };
+            entity.dirty_region = Some(BridgeSpriteRect {
+                left: 0,
+                top: 0,
+                right: 320,
+                bottom: 200,
+            });
+            let image = &assets.0[&resource];
+            assert_eq!(
+                image.size,
+                [
+                    usize::from(entity.source_extent.width),
+                    usize::from(entity.source_extent.height)
+                ]
+            );
+            let mut indexed = vec![0; 320 * 200];
+            blit_scaled_transparent_sprite(&entity, cache.resolve(resource).unwrap(), &mut indexed)
+                .unwrap();
+            let mut overlay = RgbaUiOverlay::new(320, 200);
+            assets.draw(&mut overlay, &entity).unwrap();
+            assert!(
+                overlay.pixels().chunks_exact(4).any(|pixel| pixel[3] != 0),
+                "{resource:?}"
+            );
+            for (&index, actual) in indexed.iter().zip(overlay.pixels().chunks_exact(4)) {
+                let expected = if index == 0 {
+                    [0; 4]
+                } else {
+                    let [r, g, b] =
+                        colors[usize::from(index)].map(|value| (value << 2) | (value >> 4));
+                    [r, g, b, 255]
+                };
+                assert_eq!(actual, expected, "resource {}", resource.value());
+            }
+        }
+    }
+
+    #[test]
     fn all_world_artwork_matches_native_scaling_without_publishing_source_colors() {
         let paths = match OriginalGameDataPaths::discover(None) {
             Ok(paths) => paths,

@@ -16,10 +16,21 @@ const EIGHT_BIT_CHANNEL_MAXIMUM: u16 = 255;
 pub fn decode_bloodprg_default_vga_palette(
     executable: &[u8],
 ) -> Option<[[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT]> {
-    let bytes = executable.get(
-        DEFAULT_PALETTE_FILE_OFFSET
-            ..DEFAULT_PALETTE_FILE_OFFSET.checked_add(DEFAULT_PALETTE_BYTE_COUNT)?,
-    )?;
+    decode_default_vga_palette(executable, DEFAULT_PALETTE_FILE_OFFSET)
+}
+
+/// Decode the sequel palette copied by BLOOD2PG's screen reset at file 0xADA4.
+pub fn decode_blood2pg_default_vga_palette(
+    executable: &[u8],
+) -> Option<[[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT]> {
+    decode_default_vga_palette(executable, 0x15718)
+}
+
+fn decode_default_vga_palette(
+    executable: &[u8],
+    offset: usize,
+) -> Option<[[u8; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT]> {
+    let bytes = executable.get(offset..offset.checked_add(DEFAULT_PALETTE_BYTE_COUNT)?)?;
     let mut palette = [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT];
     for (entry, source) in palette
         .iter_mut()

@@ -9,6 +9,16 @@ use commander_blood_formats::bloodprg::{
     decode_bloodprg_presentation_catalog,
 };
 use commander_blood_formats::code::ScriptDialect;
+use commander_blood_formats::name_area_effect::{
+    NameAreaEffectSequence, decode_blood2pg_name_area_effect_sequences,
+    decode_bloodprg_name_area_effect_sequences,
+};
+use commander_blood_formats::palette::{
+    decode_blood2pg_default_vga_palette, decode_bloodprg_default_vga_palette,
+};
+use commander_blood_formats::world_art::{
+    WorldArtworkLayout, decode_blood2pg_world_artwork_layout, decode_bloodprg_world_artwork_layout,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -123,6 +133,42 @@ impl GameVariant {
         .context("decoding game presentation catalog")
     }
 
+    /// Decode the game's unexpanded six-bit default palette.
+    pub fn decode_default_vga_palette(self, executable: &[u8]) -> Result<[[u8; 3]; 256]> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_default_vga_palette(executable),
+            Self::BigBugBang => decode_blood2pg_default_vga_palette(executable),
+        }
+        .context("decoding game default palette")
+    }
+
+    /// Decode the game's authored name-area effect frames.
+    pub fn decode_name_area_effect_sequences(
+        self,
+        executable: &[u8],
+    ) -> Result<Box<[NameAreaEffectSequence]>> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_name_area_effect_sequences(executable),
+            Self::BigBugBang => decode_blood2pg_name_area_effect_sequences(executable),
+        }
+        .context("decoding game name-area effects")
+    }
+
+    /// Decode the game's world-artwork identities and initial activation flags.
+    pub fn decode_world_artwork_layout(
+        self,
+        executable: &[u8],
+    ) -> Result<Box<[WorldArtworkLayout]>> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_world_artwork_layout(executable),
+            Self::BigBugBang => decode_blood2pg_world_artwork_layout(executable),
+        }
+        .context("decoding game world-artwork layout")
+    }
+
     /// Resolve the sequel's object-chooser cancel text from its verified build.
     pub fn decode_inventory_cancel_label(self, executable: &[u8]) -> Result<Box<[u8]>> {
         if self != Self::BigBugBang {
@@ -204,6 +250,21 @@ mod tests {
                 .is_err()
         );
         assert!(GameVariant::BigBugBang.decode_fonts(&bytes).is_err());
+        assert!(
+            GameVariant::BigBugBang
+                .decode_default_vga_palette(&bytes)
+                .is_err()
+        );
+        assert!(
+            GameVariant::BigBugBang
+                .decode_name_area_effect_sequences(&bytes)
+                .is_err()
+        );
+        assert!(
+            GameVariant::BigBugBang
+                .decode_world_artwork_layout(&bytes)
+                .is_err()
+        );
         assert!(
             GameVariant::BigBugBang
                 .decode_presentation_catalog(&bytes)

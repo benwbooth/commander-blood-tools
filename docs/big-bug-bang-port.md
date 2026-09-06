@@ -598,8 +598,8 @@ them. The original-asset inventory test applies all 25 authored descriptions
 through this catalog and loads the resulting line-43 resource bytes.
 
 This is catalog and resource-binding verification, not HNM playback or startup
-parity. The loader guard remains: writable-resource, menu, navigation, palette,
-world-artwork and other startup tables still need sequel-specific integration.
+parity. The loader guard remains: writable-resource, menu, navigation and other
+startup tables still need sequel-specific integration.
 Scene-start policy, profile transitions and English localization are unfinished.
 
 Verification: two native captures were byte-identical across all 45 entries.
@@ -613,6 +613,49 @@ nix develop -c python3 -P re/tools/big_bug_bang_presentation_catalog_oracle.py \
   output/big-bug-bang/disc/BLOOD2PG.EXE \
   re/tools/oracle_vectors/big_bug_bang_presentation_catalog.json
 nix develop -c cargo test -p commander-blood-formats presentation_catalog -- --include-ignored
+```
+
+### Sequel Startup Visual Tables
+
+The data loader routes the default palette, name-area effects and world-artwork
+layout through game identity and the sequel executable fingerprint. Commander
+keeps its original offsets. The sequel layouts are verified against these
+original consumers:
+
+- Screen reset at file 0xADA4 copies 192 dwords from data 0x5F28 to 0x5621.
+  This identifies the full 256-entry six-bit palette at file 0x15718.
+- Name-area selection at 0x9DD3 and 0x9DFA uses the pointer table at data 0x2A91
+  (file 0x12281). The initial sequence plus nine random alternatives contain
+  64 frames. Frame reads at 0x9E0D..0x9E2B supply the native origin and dimensions.
+- World-artwork initialization at 0x801B walks data 0x2F97 (file 0x12787) in
+  22-byte steps to its word terminator at data 0x3333. The 42 rows retain their
+  names, resource IDs, entity IDs and initial flags. Selection at 0x80D8 and
+  0x80E7 consumes the resource and entity fields at row offsets 16 and 18.
+
+The offline `big_bug_bang_startup_tables_oracle.py` runs these bounded original
+instruction ranges with guarded writes and immutable executable bytes. Its
+captures cover every palette entry, effect selection/frame and artwork row.
+The formats integration test checks both a metadata-derived fixture and the
+original executable, plus malformed bounds, colors, pointers and terminators.
+These are startup data contracts, not a complete native screen-reset execution
+or proof of production sequel startup. The production guard remains enabled;
+writable-resource, menu, navigation and profile integration are still pending.
+
+Verification: both native captures were byte-identical. All 125 format unit
+tests and three startup-table integration tests passed with original-asset checks
+enabled. The sequel runtime test imported all artwork rows and compared every
+RGBA pixel of a scaled rendering with the indexed reference, requiring nonblank
+output; it also imported the sequel choice/dialogue fonts using this palette.
+The game library passed 929 tests with 18 ignored on a private Xvfb display,
+which was reaped afterward. The new ignored artwork test passed separately.
+Game all-targets checking passed.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_startup_tables_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_startup_tables.json
+nix develop -c cargo test -p commander-blood-formats --test sequel_startup_tables -- --include-ignored
+nix develop -c cargo test -p commander-blood-game --lib sequel_startup_tables -- --include-ignored
 ```
 
 ### Authored Text Corpus Audit

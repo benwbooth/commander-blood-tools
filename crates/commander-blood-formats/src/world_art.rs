@@ -51,9 +51,23 @@ impl WorldArtworkLayout {
 pub fn decode_bloodprg_world_artwork_layout(
     executable: &[u8],
 ) -> Option<Box<[WorldArtworkLayout]>> {
+    decode_world_artwork_layout(executable, WORLD_ARTWORK_TABLE_FILE_OFFSET)
+}
+
+/// Decode the sequel table traversed in 22-byte steps at file 0x801B.
+pub fn decode_blood2pg_world_artwork_layout(
+    executable: &[u8],
+) -> Option<Box<[WorldArtworkLayout]>> {
+    decode_world_artwork_layout(executable, 0x12787)
+}
+
+fn decode_world_artwork_layout(
+    executable: &[u8],
+    table_file_offset: usize,
+) -> Option<Box<[WorldArtworkLayout]>> {
     let table_size = WORLD_ARTWORK_ENTRY_COUNT.checked_mul(WORLD_ARTWORK_ENTRY_SIZE)?;
-    let table_end = WORLD_ARTWORK_TABLE_FILE_OFFSET.checked_add(table_size)?;
-    let table = executable.get(WORLD_ARTWORK_TABLE_FILE_OFFSET..table_end)?;
+    let table_end = table_file_offset.checked_add(table_size)?;
+    let table = executable.get(table_file_offset..table_end)?;
     let terminator = executable.get(table_end..table_end + WORD_SIZE)?;
     if terminator != [u8::MIN; WORD_SIZE] {
         return None;

@@ -97,13 +97,8 @@ use commander_blood_formats::bloodprg::{
 };
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
-use commander_blood_formats::name_area_effect::{
-    NameAreaEffectSequence, decode_bloodprg_name_area_effect_sequences,
-};
-use commander_blood_formats::palette::decode_bloodprg_default_vga_palette;
-use commander_blood_formats::world_art::{
-    WorldArtworkLayout, decode_bloodprg_world_artwork_layout,
-};
+use commander_blood_formats::name_area_effect::NameAreaEffectSequence;
+use commander_blood_formats::world_art::WorldArtworkLayout;
 
 use crate::asset_import::{
     ASSET_MANIFEST_FILENAME, AssetImportOutcome, IMPORTED_ASSET_DIRECTORY_NAME,
@@ -449,7 +444,10 @@ impl OriginalGameData {
             .game
             .decode_presentation_catalog(&executable)
             .context("decoding executable presentation-line catalog")?;
-        let default_vga_palette = decode_bloodprg_default_vga_palette(&executable)
+        let default_vga_palette = paths
+            .manifest()
+            .game
+            .decode_default_vga_palette(&executable)
             .context("decoding original default palette")?;
         let choice_ui_assets =
             crate::ui::ChoiceUiAssets::import(&font_resources, &default_vga_palette)
@@ -462,9 +460,15 @@ impl OriginalGameData {
         let dialogue_ui_assets =
             crate::ui::DialogueUiAssets::import(&font_resources, &default_vga_palette)
                 .context("importing RGB dialogue and channel assets")?;
-        let name_area_effect_sequences = decode_bloodprg_name_area_effect_sequences(&executable)
+        let name_area_effect_sequences = paths
+            .manifest()
+            .game
+            .decode_name_area_effect_sequences(&executable)
             .context("decoding executable name-area effect sequences")?;
-        let world_artwork_layout = decode_bloodprg_world_artwork_layout(&executable)
+        let world_artwork_layout = paths
+            .manifest()
+            .game
+            .decode_world_artwork_layout(&executable)
             .context("decoding executable world-artwork layout")?;
         let descript_bytes = match verified_scripts.descript {
             Some(bytes) => bytes,
