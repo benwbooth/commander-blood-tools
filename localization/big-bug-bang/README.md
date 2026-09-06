@@ -123,6 +123,40 @@ nix develop -c cargo test -p commander-blood-game --lib runtime::bridge_console 
 nix develop -c cargo test -p commander-blood-game --lib sequel_travel -- --test-threads=1
 ```
 
+### Persistent Location Tracing
+
+Semantic snapshots now include `persistent.object_locations`, resolved from the
+same synchronized VAR state used for saving and hashing. Each entry records its
+object ID/name/kind, raw holder word, and a typed target ID/name where resolvable.
+Sentinels and unresolved words remain explicit rather than being inferred as a
+location. The existing hashes retain their previous meaning.
+
+`accuracy/scenarios/bbb_play_daddy_tempest_save_load.tsv` extends the ordinary
+Daddy dialogue route with the options menu's Save and Load commands in a
+disposable writable directory. Its intended assertion is that the Gluxx family's
+later location survives the round trip; the scenario alone is not passing
+evidence. In the initial live state, Daddy points to `Trashlando`, while
+`Templand` points to the celestial object `Tempest`.
+
+The replay completed in `output/big-bug-bang/daddy-tempest-save-load-01` with
+`timed_out False` and `game_exit 0`. After action 27, all three Gluxx family
+members point to `Templand` (raw VAR offset `0x12F0`). Action 38 saves slot 0
+named `ab`; action 44 loads it. The final action 47 retains those three locations
+in profile 2, with one completed save, one completed load, inactive save/load UI,
+and all pointer locks clear. Its game-frame sequence is 9,191.
+
+The resulting `GAME1.SAV` is 9,044 bytes with profile header 2, and `BLOOD.SAV`
+is 320 bytes. Independently reading the saved VAR block after its 610-byte fixed
+header confirms holder word `0x12F0` at actor records `0xC24`, `0xC6E`, and
+`0xCB8`, matching Daddy, Mamy, and Papy in `SCRIPT3.DEB`.
+This verifies a progressed gameplay save/load in the same process, not a fresh
+process restore, original-DOS save compatibility, or travel/recontact on Tempest.
+
+Verification for the trace change: 954 serial library tests passed (37 ignored),
+the explicitly enabled real-asset profile-handoff test passed with named-location,
+raw-holder, hash, and nonmutation assertions, and the game build and all-targets
+check passed.
+
 ### Native Travel Gates
 
 The hash-locked probe

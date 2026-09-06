@@ -10,7 +10,7 @@ use commander_blood_formats::descript::{DescriptBackgroundSlot, DescriptCharacte
 use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{
-    ScriptDictionary, ScriptObjectId, ScriptObjectKind, ScriptWordId,
+    ScriptDictionary, ScriptObjectId, ScriptObjectKind, ScriptStateObjectReference, ScriptWordId,
 };
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
@@ -4278,14 +4278,53 @@ impl<'window> ModernGameServices<'window> {
     ) -> Result<serde_json::Value> {
         let profile = self.runtime.current_profile();
         let profile_id = profile.map(|profile| u16::from(profile.id().value()));
-        let state_array_hash = profile
+        let synchronized_state = profile
             .map(|profile| {
                 profile
                     .synchronized_state()
-                    .map(|state| fnv1a64(&state.encode()))
                     .map_err(|error| anyhow::anyhow!("synchronizing trace state: {error:?}"))
             })
             .transpose()?;
+        let state_array_hash = synchronized_state
+            .as_ref()
+            .map(|state| fnv1a64(&state.encode()));
+        let object_locations = profile
+            .zip(synchronized_state.as_ref())
+            .map(|(profile, state)| {
+                state
+                    .objects()
+                    .iter()
+                    .filter_map(|object| {
+                        let offset = crate::native::bloodprg::script_field_offset(
+                            object.kind,
+                            ScriptFieldSelector::HOLDER_OR_LOCATION,
+                        )?;
+                        let field = state.object_word(object.id, offset / size_of::<u16>())?;
+                        let raw = state.word(field)?;
+                        let (relation, target) = match state.object_reference(field) {
+                            Some(ScriptStateObjectReference::Object(id)) => ("object", Some(id)),
+                            Some(ScriptStateObjectReference::Sentinel) => ("sentinel", None),
+                            None => ("unresolved", None),
+                        };
+                        let name = |id| {
+                            profile
+                                .directory()
+                                .object(id)
+                                .map(|entry| String::from_utf8_lossy(entry.name()).into_owned())
+                        };
+                        Some(serde_json::json!({
+                            "record": object.id.index(),
+                            "name": name(object.id),
+                            "kind": format!("{:?}", object.kind),
+                            "holder_raw": raw,
+                            "relation": relation,
+                            "target_record": target.map(|id| id.index()),
+                            "target_name": target.and_then(name),
+                        }))
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
         let character_slots_hash =
             profile.map(|profile| fnv1a64(&profile.sequence_slots().encode_save_block()));
         let assets = profile
@@ -5111,6 +5150,7 @@ impl<'window> ModernGameServices<'window> {
                 "mismatch_samples": audit.mismatch_samples,
             })),
             "persistent": {
+                "object_locations": object_locations,
                 "state_array_hash": state_array_hash,
                 "character_slots_hash": character_slots_hash,
                 "record_block": null,
@@ -6483,6 +6523,39 @@ mod tests {
             services.scene_transition.as_ref().unwrap().state().phase,
             crate::native::bloodprg::SceneTransitionPhase::Inactive
         );
+        let profile = services.runtime.current_profile().unwrap();
+        let state_before = profile.synchronized_state().unwrap();
+        let holder = state_before.object_word(daddy, 12).unwrap();
+        let trace = services
+            .semantic_trace_snapshot(&GameLifecycleState::default())
+            .unwrap();
+        let locations = trace["persistent"]["object_locations"].as_array().unwrap();
+        let daddy_location = locations
+            .iter()
+            .find(|entry| entry["record"] == daddy.index())
+            .unwrap();
+        assert_eq!(daddy_location["name"], "Daddy_Gluxx");
+        assert_eq!(daddy_location["kind"], "Actor");
+        assert_eq!(
+            daddy_location["holder_raw"],
+            state_before.word(holder).unwrap()
+        );
+        let Some(ScriptStateObjectReference::Object(target)) =
+            state_before.object_reference(holder)
+        else {
+            panic!("authored Daddy location must reference an object")
+        };
+        assert_eq!(daddy_location["relation"], "object");
+        assert_eq!(daddy_location["target_record"], target.index());
+        assert_eq!(
+            daddy_location["target_name"],
+            String::from_utf8_lossy(profile.directory().object(target).unwrap().name()).as_ref()
+        );
+        assert_eq!(
+            trace["persistent"]["state_array_hash"],
+            fnv1a64(&state_before.encode())
+        );
+        assert_eq!(profile.synchronized_state().unwrap(), state_before);
     }
 
     #[test]
