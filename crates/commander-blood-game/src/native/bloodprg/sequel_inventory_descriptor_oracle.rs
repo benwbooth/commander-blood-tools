@@ -32,6 +32,7 @@ struct Vector {
     calls: Vec<u16>,
     vm_enabled: u8,
     start_locked: u8,
+    c2_gate: u8,
     request: u8,
     active_line: u16,
     selected: u16,
@@ -267,6 +268,8 @@ fn run_vector(vector: Vector, database: &[u8]) {
         fail_once: vector.gate == 0,
     });
     host.presentation_state_mut().start_locked = true;
+    host.presentation_state_mut().c2_gate_active = true;
+    dispatch.import_presentation_scan_state(host.presentation_state());
     let mut procedures = super::super::ScriptProcedureStates::default();
     let mut sequence_slots = super::super::ScriptSequenceSlots::default();
     let mut dispatcher = Dispatcher {
@@ -369,6 +372,15 @@ fn run_vector(vector: Vector, database: &[u8]) {
     assert_eq!(
         dispatch.pending_active_line_write().unwrap_or(0x1234),
         vector.active_line
+    );
+    assert_eq!(
+        host.presentation_state().start_locked,
+        vector.start_locked != 0
+    );
+    dispatch.export_presentation_scan_state(host.presentation_state_mut());
+    assert_eq!(
+        host.presentation_state().c2_gate_active,
+        vector.c2_gate != 0
     );
     assert_eq!(
         host.presentation_state().start_locked,

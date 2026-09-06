@@ -321,9 +321,6 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
             .backend
             .apply_action_description(object, name, text)
             .map_err(ScriptExecutionServiceError::Backend)?;
-        if description.available {
-            self.presentation.start_locked = false;
-        }
         Ok(Some(description.available))
     }
 

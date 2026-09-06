@@ -1582,7 +1582,7 @@ mod tests {
                     .unwrap(),
                 Some(true)
             );
-            assert!(!service.presentation_state().start_locked);
+            assert!(service.presentation_state().start_locked);
             assert_eq!(service.backend().active_description_object(), Some(object));
             assert_eq!(
                 service.backend().assets().object_scene_video(),

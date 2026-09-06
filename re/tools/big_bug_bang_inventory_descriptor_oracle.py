@@ -52,7 +52,7 @@ def run(executable, name, database, database_missing=False, gate=0):
                           (0x6B34, ITEM + 4), (0x6B36, 0x7654),
                           (0x6B94, SAVED_LINE), (0x6B5A, 0x1234)]:
         struct.pack_into("<H", before, offset, value)
-    for offset, value in [(0x6B87, 2), (0x6B7E, 1), (0x2200, 1),
+    for offset, value in [(0x6B87, 2), (0x6B7E, 1), (0x2200, 1), (0x6B8D, 1),
                           (0x6B80, 2 if gate == 2 else 0), (0x2A33, 1 if gate == 1 else 0),
                           (0xCEA, 1), (0xCE9, 1), (0x7086, 0)]:
         before[offset] = value
@@ -157,7 +157,8 @@ def run(executable, name, database, database_missing=False, gate=0):
     var_after = bytearray(cpu.mem_read(VAR, SIZE))
     result = dict(name=list(name), database=list(database), database_missing=database_missing,
                   gate=gate, calls=calls, io=io, vm_enabled=after[0x6B7E],
-                  start_locked=after[0x2200], request=after[0x6B80], active_line=word(after, 0x6B5A),
+                  c2_gate=after[0x2200], start_locked=after[0x6B8D],
+                  request=after[0x6B80], active_line=word(after, 0x6B5A),
                   selected=word(after, 0x6B34), resume=after[0x6B87], alternate=word(after, 0x6B36),
                   saved_line=word(after, 0x6B94), choices_head=word(after, 0x6BDC),
                   slots=list(struct.unpack_from("<16H", after, 0x70E6)),

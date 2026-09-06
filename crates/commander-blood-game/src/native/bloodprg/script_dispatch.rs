@@ -88,12 +88,15 @@ pub struct ScriptDispatchState {
     pending_active_line_write: Option<u16>,
     /// One-shot write consumed by the lifecycle without overwriting later UI changes.
     pub(crate) pending_vm_execution_write: Option<bool>,
+    /// BLOOD2 GS:6B8D handoff-lock write consumed before the post-frame actor scan.
+    pending_start_lock_write: Option<bool>,
 }
 
 impl ScriptDispatchState {
     fn begin_frame(&mut self) {
         self.pending_active_line_write = None;
         self.pending_vm_execution_write = None;
+        self.pending_start_lock_write = None;
     }
 
     pub(crate) fn record_active_line_write(&mut self, line: u16) {
@@ -140,7 +143,7 @@ impl ScriptDispatchState {
     /// initialized from the same value at frame start, conjunction reproduces a
     /// write of zero by any handler without inventing a last-writer heuristic.
     pub(crate) fn export_presentation_scan_state(
-        &self,
+        &mut self,
         presentation: &mut ScriptPresentationScanState,
     ) {
         presentation.active = self.sequence_presentation.presentation_active;
@@ -149,6 +152,9 @@ impl ScriptDispatchState {
             && self.transfer_presentation.presentation_gate_active;
         presentation.hold_ready = self.text_presentation.hold_ready;
         presentation.dialogue_hold_complete = self.text_presentation.dialogue_hold_complete;
+        if let Some(locked) = self.pending_start_lock_write.take() {
+            presentation.start_locked = locked;
+        }
     }
 }
 
@@ -376,6 +382,8 @@ impl<Host: ScriptDispatchHost> Dispatcher<'_, Host> {
             .ok_or(ScriptDispatchError::MissingInventoryDescriptorHost)?;
         if found {
             self.dispatch.pending_vm_execution_write = Some(false);
+            // GS:2200 is the scene queue gate, not the GS:6B8D handoff lock.
+            self.dispatch.sequence_presentation.presentation_gate_active = false;
             self.dispatch
                 .text_presentation
                 .request_flags
@@ -419,6 +427,9 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
         instruction: &DecodedScriptInstruction,
         runtime: &mut ScriptRuntime,
     ) -> Result<ScriptFrameStep, Self::Error> {
+        if self.code.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang {
+            self.dispatch.text_presentation.yield_signal = 0;
+        }
         let mut refresh_from_var = false;
         let mut commit_to_var = false;
         let control = match instruction {
@@ -446,6 +457,12 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     }),
                 )
                 .map_err(ScriptDispatchError::Text)?;
+                if self.code.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang
+                    && execution.flow != ScriptFrameFlow::Continue
+                {
+                    self.dispatch.pending_vm_execution_write = Some(false);
+                    self.dispatch.pending_start_lock_write = Some(true);
+                }
                 return Ok(step_with_flow(token.end_offset(), execution.flow));
             }
             DecodedScriptInstruction::TopicOffer(offer) => {
@@ -852,6 +869,10 @@ pub const fn frame_execution_was_disabled(outcome: ScriptFrameOutcome) -> bool {
 #[cfg(test)]
 #[path = "sequel_inventory_descriptor_oracle.rs"]
 mod sequel_inventory_descriptor_oracle;
+
+#[cfg(test)]
+#[path = "sequel_vm_yield_oracle.rs"]
+mod sequel_vm_yield_oracle;
 
 #[cfg(test)]
 mod tests {
