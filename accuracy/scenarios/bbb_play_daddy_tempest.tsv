@@ -1,0 +1,28 @@
+# Big Bug Bang: ordinary PLAY route through Daddy's dialogue to Tempest.
+wait 150
+click 160 150
+wait 20
+park 316 45
+wait 10
+click 230 88
+wait 100
+click 185 94
+wait 100
+park 4 45
+wait 20
+click 230 117
+wait 100
+click 100 94
+wait 100
+click 185 90
+wait 200
+click 185 90
+wait 200
+click 185 101
+wait 200
+click 185 101
+wait 200
+click 185 90
+wait 200
+click 185 74
+wait 300

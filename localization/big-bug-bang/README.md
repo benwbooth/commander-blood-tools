@@ -50,11 +50,13 @@ in media remain untranslated.
 
 ## Timed Sequence Captions
 
-`en/sequences.json` supplies 94 cues across ten sequences: `present`, `1ppit`,
+`en/sequences.json` supplies 215 cues across 23 sequences: `present`, `1ppit`,
 `3ppit`, `4exploplane`, `5exploplane`, `7croolvent`, `8incanthom`,
-`9scrutbox`, `10hachoir`, and `11izwalexplo`, including
+`9scrutbox`, `10hachoir`, `11izwalexplo`, `14legscrut`, `15parfum`, `16ondobar`,
+`17vtromp`, `19chapeau`, `20larvarc`, `21pubdecod`, `24bionium`, `25diplom`,
+`26explocomb`, `27exploplane`, `28bob`, and `31explonebul`, including
 the original blank cues. The verified DESCRIPT contains 706 sequence subtitle
-cues in total; the other 612 are not covered by this catalog.
+cues in total; the other 491 are not covered by this catalog.
 The modern renderer selects English only for Big Bug Bang with the matching
 DESCRIPT SHA-256 hash and an exact match for the complete source cue stream.
 The source database, video/audio selection, cue ordering, frame thresholds, and
@@ -144,17 +146,79 @@ the trace records displayed `right` / `wrong` with original selector IDs
 is enabled in profile 2 and awaits `annoyed` / `cool` at the English question
 "are you annoyed, Commander?..." (`screen-071.png`).
 
-This proves progression after the first-row click, not native branch parity.
+This proves progression after the first-row click, not whole-encounter parity.
 The trace reaches "and what's this, then?..." (COD `0x0DB1`), but does not
 reach the `bien_ça`-guarded line at `0x0D8C`. The source choice spelling and
-guard identity need comparison with the original runtime before treating this
-as the verified affirmative branch. No selector or guard semantics were changed.
+guard identity were then compared with the original handler, as described below.
+No selector or guard semantics were changed.
 
 The additional 27 timed captions for `9scrutbox`, `10hachoir`, and
 `11izwalexplo` pass authentic-resource binding and original line-layout checks.
 They were added after this capture started and are not live-verified by it.
 The rebuilt executable includes all 94 cues. The serial library suite passes
 950 tests with 35 ignored. Teleportation and whole-game progression remain open.
+
+## Authored Daddy Guard Mismatch
+
+The matching original SCRIPT3.DIC has `bien-ça` at offset `0x06F7`, while
+the guard expects the distinct `bien_ça` entry at `0x0707`. The second menu
+choice is `pas-ça` at `0x0700`; the next inverted guard expects `_ça` at
+`0x073A`. Neither displayed choice equals either guard identity.
+
+`re/tools/big_bug_bang_dialogue_guard_oracle.py` verifies the executable,
+COD, and DIC hashes and source operands, then executes the unmodified sequel
+A3 handler at file offset `0x6AB2`. It stops at the native guard-failure
+callee (`0x697A`) or normal return. Twenty cases cover both authored guards,
+both selected/alternate slots, both displayed choices, both guard identities,
+and the empty selection. An inactive-slot poison confirms which native slot
+is read. No callee or instruction is patched.
+
+Both displayed choices fail the positive `bien_ça` guard and pass the inverted
+`_ça` guard. This explains the captured `0x0DB1` line without changing the
+authored resource or normalizing dictionary spellings. Two fresh oracle runs
+agree byte-for-byte; the real-dictionary Rust regression matches all 20 active
+concept results. This is a handler-level check, not a full DOS dialogue replay.
+
+```sh
+nix develop -c python -P re/tools/big_bug_bang_dialogue_guard_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  output/big-bug-bang/imported-assets/resources /tmp/bbb-daddy-guards.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_daddy_authored_choice_mismatch_matches_original_guards -- --include-ignored
+```
+
+## Daddy Tempest Progression
+
+`accuracy/scenarios/bbb_play_daddy_tempest.tsv` continues the ordinary PLAY
+route through `cool`, `enough`, and `tell_me`, then selects the first planet
+row, `Tempest`, at logical `(185, 74)`. The capture
+`output/big-bug-bang/english-daddy-tempest-01` completes all 27 actions and
+exits normally without a capture timeout. Its action-boundary trace records:
+
+| Action | English Prompt or Result |
+| --- | --- |
+| 21 | shall I tell him again, Commander?... (`repeat` / `enough`) |
+| 23 | would you like to know what he's saying?... (`tell_me` / `don't_care`) |
+| 25 | SHALL WE TELEPORT DADDY GLUXX TO: (`Tempest`, `Vulcan`, `Troma`, `Lovia`, `refuse`) |
+| 26 | The Tempest click closes the planet selector. |
+| 27 | Contact has ended and the bridge has returned. |
+
+The live trace reaches the complete English Tempest teleportation message;
+`screen-109.png` shows its reveal, and `screen-117.png` shows the returned
+bridge. Final frame 8709 has profile 2's VM enabled, no active line, no active
+actor/object presentation, no contact screen, and no input locks. This verifies
+the dialogue route and return to the bridge, not Daddy's persistent location,
+travel to Tempest, another contact, save/load persistence, or full-game play.
+
+The 121 new captions across 13 additional broadcasts include the decoder
+advertisement, time-gate/crown instructions, and loss messages. All 215 catalog
+cues pass original-resource binding and original renderer line-layout tests.
+The rebuilt executable includes them; this capture used the preceding 94-cue
+build, so it does not visually verify the new broadcasts. The serial library
+suite passes 950 tests with 36 ignored; the new ignored real-dictionary guard
+test passes when explicitly enabled. Targeted Rust formatting checks pass;
+the workspace-wide check still reports an unrelated existing `runtime.rs`
+formatting difference, which is unchanged here.
 
 ## COD Catalog Validation
 

@@ -706,6 +706,67 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires original Big Bug Bang SCRIPT3.DIC under output/big-bug-bang/imported-assets/resources"]
+    fn sequel_daddy_authored_choice_mismatch_matches_original_guards() {
+        use sha2::{Digest, Sha256};
+
+        #[derive(Deserialize)]
+        struct DaddyGuard {
+            expected: u16,
+            selected: u16,
+            inverted: bool,
+            alternate: bool,
+            continues: bool,
+        }
+
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources/SCRIPT3.DIC");
+        let bytes = std::fs::read(path).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            "d458a17c6ba3d39f978edaf4c9985af28b08f33640bac4588ae0b3361b91c721"
+        );
+        let dictionary = decode_script_dictionary(&bytes).unwrap();
+        let displayed = dictionary.resolve_source_offset(0x6f7).unwrap();
+        let guarded = dictionary.resolve_source_offset(0x707).unwrap();
+        assert_eq!(dictionary.word(displayed).unwrap(), b"bien-\x87a");
+        assert_eq!(dictionary.word(guarded).unwrap(), b"bien_\x87a");
+        assert_ne!(displayed, guarded);
+        let vectors: Vec<DaddyGuard> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_daddy_guards.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(vectors.len(), 20);
+        for vector in vectors {
+            let expected = dictionary.resolve_source_offset(vector.expected).unwrap();
+            let selected = (vector.selected != 0)
+                .then(|| dictionary.resolve_source_offset(vector.selected).unwrap());
+            let mut runtime = ScriptRuntime::new();
+            let failure = ScriptCodeOffset::new(0x1234);
+            runtime.begin_guard(failure);
+            // The typed runtime stores the active concept, not the unused native slot.
+            if vector.alternate {
+                runtime.set_alternate_concept(selected);
+            } else {
+                runtime.set_selected_concept(selected);
+            }
+            assert_eq!(
+                runtime.concept_guard(expected, vector.inverted).unwrap(),
+                if vector.continues {
+                    ScriptControl::Continue
+                } else {
+                    ScriptControl::Jump(failure)
+                },
+                "selected={:#x} expected={:#x} alternate={}",
+                vector.selected,
+                vector.expected,
+                vector.alternate,
+            );
+        }
+    }
+
+    #[test]
     fn timer_and_random_guards_use_typed_owned_state() {
         let slot = ScriptTimerSlot::decode(22).unwrap();
         let target = ScriptCodeOffset::new(300);

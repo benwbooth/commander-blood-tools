@@ -191,14 +191,14 @@ mod tests {
         );
         let captions =
             EnglishSequenceCaptions::load(GameVariant::BigBugBang, &bytes, &database).unwrap();
-        assert_eq!(captions.sequences.len(), 10);
+        assert_eq!(captions.sequences.len(), 23);
         assert_eq!(
             captions
                 .sequences
                 .iter()
                 .map(|entry| entry.display.len())
                 .sum::<usize>(),
-            94
+            215
         );
         for entry in &captions.sequences {
             assert_eq!(captions.display(&entry.source), entry.display);
