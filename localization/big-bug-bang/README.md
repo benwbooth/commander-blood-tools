@@ -48,6 +48,60 @@ and contextual review remain unverified.
 The other 13 COD profiles, BAS text, native UI, object names, and text embedded
 in media remain untranslated.
 
+## Options Integration Blocker
+
+Production `runtime/bridge_console.rs` currently passes BBB's seven option labels
+to the Commander Blood five-row `update_option_menu` handler. The existing native
+`update_sequel_option_menu` is not connected there. Consequently, by row index,
+Save dispatches Quit, Load and Quit have no action, simulation speed opens text
+speed, text speed toggles music, travel dispatches Save, and music dispatches Load.
+Do not treat the visible BBB menu as a working save/load interface. The two native
+sequel-options tests pass, but they do not test this production integration.
+
+`accuracy/scenarios/bbb_play_options.tsv` reaches the interactive list from
+ordinary startup input (resource profile 0). The capture
+`output/big-bug-bang/options-before-fix-01` exits normally after action 7,
+`wait 100`; `screen-017.png` visibly contains all seven rows and Cancel.
+`bbb_play_options_save.tsv` selects SAUVER at logical `(100, 104)` after the
+list opens. In `output/big-bug-bang/options-save-before-fix-01`, action 8 closes
+the list and `screen-022.png` visibly shows the Quit path's "ARE YOU SURE?"
+confirmation. The scenario does not accept that confirmation and exits normally
+after action 9, `wait 50`, without reaching the capture timeout. This is a
+reproduction of the defect, not a passing save-game test.
+
+Before connecting the handler, travel state also needs its real runtime effects;
+a changed label alone would not implement the option. The hash-locked probe
+`re/tools/big_bug_bang_travel_option_oracle.py` executes unmodified original
+instructions and supplies 46 branch cases in
+`re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl`:
+
+- At file `0x616B`, travel off skips C1 resource dispatch only for the current
+  navigation record while the phase byte is below four.
+- At `0x89C4`, travel off with a zero resource word skips palette preparation,
+  ORs UI bit four, and sets line bit eight only when line bit two is clear.
+- At `0x90B5`, travel on publishes C1; a matching target takes the bridge-reset
+  branch, while other cases set the camera countdown to eight.
+- At `0x90E8`, travel on takes the reset branch, and travel off retains the
+  deferred action for the following completion path.
+
+Two fresh executions passed and produced byte-identical fixtures. Instruction
+and write bounds reject unexpected behavior, and executable/object bytes are
+checked unchanged. These are **branch-entry** observations, not a complete native
+travel run: prerequisites are seeded and execution stops before resource work,
+palette preparation, bridge reset, and external calls. No runtime fix or
+save/load round-trip is claimed by this probe.
+
+```sh
+nix develop -c python -P re/tools/big_bug_bang_travel_option_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE /tmp/bbb-travel-options.jsonl
+cmp re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl /tmp/bbb-travel-options.jsonl
+nix develop -c cargo test -p commander-blood-game --lib sequel_options -- --test-threads=1
+```
+
+The oracle refuses an existing output file. It requires the locally supplied,
+matching original executable; neither executable bytes nor game assets are
+included in the fixtures.
+
 ## Timed Sequence Captions
 
 `en/sequences.json` supplies 215 cues across 23 sequences: `present`, `1ppit`,

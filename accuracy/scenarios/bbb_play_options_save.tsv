@@ -1,0 +1,11 @@
+# Big Bug Bang: select SAUVER in the seven-row options menu.
+# Regression route: this currently requests Quit instead of Save.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 104
+wait 50

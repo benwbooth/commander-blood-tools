@@ -1,0 +1,8 @@
+# Big Bug Bang: open the native seven-row options list after ordinary PLAY.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 100
