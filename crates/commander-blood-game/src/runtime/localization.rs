@@ -18,6 +18,7 @@ use crate::native::bloodprg::{InlineMenuDisplayWord, LoadedScriptProfile};
 const OPENING_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script1.json");
 const SCRIPT2_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script2.json");
 const SCRIPT3_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script3.json");
+const SCRIPT4_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script4.json");
 const LINE_COLUMNS: usize = 34;
 
 #[derive(Deserialize)]
@@ -51,6 +52,7 @@ impl SequelEnglishSubtitles {
             0 => ("SCRIPT1", OPENING_ENGLISH),
             1 => ("SCRIPT2", SCRIPT2_ENGLISH),
             2 => ("SCRIPT3", SCRIPT3_ENGLISH),
+            3 => ("SCRIPT4", SCRIPT4_ENGLISH),
             _ => return Ok(None),
         };
         Self::from_catalog(
@@ -326,6 +328,58 @@ mod tests {
         assert!(parse_display_words("", &[ScriptTextWord::SectionSeparator]).is_err());
         assert!(parse_display_words("", &[ScriptTextWord::InventoryChoices]).is_err());
         assert!(parse_display_words(" ", &[]).is_err());
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script4_preserves_live_numbers_and_inventory() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let cod = std::fs::read(root.join("SCRIPT4.COD")).unwrap();
+        let dic = std::fs::read(root.join("SCRIPT4.DIC")).unwrap();
+        let catalog = SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT4", SCRIPT4_ENGLISH)
+            .unwrap()
+            .unwrap();
+        assert_eq!(catalog.menus.len(), 660);
+        assert_eq!(catalog.subtitles.len(), 656);
+        for address in [0x1096, 0x2b01, 0x4138, 0x4191] {
+            let site = ScriptCodeOffset::new(address);
+            let menu = &catalog.menus[&site];
+            assert!(catalog.subtitle(site).is_none());
+            assert!(
+                menu.display
+                    .iter()
+                    .any(|word| matches!(word, InlineMenuDisplayWord::StateNumber(_)))
+            );
+            assert_eq!(
+                catalog.menu_words(site, &menu.source),
+                Some(menu.display.as_ref())
+            );
+        }
+        for address in [0x1d8d, 0x3e11, 0x561d] {
+            let site = ScriptCodeOffset::new(address);
+            let menu = &catalog.menus[&site];
+            assert_eq!(menu.source.last(), Some(&ScriptTextWord::InventoryChoices));
+            assert_eq!(
+                catalog.menu_words(site, &menu.source),
+                Some(menu.display.as_ref())
+            );
+            assert!(!catalog.choices.contains_key(&site));
+        }
+        for text in catalog.subtitles.values() {
+            assert!(
+                text.split(|b| *b == b'\r')
+                    .all(|line| line.len() <= LINE_COLUMNS)
+            );
+        }
+        assert!(
+            SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT3", SCRIPT4_ENGLISH).is_err()
+        );
+        assert!(
+            SequelEnglishSubtitles::from_catalog(b"changed", &dic, "SCRIPT4", SCRIPT4_ENGLISH)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]

@@ -29,7 +29,13 @@ still separate work. All eight localization tests pass with original resources;
 SCRIPT3 live English rendering and contextual review remain unverified.
 Game-package all-targets checking and 949 serial game-library tests pass
 (32 ignored) after this integration.
-The other 14 COD profiles, BAS text, native UI, object names, and text embedded
+`en/script4.json` supplies all 660 text sites in the fourth profile
+and is bound to matching resources. Source validation and all nine
+localization tests pass, including four live-number readouts and three inventory
+prompts. Game-package all-targets checking and 949 serial game-library tests pass
+(33 ignored). SCRIPT4 live English rendering
+and contextual review remain unverified.
+The other 13 COD profiles, BAS text, native UI, object names, and text embedded
 in media remain untranslated.
 
 Validate against the user's original resources:
@@ -79,7 +85,7 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds English catalogs for BBB SCRIPT1, SCRIPT2, and SCRIPT3
+the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT4
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.

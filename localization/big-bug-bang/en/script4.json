@@ -1,0 +1,2003 @@
+{
+  "format": "bbb-cod-display-translation-v1",
+  "language": "en",
+  "profile": "SCRIPT4",
+  "cod_sha256": "5d206b6f1bf06268cd4728293100d7d27aa680216d61aba51f24d430cd4b8ec6",
+  "dic_sha256": "aba77ee053e9fe1a4a3b06953c6e9c3959eaf457d8a3d6d68249af5db2668d46",
+  "messages": {
+    "bbb.script4.cod.000006eb": [
+      "Wow!..."
+    ],
+    "bbb.script4.cod.000006f7": [
+      "..."
+    ],
+    "bbb.script4.cod.00000722": [
+      "so, Marakas?... How are you?... Your trunk's a little blue!..."
+    ],
+    "bbb.script4.cod.00000748": [
+      "Ah! I was sick of it!..."
+    ],
+    "bbb.script4.cod.0000075c": [
+      "Enough!..."
+    ],
+    "bbb.script4.cod.00000768": [
+      "Enough!..."
+    ],
+    "bbb.script4.cod.00000774": [
+      "but is it better now?..."
+    ],
+    "bbb.script4.cod.00000788": [
+      "Ha ha ha! You have no idea!..."
+    ],
+    "bbb.script4.cod.000007a2": [
+      "I've gone completely off my head!..."
+    ],
+    "bbb.script4.cod.000007b6": [
+      "we must send him back into cyberspace, Commander..."
+    ],
+    "bbb.script4.cod.000007d2": [
+      "but careful, don't send him to a planet that's already occupied..."
+    ],
+    "bbb.script4.cod.000007f6": [
+      "Otherwise it would be chaos..."
+    ],
+    "bbb.script4.cod.0000080a": [
+      "And you yourself would be trapped in CHAOS...!!! WARNING... WARNING!!!"
+    ],
+    "bbb.script4.cod.0000082c": [
+      "as he says, Commander..."
+    ],
+    "bbb.script4.cod.00000840": [
+      "which planet do you want to teleport him to, Commander?...",
+      "wait Rondo Corpo Malus Vistar Tumul Magnus"
+    ],
+    "bbb.script4.cod.00000873": [
+      "good idea, Commander..."
+    ],
+    "bbb.script4.cod.00000885": [
+      "that way, you can check which planet is free..."
+    ],
+    "bbb.script4.cod.0000089f": [
+      "Yeah! Because I wouldn't want to share..."
+    ],
+    "bbb.script4.cod.000008b9": [
+      "with just anyone..."
+    ],
+    "bbb.script4.cod.000008d7": [
+      "but your decision requires a time freeze..."
+    ],
+    "bbb.script4.cod.000008ef": [
+      "I'm pausing the Marakas cryobox sequence..."
+    ],
+    "bbb.script4.cod.00000909": [
+      "you'll relive it until Marakas is teleported..."
+    ],
+    "bbb.script4.cod.00000923": [
+      "..."
+    ],
+    "bbb.script4.cod.00000938": [
+      "TELEPORTING MARAKAS TO RONDO..."
+    ],
+    "bbb.script4.cod.0000094a": [
+      "..."
+    ],
+    "bbb.script4.cod.00000978": [
+      "TELEPORTING MARAKAS TO CORPO..."
+    ],
+    "bbb.script4.cod.0000098a": [
+      "..."
+    ],
+    "bbb.script4.cod.000009b8": [
+      "TELEPORTING MARAKAS TO MALUS..."
+    ],
+    "bbb.script4.cod.000009ca": [
+      "..."
+    ],
+    "bbb.script4.cod.000009f8": [
+      "teleporting Marakas to Vistar..."
+    ],
+    "bbb.script4.cod.00000a0a": [
+      "..."
+    ],
+    "bbb.script4.cod.00000a38": [
+      "teleporting Marakas to Tumul..."
+    ],
+    "bbb.script4.cod.00000a4a": [
+      "..."
+    ],
+    "bbb.script4.cod.00000a78": [
+      "teleporting Marakas to Magnus..."
+    ],
+    "bbb.script4.cod.00000a8a": [
+      "..."
+    ],
+    "bbb.script4.cod.00000ac7": [
+      "Ah, Commander! There you are at last!..."
+    ],
+    "bbb.script4.cod.00000add": [
+      "You're exactly the one we need..."
+    ],
+    "bbb.script4.cod.00000af5": [
+      "why? What's happening?..."
+    ],
+    "bbb.script4.cod.00000b0b": [
+      "Oh dear, oh dear! If you only knew!..."
+    ],
+    "bbb.script4.cod.00000b23": [
+      "yes... What?..."
+    ],
+    "bbb.script4.cod.00000b33": [
+      "I've had enough..."
+    ],
+    "bbb.script4.cod.00000b43": [
+      "Enough..."
+    ],
+    "bbb.script4.cod.00000b4f": [
+      "Enough..."
+    ],
+    "bbb.script4.cod.00000b5b": [
+      "See my cap?..."
+    ],
+    "bbb.script4.cod.00000b6d": [
+      "well, what?..."
+    ],
+    "bbb.script4.cod.00000b7d": [
+      "They forced me to wear this ridiculous chief's outfit..."
+    ],
+    "bbb.script4.cod.00000b9b": [
+      "To lead the IZWAL nation!..."
+    ],
+    "bbb.script4.cod.00000baf": [
+      "Oh dear! I'd rather they'd given me loads of cash..."
+    ],
+    "bbb.script4.cod.00000bd1": [
+      "Heh heh heh... Credits, credits... I'd have stuffed my trunk full!..."
+    ],
+    "bbb.script4.cod.00000bf9": [
+      "Instead, look... I'm searching my pockets..."
+    ],
+    "bbb.script4.cod.00000c19": [
+      "Well, there's nothing in them! They're empty!..."
+    ],
+    "bbb.script4.cod.00000c39": [
+      "is it serious?..."
+    ],
+    "bbb.script4.cod.00000c47": [
+      "I can't even afford a book by Platon!..."
+    ],
+    "bbb.script4.cod.00000c63": [
+      "what a tragedy!..."
+    ],
+    "bbb.script4.cod.00000c71": [
+      "That's enough from you!..."
+    ],
+    "bbb.script4.cod.00000c90": [
+      "You again, Commander!..."
+    ],
+    "bbb.script4.cod.00000ca0": [
+      "You, Mr. BOB's envoy!..."
+    ],
+    "bbb.script4.cod.00000cb4": [
+      "You're on the right, aren't you? That's it?..."
+    ],
+    "bbb.script4.cod.00000cce": [
+      "Because if you're on the right..."
+    ],
+    "bbb.script4.cod.00000ce8": [
+      "Well, we're on the left..."
+    ],
+    "bbb.script4.cod.00000d00": [
+      "And we've had enough of you..."
+    ],
+    "bbb.script4.cod.00000d1a": [
+      "It's all you deserve..."
+    ],
+    "bbb.script4.cod.00000d30": [
+      "Am I wrong?..."
+    ],
+    "bbb.script4.cod.00000d44": [
+      "Ha ha ha! My joke's a good one... I'll tell it again"
+    ],
+    "bbb.script4.cod.00000d68": [
+      "Am I wrong?..."
+    ],
+    "bbb.script4.cod.00000d7c": [
+      "But seriously... Watch out, Commander..."
+    ],
+    "bbb.script4.cod.00000d94": [
+      "Because we can't go on living like this!..."
+    ],
+    "bbb.script4.cod.00000db0": [
+      "Are you out of your mind or what?..."
+    ],
+    "bbb.script4.cod.00000dca": [
+      "I pay my taxes like everyone in the Universe..."
+    ],
+    "bbb.script4.cod.00000de2": [
+      "So where's my money going?..."
+    ],
+    "bbb.script4.cod.00000df8": [
+      "Anyway, if you don't give me a raise, I'm warning you..."
+    ],
+    "bbb.script4.cod.00000e16": [
+      "This won't do at all!..."
+    ],
+    "bbb.script4.cod.00000e2c": [
+      "Meanwhile, I'm going on strike... There! I've stopped working..."
+    ],
+    "bbb.script4.cod.00000e4e": [
+      "oh dear, Commander! He's really angry with you..."
+    ],
+    "bbb.script4.cod.00000e6a": [
+      "..."
+    ],
+    "bbb.script4.cod.00000e82": [
+      "Wow! Commander! Thanks again for your stroke of genius!..."
+    ],
+    "bbb.script4.cod.00000ea2": [
+      "Ha ha ha! You certainly don't lack ideas, do you?..."
+    ],
+    "bbb.script4.cod.00000ec4": [
+      "That's exactly why we hired you as screenwriter!..."
+    ],
+    "bbb.script4.cod.00000ee4": [
+      "Come here, old brother! Give me a hug! Not too tight, I can still feel the chains..."
+    ],
+    "bbb.script4.cod.00000f12": [
+      "What could I give you to thank you?..."
+    ],
+    "bbb.script4.cod.00000f30": [
+      "Heh heh..."
+    ],
+    "bbb.script4.cod.00000f3e": [
+      "Oh, you know what! I won't give you anything! Then you'll truly have done it for glory!..."
+    ],
+    "bbb.script4.cod.00000f70": [
+      "that's not nice! Commander, make him give you something...",
+      "force don't_force"
+    ],
+    "bbb.script4.cod.00000f9f": [
+      "Hey! Are you crazy? I'll give if I want to!..."
+    ],
+    "bbb.script4.cod.00000fc5": [
+      "but you want..."
+    ],
+    "bbb.script4.cod.00000fd5": [
+      "That's true... Here you go... A gift..."
+    ],
+    "bbb.script4.cod.00000fef": [
+      "what is it? We didn't see anything!..."
+    ],
+    "bbb.script4.cod.0000100b": [
+      "Naturally... That's all my gratitude..."
+    ],
+    "bbb.script4.cod.00001021": [
+      "very clever..."
+    ],
+    "bbb.script4.cod.0000102f": [
+      "..."
+    ],
+    "bbb.script4.cod.00001043": [
+      "And thanks again! Ha ha ha!..."
+    ],
+    "bbb.script4.cod.0000105b": [
+      "..."
+    ],
+    "bbb.script4.cod.0000107a": [
+      "My name is Marakas, great chief of the IZWAL tribe..."
+    ],
+    "bbb.script4.cod.00001096": [
+      "We are <state:1576> Izwals in tribe..."
+    ],
+    "bbb.script4.cod.000010b9": [
+      "You must help us, Commander!..."
+    ],
+    "bbb.script4.cod.000010cf": [
+      "We need money..."
+    ],
+    "bbb.script4.cod.000010ec": [
+      "There, Commander..."
+    ],
+    "bbb.script4.cod.000010fc": [
+      "You, you're going to give us..."
+    ],
+    "bbb.script4.cod.00001112": [
+      "Something to buy books with!..."
+    ],
+    "bbb.script4.cod.0000112d": [
+      "Platon! I love Platon!..."
+    ],
+    "bbb.script4.cod.0000113f": [
+      "But the problem with Platon..."
+    ],
+    "bbb.script4.cod.00001153": [
+      "He wrote an awful lot, you know!..."
+    ],
+    "bbb.script4.cod.00001169": [
+      "And it costs loads of credits! Loads and loads!..."
+    ],
+    "bbb.script4.cod.00001183": [
+      "For one credit, we'll give you..."
+    ],
+    "bbb.script4.cod.0000119b": [
+      "extraterrestrial food..."
+    ],
+    "bbb.script4.cod.000011b0": [
+      "Ha ha ha! And with credit, we'll find..."
+    ],
+    "bbb.script4.cod.000011d0": [
+      "spiritual food..."
+    ],
+    "bbb.script4.cod.000011e5": [
+      "Wow! Commander! Are you out of your mind?..."
+    ],
+    "bbb.script4.cod.0000120e": [
+      "You're not really going to..."
+    ],
+    "bbb.script4.cod.0000122f": [
+      "waste one credit..."
+    ],
+    "bbb.script4.cod.00001246": [
+      "To buy space steak..."
+    ],
+    "bbb.script4.cod.00001263": [
+      "To a Platonist with a trunk!..."
+    ],
+    "bbb.script4.cod.0000127e": [
+      "He scares me, Commander!..."
+    ],
+    "bbb.script4.cod.00001294": [
+      "Na na na ner ner!..."
+    ],
+    "bbb.script4.cod.000012b5": [
+      "Down, Petit Piteux!..."
+    ],
+    "bbb.script4.cod.000012d0": [
+      "Oh dear, oh dear... I was scared..."
+    ],
+    "bbb.script4.cod.000012f3": [
+      "Commander! I'm glad to see you again!..."
+    ],
+    "bbb.script4.cod.0000130d": [
+      "I had a terrible nightmare..."
+    ],
+    "bbb.script4.cod.00001321": [
+      "I dreamed..."
+    ],
+    "bbb.script4.cod.0000132f": [
+      "An alien who came from ROSWELL!..."
+    ],
+    "bbb.script4.cod.00001352": [
+      "I was scared..."
+    ],
+    "bbb.script4.cod.00001360": [
+      "And look!..."
+    ],
+    "bbb.script4.cod.0000136e": [
+      "Awful CROOLIS were making fun of me!..."
+    ],
+    "bbb.script4.cod.00001392": [
+      "Something's wrong in my head!..."
+    ],
+    "bbb.script4.cod.000013aa": [
+      "I must hurry and go..."
+    ],
+    "bbb.script4.cod.000013be": [
+      "talk about it..."
+    ],
+    "bbb.script4.cod.000013d9": [
+      "To my psychoanalyst..."
+    ],
+    "bbb.script4.cod.000013f4": [
+      "But it's so expensive!..."
+    ],
+    "bbb.script4.cod.00001408": [
+      "I'd rather..."
+    ],
+    "bbb.script4.cod.00001418": [
+      "Reread Platon..."
+    ],
+    "bbb.script4.cod.00001440": [
+      "Another nightmare..."
+    ],
+    "bbb.script4.cod.00001452": [
+      "Saw the horror from ROSWELL again!..."
+    ],
+    "bbb.script4.cod.00001473": [
+      "And this time..."
+    ],
+    "bbb.script4.cod.00001483": [
+      "That's going too far..."
+    ],
+    "bbb.script4.cod.00001495": [
+      "I dreamed I was dissecting him..."
+    ],
+    "bbb.script4.cod.000014b2": [
+      "how awful!..."
+    ],
+    "bbb.script4.cod.000014c0": [
+      "I must be nuts!..."
+    ],
+    "bbb.script4.cod.000014d2": [
+      "Can you imagine?..."
+    ],
+    "bbb.script4.cod.000014e4": [
+      "Dissect him!..."
+    ],
+    "bbb.script4.cod.000014f9": [
+      "Why not eat him while we're at it?..."
+    ],
+    "bbb.script4.cod.00001513": [
+      "Commander, careful, he's going to blow a fuse!..."
+    ],
+    "bbb.script4.cod.00001540": [
+      "We raise murfalos, good food..."
+    ],
+    "bbb.script4.cod.00001559": [
+      "Free-range..."
+    ],
+    "bbb.script4.cod.0000157a": [
+      "We sell you food for one credit..."
+    ],
+    "bbb.script4.cod.0000159b": [
+      "We're out of credits, Commander..."
+    ],
+    "bbb.script4.cod.000015ba": [
+      "Do you agree to buy food from them, Commander?",
+      "accept refuse"
+    ],
+    "bbb.script4.cod.000015e3": [
+      "We'll send him one credit, Commander"
+    ],
+    "bbb.script4.cod.00001605": [
+      "TELEPORTING FOOD TO CRYOBOX"
+    ],
+    "bbb.script4.cod.00001624": [
+      "Are you crazy, turning down what's almost a gift?!..."
+    ],
+    "bbb.script4.cod.00001684": [
+      "Oh, atomic devices... Interesting... Thank you, Commander..."
+    ],
+    "bbb.script4.cod.000016cb": [
+      "Nuclear energy... Thank you!!!"
+    ],
+    "bbb.script4.cod.000016fc": [
+      "..."
+    ],
+    "bbb.script4.cod.00001723": [
+      "Ah, nice hat. Me look like great warrior... Me feel strong"
+    ],
+    "bbb.script4.cod.00001769": [
+      "Ohhh... You generous... You get rid of old junk, you have big attic, friend..."
+    ],
+    "bbb.script4.cod.000017a7": [
+      "Bleaargh... Me not like... Me scared... Me nightmares..."
+    ],
+    "bbb.script4.cod.000017c5": [
+      "Ha! Ha! Ha! Commander, did you see? He's scared stiff..."
+    ],
+    "bbb.script4.cod.000017fd": [
+      "Bionium... Shoooo... Give strength to guts in head..."
+    ],
+    "bbb.script4.cod.0000181f": [
+      "He looks happy..."
+    ],
+    "bbb.script4.cod.0000185c": [
+      "Technology... Ohhh, very complicated... Me understand nothing, but me like..."
+    ],
+    "bbb.script4.cod.00001899": [
+      "Haaaa!!! Guitar, me like. Tsoing tsoing... Oh yeah!!! AYE AM A KING BEEE!!!"
+    ],
+    "bbb.script4.cod.000018c1": [
+      "He thinks he's a rocker... Commander..."
+    ],
+    "bbb.script4.cod.00001911": [
+      "Wow! Cool! Just enough to buy a dialogue by Platon!..."
+    ],
+    "bbb.script4.cod.00001935": [
+      "know thyself!..."
+    ],
+    "bbb.script4.cod.00001941": [
+      "Hey! Know thyself!..."
+    ],
+    "bbb.script4.cod.00001953": [
+      "..."
+    ],
+    "bbb.script4.cod.0000196d": [
+      "You're giving him one credit... Commander, you're completely nuts..."
+    ],
+    "bbb.script4.cod.0000198d": [
+      "Wow!!! One credit, I'll go buy some POGS..."
+    ],
+    "bbb.script4.cod.000019ab": [
+      "..."
+    ],
+    "bbb.script4.cod.000019ce": [
+      "Sniff sniff... Smell good... Erotic smell... Female..."
+    ],
+    "bbb.script4.cod.000019f0": [
+      "Heh! Heh! That sends the stock market up... Ha ha ha... Ahem, sorry, Commander..."
+    ],
+    "bbb.script4.cod.00001a40": [
+      "Ohhh, decoder... Me able to watch TV... You kind... Me like"
+    ],
+    "bbb.script4.cod.00001a62": [
+      "Commander, while he's watching TV, he won't be reproducing..."
+    ],
+    "bbb.script4.cod.00001aa8": [
+      "Food... Yum yum... Eat, eat..."
+    ],
+    "bbb.script4.cod.00001ada": [
+      "Medicine... Me often have sore trunk... Thank you..."
+    ],
+    "bbb.script4.cod.00001b17": [
+      "WEAPONS... Weapons good for war, to defend female and children against tyrannical oppressor..."
+    ],
+    "bbb.script4.cod.00001b61": [
+      "Me see far, optical lens very handy for seeing stars..."
+    ],
+    "bbb.script4.cod.00001b9c": [
+      "Energy... Yes, me feel strength rising inside... Me like, friend..."
+    ],
+    "bbb.script4.cod.00001bd6": [
+      "Ring... Hoooo... Female like ring... Me big gift, then big reproduction..."
+    ],
+    "bbb.script4.cod.00001c1e": [
+      "Transmitter... Me not understand"
+    ],
+    "bbb.script4.cod.00001c46": [
+      "Culture... You give this to please Earth intellectuals"
+    ],
+    "bbb.script4.cod.00001c81": [
+      "Ohhh! Writing... Pretty, me give to female..."
+    ],
+    "bbb.script4.cod.00001cb3": [
+      "Wow... SHIP... Pretty color, fast... Oh, power steering, airbags... Me like..."
+    ],
+    "bbb.script4.cod.00001cf8": [
+      "Treaty... Me make peace... War too terrible, you right..."
+    ],
+    "bbb.script4.cod.00001d49": [
+      "Gifts... Gifts, you nice... Me like you..."
+    ],
+    "bbb.script4.cod.00001d79": [
+      "Which object would you like to give, Commander?"
+    ],
+    "bbb.script4.cod.00001d8d": [
+      "GIVE:",
+      "<inventory_choices>"
+    ],
+    "bbb.script4.cod.00001d9d": [
+      "..."
+    ],
+    "bbb.script4.cod.00001da7": [
+      "SEE YOU SOON, great friend COMMANDER... I eagerly await you..."
+    ],
+    "bbb.script4.cod.00001dd0": [
+      "..."
+    ],
+    "bbb.script4.cod.00001df3": [
+      "..."
+    ],
+    "bbb.script4.cod.00001e10": [
+      "..."
+    ],
+    "bbb.script4.cod.00001e2f": [
+      "Hic! Co... Comman... Command away!..."
+    ],
+    "bbb.script4.cod.00001e49": [
+      "Izwalito! You've been drinking again!..."
+    ],
+    "bbb.script4.cod.00001e5f": [
+      "Yesh... But this time it's to celebrate Marakas's release!..."
+    ],
+    "bbb.script4.cod.00001e81": [
+      "Wow! Marakas brings the house down!..."
+    ],
+    "bbb.script4.cod.00001e95": [
+      "it's great to see you happy again!..."
+    ],
+    "bbb.script4.cod.00001eab": [
+      "Oh, yes! That's great..."
+    ],
+    "bbb.script4.cod.00001ec3": [
+      "..."
+    ],
+    "bbb.script4.cod.00001ecd": [
+      "..."
+    ],
+    "bbb.script4.cod.00001ed7": [
+      "right..."
+    ],
+    "bbb.script4.cod.00001ee3": [
+      "well, all very nice, but I've got things to do!..."
+    ],
+    "bbb.script4.cod.00001f01": [
+      "yes..."
+    ],
+    "bbb.script4.cod.00001f0d": [
+      "Well, I'll leave you to it... Until next time, Commander! Thanks again!..."
+    ],
+    "bbb.script4.cod.00001f31": [
+      "Krouik..."
+    ],
+    "bbb.script4.cod.00001f3d": [
+      "..."
+    ],
+    "bbb.script4.cod.00001f68": [
+      "great concert!..."
+    ],
+    "bbb.script4.cod.00001f76": [
+      "..."
+    ],
+    "bbb.script4.cod.00001fa7": [
+      "It's awful, Commander..."
+    ],
+    "bbb.script4.cod.00001fb7": [
+      "what's happening, my little Izwalito?..."
+    ],
+    "bbb.script4.cod.00001fcd": [
+      "Oh dear... It's really awful..."
+    ],
+    "bbb.script4.cod.00001fe5": [
+      "what? What?..."
+    ],
+    "bbb.script4.cod.00001ff5": [
+      "It's not my fault, Commander..."
+    ],
+    "bbb.script4.cod.0000200b": [
+      "what?..."
+    ],
+    "bbb.script4.cod.00002017": [
+      "Well, it's complicated... We were tele-chatting with Marakas when suddenly..."
+    ],
+    "bbb.script4.cod.0000203d": [
+      "Boo-hoo..."
+    ],
+    "bbb.script4.cod.00002049": [
+      "what?..."
+    ],
+    "bbb.script4.cod.00002055": [
+      "Well, suddenly it went FLOOF..."
+    ],
+    "bbb.script4.cod.00002080": [
+      "so what?..."
+    ],
+    "bbb.script4.cod.0000208e": [
+      "Well... Marakas had disappeared!..."
+    ],
+    "bbb.script4.cod.000020a2": [
+      "yeah... Marakas cleared off..."
+    ],
+    "bbb.script4.cod.000020b6": [
+      "Ha ha ha! That's a good one!..."
+    ],
+    "bbb.script4.cod.000020d0": [
+      "Oh! I'm ashamed of laughing... It's nerves..."
+    ],
+    "bbb.script4.cod.000020ea": [
+      "Commander, shall we tell him another joke to relax him?...",
+      "yes no"
+    ],
+    "bbb.script4.cod.00002117": [
+      "Heh heh! Don't Marakas my nerves!..."
+    ],
+    "bbb.script4.cod.0000212f": [
+      "Oh ho ho! I shouldn't laugh!..."
+    ],
+    "bbb.script4.cod.00002149": [
+      "I'm ashamed! Stop making me laugh, Commander..."
+    ],
+    "bbb.script4.cod.00002165": [
+      "..."
+    ],
+    "bbb.script4.cod.00002178": [
+      "and do you know where Marakas is now?..."
+    ],
+    "bbb.script4.cod.00002192": [
+      "Well, no..."
+    ],
+    "bbb.script4.cod.000021a0": [
+      "They'll probably demand a ransom..."
+    ],
+    "bbb.script4.cod.000021b8": [
+      "why? Are you rich?..."
+    ],
+    "bbb.script4.cod.000021cc": [
+      "Do I ask you questions like that?..."
+    ],
+    "bbb.script4.cod.000021e4": [
+      "Boo-hoo... At least I've already received a message of solidarity from Super Zen..."
+    ],
+    "bbb.script4.cod.0000220c": [
+      "already? That's strange, Commander. We should question Super Zen..."
+    ],
+    "bbb.script4.cod.0000222a": [
+      "Yes, that's right! Find whoever kidnapped Marakas and tell them..."
+    ],
+    "bbb.script4.cod.0000224a": [
+      "that I'll smash his..."
+    ],
+    "bbb.script4.cod.00002260": [
+      "..."
+    ],
+    "bbb.script4.cod.0000227f": [
+      "So, you still haven't found him?..."
+    ],
+    "bbb.script4.cod.00002295": [
+      "What do we tell him, Commander?",
+      "lie truth"
+    ],
+    "bbb.script4.cod.000022b8": [
+      "Ha ha ha! I knew it!"
+    ],
+    "bbb.script4.cod.000022d0": [
+      "Go ahead! Show him to me so I can kiss his trunk..."
+    ],
+    "bbb.script4.cod.000022ee": [
+      "the thing is..."
+    ],
+    "bbb.script4.cod.000022fc": [
+      "Oh no! I knew it! You lied!..."
+    ],
+    "bbb.script4.cod.00002323": [
+      "Boo-hoo... Poor Marakas..."
+    ],
+    "bbb.script4.cod.00002335": [
+      "Glug-glug... Aglug-glug..."
+    ],
+    "bbb.script4.cod.00002345": [
+      "but... Come on... Izwalito! What are you doing?..."
+    ],
+    "bbb.script4.cod.0000235f": [
+      "I DRINK TO FORGET MY YEARS OF MIS-FOR-TU-UNE... HIC!..."
+    ],
+    "bbb.script4.cod.0000237b": [
+      "that's not sensible, Izwalito. Put that bottle down!..."
+    ],
+    "bbb.script4.cod.00002393": [
+      "Ha ha ha, hee hee hee..."
+    ],
+    "bbb.script4.cod.000023a9": [
+      "Another wee drink! Hic!..."
+    ],
+    "bbb.script4.cod.000023bf": [
+      "let's leave him, Commander. I don't want to see this..."
+    ],
+    "bbb.script4.cod.000023d9": [
+      "..."
+    ],
+    "bbb.script4.cod.000023f8": [
+      "Hic... Headache..."
+    ],
+    "bbb.script4.cod.0000240e": [
+      "of course... You've had too much to drink..."
+    ],
+    "bbb.script4.cod.00002422": [
+      "Drink... My self is too sad... Marakas..."
+    ],
+    "bbb.script4.cod.0000243e": [
+      "drinking isn't a solution..."
+    ],
+    "bbb.script4.cod.00002452": [
+      "Drink... A solution..."
+    ],
+    "bbb.script4.cod.00002464": [
+      "Me drink a solution! Hic! Thank you, Tequila!..."
+    ],
+    "bbb.script4.cod.00002480": [
+      "incurable! Commander, we must find Marakas as soon as possible..."
+    ],
+    "bbb.script4.cod.0000249e": [
+      "MARAKAS OFF OUT OF HERE!... Hic... When you're in the... hic... navy... uh..."
+    ],
+    "bbb.script4.cod.000024c4": [
+      "..."
+    ],
+    "bbb.script4.cod.000024e3": [
+      "When you're in the navy! You've got to know how to grab it and bite it! Hic!..."
+    ],
+    "bbb.script4.cod.0000250d": [
+      "not very proper..."
+    ],
+    "bbb.script4.cod.0000251d": [
+      "Ha ha ha! Proper! When I'm in utter despair!"
+    ],
+    "bbb.script4.cod.00002541": [
+      "You've got to know how to get plastered! Hic! In the navy!..."
+    ],
+    "bbb.script4.cod.00002561": [
+      "Look, I'm out of cash to buy Tequila... Give me some and I'll give you some too..."
+    ],
+    "bbb.script4.cod.0000258f": [
+      "Arf... I mean, I'll give you something great we were hiding in secret and all that..."
+    ],
+    "bbb.script4.cod.000025bf": [
+      "what are you saying, you landlubber?..."
+    ],
+    "bbb.script4.cod.000025d7": [
+      "I'll say what I like! So there!..."
+    ],
+    "bbb.script4.cod.000025f1": [
+      "I'm saying I'll sell you something really cool for blowing a hole in a head..."
+    ],
+    "bbb.script4.cod.00002615": [
+      "Look!..."
+    ],
+    "bbb.script4.cod.0000262e": [
+      "Commander! Exactly what we need!... How much for your gizmo?..."
+    ],
+    "bbb.script4.cod.00002654": [
+      "Oh, one credit! Just enough to get plastered!..."
+    ],
+    "bbb.script4.cod.0000267f": [
+      "TELEPORTING CREDIT TO IZWALITO..."
+    ],
+    "bbb.script4.cod.000026a8": [
+      "we're broke, Commander..."
+    ],
+    "bbb.script4.cod.000026ba": [
+      "Never mind! Don't care! It's yours! After all, it's to find Marakas..."
+    ],
+    "bbb.script4.cod.000026e6": [
+      "Go ahead! I'll finish my bottle..."
+    ],
+    "bbb.script4.cod.000026fe": [
+      "who supplies you with this alcohol?..."
+    ],
+    "bbb.script4.cod.00002716": [
+      "Can't say it..."
+    ],
+    "bbb.script4.cod.00002728": [
+      "come on!..."
+    ],
+    "bbb.script4.cod.00002734": [
+      "Ha ha ha! Who do you think? It's TEQUILA!..."
+    ],
+    "bbb.script4.cod.00002758": [
+      "TELEPORTING SECRETLY MADE SECRET TO ARK!..."
+    ],
+    "bbb.script4.cod.00002777": [
+      "..."
+    ],
+    "bbb.script4.cod.000027a3": [
+      "Hey, you! You're cute! Glug-glug!..."
+    ],
+    "bbb.script4.cod.000027bd": [
+      "what are you saying, you landlubber?..."
+    ],
+    "bbb.script4.cod.000027d7": [
+      "Nothing, glug-glug... Here, I'll give you a... Hic... great book..."
+    ],
+    "bbb.script4.cod.000027fd": [
+      "... It's a book by Platon... Hic... It belonged to Marakas..."
+    ],
+    "bbb.script4.cod.0000281f": [
+      "Ha ha ha! He doesn't need it now he's dead!..."
+    ],
+    "bbb.script4.cod.00002843": [
+      "Boo-hoo... Marakas..."
+    ],
+    "bbb.script4.cod.00002853": [
+      "TELEPORTING PLATON'S BOOK TO CRYOBOX..."
+    ],
+    "bbb.script4.cod.00002870": [
+      "maybe it could help us think, Commander..."
+    ],
+    "bbb.script4.cod.0000288e": [
+      "..."
+    ],
+    "bbb.script4.cod.000028b2": [
+      "Sniff... Respect my grief! Leave me alone!..."
+    ],
+    "bbb.script4.cod.000028cc": [
+      "..."
+    ],
+    "bbb.script4.cod.000028e4": [
+      "I can't take it anymore..."
+    ],
+    "bbb.script4.cod.000028f8": [
+      "And that's because of you! Because of BOB's plan..."
+    ],
+    "bbb.script4.cod.0000291c": [
+      "Marakas and I are on the left..."
+    ],
+    "bbb.script4.cod.00002934": [
+      "So we say no to the right..."
+    ],
+    "bbb.script4.cod.0000294c": [
+      "No and no..."
+    ],
+    "bbb.script4.cod.0000295c": [
+      "Then they explain this and that... We have to make sacrifices..."
+    ],
+    "bbb.script4.cod.00002980": [
+      "Myeah, myeah, myeah..."
+    ],
+    "bbb.script4.cod.00002990": [
+      "All this really makes me laugh! Ha ha ha!..."
+    ],
+    "bbb.script4.cod.000029b0": [
+      "this and that... Blah blah blah... Blah blah blah..."
+    ],
+    "bbb.script4.cod.000029c6": [
+      "Ha ha ha! Nothing but jokes..."
+    ],
+    "bbb.script4.cod.000029e0": [
+      "Because when you get down to it, it's all about money..."
+    ],
+    "bbb.script4.cod.00002a00": [
+      "And that's your fault!..."
+    ],
+    "bbb.script4.cod.00002a14": [
+      "Myeah, myeah, myeah..."
+    ],
+    "bbb.script4.cod.00002a24": [
+      "Because it certainly isn't mine!..."
+    ],
+    "bbb.script4.cod.00002a3e": [
+      "So if you want war..."
+    ],
+    "bbb.script4.cod.00002a54": [
+      "You'll get your war... And for now, I'm on strike..."
+    ],
+    "bbb.script4.cod.00002a76": [
+      "oh dear, oh dear... Even him..."
+    ],
+    "bbb.script4.cod.00002a8c": [
+      "..."
+    ],
+    "bbb.script4.cod.00002aa4": [
+      "Hello, Commander Blood, recognize me? I'm Izwalito..."
+    ],
+    "bbb.script4.cod.00002ac0": [
+      "Ah... Well, I'll be, Izwalito! Recognize him, Commander?"
+    ],
+    "bbb.script4.cod.00002ae7": [
+      "I'm glad to see you, friend Commander..."
+    ],
+    "bbb.script4.cod.00002b01": [
+      "There are <state:1650> Izwals in this community..."
+    ],
+    "bbb.script4.cod.00002b26": [
+      "Wow!!! Commander, he's so intelligent! Did you hear how he talks???"
+    ],
+    "bbb.script4.cod.00002b53": [
+      "Me? I speak well?..."
+    ],
+    "bbb.script4.cod.00002b69": [
+      "Ha ha! That's a good one!..."
+    ],
+    "bbb.script4.cod.00002b83": [
+      "I speak well! When I'm incapable of expressing myself..."
+    ],
+    "bbb.script4.cod.00002ba3": [
+      "As soon as I'm face to face with my darling!..."
+    ],
+    "bbb.script4.cod.00002bbf": [
+      "what's your darling's name?..."
+    ],
+    "bbb.script4.cod.00002bd5": [
+      "I see what you're up to!... You won't find out!..."
+    ],
+    "bbb.script4.cod.00002bf7": [
+      "She's mine, mine, MINE!..."
+    ],
+    "bbb.script4.cod.00002c15": [
+      "..."
+    ],
+    "bbb.script4.cod.00002c2d": [
+      "Boo-hoo... Sniff... Sniff..."
+    ],
+    "bbb.script4.cod.00002c41": [
+      "what's wrong, Izwalito?..."
+    ],
+    "bbb.script4.cod.00002c55": [
+      "Well... See... It's just as I told you..."
+    ],
+    "bbb.script4.cod.00002c73": [
+      "what?..."
+    ],
+    "bbb.script4.cod.00002c7f": [
+      "Well... You know... For... I mean..."
+    ],
+    "bbb.script4.cod.00002c99": [
+      "But you know! You know..."
+    ],
+    "bbb.script4.cod.00002cb3": [
+      "That I can't tell my darling I love her..."
+    ],
+    "bbb.script4.cod.00002cd3": [
+      "Boo-hoo... Boo-hoo..."
+    ],
+    "bbb.script4.cod.00002ce3": [
+      "I'm feeling gloomy..."
+    ],
+    "bbb.script4.cod.00002d03": [
+      "would you like to help her, Commander?...",
+      "help abandon"
+    ],
+    "bbb.script4.cod.00002d26": [
+      "shall we tell her for you, Izwalito?..."
+    ],
+    "bbb.script4.cod.00002d44": [
+      "..."
+    ],
+    "bbb.script4.cod.00002d56": [
+      "You have no heart, Commander!..."
+    ],
+    "bbb.script4.cod.00002d7d": [
+      "Woo! Girls! Come look! He has no heart!..."
+    ],
+    "bbb.script4.cod.00002db0": [
+      "Warf warf!..."
+    ],
+    "bbb.script4.cod.00002dcc": [
+      "He's all talk!..."
+    ],
+    "bbb.script4.cod.00002def": [
+      "Yeah! I'm sorry to say..."
+    ],
+    "bbb.script4.cod.00002e10": [
+      "To tell you..."
+    ],
+    "bbb.script4.cod.00002e2b": [
+      "That you're leaving!..."
+    ],
+    "bbb.script4.cod.00002e4c": [
+      "..."
+    ],
+    "bbb.script4.cod.00002e6c": [
+      "No... Out of the question... I don't trust it..."
+    ],
+    "bbb.script4.cod.00002e86": [
+      "are you sure?..."
+    ],
+    "bbb.script4.cod.00002e96": [
+      "No... I don't know..."
+    ],
+    "bbb.script4.cod.00002eaa": [
+      "Mmmm... Mmmm..."
+    ],
+    "bbb.script4.cod.00002eba": [
+      "Boo-hoo... I don't know anymore... My heart is like a plain..."
+    ],
+    "bbb.script4.cod.00002edc": [
+      "trampled by murfalos..."
+    ],
+    "bbb.script4.cod.00002efd": [
+      "give us her number, we'll call her on your behalf..."
+    ],
+    "bbb.script4.cod.00002f1b": [
+      "All right... But make sure you tell him I love him..."
+    ],
+    "bbb.script4.cod.00002f35": [
+      "we'll tell him... Hand it over!..."
+    ],
+    "bbb.script4.cod.00002f49": [
+      "It's 19 96 19 96..."
+    ],
+    "bbb.script4.cod.00002f6e": [
+      "Her name is Pierre..."
+    ],
+    "bbb.script4.cod.00002f7e": [
+      "Warf warf!..."
+    ],
+    "bbb.script4.cod.00002f9a": [
+      "what?!..."
+    ],
+    "bbb.script4.cod.00002fa6": [
+      "ETTE... Her name is Pierrette..."
+    ],
+    "bbb.script4.cod.00002fba": [
+      "Oh, good, you scared me..."
+    ],
+    "bbb.script4.cod.00002fd0": [
+      "I told you! When I think of her, I can't express myself anymore..."
+    ],
+    "bbb.script4.cod.00002ff8": [
+      "right... Let's go... 19 96 19 96... Did you get that, Commander?..."
+    ],
+    "bbb.script4.cod.00003022": [
+      "19 96 19 96..."
+    ],
+    "bbb.script4.cod.00003036": [
+      "..."
+    ],
+    "bbb.script4.cod.0000304e": [
+      "So... Did you call her?..."
+    ],
+    "bbb.script4.cod.00003062": [
+      "...",
+      "yes no"
+    ],
+    "bbb.script4.cod.0000307b": [
+      "Wow! She's got a lovely voice, hasn't she?..."
+    ],
+    "bbb.script4.cod.00003097": [
+      "..."
+    ],
+    "bbb.script4.cod.000030a9": [
+      "..."
+    ],
+    "bbb.script4.cod.000030c9": [
+      "So, did you tell him I loved him?..."
+    ],
+    "bbb.script4.cod.000030e5": [
+      "of course..."
+    ],
+    "bbb.script4.cod.000030f3": [
+      "And her, what did she say?..."
+    ],
+    "bbb.script4.cod.0000310b": [
+      "she said..."
+    ],
+    "bbb.script4.cod.0000311b": [
+      "my love, I love you!..."
+    ],
+    "bbb.script4.cod.0000313c": [
+      "But that's not her!..."
+    ],
+    "bbb.script4.cod.00003152": [
+      "Woohoo! It's Olga, darlings!..."
+    ],
+    "bbb.script4.cod.00003179": [
+      "Come home immediately!..."
+    ],
+    "bbb.script4.cod.0000319c": [
+      "But why? I'm perfectly happy here!..."
+    ],
+    "bbb.script4.cod.000031c5": [
+      "Listen to your husband! Go home!..."
+    ],
+    "bbb.script4.cod.000031e8": [
+      "Females of every galaxy!... Free yourselves!... We're all in cages!..."
+    ],
+    "bbb.script4.cod.0000321b": [
+      "But it's my heart that's in a cage!..."
+    ],
+    "bbb.script4.cod.00003239": [
+      "it doesn't matter, we're telling you she loves you!..."
+    ],
+    "bbb.script4.cod.00003255": [
+      "Ha ha! Wonderful! What joy!..."
+    ],
+    "bbb.script4.cod.0000326f": [
+      "My heart is so light it's growing wings!..."
+    ],
+    "bbb.script4.cod.000032ab": [
+      "It's war, you know!"
+    ],
+    "bbb.script4.cod.000032bf": [
+      "yes... Exactly... What do you suggest?..."
+    ],
+    "bbb.script4.cod.000032d7": [
+      "The only solution is hair removal..."
+    ],
+    "bbb.script4.cod.000032eb": [
+      "the what?..."
+    ],
+    "bbb.script4.cod.000032f9": [
+      "I mean, it's negotiation..."
+    ],
+    "bbb.script4.cod.0000330f": [
+      "Uh!... I mean destruction..."
+    ],
+    "bbb.script4.cod.00003327": [
+      "just like that?..."
+    ],
+    "bbb.script4.cod.00003333": [
+      "That settles everything..."
+    ],
+    "bbb.script4.cod.00003347": [
+      "in other?..."
+    ],
+    "bbb.script4.cod.00003355": [
+      "Want a peace treaty, perhaps?..."
+    ],
+    "bbb.script4.cod.0000336d": [
+      "Commander?",
+      "yes no"
+    ],
+    "bbb.script4.cod.00003390": [
+      "Here, I'd already prepared it!..."
+    ],
+    "bbb.script4.cod.000033a4": [
+      "it's free?..."
+    ],
+    "bbb.script4.cod.000033b2": [
+      "It's to save the universe!..."
+    ],
+    "bbb.script4.cod.000033c4": [
+      "teleporting treaty to cryobox!..."
+    ],
+    "bbb.script4.cod.000033dd": [
+      "..."
+    ],
+    "bbb.script4.cod.00003403": [
+      "I'm studying law, interplanetary laws..."
+    ],
+    "bbb.script4.cod.0000341d": [
+      "Would you like me to write you a treaty for one credit?"
+    ],
+    "bbb.script4.cod.0000343b": [
+      "Commander, not a bad idea. With these treaties, we can end the wars..."
+    ],
+    "bbb.script4.cod.0000346a": [
+      "Damn! We're out of credits, Commander..."
+    ],
+    "bbb.script4.cod.0000348d": [
+      "Do you agree to buy a treaty from him, Commander?",
+      "accept refuse"
+    ],
+    "bbb.script4.cod.000034b4": [
+      "We'll send him one credit, Commander"
+    ],
+    "bbb.script4.cod.000034d6": [
+      "TELEPORTING TREATY TO CRYOBOX"
+    ],
+    "bbb.script4.cod.0000352e": [
+      "Oh, atomic devices... Excellent, now I can run experiments in the Pacific... Thank you, Commander..."
+    ],
+    "bbb.script4.cod.00003558": [
+      "You mean peaceful experiments, Mr. Izwalito???"
+    ],
+    "bbb.script4.cod.00003572": [
+      "Ahem! Yes, yes, peaceful... That's what I meant..."
+    ],
+    "bbb.script4.cod.000035c1": [
+      "Nuclear energy... Thank you!!! We'll develop inverted-multiplexer power plants..."
+    ],
+    "bbb.script4.cod.00003604": [
+      "Not bad... Not bad... I mustn't show this photo to Tequila, she'd go mad with jealousy... Hee! Hee! Hee!"
+    ],
+    "bbb.script4.cod.0000363a": [
+      "Commander, we'll wreck their relationship... That'll lower reproduction..."
+    ],
+    "bbb.script4.cod.00003662": [
+      "..."
+    ],
+    "bbb.script4.cod.00003689": [
+      "Whoa... Whoa... Now that's a hat... Thank you..."
+    ],
+    "bbb.script4.cod.000036a7": [
+      "With that on his head, he'll impress his troops..."
+    ],
+    "bbb.script4.cod.000036c5": [
+      "Nice hat..."
+    ],
+    "bbb.script4.cod.000036f7": [
+      "A painting... But it's an old daub. I'll hang it in my bedroom..."
+    ],
+    "bbb.script4.cod.0000371b": [
+      "He's not a painting enthusiast..."
+    ],
+    "bbb.script4.cod.00003747": [
+      "Ahhhhhh... No, not that... Ahhhhh, I'm scared... Mommy! Mommy!"
+    ],
+    "bbb.script4.cod.0000376b": [
+      "Commander, you're frightening him with your mummy... You'll give him nightmares..."
+    ],
+    "bbb.script4.cod.00003793": [
+      "Haaaaa!!! I'm scared... Mommy!!!"
+    ],
+    "bbb.script4.cod.000037a9": [
+      "..."
+    ],
+    "bbb.script4.cod.000037cc": [
+      "Bionium... Mmm... Not bad, I feel fit... Fighting fit..."
+    ],
+    "bbb.script4.cod.000037f4": [
+      "Commander, Bionium perks him up..."
+    ],
+    "bbb.script4.cod.00003839": [
+      "Technology... Brown goods... Mmm, the lovely smell of warm capacitors and circuit boards..."
+    ],
+    "bbb.script4.cod.00003869": [
+      "He seems to like it, Commander..."
+    ],
+    "bbb.script4.cod.0000389c": [
+      "A guitar... I've dreamed of one for years..."
+    ],
+    "bbb.script4.cod.000038ba": [
+      "I'm going to be a star... Yeah..."
+    ],
+    "bbb.script4.cod.000038d2": [
+      "AH CAN GET NO... SATISFAK-SHUN..."
+    ],
+    "bbb.script4.cod.000038ea": [
+      "He looks happy. You've pleased him, Commander..."
+    ],
+    "bbb.script4.cod.00003908": [
+      "He'll impress his female..."
+    ],
+    "bbb.script4.cod.00003947": [
+      "Commander, you're giving him one credit... You're completely nuts..."
+    ],
+    "bbb.script4.cod.00003967": [
+      "You don't give credits away for nothing to the first person who comes along..."
+    ],
+    "bbb.script4.cod.00003985": [
+      "ONE CREDIT... YOU GIVE ME ONE CREDIT... YEAH!!! THANK YOU... THANK YOU..."
+    ],
+    "bbb.script4.cod.000039ab": [
+      "You're my benefactor, my friend, my savior, my master, my mistress, my Commander..."
+    ],
+    "bbb.script4.cod.000039d1": [
+      "All right, all right, Mr. Izwalito, we get it..."
+    ],
+    "bbb.script4.cod.000039ef": [
+      "..."
+    ],
+    "bbb.script4.cod.00003a0f": [
+      "Ahhhh, that feels good... Oh! YES... I feel desire rising..."
+    ],
+    "bbb.script4.cod.00003a33": [
+      "Commander, the perfume's getting him all worked up..."
+    ],
+    "bbb.script4.cod.00003a51": [
+      "Oh... YES..."
+    ],
+    "bbb.script4.cod.00003a85": [
+      "It decodes TV... Well, I'll be... Thank you... Thank you..."
+    ],
+    "bbb.script4.cod.00003aa5": [
+      "He'll become the king of channel surfing... Meanwhile, reproduction might fall..."
+    ],
+    "bbb.script4.cod.00003ac9": [
+      "..."
+    ],
+    "bbb.script4.cod.00003af7": [
+      "Food... Mmm, thank you... I'll make a little sauce..."
+    ],
+    "bbb.script4.cod.00003b1b": [
+      "Let's see, one spoonful of Crawler liver juice, two pinches of explosive pizza powder..."
+    ],
+    "bbb.script4.cod.00003b45": [
+      "He'll enjoy that, Commander..."
+    ],
+    "bbb.script4.cod.00003b59": [
+      "..."
+    ],
+    "bbb.script4.cod.00003b79": [
+      "Medicine... Thank you... Now I can treat my varicose veins..."
+    ],
+    "bbb.script4.cod.00003bb6": [
+      "WEAPONS... Always useful... In wartime, better to be armed..."
+    ],
+    "bbb.script4.cod.00003c06": [
+      "How strange... This object lets you see the stars... Well, I'll be..."
+    ],
+    "bbb.script4.cod.00003c47": [
+      "Energy... Pure... Extraordinary..."
+    ],
+    "bbb.script4.cod.00003c75": [
+      "A ring... Pretty... I'll give it to my female right away. She'll adore me..."
+    ],
+    "bbb.script4.cod.00003c9d": [
+      "..."
+    ],
+    "bbb.script4.cod.00003cce": [
+      "A transmitter"
+    ],
+    "bbb.script4.cod.00003cf0": [
+      "Culture... Yeah... Whatever..."
+    ],
+    "bbb.script4.cod.00003d25": [
+      "Writing... Thank you..."
+    ],
+    "bbb.script4.cod.00003d4d": [
+      "A SHIP... Wow!!! Power steering... Leather seats... ABS..."
+    ],
+    "bbb.script4.cod.00003d8c": [
+      "A treaty, let's see, it's to stop the war..."
+    ],
+    "bbb.script4.cod.00003dd3": [
+      "Gifts... THANK YOU... THANK YOU..."
+    ],
+    "bbb.script4.cod.00003dfd": [
+      "Which object would you like to give, Commander?"
+    ],
+    "bbb.script4.cod.00003e11": [
+      "GIVE:",
+      "<inventory_choices>"
+    ],
+    "bbb.script4.cod.00003e21": [
+      "..."
+    ],
+    "bbb.script4.cod.00003e2b": [
+      "SEE YOU SOON, COMMANDER... COME BACK WHENEVER YOU LIKE..."
+    ],
+    "bbb.script4.cod.00003e45": [
+      "..."
+    ],
+    "bbb.script4.cod.00003e69": [
+      "Tequila not dead! Ahahaha!..."
+    ],
+    "bbb.script4.cod.00003e7d": [
+      "..."
+    ],
+    "bbb.script4.cod.00003eaf": [
+      "Hi, Coco..."
+    ],
+    "bbb.script4.cod.00003ebd": [
+      "Ah! Coco!..."
+    ],
+    "bbb.script4.cod.00003ed9": [
+      "she's bonkers, Commander!..."
+    ],
+    "bbb.script4.cod.00003eed": [
+      "I'm bonkers!..."
+    ],
+    "bbb.script4.cod.00003efd": [
+      "I'm murf!..."
+    ],
+    "bbb.script4.cod.00003f1c": [
+      "I'm thick-headed!..."
+    ],
+    "bbb.script4.cod.00003f39": [
+      "I'm crazy!..."
+    ],
+    "bbb.script4.cod.00003f58": [
+      "Ciao, baby!..."
+    ],
+    "bbb.script4.cod.00003f66": [
+      "..."
+    ],
+    "bbb.script4.cod.00003f91": [
+      "Hello there, Commander!..."
+    ],
+    "bbb.script4.cod.00003f9f": [
+      "Eeee! A ghost!..."
+    ],
+    "bbb.script4.cod.00003fc0": [
+      "That's right, Commander! I am..."
+    ],
+    "bbb.script4.cod.00003fd8": [
+      "DEAD!..."
+    ],
+    "bbb.script4.cod.00003ff3": [
+      "And you'll pay for that!..."
+    ],
+    "bbb.script4.cod.00004009": [
+      "Ha ha ha!..."
+    ],
+    "bbb.script4.cod.00004027": [
+      "You'll pay!..."
+    ],
+    "bbb.script4.cod.00004045": [
+      "Goodbye, little joker!..."
+    ],
+    "bbb.script4.cod.00004062": [
+      "..."
+    ],
+    "bbb.script4.cod.0000408c": [
+      "I'm TEQUILA, darling, mother of the IZWAL tribe..."
+    ],
+    "bbb.script4.cod.000040a6": [
+      "You know, you're not bad-looking for a human..."
+    ],
+    "bbb.script4.cod.000040be": [
+      "Commander, you've caught someone's eye..."
+    ],
+    "bbb.script4.cod.000040d0": [
+      "Yes, that's it, touch my trunk, you big fool..."
+    ],
+    "bbb.script4.cod.000040e8": [
+      "Go ahead, Commander, pretend I'm not here..."
+    ],
+    "bbb.script4.cod.00004100": [
+      "What's wrong? Don't you like me?"
+    ],
+    "bbb.script4.cod.0000411a": [
+      "Go see the others if you like, they're no better..."
+    ],
+    "bbb.script4.cod.00004138": [
+      "There are another <state:1724> Izwals like me in the trobe..."
+    ],
+    "bbb.script4.cod.00004158": [
+      "Hic! Sorry, in my tribe, I mean. I've had too much to drink..."
+    ],
+    "bbb.script4.cod.00004181": [
+      "Hello, handsome..."
+    ],
+    "bbb.script4.cod.00004191": [
+      "There are <state:1724> Izwals in my tribe now, hic!"
+    ],
+    "bbb.script4.cod.000041ba": [
+      "Did you notice, darling?..."
+    ],
+    "bbb.script4.cod.000041d2": [
+      "This universe is ridiculous!..."
+    ],
+    "bbb.script4.cod.000041ea": [
+      "Whee whee! Wawow! Hello there!..."
+    ],
+    "bbb.script4.cod.0000420f": [
+      "Just a whole bunch of idiots, hic!..."
+    ],
+    "bbb.script4.cod.00004227": [
+      "Never happy! Always complaining!..."
+    ],
+    "bbb.script4.cod.0000423f": [
+      "she's losing it, Commander..."
+    ],
+    "bbb.script4.cod.00004251": [
+      "What are you saying, you landlubber?..."
+    ],
+    "bbb.script4.cod.0000426b": [
+      "... ... ... ..."
+    ],
+    "bbb.script4.cod.0000427b": [
+      "That's more like it!..."
+    ],
+    "bbb.script4.cod.0000428b": [
+      "Just a whole bunch of fools..."
+    ],
+    "bbb.script4.cod.0000429d": [
+      "Makes you wonder how they hire people at CRYO!..."
+    ],
+    "bbb.script4.cod.000042b9": [
+      "In Mr. BOB's day, it was a different story!..."
+    ],
+    "bbb.script4.cod.000042d7": [
+      "Thank you, Tequila..."
+    ],
+    "bbb.script4.cod.000042f0": [
+      "You're welcome, you're welcome..."
+    ],
+    "bbb.script4.cod.00004304": [
+      "At least in his day, they put real work into the scripts..."
+    ],
+    "bbb.script4.cod.00004324": [
+      "Now it's all nonsense, hic!..."
+    ],
+    "bbb.script4.cod.0000433a": [
+      "But Tequila! You're druuuunk!..."
+    ],
+    "bbb.script4.cod.0000435f": [
+      "Oh, you b...ch, shut up!..."
+    ],
+    "bbb.script4.cod.00004377": [
+      "Eeeeee! My God, how vulgar!..."
+    ],
+    "bbb.script4.cod.0000439c": [
+      "Did you see?..."
+    ],
+    "bbb.script4.cod.000043ac": [
+      "The dialogue is utter shit..."
+    ],
+    "bbb.script4.cod.000043c2": [
+      "They're not even censored! Fuck!..."
+    ],
+    "bbb.script4.cod.000043da": [
+      "Fuck! It's full of swear words!..."
+    ],
+    "bbb.script4.cod.000043f2": [
+      "And they're not finished!..."
+    ],
+    "bbb.script4.cod.00004411": [
+      "Well, darling... Still insisting?..."
+    ],
+    "bbb.script4.cod.00004427": [
+      "You think you're going to win, do you?..."
+    ],
+    "bbb.script4.cod.00004441": [
+      "And even if you won, what would it change?..."
+    ],
+    "bbb.script4.cod.0000445f": [
+      "You'd dance like an idiot!..."
+    ],
+    "bbb.script4.cod.00004482": [
+      "And that's all!..."
+    ],
+    "bbb.script4.cod.00004492": [
+      "she's delirious, Commander..."
+    ],
+    "bbb.script4.cod.000044af": [
+      "so... Who's the snitch, the spy?..."
+    ],
+    "bbb.script4.cod.000044c9": [
+      "That's the whole story..."
+    ],
+    "bbb.script4.cod.000044d9": [
+      "I was bottling my Tequila..."
+    ],
+    "bbb.script4.cod.000044f5": [
+      "I was working peacefully..."
+    ],
+    "bbb.script4.cod.00004507": [
+      "When suddenly!..."
+    ],
+    "bbb.script4.cod.00004515": [
+      "suddenly?..."
+    ],
+    "bbb.script4.cod.00004521": [
+      "Suddenly I realized I wasn't alone..."
+    ],
+    "bbb.script4.cod.0000453f": [
+      "I pretended not to see anything..."
+    ],
+    "bbb.script4.cod.00004557": [
+      "so what?..."
+    ],
+    "bbb.script4.cod.00004565": [
+      "I pretended not to see anything..."
+    ],
+    "bbb.script4.cod.0000457d": [
+      "and then?..."
+    ],
+    "bbb.script4.cod.0000458b": [
+      "I pretended not to see anything..."
+    ],
+    "bbb.script4.cod.000045a3": [
+      "Commander, she's losing it..."
+    ],
+    "bbb.script4.cod.000045b3": [
+      "Bionium! Please! Bionium!..."
+    ],
+    "bbb.script4.cod.000045e6": [
+      "we're out of bionium, Commander! We must go get some!..."
+    ],
+    "bbb.script4.cod.00004608": [
+      "Bio... nium..."
+    ],
+    "bbb.script4.cod.00004618": [
+      "..."
+    ],
+    "bbb.script4.cod.00004630": [
+      "well?..."
+    ],
+    "bbb.script4.cod.0000463c": [
+      "So the other person was selling information on the Internet..."
+    ],
+    "bbb.script4.cod.0000465e": [
+      "that's the one we're looking for..."
+    ],
+    "bbb.script4.cod.00004672": [
+      "I saw everything. I know who it is..."
+    ],
+    "bbb.script4.cod.0000468a": [
+      "who is it?..."
+    ],
+    "bbb.script4.cod.00004698": [
+      "It's twice the..."
+    ],
+    "bbb.script4.cod.000046aa": [
+      "of?..."
+    ],
+    "bbb.script4.cod.000046b6": [
+      "It's twice the..."
+    ],
+    "bbb.script4.cod.000046c8": [
+      "she's seized up again..."
+    ],
+    "bbb.script4.cod.000046da": [
+      "I need double the bionium..."
+    ],
+    "bbb.script4.cod.0000470d": [
+      "Commander... Desperately seeking bionium..."
+    ],
+    "bbb.script4.cod.00004721": [
+      "..."
+    ],
+    "bbb.script4.cod.00004747": [
+      "Aggg... Biog... Bioni... omg..."
+    ],
+    "bbb.script4.cod.0000475f": [
+      "Commander, I'll examine him..."
+    ],
+    "bbb.script4.cod.0000477c": [
+      "doses of bionium won't be enough..."
+    ],
+    "bbb.script4.cod.00004792": [
+      "Rrraggg... Gnnn... Biogn... mg..."
+    ],
+    "bbb.script4.cod.000047aa": [
+      "if we don't inject her with 10 doses at once, she'll die..."
+    ],
+    "bbb.script4.cod.000047ce": [
+      "DEATH..."
+    ],
+    "bbb.script4.cod.000047eb": [
+      "it's awful, Commander... She won't have the strength to tell us who the spy is..."
+    ],
+    "bbb.script4.cod.00004813": [
+      "doses of bionium or she dies..."
+    ],
+    "bbb.script4.cod.00004829": [
+      "..."
+    ],
+    "bbb.script4.cod.0000484f": [
+      "..."
+    ],
+    "bbb.script4.cod.00004872": [
+      "Argu... Gnome..."
+    ],
+    "bbb.script4.cod.00004882": [
+      "Commander, we have 10 doses of bionium... We can inject them..."
+    ],
+    "bbb.script4.cod.000048a6": [
+      "That'll make her talk, for sure... She'll tell us the spy's name..."
+    ],
+    "bbb.script4.cod.000048cc": [
+      "but..."
+    ],
+    "bbb.script4.cod.000048d8": [
+      "We're receiving a priority ultrabiozenic telepathic message..."
+    ],
+    "bbb.script4.cod.000048fd": [
+      "it's Super Zen, Commander!..."
+    ],
+    "bbb.script4.cod.0000491e": [
+      "he tells me..."
+    ],
+    "bbb.script4.cod.0000492c": [
+      "that if we give Tequila 10 doses of bionium all at once..."
+    ],
+    "bbb.script4.cod.0000494e": [
+      "she'll have the strength to speak... But she'll die immediately afterward..."
+    ],
+    "bbb.script4.cod.0000496e": [
+      "what are you doing with the bionium, Commander?...",
+      "give don't_give"
+    ],
+    "bbb.script4.cod.00004991": [
+      "INJECTING TEQUILA WITH 10 DOSES OF BIONIUM..."
+    ],
+    "bbb.script4.cod.000049b7": [
+      "Arg... It was... It was... C... T..."
+    ],
+    "bbb.script4.cod.000049d3": [
+      "who?..."
+    ],
+    "bbb.script4.cod.000049df": [
+      "The..."
+    ],
+    "bbb.script4.cod.000049eb": [
+      "The..."
+    ],
+    "bbb.script4.cod.000049f7": [
+      "It wasn't..."
+    ],
+    "bbb.script4.cod.00004a05": [
+      "what?..."
+    ],
+    "bbb.script4.cod.00004a11": [
+      "... worth going to all that trouble... Arg..."
+    ],
+    "bbb.script4.cod.00004a31": [
+      "Commander! She's..."
+    ],
+    "bbb.script4.cod.00004a43": [
+      "dead!"
+    ],
+    "bbb.script4.cod.00004a5e": [
+      "Commander! She didn't say anything!..."
+    ],
+    "bbb.script4.cod.00004a74": [
+      "let's go, it reeks of bionium here..."
+    ],
+    "bbb.script4.cod.00004a8c": [
+      "..."
+    ],
+    "bbb.script4.cod.00004aa7": [
+      "that's wise... Not all at once..."
+    ],
+    "bbb.script4.cod.00004abf": [
+      "in two goes, it should work..."
+    ],
+    "bbb.script4.cod.00004ad5": [
+      "INJECTING TEQUILA WITH 5 DOSES OF BIONIUM..."
+    ],
+    "bbb.script4.cod.00004afb": [
+      "Aouw... waouw..."
+    ],
+    "bbb.script4.cod.00004b0b": [
+      "we wait a little... There..."
+    ],
+    "bbb.script4.cod.00004b21": [
+      "INJECTING TEQUILA WITH 5 DOSES OF BIONIUM..."
+    ],
+    "bbb.script4.cod.00004b47": [
+      "Wawawawa! Fuck, I've got such a..."
+    ],
+    "bbb.script4.cod.00004b5f": [
+      "Peachy, me! Wawaw!..."
+    ],
+    "bbb.script4.cod.00004b80": [
+      "she's full of life for someone who's dying!..."
+    ],
+    "bbb.script4.cod.00004b96": [
+      "now she'll be able to tell us the snitch's name..."
+    ],
+    "bbb.script4.cod.00004bb4": [
+      "Awawaw! Yeah! Cool! No prob!..."
+    ],
+    "bbb.script4.cod.00004bce": [
+      "No problem!..."
+    ],
+    "bbb.script4.cod.00004be8": [
+      "No problemo! I'll give you a tip!..."
+    ],
+    "bbb.script4.cod.00004bfc": [
+      "she does seem a bit wired..."
+    ],
+    "bbb.script4.cod.00004c16": [
+      "Yayawaw! Well, I'm the spy! It's mee! Yesh, my good man! Me me me!..."
+    ],
+    "bbb.script4.cod.00004c48": [
+      "uh-oh! She's delirious! The dose was a little too strong!"
+    ],
+    "bbb.script4.cod.00004c6a": [
+      "forget it, Commander, there's nothing more to get out of her. Bionium has fried her brain..."
+    ],
+    "bbb.script4.cod.00004c98": [
+      "Adios muchachos! Good buh-bye!..."
+    ],
+    "bbb.script4.cod.00004cac": [
+      "..."
+    ],
+    "bbb.script4.cod.00004cd8": [
+      "We make nourishing drink, 100 percent MURFALO juice..."
+    ],
+    "bbb.script4.cod.00004cf6": [
+      "We sell to you for credit..."
+    ],
+    "bbb.script4.cod.00004d17": [
+      "We're out of credits, Commander..."
+    ],
+    "bbb.script4.cod.00004d38": [
+      "Do you agree to buy provisions from them, Commander?",
+      "accept refuse"
+    ],
+    "bbb.script4.cod.00004d5f": [
+      "We'll send him one credit, Commander"
+    ],
+    "bbb.script4.cod.00004d81": [
+      "TELEPORTING FOOD TO CRYOBOX"
+    ],
+    "bbb.script4.cod.00004dd9": [
+      "Oh, atomic devices... Interesting... Me able to pick beautiful mushrooms! Thank you, COMMANDER..."
+    ],
+    "bbb.script4.cod.00004e25": [
+      "Nuclear energy... Thank you!!! My husband will be pleased..."
+    ],
+    "bbb.script4.cod.00004e66": [
+      "You take me for one of those Galaxy girls!!! Me SCRABOUYUTURATE you..."
+    ],
+    "bbb.script4.cod.00004e8c": [
+      "COMMANDER... COMMANDER!!! The rag on her head is burning... LET'S RUN..."
+    ],
+    "bbb.script4.cod.00004ed4": [
+      "HO!!! You make me queen... Me think you a prince..."
+    ],
+    "bbb.script4.cod.00004f1e": [
+      "Me not know which way to hang it!..."
+    ],
+    "bbb.script4.cod.00004f36": [
+      "You tangle thoughts in my head..."
+    ],
+    "bbb.script4.cod.00004f6b": [
+      "How HORRIBLE!!!..."
+    ],
+    "bbb.script4.cod.00004f7b": [
+      "COMMANDER! You frightened him..."
+    ],
+    "bbb.script4.cod.00004fb2": [
+      "AAaAaAaaa... That's better..."
+    ],
+    "bbb.script4.cod.00004fc6": [
+      "have you loosened up?..."
+    ],
+    "bbb.script4.cod.00004fd8": [
+      "Speaking of which, Commander darling, you'll have to loosen up..."
+    ],
+    "bbb.script4.cod.00004ff4": [
+      "calm down, calm down... So, the snitch?..."
+    ],
+    "bbb.script4.cod.0000500e": [
+      "Oh yes... I forgot..."
+    ],
+    "bbb.script4.cod.0000502e": [
+      "Bionium... MMM! Very good... Me feel in great shape..."
+    ],
+    "bbb.script4.cod.0000507f": [
+      "Technology... BROWN GOODS!!! Leave quickly, or me turn red with anger..."
+    ],
+    "bbb.script4.cod.000050a5": [
+      "COMMANDER, that wasn't a good idea... She'll hold it against you for sure..."
+    ],
+    "bbb.script4.cod.000050ed": [
+      "A guitar... Wonderful! Izwalito will play beautiful ballads... THANK YOU!"
+    ],
+    "bbb.script4.cod.00005111": [
+      "COMMANDER... She's in for a disappointment. Izwalito dreams of becoming a ROCK AND ROLL STAR..."
+    ],
+    "bbb.script4.cod.00005164": [
+      "COMMANDER, you're completely nuts..."
+    ],
+    "bbb.script4.cod.0000518e": [
+      "Perfume... Me hot all over. Me like full-moon night, MMM..."
+    ],
+    "bbb.script4.cod.000051b6": [
+      "Well, COMMANDER... You've put her..."
+    ],
+    "bbb.script4.cod.000051ce": [
+      "in a strange state..."
+    ],
+    "bbb.script4.cod.0000520b": [
+      "A TV decoder... YIPPEEE!!! Me able to watch TRASHLANDO Watch..."
+    ],
+    "bbb.script4.cod.0000525a": [
+      "Food... MMM, YUM YUM!!! Me watch my figure. HEE! HEE!..."
+    ],
+    "bbb.script4.cod.00005282": [
+      "Yes, COMMANDER, she does have a lovely figure..."
+    ],
+    "bbb.script4.cod.000052b6": [
+      "Medicine... You good COMMANDER, you soothe my liver, my intestine, my gallbladder, my..."
+    ],
+    "bbb.script4.cod.000052e0": [
+      "COMMANDER! Let's not stay here! She might be contagious..."
+    ],
+    "bbb.script4.cod.0000531b": [
+      "WEAPONS... BAH! Me have very good kitchen knives. But leave them, might come in handy..."
+    ],
+    "bbb.script4.cod.0000536d": [
+      "An optical device. Very good! Me able to watch Izwalito a little more closely..."
+    ],
+    "bbb.script4.cod.000053ae": [
+      "Energy... Me able to do big spring cleaning. THANK YOU!"
+    ],
+    "bbb.script4.cod.000053e4": [
+      "A ring... OH! Is it for me, COMMANDER? THANK YOU!"
+    ],
+    "bbb.script4.cod.00005402": [
+      "There you go, you've made another one happy... That COMMANDER..."
+    ],
+    "bbb.script4.cod.00005448": [
+      "A transmitter... Why not!"
+    ],
+    "bbb.script4.cod.00005472": [
+      "Culture... OW!!! Me have very bad headache... Me study later..."
+    ],
+    "bbb.script4.cod.0000549e": [
+      "COMMANDER, and we wanted to elevate his mind..."
+    ],
+    "bbb.script4.cod.000054d5": [
+      "Writing... You want to make me great writer. THANK YOU..."
+    ],
+    "bbb.script4.cod.000054f3": [
+      "COMMANDER, she's dreaming... Let's not get carried away..."
+    ],
+    "bbb.script4.cod.00005521": [
+      "A SHIP... OH! Me choose color?"
+    ],
+    "bbb.script4.cod.0000553f": [
+      "COMMANDER, we give her a ship and all she notices is the color..."
+    ],
+    "bbb.script4.cod.00005580": [
+      "A treaty... THANK YOU! Me no longer want little Izwal going to war..."
+    ],
+    "bbb.script4.cod.000055d1": [
+      "Gifts... THANK YOU! You be most handsome, most kind..."
+    ],
+    "bbb.script4.cod.00005609": [
+      "Which object would you like to give, Commander?"
+    ],
+    "bbb.script4.cod.0000561d": [
+      "GIVE:",
+      "<inventory_choices>"
+    ],
+    "bbb.script4.cod.0000562d": [
+      "..."
+    ],
+    "bbb.script4.cod.00005637": [
+      "SEE YOU SOON, COMMANDER..."
+    ],
+    "bbb.script4.cod.00005645": [
+      "..."
+    ]
+  }
+}
