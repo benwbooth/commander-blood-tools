@@ -1,0 +1,23 @@
+# BBB: requires the ordinary Daddy/Tempest slot in a disposable writable root.
+# With default Travel Off, select Tempest and probe its unvisited entry gate.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 115
+wait 10
+click 100 43
+wait 60
+park 4 0
+wait 20
+click 150 150
+wait 40
+click 16 110
+wait 60
+click 250 125
+wait 200
+click 216 72
+wait 200

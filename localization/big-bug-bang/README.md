@@ -157,6 +157,66 @@ the explicitly enabled real-asset profile-handoff test passed with named-locatio
 raw-holder, hash, and nonmutation assertions, and the game build and all-targets
 check passed.
 
+### Fresh Load and Tempest Navigation
+
+The disposable captures `daddy-fresh-load-camera-01` through `03` copy only
+`BLOOD.SAV` and `GAME1.SAV` from the progressed save above into a new writable
+root before starting a new process. Ordinary Load changes the active profile
+from 0 to 2 and restores all three Gluxx family holders to `Templand`.
+The first two input probes did not open the chart: one parked at the wrong
+station, and the other clicked above the camera's measured hit rectangle.
+
+The corrected `daddy-fresh-load-camera-03` run parks at bridge frame 0, clicks
+the camera at `(150,150)`, selects the Tempest chart marker at `(16,110)`, and
+clicks the right-hand hyperjump control at `(250,125)`. It exits normally without
+timeout. Arche's holder changes to Tempest (record 72, raw `0x12D2`); the
+navigation status view renders Tempest and lists Daddy Gluxx there. This run
+stops before planet entry or recontact. Its `screen-041.png` still shows the
+source French labels, because it predates the display change below.
+
+Navigation status and information panels now override the four exact decoded
+BBB labels with `PLANET: `, `SHIP: `, `BLACK HOLE: `, and `LIFE FORMS:`. The
+source executable bytes remain unchanged; other strings and Commander Blood
+pass through unchanged. Both focused label tests pass, including a check against
+the imported original executable. The serial library suite passes 955 tests
+(38 ignored), and the game build and all-targets check pass.
+
+`accuracy/scenarios/bbb_load_daddy_tempest.tsv` runs on the rebuilt binary in
+`output/big-bug-bang/daddy-fresh-load-tempest-04` and exits without timeout.
+`screen-036.png` visibly shows `PLANET: Tempest`, `LIFE FORMS:`, and Daddy Gluxx
+in the chart information panel. The final status subtitle is
+`PLANET: Tempest LIFE FORMS: Daddy_Gluxx`.
+With the default Travel Off setting, the click inside the planet status region
+produces `DestinationUnavailable` at live frame 2,851. No local ship-HUD
+coordinator is created. Final action 21 remains at Tempest in profile 2 with
+all pointer locks clear. This is evidence for navigation and English display,
+not successful planet entry. The separate
+`accuracy/scenarios/bbb_load_daddy_tempest_travel_on.tsv` uses the options menu
+to enable the native unvisited-destination branch before hyperjumping.
+
+That Travel On scenario completes in `daddy-fresh-load-tempest-05` without
+timeout. Final action 23 has Travel enabled, an initialized ship-HUD coordinator
+at Tempest, and presentable targets `[72, 65, 73]` (Tempest, Arche, Templand).
+`PL\tempet10.hnm` is the active scene resource. `screen-046.png` shows the
+planet view and all three choices plus Cancel. The selector has completed its
+ten-step opening transition and owns the modal UI while awaiting a choice.
+This verifies destination entry; selecting Templand and recontacting Daddy are
+separate steps.
+
+`accuracy/scenarios/bbb_load_daddy_templand.tsv` extends that route with a click
+on Templand's measured third row at `(80,104)`. The capture
+`daddy-fresh-load-templand-06` also exits normally without timeout. Final action
+25 has local target 73 (Templand), active actor and description 44 (Daddy Gluxx),
+the `tempet1*.lbm` backgrounds, and the English subtitle
+`ha ha ha!... A murfalo!...`. `screen-058.png` visibly shows that caption over
+the local scenery. The final game-frame sequence is 3,567 in profile 2.
+
+This establishes scene entry, not completion of the renewed conversation.
+At the final boundary, presentation line 7 is active, its presentation gate is
+1, and no next choice is visible. The remaining dialogue continuation and
+broader game progression still need verification; this is not a complete
+playable-English release.
+
 ### Native Travel Gates
 
 The hash-locked probe

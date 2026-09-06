@@ -6,6 +6,7 @@ use commander_blood_formats::script::{
     ScriptObjectId, ScriptObjectKind, ScriptState, ScriptStateObjectReference, ScriptStateWordPair,
 };
 
+use crate::game::GameVariant;
 use crate::native::bloodprg::{
     BridgeSpriteExtent, BridgeSpritePosition, FontPoint, GameLifecycleState, LoadedScriptProfile,
     LocationInfoPanelContext, LocationInfoPanelHost, LocationInfoPanelState, LocationPanelArtwork,
@@ -406,11 +407,12 @@ impl RuntimeNavigationWorld {
 
         let navigation = runtime.data().navigation_resources();
         let decoded_labels = navigation.labels();
+        let game = runtime.data().game();
         let labels = RuntimeNavigationLabels {
-            planet: decoded_labels.planet().into(),
-            ship: decoded_labels.ship().into(),
-            black_hole: decoded_labels.black_hole().into(),
-            life_support: decoded_labels.life_support().into(),
+            planet: navigation_display_label(game, decoded_labels.planet()),
+            ship: navigation_display_label(game, decoded_labels.ship()),
+            black_hole: navigation_display_label(game, decoded_labels.black_hole()),
+            life_support: navigation_display_label(game, decoded_labels.life_support()),
         };
         let status_snapshot = RuntimeNavigationStatusSnapshot {
             location_kind: status_kind(current_location_object_kind),
@@ -971,6 +973,20 @@ fn interpolate_rect_field(source: i16, target: i16, total: i8, current: u8) -> i
         as i16
 }
 
+fn navigation_display_label(game: GameVariant, source: &[u8]) -> Box<[u8]> {
+    if game != GameVariant::BigBugBang {
+        return source.into();
+    }
+    let english: &[u8] = match source {
+        b"PLANETE: " => b"PLANET: ",
+        b"VAISSEAU: " => b"SHIP: ",
+        b"TROU NOIR: " => b"BLACK HOLE: ",
+        b"VIE PRESENTE:" => b"LIFE FORMS:",
+        _ => source,
+    };
+    english.into()
+}
+
 fn navigation_labels(labels: &RuntimeNavigationLabels) -> NavigationStatusLabels<'_> {
     NavigationStatusLabels {
         planet: &labels.planet,
@@ -1143,6 +1159,78 @@ mod tests {
         ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptProfileId, set_object_flag,
     };
     use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
+
+    #[test]
+    fn navigation_label_translation_is_sequel_only_and_exact() {
+        for (source, expected) in [
+            (b"PLANETE: ".as_slice(), b"PLANET: ".as_slice()),
+            (b"VAISSEAU: ".as_slice(), b"SHIP: ".as_slice()),
+            (b"TROU NOIR: ".as_slice(), b"BLACK HOLE: ".as_slice()),
+            (b"VIE PRESENTE:".as_slice(), b"LIFE FORMS:".as_slice()),
+        ] {
+            assert_eq!(
+                navigation_display_label(GameVariant::BigBugBang, source).as_ref(),
+                expected
+            );
+            assert_eq!(
+                navigation_display_label(GameVariant::CommanderBlood, source).as_ref(),
+                source
+            );
+        }
+        for source in [
+            b"PLANETE:".as_slice(),
+            b"Planet: ".as_slice(),
+            b"".as_slice(),
+        ] {
+            assert_eq!(
+                navigation_display_label(GameVariant::BigBugBang, source).as_ref(),
+                source
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang executable in imported-assets"]
+    fn sequel_navigation_labels_match_the_original_executable() {
+        let executable = std::fs::read(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../output/big-bug-bang/imported-assets/companions/BLOOD2PG.EXE"),
+        )
+        .unwrap();
+        let resources =
+            commander_blood_formats::bloodprg::decode_blood2pg_navigation_resources(&executable)
+                .unwrap();
+        let labels = resources.labels();
+        for (source, original, expected) in [
+            (
+                labels.planet(),
+                b"PLANETE: ".as_slice(),
+                b"PLANET: ".as_slice(),
+            ),
+            (
+                labels.ship(),
+                b"VAISSEAU: ".as_slice(),
+                b"SHIP: ".as_slice(),
+            ),
+            (
+                labels.black_hole(),
+                b"TROU NOIR: ".as_slice(),
+                b"BLACK HOLE: ".as_slice(),
+            ),
+            (
+                labels.life_support(),
+                b"VIE PRESENTE:".as_slice(),
+                b"LIFE FORMS:".as_slice(),
+            ),
+        ] {
+            assert_eq!(source, original);
+            assert_eq!(
+                navigation_display_label(GameVariant::BigBugBang, source).as_ref(),
+                expected
+            );
+            assert_eq!(source, original);
+        }
+    }
 
     #[test]
     fn inactive_navigation_chart_preserves_another_ui_owner() {
