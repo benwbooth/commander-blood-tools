@@ -557,17 +557,43 @@ fn decode_hyperspace_resources(
 /// Flat, owned bridge-menu text decoded from the executable's data image.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BloodprgBridgeMenuText {
-    option_labels: [Box<[u8]>; BLOODPRG_OPTION_MENU_LABEL_COUNT],
+    option_labels: Box<[Box<[u8]>]>,
     music_on_label: Box<[u8]>,
     text_speed_labels: [Box<[u8]>; BLOODPRG_TEXT_SPEED_LABEL_COUNT],
     cancel_label: Box<[u8]>,
     initial_text_speed_step: u16,
+    sequel_controls: Option<BloodprgSequelMenuControls>,
+}
+
+/// Additional options authored only by Big Bug Bang.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BloodprgSequelMenuControls {
+    /// Simulation speed labels, from slow through fast.
+    pub speed_labels: [Box<[u8]>; 3],
+    /// Simulation countdown reload values corresponding to the speed rows.
+    pub speed_values: [u16; 3],
+    /// Initial simulation countdown reload value, not a renderer frame rate.
+    pub initial_speed: u16,
+    /// Initial low-bit state of the travel-animation option.
+    pub initial_travel_enabled: bool,
+    /// Alternate label displayed when travel animations are enabled.
+    pub travel_on_label: Box<[u8]>,
 }
 
 impl BloodprgBridgeMenuText {
-    /// Return `TEXT`, the current music-toggle face, `SAVE`, `LOAD`, and `QUIT` labels.
-    pub const fn option_labels(&self) -> &[Box<[u8]>; BLOODPRG_OPTION_MENU_LABEL_COUNT] {
+    /// Return the game's five or seven authored option labels in native row order.
+    pub const fn option_labels(&self) -> &[Box<[u8]>] {
         &self.option_labels
+    }
+
+    /// Return the additional sequel controls, absent in Commander Blood.
+    pub const fn sequel_controls(&self) -> Option<&BloodprgSequelMenuControls> {
+        self.sequel_controls.as_ref()
+    }
+
+    /// Return the music toggle's row in this game's menu.
+    pub const fn music_option_row(&self) -> usize {
+        if self.sequel_controls.is_some() { 3 } else { 1 }
     }
 
     /// Return the alternate music-toggle face used when playback is disabled.
@@ -657,15 +683,17 @@ pub fn decode_bloodprg_bridge_menu_text(
 
     let option_labels = decode_menu_pointer_list::<BLOODPRG_OPTION_MENU_LABEL_COUNT>(
         executable,
+        BLOODPRG_DATA_FILE_OFFSET,
         OPTION_MENU_POINTER_LIST_DATA_OFFSET,
     )?;
     let text_speed_labels = decode_menu_pointer_list::<BLOODPRG_TEXT_SPEED_LABEL_COUNT>(
         executable,
+        BLOODPRG_DATA_FILE_OFFSET,
         TEXT_SPEED_POINTER_LIST_DATA_OFFSET,
     )?;
 
     Ok(BloodprgBridgeMenuText {
-        option_labels,
+        option_labels: option_labels.into(),
         music_on_label: decode_menu_label(executable, MUSIC_ON_LABEL_DATA_OFFSET)?,
         text_speed_labels,
         cancel_label: decode_menu_label(executable, LIST_WIDGET_CANCEL_LABEL_DATA_OFFSET)?,
@@ -673,14 +701,59 @@ pub fn decode_bloodprg_bridge_menu_text(
             executable,
             BLOODPRG_DATA_FILE_OFFSET + INITIAL_TEXT_SPEED_STEP_DATA_OFFSET,
         ),
+        sequel_controls: None,
+    })
+}
+
+/// Decode the analyzed sequel's seven-option menu and both speed lists.
+///
+/// File offsets follow the original handlers at `0x9A11`, `0x1C95`, and
+/// `0x1D18`. Callers selecting an executable revision must validate its hash.
+pub fn decode_blood2pg_bridge_menu_text(
+    executable: &[u8],
+) -> Result<BloodprgBridgeMenuText, BloodprgBridgeMenuTextError> {
+    const DATA: usize = 0xF7F0;
+    const REQUIRED: usize = DATA + 0x282B + 8;
+    if executable.len() < REQUIRED {
+        return Err(BloodprgBridgeMenuTextError::TruncatedExecutable {
+            actual: executable.len(),
+            required: REQUIRED,
+        });
+    }
+    if executable.get(..MZ_SIGNATURE.len()) != Some(&MZ_SIGNATURE) {
+        return Err(BloodprgBridgeMenuTextError::InvalidExecutableSignature);
+    }
+    Ok(BloodprgBridgeMenuText {
+        option_labels: decode_menu_pointer_list::<7>(executable, DATA, 0x27B9)?.into(),
+        music_on_label: decode_menu_label_at_data(executable, DATA, 0x27D8)?,
+        text_speed_labels: decode_menu_pointer_list::<5>(executable, DATA, 0x281D)?,
+        cancel_label: decode_menu_label_at_data(executable, DATA, 0x179)?,
+        initial_text_speed_step: read_unsigned_word(executable, DATA + 0xCC2),
+        sequel_controls: Some(BloodprgSequelMenuControls {
+            speed_labels: decode_menu_pointer_list::<3>(executable, DATA, 0x282B)?,
+            speed_values: std::array::from_fn(|index| {
+                read_unsigned_word(executable, 0x1D12 + index * 2)
+            }),
+            initial_speed: read_unsigned_word(executable, DATA + 0xCC4),
+            initial_travel_enabled: executable[DATA + 0xCF1] & 1 != 0,
+            travel_on_label: decode_menu_label_at_data(executable, DATA, 0x27EF)?,
+        }),
     })
 }
 
 fn decode_menu_pointer_list<const LABEL_COUNT: usize>(
     executable: &[u8],
+    data_file_offset: usize,
     list_offset: usize,
 ) -> Result<[Box<[u8]>; LABEL_COUNT], BloodprgBridgeMenuTextError> {
-    let list_file_offset = BLOODPRG_DATA_FILE_OFFSET + list_offset;
+    let list_file_offset = data_file_offset + list_offset;
+    let required = list_file_offset + (LABEL_COUNT + 1) * WORD_BYTE_COUNT;
+    if executable.len() < required {
+        return Err(BloodprgBridgeMenuTextError::TruncatedExecutable {
+            actual: executable.len(),
+            required,
+        });
+    }
     let sentinel = read_unsigned_word(executable, list_file_offset + LABEL_COUNT * WORD_BYTE_COUNT);
     if sentinel != POINTER_LIST_SENTINEL {
         return Err(BloodprgBridgeMenuTextError::MissingPointerListSentinel {
@@ -693,7 +766,7 @@ fn decode_menu_pointer_list<const LABEL_COUNT: usize>(
         .map(|index| {
             let pointer =
                 read_unsigned_word(executable, list_file_offset + index * WORD_BYTE_COUNT);
-            decode_menu_label(executable, usize::from(pointer))
+            decode_menu_label_at_data(executable, data_file_offset, usize::from(pointer))
         })
         .collect::<Result<Vec<_>, _>>()?;
     labels

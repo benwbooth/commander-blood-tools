@@ -2,15 +2,16 @@
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::bloodprg::{
-    BloodprgBridgeResources, BloodprgConfirmDialogRegions, BloodprgFontResources,
-    BloodprgHyperspaceResources, BloodprgNavigationResources, BloodprgPresentationCatalog,
-    decode_big_bug_bang_inventory_cancel_label, decode_blood2pg_bridge_resources,
+    BloodprgBridgeMenuText, BloodprgBridgeResources, BloodprgConfirmDialogRegions,
+    BloodprgFontResources, BloodprgHyperspaceResources, BloodprgNavigationResources,
+    BloodprgPresentationCatalog, decode_big_bug_bang_inventory_cancel_label,
+    decode_blood2pg_bridge_menu_text, decode_blood2pg_bridge_resources,
     decode_blood2pg_confirm_dialog_regions, decode_blood2pg_font_resources,
     decode_blood2pg_hyperspace_resources, decode_blood2pg_navigation_resources,
-    decode_blood2pg_presentation_catalog, decode_bloodprg_bridge_resources,
-    decode_bloodprg_confirm_dialog_regions, decode_bloodprg_font_resources,
-    decode_bloodprg_hyperspace_resources, decode_bloodprg_navigation_resources,
-    decode_bloodprg_presentation_catalog,
+    decode_blood2pg_presentation_catalog, decode_bloodprg_bridge_menu_text,
+    decode_bloodprg_bridge_resources, decode_bloodprg_confirm_dialog_regions,
+    decode_bloodprg_font_resources, decode_bloodprg_hyperspace_resources,
+    decode_bloodprg_navigation_resources, decode_bloodprg_presentation_catalog,
 };
 use commander_blood_formats::code::ScriptDialect;
 use commander_blood_formats::name_area_effect::{
@@ -150,6 +151,16 @@ impl GameVariant {
             Self::BigBugBang => decode_blood2pg_presentation_catalog(executable),
         }
         .context("decoding game presentation catalog")
+    }
+
+    /// Decode the game's authored options, speed controls and toggle labels.
+    pub fn decode_bridge_menu_text(self, executable: &[u8]) -> Result<BloodprgBridgeMenuText> {
+        self.validate_native_build(executable)?;
+        match self {
+            Self::CommanderBlood => decode_bloodprg_bridge_menu_text(executable),
+            Self::BigBugBang => decode_blood2pg_bridge_menu_text(executable),
+        }
+        .context("decoding game bridge menu text")
     }
 
     /// Decode the game's confirmation hit regions.
@@ -308,6 +319,11 @@ mod tests {
                 .is_err()
         );
         assert!(GameVariant::BigBugBang.decode_fonts(&bytes).is_err());
+        assert!(
+            GameVariant::BigBugBang
+                .decode_bridge_menu_text(&bytes)
+                .is_err()
+        );
         assert!(
             GameVariant::BigBugBang
                 .decode_confirm_dialog_regions(&bytes)

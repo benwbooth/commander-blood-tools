@@ -92,7 +92,6 @@ use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::{
     BloodprgBridgeMenuText, BloodprgConfirmDialogRegions, BloodprgFontResources,
     BloodprgHyperspaceResources, BloodprgNavigationResources, BloodprgPresentationCatalog,
-    decode_bloodprg_bridge_menu_text,
 };
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
@@ -432,7 +431,10 @@ impl OriginalGameData {
             .game
             .decode_confirm_dialog_regions(&executable)
             .context("decoding confirmation-dialog hit regions")?;
-        let bridge_menu_text = decode_bloodprg_bridge_menu_text(&executable)
+        let bridge_menu_text = paths
+            .manifest()
+            .game
+            .decode_bridge_menu_text(&executable)
             .context("decoding bridge options and text-speed labels")?;
         let hyperspace_resources = paths
             .manifest()

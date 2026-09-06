@@ -28,7 +28,6 @@ const PRESENTATION_CHOICE_ACTIVE_FLAG: u8 = 1;
 const PRESENTATION_CHOICE_LAYOUT_PHASE: u8 = 1;
 const PRESENTATION_CHOICE_TRANSITION_PHASE: u8 = 1 << 1;
 const PRESENTATION_CHOICE_MODAL_UI_FLAG: u8 = 1 << 2;
-const OPTION_MENU_LABEL_COUNT: usize = 5;
 const TEXT_SPEED_LABEL_COUNT: usize = 5;
 const PANEL_CENTER_X: i16 = 100;
 
@@ -764,13 +763,10 @@ fn required_builtin(
     select(profile.builtins()).with_context(|| format!("loaded profile has no {name} object"))
 }
 
-fn option_labels(
-    text: &BloodprgBridgeMenuText,
-    music_label: MusicOptionLabel,
-) -> [Box<[u8]>; OPTION_MENU_LABEL_COUNT] {
-    let mut labels = text.option_labels().clone();
+fn option_labels(text: &BloodprgBridgeMenuText, music_label: MusicOptionLabel) -> Vec<Box<[u8]>> {
+    let mut labels = text.option_labels().to_vec();
     if music_label == MusicOptionLabel::MusicOn {
-        labels[1] = text.music_on_label().into();
+        labels[text.music_option_row()] = text.music_on_label().into();
     }
     labels
 }
@@ -895,6 +891,26 @@ fn apply_backend_effects(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang executable"]
+    fn sequel_menu_music_toggle_preserves_the_other_six_rows() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE");
+        let bytes = std::fs::read(path).unwrap();
+        let text = crate::game::GameVariant::BigBugBang
+            .decode_bridge_menu_text(&bytes)
+            .unwrap();
+        let enabled = option_labels(&text, MusicOptionLabel::MusicOff);
+        let disabled = option_labels(&text, MusicOptionLabel::MusicOn);
+        assert_eq!(enabled.len(), 7);
+        assert_eq!(enabled[3].as_ref(), b"MUSIQUE_OFF");
+        assert_eq!(disabled[3].as_ref(), b"MUSIQUE_ON");
+        for row in [0, 1, 2, 4, 5, 6] {
+            assert_eq!(enabled[row], disabled[row]);
+        }
+        assert_eq!(text.option_labels(), enabled);
+    }
 
     #[test]
     fn selected_console_rows_open_from_the_native_zero_width_anchor() {

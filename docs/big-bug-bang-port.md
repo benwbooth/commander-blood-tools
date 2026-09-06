@@ -719,13 +719,39 @@ coordinator and presentation catalog, then loads every selected clip's bytes.
 This checks selection and resource binding, not HNM playback, the complete
 camera/navigation workflow, or the confirmation dialog's rendered labels.
 
-The remaining bridge-menu table cannot use Commander's five-command model.
+The bridge-menu table cannot use Commander's five-command model.
 The sequel list at data 0x27B9 has seven commands: `VITESSE`, `TEXTES`,
 `VOYAGE_OFF`, `MUSIQUE_OFF`, `SAUVER`, `CHARGER`, `QUITTER`. Native selection at
 0x9A6D..0x9B38 separately opens simulation-speed and text-speed controls and
 toggles travel and music. The loader still rejects production sequel startup
 until this model and the remaining runtime/profile contracts are integrated.
 The French bytes are preserved source data, not completed English localization.
+
+The table decoder now supports all seven sequel labels, both music and travel
+toggle faces, the five subtitle speeds, the three simulation speeds, and the
+shared cancel label. The game's fingerprint-guarded `decode_bridge_menu_text`
+selects the correct data image; `OriginalGameData` no longer calls the
+Commander-only menu decoder directly. Owned option labels have variable length,
+and the label renderer replaces the music face at row 3 for BBB rather than
+overwriting its text-speed row. Commander retains its five labels and row 1.
+
+The subtitle pointer table is at data `0x281D`; the simulation pointer table
+is at `0x282B`. The latter exposes its CS-authored `[100, 10, 1]` countdown
+reloads alongside the labels. Initialized image values are text speed `2`,
+simulation speed `1`, and travel low bit clear. These are decoded image values,
+not a claim that all subsequent startup writes have been ported.
+
+All 135 formats tests pass with original-asset tests explicitly enabled,
+including direct checks of every menu label against the sequel executable,
+malformed pointers/sentinels/terminators, and preserved speed values/flag bits.
+The native command dispatcher remains five-command-only; production sequel
+startup remains guarded until that dispatcher and its runtime owners are
+connected. This change supplies data and correct label indexing, not an
+interactive seven-command menu or an English localization.
+The game all-targets check passes, as does the original-disc music-label test.
+The full library passes 934 tests with 21 ignored on a private Xvfb display,
+which was reaped after testing. The travel label reports the current flag
+(`VOYAGE_ON` when set), unlike the music label's offered action.
 
 Verification: repeated navigation captures were byte-identical, and regenerating
 the earlier visual-table capture after the shared harness extension also produced
