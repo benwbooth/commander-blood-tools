@@ -13,9 +13,10 @@ use commander_blood_formats::script::{ScriptWordId, decode_script_dictionary};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
-use crate::native::bloodprg::{InlineMenuDisplayWord, LoadedScriptProfile, ScriptProfileId};
+use crate::native::bloodprg::{InlineMenuDisplayWord, LoadedScriptProfile};
 
 const OPENING_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script1.json");
+const SCRIPT2_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script2.json");
 const LINE_COLUMNS: usize = 34;
 
 #[derive(Deserialize)]
@@ -42,20 +43,33 @@ struct InlineMenuTranslation {
 
 impl SequelEnglishSubtitles {
     pub(super) fn for_profile(profile: &LoadedScriptProfile) -> Result<Option<Self>> {
-        if profile.code().dialect() != ScriptDialect::BigBugBang
-            || profile.id() != ScriptProfileId::INITIAL
-        {
+        if profile.code().dialect() != ScriptDialect::BigBugBang {
             return Ok(None);
         }
-        Self::from_sources(&profile.code().encode(), &profile.dictionary().encode())
+        let (name, catalog) = match profile.id().value() {
+            0 => ("SCRIPT1", OPENING_ENGLISH),
+            1 => ("SCRIPT2", SCRIPT2_ENGLISH),
+            _ => return Ok(None),
+        };
+        Self::from_catalog(
+            &profile.code().encode(),
+            &profile.dictionary().encode(),
+            name,
+            catalog,
+        )
     }
 
+    #[cfg(test)]
     fn from_sources(cod: &[u8], dic: &[u8]) -> Result<Option<Self>> {
-        let translation: Translation = serde_json::from_str(OPENING_ENGLISH)?;
+        Self::from_catalog(cod, dic, "SCRIPT1", OPENING_ENGLISH)
+    }
+
+    fn from_catalog(cod: &[u8], dic: &[u8], name: &str, catalog: &str) -> Result<Option<Self>> {
+        let translation: Translation = serde_json::from_str(catalog)?;
         ensure!(
             translation.format == "bbb-cod-display-translation-v1"
                 && translation.language == "en"
-                && translation.profile == "SCRIPT1",
+                && translation.profile == name,
             "unsupported bundled English subtitle catalog"
         );
         // Modified/other-edition resources must never receive address-matched text.
@@ -69,9 +83,10 @@ impl SequelEnglishSubtitles {
         let mut choices = BTreeMap::new();
         let mut menus = BTreeMap::new();
         let mut subtitles = BTreeMap::new();
+        let prefix = format!("bbb.{}.cod.", name.to_ascii_lowercase());
         for (id, sections) in translation.messages {
             let address = id
-                .strip_prefix("bbb.script1.cod.")
+                .strip_prefix(&prefix)
                 .context("invalid English subtitle site ID")?;
             let offset = usize::from_str_radix(address, 16)?;
             ensure!(
@@ -280,7 +295,64 @@ mod tests {
 
     use super::*;
     use crate::assets::OriginalResourceStore;
-    use crate::native::bloodprg::OriginalResourceCatalog;
+    use crate::native::bloodprg::{OriginalResourceCatalog, ScriptProfileId};
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script2_catalog_preserves_all_sites_and_live_numbers() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let mut cod = std::fs::read(root.join("SCRIPT2.COD")).unwrap();
+        let mut dic = std::fs::read(root.join("SCRIPT2.DIC")).unwrap();
+        let catalog = SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT2", SCRIPT2_ENGLISH)
+            .unwrap()
+            .unwrap();
+        assert_eq!(catalog.menus.len(), 1197);
+        assert_eq!(catalog.subtitles.len(), 1186);
+        let mut numeric = 0;
+        for (site, menu) in &catalog.menus {
+            assert_eq!(
+                catalog.menu_words(*site, &menu.source),
+                Some(menu.display.as_ref())
+            );
+            if menu
+                .display
+                .iter()
+                .any(|word| matches!(word, InlineMenuDisplayWord::StateNumber(_)))
+            {
+                numeric += 1;
+                assert!(catalog.subtitle(*site).is_none());
+            } else {
+                let text = catalog.subtitle(*site).unwrap();
+                assert!(
+                    text.split(|b| *b == b'\r')
+                        .all(|line| line.len() <= LINE_COLUMNS)
+                );
+            }
+        }
+        assert_eq!(numeric, 11);
+        assert!(
+            SequelEnglishSubtitles::from_sources(&cod, &dic)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT1", SCRIPT2_ENGLISH).is_err()
+        );
+        cod[0] ^= 1;
+        assert!(
+            SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT2", SCRIPT2_ENGLISH)
+                .unwrap()
+                .is_none()
+        );
+        cod[0] ^= 1;
+        dic[0] ^= 1;
+        assert!(
+            SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT2", SCRIPT2_ENGLISH)
+                .unwrap()
+                .is_none()
+        );
+    }
 
     #[test]
     fn bundled_prose_wraps_without_losing_words_or_overflowing() {

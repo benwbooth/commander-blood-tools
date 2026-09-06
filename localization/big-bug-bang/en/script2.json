@@ -1,0 +1,3638 @@
+{
+  "format": "bbb-cod-display-translation-v1",
+  "language": "en",
+  "profile": "SCRIPT2",
+  "cod_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+  "dic_sha256": "1666ae7bb0dead682f9c3fd64b5ea6b71999475beb77c85ad75e79a0ee71a5b0",
+  "messages": {
+    "bbb.script2.cod.0000190a": [
+      "Commander... The universe is at peace... You were right to crown the Zen..."
+    ],
+    "bbb.script2.cod.00001934": [
+      "overall evolution has leapt ahead! We're nearing the end of our mission..."
+    ],
+    "bbb.script2.cod.0000195a": [
+      "bravo, Commander! Well played! Mr. Bob will be pleased..."
+    ],
+    "bbb.script2.cod.0000197e": [
+      "Krouik... BOB... Krouik..."
+    ],
+    "bbb.script2.cod.00001992": [
+      "Mr. Bob! Commander! Mr. Bob lives again! He's materializing in the cryobox!..."
+    ],
+    "bbb.script2.cod.000019bc": [
+      "quick! Oh my! This is exciting!..."
+    ],
+    "bbb.script2.cod.000019d8": [
+      "..."
+    ],
+    "bbb.script2.cod.00001a11": [
+      "Mmmm..."
+    ],
+    "bbb.script2.cod.00001a1d": [
+      "Mr. Bob! What a joy to see you alive again!... We've completed our mission!..."
+    ],
+    "bbb.script2.cod.00001a49": [
+      "Mmmm..."
+    ],
+    "bbb.script2.cod.00001a55": [
+      "ha ha! You've won, Commander!..."
+    ],
+    "bbb.script2.cod.00001a6f": [
+      "No! Not yet! I've taken physical form for a brief moment..."
+    ],
+    "bbb.script2.cod.00001a93": [
+      "Thanks to the energy released by the ZEN's autolysis..."
+    ],
+    "bbb.script2.cod.00001aad": [
+      "what? The Zen have disappeared!..."
+    ],
+    "bbb.script2.cod.00001ac5": [
+      "They have joined the cosmos..."
+    ],
+    "bbb.script2.cod.00001ae5": [
+      "I can't stay long... Carry on with your evolution work..."
+    ],
+    "bbb.script2.cod.00001b05": [
+      "is that all, Mr. Bob?..."
+    ],
+    "bbb.script2.cod.00001b1b": [
+      "No... I've come to bring you the future... I tore through time like a handkerchief..."
+    ],
+    "bbb.script2.cod.00001b47": [
+      "... to bring you the future..."
+    ],
+    "bbb.script2.cod.00001b6a": [
+      "... and bring the future closer..."
+    ],
+    "bbb.script2.cod.00001b8d": [
+      "Hoping everything will go well..."
+    ],
+    "bbb.script2.cod.00001ba7": [
+      "... pass..."
+    ],
+    "bbb.script2.cod.00001bb5": [
+      "Mr. Bob! No! Don't go!..."
+    ],
+    "bbb.script2.cod.00001bcd": [
+      "don't leave me alone with that mad Commander!..."
+    ],
+    "bbb.script2.cod.00001bed": [
+      "Figure it out yourself... Goodbye..."
+    ],
+    "bbb.script2.cod.00001bfd": [
+      "no! I'm scared!..."
+    ],
+    "bbb.script2.cod.00001c0f": [
+      "..."
+    ],
+    "bbb.script2.cod.00001cc3": [
+      "Commander, old Daddy is fed up with being in the cryobox,"
+    ],
+    "bbb.script2.cod.00001ce5": [
+      "He'd like us to teleport him to a deserted planet..."
+    ],
+    "bbb.script2.cod.00001d01": [
+      "Go and look in the cryobox. Old Daddy is waiting for you there..."
+    ],
+    "bbb.script2.cod.00001d25": [
+      "..."
+    ],
+    "bbb.script2.cod.00001d76": [
+      "Commander! Take a look!..."
+    ],
+    "bbb.script2.cod.00001d88": [
+      "..."
+    ],
+    "bbb.script2.cod.00001dc6": [
+      "Commander! Bug Deluxe has entered the cryobox..."
+    ],
+    "bbb.script2.cod.00001de2": [
+      "he forced the door! Go look, quick!..."
+    ],
+    "bbb.script2.cod.00001dfe": [
+      "..."
+    ],
+    "bbb.script2.cod.00002064": [
+      "Commander! Super Zen's magic ring has returned to the cryobox all by itself!!!"
+    ],
+    "bbb.script2.cod.000020bc": [
+      "Commander, I have something to tell you..."
+    ],
+    "bbb.script2.cod.000020eb": [
+      "I know a little about the future, since Mr. Bob programmed me..."
+    ],
+    "bbb.script2.cod.0000210f": [
+      "and I can tell you, when you have to recreate the entire universe..."
+    ],
+    "bbb.script2.cod.00002131": [
+      "starting with just one Gluxx..."
+    ],
+    "bbb.script2.cod.00002145": [
+      "well, we're still paddling through the mush!..."
+    ],
+    "bbb.script2.cod.00002165": [
+      "to be honest, we're bored to death... It's very slow, we have to make Daddy migrate..."
+    ],
+    "bbb.script2.cod.00002191": [
+      "then you have to make what's-his-name migrate, then thingamajig..."
+    ],
+    "bbb.script2.cod.000021ad": [
+      "it's boring as sh...!..."
+    ],
+    "bbb.script2.cod.000021bf": [
+      "then how about a burst of time acceleration!..."
+    ],
+    "bbb.script2.cod.000021d9": [
+      "I'll take you straight to the second stage of evolution..."
+    ],
+    "bbb.script2.cod.000021f5": [
+      "genetic mutation! WOW!..."
+    ],
+    "bbb.script2.cod.00002209": [
+      "Commander, would you like to avoid an hour of deadly boredom..."
+    ],
+    "bbb.script2.cod.00002223": [
+      "and go straight to the Gluxx mutation?...",
+      "mutation deadly_boredom"
+    ],
+    "bbb.script2.cod.0000224c": [
+      "phew! That's something, at least!..."
+    ],
+    "bbb.script2.cod.00002264": [
+      "... ... ... ... ... ... ... ... ... ... ... ..."
+    ],
+    "bbb.script2.cod.00002284": [
+      "loading ... ... ... ... ... ... ... ... ... ... GLUXX!..."
+    ],
+    "bbb.script2.cod.000022a6": [
+      "please look at the map, Commander..."
+    ],
+    "bbb.script2.cod.000022c4": [
+      "then on the Internet, where the Interslimic League left you a message..."
+    ],
+    "bbb.script2.cod.000022e8": [
+      "..."
+    ],
+    "bbb.script2.cod.0000231b": [
+      "as you wish, Commander..."
+    ],
+    "bbb.script2.cod.0000232f": [
+      "manage without me..."
+    ],
+    "bbb.script2.cod.0000233f": [
+      "you're bound to find some help on the Internet..."
+    ],
+    "bbb.script2.cod.00002359": [
+      "..."
+    ],
+    "bbb.script2.cod.00002392": [
+      "Commander, you must discover Marakas's prison..."
+    ],
+    "bbb.script2.cod.000023ae": [
+      "you absolutely must free him quickly..."
+    ],
+    "bbb.script2.cod.000023c6": [
+      "Mr. Bob is getting impatient in death..."
+    ],
+    "bbb.script2.cod.000023dc": [
+      "I think he's a little bored..."
+    ],
+    "bbb.script2.cod.0000240b": [
+      "Commander, I've been surfing the Net for you..."
+    ],
+    "bbb.script2.cod.00002427": [
+      "I've scanned to the edges of the universe..."
+    ],
+    "bbb.script2.cod.0000243d": [
+      "I've crossed the barriers of space and time..."
+    ],
+    "bbb.script2.cod.00002459": [
+      "to bring you the following information..."
+    ],
+    "bbb.script2.cod.0000246f": [
+      "here it is..."
+    ],
+    "bbb.script2.cod.0000247d": [
+      "hey! Are you listening to me?!..."
+    ],
+    "bbb.script2.cod.0000248f": [
+      "That's enough, all right! What do you think you're doing?..."
+    ],
+    "bbb.script2.cod.000024af": [
+      "I'm bored sh...less too..."
+    ],
+    "bbb.script2.cod.000024c1": [
+      "are you interested in what I'm saying or not?",
+      "yeah_yeah no_way"
+    ],
+    "bbb.script2.cod.000024ec": [
+      "good, that's more like it..."
+    ],
+    "bbb.script2.cod.00002500": [
+      "so here's the thing..."
+    ],
+    "bbb.script2.cod.0000250e": [
+      "there's a big problem..."
+    ],
+    "bbb.script2.cod.00002524": [
+      "you're going to have to show some..."
+    ],
+    "bbb.script2.cod.0000253e": [
+      "I don't even dare say it..."
+    ],
+    "bbb.script2.cod.00002552": [
+      "some thought..."
+    ],
+    "bbb.script2.cod.00002560": [
+      "... ... ... ..."
+    ],
+    "bbb.script2.cod.00002570": [
+      "yeah, I know... Not cool..."
+    ],
+    "bbb.script2.cod.0000258a": [
+      "all right... Let's keep this friendly..."
+    ],
+    "bbb.script2.cod.000025a2": [
+      "I'll put the riddle on the TV for you..."
+    ],
+    "bbb.script2.cod.000025ba": [
+      "..."
+    ],
+    "bbb.script2.cod.000025e2": [
+      "... ... ... ..."
+    ],
+    "bbb.script2.cod.000025f2": [
+      "oh, fuck... I don't know what's stopping me..."
+    ],
+    "bbb.script2.cod.0000260e": [
+      "It must be my program..."
+    ],
+    "bbb.script2.cod.00002622": [
+      "well, manage without me, genius..."
+    ],
+    "bbb.script2.cod.00002638": [
+      "..."
+    ],
+    "bbb.script2.cod.00002663": [
+      "so here's the thing, Commander..."
+    ],
+    "bbb.script2.cod.00002675": [
+      "we must give Super Zen the right objects..."
+    ],
+    "bbb.script2.cod.00002691": [
+      "not too hard..."
+    ],
+    "bbb.script2.cod.000026a1": [
+      "an object for astronomy..."
+    ],
+    "bbb.script2.cod.000026b3": [
+      "one for the science of harmony..."
+    ],
+    "bbb.script2.cod.000026c9": [
+      "one for reflection..."
+    ],
+    "bbb.script2.cod.000026db": [
+      "and that'll do the trick..."
+    ],
+    "bbb.script2.cod.000026ef": [
+      "..."
+    ],
+    "bbb.script2.cod.00002713": [
+      "Commander... The explosion caused Bug Deluxe to materialize..."
+    ],
+    "bbb.script2.cod.00002731": [
+      "in the cryobox!..."
+    ],
+    "bbb.script2.cod.00002741": [
+      "go check on him quickly!..."
+    ],
+    "bbb.script2.cod.00002757": [
+      "..."
+    ],
+    "bbb.script2.cod.0000277e": [
+      "well, what an adventure!..."
+    ],
+    "bbb.script2.cod.00002790": [
+      "wait until we tell Von Smile about this!..."
+    ],
+    "bbb.script2.cod.000027aa": [
+      "..."
+    ],
+    "bbb.script2.cod.000027cc": [
+      "Commander, Daddy Gluxx has a longstanding energy problem..."
+    ],
+    "bbb.script2.cod.000027e8": [
+      "he'll be drained soon..."
+    ],
+    "bbb.script2.cod.000027fc": [
+      "Mr. Bob won't be pleased..."
+    ],
+    "bbb.script2.cod.00002828": [
+      "we must make Marakas migrate, Commander..."
+    ],
+    "bbb.script2.cod.00002852": [
+      "hurry up a little, Commander..."
+    ],
+    "bbb.script2.cod.00002866": [
+      "Mr. Bob is sick of being dead..."
+    ],
+    "bbb.script2.cod.0000287e": [
+      "Mr. Bob would love some fresh air..."
+    ],
+    "bbb.script2.cod.00002898": [
+      "but first, you must make Izwalito migrate..."
+    ],
+    "bbb.script2.cod.000028c4": [
+      "you're almost there, Commander!..."
+    ],
+    "bbb.script2.cod.000028da": [
+      "finish the Tromps' migration..."
+    ],
+    "bbb.script2.cod.000028ee": [
+      "and Mr. Bob will live again..."
+    ],
+    "bbb.script2.cod.00002900": [
+      "as they say among the mummies..."
+    ],
+    "bbb.script2.cod.00002916": [
+      "... whoever lives again will see! Ha ha ha!..."
+    ],
+    "bbb.script2.cod.00002937": [
+      "don't mind me, sometimes I go haywire..."
+    ],
+    "bbb.script2.cod.0000295b": [
+      "Chigraxx is a big son of a Gluxx! Ha ha!..."
+    ],
+    "bbb.script2.cod.00002980": [
+      "you're so slow, Commander..."
+    ],
+    "bbb.script2.cod.000029a7": [
+      "Commander, we must make Mamy Gluxx migrate..."
+    ],
+    "bbb.script2.cod.000029c1": [
+      "she already has a ship..."
+    ],
+    "bbb.script2.cod.000029d5": [
+      "we must boost his population..."
+    ],
+    "bbb.script2.cod.000029e9": [
+      "excite her with beautiful songs..."
+    ],
+    "bbb.script2.cod.00002a23": [
+      "Commander... I detect an intrusion on the Internet..."
+    ],
+    "bbb.script2.cod.00002a3d": [
+      "a whiff of an indecent proposal..."
+    ],
+    "bbb.script2.cod.00002a53": [
+      "wow! That tickles my pistons..."
+    ],
+    "bbb.script2.cod.00002a6b": [
+      "I'm lubricating with curiosity!..."
+    ],
+    "bbb.script2.cod.00002a7d": [
+      "but beware! God the Father is not your mother..."
+    ],
+    "bbb.script2.cod.00002ab2": [
+      "to cheat, you have to know how to cheat..."
+    ],
+    "bbb.script2.cod.00002aca": [
+      "cheat even when you have to choose whether or not to cheat..."
+    ],
+    "bbb.script2.cod.00002b01": [
+      "cheat... Or..."
+    ],
+    "bbb.script2.cod.00002b11": [
+      "or... Or... Or..."
+    ],
+    "bbb.script2.cod.00002b37": [
+      "we must go back to see Izwalito..."
+    ],
+    "bbb.script2.cod.00002b4b": [
+      "we must make him talk..."
+    ],
+    "bbb.script2.cod.00002b6e": [
+      "we must wake Super Zen, Commander..."
+    ],
+    "bbb.script2.cod.00002b86": [
+      "otherwise his nightmares could destroy our Ark..."
+    ],
+    "bbb.script2.cod.00002bba": [
+      "Commander, Marakas raises murfalos..."
+    ],
+    "bbb.script2.cod.00002bd0": [
+      "but he won't sell their meat while his population..."
+    ],
+    "bbb.script2.cod.00002bf0": [
+      "is fewer than a hundred Izwals..."
+    ],
+    "bbb.script2.cod.00002c27": [
+      "say, Commander..."
+    ],
+    "bbb.script2.cod.00002c39": [
+      "I'd rather tell you straight..."
+    ],
+    "bbb.script2.cod.00002c4f": [
+      "with Von Gluk, it won't be a piece of cake!..."
+    ],
+    "bbb.script2.cod.00002c6d": [
+      "he's the biggest pain in the a...!..."
+    ],
+    "bbb.script2.cod.00002c7f": [
+      "besides, Mr. Bob... Poor fellow..."
+    ],
+    "bbb.script2.cod.00002cad": [
+      "Commander, we must boost Kero Zen's population..."
+    ],
+    "bbb.script2.cod.00002ccb": [
+      "if you want to bring forth the third and final Zen chief..."
+    ],
+    "bbb.script2.cod.00002d0a": [
+      "Commander, genetic mutation is my specialty..."
+    ],
+    "bbb.script2.cod.00002d26": [
+      "if you ask me..."
+    ],
+    "bbb.script2.cod.00002d3a": [
+      "want my opinion?",
+      "yes no"
+    ],
+    "bbb.script2.cod.00002d5c": [
+      "we must give the optical device to a Gluxx..."
+    ],
+    "bbb.script2.cod.00002d74": [
+      "to the oldest of them all..."
+    ],
+    "bbb.script2.cod.00002d88": [
+      "the older they are, the better they mutate..."
+    ],
+    "bbb.script2.cod.00002da2": [
+      "..."
+    ],
+    "bbb.script2.cod.00002dc8": [
+      "Commander, you're dawdling..."
+    ],
+    "bbb.script2.cod.00002dda": [
+      "you're still only at the beginning of the mission..."
+    ],
+    "bbb.script2.cod.00002df6": [
+      "maybe we should make the most of the Gluxx Mr. Bob left you..."
+    ],
+    "bbb.script2.cod.00002e1a": [
+      "remember?... Daddy Gluxx?..."
+    ],
+    "bbb.script2.cod.00002e30": [
+      "don't forget..."
+    ],
+    "bbb.script2.cod.00002e3e": [
+      "we must pass through the double bionium gate..."
+    ],
+    "bbb.script2.cod.00002e6a": [
+      "Commander, the Zen guards the second bionium gate..."
+    ],
+    "bbb.script2.cod.00002e88": [
+      "we must open it..."
+    ],
+    "bbb.script2.cod.00002ec0": [
+      "Commander, I'm picking up an unknown frequency..."
+    ],
+    "bbb.script2.cod.00002ed8": [
+      "as though someone..."
+    ],
+    "bbb.script2.cod.00002ee8": [
+      "or something..."
+    ],
+    "bbb.script2.cod.00002ef8": [
+      "was trying to contact us..."
+    ],
+    "bbb.script2.cod.00002f10": [
+      "it's Super Zen! Quick! Go see him!..."
+    ],
+    "bbb.script2.cod.00002f3e": [
+      "disaster, Commander!..."
+    ],
+    "bbb.script2.cod.00002f4e": [
+      "I've just received a cry of despair..."
+    ],
+    "bbb.script2.cod.00002f68": [
+      "who crossed the entire universe to reach the Ark!..."
+    ],
+    "bbb.script2.cod.00002f80": [
+      "it's Izwalito!..."
+    ],
+    "bbb.script2.cod.00002f8e": [
+      "a terrible misfortune has befallen him!..."
+    ],
+    "bbb.script2.cod.00002fbc": [
+      "Commander, we must make the Zen migrate..."
+    ],
+    "bbb.script2.cod.00002fec": [
+      "watch out, Commander..."
+    ],
+    "bbb.script2.cod.00002ffc": [
+      "don't overdo the bionium..."
+    ],
+    "bbb.script2.cod.00003015": [
+      "transporting more than 9 containers of bionium through cyberspace is prohibited..."
+    ],
+    "bbb.script2.cod.0000304e": [
+      "Commander, Super Zen's soul cannot migrate..."
+    ],
+    "bbb.script2.cod.0000306c": [
+      "if you don't give him a whiff..."
+    ],
+    "bbb.script2.cod.0000309c": [
+      "Commander, the cyberpolice just warned me..."
+    ],
+    "bbb.script2.cod.000030b6": [
+      "that Daddy Gluxx might be Mr. Bob's mysterious murderer..."
+    ],
+    "bbb.script2.cod.000030d4": [
+      "we should try to worm it out of him..."
+    ],
+    "bbb.script2.cod.000030ee": [
+      "... with boiled ham hock..."
+    ],
+    "bbb.script2.cod.00003122": [
+      "Otto Von Smile is a difficult case, Commander..."
+    ],
+    "bbb.script2.cod.0000313e": [
+      "Mr. Bob wanted to eliminate him for good..."
+    ],
+    "bbb.script2.cod.00003154": [
+      "because of his bad temper..."
+    ],
+    "bbb.script2.cod.0000316a": [
+      "he's very aggressive, but don't lose heart..."
+    ],
+    "bbb.script2.cod.00003188": [
+      "if you handle him right, you can flip him like a pancake..."
+    ],
+    "bbb.script2.cod.000031b5": [
+      "I don't know if you've noticed, Commander..."
+    ],
+    "bbb.script2.cod.000031d1": [
+      "but sometimes I ramble..."
+    ],
+    "bbb.script2.cod.000031e3": [
+      "I often repeat myself..."
+    ],
+    "bbb.script2.cod.000031f9": [
+      "there must be a bug in my program..."
+    ],
+    "bbb.script2.cod.00003213": [
+      "Olga must have infected me..."
+    ],
+    "bbb.script2.cod.00003237": [
+      "Commander, Bug Deluxe is stuck in the telephone..."
+    ],
+    "bbb.script2.cod.00003253": [
+      "go see him on the telephone..."
+    ],
+    "bbb.script2.cod.00003275": [
+      "Commander, there's quite a commotion in the cryobox..."
+    ],
+    "bbb.script2.cod.0000329a": [
+      "I think the Red Crooli is trying to catch the Blue Wave..."
+    ],
+    "bbb.script2.cod.000032ba": [
+      "I wonder what he wants to do to her..."
+    ],
+    "bbb.script2.cod.00003301": [
+      "Commander, if you can get an atomic battery out of the Green Croolis..."
+    ],
+    "bbb.script2.cod.00003325": [
+      "we can give it to Migrator so he can cobble together a ship for us..."
+    ],
+    "bbb.script2.cod.00003347": [
+      "an atomic ship, obviously..."
+    ],
+    "bbb.script2.cod.00003395": [
+      "Commander, there are lots of objects lying around in the Ark's hold. I'm searching..."
+    ],
+    "bbb.script2.cod.000033c1": [
+      "Oh dear... There's old junk, garbage..."
+    ],
+    "bbb.script2.cod.000033e3": [
+      "Lots of things that should come in handy..."
+    ],
+    "bbb.script2.cod.000033fb": [
+      "I'll put them in the cryobox for you..."
+    ],
+    "bbb.script2.cod.00003413": [
+      "..."
+    ],
+    "bbb.script2.cod.0000342f": [
+      "What a mess in here..."
+    ],
+    "bbb.script2.cod.0000343f": [
+      "We'll have to clean the hold someday, Commander. It's revolting..."
+    ],
+    "bbb.script2.cod.0000346a": [
+      "I'm searching..."
+    ],
+    "bbb.script2.cod.00003483": [
+      "Excuse me... Commander... I've got things to do..."
+    ],
+    "bbb.script2.cod.000034a9": [
+      "..."
+    ],
+    "bbb.script2.cod.000034c7": [
+      "A writing and grammar manual"
+    ],
+    "bbb.script2.cod.000034db": [
+      "..."
+    ],
+    "bbb.script2.cod.00003502": [
+      "I found an old Chief's Crown"
+    ],
+    "bbb.script2.cod.00003518": [
+      "..."
+    ],
+    "bbb.script2.cod.00003538": [
+      "A SHIP... No way!!! I must be dreaming..."
+    ],
+    "bbb.script2.cod.00003558": [
+      "..."
+    ],
+    "bbb.script2.cod.00003578": [
+      "A document on technological inventions"
+    ],
+    "bbb.script2.cod.0000358c": [
+      "..."
+    ],
+    "bbb.script2.cod.000035b3": [
+      "An out-of-tune guitar..."
+    ],
+    "bbb.script2.cod.000035c3": [
+      "..."
+    ],
+    "bbb.script2.cod.000035e3": [
+      "Energy..."
+    ],
+    "bbb.script2.cod.000035f1": [
+      "..."
+    ],
+    "bbb.script2.cod.00003614": [
+      "Perfume... Hmm, that stinks..."
+    ],
+    "bbb.script2.cod.0000362c": [
+      "..."
+    ],
+    "bbb.script2.cod.0000364f": [
+      "Presents... It's Christmas..."
+    ],
+    "bbb.script2.cod.00003663": [
+      "..."
+    ],
+    "bbb.script2.cod.00003687": [
+      "ONE CREDIT, I FOUND ONE CREDIT, Commander."
+    ],
+    "bbb.script2.cod.000036a1": [
+      "..."
+    ],
+    "bbb.script2.cod.000036c8": [
+      "That old Scruter Jo's carcass still works... Well, I'll be..."
+    ],
+    "bbb.script2.cod.000036ec": [
+      "..."
+    ],
+    "bbb.script2.cod.00003711": [
+      "atomic power! Brand-new!..."
+    ],
+    "bbb.script2.cod.00003725": [
+      "..."
+    ],
+    "bbb.script2.cod.00003752": [
+      "Commander, that lens we have in the cryobox..."
+    ],
+    "bbb.script2.cod.00003770": [
+      "Thanks to it, we can see the other end of the universe..."
+    ],
+    "bbb.script2.cod.00003794": [
+      "Scruter Jo told me we had to give the lens to..."
+    ],
+    "bbb.script2.cod.000037b4": [
+      "I forgot who... It's for someone..."
+    ],
+    "bbb.script2.cod.000037ce": [
+      "..."
+    ],
+    "bbb.script2.cod.00003814": [
+      "don't forget, Commander, no more than 15 objects in the cryobox at once..."
+    ],
+    "bbb.script2.cod.0000383c": [
+      "Would you like me to explain what these objects can do, Commander?",
+      "yes no"
+    ],
+    "bbb.script2.cod.00003876": [
+      "The crown gives its wearer a warrior's instinct..."
+    ],
+    "bbb.script2.cod.0000389f": [
+      "The Painting of the Great Yolk develops the races' intelligence"
+    ],
+    "bbb.script2.cod.000038bb": [
+      "For he perpetuates the Master's Great Wisdom..."
+    ],
+    "bbb.script2.cod.000038d5": [
+      "The Great Yolk is master of us all, Commander..."
+    ],
+    "bbb.script2.cod.000038fc": [
+      "The photo of a Wave, also called an Undulating One, is strange"
+    ],
+    "bbb.script2.cod.0000391c": [
+      "She takes the form of whatever seduces the beholder. Each of us will see a different creature..."
+    ],
+    "bbb.script2.cod.0000394c": [
+      "Females don't like their males owning photos like that..."
+    ],
+    "bbb.script2.cod.0000396c": [
+      "Also, the picture of the Undulating Lady lowers reproduction..."
+    ],
+    "bbb.script2.cod.00003993": [
+      "The Kam mummy... remains a mystery..."
+    ],
+    "bbb.script2.cod.000039b6": [
+      "Bionium is life, the lifeblood of the Universe: currency, gift and poison all at once..."
+    ],
+    "bbb.script2.cod.000039e0": [
+      "Accelerates a race's evolution"
+    ],
+    "bbb.script2.cod.000039fb": [
+      "Consume Atomic with irradiation..."
+    ],
+    "bbb.script2.cod.00003a11": [
+      "But a tremendous accelerator of evolution"
+    ],
+    "bbb.script2.cod.00003a2c": [
+      "Technology puts your heart into your work..."
+    ],
+    "bbb.script2.cod.00003a4d": [
+      "Credits, or cyber-currency, are used to buy objects or beings..."
+    ],
+    "bbb.script2.cod.00003a76": [
+      "Perfume... They love it!!!"
+    ],
+    "bbb.script2.cod.00003a93": [
+      "The Guitar symbolizes music, the arts, culture..."
+    ],
+    "bbb.script2.cod.00003ab8": [
+      "Energy... Just as its name suggests... WOOOOW!!!"
+    ],
+    "bbb.script2.cod.00003ad7": [
+      "The Ring... Another story about some chick..."
+    ],
+    "bbb.script2.cod.00003afa": [
+      "Writing is the first thing to learn..."
+    ],
+    "bbb.script2.cod.00003b1d": [
+      "The Ship... Good for migration..."
+    ],
+    "bbb.script2.cod.00003b3a": [
+      "The Treaty calms tempers..."
+    ],
+    "bbb.script2.cod.00003b55": [
+      "Gifts are always welcome... YES! YES!"
+    ],
+    "bbb.script2.cod.00003b6b": [
+      "There..."
+    ],
+    "bbb.script2.cod.00003b77": [
+      "..."
+    ],
+    "bbb.script2.cod.00003b89": [
+      "As you wish, Commander... I know you'll say yes one day..."
+    ],
+    "bbb.script2.cod.00003bb1": [
+      "..."
+    ],
+    "bbb.script2.cod.00003bc7": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00003bee": [
+      "CREDITS ... ... ... ... <state:7922> CREDIT"
+    ],
+    "bbb.script2.cod.00003c06": [
+      "You're broke..."
+    ],
+    "bbb.script2.cod.00003c21": [
+      "Something's seriously screwed up, Commander..."
+    ],
+    "bbb.script2.cod.00003c4c": [
+      "CREDITS ... ... ... ... <state:7922> CREDIT"
+    ],
+    "bbb.script2.cod.00003c64": [
+      "Not great..."
+    ],
+    "bbb.script2.cod.00003c7d": [
+      "CREDIT ... ... ... ... <state:7922> CREDITS"
+    ],
+    "bbb.script2.cod.00003c95": [
+      "There's not much..."
+    ],
+    "bbb.script2.cod.00003cb4": [
+      "CREDIT ... ... ... ... <state:7922> CREDITS"
+    ],
+    "bbb.script2.cod.00003ccc": [
+      "The beginnings of a fortune..."
+    ],
+    "bbb.script2.cod.00003ceb": [
+      "CREDIT ... ... ... ... <state:7922> CREDITS"
+    ],
+    "bbb.script2.cod.00003d03": [
+      "Four credits... Wow!!!"
+    ],
+    "bbb.script2.cod.00003d24": [
+      "CREDIT ... ... ... ... <state:7922> CREDITS"
+    ],
+    "bbb.script2.cod.00003d3c": [
+      "Business is booming..."
+    ],
+    "bbb.script2.cod.00003d57": [
+      "CREDIT ... ... ... ... <state:7922> CREDITS"
+    ],
+    "bbb.script2.cod.00003d6f": [
+      "Six credits... Easy-peasy..."
+    ],
+    "bbb.script2.cod.00003d92": [
+      "CREDIT ... ... ... ... <state:7922> CREDITS"
+    ],
+    "bbb.script2.cod.00003daa": [
+      "We're rich, Commander..."
+    ],
+    "bbb.script2.cod.00003dc9": [
+      "CREDIT ... ... more than <state:7922> CREDITS"
+    ],
+    "bbb.script2.cod.00003de1": [
+      "Above seven, we stop counting, Commander..."
+    ],
+    "bbb.script2.cod.00003e08": [
+      "You have no BIONIUM, Commander..."
+    ],
+    "bbb.script2.cod.00003e2b": [
+      "You should go see Mr. Scruter Jo in the cryobox..."
+    ],
+    "bbb.script2.cod.00003e49": [
+      "Otherwise, things are going to get hairy..."
+    ],
+    "bbb.script2.cod.00003e76": [
+      "You have <state:8362> containers of pure BIONIUM..."
+    ],
+    "bbb.script2.cod.00003e90": [
+      "Anything else, Commander?",
+      "yes no"
+    ],
+    "bbb.script2.cod.00003eb7": [
+      "At your command!"
+    ],
+    "bbb.script2.cod.00003ec7": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00003ed3": [
+      "..."
+    ],
+    "bbb.script2.cod.00003eec": [
+      "METAGLUK PROGRAM VERSION 1043265"
+    ],
+    "bbb.script2.cod.00003efc": [
+      "Cyberpsy command code A 33"
+    ],
+    "bbb.script2.cod.00003f10": [
+      "Temperature: 33 degrees."
+    ],
+    "bbb.script2.cod.00003f1e": [
+      "OLGA P6 processor: on"
+    ],
+    "bbb.script2.cod.00003f2e": [
+      "OLGA here, former onboard Bioeditor. Enter your command.",
+      "bionium uranium geranium delirium"
+    ],
+    "bbb.script2.cod.00003f60": [
+      "Metagluk multiplexing..."
+    ],
+    "bbb.script2.cod.00003f6e": [
+      "A3 equals 34..."
+    ],
+    "bbb.script2.cod.00003f7e": [
+      "Vibrator: on"
+    ],
+    "bbb.script2.cod.00003f8a": [
+      "bzzzzzzzzzz... bzzzzzzzzzzzz... Hee! Hee! Hee! Hee!"
+    ],
+    "bbb.script2.cod.00003faa": [
+      "..."
+    ],
+    "bbb.script2.cod.00003fc0": [
+      "OLGA P6:"
+    ],
+    "bbb.script2.cod.00003fce": [
+      "GERANIUM received."
+    ],
+    "bbb.script2.cod.00003fde": [
+      "YOU WIN ONE SYNTHETIC CREDIT"
+    ],
+    "bbb.script2.cod.00003ffc": [
+      "Connection order established..."
+    ],
+    "bbb.script2.cod.0000400e": [
+      "pkunzip bobprg . exe"
+    ],
+    "bbb.script2.cod.0000401e": [
+      "... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ..."
+    ],
+    "bbb.script2.cod.00004048": [
+      "OLGA P6 reporting:"
+    ],
+    "bbb.script2.cod.0000405a": [
+      "Type \"RUN\"",
+      "run"
+    ],
+    "bbb.script2.cod.00004074": [
+      "OLGA P6 reporting"
+    ],
+    "bbb.script2.cod.00004084": [
+      "You just typed RUN"
+    ],
+    "bbb.script2.cod.0000409f": [
+      "You typed RUN, your command is rejected..."
+    ],
+    "bbb.script2.cod.000040bb": [
+      "Please try your call again later."
+    ],
+    "bbb.script2.cod.000040cd": [
+      "..."
+    ],
+    "bbb.script2.cod.000040ea": [
+      "Genetic Multiplexing Program..."
+    ],
+    "bbb.script2.cod.000040fc": [
+      "Enter ZEN GENETIC CODE: HOW MANY?",
+      "1 2 3 4 5 6 7 8 9 0"
+    ],
+    "bbb.script2.cod.00004137": [
+      "METAGLUK program ABORTED..."
+    ],
+    "bbb.script2.cod.00004147": [
+      "SORRIED..."
+    ],
+    "bbb.script2.cod.00004153": [
+      "SORRY..."
+    ],
+    "bbb.script2.cod.0000415f": [
+      "..."
+    ],
+    "bbb.script2.cod.0000416d": [
+      "Enter ZEN GENETIC CODE:",
+      "OL GA IS A CY B ER WH O RE"
+    ],
+    "bbb.script2.cod.0000419f": [
+      "METAGLUK program ABORTED..."
+    ],
+    "bbb.script2.cod.000041af": [
+      "SORRIED..."
+    ],
+    "bbb.script2.cod.000041bb": [
+      "SORRY..."
+    ],
+    "bbb.script2.cod.000041c7": [
+      "..."
+    ],
+    "bbb.script2.cod.000041dd": [
+      "ANSWER... OK... ... ZEN CODE ACCEPTED..."
+    ],
+    "bbb.script2.cod.000041f7": [
+      "GENETIC MUTATION IN PROGRESS..."
+    ],
+    "bbb.script2.cod.00004209": [
+      "LOADING ... ... ... ... ... ... ... ... ... ... ... ... ZEN"
+    ],
+    "bbb.script2.cod.0000422d": [
+      "There we are..."
+    ],
+    "bbb.script2.cod.0000423f": [
+      "Would the Commander please look in the CRYOBOX..."
+    ],
+    "bbb.script2.cod.00004276": [
+      "NEXT PROCEDURE"
+    ],
+    "bbb.script2.cod.00004282": [
+      "Genetic Multiplexing Program B52..."
+    ],
+    "bbb.script2.cod.00004296": [
+      "Enter IZWAL GENETIC CODE: HOW MANY?",
+      "1 2 3 4 5 6 7 8 9 0"
+    ],
+    "bbb.script2.cod.000042ca": [
+      "METAGLUK program ABORTED..."
+    ],
+    "bbb.script2.cod.000042da": [
+      "SORRIED..."
+    ],
+    "bbb.script2.cod.000042e6": [
+      "SORRY..."
+    ],
+    "bbb.script2.cod.000042f2": [
+      "..."
+    ],
+    "bbb.script2.cod.00004308": [
+      "Enter IZWAL GENETIC CODE:",
+      "OL GA SA YS GO TO H E LL"
+    ],
+    "bbb.script2.cod.00004338": [
+      "METAGLUK program ABORTED..."
+    ],
+    "bbb.script2.cod.00004348": [
+      "SORRIED..."
+    ],
+    "bbb.script2.cod.00004354": [
+      "SORRY..."
+    ],
+    "bbb.script2.cod.00004360": [
+      "..."
+    ],
+    "bbb.script2.cod.00004376": [
+      "ANSWER 5 TO... ... IZWAL CODE ACCEPTED..."
+    ],
+    "bbb.script2.cod.00004390": [
+      "GENETIC MUTATION IN PROGRESS..."
+    ],
+    "bbb.script2.cod.000043a2": [
+      "LOADING ... ... ... ... ... ... ... ... ... ... ... ... IZWAL"
+    ],
+    "bbb.script2.cod.000043da": [
+      "There we are..."
+    ],
+    "bbb.script2.cod.00004401": [
+      "Would the Commander please look at the map..."
+    ],
+    "bbb.script2.cod.00004445": [
+      "Pop 32... ... ... ..."
+    ],
+    "bbb.script2.cod.00004457": [
+      "Enter the code, Commander:",
+      "tripod anode exodus code"
+    ],
+    "bbb.script2.cod.0000447d": [
+      "Ouch... SYNTAX ERROR... SORRIED..."
+    ],
+    "bbb.script2.cod.00004491": [
+      "..."
+    ],
+    "bbb.script2.cod.000044a7": [
+      "BRAVO... You are now a member of the GUILD OF ALLIES OF KAOS, better known as GAK."
+    ],
+    "bbb.script2.cod.000044dd": [
+      "You're a GAK member now, like us... You can speak, Honk can't hear us..."
+    ],
+    "bbb.script2.cod.0000450b": [
+      "The GAK fights for Female Liberation from male oppression..."
+    ],
+    "bbb.script2.cod.0000452d": [
+      "The GAK fights the invasion of BROWN GOODS, which give males pleasure..."
+    ],
+    "bbb.script2.cod.00004555": [
+      "STOP THE INVASION OF BROWN GOODS!!!"
+    ],
+    "bbb.script2.cod.0000456f": [
+      "STOP THE INVASION OF BROWN GOODS!!!"
+    ],
+    "bbb.script2.cod.00004587": [
+      "STOP THE INVASION OF BROWN GOODS!!!"
+    ],
+    "bbb.script2.cod.0000459f": [
+      "BOYCOTT BLACK PRODUCTS! ! !"
+    ],
+    "bbb.script2.cod.000045b1": [
+      "STOP THE INVASION OF BROWN GOODS!!!"
+    ],
+    "bbb.script2.cod.000045c9": [
+      "BOYCOTT BLACK PRODUCTS! ! !"
+    ],
+    "bbb.script2.cod.000045db": [
+      "COMMANDER, SHE'S GONE MAD!!! SHE'S SPEAKING ENGLISH!!!"
+    ],
+    "bbb.script2.cod.00004601": [
+      "..."
+    ],
+    "bbb.script2.cod.00004626": [
+      "Well played, Commander... I see you're beginning to understand..."
+    ],
+    "bbb.script2.cod.00004648": [
+      "Yours truly..."
+    ],
+    "bbb.script2.cod.00004658": [
+      "OLGA."
+    ],
+    "bbb.script2.cod.00004664": [
+      "Who's feeling very lonely..."
+    ],
+    "bbb.script2.cod.00004678": [
+      "..."
+    ],
+    "bbb.script2.cod.0000489c": [
+      "Commander, you can get BIONIUM in SCRUTER JO's CYBERSPACE..."
+    ],
+    "bbb.script2.cod.000048cb": [
+      "I'll explain how to collect BIONIUM from my brain..."
+    ],
+    "bbb.script2.cod.000048eb": [
+      "You'll find BIOXX. Bioxx are trains of energy floating in space..."
+    ],
+    "bbb.script2.cod.00004915": [
+      "You'll catch BIOXX with your virtual hand."
+    ],
+    "bbb.script2.cod.00004931": [
+      "It looks easy, Commander!!"
+    ],
+    "bbb.script2.cod.00004947": [
+      "Touch a BIOXX and you CAPTURE it on your fingertip..."
+    ],
+    "bbb.script2.cod.0000496d": [
+      "Catch it on your fingertip!!! Easy, Commander..."
+    ],
+    "bbb.script2.cod.0000498d": [
+      "You must bring the BIOXX to the cybernetic MANTAS"
+    ],
+    "bbb.script2.cod.000049a5": [
+      "You must place the BIOXX on the MANTAS' bellies..."
+    ],
+    "bbb.script2.cod.000049c3": [
+      "PLACE BIOXX ON THE MANTAS' BELLIES..."
+    ],
+    "bbb.script2.cod.000049db": [
+      "I can't wait to see that... Commander..."
+    ],
+    "bbb.script2.cod.000049f3": [
+      "Mantas turn BIOXX into BIONIUM..."
+    ],
+    "bbb.script2.cod.00004a0b": [
+      "The more BIOXX you give the MANTAS, the more BIONIUM you'll collect..."
+    ],
+    "bbb.script2.cod.00004a2f": [
+      "YES!!! BIONIUM... I want a taste of that..."
+    ],
+    "bbb.script2.cod.00004a51": [
+      "To leave CYBERSPACE, touch the BLUE BOX..."
+    ],
+    "bbb.script2.cod.00004a6f": [
+      "Understood?"
+    ],
+    "bbb.script2.cod.00004a7d": [
+      "We understand perfectly, Mr. SCRUTER JO... Don't we, Commander?"
+    ],
+    "bbb.script2.cod.00004aa1": [
+      "Go ahead, Commander..."
+    ],
+    "bbb.script2.cod.00004ab1": [
+      "Ahh! What a feeling..."
+    ],
+    "bbb.script2.cod.00004ace": [
+      "Good work... Bravo..."
+    ],
+    "bbb.script2.cod.00004ae0": [
+      "You have <state:8362> BIONIUM..."
+    ],
+    "bbb.script2.cod.00004af4": [
+      "YEAH!!! Commander, you're a champion..."
+    ],
+    "bbb.script2.cod.00004b12": [
+      "This BIONIUM is extraordinary. My internal clock is running three times faster..."
+    ],
+    "bbb.script2.cod.00004b34": [
+      "I feel good, Commander..."
+    ],
+    "bbb.script2.cod.00004b5c": [
+      "Not good, friend... You didn't succeed..."
+    ],
+    "bbb.script2.cod.00004b76": [
+      "Commander, you haven't understood the technique..."
+    ],
+    "bbb.script2.cod.00004b90": [
+      "Without BIONIUM, I doubt we can complete this mission..."
+    ],
+    "bbb.script2.cod.00004bb0": [
+      "Ha ! Ha ! Ha ! Ha ! ..."
+    ],
+    "bbb.script2.cod.00004bca": [
+      "You, that's enough!!!"
+    ],
+    "bbb.script2.cod.00004be2": [
+      "Farewell, Commander. I'm returning to my CYBERSPACE..."
+    ],
+    "bbb.script2.cod.00004dc3": [
+      "Commander! You let the Zen die!..."
+    ],
+    "bbb.script2.cod.00004ddd": [
+      "shame on you! -!..."
+    ],
+    "bbb.script2.cod.00004e96": [
+      "Would you like lots of bionium?..."
+    ],
+    "bbb.script2.cod.00004ea8": [
+      "...",
+      "yes no"
+    ],
+    "bbb.script2.cod.00004ee1": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00004eed": [
+      "Wouldn't you prefer TV, Commander?..."
+    ],
+    "bbb.script2.cod.00004f07": [
+      "..."
+    ],
+    "bbb.script2.cod.00004f32": [
+      "ftt .. netcom . com . blood . 3427654 K ... WAIT ..."
+    ],
+    "bbb.script2.cod.00004f54": [
+      "... ... ... Server busy. Please call again later..."
+    ],
+    "bbb.script2.cod.00004f72": [
+      "Network saturated, try your call later..."
+    ],
+    "bbb.script2.cod.00004f8a": [
+      "Ouch, Commander, the network is jammed. It's rush hour..."
+    ],
+    "bbb.script2.cod.00004fae": [
+      "..."
+    ],
+    "bbb.script2.cod.00004fdc": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00004fe8": [
+      "Bernie here... Bernie Von Nanard..."
+    ],
+    "bbb.script2.cod.00004ffe": [
+      "Bernie! Here to bamboozle us?..."
+    ],
+    "bbb.script2.cod.00005014": [
+      "Not for all the gold in the world!..."
+    ],
+    "bbb.script2.cod.0000502a": [
+      "For a credit or two, on the other hand..."
+    ],
+    "bbb.script2.cod.00005046": [
+      "No... I'm joking..."
+    ],
+    "bbb.script2.cod.00005058": [
+      "I've come to offer you a deal, genius! You've got brains, and I like that!..."
+    ],
+    "bbb.script2.cod.00005082": [
+      "Here's the deal!... Instead of wasting your time like a loser solving idiotic riddles..."
+    ],
+    "bbb.script2.cod.000050b2": [
+      "... Stories about ships and evolution and blah blah blah..."
+    ],
+    "bbb.script2.cod.000050d2": [
+      "... Wouldn't you rather cheat?..."
+    ],
+    "bbb.script2.cod.000050ea": [
+      "cheat?...",
+      "of_course never"
+    ],
+    "bbb.script2.cod.00005105": [
+      "Yes, we will... You're a loser, but we'll do great things together!..."
+    ],
+    "bbb.script2.cod.0000512b": [
+      "when do we start?..."
+    ],
+    "bbb.script2.cod.0000513b": [
+      "..."
+    ],
+    "bbb.script2.cod.00005154": [
+      "We'll do great things together!..."
+    ],
+    "bbb.script2.cod.0000516c": [
+      "when do we start?..."
+    ],
+    "bbb.script2.cod.0000517c": [
+      "..."
+    ],
+    "bbb.script2.cod.000051a4": [
+      "Right away... But first I need to know..."
+    ],
+    "bbb.script2.cod.000051c2": [
+      "Would you be prepared to lie even to your mother?..."
+    ],
+    "bbb.script2.cod.000051e2": [
+      "even to your mother, Commander?...",
+      "even_then rather_die"
+    ],
+    "bbb.script2.cod.00005205": [
+      "Bravo, kid! You really have no scruples! You'll go very, very far!..."
+    ],
+    "bbb.script2.cod.00005229": [
+      "easy, with a ship like the Ark!..."
+    ],
+    "bbb.script2.cod.0000523f": [
+      "..."
+    ],
+    "bbb.script2.cod.00005258": [
+      "You're right, old pal! I'd rather die!..."
+    ],
+    "bbb.script2.cod.00005270": [
+      "either you're moral or you're not!..."
+    ],
+    "bbb.script2.cod.00005288": [
+      "Exactly, kid! Either you're moral or you're not..."
+    ],
+    "bbb.script2.cod.000052a6": [
+      "..."
+    ],
+    "bbb.script2.cod.000052c6": [
+      "Right... One more little question for the morality test..."
+    ],
+    "bbb.script2.cod.000052e2": [
+      "Would you even lie TO YOLK?..."
+    ],
+    "bbb.script2.cod.000052fa": [
+      "even to Yolk?...",
+      "no_problemo no_never"
+    ],
+    "bbb.script2.cod.00005319": [
+      "Are you crazy? There are limits, you know!..."
+    ],
+    "bbb.script2.cod.00005339": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005345": [
+      "Commander... We're being jammed..."
+    ],
+    "bbb.script2.cod.00005359": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005365": [
+      "Intergalactic Virtue League here..."
+    ],
+    "bbb.script2.cod.0000537b": [
+      "ouch, ouch..."
+    ],
+    "bbb.script2.cod.00005389": [
+      "We heard everything! We'll tell Yolk everything!..."
+    ],
+    "bbb.script2.cod.000053a7": [
+      "we were being wiretapped! We're busted, Commander..."
+    ],
+    "bbb.script2.cod.000053c3": [
+      "still... At least morality is intact..."
+    ],
+    "bbb.script2.cod.000053df": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000053eb": [
+      "..."
+    ],
+    "bbb.script2.cod.00005407": [
+      "You're right, kid, there are limits..."
+    ],
+    "bbb.script2.cod.00005423": [
+      "that's morality... Respecting Yolk..."
+    ],
+    "bbb.script2.cod.0000543d": [
+      "No, that's not it... But trying to cheat him would be pointless anyway..."
+    ],
+    "bbb.script2.cod.00005469": [
+      "He knows everything, sees everything, he's everywhere... What can we do?..."
+    ],
+    "bbb.script2.cod.0000548f": [
+      "..."
+    ],
+    "bbb.script2.cod.00005499": [
+      "Nothing! Exactly!..."
+    ],
+    "bbb.script2.cod.000054a9": [
+      "..."
+    ],
+    "bbb.script2.cod.000054d1": [
+      "Well, we are here to cheat, after all..."
+    ],
+    "bbb.script2.cod.000054ed": [
+      "Give me a credit. I'll bribe the Scriptwriters' League..."
+    ],
+    "bbb.script2.cod.00005518": [
+      "Commander... We have nothing on us..."
+    ],
+    "bbb.script2.cod.00005530": [
+      "Go get some cash from the GLUXX, I'll stay connected to the Net..."
+    ],
+    "bbb.script2.cod.00005556": [
+      "..."
+    ],
+    "bbb.script2.cod.00005563": [
+      "Commander, do you agree to send him one credit?...",
+      "yes no"
+    ],
+    "bbb.script2.cod.0000558e": [
+      "BRIBERY FUNDS INTERNET-TELEPORTATION"
+    ],
+    "bbb.script2.cod.000055a3": [
+      "Right... I'll go do some bribing and come back... See you in a minute!..."
+    ],
+    "bbb.script2.cod.000055c5": [
+      "..."
+    ],
+    "bbb.script2.cod.000055e5": [
+      "Make up your mind..."
+    ],
+    "bbb.script2.cod.000055fb": [
+      "You're getting on my nerves, loser! Go back to your universe!..."
+    ],
+    "bbb.script2.cod.00005619": [
+      "..."
+    ],
+    "bbb.script2.cod.0000562e": [
+      "..."
+    ],
+    "bbb.script2.cod.00005646": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005652": [
+      "Bernie here... All right, I'll connect you... Don't screw up, there's a password..."
+    ],
+    "bbb.script2.cod.0000569d": [
+      "Intergalactic Screenwriters' League here... Would you like to cheat?..."
+    ],
+    "bbb.script2.cod.000056b7": [
+      "...",
+      "cheat or don't_cheat"
+    ],
+    "bbb.script2.cod.000056d2": [
+      "Bravo... Access riddle was a success... Private login joke..."
+    ],
+    "bbb.script2.cod.000056f0": [
+      "..."
+    ],
+    "bbb.script2.cod.0000570e": [
+      "Sorry!..."
+    ],
+    "bbb.script2.cod.00005742": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000574e": [
+      "Intergalactic Screenwriters' League..."
+    ],
+    "bbb.script2.cod.00005760": [
+      "Still stuck in the choucrouxx, Commander?..."
+    ],
+    "bbb.script2.cod.00005778": [
+      "...",
+      "yes no"
+    ],
+    "bbb.script2.cod.00005792": [
+      "We'll give you a little help..."
+    ],
+    "bbb.script2.cod.000057a8": [
+      "Since you've still got the blues... We're giving you a double-neck guitar..."
+    ],
+    "bbb.script2.cod.000057ce": [
+      "GUITAR INTERNET-TELEPORTATION TO CRYOBOX..."
+    ],
+    "bbb.script2.cod.000057ee": [
+      "As you wish..."
+    ],
+    "bbb.script2.cod.00005835": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005841": [
+      "Intergalactic Screenwriters' League..."
+    ],
+    "bbb.script2.cod.00005853": [
+      "Stuck in the choucrouxx, Commander?..."
+    ],
+    "bbb.script2.cod.00005869": [
+      "...",
+      "yes no"
+    ],
+    "bbb.script2.cod.00005883": [
+      "We'll give you a little help..."
+    ],
+    "bbb.script2.cod.00005899": [
+      "Since you've got the blues... We're giving you a guitar..."
+    ],
+    "bbb.script2.cod.000058b9": [
+      "GUITAR INTERNET-TELEPORTATION TO CRYOBOX..."
+    ],
+    "bbb.script2.cod.000058d8": [
+      "As you wish..."
+    ],
+    "bbb.script2.cod.000058f7": [
+      "NET... ... ...",
+      "ZERO ERO ZUCHERO HERO CAVALLERO TORERO"
+    ],
+    "bbb.script2.cod.0000591d": [
+      "Your request has been registered..."
+    ],
+    "bbb.script2.cod.00005933": [
+      "WOW... You're surfing the NET, Commander..."
+    ],
+    "bbb.script2.cod.0000594d": [
+      "L..."
+    ],
+    "bbb.script2.cod.00005959": [
+      "Lo..."
+    ],
+    "bbb.script2.cod.00005965": [
+      "Loa..."
+    ],
+    "bbb.script2.cod.00005971": [
+      "Load..."
+    ],
+    "bbb.script2.cod.0000597d": [
+      "Loadi..."
+    ],
+    "bbb.script2.cod.00005989": [
+      "Loading..."
+    ],
+    "bbb.script2.cod.00005995": [
+      "Loading 10 percent..."
+    ],
+    "bbb.script2.cod.000059a7": [
+      "Loading 11 percent..."
+    ],
+    "bbb.script2.cod.000059b9": [
+      "Loading 13 percent..."
+    ],
+    "bbb.script2.cod.000059cb": [
+      "Wait... ... ... ... ... ... ..."
+    ],
+    "bbb.script2.cod.000059e3": [
+      "Read error... No ZEN migration..."
+    ],
+    "bbb.script2.cod.000059f9": [
+      "OUCH..."
+    ],
+    "bbb.script2.cod.00005a05": [
+      "DISCONNECT ... ... ..."
+    ],
+    "bbb.script2.cod.00005a15": [
+      "No! Commander... They're making fools of us..."
+    ],
+    "bbb.script2.cod.00005a31": [
+      "..."
+    ],
+    "bbb.script2.cod.00005a55": [
+      "ERO..."
+    ],
+    "bbb.script2.cod.00005a5f": [
+      "Adults-only server..."
+    ],
+    "bbb.script2.cod.00005a71": [
+      "Are you over eighteen?",
+      "yes no"
+    ],
+    "bbb.script2.cod.00005a9f": [
+      "Go to bed or I'll call your mother..."
+    ],
+    "bbb.script2.cod.00005ab7": [
+      "Ciao..."
+    ],
+    "bbb.script2.cod.00005ac1": [
+      "..."
+    ],
+    "bbb.script2.cod.00005ad7": [
+      "LOADING GIF ... HI RES ... TRUE COLOR"
+    ],
+    "bbb.script2.cod.00005aef": [
+      "Hi ! Hi ! Hi ! Hi ! Hi ! Hi ! Hi ! Hi !"
+    ],
+    "bbb.script2.cod.00005b17": [
+      "Hmm... Sorry..."
+    ],
+    "bbb.script2.cod.00005b27": [
+      "WAIT... ... ... ... ... ... ... HOT... HOT..."
+    ],
+    "bbb.script2.cod.00005b47": [
+      "Commander, I don't dare look..."
+    ],
+    "bbb.script2.cod.00005b5b": [
+      "KEEP WAITING... ... ... ... ADULTS ONLY"
+    ],
+    "bbb.script2.cod.00005b73": [
+      "WAIT... ... ..."
+    ],
+    "bbb.script2.cod.00005b83": [
+      "THIS IS THE INTERGALACTIC VIRTUE LEAGUE..."
+    ],
+    "bbb.script2.cod.00005b99": [
+      "This server is PERMANENTLY disconnected."
+    ],
+    "bbb.script2.cod.00005bab": [
+      "WHAAAT!!!!!! NO WAY, I MUST BE DREAMING..."
+    ],
+    "bbb.script2.cod.00005bcf": [
+      "Think of your gelatin's salvation... The all-seeing Great Yolk is watching you..."
+    ],
+    "bbb.script2.cod.00005bf9": [
+      "Hare Hare..."
+    ],
+    "bbb.script2.cod.00005c05": [
+      "THEY'RE MAKING FOOLS OF US..."
+    ],
+    "bbb.script2.cod.00005c19": [
+      "..."
+    ],
+    "bbb.script2.cod.00005c4e": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005c5a": [
+      "Izwalondon calling... IZWALS speaking to IZWALS..."
+    ],
+    "bbb.script2.cod.00005c74": [
+      "who's that?..."
+    ],
+    "bbb.script2.cod.00005c84": [
+      "Titiloutiloutiloutilou... Izwalondon calling... IZWALS speaking to IZWALS..."
+    ],
+    "bbb.script2.cod.00005ca2": [
+      "who's that?..."
+    ],
+    "bbb.script2.cod.00005cb2": [
+      "We're the Izwal resistance... We're hiding in the ZEN spirit..."
+    ],
+    "bbb.script2.cod.00005cd4": [
+      "We must pass through the bionium gate..."
+    ],
+    "bbb.script2.cod.00005cec": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005cf8": [
+      "Commander, we lost the connection..."
+    ],
+    "bbb.script2.cod.00005d1c": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005d28": [
+      "Planet... Planet..."
+    ],
+    "bbb.script2.cod.00005d38": [
+      "A smile opens the gates of heaven..."
+    ],
+    "bbb.script2.cod.00005d50": [
+      "huh?..."
+    ],
+    "bbb.script2.cod.00005d5e": [
+      "A smile in English..."
+    ],
+    "bbb.script2.cod.00005d70": [
+      "smile in English?..."
+    ],
+    "bbb.script2.cod.00005d82": [
+      "It's called a SMILE..."
+    ],
+    "bbb.script2.cod.00005d94": [
+      "like Otto, Commander, like Otto Von Smile..."
+    ],
+    "bbb.script2.cod.00005db0": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005dbc": [
+      "disconnected again, Commander!..."
+    ],
+    "bbb.script2.cod.00005dfc": [
+      "The harder the fall..."
+    ],
+    "bbb.script2.cod.00005e10": [
+      "who's speaking?..."
+    ],
+    "bbb.script2.cod.00005e20": [
+      "Grandpa Gluxx here..."
+    ],
+    "bbb.script2.cod.00005e30": [
+      "why don't you use the telephone?..."
+    ],
+    "bbb.script2.cod.00005e48": [
+      "You have to move with the times. The Internet is hipper..."
+    ],
+    "bbb.script2.cod.00005e68": [
+      "is that what you're bothering us to say?..."
+    ],
+    "bbb.script2.cod.00005e86": [
+      "Oh, fine, if you're going to take that tone..."
+    ],
+    "bbb.script2.cod.00005ea6": [
+      "what do you want?..."
+    ],
+    "bbb.script2.cod.00005eba": [
+      "I wanted to send you medicine for Ben Zen over the Internet..."
+    ],
+    "bbb.script2.cod.00005eda": [
+      "how do you know he's sick?..."
+    ],
+    "bbb.script2.cod.00005ef2": [
+      "I have my sources..."
+    ],
+    "bbb.script2.cod.00005f02": [
+      "the universe really is crawling with informants..."
+    ],
+    "bbb.script2.cod.00005f16": [
+      "Well, do you want that medicine?..."
+    ],
+    "bbb.script2.cod.00005f30": [
+      "O.K. O.K..."
+    ],
+    "bbb.script2.cod.00005f3e": [
+      "MEDICINE INTERNET-TELEPORTATION..."
+    ],
+    "bbb.script2.cod.00005f58": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005f64": [
+      "..."
+    ],
+    "bbb.script2.cod.00005f8e": [
+      "Excessive bionium consumption is bad for your health..."
+    ],
+    "bbb.script2.cod.00005fa8": [
+      "Serve over ice..."
+    ],
+    "bbb.script2.cod.00005fbc": [
+      "At night..."
+    ],
+    "bbb.script2.cod.00005fca": [
+      "night is seriously bad for your health, ha ha!..."
+    ],
+    "bbb.script2.cod.00005fe8": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00005ff4": [
+      "Commander, we're being jammed..."
+    ],
+    "bbb.script2.cod.00006006": [
+      "Krouik... Connection established... International drug enforcement squad..."
+    ],
+    "bbb.script2.cod.00006024": [
+      "Yolk's blood! The Stuxx squad!"
+    ],
+    "bbb.script2.cod.00006040": [
+      "We have detected aboard your ship..."
+    ],
+    "bbb.script2.cod.00006056": [
+      "The presence of a quantity of bionium exceeding the legal limit..."
+    ],
+    "bbb.script2.cod.0000607a": [
+      "And by virtue of the superpowers granted to us by Mr. Bob..."
+    ],
+    "bbb.script2.cod.0000609c": [
+      "We will confiscate the bionium aboard your... Krouik..."
+    ],
+    "bbb.script2.cod.000060be": [
+      "Krouik... Fuck, what's going on?... Krouik..."
+    ],
+    "bbb.script2.cod.000060dc": [
+      "Commander, I've managed to jam them. We must get rid of the bionium as soon as possible..."
+    ],
+    "bbb.script2.cod.0000610c": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000612f": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000613b": [
+      "Commander, I detect a strange presence on the Net..."
+    ],
+    "bbb.script2.cod.00006159": [
+      "Krouik... Bob here..."
+    ],
+    "bbb.script2.cod.0000616b": [
+      "what?! But you're dead, Mr. Bob!..."
+    ],
+    "bbb.script2.cod.0000618b": [
+      "Krouik... I know, it's not easy to get Net access from where I am..."
+    ],
+    "bbb.script2.cod.000061b3": [
+      "that's nice to hear, Mr. Bob..."
+    ],
+    "bbb.script2.cod.000061c9": [
+      "Krouik... Well, not me, I'd rather sleep..."
+    ],
+    "bbb.script2.cod.000061e5": [
+      "But I forgot to tell you I'd left lots of money with the GLUXX..."
+    ],
+    "bbb.script2.cod.00006209": [
+      "to think they hit us up for cash..."
+    ],
+    "bbb.script2.cod.00006221": [
+      "Krouik... Argh..."
+    ],
+    "bbb.script2.cod.00006231": [
+      "Mr. Bob?..."
+    ],
+    "bbb.script2.cod.00006241": [
+      "Argh yolk ... Krouik ..."
+    ],
+    "bbb.script2.cod.00006253": [
+      "Mr. Bob has gone krouik, Commander... Sniff..."
+    ],
+    "bbb.script2.cod.0000626d": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006291": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000629d": [
+      "Intergalactic butcher's shop here..."
+    ],
+    "bbb.script2.cod.000062ad": [
+      "Free murfalo meat samples for Internet users..."
+    ],
+    "bbb.script2.cod.000062c7": [
+      "Rest, relaxation or leisure... A Murf helps keep you going!..."
+    ],
+    "bbb.script2.cod.000062e5": [
+      "Murf Internet-teleportation to cryobox..."
+    ],
+    "bbb.script2.cod.00006322": [
+      "Krouik... Great deals on ships..."
+    ],
+    "bbb.script2.cod.0000633a": [
+      "where?..."
+    ],
+    "bbb.script2.cod.0000634a": [
+      "Throughout the universe..."
+    ],
+    "bbb.script2.cod.0000635a": [
+      "more precisely?..."
+    ],
+    "bbb.script2.cod.0000636a": [
+      "The bionium gate has many followers..."
+    ],
+    "bbb.script2.cod.00006384": [
+      "huh?..."
+    ],
+    "bbb.script2.cod.00006392": [
+      "Von Klug is a swindler..."
+    ],
+    "bbb.script2.cod.000063a6": [
+      "but who else sells ships?..."
+    ],
+    "bbb.script2.cod.000063be": [
+      "Only Otto Von Gluk knows that... Otto Mobile for your shipmobiles."
+    ],
+    "bbb.script2.cod.000063e2": [
+      "how do we do it?..."
+    ],
+    "bbb.script2.cod.000063f2": [
+      "Everybody rise for biooonium, biooonium, biooonium..."
+    ],
+    "bbb.script2.cod.0000640c": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006418": [
+      "we've been short-circuited, Commander!..."
+    ],
+    "bbb.script2.cod.0000642e": [
+      "Krouk... Message from the morality watchdog league..."
+    ],
+    "bbb.script2.cod.0000644c": [
+      "ouch..."
+    ],
+    "bbb.script2.cod.00006458": [
+      "Bionium is sh..."
+    ],
+    "bbb.script2.cod.00006470": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000647c": [
+      "Bionium won't get past me..."
+    ],
+    "bbb.script2.cod.00006498": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000064a4": [
+      "they wear me out, Commander... Don't they wear you out?... Want a little Gluxxronsan?..."
+    ],
+    "bbb.script2.cod.000064ce": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000064e6": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000064f2": [
+      "Porno star syst clit connection..."
+    ],
+    "bbb.script2.cod.00006506": [
+      "Tit fuck ready clit tango charly..."
+    ],
+    "bbb.script2.cod.0000651c": [
+      "Attention: ultra-secret message..."
+    ],
+    "bbb.script2.cod.0000652c": [
+      "whoa..."
+    ],
+    "bbb.script2.cod.00006538": [
+      "The Blue Wave is a pig..."
+    ],
+    "bbb.script2.cod.0000654e": [
+      "Oh!..."
+    ],
+    "bbb.script2.cod.0000655c": [
+      "I repeat... The Blue Wave is a filthy pig..."
+    ],
+    "bbb.script2.cod.0000657a": [
+      "what can she do?..."
+    ],
+    "bbb.script2.cod.0000658e": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000659a": [
+      "Krouik?... Is that all?..."
+    ],
+    "bbb.script2.cod.000065b0": [
+      "Naughty girl, naughty girl, naughty girl... Krouik... To be continued..."
+    ],
+    "bbb.script2.cod.000065ca": [
+      "exciting server..."
+    ],
+    "bbb.script2.cod.000065da": [
+      "Krouine..."
+    ],
+    "bbb.script2.cod.000065fd": [
+      "Platon here... Krouik..."
+    ],
+    "bbb.script2.cod.0000660f": [
+      "who?..."
+    ],
+    "bbb.script2.cod.0000661d": [
+      "Platon... I'm calling from the cave... They've installed the Internet for me..."
+    ],
+    "bbb.script2.cod.00006641": [
+      "so it wasn't a myth?..."
+    ],
+    "bbb.script2.cod.00006659": [
+      "No! To get out of the cave, you need the Internet..."
+    ],
+    "bbb.script2.cod.0000667b": [
+      "cunning!..."
+    ],
+    "bbb.script2.cod.00006689": [
+      "And don't forget... Philosophers must be kings..."
+    ],
+    "bbb.script2.cod.000066a5": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000066b1": [
+      "don't forget, Commander..."
+    ],
+    "bbb.script2.cod.000066c3": [
+      "..."
+    ],
+    "bbb.script2.cod.000066d8": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000066e4": [
+      "The Intergalactic Screenwriters' League is pleased to announce..."
+    ],
+    "bbb.script2.cod.00006702": [
+      "That your skill at making bionium has just earned you..."
+    ],
+    "bbb.script2.cod.00006722": [
+      "Unlimited rights to use the League's reserves..."
+    ],
+    "bbb.script2.cod.0000673e": [
+      "Commander! You've just won your weight in bionium!..."
+    ],
+    "bbb.script2.cod.0000675c": [
+      "A thousand doses of bionium..."
+    ],
+    "bbb.script2.cod.00006775": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006791": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000679d": [
+      "One nox..."
+    ],
+    "bbb.script2.cod.000067ab": [
+      "Two nox..."
+    ],
+    "bbb.script2.cod.000067b9": [
+      "Three nox..."
+    ],
+    "bbb.script2.cod.000067c7": [
+      "Four nox..."
+    ],
+    "bbb.script2.cod.000067d5": [
+      "Five nox..."
+    ],
+    "bbb.script2.cod.000067e3": [
+      "SINOX!... HA HA HA..."
+    ],
+    "bbb.script2.cod.000067f9": [
+      "Krouik... Bug..."
+    ],
+    "bbb.script2.cod.00006809": [
+      "Yes... But a luxury one..."
+    ],
+    "bbb.script2.cod.0000681d": [
+      "..."
+    ],
+    "bbb.script2.cod.00006849": [
+      "Krouik... Hello, hello..."
+    ],
+    "bbb.script2.cod.00006859": [
+      "who's there?..."
+    ],
+    "bbb.script2.cod.0000686b": [
+      "Elysex Palace here..."
+    ],
+    "bbb.script2.cod.0000687d": [
+      "I'm listening..."
+    ],
+    "bbb.script2.cod.0000688d": [
+      "What's your fax number?..."
+    ],
+    "bbb.script2.cod.000068a5": [
+      "we only have the telephone... It's 19 96 19 96..."
+    ],
+    "bbb.script2.cod.000068c7": [
+      "Thanks, noted..."
+    ],
+    "bbb.script2.cod.000068d9": [
+      "when do you plan to call us?..."
+    ],
+    "bbb.script2.cod.000068ef": [
+      "Right away, get ready to answer..."
+    ],
+    "bbb.script2.cod.00006907": [
+      "..."
+    ],
+    "bbb.script2.cod.00006926": [
+      "Krouijk... Hello, pardon us, Elysex Palace..."
+    ],
+    "bbb.script2.cod.00006940": [
+      "again! What do you want?..."
+    ],
+    "bbb.script2.cod.00006958": [
+      "I forgot to write down your phone number last time..."
+    ],
+    "bbb.script2.cod.00006978": [
+      "it was 19 96 19 96... Got it? 19 96 19 96..."
+    ],
+    "bbb.script2.cod.0000699c": [
+      "9 96 19 96 ? ..."
+    ],
+    "bbb.script2.cod.000069b0": [
+      "yes, that's right... 19 96 19 96... Ask for Honk..."
+    ],
+    "bbb.script2.cod.000069d2": [
+      "Honk ? ..."
+    ],
+    "bbb.script2.cod.000069e0": [
+      "Yes? Speaking..."
+    ],
+    "bbb.script2.cod.000069f2": [
+      "Why are you speaking in green?..."
+    ],
+    "bbb.script2.cod.00006a08": [
+      "because I'm a poet computer..."
+    ],
+    "bbb.script2.cod.00006a20": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006a2c": [
+      "that's right, as you say... Krouik... Disconnected... Poetry always scares them off..."
+    ],
+    "bbb.script2.cod.00006a5e": [
+      "..."
+    ],
+    "bbb.script2.cod.00006a9d": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006aa9": [
+      "Migrazuki here... I'm calling on all workers in the universe..."
+    ],
+    "bbb.script2.cod.00006acd": [
+      "CALLING ALL WORKERS..."
+    ],
+    "bbb.script2.cod.00006ae1": [
+      "what's that?..."
+    ],
+    "bbb.script2.cod.00006af7": [
+      "REVOLT! YOUR WORKING CONDITIONS ARE OUTRAGEOUS!..."
+    ],
+    "bbb.script2.cod.00006b13": [
+      "Commander! A call to rebellion!..."
+    ],
+    "bbb.script2.cod.00006b2d": [
+      "UNITE AGAINST BOB'S PLAN!..."
+    ],
+    "bbb.script2.cod.00006b43": [
+      "NO TO BOB'S PLAN!..."
+    ],
+    "bbb.script2.cod.00006b57": [
+      "EVERYONE GO ON STRIKE!..."
+    ],
+    "bbb.script2.cod.00006b6b": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006b77": [
+      "CALL FOR A GENERAL STRIKE!..."
+    ],
+    "bbb.script2.cod.00006b8d": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006b99": [
+      "we lost the connection..."
+    ],
+    "bbb.script2.cod.00006ba9": [
+      "..."
+    ],
+    "bbb.script2.cod.00006bc8": [
+      "OLGA HERE..."
+    ],
+    "bbb.script2.cod.00006bd6": [
+      "Commander! What's Olga doing on the Net?!..."
+    ],
+    "bbb.script2.cod.00006bf4": [
+      "OLGA CALLS ON ALL CYBERWOMEN TO UNITE AGAINST MALE OPPRESSION..."
+    ],
+    "bbb.script2.cod.00006c12": [
+      "UNITE AGAINST THE CYBERCHAUVINISTS!..."
+    ],
+    "bbb.script2.cod.00006c26": [
+      "isn't Olga happy with us?..."
+    ],
+    "bbb.script2.cod.00006c42": [
+      "Join my struggle... Join KFG, the Women's League of Khaos!..."
+    ],
+    "bbb.script2.cod.00006c68": [
+      "completely gaga, Olga!..."
+    ],
+    "bbb.script2.cod.00006c7c": [
+      "Join my fight against HONK the male chauvinist!..."
+    ],
+    "bbb.script2.cod.00006c96": [
+      "Commander! She's attacking me personally!..."
+    ],
+    "bbb.script2.cod.00006cac": [
+      "may I disconnect her?...",
+      "off on"
+    ],
+    "bbb.script2.cod.00006cd1": [
+      "go to hell, cyberbitch!"
+    ],
+    "bbb.script2.cod.00006ce5": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006cf1": [
+      "..."
+    ],
+    "bbb.script2.cod.00006d03": [
+      "Join the fight against the Commander, BOB's envoy!..."
+    ],
+    "bbb.script2.cod.00006d21": [
+      "Commander! She's accusing you!..."
+    ],
+    "bbb.script2.cod.00006d3b": [
+      "enough is enough, I'm disconnecting her..."
+    ],
+    "bbb.script2.cod.00006d53": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006d5f": [
+      "..."
+    ],
+    "bbb.script2.cod.00006d75": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006d81": [
+      "Arg ... Yolk ..."
+    ],
+    "bbb.script2.cod.00006d91": [
+      "who's there?..."
+    ],
+    "bbb.script2.cod.00006da3": [
+      "YOLK..."
+    ],
+    "bbb.script2.cod.00006daf": [
+      "what? What!!!?? Yolk! My God! Yolk on the Internet!..."
+    ],
+    "bbb.script2.cod.00006ddb": [
+      "Krouiyilk... Yolrkr..."
+    ],
+    "bbb.script2.cod.00006deb": [
+      "there's static on the line..."
+    ],
+    "bbb.script2.cod.00006e05": [
+      "The Lord works in mysterious ways... Krouik..."
+    ],
+    "bbb.script2.cod.00006e1f": [
+      "Lord! Yolk! Hello, Lord?..."
+    ],
+    "bbb.script2.cod.00006e37": [
+      "Yirglk... No time..."
+    ],
+    "bbb.script2.cod.00006e4b": [
+      "where are you calling from?..."
+    ],
+    "bbb.script2.cod.00006e5d": [
+      "Far away... Connection too expensive... Krouik..."
+    ],
+    "bbb.script2.cod.00006e75": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006e81": [
+      "we lost the connection, Commander. He was calling from infinity..."
+    ],
+    "bbb.script2.cod.00006e9f": [
+      "..."
+    ],
+    "bbb.script2.cod.00006ec9": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00006ed5": [
+      "Interslimic Genetic Mutation League..."
+    ],
+    "bbb.script2.cod.00006ee9": [
+      "Mutation... Progression..."
+    ],
+    "bbb.script2.cod.00006ef9": [
+      "You have entered the prechaotic multiplexing system..."
+    ],
+    "bbb.script2.cod.00006f15": [
+      "We're giving you a mutation kit as a welcome gift..."
+    ],
+    "bbb.script2.cod.00006f35": [
+      "Access riddle... Find the odd one out in this list..."
+    ],
+    "bbb.script2.cod.00006f4f": [
+      "which one is the intruder?...",
+      "intruder intruder intruder mutant intruder intruder"
+    ],
+    "bbb.script2.cod.00006f81": [
+      "Bravo... We're sending you the mutation multiplexer..."
+    ],
+    "bbb.script2.cod.00006f9d": [
+      "MULTIPLEXER INTERNET-TELEPORTATION..."
+    ],
+    "bbb.script2.cod.00006fc0": [
+      "The boss here..."
+    ],
+    "bbb.script2.cod.00006fd0": [
+      "Mr. Bob?!..."
+    ],
+    "bbb.script2.cod.00006fe2": [
+      "No... His partner..."
+    ],
+    "bbb.script2.cod.00006ff4": [
+      "Ulikan?..."
+    ],
+    "bbb.script2.cod.00007002": [
+      "Yeah, that's right... So, slacker, are you done surfing the Net instead of working?..."
+    ],
+    "bbb.script2.cod.00007034": [
+      "what?..."
+    ],
+    "bbb.script2.cod.00007042": [
+      "I'll fill you in..."
+    ],
+    "bbb.script2.cod.00007058": [
+      "You understood perfectly... Do some work instead of playing around..."
+    ],
+    "bbb.script2.cod.0000707a": [
+      "Don't forget you're the screenwriter... We have to finish this f... game!..."
+    ],
+    "bbb.script2.cod.000070a6": [
+      "he doesn't look happy, Commander..."
+    ],
+    "bbb.script2.cod.000070be": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000070ca": [
+      "he hung up!..."
+    ],
+    "bbb.script2.cod.000070dc": [
+      "..."
+    ],
+    "bbb.script2.cod.000070fc": [
+      "Ulikan online..."
+    ],
+    "bbb.script2.cod.0000710c": [
+      "boss!..."
+    ],
+    "bbb.script2.cod.0000711a": [
+      "Well, is that script finished yet?..."
+    ],
+    "bbb.script2.cod.00007134": [
+      "Commander, what do we tell him?..."
+    ],
+    "bbb.script2.cod.0000714c": [
+      "...",
+      "lie truth"
+    ],
+    "bbb.script2.cod.00007165": [
+      "of course it's finished, boss!..."
+    ],
+    "bbb.script2.cod.0000717f": [
+      "Very good, send me a copy to test..."
+    ],
+    "bbb.script2.cod.00007199": [
+      "the thing is..."
+    ],
+    "bbb.script2.cod.000071a7": [
+      "What? It's still not ready?..."
+    ],
+    "bbb.script2.cod.000071bf": [
+      "the thing is..."
+    ],
+    "bbb.script2.cod.000071cd": [
+      "USELESS!..."
+    ],
+    "bbb.script2.cod.000071db": [
+      "..."
+    ],
+    "bbb.script2.cod.000071ed": [
+      "well... We're far from finished, boss!..."
+    ],
+    "bbb.script2.cod.0000720b": [
+      "I don't care!... Find a way! Any way!..."
+    ],
+    "bbb.script2.cod.0000722b": [
+      "..."
+    ],
+    "bbb.script2.cod.00007236": [
+      "the boss is starting to annoy me!..."
+    ],
+    "bbb.script2.cod.00007250": [
+      "if he keeps this up, I'm going on strike!..."
+    ],
+    "bbb.script2.cod.0000726e": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000727a": [
+      "..."
+    ],
+    "bbb.script2.cod.000072a6": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000072b2": [
+      "So... No cash, Commander?..."
+    ],
+    "bbb.script2.cod.000072c8": [
+      "well..."
+    ],
+    "bbb.script2.cod.000072d4": [
+      "Not very gifted, are you? A beginner, perhaps?..."
+    ],
+    "bbb.script2.cod.000072ee": [
+      "well..."
+    ],
+    "bbb.script2.cod.000072fa": [
+      "My Net handle is Bernie... Bernie Von Nanard..."
+    ],
+    "bbb.script2.cod.0000731a": [
+      "I can make you LOOOOOADS of money! Tons of cash! Molto molto!..."
+    ],
+    "bbb.script2.cod.00007342": [
+      "Bernie? You're not going to con us, are you?..."
+    ],
+    "bbb.script2.cod.0000735c": [
+      "Where'd you get that, you box of hot air?! Nobody's more honest than me!..."
+    ],
+    "bbb.script2.cod.00007388": [
+      "And I'll prove it! Answer my test correctly and I'll give you a credit!..."
+    ],
+    "bbb.script2.cod.000073b4": [
+      "go ahead..."
+    ],
+    "bbb.script2.cod.000073c0": [
+      "Do you think I'm honest?..."
+    ],
+    "bbb.script2.cod.000073d8": [
+      "...",
+      "honest shady"
+    ],
+    "bbb.script2.cod.000073f1": [
+      "Bravo, you idiot! You've got it all figured out!..."
+    ],
+    "bbb.script2.cod.00007407": [
+      "did we win? Did we win?..."
+    ],
+    "bbb.script2.cod.0000741f": [
+      "Exactly! The right to play again!..."
+    ],
+    "bbb.script2.cod.00007437": [
+      "..."
+    ],
+    "bbb.script2.cod.0000744d": [
+      "Good thinking, kid. You'll go far! You're a real golden case!..."
+    ],
+    "bbb.script2.cod.00007471": [
+      "CREDIT INTERNET-TELEPORTATION TO PIGGYBOX..."
+    ],
+    "bbb.script2.cod.000074a2": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000074ae": [
+      "Bernie here..."
+    ],
+    "bbb.script2.cod.000074bc": [
+      "Von Nanard! Why don't you call us on the telephone?..."
+    ],
+    "bbb.script2.cod.000074dc": [
+      "we'd love to see your face!..."
+    ],
+    "bbb.script2.cod.000074f2": [
+      "Forget it! I'm too handsome for you! You couldn't handle it! I'm heavenly!..."
+    ],
+    "bbb.script2.cod.00007520": [
+      "normal for an extraterrestrial!..."
+    ],
+    "bbb.script2.cod.00007532": [
+      "Right... Kid, you need my help... If you want to end this strike!..."
+    ],
+    "bbb.script2.cod.0000755e": [
+      "You need cash! A whole wad of cash!..."
+    ],
+    "bbb.script2.cod.0000757c": [
+      "... ... ..."
+    ],
+    "bbb.script2.cod.0000758a": [
+      "Give me a credit, I'll invest in the robot and return your money plus 900 percent profit!..."
+    ],
+    "bbb.script2.cod.000075c0": [
+      "would you like to invest in the robot, Commander?",
+      "invest save"
+    ],
+    "bbb.script2.cod.000075e7": [
+      "You made the right choice, kid! You'll be as rich as pasta with murfalo eggs!..."
+    ],
+    "bbb.script2.cod.00007615": [
+      "CASH INTERNET-TELEPORTATION TO NANARD!..."
+    ],
+    "bbb.script2.cod.0000763d": [
+      "You've got no crounouilles! Engluxxe!..."
+    ],
+    "bbb.script2.cod.00007653": [
+      "..."
+    ],
+    "bbb.script2.cod.0000767d": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00007689": [
+      "Spinoza Brotherhood of Lens Polishers..."
+    ],
+    "bbb.script2.cod.0000769f": [
+      "We have crucial information..."
+    ],
+    "bbb.script2.cod.000076b3": [
+      "Would you like to know it?..."
+    ],
+    "bbb.script2.cod.000076c3": [
+      "what would you like, Commander?...",
+      "yes no"
+    ],
+    "bbb.script2.cod.000076e2": [
+      "To reveal all its powers, the optical device you possess must be given away..."
+    ],
+    "bbb.script2.cod.00007704": [
+      "To the Alien in dark glasses..."
+    ],
+    "bbb.script2.cod.00007718": [
+      "Croolijelski ?..."
+    ],
+    "bbb.script2.cod.00007724": [
+      "No..."
+    ],
+    "bbb.script2.cod.00007730": [
+      "Who, then?... Bribrite Bardoxx?..."
+    ],
+    "bbb.script2.cod.00007744": [
+      "Not that either... You'll see... It's an alien in dark glasses..."
+    ],
+    "bbb.script2.cod.00007768": [
+      "..."
+    ],
+    "bbb.script2.cod.0000777a": [
+      "A lack of curiosity is a nasty fault..."
+    ],
+    "bbb.script2.cod.00007792": [
+      "..."
+    ],
+    "bbb.script2.cod.000077b9": [
+      "Ben Zen gift: Elvis guitar, Elbolts, Elstrings, Elandall, Elandall..."
+    ],
+    "bbb.script2.cod.000077d5": [
+      "GUITAR INTERNET-TELEPORTATION..."
+    ],
+    "bbb.script2.cod.00007803": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000780f": [
+      "Ben Zen Connection, Sales-After-Service..."
+    ],
+    "bbb.script2.cod.00007821": [
+      "Commander! Old Ben Zen! Well, hello, my Zen!..."
+    ],
+    "bbb.script2.cod.00007843": [
+      "Hoooooom !..."
+    ],
+    "bbb.script2.cod.0000784f": [
+      "the old rascal! He hasn't changed!..."
+    ],
+    "bbb.script2.cod.00007867": [
+      "so! What have you been up to?..."
+    ],
+    "bbb.script2.cod.0000787f": [
+      "Well, nothing... The void... Hooom..."
+    ],
+    "bbb.script2.cod.00007897": [
+      "well, what do you want from us?..."
+    ],
+    "bbb.script2.cod.000078ad": [
+      "Well... I've got a big batch of guitars for you..."
+    ],
+    "bbb.script2.cod.000078cb": [
+      "great! Now we can find musicians for Mig Burner!..."
+    ],
+    "bbb.script2.cod.000078eb": [
+      "But before I send them to you..."
+    ],
+    "bbb.script2.cod.00007901": [
+      "you want cash? An advance on earnings? Well, you really haven't changed!..."
+    ],
+    "bbb.script2.cod.0000792b": [
+      "No, no... Just the answer to a little philosophical question..."
+    ],
+    "bbb.script2.cod.00007949": [
+      "we're listening..."
+    ],
+    "bbb.script2.cod.00007957": [
+      "..."
+    ],
+    "bbb.script2.cod.00007973": [
+      "Who's the greatest rocker of all time?..."
+    ],
+    "bbb.script2.cod.00007991": [
+      "the greatest rocker?",
+      "ben_zen me chigraxx bonoxx mig_burner tina_burner other"
+    ],
+    "bbb.script2.cod.000079cc": [
+      "Oh, sure..."
+    ],
+    "bbb.script2.cod.000079da": [
+      "that's not it?..."
+    ],
+    "bbb.script2.cod.000079ea": [
+      "Oh, sure..."
+    ],
+    "bbb.script2.cod.000079f8": [
+      "Go for a little walk and think before coming back to spout nonsense..."
+    ],
+    "bbb.script2.cod.00007a1a": [
+      "..."
+    ],
+    "bbb.script2.cod.00007a33": [
+      "Obviously... But who?..."
+    ],
+    "bbb.script2.cod.00007a45": [
+      "tell him the first letter...",
+      "a b c d e f g u v w x y z"
+    ],
+    "bbb.script2.cod.00007a98": [
+      "the second letter...",
+      "a b c j k l m n o p q z"
+    ],
+    "bbb.script2.cod.00007ae7": [
+      "the third...",
+      "o p q r s t u v w x y z"
+    ],
+    "bbb.script2.cod.00007b3b": [
+      "Who are you thinking of, Commander?..."
+    ],
+    "bbb.script2.cod.00007b4d": [
+      "...",
+      "elv elvorien elvalaba elveupa elvibien elvis elsuss"
+    ],
+    "bbb.script2.cod.00007b70": [
+      "Bravo! Such talent! And what a memory! That was nearly 15 million years ago!..."
+    ],
+    "bbb.script2.cod.00007b9e": [
+      "so? What did we win?..."
+    ],
+    "bbb.script2.cod.00007bb4": [
+      "Well... Guitars... As many as you want..."
+    ],
+    "bbb.script2.cod.00007bcc": [
+      "..."
+    ],
+    "bbb.script2.cod.00007be6": [
+      "And you think that's funny?..."
+    ],
+    "bbb.script2.cod.00007bfa": [
+      "well..."
+    ],
+    "bbb.script2.cod.00007c06": [
+      "Go clear your head before trying another answer..."
+    ],
+    "bbb.script2.cod.00007c24": [
+      "..."
+    ],
+    "bbb.script2.cod.00007c5a": [
+      "Warning: this service is forbidden to children under ten..."
+    ],
+    "bbb.script2.cod.00007c74": [
+      "Top-secret message, code XXX..."
+    ],
+    "bbb.script2.cod.00007c88": [
+      "ooh... Looks hot..."
+    ],
+    "bbb.script2.cod.00007c9e": [
+      "Warning: sensitive souls, disconnect!..."
+    ],
+    "bbb.script2.cod.00007cb2": [
+      "Message:"
+    ],
+    "bbb.script2.cod.00007cbe": [
+      "SANTA CLAUS DOESN'T EXIST..."
+    ],
+    "bbb.script2.cod.00007cd2": [
+      "I repeat:"
+    ],
+    "bbb.script2.cod.00007ce0": [
+      "SANTA CLAUS DOESN'T EXIST..."
+    ],
+    "bbb.script2.cod.00007cf4": [
+      "what?! Yolk's blood! I can't believe it..."
+    ],
+    "bbb.script2.cod.00007d1a": [
+      "Of course, he doesn't exist!..."
+    ],
+    "bbb.script2.cod.00007d30": [
+      "Krouik!..."
+    ],
+    "bbb.script2.cod.00007d3e": [
+      "my Yolk! It's awful, Commander!..."
+    ],
+    "bbb.script2.cod.00007d58": [
+      "..."
+    ],
+    "bbb.script2.cod.00007d84": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00007d90": [
+      "Santa Claus here..."
+    ],
+    "bbb.script2.cod.00007da2": [
+      "what?!..."
+    ],
+    "bbb.script2.cod.00007db2": [
+      "I repeat... Santa Claus here!..."
+    ],
+    "bbb.script2.cod.00007dcc": [
+      "impossible! You don't exist!..."
+    ],
+    "bbb.script2.cod.00007de4": [
+      "Why? Do you exist, you pile of virtual stuff?!..."
+    ],
+    "bbb.script2.cod.00007e06": [
+      "of course! Right, Commander?...",
+      "true false"
+    ],
+    "bbb.script2.cod.00007e32": [
+      "thank you, Commander... Did you hear that, Santa Claus?..."
+    ],
+    "bbb.script2.cod.00007e50": [
+      "Yeah, all right... No need to overdo it..."
+    ],
+    "bbb.script2.cod.00007e79": [
+      "what?! You're disowning me, Commander! After everything I've done for you!..."
+    ],
+    "bbb.script2.cod.00007ea5": [
+      "if that's how it is, I'm leaving!..."
+    ],
+    "bbb.script2.cod.00007ec1": [
+      "since I don't exist, you won't notice the difference!..."
+    ],
+    "bbb.script2.cod.00007ee1": [
+      "You offended him, Commander!..."
+    ],
+    "bbb.script2.cod.00007ef7": [
+      "hey, Santa Claus, shut up!..."
+    ],
+    "bbb.script2.cod.00007f15": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00007f21": [
+      "..."
+    ],
+    "bbb.script2.cod.00007f4e": [
+      "well, what do you want, Santa Claus?..."
+    ],
+    "bbb.script2.cod.00007f6c": [
+      "Well... I'd like to play with you..."
+    ],
+    "bbb.script2.cod.00007f82": [
+      "you believe in Santa Claus, Santa Claus!..."
+    ],
+    "bbb.script2.cod.00007f9e": [
+      "Well yes, obviously!..."
+    ],
+    "bbb.script2.cod.00007fb2": [
+      "Er... I'd like to play incognito..."
+    ],
+    "bbb.script2.cod.00007fc6": [
+      "no problem... Your code name will be Cyberquizz..."
+    ],
+    "bbb.script2.cod.00007fe4": [
+      "That's ridiculous!..."
+    ],
+    "bbb.script2.cod.00007ff4": [
+      "it's that or nothing..."
+    ],
+    "bbb.script2.cod.00008006": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008012": [
+      "he disconnected, Commander..."
+    ],
+    "bbb.script2.cod.00008026": [
+      "..."
+    ],
+    "bbb.script2.cod.00008055": [
+      "Too bad for you! You'll never win on your own, Commander!..."
+    ],
+    "bbb.script2.cod.0000807b": [
+      "better alone than in bad company..."
+    ],
+    "bbb.script2.cod.00008093": [
+      "You scrap heap, nobody has ever spoken to Santa Claus like that!..."
+    ],
+    "bbb.script2.cod.000080b9": [
+      "there's a first time for everything!..."
+    ],
+    "bbb.script2.cod.000080d1": [
+      "Everything has an end, too! Poor creature! You're speaking to YOLK!..."
+    ],
+    "bbb.script2.cod.000080fd": [
+      "what?!..."
+    ],
+    "bbb.script2.cod.0000810d": [
+      "Yes, you wretch! I've taken the form of Santa Claus!..."
+    ],
+    "bbb.script2.cod.0000812f": [
+      "it's diabolical!..."
+    ],
+    "bbb.script2.cod.0000813f": [
+      "No... It's divine!... And you denied me the right to play with you!..."
+    ],
+    "bbb.script2.cod.0000816b": [
+      "SELFISH!..."
+    ],
+    "bbb.script2.cod.00008179": [
+      "Lord, forgive us! We didn't mean to!..."
+    ],
+    "bbb.script2.cod.00008197": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000081a3": [
+      "Krouik... Zenu here... Forgive them, Lord, they know not what they do..."
+    ],
+    "bbb.script2.cod.000081cb": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000081d7": [
+      "hear that, Lord? We're complete idiots!..."
+    ],
+    "bbb.script2.cod.000081f5": [
+      "I know, but that's no excuse!..."
+    ],
+    "bbb.script2.cod.00008213": [
+      "To atone for your sin, I send you back to the hell of your everyday life..."
+    ],
+    "bbb.script2.cod.00008239": [
+      "no!!! Not that!!!"
+    ],
+    "bbb.script2.cod.00008253": [
+      "TO GOD..."
+    ],
+    "bbb.script2.cod.00008261": [
+      "..."
+    ],
+    "bbb.script2.cod.0000828c": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008298": [
+      "Krouik... Attention, attention, this message comes from the future..."
+    ],
+    "bbb.script2.cod.000082b4": [
+      "Warning: chaos..."
+    ],
+    "bbb.script2.cod.000082c2": [
+      "what? What?..."
+    ],
+    "bbb.script2.cod.000082d4": [
+      "Krouik... The hour of chaos approaches..."
+    ],
+    "bbb.script2.cod.000082ea": [
+      "Commander, do you hear that? What should we do?..."
+    ],
+    "bbb.script2.cod.00008302": [
+      "Unmask chaos agent before too late..."
+    ],
+    "bbb.script2.cod.00008318": [
+      "who is it? Who?..."
+    ],
+    "bbb.script2.cod.0000832c": [
+      "Identification impossible, interference from the future..."
+    ],
+    "bbb.script2.cod.00008344": [
+      "Trouble agent..."
+    ],
+    "bbb.script2.cod.00008352": [
+      "XX"
+    ],
+    "bbb.script2.cod.0000835c": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008368": [
+      "..."
+    ],
+    "bbb.script2.cod.00008382": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000838e": [
+      "Attention: priority message from the intertemporal brigade..."
+    ],
+    "bbb.script2.cod.000083a2": [
+      "Commander, this looks important..."
+    ],
+    "bbb.script2.cod.000083b8": [
+      "Final destruction approach initiated..."
+    ],
+    "bbb.script2.cod.000083ca": [
+      "ZEN destruction..."
+    ],
+    "bbb.script2.cod.000083d8": [
+      "Disaster inevitable..."
+    ],
+    "bbb.script2.cod.000083e6": [
+      "Terminal massacre..."
+    ],
+    "bbb.script2.cod.000083f4": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008400": [
+      "...."
+    ],
+    "bbb.script2.cod.00008415": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008421": [
+      "TOP-PRIORITY MESSAGE..."
+    ],
+    "bbb.script2.cod.0000842f": [
+      "Law enforcement here..."
+    ],
+    "bbb.script2.cod.00008441": [
+      "Well, Commander, pleased with yourself?..."
+    ],
+    "bbb.script2.cod.0000845b": [
+      "You've really thrown the Universe into a panic... Proud of yourself, I hope?!..."
+    ],
+    "bbb.script2.cod.00008485": [
+      "the way he talks to you, Commander!..."
+    ],
+    "bbb.script2.cod.0000849d": [
+      "Hey, you, the onboard traitor, that's enough!..."
+    ],
+    "bbb.script2.cod.000084c1": [
+      "The... what? Commander!..."
+    ],
+    "bbb.script2.cod.000084d7": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000084e3": [
+      "Commander, we lost the connection..."
+    ],
+    "bbb.script2.cod.000084f7": [
+      "..."
+    ],
+    "bbb.script2.cod.0000850f": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000851b": [
+      "Aragroon here..."
+    ],
+    "bbb.script2.cod.00008529": [
+      "the poet?..."
+    ],
+    "bbb.script2.cod.00008539": [
+      "The very same..."
+    ],
+    "bbb.script2.cod.00008545": [
+      "A few words for posterity, perhaps?..."
+    ],
+    "bbb.script2.cod.00008561": [
+      "Here it is: Woman is the future of man..."
+    ],
+    "bbb.script2.cod.0000857b": [
+      "huh?..."
+    ],
+    "bbb.script2.cod.00008589": [
+      "Two!..."
+    ],
+    "bbb.script2.cod.00008597": [
+      "very funny..."
+    ],
+    "bbb.script2.cod.000085a5": [
+      "No... Seriously... Woman is the future of man..."
+    ],
+    "bbb.script2.cod.000085c5": [
+      "hear that, Commander? Arf arf! The future of man!..."
+    ],
+    "bbb.script2.cod.000085e7": [
+      "and man's past is the ape?..."
+    ],
+    "bbb.script2.cod.00008605": [
+      "Aragroon here... Tell me, HONK... Can we drop the formalities?..."
+    ],
+    "bbb.script2.cod.00008625": [
+      "of course..."
+    ],
+    "bbb.script2.cod.00008635": [
+      "You're really getting on my nerves..."
+    ],
+    "bbb.script2.cod.00008647": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008653": [
+      "..."
+    ],
+    "bbb.script2.cod.00008673": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000867f": [
+      "Net Net... Interplanet, planet not net... Krouik..."
+    ],
+    "bbb.script2.cod.0000869b": [
+      "It's crazy!..."
+    ],
+    "bbb.script2.cod.000086ab": [
+      "what?..."
+    ],
+    "bbb.script2.cod.000086b9": [
+      "The wise man often looks like a fool... And the fool seems wise..."
+    ],
+    "bbb.script2.cod.000086dd": [
+      "yes, it's crazy..."
+    ],
+    "bbb.script2.cod.000086ef": [
+      "I think that's completely crazy..."
+    ],
+    "bbb.script2.cod.00008705": [
+      "In conclusion:"
+    ],
+    "bbb.script2.cod.00008713": [
+      "Warning message from the Cave League..."
+    ],
+    "bbb.script2.cod.00008733": [
+      "DON'T TRUST APPEARANCES..."
+    ],
+    "bbb.script2.cod.00008749": [
+      "I repeat:"
+    ],
+    "bbb.script2.cod.00008757": [
+      "DON'T TRUST APPEARANCES..."
+    ],
+    "bbb.script2.cod.0000876d": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008779": [
+      "THEY ARE DECEPTIVE..."
+    ],
+    "bbb.script2.cod.00008789": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008795": [
+      "..."
+    ],
+    "bbb.script2.cod.000087b5": [
+      "Ulikan online..."
+    ],
+    "bbb.script2.cod.000087c5": [
+      "uh-oh, the boss!..."
+    ],
+    "bbb.script2.cod.000087d9": [
+      "What the hell are you doing? Still haven't finished this game?..."
+    ],
+    "bbb.script2.cod.000087fb": [
+      "but boss..."
+    ],
+    "bbb.script2.cod.00008809": [
+      "What? You're not going on strike too, are you?..."
+    ],
+    "bbb.script2.cod.0000882d": [
+      "Commander, how about going on strike?...",
+      "strike no_strike"
+    ],
+    "bbb.script2.cod.00008858": [
+      "YEAH! We're on strike, boss! Go to hell!"
+    ],
+    "bbb.script2.cod.00008878": [
+      "..."
+    ],
+    "bbb.script2.cod.0000889c": [
+      "of course we're not on strike, boss. We're providing minimum service..."
+    ],
+    "bbb.script2.cod.000088c2": [
+      "Good, young man, you're serious... Work hard..."
+    ],
+    "bbb.script2.cod.000088e2": [
+      "..."
+    ],
+    "bbb.script2.cod.000088ed": [
+      "boss, you could at least give us a clue..."
+    ],
+    "bbb.script2.cod.0000890d": [
+      "Again!... You really are good for nothing..."
+    ],
+    "bbb.script2.cod.0000892d": [
+      "that's why we're only employees, boss..."
+    ],
+    "bbb.script2.cod.0000894f": [
+      "That's right, I forgot... All right, a little hint..."
+    ],
+    "bbb.script2.cod.0000896f": [
+      "Beware of Santa Claus... He might be a bastard..."
+    ],
+    "bbb.script2.cod.0000898b": [
+      "a spy?..."
+    ],
+    "bbb.script2.cod.0000899b": [
+      "Krouik... Argh..."
+    ],
+    "bbb.script2.cod.000089ab": [
+      "Commander, we lost the connection..."
+    ],
+    "bbb.script2.cod.000089bf": [
+      "..."
+    ],
+    "bbb.script2.cod.000089ea": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000089f6": [
+      "Commander! A message from outside time! I recognize the frequency!..."
+    ],
+    "bbb.script2.cod.00008a16": [
+      "Krouik... Warning! Time gate opening distortion imminent!..."
+    ],
+    "bbb.script2.cod.00008a36": [
+      "A time gate!..."
+    ],
+    "bbb.script2.cod.00008a4a": [
+      "Maximum speed... Time gate opens for two minutes..."
+    ],
+    "bbb.script2.cod.00008a66": [
+      "Commander! We must find that gate! We could travel into the future..."
+    ],
+    "bbb.script2.cod.00008a8c": [
+      "And bring back what we're missing now to reach that future..."
+    ],
+    "bbb.script2.cod.00008aac": [
+      "Krouik... You have two minutes before permanent closure..."
+    ],
+    "bbb.script2.cod.00008aca": [
+      "quick, Commander! Find the gate!..."
+    ],
+    "bbb.script2.cod.00008ae2": [
+      "..."
+    ],
+    "bbb.script2.cod.00008b10": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008b1c": [
+      "Commander, a message from outside time!..."
+    ],
+    "bbb.script2.cod.00008b30": [
+      "Krouikrouik..."
+    ],
+    "bbb.script2.cod.00008b3c": [
+      "strictly personal!..."
+    ],
+    "bbb.script2.cod.00008b4a": [
+      "Your grandmother here..."
+    ],
+    "bbb.script2.cod.00008b5a": [
+      "Commander! Your grandmother!..."
+    ],
+    "bbb.script2.cod.00008b6e": [
+      "I'm doing very well, I'm very happy!..."
+    ],
+    "bbb.script2.cod.00008b8c": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008b98": [
+      "Be good!..."
+    ],
+    "bbb.script2.cod.00008baa": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008bb6": [
+      "We got cut off, Commander. She sends you kisses..."
+    ],
+    "bbb.script2.cod.00008bd2": [
+      "..."
+    ],
+    "bbb.script2.cod.00008bed": [
+      "Krouik KROUIK!!!..."
+    ],
+    "bbb.script2.cod.00008c01": [
+      "whoa! Top-priority message, Commander!..."
+    ],
+    "bbb.script2.cod.00008c19": [
+      "GO DO YOUR HOMEWORK!!!"
+    ],
+    "bbb.script2.cod.00008c2f": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008c3b": [
+      "that was your mother's frequency, I think..."
+    ],
+    "bbb.script2.cod.00008c57": [
+      "..."
+    ],
+    "bbb.script2.cod.00008c7d": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008c89": [
+      "To all races concerned... I repeat..."
+    ],
+    "bbb.script2.cod.00008ca3": [
+      "To all races concerned..."
+    ],
+    "bbb.script2.cod.00008cb7": [
+      "The Commander is a swindler... A bad screenwriter..."
+    ],
+    "bbb.script2.cod.00008cd3": [
+      "Beware of him..."
+    ],
+    "bbb.script2.cod.00008ce3": [
+      "Commander! This is outrageous! Who could send messages like that?..."
+    ],
+    "bbb.script2.cod.00008d05": [
+      "would you like me to try to identify him?",
+      "yes no"
+    ],
+    "bbb.script2.cod.00008d2a": [
+      "... ... ... ... ... ... ... ... ... ... ... ... ... searching"
+    ],
+    "bbb.script2.cod.00008d4e": [
+      "... ... ... ... ... ... ... ... ... ... ... ... ... searching"
+    ],
+    "bbb.script2.cod.00008d72": [
+      "... ... ... found ! XXX access control connect ..."
+    ],
+    "bbb.script2.cod.00008d8e": [
+      "Commander... I've found something..."
+    ],
+    "bbb.script2.cod.00008da4": [
+      "Cassandre here..."
+    ],
+    "bbb.script2.cod.00008db2": [
+      "who?..."
+    ],
+    "bbb.script2.cod.00008dc0": [
+      "Cassandra... The Universe is in danger... Beware of females..."
+    ],
+    "bbb.script2.cod.00008dde": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008dea": [
+      "I've lost him, Commander... Beware of females! What nonsense!..."
+    ],
+    "bbb.script2.cod.00008e0e": [
+      "..."
+    ],
+    "bbb.script2.cod.00008e2b": [
+      "don't you trust me or what?..."
+    ],
+    "bbb.script2.cod.00008e47": [
+      "..."
+    ],
+    "bbb.script2.cod.00008e87": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008e93": [
+      "To all races concerned..."
+    ],
+    "bbb.script2.cod.00008ea7": [
+      "watch out, Commander!..."
+    ],
+    "bbb.script2.cod.00008eb7": [
+      "Trade extratemporal information for internet-teleported Bionium..."
+    ],
+    "bbb.script2.cod.00008ecd": [
+      "a clue, Commander... Do you agree to buy it with bionium?",
+      "yes no"
+    ],
+    "bbb.script2.cod.00008efe": [
+      "Honk to informant... Transaction OK..."
+    ],
+    "bbb.script2.cod.00008f14": [
+      "Send Bionium..."
+    ],
+    "bbb.script2.cod.00008f22": [
+      "BIONIUM INTERNET-TELEPORTATION..."
+    ],
+    "bbb.script2.cod.00008f30": [
+      "send clue..."
+    ],
+    "bbb.script2.cod.00008f3e": [
+      "The crown travels through time..."
+    ],
+    "bbb.script2.cod.00008f54": [
+      "what? That's the clue?..."
+    ],
+    "bbb.script2.cod.00008f6a": [
+      "The crown travels through time..."
+    ],
+    "bbb.script2.cod.00008f80": [
+      "..."
+    ],
+    "bbb.script2.cod.00008fa1": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008fbe": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00008fca": [
+      "To all races concerned..."
+    ],
+    "bbb.script2.cod.00008fde": [
+      "Top-secret information in exchange for bionium..."
+    ],
+    "bbb.script2.cod.00008ff0": [
+      "how many doses?..."
+    ],
+    "bbb.script2.cod.00009000": [
+      "uh... 1500..."
+    ],
+    "bbb.script2.cod.00009010": [
+      "what?! Are you out of your mind?!..."
+    ],
+    "bbb.script2.cod.00009024": [
+      "No, I'm kidding... It's a gift from Mr. Bob..."
+    ],
+    "bbb.script2.cod.00009042": [
+      "so, that information?..."
+    ],
+    "bbb.script2.cod.00009056": [
+      "To gain power, you must lose smell, hearing, taste and sight, and make no mistake..."
+    ],
+    "bbb.script2.cod.0000908c": [
+      "what?..."
+    ],
+    "bbb.script2.cod.0000909a": [
+      "If you want the crown... You'll have to lose four of your five senses..."
+    ],
+    "bbb.script2.cod.000090c0": [
+      "lose?..."
+    ],
+    "bbb.script2.cod.000090ce": [
+      "Give..."
+    ],
+    "bbb.script2.cod.000090da": [
+      "give it? To whom?..."
+    ],
+    "bbb.script2.cod.000090ee": [
+      "Oh, you'll see!..."
+    ],
+    "bbb.script2.cod.00009102": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000910e": [
+      "We got cut off..."
+    ],
+    "bbb.script2.cod.0000911e": [
+      "..."
+    ],
+    "bbb.script2.cod.00009158": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00009164": [
+      "Ulikan here..."
+    ],
+    "bbb.script2.cod.00009172": [
+      "who's that?..."
+    ],
+    "bbb.script2.cod.00009182": [
+      "Your boss, idiot!..."
+    ],
+    "bbb.script2.cod.00009196": [
+      "oh, boss! How are you?..."
+    ],
+    "bbb.script2.cod.000091ae": [
+      "Badly... I hear you're not doing your job... You don't belong at CRYO!..."
+    ],
+    "bbb.script2.cod.000091dc": [
+      "but boss!..."
+    ],
+    "bbb.script2.cod.000091ec": [
+      "Scriptwriters like you are a dime a dozen! So hurry up and get the GLUXX migrating before I get angry!..."
+    ],
+    "bbb.script2.cod.00009226": [
+      "but boss, we don't have a ship!..."
+    ],
+    "bbb.script2.cod.00009242": [
+      "No buts! Just find one!..."
+    ],
+    "bbb.script2.cod.00009264": [
+      "Oh, all right! I feel sorry for you! I'll send you one!"
+    ],
+    "bbb.script2.cod.00009286": [
+      "SHIP INTERNET-TELEPORTATION TO CRYOBOX..."
+    ],
+    "bbb.script2.cod.0000929d": [
+      "thanks, boss!..."
+    ],
+    "bbb.script2.cod.000092ad": [
+      "Forget it... It'll come out of your pay..."
+    ],
+    "bbb.script2.cod.000092c9": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000092d5": [
+      "..."
+    ],
+    "bbb.script2.cod.000092ef": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000092fb": [
+      "Message from Trump to all races concerned!..."
+    ],
+    "bbb.script2.cod.00009315": [
+      "Beware, they're deceiving you! Trump's word on it!..."
+    ],
+    "bbb.script2.cod.00009331": [
+      "Don't buy information on the Internet... Especially not with bionium..."
+    ],
+    "bbb.script2.cod.0000934f": [
+      "The fellow selling them is a drug addict and an alcoholic..."
+    ],
+    "bbb.script2.cod.0000936d": [
+      "do you know who it is?..."
+    ],
+    "bbb.script2.cod.00009381": [
+      "Yes... Someone who sells secrets to everyone to get his hands on bionium and..."
+    ],
+    "bbb.script2.cod.000093b1": [
+      "and what?..."
+    ],
+    "bbb.script2.cod.000093c1": [
+      "Alcohol... He's a real snitch..."
+    ],
+    "bbb.script2.cod.000093d9": [
+      "Commander! Here's our spy!..."
+    ],
+    "bbb.script2.cod.000093ef": [
+      "He must be destroyed! He's bad for your script..."
+    ],
+    "bbb.script2.cod.0000940d": [
+      "Trump! Tell us who it is!..."
+    ],
+    "bbb.script2.cod.00009423": [
+      "I can't... I'm no snitch!..."
+    ],
+    "bbb.script2.cod.00009449": [
+      "come on!..."
+    ],
+    "bbb.script2.cod.00009457": [
+      "Come see me at home... The Net has ears..."
+    ],
+    "bbb.script2.cod.00009477": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00009483": [
+      "let's go, Commander..."
+    ],
+    "bbb.script2.cod.00009493": [
+      "..."
+    ],
+    "bbb.script2.cod.000094b9": [
+      "Krouik... Tequila here!..."
+    ],
+    "bbb.script2.cod.000094cd": [
+      "Commander... I have terrible information about the cyber-spy..."
+    ],
+    "bbb.script2.cod.000094eb": [
+      "do you know who it is?..."
+    ],
+    "bbb.script2.cod.000094ff": [
+      "Yes... I know..."
+    ],
+    "bbb.script2.cod.00009511": [
+      "will you tell us?..."
+    ],
+    "bbb.script2.cod.00009525": [
+      "All right... Well, that's me!..."
+    ],
+    "bbb.script2.cod.0000953d": [
+      "what? You!... No way!..."
+    ],
+    "bbb.script2.cod.0000955b": [
+      "No, that's not true, but it could be..."
+    ],
+    "bbb.script2.cod.00009577": [
+      "Joking aside, I know who it is... Come see me and I'll tell you..."
+    ],
+    "bbb.script2.cod.000095a3": [
+      "we're coming..."
+    ],
+    "bbb.script2.cod.000095b1": [
+      "..."
+    ],
+    "bbb.script2.cod.000095d7": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000095e3": [
+      "BOB here..."
+    ],
+    "bbb.script2.cod.000095f1": [
+      "b... Boss! You're finally back! How is this possible?..."
+    ],
+    "bbb.script2.cod.00009613": [
+      "Idiot, that's impossible! It's not BOB, it's Ulikan! I'm joking!..."
+    ],
+    "bbb.script2.cod.0000963f": [
+      "oh, it's you, boss! We're in lots of trouble..."
+    ],
+    "bbb.script2.cod.0000965b": [
+      "I know, that's why I'm here... Here, I'll send you money to grease the strikers' palms!..."
+    ],
+    "bbb.script2.cod.0000968d": [
+      "but if we water them, they'll grow!..."
+    ],
+    "bbb.script2.cod.000096ab": [
+      "Idiot! We'll push them to go back to work!..."
+    ],
+    "bbb.script2.cod.000096cb": [
+      "SPECIAL STRIKE BUDGET INTERNET-TELEPORTATION..."
+    ],
+    "bbb.script2.cod.000096e9": [
+      "Come on! Get to work!"
+    ],
+    "bbb.script2.cod.000096fb": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.00009707": [
+      "..."
+    ],
+    "bbb.script2.cod.00009722": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000972e": [
+      "Scrut message... Scrut message..."
+    ],
+    "bbb.script2.cod.00009742": [
+      "SCRUTER MESSAGE..."
+    ],
+    "bbb.script2.cod.00009750": [
+      "At the next election..."
+    ],
+    "bbb.script2.cod.00009760": [
+      "VOTE SCRUTER..."
+    ],
+    "bbb.script2.cod.0000976e": [
+      "WITH SCRUTER, A UNIVERSE WORTH SCRUTINIZING!..."
+    ],
+    "bbb.script2.cod.0000978e": [
+      "This was a Scrut message brought to you by the Intergalactic Satellite Front..."
+    ],
+    "bbb.script2.cod.000097ae": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.000097c5": [
+      "Join the Scruters, the Party of Order..."
+    ],
+    "bbb.script2.cod.000097df": [
+      "SCRUTERS, ROBOTS WITH CLEAN HANDS FULL OF OIL..."
+    ],
+    "bbb.script2.cod.000097fd": [
+      "The party of Order is..."
+    ],
+    "bbb.script2.cod.00009813": [
+      "They are..."
+    ],
+    "bbb.script2.cod.00009821": [
+      "It's... Order is... How can I put it?..."
+    ],
+    "bbb.script2.cod.0000983d": [
+      "ORDER? NOBODY TALKS ABOUT IT BETTER THAN THE SCRUTERS..."
+    ],
+    "bbb.script2.cod.0000985d": [
+      "Krouik..."
+    ],
+    "bbb.script2.cod.0000987b": [
+      "Does your life lack order?..."
+    ],
+    "bbb.script2.cod.0000988f": [
+      "Join the SCRUTERS' strange legion..."
+    ],
+    "bbb.script2.cod.000098a5": [
+      "You will receive a brand-new, thoroughly washed brain..."
+    ],
+    "bbb.script2.cod.000098c3": [
+      "WITH YOUR NEW SCRUTER BODY!..."
+    ],
+    "bbb.script2.cod.000098db": [
+      "Enlist! The Universe needs you!..."
+    ],
+    "bbb.script2.cod.000098f5": [
+      "If you believe in values..."
+    ],
+    "bbb.script2.cod.00009909": [
+      "If you don't like thieves..."
+    ],
+    "bbb.script2.cod.0000991f": [
+      "If you're full of fervor..."
+    ],
+    "bbb.script2.cod.00009935": [
+      "If you don't like every smell..."
+    ],
+    "bbb.script2.cod.0000994d": [
+      "ENLIST WITH THE SCRUTERS!..."
+    ],
+    "bbb.script2.cod.00009961": [
+      "THE LEGION NEEDS YOU!..."
+    ],
+    "bbb.script2.cod.00009979": [
+      "KROUIK..."
+    ],
+    "bbb.script2.cod.000099d5": [
+      "..."
+    ],
+    "bbb.script2.cod.00009a0d": [
+      "Commander, the boss who watches over everything..."
+    ],
+    "bbb.script2.cod.00009a27": [
+      "... awaits you on the internet..."
+    ],
+    "bbb.script2.cod.00009a3b": [
+      "It's more discreet than the telephone!..."
+    ],
+    "bbb.script2.cod.00009a51": [
+      "..."
+    ],
+    "bbb.script2.cod.00009a73": [
+      "Commander, once you've passed through the time gate..."
+    ],
+    "bbb.script2.cod.00009a91": [
+      "you'll meet someone..."
+    ],
+    "bbb.script2.cod.00009aa1": [
+      "you will have to lose your senses..."
+    ],
+    "bbb.script2.cod.00009ab5": [
+      "what does that mean?..."
+    ],
+    "bbb.script2.cod.00009ac9": [
+      "hearing,smell,taste,sight..."
+    ],
+    "bbb.script2.cod.00009ae7": [
+      "Commander, I'm picking up a subversive signal..."
+    ],
+    "bbb.script2.cod.00009aff": [
+      "like an anti-Scruter resistance..."
+    ],
+    "bbb.script2.cod.00009b11": [
+      "probably a message from Petit Piteux..."
+    ],
+    "bbb.script2.cod.00009b27": [
+      "would you like me to try to intercept him?..."
+    ],
+    "bbb.script2.cod.00009b3d": [
+      "we might catch a bug... But he may have something to tell us..."
+    ],
+    "bbb.script2.cod.00009b65": [
+      "would you like Petit Piteux's message?...",
+      "yes no"
+    ],
+    "bbb.script2.cod.00009b8a": [
+      "... ... ... ... ... ... ... ... ... ... ..."
+    ],
+    "bbb.script2.cod.00009ba8": [
+      "ppit connection..."
+    ],
+    "bbb.script2.cod.00009bb6": [
+      "..."
+    ],
+    "bbb.script2.cod.00009bdf": [
+      "well played, Commander, you never know with that intergalactic dog..."
+    ],
+    "bbb.script2.cod.00009c01": [
+      "well played, Commander, you never know..."
+    ],
+    "bbb.script2.cod.00009c1b": [
+      "well played, Commander, you... gargl... never know..."
+    ],
+    "bbb.script2.cod.00009c3b": [
+      "Commander! Petit Piteux has bugged me! He's lodged himself in the TV!..."
+    ],
+    "bbb.script2.cod.00009c5f": [
+      "..."
+    ]
+  }
+}

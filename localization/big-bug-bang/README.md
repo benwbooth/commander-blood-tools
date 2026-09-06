@@ -7,7 +7,15 @@ subtitle sections, inline menu prose, and choice labels for the matching opening
 profile. The normal game loader now
 accepts the verified BBB build, but complete gameplay is not established, so this
 is not yet a playable English release.
-The other 16 COD profiles, BAS text, native UI, object names, and text embedded
+`en/script2.json` now supplies all 1,197 text sites in the second COD profile
+(985 unique sections), including 11 live-number menus. The modern runtime binds
+this catalog to matching SCRIPT2 resources. Source-aware validation and runtime
+catalog tests pass; live rendering and contextual review of SCRIPT2 remain pending.
+The integration run passed six localization tests with original resources,
+game-package all-targets checking, and 948 serial game-library tests (31 ignored).
+Workspace-wide all-targets checking failed in the script-compiler test target
+on unresolved shared-module imports; it is not a passing workspace gate.
+The other 15 COD profiles, BAS text, native UI, object names, and text embedded
 in media remain untranslated.
 
 Validate against the user's original resources:
@@ -40,8 +48,7 @@ reading the next number early. Original words, word counts, and VAR are not
 rewritten. Numeric overrides are restricted to non-spoken menu text; inventory
 generators remain unsupported by the English runtime binding.
 
-This support prepares the 11 numeric menu sites in SCRIPT2; it does not add a
-SCRIPT2 translation or enable that profile's English catalog yet. Tests cover
+This support is used by the 11 numeric menu sites in SCRIPT2. Tests cover
 signed limits, live changes, state preservation, marker-source validation, and
 the existing original numeric-renderer vectors.
 
@@ -57,7 +64,7 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds the English catalog only for the initial BBB profile
+the modern runtime binds English catalogs for BBB SCRIPT1 and SCRIPT2
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.
@@ -69,7 +76,7 @@ resources keep their original labels. Rejected A6 calls do not change the source
 and a profile reset clears it. Width measurement and drawing use the translated
 labels, while choice completion retains the original dictionary identity.
 
-There are 34 authored spoken-flag sites in this profile. Inline menu prose
+There are 34 authored spoken-flag sites in the opening profile. Inline menu prose
 (including Bob's recording and OLGA's dialogue) now uses English display words
 when its complete authored word stream matches the accepted instruction. The
 shared menu layout measures and wraps those words and completes at their own
