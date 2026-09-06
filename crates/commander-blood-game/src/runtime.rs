@@ -14,6 +14,7 @@ mod contact_scenario;
 mod game_lifecycle;
 mod input;
 mod live_trace;
+mod localization;
 mod navigation_chart;
 mod navigation_status;
 mod palette_transition;

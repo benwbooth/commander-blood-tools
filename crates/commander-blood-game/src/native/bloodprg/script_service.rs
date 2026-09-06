@@ -30,6 +30,14 @@ pub trait ScriptExecutionBackend {
     /// Backend failure propagated without erasing its concrete type.
     type Error;
 
+    /// Resolve optional localized subtitle bytes without replacing semantic words.
+    fn subtitle_display_override(
+        &mut self,
+        _instruction: ScriptCodeOffset,
+    ) -> Result<Option<Box<[u8]>>, Self::Error> {
+        Ok(None)
+    }
+
     /// Return current bridge, travel, and contact activity.
     fn environment_activity(&self) -> ScriptEnvironmentActivity;
 
@@ -252,6 +260,15 @@ impl<Backend: Default> Default for ScriptExecutionService<Backend> {
 
 impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionService<Backend> {
     type Error = ScriptExecutionServiceError<Backend::Error>;
+
+    fn subtitle_display_override(
+        &mut self,
+        instruction: ScriptCodeOffset,
+    ) -> Result<Option<Box<[u8]>>, Self::Error> {
+        self.backend
+            .subtitle_display_override(instruction)
+            .map_err(ScriptExecutionServiceError::Backend)
+    }
 
     fn prepare_script_state(
         &mut self,

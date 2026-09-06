@@ -201,6 +201,15 @@ pub trait ScriptDispatchHost {
     /// Host callback failure.
     type Error;
 
+    /// Optional display-only replacement after a COD subtitle has been accepted.
+    /// Native/reference hosts retain the authored text by returning `None`.
+    fn subtitle_display_override(
+        &mut self,
+        _instruction: ScriptCodeOffset,
+    ) -> Result<Option<Box<[u8]>>, Self::Error> {
+        Ok(None)
+    }
+
     /// Apply the recovered pre-frame object-state processor and refresh activity flags.
     fn prepare_script_state(
         &mut self,
@@ -457,6 +466,14 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                     }),
                 )
                 .map_err(ScriptDispatchError::Text)?;
+                if execution.outcome == super::TextHandlerOutcome::SubtitlePublished
+                    && let Some(display) = self
+                        .host
+                        .subtitle_display_override(token.source_offset())
+                        .map_err(ScriptDispatchError::Host)?
+                {
+                    self.dispatch.text_presentation.subtitle_text = display;
+                }
                 if self.code.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang
                     && execution.flow != ScriptFrameFlow::Continue
                 {
@@ -887,11 +904,14 @@ mod tests {
     };
     use super::*;
 
+    #[derive(Default)]
     struct TraversalHost {
         builtins: ScriptProfileBuiltins,
         scans: usize,
         simulation: Option<SequelSimulationContext>,
         settlement: Option<SequelSettlementContext>,
+        subtitle: Option<Box<[u8]>>,
+        subtitle_calls: Vec<ScriptCodeOffset>,
     }
 
     #[test]
@@ -983,6 +1003,7 @@ mod tests {
             scans: 0,
             simulation: None,
             settlement: None,
+            ..Default::default()
         };
         let mut procedures = super::super::ScriptProcedureStates::default();
         let mut sequence_slots = super::super::ScriptSequenceSlots::default();
@@ -1041,6 +1062,14 @@ mod tests {
 
     impl ScriptDispatchHost for TraversalHost {
         type Error = Infallible;
+
+        fn subtitle_display_override(
+            &mut self,
+            instruction: ScriptCodeOffset,
+        ) -> Result<Option<Box<[u8]>>, Self::Error> {
+            self.subtitle_calls.push(instruction);
+            Ok(self.subtitle.clone())
+        }
 
         fn prepare_script_state(
             &mut self,
@@ -1302,6 +1331,7 @@ mod tests {
                         excluded_location,
                     }),
                     settlement: None,
+                    ..Default::default()
                 };
                 let result = Dispatcher {
                     code: &code,
@@ -1404,6 +1434,7 @@ mod tests {
                 scans: 0,
                 simulation: None,
                 settlement: None,
+                ..Default::default()
             };
             for (token, instruction) in code.tokens().iter().zip(&instructions) {
                 let result = Dispatcher {
@@ -1539,6 +1570,7 @@ mod tests {
                     scans: 0,
                     simulation: Some(context.simulation),
                     settlement: bound.then_some(context),
+                    ..Default::default()
                 };
                 let result = Dispatcher {
                     code: &code,
@@ -1625,6 +1657,107 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn english_subtitle_hook_preserves_authored_choices_state_and_rejected_text() {
+        use commander_blood_formats::script::ScriptObjectKind;
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang");
+        let executable = std::fs::read(root.join("disc/BLOOD2PG.EXE")).unwrap();
+        let store =
+            OriginalResourceStore::new(root.join("imported-assets/resources"), None, [], true);
+        let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
+        let profiles = OriginalScriptProfileCatalog::decode_blood2pg(&executable).unwrap();
+        let english: Box<[u8]> = Box::from(b"What would you like?\r".as_slice());
+        let run = |site: usize, translated: bool, gated: bool| {
+            let mut cache = OriginalResourceCache::new();
+            let mut manager = ScriptProfileManager::new(profiles.clone());
+            manager
+                .select(ScriptProfileId::INITIAL, &mut cache, &store, &resources)
+                .unwrap();
+            let parts = manager.current_mut().unwrap().execution_parts();
+            let address = ScriptCodeOffset::new(site);
+            let index = parts
+                .code
+                .tokens()
+                .iter()
+                .position(|token| token.source_offset() == address)
+                .unwrap();
+            let instruction = &parts.instructions[index];
+            let DecodedScriptInstruction::Text(text) = instruction else {
+                panic!("expected authored A6")
+            };
+            // Isolate an accepted actor-presentation call, not a gameplay reachability claim.
+            let flags = parts
+                .state
+                .resolve_word_source_offset((text.line_record.byte_offset() + 2) as u16)
+                .unwrap();
+            parts.state.set_word(flags, 0);
+            let action_offset = super::super::script_field_offset(
+                ScriptObjectKind::Actor,
+                super::super::ScriptFieldSelector::ACTION,
+            )
+            .unwrap();
+            let action = parts
+                .state
+                .resolve_word_source_offset((text.line_record.byte_offset() + action_offset) as u16)
+                .unwrap();
+            parts.state.set_word(action, 196);
+            let mut dispatch = ScriptDispatchState::default();
+            dispatch.text_presentation.subtitle_display_active = gated;
+            let mut host = TraversalHost {
+                subtitle: translated.then(|| english.clone()),
+                ..Default::default()
+            };
+            let step = Dispatcher {
+                code: parts.code,
+                instructions: parts.instructions,
+                dialogue: parts.dialogue,
+                state: parts.state,
+                dictionary: parts.dictionary,
+                directory: parts.directory,
+                builtins: parts.builtins,
+                procedures: parts.procedures,
+                selector: parts.selector_state,
+                sequence_slots: parts.sequence_slots,
+                records: parts.record_state,
+                dispatch: &mut dispatch,
+                host: &mut host,
+            }
+            .execute_instruction(&parts.code.tokens()[index], instruction, parts.runtime)
+            .unwrap();
+            (
+                step,
+                dispatch,
+                parts.state.clone(),
+                parts.runtime.clone(),
+                parts.selector_state.clone(),
+                host.subtitle_calls,
+            )
+        };
+        let (raw_step, mut raw, raw_state, raw_runtime, raw_selector, _) = run(0x727, false, false);
+        let (step, translated, state, runtime, selector, calls) = run(0x727, true, false);
+        assert_eq!(calls, [ScriptCodeOffset::new(0x727)]);
+        assert_ne!(raw.text_presentation.subtitle_text, english);
+        assert_eq!(translated.text_presentation.subtitle_text, english);
+        assert_eq!(step, raw_step);
+        assert_eq!(state, raw_state);
+        assert_eq!(runtime, raw_runtime);
+        assert_eq!(selector, raw_selector);
+        assert!(selector.has_pending_presentation_choices());
+        raw.text_presentation.subtitle_text = english.clone();
+        assert_eq!(translated, raw);
+        assert!(
+            run(0x727, true, true).5.is_empty(),
+            "gated text must not call the translator"
+        );
+        let menu = run(0x977, true, false);
+        assert!(menu.1.text_presentation.menu_deferred);
+        assert!(
+            menu.5.is_empty(),
+            "menu prose is not yet handled by the subtitle translator"
+        );
+    }
+
+    #[test]
     fn every_shipped_profile_enters_exhaustive_dispatch_with_coherent_var_state() {
         let Some(root) = original_data_root() else {
             return;
@@ -1647,6 +1780,7 @@ mod tests {
                 scans: 0,
                 simulation: None,
                 settlement: None,
+                ..Default::default()
             };
 
             let outcome = execute_loaded_script_frame(profile, true, &mut dispatch, &mut host)

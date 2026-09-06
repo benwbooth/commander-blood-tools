@@ -1705,8 +1705,11 @@ no-input run. SCRIPT2 acceptance remains unresolved.
   rendering, wrapping, interaction and subtitle timing. An English first pass now
   covers the opening profile's 89 A6 sites in
   `localization/big-bug-bang/en/script1.json`, with source-hash, site, section, and
-  choice-count validation. The runtime does not load it yet; the other 16 COD
-  profiles and the non-COD text remain untranslated. See
+  choice-count validation. The COD backend now substitutes English after accepted
+  subtitle publication, preserving semantic/choice words and falling back on
+  nonmatching resources. Menu-only prose and choice labels are not rendered in
+  English yet; the normal launcher still rejects BBB. The other 16 COD profiles
+  and the non-COD text remain untranslated. See
   `localization/big-bug-bang/README.md` for the validation command and editorial
   limitations.
 - Capture the original sequel in DOS and compare Rust behavior through startup,

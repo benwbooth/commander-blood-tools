@@ -136,6 +136,12 @@ impl RuntimeScriptSystem {
                 .current_profile()
                 .context("profile loader did not retain the selected profile")?,
         );
+        self.service.backend_mut().english_subtitles =
+            super::localization::SequelEnglishSubtitles::for_profile(
+                runtime
+                    .current_profile()
+                    .context("missing loaded profile")?,
+            )?;
         Ok(outcome)
     }
 
@@ -711,6 +717,7 @@ pub fn initialize_and_restore_original_save_game(
 
 /// Concrete flat backend state shared by the script service and game lifecycle.
 pub struct RuntimeScriptBackend {
+    english_subtitles: Option<super::localization::SequelEnglishSubtitles>,
     database: DescriptDatabase,
     object_names: BTreeMap<ScriptObjectId, Box<[u8]>>,
     assets: DescriptPresentationAssets,
@@ -762,6 +769,7 @@ impl RuntimeScriptBackend {
         sequel_clock: Option<SequelSimulationClock>,
     ) -> Self {
         Self {
+            english_subtitles: None,
             database,
             object_names: BTreeMap::new(),
             assets: DescriptPresentationAssets::default(),
@@ -785,6 +793,7 @@ impl RuntimeScriptBackend {
 
     /// Bind stable profile object identities to their exact DEB names.
     pub fn bind_profile(&mut self, profile: &LoadedScriptProfile) {
+        self.english_subtitles = None;
         self.bind_directory(profile.directory());
     }
 
@@ -977,6 +986,16 @@ impl RuntimeScriptBackend {
 
 impl ScriptExecutionBackend for RuntimeScriptBackend {
     type Error = anyhow::Error;
+
+    fn subtitle_display_override(
+        &mut self,
+        instruction: commander_blood_formats::code::ScriptCodeOffset,
+    ) -> Result<Option<Box<[u8]>>, Self::Error> {
+        Ok(self
+            .english_subtitles
+            .as_ref()
+            .and_then(|catalog| catalog.subtitle(instruction)))
+    }
 
     fn environment_activity(&self) -> ScriptEnvironmentActivity {
         self.environment_activity
