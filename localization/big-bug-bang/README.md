@@ -10,7 +10,12 @@ is not yet a playable English release.
 `en/script2.json` now supplies all 1,197 text sites in the second COD profile
 (985 unique sections), including 11 live-number menus. The modern runtime binds
 this catalog to matching SCRIPT2 resources. Source-aware validation and runtime
-catalog tests pass; live rendering and contextual review of SCRIPT2 remain pending.
+catalog tests pass. The ordinary startup/PLAY capture
+`output/big-bug-bang/english-script2-play-02` reaches profile 1 and visibly renders
+"Go and look in the cryobox. Old Daddy is waiting for you there..."
+(`screen-028.png`). This verifies the first SCRIPT2 subtitle, not every site.
+The subsequent TV sequence still displays French text; contextual review and
+the remaining localization layers are unfinished.
 The integration run passed six localization tests with original resources,
 game-package all-targets checking, and 948 serial game-library tests (31 ignored).
 Workspace-wide all-targets checking failed in the script-compiler test target
