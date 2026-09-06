@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Read original sequel startup state in an isolated DOSBox-X child.
 
-Offline evidence only: no guest writes or host mouse control. An optional
-recorded button press targets only the freshly allocated private X display.
+Offline evidence only: no guest writes or desktop mouse control. Optional
+recorded button presses target only the freshly allocated private X display.
 The capture describes sampled allocations; it cannot prove which instructions
 read them between samples. Unknown executable or emulator layouts fail closed.
 """
@@ -48,7 +48,7 @@ def read_exact(stream, address, size):
     return data
 
 
-def locate_symbols(pid):
+def locate_symbols(pid, include_mouse_lock=False):
     """Resolve the actual child ELF, not a Nix shell wrapper on PATH."""
     executable = Path(f"/proc/{pid}/exe").resolve()
     header = executable.open("rb")
@@ -69,6 +69,8 @@ def locate_symbols(pid):
         else:
             raise ValueError("emulator ELF base is not mapped")
     wanted = {"MemBase", "Segs", "cpu_regs"}
+    if include_mouse_lock:
+        wanted.add("mouselocked")
     symbols = {}
     for row in subprocess.check_output(["nm", "-P", str(executable)], text=True).splitlines():
         fields = row.split()
@@ -78,6 +80,8 @@ def locate_symbols(pid):
         raise ValueError("DOSBox-X memory/register symbols unavailable")
     if symbols["Segs"][1] != 136 or symbols["cpu_regs"][1] != 48:
         raise ValueError(f"unverified DOSBox-X register layout: {symbols}")
+    if include_mouse_lock and symbols["mouselocked"][1] != 1:
+        raise ValueError("unverified DOSBox-X mouse lock layout")
     return executable, symbols
 
 
@@ -137,6 +141,10 @@ def inspect_guest(guest, executable):
     state = {"status": "module_found", "global_segment": global_base // 16,
              "catalog_segment": catalog // 16, "profile": profile,
              "bindings": bindings, "resident_resources": resources}
+    # The poll at module 0x0709 stores INT 33h CX, DX and BX here; later game
+    # code can adjust these shared slots, so this is not a driver event trace.
+    mouse_x, mouse_y, buttons = struct.unpack_from("<3H", guest, global_base + 0xC22)
+    state["mouse_poll"] = {"x": mouse_x, "y": mouse_y, "buttons": buttons}
     if not 0 <= profile < 17:
         return state
     expected = struct.unpack_from("<5H", executable, PROFILE_TABLE_FILE + profile * 10)
@@ -204,20 +212,50 @@ def positive_seconds(value):
     return result
 
 
-def private_click(env, pid):
-    """One button press without moving any pointer or editing game memory."""
+def private_mouse_locked(pid):
+    """Read the child emulator's standalone bool, not the game's input state."""
+    _binary, symbols = locate_symbols(pid, include_mouse_lock=True)
+    with open(f"/proc/{pid}/mem", "rb", buffering=0) as mem:
+        value = read_exact(mem, symbols["mouselocked"][0], 1)[0]
+    if value not in (0, 1):
+        raise ValueError(f"invalid DOSBox-X mouse lock bool: {value}")
+    return bool(value)
+
+
+def private_click(env, pid, position=None, capture_mouse=False):
+    """Click on the private display, optionally acquiring mouse capture first."""
+    if position is not None and (len(position) != 2 or
+                                 not 0 <= position[0] < 800 or not 0 <= position[1] < 600):
+        raise ValueError("click position must be inside the private 800x600 display")
     windows = subprocess.check_output(
         ["xdotool", "search", "--onlyvisible", "--pid", str(pid)], env=env, text=True, timeout=5).split()
     if len(windows) != 1:
         raise RuntimeError(f"expected one private DOSBox window, got {windows}")
     subprocess.run(["xdotool", "windowfocus", "--sync", windows[0]], env=env, check=True, timeout=5)
+    capture_click_sent = False
+    if capture_mouse:
+        if not private_mouse_locked(pid):
+            subprocess.run(["xdotool", "click", "1"], env=env, check=True, timeout=5)
+            capture_click_sent = True
+            time.sleep(0.15)
+        if not private_mouse_locked(pid):
+            raise RuntimeError("private DOSBox mouse capture not confirmed by mouselocked")
+    if position is not None:
+        # --sync waits for movement even when a repeated target is already reached.
+        subprocess.run(["xdotool", "mousemove", str(position[0]), str(position[1])],
+                       env=env, check=True, timeout=5)
+        time.sleep(0.15)
     subprocess.run(["xdotool", "mousedown", "1"], env=env, check=True, timeout=5)
     try:
         time.sleep(0.15)
     finally:
         subprocess.run(["xdotool", "mouseup", "1"], env=env, check=True, timeout=5)
     return {"kind": "private_x11_primary_click", "window": windows[0], "display": env["DISPLAY"],
-            "pointer_moved": False, "guest_memory_written": False}
+            "pointer_moved": False if position is None else None,
+            "pointer_move_requested": position is not None, "position": position,
+            "mouse_capture_requested": capture_mouse,
+            "capture_click_sent": capture_click_sent,
+            "mouse_capture_verified": True if capture_mouse else None, "guest_memory_written": False}
 
 
 def capture(args):
@@ -249,7 +287,7 @@ def capture(args):
             env = dict(os.environ, DISPLAY=f":{display}", SDL_VIDEODRIVER="x11", SDL_AUDIODRIVER="dummy")
             env.pop("WAYLAND_DISPLAY", None)
             command = [args.dosbox, "-conf", "/dev/null",
-                       "-set", "sdl output=surface", "-set", "sdl autolock=false",
+                       "-set", "sdl output=surface", "-set", f"sdl autolock={str(args.relative_mouse).lower()}",
                        "-set", "cpu core=normal", "-set", f"cpu cycles={args.cycles}",
                        "-set", "dosbox memsize=16", "-set", "render frameskip=0",
                        "-set", "joystick joysticktype=none",
@@ -260,7 +298,7 @@ def capture(args):
             began = time.monotonic()
             symbols = None
             last_snapshot = None
-            clicked = False
+            clicks_sent = 0
             while time.monotonic() - began < args.seconds:
                 time.sleep(args.interval)
                 if game.poll() is not None:
@@ -283,14 +321,19 @@ def capture(args):
                     if guest is not None:
                         (output / name).write_bytes(guest)
                         snapshot["guest_dump"] = name
-                    print(json.dumps({key: snapshot.get(key) for key in ("elapsed_seconds", "status", "profile", "time_storage")}), flush=True)
+                    print(json.dumps({key: snapshot.get(key) for key in ("elapsed_seconds", "status", "profile", "mouse_poll", "time_storage")}), flush=True)
                     last_snapshot = signature
-                if args.click_after is not None and not clicked and time.monotonic() - began >= args.click_after:
-                    subprocess.run(["import", "-window", "root", str(output / "before-click.png")], env=env, check=True, timeout=10)
-                    event = {"requested_at_seconds": round(time.monotonic() - began, 3), "status": "requested"}
+                if clicks_sent < len(args.click_after) and time.monotonic() - began >= args.click_after[clicks_sent]:
+                    screenshot = "before-click.png" if clicks_sent == 0 else f"before-click-{clicks_sent + 1}.png"
+                    subprocess.run(["import", "-window", "root", str(output / screenshot)], env=env, check=True, timeout=10)
+                    event = {"scheduled_at_seconds": args.click_after[clicks_sent],
+                             "requested_at_seconds": round(time.monotonic() - began, 3), "status": "requested",
+                             "position": args.click_position,
+                             "mouse_capture_requested": args.relative_mouse and clicks_sent == 0}
                     report["input_events"].append(event)
-                    event.update(private_click(env, game.pid), status="sent")
-                    clicked = True
+                    event.update(private_click(env, game.pid, args.click_position,
+                                               args.relative_mouse and clicks_sent == 0), status="sent")
+                    clicks_sent += 1
             subprocess.run(["import", "-window", "root", str(output / "screen.png")], env=env, check=True, timeout=10)
             report["outcome"] = "observed_profile" if any(s["status"] == "profile_bound" for s in report["samples"]) else "no_bound_profile_observed"
     except BaseException as error:
@@ -313,14 +356,27 @@ def main():
     parser.add_argument("--seconds", type=positive_seconds, default=60)
     parser.add_argument("--interval", type=positive_seconds, default=0.5)
     parser.add_argument("--cycles", type=int, default=30000)
-    parser.add_argument("--click-after", type=positive_seconds,
-                        help="send one primary click on the private display, without pointer movement")
+    parser.add_argument("--click-after", type=positive_seconds, action="append", default=[],
+                        help="send a primary click at this elapsed time; repeat in increasing order")
+    parser.add_argument("--click-position", type=int, nargs=2, metavar=("X", "Y"),
+                        help="optional root coordinates on the private 800x600 display")
+    parser.add_argument("--relative-mouse", action="store_true",
+                        help="enable autolock and verify a private capture click before the first input")
     parser.add_argument("--game-args", default="AMR S162227 EMS WRIC:\\cblood\\")
     args = parser.parse_args()
     if args.cycles <= 0:
         parser.error("cycles must be positive")
-    if args.click_after is not None and args.click_after >= args.seconds:
-        parser.error("click-after must occur before the capture ends")
+    if args.relative_mouse and not args.click_after:
+        parser.error("relative-mouse requires click-after")
+    if any(at >= args.seconds for at in args.click_after):
+        parser.error("each click-after must occur before the capture ends")
+    if any(left >= right for left, right in zip(args.click_after, args.click_after[1:])):
+        parser.error("click-after times must be strictly increasing")
+    if args.click_position is not None:
+        if not args.click_after:
+            parser.error("click-position requires click-after")
+        if not 0 <= args.click_position[0] < 800 or not 0 <= args.click_position[1] < 600:
+            parser.error("click-position must be inside the private 800x600 display")
     if any(char in args.game_args for char in "\n\r"):
         parser.error("game arguments must be one command line")
     raise SystemExit(0 if capture(args) else 1)

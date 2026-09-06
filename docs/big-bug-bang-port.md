@@ -1581,6 +1581,56 @@ that initial adjacency but do not reach `inter3`. Trace native writers and the
 later profile transitions before deciding its flat-state representation.
 Do not copy the second profile's defaults or silently zero-extend initial state.
 
+### Recorded Reference Input
+
+The startup capture accepts repeated, strictly increasing `--click-after` times
+and an optional `--click-position X Y` on its private 800x600 X display. It saves
+a screenshot before each click (`before-click.png`, `before-click-2.png`, etc.)
+and records scheduled and actual request times. A requested pointer move is not
+reported as verified movement. Repeated targets omit `xdotool mousemove --sync`:
+the original `startup-capture-08` failed because that option waited for movement
+when the pointer was already at the target.
+
+`--relative-mouse` enables DOSBox-X autolock and, if needed, sends a separately
+recorded acquisition click before the first intended click. It verifies the
+child emulator's one-byte `mouselocked` symbol before proceeding. It does not
+modify guest memory. The official
+[DOSBox-X mouse guide](https://dosbox-x.com/wiki/Guide%3AMouse-support-in-DOSBox%E2%80%90X)
+describes autolock; this build did not provide capture status in its window
+title, and the tested Ctrl+F10 attempt did not set `mouselocked`. A failed capture
+can have partially delivered input; `status: requested` is not evidence that
+no input occurred.
+
+```sh
+nix develop -c python3 -P re/tools/capture_big_bug_bang_startup.py \
+  output/big-bug-bang/disc output/big-bug-bang/startup-relative-reference \
+  --seconds 90 --click-after 35 --click-after 60 \
+  --click-position 160 300 --relative-mouse
+```
+
+The above replay was run as `startup-capture-13`: mouse capture was verified,
+both intended clicks were sent, and the 90-second screenshot still showed the
+original introduction. Only profile 0 was observed, with the same extra-word
+address owned by `script1.deb` and value 24930. Its `capture.json` SHA-256 is
+`821c1be535a39f598571a242334f631e8c7440998574c876bcb8b25767f16b80`.
+The uncaptured repeated-click replay `startup-capture-09` also completed, without
+reaching SCRIPT2. These are input/capture checks, not gameplay acceptance.
+
+A no-input extension, `startup-capture-14 --seconds 300 --interval 1`, completed
+300 samples through 300.311 seconds. The final screenshot showed a later space
+scene and narration, so the introduction was visibly advancing; it still had
+only profile 0 and the same `script1.deb`-owned extra word. Its `capture.json`
+SHA-256 is `56dd42db4fe1ad8f2a8f1366e52288665d953571adf4ad3f67c6de6677d8f0a9`.
+This does not show the Honk `JOUER` choice or a native SCRIPT2 time-word read.
+
+Samples now include `mouse_poll`, the shared words at global offsets
+`0x0c22`, `0x0c24`, and `0x0c26`. The original module routine at `0x0709`
+stores INT 33h CX, DX, and BX there. Later game code adjusts the same slots,
+so periodic values are not a raw driver event trace or proof of a hit-tested
+selection. The capture's 22 unit tests cover schedule validation, private-display
+targeting, pointer bounds, capture-state validation, and the existing allocation
+checks. Original normal-input navigation into SCRIPT2 remains unverified.
+
 ## Remaining Completion Requirements
 
 - Compare inherited VM handlers, including

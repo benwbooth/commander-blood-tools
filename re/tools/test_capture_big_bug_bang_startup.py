@@ -6,6 +6,7 @@ import importlib.util
 import io
 from pathlib import Path
 import struct
+import sys
 import unittest
 from unittest import mock
 
@@ -114,6 +115,12 @@ class StartupCaptureTests(unittest.TestCase):
         second = capture.inspect_guest(guest, executable)
         self.assertNotEqual(first["var_sha256"], second["var_sha256"])
 
+    def test_mouse_poll_observation_preserves_shared_slot_values(self):
+        executable, guest, globals_base, _catalog = fixture()
+        struct.pack_into("<3H", guest, globals_base + 0xC22, 720, 150, 3)
+        self.assertEqual(capture.inspect_guest(guest, executable)["mouse_poll"],
+                         {"x": 720, "y": 150, "buttons": 3})
+
     def test_private_click_uses_supplied_display_without_pointer_motion(self):
         env = {"DISPLAY": ":123", "SDL_VIDEODRIVER": "x11"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n") as search, \
@@ -135,6 +142,97 @@ class StartupCaptureTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 capture.private_click({"DISPLAY": ":123"}, 789)
             run.assert_not_called()
+
+    def test_positioned_click_records_coordinates_and_moves_only_private_pointer(self):
+        env = {"DISPLAY": ":123"}
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture.subprocess, "run") as run, \
+                mock.patch.object(capture.time, "sleep"):
+            event = capture.private_click(env, 789, [400, 445])
+        self.assertEqual([call.args[0] for call in run.call_args_list], [
+            ["xdotool", "windowfocus", "--sync", "456"],
+            ["xdotool", "mousemove", "400", "445"],
+            ["xdotool", "mousedown", "1"],
+            ["xdotool", "mouseup", "1"],
+        ])
+        self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
+        self.assertIsNone(event["pointer_moved"])
+        self.assertTrue(event["pointer_move_requested"])
+        self.assertEqual(event["position"], [400, 445])
+        self.assertFalse(event["guest_memory_written"])
+
+    def test_positioned_click_rejects_out_of_display_before_input(self):
+        with mock.patch.object(capture.subprocess, "check_output") as search:
+            for position in ([-1, 0], [0, -1], [800, 0], [0, 600], [0]):
+                with self.assertRaises(ValueError):
+                    capture.private_click({"DISPLAY": ":123"}, 789, position)
+            search.assert_not_called()
+
+    def test_relative_mouse_requires_confirmed_private_capture_before_click(self):
+        env = {"DISPLAY": ":123"}
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_mouse_locked", side_effect=[False, True]), \
+                mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
+            event = capture.private_click(env, 789, capture_mouse=True)
+        self.assertEqual([call.args[0] for call in run.call_args_list], [
+            ["xdotool", "windowfocus", "--sync", "456"], ["xdotool", "click", "1"],
+            ["xdotool", "mousedown", "1"], ["xdotool", "mouseup", "1"],
+        ])
+        self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
+        self.assertTrue(event["mouse_capture_requested"])
+        self.assertTrue(event["capture_click_sent"])
+
+    def test_relative_mouse_refuses_unconfirmed_capture(self):
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_mouse_locked", return_value=False), \
+                mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
+            with self.assertRaises(RuntimeError):
+                capture.private_click({"DISPLAY": ":123"}, 789, capture_mouse=True)
+        self.assertEqual(len(run.call_args_list), 2)
+
+    def test_relative_mouse_does_not_click_to_acquire_an_existing_lock(self):
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
+            event = capture.private_click({"DISPLAY": ":123"}, 789, capture_mouse=True)
+        self.assertEqual(len(run.call_args_list), 3)
+        self.assertFalse(event["capture_click_sent"])
+        self.assertTrue(event["mouse_capture_verified"])
+
+    def test_private_mouse_lock_reader_checks_boolean_representation(self):
+        for value in (0, 1, 2):
+            with self.subTest(value=value), \
+                    mock.patch.object(capture, "locate_symbols", return_value=(None, {"mouselocked": (0, 1)})), \
+                    mock.patch("builtins.open", return_value=io.BytesIO(bytes([value]))):
+                if value == 2:
+                    with self.assertRaises(ValueError):
+                        capture.private_mouse_locked(789)
+                else:
+                    self.assertEqual(capture.private_mouse_locked(789), bool(value))
+
+    def test_cli_preserves_ordered_click_schedule(self):
+        argv = ["capture", "disc", "output", "--seconds", "105", "--click-after", "35",
+                "--click-after", "70", "--click-position", "400", "445"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].click_after, [35.0, 70.0])
+        self.assertEqual(run.call_args.args[0].click_position, [400, 445])
+
+    def test_cli_rejects_invalid_input_schedule_before_capture(self):
+        for flags in (["--click-after", "60"],
+                      ["--relative-mouse"],
+                      ["--click-after", "35", "--click-after", "20"],
+                      ["--click-after", "35", "--click-after", "35"],
+                      ["--click-position", "400", "445"],
+                      ["--click-after", "35", "--click-position", "800", "0"]):
+            with self.subTest(flags=flags), mock.patch.object(sys, "argv", ["capture", "disc", "output", *flags]), \
+                    mock.patch.object(sys, "stderr", io.StringIO()), mock.patch.object(capture, "capture") as run:
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
 
     def test_read_exact_reports_short_read(self):
         with self.assertRaises(ValueError):
