@@ -29,6 +29,7 @@ mod save_load;
 mod scenario;
 mod scene_transition;
 mod script_backend;
+mod sequence_localization;
 mod services;
 mod shared_ui;
 mod ship_hud;
@@ -340,6 +341,7 @@ pub struct OriginalGameData {
     script_profile_catalog: OriginalScriptProfileCatalog,
     writable_resource_catalog: StartupWritableResourceCatalog,
     descript_database: DescriptDatabase,
+    english_sequence_captions: sequence_localization::EnglishSequenceCaptions,
     confirm_dialog_regions: BloodprgConfirmDialogRegions,
     bridge_menu_text: BloodprgBridgeMenuText,
     hyperspace_resources: BloodprgHyperspaceResources,
@@ -501,6 +503,11 @@ impl OriginalGameData {
         let descript_database = DescriptDatabase::parse(&descript_bytes).map_err(|error| {
             anyhow::anyhow!("decoding {}: {error:?}", paths.descript().display())
         })?;
+        let english_sequence_captions = sequence_localization::EnglishSequenceCaptions::load(
+            paths.manifest().game,
+            &descript_bytes,
+            &descript_database,
+        )?;
 
         let archive_entry_count = paths.manifest().source_archive_entry_count;
         let imported_resource_count = paths.manifest().resources.len();
@@ -534,6 +541,7 @@ impl OriginalGameData {
             script_profile_catalog,
             writable_resource_catalog,
             descript_database,
+            english_sequence_captions,
             confirm_dialog_regions,
             bridge_menu_text,
             hyperspace_resources,

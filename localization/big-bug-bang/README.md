@@ -14,10 +14,9 @@ catalog tests pass. The ordinary startup/PLAY capture
 `output/big-bug-bang/english-script2-play-02` reaches profile 1 and visibly renders
 "Go and look in the cryobox. Old Daddy is waiting for you there..."
 (`screen-028.png`). This verifies the first SCRIPT2 subtitle, not every site.
-The subsequent TV sequence still displays French text. Its first news line is
+That capture's subsequent TV sequence displays French text. Its first news line is
 the frame-10 sequence subtitle in DESCRIPT's `1ppit` record, not text baked into
-the video. DESCRIPT timed captions need a separate display translation path that
-preserves cue timing. Contextual review and
+the video. The separate DESCRIPT display path is described below. Contextual review and
 the remaining localization layers are unfinished.
 The integration run passed six localization tests with original resources,
 game-package all-targets checking, and 948 serial game-library tests (31 ignored).
@@ -47,6 +46,43 @@ prompts. Game-package all-targets checking and 949 serial game-library tests pas
 and contextual review remain unverified.
 The other 13 COD profiles, BAS text, native UI, object names, and text embedded
 in media remain untranslated.
+
+## Timed Sequence Captions
+
+`en/sequences.json` supplies 37 cues across `present`, `1ppit`, and `3ppit`,
+including the original blank cues. The verified DESCRIPT contains 706 sequence
+subtitle cues in total; the other 669 are not covered by this catalog.
+The modern renderer selects English only for Big Bug Bang with the matching
+DESCRIPT SHA-256 hash and an exact match for the complete source cue stream.
+The source database, video/audio selection, cue ordering, frame thresholds, and
+playback state are not rewritten. Modified resources and unlisted cue streams
+retain their original captions.
+
+The loader rejects missing records, cue count/frame mismatches, changed blank
+cues, non-ASCII text, and ambiguous translations of identical source streams.
+The caption layout test uses the original line planner to check screen bounds.
+Source validation and layout checks do not establish contextual translation
+quality or live rendering.
+The rebuilt ordinary-input capture
+`output/big-bug-bang/english-sequences-daddy-01/screen-031.png` visibly renders
+"Terrible news has just come in over our teleprinters" on the TV news screen.
+This verifies the first `1ppit` cue in-game, not all 37 cues. Both sequence
+localization tests and all 13 presentation-screen tests pass; the serial
+game-library run passes 950 tests (34 ignored), and game-package all-targets
+checking passes.
+The extended scenario `accuracy/scenarios/bbb_play_daddy_english.tsv` completes
+all actions and exits normally, but its two additional clicks at `(160, 20)` do
+not advance Daddy's initial message. At action 19, SCRIPT3 still has execution
+disabled on line 8, with the fully revealed, localized but unchanged vocalization.
+The trace reports `scene_gate_active=true` and no active streamed clip. This is
+a pending gameplay investigation, not proof of English SCRIPT3 prose or a
+successful conversation.
+
+```sh
+nix develop -c cargo test -p commander-blood-game --lib runtime::sequence_localization -- --include-ignored
+```
+
+## COD Catalog Validation
 
 Validate against the user's original resources:
 

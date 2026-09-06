@@ -598,7 +598,11 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
         };
         let result = self.caption.update(
             &self.services.runtime().data().sequence_caption_font,
-            &subtitles,
+            self.services
+                .runtime()
+                .data()
+                .english_sequence_captions
+                .display(&subtitles),
             playback,
             visible_frame,
         );

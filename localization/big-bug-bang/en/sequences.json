@@ -1,0 +1,50 @@
+{
+  "format": "bbb-sequence-display-translation-v1",
+  "language": "en",
+  "descript_sha256": "3ffb0122c13ea951fa9a24df3ddbbeb383a5da91f645d8833a2de1ee760e913d",
+  "sequences": {
+    "present": [
+      {"frame": 1, "text": "CRYO interactive Entertainment 1995"},
+      {"frame": 3, "text": ""},
+      {"frame": 5, "text": "CRYO interactive Entertainment 1995"},
+      {"frame": 7, "text": ""},
+      {"frame": 10, "text": "CRYO interactive Entertainment 1995"},
+      {"frame": 13, "text": ""},
+      {"frame": 15, "text": "CRYO interactive Entertainment 1995"},
+      {"frame": 17, "text": ""},
+      {"frame": 20, "text": "CRYO interactive Entertainment 1995"},
+      {"frame": 25, "text": "Commander BLOOD Version 2.0"},
+      {"frame": 55, "text": "Hello!!!"},
+      {"frame": 110, "text": "PETIT PITEUX here!"},
+      {"frame": 140, "text": "Welcome to COMMANDER BLOOD's BIOGAME"},
+      {"frame": 180, "text": "Remember old BOB? What a guy!!!"},
+      {"frame": 210, "text": "And gorgeous TINA BURNER's wedding to AMIGO..."},
+      {"frame": 250, "text": "And the MIGRATORS concert, the best band in the galaxy..."},
+      {"frame": 285, "text": "Old BOB died from it... Dead, I tell you... Ha! Ha! Ha! Good old Bob..."},
+      {"frame": 315, "text": "Commander Blood dumped him on a little planet called TERRA"},
+      {"frame": 390, "text": "In a place called ROSWELL... Ha! Ha! Ha! Good old Bob..."},
+      {"frame": 450, "text": "So Cryo hired a new writer for this new game..."},
+      {"frame": 500, "text": "And you haven't heard the best part... Ha! Ha! Ha!"},
+      {"frame": 540, "text": "YOU ARE THE WRITER..."},
+      {"frame": 610, "text": "YES, YOU!!! HA! HA! HA!"},
+      {"frame": 655, "text": "Meet the IZWALS again."},
+      {"frame": 710, "text": "GO ON, KID... GO FOR IT!!!"},
+      {"frame": 750, "text": "YEAH!!!"},
+      {"frame": 775, "text": "Meet the vile CROOLIS again"},
+      {"frame": 810, "text": "IN"},
+      {"frame": 840, "text": ""}
+    ],
+    "1ppit": [
+      {"frame": 10, "text": "Terrible news has just come in over our teleprinters"},
+      {"frame": 70, "text": "Two planets are fighting a deadly war"},
+      {"frame": 130, "text": "Stay home... stock up on food"},
+      {"frame": 190, "text": "PETIT PITEUX is with you..."}
+    ],
+    "3ppit": [
+      {"frame": 5, "text": "Attention, we have just intercepted"},
+      {"frame": 60, "text": "a coded message from the migration services"},
+      {"frame": 105, "text": "A migrant ship has been detected... Stay tuned"},
+      {"frame": 160, "text": "Remember: All gasping and pale when the hour strikes..."}
+    ]
+  }
+}
