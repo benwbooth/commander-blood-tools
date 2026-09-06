@@ -122,7 +122,7 @@ impl ShipPresentationHost for RuntimeShipPresentationBackend<'_, '_, '_, '_> {
         self.import_state(state);
         let result = self
             .services
-            .dispatch_ship_scene(*scene_link)
+            .dispatch_ship_scene(*scene_link, self.lifecycle)
             .and_then(|_| {
                 self.lifecycle.frame_presented =
                     self.services.presentation_scene_frame_presented()?;

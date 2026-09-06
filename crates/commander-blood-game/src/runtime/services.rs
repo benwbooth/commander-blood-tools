@@ -303,6 +303,16 @@ fn synchronize_selected_ship_target(
     ship.active_line = SHIP_NAVIGATION_STATUS_LINE;
 }
 
+pub(super) fn publish_sequel_scene_completion(
+    sequel: bool,
+    completed: bool,
+    lifecycle: &mut GameLifecycleState,
+) {
+    if sequel && completed {
+        lifecycle.vm_execution_enabled = true;
+    }
+}
+
 fn publish_presentation_screen_modal_ui(
     lifecycle: &mut GameLifecycleState,
     redraw_requested: bool,
@@ -2250,6 +2260,12 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         lifecycle: &mut GameLifecycleState,
     ) {
+        if self.sequel_presentation_control().is_some()
+            && !lifecycle.presentation.c2_presentation_gate
+        {
+            return;
+        }
+        self.resume_vm_after_scene(lifecycle, lifecycle.presentation.c2_presentation_gate);
         self.finish_presentation_sequence();
         if self.ship_presentation.flags & SHIP_PRESENTATION_HUD_FLAG != u16::MIN {
             self.ship_presentation.bridge_redraw_pending = BRIDGE_REDRAW_REQUESTED;
@@ -2457,8 +2473,9 @@ impl<'window> ModernGameServices<'window> {
         let screen = self
             .presentation_screen
             .as_mut()
-            .context("presentation screen is already being updated")?
-            .state_mut();
+            .context("presentation screen is already being updated")?;
+        let scene_completed = screen.take_scene_completion_output();
+        let screen = screen.state_mut();
         let screen_rebuild_pending = screen.take_screen_rebuild_pending();
         let completion_audio_pending = screen.take_completion_audio_pending();
         let choice_animation_requested = screen.take_choice_change_animation_requested();
@@ -2474,7 +2491,21 @@ impl<'window> ModernGameServices<'window> {
         if startup_mode_completed {
             state.presentation_mode = false;
         }
+        self.resume_vm_after_scene(state, scene_completed);
         Ok(())
+    }
+
+    /// Publish before subsequent UI work can write a new VM pause.
+    pub(super) fn resume_vm_after_scene(
+        &self,
+        lifecycle: &mut GameLifecycleState,
+        completed: bool,
+    ) {
+        publish_sequel_scene_completion(
+            self.sequel_presentation_control().is_some(),
+            completed,
+            lifecycle,
+        );
     }
 
     /// Apply one selected DESCRIPT record through the live BloodScript text state.
@@ -2655,6 +2686,7 @@ impl<'window> ModernGameServices<'window> {
     pub fn dispatch_ship_scene(
         &mut self,
         scene_link: GameSceneLink,
+        lifecycle: &mut GameLifecycleState,
     ) -> Result<PresentationSceneDispatchOutcome> {
         let vertical_offset = self.ship_navigation_scene_vertical_offset();
         let active_record_related = self
@@ -2687,6 +2719,13 @@ impl<'window> ModernGameServices<'window> {
         }
         self.ship_presentation = ship;
         self.presentation_screen = Some(screen);
+        self.resume_vm_after_scene(
+            lifecycle,
+            matches!(
+                &outcome,
+                Ok(PresentationSceneDispatchOutcome::PresentationFinished)
+            ),
+        );
         outcome
     }
 
@@ -2746,6 +2785,13 @@ impl<'window> ModernGameServices<'window> {
             self.script_finale_shutdown_pending = true;
         }
         self.presentation_screen = Some(screen);
+        self.resume_vm_after_scene(
+            lifecycle,
+            matches!(
+                &outcome,
+                Ok(PresentationSceneDispatchOutcome::PresentationFinished)
+            ),
+        );
         outcome
     }
 
@@ -3155,11 +3201,12 @@ impl<'window> ModernGameServices<'window> {
     /// Release every presentation owner retained across lifecycle frames.
     pub fn finish_runtime_presentations(&mut self) -> Result<()> {
         self.finish_presentation_sequence();
-        self.presentation_screen
+        let screen = self
+            .presentation_screen
             .as_mut()
-            .context("presentation screen is already being updated")?
-            .state_mut()
-            .set_active(false);
+            .context("presentation screen is already being updated")?;
+        screen.take_scene_completion_output();
+        screen.state_mut().set_active(false);
         self.presentation_word_choice
             .as_mut()
             .context("presentation word choice is already being updated")?

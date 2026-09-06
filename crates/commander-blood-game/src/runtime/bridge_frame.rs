@@ -80,7 +80,7 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
         state: &mut crate::native::bloodprg::BridgeFrameState,
     ) -> Result<()> {
         self.services
-            .dispatch_ship_scene(*scene_link)
+            .dispatch_ship_scene(*scene_link, self.lifecycle)
             .context("dispatching the bridge travel scene")?;
         let ship = self.services.ship_presentation_state();
         self.lifecycle.presentation.active_line =

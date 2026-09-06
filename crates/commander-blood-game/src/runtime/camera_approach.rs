@@ -191,7 +191,8 @@ impl CameraApproachHost<GameSceneLink> for RuntimeCameraApproachHost<'_, '_> {
             ship.presentation_gate = (ship.presentation_gate & !PRESENTATION_GATE_ACTIVE)
                 | u16::from(*presentation_pending);
         }
-        self.services.dispatch_ship_scene(*scene_link)?;
+        self.services
+            .dispatch_ship_scene(*scene_link, self.lifecycle)?;
         self.frame_presented = Some(self.services.presentation_scene_frame_presented()?);
         *presentation_pending = self.services.ship_presentation_state().presentation_gate
             & PRESENTATION_GATE_ACTIVE

@@ -153,6 +153,7 @@ impl RuntimeShipHud {
         {
             let mut backend = RuntimeShipHudBackend {
                 services,
+                lifecycle,
                 scene_link,
                 selector: &mut self.selector,
                 objects_at_arche_position: &mut self.objects_at_arche_position,
@@ -354,6 +355,7 @@ const fn presentation_gate_is_active(gate: u16) -> bool {
 
 struct RuntimeShipHudBackend<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
+    lifecycle: &'services mut crate::native::bloodprg::GameLifecycleState,
     scene_link: GameSceneLink,
     selector: &'services mut Option<ShipTargetSelectionState<ScriptObjectId>>,
     objects_at_arche_position: &'services mut Vec<ScriptObjectId>,
@@ -475,7 +477,7 @@ impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
         }
         let result = self
             .services
-            .dispatch_ship_scene(self.scene_link)
+            .dispatch_ship_scene(self.scene_link, self.lifecycle)
             .with_context(|| {
                 format!("dispatching ship HUD scene at authored row {vertical_offset}")
             })

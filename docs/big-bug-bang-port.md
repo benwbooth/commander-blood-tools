@@ -487,11 +487,9 @@ Verification for this slice: the full game library suite passed 926 tests with
 The all-targets check passed, and all 45 regenerated native captures matched
 the checked-in vectors byte for byte.
 
-This is not playback completion or initialized gameplay proof. The sequel's
-native scene-completion path re-enables the VM at 0xB68D, and explicit stream
-teardown does so at 0xB75A. Those writes still need integration with the modern
-scene/lifecycle owners before enabling sequel startup. English localization is
-also unfinished. The production guard remains in place.
+This is not initialized gameplay proof. Scene-completion VM writes are connected
+as described below, but production startup and English localization remain
+unfinished. The production guard remains in place.
 
 ```sh
 nix develop -c python3 -P re/tools/big_bug_bang_inventory_descriptor_oracle.py \
@@ -499,6 +497,42 @@ nix develop -c python3 -P re/tools/big_bug_bang_inventory_descriptor_oracle.py \
   re/tools/oracle_vectors/big_bug_bang_inventory_descriptor.jsonl \
   --resources output/big-bug-bang/imported-assets/resources
 nix develop -c cargo test -p commander-blood-game --lib inventory -- --include-ignored
+```
+
+#### Scene Completion and VM Resume
+
+The sequel resumes the VM at 0xB68D after the queue reports neither open nor
+draining, and at 0xB75A after explicit cancellation of an active scene. Ship,
+bridge, camera, HUD and contact-transition dispatch now publish that write to
+the owning lifecycle immediately. The panel publishes a consumed-once completion
+output before subsequent UI work, so a later chooser pause cannot be overwritten
+by replaying an old scene completion. Full presentation shutdown discards that
+output. These new writes are gated by the loaded sequel dialect; Commander's
+existing VM behavior is unchanged. Inactive sequel cancellation leaves scene and
+VM state unchanged.
+
+`big_bug_bang_scene_completion_oracle.py` records 38 cases from unpatched original
+instructions. The active-scene continuation at 0xB67C executes the real empty-file
+queue-service and source-status helpers, including blocked dispatch and status
+values 0 through 3. The complete cancellation routine at 0xB731 executes its
+real buffered/empty release helpers. Captures also cover palette reset, ship-depth
+thresholds, non-owning flag bits and both initial VM states. Rust compares the
+complete typed scene state and the lifecycle VM result against these captures.
+This boundary does not decode HNM data, open a file, or exercise line-five display
+clearing, and is not proof of a complete inventory interaction in initialized
+sequel gameplay.
+
+Verification for this slice: the full game library suite passed 928 tests with
+17 ignored, all 14 inventory tests passed with original-asset tests enabled,
+and the all-targets build check passed. All 38 regenerated captures matched the
+checked-in vectors byte for byte. The one-shot output regression also verifies
+that a subsequent UI pause survives another output-consumption call.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_scene_completion_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_scene_completion.jsonl
+nix develop -c cargo test -p commander-blood-game --lib sequel_scene_completion
 ```
 
 ### Authored Text Corpus Audit

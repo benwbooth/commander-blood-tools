@@ -40,6 +40,10 @@ const PRESENTATION_PANEL_SOUND_CLIP: u8 = 1;
 const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
 const NOISE_RANDOM_MODULUS: u16 = u16::MAX;
 
+#[cfg(test)]
+#[path = "sequel_scene_completion_oracle.rs"]
+mod sequel_scene_completion_oracle;
+
 /// Live state for the bridge panel, its HNM scene, and exact palette effects.
 pub struct RuntimePresentationScreen {
     state: PresentationScreenState,
@@ -47,6 +51,7 @@ pub struct RuntimePresentationScreen {
     scene: RuntimePresentationScene,
     console_tint: PaletteRemapTable,
     scene_frame_presented_output: Option<bool>,
+    scene_completion_output: bool,
     caption: RetainedSequenceCaption,
     channel: RgbaUiOverlay,
 }
@@ -77,6 +82,7 @@ impl RuntimePresentationScreen {
             scene: RuntimePresentationScene::new(initial_palette),
             console_tint,
             scene_frame_presented_output: None,
+            scene_completion_output: false,
             caption: RetainedSequenceCaption::new(),
             channel: RgbaUiOverlay::new(
                 super::LOGICAL_FRAMEBUFFER_WIDTH,
@@ -93,6 +99,10 @@ impl RuntimePresentationScreen {
     /// Mutably borrow the semantic panel state for lifecycle input synchronization.
     pub fn state_mut(&mut self) -> &mut PresentationScreenState {
         &mut self.state
+    }
+
+    pub(super) fn take_scene_completion_output(&mut self) -> bool {
+        std::mem::take(&mut self.scene_completion_output)
     }
 
     /// Borrow the underlying general presentation-scene dispatcher state.
@@ -274,6 +284,7 @@ impl RuntimePresentationScreen {
             active_record_related,
             scruter_jo_record,
             scene_frame_presented_output: &mut self.scene_frame_presented_output,
+            scene_completion_output: &mut self.scene_completion_output,
             secondary_presentation_mode,
             deferred_error: None,
             caption: &mut self.caption,
@@ -353,6 +364,7 @@ struct RuntimePresentationScreenBackend<'services, 'window> {
     active_record_related: Option<ScriptObjectId>,
     scruter_jo_record: Option<ScriptObjectId>,
     scene_frame_presented_output: &'services mut Option<bool>,
+    scene_completion_output: &'services mut bool,
     secondary_presentation_mode: bool,
     deferred_error: Option<anyhow::Error>,
     caption: &'services mut RetainedSequenceCaption,
@@ -547,7 +559,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
             self.scene_state.presentation.active_line = Some(SEQUENCE_PRESENTATION_LINE.get());
         }
 
-        self.scene.dispatch(
+        let outcome = self.scene.dispatch(
             self.services,
             self.scene_state,
             presentation_context_link_target(context),
@@ -556,6 +568,8 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
             false,
             self.secondary_presentation_mode,
         )?;
+        *self.scene_completion_output |=
+            outcome == PresentationSceneDispatchOutcome::PresentationFinished;
         *self.scene_frame_presented_output = Some(self.scene_state.frame_presented);
         Ok(PresentationSceneStatus {
             queued: self.scene_state.presentation.active_line.is_some()
@@ -605,6 +619,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
         self.channel.clear();
         if release_scene_presentation(self.scene_state) {
             self.services.finish_presentation_sequence();
+            *self.scene_completion_output = true;
         }
     }
 
