@@ -375,7 +375,9 @@ impl RuntimeScriptSystem {
             .choice_labels(self.dispatch.published_text_site?, words)
     }
 
-    pub(super) fn inline_menu_display_words(&self) -> Option<&[Box<[u8]>]> {
+    pub(super) fn inline_menu_display_words(
+        &self,
+    ) -> Option<&[crate::native::bloodprg::InlineMenuDisplayWord]> {
         self.backend().english_subtitles.as_ref()?.menu_words(
             self.dispatch.published_text_site?,
             &self.dispatch.text_presentation.menu_words,
@@ -1409,7 +1411,7 @@ mod tests {
                 .inline_menu_display_words()
                 .unwrap()
                 .iter()
-                .map(|word| std::str::from_utf8(word).unwrap())
+                .map(|word| String::from_utf8(word.resolve(None).unwrap().into_owned()).unwrap())
                 .collect::<Vec<_>>(),
             [
                 "Hello",

@@ -6,12 +6,14 @@ use anyhow::{Context, Result, ensure};
 use commander_blood_formats::code::{
     ScriptCodeOffset, ScriptDialect, decode_script_code_for_dialect,
 };
-use commander_blood_formats::instruction::{ScriptTextWord, decode_script_text};
+use commander_blood_formats::instruction::{
+    ScriptTextStateNumber, ScriptTextWord, decode_script_text,
+};
 use commander_blood_formats::script::{ScriptWordId, decode_script_dictionary};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
-use crate::native::bloodprg::{LoadedScriptProfile, ScriptProfileId};
+use crate::native::bloodprg::{InlineMenuDisplayWord, LoadedScriptProfile, ScriptProfileId};
 
 const OPENING_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script1.json");
 const LINE_COLUMNS: usize = 34;
@@ -35,7 +37,7 @@ pub(super) struct SequelEnglishSubtitles {
 
 struct InlineMenuTranslation {
     source: Box<[ScriptTextWord]>,
-    display: Box<[Box<[u8]>]>,
+    display: Box<[InlineMenuDisplayWord]>,
 }
 
 impl SequelEnglishSubtitles {
@@ -66,74 +68,77 @@ impl SequelEnglishSubtitles {
         let dictionary = decode_script_dictionary(dic)?;
         let mut choices = BTreeMap::new();
         let mut menus = BTreeMap::new();
-        let subtitles = translation
-            .messages
-            .into_iter()
-            .map(|(id, sections)| {
-                let address = id
-                    .strip_prefix("bbb.script1.cod.")
-                    .context("invalid English subtitle site ID")?;
-                let offset = usize::from_str_radix(address, 16)?;
+        let mut subtitles = BTreeMap::new();
+        for (id, sections) in translation.messages {
+            let address = id
+                .strip_prefix("bbb.script1.cod.")
+                .context("invalid English subtitle site ID")?;
+            let offset = usize::from_str_radix(address, 16)?;
+            ensure!(
+                cod.get(offset) == Some(&166),
+                "English subtitle site is not A6"
+            );
+            let prose = sections
+                .first()
+                .context("English subtitle has no prose section")?;
+            let token = code
+                .tokens()
+                .iter()
+                .find(|token| token.source_offset().index() == offset)
+                .context("English text site is not an instruction boundary")?;
+            let text = decode_script_text(token, &dictionary)?;
+            if sections.len() > 1 {
+                let source = text
+                    .words
+                    .split(|word| *word == ScriptTextWord::SectionSeparator)
+                    .skip(1)
+                    .collect::<Vec<_>>();
                 ensure!(
-                    cod.get(offset) == Some(&166),
-                    "English subtitle site is not A6"
+                    source.len() == sections.len() - 1,
+                    "English choice section mismatch"
                 );
-                let prose = sections
-                    .first()
-                    .context("English subtitle has no prose section")?;
-                let token = code
-                    .tokens()
-                    .iter()
-                    .find(|token| token.source_offset().index() == offset)
-                    .context("English text site is not an instruction boundary")?;
-                let text = decode_script_text(token, &dictionary)?;
-                if sections.len() > 1 {
-                    let source = text
-                        .words
-                        .split(|word| *word == ScriptTextWord::SectionSeparator)
-                        .skip(1)
-                        .collect::<Vec<_>>();
+                let mut words = Vec::new();
+                let mut labels = Vec::new();
+                for (source, translated) in source.into_iter().zip(sections.iter().skip(1)) {
+                    let translated = translated.split_whitespace().collect::<Vec<_>>();
                     ensure!(
-                        source.len() == sections.len() - 1,
-                        "English choice section mismatch"
+                        source.len() == translated.len(),
+                        "English choice count mismatch"
                     );
-                    let mut words = Vec::new();
-                    let mut labels = Vec::new();
-                    for (source, translated) in source.into_iter().zip(sections.iter().skip(1)) {
-                        let translated = translated.split_whitespace().collect::<Vec<_>>();
+                    for (word, label) in source.iter().zip(translated) {
+                        let ScriptTextWord::Dictionary(word) = word else {
+                            anyhow::bail!("English choice requires a static dictionary word");
+                        };
                         ensure!(
-                            source.len() == translated.len(),
-                            "English choice count mismatch"
+                            label.is_ascii() && !label.bytes().any(|byte| byte.is_ascii_control()),
+                            "English choice requires printable ASCII"
                         );
-                        for (word, label) in source.iter().zip(translated) {
-                            let ScriptTextWord::Dictionary(word) = word else {
-                                anyhow::bail!("English choice requires a static dictionary word");
-                            };
-                            ensure!(
-                                label.is_ascii()
-                                    && !label.bytes().any(|byte| byte.is_ascii_control()),
-                                "English choice requires printable ASCII"
-                            );
-                            words.push(*word);
-                            labels.push(label.as_bytes().into());
-                        }
+                        words.push(*word);
+                        labels.push(label.as_bytes().into());
                     }
-                    choices.insert(ScriptCodeOffset::new(offset), (words, labels));
                 }
-                let subtitle = wrap_subtitle(prose)?;
-                menus.insert(
-                    ScriptCodeOffset::new(offset),
-                    InlineMenuTranslation {
-                        source: text.words,
-                        display: prose
-                            .split_whitespace()
-                            .map(|word| Box::from(word.as_bytes()))
-                            .collect(),
-                    },
+                choices.insert(ScriptCodeOffset::new(offset), (words, labels));
+            }
+            let display = parse_display_words(prose, &text.words)?;
+            if display
+                .iter()
+                .any(|word| matches!(word, InlineMenuDisplayWord::StateNumber(_)))
+            {
+                ensure!(
+                    !text.control.emits_spoken_text(),
+                    "numeric English prose requires a menu-only source"
                 );
-                Ok((ScriptCodeOffset::new(offset), subtitle))
-            })
-            .collect::<Result<_>>()?;
+            } else {
+                subtitles.insert(ScriptCodeOffset::new(offset), wrap_subtitle(prose)?);
+            }
+            menus.insert(
+                ScriptCodeOffset::new(offset),
+                InlineMenuTranslation {
+                    source: text.words,
+                    display,
+                },
+            );
+        }
         Ok(Some(Self {
             subtitles,
             choices,
@@ -158,10 +163,60 @@ impl SequelEnglishSubtitles {
         &self,
         instruction: ScriptCodeOffset,
         source: &[ScriptTextWord],
-    ) -> Option<&[Box<[u8]>]> {
+    ) -> Option<&[InlineMenuDisplayWord]> {
         let menu = self.menus.get(&instruction)?;
         (menu.source.as_ref() == source).then_some(menu.display.as_ref())
     }
+}
+
+fn parse_display_words(
+    prose: &str,
+    source: &[ScriptTextWord],
+) -> Result<Box<[InlineMenuDisplayWord]>> {
+    ensure!(
+        !prose.is_empty() && prose.is_ascii() && !prose.bytes().any(|byte| byte.is_ascii_control()),
+        "English menu requires printable ASCII"
+    );
+    let mut expected = Vec::new();
+    for word in source
+        .iter()
+        .take_while(|word| **word != ScriptTextWord::SectionSeparator)
+    {
+        match word {
+            ScriptTextWord::StateNumber(number) => expected.push(*number),
+            ScriptTextWord::InventoryChoices => {
+                anyhow::bail!("English inventory generator translation is not supported")
+            }
+            _ => {}
+        }
+    }
+    let mut actual = Vec::new();
+    let words = prose
+        .split_whitespace()
+        .map(|word| {
+            if let Some(offset) = word
+                .strip_prefix("<state:")
+                .and_then(|word| word.strip_suffix('>'))
+            {
+                let number = ScriptTextStateNumber::decode(
+                    offset
+                        .parse::<u16>()
+                        .context("invalid English state-number marker")?,
+                );
+                actual.push(number);
+                Ok(InlineMenuDisplayWord::StateNumber(number))
+            } else {
+                ensure!(!word.contains(['<', '>']), "invalid English menu marker");
+                Ok(InlineMenuDisplayWord::Literal(Box::from(word.as_bytes())))
+            }
+        })
+        .collect::<Result<Box<[_]>>>()?;
+    ensure!(!words.is_empty(), "English menu has no display words");
+    ensure!(
+        actual == expected,
+        "English menu must preserve the ordered live-number sources"
+    );
+    Ok(words)
 }
 
 fn wrap_subtitle(prose: &str) -> Result<Box<[u8]>> {
@@ -194,6 +249,35 @@ fn wrap_subtitle(prose: &str) -> Result<Box<[u8]>> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn translated_menu_preserves_live_number_sources_and_order() {
+        use super::*;
+        let credits = ScriptTextStateNumber::decode(7922);
+        let bionium = ScriptTextStateNumber::decode(8362);
+        let source = [
+            ScriptTextWord::StateNumber(credits),
+            ScriptTextWord::StateNumber(bionium),
+        ];
+        let words =
+            parse_display_words("Credits: <state:7922> Bionium: <state:8362>", &source).unwrap();
+        assert_eq!(words[1], InlineMenuDisplayWord::StateNumber(credits));
+        assert_eq!(words[3], InlineMenuDisplayWord::StateNumber(bionium));
+        for invalid in [
+            "Credits: 100 Bionium: 200",
+            "<state:8362> <state:7922>",
+            "<state:7922> <state:7922>",
+            "<state:7922>",
+            "<state:7922> <state:8362> <state:8362>",
+            "<state:no> <state:8362>",
+            "<state:65536> <state:8362>",
+            "<state:7922>, <state:8362>",
+        ] {
+            assert!(parse_display_words(invalid, &source).is_err(), "{invalid}");
+        }
+        assert!(parse_display_words("<inventory>", &[ScriptTextWord::InventoryChoices]).is_err());
+        assert!(parse_display_words("   ", &[]).is_err());
+    }
+
     use super::*;
     use crate::assets::OriginalResourceStore;
     use crate::native::bloodprg::OriginalResourceCatalog;

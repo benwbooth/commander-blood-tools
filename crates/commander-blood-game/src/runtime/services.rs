@@ -28,26 +28,27 @@ use crate::native::bloodprg::{
     ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
     DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
     FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
-    IndexedGamePalette, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
-    InputCancellationOutcome, InputCancellationState, LoadedSoundBank, Manu3AnimationSelector,
-    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NameAreaEffectOutcome,
-    NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult, PointerButtonEdges,
-    PointerButtons, PointerSample, PresentationBridgeMode, PresentationChoiceNumber,
-    PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
-    PresentationHoverOutcome, PresentationHoverState, PresentationPresentPolicy,
-    PresentationQueueClockGates, PresentationQueueServiceOutcome, PresentationResourceCursor,
-    PresentationResourceId, PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
-    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SaveLoadMenuPhase,
-    SceneTransitionState, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
-    ScriptFieldSelector, ScriptFrameOutcome, ScriptObjectFlag, ScriptPresentationEntity,
-    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptShipNavigationMode, ScriptTravelActionPhase, ShipDepthTransitionOutcome,
-    ShipHudInitializationContext, ShipHudPaletteSnapshot, ShipPresentationOutcome,
-    ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
-    SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE,
-    TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
-    fill_display_band, increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
+    IndexedGamePalette, InlineMenuDisplayWord, InlineMenuRevealOutcome, InlineMenuTextMetrics,
+    InputAction, InputCancellationOutcome, InputCancellationState, LoadedSoundBank,
+    Manu3AnimationSelector, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
+    NameAreaEffectOutcome, NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame,
+    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationBridgeMode,
+    PresentationChoiceNumber, PresentationHitAreas, PresentationHitRectangle,
+    PresentationHitSelection, PresentationHoverOutcome, PresentationHoverState,
+    PresentationPresentPolicy, PresentationQueueClockGates, PresentationQueueServiceOutcome,
+    PresentationResourceCursor, PresentationResourceId, PresentationResourceSequenceOutcome,
+    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
+    PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
+    SHIP_CAMERA_RESET, SaveLoadMenuPhase, SceneTransitionState, ScriptActionRuntimeState,
+    ScriptActionState, ScriptClock, ScriptFieldSelector, ScriptFrameOutcome, ScriptObjectFlag,
+    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipHudPaletteSnapshot,
+    ShipPresentationOutcome, ShipPresentationState, ShipProjectionResources,
+    ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage, SpeakerGateAction,
+    StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE, TextPresentationState,
+    clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
+    increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
     prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
     resolve_navigation_position, reveal_inline_menu_display_step, set_object_flag, stop_cd_audio,
@@ -136,7 +137,7 @@ struct InlineMenuDrawSnapshot {
     menu_words: Box<[ScriptTextWord]>,
     menu_word_count: usize,
     visible_word_count: usize,
-    display_words: Option<Box<[Box<[u8]>]>>,
+    display_words: Option<Box<[InlineMenuDisplayWord]>>,
 }
 
 const BRIDGE_ACTOR_PALETTE_COLOR_COUNT: usize = 192;
@@ -4356,9 +4357,13 @@ impl<'window> ModernGameServices<'window> {
             .map(|words| {
                 words
                     .iter()
-                    .map(|word| String::from_utf8_lossy(word).into_owned())
-                    .collect::<Vec<_>>()
+                    .map(|word| {
+                        word.resolve(profile.map(|profile| profile.state()))
+                            .map(|text| String::from_utf8_lossy(&text).into_owned())
+                    })
+                    .collect::<Result<Vec<_>, _>>()
             })
+            .transpose()?
             .unwrap_or_else(|| inline_menu_words.clone());
         let revealed_menu_word_count = visible_inline_menu_word_count(
             self.inline_menu_draw_snapshot.as_ref(),
@@ -5333,7 +5338,7 @@ fn audit_inline_menu_raster(
     dictionary: &ScriptDictionary,
     text: &TextPresentationState,
     visible_word_count: usize,
-    display_words: Option<&[Box<[u8]>]>,
+    display_words: Option<&[InlineMenuDisplayWord]>,
 ) -> Result<Option<InlineMenuRasterAudit>> {
     if text.menu_words.is_empty()
         || visible_word_count == usize::MIN
@@ -5423,7 +5428,7 @@ fn visible_inline_menu_word_count(
     snapshot: Option<&InlineMenuDrawSnapshot>,
     text: &TextPresentationState,
     available_word_count: usize,
-    display_words: Option<&[Box<[u8]>]>,
+    display_words: Option<&[InlineMenuDisplayWord]>,
 ) -> usize {
     snapshot
         .filter(|snapshot| {
@@ -6292,7 +6297,9 @@ mod tests {
             0,
             "a post-draw text transition must not claim that its first word was already rasterized"
         );
-        let english: Box<[Box<[u8]>]> = Box::new([Box::from(b"Translated".as_slice())]);
+        let english: Box<[InlineMenuDisplayWord]> = Box::new([InlineMenuDisplayWord::Literal(
+            Box::from(b"Translated".as_slice()),
+        )]);
         let translated_snapshot = InlineMenuDrawSnapshot {
             menu_words: text.menu_words.clone(),
             menu_word_count: text.menu_word_count,

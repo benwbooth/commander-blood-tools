@@ -346,9 +346,9 @@ pub use manu3_hand::{
     Manu3AnimationSelector, Manu3HandFrameContext, Manu3HandFrameState, update_manu3_hand_frame,
 };
 pub use menu_reveal::{
-    InlineMenuRevealError, InlineMenuRevealFrame, InlineMenuRevealGate, InlineMenuRevealOutcome,
-    InlineMenuTextMetrics, InlineMenuWordPlacement, reveal_inline_menu_display_step,
-    reveal_inline_menu_step,
+    InlineMenuDisplayWord, InlineMenuRevealError, InlineMenuRevealFrame, InlineMenuRevealGate,
+    InlineMenuRevealOutcome, InlineMenuTextMetrics, InlineMenuWordPlacement,
+    reveal_inline_menu_display_step, reveal_inline_menu_step,
 };
 pub use name_area_effect::{
     NameAreaEffectError, NameAreaEffectOutcome, NameAreaEffectState, update_name_area_effect,

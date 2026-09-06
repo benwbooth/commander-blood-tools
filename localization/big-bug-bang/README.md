@@ -31,6 +31,20 @@ their original order and spelling (`<state:N>` and `<inventory_choices>`).
 The validator checks structural compatibility, not translation quality, choice
 meaning, rendered width, reachability, or gameplay.
 
+The runtime menu path now parses standalone `<state:N>` words into typed live
+number references. It requires the same ordered references as the original
+prose section, rejecting missing, added, reordered, or malformed markers. The
+renderer reads each reached number from current VAR state as a signed 16-bit
+value. Lookahead retains the native previous-number scratch value instead of
+reading the next number early. Original words, word counts, and VAR are not
+rewritten. Numeric overrides are restricted to non-spoken menu text; inventory
+generators remain unsupported by the English runtime binding.
+
+This support prepares the 11 numeric menu sites in SCRIPT2; it does not add a
+SCRIPT2 translation or enable that profile's English catalog yet. Tests cover
+signed limits, live changes, state preservation, marker-source validation, and
+the existing original numeric-renderer vectors.
+
 Editorial choices: Monsieur Bob becomes Mr. Bob; Biorédactrice becomes
 bio-editor; proper names and invented terms such as GLUXX and BIONIUM remain.
 The deliberately split `A DIEU` becomes `TO GOD` to preserve the farewell pun.

@@ -1,8 +1,8 @@
 //! Progressive inline layout for BloodScript concept-menu words.
 
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
-use commander_blood_formats::instruction::ScriptTextWord;
+use commander_blood_formats::instruction::{ScriptTextStateNumber, ScriptTextWord};
 use commander_blood_formats::script::{ScriptDictionary, ScriptState, ScriptWordId};
 
 use super::TextPresentationState;
@@ -13,6 +13,45 @@ const MENU_ROW_HEIGHT: u16 = 8;
 const MENU_WORD_GAP: u16 = 6;
 const MENU_RIGHT: i16 = 300;
 const MENU_COLOR: u8 = 239;
+
+/// Display-only menu text; numeric substitutions retain their authored VAR source.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum InlineMenuDisplayWord {
+    /// Translated literal text, without changing dictionary identities.
+    Literal(Box<[u8]>),
+    /// Live signed value from the original script state.
+    StateNumber(ScriptTextStateNumber),
+}
+
+impl InlineMenuDisplayWord {
+    /// Resolve a display word against the current state without modifying it.
+    pub fn resolve(
+        &self,
+        state: Option<&ScriptState>,
+    ) -> Result<Cow<'_, [u8]>, InlineMenuRevealError> {
+        match self {
+            Self::Literal(text) => Ok(Cow::Borrowed(text)),
+            Self::StateNumber(number) => {
+                Ok(Cow::Owned(format_state_number(*number, state)?.into_vec()))
+            }
+        }
+    }
+}
+
+fn format_state_number(
+    number: ScriptTextStateNumber,
+    state: Option<&ScriptState>,
+) -> Result<Box<[u8]>, InlineMenuRevealError> {
+    let source_offset = number.source_offset();
+    let value = state
+        .and_then(|state| {
+            state
+                .resolve_word_source_offset(source_offset)
+                .and_then(|field| state.word(field))
+        })
+        .ok_or(InlineMenuRevealError::InvalidStateNumber { source_offset })?;
+    Ok((value as i16).to_string().into_bytes().into_boxed_slice())
+}
 
 /// Width provider used by the backend-independent menu layout step.
 pub trait InlineMenuTextMetrics {
@@ -128,7 +167,7 @@ pub fn reveal_inline_menu_display_step<M: InlineMenuTextMetrics>(
     owner_matches: bool,
     word_delay: u16,
     metrics: &mut M,
-    display_words: Option<&[Box<[u8]>]>,
+    display_words: Option<&[InlineMenuDisplayWord]>,
 ) -> Result<InlineMenuRevealOutcome, InlineMenuRevealError> {
     if !presentation.menu_deferred {
         if !presentation.hold_ready {
@@ -148,14 +187,22 @@ pub fn reveal_inline_menu_display_step<M: InlineMenuTextMetrics>(
     let mut y = MENU_TOP;
     let mut cursor = usize::MIN;
     let mut encoded_cursor = usize::MIN;
-    let word_count = display_words.map_or(presentation.menu_word_count, <[Box<[u8]>]>::len);
+    let word_count =
+        display_words.map_or(presentation.menu_word_count, <[InlineMenuDisplayWord]>::len);
 
     loop {
         let (text, encoded_word_count) = if let Some(words) = display_words {
             let Some(word) = words.get(cursor) else {
                 return complete_menu(presentation, placements, x, y, word_delay, word_count);
             };
-            (word.as_ref(), 1)
+            let text = match word {
+                InlineMenuDisplayWord::Literal(text) => text.as_ref(),
+                InlineMenuDisplayWord::StateNumber(number) => {
+                    presentation.menu_number_text = format_state_number(*number, state)?;
+                    &presentation.menu_number_text
+                }
+            };
+            (text, 1)
         } else {
             let Some(current) = presentation.menu_words.get(cursor).copied() else {
                 return complete_menu(presentation, placements, x, y, word_delay, word_count);
@@ -168,16 +215,7 @@ pub fn reveal_inline_menu_display_step<M: InlineMenuTextMetrics>(
                     .word(word)
                     .ok_or(InlineMenuRevealError::UnknownDictionaryWord(word))?,
                 ScriptTextWord::StateNumber(number) => {
-                    let source_offset = number.source_offset();
-                    let value = state
-                        .and_then(|state| {
-                            state
-                                .resolve_word_source_offset(source_offset)
-                                .and_then(|field| state.word(field))
-                        })
-                        .ok_or(InlineMenuRevealError::InvalidStateNumber { source_offset })?;
-                    presentation.menu_number_text =
-                        (value as i16).to_string().into_bytes().into_boxed_slice();
+                    presentation.menu_number_text = format_state_number(number, state)?;
                     &presentation.menu_number_text
                 }
                 ScriptTextWord::SectionSeparator => {
@@ -197,7 +235,10 @@ pub fn reveal_inline_menu_display_step<M: InlineMenuTextMetrics>(
         cursor = cursor.saturating_add(1);
         encoded_cursor += encoded_word_count;
         let next = if let Some(words) = display_words {
-            words.get(cursor).map(|word| word.as_ref())
+            words.get(cursor).map(|word| match word {
+                InlineMenuDisplayWord::Literal(text) => text.as_ref(),
+                InlineMenuDisplayWord::StateNumber(_) => presentation.menu_number_text.as_ref(),
+            })
         } else {
             match presentation.menu_words.get(cursor).copied() {
                 Some(ScriptTextWord::InventoryChoices) => {
@@ -473,6 +514,83 @@ mod tests {
     }
     const FLAT_SPLIT_STATE_CURSOR: [u16; 2] = [22, MENU_TOP];
 
+    #[test]
+    fn localized_numbers_read_live_signed_state_and_preserve_authored_words() {
+        use commander_blood_formats::{
+            code::ScriptDialect,
+            script::{decode_script_directory, decode_script_state_for_dialect},
+        };
+        #[derive(Default)]
+        struct Metrics {
+            lookahead: Vec<Vec<u8>>,
+        }
+        impl InlineMenuTextMetrics for Metrics {
+            fn rendered_width(&mut self, text: &[u8]) -> u16 {
+                text.len() as u16
+            }
+            fn lookahead_width(&mut self, text: Option<&[u8]>) -> u16 {
+                self.lookahead.push(text.unwrap_or_default().to_vec());
+                text.unwrap_or_default().len() as u16
+            }
+        }
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let directory = decode_script_directory(&[]).unwrap();
+        let mut state =
+            decode_script_state_for_dialect(&[0, 0], &directory, ScriptDialect::BigBugBang)
+                .unwrap();
+        let number = ScriptTextStateNumber::decode(0);
+        let field = state.resolve_word_source_offset(0).unwrap();
+        let display = [
+            InlineMenuDisplayWord::Literal(Box::from(b"Credits:".as_slice())),
+            InlineMenuDisplayWord::StateNumber(number),
+        ];
+        for value in [i16::MIN, -1, 0, 1, i16::MAX] {
+            assert!(state.set_word(field, value as u16));
+            let before = state.encode();
+            let mut presentation = TextPresentationState {
+                menu_deferred: true,
+                menu_words: Box::new([ScriptTextWord::StateNumber(number)]),
+                menu_word_count: 2,
+                menu_reveal_count: 8,
+                menu_number_text: Box::from(b"old".as_slice()),
+                ..Default::default()
+            };
+            let source = presentation.menu_words.clone();
+            let mut metrics = Metrics::default();
+            let InlineMenuRevealOutcome::Frame(frame) = reveal_inline_menu_display_step(
+                &mut presentation,
+                &dictionary,
+                Some(&state),
+                true,
+                2,
+                &mut metrics,
+                Some(&display),
+            )
+            .unwrap() else {
+                panic!("localized menu was gated")
+            };
+            assert_eq!(
+                frame.placements[1].text.as_ref(),
+                value.to_string().as_bytes()
+            );
+            assert_eq!(
+                metrics.lookahead[0], b"old",
+                "lookahead must not resolve the next number early"
+            );
+            assert_eq!(
+                display[1].resolve(Some(&state)).unwrap().as_ref(),
+                value.to_string().as_bytes()
+            );
+            assert_eq!(presentation.menu_words, source);
+            assert_eq!(presentation.menu_word_count, 2);
+            assert_eq!(state.encode(), before);
+        }
+        assert!(matches!(
+            display[1].resolve(None),
+            Err(InlineMenuRevealError::InvalidStateNumber { source_offset: 0 })
+        ));
+    }
+
     #[derive(Deserialize)]
     struct RevealOracle {
         name: String,
@@ -534,9 +652,9 @@ mod tests {
             dictionary.resolve_source_offset(0).unwrap(),
         )]);
         let display = [
-            Box::from(b"Hello".as_slice()),
-            Box::from(b"there".as_slice()),
-            Box::from(b"Commander.".as_slice()),
+            InlineMenuDisplayWord::Literal(Box::from(b"Hello".as_slice())),
+            InlineMenuDisplayWord::Literal(Box::from(b"there".as_slice())),
+            InlineMenuDisplayWord::Literal(Box::from(b"Commander.".as_slice())),
         ];
         let mut presentation = TextPresentationState {
             menu_words: source.clone(),
@@ -578,7 +696,10 @@ mod tests {
             assert_eq!(presentation.menu_words.as_ref(), source.as_ref());
             assert_eq!(presentation.menu_word_count, 1);
             for (placement, expected) in frame.placements.iter().zip(&display) {
-                assert_eq!(&placement.text, expected);
+                assert_eq!(
+                    placement.text.as_ref(),
+                    expected.resolve(None).unwrap().as_ref()
+                );
             }
         }
         assert!(presentation.dialogue_hold_complete);
