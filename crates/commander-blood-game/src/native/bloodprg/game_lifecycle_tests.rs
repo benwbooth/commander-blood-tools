@@ -11,6 +11,46 @@ const ONE_FRAME_POINTER_PRESS_LATCH: u8 = 1;
 const COUNTDOWN_WITH_ZERO_LOW_BYTE: u16 = 256;
 
 #[test]
+fn sequel_text_hold_vm_resume_matches_native_vectors() {
+    use commander_blood_formats::code::ScriptDialect;
+    let lines =
+        include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_text_lifecycle.jsonl");
+    assert_eq!(lines.lines().count(), 2048);
+    for (index, line) in lines.lines().enumerate() {
+        let case: serde_json::Value = serde_json::from_str(line).unwrap();
+        let input = &case["input"];
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            let flag = |name: &str| input[name].as_u64().unwrap() != 0;
+            let mut state = GameLifecycleState::default();
+            state.vm_execution_enabled = flag("vm");
+            state.secondary_pointer_pressed = flag("secondary");
+            let p = &mut state.presentation;
+            p.active = flag("active");
+            p.menu_deferred = flag("menu");
+            p.subtitle_display_active = flag("subtitle");
+            p.hold_ready = flag("ready");
+            p.dialogue_hold_complete = flag("complete");
+            p.word_buffer_nonempty = flag("words");
+            p.dialogue_hold_countdown = input["countdown"].as_u64().unwrap() as u16;
+            p.scene_gate_active = flag("queue");
+            p.start_locked = flag("locked");
+            p.request_flags = PresentationRequestFlags::decode(3);
+            let mut link = GameSceneLink::Initial;
+            let expected = if dialect == ScriptDialect::BigBugBang {
+                case["output"]["vm"].as_u64().unwrap() != 0
+            } else {
+                flag("vm")
+            };
+            update_game_presentation_ownership_for_dialect(&mut state, &mut link, dialect);
+            assert_eq!(
+                state.vm_execution_enabled, expected,
+                "case {index}: {dialect:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn inventory_chooser_submission_order_matches_the_sequel_main_loop() {
     #[derive(Deserialize)]
     struct Order {

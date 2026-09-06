@@ -222,10 +222,17 @@ def private_mouse_locked(pid):
     return bool(value)
 
 
-def private_click(env, pid, position=None, capture_mouse=False, button=1):
+def private_click(env, pid, position=None, capture_mouse=False, button=1, observe_press=None,
+                  relative_motion=None):
     """Click on the private display, optionally acquiring mouse capture first."""
     if button not in (1, 3):
         raise ValueError("private click button must be 1 (primary) or 3 (secondary)")
+    if relative_motion is not None:
+        if position is not None or not capture_mouse:
+            raise ValueError("relative motion requires captured mouse and no absolute position")
+        if len(relative_motion) != 2 or any(not isinstance(value, int) or not -32768 <= value <= 32767
+                                            for value in relative_motion):
+            raise ValueError("relative motion must contain two signed 16-bit integer deltas")
     if position is not None and (len(position) != 2 or
                                  not 0 <= position[0] < 800 or not 0 <= position[1] < 600):
         raise ValueError("click position must be inside the private 800x600 display")
@@ -247,15 +254,25 @@ def private_click(env, pid, position=None, capture_mouse=False, button=1):
         subprocess.run(["xdotool", "mousemove", str(position[0]), str(position[1])],
                        env=env, check=True, timeout=5)
         time.sleep(0.15)
+    if relative_motion is not None:
+        subprocess.run(["xdotool", "mousemove_relative", "--", *map(str, relative_motion)],
+                       env=env, check=True, timeout=5)
+        time.sleep(0.15)
     subprocess.run(["xdotool", "mousedown", str(button)], env=env, check=True, timeout=5)
+    observation = None
     try:
         time.sleep(0.15)
+        if observe_press is not None:
+            observation = observe_press()
     finally:
         subprocess.run(["xdotool", "mouseup", str(button)], env=env, check=True, timeout=5)
     return {"kind": "private_x11_primary_click" if button == 1 else "private_x11_secondary_click",
             "button": button, "window": windows[0], "display": env["DISPLAY"],
-            "pointer_moved": False if position is None else None,
-            "pointer_move_requested": position is not None, "position": position,
+            "during_press": observation,
+            "relative_motion_requested": relative_motion,
+            "pointer_moved": False if position is None and relative_motion is None else None,
+            "pointer_move_requested": position is not None or relative_motion is not None,
+            "position": position,
             "mouse_capture_requested": capture_mouse,
             "capture_click_sent": capture_click_sent,
             "mouse_capture_verified": True if capture_mouse else None, "guest_memory_written": False}
@@ -302,10 +319,9 @@ def capture(args):
             symbols = None
             last_snapshot = None
             clicks_sent = 0
-            while time.monotonic() - began < args.seconds:
-                time.sleep(args.interval)
-                if game.poll() is not None:
-                    raise RuntimeError(f"DOSBox exited during capture: {game.returncode}")
+
+            def observe_guest():
+                nonlocal symbols
                 with stopped_child(game):
                     if symbols is None:
                         binary, symbols = locate_symbols(game.pid)
@@ -317,6 +333,21 @@ def capture(args):
                         cpu = read_cpu(mem, symbols)
                 snapshot = inspect_guest(guest, executable) if guest is not None else {"status": "emulator_memory_not_initialized"}
                 snapshot.update(elapsed_seconds=round(time.monotonic() - began, 3), cpu=cpu)
+                return snapshot, guest
+
+            def observe_press():
+                snapshot, guest = observe_guest()
+                if guest is not None:
+                    name = f"click-held-{clicks_sent + 1}.bin"
+                    (output / name).write_bytes(guest)
+                    snapshot["guest_dump"] = name
+                return snapshot
+
+            while time.monotonic() - began < args.seconds:
+                time.sleep(args.interval)
+                if game.poll() is not None:
+                    raise RuntimeError(f"DOSBox exited during capture: {game.returncode}")
+                snapshot, guest = observe_guest()
                 report["samples"].append(snapshot)
                 signature = {key: value for key, value in snapshot.items() if key not in ("cpu", "elapsed_seconds")}
                 if signature != last_snapshot:
@@ -335,8 +366,9 @@ def capture(args):
                              "mouse_capture_requested": args.relative_mouse and clicks_sent == 0}
                     report["input_events"].append(event)
                     event.update(private_click(env, game.pid, args.click_position,
-                                               args.relative_mouse and clicks_sent == 0,
-                                               args.click_button), status="sent")
+                                               args.relative_mouse,
+                                               args.click_button, observe_press,
+                                               args.relative_motion), status="sent")
                     clicks_sent += 1
             subprocess.run(["import", "-window", "root", str(output / "screen.png")], env=env, check=True, timeout=10)
             report["outcome"] = "observed_profile" if any(s["status"] == "profile_bound" for s in report["samples"]) else "no_bound_profile_observed"
@@ -366,6 +398,8 @@ def main():
                         help="X11 button: 1 is primary, 3 is secondary")
     parser.add_argument("--click-position", type=int, nargs=2, metavar=("X", "Y"),
                         help="optional root coordinates on the private 800x600 display")
+    parser.add_argument("--relative-motion", type=int, nargs=2, metavar=("DX", "DY"),
+                        help="captured relative mouse motion before each scheduled click")
     parser.add_argument("--relative-mouse", action="store_true",
                         help="enable autolock and verify a private capture click before the first input")
     parser.add_argument("--game-args", default="AMR S162227 EMS WRIC:\\cblood\\")
@@ -376,6 +410,11 @@ def main():
         parser.error("relative-mouse requires click-after")
     if args.click_button != 1 and not args.click_after:
         parser.error("click-button requires click-after")
+    if args.relative_motion is not None:
+        if not args.relative_mouse or args.click_position is not None:
+            parser.error("relative-motion requires relative-mouse and no click-position")
+        if any(not -32768 <= value <= 32767 for value in args.relative_motion):
+            parser.error("relative-motion requires signed 16-bit integer deltas")
     if any(at >= args.seconds for at in args.click_after):
         parser.error("each click-after must occur before the capture ends")
     if any(left >= right for left, right in zip(args.click_after, args.click_after[1:])):

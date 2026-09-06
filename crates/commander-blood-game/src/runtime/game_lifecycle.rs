@@ -201,6 +201,10 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
 impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     type Error = anyhow::Error;
 
+    fn script_dialect(&self) -> commander_blood_formats::code::ScriptDialect {
+        self.services.runtime().data().game().script_dialect()
+    }
+
     fn initialize_runtime_storage(&mut self) -> Result<()> {
         if self.runtime_storage_initialized {
             bail!("runtime storage was initialized more than once");

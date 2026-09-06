@@ -16,6 +16,45 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Text Hold Script Resume
+
+The sequel coordinator at BLOOD2PG file offsets `0x11D2..0x1280` writes the
+VM execution flag while a completed text reveal still has a nonzero hold timer.
+It enables execution only when the scene gate is clear. The shared lifecycle
+now selects this rule from the runtime's game dialect; Commander keeps its
+previous behavior. Zero countdown and the active/ready early branch do not
+perform this write.
+
+`re/tools/big_bug_bang_text_lifecycle_oracle.py` runs the unmodified native
+instruction range with 2,048 synthetic input combinations, checks bounded
+execution and allowed writes, and verifies module immutability. Its committed
+vectors cover both initial VM states, scene gates, secondary input, and timer
+values 0, 1, 255, and 256. The Rust comparison checks the VM flag only, not the
+subsequent presentation coordinator. This is native boundary evidence, not
+proof of full gameplay reachability.
+
+The private DOSBox capture helper now observes guest state while the mouse
+button is held, releases the button even if observation fails, and supports
+captured relative motion before scheduled clicks. Requested movement is not
+reported as confirmed guest movement. A real capture observed primary button
+state 1 during the press; large relative deltas were not consistently accepted
+in full by the original runtime.
+
+Verification: 941 game-library tests passed (28 ignored), 30 capture-helper
+tests passed, all-targets checking passed, and regenerating the 2,048 native
+vectors produced an identical file. Existing unrelated runtime edits were
+present during these checks and remain outside this change.
+
+The ordinary-pointer scripted run in local ignored
+`output/big-bug-bang/modern-honk-navigation-05` advances HONK's first English
+line to "What would you like?" and reaches retained word-choice phase
+`Selecting`. Screenshot `screen-020.png` shows both menu entries, still French
+(`JOUER`, `EXPLICATIONS`), and the final subtitle has 424/424 matching raster
+pixels. The pre-fix run `modern-honk-navigation-04` remained on the first line.
+The scenario uses the existing worktree's pointer-based `park` action, not VM
+state injection. This verifies opening conversation progression, not the menu
+branches, full translation, or complete playability.
+
 ### Game Identity and Loose-Asset Import
 
 The game executable now has a library-only, import-only mode for either game:

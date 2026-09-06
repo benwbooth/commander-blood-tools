@@ -408,6 +408,11 @@ pub trait GameLifecycleHost {
     /// Host operation failure.
     type Error;
 
+    /// Select the original game's presentation scheduling rules.
+    fn script_dialect(&self) -> commander_blood_formats::code::ScriptDialect {
+        commander_blood_formats::code::ScriptDialect::CommanderBlood
+    }
+
     /// Create typed framebuffers, models, resource stores, and audio buffers.
     fn initialize_runtime_storage(&mut self) -> Result<(), Self::Error>;
     /// Draw the loading frame and prepare the explicit writable resource root.
@@ -667,7 +672,11 @@ fn run_game_runtime<Host: GameLifecycleHost>(
         if !state.presentation.c2_presentation_gate {
             state.frame_presented = true;
         }
-        update_game_presentation_ownership(state, &mut session.scene_link);
+        update_game_presentation_ownership_for_dialect(
+            state,
+            &mut session.scene_link,
+            host.script_dialect(),
+        );
         play_completion_audio_if_pending(state, host)?;
         run_frame_tail(state, session.scene_link, host)?;
         session.rendered_frames = session.rendered_frames.wrapping_add(1);
@@ -693,6 +702,19 @@ fn consume_pointer_press_state(state: &mut GameLifecycleState) {
 pub fn update_game_presentation_ownership(
     state: &mut GameLifecycleState,
     scene_link: &mut GameSceneLink,
+) {
+    update_game_presentation_ownership_for_dialect(
+        state,
+        scene_link,
+        commander_blood_formats::code::ScriptDialect::CommanderBlood,
+    );
+}
+
+/// Transfer presentation ownership using the selected game's text-hold rules.
+pub fn update_game_presentation_ownership_for_dialect(
+    state: &mut GameLifecycleState,
+    scene_link: &mut GameSceneLink,
+    dialect: commander_blood_formats::code::ScriptDialect,
 ) {
     let secondary_pointer_pressed = state.secondary_pointer_pressed;
     let presentation = &mut state.presentation;
@@ -723,6 +745,12 @@ pub fn update_game_presentation_ownership(
     if !active_hold_path && presentation.dialogue_hold_complete {
         if presentation.word_buffer_nonempty {
             presentation.word_choice_active = presentation.active;
+        }
+        // BLOOD2PG 0x1248 resumes text-only scripts while the hold timer runs.
+        if dialect == commander_blood_formats::code::ScriptDialect::BigBugBang
+            && presentation.dialogue_hold_countdown != 0
+        {
+            state.vm_execution_enabled = !presentation.scene_gate_active;
         }
         if presentation.dialogue_hold_countdown == u16::MIN || secondary_pointer_pressed {
             presentation.dialogue_hold_complete = false;

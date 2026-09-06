@@ -165,6 +165,27 @@ class StartupCaptureTests(unittest.TestCase):
                     capture.private_click({"DISPLAY": ":123"}, 789, button=button)
             search.assert_not_called()
 
+    def test_press_observation_runs_before_release(self):
+        calls = []
+        def observe():
+            calls.append("observe")
+            return {"mouse_poll": {"buttons": 1}}
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture.subprocess, "run", side_effect=lambda command, **kwargs: calls.append(command[1])), \
+                mock.patch.object(capture.time, "sleep"):
+            event = capture.private_click({"DISPLAY": ":123"}, 789, observe_press=observe)
+        self.assertEqual(calls, ["windowfocus", "mousedown", "observe", "mouseup"])
+        self.assertEqual(event["during_press"], {"mouse_poll": {"buttons": 1}})
+
+    def test_failed_press_observation_still_releases_button(self):
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture.subprocess, "run") as run, \
+                mock.patch.object(capture.time, "sleep"):
+            with self.assertRaisesRegex(ValueError, "observation failed"):
+                capture.private_click({"DISPLAY": ":123"}, 789, button=3,
+                                      observe_press=mock.Mock(side_effect=ValueError("observation failed")))
+        self.assertEqual(run.call_args.args[0], ["xdotool", "mouseup", "3"])
+
     def test_positioned_click_records_coordinates_and_moves_only_private_pointer(self):
         env = {"DISPLAY": ":123"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
@@ -182,6 +203,30 @@ class StartupCaptureTests(unittest.TestCase):
         self.assertTrue(event["pointer_move_requested"])
         self.assertEqual(event["position"], [400, 445])
         self.assertFalse(event["guest_memory_written"])
+
+    def test_captured_relative_motion_precedes_press_on_private_display(self):
+        env = {"DISPLAY": ":123"}
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
+            event = capture.private_click(env, 789, capture_mouse=True, relative_motion=[-300, 20])
+        self.assertEqual([call.args[0] for call in run.call_args_list], [
+            ["xdotool", "windowfocus", "--sync", "456"],
+            ["xdotool", "mousemove_relative", "--", "-300", "20"],
+            ["xdotool", "mousedown", "1"], ["xdotool", "mouseup", "1"],
+        ])
+        self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
+        self.assertEqual(event["relative_motion_requested"], [-300, 20])
+
+    def test_relative_motion_rejects_ambiguous_or_invalid_requests_before_input(self):
+        with mock.patch.object(capture.subprocess, "check_output") as search:
+            for kwargs in ({"relative_motion": [1, 0]},
+                           {"capture_mouse": True, "relative_motion": [1, 0], "position": [1, 1]},
+                           {"capture_mouse": True, "relative_motion": [32768, 0]},
+                           {"capture_mouse": True, "relative_motion": [1.5, 0]}):
+                with self.assertRaises(ValueError):
+                    capture.private_click({"DISPLAY": ":123"}, 789, **kwargs)
+            search.assert_not_called()
 
     def test_positioned_click_rejects_out_of_display_before_input(self):
         with mock.patch.object(capture.subprocess, "check_output") as search:
@@ -242,6 +287,28 @@ class StartupCaptureTests(unittest.TestCase):
         self.assertEqual(run.call_args.args[0].click_after, [35.0, 70.0])
         self.assertEqual(run.call_args.args[0].click_position, [400, 445])
 
+    def test_cli_preserves_captured_relative_motion(self):
+        argv = ["capture", "disc", "output", "--seconds", "65", "--click-after", "45",
+                "--relative-mouse", "--relative-motion", "-300", "20"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].relative_motion, [-300, 20])
+        self.assertTrue(run.call_args.args[0].relative_mouse)
+
+    def test_cli_rejects_unusable_relative_motion(self):
+        for options in (["--relative-motion", "1", "0"],
+                        ["--relative-mouse", "--relative-motion", "32768", "0"],
+                        ["--relative-mouse", "--relative-motion", "1", "0", "--click-position", "1", "1"]):
+            argv = ["capture", "disc", "output", "--click-after", "45", *options]
+            with self.subTest(options=options), mock.patch.object(sys, "argv", argv), \
+                    mock.patch.object(sys, "stderr", new_callable=io.StringIO), \
+                    mock.patch.object(capture, "capture") as run:
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
     def test_cli_rejects_invalid_input_schedule_before_capture(self):
         for flags in (["--click-after", "60"],
                       ["--click-button", "3"],
