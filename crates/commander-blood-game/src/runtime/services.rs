@@ -1104,6 +1104,55 @@ impl<'window> ModernGameServices<'window> {
         Ok(outcome)
     }
 
+    /// A live BBB COD handoff keeps the contact whose records still belong to VAR.
+    pub(super) fn load_script_profile_for_live_handoff(
+        &mut self,
+        profile: ScriptProfileId,
+    ) -> Result<ScriptProfileLoadOutcome> {
+        use crate::native::bloodprg::ScriptProfileResourceKind;
+        let previous_var = self
+            .runtime
+            .current_profile()
+            .filter(|current| {
+                current.code().dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang
+            })
+            .map(|current| {
+                current
+                    .resources()
+                    .resource(ScriptProfileResourceKind::State)
+            });
+        if previous_var.is_none() {
+            return self.load_script_profile(profile);
+        }
+        let bindings = self
+            .scene_transition
+            .as_ref()
+            .context("profile handoff cannot interrupt a scene update")?
+            .record_bindings(self.runtime.current_profile().unwrap().state())?;
+        let mut contact = self
+            .scene_transition
+            .take()
+            .context("profile handoff cannot interrupt a scene update")?;
+        let outcome = self.load_script_profile(profile);
+        let same_var = self.runtime.current_profile().is_some_and(|current| {
+            current.code().dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang
+                && Some(
+                    current
+                        .resources()
+                        .resource(ScriptProfileResourceKind::State),
+                ) == previous_var
+        });
+        // Native profile reset does not write DS:29DB/29DD/29DF. Translate its
+        // retained VAR pointers back into the incoming directory's object IDs.
+        if outcome.is_err() {
+            self.scene_transition = Some(contact);
+        } else if same_var {
+            contact.rebind_records(bindings, self.runtime.current_profile().unwrap().state())?;
+            self.scene_transition = Some(contact);
+        }
+        outcome
+    }
+
     /// Reconstruct every profile-derived record store from synchronized VAR state.
     pub fn rebuild_script_record_state(&mut self) -> Result<()> {
         let profile = self
@@ -6313,6 +6362,80 @@ mod tests {
         assert_eq!(
             visible_inline_menu_word_count(Some(&translated_snapshot), &text, 1, None),
             0
+        );
+    }
+
+    #[test]
+    #[ignore = "requires an active desktop and serialized SDL/wgpu ownership"]
+    fn sequel_live_profile_handoff_keeps_contact_but_explicit_load_resets_it() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let paths = OriginalGameDataPaths::from_root(root).unwrap();
+        let sdl = sdl3::init().unwrap();
+        let video = sdl.video().unwrap();
+        let window = video
+            .window("BBB profile handoff test", 640, 480)
+            .hidden()
+            .build()
+            .unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable.0).unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        services
+            .load_script_profile(ScriptProfileId::INITIAL)
+            .unwrap();
+        services
+            .load_script_profile(ScriptProfileId::new(1).unwrap())
+            .unwrap();
+        let daddy = services
+            .runtime
+            .current_profile()
+            .unwrap()
+            .state()
+            .objects()[44]
+            .id;
+        assert_eq!(
+            services
+                .runtime
+                .current_profile()
+                .unwrap()
+                .state()
+                .object(daddy)
+                .unwrap()
+                .kind,
+            commander_blood_formats::script::ScriptObjectKind::Actor
+        );
+        services.request_scene_transition(daddy).unwrap();
+        let before = services.scene_transition.as_ref().unwrap().state().clone();
+        let bindings = services
+            .scene_transition
+            .as_ref()
+            .unwrap()
+            .record_bindings(services.runtime.current_profile().unwrap().state())
+            .unwrap();
+        assert_ne!(
+            before.phase,
+            crate::native::bloodprg::SceneTransitionPhase::Inactive
+        );
+        services
+            .load_script_profile_for_live_handoff(ScriptProfileId::new(2).unwrap())
+            .unwrap();
+        assert_eq!(services.scene_transition.as_ref().unwrap().state(), &before);
+        assert_eq!(
+            services
+                .scene_transition
+                .as_ref()
+                .unwrap()
+                .record_bindings(services.runtime.current_profile().unwrap().state())
+                .unwrap(),
+            bindings
+        );
+        services
+            .load_script_profile(ScriptProfileId::new(2).unwrap())
+            .unwrap();
+        assert_eq!(
+            services.scene_transition.as_ref().unwrap().state().phase,
+            crate::native::bloodprg::SceneTransitionPhase::Inactive
         );
     }
 

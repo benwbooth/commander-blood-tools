@@ -93,6 +93,11 @@ def run_reset(executable, noise):
     assert bytes(cpu.mem_read(0, len(module))) == module
     after = bytes(cpu.mem_read(GLOBALS, len(before)))
     assert all(a == b or index in written for index, (a, b) in enumerate(zip(before, after)))
+    # The contact coordinator (1A17) reads these owners after a live COD handoff.
+    # Resetting the profile must not discard its record, scene gate, or phase.
+    contact_fields = {0x29DB, 0x29DC, 0x29DD, 0x29DF}
+    assert written.isdisjoint(contact_fields)
+    assert all(before[offset] == after[offset] for offset in contact_fields)
 
     def fields(data):
         return {name: int.from_bytes(data[offset:offset + size], "little")

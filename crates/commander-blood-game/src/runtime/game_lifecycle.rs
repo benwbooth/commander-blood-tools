@@ -391,7 +391,8 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         profile: ScriptProfileId,
         _state: &mut GameLifecycleState,
     ) -> Result<GameProfileLoadStatus> {
-        self.services.load_script_profile(profile)?;
+        self.services
+            .load_script_profile_for_live_handoff(profile)?;
         Ok(GameProfileLoadStatus::Loaded)
     }
 

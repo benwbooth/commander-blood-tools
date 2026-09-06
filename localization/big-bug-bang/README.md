@@ -28,7 +28,8 @@ readouts, four inventory prompts, and one intentionally empty text site.
 Inventory sections preserve their generator marker and receive no static choice
 override: the live inventory remains authoritative. Item-name localization is
 still separate work. All eight localization tests pass with original resources;
-SCRIPT3 live English rendering and contextual review remain unverified.
+Broader SCRIPT3 contextual review remains incomplete; the verified initial
+exchange is described under Live Profile Handoff below.
 The rebuilt runtime capture `output/big-bug-bang/english-script3-play-01`
 completes every action in `accuracy/scenarios/bbb_play_daddy.tsv`, including the
 final `wait 100` (action index 15), and exits normally without the 360-second
@@ -75,12 +76,38 @@ all actions and exits normally, but its two additional clicks at `(160, 20)` do
 not advance Daddy's initial message. At action 19, SCRIPT3 still has execution
 disabled on line 8, with the fully revealed, localized but unchanged vocalization.
 The trace reports `scene_gate_active=true` and no active streamed clip. This is
-a pending gameplay investigation, not proof of English SCRIPT3 prose or a
-successful conversation.
+the profile-handoff defect corrected below, not proof of English SCRIPT3 prose
+or a successful conversation in that earlier run.
 
 ```sh
 nix develop -c cargo test -p commander-blood-game --lib runtime::sequence_localization -- --include-ignored
 ```
+
+## Live Profile Handoff
+
+The ordinary SCRIPT2-to-SCRIPT3 handoff was discarding the active contact
+coordinator. Text reveal and its hold timer finished, but no contact scene
+dispatcher remained to complete the presentation and resume the VM.
+Live BBB handoffs now retain this coordinator when both profiles use the same
+VAR resource, rebinding its typed records by native VAR offset and record kind.
+Explicit profile loading, including save restoration, still clears it.
+The original profile-reset oracle now explicitly checks that native contact
+record bytes `DS:29DB..29DC`, scene gate `DS:29DD`, and phase `DS:29DF` are not
+written. All 512 profile-gate, five reset, and 17 post-load probes pass.
+
+`output/big-bug-bang/english-daddy-handoff-01` completes the same extended
+ordinary-input scenario with a normal exit and no capture timeout.
+`screen-049.png` visibly shows the English question "would you like to try
+talking to him before teleporting him?" and the English `yes` / `no` choices.
+The frame trace also reaches both preceding English explanatory lines.
+At action 19, SCRIPT3's VM is enabled, the dialogue selector is active, and
+original selector words `oui` / `non` remain distinct from displayed labels.
+This verifies the initial dialogue and choice display, not choice selection,
+the rest of SCRIPT3, or full-game progression.
+
+The real-resource SDL test confirms that a live handoff preserves contact state
+and record bindings while an explicit load clears them. Game-package all-targets
+checking passes, as do 950 serial game-library tests (35 ignored).
 
 ## COD Catalog Validation
 

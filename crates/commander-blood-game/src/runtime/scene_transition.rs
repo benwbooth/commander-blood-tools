@@ -1,7 +1,7 @@
 //! Flat runtime host for contact-driven bridge scene transitions.
 
 use anyhow::{Context, Result, bail};
-use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind};
+use commander_blood_formats::script::{ScriptObjectId, ScriptObjectKind, ScriptState};
 
 use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeSceneInput, BridgeSpriteEntity, GameLifecycleState,
@@ -49,6 +49,53 @@ pub struct RuntimeSceneTransition {
 }
 
 impl RuntimeSceneTransition {
+    /// Native contact pointers refer to VAR byte offsets, not DEB directory IDs.
+    pub(super) fn record_bindings(
+        &self,
+        state: &ScriptState,
+    ) -> Result<[Option<(usize, ScriptObjectKind)>; 2]> {
+        let binding =
+            |record: Option<RuntimeSceneRecord>| -> Result<Option<(usize, ScriptObjectKind)>> {
+                record
+                    .map(|record| {
+                        let object = state
+                            .object(record.object)
+                            .context("contact record is absent before profile handoff")?;
+                        Ok((object.source_offset(), object.kind))
+                    })
+                    .transpose()
+            };
+        Ok([
+            binding(self.current_record)?,
+            binding(self.deferred_record)?,
+        ])
+    }
+
+    pub(super) fn rebind_records(
+        &mut self,
+        bindings: [Option<(usize, ScriptObjectKind)>; 2],
+        state: &ScriptState,
+    ) -> Result<()> {
+        let resolve =
+            |binding: Option<(usize, ScriptObjectKind)>| -> Result<Option<RuntimeSceneRecord>> {
+                binding
+                    .map(|(offset, kind)| {
+                        let object = state
+                            .objects()
+                            .iter()
+                            .find(|object| object.source_offset() == offset && object.kind == kind)
+                            .context("contact record is absent after profile handoff")?;
+                        Ok(RuntimeSceneRecord::new(object.id, object.kind))
+                    })
+                    .transpose()
+            };
+        let current = resolve(bindings[0])?;
+        let deferred = resolve(bindings[1])?;
+        self.current_record = current;
+        self.deferred_record = deferred;
+        Ok(())
+    }
+
     /// Borrow the recovered coordinator state for diagnostics and tests.
     pub const fn state(&self) -> &SceneTransitionState {
         &self.state
