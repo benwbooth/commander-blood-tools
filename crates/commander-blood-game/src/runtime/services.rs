@@ -4827,6 +4827,10 @@ impl<'window> ModernGameServices<'window> {
             .map(|control| serde_json::json!({
                 "ending_active": control.ending_active,
                 "requested_choice": control.requested_choice.map(|choice| choice.index()),
+                "last_assignment": self.scripts.sequence_assignment_site().map(|(site, query)| serde_json::json!({
+                    "code_offset": site.index(),
+                    "query_mode": query,
+                })),
             }))
             .unwrap_or(serde_json::Value::Null);
         presentation_trace

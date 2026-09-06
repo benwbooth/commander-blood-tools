@@ -86,6 +86,8 @@ pub struct ScriptDispatchState {
     pub sequel_conflict: SequelConflictState,
     /// Sequel CC/D7 controls shared with the panel and retained across profiles.
     pub sequel_presentation: SequelPresentationControl,
+    /// Most recent CC source and query mode in this profile, for runtime tracing.
+    pub sequence_assignment_site: Option<(ScriptCodeOffset, bool)>,
     /// Last write to the single shared `vm_active_line` during this VM frame.
     pending_active_line_write: Option<u16>,
     /// One-shot write consumed by the lifecycle without overwriting later UI changes.
@@ -724,6 +726,8 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 .evaluate_date_guard(*guard, runtime)
                 .map_err(ScriptDispatchError::Runtime)?,
             DecodedScriptInstruction::SequenceSlotAssignment(assignment) => {
+                self.dispatch.sequence_assignment_site =
+                    Some((token.source_offset(), runtime.query_mode()));
                 assign_presentation_sequence(
                     assignment.clone(),
                     self.state.dialect(),
@@ -1486,8 +1490,13 @@ mod tests {
                 query.then_some(ScriptCodeOffset::new(GUARD_TARGET))
             );
             let expected = dispatch.sequel_presentation;
+            assert_eq!(
+                dispatch.sequence_assignment_site,
+                Some((ScriptCodeOffset::new(0), query))
+            );
             dispatch.reset_for_profile_change();
             assert_eq!(dispatch.sequel_presentation, expected);
+            assert_eq!(dispatch.sequence_assignment_site, None);
         }
     }
 

@@ -1954,3 +1954,28 @@ sequence comparison and deliberate navigation remain necessary.
 
 Each item remains part of the full objective; completing the decoder or one
 handler does not redefine the deliverable as a compatibility-only tool.
+
+## PLAY Panel Comparison (2026-09-06)
+
+The TV request after PLAY is present in the original, not evidence of a script
+regression. In the local `native-play-05` capture, `after-07.bin` is still profile
+0. The first profile-1 sample, `state-0194.bin` at 111.132 seconds, has pending
+choice 2 (zero-based), panel actor flags 9, and sequence slot 3 named `1ppit`.
+Samples remain at panorama frame 45 until 121.654 seconds, then turn to frame
+88 and reach 90 at 122.155 seconds. The test pans back at 135 seconds; comparing
+only its later snapshots incorrectly hides the automatic turn.
+
+The Rust `modern-panel-request-01` capture similarly changes from no pending
+choice and panel flags 1 to choice 2 and flags 9 on the SCRIPT2 load (frames
+1311-1312), without a pointer press. A follow-up instrumented capture locates
+the assignment at COD offset `0x9ED7`, outside query mode. Runtime traces now
+include the last CC instruction offset and query mode; this provenance resets
+on profile replacement while the session-owned pending choice is preserved.
+
+The native UI word's `0x20` panorama-band bit is represented separately by
+`PresentationBridgeMode::FirstBand` in Rust. Comparing that raw native word
+against Rust's low UI bits alone is not a valid state comparison.
+
+These observations do not establish cryobox interaction or whole-game parity.
+The next ordinary-input comparison must include the original test's return pan
+before selecting CRYOBOX and Daddy Gluxx.

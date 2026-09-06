@@ -5,6 +5,7 @@ use std::mem::size_of;
 
 use anyhow::{Context, Result, anyhow, bail};
 use commander_blood_formats::archive::BloodResourceName;
+use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::descript::DescriptRecordKind;
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::instruction::ScriptRecordStateOperand;
@@ -345,6 +346,11 @@ impl RuntimeScriptSystem {
     /// Consume CC before panel callbacks, so later script writes remain pending.
     pub(crate) fn consume_sequel_presentation_choice(&mut self) {
         self.dispatch.sequel_presentation.requested_choice = None;
+    }
+
+    /// Last CC source and query mode; profile replacement clears the provenance.
+    pub(crate) const fn sequence_assignment_site(&self) -> Option<(ScriptCodeOffset, bool)> {
+        self.dispatch.sequence_assignment_site
     }
 
     /// Drain A8's low-byte clear of the mouse-idle timer alias at native address `0x0B3B`.
