@@ -17,6 +17,7 @@ use crate::native::bloodprg::{InlineMenuDisplayWord, LoadedScriptProfile};
 
 const OPENING_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script1.json");
 const SCRIPT2_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script2.json");
+const SCRIPT3_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script3.json");
 const LINE_COLUMNS: usize = 34;
 
 #[derive(Deserialize)]
@@ -49,6 +50,7 @@ impl SequelEnglishSubtitles {
         let (name, catalog) = match profile.id().value() {
             0 => ("SCRIPT1", OPENING_ENGLISH),
             1 => ("SCRIPT2", SCRIPT2_ENGLISH),
+            2 => ("SCRIPT3", SCRIPT3_ENGLISH),
             _ => return Ok(None),
         };
         Self::from_catalog(
@@ -115,6 +117,13 @@ impl SequelEnglishSubtitles {
                 let mut words = Vec::new();
                 let mut labels = Vec::new();
                 for (source, translated) in source.into_iter().zip(sections.iter().skip(1)) {
+                    if source == [ScriptTextWord::InventoryChoices] {
+                        ensure!(
+                            sections.len() == 2 && translated == "<inventory_choices>",
+                            "English inventory choices must preserve the sole generator section"
+                        );
+                        continue;
+                    }
                     let translated = translated.split_whitespace().collect::<Vec<_>>();
                     ensure!(
                         source.len() == translated.len(),
@@ -132,7 +141,9 @@ impl SequelEnglishSubtitles {
                         labels.push(label.as_bytes().into());
                     }
                 }
-                choices.insert(ScriptCodeOffset::new(offset), (words, labels));
+                if !words.is_empty() {
+                    choices.insert(ScriptCodeOffset::new(offset), (words, labels));
+                }
             }
             let display = parse_display_words(prose, &text.words)?;
             if display
@@ -144,7 +155,12 @@ impl SequelEnglishSubtitles {
                     "numeric English prose requires a menu-only source"
                 );
             } else {
-                subtitles.insert(ScriptCodeOffset::new(offset), wrap_subtitle(prose)?);
+                let subtitle = if prose.is_empty() {
+                    Box::from([])
+                } else {
+                    wrap_subtitle(prose)?
+                };
+                subtitles.insert(ScriptCodeOffset::new(offset), subtitle);
             }
             menus.insert(
                 ScriptCodeOffset::new(offset),
@@ -188,6 +204,13 @@ fn parse_display_words(
     prose: &str,
     source: &[ScriptTextWord],
 ) -> Result<Box<[InlineMenuDisplayWord]>> {
+    if prose.is_empty() {
+        ensure!(
+            source.is_empty(),
+            "English empty text must match an empty source"
+        );
+        return Ok(Box::from([]));
+    }
     ensure!(
         !prose.is_empty() && prose.is_ascii() && !prose.bytes().any(|byte| byte.is_ascii_control()),
         "English menu requires printable ASCII"
@@ -296,6 +319,63 @@ mod tests {
     use super::*;
     use crate::assets::OriginalResourceStore;
     use crate::native::bloodprg::{OriginalResourceCatalog, ScriptProfileId};
+
+    #[test]
+    fn empty_translation_requires_an_empty_authored_stream() {
+        assert!(parse_display_words("", &[]).unwrap().is_empty());
+        assert!(parse_display_words("", &[ScriptTextWord::SectionSeparator]).is_err());
+        assert!(parse_display_words("", &[ScriptTextWord::InventoryChoices]).is_err());
+        assert!(parse_display_words(" ", &[]).is_err());
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script3_preserves_inventory_generators_and_empty_text() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let cod = std::fs::read(root.join("SCRIPT3.COD")).unwrap();
+        let dic = std::fs::read(root.join("SCRIPT3.DIC")).unwrap();
+        let catalog = SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT3", SCRIPT3_ENGLISH)
+            .unwrap()
+            .unwrap();
+        assert_eq!(catalog.menus.len(), 779);
+        assert_eq!(catalog.subtitles.len(), 776);
+        for address in [0x17c9, 0x3379, 0x4c4d, 0x65ad] {
+            let site = ScriptCodeOffset::new(address);
+            let menu = &catalog.menus[&site];
+            assert_eq!(menu.source.last(), Some(&ScriptTextWord::InventoryChoices));
+            assert_eq!(
+                catalog.menu_words(site, &menu.source),
+                Some(menu.display.as_ref())
+            );
+            assert_eq!(
+                menu.display.as_ref(),
+                &[InlineMenuDisplayWord::Literal(Box::from(
+                    b"GIVE:".as_slice()
+                ))]
+            );
+            assert!(!catalog.choices.contains_key(&site));
+            assert!(catalog.choice_labels(site, &[]).is_none());
+        }
+        let empty = ScriptCodeOffset::new(0x65bd);
+        assert!(catalog.menus[&empty].source.is_empty());
+        assert!(catalog.menus[&empty].display.is_empty());
+        assert!(catalog.subtitle(empty).unwrap().is_empty());
+        for replacement in ["GIFT", "<inventory_choices> EXTRA", ""] {
+            let mut invalid: serde_json::Value = serde_json::from_str(SCRIPT3_ENGLISH).unwrap();
+            invalid["messages"]["bbb.script3.cod.000017c9"][1] = replacement.into();
+            assert!(
+                SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT3", &invalid.to_string())
+                    .is_err()
+            );
+        }
+        for text in catalog.subtitles.values() {
+            assert!(
+                text.split(|b| *b == b'\r')
+                    .all(|line| line.len() <= LINE_COLUMNS)
+            );
+        }
+    }
 
     #[test]
     #[ignore = "requires the user's imported Big Bug Bang resources"]

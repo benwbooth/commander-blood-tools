@@ -1,0 +1,2380 @@
+{
+  "format": "bbb-cod-display-translation-v1",
+  "language": "en",
+  "profile": "SCRIPT3",
+  "cod_sha256": "6d137440a7ace2650ff6c5c00c745176e7469c42cdb2008f68b729842a8ebfed",
+  "dic_sha256": "d458a17c6ba3d39f978edaf4c9985af28b08f33640bac4588ae0b3361b91c721",
+  "messages": {
+    "bbb.script3.cod.000006e4": [
+      "bravo! Nice fingerwork!"
+    ],
+    "bbb.script3.cod.000006f6": [
+      "Aglo! AGLO!"
+    ],
+    "bbb.script3.cod.00000706": [
+      "Algo!!! ALglO!!!... Beug... Cryobeug... KROUIK..."
+    ],
+    "bbb.script3.cod.0000071a": [
+      "We're losing the connection, Commander!..."
+    ],
+    "bbb.script3.cod.0000072a": [
+      "Krouik... Reconnect... Priority message..."
+    ],
+    "bbb.script3.cod.00000740": [
+      "the cyberspace police!..."
+    ],
+    "bbb.script3.cod.00000752": [
+      "that's impossible! She doesn't exist yet!..."
+    ],
+    "bbb.script3.cod.0000076e": [
+      "Priority message from outside time... Krouik..."
+    ],
+    "bbb.script3.cod.00000782": [
+      "Commander! This message comes from the future!..."
+    ],
+    "bbb.script3.cod.0000079a": [
+      "This message comes from the past..."
+    ],
+    "bbb.script3.cod.000007ae": [
+      "... comes from the past!..."
+    ],
+    "bbb.script3.cod.000007c0": [
+      "Krouik... This message comes from the future..."
+    ],
+    "bbb.script3.cod.000007d8": [
+      "Attention! Here's the composite sketch of Mr. Bob's murderer..."
+    ],
+    "bbb.script3.cod.000007f6": [
+      "Soft physique... Sometimes extremely violent temperament..."
+    ],
+    "bbb.script3.cod.0000080e": [
+      "Sole survivor of the Ultimate War... Seed of chaos..."
+    ],
+    "bbb.script3.cod.0000082c": [
+      "Reward of 100 000 000 credits if killed..."
+    ],
+    "bbb.script3.cod.00000848": [
+      "millions! Wow! Couldn't you give us an advance?..."
+    ],
+    "bbb.script3.cod.00000868": [
+      "Here's two credits for your weapons expenses..."
+    ],
+    "bbb.script3.cod.0000088c": [
+      "Beware of him, vicious, very dangerous... ARGH!... Krouik..."
+    ],
+    "bbb.script3.cod.000008ac": [
+      "Commander, we lost the connection..."
+    ],
+    "bbb.script3.cod.000008bc": [
+      "..."
+    ],
+    "bbb.script3.cod.000008e2": [
+      "Krouik..."
+    ],
+    "bbb.script3.cod.000008ee": [
+      "hello? Mom, is that you?..."
+    ],
+    "bbb.script3.cod.00000902": [
+      "No! It's Daddy Gluxx!..."
+    ],
+    "bbb.script3.cod.00000916": [
+      "how are you, old friend?... Evolving nicely?..."
+    ],
+    "bbb.script3.cod.00000932": [
+      "We're developing, we're developing..."
+    ],
+    "bbb.script3.cod.00000944": [
+      "right... Everything's fine, then..."
+    ],
+    "bbb.script3.cod.0000095c": [
+      "Well... Not exactly..."
+    ],
+    "bbb.script3.cod.0000096e": [
+      "what? You want one credit?..."
+    ],
+    "bbb.script3.cod.00000984": [
+      "It's not the money... It's the work... This can't go on, Commander!..."
+    ],
+    "bbb.script3.cod.000009a8": [
+      "We're overworked! I already worked on COMMANDER BLOOD, the previous game..."
+    ],
+    "bbb.script3.cod.000009ce": [
+      "I thought I'd earned my vacation..."
+    ],
+    "bbb.script3.cod.000009e6": [
+      "No! I'm signing up again! I was sleeping peacefully! They wake me up and tell me..."
+    ],
+    "bbb.script3.cod.00000a14": [
+      "YOU'LL BE THE SEED OF A NEW UNIVERSE, KID!..."
+    ],
+    "bbb.script3.cod.00000a2e": [
+      "I just wanted a little rest..."
+    ],
+    "bbb.script3.cod.00000a48": [
+      "Commander, we should never have given him writing..."
+    ],
+    "bbb.script3.cod.00000a62": [
+      "shall I cut him off?",
+      "yes no"
+    ],
+    "bbb.script3.cod.00000a87": [
+      "Krouik..."
+    ],
+    "bbb.script3.cod.00000a93": [
+      "there... Good riddance..."
+    ],
+    "bbb.script3.cod.00000aa5": [
+      "..."
+    ],
+    "bbb.script3.cod.00000ac1": [
+      "Besides, you're just a bogus screenwriter! Some polished new game this is!"
+    ],
+    "bbb.script3.cod.00000aeb": [
+      "They're all the same characters as in COMMANDER BLOOD!..."
+    ],
+    "bbb.script3.cod.00000b07": [
+      "WE'RE OVERWORKED!... NOTHING BUT RECYCLED MATERIAL!..."
+    ],
+    "bbb.script3.cod.00000b23": [
+      "right, that's enough! I'm cutting him off!..."
+    ],
+    "bbb.script3.cod.00000b3b": [
+      "Krouik..."
+    ],
+    "bbb.script3.cod.00000b47": [
+      "..."
+    ],
+    "bbb.script3.cod.00000b73": [
+      "I feel all floppy..."
+    ],
+    "bbb.script3.cod.00000b85": [
+      "Soft..."
+    ],
+    "bbb.script3.cod.00000b91": [
+      "So soft!..."
+    ],
+    "bbb.script3.cod.00000b9f": [
+      "He must be e-lim-i-nat-ed!..."
+    ],
+    "bbb.script3.cod.00000bbd": [
+      "..."
+    ],
+    "bbb.script3.cod.00000bf1": [
+      "Ageu rha... Mmmeuh"
+    ],
+    "bbb.script3.cod.00000bff": [
+      "He says he's groggy, his cerebellum's pounding..."
+    ],
+    "bbb.script3.cod.00000c21": [
+      "his face reminds me of something, Commander... Careful..."
+    ],
+    "bbb.script3.cod.00000c3d": [
+      "would you like to try talking to him before teleporting him?",
+      "yes no"
+    ],
+    "bbb.script3.cod.00000c68": [
+      "Agueu Beug... Boom Boom... Beug..."
+    ],
+    "bbb.script3.cod.00000c7e": [
+      "What? He says there's a bug... I don't quite understand..."
+    ],
+    "bbb.script3.cod.00000ca6": [
+      "something about a war and a bug... I'll check..."
+    ],
+    "bbb.script3.cod.00000cc4": [
+      "NA NA NER NER!..."
+    ],
+    "bbb.script3.cod.00000ce3": [
+      "damn! A prank by Petit Pit! He told you there was a war..."
+    ],
+    "bbb.script3.cod.00000d0f": [
+      "sorry about the bug, Commander... He hacked me, I'm dejected..."
+    ],
+    "bbb.script3.cod.00000d3d": [
+      "All right, Commander. Let's start from the beginning..."
+    ],
+    "bbb.script3.cod.00000d53": [
+      "Well, we believe in extraterrestrials..."
+    ],
+    "bbb.script3.cod.00000d6b": [
+      "that's right, isn't it, Commander?...",
+      "good-that not-that"
+    ],
+    "bbb.script3.cod.00000d8c": [
+      "Seriously, Commander? We really believe in those extraterrestrial thingies?"
+    ],
+    "bbb.script3.cod.00000db1": [
+      "and what's this, then?..."
+    ],
+    "bbb.script3.cod.00000dcf": [
+      "nanananana... I'm an exshtraterreshtial... nanananan... an exshtrathingy uh... I'm an exshtrawhatsit... naninana... shpilling everywhere... gna -!overflowing gneu I dunno qhgq whoq... shtramidfj... gnaoverflowing,yafool,b,nbugbu..."
+    ],
+    "bbb.script3.cod.00000e23": [
+      "Damn! That filthy E.T. wrecked my screen!"
+    ],
+    "bbb.script3.cod.00000e41": [
+      "NA NA NA NA NER NER!"
+    ],
+    "bbb.script3.cod.00000e64": [
+      "another bug courtesy of Petit Piteux... You lousy disk pirate!"
+    ],
+    "bbb.script3.cod.00000e84": [
+      "Right, very good, we're off to a good start..."
+    ],
+    "bbb.script3.cod.00000e9a": [
+      "are you annoyed, Commander?...",
+      "annoyed cool"
+    ],
+    "bbb.script3.cod.00000ebe": [
+      "let's not get worked up... Let's pretend nothing happened..."
+    ],
+    "bbb.script3.cod.00000ee5": [
+      "that's cool, let's carry on..."
+    ],
+    "bbb.script3.cod.00000f03": [
+      "Mr. Gluxx..."
+    ],
+    "bbb.script3.cod.00000f0f": [
+      "HEY! MR. GLUXX! DUMBHEAD! CAN YOU HEAR ME?"
+    ],
+    "bbb.script3.cod.00000f23": [
+      "Hey, boiled-shank head!..."
+    ],
+    "bbb.script3.cod.00000f37": [
+      "Do you realize you're the seed of a new universe, Mr. Gluxx?"
+    ],
+    "bbb.script3.cod.00000f66": [
+      "Eh?... WHA?..."
+    ],
+    "bbb.script3.cod.00000f7a": [
+      "shall I tell him again, Commander?...",
+      "repeat enough"
+    ],
+    "bbb.script3.cod.00000fa0": [
+      "I said: a new universe..."
+    ],
+    "bbb.script3.cod.00000fc5": [
+      "HUH?... WHA?..."
+    ],
+    "bbb.script3.cod.00000fd9": [
+      "he really doesn't understand a thing..."
+    ],
+    "bbb.script3.cod.00000ffe": [
+      "Hey, Commander, he didn't invent gunpowder, did he... Ha! Ha! Ha!"
+    ],
+    "bbb.script3.cod.00001020": [
+      "Although... He looks so floppy... He must have sniffed quite a lot..."
+    ],
+    "bbb.script3.cod.00001054": [
+      "Blurp... Gasp..."
+    ],
+    "bbb.script3.cod.00001064": [
+      "would you like to know what he's saying?...",
+      "tell_me don't_care"
+    ],
+    "bbb.script3.cod.0000108c": [
+      "He says he's about to toss his cookies... Bleaargh!"
+    ],
+    "bbb.script3.cod.000010b3": [
+      "Actually, he says he wants to go to a planet... What? Isn't he happy in our fridge?"
+    ],
+    "bbb.script3.cod.00001104": [
+      "right, this screen is killing my eyes... Let's finish this..."
+    ],
+    "bbb.script3.cod.00001120": [
+      "before becoming epileptic!..."
+    ],
+    "bbb.script3.cod.00001134": [
+      "Commander, I've spotted a few habitable planets in this soup of stars..."
+    ],
+    "bbb.script3.cod.0000115e": [
+      "anyway... Planets..."
+    ],
+    "bbb.script3.cod.00001170": [
+      "SHALL WE TELEPORT DADDY GLUXX TO:",
+      "Tempest Vulcan Troma Lovia refuse"
+    ],
+    "bbb.script3.cod.0000119b": [
+      "TELEPORTING DADDY GLUXX TO PLANET TEMPEST..."
+    ],
+    "bbb.script3.cod.000011af": [
+      "Areu..."
+    ],
+    "bbb.script3.cod.000011cd": [
+      "..."
+    ],
+    "bbb.script3.cod.000011e2": [
+      "TELEPORTING DADDY GLUXX TO PLANET VULCAN..."
+    ],
+    "bbb.script3.cod.000011f6": [
+      "Areu..."
+    ],
+    "bbb.script3.cod.00001214": [
+      "..."
+    ],
+    "bbb.script3.cod.00001229": [
+      "TELEPORTING DADDY GLUXX TO PLANET TROMA..."
+    ],
+    "bbb.script3.cod.0000123d": [
+      "Gha..."
+    ],
+    "bbb.script3.cod.0000125b": [
+      "..."
+    ],
+    "bbb.script3.cod.00001270": [
+      "TELEPORTING DADDY GLUXX TO PLANET LOVIA..."
+    ],
+    "bbb.script3.cod.00001284": [
+      "Ggg..."
+    ],
+    "bbb.script3.cod.000012a2": [
+      "..."
+    ],
+    "bbb.script3.cod.000012b7": [
+      "As you wish, Commander, but at this rate we haven't won yet..."
+    ],
+    "bbb.script3.cod.000012dd": [
+      "AGA AGA AGA..."
+    ],
+    "bbb.script3.cod.000012ed": [
+      "Oh, that's enough from you... Down! Commander doesn't want to play with you..."
+    ],
+    "bbb.script3.cod.00001311": [
+      "..."
+    ],
+    "bbb.script3.cod.00001335": [
+      "Aggg... Geuh..."
+    ],
+    "bbb.script3.cod.00001341": [
+      "Yes, that's right... Aggg... Geuh..."
+    ],
+    "bbb.script3.cod.00001359": [
+      "Hear that, Commander? He can't even speak... He talks like a murfalo!"
+    ],
+    "bbb.script3.cod.0000137f": [
+      "ha ha ha!... A murfalo!..."
+    ],
+    "bbb.script3.cod.000013a3": [
+      "With that boiled-shank face of his, no wonder!"
+    ],
+    "bbb.script3.cod.000013bb": [
+      "Aggga... meufff..."
+    ],
+    "bbb.script3.cod.000013cb": [
+      "And his female, have you seen his female? She's got five tits..."
+    ],
+    "bbb.script3.cod.000013ef": [
+      "Aggg... osss..."
+    ],
+    "bbb.script3.cod.000013ff": [
+      "And the kids?..."
+    ],
+    "bbb.script3.cod.00001411": [
+      "Aggga... gossss..."
+    ],
+    "bbb.script3.cod.00001421": [
+      "They look like hydrocephalic sperm cells!..."
+    ],
+    "bbb.script3.cod.00001437": [
+      "am I boring you, Commander? Are you in a hurry to finish?...",
+      "finish no_hurry"
+    ],
+    "bbb.script3.cod.00001466": [
+      "it's over for you..."
+    ],
+    "bbb.script3.cod.00001478": [
+      "as you wish, Commander..."
+    ],
+    "bbb.script3.cod.00001496": [
+      "..."
+    ],
+    "bbb.script3.cod.000014a9": [
+      "let's continue, then... As I was saying, hydrocephalic..."
+    ],
+    "bbb.script3.cod.000014c4": [
+      "Still, no racism... It takes all sorts to make a universe..."
+    ],
+    "bbb.script3.cod.000014f3": [
+      "Commander, bad luck, the cryobox is empty. We've got nothing to give him..."
+    ],
+    "bbb.script3.cod.00001519": [
+      "We really should help that ham evolve, Commander..."
+    ],
+    "bbb.script3.cod.00001533": [
+      "Well... I'll rummage through the Ark's hold, see if anything's lying around..."
+    ],
+    "bbb.script3.cod.0000155b": [
+      "..."
+    ],
+    "bbb.script3.cod.00001571": [
+      "Commander, they have no idea what a ship is..."
+    ],
+    "bbb.script3.cod.0000158f": [
+      "Aga... Chug chug..."
+    ],
+    "bbb.script3.cod.000015aa": [
+      "Hulu... Hulu... Hulu..."
+    ],
+    "bbb.script3.cod.000015be": [
+      "With that on his head, he'll impress his females, hee! Hee! Hee!"
+    ],
+    "bbb.script3.cod.000015e9": [
+      "You're wasting it, Commander..."
+    ],
+    "bbb.script3.cod.00001602": [
+      "Boing..."
+    ],
+    "bbb.script3.cod.0000160c": [
+      "He doesn't even know how to play it..."
+    ],
+    "bbb.script3.cod.0000162d": [
+      "Ah, it reeks of murfalo musk... It's unbearable..."
+    ],
+    "bbb.script3.cod.00001654": [
+      "Agla... Arhhh..."
+    ],
+    "bbb.script3.cod.00001664": [
+      "He looks happy... Commander..."
+    ],
+    "bbb.script3.cod.00001683": [
+      "WHAT!!! YOU'RE COMPLETELY MAD... YOU'RE GIVING HIM ONE CREDIT!!!"
+    ],
+    "bbb.script3.cod.000016a1": [
+      "One CREDIT, he gave him one CREDIT... I must be dreaming..."
+    ],
+    "bbb.script3.cod.000016ca": [
+      "Weapons... He doesn't even know how to use them..."
+    ],
+    "bbb.script3.cod.000016f1": [
+      "Might as well give caviar to murfalos..."
+    ],
+    "bbb.script3.cod.00001712": [
+      "But... Me speak... Ohhh, me intelligent..."
+    ],
+    "bbb.script3.cod.0000172c": [
+      "COMMANDER, THIS IS BRILLIANT!!!"
+    ],
+    "bbb.script3.cod.0000173c": [
+      "You found it!"
+    ],
+    "bbb.script3.cod.0000174a": [
+      "WRITING has made them intelligent. We can finally talk to them..."
+    ],
+    "bbb.script3.cod.0000176a": [
+      "Let's let them study..."
+    ],
+    "bbb.script3.cod.00001778": [
+      "..."
+    ],
+    "bbb.script3.cod.00001799": [
+      "Don't forget, we must help them evolve..."
+    ],
+    "bbb.script3.cod.000017b1": [
+      "Which object would you like to give Daddy, Commander?"
+    ],
+    "bbb.script3.cod.000017c9": [
+      "GIVE:",
+      "<inventory_choices>"
+    ],
+    "bbb.script3.cod.000017d9": [
+      "..."
+    ],
+    "bbb.script3.cod.000017f4": [
+      "That's wasteful... Commander"
+    ],
+    "bbb.script3.cod.00001806": [
+      "We must help them evolve..."
+    ],
+    "bbb.script3.cod.00001818": [
+      "Try something else"
+    ],
+    "bbb.script3.cod.00001826": [
+      "..."
+    ],
+    "bbb.script3.cod.00001850": [
+      "ON STRIKE!..."
+    ],
+    "bbb.script3.cod.00001860": [
+      "..."
+    ],
+    "bbb.script3.cod.0000187f": [
+      "Daddy! We've come to give you a raise!..."
+    ],
+    "bbb.script3.cod.00001897": [
+      "We don't even need to negotiate?..."
+    ],
+    "bbb.script3.cod.000018ad": [
+      "no! Let's not waste time!..."
+    ],
+    "bbb.script3.cod.000018c7": [
+      "Commander, would you like to give him a raise?...",
+      "yes no"
+    ],
+    "bbb.script3.cod.000018e8": [
+      "TELEPORTING DADDY GLUXX'S PAY RAISE!..."
+    ],
+    "bbb.script3.cod.0000190a": [
+      "Thanks, Commander! Your game's great! Great script! Really funny!..."
+    ],
+    "bbb.script3.cod.00001932": [
+      "all right, all right, we get it!..."
+    ],
+    "bbb.script3.cod.0000194c": [
+      "Well... About the strike, it was a joke..."
+    ],
+    "bbb.script3.cod.00001966": [
+      "Go see Grandpa! I think he'll be happy to see you!..."
+    ],
+    "bbb.script3.cod.0000198a": [
+      "..."
+    ],
+    "bbb.script3.cod.0000199f": [
+      "Very well! You asked for it! Dictator!..."
+    ],
+    "bbb.script3.cod.000019bb": [
+      "GENERAL STRIKE! CALLING ALL CHARACTERS!..."
+    ],
+    "bbb.script3.cod.000019d7": [
+      "GENERAL STRIKE!..."
+    ],
+    "bbb.script3.cod.000019f6": [
+      "..."
+    ],
+    "bbb.script3.cod.00001a24": [
+      "Daddy Strike..."
+    ],
+    "bbb.script3.cod.00001a32": [
+      "Daddy on strike or not... Still just as sluggish..."
+    ],
+    "bbb.script3.cod.00001a4e": [
+      "Daddy Strike..."
+    ],
+    "bbb.script3.cod.00001a5c": [
+      "so even the banks are closed?..."
+    ],
+    "bbb.script3.cod.00001a72": [
+      "..."
+    ],
+    "bbb.script3.cod.00001a7f": [
+      "Hello... Me DADDY GLUXX..."
+    ],
+    "bbb.script3.cod.00001a9a": [
+      "We're a real tribe now..."
+    ],
+    "bbb.script3.cod.00001ab0": [
+      "Still just as floppy, but he speaks well, don't you think, Commander???"
+    ],
+    "bbb.script3.cod.00001ae3": [
+      "Commander, we must help them evolve..."
+    ],
+    "bbb.script3.cod.00001b1b": [
+      "Commander, you should help us boost our birth rate..."
+    ],
+    "bbb.script3.cod.00001b37": [
+      "boost, boost... Commander, help them boost..."
+    ],
+    "bbb.script3.cod.00001b4f": [
+      "Yes, because if you don't boost us, we won't be able to migrate..."
+    ],
+    "bbb.script3.cod.00001b8a": [
+      "Commander, they need a ship if we want them to colonize the galaxy..."
+    ],
+    "bbb.script3.cod.00001bbd": [
+      "Commander, you're stuck in the sauerkraut..."
+    ],
+    "bbb.script3.cod.00001bd3": [
+      "Mind you, sauerkraut goes well with boiled shank..."
+    ],
+    "bbb.script3.cod.00001bfc": [
+      "You know the recipe..."
+    ],
+    "bbb.script3.cod.00001c0e": [
+      "boiled shank?..."
+    ],
+    "bbb.script3.cod.00001c27": [
+      "The boiled-shank recipe?..."
+    ],
+    "bbb.script3.cod.00001c44": [
+      "do you know her, Commander?...",
+      "yes no"
+    ],
+    "bbb.script3.cod.00001c67": [
+      "It's a great recipe, isn't it?..."
+    ],
+    "bbb.script3.cod.00001c81": [
+      "To do your shopping, you can go..."
+    ],
+    "bbb.script3.cod.00001c9b": [
+      "AT THE VENUSIA SUPRAMARKET!..."
+    ],
+    "bbb.script3.cod.00001cbb": [
+      "..."
+    ],
+    "bbb.script3.cod.00001ccd": [
+      "So, to begin..."
+    ],
+    "bbb.script3.cod.00001cdd": [
+      "You need four very fresh murfalos..."
+    ],
+    "bbb.script3.cod.00001d01": [
+      "where can we find that?..."
+    ],
+    "bbb.script3.cod.00001d19": [
+      "Get him! What a question!..."
+    ],
+    "bbb.script3.cod.00001d2f": [
+      "At the murfagic BUTCHER'S, obviously!..."
+    ],
+    "bbb.script3.cod.00001d56": [
+      "and then?..."
+    ],
+    "bbb.script3.cod.00001d64": [
+      "After that I can't remember, I..."
+    ],
+    "bbb.script3.cod.00001d7a": [
+      "forgotten..."
+    ],
+    "bbb.script3.cod.00001d92": [
+      "I told you he's sniffing, Commander!..."
+    ],
+    "bbb.script3.cod.00001db7": [
+      "But go see Mamy, she knows all the good recipes..."
+    ],
+    "bbb.script3.cod.00001dd7": [
+      "..."
+    ],
+    "bbb.script3.cod.00001ded": [
+      "Agl... aglo... aglouglou..."
+    ],
+    "bbb.script3.cod.00001e01": [
+      "How very well are you, Commander?..."
+    ],
+    "bbb.script3.cod.00001e19": [
+      "how's it going?...",
+      "good really_good too_good"
+    ],
+    "bbb.script3.cod.00001e46": [
+      "That's all right, then..."
+    ],
+    "bbb.script3.cod.00001e5a": [
+      "Still... Don't hesitate to relax anyway..."
+    ],
+    "bbb.script3.cod.00001e76": [
+      "Exercise your arms a little!..."
+    ],
+    "bbb.script3.cod.00001e9e": [
+      "Even better now, isn't it?..."
+    ],
+    "bbb.script3.cod.00001eb6": [
+      "There are at least <state:3130> Gluxx..."
+    ],
+    "bbb.script3.cod.00001ed9": [
+      "Commander, this is awful!..."
+    ],
+    "bbb.script3.cod.00001eed": [
+      "Yes, that's me..."
+    ],
+    "bbb.script3.cod.00001f0c": [
+      "what's she doing here?..."
+    ],
+    "bbb.script3.cod.00001f22": [
+      "Commander... I'm having terrible nightmares!..."
+    ],
+    "bbb.script3.cod.00001f3a": [
+      "I'm dreaming of Mr. BOB!..."
+    ],
+    "bbb.script3.cod.00001f5b": [
+      "well, well..."
+    ],
+    "bbb.script3.cod.00001f69": [
+      "I dream he's watching me..."
+    ],
+    "bbb.script3.cod.00001f89": [
+      "Commander, he has a guilty conscience..."
+    ],
+    "bbb.script3.cod.00001f9f": [
+      "I swear I didn't kill him, Commander..."
+    ],
+    "bbb.script3.cod.00001fde": [
+      "Hey, Plouxx! Know where we can find weapons?..."
+    ],
+    "bbb.script3.cod.00002004": [
+      "We make weapons..."
+    ],
+    "bbb.script3.cod.00002016": [
+      "ones that go SPLAT!?"
+    ],
+    "bbb.script3.cod.0000202a": [
+      "Of course..."
+    ],
+    "bbb.script3.cod.00002038": [
+      "are you selling?"
+    ],
+    "bbb.script3.cod.00002048": [
+      "Of course... But not for money..."
+    ],
+    "bbb.script3.cod.00002062": [
+      "What for, then?"
+    ],
+    "bbb.script3.cod.00002072": [
+      "Well... My female is a terrible cook..."
+    ],
+    "bbb.script3.cod.0000208a": [
+      "understood... You want food!..."
+    ],
+    "bbb.script3.cod.000020a4": [
+      "Yes, I'm sick of boiled shank..."
+    ],
+    "bbb.script3.cod.000020bc": [
+      "Me too, Commander... Where will we find food?..."
+    ],
+    "bbb.script3.cod.000020de": [
+      "We must pass through the bionium gate..."
+    ],
+    "bbb.script3.cod.000020f6": [
+      "the what?..."
+    ],
+    "bbb.script3.cod.00002106": [
+      "The BIONIUM gate! The double-code gate! DOUBLE CODE! DOUBLE BIONIUM!"
+    ],
+    "bbb.script3.cod.00002130": [
+      "For bionium, go see Scruter Jo. For the double gate, come see me..."
+    ],
+    "bbb.script3.cod.0000215a": [
+      "It's not very clear... This game's a crappy mess..."
+    ],
+    "bbb.script3.cod.00002176": [
+      "Commander, would you like the game to be clearer?",
+      "no yes"
+    ],
+    "bbb.script3.cod.000021a0": [
+      "I'd like that too... But you're the screenwriter!..."
+    ],
+    "bbb.script3.cod.000021c0": [
+      "..."
+    ],
+    "bbb.script3.cod.000021d3": [
+      "I'm not surprised, Commander, you're a complex being..."
+    ],
+    "bbb.script3.cod.000021f3": [
+      "Full of complexes, yeah!..."
+    ],
+    "bbb.script3.cod.00002207": [
+      "See, even the GLUXX is making fun of you!..."
+    ],
+    "bbb.script3.cod.00002228": [
+      "right... We need to find bionium..."
+    ],
+    "bbb.script3.cod.0000225d": [
+      "Mr. Gluxx, we have the bionium. What do we do?"
+    ],
+    "bbb.script3.cod.00002279": [
+      "Well, give it to me!"
+    ],
+    "bbb.script3.cod.000022a1": [
+      "You need explosives, I believe?..."
+    ],
+    "bbb.script3.cod.000022b9": [
+      "how does he know that? Has he got a spy or what?..."
+    ],
+    "bbb.script3.cod.000022db": [
+      "Because we make explosives..."
+    ],
+    "bbb.script3.cod.000022f1": [
+      "what? Him? Looking so floppy, he knows how to make weapons!..."
+    ],
+    "bbb.script3.cod.00002317": [
+      "Commander, don't you think he looks like the cyberpolice composite sketch?..."
+    ],
+    "bbb.script3.cod.00002339": [
+      "You must be confusing me with my SLIMER cousins..."
+    ],
+    "bbb.script3.cod.00002351": [
+      "yes, certainly... Right... How much for your explosives?..."
+    ],
+    "bbb.script3.cod.0000236d": [
+      "Oh! I'll give it to you in exchange for a little information..."
+    ],
+    "bbb.script3.cod.0000238f": [
+      "what would you like to know?..."
+    ],
+    "bbb.script3.cod.000023a1": [
+      "How many murfalos are in a herd?..."
+    ],
+    "bbb.script3.cod.000023cc": [
+      "What would you say, Commander?...",
+      "1 2 3 5 6 7 8 9 10 more"
+    ],
+    "bbb.script3.cod.00002400": [
+      "ridiculous, Commander! A herd of murfalos is enormous..."
+    ],
+    "bbb.script3.cod.0000241c": [
+      "Arf arf! Even my children know there aren't any left..."
+    ],
+    "bbb.script3.cod.00002440": [
+      "..."
+    ],
+    "bbb.script3.cod.00002459": [
+      "obviously... But exactly how many?..."
+    ],
+    "bbb.script3.cod.0000246f": [
+      "careful, Commander, only one possible answer..."
+    ],
+    "bbb.script3.cod.00002485": [
+      "..."
+    ],
+    "bbb.script3.cod.000024a2": [
+      "Exactly how many murfalos are in a herd?",
+      "153 950 1500 9700 35000 75000 150000 600000 one_million more lots"
+    ],
+    "bbb.script3.cod.000024dc": [
+      "too bad, Commander... It was easy, though..."
+    ],
+    "bbb.script3.cod.000024f2": [
+      "..."
+    ],
+    "bbb.script3.cod.0000250b": [
+      "bravo, Commander! How did you know?..."
+    ],
+    "bbb.script3.cod.00002521": [
+      "Thank you, Commander... Now we can hunt... Here are your explosives..."
+    ],
+    "bbb.script3.cod.00002541": [
+      "TELEPORTING EXPLOSIVES TO ARK..."
+    ],
+    "bbb.script3.cod.0000255a": [
+      "let's hurry and free our SINOX friend Bug Deluxe..."
+    ],
+    "bbb.script3.cod.00002574": [
+      "..."
+    ],
+    "bbb.script3.cod.000025a8": [
+      "When your head fails you, your legs have to make up for it..."
+    ],
+    "bbb.script3.cod.000025c6": [
+      "Since you know nothing, you'll have to pay 2 doses of bionium..."
+    ],
+    "bbb.script3.cod.000025e8": [
+      "understood... We'll go get him..."
+    ],
+    "bbb.script3.cod.000025fe": [
+      "..."
+    ],
+    "bbb.script3.cod.0000262a": [
+      "That'll be two doses of bionium for the explosives..."
+    ],
+    "bbb.script3.cod.00002646": [
+      "All right, Commander?",
+      "yes no"
+    ],
+    "bbb.script3.cod.00002663": [
+      "TELEPORTING BIONIUM TO DADDY GLUXX..."
+    ],
+    "bbb.script3.cod.00002683": [
+      "Gulp... BOOM! Here are your explosives..."
+    ],
+    "bbb.script3.cod.0000269b": [
+      "TELEPORTING EXPLOSIVES TO ARK..."
+    ],
+    "bbb.script3.cod.000026b4": [
+      "let's hurry and free Bug Deluxe, he's stuck..."
+    ],
+    "bbb.script3.cod.000026ce": [
+      "..."
+    ],
+    "bbb.script3.cod.00002703": [
+      "We sell you weapons for one credit... Me make weapons but not credit... Hee hee!..."
+    ],
+    "bbb.script3.cod.0000273c": [
+      "Devil's horn! We have no credits, Commander..."
+    ],
+    "bbb.script3.cod.00002765": [
+      "Do you agree to buy weapons from them, Commander?",
+      "accept refuse"
+    ],
+    "bbb.script3.cod.0000278c": [
+      "We'll send him one credit, Commander"
+    ],
+    "bbb.script3.cod.000027a7": [
+      "TELEPORTING WEAPONS TO CRYOBOX"
+    ],
+    "bbb.script3.cod.000027be": [
+      "Thank you... See you soon, Commander..."
+    ],
+    "bbb.script3.cod.000027d2": [
+      "..."
+    ],
+    "bbb.script3.cod.00002803": [
+      "We're at war, Commander. Help us..."
+    ],
+    "bbb.script3.cod.00002819": [
+      "We're losing our Gluxx warriors in whole bunches..."
+    ],
+    "bbb.script3.cod.0000284a": [
+      "No thanks, never between meals..."
+    ],
+    "bbb.script3.cod.00002860": [
+      "Mind you, he didn't say no..."
+    ],
+    "bbb.script3.cod.00002891": [
+      "GULP!"
+    ],
+    "bbb.script3.cod.0000289d": [
+      "right... And now, what happens?..."
+    ],
+    "bbb.script3.cod.000028b9": [
+      "Hic! I said a DOUBLE bionium!"
+    ],
+    "bbb.script3.cod.00002901": [
+      "Bionium... Ahhhh... Ohhhh..."
+    ],
+    "bbb.script3.cod.00002917": [
+      "Bionium... Ahhh..."
+    ],
+    "bbb.script3.cod.00002927": [
+      "Commander, something's happening... The BIONIUM is having an effect..."
+    ],
+    "bbb.script3.cod.0000294b": [
+      "Rhaaaa... OOOO... 010011 01..."
+    ],
+    "bbb.script3.cod.00002961": [
+      "Well, I'll be... 0000 010011... It's genetic code..."
+    ],
+    "bbb.script3.cod.0000297f": [
+      "Commander! The BIONIUM has put him in a state of multiplexed hyperconsciousness..."
+    ],
+    "bbb.script3.cod.000029ab": [
+      "It's extraordinary... We're inside his brain... What a nebula..."
+    ],
+    "bbb.script3.cod.000029d9": [
+      "Now we can create a new race..."
+    ],
+    "bbb.script3.cod.000029f1": [
+      "GA GA 0111010011..."
+    ],
+    "bbb.script3.cod.00002a01": [
+      "YES, go ahead, Mr. Gluxx... Again... Push..."
+    ],
+    "bbb.script3.cod.00002a19": [
+      "GA GA GA GA..."
+    ],
+    "bbb.script3.cod.00002a2b": [
+      "We've got it: GA GA GA GA... Four times GA, piece of cake..."
+    ],
+    "bbb.script3.cod.00002a55": [
+      "FOUR GA... Thank you, Mr. Gluxx... FOUR GA, remember that, Commander..."
+    ],
+    "bbb.script3.cod.00002a77": [
+      "GA... GAGA, easy, like Olga, completely gaga, ha ha!..."
+    ],
+    "bbb.script3.cod.00002a97": [
+      "that Olga! Don't forget to tell her about this, Commander!..."
+    ],
+    "bbb.script3.cod.00002ab9": [
+      "..."
+    ],
+    "bbb.script3.cod.00002ae8": [
+      "Heuarque!!! Heuarque!!!"
+    ],
+    "bbb.script3.cod.00002af8": [
+      "Commander, BIONIUM makes him cough now..."
+    ],
+    "bbb.script3.cod.00002b12": [
+      "Still, it does seem to perk him up!"
+    ],
+    "bbb.script3.cod.00002b61": [
+      "You give strange object, Commander... Atomic, that good to eat..."
+    ],
+    "bbb.script3.cod.00002b81": [
+      "Commander, no way, he'll eat it..."
+    ],
+    "bbb.script3.cod.00002b9b": [
+      "Oh dear, oh dear... I have a bad feeling, Commander..."
+    ],
+    "bbb.script3.cod.00002bdd": [
+      "Atomic... Dangerous, that... Good, that..."
+    ],
+    "bbb.script3.cod.00002bf5": [
+      "You said it, chubby!"
+    ],
+    "bbb.script3.cod.00002c39": [
+      "Atomic power... Oh, nuclear thrills... Glory to you, Commander!!!"
+    ],
+    "bbb.script3.cod.00002c7d": [
+      "Hee! Hee! A picture of an Undulating One..."
+    ],
+    "bbb.script3.cod.00002c91": [
+      "Don't stare at her too much... You'll damage your eyes... Commander, his female won't like this..."
+    ],
+    "bbb.script3.cod.00002ce7": [
+      "The Universe is Me... At last, I'm king"
+    ],
+    "bbb.script3.cod.00002cff": [
+      "Commander, with headgear like that, he'll think he's the chief..."
+    ],
+    "bbb.script3.cod.00002d45": [
+      "A painting of the Great Yolk, that's worth a fortune..."
+    ],
+    "bbb.script3.cod.00002d63": [
+      "Yes, Mr. Gluxx, you're rich..."
+    ],
+    "bbb.script3.cod.00002d7b": [
+      "Such a child, Commander..."
+    ],
+    "bbb.script3.cod.00002da1": [
+      "A mummy... I'll put it in my bedroom..."
+    ],
+    "bbb.script3.cod.00002dbf": [
+      "That's right, Mr. Gluxx... Commander, that will frighten his female"
+    ],
+    "bbb.script3.cod.00002e01": [
+      "Technology, how fascinating..."
+    ],
+    "bbb.script3.cod.00002e32": [
+      "Oh, a guitar... The females will like that..."
+    ],
+    "bbb.script3.cod.00002e4e": [
+      "The guitar even has two necks. Your female will love it!"
+    ],
+    "bbb.script3.cod.00002ea7": [
+      "... You give me a credit for nothing!!!"
+    ],
+    "bbb.script3.cod.00002ec1": [
+      "Commander, you're a complete idiot..."
+    ],
+    "bbb.script3.cod.00002eeb": [
+      "Perfume, it smells good. The females will like it..."
+    ],
+    "bbb.script3.cod.00002f2d": [
+      "A decoder, now we can watch TV..."
+    ],
+    "bbb.script3.cod.00002f47": [
+      "Commander, you might lower the birth rate..."
+    ],
+    "bbb.script3.cod.00002f8b": [
+      "Would you like weapons in exchange, Commander?",
+      "yes no"
+    ],
+    "bbb.script3.cod.00002fb1": [
+      "I suspected as much... Watch out..."
+    ],
+    "bbb.script3.cod.00002fc9": [
+      "It goes SPLAT!!!"
+    ],
+    "bbb.script3.cod.00003005": [
+      "Food, thank you, Commander... A specialty from your home?..."
+    ],
+    "bbb.script3.cod.00003023": [
+      "yes, nice and fat and heavy!..."
+    ],
+    "bbb.script3.cod.00003051": [
+      "Medicine for going soft..."
+    ],
+    "bbb.script3.cod.00003065": [
+      "That will raise the birth rate..."
+    ],
+    "bbb.script3.cod.0000309d": [
+      "Weapons... We don't want your weapons, Commander"
+    ],
+    "bbb.script3.cod.000030bb": [
+      "Commander, they don't want it..."
+    ],
+    "bbb.script3.cod.000030ed": [
+      "If you think I'm going to mutate with your lens..."
+    ],
+    "bbb.script3.cod.0000310f": [
+      "You've got it all wrong..."
+    ],
+    "bbb.script3.cod.00003127": [
+      "I'm too young to mutate..."
+    ],
+    "bbb.script3.cod.0000313d": [
+      "..."
+    ],
+    "bbb.script3.cod.00003165": [
+      "Optical devices, now we can get an eyeful..."
+    ],
+    "bbb.script3.cod.0000317f": [
+      "if he can't mutate, at least he can ogle!..."
+    ],
+    "bbb.script3.cod.000031b8": [
+      "Pure energy..."
+    ],
+    "bbb.script3.cod.000031e2": [
+      "A ring, I'll give it to my female..."
+    ],
+    "bbb.script3.cod.00003220": [
+      "A transmitter, now I can call you..."
+    ],
+    "bbb.script3.cod.00003253": [
+      "Culture..."
+    ],
+    "bbb.script3.cod.00003280": [
+      "Writing, what progress, but we already know how to write, Commander..."
+    ],
+    "bbb.script3.cod.000032ab": [
+      "WHAT!!! A SPACESHIP... THIS IS BRILLIANT... NOW WE CAN MIGRATE..."
+    ],
+    "bbb.script3.cod.000032ec": [
+      "A treaty... That's good for making peace..."
+    ],
+    "bbb.script3.cod.0000332e": [
+      "Ohhh, gifts... Thank you! Thank you!"
+    ],
+    "bbb.script3.cod.00003361": [
+      "Which object would you like to give Daddy, Commander?"
+    ],
+    "bbb.script3.cod.00003379": [
+      "GIVE:",
+      "<inventory_choices>"
+    ],
+    "bbb.script3.cod.00003389": [
+      "..."
+    ],
+    "bbb.script3.cod.000033a9": [
+      "We owe you a debt, Commander..."
+    ],
+    "bbb.script3.cod.000033c1": [
+      "You lent money to the Gluxx..."
+    ],
+    "bbb.script3.cod.000033d9": [
+      "Here's one credit in interest..."
+    ],
+    "bbb.script3.cod.000033f2": [
+      "Commander, Commander, they're giving us cash without us even asking..."
+    ],
+    "bbb.script3.cod.00003412": [
+      "That'll give us some pocket money..."
+    ],
+    "bbb.script3.cod.00003443": [
+      "We owe you an enormous debt, Commander..."
+    ],
+    "bbb.script3.cod.0000345d": [
+      "All that money you lent us..."
+    ],
+    "bbb.script3.cod.00003477": [
+      "They'll hit us up for cash again, you'll see..."
+    ],
+    "bbb.script3.cod.00003493": [
+      "Not at all... Here's 5 credits, plus 5 in interest... Thanks again..."
+    ],
+    "bbb.script3.cod.000034be": [
+      "WHAT!!! COMMANDER!!! WE'RE RICH!!!"
+    ],
+    "bbb.script3.cod.000034d6": [
+      "Those Gluxx... I always said they had nice faces..."
+    ],
+    "bbb.script3.cod.00003516": [
+      "..."
+    ],
+    "bbb.script3.cod.00003539": [
+      "..."
+    ],
+    "bbb.script3.cod.00003560": [
+      "We need credit to start economy on planet..."
+    ],
+    "bbb.script3.cod.0000357e": [
+      "Economics... Already?!?... That big soft lump with the huge boobs is evolving flat out..."
+    ],
+    "bbb.script3.cod.000035aa": [
+      "Evolving, sure... Mostly he wants to hit us up for cash!..."
+    ],
+    "bbb.script3.cod.000035d0": [
+      "You lend credit to Gluxx tribe..."
+    ],
+    "bbb.script3.cod.000035e6": [
+      "No credit for boiled shank..."
+    ],
+    "bbb.script3.cod.000035fe": [
+      "Come on! You lend, you rich, one day wheel turns, me rich and me pay you back..."
+    ],
+    "bbb.script3.cod.00003631": [
+      "Actually, we have a problem, Mr. Gluxx... We're broke, aren't we, Commander???"
+    ],
+    "bbb.script3.cod.0000365e": [
+      "Commander, what do we do? Shall we lend him that credit?",
+      "lend refuse"
+    ],
+    "bbb.script3.cod.00003687": [
+      "You're too kind, Commander... We'll send him one credit... Just one..."
+    ],
+    "bbb.script3.cod.000036b4": [
+      "Oh, thank you, Commander, we'll never forget... You're good, you're generous, you're..."
+    ],
+    "bbb.script3.cod.000036d8": [
+      "Tut tut tut... OK! All right, all right, Mr. Gluxx, don't lay it on so thick..."
+    ],
+    "bbb.script3.cod.00003700": [
+      "..."
+    ],
+    "bbb.script3.cod.00003720": [
+      "You're a real skinflint, Commander. You'll pay for it, you'll see!..."
+    ],
+    "bbb.script3.cod.00003740": [
+      "In fact, here, I'll give them everything we have, to teach you generosity!"
+    ],
+    "bbb.script3.cod.00003766": [
+      "OK! I'm joking... I gave away everything except one credit, Commander..."
+    ],
+    "bbb.script3.cod.000037a7": [
+      "We could use another credit, please, Commander..."
+    ],
+    "bbb.script3.cod.000037c5": [
+      "Those gloomy faces are going too far! We're happy to be generous..."
+    ],
+    "bbb.script3.cod.000037e9": [
+      "But there are limits... We're not as rich as Yolk!"
+    ],
+    "bbb.script3.cod.0000380b": [
+      "My entire tribe joins me in begging you..."
+    ],
+    "bbb.script3.cod.00003829": [
+      "... to grant us this loan, necessary to balance our..."
+    ],
+    "bbb.script3.cod.00003847": [
+      "... budgetary..."
+    ],
+    "bbb.script3.cod.00003855": [
+      "He's stringing us along, Commander. What do we do?",
+      "lend refuse"
+    ],
+    "bbb.script3.cod.0000387c": [
+      "TELEPORTING CREDIT TO DADDY COOL..."
+    ],
+    "bbb.script3.cod.00003895": [
+      "Thank you very much, Commander. Yolk will repay you!"
+    ],
+    "bbb.script3.cod.000038ab": [
+      "Yeah, right... We're ruined, Commander... Zero credits..."
+    ],
+    "bbb.script3.cod.000038c9": [
+      "..."
+    ],
+    "bbb.script3.cod.000038ec": [
+      "You're quite right, Commander. We haven't got much left..."
+    ],
+    "bbb.script3.cod.0000390c": [
+      "..."
+    ],
+    "bbb.script3.cod.00003921": [
+      "Thank you for visiting, Commander. You'll always be welcome..."
+    ],
+    "bbb.script3.cod.0000393f": [
+      "..."
+    ],
+    "bbb.script3.cod.0000395e": [
+      "Krouik..."
+    ],
+    "bbb.script3.cod.0000396a": [
+      "Grandpa Gluxx here..."
+    ],
+    "bbb.script3.cod.0000397a": [
+      "ah... The whole family... Got a discount on phone calls or what?..."
+    ],
+    "bbb.script3.cod.000039a0": [
+      "Mamy asked me to tell you that the GLUXX, meeting in council..."
+    ],
+    "bbb.script3.cod.000039c2": [
+      "... Have decided to stop working... We want a transfer to a real-time 3D game..."
+    ],
+    "bbb.script3.cod.000039f0": [
+      "demands!..."
+    ],
+    "bbb.script3.cod.00003a00": [
+      "Otherwise we're going on strike!..."
+    ],
+    "bbb.script3.cod.00003a14": [
+      "Commander, do you agree to satisfy their demands?...",
+      "yes no"
+    ],
+    "bbb.script3.cod.00003a37": [
+      "Thanks, Commander! That's nice, but we're still going on strike..."
+    ],
+    "bbb.script3.cod.00003a59": [
+      "but..."
+    ],
+    "bbb.script3.cod.00003a65": [
+      "No buts!... We're exhausted. It'll give us a holiday!..."
+    ],
+    "bbb.script3.cod.00003a8b": [
+      "..."
+    ],
+    "bbb.script3.cod.00003a9d": [
+      "Exploiter! Gluxx-trap! Bug!..."
+    ],
+    "bbb.script3.cod.00003ab3": [
+      "a little elegance, my good fellow!..."
+    ],
+    "bbb.script3.cod.00003ac9": [
+      "Elegance! You can shove your elegance up your Gluxx!..."
+    ],
+    "bbb.script3.cod.00003aed": [
+      "oh!..."
+    ],
+    "bbb.script3.cod.00003afb": [
+      "..."
+    ],
+    "bbb.script3.cod.00003b06": [
+      "RIGHT THEN, WE'RE ON STRIKE!..."
+    ],
+    "bbb.script3.cod.00003b1c": [
+      "what?..."
+    ],
+    "bbb.script3.cod.00003b2a": [
+      "Don't ask me, I'm on strike..."
+    ],
+    "bbb.script3.cod.00003b44": [
+      "Krouik..."
+    ],
+    "bbb.script3.cod.00003b50": [
+      "Commander, there's only one solution left to avoid the worst..."
+    ],
+    "bbb.script3.cod.00003b6e": [
+      "we must offer them money..."
+    ],
+    "bbb.script3.cod.00003b84": [
+      "..."
+    ],
+    "bbb.script3.cod.00003baf": [
+      "Pap... Pap... Pap..."
+    ],
+    "bbb.script3.cod.00003bc3": [
+      "PAP PAP... PAPAP!..."
+    ],
+    "bbb.script3.cod.00003bd5": [
+      "It swings, doesn't it?..."
+    ],
+    "bbb.script3.cod.00003be7": [
+      "Still, it's no Big Bang!..."
+    ],
+    "bbb.script3.cod.00003c01": [
+      "..."
+    ],
+    "bbb.script3.cod.00003c32": [
+      "GRANDPA'S GOING ON STRIKE!..."
+    ],
+    "bbb.script3.cod.00003c48": [
+      "..."
+    ],
+    "bbb.script3.cod.00003c67": [
+      "hello, Grandpa, we've come to renegotiate your contract..."
+    ],
+    "bbb.script3.cod.00003c7f": [
+      "Am I being transferred to ALIENS?..."
+    ],
+    "bbb.script3.cod.00003c95": [
+      "No... We're giving you a raise..."
+    ],
+    "bbb.script3.cod.00003ca7": [
+      "Commander, do you agree to give him one credit?...",
+      "ok never"
+    ],
+    "bbb.script3.cod.00003cd2": [
+      "GRANDPA GLUXX PAY RAISE..."
+    ],
+    "bbb.script3.cod.00003cf0": [
+      "Thank you! How generous!..."
+    ],
+    "bbb.script3.cod.00003d04": [
+      "And such spontaneity!..."
+    ],
+    "bbb.script3.cod.00003d18": [
+      "Basically, you're trying to buy me!..."
+    ],
+    "bbb.script3.cod.00003d30": [
+      "oh dear, oh dear! What a blunder!..."
+    ],
+    "bbb.script3.cod.00003d4a": [
+      "Now, old friend, you're in for it!..."
+    ],
+    "bbb.script3.cod.00003d64": [
+      "GENERAL STRIKE!"
+    ],
+    "bbb.script3.cod.00003d81": [
+      "..."
+    ],
+    "bbb.script3.cod.00003dab": [
+      "You starve us! Tormentor of GLUXX children! You asked for it!..."
+    ],
+    "bbb.script3.cod.00003dc9": [
+      "GENERAL STRIKE!..."
+    ],
+    "bbb.script3.cod.00003de8": [
+      "..."
+    ],
+    "bbb.script3.cod.00003e0f": [
+      "Grandpa Strike..."
+    ],
+    "bbb.script3.cod.00003e1d": [
+      "demands?..."
+    ],
+    "bbb.script3.cod.00003e2d": [
+      "Well, no... Just Grandpa Strike..."
+    ],
+    "bbb.script3.cod.00003e43": [
+      "..."
+    ],
+    "bbb.script3.cod.00003e5b": [
+      "Me GRANDPA GLUXX... Me new colony chief..."
+    ],
+    "bbb.script3.cod.00003e77": [
+      "Hello, Commander... We've just immigrated to this planet..."
+    ],
+    "bbb.script3.cod.00003e93": [
+      "We <state:3278> Gluxx on this planet..."
+    ],
+    "bbb.script3.cod.00003eb4": [
+      "hello, Professor... We're in a bit of a fix..."
+    ],
+    "bbb.script3.cod.00003ecc": [
+      "What's happening?... Stick out your tongue..."
+    ],
+    "bbb.script3.cod.00003eec": [
+      "Bleaargh..."
+    ],
+    "bbb.script3.cod.00003f05": [
+      "Whoa! She's loaded!..."
+    ],
+    "bbb.script3.cod.00003f1b": [
+      "we're not the problem... It's Ben Zen..."
+    ],
+    "bbb.script3.cod.00003f41": [
+      "We make wonderful medicine to heal..."
+    ],
+    "bbb.script3.cod.00003f62": [
+      "well, that's handy, then..."
+    ],
+    "bbb.script3.cod.00003f83": [
+      "so, Gluxxenberg..."
+    ],
+    "bbb.script3.cod.00003f93": [
+      "making progress..."
+    ],
+    "bbb.script3.cod.00003faf": [
+      "research against concerts?..."
+    ],
+    "bbb.script3.cod.00003fd1": [
+      "But what concert?..."
+    ],
+    "bbb.script3.cod.00003fe1": [
+      "forget it!..."
+    ],
+    "bbb.script3.cod.00003ffa": [
+      "does it cure..."
+    ],
+    "bbb.script3.cod.0000400c": [
+      "headaches?..."
+    ],
+    "bbb.script3.cod.0000402b": [
+      "Obviously... It cures everything!..."
+    ],
+    "bbb.script3.cod.0000403f": [
+      "no, because... Well, I don't feel very well..."
+    ],
+    "bbb.script3.cod.0000405f": [
+      "Show me your tongue..."
+    ],
+    "bbb.script3.cod.00004071": [
+      "Na na na na ner ner!..."
+    ],
+    "bbb.script3.cod.00004096": [
+      "She's a bit loaded!..."
+    ],
+    "bbb.script3.cod.000040b7": [
+      "the screen hurts the Commander's eyes, Doctor..."
+    ],
+    "bbb.script3.cod.000040d3": [
+      "I'll examine you..."
+    ],
+    "bbb.script3.cod.000040e9": [
+      "From deep inside the eye..."
+    ],
+    "bbb.script3.cod.0000410a": [
+      "that pirate again!..."
+    ],
+    "bbb.script3.cod.00004127": [
+      "sore eyes, Doctor..."
+    ],
+    "bbb.script3.cod.0000413b": [
+      "do you think it's..."
+    ],
+    "bbb.script3.cod.0000414d": [
+      "concerts..."
+    ],
+    "bbb.script3.cod.00004169": [
+      "the eye?..."
+    ],
+    "bbb.script3.cod.00004185": [
+      "Ah! I saw Mr. BOB's eye!..."
+    ],
+    "bbb.script3.cod.000041ac": [
+      "but... It's the famous Professor Gluxxenberg!..."
+    ],
+    "bbb.script3.cod.000041c6": [
+      "The very same... Pleased to meet you..."
+    ],
+    "bbb.script3.cod.000041d6": [
+      "We sell you medicine for credit..."
+    ],
+    "bbb.script3.cod.000041ec": [
+      "what's the money for?..."
+    ],
+    "bbb.script3.cod.00004202": [
+      "is it for research against concerts?..."
+    ],
+    "bbb.script3.cod.0000422a": [
+      "What?..."
+    ],
+    "bbb.script3.cod.00004236": [
+      "forget it..."
+    ],
+    "bbb.script3.cod.0000424f": [
+      "Ouch!!! We're out of credits, Commander..."
+    ],
+    "bbb.script3.cod.00004274": [
+      "Do you agree to buy medicine from them, Commander?",
+      "accept refuse"
+    ],
+    "bbb.script3.cod.0000429b": [
+      "We'll send him one credit, Commander"
+    ],
+    "bbb.script3.cod.000042bd": [
+      "TELEPORTING MEDICINE TO CRYOBOX"
+    ],
+    "bbb.script3.cod.000042e4": [
+      "Here! A little Gluxxronzan for the road!..."
+    ],
+    "bbb.script3.cod.0000431b": [
+      "Me at war, Commander, you help us..."
+    ],
+    "bbb.script3.cod.00004351": [
+      "Bionium... Ahhhh... Ohhhh..."
+    ],
+    "bbb.script3.cod.00004367": [
+      "Commander, something's happening... The BIONIUM is having an effect..."
+    ],
+    "bbb.script3.cod.0000438b": [
+      "Rhaaaa... OOOO... 010011 01..."
+    ],
+    "bbb.script3.cod.0000439f": [
+      "Well, I'll be... 0000 010011... It's genetic code..."
+    ],
+    "bbb.script3.cod.000043bd": [
+      "Commander! The BIONIUM has put him in a state of multiplexed hyperconsciousness... He's giving us a genetic code..."
+    ],
+    "bbb.script3.cod.000043f7": [
+      "It's extraordinary..."
+    ],
+    "bbb.script3.cod.00004405": [
+      "GA GA 0111010011..."
+    ],
+    "bbb.script3.cod.00004415": [
+      "YES, go ahead, Mr. Gluxx..."
+    ],
+    "bbb.script3.cod.00004427": [
+      "GA GA GA GA..."
+    ],
+    "bbb.script3.cod.00004439": [
+      "We've got it: GA GA GA GA... Four times GA, easy-peasy..."
+    ],
+    "bbb.script3.cod.00004461": [
+      "like Olga! Completely gaga!..."
+    ],
+    "bbb.script3.cod.00004477": [
+      "FOUR GA... Thank you, Mr. Gluxx... FOUR GA, remember that, Commander..."
+    ],
+    "bbb.script3.cod.00004499": [
+      "GA... That's better..."
+    ],
+    "bbb.script3.cod.000044c8": [
+      "Heuarque!!! Heuarque!!!"
+    ],
+    "bbb.script3.cod.000044d8": [
+      "Commander, BIONIUM makes them cough now..."
+    ],
+    "bbb.script3.cod.0000450c": [
+      "You give strange object, stranger... Atomic be good to eat..."
+    ],
+    "bbb.script3.cod.0000452c": [
+      "Commander, no way, he'll eat it..."
+    ],
+    "bbb.script3.cod.00004565": [
+      "Atomic devices... Oh! Dangerous..."
+    ],
+    "bbb.script3.cod.000045af": [
+      "Atomic devices, what extraordinary energy... Thank you!!!"
+    ],
+    "bbb.script3.cod.000045f2": [
+      "Hee! Hee! A picture of an Undulating One..."
+    ],
+    "bbb.script3.cod.0000460a": [
+      "Don't stare at her too much... You'll damage your eyes... Commander, his female won't like this..."
+    ],
+    "bbb.script3.cod.00004667": [
+      "A crown, I'll be king..."
+    ],
+    "bbb.script3.cod.0000467d": [
+      "Commander, this crown will make him want to be even more of a chief..."
+    ],
+    "bbb.script3.cod.000046c1": [
+      "A painting of the Great Yolk, that's worth a fortune..."
+    ],
+    "bbb.script3.cod.000046df": [
+      "Yes, Mr. Gluxx, you're rich..."
+    ],
+    "bbb.script3.cod.000046f7": [
+      "Such a child, Commander..."
+    ],
+    "bbb.script3.cod.00004724": [
+      "A mummy... I'll put it in my bedroom..."
+    ],
+    "bbb.script3.cod.00004742": [
+      "That's right, Mr. Gluxx... Commander, that will frighten his female"
+    ],
+    "bbb.script3.cod.00004784": [
+      "Technology, how fascinating..."
+    ],
+    "bbb.script3.cod.000047c3": [
+      "Oh, a guitar... The females will like that..."
+    ],
+    "bbb.script3.cod.0000480a": [
+      "Money... You give me a credit for nothing!!!"
+    ],
+    "bbb.script3.cod.00004828": [
+      "Commander, you've completely lost your bearings..."
+    ],
+    "bbb.script3.cod.00004859": [
+      "Perfume, it smells good. The females will like it..."
+    ],
+    "bbb.script3.cod.0000489b": [
+      "A decoder, now we can watch TV..."
+    ],
+    "bbb.script3.cod.000048b5": [
+      "Commander, you might lower the birth rate..."
+    ],
+    "bbb.script3.cod.000048f3": [
+      "Food, thank you, stranger..."
+    ],
+    "bbb.script3.cod.0000491d": [
+      "Medicine, no thanks..."
+    ],
+    "bbb.script3.cod.0000492f": [
+      "Commander, he doesn't want it..."
+    ],
+    "bbb.script3.cod.00004957": [
+      "Weapons... Thank you, Commander"
+    ],
+    "bbb.script3.cod.00004993": [
+      "Whew! I... That... Well, I'll be..."
+    ],
+    "bbb.script3.cod.000049ad": [
+      "It's having an effect..."
+    ],
+    "bbb.script3.cod.000049c1": [
+      "It makes me feel... very strange..."
+    ],
+    "bbb.script3.cod.000049d7": [
+      "Arg... Argluxx... Arglo... gluk... Von... Sm... Aie... lll..."
+    ],
+    "bbb.script3.cod.000049ff": [
+      "whoa! What's happening?..."
+    ],
+    "bbb.script3.cod.00004a15": [
+      "Commander... sm... gl..."
+    ],
+    "bbb.script3.cod.00004a29": [
+      "I'm multiplexing... I'm mutating..."
+    ],
+    "bbb.script3.cod.00004a4b": [
+      "..."
+    ],
+    "bbb.script3.cod.00004a73": [
+      "Optical devices, now we can study the sky..."
+    ],
+    "bbb.script3.cod.00004aaa": [
+      "Pure energy..."
+    ],
+    "bbb.script3.cod.00004ad4": [
+      "A ring, I'll give it to my female..."
+    ],
+    "bbb.script3.cod.00004b12": [
+      "A transmitter, now I can spy..."
+    ],
+    "bbb.script3.cod.00004b3e": [
+      "Culture..."
+    ],
+    "bbb.script3.cod.00004b64": [
+      "Writing, what progress, but we already know how to write, Commander..."
+    ],
+    "bbb.script3.cod.00004b96": [
+      "WHAT!!! A SPACESHIP..."
+    ],
+    "bbb.script3.cod.00004bc7": [
+      "A treaty... That's good for making peace..."
+    ],
+    "bbb.script3.cod.00004c09": [
+      "Ohhh! Gifts... Thank you! Thank you!"
+    ],
+    "bbb.script3.cod.00004c37": [
+      "Which object would you like to give Grandpa, Commander?"
+    ],
+    "bbb.script3.cod.00004c4d": [
+      "GIVE:",
+      "<inventory_choices>"
+    ],
+    "bbb.script3.cod.00004c5d": [
+      "..."
+    ],
+    "bbb.script3.cod.00004c84": [
+      "You lend credit to Gluxx tribe..."
+    ],
+    "bbb.script3.cod.00004ca3": [
+      "We have no credits, Mr. Gluxx..."
+    ],
+    "bbb.script3.cod.00004cc6": [
+      "Commander, shall we lend him a credit?",
+      "lend refuse"
+    ],
+    "bbb.script3.cod.00004ce9": [
+      "We'll send him one credit, Commander..."
+    ],
+    "bbb.script3.cod.00004d0d": [
+      "Oh, thank you, Commander, we'll remember this..."
+    ],
+    "bbb.script3.cod.00004d43": [
+      "As you wish..."
+    ],
+    "bbb.script3.cod.00004d6d": [
+      "We owe you a debt, Commander..."
+    ],
+    "bbb.script3.cod.00004d85": [
+      "You lent CREDITS to the Gluxx..."
+    ],
+    "bbb.script3.cod.00004d9d": [
+      "Here's one credit in interest..."
+    ],
+    "bbb.script3.cod.00004daf": [
+      "Commander, Commander, they're giving us a credit without us even asking..."
+    ],
+    "bbb.script3.cod.00004ddd": [
+      "Thanks for visiting, Commander. Come back whenever you like..."
+    ],
+    "bbb.script3.cod.00004df9": [
+      "..."
+    ],
+    "bbb.script3.cod.00004e18": [
+      "Krouik..."
+    ],
+    "bbb.script3.cod.00004e24": [
+      "Mamy Gluxx here... So you're hanging up on my little one?..."
+    ],
+    "bbb.script3.cod.00004e4c": [
+      "it's..."
+    ],
+    "bbb.script3.cod.00004e58": [
+      "No excuses!..."
+    ],
+    "bbb.script3.cod.00004e68": [
+      "You treated my little one like a Migrax! After everything he's done for you!..."
+    ],
+    "bbb.script3.cod.00004e96": [
+      "but!..."
+    ],
+    "bbb.script3.cod.00004ea4": [
+      "No buts! He worked himself to death carrying out BOB's plan!..."
+    ],
+    "bbb.script3.cod.00004ecc": [
+      "He learned to speak! To migrate! To use the telephone!... All for your filthy BOB!..."
+    ],
+    "bbb.script3.cod.00004efe": [
+      "calm down, Mamy! You'll make yourself ill!..."
+    ],
+    "bbb.script3.cod.00004f1a": [
+      "Slave driver! My little one's right! Your game's all been seen before!..."
+    ],
+    "bbb.script3.cod.00004f40": [
+      "Old technology! Zero humor! Barely interactive!..."
+    ],
+    "bbb.script3.cod.00004f5e": [
+      "PATHETIC SCRIPT!..."
+    ],
+    "bbb.script3.cod.00004f6e": [
+      "Oh dear! Not happy!..."
+    ],
+    "bbb.script3.cod.00004f84": [
+      "NO! NOT HAPPY! Krouik!..."
+    ],
+    "bbb.script3.cod.00004f9c": [
+      "hung up!..."
+    ],
+    "bbb.script3.cod.00004faa": [
+      "..."
+    ],
+    "bbb.script3.cod.00004fd5": [
+      "Aaaah... Daaaarling..."
+    ],
+    "bbb.script3.cod.00004fe5": [
+      "My sweetheart..."
+    ],
+    "bbb.script3.cod.00004ff3": [
+      "EXPLOOOOOOOODE!..."
+    ],
+    "bbb.script3.cod.0000500e": [
+      "Commander! She's going to die of pleasure..."
+    ],
+    "bbb.script3.cod.00005026": [
+      "if she stays aboard the Ark..."
+    ],
+    "bbb.script3.cod.0000503e": [
+      "she's too old for this... It'll kill her!..."
+    ],
+    "bbb.script3.cod.0000505e": [
+      "Oh yes, Commander, kill me... Make me..."
+    ],
+    "bbb.script3.cod.00005078": [
+      "Jump!..."
+    ],
+    "bbb.script3.cod.0000508b": [
+      "we absolutely must send her home..."
+    ],
+    "bbb.script3.cod.000050a3": [
+      "otherwise you'll hear from Mr. Bob..."
+    ],
+    "bbb.script3.cod.000050bd": [
+      "shall we send her back into cyberspace, Commander?",
+      "send_back keep_here"
+    ],
+    "bbb.script3.cod.000050e6": [
+      "I'll send him to a planet I've just detected, Commander..."
+    ],
+    "bbb.script3.cod.00005108": [
+      "Oh no! Not that!..."
+    ],
+    "bbb.script3.cod.0000511e": [
+      "TELEPORTING MAMY TO CYBORG!..."
+    ],
+    "bbb.script3.cod.00005132": [
+      "..."
+    ],
+    "bbb.script3.cod.00005165": [
+      "as you wish, Commander..."
+    ],
+    "bbb.script3.cod.00005179": [
+      "but don't say I didn't warn you!..."
+    ],
+    "bbb.script3.cod.0000519b": [
+      "My love! Thank you! We'll grow old together!..."
+    ],
+    "bbb.script3.cod.000051b7": [
+      "yeah, right! Especially you, old hag!..."
+    ],
+    "bbb.script3.cod.000051d5": [
+      "did you see, Commander?... She's got five washcloths..."
+    ],
+    "bbb.script3.cod.000051f9": [
+      "We'll die together, my love!..."
+    ],
+    "bbb.script3.cod.0000520f": [
+      "Together!..."
+    ],
+    "bbb.script3.cod.0000522c": [
+      "Goodbye, Commander!..."
+    ],
+    "bbb.script3.cod.0000523a": [
+      "I can hear Mr. Bob's fury from here!..."
+    ],
+    "bbb.script3.cod.00005263": [
+      "Well, kid... You didn't know..."
+    ],
+    "bbb.script3.cod.00005286": [
+      "You didn't know that relations between..."
+    ],
+    "bbb.script3.cod.000052ab": [
+      "The screenwriter and his characters must stay..."
+    ],
+    "bbb.script3.cod.000052ce": [
+      "Purely platonic?..."
+    ],
+    "bbb.script3.cod.000052ed": [
+      "..."
+    ],
+    "bbb.script3.cod.00005319": [
+      "Mamma mia!..."
+    ],
+    "bbb.script3.cod.00005327": [
+      "I'm too old for these concerts!..."
+    ],
+    "bbb.script3.cod.0000533f": [
+      "At a pinch, if it were just to see..."
+    ],
+    "bbb.script3.cod.00005359": [
+      "The Big BANG!..."
+    ],
+    "bbb.script3.cod.00005375": [
+      "..."
+    ],
+    "bbb.script3.cod.000053a6": [
+      "MAMY'S ON STRIKE!..."
+    ],
+    "bbb.script3.cod.000053b8": [
+      "..."
+    ],
+    "bbb.script3.cod.000053d7": [
+      "good evening, Mamy..."
+    ],
+    "bbb.script3.cod.000053e5": [
+      "Have you come to apologize?..."
+    ],
+    "bbb.script3.cod.000053fd": [
+      "yes, Mamy... And to offer you a raise..."
+    ],
+    "bbb.script3.cod.00005417": [
+      "An... increase in life expectancy?..."
+    ],
+    "bbb.script3.cod.0000542f": [
+      "ah... no... For that, you need to see our superior..."
+    ],
+    "bbb.script3.cod.0000544d": [
+      "Bring him to me right away..."
+    ],
+    "bbb.script3.cod.00005461": [
+      "the thing is... Actually... Mr. Bob is no more..."
+    ],
+    "bbb.script3.cod.0000547d": [
+      "... no longer what?..."
+    ],
+    "bbb.script3.cod.00005491": [
+      "is no more..."
+    ],
+    "bbb.script3.cod.0000549f": [
+      "... no more what? Get on with it!..."
+    ],
+    "bbb.script3.cod.000054b5": [
+      "well, it's over! He is no more!..."
+    ],
+    "bbb.script3.cod.000054cf": [
+      "Sorry, I didn't know..."
+    ],
+    "bbb.script3.cod.000054e3": [
+      "we were talking about a pay raise..."
+    ],
+    "bbb.script3.cod.000054f9": [
+      "Oh! Ask the others about that, I'm not interested!..."
+    ],
+    "bbb.script3.cod.0000551d": [
+      "Commander, shall we insist or not?...",
+      "no insist"
+    ],
+    "bbb.script3.cod.00005540": [
+      "all right... Bye-bye!..."
+    ],
+    "bbb.script3.cod.00005554": [
+      "..."
+    ],
+    "bbb.script3.cod.00005577": [
+      "allow me to insist..."
+    ],
+    "bbb.script3.cod.00005585": [
+      "How exasperating! You're so dense! Money means nothing to me..."
+    ],
+    "bbb.script3.cod.000055a9": [
+      "You've gone too far, Commander... Too bad for you..."
+    ],
+    "bbb.script3.cod.000055c9": [
+      "GENERAL STRIKE!..."
+    ],
+    "bbb.script3.cod.000055e8": [
+      "..."
+    ],
+    "bbb.script3.cod.00005616": [
+      "Mamy Strike..."
+    ],
+    "bbb.script3.cod.00005624": [
+      "even you, Mamy?..."
+    ],
+    "bbb.script3.cod.00005636": [
+      "Oh, what a holiday for me! I don't even know who Mr. BOB is..."
+    ],
+    "bbb.script3.cod.0000565e": [
+      "get some rest, Mamy..."
+    ],
+    "bbb.script3.cod.00005670": [
+      "..."
+    ],
+    "bbb.script3.cod.00005688": [
+      "MAMY GLUXX here... Me mother of tribe..."
+    ],
+    "bbb.script3.cod.000056a2": [
+      "but... Commander! It's Madame Five!..."
+    ],
+    "bbb.script3.cod.000056bc": [
+      "We've just immigrated to this planet..."
+    ],
+    "bbb.script3.cod.000056dd": [
+      "Well, Commander... Out for a stroll?..."
+    ],
+    "bbb.script3.cod.000056f5": [
+      "out for a stroll, Commander?...",
+      "stroll no_stroll"
+    ],
+    "bbb.script3.cod.00005718": [
+      "That's good... Keep going..."
+    ],
+    "bbb.script3.cod.00005733": [
+      "Commander darling! You came just to see me!..."
+    ],
+    "bbb.script3.cod.00005751": [
+      "Commander, you've got a ticket!..."
+    ],
+    "bbb.script3.cod.00005769": [
+      "TELEPORTING TICKET TO CRYOBOX..."
+    ],
+    "bbb.script3.cod.0000578e": [
+      "Commander... I have a great recipe..."
+    ],
+    "bbb.script3.cod.000057a4": [
+      "Now then... To make a good boiled shank..."
+    ],
+    "bbb.script3.cod.000057c0": [
+      "You need four murfalos..."
+    ],
+    "bbb.script3.cod.000057d2": [
+      "Good... And above all... NICE AND FRESH!... Free-range!..."
+    ],
+    "bbb.script3.cod.00005809": [
+      "And even better..."
+    ],
+    "bbb.script3.cod.00005819": [
+      "That you kill yourself..."
+    ],
+    "bbb.script3.cod.00005836": [
+      "Not like that canned crap!..."
+    ],
+    "bbb.script3.cod.0000585d": [
+      "Uh... I meant..."
+    ],
+    "bbb.script3.cod.00005871": [
+      "Not like that canned crap!..."
+    ],
+    "bbb.script3.cod.00005890": [
+      "Hey! Are you interested in my recipe or not?..."
+    ],
+    "bbb.script3.cod.000058ae": [
+      "do you like cooking, Commander?...",
+      "shank no_shank"
+    ],
+    "bbb.script3.cod.000058d3": [
+      "Right... So..."
+    ],
+    "bbb.script3.cod.000058e3": [
+      "after killing the murfalos..."
+    ],
+    "bbb.script3.cod.000058fe": [
+      "You must mince them very, very finely..."
+    ],
+    "bbb.script3.cod.0000592a": [
+      "Then cook in Sinox juice..."
+    ],
+    "bbb.script3.cod.00005944": [
+      "For the time recommended by your regular butcher robot..."
+    ],
+    "bbb.script3.cod.0000596d": [
+      "And then... Well, then..."
+    ],
+    "bbb.script3.cod.00005983": [
+      "All that's left is to enjoy it! Yum yum!..."
+    ],
+    "bbb.script3.cod.000059ac": [
+      "..."
+    ],
+    "bbb.script3.cod.000059bf": [
+      "You don't know what you're missing, Commander..."
+    ],
+    "bbb.script3.cod.000059db": [
+      "too bad, Commander..."
+    ],
+    "bbb.script3.cod.000059eb": [
+      "It smelled awfully good..."
+    ],
+    "bbb.script3.cod.00005a0b": [
+      "..."
+    ],
+    "bbb.script3.cod.00005a21": [
+      "Say, darling..."
+    ],
+    "bbb.script3.cod.00005a33": [
+      "Am I dreaming, or are you visiting me more and more often?..."
+    ],
+    "bbb.script3.cod.00005a57": [
+      "Have you got a crush on me, Commander?..."
+    ],
+    "bbb.script3.cod.00005a71": [
+      "have you got a crush on her, Commander?...",
+      "crush no_crush"
+    ],
+    "bbb.script3.cod.00005a98": [
+      "Darling! Commander darling! Take me with you on the ARK!..."
+    ],
+    "bbb.script3.cod.00005ab6": [
+      "Make me see stars!..."
+    ],
+    "bbb.script3.cod.00005ad6": [
+      "TELEPORTING MAMY TO CRYOBOX..."
+    ],
+    "bbb.script3.cod.00005ae8": [
+      "..."
+    ],
+    "bbb.script3.cod.00005b03": [
+      "Too bad, Commander... We could have done so much together..."
+    ],
+    "bbb.script3.cod.00005b23": [
+      "Too bad, Commander... It could have been..."
+    ],
+    "bbb.script3.cod.00005b39": [
+      "really far out..."
+    ],
+    "bbb.script3.cod.00005b54": [
+      "We be <state:3204> Gluxx on this planet..."
+    ],
+    "bbb.script3.cod.00005b77": [
+      "Me at war, Commander, you help us..."
+    ],
+    "bbb.script3.cod.00005b9b": [
+      "Me make perfume with murfalo musk... You buy perfume..."
+    ],
+    "bbb.script3.cod.00005bbb": [
+      "For one little credit..."
+    ],
+    "bbb.script3.cod.00005bd4": [
+      "Ugh!!! Commander, how awful..."
+    ],
+    "bbb.script3.cod.00005bf1": [
+      "We're out of credits, Commander..."
+    ],
+    "bbb.script3.cod.00005c12": [
+      "Do you agree to buy his perfume, Commander?",
+      "accept refuse"
+    ],
+    "bbb.script3.cod.00005c39": [
+      "We'll send him one credit, Commander"
+    ],
+    "bbb.script3.cod.00005c5b": [
+      "TELEPORTING PERFUME TO CRYOBOX..."
+    ],
+    "bbb.script3.cod.00005c9d": [
+      "Bionium... Ahhhh... Ohhhh..."
+    ],
+    "bbb.script3.cod.00005cb3": [
+      "Bionium... Ahhh..."
+    ],
+    "bbb.script3.cod.00005cc3": [
+      "Commander, something's happening... The BIONIUM is having an effect..."
+    ],
+    "bbb.script3.cod.00005ce7": [
+      "Rhaaaa... OOOO... 010011 01..."
+    ],
+    "bbb.script3.cod.00005cfd": [
+      "Well, I'll be... 0000 010011... It's genetic code..."
+    ],
+    "bbb.script3.cod.00005d1b": [
+      "Commander! The BIONIUM has put her in a state of multiplexed hyperconsciousness... She's giving us a genetic code..."
+    ],
+    "bbb.script3.cod.00005d53": [
+      "It's extraordinary..."
+    ],
+    "bbb.script3.cod.00005d61": [
+      "GA GA 0111010011..."
+    ],
+    "bbb.script3.cod.00005d71": [
+      "YES, go ahead, Mrs. Gluxx..."
+    ],
+    "bbb.script3.cod.00005d83": [
+      "GA GA GA GA..."
+    ],
+    "bbb.script3.cod.00005d95": [
+      "We've got it: GA GA GA GA... Four times GA, easy-peasy..."
+    ],
+    "bbb.script3.cod.00005dbd": [
+      "like Olga, completely gaga!..."
+    ],
+    "bbb.script3.cod.00005dd3": [
+      "FOUR GA... Thank you, Mrs. Gluxx... FOUR GA, remember that, Commander..."
+    ],
+    "bbb.script3.cod.00005df5": [
+      "GA... That's better..."
+    ],
+    "bbb.script3.cod.00005e20": [
+      "Heuarque!!! Heuarque!!!"
+    ],
+    "bbb.script3.cod.00005e30": [
+      "Commander, BIONIUM makes her cough now..."
+    ],
+    "bbb.script3.cod.00005e64": [
+      "You give strange object, stranger... Atomic be good to eat..."
+    ],
+    "bbb.script3.cod.00005e84": [
+      "Commander, no way, she'll eat it..."
+    ],
+    "bbb.script3.cod.00005ebd": [
+      "Atomic devices... Oh! Dangerous..."
+    ],
+    "bbb.script3.cod.00005f07": [
+      "Atomic devices, what extraordinary energy... Thank you!!!"
+    ],
+    "bbb.script3.cod.00005f43": [
+      "Pfff... She ugly... Not even a natural disaster..."
+    ],
+    "bbb.script3.cod.00005f5d": [
+      "Uh-oh, Commander, she won't like that..."
+    ],
+    "bbb.script3.cod.00005fa3": [
+      "A crown, I'll be Queen..."
+    ],
+    "bbb.script3.cod.00005fb9": [
+      "Commander, this crown will make him want to give orders..."
+    ],
+    "bbb.script3.cod.00005ff9": [
+      "A painting of the Great Yolk, but I'm the one who paints them..."
+    ],
+    "bbb.script3.cod.00006019": [
+      "Yes, Commander, we're idiots..."
+    ],
+    "bbb.script3.cod.0000602f": [
+      "What a child that Commander is..."
+    ],
+    "bbb.script3.cod.00006050": [
+      "A mummy... I'll put it in my bedroom..."
+    ],
+    "bbb.script3.cod.0000606e": [
+      "That's right, Mrs. Gluxx... Commander, that will frighten her male..."
+    ],
+    "bbb.script3.cod.000060b2": [
+      "Technology, how fascinating..."
+    ],
+    "bbb.script3.cod.000060e3": [
+      "Oh, a guitar... My husband will like that..."
+    ],
+    "bbb.script3.cod.00006131": [
+      "Money... You give me a credit for nothing!!!"
+    ],
+    "bbb.script3.cod.0000614f": [
+      "Commander, you're a complete idiot..."
+    ],
+    "bbb.script3.cod.00006180": [
+      "Perfume, thank you, handsome Commander, but I've got loads..."
+    ],
+    "bbb.script3.cod.0000619e": [
+      "She doesn't want it... Commander..."
+    ],
+    "bbb.script3.cod.000061c8": [
+      "A decoder, now we can watch TV..."
+    ],
+    "bbb.script3.cod.000061e2": [
+      "Commander, you might lower the birth rate..."
+    ],
+    "bbb.script3.cod.00006220": [
+      "Food, thank you, stranger..."
+    ],
+    "bbb.script3.cod.0000624a": [
+      "Medicine for going soft..."
+    ],
+    "bbb.script3.cod.00006282": [
+      "Weapons... Thank you, Commander"
+    ],
+    "bbb.script3.cod.000062bb": [
+      "Hey! What do you expect me to do with that?..."
+    ],
+    "bbb.script3.cod.000062e1": [
+      "It's true, that lens of yours looks like she's got five tits!..."
+    ],
+    "bbb.script3.cod.00006303": [
+      "Still, that's no reason to try to make me mutate!..."
+    ],
+    "bbb.script3.cod.00006327": [
+      "..."
+    ],
+    "bbb.script3.cod.0000634f": [
+      "Optical devices, now we can study the sky..."
+    ],
+    "bbb.script3.cod.0000638d": [
+      "Pure energy..."
+    ],
+    "bbb.script3.cod.000063b7": [
+      "A ring, I'll give it to my husband. Hee! Hee! Hee!..."
+    ],
+    "bbb.script3.cod.00006408": [
+      "A transmitter, now I can spy..."
+    ],
+    "bbb.script3.cod.00006434": [
+      "Culture..."
+    ],
+    "bbb.script3.cod.00006461": [
+      "Writing, what progress, but we already know how to write, Commander..."
+    ],
+    "bbb.script3.cod.00006493": [
+      "WHAT!!! A SPACESHIP... BUT WE ALREADY HAVE ONE!..."
+    ],
+    "bbb.script3.cod.000064b7": [
+      "think a little, Commander. You're making me ashamed..."
+    ],
+    "bbb.script3.cod.000064d9": [
+      "in front of under-evolved boiled shanks!..."
+    ],
+    "bbb.script3.cod.000064ef": [
+      "..."
+    ],
+    "bbb.script3.cod.0000651b": [
+      "A treaty... That's good for making peace..."
+    ],
+    "bbb.script3.cod.00006564": [
+      "Ohhh, gifts... Thank you! Thank you!"
+    ],
+    "bbb.script3.cod.00006597": [
+      "Which object would you like to give Mamy, Commander?"
+    ],
+    "bbb.script3.cod.000065ad": [
+      "GIVE:",
+      "<inventory_choices>"
+    ],
+    "bbb.script3.cod.000065bd": [
+      ""
+    ],
+    "bbb.script3.cod.000065e2": [
+      "You lend credit to Gluxx tribe..."
+    ],
+    "bbb.script3.cod.00006603": [
+      "We have no credits, Mrs. Gluxx..."
+    ],
+    "bbb.script3.cod.00006626": [
+      "Commander, shall we lend him a credit?",
+      "lend refuse"
+    ],
+    "bbb.script3.cod.00006649": [
+      "We'll send him one credit, Commander..."
+    ],
+    "bbb.script3.cod.0000666d": [
+      "Oh, thank you, Commander, we'll remember this..."
+    ],
+    "bbb.script3.cod.000066a3": [
+      "As you wish..."
+    ],
+    "bbb.script3.cod.000066cd": [
+      "We owe you a debt, Commander..."
+    ],
+    "bbb.script3.cod.000066e5": [
+      "You lent CREDITS to the Gluxx..."
+    ],
+    "bbb.script3.cod.000066fd": [
+      "Here's one credit in interest..."
+    ],
+    "bbb.script3.cod.0000670f": [
+      "Commander, Commander, they're giving us a credit without us even asking..."
+    ],
+    "bbb.script3.cod.0000673d": [
+      "Thanks for visiting, Commander. Come back whenever you like..."
+    ],
+    "bbb.script3.cod.00006759": [
+      "..."
+    ]
+  }
+}

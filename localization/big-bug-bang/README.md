@@ -20,7 +20,16 @@ The integration run passed six localization tests with original resources,
 game-package all-targets checking, and 948 serial game-library tests (31 ignored).
 Workspace-wide all-targets checking failed in the script-compiler test target
 on unresolved shared-module imports; it is not a passing workspace gate.
-The other 15 COD profiles, BAS text, native UI, object names, and text embedded
+`en/script3.json` supplies all 779 text sites in the third profile (663 unique
+sections). It is bound to matching resources, including three live population
+readouts, four inventory prompts, and one intentionally empty text site.
+Inventory sections preserve their generator marker and receive no static choice
+override: the live inventory remains authoritative. Item-name localization is
+still separate work. All eight localization tests pass with original resources;
+SCRIPT3 live English rendering and contextual review remain unverified.
+Game-package all-targets checking and 949 serial game-library tests pass
+(32 ignored) after this integration.
+The other 14 COD profiles, BAS text, native UI, object names, and text embedded
 in media remain untranslated.
 
 Validate against the user's original resources:
@@ -51,7 +60,8 @@ renderer reads each reached number from current VAR state as a signed 16-bit
 value. Lookahead retains the native previous-number scratch value instead of
 reading the next number early. Original words, word counts, and VAR are not
 rewritten. Numeric overrides are restricted to non-spoken menu text; inventory
-generators remain unsupported by the English runtime binding.
+generators in the sole post-prose choice section remain live while their prompt
+is translated. Mixed generator/static choice sections are not supported.
 
 This support is used by the 11 numeric menu sites in SCRIPT2. Tests cover
 signed limits, live changes, state preservation, marker-source validation, and
@@ -69,7 +79,7 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds English catalogs for BBB SCRIPT1 and SCRIPT2
+the modern runtime binds English catalogs for BBB SCRIPT1, SCRIPT2, and SCRIPT3
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.
