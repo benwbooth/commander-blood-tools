@@ -208,6 +208,34 @@ BAS text, most native UI,
 object names outside the inventory chooser, and text embedded
 in media remain untranslated.
 
+## Location Captions and Separate BAS
+
+The 75 opcode-05 DESCRIPT captions were inventoried separately from the timed
+sequence cues. Most are proper names; three are blank. The display layer now
+changes `Arche:` to `Ark:` and the French Ekatomb sentence to
+`Ekatomb: we'll all end up here...`. Original lookup names, carriage returns,
+and the rest of the text presentation state are preserved. Binding requires the
+known DESCRIPT hash and exact source captions. An original-resource test renders
+all 75 captions with the original RGB font, checks the two replacements and
+unchanged presentation state, and rejects wrong-game, changed-file, unrelated-name,
+and changed-caption matches. The BBB bootstrap test also applies both descriptions
+through `RuntimeScriptBackend` with actual resource loaders. These are not live
+captures of visiting Ekatomb.
+
+`sequel_bas_catalog` inventories separate BAS files using the same typed decoder
+as the runtime, keeping dictionary offsets and original source bytes. On the
+imported BBB resources it fails at `SCRIPT2.BAS` byte 6: the first menu references
+DIC offset `0x1F00`, which is inside `Private` (`0x1EFA..0x1F01`), not a word start.
+The only separate BAS file is 19,933 bytes, SHA-256
+`3e2b4a6d7c26aca6be2f88b3b539972b655ab1423907bbf75fb0931717bb5314`.
+Its paired DIC is 15,369 bytes, SHA-256
+`1666ae7bb0dead682f9c3fd64b5ea6b71999475beb77c85ad75e79a0ee71a5b0`.
+Both match the import manifest and the extracted disc copies. The resource-backed diagnostic regression pins
+that rejection and the raw word boundary. This does not prove the BAS file is
+unused: native reachability and resource ownership still need investigation.
+No empty BAS replacement, altered dictionary identity, or speculative BAS
+translation was introduced.
+
 ## Options and Saves
 
 Production `runtime/bridge_console.rs` now selects the recovered seven-row

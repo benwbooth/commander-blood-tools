@@ -11,6 +11,7 @@ mod camera_navigation;
 mod choice_list;
 mod confirm_dialog;
 mod contact_scenario;
+mod descript_localization;
 mod game_lifecycle;
 mod input;
 mod inventory_localization;
@@ -343,6 +344,7 @@ pub struct OriginalGameData {
     writable_resource_catalog: StartupWritableResourceCatalog,
     descript_database: DescriptDatabase,
     english_sequence_captions: sequence_localization::EnglishSequenceCaptions,
+    english_descript_captions: descript_localization::EnglishDescriptCaptions,
     confirm_dialog_regions: BloodprgConfirmDialogRegions,
     bridge_menu_text: BloodprgBridgeMenuText,
     hyperspace_resources: BloodprgHyperspaceResources,
@@ -509,6 +511,11 @@ impl OriginalGameData {
             &descript_bytes,
             &descript_database,
         )?;
+        let english_descript_captions = descript_localization::EnglishDescriptCaptions::load(
+            paths.manifest().game,
+            &descript_bytes,
+            &descript_database,
+        )?;
 
         let archive_entry_count = paths.manifest().source_archive_entry_count;
         let imported_resource_count = paths.manifest().resources.len();
@@ -543,6 +550,7 @@ impl OriginalGameData {
             writable_resource_catalog,
             descript_database,
             english_sequence_captions,
+            english_descript_captions,
             confirm_dialog_regions,
             bridge_menu_text,
             hyperspace_resources,
@@ -823,6 +831,32 @@ mod tests {
             data.load_named_resource(b"SCRIPT1.COD").unwrap().as_ref(),
             cod
         );
+        let mut caption_backend = RuntimeScriptBackend::new(
+            &data,
+            crate::native::bloodprg::ScriptClock {
+                hour: 12,
+                day: 1,
+                month: 1,
+            },
+        );
+        let mut caption = crate::native::bloodprg::TextPresentationState::default();
+        for (name, expected) in [
+            (b"Arche".as_slice(), b"Ark:\r".as_slice()),
+            (
+                b"Ekatomb".as_slice(),
+                b"Ekatomb: we'll all end up here...\r".as_slice(),
+            ),
+        ] {
+            assert!(
+                caption_backend
+                    .apply_description(name, false, &mut caption)
+                    .unwrap()
+                    .is_some()
+            );
+            assert_eq!(caption.subtitle_text.as_ref(), expected);
+            assert!(caption.subtitle_display_active);
+            assert_eq!(caption.subtitle_reveal_cursor, None);
+        }
         let mut runtime = OriginalGameRuntime::new(data);
         let mut scripts = RuntimeScriptSystem::new(
             runtime.data(),

@@ -751,6 +751,7 @@ pub fn initialize_and_restore_original_save_game(
 /// Concrete flat backend state shared by the script service and game lifecycle.
 pub struct RuntimeScriptBackend {
     english_subtitles: Option<super::localization::SequelEnglishSubtitles>,
+    english_descript_captions: super::descript_localization::EnglishDescriptCaptions,
     database: DescriptDatabase,
     object_names: BTreeMap<ScriptObjectId, Box<[u8]>>,
     assets: DescriptPresentationAssets,
@@ -782,7 +783,7 @@ struct SequelSimulationBindings {
 impl RuntimeScriptBackend {
     /// Clone immutable original-resource services into a persistent script backend.
     pub fn new(data: &OriginalGameData, clock: ScriptClock) -> Self {
-        Self::from_sources(
+        let mut backend = Self::from_sources(
             data.descript_database().clone(),
             data.resource_store().clone(),
             clock,
@@ -792,7 +793,9 @@ impl RuntimeScriptBackend {
                     reload_value: controls.initial_speed,
                     countdown: controls.initial_countdown,
                 }),
-        )
+        );
+        backend.english_descript_captions = data.english_descript_captions.clone();
+        backend
     }
 
     fn from_sources(
@@ -803,6 +806,7 @@ impl RuntimeScriptBackend {
     ) -> Self {
         Self {
             english_subtitles: None,
+            english_descript_captions: Default::default(),
             database,
             object_names: BTreeMap::new(),
             assets: DescriptPresentationAssets::default(),
@@ -897,6 +901,9 @@ impl RuntimeScriptBackend {
                     String::from_utf8_lossy(name)
                 )
             })?;
+        if application.is_some() {
+            self.english_descript_captions.apply(name, text);
+        }
         self.last_descript_application = application;
         Ok(application)
     }
