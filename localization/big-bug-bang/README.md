@@ -94,7 +94,20 @@ the RGB font path with nonblank and bounds checks. All 13 localization tests
 pass with original resources. This is an editorial first pass, not a live
 verification of Kam dialogue, mummy transfer, or subsequent progression.
 
-The other 9 COD profiles, BAS text, most native UI, object names, and text embedded
+`en/script9.json` supplies all 176 Bug Deluxe/Sinox text sites, including the
+rescue, technological secrets, and time-reversal dialogue. Three population
+readouts and three inventory generators remain live; three choice lists retain
+their original ordered dictionary IDs. The original-resource runtime test loads
+SCRIPT9 after initial state loading and renders all 173 static subtitles with
+the original font's RGB path, checking nonblank output and bounds. All 14
+localization tests pass with original resources. This editorial first pass does
+not verify live rescue, attack, time-reversal, or subsequent gameplay branches.
+Game-package all-targets checking and the executable build pass. The serial
+game-library run passes 964 tests (43 ignored). The preceding default-parallel
+run terminated with SIGSEGV without identifying a failing test; its cause remains
+unresolved. The serial pass does not establish parallel-suite stability.
+
+The other 8 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -611,7 +624,8 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5, SCRIPT7, SCRIPT15, and SCRIPT17
+the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5,
+SCRIPT7, SCRIPT9, SCRIPT15, and SCRIPT17
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.
