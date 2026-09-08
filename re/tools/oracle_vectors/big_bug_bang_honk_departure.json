@@ -1,0 +1,447 @@
+{
+  "inputs": {
+    "BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+    "SCRIPT2.COD": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+    "SCRIPT1.VAR": "b2e07ec2f1bdd3acbe7798fbc2eecc2ea596e7bf58d5c82aeecc0c58a28776ea",
+    "SCRIPT2.DIC": "1666ae7bb0dead682f9c3fd64b5ea6b71999475beb77c85ad75e79a0ee71a5b0",
+    "SCRIPT2.DEB": "27d3f89da777ffe4fceee763b016cc6d6e3fafa525bba8ac16beebcbd90eb904"
+  },
+  "cases": [
+    {
+      "count": 5,
+      "gate": "none",
+      "entries": [
+        {
+          "source": 13432,
+          "opcode": 160
+        },
+        {
+          "source": 13435,
+          "opcode": 192
+        }
+      ],
+      "yields": [
+        0,
+        0
+      ],
+      "state_before_sha256": "30a462d674890f355d4f750d45c083b3cbd6c4a686c754076a4438e47766c15d",
+      "state_after_sha256": "30a462d674890f355d4f750d45c083b3cbd6c4a686c754076a4438e47766c15d",
+      "code_after_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+      "count_after": 5,
+      "actor_record": [
+        196,
+        40,
+        0
+      ],
+      "player_record": [
+        196,
+        4440,
+        0
+      ],
+      "vm": 1,
+      "subtitle": 0,
+      "menu": 0,
+      "request": 0,
+      "shown": 0
+    },
+    {
+      "count": 5,
+      "gate": "shown",
+      "entries": [
+        {
+          "source": 13432,
+          "opcode": 160
+        },
+        {
+          "source": 13435,
+          "opcode": 192
+        }
+      ],
+      "yields": [
+        0,
+        0
+      ],
+      "state_before_sha256": "a9fdf8348d6da69d3cef3f76f8e1ab63d5304b28f3291923d538626dbfdaa9bf",
+      "state_after_sha256": "a9fdf8348d6da69d3cef3f76f8e1ab63d5304b28f3291923d538626dbfdaa9bf",
+      "code_after_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+      "count_after": 5,
+      "actor_record": [
+        196,
+        40,
+        0
+      ],
+      "player_record": [
+        196,
+        4440,
+        0
+      ],
+      "vm": 1,
+      "subtitle": 0,
+      "menu": 0,
+      "request": 0,
+      "shown": 32768
+    },
+    {
+      "count": 5,
+      "gate": "menu",
+      "entries": [
+        {
+          "source": 13432,
+          "opcode": 160
+        },
+        {
+          "source": 13435,
+          "opcode": 192
+        }
+      ],
+      "yields": [
+        0,
+        0
+      ],
+      "state_before_sha256": "30a462d674890f355d4f750d45c083b3cbd6c4a686c754076a4438e47766c15d",
+      "state_after_sha256": "30a462d674890f355d4f750d45c083b3cbd6c4a686c754076a4438e47766c15d",
+      "code_after_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+      "count_after": 5,
+      "actor_record": [
+        196,
+        40,
+        0
+      ],
+      "player_record": [
+        196,
+        4440,
+        0
+      ],
+      "vm": 1,
+      "subtitle": 0,
+      "menu": 1,
+      "request": 0,
+      "shown": 0
+    },
+    {
+      "count": 5,
+      "gate": "subtitle",
+      "entries": [
+        {
+          "source": 13432,
+          "opcode": 160
+        },
+        {
+          "source": 13435,
+          "opcode": 192
+        }
+      ],
+      "yields": [
+        0,
+        0
+      ],
+      "state_before_sha256": "30a462d674890f355d4f750d45c083b3cbd6c4a686c754076a4438e47766c15d",
+      "state_after_sha256": "30a462d674890f355d4f750d45c083b3cbd6c4a686c754076a4438e47766c15d",
+      "code_after_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+      "count_after": 5,
+      "actor_record": [
+        196,
+        40,
+        0
+      ],
+      "player_record": [
+        196,
+        4440,
+        0
+      ],
+      "vm": 1,
+      "subtitle": 1,
+      "menu": 0,
+      "request": 0,
+      "shown": 0
+    },
+    {
+      "count": 6,
+      "gate": "none",
+      "entries": [
+        {
+          "source": 13432,
+          "opcode": 160
+        },
+        {
+          "source": 13435,
+          "opcode": 192
+        },
+        {
+          "source": 13442,
+          "opcode": 161
+        },
+        {
+          "source": 13443,
+          "opcode": 166
+        },
+        {
+          "source": 13467,
+          "opcode": 160
+        },
+        {
+          "source": 13470,
+          "opcode": 192
+        },
+        {
+          "source": 13477,
+          "opcode": 161
+        },
+        {
+          "source": 13478,
+          "opcode": 201
+        },
+        {
+          "source": 13481,
+          "opcode": 166
+        }
+      ],
+      "yields": [
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state_before_sha256": "124f3b48e7e4d405138a6418d40bd68c2ffcad207d5ab8dcd1f0e053f95e7771",
+      "state_after_sha256": "c6d913587678078dc6f846387dd0963e6fadcf77ed483a254fee4c6089cf715f",
+      "code_after_sha256": "d0f05ace37266e9d8307cfe8bf850a674f38dc28ab9861f32033cb5ec59b0f49",
+      "count_after": 6,
+      "actor_record": [
+        0,
+        0,
+        0
+      ],
+      "player_record": [
+        0,
+        0,
+        0
+      ],
+      "vm": 1,
+      "subtitle": 1,
+      "menu": 0,
+      "request": 1,
+      "shown": 32768
+    },
+    {
+      "count": 6,
+      "gate": "shown",
+      "entries": [
+        {
+          "source": 13432,
+          "opcode": 160
+        },
+        {
+          "source": 13435,
+          "opcode": 192
+        },
+        {
+          "source": 13442,
+          "opcode": 161
+        },
+        {
+          "source": 13443,
+          "opcode": 166
+        },
+        {
+          "source": 13467,
+          "opcode": 160
+        },
+        {
+          "source": 13470,
+          "opcode": 192
+        },
+        {
+          "source": 13477,
+          "opcode": 161
+        },
+        {
+          "source": 13478,
+          "opcode": 201
+        },
+        {
+          "source": 13481,
+          "opcode": 166
+        }
+      ],
+      "yields": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state_before_sha256": "ae035bbd36f61b3ef81cb70ce445f7863e52b7c9162fc36e72bb143955b164b1",
+      "state_after_sha256": "c6d913587678078dc6f846387dd0963e6fadcf77ed483a254fee4c6089cf715f",
+      "code_after_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+      "count_after": 6,
+      "actor_record": [
+        0,
+        0,
+        0
+      ],
+      "player_record": [
+        0,
+        0,
+        0
+      ],
+      "vm": 1,
+      "subtitle": 0,
+      "menu": 0,
+      "request": 0,
+      "shown": 32768
+    },
+    {
+      "count": 6,
+      "gate": "menu",
+      "entries": [
+        {
+          "source": 13432,
+          "opcode": 160
+        },
+        {
+          "source": 13435,
+          "opcode": 192
+        },
+        {
+          "source": 13442,
+          "opcode": 161
+        },
+        {
+          "source": 13443,
+          "opcode": 166
+        },
+        {
+          "source": 13467,
+          "opcode": 160
+        },
+        {
+          "source": 13470,
+          "opcode": 192
+        },
+        {
+          "source": 13477,
+          "opcode": 161
+        },
+        {
+          "source": 13478,
+          "opcode": 201
+        },
+        {
+          "source": 13481,
+          "opcode": 166
+        }
+      ],
+      "yields": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state_before_sha256": "124f3b48e7e4d405138a6418d40bd68c2ffcad207d5ab8dcd1f0e053f95e7771",
+      "state_after_sha256": "bf9bbd6b9a3ec4c64ed918a269d54c310ecf440bdb608cf0d374273381a2b931",
+      "code_after_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+      "count_after": 6,
+      "actor_record": [
+        0,
+        0,
+        0
+      ],
+      "player_record": [
+        0,
+        0,
+        0
+      ],
+      "vm": 1,
+      "subtitle": 0,
+      "menu": 1,
+      "request": 0,
+      "shown": 0
+    },
+    {
+      "count": 6,
+      "gate": "subtitle",
+      "entries": [
+        {
+          "source": 13432,
+          "opcode": 160
+        },
+        {
+          "source": 13435,
+          "opcode": 192
+        },
+        {
+          "source": 13442,
+          "opcode": 161
+        },
+        {
+          "source": 13443,
+          "opcode": 166
+        },
+        {
+          "source": 13467,
+          "opcode": 160
+        },
+        {
+          "source": 13470,
+          "opcode": 192
+        },
+        {
+          "source": 13477,
+          "opcode": 161
+        },
+        {
+          "source": 13478,
+          "opcode": 201
+        },
+        {
+          "source": 13481,
+          "opcode": 166
+        }
+      ],
+      "yields": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "state_before_sha256": "124f3b48e7e4d405138a6418d40bd68c2ffcad207d5ab8dcd1f0e053f95e7771",
+      "state_after_sha256": "bf9bbd6b9a3ec4c64ed918a269d54c310ecf440bdb608cf0d374273381a2b931",
+      "code_after_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+      "count_after": 6,
+      "actor_record": [
+        0,
+        0,
+        0
+      ],
+      "player_record": [
+        0,
+        0,
+        0
+      ],
+      "vm": 1,
+      "subtitle": 1,
+      "menu": 0,
+      "request": 0,
+      "shown": 0
+    }
+  ]
+}

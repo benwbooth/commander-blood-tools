@@ -42,6 +42,168 @@ fn hex(value: &str) -> Vec<u8> {
         .collect()
 }
 
+#[test]
+#[ignore = "requires original BBB disc assets"]
+fn honk_departure_block_matches_original_same_pass_return() {
+    use sha2::{Digest, Sha256};
+    #[derive(Deserialize)]
+    struct Departure {
+        count: u16,
+        gate: String,
+        state_before_sha256: String,
+        state_after_sha256: String,
+        code_after_sha256: String,
+        yields: Vec<u8>,
+        vm: u8,
+        subtitle: u8,
+        menu: u8,
+        request: u8,
+    }
+    #[derive(Deserialize)]
+    struct Oracle {
+        inputs: std::collections::BTreeMap<String, String>,
+        cases: Vec<Departure>,
+    }
+    let oracle: Oracle = serde_json::from_str(include_str!(
+        "../../../../../re/tools/oracle_vectors/big_bug_bang_honk_departure.json"
+    ))
+    .unwrap();
+    let root =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
+    let read = |name: &str| {
+        let bytes = std::fs::read(root.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(&bytes)), oracle.inputs[name]);
+        bytes
+    };
+    let executable = read("BLOOD2PG.EXE");
+    let source = read("SCRIPT2.COD");
+    let initial_state = read("SCRIPT1.VAR");
+    let directory_bytes = read("SCRIPT2.DEB");
+    let directory = decode_script_directory(&directory_bytes).unwrap();
+    let dictionary = decode_script_dictionary(&read("SCRIPT2.DIC")).unwrap();
+    // BAS is not entered between these COD boundaries.
+    let dialogue = decode_script_bas(&[0xFF], &dictionary).unwrap();
+    let builtins = ScriptProfileBuiltins {
+        player: directory.find_active_object(b"blood"),
+        ..Default::default()
+    };
+    assert_eq!(oracle.cases.len(), 8);
+    for vector in oracle.cases {
+        let mut bytes = initial_state.clone();
+        let player_action = 0x28 + usize::from(executable[0xF7F0 + 0x7128 + 19 * 16]);
+        for (offset, value) in [
+            (0x1F0A, vector.count),
+            (0x115A, if vector.gate == "shown" { 0x8000 } else { 0 }),
+            (0x1192, 0xC4),
+            (0x1194, 0x28),
+            (0x1196, 0),
+            (player_action, 0xC4),
+            (player_action + 2, 0x1158),
+            (player_action + 4, 0),
+        ] {
+            bytes[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            vector.state_before_sha256
+        );
+        let mut state =
+            decode_script_state_for_dialect(&bytes, &directory, ScriptDialect::BigBugBang).unwrap();
+        // Match load_profile's retained SCRIPT2 directory-prefix read alias.
+        assert!(state.bind_read_only_word_alias(8368, directory_bytes[..2].try_into().unwrap()));
+        let code = decode_script_code_for_dialect(&source, ScriptDialect::BigBugBang).unwrap();
+        let instructions = code
+            .tokens()
+            .iter()
+            .map(|token| {
+                decode_complete_script_instruction(token, &state, &directory, &dictionary).unwrap()
+            })
+            .collect::<Vec<_>>();
+        let mut records =
+            ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+                .unwrap();
+        let mut host = ScanBoundary {
+            prepared: false,
+            reached: false,
+            state_at_boundary: Vec::new(),
+            presentation: ScriptPresentationScanState::default(),
+        };
+        let mut dispatch = ScriptDispatchState::default();
+        dispatch.current_profile =
+            super::super::ScriptProfileId::new_for_dialect(1, ScriptDialect::BigBugBang);
+        dispatch.text_presentation.menu_deferred = vector.gate == "menu";
+        dispatch.text_presentation.subtitle_display_active = vector.gate == "subtitle";
+        let mut runtime = ScriptRuntime::default();
+        runtime.arm_resume(ScriptCodeOffset::new(0x34BD), 0);
+        assert!(runtime.save_resume_cursor(ScriptCodeOffset::new(0x3478)));
+        let mut selector = ScriptSelectorState::default();
+        let mut procedures = super::super::ScriptProcedureStates::default();
+        let mut sequence_slots = super::super::ScriptSequenceSlots::default();
+        let mut dispatcher = Dispatcher {
+            code: &code,
+            instructions: &instructions,
+            dialogue: &dialogue,
+            state: &mut state,
+            dictionary: &dictionary,
+            directory: &directory,
+            builtins,
+            procedures: &mut procedures,
+            selector: &mut selector,
+            sequence_slots: &mut sequence_slots,
+            records: &mut records,
+            dispatch: &mut dispatch,
+            host: &mut host,
+        };
+        let outcome =
+            execute_decoded_script_frame(&code, &instructions, true, &mut runtime, &mut dispatcher)
+                .unwrap();
+        assert!(host.reached);
+        assert_eq!(outcome.end, ScriptFrameEnd::ResumeBoundary);
+        assert_eq!(
+            outcome.next_instruction,
+            Some(ScriptCodeOffset::new(0x34BD))
+        );
+        assert_eq!(
+            outcome.presentation_yields,
+            vector.yields.iter().filter(|&&v| v != 0).count()
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&host.state_at_boundary)),
+            vector.state_after_sha256,
+            "count {} gate {}",
+            vector.count,
+            vector.gate
+        );
+        assert_eq!(
+            dispatch.pending_vm_execution_write.unwrap_or(true),
+            vector.vm != 0
+        );
+        assert_eq!(
+            dispatch.text_presentation.subtitle_display_active,
+            vector.subtitle != 0
+        );
+        assert_eq!(dispatch.text_presentation.menu_deferred, vector.menu != 0);
+        assert_eq!(
+            dispatch.text_presentation.request_flags.bits(),
+            vector.request
+        );
+        let mut encoded = source.clone();
+        for offset in [0x3483, 0x34A9] {
+            if let Some(text) = dispatch
+                .text_instructions
+                .get(&ScriptCodeOffset::new(offset))
+            {
+                encoded[offset + 5] =
+                    (encoded[offset + 5] & 0x7F) | (u8::from(text.is_active()) << 7);
+            }
+        }
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&encoded)),
+            vector.code_after_sha256
+        );
+    }
+}
+
 struct ScanBoundary {
     prepared: bool,
     reached: bool,

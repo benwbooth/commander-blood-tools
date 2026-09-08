@@ -26,6 +26,30 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Honk Departure Block Comparison
+
+`big_bug_bang_honk_departure_oracle.py` executes the original outer VM loop
+over COD `0x3478..0x34BD`, stopping before presentation scans. It loads the
+unchanged complete SCRIPT2 COD/DIC and SCRIPT1 VAR, with synthetic reciprocal
+Honk/player conversation records, a count of five or six, and four text-gate
+states. The resume boundary is explicitly seeded in both implementations.
+Input asset hashes are pinned; the probe checks unchanged executable and
+dictionary bytes, restricted VAR and COD mutations, and balanced stack use.
+
+All eight cases agree with Rust on complete VAR hashes, complete COD hashes
+after text-activation writes, yielded presentation count, VM enable state,
+subtitle/menu flags, and presentation request bits. The Rust fixture uses the
+same retained directory-prefix read alias as the production profile loader;
+the separate BAS stream is never entered at this boundary.
+
+With count six, original A6 at `0x3483` can publish text and yield, but the
+outer loop continues to C9 at `0x34A6` in the same pass and clears both C4
+records. With menu, subtitle, or already-shown gates, the text is suppressed
+but the records are still cleared. Count five skips the block. No production
+change is justified by this comparison. It explains why a missing departure
+line alone is not evidence of a Rust-only fault; it does not prove the later
+renderer/post-scan visual timing or full conversation parity.
+
 ### Honk Inventory Save and Fresh Load
 
 The input-only `bbb_honk_inventory_save_followup.tsv` replay completed in
@@ -85,9 +109,10 @@ seven resource/display-dependent tests ignored).
 The script's counter comparison near COD `0x347B` is greater-than five, not a
 five-item cap. Its nearby excuse line at `0x3483` did not appear in this capture;
 the last revealed line was the perfume discovery before ownership cleared.
-The regression does not assert that unproven dialogue detail. Compare original
-VM text-gate/return behavior before treating that omission as correct or
-changing it. The later save/load replay above verifies a subsequent command
+The regression does not assert that unproven visual detail. The block comparison
+above now confirms the original same-pass text-gate/return semantics, while
+post-scan visual timing remains outside its scope. The later save/load replay
+above verifies a subsequent command
 and saving these items; later quest progression remains unverified.
 
 ### Honk Radio Bank Ownership
