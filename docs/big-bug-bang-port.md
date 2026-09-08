@@ -15,7 +15,10 @@ renewed Templand conversation now passes its video interlude, displays both
 choices, and continues through `no_hurry` back to Tempest navigation. Retained
 screenshots and RGB-row checks verify the formerly missing labels. Other
 conversation branches and broader progression remain unverified. These routes
-do not establish a complete playthrough. English COD display
+do not establish a complete playthrough. A later earned-inventory route now
+reaches Daddy's GIVE menu, transfers writing to him, receives the intelligence
+acknowledgement, returns to navigation, and saves/restores that ownership in a
+fresh process. Later migration, trades, and endgame remain unverified. English COD display
 catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
 captions, inventory labels, and DESCRIPT location captions also have English
 display mappings, but live coverage of these surfaces is incomplete. The
@@ -25,6 +28,65 @@ separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is rec
 state before the implementation below.
 
 ## Verified Implementation
+
+### Daddy Writing Gift and Persistence
+
+The earned six-item Honk save now continues through Travel ON, Tempest's
+destination selector, Templand, Daddy's interlude, and `no_hurry` to a visible
+GIVE menu. Its six rows are technology, guitar, perfume, energy, writing, and
+ship, followed by Cancel. Every row has matching rendered text pixels; the
+menu was also visually inspected in `daddy-writing-kcDeMios/dialogue-choice.png`.
+
+`bbb_honk_checkpoint_templand.tsv` completed with both builds:
+`output/big-bug-bang/daddy-inventory-retry-LaKzWAJV` (debug) and
+`output/big-bug-bang/release-daddy-inventory-qbThtEra` (optimized). Both pass
+the same retained-trace validator. The earlier failed navigation capture
+`daddy-inventory-fPvH6TkA` is rejected because Travel never became enabled.
+Reopening the console explicitly after load corrected that input sequence;
+no engine gate was bypassed.
+
+Selecting writing at logical `(200, 109)` changes `ecriture` from player-owned
+`FFFF` to Daddy's record `0xC24`. The dialogue confirms that writing has made
+the Gluxx intelligent, the other five items remain owned, and SCRIPT2 resumes
+with presentation ownership released. `daddy-writing-kcDeMios` verifies this
+transfer without saving; its original input file is retained as `scenario.tsv`.
+
+The extended `bbb_daddy_give_writing.tsv` then saves through the ordinary menu.
+Capture `output/big-bug-bang/daddy-writing-save-lWm64gbJ` completed all 42
+actions, naming slot zero `abhonkw`. BLOOD.SAV SHA-256 is
+`8097ee17250080e1bd77ff35c17cf074396452bc327e6d7b49848fbbd209c0b0`;
+GAME1.SAV is
+`2df2a13ab0ccd23c7b2edaa8eeafaf073b6527f0999c650e8329b531a1b65cff`.
+Inspection of the saved VAR shows `0x1EE4` changing from zero to one and bit
+`0x10` becoming set for Daddy, Mamy, and Papy. These are observed side effects,
+not a claim that their later migration branches have been exercised.
+
+Fresh-process replay `output/big-bug-bang/writing-checkpoint-load-PbbXFdIP`
+uses `bbb_load_writing_checkpoint.tsv`. Its first loaded SCRIPT2 frame restores
+Daddy's writing ownership and the other five held items; its endpoint is
+unblocked. Loading does not rewrite either save. Both gift captures and the
+fresh-load capture pass their dedicated validators. The menu-only capture is
+deliberately rejected by the gift validator for lacking transfer and the
+intelligence acknowledgement.
+
+The full `writing_gift_survives_save_and_fresh_process_load` integration test
+also passed under the optimized build, including its two separate game
+processes and save-byte comparison. Its independently retained artifacts are
+`output/fidelity/bbb-daddy-writing-1788910446370331032-780857-0` and
+`output/fidelity/bbb-writing-load-1788910544491255022-780857-1`; the harness
+records binary/scenario/asset hashes and copies the initial saves. Normal
+progression/support tests pass (six tests, fourteen resource/display-dependent
+tests ignored by default).
+
+The optimized production binary used here has SHA-256
+`07a7108e2f1ee582b0b9d94d3aeb3e2f6dbfaf947872364cf11e89031236e7c7`.
+It was built with `cargo build --release -p commander-blood-game --bin commander-blood`
+from the current worktree, without changing production code or desktop launchers.
+Its separate Honk fresh-load replay (`release-honk-load-GmBQAOFe`) passes the
+existing six-item/phone-response validator and preserves both saves. In these
+private software-rendered captures, the same inventory-menu scenario took
+about 98 seconds optimized versus 763 seconds debug; this is a replay-specific
+measurement, not a general hardware frame-rate guarantee.
 
 ### Honk Departure Block Comparison
 

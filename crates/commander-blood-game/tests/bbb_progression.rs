@@ -96,6 +96,237 @@ fn validate_recorded_honk_checkpoint_load() {
     assert_honk_checkpoint_trace(&frames);
 }
 
+#[test]
+#[ignore = "requires BBB assets, an earned Honk inventory save, and a graphical display"]
+fn daddy_offers_earned_inventory_after_loading() {
+    let frames = replay_inventory_checkpoint(
+        "bbb-daddy-inventory",
+        "accuracy/scenarios/bbb_honk_checkpoint_templand.tsv",
+    );
+    assert_daddy_inventory_offer(&frames);
+}
+
+fn replay_inventory_checkpoint(name: &str, scenario: &str) -> PathBuf {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_INVENTORY_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join("output/big-bug-bang/honk-save-followup-jcsWFXhd/writable")
+        });
+    replay_bbb_from_save(name, scenario, &save)
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a retained Daddy inventory offer"]
+fn validate_recorded_daddy_inventory_offer() {
+    let frames =
+        PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"));
+    assert_daddy_inventory_offer(&frames);
+}
+
+#[test]
+#[ignore = "requires BBB assets, an earned Honk inventory save, and a graphical display"]
+fn writing_gift_survives_save_and_fresh_process_load() {
+    let frames = replay_inventory_checkpoint(
+        "bbb-daddy-writing",
+        "accuracy/scenarios/bbb_daddy_give_writing.tsv",
+    );
+    assert_daddy_writing_gift(&frames);
+    let save = frames.parent().unwrap().join("writable");
+    let loaded = replay_bbb_from_save(
+        "bbb-writing-load",
+        "accuracy/scenarios/bbb_load_writing_checkpoint.tsv",
+        &save,
+    );
+    assert_writing_checkpoint_load(&loaded);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(save.join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap()
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a retained writing gift trace"]
+fn validate_recorded_daddy_writing_gift() {
+    assert_daddy_writing_gift(&PathBuf::from(
+        std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"),
+    ));
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a fresh writing checkpoint load"]
+fn validate_recorded_writing_checkpoint_load() {
+    assert_writing_checkpoint_load(&PathBuf::from(
+        std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"),
+    ));
+}
+
+fn has_writing_gift(semantic: &serde_json::Value) -> bool {
+    let Some(objects) = semantic["persistent"]["object_locations"].as_array() else {
+        return false;
+    };
+    objects.iter().any(|object| {
+        object["name"] == "ecriture"
+            && object["kind"] == "InventoryItem"
+            && object["holder_raw"] == 0xC24
+            && object["target_name"] == "Daddy_Gluxx"
+    }) && ["technologie", "guitare", "parfum", "energie", "vaisseau"]
+        .iter()
+        .all(|name| {
+            objects.iter().any(|object| {
+                object["name"] == *name
+                    && object["kind"] == "InventoryItem"
+                    && object["holder_raw"] == 65535
+            })
+        })
+}
+
+fn main_profile_unblocked(semantic: &serde_json::Value) -> bool {
+    semantic["vm"]["resource_profile"] == 1
+        && semantic["vm"]["execution_enabled"] == 1
+        && semantic["presentation"]["active_actor_presentation"].is_null()
+        && semantic["presentation"]["active"] == 0
+        && semantic["presentation"]["screen_active"] == false
+        && semantic["presentation"]["retained_word_choice"]["phase"] == "Closed"
+        && semantic["presentation"]["ship_scene"]["dispatch_blocked"] == false
+}
+
+fn assert_daddy_writing_gift(frames: &std::path::Path) {
+    assert_daddy_inventory_offer(frames);
+    let mut acknowledged = false;
+    let mut returned = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        acknowledged |= semantic["vm"]["resource_profile"] == 2
+            && has_writing_gift(semantic)
+            && semantic["subtitle"]
+                == "WRITING has made them intelligent. We can finally talk to them...";
+        returned = acknowledged && has_writing_gift(semantic) && main_profile_unblocked(semantic);
+    }
+    assert!(
+        acknowledged,
+        "writing transfer and intelligence acknowledgement were not observed together"
+    );
+    assert!(
+        returned,
+        "writing gift did not persist through an unblocked return"
+    );
+}
+
+fn assert_writing_checkpoint_load(frames: &std::path::Path) {
+    let mut saw_startup = false;
+    let mut loaded = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !saw_startup && semantic["vm"]["resource_profile"].is_null() {
+            continue;
+        }
+        if !loaded && semantic["vm"]["resource_profile"] == 0 {
+            saw_startup = true;
+            continue;
+        }
+        assert!(saw_startup, "fresh startup was not observed");
+        assert_eq!(
+            semantic["vm"]["resource_profile"], 1,
+            "wrong writing checkpoint profile"
+        );
+        assert!(
+            has_writing_gift(semantic),
+            "saved writing gift was not restored immediately or lost later"
+        );
+        loaded = true;
+        ready = main_profile_unblocked(semantic);
+    }
+    assert!(loaded && ready, "writing checkpoint never became ready");
+}
+
+fn assert_daddy_inventory_offer(frames: &std::path::Path) {
+    let mut loaded_inventory = false;
+    let mut travel_enabled = false;
+    let mut saw_interlude = false;
+    let mut saw_continue_choice = false;
+    let mut offered = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        let owns_all = [
+            "technologie",
+            "guitare",
+            "parfum",
+            "energie",
+            "ecriture",
+            "vaisseau",
+        ]
+        .iter()
+        .all(|name| {
+            semantic["persistent"]["object_locations"]
+                .as_array()
+                .is_some_and(|objects| {
+                    objects.iter().any(|object| {
+                        object["kind"] == "InventoryItem"
+                            && object["name"] == *name
+                            && object["holder_raw"] == 65535
+                    })
+                })
+        });
+        loaded_inventory |= semantic["vm"]["resource_profile"] == 1 && owns_all;
+        travel_enabled |= loaded_inventory && semantic["vm"]["sequel_travel_enabled"] == true;
+        if semantic["vm"]["resource_profile"] != 2 {
+            continue;
+        }
+        saw_interlude |=
+            travel_enabled && semantic["video"]["active_resource"] == "SQ\\venus06.hnm";
+        saw_continue_choice |= saw_interlude
+            && semantic["presentation"]["rendered_word_choices"]
+                == serde_json::json!(["finish", "no_hurry"]);
+        if saw_continue_choice
+            && semantic["subtitle"] == "GIVE:"
+            && semantic["presentation"]["active_actor_presentation"]["name"] == "Daddy_Gluxx"
+            && semantic["presentation"]["retained_word_choice"]["phase"] == "Selecting"
+            && semantic["presentation"]["rendered_word_choices"]
+                == serde_json::json!([
+                    "technology",
+                    "guitar",
+                    "perfume",
+                    "energy",
+                    "writing",
+                    "ship"
+                ])
+        {
+            let rows = semantic["presentation"]["retained_word_choice"]["rows"]
+                .as_array()
+                .unwrap();
+            let visible = rows.len() == 7
+                && rows[6]["kind"] == "Cancel"
+                && rows
+                    .iter()
+                    .all(|row| row["matching_text_pixels"].as_u64().is_some_and(|n| n > 0));
+            offered |= owns_all && visible;
+        }
+    }
+    assert!(
+        loaded_inventory,
+        "earned inventory checkpoint was not loaded"
+    );
+    assert!(
+        travel_enabled,
+        "Travel was not enabled before visiting Daddy"
+    );
+    assert!(
+        saw_interlude && saw_continue_choice,
+        "Daddy continuation route was not traversed"
+    );
+    assert!(
+        offered,
+        "Daddy never offered all six earned items with visible labels and Cancel"
+    );
+}
+
 fn assert_honk_checkpoint_trace(frames: &std::path::Path) {
     let mut saw_startup = false;
     let mut loaded = false;
