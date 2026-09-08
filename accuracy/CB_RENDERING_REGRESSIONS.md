@@ -57,9 +57,9 @@ visibly confirms the hand; this capture predates the explicit band-write fix.
 The precise reported visual symptoms still need verification. The hyperjump
 handler at 0x007FB9 writes zero to DS:0x0A34, the
 current MANU3 selector. Thus the Rust hand restart is not by itself a translation
-discrepancy. Determine whether the report concerns the hyperjump lever or the
-camera/map control, and whether the bars are inside the 320x200 scene or outside
-the aspect-fit viewport. Do not mask these issues by globally hiding layers.
+discrepancy. The user confirmed the travel lever. It remains unclear whether
+the reported bars are inside the 320x200 scene or outside the aspect-fit
+viewport. Do not mask these issues by globally hiding layers.
 
 The modern MANU3 between-tick renderer predicted an ordinary next tween step
 even immediately after an explicit animation selection. Repeated native lever
@@ -68,7 +68,22 @@ for such intervals, retaining pointer tracking without speculative tweening.
 Ordinary no-selector intervals still interpolate. The repeated-selector
 regression fails with the guard disabled and passes with it enabled; all 22
 MANU3 tests, including original-binary semantic vectors, pass. The desktop
-executable was rebuilt. This is not yet visual proof of the reported lever fix.
+executable was rebuilt; subsequent visual verification is described below.
+
+The user subsequently confirmed the travel lever. The rebuilt executable's
+full navigation scenario passed in 229.54 seconds. Its capture is
+`output/fidelity/cb-travel-lever-413e16ec.mkv`; the short pull excerpt is
+`output/fidelity/cb-travel-lever-pull.mp4`. At trace frames 2136-2143 the lever
+advances from 1 through 8 without skipping, with hand selector 10 throughout.
+The 60-fps contact sheet `output/fidelity/cb-travel-lever-pull.png` shows held
+native poses between simulation ticks during the repeated selector interval,
+rather than speculative between-tick tweening. Hyperspace and bridge return
+also pass. This verifies the interpolation correction on the reported control;
+an exact original/live animation comparison is still absent.
+
+The zoomed Pterra view from that build is captured at
+`output/fidelity/cb-pterra-zoom-after.png`. The scenario's trace directory is
+`output/fidelity/production-load-pterra-navigation.jsonl-1788837484936872489-2469590-0`.
 
 A 150-second, 60-fps lossless X11 capture is available at
 `output/fidelity/cb-scruter-continuity-20260907-01/display-attached.mkv`.
@@ -98,6 +113,13 @@ and preserves it and its palette after poisoning the work page and refreshing
 colors. All 11 presentation-player tests pass. Remaining investigation is
 runtime composition and timing, with synchronized original/live frame evidence
 needed before declaring the reported flash resolved.
+
+Subsequent 60-fps inspection of the continuous capture at 50.0-51.07 seconds
+(talk to idle) and 55.2-56.27 seconds (talk to talk) shows no blank page, stray
+hand, or overwritten bars. Contact sheets are `talk-boundary-50.png` and
+`talk-boundary-55.png` beside the recording. The talk-to-talk boundary does
+reset to the authored first pose. These captured transitions are visually clean
+after the retained-buffer correction; other dialogue paths are not certified.
 
 ## Verification setup
 
