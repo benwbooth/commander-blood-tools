@@ -191,8 +191,20 @@ each maps to the original accepted dictionary ID. Neither script bytes nor
 branch logic change. This is source-bound branch verification, not a live puzzle
 completion capture.
 
-English COD coverage is now 16 of 17 profiles, or 6,146 of 6,921 text sites.
-The remaining COD profile (SCRIPT13), BAS text, most native UI,
+`en/script13.json` supplies all 775 Slimer text sites, covering Otto Von Smile,
+Von Gluk, and Von Potato, the ship bargaining routes, gifts, and destructive
+comedy branches. All 26 static choice lists retain their ordered dictionary IDs.
+Population fields 3352, 3426, and 3500, the two live ship-price sites using field
+7922, and three inventory generators remain live. Source validation passes all
+775 sites. The original-resource runtime test loads SCRIPT13 after initial state
+setup and renders its 770 static subtitles through the original font's RGB path,
+checking nonblank output and bounds. All 24 localization tests pass with original
+resources. The authored bad bargains, references to Von Smile in other Slimers'
+gift responses, and original phone-number joke are retained. This is an editorial
+first pass, not live verification of the ship trades or destructive branches.
+
+English COD coverage is now all 17 profiles, or 6,921 of 6,921 text sites.
+BAS text, most native UI,
 object names outside the inventory chooser, and text embedded
 in media remain untranslated.
 
@@ -860,9 +872,10 @@ created a pipeline layout. The root cause is not established or fixed here;
 the serial pass does not prove parallel GPU-test stability. Workspace checking
 and the five targeted localization/dispatch checks passed.
 
-Remaining work includes BAS/UI translation,
-the other COD profiles, contextual editorial review, and actual playable startup
-and progression. No English voice acting or whole-game localization is claimed.
+At that checkpoint, remaining work included BAS/UI translation, the other COD
+profiles, contextual editorial review, and actual playable startup and
+progression. See the current coverage above for subsequent work. No English
+voice acting or whole-game localization is claimed.
 
 The menu-prose integration regression run passed 942 library tests serially
 (29 ignored), all three menu-reveal checks, four localization checks, and the

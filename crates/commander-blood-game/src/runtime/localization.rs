@@ -30,6 +30,8 @@ const SCRIPT11_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script11.json");
 const SCRIPT12_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script12.json");
+const SCRIPT13_ENGLISH: &str =
+    include_str!("../../../../localization/big-bug-bang/en/script13.json");
 const SCRIPT14_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script14.json");
 const SCRIPT15_ENGLISH: &str =
@@ -80,6 +82,7 @@ impl SequelEnglishSubtitles {
             9 => ("SCRIPT10", SCRIPT10_ENGLISH),
             10 => ("SCRIPT11", SCRIPT11_ENGLISH),
             11 => ("SCRIPT12", SCRIPT12_ENGLISH),
+            12 => ("SCRIPT13", SCRIPT13_ENGLISH),
             13 => ("SCRIPT14", SCRIPT14_ENGLISH),
             14 => ("SCRIPT15", SCRIPT15_ENGLISH),
             15 => ("SCRIPT16", SCRIPT16_ENGLISH),
@@ -591,6 +594,20 @@ mod tests {
                 assert_eq!(*word == expected, label.as_ref() == [answer]);
             }
         }
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script13_binds_choices_live_prices_and_rgb_text() {
+        check_profile_rgb_text(
+            12,
+            "SCRIPT13",
+            SCRIPT13_ENGLISH,
+            775,
+            26,
+            &[0x16e2, 0x27fc, 0x46dd, 0x49f8, 0x54ea],
+            &[0x241c, 0x5477, 0x5c76],
+        );
     }
 
     fn check_profile_rgb_text(
