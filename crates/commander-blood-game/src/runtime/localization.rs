@@ -26,6 +26,8 @@ const SCRIPT8_ENGLISH: &str = include_str!("../../../../localization/big-bug-ban
 const SCRIPT9_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script9.json");
 const SCRIPT10_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script10.json");
+const SCRIPT11_ENGLISH: &str =
+    include_str!("../../../../localization/big-bug-bang/en/script11.json");
 const SCRIPT12_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script12.json");
 const SCRIPT14_ENGLISH: &str =
@@ -76,6 +78,7 @@ impl SequelEnglishSubtitles {
             7 => ("SCRIPT8", SCRIPT8_ENGLISH),
             8 => ("SCRIPT9", SCRIPT9_ENGLISH),
             9 => ("SCRIPT10", SCRIPT10_ENGLISH),
+            10 => ("SCRIPT11", SCRIPT11_ENGLISH),
             11 => ("SCRIPT12", SCRIPT12_ENGLISH),
             13 => ("SCRIPT14", SCRIPT14_ENGLISH),
             14 => ("SCRIPT15", SCRIPT15_ENGLISH),
@@ -519,6 +522,74 @@ mod tests {
             ("bbb.script14.cod.00000ed3", "p o u r q u o i m o i"),
         ] {
             assert_eq!(translation.messages[site][1], letters);
+        }
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script11_binds_choices_dynamic_counts_and_rgb_text() {
+        check_profile_rgb_text(
+            10,
+            "SCRIPT11",
+            SCRIPT11_ENGLISH,
+            633,
+            19,
+            &[0x1c04, 0x3b75, 0x41f3],
+            &[0x3328, 0x4139, 0x4dac],
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script11_english_ideas_matches_original_puzzle_guards() {
+        use commander_blood_formats::instruction::{ScriptInstruction, decode_script_instruction};
+
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let cod = std::fs::read(root.join("SCRIPT11.COD")).unwrap();
+        let dic = std::fs::read(root.join("SCRIPT11.DIC")).unwrap();
+        let code = decode_script_code_for_dialect(&cod, ScriptDialect::BigBugBang).unwrap();
+        let dictionary = decode_script_dictionary(&dic).unwrap();
+        let catalog =
+            SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT11", SCRIPT11_ENGLISH)
+                .unwrap()
+                .unwrap();
+
+        // Localize IDEES to IDEAS without changing the original accepted concepts.
+        for (site, guard, answer, source_offset) in [
+            (0x19a8, 0x19c9, b'i', 0x0c65),
+            (0x1a01, 0x1a28, b'd', 0x0c73),
+            (0x1a60, 0x1a8b, b'e', 0x0c81),
+            (0x1ac3, 0x1aec, b'a', 0x0c75),
+            (0x1b16, 0x1b3d, b's', 0x0cab),
+        ] {
+            let token = code
+                .tokens()
+                .iter()
+                .find(|token| token.source_offset().index() == guard)
+                .unwrap_or_else(|| panic!("missing guard token at {guard:#x}"));
+            let ScriptInstruction::ConceptGuard { expected, inverted } =
+                decode_script_instruction(token, &dictionary).unwrap()
+            else {
+                panic!("missing original letter guard at {guard:#x}");
+            };
+            assert!(!inverted);
+            assert_eq!(
+                dictionary.resolve_source_offset(source_offset),
+                Some(expected)
+            );
+            let (words, labels) = &catalog.choices[&ScriptCodeOffset::new(site)];
+            let matching: Vec<_> = labels
+                .iter()
+                .enumerate()
+                .filter(|(_, label)| label.as_ref() == [answer])
+                .map(|(index, _)| index)
+                .collect();
+            assert_eq!(matching.len(), 1, "ambiguous English letter at {site:#x}");
+            assert_eq!(words[matching[0]], expected);
+            for (word, label) in words.iter().zip(labels) {
+                assert_eq!(*word == expected, label.as_ref() == [answer]);
+            }
         }
     }
 

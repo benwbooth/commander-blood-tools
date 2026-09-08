@@ -170,7 +170,29 @@ original font's RGB path, checking nonblank output and bounds. All 21 localizati
 tests pass with the original resources. This is an English editorial first pass,
 not live verification of its trades, destructive joke branches, or voice timing.
 
-The other 2 COD profiles (SCRIPT11 and SCRIPT13), BAS text, most native UI,
+`en/script11.json` supplies all 633 Zen text sites, covering Super Zen, Kero Zen,
+Ben Zen, cloning, medicine and guitar trades, and the ring quest. All 19 static
+choice lists retain ordered dictionary IDs; population fields 2464, 2538, and
+2612 and three inventory generators remain live. Source validation passes all
+633 sites. The original-resource runtime test loads SCRIPT11 after initial state
+setup and renders its 630 static subtitles through the original font's RGB path,
+checking nonblank output and bounds. All 23 localization tests pass with original
+resources. Live Zen progression, trades, telepathy, and voice timing remain
+unverified; this is an editorial first pass.
+
+The cave puzzle is localized from French IDEES to English IDEAS. Its third
+letter's accented E is displayed as `e`, and the unaccented-E distractor becomes
+`o` to avoid two visually identical choices. In the fourth list, the accepted E
+is displayed as `a` and the two original A distractors become `e`. The test
+`authentic_script11_english_ideas_matches_original_puzzle_guards` decodes the
+original concept guards at COD offsets `0x19C9`, `0x1A28`, `0x1A8B`, `0x1AEC`,
+and `0x1B3D`. It verifies exactly one matching English letter per list and that
+each maps to the original accepted dictionary ID. Neither script bytes nor
+branch logic change. This is source-bound branch verification, not a live puzzle
+completion capture.
+
+English COD coverage is now 16 of 17 profiles, or 6,146 of 6,921 text sites.
+The remaining COD profile (SCRIPT13), BAS text, most native UI,
 object names outside the inventory chooser, and text embedded
 in media remain untranslated.
 
