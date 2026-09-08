@@ -2276,8 +2276,7 @@ impl<'window> ModernGameServices<'window> {
             state,
         )
         .context("advancing the recovered color transition")?;
-        self.presentation_player
-            .refresh_display_rgba(self.runtime.front_buffer().pixels())?;
+        self.presentation_player.refresh_display_rgba()?;
         self.ship_presentation.transition_percent = self.palette_transition.state().percent;
         Ok(outcome)
     }
@@ -2675,7 +2674,12 @@ impl<'window> ModernGameServices<'window> {
         // ship_3d_hud_init blocks scene dispatch while the target list is open.
         // manu3_hand_frame_dispatch explicitly bypasses the presentation-request
         // delay in that state: a retained planet frame must not hide its cursor.
-        if ship_target_menu_owns_pointer(&self.ship_presentation)
+        // Dialogue choices likewise need the hand over their character idle clip.
+        let dialogue_choice_owns_pointer = self
+            .presentation_word_choice
+            .as_ref()
+            .is_some_and(|choice| choice.state().active && choice.state().interface_active);
+        if (ship_target_menu_owns_pointer(&self.ship_presentation) || dialogue_choice_owns_pointer)
             && !self.runtime.camera_approach().transition_pending
         {
             return false;
@@ -2741,6 +2745,8 @@ impl<'window> ModernGameServices<'window> {
         self.runtime
             .compose_ship_depth_bands(layout)
             .context("composing recovered ship-depth bands")?;
+        self.presentation_player
+            .refresh_display_bands(self.runtime.front_buffer().pixels(), layout)?;
         Ok(true)
     }
 

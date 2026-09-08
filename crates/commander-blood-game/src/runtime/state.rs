@@ -1075,8 +1075,18 @@ impl OriginalGameRuntime {
         Ok(())
     }
 
-    pub(super) fn darken_location_panel(&mut self, origin: [i32; 2], size: [u16; 2]) {
+    pub(super) fn darken_location_panel(&mut self, origin: [i32; 2], size: [u16; 2]) -> Result<()> {
         self.ui_overlay.darken_composited_rect(origin, size);
+        let mut entity = self.bridge_sprite_entities[LOCATION_PANEL_ENTITY];
+        entity.dirty_region = Some(crate::native::bloodprg::BridgeSpriteRect {
+            left: origin[0],
+            top: origin[1],
+            right: origin[0] + i32::from(size[0]),
+            bottom: origin[1] + i32::from(size[1]),
+        });
+        self.data
+            .world_artwork_assets
+            .draw_dimmed(&mut self.ui_overlay, &entity)
     }
 
     pub(super) fn draw_location_panel_text(

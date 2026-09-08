@@ -327,7 +327,11 @@ impl RuntimePresentationStream {
                 .wrapping_add(PRESENTED_FRAME_INCREMENT);
         }
         self.finished |= queue_finished(&queue);
-        self.resolve_display_rgba(runtime.front_buffer().pixels())?;
+        if queue_presented_frame(&queue) {
+            self.resolve_display_rgba(runtime.front_buffer().pixels())?;
+        } else {
+            self.resolve_retained_display_rgba()?;
+        }
         Ok(RuntimePresentationStepOutcome {
             queue,
             stream_finished: self.finished,
@@ -401,7 +405,7 @@ impl RuntimePresentationStream {
         self.resolve_retained_display_rgba()
     }
 
-    fn resolve_retained_display_rgba(&mut self) -> Result<()> {
+    pub(super) fn resolve_retained_display_rgba(&mut self) -> Result<()> {
         self.display_rgba = indexed_frame_rgba(&self.display_indices, &self.palette.live)
             .context("resolving the current HNM display page to true-color RGBA")?
             .into_boxed_slice();
@@ -860,6 +864,37 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn waiting_queue_does_not_replace_the_display_with_work_pixels() {
+        let Some(paths) = original_data_paths() else {
+            return;
+        };
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let request = RuntimePresentationRequest::new(
+            BloodResourceName::new(SCRUTER_IDLE_VIDEO_RESOURCE).unwrap(),
+        );
+        let (mut stream, _) =
+            RuntimePresentationStream::load(&mut runtime, request, 0, false).unwrap();
+        stream.clock.tick_threshold = 1;
+        let before = stream.display_rgba().to_vec();
+        runtime.front_buffer_mut().clear(255);
+        let outcome = stream
+            .service_frame(
+                &mut runtime,
+                0,
+                0,
+                PresentationQueueClockGates::default(),
+                false,
+            )
+            .unwrap();
+        assert!(!queue_presented_frame(&outcome.queue));
+        assert!(
+            stream.display_rgba() == before,
+            "waiting queue replaced the displayed video page"
+        );
     }
 
     #[test]

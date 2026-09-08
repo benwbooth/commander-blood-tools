@@ -761,7 +761,7 @@ impl RuntimeLocationPanelBackend<'_, '_> {
         self.services.runtime_mut().darken_location_panel(
             [i32::from(rect.x), i32::from(rect.y)],
             [rect.width as u16, rect.height as u16],
-        );
+        )?;
         Ok(())
     }
 }

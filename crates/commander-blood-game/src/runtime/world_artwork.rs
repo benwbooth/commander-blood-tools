@@ -9,7 +9,7 @@ use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
     BridgeSpriteEntity, BridgeSpriteFrameSource, BridgeSpritePosition, IndexedGamePalette,
     OriginalResourceCache, OriginalResourceCatalog, PaletteResourceTarget, ResourceId,
-    populate_bridge_sprite_from_cache,
+    build_palette_blend_remap_table, populate_bridge_sprite_from_cache,
 };
 use crate::ui::RgbaUiOverlay;
 
@@ -22,6 +22,7 @@ pub(super) struct WorldArtworkAssets(BTreeMap<ResourceId, WorldArtworkImage>);
 struct WorldArtworkImage {
     size: [usize; 2],
     pixels: Box<[u8]>,
+    dimmed_pixels: Box<[u8]>,
 }
 
 impl WorldArtworkAssets {
@@ -92,7 +93,29 @@ impl WorldArtworkAssets {
                 })
                 .collect::<Vec<_>>()
                 .into_boxed_slice();
-            images.insert(resource, WorldArtworkImage { size, pixels });
+            let mut remap = [0; 256];
+            build_palette_blend_remap_table(&colors, &mut remap, 50, [0; 3])?;
+            let dimmed_pixels = indexed
+                .iter()
+                .flat_map(|&index| {
+                    if index == 0 {
+                        [0; RGBA_COMPONENTS]
+                    } else {
+                        let rgb = colors[usize::from(remap[usize::from(index)])]
+                            .map(|value| (value << 2) | (value >> 4));
+                        [rgb[0], rgb[1], rgb[2], 255]
+                    }
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice();
+            images.insert(
+                resource,
+                WorldArtworkImage {
+                    size,
+                    pixels,
+                    dimmed_pixels,
+                },
+            );
         }
         Ok(Self(images))
     }
@@ -111,13 +134,31 @@ impl WorldArtworkAssets {
             .0
             .get(&resource)
             .context("location panel artwork was not imported")?;
-        image.draw(overlay, entity);
+        image.draw(overlay, entity, &image.pixels);
+        Ok(())
+    }
+
+    pub(super) fn draw_dimmed(
+        &self,
+        overlay: &mut RgbaUiOverlay,
+        entity: &BridgeSpriteEntity,
+    ) -> Result<()> {
+        let Some(BridgeSpriteFrameSource::CachedResource { resource, .. }) =
+            entity.frame.map(|frame| frame.source)
+        else {
+            return Ok(());
+        };
+        let image = self
+            .0
+            .get(&resource)
+            .context("location panel artwork was not imported")?;
+        image.draw(overlay, entity, &image.dimmed_pixels);
         Ok(())
     }
 }
 
 impl WorldArtworkImage {
-    fn draw(&self, overlay: &mut RgbaUiOverlay, entity: &BridgeSpriteEntity) {
+    fn draw(&self, overlay: &mut RgbaUiOverlay, entity: &BridgeSpriteEntity, pixels: &[u8]) {
         let [width, height] = [
             usize::from(entity.extent.width),
             usize::from(entity.extent.height),
@@ -142,9 +183,8 @@ impl WorldArtworkImage {
             for x in clip.left.max(origin[0])..clip.right.min(origin[0] + width as i32) {
                 let source_x = ((x - origin[0]) as usize * steps[0]) >> FIXED_POINT_FRACTION_BITS;
                 let offset = (source_y * self.size[0] + source_x) * RGBA_COMPONENTS;
-                let color: [u8; RGBA_COMPONENTS] = self.pixels[offset..offset + RGBA_COMPONENTS]
-                    .try_into()
-                    .unwrap();
+                let color: [u8; RGBA_COMPONENTS] =
+                    pixels[offset..offset + RGBA_COMPONENTS].try_into().unwrap();
                 if color[3] != 0 {
                     overlay.fill_rect([x, y], [1, 1], color);
                 }
@@ -354,6 +394,27 @@ mod tests {
                         actual,
                         expected,
                         "resource {} at {position:?}, {extent:?}",
+                        resource.value()
+                    );
+                }
+                let mut remap = [0; 256];
+                build_palette_blend_remap_table(&colors, &mut remap, 50, [0; 3]).unwrap();
+                let mut dimmed = RgbaUiOverlay::new(320, 200);
+                data.world_artwork_assets
+                    .draw_dimmed(&mut dimmed, &entity)
+                    .unwrap();
+                for (&index, actual) in reference.iter().zip(dimmed.pixels().chunks_exact(4)) {
+                    let expected = if index == 0 {
+                        [0; 4]
+                    } else {
+                        let [r, g, b] = colors[usize::from(remap[usize::from(index)])]
+                            .map(|value| (value << 2) | (value >> 4));
+                        [r, g, b, 255]
+                    };
+                    assert_eq!(
+                        actual,
+                        expected,
+                        "dimmed resource {} at {position:?}, {extent:?}",
                         resource.value()
                     );
                 }

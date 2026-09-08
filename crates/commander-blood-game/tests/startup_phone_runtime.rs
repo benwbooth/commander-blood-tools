@@ -1632,14 +1632,16 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
             record["semantic"]["video"]["display_frame_owned"], true,
             "an active Pterra stream did not own its displayed frame: {record}"
         );
-        assert_eq!(
-            record["semantic"]["video"]["manu3_layer_allowed"], false,
-            "the independent wgpu MANU3 layer was enabled over a Pterra video: {record}"
-        );
-        assert_eq!(
-            record["semantic"]["video"]["manu3_submitted_triangle_count"], 0,
-            "the renderer submitted MANU3 geometry over a Pterra video: {record}"
-        );
+        if record["semantic"]["presentation"]["retained_word_choice"]["active"] != true {
+            assert_eq!(
+                record["semantic"]["video"]["manu3_layer_allowed"], false,
+                "the independent hand was enabled over a noninteractive Pterra video"
+            );
+            assert_eq!(
+                record["semantic"]["video"]["manu3_submitted_triangle_count"], 0,
+                "the renderer submitted hand geometry over a noninteractive Pterra video"
+            );
+        }
         assert_eq!(
             record["semantic"]["video"]["palette_transition"]["surface"], "PresentationFrame",
             "a Pterra fade targeted the game surface instead of its true-color video page: {record}"
@@ -1702,12 +1704,14 @@ fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera
         "the post-video Pterra page redirected its fade into game colors"
     );
     assert_eq!(
-        post_video_choice["semantic"]["video"]["manu3_layer_allowed"], false,
-        "the post-video Pterra choice page exposed the independent hand layer"
+        post_video_choice["semantic"]["video"]["manu3_layer_allowed"], true,
+        "the Pterra identity-code chooser hid its interactive hand"
     );
-    assert_eq!(
-        post_video_choice["semantic"]["video"]["manu3_submitted_triangle_count"], 0,
-        "the renderer submitted MANU3 geometry over the post-video Pterra choice page"
+    assert!(
+        post_video_choice["semantic"]["video"]["manu3_submitted_triangle_count"]
+            .as_u64()
+            .is_some_and(|count| count > 0),
+        "the renderer omitted MANU3 geometry from the Pterra identity-code chooser"
     );
     assert!(
         post_video_choice["semantic"]["video"]["display_rgba_hash"].is_string(),

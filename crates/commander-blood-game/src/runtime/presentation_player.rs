@@ -280,14 +280,55 @@ impl RuntimePresentationPlayer {
             })
     }
 
-    /// Re-resolve the current video page after subtitles or a local color fade.
-    pub fn refresh_display_rgba(&mut self, active_indexed_pixels: &[u8]) -> Result<()> {
+    /// Re-resolve owned video pixels after a local color fade.
+    pub fn refresh_display_rgba(&mut self) -> Result<()> {
         if let Some(stream) = self.active_stream.as_mut() {
-            stream.resolve_display_rgba(active_indexed_pixels)
+            stream.resolve_retained_display_rgba()
         } else if let Some(frame) = self.retained_display.as_mut() {
             frame.resolve_rgba()
         } else {
             Ok(())
+        }
+    }
+
+    /// Carry explicit native band writes into the independently retained video page.
+    pub(super) fn refresh_display_bands(
+        &mut self,
+        source: &[u8],
+        layout: crate::native::bloodprg::ShipDepthBandLayout,
+    ) -> Result<()> {
+        let mut pixels = if let Some(stream) = self.active_stream.as_ref() {
+            stream.display_indices().to_vec()
+        } else if let Some(frame) = self.retained_display.as_ref() {
+            frame.indexed_pixels.to_vec()
+        } else {
+            return Ok(());
+        };
+        let rows = layout
+            .logical_rows()
+            .context("invalid retained video band layout")?;
+        let width = super::LOGICAL_FRAMEBUFFER_WIDTH;
+        for start in [rows.upper_destination_start, rows.lower_destination_start] {
+            let range = usize::from(start) * width
+                ..(usize::from(start) + usize::from(rows.row_count)) * width;
+            pixels
+                .get_mut(range.clone())
+                .context("retained video band outside display")?
+                .copy_from_slice(
+                    source
+                        .get(range)
+                        .context("video band source outside display")?,
+                );
+        }
+        if let Some(stream) = self.active_stream.as_mut() {
+            stream.resolve_display_rgba(&pixels)
+        } else {
+            let frame = self
+                .retained_display
+                .as_mut()
+                .expect("retained frame checked above");
+            frame.indexed_pixels = pixels.into_boxed_slice();
+            frame.resolve_rgba()
         }
     }
 
@@ -441,6 +482,83 @@ mod tests {
     const STAGED_SCENE_COLOR: [u8; 3] = [17, 19, 23];
 
     #[test]
+    fn explicit_ship_bands_update_only_their_owned_rows() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                0,
+                false,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        let mut percent = 100;
+        let layout =
+            crate::native::bloodprg::prepare_ship_depth_band(1, 0, 10, &mut percent, 0).unwrap();
+        for finish in [false, true] {
+            if finish {
+                player.finish();
+            }
+            player.display_palette_mut().unwrap()[255] = [63, 0, 0];
+            player.refresh_display_rgba().unwrap();
+            let before = player.display_rgba().unwrap().to_vec();
+            runtime.front_buffer_mut().clear(255);
+            player
+                .refresh_display_bands(runtime.front_buffer().pixels(), layout)
+                .unwrap();
+            let rgba = player.display_rgba().unwrap();
+            for (index, pixel) in rgba.chunks_exact(4).enumerate() {
+                let row = index / 320;
+                if !(35..165).contains(&row) {
+                    assert_eq!(pixel, [255, 0, 0, 255]);
+                } else {
+                    assert_eq!(pixel, &before[index * 4..index * 4 + 4]);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn palette_refresh_does_not_recapture_the_shared_work_page() {
+        let Some(data) = original_data() else {
+            assert!(
+                std::env::var_os("CBLOOD_REQUIRE_ACCURACY_TESTS").is_none(),
+                "original assets required"
+            );
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                0,
+                false,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        let before = player.display_rgba().unwrap().to_vec();
+        runtime.front_buffer_mut().clear(255);
+        player.refresh_display_rgba().unwrap();
+        assert!(
+            player.display_rgba().unwrap() == before,
+            "a color refresh replaced video pixels"
+        );
+    }
+
+    #[test]
     fn opening_line_runs_through_the_catalog_and_flat_stream() {
         let Some(data) = original_data() else {
             return;
@@ -488,7 +606,7 @@ mod tests {
         assert!(player.display_occludes_manu3());
         assert_eq!(player.display_rgba(), Some(retained_rgba.as_slice()));
         player.display_palette_mut().unwrap().fill([63, 0, 0]);
-        player.refresh_display_rgba(&[]).unwrap();
+        player.refresh_display_rgba().unwrap();
         assert_ne!(player.display_rgba(), Some(retained_rgba.as_slice()));
         assert_eq!(
             runtime.live_palette(),
@@ -683,7 +801,7 @@ mod tests {
         source_colors[visible_scene_color_index] = STAGED_SCENE_COLOR;
         source_colors[INHERITED_COLOR_INDEX] = INHERITED_VIDEO_COLOR;
         *player.display_palette_mut().unwrap() = source_colors;
-        player.refresh_display_rgba(&indexed_pixels).unwrap();
+        player.refresh_display_rgba().unwrap();
         let rgba_before_clear = player.display_rgba().unwrap().to_vec();
         player.stage_next_stream_source_colors(source_colors);
 
@@ -708,7 +826,7 @@ mod tests {
         assert_ne!(player.display_rgba().unwrap(), rgba_before_clear);
 
         *player.display_palette_mut().unwrap() = source_colors;
-        player.refresh_display_rgba(&indexed_pixels).unwrap();
+        player.refresh_display_rgba().unwrap();
         assert!(player.finish());
         let retained_rgba_before_clear = player.display_rgba().unwrap().to_vec();
         player.stage_next_stream_source_colors(source_colors);
