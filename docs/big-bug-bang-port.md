@@ -25,6 +25,21 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### English Subtitle Raster Coverage
+
+All 14 bundled COD catalogs now run the shared original-resource RGB subtitle
+check, including the 2,725 display sites in SCRIPT1 through SCRIPT4. The check
+loads profiles through the real profile manager, verifies COD/DIC identity,
+draws static subtitles with the executable's original font and colors, and
+checks nonblank output and display bounds. Authored empty text must remain empty;
+dynamic-number sites retain their state operands instead of becoming static
+subtitles. Choice IDs and inventory generators retain their original bindings.
+
+The 20 localization tests pass with imported resources using
+`cargo test -p commander-blood-game --lib runtime::localization::tests -- --include-ignored`.
+This is headless text-rendering evidence, not live verification of every choice,
+scene transition, translation meaning, or gameplay route.
+
 ### SCRIPT2 Load and Native Transition Gate
 
 The retained-state loader now binds SCRIPT2's VAR-relative word 8368 to the first

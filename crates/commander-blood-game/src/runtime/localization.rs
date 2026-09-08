@@ -481,15 +481,7 @@ mod tests {
     #[test]
     #[ignore = "requires the user's imported Big Bug Bang resources"]
     fn authentic_script10_binds_choices_inventory_and_rgb_text() {
-        check_profile_rgb_text(
-            9,
-            "SCRIPT10",
-            SCRIPT10_ENGLISH,
-            303,
-            8,
-            &[],
-            &[0x1bef],
-        );
+        check_profile_rgb_text(9, "SCRIPT10", SCRIPT10_ENGLISH, 303, 8, &[], &[0x1bef]);
     }
 
     #[test]
@@ -626,10 +618,13 @@ mod tests {
                 )
                 .unwrap();
             }
-            assert!(
-                pixels.pixels().chunks_exact(4).any(|pixel| pixel[3] != 0),
-                "blank {site:?}"
-            );
+            let has_pixels = pixels.pixels().chunks_exact(4).any(|pixel| pixel[3] != 0);
+            if catalog.menus[site].source.is_empty() {
+                assert!(text.is_empty(), "unexpected text at empty source {site:?}");
+                assert!(!has_pixels, "unexpected pixels at empty source {site:?}");
+            } else {
+                assert!(has_pixels, "blank {site:?}");
+            }
             assert!(
                 pixels
                     .pixels()
@@ -649,12 +644,29 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
-        assert!(SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT4", english).is_err());
+        assert!(
+            SequelEnglishSubtitles::from_catalog(&cod, &dic, "WRONG_PROFILE", english).is_err()
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_opening_renders_all_rgb_subtitles() {
+        check_profile_rgb_text(0, "SCRIPT1", OPENING_ENGLISH, 89, 3, &[], &[]);
     }
 
     #[test]
     #[ignore = "requires the user's imported Big Bug Bang resources"]
     fn authentic_script4_preserves_live_numbers_and_inventory() {
+        check_profile_rgb_text(
+            3,
+            "SCRIPT4",
+            SCRIPT4_ENGLISH,
+            660,
+            11,
+            &[0x1096, 0x2b01, 0x4138, 0x4191],
+            &[0x1d8d, 0x3e11, 0x561d],
+        );
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../output/big-bug-bang/imported-assets/resources");
         let cod = std::fs::read(root.join("SCRIPT4.COD")).unwrap();
@@ -707,6 +719,15 @@ mod tests {
     #[test]
     #[ignore = "requires the user's imported Big Bug Bang resources"]
     fn authentic_script3_preserves_inventory_generators_and_empty_text() {
+        check_profile_rgb_text(
+            2,
+            "SCRIPT3",
+            SCRIPT3_ENGLISH,
+            779,
+            30,
+            &[0x1eb6, 0x3e93, 0x5b54],
+            &[0x17c9, 0x3379, 0x4c4d, 0x65ad],
+        );
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../output/big-bug-bang/imported-assets/resources");
         let cod = std::fs::read(root.join("SCRIPT3.COD")).unwrap();
@@ -756,6 +777,18 @@ mod tests {
     #[test]
     #[ignore = "requires the user's imported Big Bug Bang resources"]
     fn authentic_script2_catalog_preserves_all_sites_and_live_numbers() {
+        check_profile_rgb_text(
+            1,
+            "SCRIPT2",
+            SCRIPT2_ENGLISH,
+            1197,
+            38,
+            &[
+                0x3bee, 0x3c4c, 0x3c7d, 0x3cb4, 0x3ceb, 0x3d24, 0x3d57, 0x3d92, 0x3dc9, 0x3e76,
+                0x4ae0,
+            ],
+            &[],
+        );
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../output/big-bug-bang/imported-assets/resources");
         let mut cod = std::fs::read(root.join("SCRIPT2.COD")).unwrap();
