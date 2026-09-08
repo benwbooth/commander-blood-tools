@@ -14,9 +14,9 @@ use crate::native::bloodprg::{
     ScriptFieldSelector, ShipNavigationAccessCounter, ShipNavigationCandidate,
     ShipNavigationContext, ShipNavigationHost, ShipNavigationOutcome, ShipNavigationRelation,
     ShipNavigationState, TransitionRect, advance_framebuffer_rect_transition,
-    build_palette_blend_remap_table, encode_active_presentation_line, measure_game_text_width,
-    navigation_candidates, remap_framebuffer_rect, script_field_offset, update_choice_list,
-    update_ship_navigation,
+    build_palette_blend_remap_table, decode_active_presentation_line,
+    encode_active_presentation_line, measure_game_text_width, navigation_candidates,
+    remap_framebuffer_rect, script_field_offset, update_choice_list, update_ship_navigation,
 };
 
 use super::choice_list::{RuntimeChoiceListStyle, draw_choice_list_rows};
@@ -328,13 +328,13 @@ fn initial_state(
         navigation_screen_rebuild_pending: lifecycle.navigation_rebuild_pending,
         navigation_snapshot_pending: false,
         ship_active_flags: ship.flags,
-        active_line: lifecycle.presentation.active_line,
+        active_line: decode_active_presentation_line(ship.active_line),
         presentation_gate: ship.presentation_gate,
         hud_initialized: false,
         text_display_active: text.subtitle_display_active,
         presentation_hold_ready: lifecycle.presentation.hold_ready,
         depth_band_enabled: ship.depth_band_enabled,
-        presentation_request_flags: text.request_flags.bits(),
+        presentation_request_flags: lifecycle.presentation.request_flags.bits(),
         word_choice_phase: Default::default(),
         bridge_palette_transition_staged: false,
         palette_transition_last: palette.last,
@@ -370,13 +370,14 @@ fn import_live_state(
     state.frame_presented = lifecycle.frame_presented;
     state.navigation_screen_rebuild_pending = lifecycle.navigation_rebuild_pending;
     state.ship_active_flags = ship.flags;
-    state.active_line = lifecycle.presentation.active_line;
+    // Scene dispatch runs immediately before navigation and owns the latest line.
+    state.active_line = decode_active_presentation_line(ship.active_line);
     state.presentation_gate = ship.presentation_gate;
     state.hud_initialized = services.ship_hud_initialized()?;
     state.text_display_active = text.subtitle_display_active;
     state.presentation_hold_ready = lifecycle.presentation.hold_ready;
     state.depth_band_enabled = ship.depth_band_enabled;
-    state.presentation_request_flags = text.request_flags.bits();
+    state.presentation_request_flags = lifecycle.presentation.request_flags.bits();
     state.word_choice_phase = services.presentation_word_choice_phase()?;
     state.palette_transition_last = palette.last;
     state.palette_transition_percent = palette.percent;

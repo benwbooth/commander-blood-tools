@@ -217,6 +217,52 @@ At the final boundary, presentation line 7 is active, its presentation gate is
 broader game progression still need verification; this is not a complete
 playable-English release.
 
+### Templand Interlude Completion
+
+The extended baseline `daddy-fresh-load-templand-08` reproduced repeated
+`SQ\\venus06.hnm` playback. Clearing the sequel lifecycle request alone was
+insufficient: capture `output/fidelity/bbb-templand-dialogue-1788887781723898709-3431099-0`
+still reopened the clip. At frame 5609 its source closed, but the ship active
+line remained 7 and request flags remained 2; frame 5610 reopened the source.
+
+The scene dispatcher clears the ship-owned line before navigation runs. The
+navigation adapter had imported the older lifecycle line and text-owned request
+flags, undoing completion. It now reads the ship-owned line and current lifecycle
+request flags. The sequel completion handoff also publishes the native-cleared
+secondary request and scene gate before resuming the VM. All 38 unchanged-binary
+scene-completion vectors regenerate byte-identically; the Rust oracle test now
+checks lifecycle request/gate ownership as well as VM resumption.
+
+Production regression `templand_interlude_returns_to_dialogue_and_choices` in
+`crates/commander-blood-game/tests/bbb_progression.rs` passed in 531.09 seconds.
+Its retained capture is
+`output/fidelity/bbb-templand-dialogue-1788888606946814893-3447994-0`.
+At frame 3365, dialogue advances to "With that boiled-shank face"; subsequent
+speech reaches "am I boring you, Commander? Are you in a hurry to finish?...".
+The chooser reaches `Selecting` with `finish` and `no_hurry`. The test checks
+this semantic progression, not visible pixels or successful choice selection.
+`dialogue-continuation.png` visibly confirms later authored speech.
+However, `choices.png` shows the question and hand **without visible choice
+labels**. Choice rendering/interaction remains the next blocker; the trace field
+`rendered_word_choices` actually reports retained labels, not proof of drawing.
+The frame-ready gate around choice updates and transient UI clearing require
+further verification. Neither menu usability nor the rest of this conversation
+is established by this passing regression.
+
+Run with a graphical display and imported BBB assets:
+
+```sh
+nix develop -c cargo test -p commander-blood-game --test bbb_progression \
+  templand_interlude_returns_to_dialogue_and_choices -- --ignored --exact --nocapture
+```
+
+`BBB_ASSET_CACHE` and `BBB_PROGRESSED_SAVE_DIR` override the default local asset
+and progressed-save paths. The test copies the seed saves to a fresh disposable
+directory and retains input hashes, initial saves, logs, and frame traces.
+Game-package all-targets checking and 963 enabled game-library tests pass (38
+ignored). Workspace-wide all-targets checking still fails in the shared
+script-compiler test imports; that is not a passing gate.
+
 ### Native Travel Gates
 
 The hash-locked probe

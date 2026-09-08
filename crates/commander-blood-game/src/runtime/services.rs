@@ -312,6 +312,11 @@ pub(super) fn publish_sequel_scene_completion(
     lifecycle: &mut GameLifecycleState,
 ) {
     if sequel && completed {
+        lifecycle
+            .presentation
+            .request_flags
+            .clear_secondary_request();
+        lifecycle.presentation.c2_presentation_gate = false;
         lifecycle.vm_execution_enabled = true;
     }
 }

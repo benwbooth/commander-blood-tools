@@ -167,7 +167,22 @@ fn sequel_scene_completion_matches_original_latches_and_vm_writes() {
         assert_eq!(vector.input.buffered, vector.output.buffered);
         let mut lifecycle = GameLifecycleState::default();
         lifecycle.vm_execution_enabled = vector.input.vm != 0;
+        lifecycle.presentation.request_flags =
+            crate::native::bloodprg::PresentationRequestFlags::decode(vector.input.request);
+        lifecycle.presentation.c2_presentation_gate = vector.input.gate & 1 != 0;
         publish_sequel_scene_completion(true, completed, &mut lifecycle);
+        assert_eq!(
+            lifecycle.presentation.request_flags.bits(),
+            vector.output.request,
+            "{} request ownership",
+            vector.name
+        );
+        assert_eq!(
+            lifecycle.presentation.c2_presentation_gate,
+            vector.output.gate & 1 != 0,
+            "{} scene gate",
+            vector.name
+        );
         assert_eq!(
             lifecycle.vm_execution_enabled,
             vector.output.vm != 0,
