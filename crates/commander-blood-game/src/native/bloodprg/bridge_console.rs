@@ -1,5 +1,7 @@
 //! Typed bridge-console selection, record choosers, and options handling.
 
+use commander_blood_formats::code::ScriptDialect;
+
 use super::{
     ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListRect, ChoiceListState,
     update_choice_list,
@@ -324,13 +326,20 @@ pub enum ImmediateBridgeChoiceOutcome {
 /// Publish the horn presentation record.
 ///
 /// This translates `nav_choice_handler_0` at BLOODPRG routine offset
-/// `0x008713` using a typed record identity and semantic action.
-pub fn activate_horn_choice<RecordId>(
+/// `0x008713` using a typed record identity and semantic action. BBB's handler
+/// at file `0x98AD` additionally loads the streamed radio bank.
+pub fn activate_horn_choice<RecordId, Backend: BridgeChoiceBackend>(
     record: RecordId,
     console: &mut BridgeConsoleState,
     deferred: &mut BridgeDeferredState<RecordId>,
+    dialect: ScriptDialect,
+    backend: &mut Backend,
 ) -> ImmediateBridgeChoiceOutcome {
-    activate_immediate_record(record, console, deferred)
+    let outcome = activate_immediate_record(record, console, deferred);
+    if outcome == ImmediateBridgeChoiceOutcome::Activated && dialect == ScriptDialect::BigBugBang {
+        backend.reload_radio_sound_bank();
+    }
+    outcome
 }
 
 /// Host operations shared by bridge submenus.
@@ -1015,6 +1024,60 @@ mod tests {
     }
 
     #[test]
+    fn sequel_honk_loads_the_radio_bank_only_after_activation() {
+        let vectors: Vec<serde_json::Value> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_honk_bank.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), 512);
+        for vector in vectors {
+            for dialect in [ScriptDialect::BigBugBang, ScriptDialect::CommanderBlood] {
+                let phase = vector["phase"].as_u64().unwrap() as u8;
+                let mut console =
+                    selected_console(BridgeConsoleChoice::Horn, phase_from_activation_bit(phase));
+                let mut deferred = BridgeDeferredState {
+                    record: Some(BridgeDeferredRecord {
+                        record: 0x300_u16,
+                        action: BridgeDeferredActionKind::PresentationQueue,
+                    }),
+                    redraw_requested: false,
+                };
+                let mut backend = OracleBackend::default();
+                let outcome = activate_horn_choice(
+                    vector["source"].as_u64().unwrap() as u16,
+                    &mut console,
+                    &mut deferred,
+                    dialect,
+                    &mut backend,
+                );
+                assert_eq!(
+                    outcome == ImmediateBridgeChoiceOutcome::Activated,
+                    phase & 1 != 0
+                );
+                assert_eq!(
+                    deferred.record.unwrap().record,
+                    vector["deferred_link"].as_u64().unwrap() as u16
+                );
+                let expected_loads = if dialect == ScriptDialect::BigBugBang {
+                    vector["calls"].as_array().unwrap().len()
+                } else {
+                    0
+                };
+                assert_eq!(backend.reloads, expected_loads);
+                assert_eq!(
+                    console.panel_phase,
+                    if phase & 1 != 0 {
+                        assert_eq!(vector["phase_after"], 0);
+                        BridgeChoicePanelPhase::Closed
+                    } else {
+                        phase_from_activation_bit(phase)
+                    }
+                );
+            }
+        }
+    }
+
+    #[test]
     fn horn_and_radio_handlers_match_every_original_semantic_vector() {
         for (path, radio) in [
             (
@@ -1059,7 +1122,13 @@ mod tests {
                         &mut backend,
                     )
                 } else {
-                    activate_horn_choice(vector.source_record, &mut console, &mut deferred)
+                    activate_horn_choice(
+                        vector.source_record,
+                        &mut console,
+                        &mut deferred,
+                        ScriptDialect::CommanderBlood,
+                        &mut backend,
+                    )
                 };
                 assert_eq!(
                     outcome == ImmediateBridgeChoiceOutcome::Activated,

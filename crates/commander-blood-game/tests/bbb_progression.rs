@@ -28,7 +28,41 @@ fn validate_recorded_templand_continuation() {
     assert_templand_trace(&frames, false);
 }
 
+#[test]
+#[ignore = "requires BBB assets, a progressed Daddy save, and a graphical display"]
+fn honk_phone_loads_radio_bank_and_passes_cryobox_dialogue() {
+    let frames = replay_bbb(
+        "bbb-honk-radio",
+        "accuracy/scenarios/bbb_load_daddy_f7_phone.tsv",
+    );
+    assert_honk_trace(&frames);
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a retained Honk trace"]
+fn validate_recorded_honk_radio_continuation() {
+    let frames =
+        PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"));
+    assert_honk_trace(&frames);
+}
+
 fn replay_templand(finish: bool) {
+    let frames = replay_bbb(
+        if finish {
+            "bbb-templand-finish"
+        } else {
+            "bbb-templand-dialogue"
+        },
+        if finish {
+            "accuracy/scenarios/bbb_load_daddy_templand_finish.tsv"
+        } else {
+            "accuracy/scenarios/bbb_load_daddy_templand_dialogue.tsv"
+        },
+    );
+    assert_templand_trace(&frames, finish);
+}
+
+fn replay_bbb(name: &str, scenario: &str) -> PathBuf {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let assets = std::env::var_os("BBB_ASSET_CACHE")
         .map(PathBuf::from)
@@ -38,22 +72,13 @@ fn replay_templand(finish: bool) {
         .unwrap_or_else(|| {
             workspace.join("output/big-bug-bang/daddy-tempest-save-load-01/writable")
         });
-    let name = if finish {
-        "bbb-templand-finish"
-    } else {
-        "bbb-templand-dialogue"
-    };
     let artifacts = scenario_artifacts::ScenarioArtifacts::create(&workspace, name).unwrap();
     let writable = artifacts.0.join("writable");
     fs::create_dir(&writable).unwrap();
     for name in ["BLOOD.SAV", "GAME1.SAV"] {
         fs::copy(save.join(name), writable.join(name)).unwrap();
     }
-    let scenario = workspace.join(if finish {
-        "accuracy/scenarios/bbb_load_daddy_templand_finish.tsv"
-    } else {
-        "accuracy/scenarios/bbb_load_daddy_templand_dialogue.tsv"
-    });
+    let scenario = workspace.join(scenario);
     let frames = artifacts.0.join("frames.jsonl");
     let mut command = Command::new(env!("CARGO_BIN_EXE_commander-blood"));
     command
@@ -78,7 +103,55 @@ fn replay_templand(finish: bool) {
         "BBB replay failed; artifacts: {}",
         artifacts.0.display()
     );
-    assert_templand_trace(&frames, finish);
+    frames
+}
+
+fn assert_honk_trace(frames: &std::path::Path) {
+    let mut loaded_save = false;
+    let mut returned = false;
+    let mut honk_with_bank = false;
+    let mut reached_cryobox = false;
+    let mut streamed_at_cryobox = None;
+    let mut streamed_after_cryobox = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        loaded_save |= semantic["vm"]["resource_profile"] == 2;
+        returned |= loaded_save && semantic["vm"]["resource_profile"] == 1;
+        let honk = semantic["presentation"]["active_actor_presentation"]["name"] == "Honk";
+        if returned && honk {
+            assert_eq!(
+                semantic["audio"]["streamed_sound_bank"], "radio.snd",
+                "Honk must load his authored radio bank before dispatch"
+            );
+            honk_with_bank = true;
+        }
+        let streamed = semantic["audio"]["events"].as_array().map_or(0, |events| {
+            events
+                .iter()
+                .filter(|event| event["kind"] == "streamed_dialogue")
+                .count()
+        });
+        reached_cryobox |=
+            honk_with_bank && semantic["subtitle"] == "I'll put them in the cryobox for you...";
+        if reached_cryobox {
+            let baseline = *streamed_at_cryobox.get_or_insert(streamed);
+            streamed_after_cryobox |= streamed > baseline;
+        }
+    }
+    assert!(
+        loaded_save && returned,
+        "save load and F7 return were not observed"
+    );
+    assert!(honk_with_bank, "Honk never acquired his streamed bank");
+    assert!(
+        reached_cryobox,
+        "the previously crashing line was not reached"
+    );
+    assert!(
+        streamed_after_cryobox,
+        "no streamed dialogue followed the formerly crashing line"
+    );
 }
 
 fn assert_templand_trace(frames: &std::path::Path, finish: bool) {

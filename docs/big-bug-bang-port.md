@@ -26,6 +26,47 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Honk Radio Bank Ownership
+
+The cryobox-dialogue crash below was traced to a missing BBB-specific menu
+effect, not an optional sound asset. The unchanged first console handler at
+file `0x98AD..0x98D0` tests phase bit zero, publishes Honk's C3 deferred record,
+clears the panel phase, and calls the sound loader with mode one and
+`SN\\RADIO.SND` (`DS:0xF64`). Commander's corresponding handler has no bank load.
+The shared Rust Honk path previously implemented only Commander's writes.
+
+`activate_horn_choice` now receives the active dialect and publishes the BBB
+radio-bank effect through the same runtime backend used by radio/navigation
+commands. The effect is applied before the deferred record enters script
+dispatch. No audio invariant was removed, no missing-bank fallback was added,
+and Commander retains its existing no-reload behavior.
+
+`big_bug_bang_honk_bank_oracle.py` runs all 256 phase bytes with two source
+records (512 cases), validates the original menu jump-table target, checks
+unchanged executable/global memory outside the expected writes, and records
+the real loader-call arguments at its boundary. It does not emulate the disk
+loader. Rust checks those vectors plus Commander non-reload cases; existing
+Commander horn/radio vectors also pass. Regular library tests: 973 passed,
+58 ignored. The game-package all-target check passes.
+
+The new `bbb_progression` Honk replay shares the normal copied-save/process
+harness and requires the bank before Honk dispatch, the cryobox dialogue, and
+a new streamed audio event after that line. Merely entering Honk or retaining
+an older audio event cannot satisfy the continuation check.
+
+Live replay `output/big-bug-bang/honk-bank-GiQyVySj` completed every scenario
+action and exited successfully with binary SHA-256
+`778bcb45c062ff7411b24533ce20cfd49817e8f94c77aed39c3a9e7ab968a507`.
+The last frame, 2766, is still in SCRIPT2 with Honk presenting "A document on
+technological inventions"; seven streamed-dialogue events have been emitted.
+The inspected `after-cryobox.png` shows a later dialogue line on screen. Both
+copied save hashes remained unchanged. The shared retained-trace validator
+passes this completed capture and rejects the prior crash capture specifically
+because Honk lacks `radio.snd`. The new full-process integration wrapper was
+not separately replayed after adding it; the equivalent CLI replay and its
+shared trace assertions were run. This fixes the demonstrated bank crash, not
+the entire Honk conversation or later inventory/quest progression.
+
 ### F7 Conversation Abort and Escape
 
 BBB now uses its own Escape and F7 bindings. Escape is inert, Space retains

@@ -198,9 +198,11 @@ impl RuntimeBridgeConsole {
     ) -> Result<()> {
         match choice {
             BridgeConsoleChoice::Horn => {
-                let record = required_builtin(services, |builtins| builtins.horn, "Honk")?;
-                let outcome = activate_horn_choice(record, &mut self.console, &mut self.deferred);
-                debug_assert_eq!(outcome, ImmediateBridgeChoiceOutcome::Activated);
+                self.activate_immediate_choice(
+                    services,
+                    lifecycle.primary_pointer_pressed,
+                    choice,
+                )?;
             }
             BridgeConsoleChoice::Navigation => {
                 self.update_navigation_menu(services, lifecycle.primary_pointer_pressed)?
@@ -209,7 +211,7 @@ impl RuntimeBridgeConsole {
                 self.update_contact_menu(services, lifecycle.primary_pointer_pressed)?
             }
             BridgeConsoleChoice::Radio => {
-                self.activate_radio(services, lifecycle.primary_pointer_pressed)?
+                self.activate_immediate_choice(services, lifecycle.primary_pointer_pressed, choice)?
             }
             BridgeConsoleChoice::Options => self.update_option_menu(services, lifecycle)?,
         }
@@ -312,12 +314,19 @@ impl RuntimeBridgeConsole {
         apply_backend_effects(services, effects)
     }
 
-    fn activate_radio(
+    fn activate_immediate_choice(
         &mut self,
         services: &mut ModernGameServices<'_>,
         primary_pointer_pressed: bool,
+        choice: BridgeConsoleChoice,
     ) -> Result<()> {
-        let record = required_builtin(services, |builtins| builtins.menu, "menu")?;
+        let horn = choice == BridgeConsoleChoice::Horn;
+        let record = if horn {
+            required_builtin(services, |builtins| builtins.horn, "Honk")?
+        } else {
+            required_builtin(services, |builtins| builtins.menu, "menu")?
+        };
+        let dialect = services.runtime().data().game().script_dialect();
         let fonts = services.runtime().data().font_resources().clone();
         let pointer = choice_pointer(services, primary_pointer_pressed);
         let current_hand_animation = services.manu3_hand_state().current_animation;
@@ -328,8 +337,17 @@ impl RuntimeBridgeConsole {
             current_hand_animation,
             &mut self.transition,
         );
-        let outcome =
-            activate_radio_choice(record, &mut self.console, &mut self.deferred, &mut backend);
+        let outcome = if horn {
+            activate_horn_choice(
+                record,
+                &mut self.console,
+                &mut self.deferred,
+                dialect,
+                &mut backend,
+            )
+        } else {
+            activate_radio_choice(record, &mut self.console, &mut self.deferred, &mut backend)
+        };
         let effects = backend.effects();
         let hand_requests = backend.take_hand_requests();
         backend.finish()?;
