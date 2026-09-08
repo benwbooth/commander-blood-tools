@@ -20,6 +20,7 @@ const SCRIPT2_ENGLISH: &str = include_str!("../../../../localization/big-bug-ban
 const SCRIPT3_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script3.json");
 const SCRIPT4_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script4.json");
 const SCRIPT5_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script5.json");
+const SCRIPT6_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script6.json");
 const SCRIPT7_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script7.json");
 const SCRIPT8_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script8.json");
 const SCRIPT9_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script9.json");
@@ -70,6 +71,7 @@ impl SequelEnglishSubtitles {
             2 => ("SCRIPT3", SCRIPT3_ENGLISH),
             3 => ("SCRIPT4", SCRIPT4_ENGLISH),
             4 => ("SCRIPT5", SCRIPT5_ENGLISH),
+            5 => ("SCRIPT6", SCRIPT6_ENGLISH),
             6 => ("SCRIPT7", SCRIPT7_ENGLISH),
             7 => ("SCRIPT8", SCRIPT8_ENGLISH),
             8 => ("SCRIPT9", SCRIPT9_ENGLISH),
@@ -367,6 +369,20 @@ mod tests {
             7,
             &[0x1050, 0x16b5],
             &[0x1537, 0x1ea6],
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script6_binds_choices_dynamic_counts_and_rgb_text() {
+        check_profile_rgb_text(
+            5,
+            "SCRIPT6",
+            SCRIPT6_ENGLISH,
+            543,
+            18,
+            &[0x114f, 0x2e84],
+            &[0x2cfb, 0x3ffa],
         );
     }
 

@@ -160,8 +160,18 @@ through the original font's RGB path with nonblank and bounds checks. All 19
 localization tests pass with original resources. This editorial first pass does
 not verify live puzzle answers, migration, trades, debugging, or voice timing.
 
-The other 3 COD profiles, BAS text, most native UI, object names outside the
-inventory chooser, and text embedded
+`en/script6.json` supplies all 543 green Crooli text sites for Chigraxx/Emasculator
+and Sergeant Rotator. It includes nuclear-item trades, strike dialogue, jokes,
+and gift reactions. Eighteen choice lists preserve ordered dictionary IDs;
+population fields 244 and 392 and both inventory generators remain live.
+Source validation passes all 543 sites. The original-resource runtime test loads
+SCRIPT6 after initial state setup and renders all 541 static subtitles using the
+original font's RGB path, checking nonblank output and bounds. All 21 localization
+tests pass with the original resources. This is an English editorial first pass,
+not live verification of its trades, destructive joke branches, or voice timing.
+
+The other 2 COD profiles (SCRIPT11 and SCRIPT13), BAS text, most native UI,
+object names outside the inventory chooser, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -759,8 +769,8 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5,
-SCRIPT7 through SCRIPT10, SCRIPT12, and SCRIPT14 through SCRIPT17
+the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT10,
+SCRIPT12, and SCRIPT14 through SCRIPT17
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.

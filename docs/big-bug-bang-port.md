@@ -16,8 +16,8 @@ choices, and continues through `no_hurry` back to Tempest navigation. Retained
 screenshots and RGB-row checks verify the formerly missing labels. Other
 conversation branches and broader progression remain unverified. These routes
 do not establish a complete playthrough. English COD display
-catalogs cover SCRIPT1 through SCRIPT5, SCRIPT7 through SCRIPT10, SCRIPT12,
-and SCRIPT14 through SCRIPT17, but the other 3 profiles and several
+catalogs cover SCRIPT1 through SCRIPT10, SCRIPT12,
+and SCRIPT14 through SCRIPT17, but the other 2 profiles and several
 other text layers remain unfinished. The latest route evidence is recorded in
 `../localization/big-bug-bang/README.md`. The original-disc investigation is in
 `big-bug-bang-investigation.md`; its initial decoder limitations describe the
@@ -27,7 +27,7 @@ state before the implementation below.
 
 ### English Subtitle Raster Coverage
 
-All 14 bundled COD catalogs now run the shared original-resource RGB subtitle
+All 15 bundled COD catalogs now run the shared original-resource RGB subtitle
 check, including the 2,725 display sites in SCRIPT1 through SCRIPT4. The check
 loads profiles through the real profile manager, verifies COD/DIC identity,
 draws static subtitles with the executable's original font and colors, and
@@ -35,7 +35,7 @@ checks nonblank output and display bounds. Authored empty text must remain empty
 dynamic-number sites retain their state operands instead of becoming static
 subtitles. Choice IDs and inventory generators retain their original bindings.
 
-The 20 localization tests pass with imported resources using
+The 21 localization tests pass with imported resources using
 `cargo test -p commander-blood-game --lib runtime::localization::tests -- --include-ignored`.
 This is headless text-rendering evidence, not live verification of every choice,
 scene transition, translation meaning, or gameplay route.
