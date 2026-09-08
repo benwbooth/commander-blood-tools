@@ -27,6 +27,8 @@ const SCRIPT10_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script10.json");
 const SCRIPT12_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script12.json");
+const SCRIPT14_ENGLISH: &str =
+    include_str!("../../../../localization/big-bug-bang/en/script14.json");
 const SCRIPT15_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script15.json");
 const SCRIPT16_ENGLISH: &str =
@@ -73,6 +75,7 @@ impl SequelEnglishSubtitles {
             8 => ("SCRIPT9", SCRIPT9_ENGLISH),
             9 => ("SCRIPT10", SCRIPT10_ENGLISH),
             11 => ("SCRIPT12", SCRIPT12_ENGLISH),
+            13 => ("SCRIPT14", SCRIPT14_ENGLISH),
             14 => ("SCRIPT15", SCRIPT15_ENGLISH),
             15 => ("SCRIPT16", SCRIPT16_ENGLISH),
             16 => ("SCRIPT17", SCRIPT17_ENGLISH),
@@ -487,6 +490,28 @@ mod tests {
             &[],
             &[0x1bef],
         );
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script14_binds_letter_choices_dynamic_counts_and_rgb_text() {
+        check_profile_rgb_text(
+            13,
+            "SCRIPT14",
+            SCRIPT14_ENGLISH,
+            377,
+            10,
+            &[0x0a7b, 0x1dcb, 0x2cfa],
+            &[0x1a44, 0x2a11, 0x34f7],
+        );
+        let translation: Translation = serde_json::from_str(SCRIPT14_ENGLISH).unwrap();
+        for (site, letters) in [
+            ("bbb.script14.cod.00000dff", "s u p e r t r o m p"),
+            ("bbb.script14.cod.00000e6d", "e m a s c u l a t o r"),
+            ("bbb.script14.cod.00000ed3", "p o u r q u o i m o i"),
+        ] {
+            assert_eq!(translation.messages[site][1], letters);
+        }
     }
 
     fn check_profile_rgb_text(
