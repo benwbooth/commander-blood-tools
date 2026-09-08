@@ -84,7 +84,17 @@ nonblank output and bounds. All 12 localization tests pass with original
 resources. Live SCRIPT15 progression, scene composition, and voice timing are
 not verified by these tests; this remains an editorial first pass.
 
-The other 10 COD profiles, BAS text, most native UI, object names, and text embedded
+`en/script7.json` supplies all 140 Betakam/Alphakam/Gammakam text sites,
+including strike messages, mummy transfers, three live population readouts,
+three inventory generators, and three concept-choice sections. Betakam's
+single accept choice is preserved; the other two accept/refuse lists retain
+their original ordered dictionary IDs. The original-resource test selects the
+profile after initial state loading and renders all 137 static subtitles through
+the RGB font path with nonblank and bounds checks. All 13 localization tests
+pass with original resources. This is an editorial first pass, not a live
+verification of Kam dialogue, mummy transfer, or subsequent progression.
+
+The other 9 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -601,7 +611,7 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5, SCRIPT15, and SCRIPT17
+the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5, SCRIPT7, SCRIPT15, and SCRIPT17
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.
