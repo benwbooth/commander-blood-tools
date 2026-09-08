@@ -13,6 +13,7 @@ mod confirm_dialog;
 mod contact_scenario;
 mod game_lifecycle;
 mod input;
+mod inventory_localization;
 mod live_trace;
 mod localization;
 mod navigation_chart;

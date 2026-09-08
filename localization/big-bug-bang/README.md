@@ -160,7 +160,8 @@ through the original font's RGB path with nonblank and bounds checks. All 19
 localization tests pass with original resources. This editorial first pass does
 not verify live puzzle answers, migration, trades, debugging, or voice timing.
 
-The other 3 COD profiles, BAS text, most native UI, object names, and text embedded
+The other 3 COD profiles, BAS text, most native UI, object names outside the
+inventory chooser, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -455,6 +456,23 @@ nix develop -c cargo test -p commander-blood-game --lib sequel_options -- --test
 The oracle refuses an existing output file. It requires the locally supplied,
 matching original executable; neither executable bytes nor game assets are
 included in the fixtures.
+
+## Inventory Chooser Labels
+
+`en/inventory.json` provides English display names for the 25 inventory objects
+and the runtime translates the verified `ANNULER` cancel label to `CANCEL`.
+Substitution is limited to the recognized BBB executable and requires both the
+original object record ID and exact source name bytes. Modified labels and
+unmatched identities retain their text; Commander Blood receives no substitution.
+
+The override runs after original inventory choices are constructed. It changes
+only owned display labels, not object IDs, VAR bytes, dictionary operands,
+ordering, inventory membership, selection results, or descriptor lookup.
+The resource-backed test checks all 425 object records across 17 profiles,
+unchanged identities, exact English text, RGB glyph output, and rejection of
+changed source names, IDs, and executables. This is not yet live verification
+of giving or cancelling an item with the translated chooser. Other object-name
+surfaces and BAS descriptions remain untranslated.
 
 ## Timed Sequence Captions
 

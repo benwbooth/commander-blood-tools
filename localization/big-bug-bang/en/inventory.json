@@ -1,0 +1,31 @@
+{
+  "format": "bbb-inventory-display-translation-v1",
+  "language": "en",
+  "entries": [
+    {"record":158,"source":[99,111,117,114,111,110,110,101],"english":"crown"},
+    {"record":159,"source":[116,97,98,108,101,97,117],"english":"painting"},
+    {"record":160,"source":[105,109,97,103,101],"english":"picture"},
+    {"record":161,"source":[109,111,109,105,101],"english":"mummy"},
+    {"record":162,"source":[98,105,111,110,105,117,109],"english":"bionium"},
+    {"record":163,"source":[116,101,99,104,110,111,108,111,103,105,101],"english":"technology"},
+    {"record":164,"source":[103,117,105,116,97,114,101],"english":"guitar"},
+    {"record":165,"source":[99,114,101,100,105,116],"english":"credit"},
+    {"record":166,"source":[112,97,114,102,117,109],"english":"perfume"},
+    {"record":167,"source":[100,101,99,111,100,101,117,114],"english":"decoder"},
+    {"record":168,"source":[110,111,117,114,114,105,116,117,114,101],"english":"food"},
+    {"record":169,"source":[109,101,100,105,99,97,109,101,110,116],"english":"medicine"},
+    {"record":170,"source":[97,114,109,101,115],"english":"weapons"},
+    {"record":171,"source":[111,112,116,105,113,117,101],"english":"optics"},
+    {"record":172,"source":[101,110,101,114,103,105,101],"english":"energy"},
+    {"record":173,"source":[98,97,103,117,101],"english":"ring"},
+    {"record":174,"source":[101,109,101,116,116,101,117,114],"english":"transmitter"},
+    {"record":175,"source":[97,116,111,109,105,113,117,101],"english":"nuclear"},
+    {"record":176,"source":[99,117,108,116,117,114,101],"english":"culture"},
+    {"record":177,"source":[101,99,114,105,116,117,114,101],"english":"writing"},
+    {"record":178,"source":[108,111,105,115],"english":"laws"},
+    {"record":179,"source":[116,114,97,105,116,130],"english":"treaty"},
+    {"record":180,"source":[115,99,114,117,116,101,114],"english":"scruter"},
+    {"record":181,"source":[99,97,100,101,97,117,120],"english":"gifts"},
+    {"record":182,"source":[118,97,105,115,115,101,97,117],"english":"ship"}
+  ]
+}

@@ -174,6 +174,12 @@ impl RuntimePresentationWordChoice {
                 .selector_state()
                 .inventory()
                 .presentation_choices(profile.state())?;
+            super::inventory_localization::localize(
+                services.runtime().data().game(),
+                services.runtime().data().executable(),
+                &mut self.state.choices,
+                &mut self.state.inventory_cancel_label,
+            )?;
         } else {
             anyhow::ensure!(
                 profile.selector_state().inventory().saved_line().is_none()
