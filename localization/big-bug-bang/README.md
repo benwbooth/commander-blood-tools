@@ -481,8 +481,13 @@ ordering, inventory membership, selection results, or descriptor lookup.
 The resource-backed test checks all 425 object records across 17 profiles,
 unchanged identities, exact English text, RGB glyph output, and rejection of
 changed source names, IDs, and executables. This is not yet live verification
-of giving or cancelling an item with the translated chooser. Other object-name
-surfaces and BAS descriptions remain untranslated.
+of giving or cancelling an item with the translated chooser. The same test now
+also exercises 400 translated list layouts: every starting object in cyclic
+order at each supported roster size from 1 through 16, always including CANCEL.
+It checks panel bounds, nonblank glyphs confined to their panel, all 3,800 row
+clicks against expected item indices, and cancellation without item selection.
+These use the original font and shared BBB list planner, not a live gameplay run.
+Other object-name surfaces and BAS descriptions remain untranslated.
 
 ## Timed Sequence Captions
 

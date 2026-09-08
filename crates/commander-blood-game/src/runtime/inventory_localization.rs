@@ -55,6 +55,10 @@ pub(super) fn localize(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::native::bloodprg::{
+        ChoiceListBackend, ChoiceListConfig, ChoiceListPointer, ChoiceListRect, ChoiceListRowKind,
+        ChoiceListState, GameFontFace, measure_game_text_width, update_choice_list_for_dialect,
+    };
     use commander_blood_formats::code::ScriptDialect;
     use commander_blood_formats::script::{
         ScriptObjectKind, decode_script_directory, decode_script_state_for_dialect,
@@ -118,6 +122,9 @@ mod tests {
             let mut cancel = Some(game.decode_inventory_cancel_label(&executable).unwrap());
             localize(game, &executable, &mut choices, &mut cancel).unwrap();
             assert_eq!(cancel.as_deref(), Some(b"CANCEL".as_slice()));
+            if profile == 1 {
+                check_translated_lists(&fonts, &ui, &choices, cancel.as_deref().unwrap());
+            }
             for (before, after) in original.iter().zip(&choices) {
                 assert_eq!(before.identity, after.identity);
                 let PresentationChoiceId::Inventory(id) = after.identity else {
@@ -166,5 +173,113 @@ mod tests {
             assert_eq!(unchanged, original);
         }
         assert_eq!(total, 425);
+    }
+
+    struct ListBackend<'a> {
+        fonts: &'a commander_blood_formats::bloodprg::BloodprgFontResources,
+        pointer: ChoiceListPointer,
+        prepared: Option<ChoiceListRect>,
+    }
+
+    impl ChoiceListBackend for ListBackend<'_> {
+        fn measure_label(&mut self, label: &[u8]) -> u16 {
+            measure_game_text_width(label, GameFontFace::SquareCaps, self.fonts).unwrap()
+        }
+        fn prepare_background(&mut self, rect: ChoiceListRect) {
+            self.prepared = Some(rect);
+        }
+        fn pointer(&mut self) -> ChoiceListPointer {
+            assert!(self.prepared.is_some());
+            self.pointer
+        }
+    }
+
+    fn check_translated_lists(
+        fonts: &commander_blood_formats::bloodprg::BloodprgFontResources,
+        ui: &crate::ui::ChoiceUiAssets,
+        choices: &[PresentationWordChoice],
+        cancel: &[u8],
+    ) {
+        let mut cases = 0;
+        for start in 0..choices.len() {
+            for count in 1..=16 {
+                let selected: Vec<_> = choices.iter().cycle().skip(start).take(count).collect();
+                let labels: Vec<_> = selected.iter().map(|item| item.label.as_ref()).collect();
+                let config = ChoiceListConfig {
+                    center_x: 225,
+                    preserve_individual_widths: false,
+                    cancel_label: Some(cancel),
+                    layout_only: false,
+                };
+                let mut backend = ListBackend {
+                    fonts,
+                    pointer: ChoiceListPointer::default(),
+                    prepared: None,
+                };
+                let mut state = ChoiceListState::default();
+                let frame = update_choice_list_for_dialect(
+                    &labels,
+                    config,
+                    &mut state,
+                    &mut backend,
+                    ScriptDialect::BigBugBang,
+                );
+                let [x, y] = frame.rect.origin.map(i32::from);
+                let [w, h] = frame.rect.size.map(i32::from);
+                assert!(x >= 0 && y >= 0 && x + w <= 320 && y + h <= 200);
+                assert_eq!(frame.rows.len(), count + 1);
+                for row in &frame.rows {
+                    let text = match row.kind {
+                        ChoiceListRowKind::Item(index) => labels[index],
+                        ChoiceListRowKind::Cancel => cancel,
+                    };
+                    let mut overlay = crate::ui::RgbaUiOverlay::new(320, 200);
+                    ui.draw_text(
+                        &mut overlay,
+                        text,
+                        row.position.map(i32::from),
+                        crate::ui::ChoiceTextStyle::Normal,
+                    )
+                    .unwrap();
+                    let mut pixels = 0;
+                    for (index, pixel) in overlay.pixels().chunks_exact(4).enumerate() {
+                        if pixel[3] != 0 {
+                            let px = (index % 320) as i32;
+                            let py = (index / 320) as i32;
+                            assert!(px >= x && px < x + w && py >= y && py < y + h);
+                            pixels += 1;
+                        }
+                    }
+                    assert!(pixels > 0);
+                    backend.pointer = ChoiceListPointer {
+                        position: [row.position[0] as i16 + 1, row.position[1] as i16 + 1],
+                        primary_pressed: true,
+                    };
+                    let clicked = update_choice_list_for_dialect(
+                        &labels,
+                        config,
+                        &mut state,
+                        &mut backend,
+                        ScriptDialect::BigBugBang,
+                    );
+                    match row.kind {
+                        ChoiceListRowKind::Item(index) => {
+                            assert_eq!(clicked.selected_item, Some(index));
+                            assert!(!clicked.cancelled);
+                            assert_eq!(
+                                selected[index].identity,
+                                choices[(start + index) % choices.len()].identity
+                            );
+                        }
+                        ChoiceListRowKind::Cancel => {
+                            assert!(clicked.cancelled);
+                            assert_eq!(clicked.selected_item, None);
+                        }
+                    }
+                }
+                cases += 1;
+            }
+        }
+        assert_eq!(cases, 400);
     }
 }
