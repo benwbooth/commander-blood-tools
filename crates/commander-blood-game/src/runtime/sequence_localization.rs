@@ -228,20 +228,23 @@ mod tests {
             .unwrap(),
             overlay: crate::ui::RgbaUiOverlay::new(320, 200),
         };
-        assert_eq!(captions.sequences.len(), 31);
+        assert_eq!(captions.sequences.len(), 54);
         assert_eq!(
             captions
                 .sequences
                 .iter()
                 .map(|entry| entry.display.len())
                 .sum::<usize>(),
-            329
+            706
         );
         for entry in &captions.sequences {
             assert_eq!(captions.display(&entry.source), entry.display);
             for (source, display) in entry.source.iter().zip(&entry.display) {
                 assert_eq!(source.first_visible_frame(), display.first_visible_frame());
                 assert_eq!(source.text().is_empty(), display.text().is_empty());
+                if source.text().iter().all(u8::is_ascii_digit) {
+                    assert_eq!(source.text(), display.text());
+                }
                 renderer.overlay.clear();
                 present_sequence_subtitle(
                     std::slice::from_ref(display),
@@ -268,17 +271,28 @@ mod tests {
             );
             assert_eq!(captions.display(&changed), changed);
         }
-        let unbound: Vec<_> = database
-            .lookup(b"2ppit")
-            .unwrap()
-            .commands()
-            .iter()
-            .filter_map(|command| match command {
-                DescriptCommand::SequenceSubtitle(cue) => Some(cue.clone()),
-                _ => None,
-            })
-            .collect();
-        assert!(!unbound.is_empty());
+        for record in database.records() {
+            let source: Vec<_> = record
+                .commands()
+                .iter()
+                .filter_map(|command| match command {
+                    DescriptCommand::SequenceSubtitle(cue) => Some(cue.clone()),
+                    _ => None,
+                })
+                .collect();
+            if !source.is_empty() {
+                assert!(
+                    captions
+                        .sequences
+                        .iter()
+                        .any(|entry| entry.source == source)
+                );
+            }
+        }
+        let unbound = vec![DescriptSequenceSubtitle::new(
+            1,
+            Box::from(b"Unlisted caption stream".as_slice()),
+        )];
         assert_eq!(captions.display(&unbound), unbound);
         for game in [GameVariant::CommanderBlood, GameVariant::BigBugBang] {
             let other_bytes = if game == GameVariant::BigBugBang {
