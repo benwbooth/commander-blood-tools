@@ -20,6 +20,8 @@ const SCRIPT2_ENGLISH: &str = include_str!("../../../../localization/big-bug-ban
 const SCRIPT3_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script3.json");
 const SCRIPT4_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script4.json");
 const SCRIPT5_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script5.json");
+const SCRIPT17_ENGLISH: &str =
+    include_str!("../../../../localization/big-bug-bang/en/script17.json");
 const LINE_COLUMNS: usize = 34;
 
 #[derive(Deserialize)]
@@ -55,6 +57,7 @@ impl SequelEnglishSubtitles {
             2 => ("SCRIPT3", SCRIPT3_ENGLISH),
             3 => ("SCRIPT4", SCRIPT4_ENGLISH),
             4 => ("SCRIPT5", SCRIPT5_ENGLISH),
+            16 => ("SCRIPT17", SCRIPT17_ENGLISH),
             _ => return Ok(None),
         };
         Self::from_catalog(
@@ -335,11 +338,45 @@ mod tests {
     #[test]
     #[ignore = "requires the user's imported Big Bug Bang resources"]
     fn authentic_script5_binds_choices_dynamic_counts_and_rgb_text() {
+        check_profile_rgb_text(
+            4,
+            "SCRIPT5",
+            SCRIPT5_ENGLISH,
+            216,
+            7,
+            &[0x1050, 0x16b5],
+            &[0x1537, 0x1ea6],
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script17_binds_choices_dynamic_counts_and_rgb_text() {
+        check_profile_rgb_text(
+            16,
+            "SCRIPT17",
+            SCRIPT17_ENGLISH,
+            132,
+            5,
+            &[0x0e2d, 0x1310],
+            &[0x127a, 0x175d],
+        );
+    }
+
+    fn check_profile_rgb_text(
+        profile_id: u8,
+        name: &str,
+        english: &str,
+        sites: usize,
+        choices: usize,
+        dynamic_sites: &[usize],
+        inventory_sites: &[usize],
+    ) {
         use crate::native::bloodprg::*;
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../output/big-bug-bang/imported-assets/resources");
-        let cod = std::fs::read(root.join("SCRIPT5.COD")).unwrap();
-        let dic = std::fs::read(root.join("SCRIPT5.DIC")).unwrap();
+        let cod = std::fs::read(root.join(format!("{name}.COD"))).unwrap();
+        let dic = std::fs::read(root.join(format!("{name}.DIC"))).unwrap();
         let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
         let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
         let store = OriginalResourceStore::new(root, None, [], true);
@@ -352,7 +389,7 @@ mod tests {
             .unwrap();
         manager
             .select(
-                ScriptProfileId::new_for_dialect(4, ScriptDialect::BigBugBang).unwrap(),
+                ScriptProfileId::new_for_dialect(profile_id, ScriptDialect::BigBugBang).unwrap(),
                 &mut cache,
                 &store,
                 &resources,
@@ -364,10 +401,10 @@ mod tests {
             .unwrap();
         assert_eq!(profile.code().encode(), cod);
         assert_eq!(profile.dictionary().encode(), dic);
-        assert_eq!(catalog.menus.len(), 216);
-        assert_eq!(catalog.subtitles.len(), 214);
-        assert_eq!(catalog.choices.len(), 7);
-        for address in [0x1050, 0x16b5] {
+        assert_eq!(catalog.menus.len(), sites);
+        assert_eq!(catalog.subtitles.len(), sites - dynamic_sites.len());
+        assert_eq!(catalog.choices.len(), choices);
+        for &address in dynamic_sites {
             let site = ScriptCodeOffset::new(address);
             let menu = &catalog.menus[&site];
             assert!(catalog.subtitle(site).is_none());
@@ -383,7 +420,7 @@ mod tests {
                 Some(menu.display.as_ref())
             );
         }
-        for address in [0x1537, 0x1ea6] {
+        for &address in inventory_sites {
             let site = ScriptCodeOffset::new(address);
             let menu = &catalog.menus[&site];
             assert_eq!(menu.source.last(), Some(&ScriptTextWord::InventoryChoices));
@@ -396,7 +433,14 @@ mod tests {
         for (site, (words, labels)) in &catalog.choices {
             assert_eq!(catalog.choice_labels(*site, words), Some(labels.as_slice()));
             let reversed = words.iter().rev().copied().collect::<Vec<_>>();
-            assert!(catalog.choice_labels(*site, &reversed).is_none());
+            if reversed != *words {
+                assert!(catalog.choice_labels(*site, &reversed).is_none());
+            } else {
+                assert_eq!(
+                    catalog.choice_labels(*site, &reversed),
+                    Some(labels.as_slice())
+                );
+            }
             assert!(
                 words
                     .iter()
@@ -445,18 +489,16 @@ mod tests {
             );
         }
         assert!(
-            SequelEnglishSubtitles::from_catalog(b"changed", &dic, "SCRIPT5", SCRIPT5_ENGLISH)
+            SequelEnglishSubtitles::from_catalog(b"changed", &dic, name, english)
                 .unwrap()
                 .is_none()
         );
         assert!(
-            SequelEnglishSubtitles::from_catalog(&cod, b"changed", "SCRIPT5", SCRIPT5_ENGLISH)
+            SequelEnglishSubtitles::from_catalog(&cod, b"changed", name, english)
                 .unwrap()
                 .is_none()
         );
-        assert!(
-            SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT4", SCRIPT5_ENGLISH).is_err()
-        );
+        assert!(SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT4", english).is_err());
     }
 
     #[test]

@@ -64,7 +64,17 @@ library suite passes 964 tests (39 ignored), and game-package all-targets
 checking passes. Live SCRIPT5 reachability, voice timing, scene composition,
 and contextual review remain unverified.
 
-The other 12 COD profiles, BAS text, most native UI, object names, and text embedded
+`en/script17.json` supplies all 132 Cyberquizz/Bioquizz text sites, bound to
+the original SCRIPT17 COD/DIC hashes. It preserves two live population values,
+two inventory generators, and five choice lists, including the repeated yes/yes
+and single no choices. The original-resource test selects the profile after
+loading initial persistent state, checks unchanged code and dictionary bytes,
+and renders all 130 static subtitles through the original font's RGB path,
+checking nonblank output and horizontal/vertical bounds. All 11 localization
+tests pass with original resources. This is an editorial first pass; live
+SCRIPT17 progression, voice timing, and scene composition remain unverified.
+
+The other 11 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -581,7 +591,7 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5
+the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5 and SCRIPT17
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.
