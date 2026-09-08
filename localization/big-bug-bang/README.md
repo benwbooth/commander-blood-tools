@@ -458,13 +458,15 @@ included in the fixtures.
 
 ## Timed Sequence Captions
 
-`en/sequences.json` supplies 215 cues across 23 sequences: `present`, `1ppit`,
+`en/sequences.json` supplies 329 cues across 31 sequences: `present`, `1ppit`,
 `3ppit`, `4exploplane`, `5exploplane`, `7croolvent`, `8incanthom`,
 `9scrutbox`, `10hachoir`, `11izwalexplo`, `14legscrut`, `15parfum`, `16ondobar`,
 `17vtromp`, `19chapeau`, `20larvarc`, `21pubdecod`, `24bionium`, `25diplom`,
-`26explocomb`, `27exploplane`, `28bob`, and `31explonebul`, including
+`26explocomb`, `27exploplane`, `28bob`, `31explonebul`, `33tinabar`,
+`34contromp`, `35ondoyante`, `36exarche`, `37traitz`, `38atomev`, `39argent`,
+and `40freud`, including
 the original blank cues. The verified DESCRIPT contains 706 sequence subtitle
-cues in total; the other 491 are not covered by this catalog.
+cues in total; the other 377 are not covered by this catalog.
 The modern renderer selects English only for Big Bug Bang with the matching
 DESCRIPT SHA-256 hash and an exact match for the complete source cue stream.
 The source database, video/audio selection, cue ordering, frame thresholds, and
@@ -474,8 +476,13 @@ retain their original captions.
 The loader rejects missing records, cue count/frame mismatches, changed blank
 cues, non-ASCII text, and ambiguous translations of identical source streams.
 The caption layout test uses the original line planner to check screen bounds.
-Source validation and layout checks do not establish contextual translation
-quality or live rendering.
+The original-resource test also rasterizes each translated cue with the runtime's
+8x8 caption glyphs and the executable's caption color, rejecting unexpectedly
+blank output and preserving authored blanks. These checks do not establish
+contextual translation quality or live rendering.
+The latest eight streams add 114 cues, including the nuclear-evolution threshold
+of 100 and the Izwalito peace-treaty hint. Fragmented jokes retain their cue
+boundaries; proper names and the authored `ICS` abbreviation stay intact.
 The rebuilt ordinary-input capture
 `output/big-bug-bang/english-sequences-daddy-01/screen-031.png` visibly renders
 "Terrible news has just come in over our teleprinters" on the TV news screen.

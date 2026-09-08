@@ -152,6 +152,27 @@ mod tests {
         }
     }
 
+    struct RgbRenderer {
+        font: crate::ui::SequenceCaptionFont,
+        overlay: crate::ui::RgbaUiOverlay,
+    }
+
+    impl SequenceSubtitleRenderer for RgbRenderer {
+        type Error = anyhow::Error;
+
+        fn visible_frame(&self) -> u16 {
+            i16::MAX as u16
+        }
+
+        fn draw_centered_line(&mut self, line: CenteredSequenceSubtitleLine<'_>) -> Result<()> {
+            BoundsRenderer.draw_centered_line(line)?;
+            ensure!(usize::from(line.color) == crate::ui::SEQUENCE_CAPTION_COLOR);
+            self.font
+                .draw_text(&mut self.overlay, line.text, line.position.map(i32::from));
+            Ok(())
+        }
+    }
+
     #[test]
     fn bundled_captions_fit_the_original_line_planner() {
         let catalog: Catalog = serde_json::from_str(ENGLISH).unwrap();
@@ -191,20 +212,54 @@ mod tests {
         );
         let captions =
             EnglishSequenceCaptions::load(GameVariant::BigBugBang, &bytes, &database).unwrap();
-        assert_eq!(captions.sequences.len(), 23);
+        let executable = std::fs::read(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE"),
+        )
+        .unwrap();
+        let palette = GameVariant::BigBugBang
+            .decode_default_vga_palette(&executable)
+            .unwrap();
+        let mut renderer = RgbRenderer {
+            font: crate::ui::SequenceCaptionFont::import(
+                &super::super::VGA_BIOS_FONT_8X8,
+                palette[crate::ui::SEQUENCE_CAPTION_COLOR],
+            )
+            .unwrap(),
+            overlay: crate::ui::RgbaUiOverlay::new(320, 200),
+        };
+        assert_eq!(captions.sequences.len(), 31);
         assert_eq!(
             captions
                 .sequences
                 .iter()
                 .map(|entry| entry.display.len())
                 .sum::<usize>(),
-            215
+            329
         );
         for entry in &captions.sequences {
             assert_eq!(captions.display(&entry.source), entry.display);
             for (source, display) in entry.source.iter().zip(&entry.display) {
                 assert_eq!(source.first_visible_frame(), display.first_visible_frame());
                 assert_eq!(source.text().is_empty(), display.text().is_empty());
+                renderer.overlay.clear();
+                present_sequence_subtitle(
+                    std::slice::from_ref(display),
+                    &mut SequenceSubtitlePlayback::default(),
+                    &mut renderer,
+                )
+                .unwrap();
+                assert_eq!(
+                    renderer
+                        .overlay
+                        .pixels()
+                        .chunks_exact(4)
+                        .any(|pixel| pixel[3] != 0),
+                    !display.text().is_empty(),
+                    "caption at frame {}: {:?}",
+                    display.first_visible_frame(),
+                    String::from_utf8_lossy(display.text()),
+                );
             }
             let mut changed = entry.source.clone();
             changed[0] = DescriptSequenceSubtitle::new(
