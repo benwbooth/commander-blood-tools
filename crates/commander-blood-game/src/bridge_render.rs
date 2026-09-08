@@ -575,6 +575,7 @@ mod tests {
 
     #[test]
     fn original_bridge_renders_nonblank_inside_wide_and_portrait_viewports() {
+        let _gpu = crate::gpu_test::lock();
         let Some(executable_path) = original_file("BLOODPRG.EXE") else {
             return;
         };
@@ -606,6 +607,7 @@ mod tests {
 
     #[test]
     fn live_palette_refresh_recolors_every_bridge_layer() {
+        let _gpu = crate::gpu_test::lock();
         let Some((device, _queue)) = offscreen_device() else {
             return;
         };
@@ -629,6 +631,7 @@ mod tests {
 
     #[test]
     fn procedural_stars_round_trip_every_cpu_expanded_dac_level_on_srgb_targets() {
+        let _gpu = crate::gpu_test::lock();
         let Some(executable_path) = original_file("BLOODPRG.EXE") else {
             return;
         };
@@ -713,6 +716,7 @@ mod tests {
 
     #[test]
     fn sprite_layers_preserve_native_object_panorama_actor_order() {
+        let _gpu = crate::gpu_test::lock();
         let Some(executable_path) = original_file("BLOODPRG.EXE") else {
             return;
         };

@@ -215,6 +215,7 @@ mod tests {
 
     #[test]
     fn every_original_alien_scene_renders_inside_wide_and_portrait_viewports() {
+        let _gpu = crate::gpu_test::lock();
         let cases = [
             (AlienXdbKind::Amer, "amer.xdb"),
             (AlienXdbKind::Croolis, "croolis.xdb"),

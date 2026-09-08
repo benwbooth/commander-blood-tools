@@ -6507,6 +6507,7 @@ mod tests {
     #[test]
     #[ignore = "requires an active desktop and serialized SDL/wgpu ownership"]
     fn sequel_live_profile_handoff_keeps_contact_but_explicit_load_resets_it() {
+        let _gpu = crate::gpu_test::lock();
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../output/big-bug-bang/imported-assets");
         let paths = OriginalGameDataPaths::from_root(root).unwrap();
@@ -6614,6 +6615,7 @@ mod tests {
     #[test]
     #[ignore = "requires an active desktop and serialized SDL/wgpu ownership"]
     fn real_services_run_the_complete_available_startup_slice() {
+        let _gpu = crate::gpu_test::lock();
         let paths = OriginalGameDataPaths::discover(None)
             .expect("ignored real-services test requires the original game data");
         assert!(

@@ -1428,6 +1428,7 @@ mod tests {
 
     #[test]
     fn srgb_artwork_and_overlay_match_every_cpu_expanded_dac_level() {
+        let _gpu = crate::gpu_test::lock();
         let (device, queue) = required_offscreen_device();
         let mut palette = [[u8::MIN; 3]; PALETTE_ENTRY_COUNT as usize];
         let indexed = (u8::MIN..DAC_LEVEL_COUNT as u8)
@@ -1496,6 +1497,7 @@ mod tests {
 
     #[test]
     fn ui_overlay_composite_darkens_srgb_base_and_draws_opaque_text() {
+        let _gpu = crate::gpu_test::lock();
         let (device, queue) = required_offscreen_device();
         let renderer = UiCompositeRenderer::new(
             &device,
@@ -1679,6 +1681,7 @@ mod tests {
 
     #[test]
     fn ui_overlay_composite_resizes_surface_base_and_preserves_aspect_fit() {
+        let _gpu = crate::gpu_test::lock();
         let (device, queue) = required_offscreen_device();
         let mut renderer = UiCompositeRenderer::new(&device, OFFSCREEN_FORMAT, 640, 360);
         let mut overlay =
@@ -1786,6 +1789,7 @@ mod tests {
 
     #[test]
     fn ui_composite_keeps_outer_bars_black_with_bright_base_and_overlay() {
+        let _gpu = crate::gpu_test::lock();
         let (device, queue) = required_offscreen_device();
         let mut renderer = UiCompositeRenderer::new(&device, OFFSCREEN_FORMAT, 640, 360);
         let overlay =
@@ -1963,6 +1967,7 @@ mod tests {
 
     #[test]
     fn original_manu3_renders_nonblank_inside_wide_and_portrait_viewports() {
+        let _gpu = crate::gpu_test::lock();
         let Some(executable_path) = original_file(&[
             "output/_tmp_iso/BLOODPRG.EXE",
             "../../output/_tmp_iso/BLOODPRG.EXE",

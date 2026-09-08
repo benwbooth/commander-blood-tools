@@ -22,3 +22,16 @@ mod script_rebuild;
 mod ui;
 mod video_import;
 mod window_icon;
+
+#[cfg(test)]
+mod gpu_test {
+    use std::sync::{Mutex, MutexGuard};
+
+    static GPU: Mutex<()> = Mutex::new(());
+
+    // The host Vulkan loader can unload drivers during another test's GPU use.
+    // Hold this guard until all device/queue/resource destructors have finished.
+    pub(crate) fn lock() -> MutexGuard<'static, ()> {
+        GPU.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+}

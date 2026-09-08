@@ -105,7 +105,10 @@ not verify live rescue, attack, time-reversal, or subsequent gameplay branches.
 Game-package all-targets checking and the executable build pass. The serial
 game-library run passes 964 tests (43 ignored). The preceding default-parallel
 run terminated with SIGSEGV without identifying a failing test; its cause remains
-unresolved. The serial pass does not establish parallel-suite stability.
+unresolved at that checkpoint. The serial pass does not establish parallel-suite
+stability. Subsequent core analysis identified concurrent Vulkan driver unloading
+and pipeline construction; see [GPU test isolation](../../docs/gpu-test-isolation.md)
+for evidence and the test-harness mitigation.
 
 The other 8 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
