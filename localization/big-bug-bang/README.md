@@ -458,6 +458,27 @@ included in the fixtures.
 
 ## Timed Sequence Captions
 
+### Current-Build Templand Replay
+
+After the full timed-caption catalog was added at `738715eb`, the production
+`templand_interlude_returns_to_dialogue_and_choices` test passed in 435.88 seconds
+using ordinary scenario input in a private X11 display and disposable save copies.
+Artifacts: `output/fidelity/bbb-templand-dialogue-1788896504507189024-3968894-0`.
+The executable SHA-256 is
+`4286f1c7a838e76822dab2de6abc5ff962e3fda30185b41afead4f8efb679316`.
+
+The 5,440-frame trace contains 59 `SQ\venus06.hnm` interlude frames and 328
+FINISH/NO_HURRY selecting frames, with zero missing choice-label frames.
+`choices-visible.png` and `selection-continuation.png` were captured from this
+running process and visually inspected: both labels appear, and selecting
+NO_HURRY displays "LET'S CONTINUE, THEN." Final frame 5439 returns to
+`PLANET: Tempest LIFE FORMS: Daddy_Gluxx`, profile 2, with the chooser closed,
+no active video, no active presentation screen, and an unblocked ship scene.
+This revalidates the bounded Templand route on the current build, not later
+progression or live playback of every translated sequence.
+
+### Catalog Coverage
+
 `en/sequences.json` covers all 706 authored subtitle cues across 54 sequences in
 the verified DESCRIPT, including the original blank and number-only cues. These
 numbers are present in the original resources; they are not substitute dialogue
