@@ -26,6 +26,41 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Honk Inventory Save and Fresh Load
+
+The input-only `bbb_honk_inventory_save_followup.tsv` replay completed in
+`output/big-bug-bang/honk-save-followup-jcsWFXhd` (exit zero, all 33 actions).
+It acquired the same six hold items, saved slot zero through the ordinary menu,
+and contacted Honk again. The slot name became `abhonk`: the typed name appended
+to the fixture's existing `ab`. The follow-up produced "I'm searching..." and
+ended with released presentation ownership. An intermediate two-item snapshot
+was not a collection failure; all six were present before the save action.
+
+A separate fresh process loaded a copy of that checkpoint using
+`bbb_load_honk_checkpoint.tsv`, retained under
+`output/big-bug-bang/honk-checkpoint-load-micR5onA` (exit zero, all 15 actions).
+All six inventory records were owned in the first loaded SCRIPT2 frame and
+remained owned through another phone command. Honk responded with
+"I'm searching...", the radio bank was present, and the final presentation was
+unblocked. `loaded-checkpoint.png` was inspected: the phone console and hand
+rendered. Both runs used the same production binary SHA-256
+`778bcb45c062ff7411b24533ce20cfd49817e8f94c77aed39c3a9e7ab968a507`.
+
+The saved BLOOD.SAV SHA-256 is
+`59c464db72415b001dbbcebd9762466e6e9bab40a9ff68000dc4126ce56e91ea`;
+GAME1.SAV is
+`9664e38b00b2da8ad78274e1efde9e41802c7e1bdbb6a9e04ab57bbf8347cf1f`.
+Fresh loading and contacting Honk did not alter either copied file. The
+original Daddy fixture remains unchanged.
+
+The progression regression now chains acquisition/save and fresh-process load.
+Its load validator requires startup, the correct loaded profile, all six items
+immediately on load and throughout the trace, a new phone response with the
+radio bank, and released final presentation. The equivalent CLI runs and shared
+retained-trace validators were exercised; the new chained process wrapper was
+not separately rerun. This establishes a reusable inventory checkpoint, not
+later trade, migration, BAS, or endgame coverage.
+
 ### Honk Hold Inventory Pass
 
 The longer `bbb_load_honk_inventory.tsv` input-only replay completed all actions
@@ -52,8 +87,8 @@ five-item cap. Its nearby excuse line at `0x3483` did not appear in this capture
 the last revealed line was the perfume discovery before ownership cleared.
 The regression does not assert that unproven dialogue detail. Compare original
 VM text-gate/return behavior before treating that omission as correct or
-changing it. A subsequent interactive command, save of the acquired items,
-and later quest progression remain unverified by this replay.
+changing it. The later save/load replay above verifies a subsequent command
+and saving these items; later quest progression remains unverified.
 
 ### Honk Radio Bank Ownership
 

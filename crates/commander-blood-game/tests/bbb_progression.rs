@@ -64,6 +64,104 @@ fn validate_recorded_honk_inventory_pass() {
     assert_honk_inventory_trace(&frames);
 }
 
+#[test]
+#[ignore = "requires BBB assets, a progressed Daddy save, and a graphical display"]
+fn honk_inventory_survives_save_and_fresh_process_load() {
+    let frames = replay_bbb(
+        "bbb-honk-save",
+        "accuracy/scenarios/bbb_honk_inventory_save_followup.tsv",
+    );
+    assert_honk_inventory_trace(&frames);
+    let save = frames.parent().unwrap().join("writable");
+    let loaded = replay_bbb_from_save(
+        "bbb-honk-load",
+        "accuracy/scenarios/bbb_load_honk_checkpoint.tsv",
+        &save,
+    );
+    assert_honk_checkpoint_trace(&loaded);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(save.join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "loading and contacting Honk must not rewrite {name}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a fresh-process Honk checkpoint load"]
+fn validate_recorded_honk_checkpoint_load() {
+    let frames =
+        PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"));
+    assert_honk_checkpoint_trace(&frames);
+}
+
+fn assert_honk_checkpoint_trace(frames: &std::path::Path) {
+    let mut saw_startup = false;
+    let mut loaded = false;
+    let mut responded = false;
+    let mut released = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !saw_startup && semantic["vm"]["resource_profile"].is_null() {
+            continue;
+        }
+        if !loaded && semantic["vm"]["resource_profile"] == 0 {
+            saw_startup = true;
+            continue;
+        }
+        assert!(saw_startup, "fresh-process startup was not observed");
+        assert_eq!(
+            semantic["vm"]["resource_profile"], 1,
+            "wrong checkpoint profile"
+        );
+        if !loaded {
+            assert_ne!(
+                semantic["subtitle"], "I'm searching...",
+                "stale phone response at load"
+            );
+        }
+        // Check the first loaded frame, before Honk can grant any more objects.
+        for name in [
+            "ecriture",
+            "vaisseau",
+            "technologie",
+            "guitare",
+            "energie",
+            "parfum",
+        ] {
+            assert!(
+                semantic["persistent"]["object_locations"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|object| object["name"] == name
+                        && object["kind"] == "InventoryItem"
+                        && object["holder_raw"] == 65535),
+                "loaded checkpoint lost {name}"
+            );
+        }
+        loaded = true;
+        if semantic["subtitle"] == "I'm searching..." {
+            assert_eq!(semantic["audio"]["streamed_sound_bank"], "radio.snd");
+            responded = true;
+        }
+        released = semantic["vm"]["execution_enabled"] == 1
+            && semantic["presentation"]["active_actor_presentation"].is_null()
+            && semantic["presentation"]["active"] == 0
+            && semantic["presentation"]["screen_active"] == false
+            && semantic["presentation"]["retained_word_choice"]["phase"] == "Closed"
+            && semantic["presentation"]["ship_scene"]["dispatch_blocked"] == false;
+    }
+    assert!(loaded, "checkpoint never loaded");
+    assert!(responded, "Honk did not respond after loading");
+    assert!(
+        released,
+        "loaded checkpoint ended with blocked presentation"
+    );
+}
+
 fn replay_templand(finish: bool) {
     let frames = replay_bbb(
         if finish {
@@ -82,14 +180,19 @@ fn replay_templand(finish: bool) {
 
 fn replay_bbb(name: &str, scenario: &str) -> PathBuf {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let assets = std::env::var_os("BBB_ASSET_CACHE")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| workspace.join("output/big-bug-bang/imported-assets"));
     let save = std::env::var_os("BBB_PROGRESSED_SAVE_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
             workspace.join("output/big-bug-bang/daddy-tempest-save-load-01/writable")
         });
+    replay_bbb_from_save(name, scenario, &save)
+}
+
+fn replay_bbb_from_save(name: &str, scenario: &str, save: &std::path::Path) -> PathBuf {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let assets = std::env::var_os("BBB_ASSET_CACHE")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| workspace.join("output/big-bug-bang/imported-assets"));
     let artifacts = scenario_artifacts::ScenarioArtifacts::create(&workspace, name).unwrap();
     let writable = artifacts.0.join("writable");
     fs::create_dir(&writable).unwrap();
