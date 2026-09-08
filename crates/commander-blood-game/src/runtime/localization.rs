@@ -21,6 +21,7 @@ const SCRIPT3_ENGLISH: &str = include_str!("../../../../localization/big-bug-ban
 const SCRIPT4_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script4.json");
 const SCRIPT5_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script5.json");
 const SCRIPT7_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script7.json");
+const SCRIPT8_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script8.json");
 const SCRIPT9_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script9.json");
 const SCRIPT15_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script15.json");
@@ -64,6 +65,7 @@ impl SequelEnglishSubtitles {
             3 => ("SCRIPT4", SCRIPT4_ENGLISH),
             4 => ("SCRIPT5", SCRIPT5_ENGLISH),
             6 => ("SCRIPT7", SCRIPT7_ENGLISH),
+            7 => ("SCRIPT8", SCRIPT8_ENGLISH),
             8 => ("SCRIPT9", SCRIPT9_ENGLISH),
             14 => ("SCRIPT15", SCRIPT15_ENGLISH),
             15 => ("SCRIPT16", SCRIPT16_ENGLISH),
@@ -426,6 +428,30 @@ mod tests {
             7,
             &[0x1088, 0x15f7, 0x1b6a],
             &[0x15a4, 0x1b17, 0x2088],
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script8_binds_choices_dynamic_counts_and_rgb_text() {
+        check_profile_rgb_text(
+            7,
+            "SCRIPT8",
+            SCRIPT8_ENGLISH,
+            288,
+            3,
+            &[
+                0x06f1, 0x0b84, 0x0f49, 0x130e, 0x179d, 0x1b62, 0x1f27, 0x23b4, 0x2779,
+            ],
+            &[
+                0x0b33, 0x0ef8, 0x12bd, 0x174c, 0x1b11, 0x1ed6, 0x2363, 0x2728, 0x2aed,
+            ],
+        );
+        let translation: Translation = serde_json::from_str(SCRIPT8_ENGLISH).unwrap();
+        assert_eq!(
+            translation.messages["bbb.script8.cod.00001fe5"],
+            ["TELEPORTING DECODER INTO CRYOBOX"],
+            "retain the authored decoder caption even though Morning_Oil offers gifts"
         );
     }
 
