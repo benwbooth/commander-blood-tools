@@ -61,6 +61,17 @@ discrepancy. The user confirmed the travel lever. It remains unclear whether
 the reported bars are inside the 320x200 scene or outside the aspect-fit
 viewport. Do not mask these issues by globally hiding layers.
 
+The offscreen UI-composite test previously fitted 320x200 instead of the
+production renderer's 4:3 display. Its helper now uses the production aspect
+constants. A new GPU test poisons the entire base texture yellow and uploads
+an opaque magenta overlay, then checks every pixel outside the viewport is
+black with the overlay enabled and disabled. It covers 640x360, 256x384, and
+640x481 surfaces, including resize and fractional viewport boundaries. All
+15 renderer tests pass, including original hand, bridge, and alien bounds.
+No outer-bar overwrite was reproduced. The user has been asked whether the
+reported bars are inside the game image or outside its viewport; that remains
+necessary context for locating any persisting overwrite.
+
 The modern MANU3 between-tick renderer predicted an ordinary next tween step
 even immediately after an explicit animation selection. Repeated native lever
 selection can invalidate that prediction. It now reprojects the current pose

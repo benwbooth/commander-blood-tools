@@ -1708,7 +1708,12 @@ mod tests {
             }
             let base_color = [96, 160, 224];
             let mut base = vec![u8::MIN; width as usize * height as usize * RGBA_COMPONENT_COUNT];
-            let viewport = aspect_fit_viewport(width, height, UI_OVERLAY_WIDTH, UI_OVERLAY_HEIGHT);
+            let viewport = aspect_fit_viewport(
+                width,
+                height,
+                ORIGINAL_DISPLAY_ASPECT_WIDTH,
+                ORIGINAL_DISPLAY_ASPECT_HEIGHT,
+            );
             let viewport_left = viewport.0.floor() as u32;
             let viewport_top = viewport.1.floor() as u32;
             let viewport_right = (viewport.0 + viewport.2).ceil() as u32;
@@ -1779,6 +1784,82 @@ mod tests {
         }
     }
 
+    #[test]
+    fn ui_composite_keeps_outer_bars_black_with_bright_base_and_overlay() {
+        let (device, queue) = required_offscreen_device();
+        let mut renderer = UiCompositeRenderer::new(&device, OFFSCREEN_FORMAT, 640, 360);
+        let overlay =
+            [255, 0, 255, 255].repeat(UI_OVERLAY_WIDTH as usize * UI_OVERLAY_HEIGHT as usize);
+        renderer.upload(&queue, &overlay).unwrap();
+        for (width, height) in [(640, 360), (256, 384), (640, 481)] {
+            renderer.resize(&device, width, height);
+            let base = [255, 255, 0, 255].repeat(width as usize * height as usize);
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &renderer.base_texture,
+                    mip_level: BASE_MIP_LEVEL,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                &base,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(width * RGBA_BYTES_PER_PIXEL),
+                    rows_per_image: Some(height),
+                },
+                wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: SINGLE_TEXTURE_LAYER,
+                },
+            );
+            let (left, top, viewport_width, viewport_height) = aspect_fit_viewport(
+                width,
+                height,
+                ORIGINAL_DISPLAY_ASPECT_WIDTH,
+                ORIGINAL_DISPLAY_ASPECT_HEIGHT,
+            );
+            for overlay_active in [false, true] {
+                let pixels = render_ui_composite_output(
+                    &device,
+                    &queue,
+                    &renderer,
+                    width,
+                    height,
+                    overlay_active,
+                );
+                let mut outside = 0;
+                for y in 0..height {
+                    for x in 0..width {
+                        let center = (x as f32 + 0.5, y as f32 + 0.5);
+                        if center.0 < left
+                            || center.0 >= left + viewport_width
+                            || center.1 < top
+                            || center.1 >= top + viewport_height
+                        {
+                            assert_eq!(
+                                &pixel_at(&pixels, width, x, y)[..3],
+                                &[0, 0, 0],
+                                "outer bar overwritten at {x},{y} in {width}x{height}, overlay={overlay_active}",
+                            );
+                            outside += 1;
+                        }
+                    }
+                }
+                assert!(outside > 0);
+                let center = pixel_at(&pixels, width, width / 2, height / 2);
+                assert_eq!(
+                    &center[..3],
+                    if overlay_active {
+                        &[255, 0, 255]
+                    } else {
+                        &[255, 255, 0]
+                    },
+                );
+            }
+        }
+    }
+
     fn render_ui_composite_output(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -1817,7 +1898,12 @@ mod tests {
         renderer.encode(
             &mut encoder,
             &output_view,
-            aspect_fit_viewport(width, height, UI_OVERLAY_WIDTH, UI_OVERLAY_HEIGHT),
+            aspect_fit_viewport(
+                width,
+                height,
+                ORIGINAL_DISPLAY_ASPECT_WIDTH,
+                ORIGINAL_DISPLAY_ASPECT_HEIGHT,
+            ),
             overlay_active,
         );
         encoder.copy_texture_to_buffer(
