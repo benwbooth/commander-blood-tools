@@ -422,7 +422,8 @@ impl RuntimeShipHudBackend<'_, '_> {
 
 impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
     fn clear_back_buffer(&mut self) {
-        self.services.clear_ship_hud_back_buffer();
+        let result = self.services.clear_ship_hud_back_buffer();
+        self.record(result, ());
     }
 
     fn initialize_bridge_view(&mut self, seek_target_arc: u16, view_frame: u16) {
@@ -494,7 +495,7 @@ impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
     }
 
     fn copy_display_to_back_buffer(&mut self) {
-        self.services.capture_ship_depth_source();
+        self.services.copy_display_to_back_buffer();
     }
 
     fn compose_depth_band(&mut self) {

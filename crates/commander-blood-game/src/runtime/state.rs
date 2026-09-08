@@ -144,6 +144,8 @@ pub struct OriginalGameRuntime {
     live_palette: IndexedGamePalette,
     front_buffer: IndexedFramebuffer,
     back_buffer: IndexedFramebuffer,
+    ship_depth_source: IndexedFramebuffer,
+    ship_depth_source_rgba: Box<[u8]>,
     ui_overlay: crate::ui::RgbaUiOverlay,
     manu3: Option<Manu3Model>,
     bridge_panorama: Option<BridgePanoramaArchive>,
@@ -263,6 +265,10 @@ impl OriginalGameRuntime {
             ),
             front_buffer: IndexedFramebuffer::new(),
             back_buffer: IndexedFramebuffer::new(),
+            ship_depth_source: IndexedFramebuffer::new(),
+            ship_depth_source_rgba: [0, 0, 0, 255]
+                .repeat(LOGICAL_FRAMEBUFFER_PIXEL_COUNT)
+                .into_boxed_slice(),
             manu3: None,
             bridge_panorama: None,
             save_slots: None,
@@ -398,6 +404,69 @@ impl OriginalGameRuntime {
             },
         )
         .context("rasterizing bridge sprite entity range")
+    }
+
+    /// Resolve each projected draw with its resource colors in native draw order.
+    pub(super) fn resolve_projected_sprite_rgba(
+        &self,
+        outcome: &BridgeSpriteRasterOutcome,
+        rgba: &mut [u8],
+    ) -> Result<()> {
+        use crate::native::bloodprg::{
+            BridgeSpriteFrameSource, blit_retained_framebuffer_sprite, rasterize_cached_request,
+        };
+        anyhow::ensure!(
+            rgba.len() == LOGICAL_FRAMEBUFFER_PIXEL_COUNT * 4,
+            "invalid projected RGB layer size"
+        );
+        let mut indices = vec![0; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        for request in outcome.dispatch.draw_requests.iter() {
+            indices.fill(0);
+            let mut entity = self.bridge_sprite_entities[request.entity_index];
+            entity.dirty_region = Some(request.dirty_region);
+            let source = entity
+                .frame
+                .context("projected sprite has no frame")?
+                .source;
+            let remaps = BridgeSpriteRemapTables {
+                first: &self.bridge_dark_remap,
+                second: &self.bridge_console_tint,
+            };
+            let colors = match source {
+                BridgeSpriteFrameSource::CachedResource { resource, .. } => {
+                    rasterize_cached_request(
+                        request.entity_index,
+                        &entity,
+                        request.selection,
+                        self.resource_cache
+                            .resolve(resource)
+                            .context("projected resource missing")?,
+                        &mut indices,
+                        remaps,
+                    )?;
+                    self.resource_cache
+                        .source_colors(resource)
+                        .unwrap_or(&self.live_palette)
+                }
+                BridgeSpriteFrameSource::RetainedFramebuffer => {
+                    blit_retained_framebuffer_sprite(
+                        &entity,
+                        request.selection,
+                        self.back_buffer.pixels(),
+                        &mut indices,
+                        remaps,
+                    )?;
+                    &self.live_palette
+                }
+            };
+            for (&index, pixel) in indices.iter().zip(rgba.chunks_exact_mut(4)) {
+                if index != 0 {
+                    let color = colors[usize::from(index)].map(|v| (v << 2) | (v >> 4));
+                    pixel.copy_from_slice(&[color[0], color[1], color[2], 255]);
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Composite one executable-authored entity range into the active display.
@@ -737,9 +806,22 @@ impl OriginalGameRuntime {
         .context("publishing a navigation work-surface span")
     }
 
-    /// Capture the current display as the source page for the ship-depth effect.
-    pub fn capture_ship_depth_source(&mut self) {
+    /// Copy the display to RAM without replacing the separate saved VGA page.
+    pub fn copy_display_to_back_buffer(&mut self) {
         self.back_buffer.copy_from(&self.front_buffer);
+    }
+
+    fn resolve_ship_depth_source(&mut self) {
+        for (&index, rgba) in self
+            .ship_depth_source
+            .pixels()
+            .iter()
+            .zip(self.ship_depth_source_rgba.chunks_exact_mut(4))
+        {
+            let rgb =
+                self.live_palette[usize::from(index)].map(|value| (value << 2) | (value >> 4));
+            rgba.copy_from_slice(&[rgb[0], rgb[1], rgb[2], 255]);
+        }
     }
 
     /// Clear the retained secondary surface used by first-time ship-HUD setup.
@@ -864,8 +946,42 @@ impl OriginalGameRuntime {
     }
 
     /// Copy the recovered upper and lower ship-depth bands between flat buffers.
-    pub fn compose_ship_depth_bands(&mut self, layout: ShipDepthBandLayout) -> Result<()> {
-        copy_ship_depth_bands(&mut self.front_buffer, &self.back_buffer, layout)
+    pub fn compose_ship_depth_bands(
+        &mut self,
+        layout: ShipDepthBandLayout,
+        fade_percent: u16,
+    ) -> Result<()> {
+        copy_ship_depth_bands(&mut self.front_buffer, &self.ship_depth_source, layout)?;
+        let rows = layout
+            .logical_rows()
+            .context("invalid ship-depth source layout")?;
+        // The original source is the separate A000:C000 page, not the RAM
+        // background that DESCRIPT replaces while preparing the next video.
+        for (source, destination) in [
+            (rows.upper_source_start, rows.upper_destination_start),
+            (rows.lower_source_start, rows.lower_destination_start),
+        ] {
+            for row in 0..rows.row_count {
+                for x in 0..LOGICAL_FRAMEBUFFER_WIDTH {
+                    let offset = ((usize::from(source + row) * LOGICAL_FRAMEBUFFER_WIDTH) + x) * 4;
+                    let mut rgba: [u8; 4] = self.ship_depth_source_rgba[offset..offset + 4]
+                        .try_into()
+                        .unwrap();
+                    // The saved page fades independently; never remap it with
+                    // the current HNM's unrelated color bank.
+                    for channel in &mut rgba[..3] {
+                        *channel =
+                            (u16::from(*channel) * (100 - fade_percent.min(100)) / 100) as u8;
+                    }
+                    self.ui_overlay.fill_rect(
+                        [x as i32, i32::from(destination + row)],
+                        [1, 1],
+                        rgba,
+                    );
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Clear the complete display after the recovered travel redraw request.
@@ -971,16 +1087,26 @@ impl OriginalGameRuntime {
             .data
             .load_named_resource(CHART_BACK_BUFFER_RESOURCE_PATH.as_bytes())
             .context("loading CHART.FD")?;
-        decode_chart_back_buffer(
+        let result = decode_chart_back_buffer(
             &bytes,
             self.back_buffer.pixels_mut(),
             &mut self.live_palette,
         )
-        .context("decoding CHART.FD")
+        .context("decoding CHART.FD")?;
+        self.ship_depth_source.copy_from(&self.back_buffer);
+        self.resolve_ship_depth_source();
+        Ok(result)
     }
 
     /// Decode `ORX.FD` and publish it as the active sequence background.
     pub fn restore_sequence_back_buffer(&mut self) -> Result<PbmDecodeResult> {
+        let result = self.initialize_ship_depth_source()?;
+        self.restore_back_buffer();
+        Ok(result)
+    }
+
+    /// Native backbuffer_clear_flags loads ORX into RAM and the saved VGA page.
+    pub fn initialize_ship_depth_source(&mut self) -> Result<PbmDecodeResult> {
         let bytes = self
             .data
             .load_named_resource(crate::native::bloodprg::ORX_BACK_BUFFER_RESOURCE_PATH.as_bytes())
@@ -991,7 +1117,8 @@ impl OriginalGameRuntime {
             &mut self.live_palette,
         )
         .context("decoding ORX.FD")?;
-        self.restore_back_buffer();
+        self.ship_depth_source.copy_from(&self.back_buffer);
+        self.resolve_ship_depth_source();
         Ok(result)
     }
 
@@ -1477,6 +1604,118 @@ mod tests {
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
 
     struct TemporaryRoot(PathBuf);
+
+    #[test]
+    fn projected_pterra_keeps_resource_colors_when_bridge_palette_changes() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        let resource = ResourceId::new(35);
+        runtime
+            .resource_cache
+            .load_palette_resource(
+                runtime.data.resource_store(),
+                runtime.data.resource_catalog(),
+                resource,
+                PaletteResourceTarget::Cached,
+                &mut runtime.live_palette,
+            )
+            .unwrap();
+        let source_colors = *runtime.resource_cache.source_colors(resource).unwrap();
+        assert!(
+            populate_bridge_sprite_from_cache(
+                &runtime.resource_cache,
+                &mut runtime.bridge_sprite_entities,
+                31,
+                resource,
+                BridgeSpritePosition { x: 80, y: 50 },
+                0
+            )
+            .unwrap()
+        );
+        runtime.commit_ship_entity_geometry(0..32).unwrap();
+        let mut indexed = vec![0; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        let outcome = runtime
+            .rasterize_ship_entity_range(31..32, &mut indexed)
+            .unwrap();
+        assert!(indexed.iter().any(|&index| index != 0));
+        runtime.live_palette.fill([63, 0, 63]);
+        let mut rgba = vec![0; LOGICAL_FRAMEBUFFER_PIXEL_COUNT * 4];
+        runtime
+            .resolve_projected_sprite_rgba(&outcome, &mut rgba)
+            .unwrap();
+        for (&index, pixel) in indexed.iter().zip(rgba.chunks_exact(4)) {
+            if index != 0 {
+                let expected = source_colors[usize::from(index)].map(|v| (v << 2) | (v >> 4));
+                assert_eq!(pixel, [expected[0], expected[1], expected[2], 255]);
+            }
+        }
+    }
+
+    #[test]
+    fn ship_setup_uses_orx_bands_not_the_subsequent_scene_background() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        runtime.initialize_back_buffer().unwrap();
+        runtime.initialize_ship_depth_source().unwrap();
+        runtime.front_buffer.clear(255);
+        runtime.copy_display_to_back_buffer();
+        let mut percent = 100;
+        let layout =
+            crate::native::bloodprg::prepare_ship_depth_band(1, 0, 10, &mut percent, 0).unwrap();
+        runtime.compose_ship_depth_bands(layout, 100).unwrap();
+        for row in (0..35).chain(165..200) {
+            assert!(
+                runtime.front_buffer.pixels()[row * 320..(row + 1) * 320]
+                    .iter()
+                    .all(|&index| index != 255)
+            );
+            assert!(
+                runtime.ui_overlay.pixels()[row * 320 * 4..(row + 1) * 320 * 4]
+                    .chunks_exact(4)
+                    .all(|rgba| rgba == [0, 0, 0, 255]),
+                "faded ORX band row {row} is not black"
+            );
+        }
+    }
+
+    #[test]
+    fn ship_bands_keep_the_saved_page_and_rgb_colors_when_scene_buffers_change() {
+        let Some(data) = original_game_data() else {
+            return;
+        };
+        let mut runtime = OriginalGameRuntime::new(data);
+        runtime.live_palette[1] = [0, 63, 0];
+        runtime.ship_depth_source.clear(1);
+        runtime.resolve_ship_depth_source();
+        runtime.back_buffer.clear(2);
+        runtime.front_buffer.clear(3);
+        runtime.copy_display_to_back_buffer();
+        runtime.live_palette.fill([63, 0, 63]);
+        let mut percent = 100;
+        let layout =
+            crate::native::bloodprg::prepare_ship_depth_band(1, 0, 10, &mut percent, 0).unwrap();
+        runtime.compose_ship_depth_bands(layout, 0).unwrap();
+        for row in 0..200 {
+            let index = row * 320;
+            if !(35..165).contains(&row) {
+                assert_eq!(runtime.front_buffer.pixels()[index], 1);
+                assert_eq!(
+                    &runtime.ui_overlay.pixels()[index * 4..index * 4 + 4],
+                    &[0, 255, 0, 255]
+                );
+            } else {
+                assert_eq!(runtime.front_buffer.pixels()[index], 3);
+                assert_eq!(
+                    &runtime.ui_overlay.pixels()[index * 4..index * 4 + 4],
+                    &[0; 4]
+                );
+            }
+        }
+    }
 
     #[test]
     fn shared_choice_lists_restore_only_the_reserved_console_palette_bank() {

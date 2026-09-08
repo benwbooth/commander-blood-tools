@@ -2087,13 +2087,17 @@ impl<'window> ModernGameServices<'window> {
 
     /// Mark the script-side ship interface inactive after full navigation teardown.
     pub fn finish_ship_navigation_reset(&mut self) {
+        // Ship dispatch no longer services its queue after returning to the
+        // bridge. Release its RGB page as well as the source, even mid-idle clip.
+        self.presentation_player.finish();
+        self.presentation_player.release_retained_display_frame();
         let action = self.scripts.action_state_mut();
         action.ship_navigation_mode = ScriptShipNavigationMode::Inactive;
     }
 
     /// Clear the retained ship-HUD setup surface.
-    pub fn clear_ship_hud_back_buffer(&mut self) {
-        self.runtime.clear_back_buffer();
+    pub fn clear_ship_hud_back_buffer(&mut self) -> Result<()> {
+        self.runtime.initialize_ship_depth_source().map(|_| ())
     }
 
     /// Apply the bridge seek target and panorama frame written by HUD setup.
@@ -2723,9 +2727,9 @@ impl<'window> ModernGameServices<'window> {
         &mut self.ship_presentation
     }
 
-    /// Capture the current indexed display as the ship-depth source frame.
-    pub fn capture_ship_depth_source(&mut self) {
-        self.runtime.capture_ship_depth_source();
+    /// Preserve the indexed display in RAM after the ship scene is prepared.
+    pub fn copy_display_to_back_buffer(&mut self) {
+        self.runtime.copy_display_to_back_buffer();
     }
 
     /// Advance the canonical recovered ship-depth state by one frame.
@@ -2743,10 +2747,8 @@ impl<'window> ModernGameServices<'window> {
         self.palette_transition
             .set_progress_percent(self.ship_presentation.transition_percent);
         self.runtime
-            .compose_ship_depth_bands(layout)
+            .compose_ship_depth_bands(layout, self.ship_presentation.transition_percent)
             .context("composing recovered ship-depth bands")?;
-        self.presentation_player
-            .refresh_display_bands(self.runtime.front_buffer().pixels(), layout)?;
         Ok(true)
     }
 
@@ -4076,6 +4078,11 @@ impl<'window> ModernGameServices<'window> {
                 projection_start..entities.end,
                 &mut frame.object_sprite_pixels,
             )?;
+            let rgba = frame.object_sprite_rgba.get_or_insert_with(|| {
+                vec![0; LOGICAL_FRAMEBUFFER_PIXEL_COUNT * 4].into_boxed_slice()
+            });
+            self.runtime
+                .resolve_projected_sprite_rgba(&projected, rgba)?;
             draw_requests.extend(projected.dispatch.draw_requests);
             selected_blitter_after = projected.dispatch.selected_blitter_after;
             rasterized_request_count += projected.rasterized_request_count;

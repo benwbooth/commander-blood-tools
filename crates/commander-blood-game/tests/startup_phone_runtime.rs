@@ -1385,6 +1385,39 @@ fn production_runtime_vm_unlocks_pterra_and_opens_the_authored_navigation_chart(
 }
 
 #[test]
+fn production_runtime_returns_from_scruter_cryobox_teleport() {
+    let Some(records) = run_production_scenario_with_setup(
+        "accuracy/scenarios/production_scruter_cryobox.tsv",
+        "production-scruter-cryobox.jsonl",
+        seed_authentic_pterra_unlock_save,
+    ) else {
+        return;
+    };
+    let last = records.last().expect("cryobox replay produced no records");
+    for choices in [
+        serde_json::json!(["robyx", "code", "ulikan", "69", "exxos", "electret", "666", "9"]),
+        serde_json::json!(["teleport", "refuse"]),
+    ] {
+        assert!(
+            records.iter().any(|record| record["semantic"]["presentation"]["selector_word_choices"] == choices),
+            "replay missed choices {choices}"
+        );
+    }
+    assert_eq!(last["semantic"]["presentation"]["active"], 0);
+    assert_eq!(last["semantic"]["navigation"]["ship_mode"], "Inactive");
+    assert!(
+        last["semantic"]["video"]["active_resource"].is_null(),
+        "Scruter's idle queue survived ship teardown"
+    );
+    assert_eq!(
+        last["semantic"]["video"]["display_frame_owned"], false,
+        "Scruter's retained frame covers the bridge"
+    );
+    assert_eq!(last["semantic"]["video"]["manu3_layer_allowed"], true);
+    assert_eq!(last["semantic"]["vm"]["execution_enabled"], 1);
+}
+
+#[test]
 fn production_runtime_enters_pterra_ship_navigation_through_the_recovered_camera_path() {
     let Some(records) = run_production_scenario_with_setup(
         "accuracy/scenarios/production_load_pterra_ship_navigation.tsv",

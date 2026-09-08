@@ -9,7 +9,7 @@ use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
     BridgeSpriteEntity, BridgeSpriteFrameSource, BridgeSpritePosition, IndexedGamePalette,
     OriginalResourceCache, OriginalResourceCatalog, PaletteResourceTarget, ResourceId,
-    build_palette_blend_remap_table, populate_bridge_sprite_from_cache,
+    populate_bridge_sprite_from_cache,
 };
 use crate::ui::RgbaUiOverlay;
 
@@ -93,19 +93,10 @@ impl WorldArtworkAssets {
                 })
                 .collect::<Vec<_>>()
                 .into_boxed_slice();
-            let mut remap = [0; 256];
-            build_palette_blend_remap_table(&colors, &mut remap, 50, [0; 3])?;
-            let dimmed_pixels = indexed
-                .iter()
-                .flat_map(|&index| {
-                    if index == 0 {
-                        [0; RGBA_COMPONENTS]
-                    } else {
-                        let rgb = colors[usize::from(remap[usize::from(index)])]
-                            .map(|value| (value << 2) | (value >> 4));
-                        [rgb[0], rgb[1], rgb[2], 255]
-                    }
-                })
+            // RGB artwork must not be quantized into unrelated scene colors.
+            let dimmed_pixels = pixels
+                .chunks_exact(RGBA_COMPONENTS)
+                .flat_map(|rgba| [rgba[0] / 2, rgba[1] / 2, rgba[2] / 2, rgba[3]])
                 .collect::<Vec<_>>()
                 .into_boxed_slice();
             images.insert(
@@ -397,8 +388,6 @@ mod tests {
                         resource.value()
                     );
                 }
-                let mut remap = [0; 256];
-                build_palette_blend_remap_table(&colors, &mut remap, 50, [0; 3]).unwrap();
                 let mut dimmed = RgbaUiOverlay::new(320, 200);
                 data.world_artwork_assets
                     .draw_dimmed(&mut dimmed, &entity)
@@ -407,9 +396,9 @@ mod tests {
                     let expected = if index == 0 {
                         [0; 4]
                     } else {
-                        let [r, g, b] = colors[usize::from(remap[usize::from(index)])]
-                            .map(|value| (value << 2) | (value >> 4));
-                        [r, g, b, 255]
+                        let [r, g, b] =
+                            colors[usize::from(index)].map(|value| (value << 2) | (value >> 4));
+                        [r / 2, g / 2, b / 2, 255]
                     };
                     assert_eq!(
                         actual,

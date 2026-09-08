@@ -121,6 +121,7 @@ mod ship_view;
 mod sprite_blitter;
 mod sprite_geometry;
 mod sprite_raster;
+pub(crate) use sprite_raster::rasterize_cached_request;
 mod startup;
 mod startup_cleanup;
 mod startup_prepare;

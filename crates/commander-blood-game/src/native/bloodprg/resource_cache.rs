@@ -176,6 +176,7 @@ struct CachedResource {
 #[derive(Clone, Debug, Default)]
 pub struct OriginalResourceCache {
     entries: BTreeMap<ResourceId, CachedResource>,
+    source_colors: BTreeMap<ResourceId, IndexedGamePalette>,
 }
 
 impl OriginalResourceCache {
@@ -240,9 +241,11 @@ impl OriginalResourceCache {
         let storage = match target {
             PaletteResourceTarget::Cached => {
                 if self.entries.contains_key(&resource) {
+                    self.source_colors.insert(resource, updated_palette);
                     PaletteResourceStorage::Cached(ResourceLoadStatus::AlreadyLoaded)
                 } else {
                     self.insert(resource, bytes)?;
+                    self.source_colors.insert(resource, updated_palette);
                     PaletteResourceStorage::Cached(ResourceLoadStatus::LoadedNow)
                 }
             }
@@ -270,6 +273,7 @@ impl OriginalResourceCache {
         let (bytes, updated_palette, palette_changed) =
             decode_palette_resource(resource, source, live_palette)?;
         self.insert(resource, bytes)?;
+        self.source_colors.insert(resource, updated_palette);
         *live_palette = updated_palette;
         Ok(PaletteResourceLoadOutcome {
             storage: PaletteResourceStorage::Cached(ResourceLoadStatus::LoadedNow),
@@ -283,7 +287,13 @@ impl OriginalResourceCache {
     /// offset `0x005288`. Removing an owned map entry also replaces the native
     /// `resource_free_inner` pool compaction at `0x00529C`.
     pub fn release(&mut self, resource: ResourceId) -> bool {
+        self.source_colors.remove(&resource);
         self.entries.remove(&resource).is_some()
+    }
+
+    /// Resource-local colors retained independently of subsequent scene loads.
+    pub fn source_colors(&self, resource: ResourceId) -> Option<&IndexedGamePalette> {
+        self.source_colors.get(&resource)
     }
 
     /// Borrow the exact loaded file bytes for an identifier.

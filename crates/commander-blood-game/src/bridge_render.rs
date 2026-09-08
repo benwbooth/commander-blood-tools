@@ -357,12 +357,20 @@ impl BridgeRenderer {
             true,
             &mut self.panorama_rgba,
         );
-        expand_indexed_rgba_into(
-            &frame.object_sprite_pixels,
-            &self.colors,
-            true,
-            &mut self.object_sprite_rgba,
-        );
+        if let Some(rgba) = &frame.object_sprite_rgba {
+            anyhow::ensure!(
+                rgba.len() == self.object_sprite_rgba.len(),
+                "invalid RGB object layer size"
+            );
+            self.object_sprite_rgba.copy_from_slice(rgba);
+        } else {
+            expand_indexed_rgba_into(
+                &frame.object_sprite_pixels,
+                &self.colors,
+                true,
+                &mut self.object_sprite_rgba,
+            );
+        }
         expand_indexed_rgba_into(
             &frame.actor_sprite_pixels,
             &self.actor_colors,
@@ -748,6 +756,24 @@ mod tests {
             LOGICAL_OUTPUT_HEIGHT,
         );
         assert_eq!(rgba_at(&object_only, sample_index), RED_RGBA_COLOR);
+
+        let mut owned_rgba = vec![0; PANORAMA_FRAME_PIXEL_COUNT * RGBA_COMPONENT_COUNT];
+        owned_rgba[sample_index * RGBA_COMPONENT_COUNT..(sample_index + 1) * RGBA_COMPONENT_COUNT]
+            .copy_from_slice(&BLUE_RGBA_COLOR);
+        frame.object_sprite_rgba = Some(owned_rgba.into_boxed_slice());
+        let owned_object = render_offscreen_bridge(
+            &device,
+            &queue,
+            &palette,
+            &frame,
+            LOGICAL_OUTPUT_WIDTH,
+            LOGICAL_OUTPUT_HEIGHT,
+        );
+        assert_eq!(
+            rgba_at(&owned_object, sample_index),
+            BLUE_RGBA_COLOR,
+            "bridge palette recolored the resource-owned RGB object"
+        );
 
         frame.panorama_pixels[sample_index] = PANORAMA_SAMPLE_PALETTE_INDEX;
         let panorama_over_object = render_offscreen_bridge(

@@ -291,47 +291,6 @@ impl RuntimePresentationPlayer {
         }
     }
 
-    /// Carry explicit native band writes into the independently retained video page.
-    pub(super) fn refresh_display_bands(
-        &mut self,
-        source: &[u8],
-        layout: crate::native::bloodprg::ShipDepthBandLayout,
-    ) -> Result<()> {
-        let mut pixels = if let Some(stream) = self.active_stream.as_ref() {
-            stream.display_indices().to_vec()
-        } else if let Some(frame) = self.retained_display.as_ref() {
-            frame.indexed_pixels.to_vec()
-        } else {
-            return Ok(());
-        };
-        let rows = layout
-            .logical_rows()
-            .context("invalid retained video band layout")?;
-        let width = super::LOGICAL_FRAMEBUFFER_WIDTH;
-        for start in [rows.upper_destination_start, rows.lower_destination_start] {
-            let range = usize::from(start) * width
-                ..(usize::from(start) + usize::from(rows.row_count)) * width;
-            pixels
-                .get_mut(range.clone())
-                .context("retained video band outside display")?
-                .copy_from_slice(
-                    source
-                        .get(range)
-                        .context("video band source outside display")?,
-                );
-        }
-        if let Some(stream) = self.active_stream.as_mut() {
-            stream.resolve_display_rgba(&pixels)
-        } else {
-            let frame = self
-                .retained_display
-                .as_mut()
-                .expect("retained frame checked above");
-            frame.indexed_pixels = pixels.into_boxed_slice();
-            frame.resolve_rgba()
-        }
-    }
-
     /// Stage the color mapping established by a new scene background.
     ///
     /// The background is decoded into the back page while the prior RGBA video
@@ -522,51 +481,6 @@ mod tests {
         player.refresh_display_rgba().unwrap();
         assert_eq!(player.display_rgba().unwrap(), final_frame);
         assert_eq!(*player.display_palette().unwrap(), final_palette);
-    }
-
-    #[test]
-    fn explicit_ship_bands_update_only_their_owned_rows() {
-        let Some(data) = original_data() else {
-            return;
-        };
-        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
-        let mut runtime = OriginalGameRuntime::new(data);
-        player
-            .load(
-                &mut runtime,
-                OPENING_PRESENTATION_LINE,
-                PresentationSceneSource::Owned,
-                PresentationPresentPolicy::default(),
-                0,
-                false,
-                false,
-            )
-            .unwrap()
-            .unwrap();
-        let mut percent = 100;
-        let layout =
-            crate::native::bloodprg::prepare_ship_depth_band(1, 0, 10, &mut percent, 0).unwrap();
-        for finish in [false, true] {
-            if finish {
-                player.finish();
-            }
-            player.display_palette_mut().unwrap()[255] = [63, 0, 0];
-            player.refresh_display_rgba().unwrap();
-            let before = player.display_rgba().unwrap().to_vec();
-            runtime.front_buffer_mut().clear(255);
-            player
-                .refresh_display_bands(runtime.front_buffer().pixels(), layout)
-                .unwrap();
-            let rgba = player.display_rgba().unwrap();
-            for (index, pixel) in rgba.chunks_exact(4).enumerate() {
-                let row = index / 320;
-                if !(35..165).contains(&row) {
-                    assert_eq!(pixel, [255, 0, 0, 255]);
-                } else {
-                    assert_eq!(pixel, &before[index * 4..index * 4 + 4]);
-                }
-            }
-        }
     }
 
     #[test]

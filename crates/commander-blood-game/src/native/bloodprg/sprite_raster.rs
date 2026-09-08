@@ -147,7 +147,7 @@ pub fn rasterize_bridge_sprite_range<'resource>(
     })
 }
 
-fn rasterize_cached_request(
+pub(crate) fn rasterize_cached_request(
     entity_index: usize,
     entity: &BridgeSpriteEntity,
     selection: super::BridgeSpriteBlitterSelection,

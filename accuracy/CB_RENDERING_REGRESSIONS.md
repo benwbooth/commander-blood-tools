@@ -30,10 +30,12 @@ including the existing DOS opening-frame hashes.
 
 This establishes a corruption-path correction, not yet proof that the reported
 one-frame Scruter transition flash and overwritten black bars are both gone.
-Inspect clip-switch boundaries next. The explicit ship-depth copy at 0x00B6DD
-also updated only the indexed work page. Its two destination row bands are now
-copied into an owned video page without replacing the center. A real-resource
-regression checks both active and finished video ownership.
+Inspect clip-switch boundaries next. The earlier attempt to copy ship bands
+into the retained video used the wrong source and has been removed. The saved
+image used by 0x00B6DD is distinct from the mutable RAM scene background.
+Ship initialization now loads ORX.FD into that saved image, preserving the
+separate RAM display-copy operation at 0x003E5B. Its RGB bands fade independently
+and cannot acquire Pterra's background pixels or video colors.
 
 ## Pterra map colors
 
@@ -43,14 +45,45 @@ shipped executable's initialized word at file 0xDEE8 is also 0x5F11. The C
 candidate palette_blend_remap_table_build at 0x0022E0 searches the live palette
 for nearest colors, including last-index tie handling.
 
-The modern location panel instead halved RGB channels. Imported planet artwork
-now retains the native remapped RGB variant, used inside the panel's remapped
-rectangle. Scaling, source-zero transparency, and clipping are unchanged.
-The artwork test checks all 42 layout entries at five placements/scales against
-native indexed scaling and palette remapping. The live navigation-chart and
-travel-to-password scenarios pass. A screenshot of the password chooser in
+The palette-quantized panel correction was insufficient and contradicted the
+requested RGB ownership: nearest-color matching could introduce unrelated
+colors. Panel dimming now halves the imported RGB channels directly. Scaling,
+source-zero transparency, and clipping are unchanged; the artwork test checks
+all 42 layout entries at five placements/scales.
+
+The September 8 screenshot identified a different path: the large projected
+planet behind the cockpit, not the panel artwork. BridgeRenderer expanded its
+indices using the cockpit palette. Cached sprite resources now retain their
+own source colors; projected draw requests produce an RGB layer before cockpit
+compositing. A real PTERRA.EXT test poisons the global palette with magenta and
+checks every visible pixel against the resource colors. The GPU test verifies
+that the RGB object survives palette changes and remains behind the cockpit.
+
+A screenshot of the password chooser in
 `output/fidelity/production-load-pterra-ship-navigation.jsonl-1788834458686223589-2077237-0/screen-28.png`
 visibly confirms the hand; this capture predates the explicit band-write fix.
+
+## Scruter cryobox return
+
+The production replay reaches both the exxos and teleport choices. Before the
+fix, ship navigation returned to Inactive while PE\\scr20.hnm remained open,
+frozen at sequence index 14, with display ownership and hand occlusion retained.
+Ship navigation teardown now closes the queue and releases the retained RGB
+frame. The cryobox regression checks both choices, bridge return, no remaining
+video owner, restored hand-layer permission, and enabled script execution.
+
+September 8 verification: 963 library tests passed (38 explicitly ignored),
+and the production cryobox replay passed in 292.50 seconds. Artifacts:
+
+- `output/fidelity/cb-pterra-life-support-rgb.png`: actual Life Support bridge view.
+- `output/fidelity/cb-pterra-danger-rgb-bands.png`: both bands black outside HUD/hand.
+  Pixel maxima are zero in the upper 800x160+480+0 and lower 1280x110+0+850 regions.
+- `output/fidelity/cb-scruter-cryobox-return-rgb.png`: visible bridge and hand after teleport.
+- `output/fidelity/production-scruter-cryobox.jsonl-1788885556160216261-3169699-0/`:
+  production inputs, checkpoints, and continuous frame trace.
+
+These checks do not establish that the initial Scruter clip-transition flash
+has been resolved, nor full-game rendering parity.
 
 ## Lever and black bars
 
