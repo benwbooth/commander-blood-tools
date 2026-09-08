@@ -61,6 +61,21 @@ discrepancy. Determine whether the report concerns the hyperjump lever or the
 camera/map control, and whether the bars are inside the 320x200 scene or outside
 the aspect-fit viewport. Do not mask these issues by globally hiding layers.
 
+The modern MANU3 between-tick renderer predicted an ordinary next tween step
+even immediately after an explicit animation selection. Repeated native lever
+selection can invalidate that prediction. It now reprojects the current pose
+for such intervals, retaining pointer tracking without speculative tweening.
+Ordinary no-selector intervals still interpolate. The repeated-selector
+regression fails with the guard disabled and passes with it enabled; all 22
+MANU3 tests, including original-binary semantic vectors, pass. The desktop
+executable was rebuilt. This is not yet visual proof of the reported lever fix.
+
+A 150-second, 60-fps lossless X11 capture is available at
+`output/fidelity/cb-scruter-continuity-20260907-01/display-attached.mkv`.
+It predates the interpolation correction and includes the password chooser.
+The initial contact-sheet inspection does not establish exact talking-clip
+boundary parity; the reported Scruter flash remains open.
+
 ## Verification setup
 
 Use SDL_VIDEODRIVER=x11 with Xvfb for screenshots. Inheriting WAYLAND_DISPLAY

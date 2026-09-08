@@ -114,6 +114,7 @@ pub struct Manu3Model {
     raster_reciprocals: [i32; commander_blood_formats::manu3::MAXIMUM_FACE_SPAN],
     projection_center: ProjectionCenter,
     render_triangles: Vec<RenderTriangle>,
+    animation_reselected: bool,
 }
 
 impl Manu3Model {
@@ -214,6 +215,7 @@ impl Manu3Model {
             raster_reciprocals: asset.raster_reciprocals,
             projection_center: ProjectionCenter::default(),
             render_triangles: Vec::new(),
+            animation_reselected: false,
         })
     }
 
@@ -246,6 +248,8 @@ impl Manu3Model {
     /// used by MANU3's main API entry at file offset `0x0000`.
     pub fn render_frame(&mut self, request: Manu3FrameRequest) -> Result<(), Manu3ModelError> {
         self.prepare_animation(request.cursor);
+        self.animation_reselected =
+            animation_selector_for_request(request.animation_selector).is_some();
         if let Some(animation_selector) = animation_selector_for_request(request.animation_selector)
         {
             self.animation
@@ -274,6 +278,11 @@ impl Manu3Model {
         cursor: CursorPosition,
         fraction: f32,
     ) -> Result<(), Manu3ModelError> {
+        // Lever handlers may reissue the selector every tick. Predicting an
+        // ordinary tween step then snaps back when the selector is reissued.
+        if self.animation_reselected {
+            return self.project_current_pose(cursor);
+        }
         let predicted_targets = self.animation.preview_next_targets()?;
         let interpolated =
             interpolate_targets(self.animation.targets(), &predicted_targets, fraction);
@@ -319,6 +328,7 @@ impl Manu3Model {
         &mut self,
         mut trace: impl FnMut(FrameStage),
     ) -> Result<(), Manu3ModelError> {
+        self.animation_reselected = false;
         trace(FrameStage::Tween);
         self.animation.step_tweens()?;
         self.apply_animation_targets();
@@ -599,6 +609,33 @@ mod tests {
             pose_before
         );
         assert_ne!(model.render_triangles, triangles_before);
+    }
+
+    #[test]
+    fn reissued_lever_selector_does_not_predict_an_unrequested_tween_step() {
+        let Some(path) = original_xdb() else {
+            return;
+        };
+        let asset = decode_manu3(&std::fs::read(path).unwrap()).unwrap();
+        let mut model = Manu3Model::from_asset(asset).unwrap();
+        for _ in 0..8 {
+            model
+                .render_frame(Manu3FrameRequest {
+                    cursor: CENTERED_CURSOR,
+                    animation_selector: 10,
+                })
+                .unwrap();
+            let native_pose = model.render_triangles().to_vec();
+            let animation = model.animation.clone();
+            model
+                .reproject_interpolated_frame(CENTERED_CURSOR, 0.75)
+                .unwrap();
+            assert!(
+                model.render_triangles() == native_pose,
+                "visual refresh predicted past a reissued lever selector"
+            );
+            assert_eq!(model.animation, animation);
+        }
     }
 
     #[test]
