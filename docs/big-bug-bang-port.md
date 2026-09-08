@@ -16,8 +16,8 @@ choices, and continues through `no_hurry` back to Tempest navigation. Retained
 screenshots and RGB-row checks verify the formerly missing labels. Other
 conversation branches and broader progression remain unverified. These routes
 do not establish a complete playthrough. English COD display
-catalogs cover SCRIPT1 through SCRIPT5, SCRIPT7, SCRIPT9, SCRIPT15, and SCRIPT17,
-but the other 8 profiles and several
+catalogs cover SCRIPT1 through SCRIPT5, SCRIPT7, SCRIPT9, and SCRIPT15 through SCRIPT17,
+but the other 7 profiles and several
 other text layers remain unfinished. The latest route evidence is recorded in
 `../localization/big-bug-bang/README.md`. The original-disc investigation is in
 `big-bug-bang-investigation.md`; its initial decoder limitations describe the

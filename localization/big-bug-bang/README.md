@@ -110,7 +110,17 @@ stability. Subsequent core analysis identified concurrent Vulkan driver unloadin
 and pipeline construction; see [GPU test isolation](../../docs/gpu-test-isolation.md)
 for evidence and the test-harness mitigation.
 
-The other 8 COD profiles, BAS text, most native UI, object names, and text embedded
+`en/script16.json` supplies all 209 Tubular Brain text sites, including the
+philosophy quiz, Bionium clairvoyance exchange, Croolis/Scruter dialogue, and
+writing/culture trades. Seven choice lists retain their original ordered IDs;
+the to-be/or/not-to-be prompt remains three choices. Three population readouts
+and three inventory generators remain live. The original-resource runtime test
+loads SCRIPT16 after initial state loading and renders all 206 static subtitles
+through the original font's RGB path with nonblank and bounds checks. All 15
+localization tests pass with original resources. This is an editorial first pass;
+live quiz, trades, synthesis, voice timing, and progression remain unverified.
+
+The other 7 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -628,7 +638,7 @@ The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
 the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5,
-SCRIPT7, SCRIPT9, SCRIPT15, and SCRIPT17
+SCRIPT7, SCRIPT9, and SCRIPT15 through SCRIPT17
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.
