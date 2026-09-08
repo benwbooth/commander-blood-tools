@@ -130,7 +130,17 @@ font's RGB path, checking nonblank output and bounds. All 16 localization tests
 pass with original resources. This editorial first pass does not verify live
 robot conversations, trades, voice timing, or later gameplay progression.
 
-The other 6 COD profiles, BAS text, most native UI, object names, and text embedded
+`en/script12.json` supplies all 302 Migrator/Mig Burner text sites, including
+illness and recovery, ship/address rewards, ship trades, concert dialogue, and
+the Scruter-body sale. Eight choice lists preserve ordered dictionary IDs; two
+population readouts and two inventory generators remain live. The original-resource
+runtime test selects SCRIPT12 after initial state loading and renders all 300
+static subtitles through the original font's RGB path, checking nonblank output
+and bounds. All 17 localization tests pass with original resources. This is an
+editorial first pass; live recovery/death branches, trades, concert progression,
+and voice timing remain unverified.
+
+The other 5 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -648,7 +658,7 @@ The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
 the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5,
-SCRIPT7 through SCRIPT9, and SCRIPT15 through SCRIPT17
+SCRIPT7 through SCRIPT9, SCRIPT12, and SCRIPT15 through SCRIPT17
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.

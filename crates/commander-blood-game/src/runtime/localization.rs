@@ -23,6 +23,8 @@ const SCRIPT5_ENGLISH: &str = include_str!("../../../../localization/big-bug-ban
 const SCRIPT7_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script7.json");
 const SCRIPT8_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script8.json");
 const SCRIPT9_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script9.json");
+const SCRIPT12_ENGLISH: &str =
+    include_str!("../../../../localization/big-bug-bang/en/script12.json");
 const SCRIPT15_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script15.json");
 const SCRIPT16_ENGLISH: &str =
@@ -67,6 +69,7 @@ impl SequelEnglishSubtitles {
             6 => ("SCRIPT7", SCRIPT7_ENGLISH),
             7 => ("SCRIPT8", SCRIPT8_ENGLISH),
             8 => ("SCRIPT9", SCRIPT9_ENGLISH),
+            11 => ("SCRIPT12", SCRIPT12_ENGLISH),
             14 => ("SCRIPT15", SCRIPT15_ENGLISH),
             15 => ("SCRIPT16", SCRIPT16_ENGLISH),
             16 => ("SCRIPT17", SCRIPT17_ENGLISH),
@@ -452,6 +455,20 @@ mod tests {
             translation.messages["bbb.script8.cod.00001fe5"],
             ["TELEPORTING DECODER INTO CRYOBOX"],
             "retain the authored decoder caption even though Morning_Oil offers gifts"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script12_binds_choices_dynamic_counts_and_rgb_text() {
+        check_profile_rgb_text(
+            11,
+            "SCRIPT12",
+            SCRIPT12_ENGLISH,
+            302,
+            8,
+            &[0x0a18, 0x20c8],
+            &[0x1e75, 0x2a6b],
         );
     }
 
