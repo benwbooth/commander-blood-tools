@@ -26,6 +26,35 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Honk Hold Inventory Pass
+
+The longer `bbb_load_honk_inventory.tsv` input-only replay completed all actions
+and exited successfully. Its capture is
+`output/big-bug-bang/honk-inventory-Dq8uYgJi`, using binary SHA-256
+`778bcb45c062ff7411b24533ce20cfd49817e8f94c77aed39c3a9e7ab968a507`.
+At the final frame 4141, six previously unowned inventory records have holder
+`FFFF`: `ecriture`, `vaisseau`, `technologie`, `guitare`, `energie`, and `parfum`.
+SCRIPT2 remains loaded, the VM is enabled, and Honk's actor presentation,
+screen, chooser, and dispatch block are cleared. `after-inventory.png` was
+visually inspected. The source/copied saves were not rewritten by this run.
+
+The new progression regression requires those six specific acquisitions to
+remain present at the endpoint, as well as the bank/chatter checks from the
+shorter replay and released presentation ownership. Its shared trace validator
+passes this completed capture. The earlier short capture was deliberately
+checked and rejected for incomplete inventory progression. The full-process
+test wrapper was not separately replayed; the equivalent CLI scenario and its
+shared validator were run. Normal progression/support tests pass (six tests;
+seven resource/display-dependent tests ignored).
+
+The script's counter comparison near COD `0x347B` is greater-than five, not a
+five-item cap. Its nearby excuse line at `0x3483` did not appear in this capture;
+the last revealed line was the perfume discovery before ownership cleared.
+The regression does not assert that unproven dialogue detail. Compare original
+VM text-gate/return behavior before treating that omission as correct or
+changing it. A subsequent interactive command, save of the acquired items,
+and later quest progression remain unverified by this replay.
+
 ### Honk Radio Bank Ownership
 
 The cryobox-dialogue crash below was traced to a missing BBB-specific menu

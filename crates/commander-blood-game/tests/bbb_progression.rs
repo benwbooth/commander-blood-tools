@@ -46,6 +46,24 @@ fn validate_recorded_honk_radio_continuation() {
     assert_honk_trace(&frames);
 }
 
+#[test]
+#[ignore = "requires BBB assets, a progressed Daddy save, and a graphical display"]
+fn honk_inventory_pass_retains_six_items_and_releases_presentation() {
+    let frames = replay_bbb(
+        "bbb-honk-inventory",
+        "accuracy/scenarios/bbb_load_honk_inventory.tsv",
+    );
+    assert_honk_inventory_trace(&frames);
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a retained inventory trace"]
+fn validate_recorded_honk_inventory_pass() {
+    let frames =
+        PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"));
+    assert_honk_inventory_trace(&frames);
+}
+
 fn replay_templand(finish: bool) {
     let frames = replay_bbb(
         if finish {
@@ -152,6 +170,62 @@ fn assert_honk_trace(frames: &std::path::Path) {
         streamed_after_cryobox,
         "no streamed dialogue followed the formerly crashing line"
     );
+}
+
+fn assert_honk_inventory_trace(frames: &std::path::Path) {
+    use std::collections::BTreeSet;
+    assert_honk_trace(frames);
+    let mut baseline = None;
+    let mut final_inventory = BTreeSet::new();
+    let mut saw_honk = false;
+    let mut returned = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if semantic["vm"]["resource_profile"] != 1 {
+            returned = false;
+            continue;
+        }
+        let inventory: BTreeSet<String> = semantic["persistent"]["object_locations"]
+            .as_array()
+            .expect("persistent object locations")
+            .iter()
+            .filter(|object| object["kind"] == "InventoryItem" && object["holder_raw"] == 65535)
+            .map(|object| object["name"].as_str().expect("inventory name").to_owned())
+            .collect();
+        baseline.get_or_insert_with(|| inventory.clone());
+        final_inventory = inventory;
+        saw_honk |= semantic["presentation"]["active_actor_presentation"]["name"] == "Honk";
+        returned = saw_honk
+            && final_inventory
+                .difference(baseline.as_ref().unwrap())
+                .count()
+                == 6
+            && semantic["vm"]["execution_enabled"] == 1
+            && semantic["presentation"]["active_actor_presentation"].is_null()
+            && semantic["presentation"]["active"] == 0
+            && semantic["presentation"]["screen_active"] == false
+            && semantic["presentation"]["retained_word_choice"]["phase"] == "Closed"
+            && semantic["presentation"]["ship_scene"]["dispatch_blocked"] == false;
+    }
+    let baseline = baseline.expect("main profile inventory baseline");
+    for name in [
+        "ecriture",
+        "vaisseau",
+        "technologie",
+        "guitare",
+        "energie",
+        "parfum",
+    ] {
+        assert!(!baseline.contains(name), "fixture already owns {name}");
+        assert!(final_inventory.contains(name), "Honk did not retain {name}");
+    }
+    assert_eq!(
+        final_inventory.difference(&baseline).count(),
+        6,
+        "hold-search inventory delta differs from the six-item fixture"
+    );
+    assert!(returned, "Honk did not return to an unblocked main profile");
 }
 
 fn assert_templand_trace(frames: &std::path::Path, finish: bool) {
