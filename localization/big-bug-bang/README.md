@@ -74,7 +74,17 @@ checking nonblank output and horizontal/vertical bounds. All 11 localization
 tests pass with original resources. This is an editorial first pass; live
 SCRIPT17 progression, voice timing, and scene composition remain unverified.
 
-The other 11 COD profiles, BAS text, most native UI, object names, and text embedded
+`en/script15.json` supplies all 102 Scruter Mac/Jo/K text sites, with matching
+original COD/DIC hashes. Three population readouts preserve their live state
+offsets, and three inventory prompts retain the inventory generator without
+static choice overrides. The original-resource runtime test loads SCRIPT15
+after initial persistent state, verifies unchanged code/dictionary bytes, and
+renders all 99 static subtitles through the original font's RGB path, checking
+nonblank output and bounds. All 12 localization tests pass with original
+resources. Live SCRIPT15 progression, scene composition, and voice timing are
+not verified by these tests; this remains an editorial first pass.
+
+The other 10 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -591,7 +601,7 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5 and SCRIPT17
+the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5, SCRIPT15, and SCRIPT17
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.

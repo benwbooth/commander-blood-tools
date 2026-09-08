@@ -20,6 +20,8 @@ const SCRIPT2_ENGLISH: &str = include_str!("../../../../localization/big-bug-ban
 const SCRIPT3_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script3.json");
 const SCRIPT4_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script4.json");
 const SCRIPT5_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script5.json");
+const SCRIPT15_ENGLISH: &str =
+    include_str!("../../../../localization/big-bug-bang/en/script15.json");
 const SCRIPT17_ENGLISH: &str =
     include_str!("../../../../localization/big-bug-bang/en/script17.json");
 const LINE_COLUMNS: usize = 34;
@@ -57,6 +59,7 @@ impl SequelEnglishSubtitles {
             2 => ("SCRIPT3", SCRIPT3_ENGLISH),
             3 => ("SCRIPT4", SCRIPT4_ENGLISH),
             4 => ("SCRIPT5", SCRIPT5_ENGLISH),
+            14 => ("SCRIPT15", SCRIPT15_ENGLISH),
             16 => ("SCRIPT17", SCRIPT17_ENGLISH),
             _ => return Ok(None),
         };
@@ -360,6 +363,20 @@ mod tests {
             5,
             &[0x0e2d, 0x1310],
             &[0x127a, 0x175d],
+        );
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script15_binds_dynamic_counts_inventory_and_rgb_text() {
+        check_profile_rgb_text(
+            14,
+            "SCRIPT15",
+            SCRIPT15_ENGLISH,
+            102,
+            0,
+            &[0x079b, 0x0c9e, 0x1177],
+            &[0x0c4d, 0x1126, 0x15f4],
         );
     }
 
