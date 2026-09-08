@@ -482,6 +482,49 @@ mod tests {
     const STAGED_SCENE_COLOR: [u8; 3] = [17, 19, 23];
 
     #[test]
+    fn scruter_talking_clip_close_preserves_the_authored_final_frame() {
+        let Some(data) = original_data() else {
+            assert!(std::env::var_os("CBLOOD_REQUIRE_ACCURACY_TESTS").is_none());
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        let request = super::super::RuntimePresentationRequest::new(
+            commander_blood_formats::archive::BloodResourceName::new(b"PE\\SCR02.HNM").unwrap(),
+        );
+        let (stream, _) = RuntimePresentationStream::load(&mut runtime, request, 0, false).unwrap();
+        player.active_stream = Some(stream);
+        let mut penultimate = None;
+        for tick in 1..=1000 {
+            if player.decoded_frame_count() == 30 {
+                penultimate = Some(player.display_rgba().unwrap().to_vec());
+            }
+            let outcome = player
+                .service_frame(
+                    &mut runtime,
+                    0,
+                    tick,
+                    PresentationQueueClockGates::default(),
+                    false,
+                )
+                .unwrap();
+            if outcome.stream_finished {
+                break;
+            }
+        }
+        assert!(player.active_stream.as_ref().unwrap().is_finished());
+        assert_eq!(player.decoded_frame_count(), 31);
+        let final_frame = player.display_rgba().unwrap().to_vec();
+        assert_ne!(penultimate.unwrap(), final_frame);
+        let final_palette = *player.display_palette().unwrap();
+        assert!(player.finish());
+        runtime.front_buffer_mut().clear(255);
+        player.refresh_display_rgba().unwrap();
+        assert_eq!(player.display_rgba().unwrap(), final_frame);
+        assert_eq!(*player.display_palette().unwrap(), final_palette);
+    }
+
+    #[test]
     fn explicit_ship_bands_update_only_their_owned_rows() {
         let Some(data) = original_data() else {
             return;

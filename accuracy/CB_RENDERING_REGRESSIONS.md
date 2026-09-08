@@ -76,6 +76,29 @@ It predates the interpolation correction and includes the password chooser.
 The initial contact-sheet inspection does not establish exact talking-clip
 boundary parity; the reported Scruter flash remains open.
 
+### Scruter talking-boundary isolation
+
+The continuous-capture trace at
+`output/fidelity/production-load-pterra-ship-navigation.jsonl-1788836195036749096-2273077-0/frames.jsonl`
+includes `PE\\scr02.hnm` talking clips. Frames 2755-2757 contain decoded count
+30, the closed-source retained page, then the next clip's first frame.
+The palette hash remains `72c3fee4af276d22` across that boundary. Video ownership
+stays true and submitted hand triangles stay zero. A changed final image hash
+is not alone a flash: the authored final frame changes the green waveform.
+
+Rebuilt `hnm-corpus-trace` and reran `compare_hnm_decoder_corpus.py` on the
+imported `PE/SCR02.HNM`: ordinary decoding checks 31 frames, `--rect` checks
+31 frames, and `--palette` checks one record, all with zero mismatches against
+the original executable. Destination-history checks also report zero sensitive
+frames. These are isolated original-code gates, not full runtime parity.
+
+`scruter_talking_clip_close_preserves_the_authored_final_frame` now checks that
+the player presents all 31 frames, retains the distinct final frame on close,
+and preserves it and its palette after poisoning the work page and refreshing
+colors. All 11 presentation-player tests pass. Remaining investigation is
+runtime composition and timing, with synchronized original/live frame evidence
+needed before declaring the reported flash resolved.
+
 ## Verification setup
 
 Use SDL_VIDEODRIVER=x11 with Xvfb for screenshots. Inheriting WAYLAND_DISPLAY
