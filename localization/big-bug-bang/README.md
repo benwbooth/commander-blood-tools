@@ -477,6 +477,44 @@ no active video, no active presentation screen, and an unblocked ship scene.
 This revalidates the bounded Templand route on the current build, not later
 progression or live playback of every translated sequence.
 
+### Templand FINISH Is Terminal
+
+The other Templand answer, FINISH, is an authored early exit, not a route back
+to navigation or proof of winning the game. SCRIPT3 at `0x1466` says "it's over
+for you", then `0x1478` says "as you wish, Commander" and `0x148C` requests
+`fin.hnm`. Reading the subsequent COD text alone led to an incorrect initial
+expectation that dialogue would resume. The original executable decides otherwise:
+
+- A8 at file `0x6E7C` copies the basename and, at `0x6EA4`, sets GS:`0x6B93`
+  when its first four bytes are lowercase `fin.`.
+- Scene completion at `0xB6CE..0xB6D8` copies that flag's low bit into `0xD1D`.
+- The main-loop gate at `0x1140` branches to cleanup at `0x13D8` when set.
+
+`re/tools/big_bug_bang_finale_oracle.py` executes those original instruction
+ranges without replaced callees. Five checked-in vectors distinguish `fin.hnm`
+and `fin.other` from `FIN.HNM`, `affin.hnm`, and `venus06.hnm`; a repeated capture
+is byte-identical. These probes stop at the cleanup branch, not inside DOS cleanup.
+The Rust prefix test consumes the same vectors. No runtime behavior was changed.
+
+The first live FINISH capture is
+`output/fidelity/bbb-templand-finish-1788897090964201465-3975196-0`.
+Its `choices-visible.png` and `finish-clip.png` capture the selection and clip;
+the clip image was visually inspected. That run exited successfully after the
+clip, but its original test assertion failed because it incorrectly required
+continuation. The corrected regression is
+`templand_finish_exits_after_authored_clip`; it requires visible choices, the
+FINISH branch text, the clip, completed playback, successful process exit, and
+no continuation or return to navigation.
+
+The corrected test passed in 372.54 seconds. Its independent replay artifacts are
+`output/fidelity/bbb-templand-finish-1788897794096234995-3984258-0`: 4,637 frames,
+328 selecting frames with zero missing labels, and 263 `SQ\fin.hnm` frames.
+Final frame 4636 has no active video and retains "as you wish, Commander...";
+the process exits successfully. The broader game-library run passes 965 tests
+with 49 ignored; the five native probe cases and all-targets check also pass.
+NO_HURRY's final-navigation assertion was strengthened using the prior captured
+endpoint, but that live branch was not rerun after this test-only refactor.
+
 ### Catalog Coverage
 
 `en/sequences.json` covers all 706 authored subtitle cues across 54 sequences in

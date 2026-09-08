@@ -117,6 +117,35 @@ mod tests {
     const PENDING_SEQUENCE_PRESENTATION_FLAGS: u8 = 0xA2;
     const SCENE_ACTIVITY_PRESENTATION_FLAGS: u8 = 0x10;
 
+    #[test]
+    fn sequel_finale_prefix_matches_original_exit_gate() {
+        let oracle: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_finale.json"
+        ))
+        .unwrap();
+        for case in oracle["cases"].as_array().unwrap() {
+            let request =
+                ScriptSequenceRequest::new(case["basename"].as_str().unwrap().as_bytes().to_vec())
+                    .unwrap();
+            let mut flags = PresentationRequestFlags::default();
+            let mut state = SequencePresentationState::default();
+            assert!(load_sequence_request(
+                &request,
+                SequenceRequestContext {
+                    ship_active: true,
+                    scene_gate_active: false
+                },
+                &mut flags,
+                &mut state,
+            ));
+            assert_eq!(
+                u8::from(state.finale_requested),
+                case["finale"].as_u64().unwrap() as u8
+            );
+            assert_eq!(state.finale_requested, case["shutdown"].as_bool().unwrap());
+        }
+    }
+
     #[derive(Deserialize)]
     struct TopicOracle {
         operand: u16,

@@ -1,0 +1,40 @@
+{
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "cases": [
+    {
+      "basename": "fin.hnm",
+      "finale": 1,
+      "exit_flag": 1,
+      "main_loop_target": 5080,
+      "shutdown": true
+    },
+    {
+      "basename": "fin.other",
+      "finale": 1,
+      "exit_flag": 1,
+      "main_loop_target": 5080,
+      "shutdown": true
+    },
+    {
+      "basename": "FIN.HNM",
+      "finale": 0,
+      "exit_flag": 0,
+      "main_loop_target": 4425,
+      "shutdown": false
+    },
+    {
+      "basename": "affin.hnm",
+      "finale": 0,
+      "exit_flag": 0,
+      "main_loop_target": 4425,
+      "shutdown": false
+    },
+    {
+      "basename": "venus06.hnm",
+      "finale": 0,
+      "exit_flag": 0,
+      "main_loop_target": 4425,
+      "shutdown": false
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+# BBB: same saved Templand route, selecting FINISH rather than NO_HURRY.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 115
+wait 10
+click 100 43
+wait 60
+click 230 152
+wait 10
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 150 150
+wait 40
+click 16 110
+wait 60
+click 250 125
+wait 200
+click 80 104
+wait 300
+# First row selects the authored finir concept and its fin.hnm clip.
+click 225 92
+wait 400
