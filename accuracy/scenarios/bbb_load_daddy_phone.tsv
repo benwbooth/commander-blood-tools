@@ -1,0 +1,16 @@
+# Load an ordinary progressed slot in a disposable writable root and open the phone.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 115
+wait 10
+click 100 43
+wait 60
+park 4 45
+wait 10
+click 230 88
+wait 150

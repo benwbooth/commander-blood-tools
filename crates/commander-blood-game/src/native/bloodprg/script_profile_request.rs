@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use commander_blood_formats::code::ScriptDialect;
 use commander_blood_formats::instruction::ScriptProfileRequest;
 
 use super::ScriptProfileId;
@@ -14,7 +15,7 @@ pub enum PendingScriptProfileRequest {
     /// No profile switch is pending.
     #[default]
     Empty,
-    /// A request names one of the five playable profiles.
+    /// A request names a playable profile of the selected game.
     Profile(ScriptProfileId),
     /// A malformed script produced a signed index outside the playable domain.
     Invalid(i16),
@@ -57,13 +58,29 @@ pub struct ScriptProfileRequestSlot {
 }
 
 impl ScriptProfileRequestSlot {
+    /// BBB C9 returns completed actor conversations to the main SCRIPT2 profile.
+    pub fn schedule_sequel_actor_return(&mut self, current: ScriptProfileId) {
+        if current.value() > 1 {
+            self.pending = PendingScriptProfileRequest::Profile(ScriptProfileId::new(1).unwrap());
+        }
+    }
+
     /// Apply `vm_op_d2_script_profile_request` to typed flat state.
     pub fn schedule(&mut self, request: ScriptProfileRequest) -> PendingScriptProfileRequest {
+        self.schedule_for_dialect(request, ScriptDialect::CommanderBlood)
+    }
+
+    /// Validate the native signed operand against the selected game's profile table.
+    pub fn schedule_for_dialect(
+        &mut self,
+        request: ScriptProfileRequest,
+        dialect: ScriptDialect,
+    ) -> PendingScriptProfileRequest {
         let requested_index = request.zero_based_profile_index();
         self.pending = if requested_index == NO_PENDING_PROFILE_INDEX {
             PendingScriptProfileRequest::Empty
         } else if let Ok(index) = u8::try_from(requested_index) {
-            ScriptProfileId::new(index).map_or(
+            ScriptProfileId::new_for_dialect(index, dialect).map_or(
                 PendingScriptProfileRequest::Invalid(requested_index),
                 PendingScriptProfileRequest::Profile,
             )
@@ -120,6 +137,29 @@ mod tests {
     fn decode_request(operand: u8) -> ScriptProfileRequest {
         let code = decode_script_code(&[PROFILE_REQUEST_OPCODE, operand, CODE_END_MARKER]).unwrap();
         decode_script_profile_request(&code.tokens()[0]).unwrap()
+    }
+
+    #[test]
+    fn sequel_requests_accept_all_seventeen_profiles_and_preserve_signed_operands() {
+        for operand in u8::MIN..=u8::MAX {
+            let request = decode_request(operand);
+            let raw = i16::from(operand as i8) - 1;
+            for (dialect, count) in [
+                (ScriptDialect::CommanderBlood, 5),
+                (ScriptDialect::BigBugBang, 17),
+            ] {
+                let mut slot = ScriptProfileRequestSlot::default();
+                let pending = slot.schedule_for_dialect(request, dialect);
+                assert_eq!(pending.raw_zero_based_index(), raw);
+                if raw == -1 {
+                    assert_eq!(slot.pending_profile().unwrap(), None);
+                } else if (0..count).contains(&raw) {
+                    assert_eq!(slot.pending_profile().unwrap().unwrap().value(), raw as u8);
+                } else {
+                    assert_eq!(slot.pending_profile().unwrap_err().requested_index, raw);
+                }
+            }
+        }
     }
 
     #[test]

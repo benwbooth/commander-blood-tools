@@ -26,6 +26,60 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Conversation Profile Return and D2 Domain
+
+The progressed-save Honk probe (`bbb_load_daddy_phone.tsv`) exposed a stall:
+Honk became the active presentation at frame 1432 but SCRIPT3 stayed loaded,
+with no subtitle or video through the final frame 2108. The bridge remained
+visible. The local capture is `output/big-bug-bang/progressed-phone-SiRTtR7G`.
+
+The original C9 handler at file `0x7BBF..0x7C0D` supplies a missing return path.
+For an old C4 actor record, it clears the reciprocal action, stops the sequence,
+sets depth step six, re-enables VM execution, and, when the current profile is
+greater than one, overwrites the pending profile with one (SCRIPT2). Rust now
+publishes those extra sequel effects from the typed dispatcher using the loaded
+profile's identity. Non-C4 clears and Commander behavior retain their old rules.
+The standalone executable probe `big_bug_bang_record_clear_oracle.py` executes
+the unchanged handler and field resolver for 204 cases; the dispatcher test
+checks those cases and Commander non-regression cases. The native UI-abort path
+at `0x24C8` has a related profile-return write and still needs translation.
+The native key table at `0x2281` maps extended key `0xC1` (F7) to dispatch
+entry 14 at `0x2382`; that entry resolves to `0x24C8`. The current shared Rust
+keyboard policy treats function keys as inert. BBB also binds Escape to a
+no-op and Space to the media-cancel handler, unlike the shared Rust policy
+that sends both to media cancellation. These input differences remain open.
+This change does not rewrite old saves already captured in the wrong profile.
+
+D2 also incorrectly validated every game against Commander's five-profile table.
+BBB SCRIPT2 explicitly requests higher profiles, for example operand six at
+COD byte `0x073A`. The dispatcher now supplies the active dialect to the request
+slot, allowing all 17 BBB profiles without broadening Commander's domain.
+All 256 encoded operands are checked in both dialects, preserving signed
+one-based conversion and the no-request sentinel. This is not live verification
+of all later character routes.
+
+The combined-fix live capture
+`output/fidelity/bbb-templand-dialogue-1788903699516844185-4191979-0`
+contains 5,440 frames from binary SHA-256
+`4f2e9010f89a0e80a693dd3a4011f70d74a9a912d5e5c20f48512246d1750c57`.
+Both choice labels remain visible in all 328 selecting frames. After the
+ordinary `no_hurry` click, SCRIPT2 is installed at frame 4838. The final frame
+5439 has no active video, actor presentation, screen, or ship dispatch block.
+Automatic ship clips run after the conversation return; this is not a verified
+later quest or a new Honk conversation.
+
+The initial live assertions failed because they required a fully revealed
+Tempest caption at an idle endpoint. The second capture's next animation
+interrupts that caption at `PLANET: Temp`. The shared trace validator now checks
+the actual Tempest target (record 72), cleared actor owner, closed chooser,
+unblocked screen, and SCRIPT2 return, rather than subtitle timing. Revalidating
+the completed combined-fix capture with `BBB_PROGRESSION_TRACE` and
+`validate_recorded_templand_continuation` passes. The full process replay was
+not repeated after that assertion-only correction. Library verification:
+969 passed, 57 ignored; the separate `sequel_ --include-ignored` run passed all
+82 tests; all-target game-package checking passed. Both live runs used copied,
+disposable saves, and the original save files were not rewritten.
+
 ### Explicit COD Destinations and BAS Entry
 
 The resource-backed regression

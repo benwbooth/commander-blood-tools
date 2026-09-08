@@ -80,6 +80,8 @@ pub struct ScriptDispatchState {
     pub record_clear_presentation: ScriptRecordClearPresentationState,
     /// D2 request retained until the main loop completes profile replacement.
     pub profile_request: ScriptProfileRequestSlot,
+    /// Installed profile identity for native C9's sequel return-to-main rule.
+    current_profile: Option<super::ScriptProfileId>,
     /// Shared range-search override used by sequel settlement and conflict.
     pub sequel_settlement: SequelSettlementState,
     /// Last attack rate published by D4, including query/suppressed updates.
@@ -324,6 +326,7 @@ pub fn execute_loaded_script_frame<Host: ScriptDispatchHost>(
     host: &mut Host,
 ) -> Result<ScriptFrameOutcome, ScriptFrameError<ScriptDispatchError<Host::Error>>> {
     dispatch.begin_frame();
+    dispatch.current_profile = Some(profile.id());
     let LoadedScriptExecutionParts {
         code,
         instructions,
@@ -706,13 +709,23 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
             }
             DecodedScriptInstruction::RecordClear(operation) => {
                 commit_to_var = true;
-                apply_record_clear_operation(
+                let outcome = apply_record_clear_operation(
                     *operation,
                     self.state,
                     &mut self.records.action_records,
                     &mut self.dispatch.record_clear_presentation,
                 )
                 .map_err(ScriptDispatchError::ActionRecord)?;
+                if self.code.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang
+                    && outcome.reciprocal_slot.is_some()
+                {
+                    if let Some(profile) = self.dispatch.current_profile {
+                        self.dispatch
+                            .profile_request
+                            .schedule_sequel_actor_return(profile);
+                    }
+                    self.dispatch.pending_vm_execution_write = Some(true);
+                }
                 ScriptControl::Continue
             }
             DecodedScriptInstruction::HourGuard(guard) => self
@@ -770,7 +783,9 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 .apply(*instruction, runtime)
                 .map_err(ScriptDispatchError::Runtime)?,
             DecodedScriptInstruction::ProfileRequest(request) => {
-                self.dispatch.profile_request.schedule(*request);
+                self.dispatch
+                    .profile_request
+                    .schedule_for_dialect(*request, self.code.dialect());
                 ScriptControl::Continue
             }
         };
@@ -925,6 +940,153 @@ mod tests {
         settlement: Option<SequelSettlementContext>,
         subtitle: Option<Box<[u8]>>,
         subtitle_calls: Vec<ScriptCodeOffset>,
+    }
+
+    #[test]
+    fn sequel_c9_dispatch_matches_original_profile_return_vectors() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_complete_script_instruction;
+        use commander_blood_formats::script::{
+            ScriptObjectKind, decode_script_dictionary, decode_script_directory,
+            decode_script_state_for_dialect,
+        };
+        #[derive(serde::Deserialize)]
+        struct Vector {
+            profile: u8,
+            pending: i16,
+            actor: bool,
+            enabled: u8,
+            pending_after: i16,
+            enabled_after: u8,
+            sequence_after: u8,
+            depth_after: u8,
+        }
+        let vectors: Vec<Vector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_record_clear.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), 204);
+        for dialect in [ScriptDialect::BigBugBang, ScriptDialect::CommanderBlood] {
+            for vector in &vectors {
+                let mut deb = Vec::new();
+                let mut var = Vec::new();
+                for (name, kind) in [
+                    (b"first".as_slice(), ScriptObjectKind::Actor),
+                    (b"second".as_slice(), ScriptObjectKind::Actor),
+                    (b"blood".as_slice(), ScriptObjectKind::Player),
+                ] {
+                    let mut entry = [0; 20];
+                    entry[..name.len()].copy_from_slice(name);
+                    entry[16..18].copy_from_slice(&(var.len() as u16).to_le_bytes());
+                    entry[18..20].copy_from_slice(&1u16.to_le_bytes());
+                    deb.extend(entry);
+                    let mut record = vec![0; kind.record_size_for_dialect(dialect)];
+                    record[..2].copy_from_slice(&kind.mask().to_le_bytes());
+                    var.extend(record);
+                }
+                deb.extend([0; 20]);
+                let second = ScriptObjectKind::Actor.record_size_for_dialect(dialect);
+                var[58..60]
+                    .copy_from_slice(&(if vector.actor { 0xc4u16 } else { 0xc3 }).to_le_bytes());
+                var[60..62].copy_from_slice(&(second as u16).to_le_bytes());
+                var[second + 58..second + 60].copy_from_slice(&0xc4u16.to_le_bytes());
+                let directory = decode_script_directory(&deb).unwrap();
+                let mut state = decode_script_state_for_dialect(&var, &directory, dialect).unwrap();
+                let dictionary = decode_script_dictionary(b"word\0").unwrap();
+                let dialogue = decode_script_bas(&[0xff], &dictionary).unwrap();
+                let code = decode_script_code_for_dialect(&[0xc9, 58, 0, 0xff], dialect).unwrap();
+                let instructions = code
+                    .tokens()
+                    .iter()
+                    .map(|token| {
+                        decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                            .unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                let builtins = ScriptProfileBuiltins {
+                    player: directory.find_active_object(b"blood"),
+                    ..Default::default()
+                };
+                let mut records =
+                    ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+                        .unwrap();
+                let mut dispatch = ScriptDispatchState::default();
+                dispatch.current_profile = Some(
+                    super::super::ScriptProfileId::new_for_dialect(
+                        vector.profile,
+                        ScriptDialect::BigBugBang,
+                    )
+                    .unwrap(),
+                );
+                dispatch.record_clear_presentation.sequence_active = true;
+                dispatch.record_clear_presentation.ship_3d_depth_step = 9;
+                let request_code = decode_script_code_for_dialect(
+                    &[0xd2, (vector.pending + 1) as u8, 0xff],
+                    dialect,
+                )
+                .unwrap();
+                let request = commander_blood_formats::instruction::decode_script_profile_request(
+                    &request_code.tokens()[0],
+                )
+                .unwrap();
+                dispatch.profile_request.schedule(request);
+                let mut runtime = ScriptRuntime::default();
+                let mut selector = ScriptSelectorState::default();
+                let mut procedures = super::super::ScriptProcedureStates::default();
+                let mut sequence_slots = super::super::ScriptSequenceSlots::default();
+                let mut host = TraversalHost::default();
+                let mut dispatcher = Dispatcher {
+                    code: &code,
+                    instructions: &instructions,
+                    dialogue: &dialogue,
+                    state: &mut state,
+                    dictionary: &dictionary,
+                    directory: &directory,
+                    builtins,
+                    procedures: &mut procedures,
+                    selector: &mut selector,
+                    sequence_slots: &mut sequence_slots,
+                    records: &mut records,
+                    dispatch: &mut dispatch,
+                    host: &mut host,
+                };
+                dispatcher
+                    .execute_instruction(&code.tokens()[0], &instructions[0], &mut runtime)
+                    .unwrap();
+                let sequel = dialect == ScriptDialect::BigBugBang;
+                assert_eq!(
+                    dispatch.profile_request.pending().raw_zero_based_index(),
+                    if sequel {
+                        vector.pending_after
+                    } else {
+                        vector.pending
+                    }
+                );
+                assert_eq!(
+                    dispatch.pending_vm_execution_write,
+                    (sequel && vector.actor).then_some(true)
+                );
+                if sequel {
+                    assert_eq!(
+                        u8::from(
+                            dispatch
+                                .pending_vm_execution_write
+                                .unwrap_or(vector.enabled != 0)
+                        ),
+                        vector.enabled_after
+                    );
+                }
+                assert_eq!(
+                    u8::from(dispatch.record_clear_presentation.sequence_active),
+                    vector.sequence_after
+                );
+                assert_eq!(
+                    dispatch.record_clear_presentation.ship_3d_depth_step,
+                    vector.depth_after
+                );
+            }
+        }
     }
 
     #[test]

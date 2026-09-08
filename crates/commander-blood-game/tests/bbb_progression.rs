@@ -20,6 +20,14 @@ fn templand_finish_exits_after_authored_clip() {
     replay_templand(true);
 }
 
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a retained live continuation trace"]
+fn validate_recorded_templand_continuation() {
+    let frames =
+        PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"));
+    assert_templand_trace(&frames, false);
+}
+
 fn replay_templand(finish: bool) {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let assets = std::env::var_os("BBB_ASSET_CACHE")
@@ -70,6 +78,10 @@ fn replay_templand(finish: bool) {
         "BBB replay failed; artifacts: {}",
         artifacts.0.display()
     );
+    assert_templand_trace(&frames, finish);
+}
+
+fn assert_templand_trace(frames: &std::path::Path, finish: bool) {
     let mut saw_interlude = false;
     let mut saw_continuation = false;
     let mut saw_choices = false;
@@ -79,8 +91,9 @@ fn replay_templand(finish: bool) {
     let mut saw_finish_continuation = false;
     let mut finish_clip_completed = false;
     let mut returned_to_navigation = false;
+    let mut ended_in_main_profile = false;
     let mut missing_choice_frames = 0;
-    for line in BufReader::new(File::open(&frames).unwrap()).lines() {
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
         let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
         let semantic = &frame["semantic"];
         saw_interlude |= semantic["video"]["active_resource"] == "SQ\\venus06.hnm";
@@ -120,13 +133,17 @@ fn replay_templand(finish: bool) {
         saw_finish_clip |= saw_selection && semantic["video"]["active_resource"] == "SQ\\fin.hnm";
         saw_finish_continuation |= saw_finish_clip && subtitle.starts_with("Still, no racism");
         finish_clip_completed = saw_finish_clip && semantic["video"]["active_resource"].is_null();
-        returned_to_navigation = saw_selection
-            && subtitle == "PLANET: Tempest LIFE FORMS: Daddy_Gluxx"
-            && semantic["vm"]["resource_profile"] == 2
+        returned_to_navigation |= saw_selection
+            && semantic["navigation"]["camera"]["target"]["name"] == "Tempest"
+            && semantic["navigation"]["camera"]["target"]["record"] == 72
+            && semantic["presentation"]["active_actor_presentation"].is_null()
+            && semantic["presentation"]["active"] == 0
+            && (finish || semantic["vm"]["resource_profile"] == 1)
             && semantic["video"]["active_resource"].is_null()
             && semantic["presentation"]["retained_word_choice"]["phase"] == "Closed"
             && semantic["presentation"]["screen_active"] == false
             && semantic["presentation"]["ship_scene"]["dispatch_blocked"] == false;
+        ended_in_main_profile = semantic["vm"]["resource_profile"] == 1;
     }
     assert!(saw_interlude, "Templand interlude was never reached");
     assert!(
@@ -166,7 +183,11 @@ fn replay_templand(finish: bool) {
     } else {
         assert!(
             returned_to_navigation,
-            "replay did not end at unblocked Tempest navigation"
+            "replay never returned to unblocked Tempest navigation in SCRIPT2"
+        );
+        assert!(
+            ended_in_main_profile,
+            "replay left SCRIPT2 after the conversation return"
         );
     }
 }
