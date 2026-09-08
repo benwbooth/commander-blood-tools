@@ -201,7 +201,7 @@ impl RuntimeSaveLoad {
                 self.move_selection(services, action)?;
                 Ok(None)
             }
-            InputAction::Ignored(_) => Ok(None),
+            InputAction::Ignored(_) | InputAction::AbortConversation => Ok(None),
         }
     }
 

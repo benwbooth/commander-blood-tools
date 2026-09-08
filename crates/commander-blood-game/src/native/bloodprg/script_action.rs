@@ -287,6 +287,7 @@ pub fn dispatch_script_action<Host: ScriptActionHost>(
         | ScriptActionRecord::WorldStateLink(_)
         | ScriptActionRecord::ActiveObjectLink(_)
         | ScriptActionRecord::OpaqueMarker(_)
+        | ScriptActionRecord::PresentationEnd(_)
         | ScriptActionRecord::Occupied => Ok(ScriptActionDispatch::default()),
     }
 }

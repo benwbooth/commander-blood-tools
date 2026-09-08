@@ -774,6 +774,31 @@ mod tests {
             .join(name)
     }
 
+    #[test]
+    fn sequel_f7_deferred_end_drains_to_the_player_not_the_ship() {
+        for actionable in [false, true] {
+            let mut fixture = fixture();
+            let player = fixture.objects[PLAYER_INDEX];
+            let actor = fixture.objects[ACTOR_INDEX];
+            let arche = fixture.objects[2];
+            let target = action_slot(&fixture.state, player).unwrap();
+            let record = ScriptActionRecord::PresentationEnd(actor);
+            fixture.presentation.deferred = ScriptDeferredRecord::Complete { record, actionable };
+            let drained = drain_deferred_record::<_, std::convert::Infallible>(
+                &fixture.state,
+                &mut fixture.records,
+                &mut fixture.presentation,
+                player,
+                arche,
+            )
+            .unwrap();
+            assert_eq!(drained, Some(target));
+            assert_eq!(fixture.records.record(target), record);
+            assert_eq!(fixture.records.is_actionable(target), actionable);
+            assert_eq!(fixture.presentation.deferred, ScriptDeferredRecord::Empty);
+        }
+    }
+
     fn fixture() -> Fixture {
         let kinds = [
             ScriptObjectKind::Player,

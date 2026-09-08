@@ -1,5 +1,7 @@
 //! Semantic keyboard dispatch for the modern SDL event loop.
 
+use commander_blood_formats::code::ScriptDialect;
+
 const BACKSPACE_TEXT_BYTE: u8 = b'\x08';
 const DELETE_TEXT_BYTE: u8 = b'\x7f';
 const FIRST_PRINTABLE_CHARACTER: char = '!';
@@ -63,6 +65,8 @@ pub enum HostInputKey {
 /// Proven inert actions retained so authored key bindings remain explicit.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IgnoredInputAction {
+    /// BBB's authored inert Escape binding.
+    Escape,
     /// Inert left movement command.
     MoveLeft,
     /// Inert right movement command.
@@ -74,6 +78,8 @@ pub enum IgnoredInputAction {
 /// Semantic input command consumed by higher-level game state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InputAction {
+    /// BBB F7: leave the current conversation and return to the main profile.
+    AbortConversation,
     /// Select the preceding row.
     MovePrevious,
     /// Select the following row.
@@ -144,6 +150,22 @@ pub fn translate_input_key(key: HostInputKey) -> Option<InputAction> {
             Some(InputAction::LatchTextByte(character as u8))
         }
         HostInputKey::Character(_) => None,
+    }
+}
+
+/// Apply game-specific bindings without changing Commander's keyboard policy.
+pub fn translate_input_key_for_dialect(
+    key: HostInputKey,
+    dialect: ScriptDialect,
+) -> Option<InputAction> {
+    match (dialect, key) {
+        (ScriptDialect::BigBugBang, HostInputKey::Escape) => {
+            Some(InputAction::Ignored(IgnoredInputAction::Escape))
+        }
+        (ScriptDialect::BigBugBang, HostInputKey::Function(InputFunctionKey::F7)) => {
+            Some(InputAction::AbortConversation)
+        }
+        _ => translate_input_key(key),
     }
 }
 
@@ -397,6 +419,8 @@ mod tests {
 
     fn action_index(action: InputAction) -> u8 {
         match action {
+            InputAction::AbortConversation => FUNCTION_SEVEN_ACTION_INDEX,
+            InputAction::Ignored(IgnoredInputAction::Escape) => 4,
             InputAction::MovePrevious => MOVE_PREVIOUS_ACTION_INDEX,
             InputAction::MoveNext => MOVE_NEXT_ACTION_INDEX,
             InputAction::Accept => ACCEPT_ACTION_INDEX,

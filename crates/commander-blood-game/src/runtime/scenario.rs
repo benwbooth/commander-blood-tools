@@ -59,6 +59,7 @@ impl RuntimeScenarioCadence {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RuntimeScenarioKey {
+    F7,
     Character(char),
     Enter,
     Escape,
@@ -532,6 +533,7 @@ fn decode_scenario_key(scan_code: u8, ascii: u8) -> Option<RuntimeScenarioKey> {
         (14, _) => Some(RuntimeScenarioKey::Backspace),
         (28, _) => Some(RuntimeScenarioKey::Enter),
         (57, _) => Some(RuntimeScenarioKey::Space),
+        (65, _) => Some(RuntimeScenarioKey::F7),
         (72, _) => Some(RuntimeScenarioKey::ArrowUp),
         (75, _) => Some(RuntimeScenarioKey::ArrowLeft),
         (77, _) => Some(RuntimeScenarioKey::ArrowRight),

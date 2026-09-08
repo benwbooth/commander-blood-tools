@@ -46,6 +46,11 @@ impl RuntimePresentationWordChoice {
         self.last_frame = None;
     }
 
+    /// F7 only writes the shared phase byte; the normal teardown owns other flags.
+    pub fn restart_phase(&mut self) {
+        self.state.phase = PresentationWordChoicePhase::Closed;
+    }
+
     /// Advance and draw one exact dialogue-choice frame.
     pub fn update<'window>(
         &mut self,
@@ -336,6 +341,25 @@ mod tests {
     use commander_blood_formats::script::decode_script_dictionary;
 
     use super::*;
+
+    #[test]
+    fn sequel_f7_resets_only_the_chooser_phase() {
+        let mut word_choice = RuntimePresentationWordChoice::default();
+        word_choice.state.active = true;
+        word_choice.state.phase = PresentationWordChoicePhase::Selecting;
+        word_choice.state.interface_active = true;
+        word_choice.state.request_pending = true;
+        word_choice.transition = FramebufferTransitionState {
+            total_steps: 9,
+            current_step: 4,
+        };
+        let mut expected = word_choice.state.clone();
+        expected.phase = PresentationWordChoicePhase::Closed;
+        let transition = word_choice.transition;
+        word_choice.restart_phase();
+        assert_eq!(word_choice.state, expected);
+        assert_eq!(word_choice.transition, transition);
+    }
 
     #[test]
     fn choice_labels_come_from_the_selector_buffer_not_revealed_dialogue_words() {

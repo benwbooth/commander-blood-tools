@@ -2,14 +2,15 @@
 
 use std::collections::VecDeque;
 
+use commander_blood_formats::code::ScriptDialect;
 use sdl3::keyboard::Keycode;
 
 use crate::native::bloodprg::{
     GameLifecycleState, HostInputKey, InputAction, InputArrowKey, InputCancellationBackend,
     InputCancellationOutcome, InputCancellationState, InputDispatchState, InputFunctionKey,
     PointerButtonEdges, PointerButtonState, PointerButtons, PointerSample, PointerSampleState,
-    cancel_input_action, dispatch_input_key, latch_input_text_byte, request_input_shutdown,
-    toggle_input_pause, translate_input_key, update_pointer_button_edges, update_pointer_sample,
+    cancel_input_action, latch_input_text_byte, request_input_shutdown, toggle_input_pause,
+    translate_input_key, update_pointer_button_edges, update_pointer_sample,
 };
 
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
@@ -103,9 +104,19 @@ impl RuntimeInputHost {
 
     /// Dispatch at most one queued key and update recovered input latches.
     pub fn dispatch_next(&mut self, save_menu_active: bool) -> Option<InputAction> {
+        self.dispatch_next_for_dialect(save_menu_active, ScriptDialect::CommanderBlood)
+    }
+
+    fn dispatch_next_for_dialect(
+        &mut self,
+        save_menu_active: bool,
+        dialect: ScriptDialect,
+    ) -> Option<InputAction> {
         let key = self.pending_keys.pop_front();
         self.pending_cancel_text_byte = key.and_then(cancel_text_byte);
-        let action = dispatch_input_key(&mut self.dispatch, key);
+        self.dispatch.text_byte = None;
+        let action = key
+            .and_then(|key| crate::native::bloodprg::translate_input_key_for_dialect(key, dialect));
         match action {
             Some(InputAction::Accept) => {
                 latch_input_text_byte(&mut self.dispatch, ASCII_CARRIAGE_RETURN);
@@ -126,7 +137,17 @@ impl RuntimeInputHost {
         &mut self,
         state: &mut GameLifecycleState,
     ) -> Option<InputAction> {
-        let action = self.dispatch_next(state.profile_change_blockers.save_active);
+        self.dispatch_lifecycle_input_for_dialect(state, ScriptDialect::CommanderBlood)
+    }
+
+    /// Dispatch through the selected game's key table and publish shared input latches.
+    pub fn dispatch_lifecycle_input_for_dialect(
+        &mut self,
+        state: &mut GameLifecycleState,
+        dialect: ScriptDialect,
+    ) -> Option<InputAction> {
+        let action =
+            self.dispatch_next_for_dialect(state.profile_change_blockers.save_active, dialect);
         state.pause_hud_active = self.dispatch.paused;
         state.exit_requested |= self.dispatch.shutdown_requested;
         action
@@ -351,6 +372,49 @@ mod tests {
             resources: PresentationResourceCursor::default(),
             scene_palette: [[u8::MIN; RGB_COMPONENT_COUNT]; PALETTE_ENTRY_COUNT],
             palette_dirty: false,
+        }
+    }
+
+    #[test]
+    fn sequel_keys_preserve_order_and_use_the_original_distinct_bindings() {
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+            let mut lifecycle = GameLifecycleState::default();
+            input.queue_text("q");
+            for key in [Keycode::Escape, Keycode::Space, Keycode::F7] {
+                assert!(input.queue_keycode(key));
+            }
+            assert_eq!(
+                input.dispatch_lifecycle_input_for_dialect(&mut lifecycle, dialect),
+                Some(InputAction::LatchTextByte(b'q'))
+            );
+            let sequel = dialect == ScriptDialect::BigBugBang;
+            assert_eq!(
+                input.dispatch_lifecycle_input_for_dialect(&mut lifecycle, dialect),
+                Some(if sequel {
+                    InputAction::Ignored(IgnoredInputAction::Escape)
+                } else {
+                    InputAction::Cancel
+                })
+            );
+            assert_eq!(input.dispatch_state().text_byte, None);
+            assert_eq!(
+                input.dispatch_lifecycle_input_for_dialect(&mut lifecycle, dialect),
+                Some(InputAction::Cancel)
+            );
+            assert_eq!(
+                input.dispatch_lifecycle_input_for_dialect(&mut lifecycle, dialect),
+                Some(if sequel {
+                    InputAction::AbortConversation
+                } else {
+                    InputAction::Ignored(IgnoredInputAction::Function(InputFunctionKey::F7))
+                })
+            );
+            assert_eq!(
+                input.dispatch_lifecycle_input_for_dialect(&mut lifecycle, dialect),
+                None
+            );
+            assert!(!lifecycle.exit_requested);
         }
     }
 

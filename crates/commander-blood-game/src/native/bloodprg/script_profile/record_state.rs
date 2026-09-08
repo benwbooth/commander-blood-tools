@@ -411,6 +411,9 @@ fn decode_action_record(raw: [u16; 3], state: &ScriptState) -> ScriptActionRecor
             .map(ScriptActionRecord::ActiveObjectLink)
             .unwrap_or(ScriptActionRecord::Occupied),
         RECORD_KIND_OPAQUE_MARKER => ScriptActionRecord::OpaqueMarker(raw[1]),
+        0xC9 => decode_object(raw[1], state)
+            .map(ScriptActionRecord::PresentationEnd)
+            .unwrap_or(ScriptActionRecord::Occupied),
         _ => ScriptActionRecord::Occupied,
     }
 }
@@ -455,6 +458,9 @@ fn encode_action_record(
             0,
         ],
         ScriptActionRecord::OpaqueMarker(word) => [RECORD_KIND_OPAQUE_MARKER, word, 0],
+        ScriptActionRecord::PresentationEnd(related) => {
+            [0xC9, encode_object(related, directory)?, 0]
+        }
         ScriptActionRecord::Occupied => return Ok(None),
     };
     Ok(Some(raw))

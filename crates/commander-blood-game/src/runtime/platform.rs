@@ -223,7 +223,7 @@ impl<'window> RuntimePlatformHost<'window> {
                 self.apply_game_scenario_input(services, input)?;
             }
         }
-        Ok(services.dispatch_lifecycle_input(state))
+        services.dispatch_lifecycle_input(state)
     }
 
     /// Record a completed scripted action after the ordinary frame tail.
@@ -691,6 +691,9 @@ fn queue_scenario_key(services: &mut ModernGameServices<'_>, key: RuntimeScenari
     match key {
         RuntimeScenarioKey::Character(character) => {
             services.input_mut().queue_text(&character.to_string());
+        }
+        RuntimeScenarioKey::F7 => {
+            services.input_mut().queue_keycode(sdl3::keyboard::Keycode::F7);
         }
         RuntimeScenarioKey::Enter => {
             services

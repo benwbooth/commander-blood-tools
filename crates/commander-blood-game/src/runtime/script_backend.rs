@@ -561,6 +561,57 @@ impl RuntimeScriptSystem {
         };
     }
 
+    /// Apply BBB's F7 writes before the ordinary VM and deferred-record scan.
+    pub fn abort_sequel_conversation(
+        &mut self,
+        profile: &LoadedScriptProfile,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<()> {
+        if profile.code().dialect() != commander_blood_formats::code::ScriptDialect::BigBugBang {
+            bail!("conversation abort requires Big Bug Bang");
+        }
+        let state = profile.synchronized_state()?;
+        let player = profile
+            .builtins()
+            .player
+            .context("F7 requires the player binding")?;
+        let kind = state.object(player).context("F7 player is absent")?.kind;
+        let offset = script_field_offset(kind, ScriptFieldSelector::ACTION)
+            .context("F7 player has no action field")?;
+        let related_field = state
+            .object_word(player, offset / 2 + 1)
+            .context("F7 player link is absent")?;
+        let raw = state
+            .word(related_field)
+            .context("F7 player link is unreadable")?;
+        if raw != 0 {
+            let related = state
+                .objects()
+                .iter()
+                .find(|object| object.source_offset() == usize::from(raw))
+                .context("F7 player link does not name an object")?
+                .id;
+            let actionable = match self.service.presentation_state().deferred {
+                ScriptDeferredRecord::Complete { actionable, .. } => actionable,
+                _ => true,
+            };
+            self.service.presentation_state_mut().deferred = ScriptDeferredRecord::Complete {
+                record: ScriptActionRecord::PresentationEnd(related),
+                actionable,
+            };
+        }
+        self.dispatch
+            .profile_request
+            .schedule_sequel_actor_return(profile.id());
+        lifecycle.pending_profile = self.dispatch.profile_request.pending_profile()?;
+        self.dispatch.text_presentation.menu_word_count = 0;
+        self.dispatch.record_clear_presentation.sequence_active = false;
+        self.dispatch.record_clear_presentation.ship_3d_depth_step = 6;
+        lifecycle.presentation.sequence_active = false;
+        lifecycle.vm_execution_enabled = true;
+        Ok(())
+    }
+
     /// Write the C1 emitted by `ship_3d_hud_init` directly to `orxx`'s action slot.
     pub fn queue_ship_hud_navigation_target(
         &mut self,
@@ -1392,6 +1443,132 @@ mod tests {
         scripts.import_random_state(random);
 
         assert_eq!(scripts.random_state(), random);
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn sequel_f7_matches_original_abort_vectors() {
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_script_profile_request;
+        let vectors: Vec<serde_json::Value> = serde_json::from_str(include_str!(
+            "../../../../re/tools/oracle_vectors/big_bug_bang_input_abort.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), 204);
+        let source =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/imported-assets");
+        let paths = OriginalGameDataPaths::from_root(source).unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut runtime = OriginalGameRuntime::new(data);
+        for id in 0..17 {
+            let id = ScriptProfileId::new_for_dialect(id, ScriptDialect::BigBugBang).unwrap();
+            scripts.load_profile(&mut runtime, id).unwrap();
+            let profile = runtime.current_profile_mut().unwrap();
+            let player = profile.builtins().player.unwrap();
+            let related = profile.builtins().horn.unwrap();
+            let kind = profile.state().object(player).unwrap().kind;
+            let offset = script_field_offset(kind, ScriptFieldSelector::ACTION).unwrap();
+            let slot = profile
+                .state()
+                .object_word_triple(player, offset / 2)
+                .unwrap();
+            for vector in vectors
+                .iter()
+                .filter(|v| v["profile"].as_u64() == Some(u64::from(id.value())))
+            {
+                let linked = vector["related"].as_u64().unwrap() != 0;
+                let actionable = vector["auxiliary"].as_u64().unwrap() == 0;
+                profile
+                    .execution_parts()
+                    .record_state
+                    .action_records
+                    .set_record(
+                        slot,
+                        if linked {
+                            ScriptActionRecord::ActorPresentation(related)
+                        } else {
+                            ScriptActionRecord::Empty
+                        },
+                    );
+                let before = profile.synchronized_state().unwrap();
+                scripts.service.presentation_state_mut().deferred =
+                    ScriptDeferredRecord::Complete {
+                        record: ScriptActionRecord::PresentationQueue(related),
+                        actionable,
+                    };
+                let pending = vector["pending"].as_i64().unwrap();
+                let code = decode_script_code_for_dialect(
+                    &[0xD2, (pending + 1) as u8, 0xFF],
+                    ScriptDialect::BigBugBang,
+                )
+                .unwrap();
+                scripts.dispatch.profile_request.schedule_for_dialect(
+                    decode_script_profile_request(&code.tokens()[0]).unwrap(),
+                    ScriptDialect::BigBugBang,
+                );
+                scripts.dispatch.text_presentation.menu_word_count = 345;
+                let mut lifecycle = GameLifecycleState::default();
+                lifecycle.presentation.sequence_active = true;
+                lifecycle.vm_execution_enabled = false;
+                scripts
+                    .abort_sequel_conversation(profile, &mut lifecycle)
+                    .unwrap();
+                assert_eq!(
+                    profile.synchronized_state().unwrap(),
+                    before,
+                    "F7 must defer VAR changes"
+                );
+                assert_eq!(
+                    scripts.service.presentation_state().deferred,
+                    ScriptDeferredRecord::Complete {
+                        record: if linked {
+                            ScriptActionRecord::PresentationEnd(related)
+                        } else {
+                            ScriptActionRecord::PresentationQueue(related)
+                        },
+                        actionable,
+                    }
+                );
+                assert_eq!(
+                    scripts
+                        .dispatch
+                        .profile_request
+                        .pending()
+                        .raw_zero_based_index(),
+                    vector["pending_after"].as_i64().unwrap() as i16
+                );
+                assert_eq!(
+                    lifecycle.pending_profile,
+                    scripts.dispatch.profile_request.pending_profile().unwrap()
+                );
+                assert_eq!(scripts.dispatch.text_presentation.menu_word_count, 0);
+                assert!(!lifecycle.presentation.sequence_active);
+                assert!(lifecycle.vm_execution_enabled);
+                assert!(!scripts.dispatch.record_clear_presentation.sequence_active);
+                assert_eq!(
+                    scripts
+                        .dispatch
+                        .record_clear_presentation
+                        .ship_3d_depth_step,
+                    6
+                );
+                let records = &mut profile.execution_parts().record_state.action_records;
+                records.set_record(slot, ScriptActionRecord::PresentationEnd(related));
+                records.set_actionable(slot, actionable);
+                let saved = profile.synchronized_state().unwrap();
+                profile.replace_state(saved).unwrap();
+                assert_eq!(
+                    profile.record_state().action_records.record(slot),
+                    ScriptActionRecord::PresentationEnd(related)
+                );
+                assert_eq!(
+                    profile.record_state().action_records.is_actionable(slot),
+                    actionable
+                );
+            }
+        }
     }
 
     #[test]

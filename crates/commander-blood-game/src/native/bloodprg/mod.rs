@@ -323,7 +323,7 @@ pub use input_cancel::{
 pub use input_dispatch::{
     HostInputKey, IgnoredInputAction, InputAction, InputArrowKey, InputDispatchState,
     InputFunctionKey, dispatch_input_key, latch_input_text_byte, request_input_shutdown,
-    toggle_input_pause, translate_input_key,
+    toggle_input_pause, translate_input_key, translate_input_key_for_dialect,
 };
 pub use input_selection::{
     INPUT_SELECTION_VISIBLE_ROWS, InputDirectoryRowId, InputSelectionError, InputSelectionSource,

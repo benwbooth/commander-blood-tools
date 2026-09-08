@@ -47,6 +47,8 @@ pub enum ScriptActionRecord {
     ActiveObjectLink(ScriptObjectId),
     /// C8 marker carrying its opaque query word; assignments always store zero.
     OpaqueMarker(u16),
+    /// Deferred C9 ends presentation ownership without running a C1-C8 action.
+    PresentationEnd(ScriptObjectId),
     /// Another native record kind currently owns the slot.
     Occupied,
 }

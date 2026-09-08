@@ -26,6 +26,48 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### F7 Conversation Abort and Escape
+
+BBB now uses its own Escape and F7 bindings. Escape is inert, Space retains
+media cancellation, and F7 queues a deferred C9 presentation-end record, requests
+SCRIPT2 from later profiles, clears the sequence/menu-count/chooser-phase
+globals, starts ship opening at depth six, and enables VM execution. Commander
+retains its prior bindings. These are native semantic state writes, not a DOS
+execution dependency in the game.
+
+`re/tools/big_bug_bang_input_abort_oracle.py` executes the unchanged original
+handler at file `0x24C8..0x2513` and verifies the key table against executable
+SHA-256 `4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834`.
+Its 204 cases cover every profile, three pending requests, absent/present actor
+links, and both actionable/suppressed deferred records. The probe checks all
+global writes, unchanged VAR/executable bytes, and restored registers/stack.
+Rust compares those cases with all 17 actual loaded resource profiles and
+checks deferred C9 serialization, player-slot draining, phase-only reset, and
+BBB/Commander key ordering. The abstraction preserves the deferred auxiliary
+word's actionable sign, not an arbitrary low-bit payload; these tests do not
+claim general raw-word parity beyond the tested zero/FFFF values.
+
+Verification: 972 regular library tests passed, 58 ignored; the separate
+`sequel_ --include-ignored` run passed 85 tests before the final deferred-drain
+test was added. The final three `sequel_f7` tests passed, including the
+resource-backed oracle comparison. All-target game-package checking passed.
+Live recovery uses `accuracy/scenarios/bbb_load_daddy_f7_phone.tsv`, which sends
+F7 through the ordinary SDL key queue after loading a copied progressed save.
+
+Live capture `output/big-bug-bang/f7-phone-jseEzSAA` used binary SHA-256
+`dd51833d92dcaa63ef78fe67bb83ea9f77ac92dcae892bebca1e2e2f8e2f6ec1`.
+It loaded SCRIPT3 at frame 1107, returned to SCRIPT2 after F7 at frame 1383,
+and activated Honk at frame 2080 after the ordinary phone click. English
+dialogue starts at frame 2100; `honk-dialogue.png` visibly confirms the next
+line. However, this is a **failed full scenario**, not a successful conversation
+completion: after frame 2392 ("I'll put them in the cryobox for you...") the
+process exits with `dialogue chatter is armed without a streamed DESCRIPT sound
+bank`. The last trace has chatter armed, a pending one-word menu, and no loaded
+streamed bank. Investigate `ModernGameServices::process_runtime_audio_events`
+and the original Honk menu/audio path before relaxing the invariant. Both
+copied save hashes were unchanged by the run. This proves the F7 return and
+subsequent dialogue entry, while exposing the next progression failure.
+
 ### Conversation Profile Return and D2 Domain
 
 The progressed-save Honk probe (`bbb_load_daddy_phone.tsv`) exposed a stall:
@@ -42,12 +84,11 @@ profile's identity. Non-C4 clears and Commander behavior retain their old rules.
 The standalone executable probe `big_bug_bang_record_clear_oracle.py` executes
 the unchanged handler and field resolver for 204 cases; the dispatcher test
 checks those cases and Commander non-regression cases. The native UI-abort path
-at `0x24C8` has a related profile-return write and still needs translation.
+at `0x24C8` has a related profile-return write, translated in the F7 work above.
 The native key table at `0x2281` maps extended key `0xC1` (F7) to dispatch
-entry 14 at `0x2382`; that entry resolves to `0x24C8`. The current shared Rust
-keyboard policy treats function keys as inert. BBB also binds Escape to a
-no-op and Space to the media-cancel handler, unlike the shared Rust policy
-that sends both to media cancellation. These input differences remain open.
+entry 14 at `0x2382`; that entry resolves to `0x24C8`. BBB's Escape no-op and
+Space media-cancel bindings now differ from Commander's shared defaults.
+BBB's separate horizontal-arrow selector behavior remains open.
 This change does not rewrite old saves already captured in the wrong profile.
 
 D2 also incorrectly validated every game against Commander's five-profile table.

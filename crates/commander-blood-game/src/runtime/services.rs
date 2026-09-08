@@ -3523,8 +3523,25 @@ impl<'window> ModernGameServices<'window> {
     pub fn dispatch_lifecycle_input(
         &mut self,
         state: &mut GameLifecycleState,
-    ) -> Option<InputAction> {
-        self.input.dispatch_lifecycle_input(state)
+    ) -> Result<Option<InputAction>> {
+        let action = self.input.dispatch_lifecycle_input_for_dialect(
+            state,
+            self.runtime.data().game().script_dialect(),
+        );
+        if action == Some(InputAction::AbortConversation) {
+            let profile = self
+                .runtime
+                .current_profile()
+                .context("F7 requires a loaded profile")?;
+            self.scripts.abort_sequel_conversation(profile, state)?;
+            self.ship_presentation.depth_opening_flags = 1;
+            self.ship_presentation.depth_step = 6;
+            self.presentation_word_choice
+                .as_mut()
+                .context("F7 word-choice owner is unavailable")?
+                .restart_phase();
+        }
+        Ok(action)
     }
 
     /// Sample one host pointer position into the original logical surface.
