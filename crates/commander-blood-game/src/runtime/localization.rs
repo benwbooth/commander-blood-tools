@@ -19,6 +19,7 @@ const OPENING_ENGLISH: &str = include_str!("../../../../localization/big-bug-ban
 const SCRIPT2_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script2.json");
 const SCRIPT3_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script3.json");
 const SCRIPT4_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script4.json");
+const SCRIPT5_ENGLISH: &str = include_str!("../../../../localization/big-bug-bang/en/script5.json");
 const LINE_COLUMNS: usize = 34;
 
 #[derive(Deserialize)]
@@ -53,6 +54,7 @@ impl SequelEnglishSubtitles {
             1 => ("SCRIPT2", SCRIPT2_ENGLISH),
             2 => ("SCRIPT3", SCRIPT3_ENGLISH),
             3 => ("SCRIPT4", SCRIPT4_ENGLISH),
+            4 => ("SCRIPT5", SCRIPT5_ENGLISH),
             _ => return Ok(None),
         };
         Self::from_catalog(
@@ -328,6 +330,133 @@ mod tests {
         assert!(parse_display_words("", &[ScriptTextWord::SectionSeparator]).is_err());
         assert!(parse_display_words("", &[ScriptTextWord::InventoryChoices]).is_err());
         assert!(parse_display_words(" ", &[]).is_err());
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn authentic_script5_binds_choices_dynamic_counts_and_rgb_text() {
+        use crate::native::bloodprg::*;
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let cod = std::fs::read(root.join("SCRIPT5.COD")).unwrap();
+        let dic = std::fs::read(root.join("SCRIPT5.DIC")).unwrap();
+        let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
+        let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let mut manager = ScriptProfileManager::new(
+            OriginalScriptProfileCatalog::decode_blood2pg(&executable).unwrap(),
+        );
+        let mut cache = OriginalResourceCache::new();
+        manager
+            .select(ScriptProfileId::INITIAL, &mut cache, &store, &resources)
+            .unwrap();
+        manager
+            .select(
+                ScriptProfileId::new_for_dialect(4, ScriptDialect::BigBugBang).unwrap(),
+                &mut cache,
+                &store,
+                &resources,
+            )
+            .unwrap();
+        let profile = manager.current().unwrap();
+        let catalog = SequelEnglishSubtitles::for_profile(profile)
+            .unwrap()
+            .unwrap();
+        assert_eq!(profile.code().encode(), cod);
+        assert_eq!(profile.dictionary().encode(), dic);
+        assert_eq!(catalog.menus.len(), 216);
+        assert_eq!(catalog.subtitles.len(), 214);
+        assert_eq!(catalog.choices.len(), 7);
+        for address in [0x1050, 0x16b5] {
+            let site = ScriptCodeOffset::new(address);
+            let menu = &catalog.menus[&site];
+            assert!(catalog.subtitle(site).is_none());
+            assert_eq!(
+                menu.display
+                    .iter()
+                    .filter(|word| matches!(word, InlineMenuDisplayWord::StateNumber(_)))
+                    .count(),
+                1
+            );
+            assert_eq!(
+                catalog.menu_words(site, &menu.source),
+                Some(menu.display.as_ref())
+            );
+        }
+        for address in [0x1537, 0x1ea6] {
+            let site = ScriptCodeOffset::new(address);
+            let menu = &catalog.menus[&site];
+            assert_eq!(menu.source.last(), Some(&ScriptTextWord::InventoryChoices));
+            assert_eq!(
+                catalog.menu_words(site, &menu.source),
+                Some(menu.display.as_ref())
+            );
+            assert!(!catalog.choices.contains_key(&site));
+        }
+        for (site, (words, labels)) in &catalog.choices {
+            assert_eq!(catalog.choice_labels(*site, words), Some(labels.as_slice()));
+            let reversed = words.iter().rev().copied().collect::<Vec<_>>();
+            assert!(catalog.choice_labels(*site, &reversed).is_none());
+            assert!(
+                words
+                    .iter()
+                    .all(|word| profile.dictionary().word(*word).is_some())
+            );
+        }
+        let fonts = crate::game::GameVariant::BigBugBang
+            .decode_fonts(&executable)
+            .unwrap();
+        let colors = crate::game::GameVariant::BigBugBang
+            .decode_default_vga_palette(&executable)
+            .unwrap();
+        let ui = crate::ui::DialogueUiAssets::import(&fonts, &colors).unwrap();
+        let mut pixels = crate::ui::RgbaUiOverlay::new(320, 200);
+        for (site, text) in &catalog.subtitles {
+            pixels.clear();
+            for (index, line) in text
+                .split(|byte| *byte == b'\r')
+                .filter(|line| !line.is_empty())
+                .enumerate()
+            {
+                assert!(line.len() <= LINE_COLUMNS, "{site:?}");
+                assert!(8 + index * 8 + 8 <= 200, "{site:?}");
+                ui.draw_line(
+                    &mut pixels,
+                    SubtitleRevealLine {
+                        text: line,
+                        byte_offset: 0,
+                        reveal_cursor: line.len() + 2,
+                        position: [10, 8 + index as u16 * 8],
+                    },
+                )
+                .unwrap();
+            }
+            assert!(
+                pixels.pixels().chunks_exact(4).any(|pixel| pixel[3] != 0),
+                "blank {site:?}"
+            );
+            assert!(
+                pixels
+                    .pixels()
+                    .chunks_exact(320 * 4)
+                    .all(|row| row[..10 * 4].iter().all(|value| *value == 0)
+                        && row[282 * 4..].iter().all(|value| *value == 0)),
+                "overflow {site:?}"
+            );
+        }
+        assert!(
+            SequelEnglishSubtitles::from_catalog(b"changed", &dic, "SCRIPT5", SCRIPT5_ENGLISH)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            SequelEnglishSubtitles::from_catalog(&cod, b"changed", "SCRIPT5", SCRIPT5_ENGLISH)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            SequelEnglishSubtitles::from_catalog(&cod, &dic, "SCRIPT4", SCRIPT5_ENGLISH).is_err()
+        );
     }
 
     #[test]

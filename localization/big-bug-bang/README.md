@@ -45,7 +45,26 @@ localization tests pass, including four live-number readouts and three inventory
 prompts. Game-package all-targets checking and 949 serial game-library tests pass
 (33 ignored). SCRIPT4 live English rendering
 and contextual review remain unverified.
-The other 13 COD profiles, BAS text, most native UI, object names, and text embedded
+`en/script5.json` supplies all 216 text sites in the fifth profile, covering
+Eviscerator and Outrageor dialogue, threats and imprisonment, trades, gift
+responses, and time-gate/crown instructions. This is an English editorial first
+pass, not a live-scene fidelity claim. The runtime binds it only to the exact
+SCRIPT5 COD/DIC hashes. Two population readouts preserve their state-number
+sources, both GIVE sections preserve inventory generation, and all seven
+concept-choice lists retain original dictionary IDs and positional ordering.
+
+Source validation checks all 216 sites against the imported originals. The
+real-resource test loads the initial persistent state before selecting SCRIPT5,
+verifies the catalog route without modifying COD/DIC data, checks dynamic and
+choice ownership, and renders all 214 static subtitles through the RGB UI font
+path with nonblank-pixel and horizontal/vertical bounds assertions. Mismatched
+COD/DIC resources and wrong profile tags are rejected. All ten localization
+tests pass when explicitly including original-resource tests; the enabled game
+library suite passes 964 tests (39 ignored), and game-package all-targets
+checking passes. Live SCRIPT5 reachability, voice timing, scene composition,
+and contextual review remain unverified.
+
+The other 12 COD profiles, BAS text, most native UI, object names, and text embedded
 in media remain untranslated.
 
 ## Options and Saves
@@ -562,7 +581,7 @@ French sentence. English voice acting is not supplied.
 The COD dispatcher requests a display override only after `SubtitlePublished`.
 The backend substitutes section zero, wrapped at 34 columns with the existing
 carriage-return line format. Native/reference hosts default to original text;
-the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT4
+the modern runtime binds English catalogs for BBB SCRIPT1 through SCRIPT5
 with matching COD and DIC SHA-256 hashes. Other profiles, modified resources,
 and missing sites retain their original text. Binding another profile clears
 the old translation. Original dictionary IDs and menu words are never replaced.
