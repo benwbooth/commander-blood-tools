@@ -850,6 +850,130 @@ mod tests {
         );
     }
 
+    #[test]
+    fn sequel_bas_entry_matches_original_gate_vectors() {
+        #[derive(Debug, Deserialize)]
+        struct Vector {
+            active: u8,
+            gate: u8,
+            choice: u8,
+            locked: u8,
+            blocked: u8,
+            primary: u8,
+            paired: u8,
+            target: u16,
+            enters_bas: bool,
+        }
+        let vectors: Vec<Vector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_bas_entry.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), 512);
+        for vector in vectors {
+            let mut fixture = fixture();
+            let player = fixture.objects[PLAYER_INDEX];
+            let actor = fixture.objects[ACTOR_INDEX];
+            fixture.presentation.active = vector.active != 0;
+            fixture.presentation.c2_gate_active = vector.gate != 0;
+            fixture.presentation.word_choice_active = vector.choice != 0;
+            fixture.presentation.start_locked = vector.locked != 0;
+            assert!(set_object_flag(
+                &mut fixture.state,
+                actor,
+                ScriptObjectFlag::PresentationBlocked,
+                vector.blocked != 0
+            ));
+            if vector.primary != 0 {
+                fixture.records.set_record(
+                    slot(&fixture, PLAYER_INDEX),
+                    ScriptActionRecord::ActorPresentation(actor),
+                );
+            }
+            fixture.records.set_record(
+                slot(&fixture, ACTOR_INDEX),
+                ScriptActionRecord::ActorPresentation(if vector.paired != 0 {
+                    player
+                } else {
+                    actor
+                }),
+            );
+            set_handoff_target(&mut fixture, usize::from(vector.target));
+            let mut host = RecordingHost::default();
+            let mut outcome = ScriptPresentationScanOutcome::default();
+            scan_character_handoff(
+                CharacterHandoffContext {
+                    state: &mut fixture.state,
+                    records: &mut fixture.records,
+                    runtime: &mut fixture.runtime,
+                    selector: &mut fixture.selector,
+                    presentation: &mut fixture.presentation,
+                    player,
+                },
+                actor,
+                &mut host,
+                &mut outcome,
+            )
+            .unwrap();
+            assert_eq!(
+                !outcome.handoffs.is_empty(),
+                vector.enters_bas,
+                "{vector:?}"
+            );
+            let expected = if vector.enters_bas {
+                vec![ScriptCodeOffset::new(usize::from(
+                    vector.target.wrapping_add(1),
+                ))]
+            } else {
+                Vec::new()
+            };
+            assert_eq!(host.selector_roots, expected, "{vector:?}");
+        }
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn sequel_shipped_actor_bas_entries_are_zero() {
+        use commander_blood_formats::code::ScriptDialect;
+        use commander_blood_formats::script::decode_script_state_for_dialect;
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let offset = script_field_offset(
+            ScriptObjectKind::Actor,
+            ScriptFieldSelector::PRESENTATION_HANDOFF,
+        )
+        .unwrap();
+        assert_eq!(offset, 26);
+        let mut count = 0;
+        for profile in 1..=17 {
+            let directory = decode_script_directory(
+                &std::fs::read(root.join(format!("SCRIPT{profile}.DEB"))).unwrap(),
+            )
+            .unwrap();
+            let state = decode_script_state_for_dialect(
+                &std::fs::read(root.join(format!("SCRIPT{profile}.VAR"))).unwrap(),
+                &directory,
+                ScriptDialect::BigBugBang,
+            )
+            .unwrap();
+            for actor in state
+                .objects()
+                .iter()
+                .filter(|object| object.kind == ScriptObjectKind::Actor)
+            {
+                let field = state.object_word(actor.id, offset / 2).unwrap();
+                assert_eq!(
+                    state.word(field),
+                    Some(0),
+                    "SCRIPT{profile} actor {:?}",
+                    actor.id
+                );
+                count += 1;
+            }
+        }
+        assert_eq!(count, 1037);
+        eprintln!("checked {count} initial actor BAS-entry fields across 17 profiles");
+    }
+
     fn configure_vector(name: &str, fixture: &mut Fixture) {
         let player = fixture.objects[PLAYER_INDEX];
         let actor = fixture.objects[ACTOR_INDEX];

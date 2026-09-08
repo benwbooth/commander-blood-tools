@@ -236,6 +236,19 @@ unused: native reachability and resource ownership still need investigation.
 No empty BAS replacement, altered dictionary identity, or speculative BAS
 translation was introduced.
 
+The follow-up `big_bug_bang_bas_entry_oracle.py` executes the original handoff
+gate at file offsets `0x5E0D..0x5E69`, including its unchanged field resolver at
+`0x6633`, and stops before the BAS dispatcher call at `0x5E66`. Its 512 cases vary
+the presentation gates, reciprocal actor actions, blocked flag, and zero/nonzero
+entry offsets. The Rust handoff matches every case; a repeat capture is identical.
+The original field matrix selects actor byte 26, and all 1,037 actor records in
+the 17 shipped VAR profiles initialize that word to zero. Thus this gate does
+not enter BAS from those initial records, even with the other gates open. This
+does not yet prove that later script writes or loaded saves cannot change the
+word, nor that other BAS-reading paths are unreachable. No runtime gate was
+removed or weakened. The resource-enabled `sequel_` test selection passes all
+79 tests, including the new gate and initial-record checks.
+
 ## Options and Saves
 
 Production `runtime/bridge_console.rs` now selects the recovered seven-row
