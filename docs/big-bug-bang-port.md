@@ -11,10 +11,11 @@ runtime dependencies.
 The objective is active and **not complete**. Verified production routes include
 the opening, PLAY into SCRIPT2, initial Daddy dialogue in SCRIPT3, save/load in
 a fresh process, travel to Tempest, and recontacting Daddy on Templand. The
-renewed Templand conversation now passes its video interlude and reaches its
-next choice state, but the choice labels were absent in the captured screen.
-Selection and further progression are not verified. These routes do not
-establish a complete playthrough. English COD display
+renewed Templand conversation now passes its video interlude, displays both
+choices, and continues through `no_hurry` back to Tempest navigation. Retained
+screenshots and RGB-row checks verify the formerly missing labels. Other
+conversation branches and broader progression remain unverified. These routes
+do not establish a complete playthrough. English COD display
 catalogs cover SCRIPT1 through SCRIPT4, but the other 13 profiles and several
 other text layers remain unfinished. The latest route evidence is recorded in
 `../localization/big-bug-bang/README.md`. The original-disc investigation is in

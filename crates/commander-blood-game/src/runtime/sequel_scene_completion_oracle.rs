@@ -166,6 +166,17 @@ fn sequel_scene_completion_matches_original_latches_and_vm_writes() {
         assert_eq!(scene, vector.output.scene(), "{}", vector.name);
         assert_eq!(vector.input.buffered, vector.output.buffered);
         let mut lifecycle = GameLifecycleState::default();
+        let mut screen = RuntimePresentationScreen::new([[0; 3]; 256]).unwrap();
+        screen.scene_state = scene;
+        screen.publish_scene_queue_metrics(&mut lifecycle);
+        assert_eq!(
+            lifecycle.presentation.list_entry_metric,
+            vector.output.entry
+        );
+        assert_eq!(
+            lifecycle.presentation.list_read_wrap_index,
+            vector.output.read
+        );
         lifecycle.vm_execution_enabled = vector.input.vm != 0;
         lifecycle.presentation.request_flags =
             crate::native::bloodprg::PresentationRequestFlags::decode(vector.input.request);

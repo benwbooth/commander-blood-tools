@@ -263,6 +263,50 @@ Game-package all-targets checking and 963 enabled game-library tests pass (38
 ignored). Workspace-wide all-targets checking still fails in the shared
 script-compiler test imports; that is not a passing gate.
 
+### Templand Choice Visibility and Selection
+
+The missing labels in the preceding capture were not a font or color problem.
+The native scheduler at file `0x12EA..0x131D` uses the retained queue entry/read
+counters (`0x0FFD` / `0x0FAE`) to restart the character idle sequence after
+speech. Ship-scene playback had not published those counters to the lifecycle,
+leaving them both zero. No idle frame arrived, so the original frame-ready gate
+stopped calling the chooser. Stored choice labels were therefore insufficient
+evidence of rendering or interaction. Ship, panel, and contact-scene owners now
+publish the same retained counters to the scheduler; the frame-ready gate is
+unchanged.
+
+The accompanying native audit also exposed a separate text-hold mistranslation:
+file `0x124D` tests the queued-presentation byte `0x2200`, not contact-transition
+activity at `0x29DD`. Rust now tests `c2_presentation_gate` before resuming the VM.
+The older text-hold test incorrectly assigned the native queue field to the
+contact flag; that mapping is corrected and the two flags are deliberately
+opposed. `re/tools/big_bug_bang_idle_scheduler_oracle.py` runs unchanged
+`BLOOD2PG.EXE` instructions at `0x11D2..0x1321` for 86 synthetic boundaries.
+The new test reproduced the mismatch before the correction. All 86 cases now
+match, including equal/wrapped queue counters and independent contact/queue
+gates. A second capture is byte-identical. This is scheduler-boundary evidence,
+not a native full-gameplay oracle.
+
+The regression scenario now selects the second concept row at `(225,103)` after
+the interlude. The first queue-transfer replay passed in 481.04 seconds, with
+444 selecting frames containing both labels and none missing. After correcting
+the text-hold gate, the final replay passed in 433.96 seconds:
+`output/fidelity/bbb-templand-dialogue-1788890770084644379-3869719-0`.
+Its captured/inspected `choices-visible.png` shows FINISH and NO HURRY with the
+hand present; `selection-continuation.png` shows "LET'S CONTINUE, THEN...".
+Trace analysis finds 328 selecting frames with both RGB text rows, zero missing
+rows, first visibility at frame 3981, and the selected branch at frame 4342.
+The final frame 5439 returns to profile 2 navigation with the Tempest life-form
+readout, no active actor, and a closed chooser. The test now requires the exact
+two labels, nonzero text pixels in each row throughout selection, and the
+authored `no_hurry` continuation. Row geometry/pixel diagnostics supplement the
+older misleadingly named `rendered_word_choices` label inventory.
+
+The enabled game-library suite passes 964 tests (38 ignored), and game-package
+all-targets checking passes. The prior workspace-wide script-compiler test
+failure is still outstanding. The alternate FINISH branch, later gameplay,
+remaining localization, and full-game fidelity are not established here.
+
 ### Native Travel Gates
 
 The hash-locked probe

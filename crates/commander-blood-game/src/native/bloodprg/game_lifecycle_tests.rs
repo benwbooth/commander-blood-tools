@@ -138,7 +138,8 @@ fn sequel_text_hold_vm_resume_matches_native_vectors() {
             p.dialogue_hold_complete = flag("complete");
             p.word_buffer_nonempty = flag("words");
             p.dialogue_hold_countdown = input["countdown"].as_u64().unwrap() as u16;
-            p.scene_gate_active = flag("queue");
+            p.c2_presentation_gate = flag("queue");
+            p.scene_gate_active = !flag("queue");
             p.start_locked = flag("locked");
             p.request_flags = PresentationRequestFlags::decode(3);
             let mut link = GameSceneLink::Initial;
@@ -152,6 +153,76 @@ fn sequel_text_hold_vm_resume_matches_native_vectors() {
                 state.vm_execution_enabled, expected,
                 "case {index}: {dialect:?}"
             );
+        }
+    }
+}
+
+#[test]
+fn sequel_idle_restart_matches_original_retained_queue_counters() {
+    use commander_blood_formats::code::ScriptDialect;
+    let lines =
+        include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_idle_scheduler.jsonl");
+    assert_eq!(lines.lines().count(), 86);
+    for line in lines.lines() {
+        let case: serde_json::Value = serde_json::from_str(line).unwrap();
+        let input = &case["input"];
+        let output = &case["output"];
+        let word = |data: &serde_json::Value, field: &str| data[field].as_u64().unwrap() as u16;
+        let flag = |data: &serde_json::Value, field: &str| word(data, field) & 1 != 0;
+        let mut state = GameLifecycleState::default();
+        state.vm_execution_enabled = flag(input, "vm");
+        let p = &mut state.presentation;
+        p.active = flag(input, "active");
+        p.sequence_active = flag(input, "sequence");
+        p.scene_gate_active = flag(input, "scene");
+        p.c2_presentation_gate = flag(input, "gate");
+        p.list_entry_metric = word(input, "entry");
+        p.list_read_wrap_index = word(input, "read");
+        p.active_line = (word(input, "line") != u16::MAX).then_some(word(input, "line"));
+        p.request_flags = PresentationRequestFlags::decode(word(input, "request") as u8);
+        p.dialogue_hold_countdown = word(input, "countdown");
+        p.owner = match word(input, "owner") {
+            0 => None,
+            0x6234 => Some(GamePresentationOwner::Subtitle),
+            0x6B86 => Some(GamePresentationOwner::DeferredMenu),
+            other => panic!("unknown native owner {other:#x}"),
+        };
+        p.subtitle_display_active = flag(input, "subtitle");
+        p.menu_deferred = flag(input, "menu");
+        p.hold_ready = flag(input, "ready");
+        p.dialogue_hold_complete = flag(input, "complete");
+        p.word_buffer_nonempty = flag(input, "words");
+        p.text_menu_pending = flag(input, "pending");
+        p.text_selector = Some(word(input, "selector") as i8);
+        p.dialogue_chatter_active = flag(input, "chatter");
+        let mut link = GameSceneLink::Initial;
+        update_game_presentation_ownership_for_dialect(
+            &mut state,
+            &mut link,
+            ScriptDialect::BigBugBang,
+        );
+        let p = &state.presentation;
+        assert_eq!(
+            state.vm_execution_enabled,
+            flag(output, "vm"),
+            "{}",
+            case["name"]
+        );
+        assert_eq!(
+            p.active_line.unwrap_or(u16::MAX),
+            word(output, "line"),
+            "{}",
+            case["name"]
+        );
+        assert_eq!(p.c2_presentation_gate, flag(output, "gate"));
+        assert_eq!(p.request_flags.bits(), word(output, "request") as u8);
+        assert_eq!(p.text_menu_pending, flag(output, "pending"));
+        assert_eq!(p.dialogue_chatter_active, flag(output, "chatter"));
+        assert_eq!(p.subtitle_display_active, flag(output, "subtitle"));
+        assert_eq!(p.menu_deferred, flag(output, "menu"));
+        assert_eq!(p.word_choice_active, flag(output, "choice"));
+        if word(output, "word_offset") == 0x6B62 {
+            assert_eq!(p.menu_word_source, GameMenuWordSource::PresentationBuffer);
         }
     }
 }

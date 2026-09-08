@@ -110,6 +110,15 @@ impl RuntimePresentationScreen {
         &self.scene_state
     }
 
+    /// The script scheduler still reads these counters after the source closes.
+    pub(super) fn publish_scene_queue_metrics(
+        &self,
+        lifecycle: &mut crate::native::bloodprg::GameLifecycleState,
+    ) {
+        lifecycle.presentation.list_entry_metric = self.scene_state.entry_metric;
+        lifecycle.presentation.list_read_wrap_index = self.scene_state.read_wrap_index;
+    }
+
     /// Take the shared frame-ready write produced by this panel update, if any.
     pub fn take_scene_frame_presented_output(&mut self) -> Option<bool> {
         self.scene_frame_presented_output.take()
@@ -246,10 +255,9 @@ impl RuntimePresentationScreen {
             );
         lifecycle.presentation.sequence_active = scene.sequence_active;
         lifecycle.presentation.active_line = scene.presentation.active_line;
-        lifecycle.presentation.list_entry_metric = scene.entry_metric;
-        lifecycle.presentation.list_read_wrap_index = scene.read_wrap_index;
         export_scene_transition_frame_presented(scene.frame_presented, lifecycle);
         *palette_transition_percent = scene.palette_transition_percent;
+        self.publish_scene_queue_metrics(lifecycle);
         outcome
     }
 

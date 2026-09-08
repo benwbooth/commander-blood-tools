@@ -2550,6 +2550,7 @@ impl<'window> ModernGameServices<'window> {
             .as_mut()
             .context("presentation screen is already being updated")?;
         let scene_completed = screen.take_scene_completion_output();
+        screen.publish_scene_queue_metrics(state);
         let screen = screen.state_mut();
         let screen_rebuild_pending = screen.take_screen_rebuild_pending();
         let completion_audio_pending = screen.take_completion_audio_pending();
@@ -2798,6 +2799,7 @@ impl<'window> ModernGameServices<'window> {
             self.script_finale_shutdown_pending = true;
         }
         self.ship_presentation = ship;
+        screen.publish_scene_queue_metrics(lifecycle);
         self.presentation_screen = Some(screen);
         self.resume_vm_after_scene(
             lifecycle,
@@ -4450,10 +4452,43 @@ impl<'window> ModernGameServices<'window> {
             .unwrap_or_default();
         let retained_word_choice = self.presentation_word_choice.as_ref().map(|choice| {
             let state = choice.state();
+            let rows = choice
+                .last_frame()
+                .map(|frame| {
+                    frame
+                        .rows
+                        .iter()
+                        .map(|row| {
+                            let rgba = self.runtime.choice_text_color(
+                                row.color
+                                    .try_into()
+                                    .expect("choice planner emits a known text style"),
+                            );
+                            let rect = crate::native::bloodprg::ChoiceListRect {
+                                origin: row.position.map(|value| value as i16),
+                                size: [
+                                    frame.rect.size[0],
+                                    crate::native::bloodprg::CHOICE_LIST_ROW_PITCH,
+                                ],
+                            };
+                            serde_json::json!({
+                                "kind": format!("{:?}", row.kind),
+                                "position": row.position,
+                                "matching_text_pixels": rgba_color_count_in_rect(
+                                    self.runtime.ui_overlay_rgba(), rect, rgba,
+                                ),
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
             serde_json::json!({
                 "active": state.active,
                 "interface_active": state.interface_active,
                 "phase": format!("{:?}", state.phase),
+                "rows": rows,
+                "queue_entry_metric": lifecycle.presentation.list_entry_metric,
+                "queue_read_wrap_index": lifecycle.presentation.list_read_wrap_index,
             })
         });
         let inline_menu_entries = profile

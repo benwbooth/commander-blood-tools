@@ -775,7 +775,7 @@ pub fn update_game_presentation_ownership_for_dialect(
         if dialect == commander_blood_formats::code::ScriptDialect::BigBugBang
             && presentation.dialogue_hold_countdown != 0
         {
-            state.vm_execution_enabled = !presentation.scene_gate_active;
+            state.vm_execution_enabled = !presentation.c2_presentation_gate;
         }
         if presentation.dialogue_hold_countdown == u16::MIN || secondary_pointer_pressed {
             presentation.dialogue_hold_complete = false;

@@ -26,6 +26,7 @@ const CHOICE_LIST_SELECTION_SOUND_CLIP: u8 = u8::MIN;
 pub struct RuntimePresentationWordChoice {
     state: PresentationWordChoiceState,
     transition: FramebufferTransitionState,
+    last_frame: Option<crate::native::bloodprg::ChoiceListFrame>,
 }
 
 impl RuntimePresentationWordChoice {
@@ -34,10 +35,15 @@ impl RuntimePresentationWordChoice {
         &self.state
     }
 
+    pub(super) fn last_frame(&self) -> Option<&crate::native::bloodprg::ChoiceListFrame> {
+        self.last_frame.as_ref()
+    }
+
     /// Close the dialogue chooser and discard its profile-local transition state.
     pub fn reset(&mut self) {
         self.state = PresentationWordChoiceState::default();
         self.transition = FramebufferTransitionState::default();
+        self.last_frame = None;
     }
 
     /// Advance and draw one exact dialogue-choice frame.
@@ -46,6 +52,7 @@ impl RuntimePresentationWordChoice {
         services: &mut ModernGameServices<'window>,
         lifecycle: &mut GameLifecycleState,
     ) -> Result<PresentationWordChoiceOutcome> {
+        self.last_frame = None;
         self.import_lifecycle_state(services, lifecycle)?;
         let interface_active_before_update = self.state.interface_active;
         let phase_before_update = self.state.phase;
@@ -193,7 +200,7 @@ impl RuntimePresentationWordChoice {
     }
 
     fn draw_frame<'window>(
-        &self,
+        &mut self,
         services: &mut ModernGameServices<'window>,
         frame: &crate::native::bloodprg::ChoiceListFrame,
     ) -> Result<()> {
@@ -208,7 +215,9 @@ impl RuntimePresentationWordChoice {
             &labels,
             self.state.inventory_cancel_label.as_deref(),
             frame,
-        )
+        )?;
+        self.last_frame = Some(frame.clone());
+        Ok(())
     }
 }
 

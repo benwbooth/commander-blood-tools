@@ -55,6 +55,9 @@ fn templand_interlude_returns_to_dialogue_and_choices() {
     let mut saw_interlude = false;
     let mut saw_continuation = false;
     let mut saw_choices = false;
+    let mut saw_visible_choices = false;
+    let mut saw_selection = false;
+    let mut missing_choice_frames = 0;
     for line in BufReader::new(File::open(&frames).unwrap()).lines() {
         let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
         let semantic = &frame["semantic"];
@@ -66,10 +69,27 @@ fn templand_interlude_returns_to_dialogue_and_choices() {
             .collect::<Vec<_>>()
             .join(" ");
         saw_continuation |= saw_interlude && subtitle.starts_with("With that boiled-shank face");
-        saw_choices |= saw_continuation
-            && semantic["presentation"]["rendered_word_choices"]
+        let expected_choices = semantic["presentation"]["rendered_word_choices"]
+            == serde_json::json!(["finish", "no_hurry"]);
+        saw_choices |= saw_continuation && expected_choices;
+        if saw_continuation
+            && expected_choices
+            && semantic["presentation"]["retained_word_choice"]["phase"] == "Selecting"
+        {
+            let visible = semantic["presentation"]["retained_word_choice"]["rows"]
                 .as_array()
-                .is_some_and(|choices| !choices.is_empty());
+                .is_some_and(|rows| {
+                    rows.len() == 2
+                        && rows.iter().all(|row| {
+                            row["matching_text_pixels"]
+                                .as_u64()
+                                .is_some_and(|pixels| pixels > 0)
+                        })
+                });
+            saw_visible_choices |= visible;
+            missing_choice_frames += usize::from(!visible);
+        }
+        saw_selection |= saw_visible_choices && subtitle.starts_with("let's continue, then");
     }
     assert!(saw_interlude, "Templand interlude was never reached");
     assert!(
@@ -79,5 +99,17 @@ fn templand_interlude_returns_to_dialogue_and_choices() {
     assert!(
         saw_choices,
         "renewed Templand conversation never reached its next choice"
+    );
+    assert!(
+        saw_visible_choices,
+        "choice labels never reached the RGB UI layer"
+    );
+    assert_eq!(
+        missing_choice_frames, 0,
+        "choice labels disappeared while selecting"
+    );
+    assert!(
+        saw_selection,
+        "no_hurry selection never resumed the authored branch"
     );
 }
