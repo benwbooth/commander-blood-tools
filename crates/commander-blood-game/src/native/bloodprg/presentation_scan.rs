@@ -974,6 +974,112 @@ mod tests {
         eprintln!("checked {count} initial actor BAS-entry fields across 17 profiles");
     }
 
+    #[test]
+    #[ignore = "requires the user's imported Big Bug Bang resources"]
+    fn sequel_cod_explicit_destinations_do_not_overlap_actor_bas_entries() {
+        use crate::assets::OriginalResourceStore;
+        use crate::native::bloodprg::*;
+        use commander_blood_formats::code::ScriptDialect;
+        use commander_blood_formats::instruction::DecodedScriptInstruction as I;
+        use commander_blood_formats::script::{ScriptStateWord, ScriptStateWordTriple};
+
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets/resources");
+        let executable = std::fs::read(root.join("../../disc/BLOOD2PG.EXE")).unwrap();
+        let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
+        let store = OriginalResourceStore::new(root, None, [], true);
+        let mut manager = ScriptProfileManager::new(
+            OriginalScriptProfileCatalog::decode_blood2pg(&executable).unwrap(),
+        );
+        let mut cache = OriginalResourceCache::new();
+        manager
+            .select(ScriptProfileId::INITIAL, &mut cache, &store, &resources)
+            .unwrap();
+        let word = |target: ScriptStateWord| (target.object(), target.word_index() * 2, 2);
+        let triple =
+            |target: ScriptStateWordTriple| (target.object(), target.first_word_index() * 2, 6);
+        let mut instructions = 0;
+        let mut destinations = 0;
+        let mut actor_destinations = 0;
+        for id in 0..17 {
+            manager
+                .select(
+                    ScriptProfileId::new_for_dialect(id, ScriptDialect::BigBugBang).unwrap(),
+                    &mut cache,
+                    &store,
+                    &resources,
+                )
+                .unwrap();
+            let profile = manager.current().unwrap();
+            assert_eq!(profile.instructions().len(), profile.code().tokens().len());
+            for (token, instruction) in profile.code().tokens().iter().zip(profile.instructions()) {
+                instructions += 1;
+                // Include query destinations too. Implicit handler writes and saves
+                // are outside this authored-address audit.
+                let destination = match instruction {
+                    I::SharedBit(op) => Some(word(op.target)),
+                    I::SharedState(op) => Some(word(op.target)),
+                    I::DirectRecord(op) => Some(word(op.target)),
+                    I::BitFlag(op) => Some((op.target.object(), op.target.byte_index(), 1)),
+                    I::RecordPair(op) => {
+                        Some((op.target.object(), op.target.first_word_index() * 2, 4))
+                    }
+                    I::RecordState(op) => Some(triple(op.target)),
+                    I::AboardRecord(op) => Some(triple(op.target)),
+                    I::PresentationQueue(op) => Some(triple(op.target)),
+                    I::ActorRecord(op) => Some(triple(op.target)),
+                    I::WorldStateRecord(op) => Some(triple(op.target)),
+                    I::TravelRecord(op) => Some(triple(op.target)),
+                    I::ActiveObjectRecord(op) => Some(triple(op.target)),
+                    I::OpaqueMarkerRecord(op) => Some(triple(op.target)),
+                    I::RecordClear(op) => Some(triple(op.target)),
+                    I::Transfer(op) => Some((
+                        op.source_record.object(),
+                        op.source_record.word_index() * 2,
+                        6,
+                    )),
+                    I::MultiplyDivide(op) => Some(word(op.target)),
+                    I::Control(_)
+                    | I::Text(_)
+                    | I::TopicOffer(_)
+                    | I::SequenceRequest(_)
+                    | I::ProcedureGate(_)
+                    | I::ProcedureActivation(_)
+                    | I::HourGuard(_)
+                    | I::DateGuard(_)
+                    | I::SequenceSlotAssignment(_)
+                    | I::Environment(_)
+                    | I::ProfileRequest(_)
+                    | I::SequelGrowth(_)
+                    | I::SequelSettlement(_)
+                    | I::SequelConflict(_)
+                    | I::SequelEnding => None,
+                };
+                let Some((object, start, width)) = destination else {
+                    continue;
+                };
+                destinations += 1;
+                let Some(object) = object else { continue };
+                if profile.state().object(object).unwrap().kind == ScriptObjectKind::Actor {
+                    actor_destinations += 1;
+                    assert!(
+                        start >= 28 || start + width <= 26,
+                        "SCRIPT{} {:?}: {instruction:?} overlaps actor BAS-entry bytes 26..28",
+                        id + 1,
+                        token.source_offset(),
+                    );
+                }
+            }
+        }
+        assert_eq!(
+            (instructions, destinations, actor_destinations),
+            (25513, 11832, 2930)
+        );
+        eprintln!(
+            "checked {instructions} instructions, {destinations} explicit destinations, {actor_destinations} actor destinations across 17 profiles"
+        );
+    }
+
     fn configure_vector(name: &str, fixture: &mut Fixture) {
         let player = fixture.objects[PLAYER_INDEX];
         let actor = fixture.objects[ACTOR_INDEX];

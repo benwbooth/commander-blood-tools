@@ -16,14 +16,34 @@ choices, and continues through `no_hurry` back to Tempest navigation. Retained
 screenshots and RGB-row checks verify the formerly missing labels. Other
 conversation branches and broader progression remain unverified. These routes
 do not establish a complete playthrough. English COD display
-catalogs cover SCRIPT1 through SCRIPT10, SCRIPT12,
-and SCRIPT14 through SCRIPT17, but the other 2 profiles and several
-other text layers remain unfinished. The latest route evidence is recorded in
+catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
+captions, inventory labels, and DESCRIPT location captions also have English
+display mappings, but live coverage of these surfaces is incomplete. The
+separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is recorded in
 `../localization/big-bug-bang/README.md`. The original-disc investigation is in
 `big-bug-bang-investigation.md`; its initial decoder limitations describe the
 state before the implementation below.
 
 ## Verified Implementation
+
+### Explicit COD Destinations and BAS Entry
+
+The resource-backed regression
+`sequel_cod_explicit_destinations_do_not_overlap_actor_bas_entries` loads all
+17 profiles through the production profile manager, including INITIAL before
+SCRIPT2 so its adjacent DEB alias is bound. It checks all 25,513 decoded
+instructions: 11,832 explicit state destinations, of which 2,930 belong to
+actors. None overlaps actor bytes 26..28, the original BAS-entry field. Byte,
+word, pair, and triple spans are checked, including query-mode destinations;
+the instruction match is exhaustive so new variants require an audit decision.
+
+Together with `sequel_shipped_actor_bas_entries_are_zero` and the 512-case
+original-executable gate oracle, this rules out an explicit authored COD
+destination changing the initially zero actor entry. It does not prove BAS
+unreachable: implicit handler writes, loaded saves, selected-concept entry,
+and other native BAS readers are outside this destination check. SCRIPT2.BAS
+is not discarded or replaced with an empty stream. This is static resource
+evidence, not another completed gameplay route.
 
 ### English Subtitle Raster Coverage
 
