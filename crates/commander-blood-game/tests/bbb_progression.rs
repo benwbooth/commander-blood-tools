@@ -9,6 +9,125 @@ mod scenario_artifacts;
 mod scenario_process;
 
 #[test]
+#[ignore = "requires BBB assets, an earned Izwalito Help save, and a graphical display"]
+fn izwalito_treaty_purchase_survives_save_and_fresh_process_load() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_IZWALITO_HELP_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join(
+                "output/fidelity/bbb-izwalito-help-save-1788922492594927215-1025035-0/writable",
+            )
+        });
+    let purchased = replay_bbb_from_save(
+        "bbb-izwalito-treaty-save",
+        "accuracy/scenarios/bbb_izwalito_treaty.tsv",
+        &save,
+    );
+    assert_izwalito_treaty_trace(&purchased, false);
+    let writable = purchased.parent().unwrap().join("writable");
+    let credits = |directory: &std::path::Path| {
+        use commander_blood_formats::code::ScriptDialect;
+        use commander_blood_game::native::bloodprg::OriginalSaveGame;
+        let bytes = fs::read(directory.join("GAME1.SAV")).unwrap();
+        let decoded =
+            OriginalSaveGame::decode_for_dialect(&bytes, 8368, ScriptDialect::BigBugBang).unwrap();
+        u16::from_le_bytes(decoded.state_block()[0x1ef2..0x1ef4].try_into().unwrap())
+    };
+    assert_eq!(credits(&writable), credits(&save).checked_sub(1).unwrap());
+    let loaded = replay_bbb_from_save(
+        "bbb-izwalito-treaty-load",
+        "accuracy/scenarios/bbb_load_zen_checkpoint.tsv",
+        &writable,
+    );
+    assert_izwalito_treaty_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(writable.join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE from a completed treaty purchase and save"]
+fn validate_recorded_izwalito_treaty_purchase() {
+    assert_izwalito_treaty_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        false,
+    );
+}
+
+fn assert_izwalito_treaty_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut loaded = false;
+    let mut offer = false;
+    let mut acquired = false;
+    let mut inventory_label = false;
+    let mut saved = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let s = &frame["semantic"];
+        if !loaded && s["vm"]["resource_profile"] != 1 {
+            continue;
+        }
+        // SCRIPT1.DEB item 179 binds the original treaty record at VAR 0x1E38.
+        // Its accented source name is lossy in the JSON trace, so use identity.
+        let treaty = s["persistent"]["object_locations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|object| object["record"] == 179 && object["kind"] == "InventoryItem")
+            .unwrap();
+        let aboard = treaty["holder_raw"] == 65535;
+        if !loaded {
+            assert_eq!(aboard, fresh_load);
+        }
+        loaded = true;
+        assert_ne!(s["presentation"]["sequel_control"]["ending_active"], true);
+        for name in ["guitare", "parfum", "decodeur", "energie"] {
+            assert!(has_location(s, name, 65535), "lost {name}");
+        }
+        assert!(has_location(s, "Izwalito", 0x1328));
+        assert!(has_location(s, "optique", 0x612));
+        offer |= s["vm"]["resource_profile"] == 3
+            && s["presentation"]["active_actor_presentation"]["name"] == "Izwalito"
+            && rendered_choices(s, &["accept", "refuse"])
+            && s["subtitle"] == "Do you agree to buy a treaty from him, Commander?";
+        if aboard {
+            assert!(
+                fresh_load || offer,
+                "treaty acquired before the purchase offer"
+            );
+            acquired = true;
+        } else {
+            assert!(!acquired, "purchased treaty disappeared");
+        }
+        inventory_label |= aboard
+            && s["presentation"]["rendered_word_choices"]
+                == serde_json::json!(["guitar", "perfume", "decoder", "energy", "treaty"])
+            && s["presentation"]["retained_word_choice"]["phase"] == "Selecting"
+            && s["presentation"]["retained_word_choice"]["rows"][4]["matching_text_pixels"]
+                .as_u64()
+                .is_some_and(|pixels| pixels > 0);
+        saved |= s["save_load"]["completed_saves"]
+            .as_u64()
+            .is_some_and(|count| count > 0);
+        ready =
+            main_profile_unblocked(s) && s["presentation"]["pending_presentation_owner"].is_null();
+    }
+    assert!(
+        loaded && acquired && ready,
+        "treaty route did not return to an unblocked bridge"
+    );
+    assert!(
+        fresh_load || (offer && inventory_label && saved),
+        "treaty purchase was not saved"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned migrated Izwal save, and a graphical display"]
 fn izwalito_help_save_reloads_into_authored_no_ending() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");

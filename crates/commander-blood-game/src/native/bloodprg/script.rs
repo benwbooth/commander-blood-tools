@@ -1019,6 +1019,79 @@ mod tests {
     }
 
     #[test]
+    fn sequel_timer_decoder_and_runtime_match_original_executable() {
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_script_instruction;
+
+        #[derive(Debug, Deserialize)]
+        struct Case {
+            slot: u8,
+            flags: u8,
+            initial: u16,
+            operand: u16,
+            final_state: u16,
+            branch_taken: bool,
+            cursor: usize,
+            flags_after: u8,
+            guard_depth: usize,
+        }
+
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let cases: Vec<Case> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_timer.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(cases.len(), 3072);
+        for case in cases {
+            let query = case.flags & 1 != 0;
+            let mut bytes = vec![0xFF; if query { 6 } else { 5 }];
+            if query {
+                bytes[..3].copy_from_slice(&[0xA0, 0x80, 1]);
+            }
+            let start = if query { 3 } else { 0 };
+            bytes[start..start + 2].copy_from_slice(&[0xA5, case.slot]);
+            if !query {
+                bytes[start + 2..start + 4].copy_from_slice(&case.operand.to_le_bytes());
+            }
+            let code = decode_script_code_for_dialect(&bytes, ScriptDialect::BigBugBang).unwrap();
+            let token = &code.tokens()[usize::from(query)];
+            let instruction = decode_script_instruction(token, &dictionary).unwrap();
+            let mut runtime = ScriptRuntime::new();
+            for index in 0..128 {
+                runtime.assign_timer(
+                    ScriptTimerSlot::decode(index).unwrap(),
+                    u16::from(index) * 257,
+                );
+            }
+            runtime.assign_timer(ScriptTimerSlot::decode(case.slot).unwrap(), case.initial);
+            let before = runtime.encode_timer_save_block();
+            runtime.begin_guard(ScriptCodeOffset::new(0x100));
+            runtime.begin_guard(ScriptCodeOffset::new(0x180));
+            runtime.query_mode = query;
+            let control = runtime
+                .apply_instruction(&instruction, &mut BloodPrng::default())
+                .unwrap();
+            assert_eq!(
+                matches!(control, ScriptControl::Jump(_)),
+                case.branch_taken,
+                "{case:?}"
+            );
+            let cursor = match control {
+                ScriptControl::Jump(target) => target.index(),
+                ScriptControl::Continue => 0x40 + token.encoded_bytes().len() - 1,
+            };
+            assert_eq!(cursor, case.cursor, "{case:?}");
+            assert_eq!(runtime.query_mode(), case.flags_after & 1 != 0, "{case:?}");
+            assert_eq!(runtime.guard_depth(), case.guard_depth, "{case:?}");
+            let mut expected = before;
+            let offset = usize::from(case.slot) * 2;
+            expected[offset..offset + 2].copy_from_slice(&case.final_state.to_le_bytes());
+            assert_eq!(runtime.encode_timer_save_block(), expected, "{case:?}");
+        }
+    }
+
+    #[test]
     fn jumps_and_timer_slots_match_original_vectors_in_the_flat_domain() {
         let jumps: Vec<JumpOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_65db_natural.json"

@@ -11,7 +11,12 @@ For the current integration-review findings, verification limits, and ordered
 completion gates, see [the fidelity completion plan](../../docs/fidelity-completion-plan.md)
 and [the source/test inventory](../../docs/fidelity-inventory-2026-09-04.md).
 
-All 521 recovered native routines are accounted for by the checked coverage
+These ledgers cover Commander Blood, not complete Big Bug Bang native or VM
+parity. BBB has changed executable/module code and additional handlers; its
+source-first completion obligations are tracked in
+[the BBB port document](../../docs/big-bug-bang-port.md#source-first-completion-gate).
+
+All 521 recovered Commander Blood native routines are accounted for by the checked coverage
 ledgers: 474 routines have documented complete Rust implementations and 47 DOS
 memory, hardware, or authored no-operation adapters have documented
 eliminations. No recovered routine remains partially translated. The coverage

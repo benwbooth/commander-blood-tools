@@ -38,6 +38,49 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Source-First Completion Gate
+
+The current priority is complete native-source and VM-logic coverage before
+the user resumes manual testing. Route replays below are regression evidence,
+not a substitute for this gate. The CB ledger's 521 recovered routines do not
+constitute a BBB routine inventory or prove inherited handlers unchanged.
+
+Outstanding coverage work includes BBB-specific native routine ownership and
+comparison, the changed AMER/CROOLIS modules, inherited VM handler semantics,
+editable source recovery for all 17 COD profiles, and SCRIPT2 BAS execution
+and ownership. Modern typed COD decoding and English text coverage alone do
+not close these obligations. The legacy editable-source compiler still uses
+CB descriptors; raw byte continuations are not completed BBB script ports.
+
+The inherited A5 handler at BBB `0x6B07..0x6B28` has the same instruction
+structure as CB `0x65EB`, with relocated globals and timer storage. The
+`big_bug_bang_timer_oracle.py` harness executes its original bytes together
+with the failure helper at `0x697A..0x6993`. Its 3,072 cases cover every owned
+timer slot, query-flag combinations and zero/signed-boundary state values,
+with separate GS globals, SS state and DS script allocations. Instruction
+and write-range assertions reject unexpected execution or state changes.
+The Rust test compares BBB token decoding, cursor, full saved timer block,
+query state and guard depth. Negative signed indices are outside the typed
+timer domain and are not claimed as covered. This is one inherited-handler
+comparison, not complete VM parity.
+
+### Izwalito's Treaty Purchase
+
+`bbb_izwalito_treaty.tsv` continues from the earned Help save, answers Yes,
+accepts the treaty offer, cancels the GIVE menu and saves from the unblocked
+bridge. `izwalito_treaty_purchase_survives_save_and_fresh_process_load` passed
+in 193.96 seconds, requiring rendered Accept/Refuse and treaty inventory
+labels, precisely one credit spent, retained prior inventory, and a fresh
+process restoring the treaty without rewriting either save file.
+
+The original SCRIPT4 subtracts the credit at `0x34CF` and transfers treaty
+record `0x1E38` at `0x34E6`. No runtime behavior change was needed for this
+route. Evidence is in
+`output/fidelity/bbb-izwalito-treaty-save-1788923108216766608-1036958-0` and
+`output/fidelity/bbb-izwalito-treaty-load-1788923285195158501-1036958-1`.
+This verification preceded the source-first priority change; it does not
+establish later treaty use or a complete playthrough.
+
 ### Izwalito's Help Conversation
 
 The first Vulcan visit after migration reveals Izwalito as a life form and
