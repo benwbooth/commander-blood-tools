@@ -18,7 +18,9 @@ conversation branches and broader progression remain unverified. These routes
 do not establish a complete playthrough. A later earned-inventory route now
 reaches Daddy's GIVE menu, transfers writing to him, receives the intelligence
 acknowledgement, returns to navigation, and saves/restores that ownership in a
-fresh process. Later migration, trades, and endgame remain unverified. English COD display
+fresh process. Honk's accelerated mutation, the Internet League puzzle, and
+saving/reloading the multiplexer reward are now verified too. Ordinary
+migration, later trades, and endgame remain unverified. English COD display
 catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
 captions, inventory labels, and DESCRIPT location captions also have English
 display mappings, but live coverage of these surfaces is incomplete. The
@@ -28,6 +30,63 @@ separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is rec
 state before the implementation below.
 
 ## Verified Implementation
+
+### Internet Access and Mutation Puzzle
+
+The actual Internet entry is in the second console row's remote-contact list:
+open at logical `(230, 104)`, then select `internet` (record 3) at `(100, 94)`.
+`bbb_mutation_remote_contacts.tsv` verifies the available contact from the
+earned mutation checkpoint; its retained capture is
+`output/big-bug-bang/mutation-remote-sOYaOMpy`.
+
+First contact does not immediately offer the League puzzle. SCRIPT2's authored
+visit-count branch at `0x4ED6` compares Internet's `0x80` field against one,
+publishes `Wouldn't you prefer TV, Commander?`, clears the contact, grants the
+decoder, and requests the advertisement sequence. The live capture
+`internet-call-y6NnVh39` shows that branch and `SQ\\decodeur.hnm`, then returns
+to the bridge. Its input file is retained as `scenario.tsv`.
+
+Calling Internet again reaches the Interslimic Genetic Mutation League and
+its six-row odd-one-out puzzle. `bbb_mutation_internet.tsv` captures both
+calls without bypassing any script gate. All six English rows have matching
+rendered text pixels; the inspected screenshot is
+`output/big-bug-bang/internet-recontact-1hZtPaQd/mutation-puzzle.png`.
+The fourth row is `mutant` at logical `(200, 104)`.
+
+Selecting it publishes the reward acknowledgement and makes `optique`
+(the mutation multiplexer) player-owned. This is not yet a safe save point:
+the same call continues to Bernie's `honest`/`shady` riddle. Capture
+`internet-multiplexer-xwHf9pw6` earned the multiplexer but ended at that
+second choice; its attempted save was not accepted. The reward validator
+rejects it because presentation ownership has not been released. The revised
+`bbb_internet_multiplexer_save.tsv` answers `shady` before opening Save.
+
+The full `mutation_and_internet_reward_survive_fresh_loads` graphical test
+passed in 206.82 seconds with optimized binary
+`a99d1efb4c47a6335ee73cf776ad441ff2d4207450e705cae643e7c96a50e499`.
+It starts from the earned writing save, selects Honk's authored `mutation`
+choice, saves, loads that new checkpoint in another process, earns both Internet
+items, completes Bernie's riddle, saves, and loads again. The three captures are:
+
+- `output/fidelity/bbb-mutation-save-1788912645186386474-809228-0`
+- `output/fidelity/bbb-internet-reward-1788912717882326488-809228-1`
+- `output/fidelity/bbb-internet-reward-load-1788912836210828259-809228-2`
+
+The mutation validator requires the original destinations (Daddy on Tromaland,
+Mamy on Loviland, Papy on Templand), writing retained by Daddy, and technology
+and ship transferred to Cyberquizz. The reward validator requires the rendered
+six-choice puzzle, acknowledgement, decoder and multiplexer ownership, and
+an unblocked return. The final process restores the items immediately and
+does not rewrite either save. The saved credits word at VAR `0x1EF2` is one.
+
+The reusable reward checkpoint is the second capture's `writable` directory,
+slot name `abhonkwmi`. BLOOD.SAV SHA-256 is
+`ed5d779a342b9b4ba1cdb647d80585e6a11708a4866971057af88b20b56fdce7`;
+GAME1.SAV is
+`3fb4ae1bd1cb51722ecc5b83ddf68ec24cc34d965a4bed31650409a58627162f`.
+The test accepts `BBB_WRITING_SAVE_DIR` for its earned starting checkpoint.
+These input-only replays add campaign evidence without changing production
+logic or claiming ordinary migration, later quests, or the ending.
 
 ### Numeric Status Menu Audio
 

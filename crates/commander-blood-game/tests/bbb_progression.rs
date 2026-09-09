@@ -9,6 +9,179 @@ mod scenario_artifacts;
 mod scenario_process;
 
 #[test]
+#[ignore = "requires BBB assets, an earned writing save, and a graphical display"]
+fn mutation_and_internet_reward_survive_fresh_loads() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_WRITING_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join("output/big-bug-bang/daddy-writing-save-lWm64gbJ/writable")
+        });
+    let mutation = replay_bbb_from_save(
+        "bbb-mutation-save",
+        "accuracy/scenarios/bbb_honk_mutation_save.tsv",
+        &save,
+    );
+    assert_mutation_trace(&mutation);
+    let reward = replay_bbb_from_save(
+        "bbb-internet-reward",
+        "accuracy/scenarios/bbb_internet_multiplexer_save.tsv",
+        &mutation.parent().unwrap().join("writable"),
+    );
+    assert_internet_reward_trace(&reward, false);
+    let loaded = replay_bbb_from_save(
+        "bbb-internet-reward-load",
+        "accuracy/scenarios/bbb_load_multiplexer_checkpoint.tsv",
+        &reward.parent().unwrap().join("writable"),
+    );
+    assert_internet_reward_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(reward.parent().unwrap().join("writable").join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a mutation-save trace"]
+fn validate_recorded_mutation_save() {
+    assert_mutation_trace(&PathBuf::from(
+        std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"),
+    ));
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to an Internet reward trace"]
+fn validate_recorded_internet_reward() {
+    assert_internet_reward_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        false,
+    );
+}
+
+fn has_location(semantic: &serde_json::Value, name: &str, holder: u64) -> bool {
+    semantic["persistent"]["object_locations"]
+        .as_array()
+        .is_some_and(|objects| {
+            objects
+                .iter()
+                .any(|object| object["name"] == name && object["holder_raw"] == holder)
+        })
+}
+
+fn has_mutation(semantic: &serde_json::Value) -> bool {
+    [
+        ("Daddy_Gluxx", 0x15C8),
+        ("Mamy_Gluxx", 0x14E8),
+        ("Papy_Gluxx", 0x12F0),
+        ("ecriture", 0xC24),
+        ("technologie", 0x6F0),
+        ("vaisseau", 0x6F0),
+    ]
+    .into_iter()
+    .all(|(name, holder)| has_location(semantic, name, holder))
+}
+
+fn assert_mutation_trace(frames: &std::path::Path) {
+    let mut writing = false;
+    let mut choice = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        writing |= has_writing_gift(semantic);
+        choice |= writing
+            && semantic["presentation"]["rendered_word_choices"]
+                == serde_json::json!(["mutation", "deadly_boredom"]);
+        ready = choice && has_mutation(semantic) && main_profile_unblocked(semantic);
+    }
+    assert!(
+        ready,
+        "earned writing did not progress through the mutation choice to the authored destinations and transfers"
+    );
+}
+
+fn assert_internet_reward_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut startup = false;
+    let mut loaded = false;
+    let mut detour = false;
+    let mut puzzle = false;
+    let mut acknowledged = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !loaded && semantic["vm"]["resource_profile"].is_null() {
+            continue;
+        }
+        if !loaded && semantic["vm"]["resource_profile"] == 0 {
+            startup = true;
+            continue;
+        }
+        assert!(startup, "fresh startup not observed");
+        assert_eq!(semantic["vm"]["resource_profile"], 1);
+        assert!(
+            has_mutation(semantic),
+            "mutation checkpoint was not restored or was lost"
+        );
+        let reward_owned =
+            has_location(semantic, "optique", 65535) && has_location(semantic, "decodeur", 65535);
+        if fresh_load {
+            assert!(
+                reward_owned,
+                "saved decoder and multiplexer were not restored immediately"
+            );
+        } else if !loaded {
+            assert!(
+                !has_location(semantic, "optique", 65535),
+                "reward must be earned during this replay"
+            );
+        }
+        loaded = true;
+        let presentation = &semantic["presentation"];
+        detour |= semantic["video"]["active_resource"] == "SQ\\decodeur.hnm";
+        let rows = presentation["retained_word_choice"]["rows"].as_array();
+        puzzle |= detour
+            && presentation["active_actor_presentation"]["name"] == "internet"
+            && presentation["rendered_word_choices"]
+                == serde_json::json!([
+                    "intruder", "intruder", "intruder", "mutant", "intruder", "intruder"
+                ])
+            && presentation["retained_word_choice"]["phase"] == "Selecting"
+            && rows.is_some_and(|rows| {
+                rows.len() == 6
+                    && rows.iter().all(|row| {
+                        row["matching_text_pixels"]
+                            .as_u64()
+                            .is_some_and(|pixels| pixels > 0)
+                    })
+            });
+        acknowledged |= puzzle
+            && presentation["inline_menu"]["display_words"]
+                == serde_json::json!([
+                    "Bravo...",
+                    "We're",
+                    "sending",
+                    "you",
+                    "the",
+                    "mutation",
+                    "multiplexer..."
+                ]);
+        ready = reward_owned && main_profile_unblocked(semantic);
+    }
+    assert!(
+        loaded && ready,
+        "Internet reward did not survive an unblocked return/load"
+    );
+    assert!(
+        fresh_load || (puzzle && acknowledged),
+        "rendered League puzzle and reward acknowledgement not observed"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned mutation save, and a graphical display"]
 fn mutation_checkpoint_numeric_status_menu_continues() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
