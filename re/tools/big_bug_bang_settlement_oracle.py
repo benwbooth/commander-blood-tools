@@ -112,7 +112,8 @@ def fixture():
     return state, bytes(directory)
 
 
-def run(executable, name, state, directory, group=1, countdown=0, query=0, override=0, attack_rate=None):
+def run(executable, name, state, directory, group=1, countdown=0, query=0, override=0, attack_rate=None,
+        bindings=None):
     conflict = attack_rate is not None
     token = struct.pack("<BHH", 0xD4, group, attack_rate) if conflict else struct.pack("<BH", 0xD5, group)
     machine = Uc(UC_ARCH_X86, UC_MODE_16)
@@ -122,8 +123,11 @@ def run(executable, name, state, directory, group=1, countdown=0, query=0, overr
     globals_before = bytearray(32768)
     struct.pack_into("<HH", globals_before, VAR_POINTER, 0, STATE_SEGMENT)
     struct.pack_into("<HH", globals_before, DIRECTORY_POINTER, 0, DIRECTORY_SEGMENT)
-    for offset, value in [(ARCHETYPE, ARCHE), (HONK, HONK_ACTOR), (EXCLUDED_DESTINATION, ARK_LOCATION),
-                          (EXCLUDED_SOURCE, TRASH), (COUNTDOWN, countdown)]:
+    if bindings is None:
+        bindings = {ARCHETYPE: ARCHE, HONK: HONK_ACTOR,
+                    EXCLUDED_DESTINATION: ARK_LOCATION, EXCLUDED_SOURCE: TRASH}
+    assert set(bindings) == {ARCHETYPE, HONK, EXCLUDED_DESTINATION, EXCLUDED_SOURCE}
+    for offset, value in [*bindings.items(), (COUNTDOWN, countdown)]:
         word(globals_before, offset, value)
     globals_before[QUERY_MODE] = query
     globals_before[RANGE_OVERRIDE] = override
@@ -232,15 +236,40 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("executable", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--save", type=Path, help="earned original BBB save; output contains local game data")
+    parser.add_argument("--directory", type=Path, help="original SCRIPT1.DEB for --save")
+    parser.add_argument("--group", type=lambda value: int(value, 0), default=16)
     args = parser.parse_args()
     executable = args.executable.read_bytes()
     if hashlib.sha256(executable).hexdigest() != EXECUTABLE_SHA256:
         raise SystemExit("unsupported BLOOD2PG.EXE build; refusing fixed-offset oracle")
-    results = list(vectors(executable))
-    assert set().union(*(set(item["native_handlers_called"]) for item in results)) == set(HANDLER_ENTRIES)
+    if bool(args.save) != bool(args.directory):
+        parser.error("--save and --directory must be supplied together")
+    if not 0 <= args.group <= 65535:
+        parser.error("--group must fit an unsigned word")
+    if args.save:
+        saved = args.save.read_bytes()
+        # Pinned BBB save layout: profile, 512 timer bytes, 96 sequence bytes, VAR.
+        if len(saved) < 610 + 8368 or struct.unpack_from("<H", saved)[0] >= 17:
+            parser.error("truncated or invalid original BBB save")
+        directory = args.directory.read_bytes()
+        names = {name.split(b"\0")[0]: offset for name, offset, kind
+                 in struct.iter_unpack("<16sHH", directory) if kind == 1}
+        bindings = {field: names[name] for field, name in [
+            (ARCHETYPE, b"arche"), (HONK, b"Honk"),
+            (EXCLUDED_DESTINATION, b"Arche"), (EXCLUDED_SOURCE, b"Trashlando")]}
+        result = run(executable, "earned_save_settlement", saved[610:610 + 8368], directory,
+                     group=args.group, bindings=bindings)
+        result["save_sha256"] = hashlib.sha256(saved).hexdigest()
+        result["directory_sha256"] = hashlib.sha256(directory).hexdigest()
+        results = [result]
+    else:
+        results = list(vectors(executable))
+        assert set().union(*(set(item["native_handlers_called"]) for item in results)) == set(HANDLER_ENTRIES)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("".join(json.dumps(item, separators=(",", ":")) + "\n" for item in results))
-    print(f"wrote {len(results)} native settlement cases covering all {len(HANDLER_ENTRIES)} handler/helper entries")
+    covered = set().union(*(set(item["native_handlers_called"]) for item in results))
+    print(f"wrote {len(results)} native settlement cases covering {len(covered)} handler/helper entries")
 
 
 if __name__ == "__main__":

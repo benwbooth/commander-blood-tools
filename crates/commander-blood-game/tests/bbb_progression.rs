@@ -9,6 +9,186 @@ mod scenario_artifacts;
 mod scenario_process;
 
 #[test]
+#[ignore = "requires BBB assets, an earned food-purchase save, and a graphical display"]
+fn izwal_migration_survives_save_and_fresh_process_load() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_FOOD_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace
+                .join("output/fidelity/bbb-marakas-food-save-1788918507683083392-895506-0/writable")
+        });
+    let migrated = replay_bbb_from_save(
+        "bbb-izwal-migration-save",
+        "accuracy/scenarios/bbb_izwal_migration.tsv",
+        &save,
+    );
+    assert_izwal_migration_trace(&migrated, false);
+    let writable = migrated.parent().unwrap().join("writable");
+    let loaded = replay_bbb_from_save(
+        "bbb-izwal-migration-load",
+        "accuracy/scenarios/bbb_load_zen_checkpoint.tsv",
+        &writable,
+    );
+    assert_izwal_migration_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(writable.join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a completed Izwal migration"]
+fn validate_recorded_izwal_migration() {
+    assert_izwal_migration_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        false,
+    );
+}
+
+fn assert_izwal_migration_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut loaded = false;
+    let mut menu = false;
+    let mut given = false;
+    let mut migrated = false;
+    let mut saved = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !loaded && semantic["vm"]["resource_profile"] != 1 {
+            continue;
+        }
+        let settled =
+            has_location(semantic, "Izwalito", 0x1328) && has_location(semantic, "Tequila", 0x1328);
+        let optics_given = has_location(semantic, "optique", 0x612);
+        if !loaded {
+            assert_eq!(settled, fresh_load, "wrong initial migration state");
+            assert_eq!(optics_given, fresh_load, "wrong initial optics owner");
+        }
+        loaded = true;
+        for (name, holder) in [
+            ("Daddy_Gluxx", 0x15c8),
+            ("Mamy_Gluxx", 0x14e8),
+            ("Papy_Gluxx", 0x12f0),
+            ("technologie", 0x6f0),
+            ("vaisseau", 0x6f0),
+        ] {
+            assert!(has_location(semantic, name, holder), "moved {name}");
+        }
+        // SCRIPT4's Platon interlude transfers writing through the cryobox to Marakas.
+        assert!(
+            [0xc24, 65535, 0x612]
+                .into_iter()
+                .any(|holder| has_location(semantic, "ecriture", holder))
+        );
+        assert!(has_location(semantic, "Marakas", 0x1478));
+        for name in ["guitare", "parfum", "decodeur", "energie"] {
+            assert!(has_location(semantic, name, 65535), "lost {name}");
+        }
+        let p = &semantic["presentation"];
+        menu |= p["active_actor_presentation"]["name"] == "Marakas"
+            && p["rendered_word_choices"]
+                == serde_json::json!(["guitar", "perfume", "decoder", "optics", "energy"])
+            && p["retained_word_choice"]["phase"] == "Selecting"
+            && p["retained_word_choice"]["rows"]
+                .as_array()
+                .is_some_and(|rows| {
+                    rows.len() == 6
+                        && rows[5]["kind"] == "Cancel"
+                        && rows
+                            .iter()
+                            .all(|row| row["matching_text_pixels"].as_u64().is_some_and(|n| n > 0))
+                });
+        if optics_given {
+            assert!(
+                fresh_load || menu,
+                "optics transferred before the visible gift menu"
+            );
+            given = true;
+        } else {
+            assert!(!given, "optics gift was lost");
+        }
+        if settled {
+            assert!(given, "migration preceded the optics gift");
+            migrated = true;
+        } else {
+            assert!(!migrated, "migration destinations changed unexpectedly");
+        }
+        ready = main_profile_unblocked(semantic) && p["pending_presentation_owner"].is_null();
+        saved |= semantic["save_load"]["completed_saves"]
+            .as_u64()
+            .is_some_and(|n| n > 0);
+    }
+    assert!(
+        loaded && given && migrated && ready,
+        "migration did not finish at an unblocked bridge"
+    );
+    assert!(fresh_load || saved, "migration was not saved");
+}
+
+#[test]
+#[ignore = "requires BBB_SETTLEMENT_ORACLE from the earned-save native oracle"]
+fn earned_save_settlement_matches_original_executable() {
+    use commander_blood_formats::code::ScriptDialect;
+    use commander_blood_formats::instruction::ScriptSequelSettlementOperation;
+    use commander_blood_formats::script::{
+        decode_script_directory, decode_script_state_for_dialect,
+    };
+    use commander_blood_game::native::bloodprg::{
+        SequelSettlementContext, SequelSettlementState, SequelSimulationContext,
+        apply_sequel_settlement,
+    };
+    let bytes = fs::read(std::env::var_os("BBB_SETTLEMENT_ORACLE").expect("BBB_SETTLEMENT_ORACLE"))
+        .unwrap();
+    let vector: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let field_bytes =
+        |name: &str| -> Vec<u8> { serde_json::from_value(vector[name].clone()).unwrap() };
+    let directory = decode_script_directory(&field_bytes("directory")).unwrap();
+    let before = field_bytes("state_before");
+    let after = field_bytes("state_after");
+    assert_ne!(before, after, "oracle did not exercise a settlement");
+    let mut state =
+        decode_script_state_for_dialect(&before, &directory, ScriptDialect::BigBugBang).unwrap();
+    let token = field_bytes("token");
+    assert_eq!(token.len(), 3);
+    assert_eq!(token[0], 0xd5);
+    let context = SequelSettlementContext {
+        simulation: SequelSimulationContext {
+            countdown: serde_json::from_value(vector["countdown"].clone()).unwrap(),
+            excluded_location: directory.find_active_object(b"Trashlando").unwrap(),
+        },
+        arche: directory.find_active_object(b"arche").unwrap(),
+        excluded_destination: directory.find_active_object(b"Arche").unwrap(),
+        honk: directory.find_active_object(b"Honk").unwrap(),
+    };
+    let mut simulation = SequelSettlementState {
+        range_override_active: vector["range_override_before"] != 0,
+    };
+    apply_sequel_settlement(
+        ScriptSequelSettlementOperation {
+            group_mask: u16::from_le_bytes([token[1], token[2]]),
+        },
+        context,
+        &mut simulation,
+        &mut state,
+    )
+    .unwrap();
+    assert_eq!(
+        state.encode(),
+        after,
+        "Rust settlement differs from the original handler on earned state"
+    );
+    assert_eq!(
+        u8::from(simulation.range_override_active),
+        vector["range_override_after"]
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned Izwal save, and a graphical display"]
 fn marakas_food_purchase_survives_save_and_fresh_process_load() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");

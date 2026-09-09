@@ -24,8 +24,10 @@ are now verified too. Super Zen's cryobox wake-up, second-contact teleport,
 and fresh-load persistence of all three Zen destinations are verified. Izwal
 creation, its immediate guild-code continuation, and save/load persistence of
 Izwalito, Marakas and Tequila on Spiraland are also verified. Marakas's food
-purchase, its one-credit cost, and fresh-load persistence are verified. Ordinary
-migration, later trades, and endgame remain unverified. English COD display
+purchase, its one-credit cost, and fresh-load persistence are verified. Giving
+Marakas optics now has verified first-migration and save/load coverage for
+Izwalito and Tequila on Vulcland. Further migration, later trades, and endgame
+remain unverified. English COD display
 catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
 captions, inventory labels, and DESCRIPT location captions also have English
 display mappings, but live coverage of these surfaces is incomplete. The
@@ -35,6 +37,67 @@ separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is rec
 state before the implementation below.
 
 ## Verified Implementation
+
+### Earned-State Settlement Oracle
+
+The native D5 oracle now accepts `--save GAME1.SAV --directory SCRIPT1.DEB
+--group 16`. This binds the original named objects from the directory and feeds
+the saved VAR bytes to the unchanged original handler and its seven helpers.
+It is a direct handler experiment, not proof that the script's D5 gate has
+been satisfied. Generated results contain local game data and remain under
+`output/`, outside the repository's committed fixtures.
+
+On the earned food-purchase save, the original handler leaves Marakas on
+Spiraland and moves Izwalito and Tequila to Vulcland. The new ignored regression
+`earned_save_settlement_matches_original_executable`, supplied that output via
+`BBB_SETTLEMENT_ORACLE`, verifies the entire resulting VAR byte-for-byte
+against Rust and requires an actual state change. The 100 synthetic settlement
+and 124 conflict cases regenerate unchanged after adding this input mode.
+
+The normal gameplay gate is SCRIPT2 `0x1610`: counter `0x1FEC > 0` enables
+group-16 settlement. Marakas's optics response at SCRIPT4 `0x1B61` increases
+relief and sets this counter to one at `0x1B86`. This is an ordinary gift path,
+not a direct simulation-state edit. His recontact food sequence includes native
+CD transfers back to Marakas (`0x125C` or `0x14F2`), so food ownership may change
+before the repeat purchase offer. Refusing that offer leaves the five-item GIVE
+menu; giving optics opens another GIVE menu with four items and Cancel.
+
+`bbb_izwal_migration.tsv` enables Travel, restores the forward view, approaches
+the already-current Spiralus, refuses the repeat purchase, gives optics,
+cancels GIVE, waits for ordinary settlement and saves. Clicking Spiralus on the
+chart is intentionally ignored when it is the current planet; that behavior
+must not be confused with a broken travel handler.
+
+`izwal_migration_survives_save_and_fresh_process_load` passed in 143.16 seconds.
+It requires rendered gift rows, optics ownership by Marakas before migration,
+both descendants on the native-predicted Vulcland, an unblocked final bridge,
+a completed save, immediate persistence in a fresh process, and byte-identical
+save files after loading. The writing item is allowed to pass through the
+authored Platon sequence to Marakas (`0x11DE`, `0x1277`); an initial test wrongly
+treated its old Daddy ownership as permanent. No production change was needed.
+The gift-only capture `output/big-bug-bang/izwal-optics-gift` is rejected for
+not completing migration and returning to the bridge.
+
+Passing save artifacts:
+`output/fidelity/bbb-izwal-migration-save-1788919669277150183-937814-0`.
+Fresh-load artifacts:
+`output/fidelity/bbb-izwal-migration-load-1788919796220936127-937814-1`.
+`BLOOD.SAV` SHA-256:
+`f57ba4a59e8339b49e9229bf73b53417f9d468406ed144ac477fd16e715636df`.
+`GAME1.SAV` SHA-256:
+`07f03fa349766fb4caf8717efdb7de37774ae2a51ae47c8f071de26fedc2c3d8`.
+Override the input checkpoint with `BBB_FOOD_SAVE_DIR`. Reproduce the separate
+native comparison with:
+
+```sh
+nix develop -c python -P re/tools/big_bug_bang_settlement_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE output/big-bug-bang/earned-settlement.jsonl \
+  --save output/fidelity/bbb-marakas-food-save-1788918507683083392-895506-0/writable/GAME1.SAV \
+  --directory output/big-bug-bang/izwal-optics-gift/writable/SCRIPT1.DEB --group 16
+BBB_SETTLEMENT_ORACLE=output/big-bug-bang/earned-settlement.jsonl \
+  nix develop -c cargo test --release -p commander-blood-game --test bbb_progression \
+  earned_save_settlement_matches_original_executable -- --ignored --exact
+```
 
 ### Marakas Food Purchase
 
