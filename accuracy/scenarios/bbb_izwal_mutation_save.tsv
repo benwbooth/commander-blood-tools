@@ -1,0 +1,37 @@
+# Load the Zen teleport checkpoint, create Izwal through Metagluk, and save.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 115
+wait 10
+click 100 43
+wait 60
+park 4 45
+wait 10
+click 230 136
+wait 150
+click 200 94
+wait 200
+click 200 104
+wait 200
+click 200 94
+wait 200
+click 180 93
+wait 100
+click 180 98
+wait 200
+click 200 115
+wait 300
+park 4 45
+wait 10
+click 230 152
+wait 40
+click 100 104
+wait 10
+key 23 105
+key 28 13
+wait 20

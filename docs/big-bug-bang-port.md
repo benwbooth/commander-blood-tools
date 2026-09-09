@@ -21,7 +21,9 @@ acknowledgement, returns to navigation, and saves/restores that ownership in a
 fresh process. Honk's accelerated mutation, the Internet League puzzle, and
 saving/reloading the multiplexer reward, and creating/saving/reloading Super Zen
 are now verified too. Super Zen's cryobox wake-up, second-contact teleport,
-and fresh-load persistence of all three Zen destinations are verified. Ordinary
+and fresh-load persistence of all three Zen destinations are verified. Izwal
+creation, its immediate guild-code continuation, and save/load persistence of
+Izwalito, Marakas and Tequila on Spiraland are also verified. Ordinary
 migration, later trades, and endgame remain unverified. English COD display
 catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
 captions, inventory labels, and DESCRIPT location captions also have English
@@ -32,6 +34,45 @@ separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is rec
 state before the implementation below.
 
 ## Verified Implementation
+
+### Izwal Creation and Guild Continuation
+
+From the earned Zen teleport save, the ordinary Metagluk route accepts `5`
+and `GO` at the two Izwal prompts. SCRIPT2.COD's AF instructions at
+`0x441F`, `0x4424` and `0x4429` place Tequila, Izwalito and Marakas at holder
+`0x1478` (Spiraland, record 87). The next authored procedure immediately asks
+for another code; selecting `code` completes the GAK membership dialogue and
+returns to the bridge. No runtime changes or edited progression data were
+needed for this route.
+
+`izwal_mutation_survives_save_and_fresh_process_load` passed in 106.75 seconds
+with the same optimized runtime binary recorded below. It checks the rendered
+command/run/numeric/word menus, accepted Izwal code, guild continuation, all
+three Spiraland destinations, retention of earlier mutation/Zen/Internet state,
+an unblocked bridge, ordinary save, immediate restoration in a fresh process,
+and unchanged save-file bytes after load. A subsequently tightened validator
+also passed the retained trace with the full guild acceptance message required.
+The ordinary integration suite passed six support tests; 25 asset/display tests
+remain opt-in, not implicitly covered by that suite invocation.
+
+Retained captures:
+
+- `output/fidelity/bbb-izwal-mutation-save-1788915140825347076-835837-0`
+- `output/fidelity/bbb-izwal-mutation-load-1788915231906564675-835837-1`
+
+The first capture's `writable` directory is the next earned checkpoint.
+BLOOD.SAV SHA-256:
+`7cd0a6f7986325bf33f74511c546266141ecab6d178ee2e5dd1ded8f231a3b87`;
+GAME1.SAV SHA-256:
+`7b844398f96728584b08f73fb9ebc265c69298b572daa584b81c3ecd288be25d`.
+The seed can be overridden with `BBB_ZEN_TELEPORT_SAVE_DIR`.
+
+The initial `output/big-bug-bang/izwal-mutation-ADPIbzos` replay stopped at the
+guild code prompt: all three actors had moved, but Save had not run. The
+validator rejects that trace, and its original inputs are retained as
+`scenario.tsv`. This was incomplete replay input, not an established runtime
+failure. These checks do not establish migration, later quests, endgame, or
+original-game visual parity.
 
 ### Super Zen Cryobox Teleport
 
