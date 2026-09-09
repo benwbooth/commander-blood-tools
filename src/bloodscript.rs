@@ -471,7 +471,16 @@ pub fn decompile_with_symbols(
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
 ) -> Result<Decompilation> {
-    decompile_mode(kind, image, dictionary, symbols, false, None)
+    decompile_mode(kind, image, dictionary, symbols, false, None, false)
+}
+
+/// Recover BBB COD statements without pretending CB-only structured ownership
+/// and BAS recovery have already been verified for the sequel.
+pub fn decompile_big_bug_bang_cod(
+    image: &[u8],
+    dictionary: &HashMap<u16, String>,
+) -> Result<Decompilation> {
+    decompile_mode(ImageKind::Cod, image, dictionary, &[], false, None, true)
 }
 
 pub fn decompile_structured_with_symbols(
@@ -480,7 +489,7 @@ pub fn decompile_structured_with_symbols(
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
 ) -> Result<Decompilation> {
-    decompile_mode(kind, image, dictionary, symbols, true, None)
+    decompile_mode(kind, image, dictionary, symbols, true, None, false)
 }
 
 pub fn decompile_structured_cod_with_symbols(
@@ -489,7 +498,15 @@ pub fn decompile_structured_cod_with_symbols(
     dictionary: &HashMap<u16, String>,
     symbols: &[DebSymbol],
 ) -> Result<Decompilation> {
-    decompile_mode(ImageKind::Cod, image, dictionary, symbols, true, Some(var))
+    decompile_mode(
+        ImageKind::Cod,
+        image,
+        dictionary,
+        symbols,
+        true,
+        Some(var),
+        false,
+    )
 }
 
 pub fn decompile_structured_bas_with_symbols(
@@ -509,6 +526,7 @@ fn decompile_mode(
     symbols: &[DebSymbol],
     structured: bool,
     var: Option<&[u8]>,
+    sequel: bool,
 ) -> Result<Decompilation> {
     let mut source = String::new();
     writeln!(source, "; BloodScript typed VM source")?;
@@ -525,7 +543,15 @@ fn decompile_mode(
     writeln!(source)?;
 
     let stats = match kind {
-        ImageKind::Cod => decompile_cod(&mut source, image, dictionary, symbols, structured, var)?,
+        ImageKind::Cod => decompile_cod(
+            &mut source,
+            image,
+            dictionary,
+            symbols,
+            structured,
+            var,
+            sequel,
+        )?,
         ImageKind::Bas => decompile_bas(&mut source, image, dictionary, &[], None, None)?,
     };
     let source = format_modern_source(&source, dictionary)?;
@@ -1689,6 +1715,13 @@ fn normalize_modern_statement(
             bail!("line {line_number}: case must be used as a selector block opener")
         }
         "say" => normalize_modern_say(&fields, line_number, lexicon),
+        "text_tokens"
+            if fields
+                .get(2)
+                .is_some_and(|field| field.starts_with("presentation=")) =>
+        {
+            normalize_modern_say(&fields, line_number, lexicon)
+        }
         "text" | "text_tokens" => normalize_modern_text(&fields, line_number),
         "queue" => {
             if fields.len() != 3 || fields[1] != "presentation" {
@@ -1747,12 +1780,12 @@ fn normalize_modern_statement(
         }
         "run" => {
             if fields.len() != 3 || fields[1] != "profile" {
-                bail!("line {line_number}: expected 'run profile SCRIPT1..SCRIPT5'");
+                bail!("line {line_number}: expected 'run profile SCRIPT1..SCRIPT17'");
             }
             let profile = fields[2]
                 .strip_prefix("SCRIPT")
                 .and_then(|value| value.parse::<u8>().ok())
-                .filter(|value| (1..=5).contains(value))
+                .filter(|value| (1..=17).contains(value))
                 .ok_or_else(|| anyhow!("line {line_number}: invalid profile {:?}", fields[2]))?;
             Ok(format!("RUN_PROFILE {profile:02X}"))
         }
@@ -1891,7 +1924,7 @@ fn normalize_modern_statement(
             {
                 return Ok(statement);
             }
-            if fields.len() == 3 && matches!(fields[1], "=" | "+=" | "-=") {
+            if fields.len() == 3 && matches!(fields[1], "=" | "+=" | "-=" | "*=" | "/=") {
                 return normalize_modern_shared_expression(&fields, false, line_number);
             }
             let canonical_name = if command == "halt" {
@@ -2295,6 +2328,8 @@ fn normalize_modern_shared_expression(
         (false, "=") => "F5",
         (false, "+=") => "F6",
         (false, "-=") => "F7",
+        (false, "*=") => "F8",
+        (false, "/=") => "F9",
         _ => bail!(
             "line {line_number}: operator {:?} is not valid for a {} expression",
             fields[1],
@@ -2311,6 +2346,16 @@ fn modern_shared_target_to_canonical(
     value: &str,
     line_number: usize,
 ) -> Result<(&'static str, String)> {
+    for (name, opcode) in [
+        ("state_b1", "B1"),
+        ("state_b5", "B5"),
+        ("state_b6", "B6"),
+        ("state_be", "BE"),
+    ] {
+        if let Some(inner) = bracketed_operand(value, name) {
+            return Ok((opcode, modern_operand_to_canonical(inner, line_number)?));
+        }
+    }
     if let Some(inner) = bracketed_operand(value, "state") {
         return Ok(("C0", modern_operand_to_canonical(inner, line_number)?));
     }
@@ -2426,7 +2471,8 @@ fn normalize_modern_say(
     line_number: usize,
     lexicon: &DictionaryPhraseLexicon,
 ) -> Result<String> {
-    if fields.len() < 5 {
+    let token_payload = fields.first() == Some(&"text_tokens");
+    if fields.len() < if token_payload { 4 } else { 5 } {
         bail!(
             "line {line_number}: say expects OBJECT, presentation=LINE, ':', and a quoted phrase"
         );
@@ -2435,7 +2481,7 @@ fn normalize_modern_say(
         .iter()
         .position(|field| *field == ":")
         .ok_or_else(|| anyhow!("line {line_number}: expected ':' before dialogue phrase"))?;
-    if separator + 1 >= fields.len() {
+    if !token_payload && separator + 1 >= fields.len() {
         bail!("line {line_number}: say has no quoted phrase");
     }
 
@@ -2461,6 +2507,8 @@ fn normalize_modern_say(
                 bail!("line {line_number}: presentation line is outside the selector range");
             }
             presentation = Some(selector as i8 as u8);
+        } else if token_payload && field == "choice_list" {
+            flags_b4 |= 0x40;
         } else if field == "chatter" {
             flags_b4 |= 0x20;
         } else if field == "repeatable" {
@@ -2537,6 +2585,29 @@ fn normalize_modern_say(
     }
     let presentation = presentation
         .ok_or_else(|| anyhow!("line {line_number}: say is missing presentation=LINE"))?;
+
+    if token_payload {
+        let words = fields[separator + 1..]
+            .iter()
+            .map(|value| modern_operand_to_canonical(value, line_number))
+            .collect::<Result<Vec<_>>>()?;
+        if let Some(choice) = recent_choice_requirement {
+            let expected = modern_operand_to_canonical(choice, line_number)?;
+            if !words.ends_with(&["FFFF".to_string(), expected]) {
+                bail!("line {line_number}: recent-choice condition must match the trailing choice");
+            }
+        }
+        let mut args = vec![
+            modern_operand_to_canonical(fields[1], line_number)?,
+            format!("{presentation:02X}"),
+            format!("{flags_b4:02X}"),
+            format!("{flags_b5:02X}"),
+            loop_target.unwrap_or_else(|| "-".to_string()),
+            control_word.unwrap_or_else(|| "-".to_string()),
+        ];
+        args.extend(words);
+        return Ok(format!("TEXT {}", args.join(" ")));
+    }
 
     let phrase: String = serde_json::from_str(fields[separator + 1])
         .map_err(|_| anyhow!("line {line_number}: dialogue phrase must be a quoted string"))?;
@@ -2744,6 +2815,9 @@ fn modern_statement(
                 "presentation={}",
                 crate::vm::dlg_line_id_for_selector(selector)
             )];
+            if !phrase_is_exact && flags_b4 & 0x40 != 0 {
+                modifiers.push("choice_list".to_string());
+            }
             if flags_b4 & 0x20 != 0 {
                 modifiers.push("chatter".to_string());
             }
@@ -3264,6 +3338,11 @@ fn modern_shared_state(args: &[&str], query: bool, line_number: usize) -> Result
         "B4" => modern_typed_shared_target(args[1], ".aggressiveness", "aggressiveness"),
         "BF" => modern_typed_shared_target(args[1], ".encounter_count", "encounter_count"),
         "C0" => format!("state[{}]", canonical_operand_to_modern(args[1])),
+        "B1" | "B5" | "B6" | "BE" => format!(
+            "state_{}[{}]",
+            args[0].to_ascii_lowercase(),
+            canonical_operand_to_modern(args[1])
+        ),
         opcode => bail!(
             "line {line_number}: shared-state opcode 0x{opcode} has not been assigned source semantics"
         ),
@@ -3279,6 +3358,8 @@ fn modern_shared_state(args: &[&str], query: bool, line_number: usize) -> Result
         (false, "F5") => "=",
         (false, "F6") => "+=",
         (false, "F7") => "-=",
+        (false, "F8") => "*=",
+        (false, "F9") => "/=",
         (_, operator) => bail!(
             "line {line_number}: shared-state operator 0x{operator} is invalid in {} mode",
             if query { "query" } else { "update" }
@@ -3612,8 +3693,13 @@ fn decompile_cod(
     symbols: &[DebSymbol],
     structured_source: bool,
     var: Option<&[u8]>,
+    sequel: bool,
 ) -> Result<BodyStats> {
-    let tokens = vm::walk(image, 0, image.len());
+    let tokens = if sequel {
+        vm::walk_big_bug_bang(image, 0, image.len())
+    } else {
+        vm::walk(image, 0, image.len())
+    };
     let annotations = cod_annotations(&tokens, image, symbols)?;
     let structured = if structured_source {
         structured_annotations(analyze_structured_guards("COD", image, symbols)?)
@@ -3694,7 +3780,17 @@ fn decompile_cod(
         }
         emit_structured_ends(output, offset, &structured, &annotations.labels)?;
         emit_directives(output, offset, &annotations)?;
-        if let Some(region) = structured.starts.get(&offset) {
+        let sequel_statement = sequel
+            && matches!(
+                &token,
+                VmToken::Op {
+                    opcode: 0xA2 | 0xD3..=0xD7,
+                    ..
+                }
+            );
+        if sequel_statement {
+            emit_sequel_instruction(output, &token)?;
+        } else if let Some(region) = structured.starts.get(&offset) {
             let false_target = region.else_offset.unwrap_or(region.end);
             writeln!(
                 output,
@@ -3728,11 +3824,12 @@ fn decompile_cod(
                 &mut dictionary_operands,
                 structured.rejected.get(&offset),
                 proven_statements.get(&offset).copied(),
+                sequel,
             )?;
         }
         stats.typed_statements += 1;
         stats.typed_bytes += encoded.len();
-        if matches!(token, VmToken::Op { .. }) {
+        if matches!(token, VmToken::Op { .. }) && !sequel_statement {
             stats.generic_op_statements += 1;
             stats.generic_op_bytes += encoded.len();
         }
@@ -3754,6 +3851,45 @@ fn decompile_cod(
     emit_structured_ends(output, image.len(), &structured, &annotations.labels)?;
     emit_directives(output, image.len(), &annotations)?;
     Ok(stats)
+}
+
+fn emit_sequel_instruction(output: &mut String, token: &VmToken) -> Result<()> {
+    let VmToken::Op {
+        offset,
+        opcode,
+        operands,
+        ..
+    } = token
+    else {
+        bail!("expected sequel instruction");
+    };
+    let word = |index| u16::from_le_bytes([operands[index], operands[index + 1]]);
+    write!(output, "{offset:08X}: ")?;
+    match opcode {
+        0xA2 if operands.len() == 2 => writeln!(output, "RANDOM_GUARD {:04X}", word(0))?,
+        0xD3 if operands.len() == 8 => writeln!(
+            output,
+            "MULTIPLY_DIVIDE {:04X} {:02X} {:04X} {:02X} {:04X}",
+            word(0),
+            operands[2],
+            word(3),
+            operands[5],
+            word(6)
+        )?,
+        0xD4 if operands.len() == 4 => {
+            writeln!(output, "POPULATION_GROWTH {:04X} {:04X}", word(0), word(2))?
+        }
+        0xD5 if operands.len() == 2 => writeln!(output, "SETTLE_DESCENDANTS {:04X}", word(0))?,
+        0xD6 if operands.len() == 4 => writeln!(
+            output,
+            "POPULATION_CONFLICT {:04X} {:04X}",
+            word(0),
+            word(2)
+        )?,
+        0xD7 if operands.is_empty() => writeln!(output, "ENDING")?,
+        _ => bail!("malformed sequel instruction at {offset:#x}"),
+    }
+    Ok(())
 }
 
 fn decompile_bas(
@@ -3868,6 +4004,7 @@ fn decompile_bas(
                         &mut dictionary_operands,
                         None,
                         proven_statements.get(&token.offset()).copied(),
+                        false,
                     )?;
                 }
                 vm_source::BasToken::Yield { .. } => {
@@ -4836,6 +4973,7 @@ fn emit_token(
     dictionary_operands: &mut DictionaryOperandFormatter<'_>,
     guard_rejections: Option<&BTreeSet<GuardRejection>>,
     proven_statement: Option<ProvenStatement>,
+    sequel: bool,
 ) -> Result<()> {
     let offset = token.offset();
     write!(output, "{offset:08X}: ")?;
@@ -4857,8 +4995,18 @@ fn emit_token(
                 optional_address_operand(*loop_target, labels),
                 option_word(*control_word)
             )?;
-            for word in word_offsets {
-                write!(output, " {}", dictionary_operands.operand(*word))?;
+            let mut words = word_offsets.iter();
+            while let Some(word) = words.next() {
+                if sequel && *word == 1 {
+                    let operand = words
+                        .next()
+                        .ok_or_else(|| anyhow!("numeric marker has no VAR operand"))?;
+                    write!(output, " state_number(0x{operand:04X})")?;
+                } else if sequel && *word == 0xFFFE {
+                    write!(output, " inventory_choices")?;
+                } else {
+                    write!(output, " {}", dictionary_operands.operand(*word))?;
+                }
             }
         }
         VmToken::GuardPush { target, .. } => {
@@ -5194,6 +5342,46 @@ fn compile_statement(
     };
     match name {
         "RAW" => return parse_byte_list(args, line, "RAW"),
+        "RANDOM_GUARD" => {
+            require_count(args, 1, line, name)?;
+            output.push(0xA2);
+            word(&mut output, parse_word(args[0], line, "random modulus")?);
+        }
+        "MULTIPLY_DIVIDE" => {
+            require_count(args, 5, line, name)?;
+            output.push(0xD3);
+            word(
+                &mut output,
+                parse_object_address(args[0], objects, line, "target")?,
+            );
+            for pair in args[1..].chunks_exact(2) {
+                output.push(parse_byte(pair[0], line, "operand mode")?);
+                word(
+                    &mut output,
+                    parse_object_address(pair[1], objects, line, "operand")?,
+                );
+            }
+        }
+        "POPULATION_GROWTH" | "POPULATION_CONFLICT" | "SETTLE_DESCENDANTS" => {
+            require_count(
+                args,
+                if name == "SETTLE_DESCENDANTS" { 1 } else { 2 },
+                line,
+                name,
+            )?;
+            output.push(match name {
+                "POPULATION_GROWTH" => 0xD4,
+                "SETTLE_DESCENDANTS" => 0xD5,
+                _ => 0xD6,
+            });
+            for value in args {
+                word(&mut output, parse_word(value, line, "population operand")?);
+            }
+        }
+        "ENDING" => {
+            require_count(args, 0, line, name)?;
+            output.push(0xD7);
+        }
         "END" => {
             require_count(args, 0, line, name)?;
             output.push(0xFF);
@@ -5413,6 +5601,26 @@ fn compile_statement(
                 word(&mut output, value);
             }
             for value in &args[6..] {
+                if let Some(operand) = value
+                    .strip_prefix("state_number(")
+                    .and_then(|v| v.strip_suffix(')'))
+                {
+                    word(&mut output, 1);
+                    word(
+                        &mut output,
+                        parse_object_address(
+                            operand.strip_prefix("0x").unwrap_or(operand),
+                            objects,
+                            line,
+                            "numeric state word",
+                        )?,
+                    );
+                    continue;
+                }
+                if *value == "inventory_choices" {
+                    word(&mut output, 0xFFFE);
+                    continue;
+                }
                 word(
                     &mut output,
                     parse_dictionary_address(

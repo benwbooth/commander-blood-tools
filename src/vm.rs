@@ -1529,6 +1529,15 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
 /// Walk `cod[start..end]` in execution order, yielding tokens. Stops at `end`,
 /// at the `0xFF` end marker, or at the first byte that cannot be a token.
 pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
+    walk_source(cod, start, end, false)
+}
+
+/// Source-tool framing for BBB; this does not enable the retired interpreter.
+pub fn walk_big_bug_bang(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
+    walk_source(cod, start, end, true)
+}
+
+fn walk_source(cod: &[u8], start: usize, end: usize, sequel: bool) -> Vec<VmToken> {
     let end = end.min(cod.len());
     let mut pos = start;
     let mut mode1 = false; // decoder mode (gs:0x67AD); false = mode 0
@@ -1539,17 +1548,22 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
         if op == 0xFF {
             break; // end-of-program marker (executor: `cmp al,0xFF; je end`)
         }
-        if !(OP_MIN..=OP_MAX).contains(&op) {
+        if !(OP_MIN..=if sequel { 0xD7 } else { OP_MAX }).contains(&op) {
             out.push(VmToken::Invalid {
                 offset: pos,
                 byte: op,
             });
             break;
         }
-        let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
+        let (b0, b1) = if sequel && op >= 0xD3 {
+            // BLOOD2PG.EXE file 0x16AEA, hash-pinned by compare_game_discs.py.
+            [(9, 9), (5, 5), (3, 3), (5, 5), (1, 1)][usize::from(op - 0xD3)]
+        } else {
+            OPCODE_DESC[(op - OP_MIN) as usize]
+        };
 
         if op == OP_TEXT {
-            match decode_text(cod, pos, end) {
+            match decode_text_for_source(cod, pos, end, sequel) {
                 Some((tok, next)) => {
                     out.push(tok);
                     pos = next;
@@ -1637,6 +1651,13 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             len = l;
         }
 
+        if sequel && pos + len > end {
+            out.push(VmToken::Invalid {
+                offset: pos,
+                byte: op,
+            });
+            break;
+        }
         if op == OP_PUSH {
             out.push(VmToken::GuardPush {
                 offset: pos,
@@ -1873,6 +1894,15 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
 /// Decode an `0xA6` TEXT token starting at `pos`. Returns the token and the
 /// offset just past it, or `None` if malformed.
 fn decode_text(cod: &[u8], pos: usize, end: usize) -> Option<(VmToken, usize)> {
+    decode_text_for_source(cod, pos, end, false)
+}
+
+fn decode_text_for_source(
+    cod: &[u8],
+    pos: usize,
+    end: usize,
+    sequel: bool,
+) -> Option<(VmToken, usize)> {
     // A6 b1 b2 b3 b4 b5  [loop_target?] [control_word?]  w0 w1 ... 0x0000
     if pos + 6 > end {
         return None;
@@ -1906,6 +1936,11 @@ fn decode_text(cod: &[u8], pos: usize, end: usize) -> Option<(VmToken, usize)> {
             break;
         }
         word_offsets.push(w);
+        if sequel && w == 1 {
+            // BBB's numeric marker consumes a VAR operand even when it is zero.
+            word_offsets.push(read_u16(cod, p)?);
+            p += 2;
+        }
         if word_offsets.len() > 512 || p > end {
             return None;
         }

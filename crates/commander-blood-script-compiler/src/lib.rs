@@ -1,8 +1,8 @@
-//! Narrow in-process compiler API for editable Commander Blood game scripts.
+//! In-process compiler API for editable Commander Blood and BBB game scripts.
 //!
 //! The recovered compiler implementation remains shared with the reverse-
-//! engineering tools. This crate deliberately exposes only the two compilation
-//! entry points needed by the modern game's startup verifier.
+//! engineering tools. Runtime startup uses the profile/DESCRIPT compilers;
+//! source recovery tools can also compile standalone sequel COD programs.
 
 // These shared modules retain the tools crate's lint/test ownership. Re-linting
 // them through this narrow wrapper produces duplicate, context-dependent lints.
@@ -41,3 +41,12 @@ pub use descript_source::compile as compile_descript;
 pub use vm_profile::ProfileImages;
 /// Compile one unified BloodScript source into its five original VM images.
 pub use vm_profile::compile as compile_profile;
+
+/// Source recovery report, including unresolved byte and opcode counts.
+pub use bloodscript::Decompilation;
+/// Compile a standalone BloodScript program, not its companion resource bundle.
+pub use bloodscript::compile_with_dictionary as compile_program;
+/// Recover sequel COD statements with BBB instruction framing.
+pub use bloodscript::decompile_big_bug_bang_cod;
+/// Decode exact CP437 dictionary words for source recovery and recompilation.
+pub use script::parse_dictionary as parse_source_dictionary;

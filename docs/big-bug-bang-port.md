@@ -47,10 +47,11 @@ constitute a BBB routine inventory or prove inherited handlers unchanged.
 
 Outstanding coverage work includes BBB-specific native routine ownership and
 comparison, the changed AMER/CROOLIS modules, inherited VM handler semantics,
-editable source recovery for all 17 COD profiles, and SCRIPT2 BAS execution
-and ownership. Modern typed COD decoding and English text coverage alone do
-not close these obligations. The legacy editable-source compiler still uses
-CB descriptors; raw byte continuations are not completed BBB script ports.
+structured source and companion-resource recovery for all 17 profiles, and
+SCRIPT2 BAS execution and ownership. Modern typed COD decoding and English
+text coverage alone do not close these obligations. The explicit BBB COD
+source path now reproduces all 17 original COD files, as detailed below;
+the default CB walker and retired interpreter have not been switched to BBB.
 
 The inherited A5 handler at BBB `0x6B07..0x6B28` has the same instruction
 structure as CB `0x65EB`, with relocated globals and timer storage. The
@@ -63,6 +64,62 @@ The Rust test compares BBB token decoding, cursor, full saved timer block,
 query state and guard depth. Negative signed indices are outside the typed
 timer domain and are not claimed as covered. This is one inherited-handler
 comparison, not complete VM parity.
+
+### COD Source Recovery and Shared Arithmetic
+
+The source-first pass found a production translation discrepancy that route
+tests had missed. BBB's shared-state handler at `0x744B..0x750A` implements
+operator F8 with unsigned MUL at `0x74DE..0x74EB` and F9 with unsigned DIV
+at `0x74EB..0x74FE`. Rust previously classified both as `PreserveOrFail`.
+The seven dispatch aliases B1/B4/B5/B6/BE/BF/C0 all enter this same handler.
+The recovered corpus contains 57 multiply/divide uses across 12 profiles,
+including the population words of Marakas, Izwalito, Tequila and Daddy.
+
+The formats decoder now selects Multiply/Divide only for the BBB dialect.
+The runtime keeps the low 16 bits of multiplication, performs unsigned
+division, and preserves the target for a zero divisor. Both operations fail
+in query mode without writing VAR. CB decoding retains its previous
+PreserveOrFail classification for these bytes.
+`big_bug_bang_shared_arithmetic_oracle.py` captures 1,728 original-executable
+cases, with instruction/write guards and the real guard-failure helper.
+They cover signed boundaries, zero, truncation, all ordinary comparisons and
+updates, unsupported operators, immediate/indirect modes and aliased operands.
+The Rust regression compares every case through each of the seven opcode
+aliases (12,096 comparisons), checking the full VAR image, cursor, query flag
+and guard depth. The fixture regenerates byte-identically.
+
+The standalone compiler now has an explicit BBB source walker and named
+statements for D3 multiply/divide, D4 population growth, D5 descendant
+settlement, D6 conflict, D7 ending and A2 random guards. Shared-state aliases
+retain their distinct encodings in readable expressions; F8/F9 use `*=` and
+`/=`. Text uses `state_number(0xOFFSET)` and `inventory_choices` instead of
+misclassifying these markers as dictionary words. In particular, a numeric
+operand of zero does not terminate the line, and FFFF/FFFE operands are not
+mistaken for choice markers. Generated `text_tokens` controls now compile
+with their actual emitted grammar, and profile requests support SCRIPT1..17.
+
+All 17 original COD files and their real CP437 dictionaries now pass source
+decompilation/recompilation: **25,530 statements and 241,219 bytes**, with zero
+raw bytes and zero generic opcode statements. The recovery command checks
+these gates and byte identity before writing each local source file:
+
+```sh
+nix develop -c cargo run -p commander-blood-script-compiler --example recover_bbb_cod -- \
+  output/big-bug-bang/imported-assets/resources \
+  output/big-bug-bang/recovered-cod-source
+```
+
+These are standalone editable COD programs, not finished unified profiles.
+They still use numeric state addresses and lack BBB-specific structured
+procedure/field ownership recovery, derived DEB/DIC/VAR rebuilding, BAS source,
+and production startup integration. Byte-identical source compilation does
+not establish complete native behavior or a complete playthrough.
+
+Verification for this checkpoint: all five sequel source tests pass with the
+original resources; all 978 enabled game-library tests pass (59 ignored).
+The release game rebuilt successfully with SHA-256
+`a46494369be248f21626ae562536040c5ccb64415d09387da1403e9997327280`.
+No manual gameplay session was requested or launched for this source-first pass.
 
 ### Izwalito's Treaty Purchase
 

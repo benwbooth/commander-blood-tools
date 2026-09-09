@@ -517,6 +517,10 @@ pub enum ScriptStateOperator {
     Add,
     /// Wrapping subtraction in set mode; query mode fails.
     Subtract,
+    /// BBB wrapping multiplication in set mode; query mode fails.
+    Multiply,
+    /// BBB unsigned division in set mode; zero divisor preserves the word.
+    Divide,
     /// Any other original byte: query mode fails and set mode preserves the word.
     PreserveOrFail(u8),
 }
@@ -1501,6 +1505,8 @@ pub fn decode_script_shared_state_operation(
         0xF5 => ScriptStateOperator::EqualOrAssign,
         0xF6 => ScriptStateOperator::Add,
         0xF7 => ScriptStateOperator::Subtract,
+        0xF8 if token.dialect() == ScriptDialect::BigBugBang => ScriptStateOperator::Multiply,
+        0xF9 if token.dialect() == ScriptDialect::BigBugBang => ScriptStateOperator::Divide,
         other => ScriptStateOperator::PreserveOrFail(other),
     };
     let operand_offset = OPCODE_SIZE + WORD_SIZE + BYTE_SIZE + BYTE_SIZE;

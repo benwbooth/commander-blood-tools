@@ -73,6 +73,7 @@ pub fn apply_multiply_divide_operation(
 }
 
 /// Apply `vm_op_shared_state_marker` to typed object or trailing-state words.
+/// BBB 0x744B adds F8/F9 arithmetic to CB 0x6863; decoding owns that distinction.
 pub fn apply_shared_state_operation(
     operation: ScriptSharedStateOperation,
     state: &mut ScriptState,
@@ -94,6 +95,8 @@ pub fn apply_shared_state_operation(
             ScriptStateOperator::EqualOrAssign => current == operand,
             ScriptStateOperator::Add
             | ScriptStateOperator::Subtract
+            | ScriptStateOperator::Multiply
+            | ScriptStateOperator::Divide
             | ScriptStateOperator::PreserveOrFail(_) => false,
         };
         if passes {
@@ -108,6 +111,8 @@ pub fn apply_shared_state_operation(
             ScriptStateOperator::EqualOrAssign => operand,
             ScriptStateOperator::Add => current.wrapping_add(operand),
             ScriptStateOperator::Subtract => current.wrapping_sub(operand),
+            ScriptStateOperator::Multiply => current.wrapping_mul(operand),
+            ScriptStateOperator::Divide => current.checked_div(operand).unwrap_or(current),
             ScriptStateOperator::NotEqual
             | ScriptStateOperator::LessThan
             | ScriptStateOperator::GreaterThan
@@ -302,6 +307,86 @@ mod tests {
         query_mode_before: u8,
         query_mode_after: u8,
         branch_failed: bool,
+    }
+
+    #[test]
+    fn sequel_shared_arithmetic_matches_original_for_every_dispatch_alias() {
+        use commander_blood_formats::code::{
+            ScriptDialect, ScriptTokenDecoder, decode_script_token,
+        };
+
+        #[derive(Debug, Deserialize)]
+        struct Case {
+            operator: u8,
+            query: u8,
+            token: Vec<u8>,
+            state_before: Vec<u8>,
+            state_after: Vec<u8>,
+            branch_failed: bool,
+            cursor: usize,
+            query_after: u8,
+            guard_depth: usize,
+        }
+        let directory = decode_script_directory(&[]).unwrap();
+        let cases: Vec<Case> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_shared_arithmetic.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(cases.len(), 1728);
+        for case in cases {
+            for opcode in [0xB1, 0xB4, 0xB5, 0xB6, 0xBE, 0xBF, 0xC0] {
+                let mut bytes = case.token.clone();
+                bytes[0] = opcode;
+                let mut decoder = ScriptTokenDecoder::new(ScriptDialect::BigBugBang);
+                if case.query != 0 {
+                    decode_script_token(&[0xA0, 0, 2], ScriptCodeOffset::new(0), &mut decoder)
+                        .unwrap();
+                }
+                let token =
+                    decode_script_token(&bytes, ScriptCodeOffset::new(0), &mut decoder).unwrap();
+                let mut state = decode_script_state(&case.state_before, &directory).unwrap();
+                let operation = decode_script_shared_state_operation(&token, &state).unwrap();
+                let mut runtime = ScriptRuntime::new();
+                runtime.begin_guard(ScriptCodeOffset::new(0x100));
+                runtime.begin_guard(ScriptCodeOffset::new(0x200));
+                if case.query == 0 {
+                    runtime.begin_guard(ScriptCodeOffset::new(0x300));
+                    runtime.end_guard();
+                }
+                let result =
+                    apply_shared_state_operation(operation, &mut state, &mut runtime).unwrap();
+                assert_eq!(
+                    matches!(result, ScriptControl::Jump(_)),
+                    case.branch_failed,
+                    "{case:?}"
+                );
+                let cursor = match result {
+                    ScriptControl::Continue => 0x40 + token.encoded_bytes().len(),
+                    ScriptControl::Jump(target) => target.index(),
+                };
+                assert_eq!(cursor, case.cursor, "{case:?}");
+                assert_eq!(runtime.query_mode(), case.query_after != 0, "{case:?}");
+                assert_eq!(runtime.guard_depth(), case.guard_depth, "{case:?}");
+                assert_eq!(state.encode(), case.state_after, "{case:?}");
+
+                if matches!(case.operator, 0xF8 | 0xF9) {
+                    let token = decode_script_token(
+                        &bytes,
+                        ScriptCodeOffset::new(0),
+                        &mut ScriptTokenDecoder::new(ScriptDialect::CommanderBlood),
+                    )
+                    .unwrap();
+                    assert_eq!(
+                        decode_script_shared_state_operation(&token, &state)
+                            .unwrap()
+                            .operator,
+                        ScriptStateOperator::PreserveOrFail(case.operator)
+                    );
+                }
+            }
+        }
     }
 
     #[derive(Deserialize)]
