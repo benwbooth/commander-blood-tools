@@ -9,6 +9,104 @@ mod scenario_artifacts;
 mod scenario_process;
 
 #[test]
+#[ignore = "requires BBB assets, an earned Super Zen save, and a graphical display"]
+fn zen_teleport_survives_save_and_fresh_process_load() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_ZEN_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace
+                .join("output/fidelity/bbb-zen-mutation-save-1788913743695723224-821950-0/writable")
+        });
+    let teleported = replay_bbb_from_save(
+        "bbb-zen-teleport-save",
+        "accuracy/scenarios/bbb_zen_teleport_save.tsv",
+        &save,
+    );
+    assert_zen_teleport_trace(&teleported, false);
+    let loaded = replay_bbb_from_save(
+        "bbb-zen-teleport-load",
+        "accuracy/scenarios/bbb_load_zen_checkpoint.tsv",
+        &teleported.parent().unwrap().join("writable"),
+    );
+    assert_zen_teleport_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(teleported.parent().unwrap().join("writable").join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a Super Zen teleport trace"]
+fn validate_recorded_zen_teleport() {
+    assert_zen_teleport_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        false,
+    );
+}
+
+fn assert_zen_teleport_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut startup = false;
+    let mut loaded = false;
+    let mut woke = false;
+    let mut returned = false;
+    let mut choice = false;
+    let mut acknowledged = false;
+    let mut ready = false;
+    let mut saved = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        let profile = &semantic["vm"]["resource_profile"];
+        if !loaded && profile.is_null() {
+            continue;
+        }
+        if !loaded && profile == 0 {
+            startup = true;
+            continue;
+        }
+        assert!(startup, "fresh startup not observed");
+        assert!(
+            has_mutation(semantic),
+            "earned mutation progression was lost"
+        );
+        assert!(has_location(semantic, "optique", 65535));
+        assert!(has_location(semantic, "decodeur", 65535));
+        let relocated = ["Super_Zen", "Kero_Zen", "Ben_Zen"]
+            .into_iter()
+            .all(|name| has_location(semantic, name, 0x1440));
+        if fresh_load {
+            assert!(relocated, "Zen locations were not restored immediately");
+        } else if !loaded {
+            assert_eq!(profile, 1);
+            assert!(has_location(semantic, "Super_Zen", 65535));
+            assert!(!relocated, "fixture already teleported Zen");
+        }
+        loaded = true;
+        let zen = profile == 10
+            && semantic["presentation"]["active_actor_presentation"]["name"] == "Super_Zen";
+        woke |= zen && semantic["subtitle"] == "Let's let him wake up, Commander...";
+        returned |= woke && main_profile_unblocked(semantic);
+        choice |= returned && zen && rendered_choices(semantic, &["YES", "NO"]);
+        acknowledged |=
+            choice && zen && semantic["subtitle"] == "TELEPORTING SUPER ZEN TO CRAZYSTONE...";
+        ready = relocated && main_profile_unblocked(semantic);
+        saved |= ready && semantic["save_load"]["completed_saves"] == 1;
+    }
+    assert!(
+        loaded && ready,
+        "Zen teleport did not persist into an unblocked main profile"
+    );
+    assert!(
+        fresh_load || (acknowledged && saved),
+        "wake, recontact, teleport and ordinary save were not all observed"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned Internet reward save, and a graphical display"]
 fn zen_mutation_survives_save_and_fresh_process_load() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");

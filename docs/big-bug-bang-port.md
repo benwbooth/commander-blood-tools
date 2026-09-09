@@ -20,7 +20,8 @@ reaches Daddy's GIVE menu, transfers writing to him, receives the intelligence
 acknowledgement, returns to navigation, and saves/restores that ownership in a
 fresh process. Honk's accelerated mutation, the Internet League puzzle, and
 saving/reloading the multiplexer reward, and creating/saving/reloading Super Zen
-are now verified too. Ordinary
+are now verified too. Super Zen's cryobox wake-up, second-contact teleport,
+and fresh-load persistence of all three Zen destinations are verified. Ordinary
 migration, later trades, and endgame remain unverified. English COD display
 catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
 captions, inventory labels, and DESCRIPT location captions also have English
@@ -31,6 +32,39 @@ separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is rec
 state before the implementation below.
 
 ## Verified Implementation
+
+### Super Zen Cryobox Teleport
+
+The earned Super Zen checkpoint now continues through two normal cryobox
+contacts. The first plays the wake-up dialogue and returns to the bridge. The
+second renders YES/NO, accepts YES, displays `TELEPORTING SUPER ZEN TO
+CRAZYSTONE...`, and returns with Super_Zen, Kero_Zen and Ben_Zen at Crazyland
+(holder `0x1440`, record 85). SCRIPT11.COD's authored AF operands at
+`0x0AAE..0x0ABB` select that surface destination, not the Crazystone planet
+record. No runtime code change was needed for this route.
+
+`zen_teleport_survives_save_and_fresh_process_load` passed in 84.38 seconds
+using optimized binary SHA-256
+`294f470519f58da64578b2b486e1e9de1d99d1bc91b46dd5fe5dff53685e699d`.
+It checks the ordered wake/return/recontact flow, rendered choice text pixels,
+teleport acknowledgement, retained earlier quest state, ordinary save, immediate
+fresh-load destinations, unblocked main profile, and byte-identical save files
+after loading. Retained artifacts:
+
+- `output/fidelity/bbb-zen-teleport-save-1788914768113288261-831597-0`
+- `output/fidelity/bbb-zen-teleport-load-1788914836928770448-831597-1`
+
+The first directory's `writable` subdirectory is the next campaign checkpoint.
+Its BLOOD.SAV SHA-256 is
+`091d5bc577549f3c539bbd3a80225878186da850f9a409b51844a7d2725eb2a1`;
+GAME1.SAV is
+`8dcd3314650e1bd64ba630408dfac9ec03c662cbe858d02b3924115b65045759`.
+Override the test seed with `BBB_ZEN_SAVE_DIR` for another earned pre-teleport
+save. The retained-trace validator rejects the wake-only capture
+`output/big-bug-bang/zen-contact-lwMORzaw` as expected.
+
+This is trace and RGB text-pixel evidence, not a visual comparison with the
+original game. Izwal creation, later Zen dialogue and endgame remain unverified.
 
 ### Resumed Concept-Slot Selection
 
