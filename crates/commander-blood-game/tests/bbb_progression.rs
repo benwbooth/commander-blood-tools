@@ -9,6 +9,92 @@ mod scenario_artifacts;
 mod scenario_process;
 
 #[test]
+#[ignore = "requires BBB assets, an earned Izwal save, and a graphical display"]
+fn spiralus_marakas_contact_and_cancel_returns_to_bridge() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_IZWAL_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join(
+                "output/fidelity/bbb-izwal-mutation-save-1788915140825347076-835837-0/writable",
+            )
+        });
+    let frames = replay_bbb_from_save(
+        "bbb-spiralus-marakas-contact",
+        "accuracy/scenarios/bbb_spiralus_contact.tsv",
+        &save,
+    );
+    assert_spiralus_contact_trace(&frames);
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a Spiralus contact trace"]
+fn validate_recorded_spiralus_contact() {
+    assert_spiralus_contact_trace(&PathBuf::from(
+        std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"),
+    ));
+}
+
+fn assert_spiralus_contact_trace(frames: &std::path::Path) {
+    let mut loaded = false;
+    let mut traveled = false;
+    let mut introduced = false;
+    let mut requested_money = false;
+    let mut menu = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !loaded && semantic["vm"]["resource_profile"] != 1 {
+            continue;
+        }
+        loaded = true;
+        assert!(has_mutation(semantic));
+        for name in ["Izwalito", "Marakas", "Tequila"] {
+            assert!(has_location(semantic, name, 0x1478));
+        }
+        for name in ["guitare", "parfum", "decodeur", "optique", "energie"] {
+            assert!(
+                has_location(semantic, name, 65535),
+                "Cancel route transferred {name}"
+            );
+        }
+        traveled |= semantic["vm"]["sequel_travel_enabled"] == true
+            && semantic["navigation"]["camera"]["target"]["name"] == "Spiralus";
+        let marakas = semantic["vm"]["resource_profile"] == 3
+            && semantic["presentation"]["active_actor_presentation"]["name"] == "Marakas";
+        let revealed = &semantic["presentation"]["inline_menu"]["revealed_words"];
+        introduced |= traveled
+            && marakas
+            && revealed == &serde_json::json!(["To", "lead", "the", "IZWAL", "nation!..."]);
+        requested_money |=
+            introduced && marakas && revealed == &serde_json::json!(["We", "need", "money..."]);
+        let presentation = &semantic["presentation"];
+        menu |= requested_money
+            && marakas
+            && presentation["rendered_word_choices"]
+                == serde_json::json!(["guitar", "perfume", "decoder", "optics", "energy"])
+            && presentation["retained_word_choice"]["phase"] == "Selecting"
+            && presentation["retained_word_choice"]["rows"]
+                .as_array()
+                .is_some_and(|rows| {
+                    rows.len() == 6
+                        && rows[5]["kind"] == "Cancel"
+                        && rows
+                            .iter()
+                            .all(|row| row["matching_text_pixels"].as_u64().is_some_and(|n| n > 0))
+                });
+        ready = menu
+            && main_profile_unblocked(semantic)
+            && semantic["navigation"]["camera"]["target"]["name"] == "Spiralus";
+    }
+    assert!(
+        ready,
+        "Spiralus contact, rendered inventory and unblocked Cancel return were not all observed"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned Zen teleport save, and a graphical display"]
 fn izwal_mutation_survives_save_and_fresh_process_load() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");

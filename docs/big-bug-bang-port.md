@@ -35,6 +35,39 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Spiralus Travel and Marakas Contact
+
+The earned Izwal checkpoint can enable travel in Options, select Spiralus at
+chart coordinate `(77,49)`, approach it, and contact Marakas from the location
+panel. SCRIPT4/profile 3 plays his first introduction and money request, then
+opens GIVE with the five retained inventory items. Selecting Cancel returns to
+an unblocked SCRIPT2/profile 1 bridge still targeting Spiralus, without moving
+any of those items or the three Izwal actors.
+
+`spiralus_marakas_contact_and_cancel_returns_to_bridge` passed in 74.14 seconds.
+Its input is `accuracy/scenarios/bbb_spiralus_contact.tsv`; override its earned
+seed with `BBB_IZWAL_SAVE_DIR`. The regression requires travel enabled, the
+Spiralus target, Marakas ownership in profile 3, revealed English introduction
+and money-request words, all five inventory rows plus Cancel with matching
+text pixels, unchanged item ownership, and the unblocked final bridge.
+Evidence is retained at
+`output/fidelity/bbb-spiralus-marakas-contact-1788915865754010273-843456-0`.
+
+The exploratory screenshot
+`output/big-bug-bang/spiralus-contact-QyvuHefU/travel.png` visibly shows Marakas,
+the GIVE list and hand. Despite its filename, this is not a travel-animation
+screenshot. That first replay stopped at GIVE and is correctly rejected by the
+completed-route validator. A corrected Cancel replay is retained at
+`output/big-bug-bang/marakas-cancel-LrjtuTWP`.
+
+An initial test incorrectly checked the general subtitle field for Marakas's
+dialogue; that field still held another speaker's line. The corrected test
+checks `inline_menu.revealed_words`, then independently checks chooser text
+pixels. This test correction required no production runtime change. The normal
+integration invocation passes six support tests with 27 opt-in tests ignored.
+This establishes contact and cancellation, not a completed trade, migration,
+save checkpoint after this visit, or original-game visual parity.
+
 ### Izwal Creation and Guild Continuation
 
 From the earned Zen teleport save, the ordinary Metagluk route accepts `5`
