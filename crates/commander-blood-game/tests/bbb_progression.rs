@@ -9,6 +9,90 @@ mod scenario_artifacts;
 mod scenario_process;
 
 #[test]
+#[ignore = "requires BBB assets, an earned mutation save, and a graphical display"]
+fn mutation_checkpoint_numeric_status_menu_continues() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_MUTATION_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join("output/big-bug-bang/honk-mutation-save-3VQKDoJ7/writable")
+        });
+    let frames = replay_bbb_from_save(
+        "bbb-numeric-status",
+        "accuracy/scenarios/bbb_mutation_status_menu.tsv",
+        &save,
+    );
+    assert_numeric_status_menu(&frames);
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a numeric status menu replay"]
+fn validate_recorded_numeric_status_menu() {
+    assert_numeric_status_menu(&PathBuf::from(
+        std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"),
+    ));
+}
+
+fn assert_numeric_status_menu(frames: &std::path::Path) {
+    let mut loaded = false;
+    let mut numeric_revealed = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if semantic["vm"]["resource_profile"] != 1 {
+            assert!(!loaded, "status menu unexpectedly left SCRIPT2");
+            continue;
+        }
+        loaded = true;
+        let locations = semantic["persistent"]["object_locations"]
+            .as_array()
+            .unwrap();
+        for (name, target) in [
+            ("Daddy_Gluxx", "Tromaland"),
+            ("Mamy_Gluxx", "Loviland"),
+            ("Papy_Gluxx", "Templand"),
+        ] {
+            assert!(
+                locations
+                    .iter()
+                    .any(|item| item["name"] == name && item["target_name"] == target),
+                "mutation checkpoint lost {name}"
+            );
+        }
+        let presentation = &semantic["presentation"];
+        numeric_revealed |= presentation["inline_menu"]["revealed_words"]
+            == serde_json::json!(["CREDITS", "...", "...", "...", "...", "0", "CREDIT"]);
+        let rows = presentation["retained_word_choice"]["rows"].as_array();
+        ready = numeric_revealed
+            && presentation["active_actor_presentation"]["name"] == "menu"
+            && presentation["inline_menu"]["revealed_words"]
+                == serde_json::json!(["Anything", "else,", "Commander?"])
+            && presentation["rendered_word_choices"] == serde_json::json!(["yes", "no"])
+            && presentation["retained_word_choice"]["phase"] == "Selecting"
+            && rows.is_some_and(|rows| {
+                rows.len() == 2
+                    && rows.iter().all(|row| {
+                        row["matching_text_pixels"]
+                            .as_u64()
+                            .is_some_and(|pixels| pixels > 0)
+                    })
+            })
+            && semantic["audio"]["events"]
+                .as_array()
+                .is_some_and(|events| {
+                    events
+                        .iter()
+                        .any(|event| event["kind"] == "streamed_dialogue")
+                });
+    }
+    assert!(
+        loaded && numeric_revealed && ready,
+        "numeric menu did not reveal the credit value and reach a rendered follow-up choice"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, a progressed Daddy save, and a graphical display"]
 fn templand_interlude_returns_to_dialogue_and_choices() {
     replay_templand(false);

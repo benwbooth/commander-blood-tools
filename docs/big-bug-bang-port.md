@@ -29,6 +29,55 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Numeric Status Menu Audio
+
+Opening the ship's status menu from the earned mutation checkpoint previously
+aborted with `sequel numeric chatter hashing has not been verified against the
+native audio routine`. This was initially misidentified as opening the Internet;
+the activated record is `menu`, and the first numeric line reports credits.
+
+The original `BLOOD2PG.EXE` routine at file offset `0xCF73` hashes each encoded
+word as a NUL-terminated dictionary suffix (`0xCFA6..0xCFD2`). Unlike the menu
+renderer, it does not substitute decimal state values for the numeric marker
+`1` and its following operand. Both are dictionary lookups for audio, including
+positions inside a word. Rust now retains that behavior, signed-byte additions,
+encoded-word count, and zero/FFFF termination. This is owned dictionary access,
+not runtime executable or hardware emulation.
+
+`re/tools/big_bug_bang_numeric_chatter_oracle.py` executes the original hash
+with synthetic dictionary data and produces 23 vectors. The production resolver
+and audio selector match every vector, including suffixes, signed bytes, empty
+strings, and operand terminators. Invalid out-of-dictionary operands still fail.
+Reproduce the oracle with:
+
+```sh
+nix develop -c python -P re/tools/big_bug_bang_numeric_chatter_oracle.py output/big-bug-bang/disc/BLOOD2PG.EXE re/tools/oracle_vectors/big_bug_bang_numeric_chatter.json
+```
+
+Live replay `output/big-bug-bang/numeric-chatter-fixed-ZWgEPlit` completed 4,143
+frames with optimized binary SHA-256
+`a99d1efb4c47a6335ee73cf776ad441ff2d4207450e705cae643e7c96a50e499`.
+It restored Daddy on Tromaland, Mamy on Loviland, and Papy on Templand, revealed
+`CREDITS ... ... ... ... 0 CREDIT`, played streamed dialogue, and reached
+`Anything else, Commander?` with visible yes/no rows and the hand. The inspected
+screenshot is `internet.png` in that capture; its historical filename does not
+establish Internet access. Both input save hashes remained unchanged.
+
+`bbb_mutation_status_menu.tsv` and `mutation_checkpoint_numeric_status_menu_continues`
+cover this continuation. The retained-trace validator accepts the repaired
+capture and rejects the earlier `mutation-internet-He2IIFf1` crash. The mutation
+save is `output/big-bug-bang/honk-mutation-save-3VQKDoJ7/writable`, overridable
+with `BBB_MUTATION_SAVE_DIR`. Actual Internet access, ordinary migration,
+later trades, and endgame are not established by this regression.
+
+The full optimized graphical test passed in 46.12 seconds, retaining its binary,
+scenario, manifest, and initial-save hashes under
+`output/fidelity/bbb-numeric-status-1788911984835081420-800828-0`.
+Game library tests passed 974 with 59 ignored; format tests passed 116 with 10
+ignored. A renderer fixture now clears its resource-owned RGB layer before
+testing the indexed fallback, then installs RGB explicitly for the independent
+palette-ownership assertion. No renderer production behavior changed here.
+
 ### Daddy Writing Gift and Persistence
 
 The earned six-item Honk save now continues through Travel ON, Tempest's

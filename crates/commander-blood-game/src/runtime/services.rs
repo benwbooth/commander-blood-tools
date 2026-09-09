@@ -1029,20 +1029,46 @@ impl<'window> ModernGameServices<'window> {
             .current_profile()
             .context("dialogue chatter words require a loaded BloodScript profile")?
             .dictionary();
-        words
-            .iter()
-            .take_while(|word| !matches!(word, ScriptTextWord::SectionSeparator))
-            .map(|word| match word {
+        Self::resolve_audio_dictionary_words(dictionary, words)
+    }
+
+    fn resolve_audio_dictionary_words(
+        dictionary: &ScriptDictionary,
+        words: &[ScriptTextWord],
+    ) -> Result<Vec<Box<[u8]>>> {
+        let mut resolved = Vec::new();
+        for word in words {
+            match word {
                 ScriptTextWord::Dictionary(word) => {
-                    dictionary.word(*word).map(Box::from).with_context(|| {
+                    resolved.push(dictionary.word(*word).map(Box::from).with_context(|| {
                         format!("resolving dialogue chatter dictionary word {word:?}")
-                    })
+                    })?);
                 }
-                ScriptTextWord::SectionSeparator => unreachable!("section separators terminate"),
-                ScriptTextWord::StateNumber(_) => bail!("sequel numeric chatter hashing has not been verified against the native audio routine"),
-                ScriptTextWord::InventoryChoices => bail!("unexpanded inventory choices cannot be hashed as dictionary chatter"),
-            })
-            .collect()
+                ScriptTextWord::SectionSeparator => break,
+                ScriptTextWord::StateNumber(number) => {
+                    // BLOOD2PG 0xCFA6 hashes the encoded marker and operand,
+                    // not the decimal text produced by the menu renderer.
+                    for offset in [1, number.source_offset()] {
+                        if offset == 0 || offset == u16::MAX {
+                            return Ok(resolved);
+                        }
+                        resolved.push(Box::from(
+                            dictionary
+                                .suffix_at_source_offset(offset)
+                                .with_context(|| {
+                                    format!(
+                                        "resolving numeric chatter dictionary position {offset}"
+                                    )
+                                })?,
+                        ));
+                    }
+                }
+                ScriptTextWord::InventoryChoices => {
+                    bail!("unexpanded inventory choices cannot be hashed as dictionary chatter")
+                }
+            }
+        }
+        Ok(resolved)
     }
 
     fn play_streamed_dialogue_clip(&mut self, clip_index: u16) -> Result<()> {
@@ -6049,6 +6075,74 @@ mod tests {
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const SCRIPT_RADIO_CLIP_COUNTDOWN: u16 = 2;
+
+    #[test]
+    fn numeric_chatter_matches_original_bbb_audio_hash() {
+        use commander_blood_formats::instruction::ScriptTextStateNumber;
+        #[derive(serde::Deserialize)]
+        struct Vector {
+            number: u16,
+            seed: u16,
+        }
+        #[derive(serde::Deserialize)]
+        struct Oracle {
+            dictionary: Vec<u8>,
+            cases: Vec<Vector>,
+        }
+        let oracle: Oracle = serde_json::from_str(include_str!(
+            "../../../../re/tools/oracle_vectors/big_bug_bang_numeric_chatter.json"
+        ))
+        .unwrap();
+        let dictionary = decode_script_dictionary(&oracle.dictionary).unwrap();
+        let word = ScriptTextWord::Dictionary(dictionary.resolve_source_offset(2).unwrap());
+        assert_eq!(oracle.cases.len(), 23);
+        for case in oracle.cases {
+            let words = ModernGameServices::resolve_audio_dictionary_words(
+                &dictionary,
+                &[
+                    word,
+                    ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(case.number)),
+                    word,
+                ],
+            )
+            .unwrap();
+            let mut state = AudioEventState {
+                playback_enabled: true,
+                menu_words_pending: true,
+                dialogue_armed: false,
+                voice_reaction_requested: false,
+                voice_cooldown: 0,
+                dialogue_delay: 0,
+                dialogue_seed: 0,
+                last_clip: 0,
+            };
+            let requests = process_audio_events(
+                &mut state,
+                AudioEventContext {
+                    dialogue_suppressed: false,
+                    menu_words: &words,
+                    streamed_dialogue_clip_count: 0,
+                    dialogue_delay_base: 0,
+                    dialogue_delay_limit: 0,
+                },
+                |_| panic!("hashing does not draw random numbers"),
+            )
+            .unwrap();
+            assert!(requests.is_empty());
+            assert_eq!(state.dialogue_seed, case.seed, "operand {}", case.number);
+            assert!(state.dialogue_armed);
+            assert!(!state.menu_words_pending);
+        }
+        assert!(
+            ModernGameServices::resolve_audio_dictionary_words(
+                &dictionary,
+                &[ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(
+                    1000
+                )),]
+            )
+            .is_err()
+        );
+    }
 
     fn test_surface_fade(surface: RuntimePaletteTransitionSurface) -> RuntimePaletteTransition {
         let mut transition = RuntimePaletteTransition::default();

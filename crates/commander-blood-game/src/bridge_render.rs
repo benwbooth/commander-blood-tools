@@ -740,6 +740,8 @@ mod tests {
         frame.panorama_pixels.fill(u8::MIN);
         frame.object_sprite_pixels.fill(u8::MIN);
         frame.actor_sprite_pixels.fill(u8::MIN);
+        // Exercise the indexed fallback before installing an owned RGB layer below.
+        frame.object_sprite_rgba = None;
         let sample_index = OBJECT_SAMPLE_Y * PANORAMA_FRAME_WIDTH + OBJECT_SAMPLE_X;
         frame.object_sprite_pixels[sample_index] = OBJECT_SAMPLE_PALETTE_INDEX;
 

@@ -1,0 +1,121 @@
+{
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "dictionary": [
+    0,
+    0,
+    104,
+    101,
+    108,
+    108,
+    111,
+    0,
+    115,
+    105,
+    103,
+    110,
+    101,
+    100,
+    128,
+    255,
+    0,
+    116,
+    97,
+    105,
+    108,
+    0
+  ],
+  "cases": [
+    {
+      "number": 0,
+      "seed": 33
+    },
+    {
+      "number": 1,
+      "seed": 66
+    },
+    {
+      "number": 2,
+      "seed": 100
+    },
+    {
+      "number": 3,
+      "seed": 93
+    },
+    {
+      "number": 4,
+      "seed": 87
+    },
+    {
+      "number": 5,
+      "seed": 80
+    },
+    {
+      "number": 6,
+      "seed": 73
+    },
+    {
+      "number": 7,
+      "seed": 66
+    },
+    {
+      "number": 8,
+      "seed": 98
+    },
+    {
+      "number": 9,
+      "seed": 91
+    },
+    {
+      "number": 10,
+      "seed": 84
+    },
+    {
+      "number": 11,
+      "seed": 78
+    },
+    {
+      "number": 12,
+      "seed": 71
+    },
+    {
+      "number": 13,
+      "seed": 64
+    },
+    {
+      "number": 14,
+      "seed": 58
+    },
+    {
+      "number": 15,
+      "seed": 66
+    },
+    {
+      "number": 16,
+      "seed": 66
+    },
+    {
+      "number": 17,
+      "seed": 93
+    },
+    {
+      "number": 18,
+      "seed": 86
+    },
+    {
+      "number": 19,
+      "seed": 80
+    },
+    {
+      "number": 20,
+      "seed": 73
+    },
+    {
+      "number": 21,
+      "seed": 66
+    },
+    {
+      "number": 65535,
+      "seed": 33
+    }
+  ]
+}

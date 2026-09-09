@@ -878,6 +878,13 @@ impl ScriptDictionary {
         self.words.get(word.index()).map(AsRef::as_ref)
     }
 
+    /// Resolve a NUL-terminated suffix, including positions inside an entry.
+    /// BBB's audio hasher treats numeric menu operands as dictionary positions.
+    pub fn suffix_at_source_offset(&self, offset: u16) -> Option<&[u8]> {
+        let (start, word) = self.source_offsets.range(..=offset).next_back()?;
+        self.word(*word)?.get(usize::from(offset - start)..)
+    }
+
     /// Iterate every interned word in authored order.
     pub fn words(&self) -> impl Iterator<Item = (ScriptWordId, &[u8])> {
         self.words
