@@ -4375,6 +4375,20 @@ impl<'window> ModernGameServices<'window> {
                                 .object(id)
                                 .map(|entry| String::from_utf8_lossy(entry.name()).into_owned())
                         };
+                        // BBB's D6 growth handler reads actor flags at +2 and population at +22.
+                        let sequel_actor = state.dialect()
+                            == commander_blood_formats::code::ScriptDialect::BigBugBang
+                            && object.kind
+                                == commander_blood_formats::script::ScriptObjectKind::Actor;
+                        let actor_word = |word| {
+                            sequel_actor
+                                .then(|| {
+                                    state
+                                        .object_word(object.id, word)
+                                        .and_then(|field| state.word(field))
+                                })
+                                .flatten()
+                        };
                         Some(serde_json::json!({
                             "record": object.id.index(),
                             "name": name(object.id),
@@ -4383,6 +4397,8 @@ impl<'window> ModernGameServices<'window> {
                             "relation": relation,
                             "target_record": target.map(|id| id.index()),
                             "target_name": target.and_then(name),
+                            "sequel_population": actor_word(11),
+                            "sequel_simulation_flags": actor_word(1),
                         }))
                     })
                     .collect::<Vec<_>>()
@@ -6701,6 +6717,25 @@ mod tests {
             .unwrap();
         assert_eq!(daddy_location["name"], "Daddy_Gluxx");
         assert_eq!(daddy_location["kind"], "Actor");
+        assert_eq!(
+            daddy_location["sequel_population"],
+            state_before
+                .word(state_before.object_word(daddy, 11).unwrap())
+                .unwrap()
+        );
+        assert_eq!(
+            daddy_location["sequel_simulation_flags"],
+            state_before
+                .word(state_before.object_word(daddy, 1).unwrap())
+                .unwrap()
+        );
+        assert!(
+            locations
+                .iter()
+                .filter(|entry| entry["kind"] != "Actor")
+                .all(|entry| entry["sequel_population"].is_null()
+                    && entry["sequel_simulation_flags"].is_null())
+        );
         assert_eq!(
             daddy_location["holder_raw"],
             state_before.word(holder).unwrap()

@@ -751,11 +751,12 @@ fn publish_script_active_line_to_lifecycle(
     }
 }
 
-/// Initialize an already selected profile, then transactionally restore one original save image.
+/// Restore an original save with the selected game's script-execution order.
 ///
 /// Profile resource selection remains with the caller because the concrete SDL service also
 /// rebuilds profile-owned HUD, navigation, and scene adapters. Keeping the data-only transaction
 /// here gives production and headless campaign validation one exact flat-memory restore path.
+/// BBB executes only after restoring the saved blocks; Commander retains its existing order.
 pub fn initialize_and_restore_original_save_game(
     scripts: &mut RuntimeScriptSystem,
     runtime: &mut OriginalGameRuntime,
@@ -779,9 +780,11 @@ pub fn initialize_and_restore_original_save_game(
 
     lifecycle.pending_profile = None;
     lifecycle.vm_execution_enabled = true;
-    scripts
-        .execute_lifecycle_frame(runtime, lifecycle, true)
-        .context("initializing the saved BloodScript profile")?;
+    if dialect != commander_blood_formats::code::ScriptDialect::BigBugBang {
+        scripts
+            .execute_lifecycle_frame(runtime, lifecycle, true)
+            .context("initializing the saved BloodScript profile")?;
+    }
 
     let state_byte_count = original_save_state_block_byte_count(
         runtime
@@ -796,7 +799,15 @@ pub fn initialize_and_restore_original_save_game(
             .current_profile_mut()
             .context("saved profile disappeared before state restoration")?,
     )
-    .context("restoring the original save blocks")
+    .context("restoring the original save blocks")?;
+    // BLOOD2PG 0x1F4D..0x1FA3 restores timers, sequences, VAR and procedure bytes
+    // before 0x1FAF/0x1FB4 rebuild the inventory and execute the restored script.
+    if dialect == commander_blood_formats::code::ScriptDialect::BigBugBang {
+        scripts
+            .execute_lifecycle_frame(runtime, lifecycle, true)
+            .context("executing the restored Big Bug Bang profile")?;
+    }
+    Ok(())
 }
 
 /// Concrete flat backend state shared by the script service and game lifecycle.

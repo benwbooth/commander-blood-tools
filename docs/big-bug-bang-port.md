@@ -35,6 +35,56 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Restore Before Executing BBB Scripts
+
+Long bridge waits exposed a save-load ordering bug that the earlier ownership
+and visible-UI checks missed. The loaded Izwal checkpoint retained a pending
+Daddy_Gluxx call even though the visible bridge was idle. The timer context
+suppresses script countdowns while a presentation owner is pending, leaving
+Marakas's population fixed at 37 in the bridge-only replay.
+
+Native BLOOD2PG loading selects the profile at file `0x1F42` (far call to
+`0502:0000`, profile loader at file `0x5820`). It then restores timers,
+sequences, VAR and procedure bytes at `0x1F4D..0x1FA3`. Only afterward does it
+rebuild inventory (`0x1FAF`, `0502:01DF`) and execute the restored script
+(`0x1FB4`, `0502:0233`, file `0x5A53`). The profile loader itself resets and
+binds resources; it does not execute fresh SCRIPT2 before those reads.
+
+Rust instead executed fresh SCRIPT2 before restoring the save. Its initialization
+queued Daddy's opening call in transient action state, which restoring VAR did
+not overwrite. The BBB restore path now executes only after restoring the save
+blocks. Commander Blood's existing ordering is unchanged. No timer gate was
+disabled and no pending owner is forcibly discarded after dispatch.
+
+Live traces now expose `sequel_population` and `sequel_simulation_flags` for BBB
+actors, directly from synchronized state. Non-actors expose nulls. The existing
+live profile-handoff test checks the values and confirms tracing does not alter
+state. `loaded_izwal_bridge_advances_population_without_a_stale_call` requires
+an empty pending owner throughout the loaded bridge, an unblocked final profile,
+and actual population growth through normal elapsed game time.
+
+The old capture `output/big-bug-bang/izwal-growth-trace-ndQyQKae` is rejected by
+the new validator for its leaked Daddy call. With the fix, the live regression
+passed in 70.02 seconds at
+`output/fidelity/bbb-loaded-izwal-growth-1788917525623232829-870455-0`:
+Marakas grew from 37 to 108 and the pending owner remained null. Exact population
+is not the test oracle because host-delivered elapsed time varies. Runtime
+SHA-256: `6ab6e39f8630dbeacc2836e0805be6684b381df9a77edd716b8139318f9ea3c7`.
+
+The existing Izwal creation/guild/save/fresh-load regression also passed with
+the corrected load order in 134.04 seconds. Its retained captures are
+`output/fidelity/bbb-izwal-mutation-save-1788917623255486087-874133-0` and
+`output/fidelity/bbb-izwal-mutation-load-1788917740304573479-874133-1`.
+The former provides a new earned checkpoint with the simulation no longer
+stalled during the route.
+
+The native D6 oracle was also regenerated: all 126 vectors matched the
+checked-in results byte for byte. The game-library suite passed 975 tests with
+59 ignored under `nix develop`; the ordinary BBB integration invocation passed
+six support tests with 29 opt-in tests ignored. A direct test-binary invocation
+outside Nix failed the bridge sprite raster test; its Nix rerun and full suite
+passed. These checks do not establish migration or whole-game completion.
+
 ### Spiralus Travel and Marakas Contact
 
 The earned Izwal checkpoint can enable travel in Options, select Spiralus at

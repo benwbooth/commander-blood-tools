@@ -10,6 +10,69 @@ mod scenario_process;
 
 #[test]
 #[ignore = "requires BBB assets, an earned Izwal save, and a graphical display"]
+fn loaded_izwal_bridge_advances_population_without_a_stale_call() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_IZWAL_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join(
+                "output/fidelity/bbb-izwal-mutation-save-1788915140825347076-835837-0/writable",
+            )
+        });
+    let frames = replay_bbb_from_save(
+        "bbb-loaded-izwal-growth",
+        "accuracy/scenarios/bbb_izwal_bridge_growth.tsv",
+        &save,
+    );
+    assert_loaded_izwal_growth(&frames);
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to an idle loaded Izwal bridge"]
+fn validate_recorded_loaded_izwal_growth() {
+    assert_loaded_izwal_growth(&PathBuf::from(
+        std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE"),
+    ));
+}
+
+fn assert_loaded_izwal_growth(frames: &std::path::Path) {
+    let mut initial = None;
+    let mut population = 0;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if semantic["vm"]["resource_profile"] != 1 {
+            assert!(
+                initial.is_none(),
+                "loaded bridge unexpectedly changed profile"
+            );
+            continue;
+        }
+        assert!(
+            semantic["presentation"]["pending_presentation_owner"].is_null(),
+            "fresh SCRIPT2 initialization leaked a pending call into the loaded save"
+        );
+        let marakas = semantic["persistent"]["object_locations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|actor| actor["name"] == "Marakas")
+            .unwrap();
+        assert_eq!(marakas["holder_raw"], 0x1478);
+        assert_eq!(marakas["sequel_simulation_flags"].as_u64().unwrap() & 13, 5);
+        population = marakas["sequel_population"].as_u64().unwrap();
+        initial.get_or_insert(population);
+        ready = main_profile_unblocked(semantic);
+    }
+    assert!(
+        ready && population > initial.expect("saved profile not loaded"),
+        "ordinary bridge time did not advance the restored population"
+    );
+}
+
+#[test]
+#[ignore = "requires BBB assets, an earned Izwal save, and a graphical display"]
 fn spiralus_marakas_contact_and_cancel_returns_to_bridge() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let save = std::env::var_os("BBB_IZWAL_SAVE_DIR")
