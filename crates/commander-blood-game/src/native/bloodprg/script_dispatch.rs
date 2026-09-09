@@ -212,6 +212,7 @@ pub trait ScriptDispatchHost {
     fn subtitle_display_override(
         &mut self,
         _instruction: ScriptCodeOffset,
+        _state: &ScriptState,
     ) -> Result<Option<Box<[u8]>>, Self::Error> {
         Ok(None)
     }
@@ -483,7 +484,7 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 if execution.outcome == super::TextHandlerOutcome::SubtitlePublished
                     && let Some(display) = self
                         .host
-                        .subtitle_display_override(token.source_offset())
+                        .subtitle_display_override(token.source_offset(), self.state)
                         .map_err(ScriptDispatchError::Host)?
                 {
                     self.dispatch.text_presentation.subtitle_text = display;
@@ -1241,6 +1242,7 @@ mod tests {
         fn subtitle_display_override(
             &mut self,
             instruction: ScriptCodeOffset,
+            _state: &ScriptState,
         ) -> Result<Option<Box<[u8]>>, Self::Error> {
             self.subtitle_calls.push(instruction);
             Ok(self.subtitle.clone())

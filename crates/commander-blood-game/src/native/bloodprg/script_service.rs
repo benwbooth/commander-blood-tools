@@ -3,7 +3,7 @@
 use std::fmt;
 
 use commander_blood_formats::code::ScriptCodeOffset;
-use commander_blood_formats::script::ScriptObjectId;
+use commander_blood_formats::script::{ScriptObjectId, ScriptState};
 
 use super::text_scan::activate_profile_object_text;
 use super::{
@@ -34,6 +34,7 @@ pub trait ScriptExecutionBackend {
     fn subtitle_display_override(
         &mut self,
         _instruction: ScriptCodeOffset,
+        _state: &ScriptState,
     ) -> Result<Option<Box<[u8]>>, Self::Error> {
         Ok(None)
     }
@@ -264,9 +265,10 @@ impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionServ
     fn subtitle_display_override(
         &mut self,
         instruction: ScriptCodeOffset,
+        state: &ScriptState,
     ) -> Result<Option<Box<[u8]>>, Self::Error> {
         self.backend
-            .subtitle_display_override(instruction)
+            .subtitle_display_override(instruction, state)
             .map_err(ScriptExecutionServiceError::Backend)
     }
 

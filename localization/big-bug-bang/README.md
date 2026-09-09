@@ -1,5 +1,14 @@
 # Big Bug Bang English Display Text
 
+Latest SCRIPT4 coverage: Izwalito's earned Help conversation reaches and saves
+the phone-number dialogue. Fresh recontact now displays its live population
+in English after recovery of the inherited spoken-number path. Yes continues
+through the Olga conversation to the rendered peace-treaty offer; No follows
+the original authored Bob ending, not ordinary bridge navigation. The Help
+prompt and Pierrette pronouns were corrected against the French source.
+See `../../docs/big-bug-bang-port.md` for artifacts, native-handler evidence,
+and the remaining unverified progression. This is not full-game completion.
+
 `en/script1.json` contains an English editorial first pass for all 89 A6 text
 sites in the opening COD profile. It includes non-spoken sites, unchanged sound
 effects, and the three choice sections. The COD runtime backend now binds its

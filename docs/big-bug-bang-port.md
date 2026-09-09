@@ -38,6 +38,93 @@ state before the implementation below.
 
 ## Verified Implementation
 
+### Izwalito's Help Conversation
+
+The first Vulcan visit after migration reveals Izwalito as a life form and
+sets the descendants' discovery flags. A second approach reaches his SCRIPT4
+conversation. `bbb_izwalito_contact.tsv` follows this route, selects Help,
+continues through the `19 96 19 96` phone-number dialogue and saves normally.
+`bbb_izwalito_help_reload.tsv` recontacts him after loading and answers No to
+the subsequent yes/no question about calling his sweetheart.
+
+The English prompt at `0x2D03` now correctly asks whether to help **him**:
+Izwalito is asking for help expressing his feelings. Lines at `0x2F1B`,
+`0x2F35`, and `0x30C9` now refer to Pierrette as **her**, consistent with the
+surrounding original French dialogue. The Pierre/Pierrette joke is unchanged.
+The original-resource SCRIPT4 test checks the corrected wrapped prompt along
+with the catalog's existing live-number, inventory and RGB-rendering checks.
+
+The `izwalito_help_save_reloads_into_authored_no_ending` regression requires
+the rendered Help/Abandon choice with the corrected prompt, the phone-number
+continuation, a save, and an unblocked bridge. Its fresh process must reach
+the complete live English population and later Yes/No choice without repeating
+Help, then reach the authored No ending without rewriting either save.
+Izwalito's destination and remaining owned
+inventory must be retained throughout. Tequila may continue from Vulcland
+to Goanland as population grows.
+
+The first two-process attempt exposed a real crash on fresh-load recontact:
+`UnverifiedSpokenStateNumber` while executing the population line at SCRIPT4
+`0x2B01`. The inherited spoken-mode latch makes this numeric path reachable
+even though the instruction itself does not set the spoken flag. Its artifact
+is `output/fidelity/bbb-izwalito-help-load-1788920784969375022-965183-1`.
+
+`re/tools/big_bug_bang_spoken_number_oracle.py` now executes the original
+`0x6D58..0x6DEA` string builder, dictionary-length helper, and signed decimal
+formatter. Its 45 synthetic cases cover signed limits, digit lengths,
+dictionary-interior operands, punctuation, and wrapping. The native Rust
+translation matches their complete output bytes, including the original
+cursor remaining on the numeric operand and subsequently reading it as a
+dictionary suffix. The fixture regenerates byte-identically against the
+pinned executable; production code has no executable or emulator dependency.
+
+English subtitle overrides now receive read-only script state, so an inherited
+spoken line displays the live signed value without the original accidental
+dictionary suffix. The actual SCRIPT4 test checks the Izwalito population line
+at values 0, 26, 32767, -32768, and -1 and verifies state is unchanged. Reads
+outside an owned VAR field or dictionary suffix still fail explicitly; no
+dictionary padding or invented backing bytes were added.
+
+The first repaired runtime replay exited without a runtime error but exposed
+two incorrect acceptance assumptions: Tequila had migrated to Goanland, and
+No does not return to ordinary play. The original SCRIPT4 No branch writes
+`VAR[0x1F04] = 2` at `0x30B6`. SCRIPT2 tests that value at `0x9F0C`, requests
+sequence 6 of `28bob` at `0x9F14`, and executes D7 at `0x9F1D`. The trace reaches
+the corresponding presentation assignment at `0x9F14`, ending latch, and
+forward panel phase 7 before process exit. Adding more wait/park input cannot
+prevent this authored ending; the test must verify it, not bypass it.
+The migration exception is
+specific, not a removal of destination checks: the original D5 handler also
+moves Tequila from `0x1328` to `0x1360` while leaving Izwalito at `0x1328` when
+the earned Help save is supplied with Izwalito's observed mature population
+363. The saved population itself was 214; this is a controlled population
+substitution, not a claim to have captured every live VAR byte. The result is
+retained in `output/big-bug-bang/izwalito-goan-native-settlement.jsonl`; Rust
+matches its full resulting VAR image. The complete English population line
+was observed at frame 2851 of
+`output/fidelity/bbb-izwalito-help-load-1788921800165281633-1002831-1` as
+`There are 412 Izwals in this community...`, matching the live actor value.
+
+The alternative Yes route is retained as `bbb_izwalito_yes.tsv`, seeded from
+the earned Help save at
+`output/fidelity/bbb-izwalito-help-save-1788922025625953790-1015705-0/writable`.
+`output/big-bug-bang/izwalito-yes` completes that scenario and reaches the
+English peace-treaty purchase prompt with rendered Accept/Refuse choices.
+`validate_recorded_izwalito_yes_continuation` verifies the initial Yes/No choice,
+the completed Olga conversation response, the final treaty prompt and choice
+pixels, and absence of the ending latch throughout. Purchasing the treaty and
+saving the continuation are not yet verified by this route.
+
+The full two-process No regression passed in 254.06 seconds with artifacts
+`output/fidelity/bbb-izwalito-help-save-1788922492594927215-1025035-0` and
+`output/fidelity/bbb-izwalito-help-load-1788922664517641482-1025035-1`.
+It verifies both save files remain byte-identical after fresh recontact.
+The tested optimized binary SHA-256 is
+`2713b033e4ea71f5a5580a8d20a132fd2d460455df1faed4a2090200ee891b8b`.
+All 976 enabled game-library tests, all 24 localization tests including
+original resources, and game-package all-targets checking also pass. These
+results do not establish later trades, further quests, or a complete playthrough.
+
 ### Earned-State Settlement Oracle
 
 The native D5 oracle now accepts `--save GAME1.SAV --directory SCRIPT1.DEB

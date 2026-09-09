@@ -9,7 +9,7 @@ use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::descript::DescriptRecordKind;
 use commander_blood_formats::descript_database::DescriptDatabase;
 use commander_blood_formats::instruction::ScriptRecordStateOperand;
-use commander_blood_formats::script::{ScriptDirectory, ScriptObjectId, ScriptWordId};
+use commander_blood_formats::script::{ScriptDirectory, ScriptObjectId, ScriptState, ScriptWordId};
 
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
@@ -1092,11 +1092,12 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
     fn subtitle_display_override(
         &mut self,
         instruction: commander_blood_formats::code::ScriptCodeOffset,
+        state: &ScriptState,
     ) -> Result<Option<Box<[u8]>>, Self::Error> {
-        Ok(self
-            .english_subtitles
-            .as_ref()
-            .and_then(|catalog| catalog.subtitle(instruction)))
+        match self.english_subtitles.as_ref() {
+            Some(catalog) => catalog.subtitle_with_state(instruction, state),
+            None => Ok(None),
+        }
     }
 
     fn environment_activity(&self) -> ScriptEnvironmentActivity {

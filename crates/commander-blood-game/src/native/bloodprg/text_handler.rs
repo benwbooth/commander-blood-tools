@@ -272,8 +272,10 @@ pub enum TextHandlerError {
     Condition(TextConditionError),
     /// A word identity did not belong to the supplied dictionary.
     UnknownDictionaryWord(ScriptWordId),
-    /// The sequel's distinct spoken-number cursor path is not yet verified.
-    UnverifiedSpokenStateNumber,
+    /// A spoken numeric operand could not resolve an owned VAR word.
+    MissingSpokenStateNumber(u16),
+    /// Native spoken-text lookahead addressed no owned dictionary suffix.
+    UnknownDictionaryOffset(u16),
 }
 
 impl fmt::Display for TextHandlerError {
@@ -452,6 +454,7 @@ pub fn execute_text_instruction(
             record_value,
             history: history.as_ref(),
         },
+        Some(&*state),
         inventory_context,
     )?;
 
@@ -513,6 +516,7 @@ pub fn handle_text_instruction(
         presentation,
         conditions,
         None,
+        None,
     )
 }
 
@@ -541,6 +545,7 @@ fn handle_text_instruction_with_inventory(
     script: &mut ScriptRuntime,
     presentation: &mut TextPresentationState,
     conditions: TextConditionInputs<'_>,
+    state: Option<&ScriptState>,
     inventory_context: Option<InventoryTextConditionContext<'_>>,
 ) -> Result<TextHandlerOutcome, TextHandlerError> {
     if let Some(skip_count) = text.control.rejection_skip_count() {
@@ -600,7 +605,12 @@ fn handle_text_instruction_with_inventory(
 
     let subtitle_mode = presentation.subtitle_word_list_mode || condition_effects.spoken_word_mode;
     let subtitle = subtitle_mode
-        .then(|| assemble_subtitle(&text.words, dictionary))
+        .then(|| {
+            assemble_subtitle(&text.words, dictionary, |offset| {
+                let state = state?;
+                state.word(state.resolve_word_source_offset(offset)?)
+            })
+        })
         .transpose()?;
 
     presentation.selected_line = Some(text.presentation_selector);
@@ -678,43 +688,50 @@ fn text_handler_gate(
 fn assemble_subtitle(
     words: &[ScriptTextWord],
     dictionary: &ScriptDictionary,
+    mut number: impl FnMut(u16) -> Option<u16>,
 ) -> Result<Box<[u8]>, TextHandlerError> {
-    if words
-        .iter()
-        .take_while(|word| !matches!(word, ScriptTextWord::SectionSeparator))
-        .any(|word| matches!(word, ScriptTextWord::StateNumber(_)))
-    {
-        return Err(TextHandlerError::UnverifiedSpokenStateNumber);
+    let mut encoded = Vec::new();
+    for word in words {
+        match word {
+            ScriptTextWord::Dictionary(word) => encoded.push(
+                dictionary
+                    .source_offset(*word)
+                    .ok_or(TextHandlerError::UnknownDictionaryWord(*word))?,
+            ),
+            ScriptTextWord::StateNumber(field) => encoded.extend([1, field.source_offset()]),
+            ScriptTextWord::SectionSeparator | ScriptTextWord::InventoryChoices => break,
+        }
     }
-    let spoken_words: Vec<ScriptWordId> = words
-        .iter()
-        .take_while(|word| matches!(word, ScriptTextWord::Dictionary(_)))
-        .filter_map(|word| match word {
-            ScriptTextWord::Dictionary(word) => Some(*word),
-            ScriptTextWord::SectionSeparator => None,
-            ScriptTextWord::StateNumber(_) => unreachable!("numeric subtitles were rejected"),
-            ScriptTextWord::InventoryChoices => {
-                unreachable!("inventory marker is after the subtitle section")
-            }
-        })
-        .collect();
+    encoded.push(0);
     let mut output = Vec::new();
     let mut line_length = u8::MIN;
-
-    for (index, word) in spoken_words.iter().copied().enumerate() {
-        let bytes = dictionary
-            .word(word)
-            .ok_or(TextHandlerError::UnknownDictionaryWord(word))?;
-        output.extend_from_slice(bytes);
-        for _ in bytes {
-            line_length = line_length.wrapping_add(CHARACTER_LENGTH_INCREMENT);
+    let mut cursor = 0;
+    while encoded[cursor] != 0 {
+        let offset = encoded[cursor];
+        cursor += 1;
+        if offset == 1 {
+            // Native 0x6D5F leaves the cursor on the VAR operand: lookahead and
+            // the next iteration also interpret it as a dictionary position.
+            let field = encoded[cursor];
+            let value = number(field).ok_or(TextHandlerError::MissingSpokenStateNumber(field))?;
+            let digits = (value as i16).to_string();
+            output.extend_from_slice(digits.as_bytes());
+            output.push(b' ');
+            line_length = line_length.wrapping_add(digits.len() as u8).wrapping_add(1);
+        } else {
+            let bytes = dictionary
+                .suffix_at_source_offset(offset)
+                .ok_or(TextHandlerError::UnknownDictionaryOffset(offset))?;
+            output.extend_from_slice(bytes);
+            line_length = line_length.wrapping_add(bytes.len() as u8);
         }
-
-        let next_bytes = match spoken_words.get(index + 1).copied() {
-            Some(next_word) => dictionary
-                .word(next_word)
-                .ok_or(TextHandlerError::UnknownDictionaryWord(next_word))?,
-            None => &[],
+        let next = encoded[cursor];
+        let next_bytes = if next == 0 {
+            &[][..]
+        } else {
+            dictionary
+                .suffix_at_source_offset(next)
+                .ok_or(TextHandlerError::UnknownDictionaryOffset(next))?
         };
         if next_bytes
             .first()
@@ -750,6 +767,46 @@ mod tests {
     use serde::Deserialize;
 
     use super::*;
+
+    #[test]
+    fn spoken_numbers_match_original_cursor_spacing_and_signed_formatting() {
+        let vectors: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_spoken_number.json"
+        ))
+        .unwrap();
+        for case in vectors["cases"].as_array().unwrap() {
+            let bytes =
+                |key: &str| -> Vec<u8> { serde_json::from_value(case[key].clone()).unwrap() };
+            let dictionary = decode_script_dictionary(&bytes("dictionary")).unwrap();
+            let raw: Vec<u16> = serde_json::from_value(case["words"].clone()).unwrap();
+            let mut words = Vec::new();
+            let mut cursor = 0;
+            while raw[cursor] != 0 {
+                if raw[cursor] == 1 {
+                    cursor += 1;
+                    words.push(ScriptTextWord::StateNumber(
+                        commander_blood_formats::instruction::ScriptTextStateNumber::decode(
+                            raw[cursor],
+                        ),
+                    ));
+                } else {
+                    words.push(ScriptTextWord::Dictionary(
+                        dictionary.resolve_source_offset(raw[cursor]).unwrap(),
+                    ));
+                }
+                cursor += 1;
+            }
+            let state = bytes("state");
+            let output = assemble_subtitle(&words, &dictionary, |offset| {
+                let offset = usize::from(offset);
+                Some(u16::from_le_bytes(
+                    state.get(offset..offset + 2)?.try_into().ok()?,
+                ))
+            })
+            .unwrap();
+            assert_eq!(output.as_ref(), bytes("output"), "{}", case["name"]);
+        }
+    }
 
     const INITIAL_SKIP_COUNT: u8 = 0x55;
     const INITIAL_RESUME_TARGET: usize = 0x9ABC;

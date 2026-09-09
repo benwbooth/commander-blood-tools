@@ -217,6 +217,40 @@ impl SequelEnglishSubtitles {
         self.subtitles.get(&instruction).cloned()
     }
 
+    pub(super) fn subtitle_with_state(
+        &self,
+        instruction: ScriptCodeOffset,
+        state: &commander_blood_formats::script::ScriptState,
+    ) -> Result<Option<Box<[u8]>>> {
+        if let Some(text) = self.subtitle(instruction) {
+            return Ok(Some(text));
+        }
+        let Some(menu) = self.menus.get(&instruction) else {
+            return Ok(None);
+        };
+        let words = menu
+            .display
+            .iter()
+            .map(|word| -> Result<String> {
+                match word {
+                    InlineMenuDisplayWord::Literal(bytes) => {
+                        Ok(std::str::from_utf8(bytes)?.to_owned())
+                    }
+                    InlineMenuDisplayWord::StateNumber(number) => {
+                        let value = state
+                            .resolve_word_source_offset(number.source_offset())
+                            .and_then(|word| state.word(word))
+                            .ok_or_else(|| {
+                                anyhow::anyhow!("unbound English numeric subtitle field")
+                            })?;
+                        Ok((value as i16).to_string())
+                    }
+                }
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(Some(wrap_subtitle(&words.join(" "))?))
+    }
+
     pub(super) fn choice_labels(
         &self,
         instruction: ScriptCodeOffset,
@@ -780,6 +814,40 @@ mod tests {
             .unwrap();
         assert_eq!(catalog.menus.len(), 660);
         assert_eq!(catalog.subtitles.len(), 656);
+        let directory = commander_blood_formats::script::decode_script_directory(
+            &std::fs::read(root.join("SCRIPT4.DEB")).unwrap(),
+        )
+        .unwrap();
+        let mut state = commander_blood_formats::script::decode_script_state_for_dialect(
+            &std::fs::read(root.join("SCRIPT4.VAR")).unwrap(),
+            &directory,
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        let population = state.resolve_word_source_offset(1650).unwrap();
+        for value in [0, 26, 32767, 32768, 65535] {
+            assert!(state.set_word(population, value));
+            let before = state.clone();
+            assert_eq!(
+                catalog
+                    .subtitle_with_state(ScriptCodeOffset::new(0x2b01), &state)
+                    .unwrap()
+                    .unwrap(),
+                wrap_subtitle(&format!(
+                    "There are {} Izwals in this community...",
+                    value as i16
+                ))
+                .unwrap(),
+            );
+            assert_eq!(state, before);
+        }
+        assert_eq!(
+            catalog
+                .subtitle(ScriptCodeOffset::new(0x2d03))
+                .unwrap()
+                .as_ref(),
+            b"would you like to help him,\rCommander?...\r"
+        );
         for address in [0x1096, 0x2b01, 0x4138, 0x4191] {
             let site = ScriptCodeOffset::new(address);
             let menu = &catalog.menus[&site];

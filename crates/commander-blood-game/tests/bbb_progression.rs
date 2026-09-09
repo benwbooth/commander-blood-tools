@@ -9,6 +9,168 @@ mod scenario_artifacts;
 mod scenario_process;
 
 #[test]
+#[ignore = "requires BBB assets, an earned migrated Izwal save, and a graphical display"]
+fn izwalito_help_save_reloads_into_authored_no_ending() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_MIGRATED_IZWAL_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join(
+                "output/fidelity/bbb-izwal-migration-save-1788919669277150183-937814-0/writable",
+            )
+        });
+    let helped = replay_bbb_from_save(
+        "bbb-izwalito-help-save",
+        "accuracy/scenarios/bbb_izwalito_contact.tsv",
+        &save,
+    );
+    assert_izwalito_help_trace(&helped, false);
+    let writable = helped.parent().unwrap().join("writable");
+    let loaded = replay_bbb_from_save(
+        "bbb-izwalito-help-load",
+        "accuracy/scenarios/bbb_izwalito_help_reload.tsv",
+        &writable,
+    );
+    assert_izwalito_help_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(writable.join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}"
+        );
+    }
+}
+
+fn assert_izwalito_help_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut loaded = false;
+    let mut choice = false;
+    let mut phone_number = false;
+    let mut follow_up = false;
+    let mut saved = false;
+    let mut population_line = false;
+    let mut ready = false;
+    let mut authored_ending = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let s = &frame["semantic"];
+        if !loaded && s["vm"]["resource_profile"] != 1 {
+            continue;
+        }
+        loaded = true;
+        assert!(has_location(s, "Izwalito", 0x1328));
+        // With continued growth, native D5 can move Tequila on to Goanland.
+        assert!(
+            has_location(s, "Tequila", 0x1328)
+                || (fresh_load && has_location(s, "Tequila", 0x1360))
+        );
+        assert!(has_location(s, "optique", 0x612));
+        for name in ["guitare", "parfum", "decodeur", "energie"] {
+            assert!(has_location(s, name, 65535), "lost {name}");
+        }
+        let izwalito = s["vm"]["resource_profile"] == 3
+            && s["presentation"]["active_actor_presentation"]["name"] == "Izwalito";
+        if izwalito
+            && s["subtitle"].as_str().is_some_and(|text| {
+                text.starts_with("There are ") && text.ends_with("Izwals in this community...")
+            })
+        {
+            let population = s["persistent"]["object_locations"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|object| object["name"] == "Izwalito")
+                .unwrap()["sequel_population"]
+                .as_u64()
+                .unwrap();
+            assert_eq!(
+                s["subtitle"],
+                format!(
+                    "There are {} Izwals in this community...",
+                    population as u16 as i16
+                )
+            );
+            population_line = true;
+        }
+        choice |= izwalito
+            && rendered_choices(s, &["help", "abandon"])
+            && s["subtitle"] == "would you like to help him, Commander?...";
+        follow_up |= izwalito && rendered_choices(s, &["yes", "no"]);
+        phone_number |= choice
+            && izwalito
+            && s["subtitle"]
+                .as_str()
+                .is_some_and(|text| text.contains("19 96 19 96"));
+        ready =
+            main_profile_unblocked(s) && s["presentation"]["pending_presentation_owner"].is_null();
+        authored_ending = follow_up
+            && s["vm"]["resource_profile"] == 1
+            && s["presentation"]["sequel_control"]["ending_active"] == true
+            && s["presentation"]["sequel_control"]["last_assignment"]["code_offset"] == 0x9f14
+            && s["presentation"]["screen_phase"] == 7
+            && s["presentation"]["screen_reverse"] == false
+            && s["presentation"]["pending_presentation_owner"].is_null();
+        saved |= s["save_load"]["completed_saves"]
+            .as_u64()
+            .is_some_and(|n| n > 0);
+    }
+    assert!(
+        loaded && if fresh_load { authored_ending } else { ready },
+        "Izwalito route did not reach its authored completion state"
+    );
+    assert!(
+        fresh_load || (choice && phone_number && saved),
+        "Help route did not reach and save the phone-number continuation"
+    );
+    if fresh_load {
+        assert!(
+            population_line,
+            "fresh recontact did not display the live English population"
+        );
+        assert!(
+            follow_up && !choice,
+            "fresh load did not preserve the phone-number conversation stage"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE from a completed fresh Izwalito recontact"]
+fn validate_recorded_izwalito_recontact() {
+    assert_izwalito_help_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        true,
+    );
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE from the completed Izwalito Yes scenario"]
+fn validate_recorded_izwalito_yes_continuation() {
+    let path = std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE");
+    let mut follow_up = false;
+    let mut conversation = false;
+    let mut offer = false;
+    for line in BufReader::new(File::open(path).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let s = &frame["semantic"];
+        assert_ne!(s["presentation"]["sequel_control"]["ending_active"], true);
+        let izwalito = s["vm"]["resource_profile"] == 3
+            && s["presentation"]["active_actor_presentation"]["name"] == "Izwalito";
+        follow_up |= izwalito && rendered_choices(s, &["yes", "no"]);
+        conversation |= follow_up
+            && izwalito
+            && s["subtitle"] == "it doesn't matter, we're telling you she loves you!...";
+        offer = conversation
+            && izwalito
+            && rendered_choices(s, &["accept", "refuse"])
+            && s["subtitle"] == "Do you agree to buy a treaty from him, Commander?";
+    }
+    assert!(
+        offer,
+        "Yes route did not finish at the authored treaty offer"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned food-purchase save, and a graphical display"]
 fn izwal_migration_survives_save_and_fresh_process_load() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
