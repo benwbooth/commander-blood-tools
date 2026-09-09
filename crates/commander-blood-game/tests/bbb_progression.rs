@@ -9,6 +9,125 @@ mod scenario_artifacts;
 mod scenario_process;
 
 #[test]
+#[ignore = "requires BBB assets, an earned Internet reward save, and a graphical display"]
+fn zen_mutation_survives_save_and_fresh_process_load() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_INTERNET_REWARD_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace
+                .join("output/fidelity/bbb-internet-reward-1788912717882326488-809228-1/writable")
+        });
+    let mutation = replay_bbb_from_save(
+        "bbb-zen-mutation-save",
+        "accuracy/scenarios/bbb_zen_mutation_save.tsv",
+        &save,
+    );
+    assert_zen_mutation_trace(&mutation, false);
+    let loaded = replay_bbb_from_save(
+        "bbb-zen-mutation-load",
+        "accuracy/scenarios/bbb_load_zen_checkpoint.tsv",
+        &mutation.parent().unwrap().join("writable"),
+    );
+    assert_zen_mutation_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(mutation.parent().unwrap().join("writable").join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a Super Zen mutation trace"]
+fn validate_recorded_zen_mutation() {
+    assert_zen_mutation_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        false,
+    );
+}
+
+fn rendered_choices(semantic: &serde_json::Value, labels: &[&str]) -> bool {
+    let presentation = &semantic["presentation"];
+    presentation["rendered_word_choices"] == serde_json::json!(labels)
+        && presentation["retained_word_choice"]["phase"] == "Selecting"
+        && presentation["retained_word_choice"]["rows"]
+            .as_array()
+            .is_some_and(|rows| {
+                rows.len() == labels.len()
+                    && rows.iter().all(|row| {
+                        row["matching_text_pixels"]
+                            .as_u64()
+                            .is_some_and(|pixels| pixels > 0)
+                    })
+            })
+}
+
+fn assert_zen_mutation_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut startup = false;
+    let mut loaded = false;
+    let mut command = false;
+    let mut run = false;
+    let mut count = false;
+    let mut code = false;
+    let mut accepted = false;
+    let mut ready = false;
+    let mut saved = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !loaded && semantic["vm"]["resource_profile"].is_null() {
+            continue;
+        }
+        if !loaded && semantic["vm"]["resource_profile"] == 0 {
+            startup = true;
+            continue;
+        }
+        assert!(startup, "fresh startup not observed");
+        assert_eq!(semantic["vm"]["resource_profile"], 1);
+        assert!(
+            has_mutation(semantic)
+                && has_location(semantic, "optique", 65535)
+                && has_location(semantic, "decodeur", 65535),
+            "earned starting progression was lost"
+        );
+        let zen = has_location(semantic, "Super_Zen", 65535);
+        if fresh_load {
+            assert!(zen, "Super Zen was not restored immediately");
+        } else if !loaded {
+            assert!(!zen, "Super Zen must be created during this replay");
+        }
+        loaded = true;
+        command |= rendered_choices(semantic, &["bionium", "uranium", "geranium", "delirium"]);
+        run |= command && rendered_choices(semantic, &["run"]);
+        count |= run
+            && rendered_choices(
+                semantic,
+                &["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+            );
+        code |= count
+            && rendered_choices(
+                semantic,
+                &["OL", "GA", "IS", "A", "CY", "B", "ER", "WH", "O", "RE"],
+            );
+        accepted |= code
+            && semantic["presentation"]["inline_menu"]["display_words"]
+                == serde_json::json!(["ANSWER...", "OK...", "...", "ZEN", "CODE", "ACCEPTED..."]);
+        ready = zen && main_profile_unblocked(semantic);
+        saved |= semantic["save_load"]["completed_saves"] == 1;
+    }
+    assert!(
+        loaded && ready,
+        "Super Zen did not survive an unblocked return/load"
+    );
+    assert!(
+        fresh_load || (accepted && saved),
+        "OLGA's rendered prompts, accepted code, and normal save were not all observed"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned writing save, and a graphical display"]
 fn mutation_and_internet_reward_survive_fresh_loads() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");

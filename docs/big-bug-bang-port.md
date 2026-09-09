@@ -19,7 +19,8 @@ do not establish a complete playthrough. A later earned-inventory route now
 reaches Daddy's GIVE menu, transfers writing to him, receives the intelligence
 acknowledgement, returns to navigation, and saves/restores that ownership in a
 fresh process. Honk's accelerated mutation, the Internet League puzzle, and
-saving/reloading the multiplexer reward are now verified too. Ordinary
+saving/reloading the multiplexer reward, and creating/saving/reloading Super Zen
+are now verified too. Ordinary
 migration, later trades, and endgame remain unverified. English COD display
 catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
 captions, inventory labels, and DESCRIPT location captions also have English
@@ -30,6 +31,68 @@ separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is rec
 state before the implementation below.
 
 ## Verified Implementation
+
+### Resumed Concept-Slot Selection
+
+The ZEN multiplexing path exposed a shared VM translation error. After selecting
+`4` in the numeric prompt, Rust displayed `Enter ZEN GENETIC CODE:` but aborted
+before its ten word choices appeared. Capture
+`output/big-bug-bang/zen-mutation-11WhGpiE` records the failure, before the
+scenario's next pointer input. Super Zen remained on Trashlando rather than
+entering the cryobox.
+
+Original BBB A3 (`0x6AB2`, slot selection at `0x6ACA`) chooses the primary or
+alternate concept slot strictly using resume mask `0x02`. An empty selected slot
+fails either guard polarity; it does not fall back to another slot. Rust used
+`alternate_concept.or(selected_concept)`, so a stale primary `4` could satisfy
+the inverted comparison against `GA` and enter the abort branch while the new
+choice was still pending. `ScriptRuntime::concept_guard` now follows the
+semantic resume phase, including when the selected slot is empty.
+
+`re/tools/big_bug_bang_concept_slots_oracle.py` executes the original A3 handler
+and guard-pop helper with both slots populated independently. Its 144 cases
+cover four resume-byte values, empty/matching/nonmatching slots, two targets,
+and both polarities. The original Rust implementation fails these vectors;
+the corrected one matches all of them. Older Commander and Daddy oracle tests
+now explicitly seed their recorded resume phases instead of assuming that
+populating the alternate slot selects it. Game library tests pass 975 with
+59 ignored, and the asset-dependent Daddy guard comparison also passes.
+
+The full `zen_mutation_survives_save_and_fresh_process_load` graphical regression
+passed in 89.88 seconds with optimized binary SHA-256
+`294f470519f58da64578b2b486e1e9de1d99d1bc91b46dd5fe5dff53685e699d`.
+It loads the earned Internet reward, selects `yes` from status, then `geranium`,
+`run`, `4`, and `GA`. All command/code rows have matching rendered text pixels,
+the acceptance message appears, Super Zen changes from Trashlando to player-owned,
+and the ordinary save completes. A fresh process restores him immediately and
+leaves both save files unchanged. The old aborted trace is rejected by the same
+validator.
+
+The new checkpoints and complete input manifests are retained in:
+
+- `output/fidelity/bbb-zen-mutation-save-1788913743695723224-821950-0`
+- `output/fidelity/bbb-zen-mutation-load-1788913817892165399-821950-1`
+
+The first capture's `writable` directory is the reusable Super Zen checkpoint,
+slot name `abhonkwmiz`.
+BLOOD.SAV SHA-256 is
+`b977c1234e75fd07d2db14cc7fec2e7efda7fb0e3313c68e7a99c485b8be80e1`;
+GAME1.SAV is
+`8c8bc94f9543d342dfd8bab99a96b873e69bf51ab709da6479433aaa5eab7afb`.
+The input-only scenarios are `bbb_zen_mutation_save.tsv` and
+`bbb_load_zen_checkpoint.tsv`; the test accepts `BBB_INTERNET_REWARD_SAVE_DIR`.
+`bbb_multiplexer_program.tsv` is the shorter inspection route ending at the
+numeric ZEN prompt.
+This does not establish Super Zen's later dialogue, Izwal creation, or endgame.
+
+The earlier three-process mutation/Internet regression was rerun with the same
+corrected binary and passed in 206.65 seconds. Its captures are
+`bbb-mutation-save-1788913858582822241-823242-0`,
+`bbb-internet-reward-1788913931196421770-823242-1`, and
+`bbb-internet-reward-load-1788914049685620992-823242-2` under `output/fidelity`.
+This checks the shared guard change against the already-earned progression,
+including both puzzles and fresh save loading, rather than relying only on
+the new ZEN route.
 
 ### Internet Access and Mutation Puzzle
 

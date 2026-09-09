@@ -1,0 +1,35 @@
+# Load the Internet reward, enter Metagluk, create Super Zen, and save normally.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 115
+wait 10
+click 100 43
+wait 60
+park 4 45
+wait 10
+click 230 136
+wait 150
+click 200 94
+wait 200
+click 200 104
+wait 200
+click 200 94
+wait 200
+click 180 82
+wait 100
+click 180 60
+wait 200
+park 4 45
+wait 10
+click 230 152
+wait 40
+click 100 104
+wait 10
+key 44 122
+key 28 13
+wait 20

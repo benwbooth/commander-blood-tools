@@ -456,7 +456,12 @@ impl ScriptRuntime {
         expected: ScriptWordId,
         inverted: bool,
     ) -> Result<ScriptControl, ScriptRuntimeError> {
-        let selected = self.alternate_concept.or(self.selected_concept);
+        // The native resume bit selects a slot, even when that slot is empty.
+        let selected = if self.selector_resume_active() {
+            self.alternate_concept
+        } else {
+            self.selected_concept
+        };
         let matches = selected == Some(expected);
         if selected.is_some() && matches != inverted {
             Ok(ScriptControl::Continue)
@@ -745,8 +750,9 @@ mod tests {
             let mut runtime = ScriptRuntime::new();
             let failure = ScriptCodeOffset::new(0x1234);
             runtime.begin_guard(failure);
-            // The typed runtime stores the active concept, not the unused native slot.
             if vector.alternate {
+                runtime.arm_resume(failure, 0);
+                assert!(runtime.activate_selector_resume());
                 runtime.set_alternate_concept(selected);
             } else {
                 runtime.set_selected_concept(selected);
@@ -843,6 +849,66 @@ mod tests {
     }
 
     #[test]
+    fn concept_slot_selection_matches_original_bbb_including_empty_resume_slot() {
+        #[derive(serde::Deserialize)]
+        struct Case {
+            phase: u8,
+            primary: u16,
+            alternate: u16,
+            expected: u16,
+            inverted: bool,
+            continues: bool,
+        }
+        #[derive(serde::Deserialize)]
+        struct Oracle {
+            cases: Vec<Case>,
+        }
+        let oracle: Oracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_concept_slots.json"
+        ))
+        .unwrap();
+        assert_eq!(oracle.cases.len(), 144);
+        let dictionary = decode_script_dictionary(&[0; 65]).unwrap();
+        for case in oracle.cases {
+            let mut runtime = ScriptRuntime::new();
+            if case.phase != 0 {
+                runtime.arm_resume(ScriptCodeOffset::new(100), 0);
+                if case.phase & 2 != 0 {
+                    assert!(runtime.activate_selector_resume());
+                }
+            }
+            let resolve = |offset| {
+                if offset == 0 {
+                    None
+                } else {
+                    dictionary.resolve_source_offset(offset)
+                }
+            };
+            runtime.set_selected_concept(resolve(case.primary));
+            runtime.set_alternate_concept(resolve(case.alternate));
+            let failure = ScriptCodeOffset::new(0x1234);
+            runtime.begin_guard(failure);
+            assert_eq!(
+                runtime
+                    .concept_guard(resolve(case.expected).unwrap(), case.inverted)
+                    .unwrap(),
+                if case.continues {
+                    ScriptControl::Continue
+                } else {
+                    ScriptControl::Jump(failure)
+                },
+                "phase={} primary={} alternate={} expected={} inverted={}",
+                case.phase,
+                case.primary,
+                case.alternate,
+                case.expected,
+                case.inverted
+            );
+            assert_eq!(runtime.guard_depth(), usize::from(case.continues));
+        }
+    }
+
+    #[test]
     fn branch_and_guard_stack_match_the_well_formed_original_vectors() {
         let branches: Vec<BranchOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_6462_natural.json"
@@ -933,6 +999,8 @@ mod tests {
             let mut runtime = ScriptRuntime::new();
             runtime.begin_guard(failure_target);
             if vector.resume_state.unwrap() & 2 != 0 {
+                runtime.arm_resume(failure_target, 0);
+                assert!(runtime.activate_selector_resume());
                 runtime.set_alternate_concept(selected);
             } else {
                 runtime.set_selected_concept(selected);
