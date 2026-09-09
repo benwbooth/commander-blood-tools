@@ -1,0 +1,41 @@
+# Let the earned Izwal population grow, then approach Marakas's food offer.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 115
+wait 10
+click 100 43
+wait 60
+park 4 45
+wait 1000
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 150 150
+wait 40
+click 77 49
+wait 60
+click 250 125
+wait 200
+click 80 104
+wait 600
+click 200 94
+wait 400
+click 200 133
+wait 300
+park 4 45
+wait 10
+click 230 152
+wait 40
+click 100 104
+wait 10
+key 33 102
+key 28 13
+wait 20

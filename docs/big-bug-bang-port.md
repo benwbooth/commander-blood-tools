@@ -23,7 +23,8 @@ saving/reloading the multiplexer reward, and creating/saving/reloading Super Zen
 are now verified too. Super Zen's cryobox wake-up, second-contact teleport,
 and fresh-load persistence of all three Zen destinations are verified. Izwal
 creation, its immediate guild-code continuation, and save/load persistence of
-Izwalito, Marakas and Tequila on Spiraland are also verified. Ordinary
+Izwalito, Marakas and Tequila on Spiraland are also verified. Marakas's food
+purchase, its one-credit cost, and fresh-load persistence are verified. Ordinary
 migration, later trades, and endgame remain unverified. English COD display
 catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
 captions, inventory labels, and DESCRIPT location captions also have English
@@ -34,6 +35,39 @@ separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is rec
 state before the implementation below.
 
 ## Verified Implementation
+
+### Marakas Food Purchase
+
+`bbb_marakas_food_trade.tsv` loads the earned Izwal checkpoint, waits for
+ordinary population growth, travels to Spiralus, contacts Marakas, accepts his
+food offer, cancels GIVE, and saves through the normal menu. It does not modify
+VAR or bypass a story gate. SCRIPT4 at `0x152F` gates the offer on population
+word `0x0628 >= 100` and food not already owned. The accepted branch decrements
+credits at `0x1EF2` by one and transfers food to the cryobox.
+
+`marakas_food_purchase_survives_save_and_fresh_process_load` checks rendered
+English accept/refuse rows, food ownership after the offer, retention of the
+other five items and Izwal destinations, return to an unblocked bridge, and a
+completed save. It decodes the original save format to check the one-credit
+cost, then launches a fresh process and verifies food ownership from the first
+loaded frame and unchanged save files. The offer-only capture
+`output/big-bug-bang/marakas-food-offer-AXfS9fgH` is rejected by the recorded
+validator because no completed purchase or bridge return occurred. Its
+`offer.png` visibly shows the English prompt and both choices.
+
+The two-process live test passed in 199.77 seconds using runtime SHA-256
+`6ab6e39f8630dbeacc2836e0805be6684b381df9a77edd716b8139318f9ea3c7`.
+Purchase artifacts are at
+`output/fidelity/bbb-marakas-food-save-1788918507683083392-895506-0`,
+and reload artifacts at
+`output/fidelity/bbb-marakas-food-load-1788918691390336278-895506-1`.
+The resulting save has two credits, down from three. Its `BLOOD.SAV` SHA-256 is
+`086b13ef2f2eda805fedafd68a8bcf6f807846ea39bfb3e658571eeab71833eb`;
+`GAME1.SAV` is
+`f1bc5b98c5335d74dcbd78dde6dd23d74ccfaff24f922d67f80a007daf55c2cb`.
+The strengthened recorded validator also passes on the purchase trace. No
+production behavior change was necessary for this trade after the save-order
+fix below. Migration, later quests, and endgame are not established by it.
 
 ### Restore Before Executing BBB Scripts
 

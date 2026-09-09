@@ -10,6 +10,107 @@ mod scenario_process;
 
 #[test]
 #[ignore = "requires BBB assets, an earned Izwal save, and a graphical display"]
+fn marakas_food_purchase_survives_save_and_fresh_process_load() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_IZWAL_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join(
+                "output/fidelity/bbb-izwal-mutation-save-1788917623255486087-874133-0/writable",
+            )
+        });
+    let purchased = replay_bbb_from_save(
+        "bbb-marakas-food-save",
+        "accuracy/scenarios/bbb_marakas_food_trade.tsv",
+        &save,
+    );
+    assert_marakas_food_trace(&purchased, false);
+    let writable = purchased.parent().unwrap().join("writable");
+    let credits = |directory: &std::path::Path| {
+        use commander_blood_formats::code::ScriptDialect;
+        use commander_blood_game::native::bloodprg::OriginalSaveGame;
+        // Original BBB SCRIPT1.VAR has 8368 bytes; credits are its word at 0x1EF2.
+        let bytes = fs::read(directory.join("GAME1.SAV")).unwrap();
+        let decoded =
+            OriginalSaveGame::decode_for_dialect(&bytes, 8368, ScriptDialect::BigBugBang).unwrap();
+        u16::from_le_bytes(decoded.state_block()[0x1ef2..0x1ef4].try_into().unwrap())
+    };
+    assert_eq!(credits(&writable), credits(&save).checked_sub(1).unwrap());
+    let loaded = replay_bbb_from_save(
+        "bbb-marakas-food-load",
+        "accuracy/scenarios/bbb_load_zen_checkpoint.tsv",
+        &writable,
+    );
+    assert_marakas_food_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(writable.join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}",
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE pointing to a completed food purchase"]
+fn validate_recorded_marakas_food_purchase() {
+    assert_marakas_food_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        false,
+    );
+}
+
+fn assert_marakas_food_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut loaded = false;
+    let mut offer = false;
+    let mut acquired = false;
+    let mut ready = false;
+    let mut saved = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !loaded && semantic["vm"]["resource_profile"] != 1 {
+            continue;
+        }
+        if !loaded {
+            assert_eq!(has_location(semantic, "nourriture", 65535), fresh_load);
+        }
+        loaded = true;
+        assert!(has_mutation(semantic));
+        for name in ["Izwalito", "Marakas", "Tequila"] {
+            assert!(has_location(semantic, name, 0x1478), "moved {name}");
+        }
+        for name in ["guitare", "parfum", "decodeur", "optique", "energie"] {
+            assert!(has_location(semantic, name, 65535), "lost {name}");
+        }
+        offer |= semantic["vm"]["resource_profile"] == 3
+            && semantic["presentation"]["active_actor_presentation"]["name"] == "Marakas"
+            && rendered_choices(semantic, &["accept", "refuse"]);
+        if has_location(semantic, "nourriture", 65535) {
+            assert!(
+                fresh_load || offer,
+                "food acquired before its purchase offer"
+            );
+            acquired = true;
+        } else {
+            assert!(!acquired, "purchased food disappeared");
+        }
+        ready = main_profile_unblocked(semantic)
+            && semantic["presentation"]["pending_presentation_owner"].is_null();
+        saved |= semantic["save_load"]["completed_saves"] == 1;
+    }
+    assert!(
+        loaded && acquired && ready,
+        "food route did not finish at an unblocked bridge"
+    );
+    assert!(
+        fresh_load || (offer && saved),
+        "purchase route did not save"
+    );
+}
+
+#[test]
+#[ignore = "requires BBB assets, an earned Izwal save, and a graphical display"]
 fn loaded_izwal_bridge_advances_population_without_a_stale_call() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
     let save = std::env::var_os("BBB_IZWAL_SAVE_DIR")
