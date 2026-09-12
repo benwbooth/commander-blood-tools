@@ -170,6 +170,23 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_ae_b0_use_shared_masked_bit_state
 ```
 
+The inherited B7 handler at BBB `0x76AD..0x770C` uses the same high-bit-first
+byte addressing as Commander. `big_bug_bang_bit_flag_oracle.py` executes that
+handler and the real guard-failure helper in 400 cases over query bytes,
+inversion, five byte patterns, and bit indices spanning positions 0..7 and
+multiple later bytes. The Rust regression decodes each BBB token and applies
+it through the shared bounded `ScriptState` and `apply_bit_flag_operation`
+path, checking the derived mask, byte mutation, control flow, guard depth, and
+cursor. B8/B9/BD pair writes remain a separate helper-backed obligation.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_bit_flag_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_bit_flag.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_b7_uses_shared_high_bit_first_flag_state
+```
+
 ### COD Source Recovery and Shared Arithmetic
 
 The source-first pass found a production translation discrepancy that route
