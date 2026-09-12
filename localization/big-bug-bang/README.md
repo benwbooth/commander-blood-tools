@@ -15,6 +15,12 @@ acknowledgement, applies the original evolution and aggressiveness changes,
 returns to the bridge, saves, and restores the result in another process. See
 `../../docs/big-bug-bang-port.md` for the retained evidence and limitations.
 
+The next verified route buys Izwalito's one-credit replacement treaty, travels
+normally to Goanland, and gives it to Tequila through her rendered English GIVE
+menu. Her inline acknowledgement and authored population, evolution, and
+aggressiveness changes persist through an ordinary save and fresh-process load.
+This still leaves the other treaty recipients and endgame unverified.
+
 `en/script1.json` contains an English editorial first pass for all 89 A6 text
 sites in the opening COD profile. It includes non-spoken sites, unchanged sound
 effects, and the three choice sections. The COD runtime backend now binds its

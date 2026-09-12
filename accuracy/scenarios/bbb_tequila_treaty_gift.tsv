@@ -1,0 +1,55 @@
+# Give treaties to Izwalito and Tequila, return to the bridge, and save.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 115
+wait 10
+click 100 43
+wait 60
+park 4 45
+wait 10
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+wait 600
+click 200 111
+wait 300
+# Buy the replacement treaty and cancel Izwalito's rebuilt GIVE list.
+click 200 94
+wait 500
+click 200 122
+wait 300
+# Navigate normally to Goan and enter Goanland.
+park 4 0
+wait 20
+click 150 150
+wait 40
+click 55 122
+wait 60
+click 250 125
+wait 200
+click 80 104
+wait 600
+click 200 111
+wait 300
+# Cancel Tequila's remaining four-item GIVE list.
+click 200 117
+wait 300
+park 4 45
+wait 200
+click 230 152
+wait 40
+click 100 104
+wait 10
+key 28 13
+wait 20

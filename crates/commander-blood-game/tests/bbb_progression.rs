@@ -266,6 +266,218 @@ fn assert_izwalito_treaty_gift_trace(frames: &std::path::Path, fresh_load: bool)
 }
 
 #[test]
+#[ignore = "requires BBB assets, a purchased treaty save, and a graphical display"]
+fn tequila_treaty_gift_survives_save_and_fresh_process_load() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_TREATY_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join(
+                "output/fidelity/bbb-izwalito-treaty-save-1788923108216766608-1036958-0/writable",
+            )
+        });
+    let gifted = replay_bbb_from_save(
+        "bbb-tequila-treaty-gift-save",
+        "accuracy/scenarios/bbb_tequila_treaty_gift.tsv",
+        &save,
+    );
+    assert_tequila_treaty_gift_trace(&gifted, false);
+    let writable = gifted.parent().unwrap().join("writable");
+    let credits = |directory: &std::path::Path| {
+        use commander_blood_formats::code::ScriptDialect;
+        use commander_blood_game::native::bloodprg::OriginalSaveGame;
+        let bytes = fs::read(directory.join("GAME1.SAV")).unwrap();
+        let decoded =
+            OriginalSaveGame::decode_for_dialect(&bytes, 8368, ScriptDialect::BigBugBang).unwrap();
+        u16::from_le_bytes(decoded.state_block()[0x1ef2..0x1ef4].try_into().unwrap())
+    };
+    assert_eq!(credits(&writable), credits(&save).checked_sub(1).unwrap());
+    let loaded = replay_bbb_from_save(
+        "bbb-tequila-treaty-gift-load",
+        "accuracy/scenarios/bbb_load_zen_checkpoint.tsv",
+        &writable,
+    );
+    assert_tequila_treaty_gift_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(writable.join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE from a completed Tequila treaty gift"]
+fn validate_recorded_tequila_treaty_gift() {
+    assert_tequila_treaty_gift_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        false,
+    );
+}
+
+fn assert_tequila_treaty_gift_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut loaded = false;
+    let mut izwalito_menu = false;
+    let mut tequila_menu = false;
+    let mut izwalito_acknowledged = false;
+    let mut tequila_acknowledged = false;
+    let mut first_gift = false;
+    let mut replacement = false;
+    let mut second_gift = false;
+    let mut izwalito_effect = false;
+    let mut tequila_effect = false;
+    let mut saved = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !loaded && semantic["vm"]["resource_profile"].is_null() {
+            continue;
+        }
+        if !loaded && semantic["vm"]["resource_profile"] == 0 {
+            continue;
+        }
+        let izwalito = sequel_actor(semantic, "Izwalito").expect("Izwalito trace record");
+        let tequila = sequel_actor(semantic, "Tequila").expect("Tequila trace record");
+        let treaty_holder = semantic["persistent"]["object_locations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|object| object["record"] == 179)
+            .expect("treaty trace record")["holder_raw"]
+            .as_u64()
+            .expect("treaty holder");
+        for name in ["guitare", "parfum", "decodeur", "energie"] {
+            assert!(
+                has_location(semantic, name, 65535),
+                "treaty route moved {name}"
+            );
+        }
+        if !loaded {
+            assert_eq!(treaty_holder, if fresh_load { 0x6a6 } else { 65535 });
+            assert_eq!(
+                (
+                    izwalito["sequel_evolution"].as_u64(),
+                    izwalito["sequel_aggressiveness"].as_u64()
+                ),
+                if fresh_load {
+                    (Some(140), Some(100))
+                } else {
+                    (Some(90), Some(150))
+                }
+            );
+            assert_eq!(
+                (
+                    tequila["sequel_evolution"].as_u64(),
+                    tequila["sequel_aggressiveness"].as_u64()
+                ),
+                if fresh_load {
+                    (Some(140), Some(0))
+                } else {
+                    (Some(90), Some(150))
+                }
+            );
+            if fresh_load {
+                first_gift = true;
+                replacement = true;
+                second_gift = true;
+                izwalito_effect = true;
+                tequila_effect = true;
+            }
+        }
+        loaded = true;
+        let active_actor = semantic["presentation"]["active_actor_presentation"]["name"].as_str();
+        let treaty_row_visible = semantic["presentation"]["rendered_word_choices"]
+            == serde_json::json!(["guitar", "perfume", "decoder", "energy", "treaty"])
+            && semantic["presentation"]["retained_word_choice"]["phase"] == "Selecting"
+            && semantic["presentation"]["retained_word_choice"]["rows"][4]["matching_text_pixels"]
+                .as_u64()
+                .is_some_and(|pixels| pixels > 0);
+        izwalito_menu |= active_actor == Some("Izwalito") && treaty_row_visible;
+        tequila_menu |= active_actor == Some("Tequila") && treaty_row_visible;
+        izwalito_acknowledged |=
+            semantic["subtitle"] == "A treaty, let's see, it's to stop the war...";
+        tequila_acknowledged |= semantic["presentation"]["inline_menu"]["display_words"]
+            == serde_json::json!([
+                "A",
+                "treaty...",
+                "THANK",
+                "YOU!",
+                "Me",
+                "no",
+                "longer",
+                "want",
+                "little",
+                "Izwal",
+                "going",
+                "to",
+                "war..."
+            ]);
+
+        match treaty_holder {
+            0x65c => {
+                assert!(
+                    fresh_load || izwalito_menu,
+                    "first treaty moved before its visible row"
+                );
+                first_gift = true;
+            }
+            65535 if first_gift => replacement = true,
+            0x6a6 => {
+                assert!(fresh_load || (replacement && tequila_menu));
+                second_gift = true;
+            }
+            _ => {}
+        }
+        let izwalito_values = (
+            izwalito["sequel_evolution"].as_u64(),
+            izwalito["sequel_aggressiveness"].as_u64(),
+        );
+        if izwalito_values == (Some(140), Some(100)) {
+            izwalito_effect = true;
+        } else {
+            assert_eq!(izwalito_values, (Some(90), Some(150)));
+            assert!(!izwalito_effect, "Izwalito treaty effect reverted");
+        }
+        let tequila_values = (
+            tequila["sequel_evolution"].as_u64(),
+            tequila["sequel_aggressiveness"].as_u64(),
+        );
+        if tequila_values == (Some(140), Some(0)) {
+            tequila_effect = true;
+        } else {
+            assert_eq!(tequila_values, (Some(90), Some(150)));
+            assert!(!tequila_effect, "Tequila treaty effect reverted");
+        }
+        saved |= semantic["save_load"]["completed_saves"]
+            .as_u64()
+            .is_some_and(|count| count > 0);
+        ready =
+            second_gift && izwalito_effect && tequila_effect && main_profile_unblocked(semantic);
+    }
+    assert!(
+        loaded
+            && first_gift
+            && replacement
+            && second_gift
+            && izwalito_effect
+            && tequila_effect
+            && ready,
+        "two-treaty route did not reach an unblocked bridge"
+    );
+    assert!(
+        fresh_load
+            || (izwalito_menu
+                && tequila_menu
+                && izwalito_acknowledged
+                && tequila_acknowledged
+                && saved),
+        "visible treaty gifts, authored acknowledgements, and save were not all observed"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned migrated Izwal save, and a graphical display"]
 fn izwalito_help_save_reloads_into_authored_no_ending() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");

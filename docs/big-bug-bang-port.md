@@ -269,6 +269,39 @@ Population continued through ordinary growth and conflict while the route ran;
 this test does not establish another settlement stage, treaty effects on other
 races, or the ending.
 
+### Tequila Treaty Gift
+
+`bbb_tequila_treaty_gift.tsv` begins again at the purchased-treaty checkpoint,
+gives that treaty to Izwalito, accepts the authored one-credit replacement
+offer, and cancels the rebuilt GIVE list. It then uses the normal chart and
+hyperjump controls to reach Goan, enters Goanland, selects the visibly rendered
+`treaty` row for Tequila, cancels her remaining four-item GIVE list, returns to
+the bridge, and saves. A second executable process loads the resulting save
+without rewriting either file.
+
+The source-defined effects are independently visible in the synchronized state.
+Izwalito's population changes from 1155 to 1555 while evolution changes from 90
+to 140 and aggressiveness from 150 to 100. Tequila's population changes from
+142 to 542 while evolution changes from 90 to 140 and aggressiveness from 150
+to 0. The replacement costs exactly one credit, and the treaty ends at Tequila's
+state offset `0x06a6`; guitar, perfume, decoder, and energy remain aboard. These
+match SCRIPT4 COD `0x5580..0x55c2`, including the English inline acknowledgement
+and the subsequent return to the four-item GIVE menu.
+
+`tequila_treaty_gift_survives_save_and_fresh_process_load` passed in 220.08
+seconds. Gift/save evidence is retained at
+`output/fidelity/bbb-tequila-treaty-gift-save-1789244096370779124-2857000-0`;
+fresh-load evidence is at
+`output/fidelity/bbb-tequila-treaty-gift-load-1789244299754637295-2857000-1`.
+The resulting `BLOOD.SAV` SHA-256 is
+`f57ba4a59e8339b49e9229bf73b53417f9d468406ed144ac477fd16e715636df`;
+`GAME1.SAV` is
+`361ccb2938449e95719e94d296a6b49f567d0ef6b893be48a37b63a9cfe6fc57`.
+The tested optimized runtime SHA-256 remains
+`c556c0079a12063c22421aec3ae94fce487ab3072dbc1db4c8fc08b1d0606346`.
+Later simulation continues to change population normally. This route does not
+establish peace-treaty effects for the other races or the ending.
+
 ### Izwalito's Help Conversation
 
 The first Vulcan visit after migration reveals Izwalito as a life form and
