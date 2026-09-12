@@ -135,6 +135,23 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_sequence_procedure_and_yield_handlers_use_shared_typed_state
 ```
 
+That separate A8 comparison is now complete. The guarded
+`big_bug_bang_sequence_request_oracle.py` harness executes BBB's unmodified
+0x6E7C..0x6EE4 handler in 64 cases spanning empty, ordinary, finale-prefix,
+case-sensitive, high-byte, and segment-wrapping basenames across pending,
+ship, scene, and inactive gate combinations. The generated vectors prove the
+copied basename and consumed pad, sticky `fin.` latch, preserved request bits,
+line-7 selection, three presentation resets, and wrapped script cursor against
+the same typed `load_sequence_request` path used by Commander.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_sequence_request_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_sequence_request.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_a8_uses_shared_sequence_request_state
+```
+
 ### COD Source Recovery and Shared Arithmetic
 
 The source-first pass found a production translation discrepancy that route
