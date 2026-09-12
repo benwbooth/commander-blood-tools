@@ -114,6 +114,27 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_a0_a4_decode_into_the_shared_control_flow_runtime
 ```
 
+BBB's A7, A9, AA, AB and AC entries likewise retain the shared sequence,
+procedure and yield semantics. `big_bug_bang_sequence_procedure_oracle.py`
+verifies their dispatch entries and executes the five unmodified handlers in
+96 cases: 24 topic offers, 48 enabled/disabled procedure gates, 16 procedure
+activation writes, and four initial latch values for each yield entry. The Rust
+regression frames A7/A9/AA/AB as BBB tokens and applies the decoded values to
+the same `SequencePresentationState`, `ScriptProcedureStates`, and
+`ScriptRuntime` used by Commander. AC enters the same selector-yield method at
+the BAS boundary. AB's typed state owns the low enabled bit consumed by A9; the
+comparison covers that semantic bit for all tested byte values, not arbitrary
+self-modifying COD bytes. A8 remains a separate comparison obligation because
+it owns a variable-length basename and several presentation side effects.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_sequence_procedure_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_sequence_procedure.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_sequence_procedure_and_yield_handlers_use_shared_typed_state
+```
+
 ### COD Source Recovery and Shared Arithmetic
 
 The source-first pass found a production translation discrepancy that route

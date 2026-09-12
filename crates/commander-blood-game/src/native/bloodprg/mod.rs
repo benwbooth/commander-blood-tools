@@ -513,6 +513,8 @@ pub use presentation_word_choice::{
 
 #[cfg(test)]
 mod sequel_inventory_choice_oracle;
+#[cfg(test)]
+mod sequel_sequence_procedure_oracle;
 pub use procedure::{
     SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT, ScriptProcedureStateError, ScriptProcedureStates,
     apply_procedure_activation, apply_procedure_patch_stream, build_procedure_patch_stream,
