@@ -484,6 +484,49 @@ pub fn decompile_big_bug_bang_cod(
     decompile_mode(ImageKind::Cod, image, dictionary, &[], false, None, true)
 }
 
+/// Recover a standalone BAS artifact whose companion dictionary is absent.
+///
+/// Encoded word offsets remain numeric source operands. The parser recovers
+/// only byte framing and BAS control structure, so callers cannot accidentally
+/// assign coincidental words from an unrelated dictionary to the artifact.
+pub fn decompile_unbound_bas(image: &[u8]) -> Result<Decompilation> {
+    let dictionary = HashMap::new();
+    let mut source = String::new();
+    writeln!(source, "; BloodScript typed VM source")?;
+    writeln!(source, "; format: {READABLE_SOURCE_FORMAT}")?;
+    writeln!(source, "; image: BAS")?;
+    writeln!(source, "; size: 0x{:08X}", image.len())?;
+    writeln!(
+        source,
+        "; dictionary: unbound; encoded word offsets are authoritative"
+    )?;
+    writeln!(source)?;
+
+    let stats = decompile_bas(&mut source, image, &dictionary, &[], None, None, true)?;
+    let source = format_modern_source(&source, &dictionary)?;
+    Ok(Decompilation {
+        source,
+        typed_statements: stats.typed_statements,
+        typed_bytes: stats.typed_bytes,
+        generic_op_statements: stats.generic_op_statements,
+        generic_op_bytes: stats.generic_op_bytes,
+        raw_bytes: stats.raw_bytes,
+        symbolic_labels: stats.symbolic_labels,
+        procedures: stats.procedures,
+        structured_guards: stats.structured_guards,
+        unstructured_guards: stats.unstructured_guards,
+        guard_rejection_counts: stats.guard_rejection_counts,
+        object_aliases: stats.object_aliases,
+        object_alias_uses: stats.object_alias_uses,
+        dictionary_offsets: stats.dictionary_offsets,
+        dictionary_uses: stats.dictionary_uses,
+        field_aliases: stats.field_aliases,
+        field_alias_uses: stats.field_alias_uses,
+        structured_selector_lists: stats.structured_selector_lists,
+        structured_cases: stats.structured_cases,
+    })
+}
+
 /// Recover structured BBB COD using the companion DEB and VAR ownership data.
 pub fn decompile_structured_big_bug_bang_cod_with_symbols(
     image: &[u8],
@@ -571,7 +614,7 @@ fn decompile_mode(
             var,
             sequel,
         )?,
-        ImageKind::Bas => decompile_bas(&mut source, image, dictionary, &[], None, None)?,
+        ImageKind::Bas => decompile_bas(&mut source, image, dictionary, &[], None, None, false)?,
     };
     let source = format_modern_source(&source, dictionary)?;
     Ok(Decompilation {
@@ -618,6 +661,7 @@ fn decompile_mode_with_bas_graph(
         symbols,
         Some(var),
         Some(graph),
+        false,
     )?;
     let source = format_modern_source(&source, dictionary)?;
     Ok(Decompilation {
@@ -3929,8 +3973,9 @@ fn decompile_bas(
     symbols: &[DebSymbol],
     var: Option<&[u8]>,
     graph: Option<&BasControlFlow>,
+    unbound_dictionary: bool,
 ) -> Result<BodyStats> {
-    let vm_tokens = bas_vm_tokens(image, dictionary);
+    let vm_tokens = bas_vm_tokens(image, dictionary, unbound_dictionary);
     let mut field_aliases = var
         .map(|var| {
             field_aliases(
@@ -3952,12 +3997,12 @@ fn decompile_bas(
         .unwrap_or_default();
     add_proven_statement_objects(&mut object_aliases, &vm_tokens, &proven_statements, symbols);
     simplify_alias_identifiers(&mut object_aliases, &mut field_aliases);
-    let dictionary_values = bas_dictionary_operand_values(image, dictionary);
+    let dictionary_values = bas_dictionary_operand_values(image, dictionary, unbound_dictionary);
     let dictionary_aliases = dictionary_aliases(dictionary_values.iter().copied(), dictionary);
     let mut dictionary_operands = DictionaryOperandFormatter::new(&dictionary_aliases, dictionary);
     emit_object_declarations(output, &object_aliases)?;
     emit_field_declarations(output, &field_aliases, &object_aliases)?;
-    let annotations = bas_annotations(image, dictionary)?;
+    let annotations = bas_annotations(image, dictionary, unbound_dictionary)?;
     let structured = bas_structured_annotations(graph);
     let mut cursor = 0usize;
     let mut raw_start = 0usize;
@@ -3988,7 +4033,9 @@ fn decompile_bas(
     };
 
     while cursor < image.len() {
-        if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
+        if let Some((end, token)) =
+            recovered_bas_token_at(image, cursor, dictionary, unbound_dictionary)
+        {
             if raw_start < cursor {
                 emit_raw(
                     output,
@@ -4255,12 +4302,18 @@ fn flow_role_priority(role: &str) -> u8 {
     }
 }
 
-fn bas_annotations(image: &[u8], dictionary: &HashMap<u16, String>) -> Result<SourceAnnotations> {
+fn bas_annotations(
+    image: &[u8],
+    dictionary: &HashMap<u16, String>,
+    unbound_dictionary: bool,
+) -> Result<SourceAnnotations> {
     let mut cursor = 0usize;
     let mut nodes = BTreeSet::new();
     let mut next_nodes = BTreeSet::new();
     while cursor < image.len() {
-        if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
+        if let Some((end, token)) =
+            recovered_bas_token_at(image, cursor, dictionary, unbound_dictionary)
+        {
             if let vm_source::BasToken::SelectorNode { next, .. } = token {
                 nodes.insert(cursor);
                 if next != 0 {
@@ -4655,11 +4708,30 @@ fn cod_object_operand_values(token: &VmToken) -> Vec<u16> {
     values
 }
 
-fn bas_vm_tokens(image: &[u8], dictionary: &HashMap<u16, String>) -> Vec<VmToken> {
+fn recovered_bas_token_at(
+    image: &[u8],
+    offset: usize,
+    dictionary: &HashMap<u16, String>,
+    unbound_dictionary: bool,
+) -> Option<(usize, vm_source::BasToken)> {
+    if unbound_dictionary {
+        vm_source::unbound_bas_token_at(image, offset)
+    } else {
+        vm_source::bas_token_at(image, offset, dictionary)
+    }
+}
+
+fn bas_vm_tokens(
+    image: &[u8],
+    dictionary: &HashMap<u16, String>,
+    unbound_dictionary: bool,
+) -> Vec<VmToken> {
     let mut tokens = Vec::new();
     let mut cursor = 0usize;
     while cursor < image.len() {
-        if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
+        if let Some((end, token)) =
+            recovered_bas_token_at(image, cursor, dictionary, unbound_dictionary)
+        {
             match token {
                 vm_source::BasToken::Text(token) | vm_source::BasToken::Vm(token) => {
                     tokens.push(token);
@@ -4674,11 +4746,17 @@ fn bas_vm_tokens(image: &[u8], dictionary: &HashMap<u16, String>) -> Vec<VmToken
     tokens
 }
 
-fn bas_dictionary_operand_values(image: &[u8], dictionary: &HashMap<u16, String>) -> Vec<u16> {
+fn bas_dictionary_operand_values(
+    image: &[u8],
+    dictionary: &HashMap<u16, String>,
+    unbound_dictionary: bool,
+) -> Vec<u16> {
     let mut values = Vec::new();
     let mut cursor = 0usize;
     while cursor < image.len() {
-        if let Some((end, token)) = vm_source::bas_token_at(image, cursor, dictionary) {
+        if let Some((end, token)) =
+            recovered_bas_token_at(image, cursor, dictionary, unbound_dictionary)
+        {
             match token {
                 vm_source::BasToken::Menu { word_offsets, .. } => values.extend(word_offsets),
                 vm_source::BasToken::Text(token) | vm_source::BasToken::Vm(token) => {
@@ -4713,7 +4791,7 @@ pub(crate) fn dictionary_operand_order(
     .flat_map(dictionary_operand_values)
     .collect::<Vec<_>>();
     if let Some(bas) = bas {
-        values.extend(bas_dictionary_operand_values(bas, dictionary));
+        values.extend(bas_dictionary_operand_values(bas, dictionary, false));
     }
     values
 }

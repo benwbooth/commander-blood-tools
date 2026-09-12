@@ -141,9 +141,11 @@ The current `cbvm` executable was rebuilt before the final probe:
   misreads it as a long operation and loses synchronization. The first raw span
   begins at `0x14C5`. This is not evidence that all remaining bytes are unknown
   instructions; the old dialect is simply the wrong decoder for this sequence.
-- `SCRIPT2.BAS` round-trips by retaining 16229 of 19933 bytes as raw data. Its
-  conversation structure needs separate analysis. `.BAS` is compiled binary
-  data, not shipped BASIC source text.
+- `SCRIPT2.BAS` now has a zero-raw, 1,102-statement structural source under
+  `re/vm/big-bug-bang-separate-bas`. It recompiles all 19,933 bytes exactly.
+  Its word offsets remain numeric because none resolves as a complete stream
+  against any shipped BBB dictionary; `.BAS` is compiled binary data, not
+  shipped BASIC source text.
 - `DESCRIPT.DES` fully decompiles and recompiles byte-exactly: 230 records,
   2757 commands, 44676 bytes.
 

@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use commander_blood_script_compiler::{
     ProfileDialect, ProfileImages, compile_profile, compile_program, decompile_big_bug_bang_cod,
-    decompile_structured_big_bug_bang_cod_with_symbols, parse_source_dictionary,
-    parse_source_directory, require_same_profile,
+    decompile_structured_big_bug_bang_cod_with_symbols, decompile_unbound_bas,
+    parse_source_dictionary, parse_source_directory, require_same_profile,
 };
 
 #[test]
@@ -129,6 +129,34 @@ fn all_sequel_unified_profiles_rebuild_every_active_companion() {
             .sum::<usize>();
     }
     assert_eq!(compared_bytes, 637_922);
+}
+
+#[test]
+#[ignore = "requires original BBB SCRIPT2.BAS under output/big-bug-bang/imported-assets/resources"]
+fn sequel_separate_bas_round_trips_without_inventing_a_dictionary() {
+    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let bytes =
+        std::fs::read(workspace.join("output/big-bug-bang/imported-assets/resources/SCRIPT2.BAS"))
+            .unwrap();
+    let result = decompile_unbound_bas(&bytes).unwrap();
+    assert_eq!(result.raw_bytes, 0);
+    assert_eq!(result.generic_op_statements, 0);
+    assert_eq!(result.typed_statements, 1_102);
+    assert!(result.source.contains("dictionary: unbound"));
+    assert!(result.source.contains("selector_node 0x0001 selector_009B"));
+    assert!(result.source.contains("menu 0x1F00 0x00A5"));
+    assert!(result.source.contains("text_tokens 0x016A"));
+    assert_eq!(
+        result.source,
+        std::fs::read_to_string(
+            workspace.join("re/vm/big-bug-bang-separate-bas/script2.bas.blood")
+        )
+        .unwrap()
+    );
+    assert_eq!(
+        compile_program(&result.source, &HashMap::new()).unwrap(),
+        bytes
+    );
 }
 
 #[test]

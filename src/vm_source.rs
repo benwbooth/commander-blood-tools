@@ -320,6 +320,22 @@ pub(crate) fn bas_token_at(
     offset: usize,
     dictionary: &HashMap<u16, String>,
 ) -> Option<(usize, BasToken)> {
+    bas_token_at_with_dictionary_binding(image, offset, dictionary, true)
+}
+
+/// Frame a BAS token without claiming that its encoded word offsets belong to
+/// a supplied dictionary. This is reserved for preserved standalone artifacts
+/// whose control structure is valid but whose companion dictionary is absent.
+pub(crate) fn unbound_bas_token_at(image: &[u8], offset: usize) -> Option<(usize, BasToken)> {
+    bas_token_at_with_dictionary_binding(image, offset, &HashMap::new(), false)
+}
+
+fn bas_token_at_with_dictionary_binding(
+    image: &[u8],
+    offset: usize,
+    dictionary: &HashMap<u16, String>,
+    require_dictionary_binding: bool,
+) -> Option<(usize, BasToken)> {
     // The BAS control-flow dispatcher receives a pointer to a selector node and
     // scans `{selector:u16, next:u16, body...}` records. In shipped BAS images
     // each node immediately follows an AC yield. This structural check must run
@@ -328,7 +344,9 @@ pub(crate) fn bas_token_at(
         let end = offset.checked_add(4)?;
         let selector = read_word(image, offset)?;
         let next = read_word(image, offset + 2)?;
-        dictionary.get(&selector)?;
+        if require_dictionary_binding {
+            dictionary.get(&selector)?;
+        }
         if next != 0 && next as usize >= image.len() {
             return None;
         }
@@ -347,7 +365,7 @@ pub(crate) fn bas_token_at(
         return Some((offset + 1, BasToken::End { offset }));
     }
     if opcode == 0xA3 {
-        let (end, labels) = bas_menu_at(image, offset, dictionary, 1)?;
+        let (end, labels) = bas_menu_at(image, offset, dictionary, 1, require_dictionary_binding)?;
         return Some((
             end,
             BasToken::Menu {
@@ -357,7 +375,12 @@ pub(crate) fn bas_token_at(
         ));
     }
     if opcode == vm::OP_TEXT {
-        let (end, token) = bas_text_at(image, offset, dictionary)?;
+        let (end, token) = bas_text_at_with_dictionary_binding(
+            image,
+            offset,
+            dictionary,
+            require_dictionary_binding,
+        )?;
         return Some((end, BasToken::Text(token)));
     }
     if opcode == vm::OP_YIELD_A {
@@ -431,6 +454,7 @@ fn bas_menu_at(
     offset: usize,
     dictionary: &HashMap<u16, String>,
     minimum_labels: usize,
+    require_dictionary_binding: bool,
 ) -> Option<(usize, Vec<(u16, String)>)> {
     if image.get(offset) != Some(&0xA3) {
         return None;
@@ -443,11 +467,13 @@ fn bas_menu_at(
         if word == 0 {
             return (labels.len() >= minimum_labels).then_some((cursor, labels));
         }
-        let label = dictionary.get(&word)?;
-        if !(2..=16).contains(&label.len()) || label.contains(' ') {
+        let label = dictionary.get(&word);
+        if require_dictionary_binding
+            && !label.is_some_and(|label| (2..=16).contains(&label.len()) && !label.contains(' '))
+        {
             return None;
         }
-        labels.push((word, label.clone()));
+        labels.push((word, label.cloned().unwrap_or_default()));
         if labels.len() > 128 {
             return None;
         }
@@ -455,10 +481,11 @@ fn bas_menu_at(
     None
 }
 
-pub(crate) fn bas_text_at(
+fn bas_text_at_with_dictionary_binding(
     image: &[u8],
     offset: usize,
     dictionary: &HashMap<u16, String>,
+    require_dictionary_binding: bool,
 ) -> Option<(usize, VmToken)> {
     if image.get(offset) != Some(&vm::OP_TEXT) {
         return None;
@@ -472,8 +499,11 @@ pub(crate) fn bas_text_at(
     else {
         return None;
     };
-    if flags_b5 & 0x80 == 0
-        || !word_offsets
+    if flags_b5 & 0x80 == 0 {
+        return None;
+    }
+    if require_dictionary_binding
+        && !word_offsets
             .iter()
             .all(|word| *word == 0xFFFF || dictionary.contains_key(word))
     {

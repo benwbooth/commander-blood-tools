@@ -10,6 +10,8 @@ Big Bug Bang does not own a per-profile BAS resource. The disc's lone
 `SCRIPT2.BAS` is preserved separately, but original-executable analysis found
 no legitimate state path that can make its selector roots reachable. It is not
 silently replaced with an empty program or attached to SCRIPT2's dictionary.
+Its byte-exact, structurally typed, dictionary-unbound source is maintained at
+`../big-bug-bang-separate-bas/script2.bas.blood`.
 
 Regenerate these sources from extracted resources and verify recompilation:
 

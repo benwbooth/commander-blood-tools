@@ -175,6 +175,14 @@ profiles because the ownership proof below establishes that it is unreachable
 from legitimate shipped state. The compiler neither emits an invented empty
 BAS nor binds that file to SCRIPT2's incompatible dictionary.
 
+The separate artifact is nevertheless fully ported as editable source at
+`re/vm/big-bug-bang-separate-bas/script2.bas.blood`. Its legacy BAS framing
+recovers 593 text records, 122 menus, 122 linked selector nodes and 265 other
+instructions with no raw or generic operations. All encoded word offsets remain
+numeric because no shipped BBB dictionary resolves the stream; compiling the
+source without a dictionary reproduces all 19,933 shipped bytes exactly. This
+structural recovery does not alter the ownership or reachability conclusion.
+
 Regeneration decompiles each original profile, recompiles it internally, and
 rejects any byte difference before writing source:
 
@@ -2992,9 +3000,11 @@ with original bytes attached, not replacement characters or guessed corrections:
 `bbb.script12.cod.00001b9c`. An English editor must resolve these in context.
 
 This is authored COD translation source, **not completed English localization**.
-BAS dialogue, native UI/object display names, and media-embedded text are
-explicitly excluded in the output. Runtime localization, translated choice
-labels that preserve concept IDs, font/wrapping checks, and timing remain work.
+The separate BAS source has no recoverable companion dictionary, so its numeric
+dialogue and choice operands cannot be translated from shipped evidence. Native
+UI/object display names and media-embedded text are also explicitly excluded.
+Runtime localization, translated choice labels that preserve concept IDs,
+font/wrapping checks, and timing remain work.
 Generated original-text catalogs stay under ignored `output/`, not in the repo.
 
 The longer no-input reference, `startup-capture-15 --seconds 600 --interval 1`,

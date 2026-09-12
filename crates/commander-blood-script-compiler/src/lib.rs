@@ -54,6 +54,8 @@ pub use bloodscript::compile_with_dictionary as compile_program;
 pub use bloodscript::decompile_big_bug_bang_cod;
 /// Recover structured sequel COD using companion DEB and VAR ownership.
 pub use bloodscript::decompile_structured_big_bug_bang_cod_with_symbols;
+/// Recover a standalone BAS image without assigning it a companion dictionary.
+pub use bloodscript::decompile_unbound_bas;
 /// Decode a script directory into source symbols.
 pub use script::parse_deb as parse_source_directory;
 /// Decode exact CP437 dictionary words for source recovery and recompilation.

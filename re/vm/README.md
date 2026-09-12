@@ -130,7 +130,9 @@ cargo run --bin cbvm -- decompile-big-bug-bang-unified \
 
 BBB profiles derive COD, DEB, DIC, and VAR. They intentionally do not emit BAS;
 the sequel's lone dormant BAS file has separate ownership evidence in
-`docs/big-bug-bang-port.md`.
+`docs/big-bug-bang-port.md` and standalone editable source under
+`big-bug-bang-separate-bas/`. That source preserves numeric word offsets because
+none of the 17 shipped BBB dictionaries is its companion.
 
 Compile one complete edited profile with:
 
