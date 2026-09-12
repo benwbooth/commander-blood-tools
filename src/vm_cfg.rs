@@ -151,7 +151,25 @@ const MAX_FLOW_STATES: usize = 250_000;
 const MAX_GUARD_DEPTH: usize = 64;
 
 pub fn analyze_cod(script: &str, image: &[u8], symbols: &[DebSymbol]) -> Result<CodControlFlow> {
-    let tokens = vm::walk(image, 0, image.len());
+    analyze_cod_for_dialect(script, image, symbols, false)
+}
+
+/// Analyze a BBB COD stream using its extended opcode descriptor table.
+pub fn analyze_big_bug_bang_cod(
+    script: &str,
+    image: &[u8],
+    symbols: &[DebSymbol],
+) -> Result<CodControlFlow> {
+    analyze_cod_for_dialect(script, image, symbols, true)
+}
+
+fn analyze_cod_for_dialect(
+    script: &str,
+    image: &[u8],
+    symbols: &[DebSymbol],
+    sequel: bool,
+) -> Result<CodControlFlow> {
+    let tokens = walk_for_dialect(image, sequel);
     let end_marker = validate_typed_stream(image, &tokens)?;
     let functions = functions_from_symbols(script, symbols, image.len());
     let offsets: BTreeSet<usize> = tokens
@@ -334,8 +352,26 @@ pub fn analyze_structured_guards(
     image: &[u8],
     symbols: &[DebSymbol],
 ) -> Result<GuardRecovery> {
-    let graph = analyze_cod(script, image, symbols)?;
-    let tokens = vm::walk(image, 0, image.len());
+    analyze_structured_guards_for_dialect(script, image, symbols, false)
+}
+
+/// Recover structured guards from a BBB COD stream.
+pub fn analyze_big_bug_bang_structured_guards(
+    script: &str,
+    image: &[u8],
+    symbols: &[DebSymbol],
+) -> Result<GuardRecovery> {
+    analyze_structured_guards_for_dialect(script, image, symbols, true)
+}
+
+fn analyze_structured_guards_for_dialect(
+    script: &str,
+    image: &[u8],
+    symbols: &[DebSymbol],
+    sequel: bool,
+) -> Result<GuardRecovery> {
+    let graph = analyze_cod_for_dialect(script, image, symbols, sequel)?;
+    let tokens = walk_for_dialect(image, sequel);
     let functions = functions_from_symbols(script, symbols, image.len());
     let mut candidates = Vec::new();
     let mut rejected: BTreeMap<usize, BTreeSet<GuardRejection>> = BTreeMap::new();
@@ -537,6 +573,7 @@ fn collect_block_flag_values(
 
 fn token_may_branch(token: &VmToken, query: bool) -> bool {
     match token {
+        VmToken::Op { opcode: 0xA2, .. } => query,
         VmToken::ConceptGuard { .. }
         | VmToken::GlobalWordCompare { .. }
         | VmToken::GlobalPairCompare { .. }
@@ -553,6 +590,14 @@ fn token_may_branch(token: &VmToken, query: bool) -> bool {
         | VmToken::PairRecord { .. }
         | VmToken::RecordTriple { .. } => query,
         _ => false,
+    }
+}
+
+fn walk_for_dialect(image: &[u8], sequel: bool) -> Vec<VmToken> {
+    if sequel {
+        vm::walk_big_bug_bang(image, 0, image.len())
+    } else {
+        vm::walk(image, 0, image.len())
     }
 }
 

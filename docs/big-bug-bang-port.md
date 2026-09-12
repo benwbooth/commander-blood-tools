@@ -47,11 +47,11 @@ constitute a BBB routine inventory or prove inherited handlers unchanged.
 
 Outstanding coverage work includes BBB-specific native routine ownership and
 comparison, the changed AMER/CROOLIS modules, inherited VM handler semantics,
-structured source and companion-resource recovery for all 17 profiles, and
-SCRIPT2 BAS execution and ownership. Modern typed COD decoding and English
-text coverage alone do not close these obligations. The explicit BBB COD
-source path now reproduces all 17 original COD files, as detailed below;
-the default CB walker and retired interpreter have not been switched to BBB.
+derived companion DEB/DIC/VAR rebuilding, and SCRIPT2 BAS execution and
+ownership. Modern typed COD decoding, structured recovery, and English text
+coverage alone do not close these obligations. The explicit BBB COD source
+path now reproduces all 17 original COD files, as detailed below; the default
+CB walker and retired interpreter have not been switched to BBB.
 
 The inherited A5 handler at BBB `0x6B07..0x6B28` has the same instruction
 structure as CB `0x65EB`, with relocated globals and timer storage. The
@@ -98,10 +98,21 @@ operand of zero does not terminate the line, and FFFF/FFFE operands are not
 mistaken for choice markers. Generated `text_tokens` controls now compile
 with their actual emitted grammar, and profile requests support SCRIPT1..17.
 
-All 17 original COD files and their real CP437 dictionaries now pass source
-decompilation/recompilation: **25,530 statements and 241,219 bytes**, with zero
-raw bytes and zero generic opcode statements. The recovery command checks
-these gates and byte identity before writing each local source file:
+The BBB path now also uses each profile's real DEB symbols and VAR ownership to
+recover procedures, structured guards, objects, and fields. CFG and guard
+analysis select the BBB instruction walker without changing the Commander
+Blood path. A2 random instructions create control-flow branches only in query
+mode, matching their condition/update distinction. Names that start with a
+digit, including SCRIPT5's `1fincro` and `2fincro`, receive a leading underscore
+so that the recovered procedure remains an editable source identifier.
+
+All 17 original COD files and their real CP437 dictionaries now pass structured
+source decompilation/recompilation: **25,530 statements and 241,219 bytes**, with
+zero raw bytes and zero generic opcode statements. The recovered structure
+contains **312 procedures, 2,221 guards, 627 object aliases, 7,684 object-alias
+uses, and 1,153 field aliases**, with zero rejected guards. The recovery command
+loads each COD/DIC/DEB/VAR set and checks these gates and byte identity before
+writing each local source file:
 
 ```sh
 nix develop -c cargo run -p commander-blood-script-compiler --example recover_bbb_cod -- \
@@ -110,16 +121,17 @@ nix develop -c cargo run -p commander-blood-script-compiler --example recover_bb
 ```
 
 These are standalone editable COD programs, not finished unified profiles.
-They still use numeric state addresses and lack BBB-specific structured
-procedure/field ownership recovery, derived DEB/DIC/VAR rebuilding, BAS source,
-and production startup integration. Byte-identical source compilation does
-not establish complete native behavior or a complete playthrough.
+State outside recovered record fields remains numeric, and derived DEB/DIC/VAR
+rebuilding, BAS source, and production startup integration remain incomplete.
+Byte-identical source compilation does not establish complete native behavior
+or a complete playthrough.
 
-Verification for this checkpoint: all five sequel source tests pass with the
-original resources; all 978 enabled game-library tests pass (59 ignored).
-The release game rebuilt successfully with SHA-256
-`a46494369be248f21626ae562536040c5ccb64415d09387da1403e9997327280`.
-No manual gameplay session was requested or launched for this source-first pass.
+Verification for the structured checkpoint: the real all-profile corpus test,
+all five CFG tests, and all 34 BloodScript tests pass. The broader root-library
+run had 689 passing tests and seven failures solely because its Commander Blood
+fixtures were unavailable at `accuracy/cblood_install/cblood`; those failures
+do not exercise this BBB source path. No manual gameplay session was requested
+or launched for this source-recovery pass.
 
 ### Izwalito's Treaty Purchase
 

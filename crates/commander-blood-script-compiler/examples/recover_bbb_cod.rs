@@ -4,7 +4,8 @@ use std::{env, fs, path::PathBuf};
 
 use anyhow::{Context, Result, bail};
 use commander_blood_script_compiler::{
-    compile_program, decompile_big_bug_bang_cod, parse_source_dictionary,
+    compile_program, decompile_structured_big_bug_bang_cod_with_symbols, parse_source_dictionary,
+    parse_source_directory,
 };
 
 fn main() -> Result<()> {
@@ -19,7 +20,10 @@ fn main() -> Result<()> {
         let name = format!("SCRIPT{profile}");
         let cod = fs::read(input.join(format!("{name}.COD"))).with_context(|| name.clone())?;
         let dictionary = parse_source_dictionary(&fs::read(input.join(format!("{name}.DIC")))?);
-        let recovered = decompile_big_bug_bang_cod(&cod, &dictionary)?;
+        let symbols = parse_source_directory(&fs::read(input.join(format!("{name}.DEB")))?);
+        let var = fs::read(input.join(format!("{name}.VAR")))?;
+        let recovered =
+            decompile_structured_big_bug_bang_cod_with_symbols(&cod, &var, &dictionary, &symbols)?;
         if recovered.raw_bytes != 0 || recovered.generic_op_statements != 0 {
             bail!("{name} contains unresolved bytes or operations");
         }

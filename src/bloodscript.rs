@@ -483,6 +483,24 @@ pub fn decompile_big_bug_bang_cod(
     decompile_mode(ImageKind::Cod, image, dictionary, &[], false, None, true)
 }
 
+/// Recover structured BBB COD using the companion DEB and VAR ownership data.
+pub fn decompile_structured_big_bug_bang_cod_with_symbols(
+    image: &[u8],
+    var: &[u8],
+    dictionary: &HashMap<u16, String>,
+    symbols: &[DebSymbol],
+) -> Result<Decompilation> {
+    decompile_mode(
+        ImageKind::Cod,
+        image,
+        dictionary,
+        symbols,
+        true,
+        Some(var),
+        true,
+    )
+}
+
 pub fn decompile_structured_with_symbols(
     kind: ImageKind,
     image: &[u8],
@@ -3702,7 +3720,11 @@ fn decompile_cod(
     };
     let annotations = cod_annotations(&tokens, image, symbols)?;
     let structured = if structured_source {
-        structured_annotations(analyze_structured_guards("COD", image, symbols)?)
+        structured_annotations(if sequel {
+            crate::vm_cfg::analyze_big_bug_bang_structured_guards("COD", image, symbols)?
+        } else {
+            analyze_structured_guards("COD", image, symbols)?
+        })
     } else {
         StructuredAnnotations::default()
     };
@@ -4379,6 +4401,8 @@ fn identifier_component(name: &str) -> String {
     }
     if output.is_empty() {
         output.push_str("unnamed");
+    } else if output.as_bytes()[0].is_ascii_digit() {
+        output.insert(0, '_');
     }
     output
 }
