@@ -1,0 +1,3306 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT4
+concepts "parler" "bonjour" "rayon"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc finmar1 enabled {
+        during contact
+        require Marakas.current_location == aboard
+        require globals.A68 == 2
+        require presentation == Marakas
+    } then {
+        say Marakas presentation=10 : "Ouaou|!..."
+        say Marakas presentation=8 if_not_shown skip_next=2 : "..."
+        end presentation Marakas
+        globals.A13 += 3
+    }
+    proc crlibma enabled {
+        during contact
+        require globals.A64 == 0
+        require Marakas.current_location == aboard
+        require presentation == Marakas
+    } then {
+        say Marakas presentation=8 chatter : "alors marakas|?... comment ca va|?... vous avez la trompe un peu bleue|!..."
+        say Marakas presentation=12 : "Ah|! J'en avais assez|!..."
+        say Marakas presentation=20 : "Assez|!..."
+        say Marakas presentation=21 : "Assez|!..."
+        say Marakas presentation=8 chatter : "mais ca va mieux maintenant|?..."
+        say Marakas presentation=15 : "Ah ah ah|! Vous n'avez pas idée|!..."
+        say Marakas presentation=26 : "J'ai trop travaillé du chapeau|!..."
+        say Marakas presentation=8 chatter : "il faut le renvoyer dans le cyberspace|, commander|..."
+        say Marakas presentation=8 chatter : "mais attention|, il ne faut pas l'envoyer sur une planéte déjà occupée|..."
+        say Marakas presentation=12 : "Sinon ca serait le chaos|..."
+        say Marakas presentation=13 : "Et vous-méme seriez bloqué dans le CHAOS|...|!!! ATTENTION|... ATTENTION|!!!"
+        say Marakas presentation=8 chatter : "comme il dit|, commander|..."
+        say Marakas presentation=8 chatter resume_at=marrac01 : "sur quelle planéte voulez-vous le téléporter|, commander|?..." choices "attendre" "Rondo" "Corpo" "Malus" "Vistar" "Tumul" "Magnus"
+        when {
+            require choice == "attendre"
+        } then {
+            say Marakas presentation=8 chatter : "bonne idée|, commander|..."
+            say Marakas presentation=8 chatter : "vous pourrez ainsi vérifier quelle planéte est libre|..."
+            say Marakas presentation=12 : "Ouais|! Parce que je voudrais pas partager|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "avec n'importe qui|..."
+            request sequence "match04.hnm"
+            say Marakas presentation=8 chatter : "mais votre décision nécessite un gel temporel|..."
+            say Marakas presentation=8 chatter : "j'effectue un arrét sur la séquence Marakas cryobox|..."
+            say Marakas presentation=8 chatter : "vous la revivrez jusqu'à la téléportation de marakas|..."
+            say Marakas presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Marakas
+            choice = none
+        }
+        when {
+            require choice == "Rondo"
+        } then {
+            say Marakas presentation=8 chatter : "TELEPORTATION MARAKAS SUR RONDO|..."
+            say Marakas presentation=8 if_not_shown skip_next=7 : "..."
+            Rondo.known = true
+            Rondo.active = true
+            Rondoland.active = true
+            Marakas.current_location = Rondoland
+            bits(Marakas.flags,0x0004) = true
+            end presentation Marakas
+            choice = none
+        }
+        when {
+            require choice == "Corpo"
+        } then {
+            say Marakas presentation=8 chatter : "TELEPORTATION MARAKAS SUR CORPO|..."
+            say Marakas presentation=8 if_not_shown skip_next=7 : "..."
+            Corpo.active = true
+            Corpoland.active = true
+            Corpo.known = true
+            Marakas.current_location = Corpoland
+            bits(Marakas.flags,0x0004) = true
+            end presentation Marakas
+            choice = none
+        }
+        when {
+            require choice == "Malus"
+        } then {
+            say Marakas presentation=8 chatter : "TELEPORTATION MARAKAS SUR MALUS|..."
+            say Marakas presentation=8 if_not_shown skip_next=7 : "..."
+            end presentation Marakas
+            Malus.active = true
+            Malus.known = true
+            Malusland.active = true
+            Marakas.current_location = Malusland
+            bits(Marakas.flags,0x0004) = true
+            choice = none
+        }
+        when {
+            require choice == "Vistar"
+        } then {
+            say Marakas presentation=8 chatter : "teleportation marakas sur vistar|..."
+            say Marakas presentation=8 if_not_shown skip_next=7 : "..."
+            end presentation Marakas
+            Vistar.active = true
+            Vistarland.active = true
+            Vistar.known = true
+            Marakas.current_location = Vistarland
+            bits(Marakas.flags,0x0004) = true
+            choice = none
+        }
+        when {
+            require choice == "Tumul"
+        } then {
+            say Marakas presentation=8 chatter : "teleportation marakas sur tumul|..."
+            say Marakas presentation=8 if_not_shown skip_next=7 : "..."
+            Tumul.active = true
+            Tumul.known = true
+            Tumland.active = true
+            Marakas.current_location = Tumland
+            bits(Marakas.flags,0x0004) = true
+            end presentation Marakas
+            choice = none
+        }
+        when {
+            require choice == "Magnus"
+        } then {
+            say Marakas presentation=8 chatter : "teleportation marakas sur magnus|..."
+            say Marakas presentation=8 if_not_shown skip_next=7 : "..."
+            end presentation Marakas
+            Magnus.active = true
+            Magnus.known = true
+            Magnusland.active = true
+            Marakas.current_location = Magnusland
+            bits(Marakas.flags,0x0004) = true
+            choice = none
+        }
+    }
+    proc marrac01 enabled {
+        during travel
+        require presentation == Marakas
+    } then {
+        when {
+            require Marakas.encounter_count == 1
+        } then {
+            say Marakas presentation=9 : "Ah Commander|! Enfin vous voilà|!..."
+            say Marakas presentation=10 : "Vous étes vraiment celui qu'il nous faut|..."
+            say Marakas presentation=8 chatter : "pourquoi|? Qu'est-ce qui se passe|?..."
+            say Marakas presentation=22 : "Aie aie aie|! Si vous saviez|!..."
+            say Marakas presentation=8 chatter : "oui|... quoi|?..."
+            say Marakas presentation=12 : "J'en ai assez|..."
+            say Marakas presentation=20 : "Assez|..."
+            say Marakas presentation=21 : "Assez|..."
+            say Marakas presentation=26 : "Vous voyez ma casquette|?..."
+            say Marakas presentation=8 chatter : "eh bien quoi|?..."
+            say Marakas presentation=17 : "On m'a obligé à porter ce costume ridicule de chef|..."
+            dictionary blank after "costume"
+            say Marakas presentation=18 : "Pour conduire la nation IZWAL|!..."
+            say Marakas presentation=23 : "Ah là là|! J'aurais préféré qu'on me file plein de pognon|..."
+            say Marakas presentation=14 : "Hin hin hin|... Des crédits, des crédits|... J'm'en serais fichu plein la trompe|!..."
+            say Marakas presentation=27 : "Au lieu de ça, regardez|... je fouille dans mes poches|..."
+            say Marakas presentation=28 : "Et ben y a que dalle dedans|! Elles sont vides|!..."
+            say Marakas presentation=8 chatter : "c'est grave|?..."
+            say Marakas presentation=11 : "Je peux méme pas m'acheter un livre de Platon|!..."
+            say Marakas presentation=8 chatter : "quelle tragédie|!..."
+            say Marakas presentation=10 : "Vous, ça va comme ça|!..."
+        }
+        when {
+            require globals.A68 == 1
+        } then {
+            say Marakas presentation=9 : "Encore vous, Commander|!..."
+            say Marakas presentation=10 : "Vous, l'envoyé de Monsieur BOB|!..."
+            say Marakas presentation=11 : "Vous étes bien de droite, hein, c'est ca|?..."
+            say Marakas presentation=21 : "Parce que si vous vous étes de droite|..."
+            say Marakas presentation=20 : "Eh ben nous on est de gauche|..."
+            say Marakas presentation=12 : "Et nous on en a assez de vous|..."
+            say Marakas presentation=13 : "C'est tout ce que vous méritez|..."
+            say Marakas presentation=14 : "Est-ce que je me trompe|?..."
+            say Marakas presentation=15 : "Ah ah ah|! Elle est bonne, ma blague|... Je vous la refais"
+            say Marakas presentation=14 : "Est-ce que je me trompe|?..."
+            say Marakas presentation=24 : "Mais sérieusement|... Attention à vous, Commander|..."
+            say Marakas presentation=25 : "Parce que c'est plus possible de vivre comme ca|!..."
+            say Marakas presentation=26 : "Ca va pas dans votre téte ou quoi|?..."
+            say Marakas presentation=17 : "Je paie mes impots comme tout l'Univers|..."
+            say Marakas presentation=23 : "Alors il passe où mon pognon|?..."
+            say Marakas presentation=24 : "En tout cas, si vous m'augmentez pas, je vous préviens|..."
+            say Marakas presentation=22 : "Ca va pas aller du tout|!..."
+            say Marakas presentation=27 : "En attendant, moi je fais gréve|... Hop|! J'arréte le boulot|..."
+            say Marakas presentation=8 chatter : "oulàlà commander|! il est drolement remonté contre vous|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Marakas
+        }
+        when {
+            require globals.A81 == 6
+        } then {
+            say Marakas presentation=17 : "Waou|! Commander|! Encore merci pour votre coup de génie|!..."
+            say Marakas presentation=15 : "Ah ah ah|! Ca|! Vous manquez pas d'idées, vous, hein|?..."
+            say Marakas presentation=10 : "Méme que c'est pour ça qu'on vous a pris comme scénariste|!..."
+            say Marakas presentation=19 : "Allez|! Dans mes bras, vieux frére|! Me serre pas trop fort, je sens encore les chaines|..."
+            say Marakas presentation=14 : "Qu'est-ce que je pourrais bien vous offrir pour vous remercier|?..."
+            say Marakas presentation=8 chatter : "Hé Hé|..."
+            say Marakas presentation=25 : "Oh puis tiens|! Je vais rien vous offrir|! Comme ça, vous aurez vraiment fait ca pour la gloire|!..."
+            say Marakas presentation=8 chatter resume_at=marrac01_dialogue_resume_1 : "pas sympa, ça|! commander, forcez-le à vous offrir quelque chose|..." choices "forcer" "pas_forcer"
+            when {
+                require choice == "forcer"
+            } then {
+                say Marakas presentation=26 : "Eh oh|! Ca va pas la téte|! Je donne si je veux|!..."
+                say Marakas presentation=8 chatter : "mais vous voulez|..."
+                say Marakas presentation=13 : "C'est vrai|... Voilà pour toi|... Cadeau|..."
+                say Marakas presentation=8 chatter : "ben qu'est-ce que c'est|? On n'a rien vu|!..."
+                say Marakas presentation=28 : "Normal|... C'est toute ma gratitude|..."
+                say Marakas presentation=8 chatter : "c'est malin|..."
+                say Marakas presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice != "_forcer"
+            } then {
+                choice = none
+            }
+            marrac01_dialogue_resume_1:
+            say Marakas presentation=15 : "Et encore merci|! ah ah ah|!..."
+            say Marakas presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A81 = 7
+            end presentation Marakas
+        }
+        when {
+            require Marakas.encounter_count > 1
+        } then {
+            say Marakas presentation=9 : "Mon nom est Marakas, grand chef de tribu IZWALS|..."
+            text_tokens Marakas presentation=11 : "Nous" "sommes" state_number(0x0628) "izwals" "dans" "tribu" "..."
+        }
+        when {
+            require Marakas.encounter_count == 1
+        } then {
+            say Marakas presentation=9 : "Il faut nous aider|, Commander|!..."
+            say Marakas presentation=23 : "On a besoin d'argent|..."
+        }
+        when {
+            require Marakas.encounter_count == 2
+        } then {
+            say Marakas presentation=20 : "Voilà|, Commander|..."
+            say Marakas presentation=10 : "Toi|, tu vas nous donner|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "De quoi acheter des livres|!..."
+            transfer credit from Marakas to aboard
+            say Marakas presentation=14 : "Platon|! J'adore Platon|!..."
+            say Marakas presentation=25 : "Mais le probléme avec Platon|..."
+            say Marakas presentation=22 : "C'est qu'il a écrit beaucoup beaucoup|!..."
+            say Marakas presentation=23 : "Et ca coùte bezef crédits|! Bezef bezef|!..."
+            say Marakas presentation=17 : "Pour un crédit|, on te donnera|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "nourritures extraterrestres|..."
+            transfer nourriture from Marakas to aboard
+            say Marakas presentation=15 : "Ah ah ah|! Et nous avec crédit|, on trouvera|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "nourritures spirituelles|..."
+            transfer ecriture from Marakas to aboard
+            say Marakas presentation=8 if_not_shown skip_next=1 : "Waou|! Commander|! Ca va pas la téte|?..."
+            request sequence "ppit03.hnm"
+            say Marakas presentation=8 if_not_shown skip_next=1 : "Vous allez quand méme pas|..."
+            request sequence "ppit05.hnm"
+            say Marakas presentation=8 if_not_shown skip_next=1 : "gaspiller un crédit|..."
+            transfer credit from aboard to Marakas
+            say Marakas presentation=8 if_not_shown skip_next=1 : "Pour acheter du steak de l'espace|..."
+            transfer nourriture from aboard to Marakas
+            say Marakas presentation=8 if_not_shown skip_next=1 : "A un platonicien à trompe|!..."
+            transfer ecriture from aboard to Marakas
+            say Marakas presentation=16 : "Il me fait peur|, Commander|!..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "Na na na né reu|!..."
+            request sequence "ppit07.hnm"
+            say Marakas presentation=8 if_not_shown skip_next=1 : "Couché Petit Piteux|!..."
+            request sequence "bobb.hnm"
+            say Marakas presentation=22 : "Aie aie aie|... J'ai eu peur|..."
+        }
+        when {
+            require Marakas.encounter_count == 3
+        } then {
+            say Marakas presentation=17 : "Commander|! Je suis content de vous revoir|!..."
+            say Marakas presentation=22 : "J'ai fait un affreux cauchemar|..."
+            say Marakas presentation=16 : "J'ai révé|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "D'un alien qui venait de ROSWELL|!..."
+            request sequence "momi10.hnm"
+            say Marakas presentation=16 : "J'avais peur|..."
+            say Marakas presentation=12 : "Et regardez|!..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "D'affreux CROOLIS se moquaient de moi|!..."
+            request sequence "match04.hnm"
+            say Marakas presentation=26 : "Ca va pas bien dans ma téte|!..."
+            say Marakas presentation=9 : "Il faut vite que j'aille|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "en parler|..."
+            request sequence "p_cles.hnm"
+            say Marakas presentation=8 if_not_shown skip_next=1 : "A mon psychanalyste|..."
+            request sequence "kort.hnm"
+            say Marakas presentation=23 : "Mais ça coute tellement cher|!..."
+            say Marakas presentation=27 : "Je vais plutot|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "Relire Platon|..."
+            request sequence "diplom1j.hnm"
+        }
+        when {
+            require Marakas.encounter_count == 4
+        } then {
+            say Marakas presentation=16 : "Encore fait un cauchemar|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "Encore vu l'affreux de ROSWELL|!..."
+            request sequence "momi10.hnm"
+            say Marakas presentation=20 : "Et cette fois|..."
+            say Marakas presentation=21 : "Ca dépasse les bornes|..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "J'ai révé que je le disséquais|..."
+            transfer nourriture from Marakas to aboard
+            say Marakas presentation=8 chatter : "quelle horreur|!..."
+            say Marakas presentation=26 : "Je dois étre timbré|!..."
+            say Marakas presentation=19 : "Vous vous rendez compte|?..."
+            say Marakas presentation=8 if_not_shown skip_next=1 : "Le disséquer|!..."
+            transfer nourriture from aboard to Marakas
+            say Marakas presentation=15 : "Pourquoi pas le manger tant qu'on y est|?..."
+            say Marakas presentation=8 chatter : "commander|, attention|, il va péter les plombs|!..."
+        }
+        when {
+            require state_b1[Marakas.population] > 100
+            require nourriture.holder != aboard
+        } then {
+            say Marakas presentation=9 : "Nous élevons murfalos, bonne nourriture..."
+            when {
+                random_guard 0x0003
+            } then {
+                say Marakas presentation=8 if_not_shown skip_next=1 : "Elevés en plein air|..."
+                request sequence "ettamorf.hnm"
+            }
+            say Marakas presentation=15 : "Nous te vendons nourriture contre un crédit..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Marakas presentation=8 chatter : "Nous n'avons plus de crédits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Marakas presentation=8 chatter resume_at=gest01 : "Vous acceptez de leur acheter de la bouffe, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Marakas presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Marakas
+                    globals.A4 -= 1
+                    say Marakas presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION NOURRITURE DANS CRYOBOX"
+                    transfer nourriture from Marakas to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    say Marakas presentation=26 if_not_shown skip_next=2 : "Ca va pas la téte de refuser un presque cadeau|!|?..."
+                    Marakas.aggressiveness += 200
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest01 enabled {
+        during travel
+        require presentation == Marakas
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Marakas.evolution] < 100
+            } then {
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Marakas.evolution] < 500
+                require state_b6[Marakas.evolution] > 100
+            } then {
+                say Marakas presentation=10 if_not_shown skip_next=5 : "Oh des atomiques|... Intéressant|... Merci Commander|..."
+                state_b1[Marakas.population] /= 2
+                state_b6[Marakas.evolution] += 100
+                Marakas.aggressiveness += 100
+                globals.B31 = 0
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Marakas.evolution] > 500
+            } then {
+                say Marakas presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire|... Merci|!!!"
+                state_b6[Marakas.evolution] += 200
+                state_b5[Marakas.energy] += 200
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Marakas presentation=8 chatter if_not_shown skip_next=3 : "..."
+            state_b1[Marakas.population] /= 4
+            globals.B31 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Marakas presentation=15 if_not_shown skip_next=4 : "Ah, joli chapeau. Moi ressembler à grand guerrier|... Moi me sentir fort"
+            state_b5[Marakas.energy] += 200
+            Marakas.aggressiveness += 400
+            globals.B30 += 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Marakas presentation=14 if_not_shown skip_next=2 : "Ohhh|... Toi généreux|... Toi te débarrasser de vieilleries, toi avoir grand grenier, ami|..."
+            state_b6[Marakas.evolution] += 30
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Marakas presentation=16 : "Beuark|... Moi pas aimer|... Moi peur|... Moi cauchemars..."
+            say Marakas presentation=8 chatter if_not_shown skip_next=2 : "Ha! Ha! Ha! Commander, vous avez vu, il est mort de trouille|..."
+            globals.B31 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Marakas presentation=9 : "Bionium|... Chouuuu|... Ca donner force à boyaux de la téte|..."
+            say Marakas presentation=8 chatter if_not_shown skip_next=5 : "Il a l'air content|..."
+            state_b1[Marakas.population] += 100
+            state_b6[Marakas.evolution] += 50
+            state_b5[Marakas.energy] += 200
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Marakas presentation=9 if_not_shown skip_next=3 : "Technologie|... Ohhh trés compliqué|... Moi rien comprendre, mais moi aimer..."
+            state_b6[Marakas.evolution] += 80
+            globals.B29 += 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Marakas presentation=17 : "Haaaa|!!! Guitare, moi aimer. Tsoing tsoing|... Oyé|!!! AYE AME HEU KING BEEE|!!!"
+            dictionary blank after "Guitare,"
+            say Marakas presentation=8 chatter if_not_shown skip_next=5 : "Il se prend pour un rocker|... Commander|..."
+            globals.B31 += 1
+            state_b1[Marakas.population] += 350
+            state_b6[Marakas.evolution] += 30
+            globals.B30 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            when {
+                require Marakas.encounter_count == 1
+            } then {
+                say Marakas presentation=17 : "Wow|! Cool|! Juste de quoi m'acheter un dialogue de Platon|!|..."
+                say Marakas presentation=8 chatter : "connais-toi|!..."
+                say Marakas presentation=10 : "Eh|! Connais-toi toi-méme|!..."
+                say Marakas presentation=8 if_not_shown skip_next=3 : "..."
+                globals.A4 -= 1
+                bits(credit.flags,0x0040) = false
+                end presentation Marakas
+            }
+            say Marakas presentation=8 chatter : "Vous lui filez un crédit|... Commander vous étes complétement givré|..."
+            say Marakas presentation=17 : "Woaoh|!!! Un crédit, je vais vite m'acheter des POGS|..."
+            say Marakas presentation=8 if_not_shown skip_next=3 : "..."
+            globals.A4 -= 1
+            end presentation Marakas
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Marakas presentation=14 : "Sniff sniff|... Ca sentir bon|... Ca odeur érotique|... Femelle|..."
+            say Marakas presentation=8 chatter if_not_shown skip_next=4 : "Hé! Hé! Ca fait remonter le cours de la bourse|... Ha Ha Ha|... Hum, pardon, Commander..."
+            state_b6[Marakas.evolution] += 30
+            state_b1[Marakas.population] += 500
+            globals.B31 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Marakas presentation=9 : "Ohhh décodeur|... Moi pouvoir regarder télé|... Toi gentil|... Moi aimer"
+            say Marakas presentation=8 chatter if_not_shown skip_next=4 : "Commander, pendant qu'il va regarder la télé, il va pas se reproduire|..."
+            state_b6[Marakas.evolution] += 50
+            state_b1[Marakas.population] -= 100
+            globals.B31 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Marakas presentation=15 if_not_shown skip_next=2 : "De la nourriture|... Miam miam|... Manger, manger|..."
+            state_b5[Marakas.energy] += 600
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Marakas presentation=9 if_not_shown skip_next=3 : "Médicaments|... Moi avoir souvent mal à la trompe|... Merci|..."
+            state_b6[Marakas.evolution] += 40
+            state_b1[Marakas.population] += 450
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Marakas presentation=14 if_not_shown skip_next=4 : "ARMES|... Armes bon pour faire guerre, pour défendre femelle et enfants contre oppresseur tyrannique..."
+            Marakas.aggressiveness += 250
+            state_b6[Marakas.evolution] += 40
+            globals.B30 += 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Marakas presentation=8 chatter if_not_shown skip_next=3 : "Moi voir loin, lentille optique trés pratique pour voir étoiles|..."
+            state_b6[Marakas.evolution] += 40
+            globals.B29 = 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Marakas presentation=9 if_not_shown skip_next=2 : "Energie|... Oui moi sentir force monter en moi|... Moi aimer, ami|..."
+            state_b5[Marakas.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Marakas presentation=9 if_not_shown skip_next=4 : "Bague|... Hoooo|... Femelle aimer bague|... Moi grand cadeau, aprés grande reproduction..."
+            state_b6[Marakas.evolution] += 50
+            state_b1[Marakas.population] += 400
+            globals.B31 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Marakas presentation=9 if_not_shown skip_next=2 : "Emetteur|... Moi pas comprendre"
+            state_b6[Marakas.evolution] += 10
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Marakas presentation=9 if_not_shown skip_next=3 : "Culture|... Toi donner ça pour faire plaisir à intellectuels terriens"
+            state_b6[Marakas.evolution] += 150
+            state_b5[Marakas.energy] += 200
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Marakas presentation=8 chatter if_not_shown skip_next=2 : "Ohhh|! Ecriture|... Joli, moi offrir a femelle|..."
+            state_b6[Marakas.evolution] += 80
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Marakas presentation=9 if_not_shown skip_next=3 : "Wah|... VAISSEAU|... Jolie couleur, rapide|... Oh, direction assistée, airbags|... Moi aimer|..."
+            state_b6[Marakas.evolution] += 60
+            globals.B29 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Marakas presentation=8 chatter if_not_shown skip_next=5 : "Traité|... Moi faire la paix|... Guerre étre trop terrible, toi avoir raison|..."
+            state_b6[Marakas.evolution] += 50
+            globals.B30 = 0
+            Marakas.aggressiveness = 50
+            state_b1[Marakas.population] += 200
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Marakas presentation=9 if_not_shown skip_next=3 : "Cadeaux|... Cadeaux, toi gentil|... Moi aimer toi|..."
+            state_b6[Marakas.evolution] += 10
+            state_b5[Marakas.energy] += 100
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Marakas presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Marakas presentation=8 chatter resume_at=gest01_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Marakas presentation=8 : "..."
+        gest01_dialogue_resume_1:
+        say Marakas presentation=9 : "A BIENTOT, Grand ami COMMANDER|... Je t'attends avec impatience|..."
+        when {
+            require Marakas.encounter_count == 3
+        } then {
+            say Marakas presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Marakas
+            sequence_slots[2] = "40freud"
+        }
+        when {
+            require Marakas.encounter_count == 4
+        } then {
+            say Marakas presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Marakas
+            sequence_slots[3] = "27exploplane"
+        }
+        say Marakas presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Marakas
+    }
+    proc marbak enabled {
+        during bridge
+        require globals.A81 == 5
+        require presentation == Izwalito
+    } then {
+        say Izwalito presentation=8 : "Hips|! Co|... Comman|... Comman donc|!..."
+        say Izwalito presentation=8 chatter : "izwalito|! tu as encore bu|!..."
+        say Izwalito presentation=8 : "Vui|... Mais cette fois c'est pour féter la libération de Marakas|!..."
+        say Izwalito presentation=8 : "Waou|! Marakas la baraque|!..."
+        say Izwalito presentation=8 chatter : "c'est chouette de te revoir content|!..."
+        say Izwalito presentation=8 : "Ah ben ça oui|! C'est chouette|..."
+        say Izwalito presentation=8 chatter : "..."
+        say Izwalito presentation=8 : "..."
+        say Izwalito presentation=8 chatter : "bon|..."
+        say Izwalito presentation=8 : "bon ben c'est pas tout, mais j'ai à faire, moi|!..."
+        say Izwalito presentation=8 chatter : "oui|..."
+        say Izwalito presentation=8 : "Alors j'vais vous laisser|... Et à la prochaine, Commander|! Encore merci|!..."
+        say Izwalito presentation=8 : "krouik|..."
+        say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A81 = 6
+        end presentation Izwalito
+    }
+    proc finizw1 enabled {
+        during contact
+        require Izwalito.current_location == aboard
+        require globals.A68 == 2
+        require presentation == Izwalito
+    } then {
+        say Izwalito presentation=10 : "super concert|!..."
+        say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A13 += 3
+        end presentation Izwalito
+    }
+    proc iswa01 enabled {
+        during travel
+        require presentation == Izwalito
+    } then {
+        when {
+            require globals.A60 == 0
+            require globals.A53 == 2
+        } then {
+            say Izwalito presentation=16 : "C'est affreux, Commander|..."
+            say Izwalito presentation=8 chatter : "que se passe-t-il mon petit Izwalito|?..."
+            say Izwalito presentation=24 : "Ah là là|... C'est vraiment affreux|..."
+            say Izwalito presentation=8 chatter : "quoi|? quoi|?..."
+            say Izwalito presentation=9 : "Moi j'y suis pour rien, Commander|..."
+            say Izwalito presentation=8 chatter : "quoi|?..."
+            say Izwalito presentation=19 : "Eh ben voilà c'est compliqué|... On télécausait avec Marakas quand tout à coup|..."
+            say Izwalito presentation=16 : "Ouin|..."
+            say Izwalito presentation=8 chatter : "quoi|?..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Eh ben tout à coup ca a fait FLOUF|..."
+            request sequence "explan01.hnm"
+            say Izwalito presentation=8 chatter : "et alors|?..."
+            say Izwalito presentation=14 : "Ben|... Marakas avait disparu|!..."
+            say Izwalito presentation=8 chatter : "ouais|... Marakas s'est cassé|..."
+            say Izwalito presentation=17 : "Ah ah ah|! Elle est bonne celle-là|!..."
+            say Izwalito presentation=18 : "Oh! j'ai honte de rire|... C'est nerveux|..."
+            say Izwalito presentation=8 chatter resume_at=iswa01_dialogue_resume_1 : "commander, on lui dit encore une blague pour le détendre|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Izwalito presentation=8 chatter : "Hin hin|! marakas pas les pieds|!..."
+                say Izwalito presentation=21 : "Oh oh oh|! Je devrais pas rire|!..."
+                say Izwalito presentation=25 : "J'ai honte|! Arrétez de me faire rire, Commander|..."
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+            iswa01_dialogue_resume_1:
+            say Izwalito presentation=8 chatter : "et où est marakas maintenant, tu le sais|?..."
+            say Izwalito presentation=12 : "Ben non|..."
+            say Izwalito presentation=20 : "On va sùrement nous demander une rançon|..."
+            say Izwalito presentation=8 chatter : "pourquoi|? vous étes riches|?..."
+            say Izwalito presentation=10 : "Je t'en pose des questions à toi|?..."
+            say Izwalito presentation=16 : "Ouin|... En tous cas j'ai déjà recu un message de solidarité de Super Zen|..."
+            say Izwalito presentation=8 chatter : "déjà|? c'est étrange, commander, il faudrait interroger super zen|..."
+            say Izwalito presentation=28 : "Oui c'est ca|! Trouvez qui a enlevé Marakas et dites-y|..."
+            say Izwalito presentation=28 : "que je vais lui péter la|..."
+            say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Izwalito
+            globals.A60 = 1
+        }
+        when {
+            require globals.A60 == 1
+        } then {
+            say Izwalito presentation=18 : "Alors, vous l'avez toujours pas trouvé|?..."
+            say Izwalito presentation=8 chatter resume_at=iswa01_dialogue_resume_2 : "Qu'est-ce qu'on lui dit, commander|?" choices "mentir" "vérité"
+            when {
+                require choice == "mentir"
+            } then {
+                say Izwalito presentation=17 : "Ah ah ah|! J'en étais sùr|!"
+                say Izwalito presentation=15 : "Allez-y|! Montrez-le moi que je l'embrasse sur la trompe|..."
+                say Izwalito presentation=8 chatter : "c'est que|..."
+                say Izwalito presentation=18 if_not_shown skip_next=1 : "Oh non|! J'en étais sùr|! Vous avez menti|!..."
+                choice = none
+            }
+            when {
+                require choice == "vérité"
+            } then {
+                choice = none
+            }
+            iswa01_dialogue_resume_2:
+            say Izwalito presentation=16 : "Ouin|... Pauvre Marakas|..."
+            say Izwalito presentation=26 : "Glouglou|... Aglouglou|..."
+            say Izwalito presentation=8 chatter : "mais|... enfin|... izwalito|! que fais-tu|?..."
+            say Izwalito presentation=27 : "JE BOA POUR OUBLIER MES ANNEES D'IN-FOR-TU-NEU|... HIPS|!..."
+            say Izwalito presentation=8 chatter : "c'est pas raisonnable, izwalito, làche cette bouteille|!..."
+            say Izwalito presentation=21 : "Ah ah ah hi hi hi|..."
+            say Izwalito presentation=26 : "Encore un chti coup|! Hips|!..."
+            say Izwalito presentation=8 chatter : "laissons-le, commander, je ne veux pas voir ca|..."
+            say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A60 = 2
+            end presentation Izwalito
+        }
+        when {
+            require globals.A60 == 2
+        } then {
+            say Izwalito presentation=18 : "Hips|... Mal à la téte|..."
+            say Izwalito presentation=8 chatter : "normal|... t'as trop bu|..."
+            say Izwalito presentation=16 : "Boire|... Mon moi est trop triste|... Marakas|..."
+            say Izwalito presentation=8 chatter : "boire n'est pas une solution|..."
+            say Izwalito presentation=25 : "Boire|... Une solution|..."
+            say Izwalito presentation=26 : "Moi boire une solution|! Hips|! Merci Tequila|!..."
+            say Izwalito presentation=8 chatter : "incurable|! commander, il faut retrouver marakas au plus vite|..."
+            say Izwalito presentation=27 : "MARACASSE-TOI D'ICI|!...Hips|... Quand on est dans la|... hic|... marine|...eu|..."
+            say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A60 = 3
+            end presentation Izwalito
+        }
+        when {
+            require globals.A60 == 4
+        } then {
+            say Izwalito presentation=27 : "Quand on est dans la marine|! Faut savoir s'la prendre et s'la mordre|! Hips|!..."
+            say Izwalito presentation=8 chatter : "pas trés convenable|..."
+            say Izwalito presentation=17 : "Ah ah ah|! Convenable|! Alors que je suis en plein désespoir|!"
+            say Izwalito presentation=27 : "Faut savoir se torcher|! hips|! dans la marine|!|..."
+            say Izwalito presentation=20 : "Tiens, j'ai plus de pognon pour acheter la Tequila|... Si tu m'en files, je t'en file aussi|..."
+            say Izwalito presentation=15 : "Arf|... Je veux dire je te file un truc super qu'on cachait en secret et tout et tout|..."
+            say Izwalito presentation=8 chatter : "qu'est-ce que tu dis marin d'eau douce|?..."
+            say Izwalito presentation=10 : "Je dis ce que je veux|! D'abord|!..."
+            say Izwalito presentation=19 : "Je dis que j'te vends un truc trop cool pour trouer la téte|..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Regarde|!..."
+            request sequence "brouil.hnm"
+            say Izwalito presentation=8 chatter : "commander|! exactement ce qu'il nous faut|!... combien tu le vends, ton bidule|?..."
+            say Izwalito presentation=14 : "Oh un crédit|! Juste de quoi me pinter un coup|!..."
+            when {
+                require globals.A4 > 0
+            } then {
+                say Izwalito presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION CREDIT A IZWALITO..."
+                transfer credit from aboard to Izwalito
+                globals.A4 -= 1
+            }
+            when {
+                require globals.A4 == 0
+            } then {
+                say Izwalito presentation=8 chatter : "on est fauché, commander|..."
+                say Izwalito presentation=12 : "Pas grave|! Rien à cirer|! J'vous l'file|! De toutes façons, c'est pour retrouver Marakas|..."
+            }
+            say Izwalito presentation=26 : "Allez-y|! Moi je finis ma bouteille|..."
+            say Izwalito presentation=8 chatter : "c'est qui qui te fournit cet alcool|?..."
+            say Izwalito presentation=18 : "Peut pas le dire|..."
+            say Izwalito presentation=8 chatter : "allez|!..."
+            say Izwalito presentation=17 : "Ah ah ah|! Qui tu veux que ce soit|? C'est TEQUILA|!..."
+            say Izwalito presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION SECRET FABRIQUE EN CACHETTE SUR ARCHE|!..."
+            transfer technologie from Izwalito to aboard
+            say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A60 = 5
+            end presentation Izwalito
+        }
+        when {
+            require globals.A53 == 4
+            require trait_C3_A9.holder != aboard
+            require globals.A80 < 3
+        } then {
+            say Izwalito presentation=26 : "Salut toi|! T'es mignon toi|! Glouglou|!..."
+            say Izwalito presentation=8 chatter : "qu'est-ce que tu dis|, marin d'eau douce|?..."
+            say Izwalito presentation=26 : "Rien glouglou|... Tiens|, je vous offre un|... Hips|... super bouquin|..."
+            say Izwalito presentation=16 : "... C'est un livre de Platon|... hips|... C'était à Marakas|..."
+            say Izwalito presentation=21 : "Ah ah ah|! Il n'en a plus besoin maintenant qu'il est mort|!..."
+            say Izwalito presentation=16 : "Ouin|... Marakas|..."
+            say Izwalito presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION LIVRE DE PLATON DANS CRYOBOX|..."
+            transfer trait_C3_A9 from Izwalito to aboard
+            say Izwalito presentation=8 chatter : "peut-étre que ca pourrait nous aider à la réflexion|, commander..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Izwalito
+        }
+        when {
+            require globals.A80 < 2
+            require globals.A53 > 3
+            require trait_C3_A9.holder == aboard
+        } then {
+            say Izwalito presentation=16 : "Snif|... Respectez ma douleur|! Laissez-moi tranquille|!..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Izwalito
+        }
+        when {
+            require globals.A68 == 1
+        } then {
+            say Izwalito presentation=9 : "Moi j'en peux plus, moi|..."
+            say Izwalito presentation=10 : "Et c'est à cause de toi, ca|! A cause du plan BOB|..."
+            say Izwalito presentation=11 : "Moi et Marakas, on est de gauche|..."
+            say Izwalito presentation=12 : "Alors on dit non à la droite|..."
+            say Izwalito presentation=13 : "Non et non|..."
+            say Izwalito presentation=19 : "Alors on nous explique ceci, et puis cela|... On doit faire des sacrifices..."
+            say Izwalito presentation=15 : "Moui moui moui|..."
+            say Izwalito presentation=17 : "Ca me fait bien rigoler tout ca|! ah ah ah|!..."
+            say Izwalito presentation=19 : "ceci cela|... blablabla|... blablabla|..."
+            say Izwalito presentation=21 : "Ah ah ah|! Rien que des blagues|..."
+            say Izwalito presentation=20 : "Parce que le fond de l'histoire, c'est quand méme le pognon|..."
+            say Izwalito presentation=22 : "Et c'est ta faute ça|!..."
+            say Izwalito presentation=23 : "Moui moui moui|..."
+            say Izwalito presentation=9 : "Parce qu'en tout cas c'est pas la mienne|!..."
+            say Izwalito presentation=28 : "Alors si tu veux la guerre|..."
+            say Izwalito presentation=29 : "Tu vas l'avoir la guerre|... Et pour l'instant je fais gréve|..."
+            say Izwalito presentation=8 chatter : "aie aie aie|... méme lui|..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Izwalito
+        }
+        when {
+            require Izwalito.encounter_count == 1
+        } then {
+            say Izwalito presentation=9 : "Bonjour, Commander Blood, tu me reconnais, je suis Izwalito|..."
+            say Izwalito presentation=8 chatter : "Ah|... Ca alors, Izwalito, vous le reconnaissez, commander|?"
+        }
+        when {
+            require Izwalito.encounter_count == 2
+        } then {
+            say Izwalito presentation=11 : "Je suis content de te voir ami Commander|..."
+        }
+        text_tokens Izwalito presentation=11 : "Nous" "sommes" state_number(0x0672) "izwals" "dans" "cette" "communauté" "..."
+        when {
+            require Izwalito.encounter_count == 1
+        } then {
+            say Izwalito presentation=8 chatter : "Waooh|!!! Commander, qu'il est intelligent, vous avez vu comment il parle|???"
+        }
+        when {
+            require Izwalito.encounter_count == 1
+        } then {
+            say Izwalito presentation=9 : "Moi|? Moi je parle bien|?..."
+            say Izwalito presentation=17 : "Ah ah|! C'est la meilleure|, celle-là|!..."
+            say Izwalito presentation=19 : "Moi parler bien|! Alors que je suis incapable de m'exprimer|..."
+            say Izwalito presentation=18 : "Dés que je suis en face de ma chérie|!..."
+            say Izwalito presentation=8 chatter : "comment elle s'appelle|, ta chérie|?..."
+            say Izwalito presentation=10 : "Toi|, je te vois venir|!... Tu ne le sauras pas|!..."
+            say Izwalito presentation=9 : "Elle est à moi|, à moi|, à MOI|!..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Izwalito
+        }
+        when {
+            require Izwalito.encounter_count == 2
+        } then {
+            say Izwalito presentation=16 : "Ouin|... Snif|... Snif|..."
+            say Izwalito presentation=8 chatter : "qu'est-ce qui t'arrive|, izwalito|?..."
+            say Izwalito presentation=19 : "Bon|... Ben|... C'est comme je vous avais dit|..."
+            say Izwalito presentation=8 chatter : "quoi|?..."
+            say Izwalito presentation=19 : "Ben|... Vous savez|... Pour|... Enfin|..."
+            say Izwalito presentation=22 : "Mais tu sais bien|! Toi tu sais|..."
+            say Izwalito presentation=25 : "Que j'arrive pas à dire à ma chérie que je l'aime|..."
+            say Izwalito presentation=16 : "Ouin|... Ouin|..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Je broie du noir|..."
+            request sequence "venthig.hnm"
+            say Izwalito presentation=8 chatter resume_at=iswa01_dialogue_resume_3 : "vous voulez l'aider|, commander|?..." choices "aider" "abandonner"
+            when {
+                require choice == "aider"
+            } then {
+                say Izwalito presentation=8 chatter : "tu veux qu'on lui dise de ta part|, izwalito|?..."
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "abandonner"
+            } then {
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "Tu n'as pas de coeur|, Commander|!..."
+                request sequence "ppitbb01.hnm"
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "Wou|! Les filles|! Venez voir|! Il n'a pas de coeur|!..."
+                request sequence "ppitin02.hnm"
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "Ouarf ouarf|!..."
+                request sequence "match02.hnm"
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "Il n'a que de la bouche|!..."
+                request sequence "p_cles.hnm"
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "Ouais|! Je suis au regret|..."
+                request sequence "bobb.hnm"
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "De te dire|..."
+                request sequence "bobb.hnm"
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "Que tu t'en vas|!..."
+                request sequence "krando20.hnm"
+                say Izwalito presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Izwalito
+                globals.A13 = 2
+                choice = none
+            }
+        }
+        iswa01_dialogue_resume_3:
+        when {
+            require Izwalito.encounter_count == 2
+        } then {
+            say Izwalito presentation=12 : "Non|... Pas question|... J'ai pas confiance|..."
+            say Izwalito presentation=8 chatter : "tu es sùr|?..."
+            say Izwalito presentation=11 : "Non|... Je sais pas|..."
+            say Izwalito presentation=18 : "Mmmm|... Mmmm|..."
+            say Izwalito presentation=16 : "Ouin|... Je sais plus|... Mon coeur est comme une plaine|..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "piétinée par des murfalos|..."
+            request sequence "ettamorf.hnm"
+            say Izwalito presentation=8 chatter : "donne-nous son numéro|, on va l'appeler de ta part|..."
+            say Izwalito presentation=10 : "Bon|... Mais dites-lui bien que je l'aime|..."
+            say Izwalito presentation=8 chatter : "on lui dira|... donne|!..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "C'est le 19 96 19 96|..."
+            request sequence "diplom1j.hnm"
+            say Izwalito presentation=18 : "Elle s'appelle Pierre|..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Ouarf ouarf|!..."
+            request sequence "match02.hnm"
+            say Izwalito presentation=8 chatter : "quoi|?!..."
+            say Izwalito presentation=15 : "ETTE|... Elle s'appelle Pierrette|..."
+            say Izwalito presentation=8 chatter : "Ah bon tu m'as fait peur|..."
+            say Izwalito presentation=19 : "Je vous ai dit|! Quand je pense à elle|, j'arrive plus à m'exprimer|..."
+            say Izwalito presentation=8 chatter : "bon|... on y va|... 19 96 19 96|... vous avez noté|, commander|?..."
+            say Izwalito presentation=8 chatter : "le 19 96 19 96|..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Izwalito
+        }
+        when {
+            require Izwalito.encounter_count == 3
+        } then {
+            say Izwalito presentation=18 : "Alors|... Vous l'avez appelée|?..."
+            say Izwalito presentation=8 chatter resume_at=iswa01_dialogue_resume_4 : "..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Izwalito presentation=9 : "Waou|! Elle a une belle voix|, hein|?..."
+                say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Izwalito presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Izwalito
+                globals.A13 = 2
+                choice = none
+            }
+        }
+        iswa01_dialogue_resume_4:
+        when {
+            require Izwalito.encounter_count == 3
+        } then {
+            say Izwalito presentation=15 : "Alors|, tu lui as dit que je l'aimais|?..."
+            say Izwalito presentation=8 chatter : "bien sùr|..."
+            say Izwalito presentation=10 : "Et elle|, qu'est-ce qu'elle a dit|?..."
+            say Izwalito presentation=8 chatter : "elle a dit|..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "mon amour je t'aime|!..."
+            request sequence "ppitin02.hnm"
+            say Izwalito presentation=12 : "Mais c'est pas elle|, ça|!..."
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Wouou|! C'est Olga|, mes chéris|!..."
+            request sequence "ppitin03.hnm"
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Rentre à la maison immédiatement|!..."
+            dictionary blank after "maison"
+            request sequence "ppit05_3.hnm"
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Mais pourquoi|? Je suis trés bien ici|!..."
+            request sequence "ppitin02.hnm"
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Ecoute ton mari|! Rentre chez toi|!..."
+            request sequence "bobb.hnm"
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Femelles de toutes les galaxies|!... Libérez-vous|!... Nous sommes toutes en cage|!..."
+            request sequence "1eeden20.hnm"
+            say Izwalito presentation=9 : "Mais moi|, c'est mon coeur qui est en cage|!..."
+            say Izwalito presentation=8 chatter : "c'est pas grave|, puisqu'on te dit qu'elle t'aime|!..."
+            say Izwalito presentation=21 : "Ah ah|! C'est merveilleux|! Quel bonheur|!..."
+            dictionary blank after "merveilleux"
+            say Izwalito presentation=8 if_not_shown skip_next=1 : "Mon coeur est si léger qu'il lui pousse des ailes|!..."
+            request sequence "galaxi.hnm"
+        }
+        when {
+            require trait_C3_A9.holder != aboard
+            require globals.A73 == 1
+        } then {
+            say Izwalito presentation=28 : "C'est la guerre, tu sais|!"
+            say Izwalito presentation=8 chatter : "eh oui|... justement|... que proposes-tu|?..."
+            say Izwalito presentation=29 : "La seule solution c'est l'épilation|..."
+            say Izwalito presentation=8 chatter : "la quoi|?..."
+            say Izwalito presentation=29 : "Je veux dire, c'est la négociation|..."
+            say Izwalito presentation=28 : "Euh|!... Je veux dire la destruction|..."
+            say Izwalito presentation=8 chatter : "carrément|?..."
+            say Izwalito presentation=29 : "Comme ça tout est réglé|..."
+            say Izwalito presentation=8 chatter : "en d'autre|?..."
+            say Izwalito presentation=28 : "Tu veux un traité de paix, peut-étre|?..."
+            say Izwalito presentation=8 chatter resume_at=iswa01_dialogue_resume_5 : "Commander|?" choices "oui" "non"
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+            when {
+                require choice == "oui"
+            } then {
+                say Izwalito presentation=29 : "Tiens, je l'avais déjà préparé|!..."
+                say Izwalito presentation=8 chatter : "c'est gratuit|?..."
+                say Izwalito presentation=28 : "C'est pour sauver l'univers|!..."
+                say Izwalito presentation=8 chatter if_not_shown skip_next=1 : "teleportation traité sur cryobox|!..."
+                transfer trait_C3_A9 from Izwalito to aboard
+                say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+                end presentation Izwalito
+                choice = none
+            }
+        }
+        iswa01_dialogue_resume_5:
+        when {
+            require state_b1[Izwalito.population] > 300
+            require trait_C3_A9.holder != aboard
+            require Izwalito.encounter_count > 2
+        } then {
+            say Izwalito presentation=14 : "Je fais du droit, j'étudie les lois interplanétaires|..."
+            say Izwalito presentation=15 : "Voulez-vous que je vous rédige un traité contre un crédit|?"
+            say Izwalito presentation=8 chatter : "Commander, c'est pas béte, gràce a ces traités, nous pourrons arréter les guerres|..."
+            dictionary blank after "ces"
+            when {
+                require globals.A4 == 0
+            } then {
+                say Izwalito presentation=8 chatter : "Mince! Nous n'avons plus de credits, Commander|..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Izwalito presentation=8 chatter resume_at=gest02 : "Vous acceptez de lui acheter un traité, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Izwalito presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un credit, Commander"
+                    transfer credit from aboard to Izwalito
+                    globals.A4 -= 1
+                    say Izwalito presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION TRAITE DANS CRYOBOX"
+                    transfer trait_C3_A9 from Izwalito to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest02 enabled {
+        during travel
+        require presentation == Izwalito
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Izwalito.evolution] < 100
+            } then {
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Izwalito.evolution] < 500
+                require state_b6[Izwalito.evolution] > 100
+            } then {
+                say Izwalito presentation=10 : "Oh des atomiques... Excellent, je vais pouvoir faire des expériences dans le Pacifique|... Merci Commander|..."
+                say Izwalito presentation=8 chatter : "Vous voulez dire des expériences pacifiques, Monsieur Izwalito|???"
+                say Izwalito presentation=15 if_not_shown skip_next=5 : "Heum|! Oui, oui pacifiques|... C'est ce que je voulais dire|..."
+                state_b1[Izwalito.population] /= 2
+                state_b6[Izwalito.evolution] += 100
+                Izwalito.aggressiveness += 150
+                globals.B31 = 0
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Izwalito.evolution] > 500
+            } then {
+                say Izwalito presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire|... Merci|!!! On va développer des centrales à multiplexeur inversé|..."
+                state_b6[Izwalito.evolution] += 200
+                state_b5[Izwalito.energy] += 400
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Izwalito presentation=15 : "Pas mal... Pas mal... Il ne faut pas que je montre cette photo à Tequila, elle serait folle de jalousie... Hi! Hi! Hi!"
+            say Izwalito presentation=8 chatter : "Commander on va foutre le bazar dans leur couple|... Ca va faire baisser la reproduction..."
+            say Izwalito presentation=8 if_not_shown skip_next=3 : "..."
+            state_b1[Izwalito.population] /= 4
+            globals.B31 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Izwalito presentation=9 : "Houlà|... Houlà|... Ca c'est du chapeau|... Merci|..."
+            say Izwalito presentation=8 chatter : "Avec ça sur la téte, il va impressionner ses troupes|..."
+            say Izwalito presentation=15 if_not_shown skip_next=4 : "Joli chapeau|..."
+            state_b5[Izwalito.energy] += 400
+            Izwalito.aggressiveness += 300
+            globals.B30 += 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Izwalito presentation=16 : "Un tableau|... Mais c'est une vieille croute, je vais l'accrocher dans ma chambre..."
+            say Izwalito presentation=8 chatter if_not_shown skip_next=2 : "Il n'est pas amateur de peinture|..."
+            state_b6[Izwalito.evolution] += 30
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Izwalito presentation=18 : "Ahhhhhh|... Non pas ca|... Ahhhhh J'ai peur|.... Maman|! Maman|!"
+            say Izwalito presentation=8 chatter : "Commander, vous lui faites peur avec votre momie|... Vous allez lui donner des cauchemars|..."
+            say Izwalito presentation=16 : "Haaaaa|!!! J'ai peur|... Maman|!!!"
+            say Izwalito presentation=12 if_not_shown skip_next=3 : "..."
+            globals.B31 -= 1
+            end presentation Izwalito
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Izwalito presentation=12 : "Du Bionium|... Hum|... Pas mauvais, je me sens en forme|... En pleine forme..."
+            say Izwalito presentation=8 chatter if_not_shown skip_next=5 : "Commander, le Bionium, ça le met en forme|..."
+            state_b1[Izwalito.population] += 400
+            state_b6[Izwalito.evolution] += 20
+            state_b5[Izwalito.energy] += 100
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Izwalito presentation=13 : "De la technologie|... Du produit brun|... Hum ca sent bon les condensateurs chauds et les circuits imprimés|..."
+            say Izwalito presentation=8 chatter if_not_shown skip_next=3 : "Il a l'air d'aimer ca, Commander|..."
+            state_b6[Izwalito.evolution] += 80
+            globals.B29 += 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Izwalito presentation=15 : "Une guitare|... Ca fait des années que j'en réve|..."
+            say Izwalito presentation=13 : "Je vais devenir une star|... Ouais|..."
+            say Izwalito presentation=17 : "AH CAN GAITEU NO|... SATI SFAK-CHEUN|..."
+            say Izwalito presentation=8 chatter : "Il a l'air content, vous lui avez fait plaisir Commander|..."
+            say Izwalito presentation=8 chatter if_not_shown skip_next=5 : "Il va impressionner sa femelle|..."
+            globals.B31 += 1
+            state_b1[Izwalito.population] += 450
+            state_b6[Izwalito.evolution] += 20
+            globals.B30 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Izwalito presentation=8 chatter : "Commander, vous lui filez un crédit|... Vous étes complétement givré|..."
+            say Izwalito presentation=8 chatter : "On donne pas des crédits, contre rien, au premier venu|..."
+            dictionary blank after "venu"
+            say Izwalito presentation=11 : "UN CREDIT|... TU ME DONNES UN CREDIT|... OUUAIS|!!! MERCI|... MERCI|..."
+            say Izwalito presentation=14 : "Tu es mon bienfaiteur, mon ami, mon sauveur, mon maitre, ma maitresse, mon Commander|..."
+            say Izwalito presentation=8 chatter : "Bon ca va, ca va, Monsieur Izwalito, on a compris|..."
+            say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Izwalito presentation=15 : "Ahhhh Que c'est bon|... Oh! OUI|... Je sens le désir monter|..."
+            dictionary blank after "Ahhhh"
+            say Izwalito presentation=8 chatter : "Commander, le parfum, ca le met dans tout ses états|..."
+            say Izwalito presentation=18 if_not_shown skip_next=4 : "Oh|... OUI|..."
+            state_b6[Izwalito.evolution] += 30
+            state_b1[Izwalito.population] += 400
+            globals.B31 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Izwalito presentation=13 if_not_shown skip_next=4 : "Ca décode la télé|... Ca alors|... Merci|... Merci|..."
+            say Izwalito presentation=8 chatter : "Il va devenir le roi du zapping... En attendant, la reproduction risque de baisser..."
+            say Izwalito presentation=8 if_not_shown skip_next=4 : "..."
+            state_b6[Izwalito.evolution] += 50
+            state_b1[Izwalito.population] -= 200
+            globals.B31 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Izwalito presentation=15 : "De la nourriture|... Hum, merci|... Je vais préparer une petite sauce|..."
+            say Izwalito presentation=17 : "Voyons, une cuillére de jus de foie de grouillant, deux pincées de poudre de pizza explosive|..."
+            say Izwalito presentation=8 chatter : "Il va se régaler, Commander|..."
+            say Izwalito presentation=8 if_not_shown skip_next=2 : "..."
+            state_b5[Izwalito.energy] += 500
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Izwalito presentation=9 if_not_shown skip_next=3 : "Des médicaments|... Merci|... je vais pouvoir soigner mes varices|..."
+            state_b6[Izwalito.evolution] += 30
+            state_b1[Izwalito.population] += 350
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Izwalito presentation=14 if_not_shown skip_next=4 : "DES ARMES|... Ca peut toujours servir|... En temps de guerre il vaut mieux étre armé|..."
+            Izwalito.aggressiveness += 400
+            state_b6[Izwalito.evolution] += 30
+            globals.B30 += 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Izwalito presentation=8 chatter if_not_shown skip_next=3 : "C'est étrange|... Cet objet permet de voir les étoiles|... Ca alors|..."
+            state_b6[Izwalito.evolution] += 50
+            globals.B29 += 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Izwalito presentation=9 if_not_shown skip_next=2 : "De l'énergie|... Pure|... C'est extraordinaire|..."
+            state_b5[Izwalito.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Izwalito presentation=12 : "Une bague|... Joli|... Je vais vite l'offrir à ma femelle, elle va m'adorer|..."
+            say Izwalito presentation=8 if_not_shown skip_next=5 : "..."
+            state_b6[Izwalito.evolution] += 40
+            state_b1[Izwalito.population] += 400
+            globals.B31 += 1
+            end presentation Izwalito
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Izwalito presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Izwalito.evolution] += 30
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Izwalito presentation=9 if_not_shown skip_next=3 : "De la Culture|... Ouais|... Bof|..."
+            state_b6[Izwalito.evolution] += 150
+            state_b5[Izwalito.energy] += 300
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Izwalito presentation=8 chatter if_not_shown skip_next=2 : "De l'écriture|... Merci|..."
+            state_b6[Izwalito.evolution] += 50
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Izwalito presentation=18 if_not_shown skip_next=3 : "Un VAISSEAU... Waoh|!!! Direction assistée|... Siéges en cuir|... ABS|..."
+            state_b6[Izwalito.evolution] += 50
+            globals.B29 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Izwalito presentation=8 chatter if_not_shown skip_next=5 : "Un traité, voyons voir, c'est pour arréter la guerre|..."
+            state_b6[Izwalito.evolution] += 50
+            globals.B30 = 0
+            Izwalito.aggressiveness = 100
+            state_b1[Izwalito.population] += 400
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Izwalito presentation=9 if_not_shown skip_next=3 : "Des cadeaux|... MERCI|... MERCI|..."
+            state_b6[Izwalito.evolution] += 10
+            state_b5[Izwalito.energy] += 500
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Izwalito presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Izwalito presentation=8 chatter resume_at=gest02_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Izwalito presentation=8 : "..."
+        gest02_dialogue_resume_1:
+        say Izwalito presentation=8 chatter : "A BIENTOT, COMMANDER|... REVIENS QUAND TU VEUX|..."
+        say Izwalito presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Izwalito
+    }
+    proc finteq2 enabled {
+        during contact
+        require Tequila.current_location == aboard
+        require globals.A68 == 2
+        require presentation == Tequila
+    } then {
+        say Tequila presentation=10 : "Tequila not dead|! Ahahah|!..."
+        say Tequila presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A13 += 3
+        end presentation Tequila
+    }
+    proc bargteq enabled {
+        require Tequila.current_location == aboard
+        require globals.A87 == 7
+        during contact
+        require globals.A64 == 0
+        require presentation == Tequila
+    } then {
+        say Tequila presentation=15 : "Salut Coco|..."
+        say Tequila presentation=8 if_not_shown skip_next=1 : "Ah|! Coco|!..."
+        request sequence "star2.hnm"
+        say Tequila presentation=8 chatter : "elle est barge|, commander|!..."
+        say Tequila presentation=14 : "Je suis barge|!..."
+        say Tequila presentation=8 if_not_shown skip_next=1 : "Je suis murf|!..."
+        request sequence "ettamorf.hnm"
+        say Tequila presentation=8 if_not_shown skip_next=1 : "Je suis bouché|!..."
+        request sequence "p_cles.hnm"
+        say Tequila presentation=8 if_not_shown skip_next=1 : "Je suis folle|!..."
+        request sequence "ppitin02.hnm"
+        say Tequila presentation=8 chatter : "Ciao baby|!..."
+        say Tequila presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Tequila
+    }
+    proc cbteqde enabled {
+        during contact
+        require globals.A64 == 0
+        require Tequila.current_location == aboard
+        require globals.A87 == 6
+        require presentation == Tequila
+    } then {
+        say Tequila presentation=15 : "Coucou Commander|!..."
+        say Tequila presentation=8 if_not_shown skip_next=1 : "Hiiii|! Un fantome|!..."
+        request sequence "ppitin02.hnm"
+        say Tequila presentation=16 : "Eh oui|, Commander|! Je suis|..."
+        say Tequila presentation=8 if_not_shown skip_next=1 : "MORTE|!..."
+        request sequence "maledict.hnm"
+        say Tequila presentation=17 : "Et tu vas payer pour ça|!..."
+        say Tequila presentation=8 if_not_shown skip_next=1 : "Ah ah ah|!..."
+        request sequence "match02.hnm"
+        say Tequila presentation=8 if_not_shown skip_next=1 : "Tu vas payer|!..."
+        request sequence "match11.hnm"
+        say Tequila presentation=8 if_not_shown skip_next=1 : "Adieu petit rigolo|!..."
+        request sequence "ppit03.hnm"
+        say Tequila presentation=8 if_not_shown skip_next=2 : "..."
+        end presentation Tequila
+        globals.A13 = 2
+    }
+    proc tequi01 enabled {
+        during travel
+        require presentation == Tequila
+    } then {
+        when {
+            require Tequila.encounter_count == 1
+        } then {
+            say Tequila presentation=9 : "Moi c'est TEQUILA, mon chéri, mére de tribu IZWALS..."
+            say Tequila presentation=12 : "Tu sais qu't'es pas mal pour un humain..."
+            say Tequila presentation=8 chatter : "Commander, vous avez une touche..."
+            say Tequila presentation=11 : "Oui, c'est ça, touche-moi la trompe, grand fou..."
+            say Tequila presentation=8 chatter : "Allez-y, Commander, faites comme si j'étais pas là..."
+            say Tequila presentation=13 : "Qu'est-ce qui y a|? J'te plais pas|?"
+            say Tequila presentation=11 : "Va voir les autres si tu veux, elles sont pas mieux..."
+            text_tokens Tequila presentation=10 : "Y" "en" "a" "encore" state_number(0x06BC) "izwals" "comme" "moi" "dans" "la" "trobu..."
+            say Tequila presentation=14 : "Hips! Excuse-moi, dans ma tribu je veux dire, j'ai trop bu..."
+        }
+        when {
+            require Tequila.encounter_count > 1
+        } then {
+            say Tequila presentation=9 : "Salut beau gosse|..."
+            text_tokens Tequila presentation=10 : "On" "est" state_number(0x06BC) "izwals" "maintenant" "dans" "ma" "tribu," "hic" "!"
+        }
+        when {
+            require Tequila.encounter_count == 2
+        } then {
+            say Tequila presentation=15 : "Tu as remarqué|, mon chéri|?|..."
+            say Tequila presentation=16 : "C'est n'importe quoi|, cet univers|!|..."
+            say Tequila presentation=8 if_not_shown skip_next=1 : "Wiou wiou|! Wawaou|! Coucou|!|..."
+            request sequence "ppit03.hnm"
+            say Tequila presentation=17 : "Rien qu'une tripotée de débiles|, hic|!..."
+            say Tequila presentation=18 : "Jamais contents|! Toujours à se plaindre|!..."
+            say Tequila presentation=8 chatter : "elle débloque|, commander|..."
+            say Tequila presentation=19 : "Qu'est-ce que tu dis|, marin d'eau douce|?..."
+            say Tequila presentation=8 chatter : "...|...|...|..."
+            say Tequila presentation=18 : "Je préfére ca|!..."
+            say Tequila presentation=17 : "Rien qu'une tripotée d'imbéciles|..."
+            say Tequila presentation=16 : "On se demande comment ils embauchent|, à CRYO|!..."
+            say Tequila presentation=20 : "Du temps de Monsieur BOB|, c'était une autre histoire|!..."
+            say Tequila presentation=8 if_not_shown skip_next=1 : "Merci Tequila|..."
+            request sequence "bobb.hnm"
+            say Tequila presentation=21 : "De rien|, de rien|..."
+            say Tequila presentation=22 : "Au moins|, de son temps|, on chiadait les scénarios|..."
+            say Tequila presentation=11 : "Maintenant c'est n'importe quoi|, hips|!..."
+            say Tequila presentation=8 if_not_shown skip_next=1 : "Mais Tequila|! Vous étes iiiiivre|!..."
+            request sequence "ppitin02.hnm"
+            say Tequila presentation=12 : "Oh toi la p...asse|, Ta gueule|!..."
+            say Tequila presentation=8 if_not_shown skip_next=1 : "Hiiiii|! Mon dieu quelle vulgarité|!..."
+            request sequence "ppitin03.hnm"
+            say Tequila presentation=13 : "Vous avez vu|?..."
+            say Tequila presentation=14 : "Les dialogues sont nuls à chier|..."
+            say Tequila presentation=15 : "Ils sont méme pas censurés|! Putain|!..."
+            say Tequila presentation=16 : "Bordel|! C'est plein de gros mots|!..."
+            say Tequila presentation=17 : "Et ils sont pas terminés|!..."
+        }
+        when {
+            require Tequila.encounter_count == 3
+        } then {
+            say Tequila presentation=14 : "Alors|, chéri|... Tu t'obstines|?..."
+            say Tequila presentation=15 : "Tu crois que tu vas gagner|, peut-étre|?..."
+            say Tequila presentation=16 : "Et méme si tu gagnais|, qu'est-ce que ca changerait|?..."
+            say Tequila presentation=8 if_not_shown skip_next=1 : "Tu danserais comme un idiot|!..."
+            request sequence "tvgre100.hnm"
+            say Tequila presentation=17 : "Et voilà tout|!..."
+            say Tequila presentation=8 chatter : "elle délire|, commander|..."
+        }
+        when {
+            require globals.A87 == 1
+        } then {
+            say Tequila presentation=8 chatter : "alors|... c'est qui cette balance, cet espion|?..."
+            say Tequila presentation=9 : "Voilà toute l'histoire|..."
+            say Tequila presentation=10 : "J'étais en train de mettre en bouteille ma Tequila|..."
+            say Tequila presentation=11 : "Je travaillais bien tranquillement|..."
+            say Tequila presentation=12 : "Quand soudain|!..."
+            say Tequila presentation=8 chatter : "soudain|?..."
+            say Tequila presentation=13 : "Soudain je me suis apercue que je n'étais pas seule|..."
+            say Tequila presentation=14 : "J'ai fait semblant de ne rien voir|..."
+            say Tequila presentation=8 chatter : "et alors|?..."
+            say Tequila presentation=14 : "J'ai fait semblant de ne rien voir|..."
+            say Tequila presentation=8 chatter : "et aprés|?..."
+            say Tequila presentation=14 : "J'ai fait semblant de ne rien voir|..."
+            say Tequila presentation=8 chatter : "Commander elle débloque|..."
+            say Tequila presentation=15 if_not_shown skip_next=1 : "Du bionium|! Par pitié|! Du bionium|!..."
+            globals.A87 = 2
+        }
+        when {
+            require globals.A87 == 2
+            require globals.vbio == 0
+        } then {
+            say Tequila presentation=8 chatter : "nous n'avons plus de bionium, commander|! il faut aller en chercher|!..."
+            say Tequila presentation=15 : "Bio|... nium|..."
+            say Tequila presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Tequila
+        }
+        when {
+            require globals.A87 == 3
+        } then {
+            say Tequila presentation=8 chatter : "alors|?..."
+            say Tequila presentation=16 : "Alors l'autre personne était en train de vendre des informations sur Internet|..."
+            say Tequila presentation=8 chatter : "c'est celui que nous cherchons|..."
+            say Tequila presentation=17 : "J'ai tout vu, je sais qui c'est|..."
+            say Tequila presentation=8 chatter : "qui c'est|?..."
+            say Tequila presentation=15 : "C'est le double de|..."
+            say Tequila presentation=8 chatter : "de|?..."
+            say Tequila presentation=15 : "C'est le double de|..."
+            say Tequila presentation=8 chatter : "elle s'est encore bloquée|..."
+            say Tequila presentation=15 if_not_shown skip_next=1 : "C'est le double de bionium qu'il me faut|..."
+            globals.A87 = 4
+        }
+        when {
+            require globals.A87 == 4
+            require globals.vbio < 2
+        } then {
+            say Tequila presentation=8 chatter : "commander|... recherche bionium désespérément|..."
+            say Tequila presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Tequila
+        }
+        when {
+            require globals.A87 == 4
+            require globals.vbio > 1
+            require globals.vbio < 10
+        } then {
+            say Tequila presentation=15 : "Aggg|... Biog|... Bioni|... omg|..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=1 : "commander je l'ausculte|..."
+            request sequence "brouil.hnm"
+            say Tequila presentation=8 chatter : "doses de bionium ne suffiront pas|..."
+            say Tequila presentation=15 : "Rrraggg|... Gnnn|... Biogn|... mg|..."
+            dictionary blank after "Gnnn"
+            say Tequila presentation=8 chatter : "si on ne lui injecte pas 10 doses d'un coup, elle va mourir|..."
+            say Tequila presentation=8 if_not_shown skip_next=1 : "LA MORT|..."
+            request sequence "maledict.hnm"
+            say Tequila presentation=8 chatter : "c'est affreux, commander|... elle n'aura pas la force de nous dire qui est l'espion|..."
+            say Tequila presentation=8 chatter : "doses de bionium ou elle meurt|..."
+            say Tequila presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A87 = 5
+            end presentation Tequila
+        }
+        when {
+            require globals.A87 == 4
+            require globals.vbio > 9
+        } then {
+            say Tequila presentation=8 if_not_shown skip_next=1 : "..."
+            globals.A87 = 5
+        }
+        when {
+            require globals.A87 == 5
+            require globals.vbio > 9
+        } then {
+            say Tequila presentation=15 : "Argu|... Gnome|...."
+            say Tequila presentation=8 chatter : "commander, nous avons 10 doses de bionium|... Nous pouvons les lui injecter|..."
+            dictionary blank after "pouvons"
+            say Tequila presentation=8 chatter : "Ca la fera parler, c'est sùr|... elle nous dira le nom de l'espion|..."
+            say Tequila presentation=8 chatter : "mais|..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=1 : "Nous recevons un message télépathique prioritaire ultrabiozénique|..."
+            request sequence "brouil.hnm"
+            say Tequila presentation=8 chatter if_not_shown skip_next=1 : "c'est super zen, commander|!..."
+            request sequence "crazys20.hnm"
+            say Tequila presentation=8 chatter : "il m'annonce|..."
+            say Tequila presentation=8 chatter : "que si nous donnons 10 doses de bionium d'un coup à tequila|..."
+            say Tequila presentation=8 chatter : "elle aura la force de parler|... mais elle mourra aussitot|..."
+            say Tequila presentation=8 chatter resume_at=tequi01_dialogue_resume_1 : "que faites-vous du bionium, commander|?..." choices "donner" "pas_donner"
+            when {
+                require choice == "donner"
+            } then {
+                say Tequila presentation=8 chatter if_not_shown skip_next=2 : "INJECTION 10 DOSES DE BIONIUM A TEQUILA|..."
+                transfer bionium from aboard to Tequila
+                globals.A87 = 6
+                say Tequila presentation=16 : "Arg|... C'était|... C'était|... Cé|... Té|..."
+                say Tequila presentation=8 chatter : "qui|?..."
+                say Tequila presentation=17 : "La|..."
+                say Tequila presentation=15 : "La|..."
+                say Tequila presentation=16 : "C'était pas|..."
+                say Tequila presentation=8 chatter : "quoi|?..."
+                say Tequila presentation=17 : "... la peine de vous donner tout ce mal|... Arg|..."
+                say Tequila presentation=8 chatter : "commander|! elle est|..."
+                say Tequila presentation=8 chatter if_not_shown skip_next=1 : "morte|!"
+                request sequence "maledict.hnm"
+                say Tequila presentation=8 chatter : "commander|! elle a rien dit|!..."
+                say Tequila presentation=8 chatter : "partons, ca sent trop le bionium ici|..."
+                say Tequila presentation=8 if_not_shown skip_next=3 : "..."
+                Tequila.current_location = aboard
+                end presentation Tequila
+                choice = none
+            }
+            when {
+                require choice != "_donner"
+            } then {
+                say Tequila presentation=8 chatter : "c'est sage|... pas tout d'un coup|..."
+                say Tequila presentation=8 chatter : "en deux fois, ca devrait aller|..."
+                say Tequila presentation=8 chatter if_not_shown skip_next=2 : "INJECTION 5 DOSES DE BIONIUM A TEQUILA|..."
+                transfer bionium from aboard to Tequila
+                globals.vbio -= 5
+                say Tequila presentation=12 : "Aouw|... waouw|..."
+                say Tequila presentation=8 chatter : "on attend un peu|... voilà|..."
+                say Tequila presentation=8 chatter if_not_shown skip_next=2 : "INJECTION 5 DOSES DE BIONIUM A TEQUILA|..."
+                transfer bionium from aboard to Tequila
+                globals.vbio -= 5
+                say Tequila presentation=17 : "Wawawawa|! P'tain j'ai une de ces|..."
+                say Tequila presentation=8 if_not_shown skip_next=1 : "Péches, moi|! wawaw|!..."
+                request sequence "explroug.hnm"
+                say Tequila presentation=8 chatter : "elle péte la forme la mourante|!..."
+                say Tequila presentation=8 chatter : "elle va pouvoir nous dire le nom de la balance|..."
+                say Tequila presentation=17 : "Awawaw|! Yeah|! Cool|! pas d'prob|!..."
+                say Tequila presentation=8 if_not_shown skip_next=1 : "Pas d'probléme|!..."
+                request sequence "star2.hnm"
+                say Tequila presentation=17 : "No problémo|! J'vous tuyaute|!..."
+                say Tequila presentation=8 chatter : "elle a l'air un peu speed, quand méme|..."
+                say Tequila presentation=17 : "Yayawaw|! Eh ben c'est moi l'espionne|! It's mi|! mais vui mon bon monsieur|! moi moi moi|!..."
+                say Tequila presentation=8 chatter : "aie|! elle délire|! la dose était un peu trop forte|!"
+                say Tequila presentation=8 chatter : "laissez tomber, commander, il n'y a plus rien à en tirer, le bionium lui a brùlé la cervelle|..."
+                dictionary blank after "laissez"
+                say Tequila presentation=17 : "Adios muchachos|! good babaille|!..."
+                say Tequila presentation=8 if_not_shown skip_next=4 : "..."
+                Tequila.current_location = aboard
+                globals.A87 = 7
+                end presentation Tequila
+                choice = none
+            }
+        }
+        tequi01_dialogue_resume_1:
+        when {
+            require Tequila.aggressiveness < 700
+            require globals.A86 == 0
+        } then {
+            say Tequila presentation=9 : "Nous fabriquer boisson alimentaire 100 pour 100 jus de MURFALO|..."
+            say Tequila presentation=15 : "Nous vendre à toi contre crédit|..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Tequila presentation=8 chatter : "Nous n'avons plus de crédits, Commander|..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Tequila presentation=8 chatter resume_at=gest03 : "Vous acceptez de leur acheter des vivres, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Tequila presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Tequila
+                    globals.A4 -= 1
+                    say Tequila presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION NOURRITURE DANS CRYOBOX"
+                    transfer nourriture from Tequila to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest03 enabled {
+        during travel
+        require presentation == Tequila
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Tequila.evolution] < 100
+            } then {
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Tequila.evolution] < 500
+                require state_b6[Tequila.evolution] > 100
+            } then {
+                say Tequila presentation=10 if_not_shown skip_next=4 : "Oh des atomiques|... Intéressant|... Moi pouvoir cueillir de beaux champignons! Merci COMMANDER|..."
+                state_b1[Tequila.population] /= 2
+                Tequila.aggressiveness += 100
+                globals.B31 = 0
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Tequila.evolution] > 500
+            } then {
+                say Tequila presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire|... Merci|!!! c'est mon mari qui va étre content|..."
+                state_b6[Tequila.evolution] += 200
+                state_b5[Tequila.energy] += 500
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Tequila presentation=12 : "Toi me prendre pour une de ces filles de la Galaxie|!!! Moi te SCRABOUYUTURER..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=4 : "COMMANDER|... COMMANDER|!!! Le torchon qu'elle a sur la téte brule|... FUYONS..."
+            state_b1[Tequila.population] /= 2
+            Tequila.aggressiveness += 200
+            globals.B31 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Tequila presentation=13 if_not_shown skip_next=4 : "HO|!!! Toi faire de moi une reine|... Moi te trouver bon prince|..."
+            state_b5[Tequila.energy] += 500
+            Tequila.aggressiveness = 600
+            globals.B30 += 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Tequila presentation=14 : "Moi pas trouvé le sens pour l'accrocher!|..."
+            say Tequila presentation=14 if_not_shown skip_next=3 : "Toi melange les pinceaux dans ma téte|..."
+            state_b6[Tequila.evolution] += 30
+            state_b1[Tequila.population] -= 100
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Tequila presentation=15 : "Quelle HORREUR|!!!|..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=2 : "COMMANDER! Vous lui avez fait peur|..."
+            globals.B31 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            when {
+                require globals.A87 == 2
+            } then {
+                say Tequila presentation=10 : "AAaAaAaaa|... Ca va mieux|..."
+                say Tequila presentation=8 chatter : "vous vous étes débloquée|?..."
+                say Tequila presentation=11 : "A ce propos, commander chéri, va falloir te décoincer|..."
+                say Tequila presentation=8 chatter : "du calme, du calme|... alors la balance|?..."
+                say Tequila presentation=9 if_not_shown skip_next=2 : "Ah oui|... j'oubliais|..."
+                globals.A87 = 3
+                state_b6[Tequila.evolution] += 50
+            }
+            say Tequila presentation=16 if_not_shown skip_next=5 : "Du Bionium|... HUM|! Trés bon|... Moi me sentir en pleine forme|..."
+            state_b1[Tequila.population] += 200
+            state_b5[Tequila.energy] += 400
+            state_b6[Tequila.evolution] += 40
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Tequila presentation=17 : "De la technologie|... Des PRODUITS BRUNS|!!! Repars vite, ou moi fàchée toute rouge..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=4 : "COMMANDER, L'idée n'était pas bonne|... Elle va vous en vouloir c'est sur|..."
+            state_b6[Tequila.evolution] += 40
+            Tequila.aggressiveness += 300
+            globals.B29 += 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Tequila presentation=18 : "Une guitare|... Merveilleux|! Izwalito va jouer de belles ballades|... MERCI|!"
+            say Tequila presentation=8 chatter if_not_shown skip_next=5 : "COMMANDER|... Elle va déchanter|, Izwalito reve de devenir une STAR du ROCK AND ROLL..."
+            globals.B31 += 1
+            state_b1[Tequila.population] += 450
+            state_b6[Tequila.evolution] += 30
+            globals.B30 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Tequila presentation=8 chatter if_not_shown skip_next=2 : "COMMANDER, vous étes complétement givré|..."
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Tequila presentation=19 : "Du parfum|... Moi avoir chaud partout. Moi étre comme soir de pleine lune HUMM|..."
+            say Tequila presentation=8 chatter : "Et bien COMMANDER|... Vous l'avez mise|..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=5 : "dans un drole d'état|..."
+            state_b6[Tequila.evolution] += 10
+            state_b1[Tequila.population] += 400
+            state_b5[Tequila.energy] += 400
+            globals.B31 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Tequila presentation=20 if_not_shown skip_next=5 : "Un décodeur pour la télé|... YOUPiii|!!! Moi pouvoir regarder alerte à TRASHLANDO..."
+            state_b6[Tequila.evolution] += 40
+            state_b1[Tequila.population] -= 100
+            state_b5[Tequila.energy] += 200
+            globals.B31 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Tequila presentation=21 : "De la nourriture|... HUMM MIAM MIAM|!!! Moi faire attention à ma ligne. HI! HI!..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=2 : "Oui c'est vrai COMMANDER, elle a une trés belle ligne|..."
+            state_b5[Tequila.energy] += 400
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Tequila presentation=22 : "Des médicaments|... Toi étre bon COMMANDER, toi soulagé mon foie, mon intestin, ma vesicule, ma|..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=3 : "COMMANDER! Ne restons pas là! Elle est peut étre contagieuse|..."
+            state_b6[Tequila.evolution] += 30
+            state_b1[Tequila.population] += 450
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Tequila presentation=23 if_not_shown skip_next=4 : "DES ARMES|... BOF|! Moi avoir de trés bons couteaux de cuisine. Mais laisse toujours, ca peut servir..."
+            Tequila.aggressiveness += 450
+            state_b6[Tequila.evolution] += 30
+            globals.B30 += 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Tequila presentation=12 if_not_shown skip_next=3 : "Une optique|. Trés bien|! Moi pouvoir surveiller Izwalito d'un peu plus prés..."
+            state_b6[Tequila.evolution] += 50
+            globals.B29 += 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Tequila presentation=9 if_not_shown skip_next=2 : "De l'énergie|... Moi pouvoir faire grand nettoyage de printemps MERCI|!"
+            state_b5[Tequila.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Tequila presentation=11 : "Une bague... OH|! C'est pour moi COMMANDER|? MERCI|!"
+            say Tequila presentation=8 chatter if_not_shown skip_next=4 : "Et voilà le travail, vous faites encore une heureuse|... sacré COMMANDER|..."
+            state_b6[Tequila.evolution] += 30
+            state_b1[Tequila.population] += 400
+            globals.B31 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Tequila presentation=17 if_not_shown skip_next=2 : "Un émetteur|... Pourquoi pas|!"
+            state_b6[Tequila.evolution] += 30
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Tequila presentation=15 : "De la Culture|... OU|!!! Moi avoir trés mal à la téte|... Moi étudier plus tard..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=3 : "COMMANDER, ET nous qui voulions élever son esprit|..."
+            state_b6[Tequila.evolution] += 50
+            state_b5[Tequila.energy] += 100
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Tequila presentation=10 : "L'écriture... Toi vouloir faire de moi un grand écrivain MERCI|..."
+            say Tequila presentation=8 chatter if_not_shown skip_next=2 : "COMMANDER, elle réve|... Faut pas exagérer|..."
+            state_b6[Tequila.evolution] += 80
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Tequila presentation=14 : "Un VAISSEAU|... OH|! Moi pouvoir choisir la couleur|?"
+            say Tequila presentation=8 chatter if_not_shown skip_next=3 : "COMMANDER, on lui donne un vaisseau et elle ne regarde que la couleur|..."
+            state_b6[Tequila.evolution] += 50
+            globals.B29 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Tequila presentation=11 if_not_shown skip_next=5 : "Un traité|... MERCI|! Moi plus vouloir voir petit Izwal partir à la guerre..."
+            state_b6[Tequila.evolution] += 50
+            globals.B30 = 0
+            Tequila.aggressiveness = 0
+            state_b1[Tequila.population] += 400
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Tequila presentation=18 if_not_shown skip_next=3 : "Des cadeaux|... MERCI|! Toi étre le plus beau, le plus gentil|..."
+            state_b6[Tequila.evolution] += 30
+            state_b5[Tequila.energy] += 400
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Tequila presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Tequila presentation=8 chatter resume_at=gest03_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Tequila presentation=8 : "..."
+        gest03_dialogue_resume_1:
+        say Tequila presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        say Tequila presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Tequila
+        halt
+    }
+}

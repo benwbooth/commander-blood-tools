@@ -1,0 +1,2863 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT6
+concepts "parler" "bonjour" "rayon"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc chir enabled {
+        require globals.B95 == 2
+        during bridge
+        require presentation == Emasculator
+    } then {
+        say Emasculator presentation=8 : "Ici l'Elysex|..."
+        say Emasculator presentation=8 chatter : "mais je vous reconnais|... Vous étes Emasculator|..."
+        say Emasculator presentation=8 : "Chut|... C'est mon pseudo dans le jeu|... Mais en vrai c'est Chigraxx|..."
+        say Emasculator presentation=8 chatter : "Jaxx|!..."
+        say Emasculator presentation=8 : "Ecoutez|... Ta gueule|!..."
+        say Emasculator presentation=8 chatter : "c'est bien lui, pas de doute|..."
+        say Emasculator presentation=8 : "Je suis dans ce jeu incognito|... Si mon premier ministre savait que je m'amuse sur internet|..."
+        say Emasculator presentation=8 chatter : "pas sérieux, ca|..."
+        say Emasculator presentation=8 : "Je sais, mais sinon je m'emmerde|..."
+        say Emasculator presentation=8 chatter : "Président|!... Voyons|..."
+        say Emasculator presentation=8 : "J'aimerais parler avec quelqu'un de normal|..."
+        say Emasculator presentation=8 chatter : "les gens de l'enaxx vous gonflent|?..."
+        say Emasculator presentation=8 : "Ils me les brisent, ces technokraxx|..."
+        say Emasculator presentation=8 chatter resume_at=chir_dialogue_resume_1 : "commander, voulez-vous dialoguer avec Chigraxx|?..." choices "dialoguer" "négocier"
+        when {
+            require choice == "dialoguer"
+        } then {
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Ah|! enfin|! Putain, ça fait trente ans que j'attends ca|!..."
+            choice = none
+        }
+        when {
+            require choice == "négocier"
+        } then {
+            say Emasculator presentation=8 : "Ah non|! Pas question|! Ca fait depuis que je suis élu que je fais rien que négocier|!..."
+            say Emasculator presentation=8 : "J'en ai marre|! Un peu d'humanité, bordel|! Je suis un crooli comme les autres|..."
+            say Emasculator presentation=8 chatter : "Ah Ah|! Un crooli|! Vous avez l'air en colére|!..."
+            say Emasculator presentation=8 : "C'est bien simple, je suis vert|..."
+            say Emasculator presentation=8 chatter : "Un CROOLI VERT|!"
+            say Emasculator presentation=8 : "Je veux dialoguer|..."
+            say Emasculator presentation=8 chatter : "Bon|..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "..."
+            choice = none
+        }
+        chir_dialogue_resume_1:
+        say Emasculator presentation=8 chatter : "Commander, le Président veut dialoguer|..."
+        say Emasculator presentation=8 resume_at=chir_dialogue_resume_2 : "Qu'est-ce que vous avez envie de lui dire|?" choices "rien" "croonard" "engluxxé" "bonjour"
+        when {
+            require choice == "bonjour"
+        } then {
+            say Emasculator presentation=8 : "Bonjour toi-méme petit cron|!..."
+            say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "vous n'étiez pas obligé d'étre poli avec lui, commander|..."
+            dictionary blank after "n'étiez"
+            choice = none
+        }
+        when {
+            require choice != "bonjour"
+        } then {
+            say Emasculator presentation=8 chatter : "Félicitations, commander|! Ca lui apprendra à vouloir dialoguer avec vous|..."
+            say Emasculator presentation=8 : "Eh oh|! sur un autre ton|! Méme sur Internet on se fout de ma gueule alors|?..."
+            say Emasculator presentation=8 chatter : "c'est pas une vie|..."
+            say Emasculator presentation=8 : "Non... D'ailleurs je retourne bosser, tiens|... Mais vous ne perdez rien pour attendre, crounouilles molles|..."
+            say Emasculator presentation=8 : "Je répéterai tout à Monsieur Bob|! Il va vous sucrer les indemnités débugage|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "..."
+            choice = none
+        }
+        chir_dialogue_resume_2:
+        say Emasculator presentation=8 chatter : "c'est terrible, on ne peut pas dialoguer avec certaines personnes|..."
+        say Emasculator presentation=8 : "Finalement, je préfére encore négocier|..."
+        say Emasculator presentation=8 chatter : "a bientot alors|!..."
+        say Emasculator presentation=8 : "quelle insolence|! machine|! tu parles au président du nucléaire|!..."
+        say Emasculator presentation=8 chatter : "essaie pour voir|!..."
+        say Emasculator presentation=8 : "Tu l'auras voulu, avorton|... je fais tout péter|!..."
+        dictionary blank after "Tu"
+        say Emasculator presentation=8 chatter : "non|! pas ca|! la guerre atomique c'est affreux|!..."
+        say Emasculator presentation=8 : "Peut-étre|... Mais la paix nucléaire, ça me fait chier|... J'm'ennuie à crever|..."
+        say Emasculator presentation=8 chatter : "à crever les autres, ouais|..."
+        say Emasculator presentation=8 if_not_shown skip_next=3 : "..."
+        end presentation Emasculator
+        sequence_slots[4] = "37traitz"
+        globals.B95 = 3
+    }
+    proc chi02 enabled {
+        require globals.A65 == 1
+        during bridge
+        require presentation == Emasculator
+    } then {
+        say Emasculator presentation=8 : "krouik|..."
+        say Emasculator presentation=8 : "Ici Chigraxx|!..."
+        say Emasculator presentation=8 chatter : "Jaxx|! Comment ca vax|?..."
+        say Emasculator presentation=8 : "Alors t'es content de toi, ver de Terre|!..."
+        say Emasculator presentation=8 chatter : "mais|..."
+        say Emasculator presentation=8 : "T'as foutu tout l'Univers en gréve|!... T'as fait ça rien que pour m'embéter|!..."
+        say Emasculator presentation=8 : "Maintenant tout le monde me reproche de claquer du fric à essayer mes atomiques|!..."
+        say Emasculator presentation=8 chatter : "ben ca coute cher|!..."
+        say Emasculator presentation=8 : "Ben oui|! Evidemment|! C'est pour ça que c'est bon|!..."
+        say Emasculator presentation=8 chatter : "vous appelez juste pour dire ça|?"
+        say Emasculator presentation=8 : "Non|! j'appelle parce que je suis humilié|!..."
+        say Emasculator presentation=8 chatter resume_at=chi02_dialogue_resume_1 : "commander, voulez-vous lui demander pourquoi|?..." choices "oui" "non"
+        when {
+            require choice == "oui"
+        } then {
+            say Emasculator presentation=8 chatter : "et pourquoi|?..."
+            say Emasculator presentation=8 : "Ben|... Vous savez que je suis ici incognito|..."
+            say Emasculator presentation=8 chatter : "oui|... on vous appelle emasculator|..."
+            say Emasculator presentation=8 : "Oui|... Je me demande pourquoi, d'ailleurs|... Eh ben figurez-vous que pour rester incognito|..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "..."
+            choice = none
+        }
+        when {
+            require choice == "non"
+        } then {
+            say Emasculator presentation=8 : "Pour rester incognito, sous l'identité d'Emasculator|..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "..."
+            choice = none
+        }
+        chi02_dialogue_resume_1:
+        say Emasculator presentation=8 : "J'AI DU ME METTRE EN GREVE|! MOI|! CHIGRAXX|! EN GREVE|!..."
+        say Emasculator presentation=8 chatter : "Ca vous apprendra à jouer au lieu de travailler|!..."
+        say Emasculator presentation=8 : "krouik|..."
+        say Emasculator presentation=8 chatter : "ca la lui coupe, commander|!..."
+        say Emasculator presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A65 = 2
+        end presentation Emasculator
+    }
+    proc inschi enabled {
+        require globals.A94 == 0
+        require globals.C11 == 9
+        during bridge
+        require presentation == Emasculator
+    } then {
+        say Emasculator presentation=8 : "KROUIK|!..."
+        say Emasculator presentation=8 chatter : "oulà|! c'est un gros krouik, commander|!..."
+        say Emasculator presentation=8 : "P'tain|! Ici Chigraxx, alias Emasculator|..."
+        say Emasculator presentation=8 : "Alors petits bouseux|! Engluxxés|! T'as essayé de me biaiser|..."
+        say Emasculator presentation=8 : "Avec ton commando crooli rouge ridicule|!..."
+        say Emasculator presentation=8 : "Si tu reveux la guerre tu vas la ravoir|!..."
+        say Emasculator presentation=8 : "Pour au moins sept ans|!..."
+        say Emasculator presentation=8 : "KROUIK|!..."
+        say Emasculator presentation=8 chatter : "aie aie aie|! ca promet, commander|!..."
+        say Emasculator presentation=8 if_not_shown skip_next=3 : "..."
+        globals.A94 = 1
+        end presentation Emasculator
+        sequence_slots[2] = "18gcrool"
+    }
+    proc emasc01 enabled {
+        require presentation == Emasculator
+    } then {
+        when {
+            require globals.A68 == 2
+        } then {
+            say Emasculator presentation=8 chatter : "alors|... Emasculator|... vous n'étes pas sur l'arche pour le grand concert|?..."
+            say Emasculator presentation=10 : "Beuark|! Féte de la musique invention débile|!..."
+            say Emasculator presentation=11 : "Big Bang beaucoup mieux|! Tout péter|! Braoum|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A13 += 3
+            end presentation Emasculator
+        }
+        when {
+            require globals.A68 == 1
+            require globals.A100 < 5
+        } then {
+            say Emasculator presentation=9 : "EN GREVE..."
+            say Emasculator presentation=10 : "..."
+            say Emasculator presentation=11 : "..."
+            say Emasculator presentation=12 : "..."
+            say Emasculator presentation=13 : "..."
+            say Emasculator presentation=14 : "..."
+            say Emasculator presentation=15 : "..."
+            say Emasculator presentation=16 : "..."
+            say Emasculator presentation=17 : "..."
+            say Emasculator presentation=18 : "P'TAIN|! MOI EN GREVE|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Emasculator
+        }
+        when {
+            require Emasculator.encounter_count == 1
+        } then {
+            say Emasculator presentation=9 : "Vot' nom! Plus vite que ca!"
+            dictionary blank after "Plus"
+            say Emasculator presentation=8 chatter : "Oulàlà! A pas l'air commode celui-là, Commander!"
+            say Emasculator presentation=10 : "Qu'est-ce qu'elle baragouine vot' bécane?"
+            say Emasculator presentation=8 chatter : "Commander! Vous entendez comment qu'il me cause cet empaffé|???"
+            say Emasculator presentation=11 : "Ecoute petit, si tu calmes pas ton engin..."
+            say Emasculator presentation=12 : "Je vous fais péter la téte à tous les deux!"
+            say Emasculator presentation=13 : "Compris?.."
+            say Emasculator presentation=8 chatter : "Commander... J'ai peur..."
+            say Emasculator presentation=12 : "Alors|... Tu me donne ton matricule|?..."
+            say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_1 : "on lui dit votre nom|, commander|?..." choices "nom" "non"
+            when {
+                require choice == "nom"
+            } then {
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Emasculator presentation=13 : "Si à 3 vous répondez pas, je vous explose|!..."
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "commander|! je lui dis|!..."
+                choice = none
+            }
+            emasc01_dialogue_resume_1:
+            say Emasculator presentation=8 chatter : "Euh... Co... Co......"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "..."
+            request sequence "logo_bl.hnm"
+            say Emasculator presentation=15 : "Oh pardon Co... Co... Commander! Chavais pas!"
+            say Emasculator presentation=16 : "Moi c'est Emasculator, Général des Croolis verts!"
+            say Emasculator presentation=17 : "A vos ordres, Commander!"
+            say Emasculator presentation=8 chatter : "Alors là... Il fait plus le malin, Commander!"
+        }
+        text_tokens Emasculator presentation=18 : "Commander," "nous" "sommes" state_number(0x00F4) "croolis-green" "dans" "ma" "Compagnie..."
+        say Emasculator presentation=17 : "Tous à mes ordres, moi, Emasculator|..."
+        when {
+            require Emasculator.encounter_count == 1
+        } then {
+            say Emasculator presentation=9 : "Dites voir|, Commander|..."
+            say Emasculator presentation=10 : "Otez-moi d'un doute|..."
+            say Emasculator presentation=11 : "Vous seriez pas une gonzesse|, par hasard|?..."
+            say Emasculator presentation=12 : "Hein|? Z'étes pas une femelle|, Commander|?..."
+            say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_2 : "Vous étes quoi|, commander|?..." choices "màle" "femelle" "gonzesse" "vraie_gonzesse"
+            when {
+                require choice == "màle"
+            } then {
+                say Emasculator presentation=13 : "Ouf|! Eu peur|! Parait que des espionnes grouillent|..."
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "peut-étre|, mais c'est pas le commander|..."
+                choice = none
+            }
+            when {
+                require choice != "màle"
+            } then {
+                say Emasculator presentation=14 : "QUUUUOAAA|?!! Co|... Co|... COMMENT|?..."
+                say Emasculator presentation=8 chatter : "comment|... deur|?..."
+                say Emasculator presentation=15 : "Commander|! Méme vous alors|?..."
+                say Emasculator presentation=8 chatter : "Pas commander|... Commandeuse|!..."
+                say Emasculator presentation=16 : "Ptain|! On est envahi alors|!?..."
+                say Emasculator presentation=8 chatter : "commander|, c'est vous la femelle dont il faut se méfier|?..."
+                say Emasculator presentation=17 : "Avant les jeux vidéo|, c'était peinard|, on était qu'entre mecs|..."
+                say Emasculator presentation=8 chatter : "eh ouais|, c'est fini tout ca|..."
+                say Emasculator presentation=8 chatter : "bon|... on reprend|?..."
+                say Emasculator presentation=12 if_not_shown skip_next=1 : "Allez|... On y va|... Organisons la résistance des màles|..."
+                dictionary blank after "Organisons"
+                choice = none
+            }
+        }
+        emasc01_dialogue_resume_2:
+        when {
+            require Emasculator.encounter_count == 1
+            require atomique.holder != aboard
+        } then {
+            say Emasculator presentation=9 : "Si vous voulez, Commander, de vous à moi..."
+            say Emasculator presentation=8 chatter : "Il a des choses à nous dire, la boule de nerfs?"
+            say Emasculator presentation=11 : "Nous Croolis fabriquons une petite invention trés sympa..."
+            say Emasculator presentation=8 chatter : "Va-s-y, Bouboule, crache le morceau!"
+            say Emasculator presentation=13 : "Une toute petite invention... Pratique..."
+            say Emasculator presentation=12 : "Comme le pignon double pour vélo..."
+            say Emasculator presentation=8 chatter : "T'accouches, gros lard?"
+            say Emasculator presentation=15 : "Nous fabriquons des atomiques..."
+            say Emasculator presentation=8 chatter : "QUOI?!?!?"
+            say Emasculator presentation=17 : "Des atomiques... A vendre... A vous, Commander..."
+            say Emasculator presentation=8 chatter : "Combien le prix?"
+            say Emasculator presentation=16 : "Pas cher pour vous, une misére, atomique trés dangereux pour trois..."
+            say Emasculator presentation=8 chatter : "Trois crédits?"
+            say Emasculator presentation=14 : "Non, trois fois rien..."
+            say Emasculator presentation=8 chatter : "Combien, bon sang?"
+            say Emasculator presentation=12 : "Dix crédits... Une misére..."
+        }
+        when {
+            require Emasculator.encounter_count == 2
+        } then {
+            say Emasculator presentation=9 : "Ouais|!... Ouais|!..."
+            say Emasculator presentation=12 : "Ah ah|! C'est moi le meilleur|! Ah|! Ah|!..."
+            say Emasculator presentation=18 : "Oui c'est moi|! Ah ah ah|!..."
+            say Emasculator presentation=16 : "Regardez Commander|! Ma danse de reproduction|!..."
+            say Emasculator presentation=16 : "Je vous la refais|!..."
+            say Emasculator presentation=11 : "Elle est pas super|?..."
+            say Emasculator presentation=8 chatter : "...|...|...|...|...|...|...|..."
+            say Emasculator presentation=16 : "Ouais elle est super|!..."
+            say Emasculator presentation=15 : "Mais j'y pense|! J'en ai une bonne|!..."
+            say Emasculator presentation=9 : "Ouais|! Une super bonne|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Attention devinette|!..."
+            request sequence "brouil.hnm"
+            say Emasculator presentation=11 : "Qu'est-ce qui est rose et qui devient rouge quand on appuie sur un bouton|?..."
+            say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_3 : "vous savez la réponse|, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Emasculator presentation=12 : "Elle est super bonne|, hein|?..."
+                say Emasculator presentation=15 if_not_shown skip_next=1 : "Y en a là-dedans|! Des boyaux plein la téte|!..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Emasculator presentation=18 : "Ben moi je sais|! Ah ah|!..."
+                say Emasculator presentation=11 : "Je vais te le dire|..."
+                say Emasculator presentation=13 : "Alors ce qui est rose|..."
+                say Emasculator presentation=14 : "Et qui devient rouge quand on appuie sur un bouton|..."
+                say Emasculator presentation=17 : "Eh ben c'est un GLUXX|!..."
+                say Emasculator presentation=8 if_not_shown skip_next=1 : "Un GLUXX dans un hachoir|! Ah ah ah|!..."
+                request sequence "venthig.hnm"
+                say Emasculator presentation=16 : "Ouais|! Elle est vraiment trop bonne|!..."
+                say Emasculator presentation=8 chatter : "beuark|! Dans un hachoir|! J'aimerais pas voir le résultat|!..."
+                say Emasculator presentation=8 if_not_shown skip_next=1 : "Ca donne à peu prés ça|!..."
+                transfer nourriture from Emasculator to aboard
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "beuaaark|!..."
+                choice = none
+            }
+        }
+        emasc01_dialogue_resume_3:
+        when {
+            require Emasculator.encounter_count == 3
+        } then {
+            say Emasculator presentation=15 : "Commander|... J'ai un truc à vous dire|..."
+            say Emasculator presentation=15 : "Chais pas ce que j'ai|..."
+            say Emasculator presentation=15 : "J'arréte pas de réfléchir|..."
+            say Emasculator presentation=15 : "Et ça me bloque|..."
+            say Emasculator presentation=15 : "Ca me bloque toujours dans la méme position|..."
+            say Emasculator presentation=15 : "Vous savez pas ce que je peux faire|?..."
+            say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_4 : "vous savez|, commander|?..." choices "gym" "guerre" "lecture" "sais_pas"
+            when {
+                require choice == "gym"
+            } then {
+                say Emasculator presentation=8 chatter : "faut faire de la gym|..."
+                say Emasculator presentation=8 if_not_shown skip_next=1 : "avec les bras|..."
+                request sequence "brs02.hnm"
+                say Emasculator presentation=8 chatter : "alors ca va mieux|?..."
+                say Emasculator presentation=16 if_not_shown skip_next=1 : "Ouah|! Ca va murfalement bien|!..."
+                choice = none
+            }
+            when {
+                require choice == "guerre"
+            } then {
+                say Emasculator presentation=17 : "Ouarf|! La guerre|! Bonne idée|!..."
+                say Emasculator presentation=8 if_not_shown skip_next=1 : "Ca va péter|!..."
+                request sequence "explroug.hnm"
+                say Emasculator presentation=8 if_not_shown skip_next=2 : "..."
+                Emasculator.aggressiveness = 1000
+                choice = none
+            }
+            when {
+                require choice == "lecture"
+            } then {
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "tiens|! lis ça|! c'est guerre et paix|!..."
+                request sequence "diplom1r.hnm"
+                say Emasculator presentation=15 : "C'est vrai une seule page|... C'est guére épais|!..."
+                say Emasculator presentation=8 chatter : "y a quand méme bien 800 pages|!..."
+                say Emasculator presentation=10 : "Tu vas me faire croire ca|?..."
+                say Emasculator presentation=8 chatter : "tu nous crois pas|?..."
+                say Emasculator presentation=10 : "Mmmm|... Tu la vois celle-là|?..."
+                say Emasculator presentation=8 chatter : "bon|... on va compter ensemble|..."
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "une page|..."
+                request sequence "diplom1r.hnm"
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "deux pages|..."
+                request sequence "diplom1r.hnm"
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "trois pages|..."
+                request sequence "diplom1r.hnm"
+                say Emasculator presentation=15 : "Y en a combien|, t'as dit|?..."
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "j'ai dit 800|..."
+                request sequence "diplom1r.hnm"
+                say Emasculator presentation=9 : "Ouais ok, bon ça va, je te crois|..."
+                say Emasculator presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "sais_pas"
+            } then {
+                say Emasculator presentation=15 : "Dommage|... Je vais rester bloqué|..."
+                say Emasculator presentation=15 : "Ca m'énerve un peu|..."
+                say Emasculator presentation=15 : "J'ai l'impression de bégayer du corps|..."
+                say Emasculator presentation=8 chatter : "c'est vraiment ridicule|!..."
+                say Emasculator presentation=17 : "Quoi|!? Qu'est-ce que t'as dit marin d'eau douce|?..."
+                say Emasculator presentation=8 chatter : "vous étes guéri|! je vous ai débloqué|!..."
+                say Emasculator presentation=15 if_not_shown skip_next=1 : "Ouais|... Faudra que j'y réfléchisse|..."
+                choice = none
+            }
+        }
+        emasc01_dialogue_resume_4:
+        when {
+            require Emasculator.encounter_count == 4
+        } then {
+            say Emasculator presentation=11 : "Hé|... J'en ai une bonne|..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Oui c'est moi|..."
+            request sequence "ppitin02.hnm"
+            say Emasculator presentation=17 : "Qu'est-ce qu'elle fout là cette femelle|?..."
+            say Emasculator presentation=8 chatter : "chais pas|..."
+            say Emasculator presentation=11 : "Bon|... Je disais j'en ai une bien bonne|..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Oui c'est moi|..."
+            request sequence "ppitin02.hnm"
+            say Emasculator presentation=17 : "How|! Couchée la cybercienne de l'espace|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Tu parles pas à ma femme comme ça|, toi|!..."
+            request sequence "ppit03.hnm"
+            say Emasculator presentation=17 : "How|! Il sort d'où celui-là|?..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "C'est mon mariiii|!..."
+            request sequence "ppitin03.hnm"
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Laisse-moi parler chérie|..."
+            request sequence "ppit4_2.hnm"
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Toi le gros lourd|, là|!... T'as mal parlé de ma femme|!..."
+            request sequence "ppit05.hnm"
+            say Emasculator presentation=18 : "Moi|?... Ah ah|! N'importe quoi|!..."
+            say Emasculator presentation=13 : "Hein les copains|?... J'ai jamais dragué sa femme|, moi|?..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "T'as dit qu'elle était super bonne|!..."
+            request sequence "ppit06_2.hnm"
+            say Emasculator presentation=8 chatter : "il parlait d'une blague|!..."
+            say Emasculator presentation=16 : "Ah ah|! La bonne blague|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Excuse-moi vieux|, j'avais pas compris|!..."
+            request sequence "ppit05.hnm"
+            say Emasculator presentation=12 : "Arf arf|! Qu'est-ce que t'es idiot|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Nanana na né reu|!..."
+            request sequence "ppit07.hnm"
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "BOUM|!..."
+            request sequence "explo3.hnm"
+            say Emasculator presentation=9 : "Ouais|! T'as vu comment je l'ai dégommé|, Commander|?..."
+            say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_5 : "vous avez vu|, commander|?..." choices "vu" "pas_vu"
+            when {
+                require choice == "vu"
+            } then {
+                say Emasculator presentation=12 if_not_shown skip_next=1 : "C'était super|, hein|?..."
+                choice = none
+            }
+            when {
+                require choice != "vu"
+            } then {
+                say Emasculator presentation=10 : "T'as pas vu|?..."
+                say Emasculator presentation=8 if_not_shown skip_next=1 : "Ben tiens|! T'as qu'à mettre des lunettes|!..."
+                transfer optique from Emasculator to aboard
+                say Emasculator presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+        emasc01_dialogue_resume_5:
+        when {
+            require Emasculator.encounter_count == 5
+        } then {
+            say Emasculator presentation=11 : "Bon alors voilà|... J'en ai une super b..."
+            say Emasculator presentation=8 chatter : "bonne|?..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Oui c'est moi|!..."
+            request sequence "ppitin02.hnm"
+            say Emasculator presentation=17 : "Dégage|! Elle me fatigue celle-là|!..."
+            say Emasculator presentation=14 : "Bon Commander|... Tu veux entendre ma blague|?..."
+            say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_6 : "une petite blague|, commander|?..." choices "blague" "pas_envie"
+            when {
+                require choice == "blague"
+            } then {
+                choice = none
+            }
+            when {
+                require choice != "_envie"
+            } then {
+                say Emasculator presentation=15 : "T'es pas un rigolo|, toi|, hein|?..."
+                say Emasculator presentation=15 : "Eh ben je vais te la raconter quand méme|!..."
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "moi je veux bien|..."
+                choice = none
+            }
+        }
+        emasc01_dialogue_resume_6:
+        when {
+            require Emasculator.encounter_count == 6
+        } then {
+            say Emasculator presentation=8 chatter : "vous aimez la religion|, emasculator|?..."
+            say Emasculator presentation=9 : "La religion|, moi|?..."
+            say Emasculator presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Emasculator
+            sequence_slots[4] = "23tableau"
+        }
+        when {
+            require Emasculator.encounter_count == 5
+        } then {
+            say Emasculator presentation=9 : "Chouette|! Alors voilà|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "C'est l'histoire de la chévre|..."
+            request sequence "flitutr.hnm"
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Et du légionnaire|..."
+            request sequence "marcomb.hnm"
+            say Emasculator presentation=17 : "Le légionnaire|, il veut|..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "La chévre..."
+            transfer armes from Emasculator to aboard
+            say Emasculator presentation=14 : "Mais la chévre elle veut pas|... Elle dit|..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Mééééééé|!!!..."
+            request sequence "ppitin02.hnm"
+            say Emasculator presentation=13 : "Alors le légionnaire y dit|..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Y a pas de mais|!..."
+            request sequence "match01.hnm"
+            say Emasculator presentation=17 : "Ouarf arf|! Elle est super bonne|, non|?..."
+            say Emasculator presentation=18 : "Moi elle me fait vachement rire Ah! ah|!..."
+            say Emasculator presentation=13 : "Et vous les copains|, elle vous fait rire|?..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "OUA AH AH AH AH AH|!..."
+            request sequence "match02.hnm"
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Hi hi hi HO HO Ho Ah ah|!..."
+            request sequence "match07.hnm"
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Ouarf ARF ARF ARF|!..."
+            request sequence "matchfin.hnm"
+            say Emasculator presentation=15 : "Au moins y en a qui apprécient|..."
+            say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_7 : "vous riez à sa blague|, commander|?..." choices "rire" "sourire" "réfléchir" "pas_rire"
+            when {
+                require choice == "rire"
+            } then {
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "ah ah ah ah ah|!..."
+                request sequence "p_cles.hnm"
+                say Emasculator presentation=11 if_not_shown skip_next=1 : "Chuis content qu'elle te plaise|, Commander|..."
+                choice = none
+            }
+            when {
+                require choice != "rire"
+            } then {
+                say Emasculator presentation=8 chatter if_not_shown skip_next=1 : "c'est pas assez cérébral comme blague|..."
+                request sequence "brouil.hnm"
+                say Emasculator presentation=17 if_not_shown skip_next=1 : "Ptain|! Encore des intellos|! Y en a marre|!..."
+                choice = none
+            }
+        }
+        emasc01_dialogue_resume_7:
+        when {
+            require !bits(Trump.flags,0x0004)
+            require atomique.holder != aboard
+        } then {
+            say Emasculator presentation=12 : "Tu veux du tomique|, Commander|?... 10 crédits|..."
+            when {
+                require globals.A4 < 10
+            } then {
+                say Emasculator presentation=8 chatter : "Nous n'avons pas dix crédits, Commander, c'est la misére..."
+            }
+            when {
+                require globals.A4 > 9
+            } then {
+                say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_8 : "Vous acceptez de leur acheter de l'atomique, Commander?" choices "accepter" "refuser"
+                dictionary blank after "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie dix crédits, Commander"
+                    transfer credit from aboard to Emasculator
+                    globals.A4 -= 10
+                    say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION ATOMIQUE DANS CRYOBOX"
+                    transfer atomique from Emasculator to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+        emasc01_dialogue_resume_8:
+        when {
+            require globals.A4 > 0
+            require atomique.holder != aboard
+            require bits(Izwalito.flags,0x0004)
+            require bits(Trump.flags,0x0004)
+        } then {
+            say Emasculator presentation=9 : "Bon|... Je brade l'atomique|... Si ça vous dit|..."
+            say Emasculator presentation=8 chatter : "combien|? 6 crédits|?..."
+            say Emasculator presentation=10 : "Non|... Un crédit|... Pas plus|..."
+            say Emasculator presentation=8 chatter resume_at=emasc01_dialogue_resume_9 : "voulez-vous acheter un atomique, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION CREDIT ATOMIQUE EMASCULATOR..."
+                transfer credit from aboard to Emasculator
+                globals.A4 -= 1
+                say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION ATOMIQUE SUR CRYOBOX|..."
+                transfer atomique from Emasculator to aboard
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+        }
+        emasc01_dialogue_resume_9:
+        when {
+            require Emasculator.encounter_count == 7
+        } then {
+            say Emasculator presentation=15 : "Dites donc|, Commander|... J'y pense|!..."
+            say Emasculator presentation=12 : "C'est l'heure de \" L'objet mystére \"|!..."
+            say Emasculator presentation=8 if_not_shown skip_next=1 : "Mon émission préférée|!..."
+            transfer decodeur from Emasculator to aboard
+            say Emasculator presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Emasculator
+            sequence_slots[5] = "44roswell"
+        }
+    }
+    proc gest01 enabled {
+        during travel
+        require presentation == Emasculator
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            say Emasculator presentation=11 if_not_shown skip_next=3 : "Ha! Ha! Ha! Trés drole, Commander..."
+            globals.B96 += 1
+            atomique.holder = aboard
+            bits(atomique.flags,0x0040) = false
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Emasculator presentation=10 : "Sauf vot'respect, Commander, c't'une horreur!"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=4 : "Il a pas aimé, je crois. Il a du voir sa tronche..."
+            state_b1[Emasculator.population] -= 100
+            Emasculator.aggressiveness += 100
+            globals.B37 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "Merci Commander! Enfin 'vais pouvoir tout péter!..."
+            dictionary blank after "'vais"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=6 : "A∩e A∩e A∩e... Tirons-nous vite d'ici!"
+            state_b5[Emasculator.energy] += 200
+            Emasculator.aggressiveness += 200
+            state_b6[Emasculator.evolution] += 50
+            globals.B36 = 1
+            globals.B35 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Emasculator presentation=13 : "Ouarf! Ouarf! De l'art! Chuis pas Van Gogh, Commander!"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "Lui c'est plutot l'art brut, hein?"
+            Emasculator.aggressiveness += 100
+            state_b6[Emasculator.evolution] += 50
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Emasculator presentation=12 : "C'est toute ma jeunesse, ça..."
+            say Emasculator presentation=13 : "Ca m'rappelle quand on giclait du Gluxx au napalm!"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "O souvenirs... Il a l'air d'apprécier... Par contre, sa femelle..."
+            globals.B37 = 0
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Emasculator presentation=14 : "Du Bionium... Sauf vot'respect, ça c'est Biiip..., Commander!"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=5 : "L'excitez pas trop quand méme, il va faire exploser la natalité!"
+            dictionary blank after "exploser"
+            state_b1[Emasculator.population] += 150
+            state_b6[Emasculator.evolution] += 50
+            state_b5[Emasculator.energy] += 200
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            when {
+                require globals.A100 > 4
+            } then {
+                say Emasculator presentation=8 if_not_shown skip_next=1 : "Argh|!... De la mort|..."
+                request sequence "maledict.hnm"
+                say Emasculator presentation=8 chatter : "Science sans conscience|... ça lui ruine l'àme, commander|!..."
+                say Emasculator presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A93 = 1
+                end presentation Emasculator
+            }
+            say Emasculator presentation=9 : "De la Tokologie... Mon réve de gosse... Sacré nom de..."
+            say Emasculator presentation=8 chatter : "Pas de blasphéme, grosse brute!"
+            say Emasculator presentation=11 if_not_shown skip_next=4 : "Ah! Tokologie! Des bidules qui tuent, des trucs en fer, des secrets de la mort!"
+            state_b6[Emasculator.evolution] += 100
+            state_b5[Emasculator.energy] += 100
+            globals.B35 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Emasculator presentation=13 : "Quoi? J'ai une téte de rocker, c'est ça?"
+            say Emasculator presentation=8 chatter : "Vous l'insultez, Commander..."
+            say Emasculator presentation=12 : "J'vous respecte, hein, mon Commander..."
+            say Emasculator presentation=13 : "... Mais sauf vot'respect, moi les rockers je les brise!"
+            say Emasculator presentation=8 chatter : "C'est vrai qu'il nous les brise..."
+            say Emasculator presentation=8 chatter if_not_shown skip_next=6 : "Les guitares..."
+            globals.B37 += 1
+            state_b1[Emasculator.population] += 250
+            Emasculator.aggressiveness -= 200
+            state_b6[Emasculator.evolution] += 50
+            globals.B36 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "Du pognon! On va te gonfler le budget Défense, vous allez voir ca!"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "Dites donc, Commander, vous étes complétement givré..."
+            state_b5[Emasculator.energy] += 50
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Emasculator presentation=8 chatter : "C'est vrai que les militaires ça pue..."
+            say Emasculator presentation=10 : "De quoi? De quoi? Qu'est-ce qu'elle cause, la ferraille?"
+            say Emasculator presentation=8 chatter : "Rien, rien."
+            say Emasculator presentation=11 : "Bon. Merci pour le parfum, Commander..."
+            say Emasculator presentation=12 : "Croocroo Chamel, trés bien au fond des godillots..."
+            say Emasculator presentation=8 chatter if_not_shown skip_next=5 : "J'vous dis qu'ça pue les militaires..."
+            state_b6[Emasculator.evolution] += 50
+            state_b1[Emasculator.population] += 250
+            globals.B37 += 1
+            Emasculator.aggressiveness -= 100
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Emasculator presentation=8 chatter : "Il va pouvoir regarder Rambo sur Télé Nostalgie..."
+            say Emasculator presentation=9 : "Z'auriez pas un Gnotoscope avec?"
+            say Emasculator presentation=10 if_not_shown skip_next=4 : "Pour me r'passer au ralenti tout'les'splosions! BOOOOOOUM!"
+            state_b6[Emasculator.evolution] += 100
+            state_b1[Emasculator.population] /= 2
+            globals.B37 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Emasculator presentation=15 : "Des rations de combat! Miam miam, y a méme du rata de migrax..."
+            say Emasculator presentation=12 if_not_shown skip_next=2 : "J'vais m'faire péter le bide... BOOOOOUM!"
+            state_b5[Emasculator.energy] += 400
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "Des médocs... Important, ça, en campagne."
+            say Emasculator presentation=8 chatter if_not_shown skip_next=3 : "Il pense vraiment qu'à la guerre ce taré."
+            state_b6[Emasculator.evolution] += 50
+            state_b1[Emasculator.population] += 250
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Emasculator presentation=14 : "DES ARMES..."
+            say Emasculator presentation=8 chatter : "Commander! Il va jouir! Ecartez-vous!"
+            say Emasculator presentation=10 : "DES ARMES!... Ca tombe au poil, on en manquait justement"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=4 : "Tu parles!"
+            Emasculator.aggressiveness += 250
+            state_b6[Emasculator.evolution] += 50
+            globals.B36 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Emasculator presentation=11 : "De la Ptique... Qu'est-ce que c'te bitonniau d'lunette|?"
+            say Emasculator presentation=8 chatter : "Il connait rien à rien ce lourdaud..."
+            say Emasculator presentation=8 chatter if_not_shown skip_next=3 : "Comment qu'il a fait pour fabriquer des atomiques?.."
+            globals.B35 = 1
+            state_b6[Emasculator.evolution] += 50
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "AAAh! C'est aussi bon qu'un coup de gnole..."
+            say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "Comme en 14, Commander!"
+            state_b5[Emasculator.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "Une bague... Chuis pas une gonzesse, Commander"
+            say Emasculator presentation=8 chatter : "C'est pas une bague, Général, c'est un dégoupilleur de grenade"
+            say Emasculator presentation=15 : "Ah bon, je préfére ça"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=5 : "On a frolé l'incident diplomatique, Commander"
+            state_b6[Emasculator.evolution] += 50
+            state_b1[Emasculator.population] += 200
+            globals.B37 += 1
+            Emasculator.aggressiveness = 100
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Emasculator.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "De la Culture... C'est pour faire pousser les carottes?"
+            say Emasculator presentation=8 chatter : "Non, idiot, c'est pour faire pousser les cerveaux..."
+            say Emasculator presentation=13 : "Les quoi?"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=3 : "C'est sans espoir, Commander, il est con comme une bombe"
+            state_b6[Emasculator.evolution] += 200
+            state_b5[Emasculator.energy] += 10
+            bits(culture.flags,0x0040) = false
+            when {
+                require globals.A100 == 6
+                require globals.A93 == 0
+            } then {
+                say Emasculator presentation=16 : "Argh|!... Argul|... ture|..."
+                say Emasculator presentation=8 chatter : "oulà|! il a du mal à avaler|!..."
+                say Emasculator presentation=8 if_not_shown skip_next=2 : "..."
+                end presentation Emasculator
+                globals.A93 = 1
+            }
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            when {
+                require globals.A100 == 6
+                require globals.A93 == 0
+            } then {
+                say Emasculator presentation=14 : "Argh|... ture|... ture|..."
+                say Emasculator presentation=8 chatter : "Ca le tue, commander|!..."
+                say Emasculator presentation=8 if_not_shown skip_next=2 : "..."
+                end presentation Emasculator
+                globals.A93 = 1
+            }
+            say Emasculator presentation=16 : "De la criture! Pouah! C'est bon pour les bonnes femmes, ca!"
+            say Emasculator presentation=8 chatter : "Mais non, George Sand, tu vas voir, c'est un vrai truc de mec."
+            say Emasculator presentation=15 : "On peut criturer des insultes?"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Emasculator.evolution] += 100
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "Un Vaisseau! Enfin conquérir tout ce merdier! pas trop tot!.."
+            say Emasculator presentation=8 chatter if_not_shown skip_next=3 : "On va crouler sous les Croolis, Commander"
+            state_b6[Emasculator.evolution] += 50
+            globals.B35 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "Traité... Traité... Traité de quoi, d'abord?"
+            say Emasculator presentation=10 : "Hein, vous m'avez traité de quoi?"
+            say Emasculator presentation=8 chatter : "Mais quel crétin!"
+            say Emasculator presentation=11 : "C'est bien ca, vous m'avez traité de crétin!"
+            say Emasculator presentation=8 chatter if_not_shown skip_next=5 : "On lui offre la paix et il nous cherche des noises! Incurable!..."
+            dictionary blank after "offre"
+            state_b6[Emasculator.evolution] += 50
+            globals.B36 = 0
+            Emasculator.aggressiveness = 0
+            state_b1[Emasculator.population] += 300
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Emasculator presentation=9 : "Des cadeaux... Commander, c'est la premiére fois, chais pas quoi dire..."
+            say Emasculator presentation=8 chatter if_not_shown skip_next=3 : "Ca par contre, ca doit pas étre la premiére fois"
+            state_b6[Emasculator.evolution] += 10
+            state_b5[Emasculator.energy] += 100
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Emasculator presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Emasculator presentation=8 chatter resume_at=gest01_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Emasculator presentation=8 : "..."
+        gest01_dialogue_resume_1:
+        say Emasculator presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        say Emasculator presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Emasculator
+    }
+    proc finrot1 enabled {
+        during contact
+        require Rotator.current_location == aboard
+        require globals.A68 == 2
+        require presentation == Rotator
+    } then {
+        say Rotator presentation=10 : "Toute la musique que j'aime|..."
+        say Rotator presentation=11 : "Elle vient de là|..."
+        say Rotator presentation=12 : "Elle vient du bloodz|!..."
+        say Rotator presentation=13 : "Rock ' n' blood|! Yeah|!..."
+        say Rotator presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A13 += 3
+        end presentation Rotator
+    }
+    proc rota01 enabled {
+        require presentation == Rotator
+    } then {
+        when {
+            require globals.A68 == 1
+        } then {
+            say Rotator presentation=9 : "EN GREVE..."
+            say Rotator presentation=10 : "..."
+            say Rotator presentation=11 : "...GREVE"
+            say Rotator presentation=12 : "..."
+            say Rotator presentation=13 : "...GREVE"
+            say Rotator presentation=14 : "..."
+            say Rotator presentation=15 : "...GREVE"
+            say Rotator presentation=16 : "..."
+            say Rotator presentation=17 : "...GREVE"
+            say Rotator presentation=18 : "..."
+            say Rotator presentation=19 : "...GREVE"
+            say Rotator presentation=20 : "..."
+            say Rotator presentation=21 : "...GREVE"
+            say Rotator presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Rotator
+        }
+        say Rotator presentation=9 : "Moi SERGENT ROTATOR..."
+        when {
+            require Rotator.encounter_count == 1
+        } then {
+            say Rotator presentation=8 chatter : "Oulàlà! Il a l'air encore plus futé que son Général!"
+        }
+        text_tokens Rotator presentation=11 : "Nous" "étre" state_number(0x0188) "croolis_green" "ici..."
+        when {
+            require Rotator.encounter_count == 1
+        } then {
+            say Rotator presentation=8 chatter : "Faut lui filer l'intelligence d'urgence|!"
+            dictionary blank after "Faut"
+            say Rotator presentation=8 chatter : "Ah ben non, on n'a pas ca sur la Cryobox..."
+            say Rotator presentation=8 chatter : "On va essayer de lui parler..."
+            say Rotator presentation=8 chatter : "Eh! Gros Totor! Toi avoir quelque chose pour Commander?"
+        }
+        when {
+            require Rotator.encounter_count == 1
+        } then {
+            say Rotator presentation=9 : "Moi|..."
+            say Rotator presentation=8 chatter : "toi parler|?..."
+            say Rotator presentation=10 : "Moi du mal|..."
+            say Rotator presentation=8 chatter : "on va lui parler par images|..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=1 : "Toi parler|? Toi écriture|?..."
+            request sequence "diplom1j.hnm"
+            say Rotator presentation=11 : "Miam miam|... écriture|..."
+            say Rotator presentation=8 chatter : "Toi étre|..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=1 : "intelligent|?..."
+            request sequence "brouil.hnm"
+            say Rotator presentation=8 chatter : "ou toi|..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=1 : "idiot comme murfalo|?..."
+            request sequence "venus06.hnm"
+            say Rotator presentation=12 : "Moi|... Moi|... Murf|..."
+            say Rotator presentation=13 : "Murfal|..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=2 : "..."
+            end presentation Rotator
+            sequence_slots[3] = "10hachoir"
+        }
+        when {
+            require Rotator.encounter_count == 2
+        } then {
+            say Rotator presentation=8 chatter : "alors comme ca|..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=1 : "Toi murfalo muté|?..."
+            say Rotator presentation=14 : "Quoi|? Moi muté|?..."
+            say Rotator presentation=8 if_not_shown skip_next=1 : "Moi muté sur quelle planéte|?..."
+            request sequence "crol_pay.hnm"
+            say Rotator presentation=8 chatter : "mais non|... muté|... pas muté comme ca..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=1 : "pas muté comme transporté..."
+            request sequence "crol_pay.hnm"
+            say Rotator presentation=8 chatter if_not_shown skip_next=1 : "mais muté comme ca|..."
+            request sequence "venthig.hnm"
+            say Rotator presentation=15 : "Ah|! Choir|! Hachoir|!..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=2 : "..."
+            end presentation Rotator
+            sequence_slots[4] = "7croolvent"
+        }
+        when {
+            require Rotator.encounter_count == 3
+        } then {
+            say Rotator presentation=16 : "Toi content faire scénario Commander Blood|?..."
+            say Rotator presentation=8 chatter resume_at=rota01_dialogue_resume_1 : "vous content|?..." choices "content" "bof" "bof_bof" "mouais_bof"
+            when {
+                require choice == "content"
+            } then {
+                say Rotator presentation=17 : "Toi chance|, alors|..."
+                say Rotator presentation=18 : "Toi pas trouver que quand méme|..."
+                say Rotator presentation=16 : "Toi payer cher pour jeu pas terrible|..."
+                say Rotator presentation=15 if_not_shown skip_next=1 : "Plus de 200 crédits|! Toi fou dépenser trop|!..."
+                choice = none
+            }
+            when {
+                require choice != "content"
+            } then {
+                say Rotator presentation=17 : "Moi comprendre|..."
+                say Rotator presentation=18 : "Bien d'accord avec toi|..."
+                say Rotator presentation=15 if_not_shown skip_next=1 : "Dire que toi dépenser plus de 200 crédits|!..."
+                choice = none
+            }
+        }
+        rota01_dialogue_resume_1:
+        when {
+            require Rotator.encounter_count == 3
+        } then {
+            say Rotator presentation=13 : "Tout ca pour voir|..."
+            say Rotator presentation=8 if_not_shown skip_next=1 : "ca|!..."
+            request sequence "logo_bl.hnm"
+            say Rotator presentation=14 : "Méme chose que dans Commander Blood numéro 1..."
+            say Rotator presentation=15 : "Animations personnages tout pareil|..."
+            say Rotator presentation=15 : "Tout pareil|..."
+            say Rotator presentation=15 : "Tout pareil|..."
+            say Rotator presentation=15 : "Tout pareil pour plus de 200 crédits|!..."
+            say Rotator presentation=8 if_not_shown skip_next=1 : "Ca arnaque|! Ah ah ah|!..."
+            request sequence "matchfin.hnm"
+            say Rotator presentation=13 : "Toi regretter payer si cher|?..."
+            say Rotator presentation=8 chatter resume_at=rota01_dialogue_resume_2 : "vous regrettez|, commander|?..." choices "bof" "regret" "remords" "haine" "amertume" "désespoir"
+            when {
+                require choice == "bof"
+            } then {
+                say Rotator presentation=14 : "Toi pas difficile à contenter|..."
+                say Rotator presentation=15 if_not_shown skip_next=1 : "Toi pas payer peut-étre|?..."
+                choice = none
+            }
+            when {
+                require choice != "bof"
+            } then {
+                choice = none
+            }
+            rota01_dialogue_resume_2:
+            say Rotator presentation=16 : "Normal|! Toi vu prix|?... Plus de 200 crédits|!..."
+            say Rotator presentation=8 if_not_shown skip_next=1 : "Un|..."
+            transfer credit from Rotator to aboard
+            say Rotator presentation=8 if_not_shown skip_next=1 : "Deux|..."
+            transfer credit from aboard to Rotator
+            say Rotator presentation=8 if_not_shown skip_next=1 : "Trois|..."
+            transfer credit from Rotator to aboard
+            say Rotator presentation=8 if_not_shown skip_next=1 : "Quatre|..."
+            transfer credit from aboard to Rotator
+            say Rotator presentation=12 : "Je continue ou ton portefeuille te fait mal|?..."
+        }
+        when {
+            require Rotator.encounter_count == 3
+        } then {
+            say Rotator presentation=8 chatter resume_at=rota01_dialogue_resume_3 : "vous avez mal au portefeuille|, commander|?..." choices "mal" "pas_mal" "pas_mal_mal" "méme_pas_mal"
+            when {
+                require choice == "mal"
+            } then {
+                say Rotator presentation=17 if_not_shown skip_next=1 : "Moi aussi|, à ta place|, moi mal|!..."
+                choice = none
+            }
+            when {
+                require choice != "mal"
+            } then {
+                say Rotator presentation=18 if_not_shown skip_next=1 : "Toi riche|, peut-étre|, Commander|..."
+                choice = none
+            }
+        }
+        rota01_dialogue_resume_3:
+        when {
+            require Rotator.encounter_count == 4
+        } then {
+            say Rotator presentation=10 : "Toi toujours là|, Commander|?..."
+            say Rotator presentation=11 : "Toi en vouloir pour ton argent|?..."
+            say Rotator presentation=8 chatter resume_at=rota01_dialogue_resume_4 : "vous en vouloir pour votre argent|, commander|?..." choices "vouloir" "pas_vouloir"
+            when {
+                require choice == "vouloir"
+            } then {
+                say Rotator presentation=8 if_not_shown skip_next=8 : "..."
+                end presentation Rotator
+                sequence_slots[1] = "39argent"
+                sequence_slots[2] = "39argent"
+                sequence_slots[3] = "39argent"
+                sequence_slots[4] = "39argent"
+                sequence_slots[5] = "39argent"
+                sequence_slots[6] = "39argent"
+                choice = none
+            }
+            when {
+                require choice != "vouloir"
+            } then {
+                say Rotator presentation=13 : "Toi content|, alors|? Toi bien arnaqué|!..."
+                say Rotator presentation=8 if_not_shown skip_next=1 : "Are are|! Arnaqué|!..."
+                request sequence "match02.hnm"
+                say Rotator presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+        rota01_dialogue_resume_4:
+        when {
+            require Rotator.encounter_count == 5
+        } then {
+            say Rotator presentation=14 : "Hé hé hé|!..."
+            say Rotator presentation=14 : "Hé hé hé|!..."
+            say Rotator presentation=13 : "Moi rire parce que moi drole|..."
+            say Rotator presentation=14 : "Hé hé hé|!..."
+            say Rotator presentation=14 : "Hé hé hé|!..."
+            say Rotator presentation=15 : "Moi jubiler|!..."
+            say Rotator presentation=12 : "Toi vouloir entendre ma blague|?..."
+            say Rotator presentation=14 : "Hé hé hé|!..."
+            say Rotator presentation=11 : "Mais attention|... Moi te prévenir|..."
+            say Rotator presentation=14 : "Hé hé hé|..."
+            say Rotator presentation=10 : "Moi humour trés spécial|..."
+            say Rotator presentation=15 : "Blague faire rire que moi|..."
+            say Rotator presentation=10 : "Moi sùr toi pas aimer ma blague|..."
+            say Rotator presentation=8 chatter resume_at=rota01_dialogue_resume_5 : "vous la voulez quand méme|, sa blague|?..." choices "quand_méme" "surtout_pas"
+            when {
+                require choice == "quand_méme"
+            } then {
+                say Rotator presentation=14 : "Hé hé hé|..."
+                say Rotator presentation=16 : "Toi perdu|!..."
+                say Rotator presentation=14 : "Hé hé hé|..."
+                say Rotator presentation=8 if_not_shown skip_next=1 : "Hé hé hé|! Lui perdu|!..."
+                request sequence "match02.hnm"
+                say Rotator presentation=8 if_not_shown skip_next=1 : "Oh oh oh|! Perdu|!..."
+                request sequence "matchfin.hnm"
+                say Rotator presentation=8 if_not_shown skip_next=1 : "Ah ah ah|! Pllllffft|! Perdu|!..."
+                request sequence "ppit07.hnm"
+                say Rotator presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Rotator
+                globals.A13 = 1
+                choice = none
+            }
+            when {
+                require choice == "surtout_pas"
+            } then {
+                say Rotator presentation=14 : "Hé hé hé|..."
+                say Rotator presentation=12 if_not_shown skip_next=1 : "Dommage|..."
+                choice = none
+            }
+        }
+        rota01_dialogue_resume_5:
+        when {
+            require image.holder != aboard
+        } then {
+            say Rotator presentation=12 : "Moi vendre jolie image... Toi aimer image|???"
+            say Rotator presentation=15 : "Toi acheter image contre crédit..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Rotator presentation=8 chatter : "Nous plus avoir crédit, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Rotator presentation=8 chatter resume_at=gest02 : "Vous vouloir acheter image, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Rotator presentation=8 chatter if_not_shown skip_next=2 : "Nous envoyer credit, Commander"
+                    transfer credit from aboard to Rotator
+                    globals.A4 -= 1
+                    say Rotator presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION IMAGE DANS CRYOBOX"
+                    transfer image from Rotator to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest02 enabled {
+        during travel
+        require presentation == Rotator
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            say Rotator presentation=10 : "Papa Général déjà avoir atomique, moi pas besoin..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=3 : "Ben oui, Commander"
+            globals.B96 += 1
+            atomique.holder = aboard
+            bits(atomique.flags,0x0040) = false
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Rotator presentation=13 : "Toi pas compris? Moi vendre image, pas toi donner à moi!.."
+            say Rotator presentation=8 chatter if_not_shown skip_next=4 : "S'il vous plait, ne l'énervez pas, Commander"
+            state_b1[Rotator.population] /= 2
+            Rotator.aggressiveness += 100
+            globals.B37 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Rotator presentation=9 : "Krone! Aglou Aglou, a bon ça, Krone!"
+            say Rotator presentation=8 chatter if_not_shown skip_next=5 : "Il croit que c'est de la biére, Commander"
+            state_b5[Rotator.energy] += 200
+            Rotator.aggressiveness += 200
+            globals.B36 = 1
+            globals.B35 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Rotator presentation=16 : "Ableau? A pas beau, Ableau!"
+            say Rotator presentation=8 chatter if_not_shown skip_next=2 : "Abloablo... Quelle tache! Finalement les Gluxx avaient de la conversation"
+            Rotator.aggressiveness += 100
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Rotator presentation=15 : "Tacatacatacatac!!!"
+            say Rotator presentation=8 chatter if_not_shown skip_next=2 : "Il est fou, il tire dessus! Il croit que c'est un ennemi!"
+            globals.B37 = 0
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Rotator presentation=9 : "Ppppppffffffuit, prrr, out..."
+            say Rotator presentation=8 chatter : "Ca le fait loufer..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=4 : "Commander, on ne devrait pas trainer dans le coin..."
+            state_b5[Rotator.energy] += 150
+            state_b6[Rotator.evolution] += 100
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Rotator presentation=9 : "Knologie... Ca bon chanteur terrien ça, mais servir à rien"
+            say Rotator presentation=8 chatter : "Il confond avec Mouloudji. Incroyable! Il connait Mouloudji!"
+            say Rotator presentation=12 : "Rappelle-toi, Barbara, il pleuvait sans cesse sur Brest..."
+            say Rotator presentation=8 chatter : "Et ses chansons! Sergent Rotator, chapeau!"
+            say Rotator presentation=15 : "Pour moi chapeau? Où ça?"
+            say Rotator presentation=8 chatter if_not_shown skip_next=4 : "Désolé, Rototo, mais a pas chapo sur cryoboxo"
+            dictionary blank after "cryoboxo"
+            state_b6[Rotator.evolution] += 100
+            state_b5[Rotator.energy] += 10
+            globals.B35 = 1
+            bits(technologie.flags,0x0040) = false
+            when {
+                require globals.A100 == 6
+                require globals.A93 == 0
+            } then {
+                say Rotator presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A93 = 1
+                end presentation Rotator
+            }
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Rotator presentation=8 chatter : "Vous croyez qu'il a fait son service avec Elvis, Commander?.."
+            say Rotator presentation=15 : "Love me tender..."
+            say Rotator presentation=8 chatter : "Bien joué, Commander, il a l'air d'etre rock'n'roll"
+            say Rotator presentation=14 : "Bebapeloolachizzzma∩baybé..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=5 : "Un vrai juke-box, on ne l'arrete plus"
+            globals.B37 += 1
+            state_b1[Rotator.population] += 250
+            Rotator.aggressiveness -= 200
+            globals.B36 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Rotator presentation=11 : "Pognon... Pognon..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=2 : "Commander, ne jetez pas l'argent par les hublots..."
+            state_b5[Rotator.energy] += 50
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Rotator presentation=10 : "A bon parfum pour cocktail Morlotov!"
+            say Rotator presentation=8 chatter if_not_shown skip_next=5 : "Quel saoulard! Il avalerait n'importe quoi..."
+            state_b6[Rotator.evolution] += 30
+            state_b1[Rotator.population] += 250
+            globals.B37 += 1
+            Rotator.aggressiveness -= 100
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Rotator presentation=8 chatter : "Si ca pouvait l'aider à parler en clair..."
+            say Rotator presentation=9 if_not_shown skip_next=4 : "Hum... tééfun, agueu|, SSS... Tarlette à Malibu..."
+            dictionary blank after "Hum..."
+            state_b6[Rotator.evolution] += 80
+            state_b1[Rotator.population] -= 150
+            globals.B37 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Rotator presentation=15 : "RAmMiAmmmeuMaRamiaM..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=2 : "Il attend méme pas qu'on soit parti pour baffrer! Beurk!"
+            state_b5[Rotator.energy] += 450
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Rotator presentation=9 : "Ah merci, ça va mieux"
+            say Rotator presentation=10 : "Je croyais que j'allais rester con comme un Crooli toute ma vie..."
+            say Rotator presentation=8 chatter : "Incroyable! Vous l'avez guéri de sa tare!"
+            say Rotator presentation=11 : "Ca m'a bien nettoyé les boyaux d'la téte, vot'truc!"
+            say Rotator presentation=8 chatter : "On croirait entendre son pére le Général"
+            say Rotator presentation=14 : "Aga... A papa le Général... A mon papa..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=3 : "Pas fait effet trés longtemps, le médoc. Enfin, c'est mieux que rien."
+            state_b6[Rotator.evolution] += 50
+            state_b1[Rotator.population] += 200
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Rotator presentation=14 : "Aqueu Gachette..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=4 : "Ah quel gachis!"
+            Rotator.aggressiveness += 250
+            state_b6[Rotator.evolution] += 50
+            globals.B36 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Rotator presentation=13 : "Moi pas myope"
+            say Rotator presentation=8 chatter if_not_shown skip_next=3 : "Lui pas cerveau non plus|, Commander..."
+            state_b6[Rotator.evolution] += 50
+            globals.B35 += 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Rotator presentation=9 if_not_shown skip_next=2 : "Ca faire bien par où ça passe..."
+            state_b5[Rotator.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Rotator presentation=9 : "Moi pas besoin bac, études servir à rien"
+            say Rotator presentation=8 chatter if_not_shown skip_next=5 : "Il a raison, Commander. Pour lui, étre trop tard"
+            state_b6[Rotator.evolution] += 50
+            state_b1[Rotator.population] += 200
+            globals.B37 += 1
+            Rotator.aggressiveness -= 200
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Rotator presentation=9 if_not_shown skip_next=2 : "Un emetteur"
+            state_b6[Rotator.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Rotator presentation=9 : "Pan! Pan!"
+            say Rotator presentation=8 chatter : "Attention, Commander!"
+            say Rotator presentation=8 chatter if_not_shown skip_next=3 : "Quand il entend le mot culture, il sort son revolver!"
+            state_b6[Rotator.evolution] += 100
+            state_b5[Rotator.energy] += 100
+            bits(culture.flags,0x0040) = false
+            when {
+                require globals.A100 == 6
+                require globals.A93 == 0
+            } then {
+                say Rotator presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A93 = 1
+                end presentation Rotator
+            }
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Rotator presentation=15 : "Ah pourquoi faire?"
+            say Rotator presentation=8 chatter if_not_shown skip_next=2 : "Ah pour écrire au fan club de Stallone, par exemple..."
+            state_b6[Rotator.evolution] += 60
+            bits(ecriture.flags,0x0040) = false
+            when {
+                require globals.A100 == 6
+                require globals.A93 == 0
+            } then {
+                say Rotator presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A93 = 1
+                end presentation Rotator
+            }
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Rotator presentation=9 : "Non merci... trop compiqué..."
+            say Rotator presentation=8 chatter : "Compliqué!"
+            say Rotator presentation=10 : "Ne vous moquez pas de moi, je ne dispose pas de votre richesse de vocabulaire..."
+            say Rotator presentation=8 chatter : "Mais à la fin, il sait causer ou pas?"
+            say Rotator presentation=11 if_not_shown skip_next=3 : "Toi pas t'énerver, moi illettré"
+            state_b6[Rotator.evolution] += 60
+            globals.B35 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Rotator presentation=8 chatter if_not_shown skip_next=5 : "Laissez tomber! Il pourra pas le lire..."
+            state_b6[Rotator.evolution] += 80
+            globals.B36 = 0
+            Rotator.aggressiveness = 0
+            state_b1[Rotator.population] += 500
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Rotator presentation=9 : "KA... DO... KA... DO..."
+            say Rotator presentation=8 chatter if_not_shown skip_next=3 : "Ouais, ben ta téte à toi, pas cadeau, ca, hein"
+            state_b6[Rotator.evolution] += 10
+            state_b5[Rotator.energy] += 100
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Rotator presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Rotator presentation=8 chatter resume_at=gest02_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Rotator presentation=8 : "..."
+        gest02_dialogue_resume_1:
+        say Rotator presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        say Rotator presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Rotator
+        halt
+    }
+}

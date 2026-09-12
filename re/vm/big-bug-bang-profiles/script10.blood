@@ -1,0 +1,2187 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT10
+concepts "parler" "bonjour" "rayon"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc blue01 enabled {
+        during travel
+        require presentation == Blue_Wave
+    } then {
+        when {
+            require Blue_Wave.encounter_count == 1
+        } then {
+            say Blue_Wave presentation=23 : "Bonjour beau Commander..."
+            say Blue_Wave presentation=22 : "Wouou|... regarde un peu par ici|..."
+            say Blue_Wave presentation=20 : "Coucou|! Hi hi|!..."
+            say Blue_Wave presentation=16 : "Toc|! Toc|! Regarde-moi|..."
+            say Blue_Wave presentation=14 : "Tu veux jouer avec moi... Hi! Hi! Hi! Hi!"
+            say Blue_Wave presentation=8 chatter : "Commander, cette Blue Wave me fait craquer..."
+            say Blue_Wave presentation=8 chatter : "Elle émet une|..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=1 : "énergie considérable|..."
+            request sequence "star2.hnm"
+            say Blue_Wave presentation=8 chatter : "On essaie de la brancher, Commander|?"
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Ici la ligue intergalactique de vertu|!..."
+            request sequence "ppitin02.hnm"
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Attention Camarade Ondoyante|!... On essaie de te|..."
+            request sequence "ppitin03.hnm"
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "..."
+            transfer armes from Blue_Wave to aboard
+            say Blue_Wave presentation=13 : "Qu'est-ce qu'il raconte votre ordinateur, Commander|?"
+            say Blue_Wave presentation=8 chatter : "Rien du tout, ma chérie, rien du tout..."
+            dictionary blank after "tout..."
+            say Blue_Wave presentation=8 chatter : "Commander, j'en peux plus, j'attaque...Alors beauté, on habite chez ses harengs|?"
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Réagis|, Camarade femelle|!..."
+            request sequence "ppitin02.hnm"
+            say Blue_Wave presentation=12 : "Espéce de murfle|!"
+            dictionary blank after "Espéce"
+            say Blue_Wave presentation=8 chatter : "Ca marche, Commander, vous n'avez plus qu'à la ferrer..."
+        }
+        when {
+            require momie.holder != Blue_Wave
+            require bits(bague.flags,0x0040)
+            require globals.A26 == 0
+            require momie.holder != aboard
+        } then {
+            say Blue_Wave presentation=12 : "Non, Commander, il est trop tot pour l'alliance. Tu dois d'abord résoudre l'énigme de Super Zen|..."
+            say Blue_Wave presentation=22 : "Tu veux que je t'aide à la comprendre|?..."
+            dictionary blank after "?..."
+            say Blue_Wave presentation=23 : "Il parait que tu es un peu lent|..."
+            say Blue_Wave presentation=8 chatter resume_at=blue01_dialogue_resume_1 : "vous acceptez son aide|, commander|, ou vous avez votre fierté|?..." choices "aide" "fierté"
+            when {
+                require choice != "fierté"
+            } then {
+                say Blue_Wave presentation=24 : "C'est pourtant simple|..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "La bandelette|..."
+                request sequence "momi10.hnm"
+                say Blue_Wave presentation=8 chatter if_not_shown skip_next=1 : "mais bien sur|, commander|! la bandelette|..."
+                choice = none
+            }
+            when {
+                require choice != "aide"
+            } then {
+                choice = none
+            }
+            blue01_dialogue_resume_1:
+            say Blue_Wave presentation=8 if_not_shown skip_next=3 : "..."
+            end presentation Blue_Wave
+            bague.holder = aboard
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require momie.holder != Blue_Wave
+            require bits(bague.flags,0x0040)
+            require globals.A26 == 0
+            require momie.holder == aboard
+        } then {
+            say Blue_Wave presentation=12 : "Non, beau Commander, il est trop tot. D'abord tu dois unir l'énergie et la bandelette|..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=1 : "Elle nous rend la bague, Commander|..."
+            transfer bague from Blue_Wave to aboard
+        }
+        when {
+            require globals.B79 < 5
+            require bits(bague.flags,0x0040)
+            require globals.A26 == 1
+        } then {
+            say Blue_Wave presentation=11 : "Oui|... La bague|... elle est belle|... Mais|..."
+            say Blue_Wave presentation=8 chatter : "mais|?..."
+            say Blue_Wave presentation=12 : "Mais non|... pas encore|... trop tot|... nous ne nous connaissons pas assez|..."
+            say Blue_Wave presentation=8 chatter : "c'est aussi mon opinion|..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "commander, montrez-lui que vous étes généreux|..."
+            bague.holder = aboard
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require globals.B79 > 4
+            require bits(bague.flags,0x0040)
+            require globals.A26 == 1
+        } then {
+            say Blue_Wave presentation=8 chatter : "Gouzba|... Gouzba|... BAGOUZE|!..."
+            say Blue_Wave presentation=14 : "Je vois que Monsieur a du savoir-faire avec les femmes..."
+            say Blue_Wave presentation=9 : "Je t'aime de plus en plus..."
+            say Blue_Wave presentation=8 chatter : "Co... Co... Commander... Vous avez entendu???"
+            say Blue_Wave presentation=15 : "Co...Commander...Je ne sais pas ce que j'ai...cette bague...vous..."
+            say Blue_Wave presentation=11 : "...Moi...Vous et moi..."
+            say Blue_Wave presentation=28 : "..."
+            say Blue_Wave presentation=8 chatter : "Commander! Elle s'est évanouie! Vite|! Il faut en profiter!..."
+            say Blue_Wave presentation=8 chatter resume_at=blue01_dialogue_resume_2 : "Commander, voulez-vous la téléporter dans la cryobox, elle pourrait nous étre utile, non?" choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Blue_Wave presentation=8 chatter : "YAOUH!!!!!!!"
+                say Blue_Wave presentation=8 chatter : "TELEPORTATION BLUE WAVE SUR CRYOBOX"
+                say Blue_Wave presentation=19 : "..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=4 : "..."
+                Blue_Wave.current_location = aboard
+                energie.holder = aboard
+                end presentation Blue_Wave
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Blue_Wave presentation=12 : "Tant pis pour toi, idiot!..."
+                say Blue_Wave presentation=8 chatter : "Idiot!"
+                say Blue_Wave presentation=8 chatter : "Idiot!"
+                say Blue_Wave presentation=8 chatter : "Triple idiot!"
+                say Blue_Wave presentation=8 chatter : "Un idiot pareil, ça ne mérite pas un ordinateur de mon calibre..."
+                say Blue_Wave presentation=8 chatter : "Commander, je n'ai jamais vu une lavette comme vous!"
+                say Blue_Wave presentation=8 chatter : "Rater une occasion pareille! On n'a pas idée!"
+                dictionary blank after "occasion"
+                say Blue_Wave presentation=8 chatter : "Tiens, j'en ai marre! Si c'est comme ça, je m'en vais..."
+                say Blue_Wave presentation=8 chatter : "Adieu, Casanova de pacotille! Je vais me marier avec elle, moi|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "..."
+                request sequence "fin.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Blue_Wave
+                globals.A13 = 2
+                choice = none
+            }
+        }
+        blue01_dialogue_resume_2:
+        when {
+            require Blue_Wave.encounter_count == 1
+        } then {
+            say Blue_Wave presentation=9 : "Mon nom est Blue Wave, bel étranger..."
+            say Blue_Wave presentation=13 : "Nous les waves, nous prenons la forme des phantasmes de celui qui nous regarde..."
+            say Blue_Wave presentation=13 resume_at=blue01_dialogue_resume_3 : "Que vois-tu, Commander|?..." choices "femme" "souris" "chien" "yolk"
+            when {
+                require choice == "femme"
+            } then {
+                say Blue_Wave presentation=17 if_not_shown skip_next=1 : "Je vois que tu as du gout, Commander..."
+                choice = none
+            }
+            when {
+                require choice == "souris"
+            } then {
+                say Blue_Wave presentation=8 chatter if_not_shown skip_next=1 : "menteur|! vous étes vraiment un pervers, commander|..."
+                choice = none
+            }
+            when {
+                require choice == "chien"
+            } then {
+                say Blue_Wave presentation=8 if_not_shown skip_next=2 : "Coucou les cocos|! Alors comme ça on préfére les chiens|?..."
+                request sequence "ppit01.hnm"
+                choice = none
+            }
+            when {
+                require choice == "yolk"
+            } then {
+                say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Vous voyez vraiment ça|, commander|?..."
+                request sequence "tabloyol.hnm"
+                choice = none
+            }
+            blue01_dialogue_resume_3:
+            say Blue_Wave presentation=8 chatter : "Co... Commander... J'ai un malaise... Vous avez vu son clavier... et sa souris|???"
+            say Blue_Wave presentation=11 : "Votre ordinateur de bord s'affole, Commander?..."
+            say Blue_Wave presentation=8 chatter : "J'ai jamais vu une souris comme ça, Commander..."
+            say Blue_Wave presentation=10 : "Chacun son phantasme...Pas vrai Commander?... Chacun sa souris..."
+            say Blue_Wave presentation=8 chatter : "Commander, rien qu'à la|..."
+            say Blue_Wave presentation=29 : "..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=1 : "regarder|..."
+            request sequence "ppitbb01.hnm"
+            say Blue_Wave presentation=8 chatter : "elle m'épuise..."
+            say Blue_Wave presentation=18 : "Tu veux de l'énergie|?... J'en ai à revendre..."
+            say Blue_Wave presentation=15 : "De l'énergie pure contre un cadeau, beau Commander..."
+            say Blue_Wave presentation=8 chatter : "Commander, je frise le RESET... L'épectase des droides..."
+            dictionary blank after "droides..."
+            when {
+                require cadeaux.holder != aboard
+                require cadeaux.holder != Blue_Wave
+            } then {
+                say Blue_Wave presentation=8 chatter : "Mince!!! Nous n'avons plus de cadeaux, Commander..."
+                say Blue_Wave presentation=11 : "Je n'ai pas dit DES cadeaux, droide, mais UN cadeau...LE cadeau..."
+            }
+            when {
+                require cadeaux.holder == aboard
+            } then {
+                say Blue_Wave presentation=8 chatter resume_at=blue01_dialogue_resume_4 : "Vous acceptez de lui donner un cadeau, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Blue_Wave presentation=8 chatter if_not_shown skip_next=1 : "On lui envoie des cadeaux, Commander"
+                    transfer cadeaux from aboard to Blue_Wave
+                    say Blue_Wave presentation=15 : "J'ai dit UN cadeau, pas DES cadeaux, bel étranger..."
+                    say Blue_Wave presentation=8 chatter : "Ben oui, bel étranger...C'est pas du toc qu'il faut lui refiler à la princesse..."
+                    say Blue_Wave presentation=14 : "Il sait vivre, votre ordinateur de bord, lui..."
+                    say Blue_Wave presentation=8 chatter : "Ouh! Commander! Vous l'avez entendue? Elle continue et je me déconnecte pour aller la rejoindre..."
+                    say Blue_Wave presentation=21 : "Oui, c'est ça, viens me montrer|..."
+                    dictionary blank after "Oui,"
+                    say Blue_Wave presentation=24 : "ton disque dur..."
+                    say Blue_Wave presentation=8 chatter : "Un glaçon, Commander, vite! ou je disjoncte!"
+                    say Blue_Wave presentation=8 chatter : "Qu'est-ce qu'on pourrait lui donner contre son énergie?"
+                    say Blue_Wave presentation=12 if_not_shown skip_next=1 : "Votre assistant est insistant, Commander..."
+                    dictionary blank after "insistant,"
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    say Blue_Wave presentation=8 chatter : "Ben qu'est-ce qu'on lui donne, alors|?"
+                    say Blue_Wave presentation=13 : "Ben oui, qu'est-ce que tu me donnes|???"
+                    say Blue_Wave presentation=8 chatter if_not_shown skip_next=1 : "Attaquez, Commander, droit au but|!"
+                    choice = none
+                }
+                blue01_dialogue_resume_4:
+                when {
+                    require globals.B79 > 3
+                } then {
+                    say Blue_Wave presentation=10 : "Décidément, tu me gàtes...Mon énergie est à toi, beau voyageur de l'espace..."
+                    say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION ENERGIE SUR CRYOBOX"
+                    transfer energie from Blue_Wave to aboard
+                    state_b5[Blue_Wave.energy] = 1000
+                }
+            }
+        }
+    }
+    proc gest01 enabled {
+        during travel
+        require presentation == Blue_Wave
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=15 : "Des atomiques... Ohh oui... Commander... Tu vas me faire exploser..."
+            say Blue_Wave presentation=8 chatter : "Ca alors, elle a l'air d'aimer ça..."
+            say Blue_Wave presentation=12 : "Evidemment que j'aime ça... Quel lourdaud ce truc à puce..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=4 : "Commander|! Vous entendez|? Elle me traite de puceau|!"
+            globals.B79 += 1
+            state_b5[Blue_Wave.energy] = 1000
+            Blue_Wave.aggressiveness = 1000
+            bits(atomique.flags,0x0040) = false
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=18 if_not_shown skip_next=1 : "Ohh! Mais c'est ma cousine Long Wave..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Sa cousine|!!! Commander|!!! Elle a une cousine..."
+            globals.B79 += 1
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=12 : "Une couronne, je vais étre encore plus belle pour toi... Merci beau Commander..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Commander... Si on la téléportait dans l'Arche..."
+            globals.B79 += 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=16 : "Un tableau? Que veux-tu que j'en fasse..."
+            say Blue_Wave presentation=8 chatter : "Mais oui... Que voulez-vous qu'elle en fasse|???"
+            say Blue_Wave presentation=13 : "Remarque, ça fera joli dans ma salle de bains..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Mais oui... Ca fera joli dans sa salle de bains..."
+            globals.B79 += 1
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require globals.A26 > 0
+            require bits(momie.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=8 chatter : "encore|! vous en faites trop|, commander|!..."
+            say Blue_Wave presentation=24 : "Arg|... Quelle horreur|... Adieu|..."
+            say Blue_Wave presentation=8 chatter : "catastrophe|! elle va tout dire à yolk|!..."
+            say Blue_Wave presentation=8 if_not_shown skip_next=3 : "..."
+            bits(momie.flags,0x0040) = false
+            end presentation Blue_Wave
+            globals.A13 = 2
+        }
+        when {
+            require globals.A26 == 0
+            require bits(momie.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=16 : "Une momie|!!! Beuak! Quelle horreur!!!"
+            say Blue_Wave presentation=8 chatter : "Commander, vous lui avez fait peur..."
+            say Blue_Wave presentation=8 chatter : "A ce rythme on n'est pas prét de se la..."
+            dictionary blank after "A"
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Ligue de vertu intergalactique|!..."
+            request sequence "ppitin02.hnm"
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Vous étes prié de surveiller vos propos|..."
+            request sequence "ppitin03.hnm"
+            say Blue_Wave presentation=25 : "AAA... AAARRR... AAARRRGGH!..."
+            say Blue_Wave presentation=8 chatter : "Commander|! Qu'est-ce qui lui arrive|?..."
+            say Blue_Wave presentation=26 : "IIIIIIRRRRRKK|!..."
+            say Blue_Wave presentation=27 : "YYYOOORRLLK|!!!"
+            say Blue_Wave presentation=8 chatter : "Nom de Yolk|! Vous entendez|?"
+            say Blue_Wave presentation=8 chatter : "ELLE RENTRE EN EXTASE BIOTONIQUE|!!!"
+            say Blue_Wave presentation=26 : "BIOOOO..."
+            say Blue_Wave presentation=27 : "TOOO..."
+            say Blue_Wave presentation=28 : "NIQUE|!!!"
+            say Blue_Wave presentation=8 chatter : "OULALA|! commander, qu'est-ce que vous lui avez fait|?"
+            say Blue_Wave presentation=18 : "GOUZBA... GOUZBA... GOUZBA..."
+            say Blue_Wave presentation=8 chatter : "Qu'est-ce qu'elle raconte|? Gouzba|? Kezako|?"
+            say Blue_Wave presentation=18 : "GOUZBAAAA|!..."
+            say Blue_Wave presentation=8 chatter : "Vite commander|! faites quelque chose|! mes détecteurs biofidusactifs..."
+            say Blue_Wave presentation=8 chatter : "disent que si vous ne lui donnez pas ce qu'elle réclame..."
+            say Blue_Wave presentation=8 chatter : "elle va mourir dans la minute|..."
+            say Blue_Wave presentation=8 chatter : "regardez|! elle ne bouge plus|..."
+            say Blue_Wave presentation=8 chatter : "elle cligne juste des yeux|..."
+            say Blue_Wave presentation=8 chatter : "elle est figée|..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=1 : "comme une image"
+            transfer image from Blue_Wave to aboard
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Ne la laissez pas mourir|, Commander|..."
+            request sequence "bobb.hnm"
+            say Blue_Wave presentation=8 chatter : "bob|!..."
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Sinon je vous garantis|..."
+            request sequence "bobb.hnm"
+            say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Que vous irez la rejoindre|!..."
+            request sequence "maledict.hnm"
+            say Blue_Wave presentation=21 : "GOUZBAAAARGH..."
+            say Blue_Wave presentation=8 chatter : "Vite commander|!"
+            say Blue_Wave presentation=8 if_not_shown skip_next=2 : "..."
+            bits(momie.flags,0x0040) = false
+            globals.A26 = 1
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=18 : "Hum... Quelle étrange substance... Je me sens plus forte..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Hé! Hé! Elle se sent plus forte..."
+            globals.B79 += 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 : "De la technologie... Crois-tu que je manque de technique, petit coquin|?"
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Quelle petite coquine..."
+            globals.B79 += 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=15 : "Quel bonheur... je vais pouvoir vous chanter une sirénade|?"
+            say Blue_Wave presentation=8 chatter : "Oh oui! Oh oui!"
+            say Blue_Wave presentation=11 : "Si vous m'offrez encore autre chose, peut-étre que je ferai un effort..."
+            say Blue_Wave presentation=8 chatter : "Allons, Commander, mettez la main à la cryobox..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Allons! Un effort!..."
+            globals.B79 += 1
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 : "Dites donc, malotru, vous me prenez pour qui|?!?"
+            say Blue_Wave presentation=11 : "Je ne suis pas celle que vous croyez..."
+            say Blue_Wave presentation=8 chatter : "Commander! vous avez tout fait foirer!"
+            say Blue_Wave presentation=8 chatter : "C'est vrai, ça! Vous la prenez pour qui|?"
+            say Blue_Wave presentation=8 chatter : "Excusez-nous, Blue Wave de réve, nous ne pensions pas à mal..."
+            say Blue_Wave presentation=13 : "C'est ce qu'ils disent tous..."
+            say Blue_Wave presentation=8 chatter : "Oui mais nous c'est pas pareil... Et pour le prouver, on vous donne tout ce qu'on a..."
+            when {
+                require globals.A4 > 1
+            } then {
+                say Blue_Wave presentation=10 : "Bon, je préfère ça..."
+                say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Commander... excusez-moi, j'ai craqué, je lui ai donné tous nos crédits..."
+                globals.A4 = 0
+                bits(credit.flags,0x0040) = false
+            }
+            when {
+                require globals.A4 == 1
+            } then {
+                say Blue_Wave presentation=13 : "Espèce de murfle! Allons! du balai!"
+                say Blue_Wave presentation=8 chatter : "Bon sang de Yolk, Commander|! Nous n'avions plus de crédits..."
+                say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Faut absolument essayer autre chose!!!"
+                globals.B79 -= 1
+                bits(credit.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=17 : "Sniff... Que ça sent bon, Commander... Oh! Que tu es beau, Commander"
+            say Blue_Wave presentation=8 chatter : "Ha! Ha! Commander, cette fois c'est la bonne... Maintenant, ferrez..."
+            say Blue_Wave presentation=8 if_not_shown skip_next=2 : "..."
+            globals.B79 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 : "Un décodeur|... Que veux-tu que j'en fasse|..."
+            say Blue_Wave presentation=8 chatter : "Commander, elle s'y connait pas en électronique|..."
+            say Blue_Wave presentation=10 : "électro|... quoi|? -&!2Ouhhh|... finalement on l'intéresse|..."
+            globals.B79 += 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=15 : "De la nourriture... Il faut que je fasse attention à ma ligne..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Eh oui... Sa ligne...."
+            globals.B79 += 1
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 : "Des médicaments... Tu veux me droguer..."
+            say Blue_Wave presentation=8 chatter : "L'intention était bonne, Commander, mais elle vous a flairé..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Peut-étre que ça va quand méme agir..."
+            globals.B79 += 1
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=14 : "DES ARMES... Mais t'es devenu fou..."
+            say Blue_Wave presentation=8 chatter : "fou d'amour..."
+            say Blue_Wave presentation=19 if_not_shown skip_next=2 : "Range-moi ça tout de suite..."
+            globals.B79 += 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=14 : "Merci, Commander, comme ça je ne te perdrai pas de vue..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "..."
+            globals.B79 += 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 : "De l'énergie... Je n'en ai pas besoin|... Beau Commander..."
+            say Blue_Wave presentation=8 chatter : "ca C'est sur... c'est plutot vous qui en aurez besoin, commander..."
+            say Blue_Wave presentation=20 : "Honk a raison... Tenez... Pour vous..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Commander|! Elle nous refile son énergie|... MMMMMh|..."
+            transfer energie from Blue_Wave to aboard
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 if_not_shown skip_next=2 : "Un èmetteur..."
+            globals.B79 += 1
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 if_not_shown skip_next=2 : "De la Culture..."
+            globals.B79 += 1
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Hum..."
+            globals.B79 += 1
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 : "Un VAISSEAU...J'irai voir ma cousine Short Wave..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=4 : "Une cousine...MMMMH..."
+            state_b6[Blue_Wave.evolution] += 10
+            globals.B47 = 1
+            globals.B79 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=21 : "Un traité... Tu veux dire un contrat de mariage|?..."
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "allez-y commander|! c'est le moment de concrétiser..."
+            globals.B79 += 1
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Blue_Wave presentation=9 : "Des cadeaux... Ohhh oui, Commander... c'est gentil, mais..."
+            say Blue_Wave presentation=8 chatter : "mais quoi|? ils lui plaisent pas nos cadeaux|?"
+            say Blue_Wave presentation=22 : "Si si, mais... as-tu LE cadeau|?"
+            say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "Vous voyez ce qu'elle veut dire, commander|?"
+            globals.B79 += 1
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Blue_Wave presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Blue_Wave presentation=8 chatter resume_at=gest01_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Blue_Wave presentation=8 : "..."
+        gest01_dialogue_resume_1:
+        say Blue_Wave presentation=8 chatter : "A BIENTOT, COMMANDER CHERI... REVIENS VITE ME VOIR..."
+        say Blue_Wave presentation=8 chatter : "Commander, elle me rend fou, vous avez vu son clavier... Et sa souris... Hein! Sa souris..."
+        say Blue_Wave presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Blue_Wave
+    }
+    proc tlp enabled {
+        during contact
+        require globals.A64 == 0
+        require Blue_Wave.current_location == aboard
+        require presentation == Blue_Wave
+    } then {
+        say Blue_Wave presentation=17 : "Hi! Hi! Hi! Je suis bien chez toi..."
+        say Blue_Wave presentation=18 : "Monsieur Honk est trés gentil avec moi..."
+        when {
+            require globals.A96 == 0
+        } then {
+            say Blue_Wave presentation=8 chatter : "Elle est craquante... Hein! Commander..."
+            say Blue_Wave presentation=8 chatter : "elle m'a montré ce qu'elle savait faire|... c'est époustouflant|..."
+            say Blue_Wave presentation=9 : "Pfff|... quel flatteur ce Honk|!..."
+            say Blue_Wave presentation=8 chatter : "je vous jure, commander|... on dirait un spectacle du Crooli-Horse|..."
+            say Blue_Wave presentation=8 chatter resume_at=tlp_dialogue_resume_1 : "voulez-vous voir la Blue Wave vous faire un spectacle|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Blue_Wave presentation=9 : "SPECTACLE|!..."
+                say Blue_Wave presentation=10 : "pfff... Vous les hommes|!"
+                say Blue_Wave presentation=11 : "si souvent je dis oui..."
+                say Blue_Wave presentation=12 : "parfois je dis non..."
+                say Blue_Wave presentation=13 : "Tiens|! Je suis un cadeau..."
+                say Blue_Wave presentation=14 : "attrape..."
+                say Blue_Wave presentation=15 : "Je t'embrasse..."
+                say Blue_Wave presentation=15 : "brasse|..."
+                say Blue_Wave presentation=15 : "brasse|..."
+                say Blue_Wave presentation=16 : "toc toc..."
+                say Blue_Wave presentation=18 : "pour mes cheveux j'utilise croolidop..."
+                say Blue_Wave presentation=21 : "et hop|!..."
+                say Blue_Wave presentation=22 : "toc toc..."
+                say Blue_Wave presentation=25 : "salto..."
+                say Blue_Wave presentation=26 : "saut pé..."
+                say Blue_Wave presentation=27 : "rilleux..."
+                say Blue_Wave presentation=28 if_not_shown skip_next=1 : "saut périlleux..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Blue_Wave presentation=8 chatter : "Tant pis pour vous commander|!..."
+                say Blue_Wave presentation=10 : "Tant pis pour toi|, pauvre idiot|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Mais vous étes fou|! Ca se refuse pas|..."
+                request sequence "ppit03.hnm"
+                say Blue_Wave presentation=28 : "Un spectacle de la Blue Wave|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Pourquoi t'as dit non|! Elle est bien bonne celle-là|!..."
+                request sequence "bobb.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Oui c'est moaaa|!..."
+                request sequence "ppitin02.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "A poil|! A poil|!..."
+                request sequence "match02.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Oh|! Je vous en prie|! Grands fous|!..."
+                request sequence "ppitin03.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Pas toi|! L'autre|!..."
+                request sequence "match11.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "A poil ou on casse tout|!..."
+                request sequence "match10.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Ouais|! On fait tout péter|!..."
+                request sequence "archex30.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Tout|! Tout|! Le chaos|!..."
+                request sequence "momi10.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=4 : "..."
+                globals.A96 = 1
+                globals.A61 = 1
+                end presentation Blue_Wave
+                choice = none
+            }
+            tlp_dialogue_resume_1:
+            say Blue_Wave presentation=8 chatter : "j'aime bien|... bravo blue wave|!... encore un petit saut périlleux peut-étre|?..."
+            say Blue_Wave presentation=12 : "Non|! Pas question|! Ca suffit|!..."
+            say Blue_Wave presentation=8 chatter : "Vous étes si belle, blue wave|..."
+            say Blue_Wave presentation=11 : "Oui ça je sais|..."
+            say Blue_Wave presentation=8 chatter : "alors, pour la beauté du geste|?..."
+            say Blue_Wave presentation=9 : "Pfff|... bon d'accord|..."
+            say Blue_Wave presentation=26 : "saut périlleux|..."
+            say Blue_Wave presentation=27 : "...arrière|..."
+            say Blue_Wave presentation=8 chatter : "magnifique|!..."
+            say Blue_Wave presentation=8 chatter resume_at=tlp_dialogue_resume_2 : "commander, j'ai réussi à la filmer d'un autre angle|... vous voulez mater|?..." choices "mater" "rater"
+            when {
+                require choice == "mater"
+            } then {
+                say Blue_Wave presentation=29 : "vue arrière|..."
+                say Blue_Wave presentation=8 chatter : "superbe, non|?... Encore une fois|..."
+                say Blue_Wave presentation=29 if_not_shown skip_next=1 : "arrière|..."
+                choice = none
+            }
+            when {
+                require choice == "rater"
+            } then {
+                say Blue_Wave presentation=8 chatter : "vous avez raison, commander, vous étes trop jeune pour ça|..."
+                say Blue_Wave presentation=10 : "Tant pis pour toi|, pauvre idiot|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Mais vous étes fou|! Ca se refuse pas|..."
+                request sequence "ppit03.hnm"
+                say Blue_Wave presentation=28 : "Un spectacle de la Blue Wave|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Pourquoi t'as dit non|! Elle est bien bonne celle-là|!..."
+                request sequence "bobb.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Oui c'est moaaa|!..."
+                request sequence "ppitin02.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "A poil|! A poil|!..."
+                request sequence "match02.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Oh|! Je vous en prie|! Grands fous|!..."
+                request sequence "ppitin03.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Pas toi|! L'autre|!..."
+                request sequence "match11.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "A poil ou on casse tout|!..."
+                request sequence "match10.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Ouais|! On fait tout péter|!..."
+                request sequence "archex30.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Tout|! Tout|! Le chaos|!..."
+                request sequence "momi10.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=4 : "..."
+                globals.A61 = 1
+                globals.A96 = 1
+                end presentation Blue_Wave
+                choice = none
+            }
+        }
+        tlp_dialogue_resume_2:
+        when {
+            require globals.A96 == 0
+        } then {
+            say Blue_Wave presentation=8 chatter resume_at=tlp_dialogue_resume_3 : "j'en ai une encore plus gratinée, vous voulez voir|?" choices "gratinée" "non"
+            when {
+                require choice == "gratinée"
+            } then {
+                say Blue_Wave presentation=19 : "VUE SUPER GRATINEE|..."
+                say Blue_Wave presentation=8 chatter : "on se la refait|..."
+                say Blue_Wave presentation=19 : "..."
+                say Blue_Wave presentation=8 chatter : "y a plus de mots, commander|..."
+                say Blue_Wave presentation=19 : "..."
+                say Blue_Wave presentation=8 chatter : "on ne s'en lasse pas|..."
+                say Blue_Wave presentation=17 : "Dis donc, petit vicieux|! Tu le vois celui-là|?..."
+                say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "oh oui|!..."
+                globals.A96 = 1
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Blue_Wave presentation=8 chatter : "vous avez raison, nous n'avons pas de temps à perdre, commander|..."
+                say Blue_Wave presentation=24 : "Bon ben moi je m'en vais alors|..."
+                say Blue_Wave presentation=10 : "Tant pis pour toi|, pauvre idiot|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Mais vous étes fou|! Ca se refuse pas|..."
+                request sequence "ppit03.hnm"
+                say Blue_Wave presentation=28 : "Un spectacle de la Blue Wave|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Pourquoi t'as dit non|! Elle est bien bonne celle-là|!..."
+                request sequence "bobb.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Oui c'est moaaa|!..."
+                request sequence "ppitin02.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "A poil|! A poil|!..."
+                request sequence "match02.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Oh|! Je vous en prie|! Grands fous|!..."
+                request sequence "ppitin03.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Pas toi|! L'autre|!..."
+                request sequence "match11.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "A poil ou on casse tout|!..."
+                request sequence "match10.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Ouais|! On fait tout péter|!..."
+                request sequence "archex30.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Tout|! Tout|! Le chaos|!..."
+                request sequence "momi10.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Blue_Wave
+                globals.A61 = 1
+                choice = none
+            }
+        }
+        tlp_dialogue_resume_3:
+        when {
+            require globals.A96 == 1
+        } then {
+            say Blue_Wave presentation=8 chatter resume_at=tlp_dialogue_resume_4 : "voulez-vous revoir le spectacle de la blue wave, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Blue_Wave presentation=10 : "Laissez-moi seule dix secondes|... et revenez|..."
+                say Blue_Wave presentation=8 chatter if_not_shown skip_next=2 : "YOUPI|!..."
+                globals.A96 = 0
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Blue_Wave presentation=10 : "Tant pis pour toi|, pauvre idiot|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Mais vous étes fou|! Ca se refuse pas|..."
+                request sequence "ppit03.hnm"
+                say Blue_Wave presentation=28 : "Un spectacle de la Blue-Wave|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Pourquoi t'as dit non|! Elle est bien bonne celle-là|!..."
+                request sequence "bobb.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Oui c'est moaaa|!..."
+                request sequence "ppitin02.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "A poil|! A poil|!..."
+                request sequence "match02.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Oh|! Je vous en prie|! Grands fous|!..."
+                request sequence "ppitin03.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Pas toi|! L'autre|!..."
+                request sequence "match11.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "A poil ou on casse tout|!..."
+                request sequence "match10.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Ouais|! On fait tout péter|!..."
+                request sequence "archex30.hnm"
+                say Blue_Wave presentation=8 if_not_shown skip_next=1 : "Tout|! Tout|! Le chaos|!..."
+                request sequence "momi10.hnm"
+                say Blue_Wave presentation=24 : "Tchao idiot|! Attrape-moi si tu peux|!..."
+                say Blue_Wave presentation=8 if_not_shown skip_next=7 : "..."
+                end presentation Blue_Wave
+                when {
+                    require globals.A61 == 0
+                } then {
+                    globals.A61 = 1
+                }
+                globals.A96 = 2
+                choice = none
+            }
+        }
+        tlp_dialogue_resume_4:
+        when {
+            require globals.A96 == 2
+        } then {
+            say Blue_Wave presentation=8 chatter : "qu'est-ce qu'elle est bonne..."
+        }
+        say Blue_Wave presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Blue_Wave
+        halt
+    }
+}

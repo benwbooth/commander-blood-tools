@@ -37,10 +37,14 @@ mod vm_source;
 
 /// Compile readable DESCRIPT source into the original `DESCRIPT.DES` image.
 pub use descript_source::compile as compile_descript;
-/// The five compiled images produced from one BloodScript profile.
-pub use vm_profile::ProfileImages;
-/// Compile one unified BloodScript source into its five original VM images.
+/// Compile one unified BloodScript source into its original VM images.
 pub use vm_profile::compile as compile_profile;
+/// Recover one unified BloodScript profile and verify its exact recompilation.
+pub use vm_profile::decompile as decompile_profile;
+/// Compare every resource owned by two profiles byte for byte.
+pub use vm_profile::require_same_profile;
+/// The compiled images and explicit game dialect for one BloodScript profile.
+pub use vm_profile::{ProfileDialect, ProfileImages};
 
 /// Source recovery report, including unresolved byte and opcode counts.
 pub use bloodscript::Decompilation;

@@ -1,0 +1,2093 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT17
+concepts "parler" "bonjour" "rayon" "Ici" "Pére" "Noél" "..." "vous" "avez" "une" "drole" "de" "téte," "père" "noél" "Vous" "m'avez" "dit" "me" "changer" "je" "suis" "relooké" "style" "cyber" "mouais" "c'est" "pas" "pire" "que" "la" "barbe" "blanche" "m'en" "parlez" "!" "Avec" "les" "poils," "impossible" "bouffer" "soupe" "!..." "bon" "voulez" "toujours" "jouer" "avec" "nous" "?..." "bien" "sùr" "mais" "au" "fait" "qu'est-ce" "qui" "prouve" "étes" "vraiment" "le" "pére" "commencez" "à" "gonfler" "preuve" "Eh" "voilà" "!...Voilà" "des" "cadeaux" "oh" "merci" "Ca" "va," "ça" "va" "J'ai" "l'habitude" "Alors" "enfants" "?" "revenez" "voir" "Père" "appelez" "cyberquizz" "maintenant" "Je" "sais," "n'ai" "ne" "bizarre" "n'étre" "plus" "qu'une" "bouche" "et" "deux" "yeux" "Ah" "là" "Si" "saviez" "En" "faut" "On" "dirait" "mère" "aussi" "voix" "très" "sensuelle" "M'en" "Méme" "mes" "rennes" "se" "moquent" "moi" "Y" "a" "qu'eux" "ARF" "suffit" "Merci" "prendre" "ma" "défense" "Tenez" "," "Pour" "remercier..." "merci," "Berquizz" "trop" "gentil" "C'est" "vrai," "gentil," "obligé," "mon" "boulot" "heureux" "pas_heureux" "Encore" "existe" "!?..." "Dis" "donc" "As-tu" "remarqué" "tu" "as" "souvent" "choix" "commander" "oui" "agréable" "d'avoir" "non" "Tu" "dois" "étre" "alors" "T'as" "envie" "tout" "faire" "péter" "dans" "cet" "univers" "dingues" "tout_péter" "pas_péter" "_péter" "raison" "poli" "Des" "problémes" "gréve" "aider" "boucler" "mission," "pour" "on" "est" "en" "train" "foirer" "scénario" "Mais" "heureusement" "croyez" "Et" "puisque" "allez" "encore" "un" "cadeau" "Quoi" "Ils" "sont" "beaux," "cadeaux," "peut-étre" "???" "si" "Bon" "préfère" "Parce" "vrai" "du" "ciel" "vais" "arréter" "gréves" "Mieux" "qu'ça," "mieux" "qu'ça" "quoi" "retrouvé" "clé" "Quelle" "lui" "répond," "fermer" "ta" "gueule" "ah" "Trés" "malin" "Décidément," "faites" "éh" "Tréve" "confiserie" "plaisanterie" "malgré" "offre" "nouvelle" "chance" "Une" "race" "aux" "pouvoirs" "stupéfiants" "ils" "aideront" "Ouais" "ouais," "rien" "Moi" "Cyberquizz," "QUIZZER..." "Nous" "quizzers" "ici..." "Oh!" "atomiques..." "intéressant..." "Commander..." "De" "l'énergie" "nucléaire..." "Merci!!!" "Du" "Bionium..." "technologie..." "Voila" "calmer..." "Commander" "complétement" "givré..." "nourriture..." "médicaments..." "DES" "ARMES..." "l'énergie..." "bague..." "Un"
+dictionary blank after "voulez"
+dictionary blank after "maintenant"
+dictionary blank after "moquent"
+dictionary blank after "Berquizz"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc pere enabled {
+        during contact
+        require globals.A64 == 0
+        require presentation == Cyberquizz
+    } then {
+        when {
+            require Cyberquizz.encounter_count == 1
+        } then {
+            say Cyberquizz presentation=9 : "Ici Pére Noél|..."
+            say Cyberquizz presentation=8 chatter : "vous avez une drole de téte, père noél|..."
+            say Cyberquizz presentation=10 : "Vous m'avez dit de me changer|... je me suis relooké style cyber|..."
+            say Cyberquizz presentation=8 chatter : "mouais|... c'est pas pire que la barbe blanche|..."
+            say Cyberquizz presentation=9 : "m'en parlez pas|! Avec les poils, impossible de bouffer la soupe|!..."
+            say Cyberquizz presentation=8 chatter : "bon|... vous voulez toujours jouer avec nous|?..."
+            say Cyberquizz presentation=10 : "bien sùr|..."
+            say Cyberquizz presentation=8 chatter : "mais au fait|... qu'est-ce qui nous prouve que vous étes vraiment le pére noél|?..."
+            say Cyberquizz presentation=9 : "Vous commencez à me gonfler|... Vous voulez une preuve|?..."
+            say Cyberquizz presentation=8 if_not_shown skip_next=1 : "Eh bien voilà|!...Voilà des cadeaux|!..."
+            transfer cadeaux from Cyberquizz to aboard
+            say Cyberquizz presentation=8 chatter : "oh merci père noél|!..."
+            say Cyberquizz presentation=10 : "Ca va, ça va|! J'ai l'habitude|..."
+            say Cyberquizz presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Cyberquizz
+        }
+        when {
+            require Cyberquizz.encounter_count == 2
+        } then {
+            say Cyberquizz presentation=9 : "Alors les enfants|? Vous revenez voir le Père Noél|?..."
+            say Cyberquizz presentation=8 chatter : "vous vous appelez cyberquizz maintenant|..."
+            say Cyberquizz presentation=10 : "Je sais, je sais, mais je n'ai pas l'habitude|..."
+            say Cyberquizz presentation=8 chatter : "Ca ne vous fait pas bizarre de n'étre plus qu'une bouche et deux yeux|?..."
+            say Cyberquizz presentation=9 : "Ah là là|! Si vous saviez|! En plus faut voir la bouche|! On dirait la mère Noél|!..."
+            say Cyberquizz presentation=8 chatter : "vous avez aussi la voix très sensuelle|..."
+            say Cyberquizz presentation=10 : "M'en parlez pas|! Méme mes rennes se moquent de moi|!..."
+            say Cyberquizz presentation=8 if_not_shown skip_next=1 : "Y a pas qu'eux|! ARF ARF ARF|!..."
+            request sequence "ppit07.hnm"
+            say Cyberquizz presentation=8 chatter : "Ah ça suffit|!..."
+            say Cyberquizz presentation=9 : "Merci de prendre ma défense|..."
+            say Cyberquizz presentation=8 if_not_shown skip_next=1 : "Tenez|, Pour vous remercier..."
+            transfer cadeaux from Cyberquizz to aboard
+            say Cyberquizz presentation=8 chatter : "oh merci, Berquizz Noél|! c'est trop gentil|..."
+            say Cyberquizz presentation=10 : "C'est vrai, c'est trop gentil, mais je suis obligé, c'est mon boulot|..."
+            say Cyberquizz presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Cyberquizz
+        }
+    }
+    proc entub1 enabled {
+        during contact
+        require globals.A64 == 0
+        require presentation == Cyberquizz
+    } then {
+        when {
+            require globals.A100 == 1
+        } then {
+            say Cyberquizz presentation=9 : "Alors|, heureux|?..."
+            say Cyberquizz presentation=8 chatter resume_at=entub1_dialogue_resume_1 : "..." choices "heureux" "pas_heureux"
+            when {
+                require choice == "heureux"
+            } then {
+                say Cyberquizz presentation=10 : "Encore heureux|!..."
+                say Cyberquizz presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice != "heureux"
+            } then {
+                say Cyberquizz presentation=9 : "Alors que le Pére Noél existe|!?..."
+                say Cyberquizz presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+        entub1_dialogue_resume_1:
+        when {
+            require Cyberquizz.encounter_count == 3
+        } then {
+            say Cyberquizz presentation=10 : "Dis donc|... As-tu remarqué que tu as souvent le choix|?..."
+            say Cyberquizz presentation=8 chatter resume_at=entub1_dialogue_resume_2 : "vous avez remarqué|, commander|?..." choices "oui" "oui"
+            when {
+                require choice == "oui"
+            } then {
+                choice = none
+            }
+            entub1_dialogue_resume_2:
+            say Cyberquizz presentation=9 : "C'est agréable d'avoir le choix|, non|?..."
+            say Cyberquizz presentation=8 chatter resume_at=perno1 : "..." choices "non"
+            when {
+                require choice == "non"
+            } then {
+                say Cyberquizz presentation=10 : "Tu dois étre heureux|, alors|!..."
+                say Cyberquizz presentation=8 chatter if_not_shown skip_next=2 : "..."
+                end presentation Cyberquizz
+                choice = none
+            }
+        }
+    }
+    proc perno1 enabled {
+        during contact
+        require globals.A64 == 0
+        require presentation == Cyberquizz
+    } then {
+        when {
+            require Cyberquizz.encounter_count == 4
+        } then {
+            say Cyberquizz presentation=9 : "T'as pas envie de tout faire péter dans cet univers de dingues|?..."
+            say Cyberquizz presentation=8 chatter resume_at=perno1_dialogue_resume_1 : "..." choices "tout_péter" "pas_péter"
+            when {
+                require choice == "tout_péter"
+            } then {
+                say Cyberquizz presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Cyberquizz
+                sequence_slots[1] = "5exploplane"
+                choice = none
+            }
+            when {
+                require choice != "_péter"
+            } then {
+                say Cyberquizz presentation=10 : "T'as raison|, c'est pas poli|..."
+                say Cyberquizz presentation=8 if_not_shown skip_next=2 : "..."
+                choice = none
+                end presentation Cyberquizz
+            }
+        }
+        perno1_dialogue_resume_1:
+        when {
+            require globals.A100 == 0
+            require globals.A68 == 1
+        } then {
+            say Cyberquizz presentation=10 : "Alors|? Des problémes de gréve|?... Ca va pas aider à boucler la mission, ça|!..."
+            say Cyberquizz presentation=8 chatter : "pour sùr|... on est en train de foirer le scénario|..."
+            say Cyberquizz presentation=9 : "Mais heureusement|... Vous croyez au Pére Noél|..."
+            say Cyberquizz presentation=10 : "Et vous avez bien raison puisque|..."
+            say Cyberquizz presentation=8 chatter : "vous allez nous faire encore un cadeau|?..."
+            say Cyberquizz presentation=9 : "Quoi|? Ils sont pas beaux, mes cadeaux, peut-étre|???"
+            say Cyberquizz presentation=8 chatter : "mais si|, mais si|..."
+            say Cyberquizz presentation=10 : "Bon|... Je préfère ça|... Parce que c'est un vrai cadeau du ciel que je vais vous faire|..."
+            say Cyberquizz presentation=8 chatter : "vous allez arréter les gréves|?..."
+            say Cyberquizz presentation=9 : "Mieux qu'ça, mieux qu'ça|!..."
+            say Cyberquizz presentation=8 chatter : "quoi|?... vous avez retrouvé la clé|?..."
+            say Cyberquizz presentation=10 : "Quelle clé|?..."
+            say Cyberquizz presentation=8 chatter resume_at=perno1_dialogue_resume_2 : "on lui répond, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Cyberquizz presentation=8 chatter : "pour fermer ta gueule|!... Ah ah ah|!..."
+                say Cyberquizz presentation=9 : "Ah ah|! Trés malin|! Décidément, vous me faites pas de cadeaux|!..."
+                say Cyberquizz presentation=8 chatter : "éh éh|!..."
+                say Cyberquizz presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+            perno1_dialogue_resume_2:
+            say Cyberquizz presentation=10 : "Tréve de confiserie|!"
+            say Cyberquizz presentation=8 chatter : "de plaisanterie|?..."
+            say Cyberquizz presentation=10 : "C'est Noél malgré tout|! Alors je vous offre une nouvelle chance|!..."
+            say Cyberquizz presentation=9 : "Une nouvelle race aux pouvoirs stupéfiants|... ils vous aideront|..."
+            say Cyberquizz presentation=8 chatter : "merci pére noél|..."
+            say Cyberquizz presentation=10 : "Ouais ouais, de rien|..."
+            say Cyberquizz presentation=8 if_not_shown skip_next=3 : "..."
+            end presentation Cyberquizz
+            sequence_slots[3] = "8incanthom"
+            globals.A100 = 1
+        }
+    }
+    proc cy01 enabled {
+        during travel
+        require presentation == Cyberquizz
+    } then {
+        say Cyberquizz presentation=9 : "Moi Cyberquizz, moi QUIZZER..."
+        text_tokens Cyberquizz presentation=11 : "Nous" "étre" state_number(0x0706) "quizzers" "ici..."
+    }
+    proc gest01 enabled {
+        during travel
+        require presentation == Cyberquizz
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Cyberquizz.evolution] < 100
+            } then {
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Cyberquizz.evolution] < 500
+                require state_b6[Cyberquizz.evolution] > 100
+            } then {
+                say Cyberquizz presentation=10 if_not_shown skip_next=4 : "Oh! des atomiques... intéressant... Merci Commander..."
+                state_b1[Cyberquizz.population] /= 2
+                Cyberquizz.aggressiveness += 50
+                globals.B55 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Cyberquizz.evolution] > 500
+            } then {
+                say Cyberquizz presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire... Merci!!!"
+                state_b6[Cyberquizz.evolution] += 20
+                state_b5[Cyberquizz.energy] += 100
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 chatter if_not_shown skip_next=3 : "..."
+            state_b1[Cyberquizz.population] /= 4
+            state_b5[Cyberquizz.energy] += 10
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=4 : "..."
+            state_b5[Cyberquizz.energy] += 20
+            Cyberquizz.aggressiveness += 200
+            globals.B54 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Cyberquizz.evolution] += 5
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 if_not_shown skip_next=2 : "..."
+            globals.B55 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=4 : "Du Bionium..."
+            state_b1[Cyberquizz.population] += 100
+            state_b6[Cyberquizz.evolution] += 10
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=4 : "De la technologie..."
+            state_b6[Cyberquizz.evolution] += 10
+            state_b5[Cyberquizz.energy] += 10
+            globals.B65 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 chatter if_not_shown skip_next=5 : "Voila qui va le calmer... Commander..."
+            globals.B55 = 1
+            state_b1[Cyberquizz.population] += 150
+            state_b6[Cyberquizz.evolution] += 10
+            globals.B54 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement givré..."
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 chatter if_not_shown skip_next=4 : "..."
+            state_b6[Cyberquizz.evolution] += 10
+            state_b1[Cyberquizz.population] += 200
+            globals.B55 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=4 : "..."
+            state_b6[Cyberquizz.evolution] += 10
+            state_b1[Cyberquizz.population] -= 50
+            globals.B55 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=15 if_not_shown skip_next=2 : "De la nourriture..."
+            state_b5[Cyberquizz.energy] += 100
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=3 : "Des médicaments..."
+            state_b6[Cyberquizz.evolution] += 10
+            state_b1[Cyberquizz.population] += 150
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=14 if_not_shown skip_next=4 : "DES ARMES..."
+            Cyberquizz.aggressiveness += 150
+            state_b6[Cyberquizz.evolution] += 5
+            globals.B54 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Cyberquizz.evolution] += 20
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=2 : "De l'énergie..."
+            state_b5[Cyberquizz.energy] += 200
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=4 : "Une bague..."
+            state_b6[Cyberquizz.evolution] += 10
+            state_b1[Cyberquizz.population] += 200
+            globals.B55 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Cyberquizz.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=3 : "De la Culture..."
+            state_b6[Cyberquizz.evolution] += 20
+            state_b5[Cyberquizz.energy] += 10
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Cyberquizz.evolution] += 50
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=3 : "Un VAISSEAU..."
+            state_b6[Cyberquizz.evolution] += 10
+            globals.B66 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=8 chatter if_not_shown skip_next=3 : "..."
+            Cyberquizz.aggressiveness = 0
+            state_b1[Cyberquizz.population] += 200
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Cyberquizz presentation=9 if_not_shown skip_next=3 : "Des cadeaux..."
+            state_b6[Cyberquizz.evolution] += 10
+            state_b5[Cyberquizz.energy] += 10
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Cyberquizz presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Cyberquizz presentation=8 chatter resume_at=gest01_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Cyberquizz presentation=8 : "..."
+        gest01_dialogue_resume_1:
+        when {
+            require globals.B65 == 1
+            require globals.B66 == 1
+        } then {
+            globals.B53 = 1
+        }
+        say Cyberquizz presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        say Cyberquizz presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Cyberquizz
+    }
+    proc cybnoel enabled {
+        during contact
+        require presentation == Cyberquizz
+    } then {
+        say Cyberquizz presentation=10 : "Cyber Noél a toute la Galaxie|..."
+        say Cyberquizz presentation=8 chatter if_not_shown skip_next=1 : "..."
+        end presentation Cyberquizz
+    }
+    proc bi01 enabled {
+        require presentation == Bioquizz
+    } then {
+        say Bioquizz presentation=9 : "Moi Bioquizz, moi QUIZZER..."
+        text_tokens Bioquizz presentation=11 : "Nous" "étre" state_number(0x0750) "quizzers" "ici..."
+    }
+    proc gest02 enabled {
+        during travel
+        require presentation == Bioquizz
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Bioquizz.evolution] < 100
+            } then {
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Bioquizz.evolution] < 500
+                require state_b6[Bioquizz.evolution] > 100
+            } then {
+                say Bioquizz presentation=10 if_not_shown skip_next=4 : "Oh! des atomiques... intéressant... Merci Commander..."
+                state_b1[Bioquizz.population] /= 2
+                Bioquizz.aggressiveness += 50
+                globals.B55 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Bioquizz.evolution] > 500
+            } then {
+                say Bioquizz presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire... Merci!!!"
+                state_b6[Bioquizz.evolution] += 20
+                state_b5[Bioquizz.energy] += 100
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 chatter if_not_shown skip_next=3 : "..."
+            state_b1[Bioquizz.population] /= 4
+            state_b5[Bioquizz.energy] += 10
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=4 : "..."
+            state_b5[Bioquizz.energy] += 20
+            Bioquizz.aggressiveness += 200
+            globals.B54 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Bioquizz.evolution] += 5
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 if_not_shown skip_next=2 : "..."
+            globals.B55 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=4 : "Du Bionium..."
+            state_b1[Bioquizz.population] += 100
+            state_b6[Bioquizz.evolution] += 10
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=4 : "De la technologie..."
+            state_b6[Bioquizz.evolution] += 10
+            state_b5[Bioquizz.energy] += 10
+            globals.B65 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 chatter if_not_shown skip_next=5 : "Voilà qui va le calmer... Commander..."
+            globals.B55 = 1
+            state_b1[Bioquizz.population] += 150
+            state_b6[Bioquizz.evolution] += 10
+            globals.B54 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement givré..."
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 chatter if_not_shown skip_next=4 : "..."
+            state_b6[Bioquizz.evolution] += 10
+            state_b1[Bioquizz.population] += 200
+            globals.B55 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=4 : "..."
+            state_b6[Bioquizz.evolution] += 10
+            state_b1[Bioquizz.population] -= 50
+            globals.B55 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Bioquizz presentation=15 if_not_shown skip_next=2 : "De la nourriture..."
+            state_b5[Bioquizz.energy] += 100
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=3 : "Des médicaments..."
+            state_b6[Bioquizz.evolution] += 10
+            state_b1[Bioquizz.population] += 150
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Bioquizz presentation=14 if_not_shown skip_next=4 : "DES ARMES..."
+            Bioquizz.aggressiveness += 150
+            state_b6[Bioquizz.evolution] += 5
+            globals.B54 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Bioquizz.evolution] += 20
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=2 : "De l'énergie..."
+            state_b5[Bioquizz.energy] += 200
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=4 : "Une bague..."
+            state_b6[Bioquizz.evolution] += 10
+            state_b1[Bioquizz.population] += 200
+            globals.B55 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Bioquizz.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=3 : "De la Culture..."
+            state_b6[Bioquizz.evolution] += 20
+            state_b5[Bioquizz.energy] += 10
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Bioquizz.evolution] += 50
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=3 : "Un VAISSEAU..."
+            state_b6[Bioquizz.evolution] += 10
+            globals.B66 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Bioquizz presentation=8 chatter if_not_shown skip_next=3 : "..."
+            Bioquizz.aggressiveness = 0
+            state_b1[Bioquizz.population] += 200
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Bioquizz presentation=9 if_not_shown skip_next=3 : "Des cadeaux..."
+            state_b6[Bioquizz.evolution] += 10
+            state_b5[Bioquizz.energy] += 10
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Bioquizz presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Bioquizz presentation=8 chatter resume_at=gest02_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Bioquizz presentation=8 : "..."
+        gest02_dialogue_resume_1:
+        when {
+            require globals.B65 == 1
+            require globals.B66 == 1
+        } then {
+            globals.B53 = 1
+        }
+        say Bioquizz presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        say Bioquizz presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Bioquizz
+        halt
+    }
+}

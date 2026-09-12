@@ -1,0 +1,2874 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT14
+concepts "parler" "bonjour" "rayon"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc _1fintro as "1fintro" enabled {
+        during contact
+        require globals.A68 == 2
+        require Trump.current_location == aboard
+        require presentation == Trump
+    } then {
+        say Trump presentation=10 : "T'as vu ca|? Tain pu|!..."
+        say Trump presentation=11 : "Non mais t'as vu|?..."
+        say Trump presentation=8 if_not_shown skip_next=3 : "..."
+        globals.A13 += 3
+        end presentation Trump
+        sequence_slots[3] = "34contromp"
+    }
+    proc prepcon enabled {
+        during bridge
+        require globals.A64 == 1
+        require presentation == Trump
+    } then {
+        say Trump presentation=8 : "Hello hello|!..."
+        say Trump presentation=8 : "Alors comment ca tromp|? Ici Trump|!..."
+        say Trump presentation=8 chatter : "Oh|... Couci couca|..."
+        say Trump presentation=8 : "Parce que moi ca tromp a pleines narines|!..."
+        say Trump presentation=8 : "Avec les copains on a monté un groupe pour Tina|!..."
+        say Trump presentation=8 chatter : "On va pouvoir faire un concert|!..."
+        say Trump presentation=8 : "Ouais|! Un grand BLOOD AID|!..."
+        say Trump presentation=8 chatter : "a quel endroit on pourrait le faire|?..."
+        say Trump presentation=8 : "Sur l'arche|!..."
+        say Trump presentation=8 : "J'ai déjà prévenu tout le monde|!..."
+        say Trump presentation=8 chatter : "tout l'univers|!..."
+        say Trump presentation=8 : "sur l'Arche|!..."
+        say Trump presentation=8 if_not_shown skip_next=2 : "..."
+        end presentation Trump
+        globals.A64 = 2
+    }
+    proc aptru enabled {
+        during bridge
+        require globals.A86 == 1
+        require presentation == Trump
+    } then {
+        say Trump presentation=8 : "krouik|..."
+        say Trump presentation=8 chatter : "Trump|?..."
+        say Trump presentation=8 : "Oui|... krouik|... c'est moi|..."
+        say Trump presentation=8 chatter : "qu'est-ce qui se passe|?..."
+        say Trump presentation=8 : "Je|... je|..."
+        say Trump presentation=8 chatter : "vous|?... vous?..."
+        say Trump presentation=8 : "Oui, c'est moi|..."
+        say Trump presentation=8 chatter : "quoi|?..."
+        say Trump presentation=8 : "Je ne peux pas vous parler au téléphone|... pas prudent|..."
+        say Trump presentation=8 chatter : "mais il est parfaitement protégé, ce téléphone|..."
+        say Trump presentation=8 : "que tu crois|!..."
+        say Trump presentation=8 : "rendez-vous sur le Net|... plus discret|..."
+        say Trump presentation=8 : "krouik|..."
+        say Trump presentation=8 chatter : "commander, ca a coupé|..."
+        say Trump presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Trump
+    }
+    proc tru01 enabled {
+        during travel
+        require presentation == Trump
+    } then {
+        when {
+            require globals.A68 == 1
+            require globals.A63 < 2
+            require guitare.holder != aboard
+        } then {
+            say Trump presentation=9 : "Tu te trompes sur les TROMPS, Commander|..."
+            say Trump presentation=8 chatter : "en quoi|?..."
+            say Trump presentation=10 : "Si tu crois que leur gréve sera bréve|..."
+            say Trump presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Trump
+        }
+        when {
+            require globals.A68 == 1
+            require guitare.holder == aboard
+            require globals.A63 == 8
+        } then {
+            say Trump presentation=9 : "Vous cherchez des musiciens|?..."
+            say Trump presentation=8 chatter : "plein|..."
+            say Trump presentation=10 : "Vous faites bien|... Je suis moi-méme grand rythmicien|..."
+            say Trump presentation=8 chatter : "je croyais que vous étiez dans la peinture|..."
+            say Trump presentation=11 : "Art pour art|... La peinture moi j'en ai marre|... J'aime encore mieux la guitare|..."
+        }
+        say Trump presentation=9 : "Moi Trump, moi TROMP..."
+        text_tokens Trump presentation=11 : "Nous" "étre" state_number(0x01D2) "tromps" "ici..."
+        when {
+            require Trump.encounter_count == 1
+        } then {
+            say Trump presentation=9 : "Salut Commander|..."
+            say Trump presentation=10 : "Tu aimes la science|, je crois|..."
+            say Trump presentation=8 chatter : "moui|... couci couca|..."
+            say Trump presentation=11 : "Tu veux connaitre l'origine des TROMPS|?..."
+            say Trump presentation=8 chatter resume_at=tru01_dialogue_resume_1 : "un peu d'histoire|, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Trump presentation=12 : "C'est une belle histoire|..."
+                say Trump presentation=13 : "Un vrai miracle de la nature|..."
+                say Trump presentation=14 : "Ce petit film te fera comprendre bien des choses|..."
+                say Trump presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Trump
+                sequence_slots[5] = "17vtromp"
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Trump presentation=13 : "Dommage|... C'était un beau secret de la nature|..."
+                say Trump presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+        tru01_dialogue_resume_1:
+        when {
+            require Trump.encounter_count == 2
+        } then {
+            say Trump presentation=9 : "Pour faire migrer notre race|..."
+            say Trump presentation=10 : "Il faut connaitre l'histoire de notre apparition|..."
+            say Trump presentation=11 : "Nous donner un vaisseau|, évidemment|..."
+            say Trump presentation=8 chatter : "un vaisseau sanguin|!..."
+            say Trump presentation=12 : "Oui|... mais qui pourrait vous donner un vaisseau|..."
+            say Trump presentation=8 if_not_shown skip_next=1 : "Sans gain|?..."
+            transfer credit from Trump to aboard
+            say Trump presentation=8 chatter : "quel humour|, commander|..."
+            say Trump presentation=14 : "Il faut aussi me donner de quoi grossir 15 000 fois|..."
+            say Trump presentation=15 : "le deuxiéme chef TROMP qui est encore plus petit que moi|..."
+            say Trump presentation=16 : "Vous voyez ce que je veux dire|?..."
+            say Trump presentation=8 chatter resume_at=tru01_dialogue_resume_2 : "vous voyez|, commander|?..." choices "voir" "pas_voir"
+            when {
+                require choice == "voir"
+            } then {
+                say Trump presentation=9 : "C'est cool|... J'espére que tu vois bien|..."
+                say Trump presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice != "voir"
+            } then {
+                say Trump presentation=10 : "Bon|... ben je te réexplique|, alors|..."
+                say Trump presentation=11 : "Regarde BIEN ce petit documentaire sur|..."
+                say Trump presentation=8 if_not_shown skip_next=1 : "La vie sexuelle des CROOLIS|..."
+                request sequence "match04.hnm"
+                say Trump presentation=8 if_not_shown skip_next=1 : "qui tirent en l'air|..."
+                request sequence "match10.hnm"
+                say Trump presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Trump
+                sequence_slots[3] = "17vtromp"
+                choice = none
+            }
+        }
+        tru01_dialogue_resume_2:
+        when {
+            require globals.A86 == 2
+            require globals.A88 >= 0
+        } then {
+            say Trump presentation=8 chatter : "alors c'est qui, la balance|?..."
+            say Trump presentation=9 : "Oh je peux pas le dire|! Mais si vous me dites un nom, je vous dirai oui ou non|..."
+            say Trump presentation=8 chatter : "c'est toi|?..."
+            say Trump presentation=10 : "Non|! Non|! Pas comme ça|! Tu me dis la premiére lettre, et puis la deuxiéme, etc|..."
+            say Trump presentation=8 chatter resume_at=tru01_dialogue_resume_3 : "Bon|... La premiére lettre est un|..." choices "s" "u" "p" "e" "r" "t" "r" "o" "m" "p"
+            when {
+                require choice != "t"
+            } then {
+                say Trump presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A88 += 1
+                choice = none
+            }
+            when {
+                require choice == "t"
+            } then {
+                say Trump presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A89 += 1
+                choice = none
+            }
+        }
+        tru01_dialogue_resume_3:
+        when {
+            require globals.A86 == 2
+        } then {
+            say Trump presentation=8 chatter resume_at=tru01_dialogue_resume_4 : "deuxiéme lettre|..." choices "e" "m" "a" "s" "c" "u" "l" "a" "t" "o" "r"
+            when {
+                require choice != "e"
+            } then {
+                say Trump presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A88 += 1
+                choice = none
+            }
+            when {
+                require choice == "e"
+            } then {
+                say Trump presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A89 += 1
+                choice = none
+            }
+        }
+        tru01_dialogue_resume_4:
+        when {
+            require globals.A86 == 2
+        } then {
+            say Trump presentation=8 chatter resume_at=tru01_dialogue_resume_5 : "troisiéme lettre|..." choices "p" "o" "u" "r" "q" "u" "o" "i" "m" "o" "i"
+            dictionary blank after "i"
+            when {
+                require choice != "q"
+            } then {
+                say Trump presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A88 += 1
+                choice = none
+            }
+            when {
+                require choice == "q"
+            } then {
+                say Trump presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A89 += 1
+                choice = none
+            }
+        }
+        tru01_dialogue_resume_5:
+        when {
+            require globals.A86 == 2
+            require globals.A88 > 0
+        } then {
+            say Trump presentation=13 : "Je peux dés à présent vous dire que c'est pas ça|!..."
+            say Trump presentation=8 chatter : "on peut réessayer|? on a une autre idée|!..."
+            say Trump presentation=14 : "Ah non|! Ca serait trop facile|! D'abord il faut me donner un bionium|..."
+            say Trump presentation=8 chatter : "rapace|!..."
+            say Trump presentation=15 : "Oiseau de mauvais augure|!..."
+        }
+        when {
+            require globals.A86 == 2
+            require globals.A89 == 3
+        } then {
+            say Trump presentation=11 : "Vous pensez à Tequila, peut-étre|?..."
+            say Trump presentation=8 chatter : "Oui, c'est ça|..."
+            say Trump presentation=17 : "Eh bien bravo|! C'est elle|... Vous avez deviné|... Les femelles sont parfois perverses|..."
+            say Trump presentation=8 chatter : "on sait|... nous on a olga|!..."
+            say Trump presentation=8 if_not_shown skip_next=1 : "Oui c'est moi|!..."
+            request sequence "ppitin02.hnm"
+            say Trump presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A86 = 3
+            end presentation Trump
+        }
+        when {
+            require globals.A86 == 3
+            require tableau.holder != aboard
+            require state_b6[Trump.evolution] > 100
+        } then {
+            say Trump presentation=10 : "Nous peignons joli tableau du Grand YOLK, artisanat local..."
+            say Trump presentation=15 : "A vendre à toi joli tableau au cadre en corne de murfalo, contre credit..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Trump presentation=8 chatter : "Nous n'avons plus de credits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Trump presentation=8 chatter resume_at=gest01 : "Vous acceptez de leur acheter un tableau, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Trump presentation=8 chatter if_not_shown skip_next=1 : "On lui envoie un credit, Commander"
+                    transfer credit from aboard to Trump
+                    say Trump presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION TABLEAU DANS CRYOBOX"
+                    transfer tableau from Trump to aboard
+                    say Trump presentation=8 if_not_shown skip_next=4 : "..."
+                    end presentation Trump
+                    sequence_slots[3] = "23tableau"
+                    globals.A4 -= 1
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest01 enabled {
+        during travel
+        require presentation == Trump
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Trump.evolution] < 100
+            } then {
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Trump.evolution] < 500
+                require state_b6[Trump.evolution] > 100
+            } then {
+                say Trump presentation=9 if_not_shown skip_next=5 : "Oh des atomiques... intéressant... Merci Commander..."
+                state_b1[Trump.population] /= 2
+                state_b6[Trump.evolution] += 100
+                Trump.aggressiveness += 50
+                globals.B28 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Trump.evolution] > 500
+            } then {
+                say Trump presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire... Merci!!!"
+                state_b6[Trump.evolution] += 200
+                state_b5[Trump.energy] = 1000
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Trump presentation=11 : "Une Image...Par le grand YOLK|!!! Ce n'est pas de l'Art, mais un vulgaire faux..."
+            say Trump presentation=15 : "Je n'aime pas du tout ça..."
+            say Trump presentation=8 chatter if_not_shown skip_next=3 : "AH! les artistes... commander, Il se prend pour le plus grand de la Galaxie..."
+            Trump.aggressiveness += 300
+            state_b5[Trump.energy] += 200
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Trump presentation=12 if_not_shown skip_next=4 : "Une Couronne avec un beau plumet...PAS MAL! PAS MAL! Je vais enfin etre reconnu..."
+            state_b5[Trump.energy] += 200
+            Trump.aggressiveness += 300
+            globals.B27 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Trump presentation=13 : "Un Tableau...Quelle drole d'idée! Je les vends moi MOOSSIEUU!!! Je suis un grand Artiste moi..."
+            say Trump presentation=8 chatter if_not_shown skip_next=2 : "OULLAAA!!! COMMANDER...Quel mégalomane ce TRUMP..."
+            state_b6[Trump.evolution] += 50
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Trump presentation=14 if_not_shown skip_next=2 : "Une momie...Pas fou non! Je suis déjà un Artiste maudit, n'en rajoute pas commander..."
+            globals.B28 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require globals.A88 == 0
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Trump presentation=15 : "Du Bionium... Pas DEGUEU!!! OULAA! j'ai de l'inspiration pour peindre..."
+            say Trump presentation=8 chatter if_not_shown skip_next=5 : "BIZARRE! BIZARRE! COMMANDER... Le bionium l'inspire..."
+            state_b1[Trump.population] += 500
+            state_b6[Trump.evolution] += 30
+            state_b5[Trump.energy] += 500
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require globals.A88 > 0
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Trump presentation=15 : "Gloups|...Arf|..."
+            say Trump presentation=8 if_not_shown skip_next=1 : "Chtroumpf|!|..."
+            request sequence "star2.hnm"
+            say Trump presentation=16 if_not_shown skip_next=7 : "Nouvelle tentative OK|..."
+            globals.A88 = 0
+            globals.A89 = 0
+            state_b1[Trump.population] += 100
+            Trump.aggressiveness += 100
+            state_b6[Trump.evolution] += 50
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Trump presentation=16 : "De la technologie, oui... de la technologie DEHORS!!! Je hais la technologie!!!..."
+            say Trump presentation=17 : "Je suis un ARTISTE!!! AR TIS TE..."
+            say Trump presentation=8 chatter if_not_shown skip_next=4 : "commander! Il devient COM PLE TE MENT FOU ce pauvre Trump..."
+            state_b6[Trump.evolution] += 50
+            Trump.aggressiveness *= 2
+            globals.B28 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            when {
+                require globals.A63 == 8
+            } then {
+                say Trump presentation=15 : "Super|! Guitare pour tintamarre|!..."
+                say Trump presentation=8 chatter if_not_shown skip_next=1 : "apparemment c'est dans ses cordes|..."
+                globals.B86 += 1
+            }
+            say Trump presentation=8 chatter : "Voilà qui va le calmer... Commander..."
+            say Trump presentation=17 : "Ne pars pas commander, écoute plutot cette improvisation..."
+            say Trump presentation=8 chatter : "NON NON Merci..."
+            say Trump presentation=8 chatter if_not_shown skip_next=6 : "COMMANDER... J'ai les tympans fragiles, laissons le improviser tranquille..."
+            globals.B28 = 0
+            state_b1[Trump.population] += 350
+            state_b6[Trump.evolution] += 10
+            Trump.aggressiveness = 150
+            globals.B27 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Trump presentation=8 chatter : "Commander vous étes complétement givré..."
+            say Trump presentation=18 if_not_shown skip_next=2 : "Mais non, mais non. Les Artistes ont besoins de mécénes. Merci..."
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Trump presentation=19 : "Du Parfum... Il fleure bon la femelle! Tiens à ce propos, ou est la mienne..."
+            say Trump presentation=8 chatter if_not_shown skip_next=4 : "COMMANDER...Je me demande s'il n'a pas une idée derriére la trompe..."
+            state_b6[Trump.evolution] += 50
+            state_b1[Trump.population] += 400
+            globals.B28 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Trump presentation=20 : "A bon! un décodeur... MEEFFF...! pourquoi pas!"
+            say Trump presentation=8 chatter if_not_shown skip_next=4 : "Allez donc lui faire plaisir COMMANDER..."
+            state_b6[Trump.evolution] += 40
+            state_b1[Trump.population] -= 100
+            globals.B28 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Trump presentation=15 if_not_shown skip_next=2 : "De la nourriture...Trés bon pour ma force créatrice"
+            state_b5[Trump.energy] += 500
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Trump presentation=12 : "Des médicaments... Mais je ne suis jamais malade..."
+            say Trump presentation=12 : "HEEHEU!!! HEEHEU!!! Enfin presque..."
+            say Trump presentation=8 chatter if_not_shown skip_next=3 : "COMMANDER...HO LA LA!!! Et s'il était contagieux..."
+            state_b5[Trump.energy] += 400
+            state_b1[Trump.population] += 250
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Trump presentation=14 if_not_shown skip_next=4 : "DES ARMES... Oui oui, rien de tel qu'une petite guerre pour ce mettre en forme..."
+            Trump.aggressiveness += 400
+            state_b6[Trump.evolution] += 30
+            globals.B27 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            when {
+                require !bits(Tramp.flags,0x0004)
+            } then {
+                say Trump presentation=13 : "Wow|! Bien vu|!... Grossissement 15 000 fois|..."
+                say Trump presentation=8 chatter : "on va voir tous ses défauts|..."
+                say Trump presentation=12 : "Ca va faire apparaitre mon infiniment petit camarade TRAMP|..."
+                say Trump presentation=8 chatter if_not_shown skip_next=4 : "on s'enfonce dans le microscopique|, commander|..."
+                state_b6[Trump.evolution] += 100
+                globals.B26 += 1
+                state_b1[Trump.population] += 250
+                bits(optique.flags,0x0040) = false
+            }
+            when {
+                require bits(Tramp.flags,0x0004)
+            } then {
+                say Trump presentation=13 if_not_shown skip_next=3 : "Une optique... HOOHAAA!!! La vue est superbe..."
+                dictionary blank after "HOOHAAA!!!"
+                state_b6[Trump.evolution] += 50
+                bits(optique.flags,0x0040) = false
+                globals.B26 += 1
+            }
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Trump presentation=9 if_not_shown skip_next=2 : "De l'énergie... SUPER|!|! Excuse-moi COMMANDER, j'ai deux ou trois montagnes à déplacer..."
+            state_b5[Trump.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Trump presentation=17 : "Une bague... WAOOUU! Ma femelle est préte à tout pour ce genre de quincaillerie... Merci!!!"
+            say Trump presentation=8 chatter if_not_shown skip_next=4 : "COMMANDER...Il va surement avoir du bon temps..."
+            dictionary blank after "COMMANDER...Il"
+            state_b6[Trump.evolution] += 10
+            state_b1[Trump.population] += 200
+            globals.B28 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Trump presentation=11 if_not_shown skip_next=2 : "Un émetteur...OUI BOF! Pourquoi pas..."
+            state_b6[Trump.evolution] += 50
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Trump presentation=9 : "De la Culture... Merci COMMANDER, c'est un grand pas pour notre peuple qui trouvera une vue de l'esprit des plus...."
+            say Trump presentation=8 chatter if_not_shown skip_next=3 : "Et BLA! BLA! et BLA! BLA! Ca marche COMMANDER! Il parle comme un ministre..."
+            state_b6[Trump.evolution] += 100
+            state_b5[Trump.energy] += 100
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Trump presentation=13 if_not_shown skip_next=3 : "De l'écriture... Trés bien je vais pouvoir écrire mes mémoires..."
+            state_b6[Trump.evolution] += 100
+            state_b5[Trump.energy] += 100
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Trump presentation=16 : "Un VAISSEAU... Formidable! Le grand peuple Tromp va conquérir l'univers..."
+            say Trump presentation=8 chatter if_not_shown skip_next=4 : "Rien que ca! COMMANDER..."
+            state_b6[Trump.evolution] += 50
+            state_b5[Trump.energy] += 200
+            globals.B26 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Trump presentation=17 if_not_shown skip_next=5 : "Un Traité... Merci COMMANDER! Enfin! la paix..."
+            state_b6[Trump.evolution] += 60
+            globals.B27 = 0
+            Trump.aggressiveness = 0
+            state_b1[Trump.population] += 200
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Trump presentation=9 if_not_shown skip_next=3 : "Des cadeaux... Merci! tu me gàtes COMMANDER"
+            state_b6[Trump.evolution] += 10
+            state_b5[Trump.energy] += 100
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Trump presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Trump presentation=8 chatter resume_at=gest01_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        dictionary blank after "DONNER:"
+        say Trump presentation=8 if_not_shown skip_next=1 : "..."
+        gest01_dialogue_resume_1:
+        say Trump presentation=13 : "A BIENTOT, COMMANDER..."
+        when {
+            require globals.A88 > 0
+        } then {
+            say Trump presentation=8 if_not_shown skip_next=2 : "..."
+            sequence_slots[2] = "43internet"
+            end presentation Trump
+        }
+        say Trump presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Trump
+    }
+    proc _2fintro as "2fintro" enabled {
+        during contact
+        require globals.A68 == 2
+        require Tramp.current_location == aboard
+        require presentation == Tramp
+    } then {
+        say Tramp presentation=10 : "Mets-moi une trampe|!..."
+        say Tramp presentation=12 : "Je réve|!..."
+        say Tramp presentation=11 : "Non mais t'as vu|?..."
+        say Tramp presentation=8 if_not_shown skip_next=3 : "..."
+        globals.A13 += 3
+        end presentation Tramp
+        sequence_slots[3] = "34contromp"
+    }
+    proc nconpre enabled {
+        during bridge
+        require presentation == Tramp
+        require globals.A64 == 2
+    } then {
+        say Tramp presentation=8 : "He|! Commander|!..."
+        say Tramp presentation=8 : "C'est Tramp|! Il fait beau chez vous|?..."
+        say Tramp presentation=8 chatter : "ouais bof|!..."
+        say Tramp presentation=8 : "Parce qu'ici il pleut comme murfalo qui pisse|!..."
+        say Tramp presentation=8 : "Je suis trempé|!..."
+        say Tramp presentation=8 : "Enfin je vais sécher sur l'Arche|!..."
+        say Tramp presentation=8 chatter : "comment ca|?..."
+        say Tramp presentation=8 : "Oui|! On arrive tous pour le concert|!..."
+        say Tramp presentation=8 : "krouik|..."
+        when {
+            random_guard 0x0001
+        } then {
+            Trump.current_location = aboard
+            Tramp.current_location = aboard
+            Super_Tromp.current_location = aboard
+            Rotator.current_location = aboard
+            Outrageor.current_location = aboard
+            Eviscerator.current_location = aboard
+            Tequila.current_location = aboard
+            Emasculator.current_location = aboard
+            Blue_Wave.current_location = Trashlando
+            Mig_Burner.current_location = Trashlando
+        }
+        when {
+            random_guard 0x0001
+        } then {
+            Marakas.current_location = aboard
+            Izwalito.current_location = aboard
+            Daddy_Gluxx.current_location = aboard
+            Mamy_Gluxx.current_location = aboard
+            Papy_Gluxx.current_location = aboard
+            Otto_Von_Smile.current_location = aboard
+            Otto_Von_Gluk.current_location = aboard
+            Cyberquizz.current_location = Trashlando
+            Migrator.current_location = Trashlando
+            Mega_Paul.current_location = Trashlando
+        }
+        say Tramp presentation=8 chatter : "ca promet|, commander|!..."
+        say Tramp presentation=8 if_not_shown skip_next=3 : "..."
+        end presentation Tramp
+        globals.A64 = 3
+        sequence_slots[1] = "34contromp"
+    }
+    proc tra01 enabled {
+        during travel
+        require presentation == Tramp
+    } then {
+        when {
+            require globals.A68 == 1
+            require guitare.holder != aboard
+            require globals.A63 == 0
+        } then {
+            say Tramp presentation=9 : "Moi c'est Tramp|... Et je fais gréve|... Tu veux une trampe|?..."
+            say Tramp presentation=8 chatter : "merci, merci, non|..."
+            say Tramp presentation=10 : "Et une super trampe|? Tu veux pas une super trampe|?... Je fais pas la gréve des baffes|..."
+            say Tramp presentation=8 chatter : "sans facons, non merci|..."
+            say Tramp presentation=11 : "Alors Honk|... On fait pas gréve|?..."
+            say Tramp presentation=8 chatter : "J'ai été programmé par monsieur bob pour effectuer un service minimum|..."
+            say Tramp presentation=12 : "Mon pauvre vieux|... Dur d'étre une machine|..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Tramp
+        }
+        when {
+            require globals.A63 == 8
+        } then {
+            say Tramp presentation=9 : "Ca plane pour moi|!..."
+            dictionary blank after "plane"
+            say Tramp presentation=13 : "Mon réve|, c'est de jouer dans|..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Un concert de Tina Burner|!..."
+            request sequence "lpm4sc1.hnm"
+        }
+        say Tramp presentation=9 : "Moi Tramp, moi TROMP..."
+        text_tokens Tramp presentation=11 : "Y" "a" state_number(0x021C) "tromps" "ici..."
+        when {
+            require Tramp.encounter_count == 1
+        } then {
+            say Tramp presentation=9 : "Wa|! Ca plane pour moi|!..."
+            say Tramp presentation=11 : "Dites donc|... J'en crois pas mes narines|!..."
+            say Tramp presentation=16 : "Woua|! Commander|! Approchez voir|!..."
+            say Tramp presentation=10 : "Montrez un peu vos crounouilles|!..."
+            say Tramp presentation=8 chatter : "commander|, montrez lui|!..."
+            say Tramp presentation=14 : "Wa la vache dis donc|! T'as vu ça|!..."
+            say Tramp presentation=12 : "Snif snif|! Elles sentent comme nous|!..."
+            say Tramp presentation=9 : "Commander|! Vous étes un TROMP de premiére|!..."
+            say Tramp presentation=13 : "Vous avez vu|, les copains|?..."
+            say Tramp presentation=13 : "Le Commander est des notres|!..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Il est des no-otres|! Il a des crounouilles comme les au-autres|!..."
+            request sequence "chantro3.hnm"
+            say Tramp presentation=8 if_not_shown skip_next=1 : "..."
+            globals.A86 = 1
+        }
+        when {
+            require Tramp.encounter_count == 2
+        } then {
+            say Tramp presentation=16 : "Commander c'est un scandale|!..."
+            say Tramp presentation=9 : "Vous ne trouvez pas|..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Qu'on se moque de vous|?..."
+            request sequence "match02.hnm"
+            say Tramp presentation=13 : "Hein qu'on se moque de lui|?..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Ah ca c'est sùr|! Ah ca c'est sùr|!..."
+            request sequence "chantro2.hnm"
+            say Tramp presentation=9 : "On vous montre toujours les mémes images|!..."
+            say Tramp presentation=16 : "C'est un scandale|!..."
+            say Tramp presentation=16 : "Toujours les mémes images mises à toutes les sauces|!..."
+            say Tramp presentation=15 : "Un exemple au hasard|!..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Le hachoir à murfalo génétique qui broie du noir|!..."
+            request sequence "venthig.hnm"
+            say Tramp presentation=14 : "J'en perds mon bandeau|!..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Ou encore celle-là|!..."
+            request sequence "p_cles.hnm"
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Et eux|!..."
+            request sequence "ettamorf.hnm"
+            say Tramp presentation=16 : "Moi j'en ai marre|! Toujours pareil|!..."
+        }
+        when {
+            require Tramp.encounter_count == 3
+        } then {
+            say Tramp presentation=9 : "Eh|! Vous voulez savoir pourquoi j'ai un bandeau|?..."
+            say Tramp presentation=8 chatter resume_at=tra01_dialogue_resume_1 : "..." choices "savoir" "ignorer"
+            when {
+                require choice == "savoir"
+            } then {
+                say Tramp presentation=9 : "Eh ben c'est parce que|..."
+                say Tramp presentation=14 : "Quand je le léve|, je vois mieux|!..."
+                say Tramp presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "ignorer"
+            } then {
+                choice = none
+            }
+        }
+        tra01_dialogue_resume_1:
+        when {
+            require Tramp.encounter_count == 4
+        } then {
+            say Tramp presentation=11 : "Vous savez comment j'ai perdu un oeil|?..."
+            say Tramp presentation=13 : "En faisant de la gymnastique|!..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Je me suis mis le doigt dans l'oeil|..."
+            request sequence "brs02.hnm"
+            say Tramp presentation=16 : "Ca m'a fait super mal|!..."
+        }
+        when {
+            require state_b6[Tramp.evolution] > 400
+        } then {
+            say Tramp presentation=9 : "Nous on invente des formules magiques|, artisanat local..."
+            say Tramp presentation=15 : "On t'en vend une contre un crédit..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Tramp presentation=8 chatter : "Nous n'avons plus de crédits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Tramp presentation=8 chatter resume_at=gest02 : "Vous acceptez de leur acheter une formule magique, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Tramp presentation=8 chatter if_not_shown skip_next=1 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Tramp
+                    say Tramp presentation=14 : "FORMULE MAGIQUE:"
+                    say Tramp presentation=15 : "HATA HATA HOGLO HULU..."
+                    say Tramp presentation=16 : "HAMTOT ZAGLO HOLO HULU..."
+                    say Tramp presentation=17 : "HATA HATA HOGLO HULU..."
+                    say Tramp presentation=14 : "HERR TOT ZAGLO HOLO HULU..."
+                    say Tramp presentation=8 if_not_shown skip_next=2 : "Et voilà..."
+                    globals.A4 -= 1
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest02 enabled {
+        during travel
+        require presentation == Tramp
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Tramp.evolution] < 100
+            } then {
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Tramp.evolution] < 500
+                require state_b6[Tramp.evolution] > 100
+            } then {
+                say Tramp presentation=10 if_not_shown skip_next=5 : "Oh! des atomiques... intéressant... Merci Commander..."
+                state_b1[Tramp.population] /= 2
+                state_b6[Tramp.evolution] += 100
+                Tramp.aggressiveness += 100
+                globals.B28 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Tramp.evolution] > 500
+            } then {
+                say Tramp presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire... Merci!!!"
+                state_b6[Tramp.evolution] += 200
+                state_b5[Tramp.energy] = 1000
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Tramp presentation=9 : "Une Image... CHUUUTTT!!! Ma femelle est dans les parages...Merci COMMANDER"
+            say Tramp presentation=8 chatter if_not_shown skip_next=3 : "A mon avis COMMANDER, il va la mettre sous son matelas..."
+            state_b1[Tramp.population] /= 4
+            state_b5[Tramp.energy] += 400
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Tramp presentation=11 if_not_shown skip_next=5 : "Une Couronne... merci! Je vais étre le Play boy du quartier..."
+            dictionary blank after "boy"
+            state_b5[Tramp.energy] += 200
+            Tramp.aggressiveness += 200
+            state_b1[Tramp.population] += 200
+            globals.B27 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Tramp presentation=12 : "Un Tableau... Mais c'est le grand Yolk! merci... HO! merci COMMANDER!..."
+            say Tramp presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Tramp.evolution] += 50
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Tramp presentation=13 : "Une Momie... HAAAAA!!! Nom d'un crapaud bouffi... Ne me laisse pas cette HORREUR!!!"
+            say Tramp presentation=8 chatter if_not_shown skip_next=2 : "COMMANDER... CA leur fait tous le méme effet!! Vous ne trouvez pas ca drole? Moi oui! HI! HI!"
+            globals.B28 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Tramp presentation=9 : "Du Bionium... SNIF! SNIF! Ca sent la péche, OUI! la PECHE et quelle PECHE!!!"
+            say Tramp presentation=8 chatter if_not_shown skip_next=5 : "COMMANDER il a un probléme de trompe ma parole..."
+            state_b1[Tramp.population] += 100
+            state_b6[Tramp.evolution] += 10
+            state_b5[Tramp.energy] += 500
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Tramp presentation=12 if_not_shown skip_next=4 : "De la technologie... Rien de tel qu'un peu de bricolage..."
+            state_b6[Tramp.evolution] += 100
+            state_b5[Tramp.energy] += 200
+            globals.B28 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            when {
+                require globals.A63 == 8
+            } then {
+                say Tramp presentation=13 : "J'suis engagé comme musicien de Tina Burner|!?..."
+                say Tramp presentation=8 chatter : "on verra|..."
+                say Tramp presentation=14 if_not_shown skip_next=1 : "GENIAL|!... TROP COOL|! MEGATROMP|!..."
+                globals.B86 += 1
+            }
+            say Tramp presentation=13 : "Une guitare... C'est COOL!! avec un grand feu sur la plage... Les femelles adorent ca..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Ca va pas non|? C'est quoi ces phantasmes débiles|?..."
+            request sequence "ppitin03.hnm"
+            say Tramp presentation=8 chatter if_not_shown skip_next=6 : "Toutes les femelles n'aiment pas ca|... Commander..."
+            globals.B28 = 0
+            state_b1[Tramp.population] += 350
+            state_b6[Tramp.evolution] += 40
+            Tramp.aggressiveness -= 300
+            globals.B27 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Tramp presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement givré... Non mais je reve!!!"
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Tramp presentation=14 : "Du Parfum... C'est pour les femelles. Ha! oui... les femelles!! Je vais l'offrir à ma femelle..."
+            say Tramp presentation=8 chatter if_not_shown skip_next=4 : "Comme il est galant COMMANDER. Il doit avoir une idée derriére la trompe..."
+            state_b6[Tramp.evolution] += 40
+            state_b1[Tramp.population] += 250
+            globals.B28 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Tramp presentation=15 : "Un Décodeur... Je vais pouvoir regarder la coupe de la Galaxie... merci COMMANDER!!!"
+            say Tramp presentation=8 if_not_shown skip_next=1 : "Ouais|! ALLEZ LES TROMPS|!..."
+            request sequence "chantro3.hnm"
+            say Tramp presentation=8 if_not_shown skip_next=1 : "ALLEZ CROOLIS|!..."
+            request sequence "match02.hnm"
+            say Tramp presentation=8 chatter : "ALLEZ LES TROMPS!!!..."
+            say Tramp presentation=8 if_not_shown skip_next=1 : "HONK|! Tu dois rester neutre|!..."
+            request sequence "bobb.hnm"
+            say Tramp presentation=8 chatter if_not_shown skip_next=4 : "oh pardon monsieur bob|!..."
+            state_b6[Tramp.evolution] += 100
+            state_b1[Tramp.population] -= 100
+            globals.B28 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Tramp presentation=15 : "De la nourriture... Je prends la cuisse du murfalo! Et on ne discute pas..."
+            say Tramp presentation=8 chatter if_not_shown skip_next=3 : "HOLA!!! Doucement... Vous avez vu COMMANDER il ne plaisante pas avec la bouffe... HEU! la nourriture je veux dire..."
+            state_b5[Tramp.energy] += 300
+            Tramp.aggressiveness += 50
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Tramp presentation=16 if_not_shown skip_next=3 : "Des médicaments..."
+            state_b6[Tramp.evolution] += 50
+            state_b1[Tramp.population] += 250
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Tramp presentation=14 : "DES ARMES... En garde COMMANDER!!! Vous avez eu peur hein! Je plaisante..."
+            say Tramp presentation=8 chatter if_not_shown skip_next=4 : "COMMANDER, je peux revenir... J'aime pas le voir avec des trucs pointus..."
+            Tramp.aggressiveness += 350
+            state_b6[Tramp.evolution] += 30
+            globals.B27 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Tramp presentation=15 if_not_shown skip_next=3 : "Une Optique... merci! C'est de quel coté que je regarde..."
+            state_b6[Tramp.evolution] += 40
+            bits(optique.flags,0x0040) = false
+            globals.B26 += 1
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Tramp presentation=16 if_not_shown skip_next=2 : "De l'énergie...OUAOUUU!!! La Force est en moi..."
+            state_b5[Tramp.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Tramp presentation=9 if_not_shown skip_next=4 : "Une bague...Belle pierre... Ca va chercher dans les combien?"
+            state_b6[Tramp.evolution] += 50
+            state_b1[Tramp.population] += 200
+            globals.B28 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Tramp presentation=9 if_not_shown skip_next=2 : "Un émetteur..."
+            state_b6[Tramp.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Tramp presentation=9 if_not_shown skip_next=3 : "De la Culture..."
+            state_b6[Tramp.evolution] += 100
+            state_b5[Tramp.energy] += 50
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Tramp presentation=8 chatter if_not_shown skip_next=2 : "Ecriture|..."
+            state_b6[Tramp.evolution] += 100
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Tramp presentation=9 if_not_shown skip_next=3 : "Un VAISSEAU..."
+            state_b6[Tramp.evolution] += 50
+            globals.B26 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Tramp presentation=8 chatter if_not_shown skip_next=5 : "Enfin la Paix|..."
+            state_b6[Tramp.evolution] += 10
+            globals.B27 = 0
+            Tramp.aggressiveness = 0
+            state_b1[Tramp.population] += 200
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Tramp presentation=9 if_not_shown skip_next=3 : "Des cadeaux..."
+            state_b6[Tramp.evolution] += 10
+            state_b5[Tramp.energy] += 50
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Tramp presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Tramp presentation=8 chatter resume_at=gest02_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Tramp presentation=8 : "..."
+        gest02_dialogue_resume_1:
+        say Tramp presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        say Tramp presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Tramp
+    }
+    proc _3fintro as "3fintro" enabled {
+        during contact
+        require globals.A68 == 2
+        require Super_Tromp.current_location == aboard
+        require presentation == Super_Tromp
+    } then {
+        say Super_Tromp presentation=10 : "Regarde bien|!..."
+        say Super_Tromp presentation=12 : "Derriére ces lunettes|, c'est moi|..."
+        say Super_Tromp presentation=13 : "C'est moi Michel Polnareff|!..."
+        say Super_Tromp presentation=14 : "Dans un instant|..."
+        say Super_Tromp presentation=11 : "Tu vas me voir jouer du piano|!..."
+        say Super_Tromp presentation=15 : "Mais surtout|... Regarde bien|..."
+        say Super_Tromp presentation=16 : "Dans une seconde|..."
+        say Super_Tromp presentation=17 : "Je vais enlever mes lunettes|!..."
+        say Super_Tromp presentation=8 if_not_shown skip_next=3 : "..."
+        globals.A13 += 3
+        end presentation Super_Tromp
+        sequence_slots[3] = "34contromp"
+    }
+    proc supt01 enabled {
+        during travel
+        require presentation == Super_Tromp
+    } then {
+        when {
+            require Super_Tromp.encounter_count == 1
+        } then {
+            vaisseau.holder = aboard
+        }
+        when {
+            require globals.B87 == 0
+        } then {
+            say Super_Tromp presentation=9 : "sa...sa...sa..."
+            say Super_Tromp presentation=9 : "sa... sa... sa..."
+            say Super_Tromp presentation=8 chatter : "salut|?..."
+            say Super_Tromp presentation=10 : "Salaud de scénariste|!..."
+            say Super_Tromp presentation=8 chatter : "quoi|? pourquoi|?..."
+            say Super_Tromp presentation=11 : "je... je... je..."
+            say Super_Tromp presentation=8 chatter : "je ne sais pas|?..."
+            say Super_Tromp presentation=12 : "Jeune imbécile|!..."
+            say Super_Tromp presentation=13 : "aco... aco... aco..."
+            say Super_Tromp presentation=8 chatter : "a comme c'est gentil d'étre venu|?..."
+            say Super_Tromp presentation=14 : "A cause de vous je b... je b..."
+            say Super_Tromp presentation=8 chatter resume_at=supt01_dialogue_resume_1 : "commander, d'aprés vous que va-t il dire|?...JE" choices "bégaie" "boude" "biaise" "baba_cool" "bourre"
+            when {
+                require choice == "bégaie"
+            } then {
+                say Super_Tromp presentation=8 chatter : "je bégaie|?..."
+                say Super_Tromp presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice != "bégaie"
+            } then {
+                choice = none
+            }
+            supt01_dialogue_resume_1:
+            say Super_Tromp presentation=15 : "Non|!...Je bug comme un fou|!..."
+            say Super_Tromp presentation=8 chatter : "vous buggez|?..."
+            say Super_Tromp presentation=16 : "J'arréte pas...édé|... édé..."
+            say Super_Tromp presentation=8 chatter : "Et des fois c'est génant|?..."
+            say Super_Tromp presentation=17 : "Aidez-moi ou je vous re... je vous re..."
+            say Super_Tromp presentation=8 chatter : "je vous reverrai jamais|?..."
+            say Super_Tromp presentation=10 : "Non|! Je vous refile tous mes bugs|!..."
+            say Super_Tromp presentation=8 chatter : "comment faire|?..."
+            say Super_Tromp presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Super_Tromp
+            globals.B87 = 1
+        }
+        say Super_Tromp presentation=9 : "Moi Super Tromp, moi CHEF TROMP..."
+        text_tokens Super_Tromp presentation=11 : "Nous" state_number(0x0266) "tromps" "ici..."
+        when {
+            require globals.B87 == 1
+            require medicament.holder == aboard
+            require ecriture.holder == aboard
+            require technologie.holder == aboard
+        } then {
+            say Super_Tromp presentation=8 chatter : "on vous apporte de quoi faire votre débugage|!..."
+            say Super_Tromp presentation=9 : "A... A... A..."
+            say Super_Tromp presentation=8 chatter : "Ah enfin|?..."
+            say Super_Tromp presentation=10 : "Non|! Allez-y|!..."
+        }
+        when {
+            require globals.B87 == 1
+            require medicament.holder == Super_Tromp
+            require technologie.holder == Super_Tromp
+            require ecriture.holder == Super_Tromp
+        } then {
+            say Super_Tromp presentation=8 chatter : "voilà|! on a fini votre débugage|..."
+            say Super_Tromp presentation=9 : "A... A... Ah bon|?..."
+            say Super_Tromp presentation=8 chatter : "oh non|! ca a raté, commander|!..."
+            say Super_Tromp presentation=10 : "M... M... M..."
+            say Super_Tromp presentation=8 chatter : "y en a marre|..."
+            say Super_Tromp presentation=11 : "Mais non, c'était une blague|! Je vais bien, merci|!..."
+            say Super_Tromp presentation=8 chatter : "ouf|!..."
+            say Super_Tromp presentation=8 chatter : "laissons-le se reposer de son comabug|..."
+            say Super_Tromp presentation=15 : "Encore merci|! A bientot|!..."
+            say Super_Tromp presentation=16 : "Ah|... au fait|... j'avais un message télé pour vous|..."
+            say Super_Tromp presentation=12 : "De la part de monsieur BOB|!..."
+            say Super_Tromp presentation=8 if_not_shown skip_next=3 : "..."
+            sequence_slots[2] = "38atomev"
+            end presentation Super_Tromp
+            globals.B87 = 2
+        }
+        when {
+            require globals.B87 == 1
+            require ecriture.holder != aboard
+            require technologie.holder != aboard
+            require medicament.holder != aboard
+        } then {
+            say Super_Tromp presentation=9 : "ba..."
+            say Super_Tromp presentation=10 : "be..."
+            say Super_Tromp presentation=11 : "bi..."
+            say Super_Tromp presentation=12 : "bo..."
+            say Super_Tromp presentation=13 : "BUG|!..."
+            say Super_Tromp presentation=8 chatter : "on n'a pas tout ce qu'il faut pour le débuger, commander|!..."
+            say Super_Tromp presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Super_Tromp
+        }
+    }
+    proc formbug enabled {
+        during travel
+        require presentation == Super_Tromp
+    } then {
+        when {
+            require globals.A68 == 1
+            require globals.B87 > 1
+        } then {
+            say Super_Tromp presentation=13 : "Nous connaissons formule magique contre gréves..."
+            say Super_Tromp presentation=15 : "Nous vendons à toi formule magique contre crédit..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Super_Tromp presentation=8 chatter : "Nous n'avons plus de crédits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Super_Tromp presentation=8 chatter resume_at=gest03 : "Vous acceptez de leur acheter une formule magique, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Super_Tromp presentation=8 chatter if_not_shown skip_next=1 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Super_Tromp
+                    say Super_Tromp presentation=14 : "FORMULE MAGIQUE:"
+                    say Super_Tromp presentation=8 chatter : "retenez bien|, commander|..."
+                    say Super_Tromp presentation=15 : "HATA HATA HOGLO HULU..."
+                    say Super_Tromp presentation=16 : "HAMTOT ZAGLO HOLO HULU..."
+                    say Super_Tromp presentation=17 : "HATA HATA HOGLO HULU..."
+                    say Super_Tromp presentation=14 : "HERR TOT ZAGLO HOLO HULU..."
+                    say Super_Tromp presentation=8 if_not_shown skip_next=2 : "Et voilà..."
+                    globals.A4 -= 1
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest03 enabled {
+        during travel
+        require presentation == Super_Tromp
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Super_Tromp.evolution] < 100
+            } then {
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Super_Tromp.evolution] < 500
+                require state_b6[Super_Tromp.evolution] > 100
+            } then {
+                say Super_Tromp presentation=10 if_not_shown skip_next=5 : "Oh! des atomiques... intéressant... merci Commander..."
+                state_b1[Super_Tromp.population] /= 2
+                state_b6[Super_Tromp.evolution] += 100
+                Super_Tromp.aggressiveness += 50
+                globals.B28 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Super_Tromp.evolution] > 500
+            } then {
+                say Super_Tromp presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire... merci!!!"
+                state_b6[Super_Tromp.evolution] += 20
+                state_b5[Super_Tromp.energy] += 200
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=8 chatter if_not_shown skip_next=3 : "Trop belle|..."
+            state_b1[Super_Tromp.population] /= 4
+            state_b5[Super_Tromp.energy] += 10
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=4 : "OUUUU|.... Moi Big CHEF|..."
+            state_b5[Super_Tromp.energy] += 20
+            Super_Tromp.aggressiveness += 200
+            globals.B27 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=8 chatter if_not_shown skip_next=2 : "Un tableau|..."
+            state_b6[Super_Tromp.evolution] += 5
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=8 if_not_shown skip_next=2 : "MOOOMIIIE|..."
+            globals.B28 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=4 : "Du Bionium..."
+            state_b1[Super_Tromp.population] += 100
+            state_b6[Super_Tromp.evolution] += 10
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=4 : "De la technologie..."
+            state_b6[Super_Tromp.evolution] += 50
+            state_b5[Super_Tromp.energy] += 10
+            globals.B28 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            when {
+                require globals.A63 == 8
+            } then {
+                say Super_Tromp presentation=8 chatter if_not_shown skip_next=5 : "Voila qui va l'exciter... Commander..."
+                globals.B28 = 0
+                state_b1[Super_Tromp.population] += 250
+                state_b6[Super_Tromp.evolution] += 50
+                globals.B27 = 0
+                globals.B86 += 1
+            }
+            say Super_Tromp presentation=10 if_not_shown skip_next=5 : "C'est cool|!..."
+            globals.B27 = 0
+            state_b1[Super_Tromp.population] += 250
+            state_b6[Super_Tromp.evolution] += 50
+            globals.B28 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement givré..."
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=8 chatter if_not_shown skip_next=4 : "SNIF|... Pas mal|..."
+            state_b6[Super_Tromp.evolution] += 50
+            state_b1[Super_Tromp.population] += 200
+            globals.B28 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=4 : "Un décodeur|..."
+            state_b6[Super_Tromp.evolution] += 100
+            state_b1[Super_Tromp.population] -= 50
+            globals.B28 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=15 if_not_shown skip_next=2 : "De la nourriture..."
+            state_b5[Super_Tromp.energy] += 300
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=3 : "Des médicaments..."
+            state_b6[Super_Tromp.evolution] += 50
+            state_b1[Super_Tromp.population] += 150
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=14 if_not_shown skip_next=4 : "DES ARMES..."
+            Super_Tromp.aggressiveness += 150
+            state_b6[Super_Tromp.evolution] += 50
+            globals.B27 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=8 chatter if_not_shown skip_next=3 : "Une optique|..."
+            state_b6[Super_Tromp.evolution] += 50
+            bits(optique.flags,0x0040) = false
+            globals.B26 += 1
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=2 : "De l'énergie..."
+            state_b5[Super_Tromp.energy] += 200
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=4 : "Une bague..."
+            state_b6[Super_Tromp.evolution] += 50
+            state_b1[Super_Tromp.population] += 200
+            globals.B28 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Super_Tromp.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=3 : "De la Culture..."
+            state_b6[Super_Tromp.evolution] += 100
+            state_b5[Super_Tromp.energy] += 10
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=8 chatter if_not_shown skip_next=2 : "L'écriture|..."
+            state_b6[Super_Tromp.evolution] += 100
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=3 : "Un VAISSEAU..."
+            state_b6[Super_Tromp.evolution] += 50
+            globals.B26 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=8 chatter if_not_shown skip_next=4 : "Enfin la PAIX|..."
+            globals.B27 = 0
+            Super_Tromp.aggressiveness = 0
+            state_b1[Super_Tromp.population] += 200
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Super_Tromp presentation=9 if_not_shown skip_next=3 : "Des cadeaux..."
+            state_b6[Super_Tromp.evolution] += 10
+            state_b5[Super_Tromp.energy] += 50
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Super_Tromp presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Super_Tromp presentation=8 chatter resume_at=gest03_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Super_Tromp presentation=8 : "..."
+        gest03_dialogue_resume_1:
+        say Super_Tromp presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        when {
+            require Super_Tromp.encounter_count == 1
+        } then {
+            sequence_slots[3] = "41cryobug"
+        }
+        when {
+            require Super_Tromp.encounter_count == 2
+        } then {
+            sequence_slots[4] = "42micro"
+        }
+        say Super_Tromp presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Super_Tromp
+        halt
+    }
+}

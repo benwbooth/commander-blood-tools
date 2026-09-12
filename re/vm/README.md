@@ -120,6 +120,18 @@ cargo run --bin cbvm -- decompile-unified \
   accuracy/cblood_install/cblood re/vm/profiles
 ```
 
+Generate Big Bug Bang's 17 four-resource profiles with its explicit dialect:
+
+```sh
+cargo run --bin cbvm -- decompile-big-bug-bang-unified \
+  output/big-bug-bang/imported-assets/resources \
+  re/vm/big-bug-bang-profiles
+```
+
+BBB profiles derive COD, DEB, DIC, and VAR. They intentionally do not emit BAS;
+the sequel's lone dormant BAS file has separate ownership evidence in
+`docs/big-bug-bang-port.md`.
+
 Compile one complete edited profile with:
 
 ```sh
@@ -128,10 +140,12 @@ cargo run --bin cbvm -- compile-profile \
 ```
 
 Generated `bloodscript 8` source is intended for editing rather than for reading
-as decorated disassembly. Its `state`, `logic`, and `conversations` sections own
-all information required to emit the five binary images. DEB object order comes
-from state declarations; procedures, globals, and labels retain the remaining DEB order;
-DIC words are interned in logic-then-conversation first-use order.
+as decorated disassembly. A Commander profile's `state`, `logic`, and
+`conversations` sections own all information required to emit its five binary
+images. A BBB profile omits `conversations` and emits its four active resources.
+DEB object order comes from state declarations; procedures, globals, and labels
+retain the remaining DEB order; DIC words are interned in program first-use
+order.
 
 Dialogue uses `say object presentation=N [modifiers] : "sentence"`. Named modifiers
 include `chatter`, `repeatable`, `chance=20%`, `if_not_shown skip_next=N`,

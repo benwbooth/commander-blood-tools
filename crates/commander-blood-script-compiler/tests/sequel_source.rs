@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use commander_blood_script_compiler::{
-    compile_program, decompile_big_bug_bang_cod,
+    ProfileDialect, ProfileImages, compile_profile, compile_program, decompile_big_bug_bang_cod,
     decompile_structured_big_bug_bang_cod_with_symbols, parse_source_dictionary,
-    parse_source_directory,
+    parse_source_directory, require_same_profile,
 };
 
 #[test]
@@ -96,6 +96,39 @@ fn all_sequel_cod_profiles_round_trip_source() {
         [312, 2_221, 0, 627, 7_684, 1_153],
         "BBB procedure, guard, and typed ownership coverage changed"
     );
+}
+
+#[test]
+#[ignore = "requires original BBB profiles under output/big-bug-bang/imported-assets/resources"]
+fn all_sequel_unified_profiles_rebuild_every_active_companion() {
+    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let resources = workspace.join("output/big-bug-bang/imported-assets/resources");
+    let sources = workspace.join("re/vm/big-bug-bang-profiles");
+    let mut compared_bytes = 0usize;
+    for profile in 1..=17 {
+        let name = format!("SCRIPT{profile}");
+        let read =
+            |extension: &str| std::fs::read(resources.join(format!("{name}.{extension}"))).unwrap();
+        let shipped = ProfileImages {
+            dialect: ProfileDialect::BigBugBang,
+            name: name.clone(),
+            cod: read("COD"),
+            bas: None,
+            deb: read("DEB"),
+            dic: read("DIC"),
+            var: read("VAR"),
+        };
+        let source =
+            std::fs::read_to_string(sources.join(format!("script{profile}.blood"))).unwrap();
+        let rebuilt = compile_profile(&source).unwrap();
+        require_same_profile(&rebuilt, &shipped).unwrap();
+        compared_bytes += shipped
+            .extensions()
+            .iter()
+            .map(|extension| shipped.image(extension).unwrap().len())
+            .sum::<usize>();
+    }
+    assert_eq!(compared_bytes, 637_922);
 }
 
 #[test]

@@ -1,0 +1,3320 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT11
+concepts "parler" "bonjour" "rayon"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc zenmar enabled {
+        during bridge
+        require globals.A60 == 3
+        require presentation == Super_Zen
+    } then {
+        say Super_Zen presentation=8 : "Appel urgent|... Ici Super Zen|..."
+        say Super_Zen presentation=8 chatter : "on vous écoute|..."
+        say Super_Zen presentation=8 : "Hooom|... renseignement sur situation Marakas|..."
+        say Super_Zen presentation=8 chatter : "quoi|!? vous savez quelque chose|?..."
+        say Super_Zen presentation=8 : "Je sais tout|... Mais transmission coordonnées impossible par téléphone|..."
+        say Super_Zen presentation=8 chatter : "par Internet|?..."
+        say Super_Zen presentation=8 : "Impossible|... Face à face, cerveau dans cerveau|... Venez me voir|..."
+        say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A60 = 4
+        end presentation Super_Zen
+    }
+    proc peren enabled {
+        during bridge
+        require globals.A55 == 1
+        require presentation == Super_Zen
+    } then {
+        say Super_Zen presentation=8 : "Ici Pére noél|... alias Cyberquizz|..."
+        say Super_Zen presentation=8 chatter : "pas terrible votre déguisement, pére noél|!..."
+        say Super_Zen presentation=8 : "Quoi|? C'est un manteau que j'ai trouvé dans le cyberspace|..."
+        say Super_Zen presentation=8 chatter : "mon dieu|! c'est le manteau de ce pauvre super zen|..."
+        say Super_Zen presentation=8 : "Bon|... vous voulez toujours jouer avec moi|?..."
+        say Super_Zen presentation=8 chatter : "si vous promettez de vous changer|!..."
+        say Super_Zen presentation=8 : "Promis|! Je me changerai pendant le voyage|..."
+        say Super_Zen presentation=8 chatter : "TELEPORTATION PERE NOEL CYBERQUIZZ SUR CRYOBOX|..."
+        say Super_Zen presentation=8 : "Waouh|! Ca décoiffe|! C'est autre chose que le traineau|!..."
+        say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+        Cyberquizz.current_location = aboard
+        end presentation Super_Zen
+    }
+    proc zncry enabled {
+        during contact
+        require globals.A64 == 0
+        require presentation == Super_Zen
+    } then {
+        when {
+            require Super_Zen.encounter_count == 1
+        } then {
+            say Super_Zen presentation=9 : "MFFF... MFFF..."
+            say Super_Zen presentation=10 : "ATA... ATA... Mfff..."
+            say Super_Zen presentation=8 chatter : "UN SUPER ZEN|!!! Qu'est-ce qu'il fout là|???"
+            dictionary blank after "là"
+            say Super_Zen presentation=11 : "Mfff... Mfffutur..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Cauchemar... Roswell|..."
+            request sequence "momi10.hnm"
+            say Super_Zen presentation=8 chatter : "CA ALORS, c'est un sacré nom de Yolk de Super Zen, pas de doute|!!!"
+            say Super_Zen presentation=12 : "Mfff... Mfff... TO TO... SUPER ZEN|!"
+            say Super_Zen presentation=8 chatter : "Laissons-le se réveiller, Commander..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Super_Zen
+        }
+        say Super_Zen presentation=14 : "HOOOOOOMMMMM|..."
+        say Super_Zen presentation=14 : "Moi Super Zen, moi ZEN|... moi BLURP..."
+        say Super_Zen presentation=8 chatter : "Comment ca lui BLURP? Lui ZEN ou BLURP|?"
+        say Super_Zen presentation=12 : "Ze moi Ze grois gueu ze vais romir..."
+        say Super_Zen presentation=8 chatter : "Oulàlà, Commander, il a pas l'air d'aller bien, il lui faut du grand air..."
+        say Super_Zen presentation=8 chatter : "J'ai repéré une planéte qui pourrait lui convenir..."
+        say Super_Zen presentation=8 chatter : "de toutes facons, si on se débarrasse pas de lui..."
+        say Super_Zen presentation=19 : "J'AI MAL AU COEUR|! LAISSEZ-MOI SORTIR|!"
+        say Super_Zen presentation=8 chatter : "Il va en mettre partout|!"
+        say Super_Zen presentation=8 chatter resume_at=supz01 : "Voulez-vous que je le téléporte, Commander?" choices "OUI" "NON"
+        when {
+            require choice == "OUI"
+        } then {
+            Crazystone.active = true
+            Crazystone.known = true
+            Crazyland.active = true
+            Crazyland.known = true
+            bits(Super_Zen.flags,0x0004) = true
+            say Super_Zen presentation=8 chatter : "TELEPORTATION SUPER ZEN SUR CRAZYSTONE..."
+            say Super_Zen presentation=8 if_not_shown skip_next=5 : "..."
+            Super_Zen.current_location = Crazyland
+            Ben_Zen.current_location = Crazyland
+            Kero_Zen.current_location = Crazyland
+            end presentation Super_Zen
+            choice = none
+        }
+        when {
+            require choice == "NON"
+        } then {
+            say Super_Zen presentation=8 chatter : "Comme vous voulez... Commander... Mais bon, il risque de s'enrhumer dans la cryobox..."
+            say Super_Zen presentation=8 chatter : "Vous savez, on n'est pas là pour faire mourir des races, mais pour les faire évoluer..."
+            say Super_Zen presentation=8 chatter : "Ceci dit, c'est comme vous voulez..."
+            dictionary blank after "Ceci"
+            say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Super_Zen
+            choice = none
+        }
+    }
+    proc supz01 enabled {
+        during travel
+        require presentation == Super_Zen
+    } then {
+        when {
+            require Super_Zen.encounter_count == 3
+        } then {
+            say Super_Zen presentation=9 : "Hooom Commander|!..."
+            say Super_Zen presentation=10 : "Voulez-vous jouer au ni oui ni non avec moi|?..."
+            say Super_Zen presentation=8 chatter resume_at=supz01_dialogue_resume_1 : "..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Super_Zen presentation=12 : "Moi aussi j'aurais bien aimé|..."
+                say Super_Zen presentation=13 if_not_shown skip_next=1 : "Mais d'abord je dois vérifier quelque chose|..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Super_Zen presentation=14 : "Tant pis|!... La prochaine fois peut-étre|..."
+                say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+                end presentation Super_Zen
+                choice = none
+            }
+        }
+        supz01_dialogue_resume_1:
+        when {
+            require Super_Zen.encounter_count == 3
+        } then {
+            say Super_Zen presentation=15 : "Vous voyez ce que je veux dire|?..."
+            say Super_Zen presentation=8 chatter resume_at=supz01_dialogue_resume_2 : "vous voyez|, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Super_Zen presentation=19 if_not_shown skip_next=1 : "Perdu|! Ah ah ah|! Tu as dit OUI|!..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Super_Zen presentation=19 if_not_shown skip_next=1 : "Perdu|! Tu as dit NON|! Ah ah ah|!..."
+                choice = none
+            }
+        }
+        supz01_dialogue_resume_2:
+        when {
+            require Super_Zen.encounter_count == 4
+        } then {
+            say Super_Zen presentation=10 : "Hooom Commander|..."
+            say Super_Zen presentation=9 : "Veux-tu jouer au ni oui ni non|?..."
+            say Super_Zen presentation=8 chatter resume_at=supz01_dialogue_resume_3 : "..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+            supz01_dialogue_resume_3:
+            say Super_Zen presentation=19 : "Perdu|! Ah ah ah|! Ni oui ni non|!..."
+            say Super_Zen presentation=8 chatter : "c'est malin|..."
+        }
+        when {
+            require Super_Zen.encounter_count > 4
+            require Super_Zen.encounter_count < 9
+        } then {
+            say Super_Zen presentation=9 : "Vous voulez jouer au ni zen ni gluxx avec moi|, Commander|?..."
+            say Super_Zen presentation=8 chatter resume_at=supz01_dialogue_resume_4 : "..." choices "oui" "non" "zen" "gluxx"
+            when {
+                require choice == "oui"
+            } then {
+                say Super_Zen presentation=19 : "Ouais|! Super|!..."
+                say Super_Zen presentation=16 : "Mais|... Euh|..."
+                say Super_Zen presentation=12 : "Je crois que j'ai encore|..."
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "...oublié les régles|!..."
+                request sequence "star2.hnm"
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Super_Zen presentation=19 : "BRAVO|! Gagné|! Vous n'avez dit ni ZEN ni GLUXX|!..."
+                say Super_Zen presentation=8 chatter : "Ah|! perdu super zen|! vous avez dit zen et gluxx|..."
+                say Super_Zen presentation=17 : "Damnation|!..."
+                say Super_Zen presentation=9 : "Mais toi aussi|, HONK|!..."
+                say Super_Zen presentation=8 chatter : "quoi|?..."
+                say Super_Zen presentation=13 : "Tu as dit ZEN et GLUXX|!..."
+                say Super_Zen presentation=8 chatter : "encore perdu super zen|! vous venez de le redire|!..."
+                say Super_Zen presentation=17 : "Ah|! GLUXX alors|!..."
+                say Super_Zen presentation=8 chatter : "encore|!..."
+                say Super_Zen presentation=17 : "Ah non d'un ZEN|!..."
+                say Super_Zen presentation=8 chatter : "encore|!..."
+                say Super_Zen presentation=13 if_not_shown skip_next=1 : "Les ordinateurs sont trop forts pour moi à ce jeu|!..."
+                choice = none
+            }
+            when {
+                require choice == "zen"
+            } then {
+                say Super_Zen presentation=19 : "Perdu|! Ah ah ah|! Vous avez dit ZEN|!..."
+                say Super_Zen presentation=8 chatter : "vous aussi|!..."
+                say Super_Zen presentation=17 if_not_shown skip_next=1 : "Damnation|!..."
+                choice = none
+            }
+            when {
+                require choice == "gluxx"
+            } then {
+                say Super_Zen presentation=19 : "Ah ah|! Perdu|! Vous avez dit GLUXX|!..."
+                say Super_Zen presentation=8 chatter : "Ah|! GLUXX de gluxx|!..."
+                say Super_Zen presentation=19 : "Encore perdu|!..."
+                say Super_Zen presentation=8 chatter if_not_shown skip_next=1 : "il est trop fort|..."
+                choice = none
+            }
+        }
+        supz01_dialogue_resume_4:
+        when {
+            require Super_Zen.encounter_count == 9
+        } then {
+            say Super_Zen presentation=14 : "Voulez-vous jouer au oui ou non|?..."
+            say Super_Zen presentation=8 chatter resume_at=supz01_dialogue_resume_5 : "vous voulez jouer au oui ou non|, commander|?..." choices "oui" "non" "ni_oui" "ni_non"
+            when {
+                require choice == "oui"
+            } then {
+                say Super_Zen presentation=19 if_not_shown skip_next=1 : "Ouais|! Gagné|! Tu as dit oui|..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Super_Zen presentation=19 if_not_shown skip_next=1 : "Bravo|! Tu as dit non|!..."
+                choice = none
+            }
+            when {
+                require choice == "ni_oui"
+            } then {
+                say Super_Zen presentation=19 if_not_shown skip_next=1 : "Perdu|! Tu as dit ni oui|..."
+                choice = none
+            }
+            when {
+                require choice == "ni_non"
+            } then {
+                say Super_Zen presentation=19 : "Perdu|! Tu as dit ni non|..."
+                say Super_Zen presentation=8 chatter : "ni oui non plus|..."
+                say Super_Zen presentation=19 if_not_shown skip_next=1 : "Deux fois perdu|! Tu as dit ni oui|!..."
+                choice = none
+            }
+        }
+        supz01_dialogue_resume_5:
+        when {
+            require globals.A68 == 1
+        } then {
+            say Super_Zen presentation=9 : "Hooom|... gréve|..."
+            say Super_Zen presentation=8 chatter : "c'est ca|! méme lui|... gréve|!..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Super_Zen
+        }
+        when {
+            require globals.A53 == 1
+        } then {
+            say Super_Zen presentation=9 : "Commander|?... Hooom..."
+            say Super_Zen presentation=8 chatter : "Oui, c'est lui|..."
+            say Super_Zen presentation=14 : "Vous progressez, je vois|..."
+            say Super_Zen presentation=11 : "Mais attention|... prenez garde au chaos..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "... le chaos|..."
+            request sequence "momi10.hnm"
+            say Super_Zen presentation=12 : "Prenez garde..."
+            say Super_Zen presentation=8 chatter : "Commander, j'ai les circuits qui trembloodent..."
+            say Super_Zen presentation=13 : "Oubliez tout le reste..."
+            say Super_Zen presentation=10 : "Concentrez-vous sur mon vizen|... zage..."
+            say Super_Zen presentation=8 chatter : "Sur son quoi|?"
+            say Super_Zen presentation=19 : "...sur mon visage, bon sang de blood|!..."
+            say Super_Zen presentation=20 : "... télépathie..."
+            say Super_Zen presentation=12 : "...Reprenons..."
+            say Super_Zen presentation=10 : "Concentrez-vous sur mon visage..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Le futur..."
+            request sequence "galaxi.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Pourquoi ceci..."
+            request sequence "legion01.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "... plutot que cela|?..."
+            request sequence "caiscrut.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "...pourquoi|?..."
+            request sequence "mag_scr.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Pourqu...AAAH|!"
+            request sequence "explo3.hnm"
+            say Super_Zen presentation=17 : "AAAH|!..."
+            say Super_Zen presentation=15 : "Tu n'es pas encore prét pour la télépathie, Commander..."
+            say Super_Zen presentation=16 : "Il te manque..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "quelque chose... d'important..."
+            request sequence "brouil.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=3 : "..."
+            Marakas.current_location = Trashlando
+            globals.A53 = 2
+            end presentation Super_Zen
+        }
+        when {
+            require globals.A60 == 5
+            require technologie.holder == aboard
+            require globals.A53 == 2
+        } then {
+            say Super_Zen presentation=9 : "Hooom Commander... j'attendais ta revenue..."
+            say Super_Zen presentation=11 : "J'espére que tu t'es équipé|..."
+            say Super_Zen presentation=20 : "... pour la télépathie|..."
+            say Super_Zen presentation=10 : "Je vérifie|... regarde-moi|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Je vois dans ton cerveau|... des idées lumineuses|... je vois|..."
+            request sequence "tourbi.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "... que tu es prét|..."
+            request sequence "brouil.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Je vais pouvoir t'aider à voir le futur, aidé de mon assistant TUBULAR|..."
+            request sequence "kort.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Mais|... AAAH|! ton cerveau explose..."
+            request sequence "explroug.hnm"
+            say Super_Zen presentation=17 : "AAAh|!..."
+            say Super_Zen presentation=14 : "Pour alimenter ton cerveau, il faut aussi du bionium, commander|... de l'énergie|... beaucoup d'énergie|..."
+            when {
+                require globals.vbio < 5
+            } then {
+                say Super_Zen presentation=8 chatter : "Bon|... compris|... attention scruter jo, nous voilà|!"
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+                end presentation Super_Zen
+            }
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            globals.A53 = 3
+        }
+        when {
+            require globals.A53 == 2
+            require technologie.holder != aboard
+            require globals.A60 < 5
+        } then {
+            say Super_Zen presentation=9 : "Inutile|... Vanité des vanités|..."
+            say Super_Zen presentation=12 : "Pourquoi revenir me voir sans étre prét|..."
+            say Super_Zen presentation=19 : "Pour télépathie|?..."
+            say Super_Zen presentation=10 : "Retourne voir|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Izwalito|..."
+            request sequence "aready20.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Super_Zen
+        }
+        when {
+            require globals.A60 == 5
+            require globals.A53 == 3
+            require globals.vbio > 4
+        } then {
+            say Super_Zen presentation=15 : "Je vois que tu es habile!..."
+            say Super_Zen presentation=10 : "Tréve de bavardage, regarde-moi dans les yeux|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "... dans les yeux|..."
+            request sequence "ppitbb01.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "AAAH|!..."
+            request sequence "explo3.hnm"
+            say Super_Zen presentation=17 : "AAArgh|!..."
+            say Super_Zen presentation=13 : "Ce ne sont pas tes yeux|... ton esprit est piraté par quelque chose|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "NA NA NA NA Né REUH|!..."
+            request sequence "ppit07.hnm"
+            say Super_Zen presentation=8 chatter : "Encore lui|! y en a marre|! coucouche panier, pipiteux|!"
+            dictionary blank after "coucouche"
+            say Super_Zen presentation=12 : "Mais peu importe|... je trouverai un autre moyen de t'envoyer mes images|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "par un canal de plus|..."
+            request sequence "decodeur.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=4 : "..."
+            globals.vbio -= 5
+            globals.A53 = 4
+            end presentation Super_Zen
+            sequence_slots[1] = "11izwalexplo"
+        }
+        when {
+            require globals.A53 == 3
+            require globals.vbio < 5
+        } then {
+            say Super_Zen presentation=10 : "Il faut davantage de bionium|, Commander|..."
+            say Super_Zen presentation=8 chatter : "encore plus|?..."
+            say Super_Zen presentation=20 : "Télépathie chére en énergie|, Commander|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Super_Zen
+        }
+    }
+    proc marabid enabled {
+        during travel
+        require Marakas.current_location == Trashlando
+        require presentation == Super_Zen
+    } then {
+        when {
+            require globals.A80 == 0
+            require globals.A60 > 5
+        } then {
+            say Super_Zen presentation=10 : "Hooom|... Commander|... Enigme platonicienne|..."
+            say Super_Zen presentation=11 : "Vous croyez que vous étes assez|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Intelligent|..."
+            request sequence "brouil.hnm"
+            say Super_Zen presentation=12 : "Pour trouver|?..."
+            say Super_Zen presentation=8 chatter resume_at=marlib2 : "vous croyez étre quoi|, commander|?..." choices "intelligent" "primate" "crétin" "gros_lourd"
+            when {
+                require choice == "intelligent"
+            } then {
+                say Super_Zen presentation=13 : "Félicitations|, Commander|... Vous allez trouver tout seul|..."
+                say Super_Zen presentation=8 chatter : "allez-y|, montrez-lui comme vous étes pas béte|, commander|..."
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice != "intelligent"
+            } then {
+                say Super_Zen presentation=14 : "C'est méritoire de le reconnaitre|, Commander|..."
+                say Super_Zen presentation=9 : "Je vous rappelle donc qu'il me faut|..."
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "Astronomie|..."
+                transfer optique from Super_Zen to aboard
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "Harmonie|..."
+                transfer guitare from Super_Zen to aboard
+                say Super_Zen presentation=10 : "Et réflexion|..."
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+    }
+    proc marlib2 enabled {
+        during travel
+        require Marakas.current_location == Trashlando
+        require presentation == Super_Zen
+    } then {
+        when {
+            require globals.A80 < 3
+            require globals.A80 > 0
+        } then {
+            say Super_Zen presentation=14 : "Commander|... C'est bien|... Tu réfléchis|..."
+            say Super_Zen presentation=15 : "Mais il faut encore me donner quelque chose|..."
+        }
+        when {
+            require globals.A81 == 0
+            require globals.A80 > 2
+            require globals.A53 > 3
+        } then {
+            say Super_Zen presentation=9 : "Tu es un excellent détective|... Tu vas peut-étre pouvoir libérer Marakas de la caverne|..."
+            say Super_Zen presentation=8 chatter : "bon sang de yolk|! c'est super zen qui séquestre marakas|!..."
+            say Super_Zen presentation=12 : "Il n'en est rien, mon ami|... Marakas est prisonnier de son propre esprit|..."
+            say Super_Zen presentation=11 : "La caverne est son propre esprit|..."
+            say Super_Zen presentation=10 : "Te voici confronté à l'énigme fondamentale|..."
+            say Super_Zen presentation=18 : "Hooom|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Le moment de la réflexion est venu|..."
+            transfer image from Super_Zen to aboard
+            say Super_Zen presentation=14 : "Si la caverne est remplie d'images|..."
+            say Super_Zen presentation=13 : "Si ces images ne sont que les ombres des choses|..."
+            say Super_Zen presentation=15 : "Qu'est-ce qui permettra de voir les choses elles-mémes et non pas leur ombre|?..."
+            say Super_Zen presentation=10 : "Si la caverne est ton esprit|..."
+            say Super_Zen presentation=19 : "Comment sortir de la caverne|?!!..."
+            say Super_Zen presentation=8 chatter : "oh j'en sais rien|..."
+            say Super_Zen presentation=16 : "Je vais te proposer des listes de lettres|... Tu choisiras dans l'ordre la premiére lettre de ta réponse, la deuxiéme|, etc|..."
+            say Super_Zen presentation=8 chatter : "c'est compliqué|!..."
+            say Super_Zen presentation=15 : "Non|... La réponse tient en un seul mot|..."
+            say Super_Zen presentation=8 chatter resume_at=marlib2_dialogue_resume_1 : "bon|... la premiére lettre|..." choices "i" "o" "n"
+            when {
+                require choice == "i"
+            } then {
+                say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A81 += 1
+                choice = none
+            }
+            when {
+                require choice != "i"
+            } then {
+                choice = none
+            }
+        }
+        marlib2_dialogue_resume_1:
+        when {
+            require globals.A80 > 2
+            require globals.A53 > 3
+            require globals.A81 > 0
+        } then {
+            say Super_Zen presentation=8 chatter resume_at=marlib2_dialogue_resume_2 : "la deuxiéme lettre|..." choices "c" "h" "a" "r" "m" "i" "d" "e"
+            when {
+                require choice == "d"
+            } then {
+                say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A81 += 1
+                choice = none
+            }
+            when {
+                require choice != "d"
+            } then {
+                choice = none
+            }
+        }
+        marlib2_dialogue_resume_2:
+        when {
+            require globals.A80 > 2
+            require globals.A53 > 3
+            require globals.A81 > 0
+        } then {
+            say Super_Zen presentation=8 chatter resume_at=marlib2_dialogue_resume_3 : "La troisiéme lettre|..." choices "r" "é" "p" "u" "b" "l" "i" "q" "u" "e"
+            when {
+                require choice == "é"
+            } then {
+                say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A81 += 1
+                choice = none
+            }
+            when {
+                require choice != "é"
+            } then {
+                choice = none
+            }
+        }
+        marlib2_dialogue_resume_3:
+        when {
+            require globals.A80 > 2
+            require globals.A81 > 0
+            require globals.A53 > 3
+        } then {
+            say Super_Zen presentation=8 chatter resume_at=marlib2_dialogue_resume_4 : "La quatriéme lettre|..." choices "a" "l" "c" "i" "b" "i" "a" "d" "e"
+            when {
+                require choice == "e"
+            } then {
+                say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A81 += 1
+                choice = none
+            }
+            when {
+                require choice != "e"
+            } then {
+                choice = none
+            }
+        }
+        marlib2_dialogue_resume_4:
+        when {
+            require globals.A81 == 4
+        } then {
+            say Super_Zen presentation=8 chatter resume_at=marlib2_dialogue_resume_5 : "Cinquiéme et derniére lettre|..." choices "s" "o" "c" "r" "a" "t" "e"
+            dictionary blank after "Cinquiéme"
+            when {
+                require choice == "s"
+            } then {
+                say Super_Zen presentation=8 if_not_shown skip_next=3 : "..."
+                globals.A81 = 5
+                end presentation Super_Zen
+                choice = none
+            }
+            when {
+                require choice != "s"
+            } then {
+                choice = none
+            }
+        }
+        marlib2_dialogue_resume_5:
+        when {
+            require globals.A80 > 2
+            require globals.A53 > 3
+            require globals.A81 < 5
+        } then {
+            say Super_Zen presentation=17 : "AAAaaah|! échec|!..."
+            say Super_Zen presentation=9 : "Tu dois encore réfléchir, Commander|... Les idées ne viennent pas toutes seules|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A81 = 0
+            end presentation Super_Zen
+        }
+    }
+    proc supzen3 enabled {
+        during travel
+        require presentation == Super_Zen
+    } then {
+        when {
+            require Super_Zen.encounter_count < 5
+        } then {
+            say Super_Zen presentation=9 : "Vous me reconnaissez|? Z'est Moi, Super Zen, le plus super des ZEN... Hoooooom..."
+            say Super_Zen presentation=8 chatter : "Hoooooom..."
+            text_tokens Super_Zen presentation=11 : "Nous" "sommes" state_number(0x09A0) "zen" "ici..." "Superzénial," "non" "?"
+        }
+    }
+    proc _1supzen as "1supzen" enabled {
+        during travel
+        require presentation == Super_Zen
+    } then {
+        when {
+            require globals.A21 == 0
+            require bits(couronne.flags,0x0040)
+            require globals.A74 == 5
+            require bague.holder != aboard
+        } then {
+            say Super_Zen presentation=9 : "La Couronne... Je ne veux pas de ce pouvoir, Commander..."
+            say Super_Zen presentation=8 chatter : "Quelle sagesse... C'est bien le seul|! C'est vraiment lui le meilleur!"
+            say Super_Zen presentation=10 : "Le pouvoir corrompt méme les meilleurs, honorable mécanisme..."
+            say Super_Zen presentation=8 chatter : "OUI, c'est pour ca qu'on vous la donne..."
+            say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A74 = 6
+            choice = none
+        }
+        when {
+            require globals.A74 == 6
+        } then {
+            say Super_Zen presentation=8 chatter if_not_shown skip_next=1 : "teleportation couronne super zen|..."
+            transfer couronne from aboard to Super_Zen
+            say Super_Zen presentation=13 : "J'obéis|, Commander|... Mais ce n'est pas de gaieté de coeur|..."
+            say Super_Zen presentation=8 chatter : "Quand méme, il pourrait dire merci..."
+            say Super_Zen presentation=13 : "Cher Commander, vénéré Médiateur du Grand Yolk, l'heure est venue, enfin..."
+            dictionary blank after "Yolk,"
+            say Super_Zen presentation=8 chatter : "de dire merci?..."
+            say Super_Zen presentation=11 : "L'heure est venue... Hoooooom..."
+            say Super_Zen presentation=8 chatter : "Dites donc, Commander, il a l'air vraiment super zen, Super Zen"
+            say Super_Zen presentation=11 : "Le moment tant attendu... Hoooooooooooom..."
+            say Super_Zen presentation=8 chatter : "Oui c'est ca, Hooooooooom... Et puis Faaaaaam..."
+            say Super_Zen presentation=10 : "Hoooooooooom..."
+            say Super_Zen presentation=8 chatter : "Il médite..."
+            say Super_Zen presentation=10 : "Hoooooooooom..."
+            say Super_Zen presentation=8 chatter : "Bon, il m'énerve! On va jamais finir..."
+            say Super_Zen presentation=9 : "L'heure est venue..."
+            say Super_Zen presentation=8 chatter : "Ouais ben en tout cas elle tourne!"
+            say Super_Zen presentation=9 : "de vous offrir la bague qui jadis se trouvait|..."
+            say Super_Zen presentation=10 : "dans l'oeuf d'Origine..."
+            say Super_Zen presentation=8 chatter : "Quoi, quoi|?..."
+            say Super_Zen presentation=9 : "Dans l'oeuf pondu par le vaisseau d'Origine|..."
+            say Super_Zen presentation=13 : "et qui seule vous permettra d'atteindre le But Ultime..."
+            say Super_Zen presentation=8 chatter : "attends|! attends|! c'est quoi cette histoire|?..."
+            say Super_Zen presentation=10 : "Jadis l'Armada Ultime|..."
+            say Super_Zen presentation=13 : "escorta le vaisseau d'Origine jusqu'à la ponte de l'Oeuf..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Dans l'Oeuf était la bague|..."
+            transfer bague from Super_Zen to aboard
+            say Super_Zen presentation=8 chatter : "ah d'accord|!..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Cette bague|..."
+            transfer bague from aboard to Super_Zen
+            say Super_Zen presentation=12 : "Seigneur Commander, j'ai l'honneur et la gràce de la mettre à votre disposition|..."
+            say Super_Zen presentation=11 if_not_shown skip_next=1 : "Vous en ferez LE bon usage, je le sais... Acceptez-vous mon offrande|?"
+            globals.A21 = 1
+        }
+    }
+    proc supzen2 enabled {
+        during travel
+        require presentation == Super_Zen
+    } then {
+        when {
+            require globals.A21 == 1
+        } then {
+            say Super_Zen presentation=8 chatter resume_at=gestspz : "Qu'est-ce qu'on fait, Commander? C'est trés louche son histoire..." choices "accepter" "refuser"
+            when {
+                require choice == "accepter"
+            } then {
+                say Super_Zen presentation=10 : "Bravo Commander, on ne m'avait pas menti..."
+                say Super_Zen presentation=11 : "Vous étes bien l'élu..."
+                say Super_Zen presentation=8 chatter : "Bravo commander... et sans campagne électorale|!..."
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "Voici la bague|..."
+                transfer bague from Super_Zen to aboard
+                say Super_Zen presentation=12 : "YOLK est Grand|!"
+                say Super_Zen presentation=8 chatter : "Et moi petit..."
+                say Super_Zen presentation=13 : "Ca fait une bonne moyenne..."
+                say Super_Zen presentation=8 chatter if_not_shown skip_next=1 : "Qu'est-ce qu'on rigole avec Super Zen|!"
+                request sequence "p_cles.hnm"
+                say Super_Zen presentation=14 : "Mais tréve de plaisanterie|! Commander, prends garde à cette bague..."
+                say Super_Zen presentation=8 chatter : "encore un cadeau empoisonné|! je le savais|!"
+                say Super_Zen presentation=15 : "Eh oui, ce n'est pas facile tous les jours d'étre l'élu..."
+                say Super_Zen presentation=8 chatter : "A qui le dites-vous|!"
+                say Super_Zen presentation=16 : "Mais à toi, pauvre idiot|!"
+                say Super_Zen presentation=8 chatter : "Commander je vais me taire, je crois que je l'énerve..."
+                say Super_Zen presentation=10 : "Le silence est l'étui de la vérité..."
+                say Super_Zen presentation=8 chatter : "C'est ben vrai ca|!"
+                say Super_Zen presentation=18 : "COUCHE|!!!"
+                say Super_Zen presentation=19 : "Reprenons... Ecoutez bien, Commander, le sort du Grand Yolk repose..."
+                say Super_Zen presentation=20 : "SUR VOS EPAULES|!"
+                say Super_Zen presentation=8 chatter : "Nom de..."
+                say Super_Zen presentation=19 : "YOLK|!"
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "Yolk en son infinie sagesse et puissance veut s'incarner en ce monde..."
+                request sequence "explroug.hnm"
+                say Super_Zen presentation=10 : "Vous, Commander, serez son messager et son prophéte..."
+                say Super_Zen presentation=11 : "Vous annoncerez sa venue, et le ferez revenir..."
+                dictionary blank after "revenir..."
+                say Super_Zen presentation=12 : "Pour ce faire, vous devrez concilier les contraires..."
+                say Super_Zen presentation=13 : "Marier le Yink et le Yank..."
+                say Super_Zen presentation=14 : "Unir la Vie et la Mort..."
+                say Super_Zen presentation=15 : "L'Energie et la Bandelette..."
+                say Super_Zen presentation=8 chatter : "La quoi|?..."
+                say Super_Zen presentation=15 : "La Bandelette... Je vais quand méme pas expliquer, c'est une énigme..."
+                say Super_Zen presentation=8 chatter : "c'est vrai, ce serait idiot..."
+                say Super_Zen presentation=16 : "Bon... Ben voilà... Ma mission est terminée... Je vais me dézentégrer..."
+                say Super_Zen presentation=8 chatter : "Oh non|! Pas sous nos yeux|!"
+                say Super_Zen presentation=14 : "Et encore merci pour la couronne, mais sincérement je ne sais qu'en faire..."
+                say Super_Zen presentation=8 chatter : "sacré philosophe ce Super Zen|!"
+                say Super_Zen presentation=9 : "Aussi je vous la rends... Faites-en aussi bon usage..."
+                say Super_Zen presentation=8 chatter if_not_shown skip_next=2 : "Commander, il nous rend la couronne..."
+                transfer couronne from Super_Zen to aboard
+                globals.A72 = 1
+                say Super_Zen presentation=13 : "A présent, vénéré Commander, permettez-moi de prendre congé|..."
+                say Super_Zen presentation=10 : "Approchez-vous une derniére fois|... écoutez-moi bien|..."
+                say Super_Zen presentation=17 : "Ne vous laissez jamais abattre par les critiques|..."
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "... Et rendez gràce à Yolk|..."
+                request sequence "tabloyol.hnm"
+                say Super_Zen presentation=9 : "Car vous étes un nom de Yolk de suprabon scénariste|!..."
+                say Super_Zen presentation=19 : "ET NE LAISSEZ JAMAIS PERSONNE DIRE LE CONTRAIRE|!"
+                say Super_Zen presentation=18 : "Encore bravo, Commander|... Je m'incline|..."
+                say Super_Zen presentation=13 : "Adieu|... Arg... Dieu|... Ayolk|... Yooolk|... Yooo|..."
+                say Super_Zen presentation=8 if_not_shown skip_next=1 : "YOOOooom|..."
+                request sequence "star2.hnm"
+                say Super_Zen presentation=8 if_not_shown skip_next=4 : "..."
+                globals.A23 = 1
+                end presentation Super_Zen
+                sequence_slots[2] = "19chapeau"
+                choice = none
+            }
+            when {
+                require choice == "refuser"
+            } then {
+                say Super_Zen presentation=8 chatter : "Bien joué, Commander, on ne sait jamais avec ces Zénozophes!"
+                say Super_Zen presentation=10 if_not_shown skip_next=1 : "Libre à vous, Seigneur Commander, peut-étre l'heure n'était-elle pas venue..."
+                choice = none
+            }
+        }
+    }
+    proc gestspz enabled {
+        during travel
+        require presentation == Super_Zen
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            say Super_Zen presentation=15 : "Hooom nuclear... Psy-power... Yo! Yo! Yo!"
+            say Super_Zen presentation=8 chatter : "Commander... L'atomique lui fait un drole d'effet..."
+            say Super_Zen presentation=14 : "Hata Hata irradié... Humba!!! Humba!!!"
+            say Super_Zen presentation=8 chatter : "Ca alors, Commander, il entame une danse de la reproduction, ce sont les radiations qui le mettent en transe..."
+            say Super_Zen presentation=15 : "Chih rhak... Chih rhak... Qui rak..."
+            say Super_Zen presentation=16 : "TO TO TO TO TO..."
+            say Super_Zen presentation=8 chatter : "Ca y est Commander, IL NOUS L'A DIT!!!"
+            say Super_Zen presentation=8 chatter : "Il nous l'a diiit, il nous l'a diiit..."
+            say Super_Zen presentation=8 chatter : "Son code génétique c'est TO, Commander, 5 TO..."
+            say Super_Zen presentation=8 chatter : "Retenez bien ce code: 5 TO..."
+            say Super_Zen presentation=9 if_not_shown skip_next=3 : "Hooooom..."
+            state_b1[Super_Zen.population] += 200
+            state_b6[Super_Zen.evolution] += 100
+            bits(atomique.flags,0x0040) = false
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            when {
+                require globals.A60 > 5
+                require globals.A80 < 3
+                require globals.A81 == 0
+            } then {
+                say Super_Zen presentation=9 if_not_shown skip_next=5 : "Hoooom image... Réflexion permet de sortir de la caverne..."
+                globals.A80 += 1
+                state_b1[Super_Zen.population] /= 2
+                state_b5[Super_Zen.energy] += 100
+                globals.B25 = 0
+                bits(image.flags,0x0040) = false
+            }
+            when {
+                require globals.A81 > 0
+            } then {
+                say Super_Zen presentation=9 if_not_shown skip_next=4 : "Hooom image|... Des idées me viennent|..."
+                state_b1[Super_Zen.population] /= 2
+                state_b5[Super_Zen.energy] += 100
+                globals.B25 = 0
+                bits(image.flags,0x0040) = false
+            }
+            when {
+                require globals.A60 < 6
+            } then {
+                say Super_Zen presentation=9 : "Pas encore|... trop tot|..."
+                say Super_Zen presentation=8 chatter if_not_shown skip_next=2 : "intéressant ca|, commander|..."
+                image.holder = aboard
+                bits(image.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=2 : "Hoooom tableau..."
+            state_b6[Super_Zen.evolution] += 20
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=3 : "Hoooommm momie... Hare Hare..."
+            state_b5[Super_Zen.energy] += 50
+            globals.B25 = 0
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bionium.holder != Super_Zen
+            require !bits(Marakas.flags,0x0004)
+        } then {
+            say Super_Zen presentation=8 chatter : "Commander, ma petite puce me dit que Super Zen a quelque chose à nous révéler..."
+            say Super_Zen presentation=12 : "Il est vrai que Grand Yolk m'a confié de quoi vous aider dans votre entreprise..."
+            dictionary blank after "aider"
+            say Super_Zen presentation=8 chatter : "Vous l'entendez|? Il veut qu'on lui donne quelque chose..."
+            say Super_Zen presentation=13 : "Oh! Rien de bien difficile à trouver... Daddy Gluxx a déjà du vous en parler..."
+            say Super_Zen presentation=8 chatter : "la double porte|?..."
+            say Super_Zen presentation=10 : "Hooom..."
+        }
+        when {
+            require !bits(Marakas.flags,0x0004)
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Super_Zen presentation=11 : "Hoooooooooom BIONIUM... Turbo Zen..."
+            say Super_Zen presentation=12 : "AAAAAAhhh!!!"
+            say Super_Zen presentation=8 chatter : "Commander il se passe quelque chose..."
+            say Super_Zen presentation=19 : "TO TO|..."
+            say Super_Zen presentation=8 chatter : "Il entre en transe..."
+            say Super_Zen presentation=8 chatter if_not_shown skip_next=1 : "Il entre en phase de multiplexion génétique|!..."
+            request sequence "venthig.hnm"
+            say Super_Zen presentation=12 : "TO TO TO..."
+            say Super_Zen presentation=8 chatter : "Commander il nous a donné un code génétique 5 fois TO..."
+            say Super_Zen presentation=8 chatter : "Retenez bien ce code, commander|: 5 TO..."
+            say Super_Zen presentation=14 : "Hoooooom..."
+            say Super_Zen presentation=8 chatter if_not_shown skip_next=5 : "Il a l'air content..."
+            state_b5[Super_Zen.energy] += 400
+            globals.vbio -= 1
+            state_b1[Super_Zen.population] *= 2
+            globals.B70 = 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require bits(Marakas.flags,0x0004)
+        } then {
+            when {
+                require globals.A60 < 6
+            } then {
+                say Super_Zen presentation=10 : "Ne gaspillez pas le bionium|, Commander..."
+                say Super_Zen presentation=13 if_not_shown skip_next=2 : "Il vous servira plus tard|..."
+                bionium.holder = aboard
+                bits(bionium.flags,0x0040) = false
+            }
+            when {
+                require globals.A81 == 0
+                require globals.A60 > 5
+                require globals.A80 < 3
+            } then {
+                say Super_Zen presentation=10 : "Bioni|... Hooom|... Moteur de réflexion|..."
+                say Super_Zen presentation=8 chatter if_not_shown skip_next=7 : "commander|! son évolution est phénoménale|!..."
+                globals.A80 += 1
+                globals.vbio -= 1
+                state_b5[Super_Zen.energy] += 400
+                state_b1[Super_Zen.population] *= 2
+                state_b6[Super_Zen.evolution] += 300
+                globals.B70 = 1
+                bits(bionium.flags,0x0040) = false
+            }
+            when {
+                require globals.A81 > 4
+            } then {
+                say Super_Zen presentation=19 : "Beuark|!... Bioniargh|!..."
+                say Super_Zen presentation=8 chatter if_not_shown skip_next=2 : "il en veut pas|, commander|..."
+                bionium.holder = aboard
+                bits(bionium.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=4 : "Hoooom technologie... teuf teuf..."
+            state_b6[Super_Zen.evolution] += 30
+            state_b5[Super_Zen.energy] += 100
+            globals.B70 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            when {
+                require globals.A81 > 0
+            } then {
+                say Super_Zen presentation=10 if_not_shown skip_next=4 : "Hooom|... Un grand concert se trame|..."
+                bits(guitare.flags,0x0040) = false
+                state_b6[Super_Zen.evolution] += 20
+                globals.B25 = 1
+                state_b1[Super_Zen.population] += 250
+            }
+            when {
+                require globals.A80 < 3
+                require globals.A81 == 0
+                require globals.A60 > 5
+            } then {
+                say Super_Zen presentation=13 if_not_shown skip_next=6 : "Musique, science de l'harmonie|... rapports mathématiques|..."
+                state_b6[Super_Zen.evolution] += 20
+                globals.A80 += 1
+                state_b1[Super_Zen.population] += 250
+                globals.B25 = 1
+                globals.B24 = 0
+                bits(guitare.flags,0x0040) = false
+            }
+            when {
+                require globals.A60 < 6
+            } then {
+                say Super_Zen presentation=9 if_not_shown skip_next=5 : "Hooooom guitare... Kling Kloing!!!"
+                state_b6[Super_Zen.evolution] += 20
+                state_b1[Super_Zen.population] += 250
+                globals.B25 = 1
+                globals.B24 = 0
+                bits(guitare.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 : "Hoooooom parfum... le parfum est l'essence de l'homme..."
+            say Super_Zen presentation=8 chatter : "Hooom|..."
+            say Super_Zen presentation=14 if_not_shown skip_next=6 : "Reproclonage activé|..."
+            state_b6[Super_Zen.evolution] += 100
+            state_b1[Super_Zen.population] += 450
+            Super_Zen.aggressiveness -= 100
+            globals.B25 += 1
+            globals.B23 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require parfum.holder != Super_Zen
+            require parfum.holder != aboard
+            require vaisseau.holder == Super_Zen
+            require !bits(Kero_Zen.flags,0x0004)
+            require state_b1[Super_Zen.population] < 250
+        } then {
+            say Super_Zen presentation=9 : "Dites donc|, Commander|..."
+            say Super_Zen presentation=10 : "Faudrait nous mettre au parfum|..."
+            say Super_Zen presentation=11 : "Si vous voyez ce que je veux dire|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Super_Zen
+            sequence_slots[4] = "15parfum"
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=4 : "Hommmm decodeur"
+            state_b6[Super_Zen.evolution] += 30
+            state_b1[Super_Zen.population] -= 200
+            globals.B25 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=2 : "hommm nourriture... spirituelle|..."
+            dictionary blank after "hommm"
+            state_b5[Super_Zen.energy] += 400
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=3 : "Hommmm medecine"
+            state_b6[Super_Zen.evolution] += 20
+            state_b1[Super_Zen.population] += 300
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Super_Zen presentation=14 : "Hommmm armes... Mon nom est Zen|..."
+            say Super_Zen presentation=9 : "SUPER Zen|..."
+            say Super_Zen presentation=8 chatter : "Commander, il se prend pour Crooli Bond|..."
+            say Super_Zen presentation=10 if_not_shown skip_next=4 : "Rien que pour vos yeux, Commander|..."
+            Super_Zen.aggressiveness += 350
+            state_b6[Super_Zen.evolution] += 10
+            globals.B24 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+            require globals.A60 < 6
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=3 : "Hommm lentille optique..."
+            state_b6[Super_Zen.evolution] += 20
+            globals.B72 = 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+            require globals.A81 > 1
+        } then {
+            say Super_Zen presentation=9 : "Hooom|... Vision survision surclonique|!..."
+            say Super_Zen presentation=8 chatter if_not_shown skip_next=2 : "faudrait vous calmer sur les optiques|, commander|..."
+            state_b6[Super_Zen.evolution] += 20
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+            require globals.A60 > 5
+            require globals.A80 < 3
+            require globals.A81 == 0
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=3 : "Tu vois bien|... Sphéres célestes, astronomie, science reine|..."
+            globals.A80 += 1
+            state_b6[Super_Zen.evolution] += 100
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=2 : "Hoooom energie"
+            state_b5[Super_Zen.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=2 : "hommmmm culture..."
+            state_b6[Super_Zen.evolution] += 150
+            bits(culture.flags,0x0040) = true
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 if_not_shown skip_next=2 : "Hooom ecriture..."
+            state_b6[Super_Zen.evolution] += 80
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 : "Hoooom vaisseaux... Le vaisseau est l'avenir de l'Hoooom..."
+            say Super_Zen presentation=10 : "Mais aprés tout, pourquoi migrer|? Comme disait Leibnizen mon maitre, c'est partout comme ici..."
+            say Super_Zen presentation=11 : "Minus ou Magnus, Bonus ou Malus, Eden ou Venusia... Pourquoi voyager|?..."
+            say Super_Zen presentation=8 chatter : "toujours à couper les neurones en quatre, ces philosophes|!"
+            say Super_Zen presentation=12 : "Qu'as-tu, machine|? tu veux un coup de concept|?"
+            say Super_Zen presentation=8 chatter : "Non pitié|! pas ca|!"
+            say Super_Zen presentation=13 : "Toujours est-il que nous tacherons de faire bon usage de votre don, Commander..."
+            say Super_Zen presentation=14 if_not_shown skip_next=4 : "Soyez loué... Hommmm"
+            state_b6[Super_Zen.evolution] += 50
+            globals.B71 = 1
+            bits(vaisseau.flags,0x0040) = false
+            globals.B23 += 1
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+            require globals.A73 == 0
+            require !bits(Super_Zen.flags,0x0008)
+        } then {
+            say Super_Zen presentation=13 : "Attends le moment opportun, Commander|... Il n'est pas temps pour un traité|..."
+            dictionary blank after "opportun,"
+            say Super_Zen presentation=8 chatter if_not_shown skip_next=2 : "Ben ca c'est sùr, commander|!..."
+            trait_C3_A9.holder = aboard
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+            require bits(Super_Zen.flags,0x0008)
+            require globals.A73 == 0
+        } then {
+            say Super_Zen presentation=11 : "Bonne idée|... Paix|, amour|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Pas guerre|..."
+            request sequence "match04.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+            globals.B24 = 0
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require globals.A73 == 1
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 : "Hooom... Enfin, le traité..."
+            say Super_Zen presentation=10 : "Nous allons pouvoir retrouver la paix, Commander..."
+            say Super_Zen presentation=11 : "Vous arrivez à temps, nous étions en train de nous faire exterminer..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "Par de grosses brutes sanguinaires|..."
+            dictionary blank after "sanguinaires"
+            request sequence "match02.hnm"
+            say Super_Zen presentation=12 : "Nous refusons l'usage des armes, conformément à l'enseignement de notre mage Ganzhi..."
+            say Super_Zen presentation=13 : "Car mieux vaut|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "subir la violence|..."
+            request sequence "match08.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "que la commettre|..."
+            request sequence "match10.hnm"
+            say Super_Zen presentation=14 : "Nous n'acceptons la paix que si elle vient|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "de la parole|..."
+            request sequence "diplom1j.hnm"
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "et non des armes..."
+            request sequence "garde2.hnm"
+            say Super_Zen presentation=8 chatter : "complétement barges ces Zen|! on aurait du les laisser crever..."
+            say Super_Zen presentation=15 : "Nous serions morts noblement, petite machine, comme de véritables Zen..."
+            say Super_Zen presentation=16 : "Comme notre regretté sage Zocrate, que nous avons|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=1 : "condamné à mort|..."
+            request sequence "maledict.hnm"
+            say Super_Zen presentation=8 chatter : "Ils sont vraiment fous|! Et pourquoi|?"
+            say Super_Zen presentation=17 : "Parce qu'il était plus sage que nous..."
+            say Super_Zen presentation=8 chatter : "Quels barbares..."
+            say Super_Zen presentation=18 : "Nous ne nous en étions pas apercus, voilà tout|!"
+            say Super_Zen presentation=8 chatter : "Ben voyons, voilà tout..."
+            say Super_Zen presentation=19 : "Nous regrettons amérement cette erreur..."
+            dictionary blank after "regrettons"
+            say Super_Zen presentation=8 chatter : "Quelle erreur|!"
+            say Super_Zen presentation=20 : "Et c'est pourquoi depuis sa mort nous refusons toute violence, méme pour nous défendre..."
+            say Super_Zen presentation=8 chatter : "c'est plutot sage..."
+            say Super_Zen presentation=20 : "Ben oui... Mieux vaut subir l'injustice que la commettre..."
+            say Super_Zen presentation=8 if_not_shown skip_next=8 : "..."
+            end presentation Super_Zen
+            sequence_slots[3] = "43internet"
+            globals.A73 = 2
+            globals.A74 = 1
+            state_b6[Super_Zen.evolution] += 200
+            Super_Zen.aggressiveness = 50
+            globals.B24 = 0
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+            require globals.A80 < 3
+            require globals.A81 == 0
+            require globals.A60 > 5
+        } then {
+            say Super_Zen presentation=18 if_not_shown skip_next=5 : "Hooom|... Platon sacré|... République livre 6 et 7|... La caverne|..."
+            globals.A80 += 1
+            state_b6[Super_Zen.evolution] += 100
+            globals.B24 = 0
+            Super_Zen.aggressiveness = 50
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Super_Zen presentation=9 : "Hooooom cadeaux...Vous étes zénéreux, Commander"
+            dictionary blank after "zénéreux,"
+            say Super_Zen presentation=8 chatter : "Zénéreux, tu parles|! il est mesquin|: il veut quelque soze en ésanze..."
+            say Super_Zen presentation=10 : "On ne donne jamais rien pour rien..."
+            say Super_Zen presentation=8 chatter : "C'est ben vrai ca|!"
+            say Super_Zen presentation=11 : "Aussi pour vous récompenser de votre zénérosité, je vous offre..."
+            say Super_Zen presentation=8 chatter : "Super, il va nous filer un tuyau zénial|!"
+            say Super_Zen presentation=12 : "Je vous offre des cadeaux|!"
+            say Super_Zen presentation=8 chatter : "Oh non, il nous les rend|!"
+            say Super_Zen presentation=13 : "C'est la régle de l'ésanze, petite machine|!"
+            say Super_Zen presentation=8 chatter if_not_shown skip_next=3 : "Il se fout de nous Commander|! quelle ironie|!"
+            transfer cadeaux from Super_Zen to aboard
+            state_b6[Super_Zen.evolution] += 10
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Super_Zen presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Super_Zen presentation=8 chatter resume_at=gestspz_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Super_Zen presentation=8 : "..."
+        gestspz_dialogue_resume_1:
+        when {
+            require parfum.holder != Super_Zen
+            require vaisseau.holder == Super_Zen
+            require !bits(Kero_Zen.flags,0x0004)
+            require state_b1[Super_Zen.population] < 250
+        } then {
+            say Super_Zen presentation=9 : "Dites donc|, Commander|..."
+            say Super_Zen presentation=10 : "Faudrait nous mettre au parfum|..."
+            say Super_Zen presentation=11 : "Si vous voyez ce que je veux dire|..."
+            say Super_Zen presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Super_Zen
+            sequence_slots[4] = "15parfum"
+        }
+        say Super_Zen presentation=8 chatter : "A bientot, Commander..."
+        say Super_Zen presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Super_Zen
+    }
+    proc keroz01 enabled {
+        during travel
+        require presentation == Kero_Zen
+    } then {
+        when {
+            require globals.A68 == 1
+        } then {
+            say Kero_Zen presentation=10 : "Hooom|... gréve|..."
+            say Kero_Zen presentation=8 chatter : "évidemment|..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Kero_Zen
+        }
+        when {
+            require Kero_Zen.encounter_count == 1
+        } then {
+            say Kero_Zen presentation=9 : "Hooom Commander|... Moi Kero Zen|..."
+            say Kero_Zen presentation=8 chatter : "vous avez vu, commander|?... il parle moins bien que Super Zen|..."
+            say Kero_Zen presentation=11 : "Ca normal, étre à cause que moi copie de Super Zen|..."
+            say Kero_Zen presentation=8 chatter : "quoi|?... Toi plutot copie de Guerre des Etoiles|..."
+            say Kero_Zen presentation=12 : "Moi duplicata mental de Super Zen|..."
+            say Kero_Zen presentation=8 chatter resume_at=keroz01_dialogue_resume_1 : "vous ne trouvez pas qu'il a été pompé sur la Guerre des étoiles|?..." choices "pompé" "plagié" "piqué" "volé" "coupé" "collé" "coupé_collé" "quelle_honte"
+            dictionary blank after "collé"
+            when {
+                require choice == "pompé"
+            } then {
+                choice = none
+            }
+            when {
+                require choice != "pompé"
+            } then {
+                choice = none
+            }
+        }
+        keroz01_dialogue_resume_1:
+        when {
+            require Kero_Zen.encounter_count == 1
+        } then {
+            say Kero_Zen presentation=8 chatter : "arréte ton arche|! Toi pompé sur personnage de Guerre des étoiles|..."
+            say Kero_Zen presentation=9 : "Ne me parle plus jamais de|..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "la guerre|..."
+            request sequence "archex20.hnm"
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Des étoiles|..."
+            request sequence "star2.hnm"
+            say Kero_Zen presentation=10 : "Toi pas cool|!... Toi me rappeler..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "mauvais souvenirs|..."
+            request sequence "archex50.hnm"
+            say Kero_Zen presentation=19 : "Argh|! Moi pas supporter|!..."
+            say Kero_Zen presentation=8 chatter : "eh|! dis|! dis pourquoi|... quoi|!..."
+            say Kero_Zen presentation=8 chatter : "allez|!..."
+            say Kero_Zen presentation=8 chatter : "quoi|!..."
+            say Kero_Zen presentation=11 : "Hein|?..."
+            say Kero_Zen presentation=8 chatter : "quoi|?..."
+            say Kero_Zen presentation=10 : "Ben voilà|! Moi venir de Guerre des Etoiles|..."
+            say Kero_Zen presentation=14 : "Moi échappé là-bas|! Travail trop dur|!... Travailler comme chien|!..."
+            dictionary blank after "chien"
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Oui|? Quoi|? Moi aussi travailler comme un chien|!..."
+            request sequence "ppit04.hnm"
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Dites donc|! Prenez garde|!..."
+            request sequence "bobb.hnm"
+            say Kero_Zen presentation=8 chatter : "bob|!..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Déconnez pas|! Ne parlez pas de la Guerre des Etoiles|!..."
+            request sequence "bobb.hnm"
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "George Lucas va nous faire un procés|..."
+            request sequence "bobb.hnm"
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Moi je veux bien étre témoin|! J'ai tout vu|!..."
+            request sequence "ppitbb01.hnm"
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Toi|, si tu parles|, je te livre aux CROOLIS|!..."
+            request sequence "bobb.hnm"
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Ouais|! Le clébard|! Le clébard|!..."
+            request sequence "match07.hnm"
+            say Kero_Zen presentation=12 : "Remarquez|, Monsieur Bob|..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Un procés|..."
+            request sequence "diplom1r.hnm"
+            say Kero_Zen presentation=14 : "Ca étre inespéré|! Ca nous faire PUB|!..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Achetez, Achetez, Achetez|... Le jeu scandaleux|..."
+            request sequence "pubred01.hnm"
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            request sequence "logo_bl.hnm"
+            say Kero_Zen presentation=8 chatter : "bon|... reprenons|... en fait|, toi copie Super ZEN|..."
+            say Kero_Zen presentation=9 : "Oui|! Ca étre ca|!..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Super Zen parler dans mon esprit|..."
+            request sequence "brouil.hnm"
+            say Kero_Zen presentation=8 chatter : "moi comprendre, commander|... lui clone de Super Zen|..."
+            say Kero_Zen presentation=13 : "Donc moi moins parfait que Super Zen, comme copie de la chose moins parfaite que la chose|..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "Comme tableau de YOLK moins parfait que YOLK|..."
+            request sequence "tabloyol.hnm"
+            say Kero_Zen presentation=8 chatter : "comme olga moins parfaite que honk|!..."
+            say Kero_Zen presentation=14 : "Clonage servir à faire trois chefs ZEN|..."
+            say Kero_Zen presentation=8 chatter : "il en manque un|..."
+            say Kero_Zen presentation=15 : "Ca étre pour tripartition de l'àme|..."
+            say Kero_Zen presentation=8 chatter : "tri|... quoi|?..."
+            say Kero_Zen presentation=15 : "Tripartition de l'àme|... àme en trois parties|..."
+            say Kero_Zen presentation=8 chatter : "il parle peut-étre moins bien que Super zen, mais il cause toujours mieux que moi|..."
+            say Kero_Zen presentation=8 chatter resume_at=keroz01_dialogue_resume_2 : "voulez-vous que je l'interroge davantage|?" choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Kero_Zen presentation=16 : "Quand trois chefs ZEN exister, alors pouvoir vivre en harmonie trois ensemble|..."
+                say Kero_Zen presentation=12 : "Alors trois ZEN s'unifier dans harmonie, et YOLK revenir|..."
+                say Kero_Zen presentation=8 chatter : "waow|! il a l'air au courant, kero zen|..."
+                say Kero_Zen presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+            keroz01_dialogue_resume_2:
+            say Kero_Zen presentation=9 : "Vous aider moi à clonage dernier ZEN et moi aider vous recréer BOB|..."
+            say Kero_Zen presentation=8 chatter : "compris, commander|? faut lui rapporter tout ce qu'on trouve|..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Kero_Zen
+        }
+        when {
+            require globals.A54 == 0
+            require bits(optique.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 : "Hommm lentille optique... survision clonique|!..."
+            say Kero_Zen presentation=10 if_not_shown skip_next=4 : "Clonage troisiéme chef ZEN en cours|... migration des àmes imminente|..."
+            globals.A54 = 1
+            state_b6[Kero_Zen.evolution] += 20
+            globals.B72 = 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require globals.A54 == 0
+            require Kero_Zen.encounter_count > 2
+            require optique.holder != aboard
+        } then {
+            say Kero_Zen presentation=10 : "Hooom Commander|..."
+            say Kero_Zen presentation=11 : "Toi pas voir encore moyen clonage|..."
+            say Kero_Zen presentation=8 chatter : "nous pas voir encore, mais nous chercher|..."
+            say Kero_Zen presentation=12 : "Ouvrez grand les yeux|... clonage comme image miroir|..."
+            say Kero_Zen presentation=8 chatter : "un peu de réflexion, commander|..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Kero_Zen
+        }
+        when {
+            require globals.A54 == 0
+            require optique.holder == aboard
+        } then {
+            say Kero_Zen presentation=10 : "Moi voir vous avoir machine à clonage sur cryobox|..."
+            say Kero_Zen presentation=11 : "Vous donner à moi vision clonique|..."
+        }
+        say Kero_Zen presentation=9 : "Moi Kero Zen, moi ZEN... Hoooooom..."
+        text_tokens Kero_Zen presentation=11 : "Nous" "étre" state_number(0x09EA) "zen" "ici..."
+        when {
+            require globals.A38 > 0
+            require state_b6[Kero_Zen.evolution] > 0
+        } then {
+            say Kero_Zen presentation=9 : "Nous fabriquer médecine, industrie locale... Hoooom..."
+            say Kero_Zen presentation=15 : "Nous vendre à toi médicaments, contre crédit..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Kero_Zen presentation=8 chatter : "Nous n'avons plus de crédits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Kero_Zen presentation=8 chatter resume_at=gestsp2 : "Vous acceptez de leur acheter leur médecine, Commander?" choices "OUI" "NON"
+                when {
+                    require choice == "OUI"
+                } then {
+                    say Kero_Zen presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Kero_Zen
+                    globals.A4 -= 1
+                    say Kero_Zen presentation=8 chatter if_not_shown skip_next=2 : "MEDICINE'S TELEPORTATION INTO CRYOBOX"
+                    transfer medicament from Kero_Zen to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "NON"
+                } then {
+                    say Kero_Zen presentation=8 if_not_shown skip_next=1 : "..."
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gestsp2 enabled {
+        during travel
+        require presentation == Kero_Zen
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=15 : "Hooom nuclear... Psy-power... Yo! Yo! Yo!"
+            say Kero_Zen presentation=8 chatter : "Commander... L'atomique lui fait un drole d'effet..."
+            say Kero_Zen presentation=14 : "Hata Hata irradié... Humba!!! Humba!!!"
+            say Kero_Zen presentation=8 chatter : "Ca alors, Commander, il entame une danse de la reproduction, ce sont les radiations qui le mettent en transe..."
+            say Kero_Zen presentation=15 : "Chih rhak... Chih rhak... ki rak..."
+            say Kero_Zen presentation=16 : "TO TO TO TO TO|..."
+            say Kero_Zen presentation=8 chatter : "Ca y est Commander, IL NOUS L'A DIT|!!!"
+            say Kero_Zen presentation=8 chatter : "Il nous l'a diiit, il nous l'a diiit..."
+            say Kero_Zen presentation=8 chatter : "Son code génétique c'est TO, Commander, 5 TO..."
+            say Kero_Zen presentation=8 chatter : "Retenez bien ce code: 5 TO..."
+            say Kero_Zen presentation=9 if_not_shown skip_next=1 : "Hooooom..."
+            bits(atomique.flags,0x0040) = false
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=4 : "Hoooom image... Gut Gut..."
+            state_b1[Kero_Zen.population] /= 2
+            state_b5[Kero_Zen.energy] += 50
+            globals.B25 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=4 : "Hooooom couronne... Hare Hare..."
+            Kero_Zen.aggressiveness += 400
+            state_b5[Kero_Zen.energy] += 100
+            globals.B24 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=2 : "Hoooom tableau..."
+            state_b6[Kero_Zen.evolution] += 30
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=3 : "Hoooommm momie... Hare Hare..."
+            state_b5[Kero_Zen.energy] += 100
+            globals.B25 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=4 : "Hoooom technologie... teuf teuf..."
+            state_b6[Kero_Zen.evolution] += 20
+            state_b5[Kero_Zen.energy] += 100
+            globals.B70 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=5 : "Hooooom guitare... Kling Kloing!!!"
+            state_b6[Kero_Zen.evolution] += 20
+            state_b1[Kero_Zen.population] += 350
+            globals.B25 = 1
+            globals.B24 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=4 : "Hoooooom parfum... guru méditation..."
+            state_b6[Kero_Zen.evolution] += 20
+            state_b1[Kero_Zen.population] += 400
+            globals.B25 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=4 : "Hommmm décodeur"
+            state_b6[Kero_Zen.evolution] += 40
+            state_b1[Kero_Zen.population] -= 200
+            globals.B25 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=2 : "hommm nourriture..."
+            state_b5[Kero_Zen.energy] += 500
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=3 : "Hommmm médecine"
+            state_b6[Kero_Zen.evolution] += 30
+            state_b1[Kero_Zen.population] += 300
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=14 if_not_shown skip_next=4 : "Hommmm armes..."
+            Kero_Zen.aggressiveness += 400
+            state_b6[Kero_Zen.evolution] += 20
+            globals.B24 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require globals.A54 == 1
+            require bits(optique.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=10 : "Hooom lentille sursurvision bioharmonique|..."
+            say Kero_Zen presentation=8 chatter : "waow|! qu'est-ce que c'est que ca|!?..."
+            say Kero_Zen presentation=11 : "Surclonage en route|... les philosophes doivent étre rois|..."
+            say Kero_Zen presentation=8 if_not_shown skip_next=3 : "..."
+            Kero_Zen.aggressiveness = 1000
+            state_b6[Kero_Zen.evolution] = 1000
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=2 : "Hoooom energie|... zénifiant|..."
+            state_b5[Kero_Zen.energy] += 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=2 : "hommmmm culture..."
+            state_b6[Kero_Zen.evolution] += 100
+            bits(culture.flags,0x0040) = true
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=2 : "Hooom ecriture..."
+            state_b6[Kero_Zen.evolution] += 60
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 : "Hoooom spaceships"
+            say Kero_Zen presentation=8 chatter : "il parle anglais, commander|!..."
+            say Kero_Zen presentation=10 : "Voyages good for apprendre new language|!..."
+            say Kero_Zen presentation=11 if_not_shown skip_next=5 : "Mais non merci|... Moi déjà good en language|..."
+            vaisseau.holder = aboard
+            state_b6[Kero_Zen.evolution] += 40
+            globals.B23 += 1
+            globals.B71 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=4 : "Hooom traité..."
+            state_b6[Kero_Zen.evolution] += 50
+            Kero_Zen.aggressiveness = 0
+            globals.B24 = 0
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Kero_Zen presentation=9 if_not_shown skip_next=2 : "Hooooom cadeaux..."
+            state_b6[Kero_Zen.evolution] += 10
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Kero_Zen presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Kero_Zen presentation=8 chatter resume_at=gestsp2_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Kero_Zen presentation=8 : "..."
+        gestsp2_dialogue_resume_1:
+        say Kero_Zen presentation=8 chatter : "A bientot, Commander..."
+        say Kero_Zen presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Kero_Zen
+    }
+    proc benz01 enabled {
+        during travel
+        require presentation == Ben_Zen
+    } then {
+        when {
+            require globals.A68 == 1
+        } then {
+            say Ben_Zen presentation=10 : "GREVE|..."
+            say Ben_Zen presentation=8 chatter : "ouais c'est ca|..."
+            say Ben_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Ben_Zen
+        }
+        when {
+            require globals.A54 < 1
+        } then {
+            say Ben_Zen presentation=9 : "Pas vision clonique|... Kero sans relais zen|..."
+            say Ben_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Ben_Zen
+        }
+        say Ben_Zen presentation=9 : "Moi Ben Zen, moi ZEN... Hoooooom..."
+        text_tokens Ben_Zen presentation=11 : "Nous" "étre" state_number(0x0A34) "zen" "ici..."
+        when {
+            require globals.A54 == 1
+        } then {
+            say Ben_Zen presentation=12 : "Toi bien regarder, commander, moi grave probléme...Attention..."
+            say Ben_Zen presentation=17 : "Hooom|!"
+            say Ben_Zen presentation=13 : "Toi vu|? Moi malade... Attention..."
+            say Ben_Zen presentation=17 : "Hooom|!"
+            say Ben_Zen presentation=14 : "Moi toujours tomber à la renverse, pas équilibre... Attention..."
+            say Ben_Zen presentation=17 : "Hooom|!"
+            say Ben_Zen presentation=15 : "Moi souffrir colonne|! Aie aie aie..."
+            say Ben_Zen presentation=17 : "Hooom|!"
+            say Ben_Zen presentation=18 : "Par pitié, commander, aide-moi, c'est insupportable..."
+            say Ben_Zen presentation=17 : "Hooom|!"
+            say Ben_Zen presentation=8 chatter : "quelle curieuse maladie|! comment vous avez attrapé ca, monsieur Ben Zen|?"
+            say Ben_Zen presentation=19 : "Ben|... Au concert des Crooling Stones... JiHen Migrix toujours se rouler par terre..."
+            say Ben_Zen presentation=8 chatter : "alors vous avez voulu faire pareil..."
+            say Ben_Zen presentation=17 : "Et depuis moi pas arréter tomber, Hooom|!"
+            say Ben_Zen presentation=8 chatter : "aie|! on va vous aider|!"
+            say Ben_Zen presentation=8 chatter : "il faut le soigner, commander, ou il va se casser le dos|!"
+            say Ben_Zen presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A54 = 2
+            end presentation Ben_Zen
+        }
+        when {
+            require globals.A54 == 2
+            require globals.A38 == 0
+            require medicament.holder == aboard
+            require Ben_Zen.encounter_count > 1
+        } then {
+            say Ben_Zen presentation=8 chatter : "commander|, on a un médicament dans la cryobox|..."
+            say Ben_Zen presentation=8 chatter : "ca y est monsieur ben zen|! on a votre médicament|..."
+            say Ben_Zen presentation=17 : "Hooom ben dépéchez-vous, j'en peux plus|!..."
+            say Ben_Zen presentation=8 chatter resume_at=benz01_dialogue_resume_1 : "allez-y commander, donnez-lui|..." choices "donner" "pas_donner"
+            when {
+                require choice == "donner"
+            } then {
+                say Ben_Zen presentation=8 chatter if_not_shown skip_next=3 : "TRAITEMENT BEN ZEN|!..."
+                globals.A38 = 1
+                transfer medicament from aboard to Ben_Zen
+                choice = none
+            }
+            when {
+                require choice != "_donner"
+            } then {
+                choice = none
+            }
+        }
+        benz01_dialogue_resume_1:
+        when {
+            require globals.A38 == 1
+            require globals.A54 == 2
+        } then {
+            say Ben_Zen presentation=19 : "OUAOUH|! Quelle péche|! ça va mieux|!..."
+            say Ben_Zen presentation=8 chatter : "Ca fait plaisir de vous voir debout|!..."
+            say Ben_Zen presentation=11 : "Ben et moi donc|! Je me sens un autre ZEN|!"
+            say Ben_Zen presentation=12 : "J'avais ben l'impression d'étre Croolis Zeltsine|!..."
+            when {
+                require bits(Tequila.flags,0x0004)
+            } then {
+                say Ben_Zen presentation=8 chatter : "c'est tequila qui va étre jalouse|!..."
+            }
+            say Ben_Zen presentation=13 : "J'aimerais ben vous remercier de m'avoir soulagé|..."
+            say Ben_Zen presentation=14 : "Nous fabriquons de ben belles guitares, le méme modéle que celle de JiHen Migrix|!..."
+            say Ben_Zen presentation=15 : "Double manche|! Corne de murfalo benzenurisée|!..."
+            say Ben_Zen presentation=8 chatter : "magnifique|! merci beaucoup de votre cadeau|!..."
+            say Ben_Zen presentation=17 : "Argh|!..."
+            say Ben_Zen presentation=8 chatter : "bon sang|! il fait une rechute|!..."
+            say Ben_Zen presentation=16 : "Ben pas du tout|... je suis tombé de surprise|!..."
+            say Ben_Zen presentation=8 chatter : "pourquoi|? je suis trop poli|?..."
+            say Ben_Zen presentation=12 : "Ben ça non|! Mais la guitare|..."
+            say Ben_Zen presentation=8 chatter : "le cadeau|?..."
+            say Ben_Zen presentation=11 : "Ben justement|... ce n'était pas un cadeau|... je vous la proposais pour un crédit, pas cher|..."
+            say Ben_Zen presentation=8 chatter resume_at=benz01_dialogue_resume_2 : "il veut nous la vendre|! commander, vous étes|..." choices "choqué" "surpris" "vert" "ok"
+            when {
+                require choice != "ok"
+            } then {
+                globals.A54 = 3
+                choice = none
+            }
+            when {
+                require choice == "ok"
+            } then {
+                choice = none
+            }
+        }
+        benz01_dialogue_resume_2:
+        when {
+            require globals.A38 == 1
+            require globals.A54 == 3
+        } then {
+            say Ben_Zen presentation=8 chatter : "vous pourriez nous l'offrir|! on vous a sauvé|!..."
+            say Ben_Zen presentation=15 : "Ben|... Tout travail mérite salaire, honorable machine|..."
+            say Ben_Zen presentation=8 chatter : "c'est gonflé|!..."
+            say Ben_Zen presentation=14 : "Ben c'est la loi de l'offre et de la demande|..."
+            say Ben_Zen presentation=8 chatter : "vous étes bien le fils de votre temps, ben zen|..."
+            say Ben_Zen presentation=16 : "Chacun veut et croit étre meilleur que ce temps-ci qui est le sien|..."
+            say Ben_Zen presentation=10 : "Mais le meilleur sera celui qui exprimera le mieux ce temps-ci qui est le sien|..."
+            say Ben_Zen presentation=8 chatter : "la philo ca méne à tout|..."
+            say Ben_Zen presentation=11 : "Ben|... A tout ou rien|... ça revient au méme|..."
+            say Ben_Zen presentation=8 chatter : "eh ben|! pour un zen, vous ne perdez pas le nord|!..."
+            say Ben_Zen presentation=9 if_not_shown skip_next=1 : "Ben reprenons|..."
+            globals.A54 = 4
+        }
+        when {
+            require globals.A54 == 2
+            require globals.A38 == 0
+            require medicament.holder != aboard
+            require Ben_Zen.encounter_count > 1
+        } then {
+            say Ben_Zen presentation=17 : "Hooom|! Hooom secours|!"
+            say Ben_Zen presentation=8 chatter : "Il faut l'aider, commander|!"
+            say Ben_Zen presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Ben_Zen
+        }
+        when {
+            require globals.A38 == 1
+            require guitare.holder != aboard
+        } then {
+            say Ben_Zen presentation=9 : "Nous fabriquons guitare, artisanat local... Hoooom..."
+            say Ben_Zen presentation=15 : "Nous te vendons jolie guitare en corne de murfalo, contre credit..."
+            dictionary blank after "corne"
+            when {
+                require globals.A4 == 0
+            } then {
+                say Ben_Zen presentation=8 chatter : "Nous n'avons plus de crédits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Ben_Zen presentation=8 chatter resume_at=benz01_dialogue_resume_3 : "Vous acceptez de leur acheter une guitare, Commander?" choices "ACCEPTER" "REFUSER"
+                when {
+                    require choice == "ACCEPTER"
+                } then {
+                    say Ben_Zen presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Ben_Zen
+                    globals.A4 -= 1
+                    say Ben_Zen presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION GUITARE DANS CRYOBOX"
+                    transfer guitare from Ben_Zen to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "REFUSER"
+                } then {
+                    choice = none
+                }
+            }
+        }
+        benz01_dialogue_resume_3:
+        when {
+            require Ben_Zen.encounter_count == 4
+        } then {
+            say Ben_Zen presentation=8 chatter : "au fait, ben zen, pourquoi vous vous appelez ben zen|?..."
+            say Ben_Zen presentation=11 : "Ben|... C'est parce que moi tout le temps dire ben|... quand moi parler|..."
+            say Ben_Zen presentation=8 chatter : "ah|? et pourquoi un coup vous parlez bien, et un coup vous pas parler bien|?..."
+            say Ben_Zen presentation=12 : "Ben|... justement|... j'en sais rien|... ça me tue|!..."
+            say Ben_Zen presentation=8 chatter : "pauvre vieux|..."
+            say Ben_Zen presentation=9 : "Ben ouais|..."
+        }
+        when {
+            require Ben_Zen.encounter_count == 9
+        } then {
+            say Ben_Zen presentation=9 : "La musique adoucir les moeurs|..."
+            say Ben_Zen presentation=8 chatter : "ouais ouais, c'est ça|..."
+        }
+    }
+    proc gestsp3 enabled {
+        during travel
+        require presentation == Ben_Zen
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=8 chatter : "Commander... L'atomique lui fait un drole d'effet..."
+            say Ben_Zen presentation=14 : "Hata Hata irradié... Humba!!! Humba!!!"
+            say Ben_Zen presentation=8 chatter : "Ca alors, Commander il entame une danse de la reproduction, ce sont les radiations qui le mettent en transe..."
+            say Ben_Zen presentation=15 : "Chih rhak... Chih rhak... Qui rak|..."
+            say Ben_Zen presentation=16 : "TO TO TO TO TO|..."
+            say Ben_Zen presentation=8 chatter : "Ca y est Commander, IL NOUS L'A DIT!!!"
+            say Ben_Zen presentation=8 chatter : "Son code génétique c'est TO, Commander, 5 TO..."
+            say Ben_Zen presentation=8 chatter : "Retenez bien ce code: 5 TO..."
+            say Ben_Zen presentation=9 if_not_shown skip_next=1 : "Hooooom..."
+            bits(atomique.flags,0x0040) = false
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=4 : "Hoooom image... Gut Gut..."
+            state_b1[Ben_Zen.population] /= 2
+            state_b5[Ben_Zen.energy] += 50
+            globals.B25 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=4 : "Hooooom couronne... Hare Hare..."
+            Ben_Zen.aggressiveness += 400
+            state_b5[Ben_Zen.energy] += 200
+            globals.B24 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=2 : "Hoooom tableau..."
+            state_b6[Ben_Zen.evolution] += 10
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=4 : "Hoooommm momie... Hare Hare..."
+            state_b5[Ben_Zen.energy] += 100
+            Ben_Zen.aggressiveness += 200
+            globals.B25 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=4 : "Hoooom technologie... teuf teuf..."
+            state_b6[Ben_Zen.evolution] += 40
+            state_b5[Ben_Zen.energy] += 200
+            globals.B70 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=1 : "Hooooom guitare... Kling Kloing!!! MOI pas vouloir guitare..."
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 : "Credit Hommmmm moi aimer..."
+            say Ben_Zen presentation=8 chatter : "Vous étes barjo, Commander..."
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=4 : "Hoooooom parfum... guru méditation..."
+            state_b6[Ben_Zen.evolution] += 10
+            state_b1[Ben_Zen.population] += 350
+            globals.B25 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=4 : "Hommmm décodeur"
+            state_b6[Ben_Zen.evolution] += 50
+            state_b1[Ben_Zen.population] -= 200
+            globals.B25 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=2 : "hommm nourriture..."
+            state_b5[Ben_Zen.energy] += 500
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=3 : "Hommmm médecine"
+            state_b6[Ben_Zen.evolution] += 50
+            state_b1[Ben_Zen.population] += 200
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=14 if_not_shown skip_next=4 : "Hommmm armes..."
+            Ben_Zen.aggressiveness += 400
+            state_b6[Ben_Zen.evolution] += 10
+            globals.B24 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=3 : "Hommm lentille optique..."
+            state_b6[Ben_Zen.evolution] += 20
+            globals.B72 = 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=2 : "Hoooom énergie"
+            state_b5[Ben_Zen.energy] += 500
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=2 : "hommmmm culture..."
+            state_b6[Ben_Zen.evolution] += 60
+            bits(culture.flags,0x0040) = true
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=2 : "Hooom écriture..."
+            state_b6[Ben_Zen.evolution] += 60
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=4 : "Hoooom vaisseaux"
+            state_b6[Ben_Zen.evolution] += 40
+            globals.B23 += 1
+            globals.B71 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=4 : "Hooom traité..."
+            state_b6[Ben_Zen.evolution] += 30
+            Ben_Zen.aggressiveness = 0
+            globals.B24 = 0
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Ben_Zen presentation=9 if_not_shown skip_next=2 : "Hooooom cadeaux..."
+            state_b6[Ben_Zen.evolution] += 10
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Ben_Zen presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Ben_Zen presentation=8 chatter resume_at=gestsp3_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Ben_Zen presentation=8 : "..."
+        gestsp3_dialogue_resume_1:
+        say Ben_Zen presentation=8 chatter : "A bientot, Commander..."
+        say Ben_Zen presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Ben_Zen
+        halt
+    }
+}

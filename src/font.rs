@@ -41,7 +41,7 @@ pub fn subtitle_draw_glyph(ch: char) -> Option<GameFontGlyph> {
     game_font_glyph(ch)
 }
 
-/// CP437 code for `ch`, restricted to the range the font table covers (`0x00..0xAF`).
+/// CP437 code for `ch` across the complete byte domain.
 ///
 /// The game's strings are CP437 bytes, and `GAME_FONT_CHAR_MAP` is indexed by that
 /// BYTE. A Unicode scalar cannot index it directly: `é` decodes to U+00E9 = 233,
@@ -51,9 +51,7 @@ pub fn cp437_byte(ch: char) -> Option<u8> {
     if (ch as u32) < 0x80 {
         return Some(ch as u8);
     }
-    // Only 0x80..0xAF matters: the table ends at 0xB0, where CP437's box-drawing
-    // characters begin and the game has no glyphs.
-    (0x80u8..0xb0).find(|&b| cp437_char(b) == ch)
+    (0x80u8..=u8::MAX).find(|&b| cp437_char(b) == ch)
 }
 
 /// Decode game data (CP437) to a `String`. `String::from_utf8_lossy` is WRONG for
@@ -63,21 +61,23 @@ pub fn cp437_string(bytes: &[u8]) -> String {
     bytes.iter().map(|&b| cp437_char(b)).collect()
 }
 
-/// CP437 byte -> Unicode scalar. ASCII is identity; `0x80..0xAF` is the span the
-/// font has glyphs for; above that the game has no glyph, so it maps to U+FFFD and
-/// stays visible rather than silently vanishing.
+/// CP437 byte -> Unicode scalar. Glyph selection remains separately bounded by
+/// each original font table, but source and resource codecs must retain all bytes.
 fn cp437_char(b: u8) -> char {
-    const HIGH: [char; 48] = [
+    const HIGH: [char; 128] = [
         'Ç', 'ü', 'é', 'â', 'ä', 'à', 'å', 'ç', 'ê', 'ë', 'è', 'ï', 'î', 'ì', 'Ä', 'Å', 'É', 'æ',
         'Æ', 'ô', 'ö', 'ò', 'û', 'ù', 'ÿ', 'Ö', 'Ü', '¢', '£', '¥', '₧', 'ƒ', 'á', 'í', 'ó', 'ú',
-        'ñ', 'Ñ', 'ª', 'º', '¿', '⌐', '¬', '½', '¼', '¡', '«', '»',
+        'ñ', 'Ñ', 'ª', 'º', '¿', '⌐', '¬', '½', '¼', '¡', '«', '»', '░', '▒', '▓', '│', '┤', '╡',
+        '╢', '╖', '╕', '╣', '║', '╗', '╝', '╜', '╛', '┐', '└', '┴', '┬', '├', '─', '┼', '╞', '╟',
+        '╚', '╔', '╩', '╦', '╠', '═', '╬', '╧', '╨', '╤', '╥', '╙', '╘', '╒', '╓', '╫', '╪', '┘',
+        '┌', '█', '▄', '▌', '▐', '▀', 'α', 'ß', 'Γ', 'π', 'Σ', 'σ', 'µ', 'τ', 'Φ', 'Θ', 'Ω', 'δ',
+        '∞', 'φ', 'ε', '∩', '≡', '±', '≥', '≤', '⌠', '⌡', '÷', '≈', '°', '∙', '·', '√', 'ⁿ', '²',
+        '■', '\u{00a0}',
     ];
     if b < 0x80 {
         b as char
-    } else if b < 0xb0 {
-        HIGH[(b - 0x80) as usize]
     } else {
-        '\u{fffd}'
+        HIGH[(b - 0x80) as usize]
     }
 }
 
@@ -483,6 +483,14 @@ mod tests {
                 .all(|c| game_font_glyph(c).is_some()),
             "every character of a decoded word must have a glyph"
         );
+    }
+
+    #[test]
+    fn complete_cp437_domain_round_trips_for_source_recovery() {
+        for byte in 0u8..=u8::MAX {
+            assert_eq!(cp437_byte(cp437_char(byte)), Some(byte));
+        }
+        assert_eq!(cp437_string(&[0xef]), "∩");
     }
 
     #[test]

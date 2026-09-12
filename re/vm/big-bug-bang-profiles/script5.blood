@@ -1,0 +1,2272 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT5
+concepts "parler" "bonjour" "rayon"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc _1fincro as "1fincro" enabled {
+        during contact
+        require globals.A68 == 2
+        require Eviscerator.current_location == aboard
+        require presentation == Eviscerator
+    } then {
+        say Eviscerator presentation=10 : "Ouais|!..."
+        say Eviscerator presentation=11 : "Le roi|!..."
+        say Eviscerator presentation=12 : "Je suis le roi de la batterie|!..."
+        say Eviscerator presentation=13 : "Des abattoirs aussi|!..."
+        say Eviscerator presentation=14 : "Arf arf|!..."
+        say Eviscerator presentation=15 : "Tu te rends compte|, Commander|?..."
+        say Eviscerator presentation=16 : "Moi a la batterie pour Tina|!..."
+        say Eviscerator presentation=8 if_not_shown skip_next=3 : "..."
+        globals.A13 += 3
+        end presentation Eviscerator
+        sequence_slots[4] = "12concrool"
+    }
+    proc braque enabled {
+        during bridge
+        require globals.C11 == 1
+        require presentation == Eviscerator
+    } then {
+        say Eviscerator presentation=8 : "krouik|..."
+        say Eviscerator presentation=8 : "Au secours|! Commander|! Au secours|!..."
+        say Eviscerator presentation=8 : "Ici Eviscerator|!... Au secours|!..."
+        say Eviscerator presentation=8 chatter : "eviscerator a un probléme, commander|..."
+        say Eviscerator presentation=8 : "Au sec|... ourg|..."
+        say Eviscerator presentation=8 if_not_shown skip_next=2 : "..."
+        globals.C11 = 2
+        end presentation Eviscerator
+    }
+    proc bigki enabled {
+        during bridge
+        require globals.C11 == 8
+        require presentation == Eviscerator
+    } then {
+        say Eviscerator presentation=8 : "krouik..."
+        say Eviscerator presentation=8 : "Commander|! Ici Eviscerator, Crooli rouge|..."
+        say Eviscerator presentation=8 chatter : "rouge|? on n'a pas la couleur sur le téléphone|..."
+        say Eviscerator presentation=8 : "Eh ben chuis rouge|! Chuis tout rouge du sang des croolis verts|!..."
+        say Eviscerator presentation=8 chatter : "leur sang n'est pas vert|?..."
+        say Eviscerator presentation=8 : "Bon sang|! Alors c'est moi qui saigne, Commander|!..."
+        say Eviscerator presentation=8 : "En tout cas, mission réussie|! Je les ai détruits|!..."
+        say Eviscerator presentation=8 : "Ils vous embéteront plus|!..."
+        say Eviscerator presentation=8 chatter : "merci mon brave|!..."
+        say Eviscerator presentation=8 : "De rien|! Je rentre me laver|!..."
+        dictionary blank after "laver"
+        say Eviscerator presentation=8 : "krouik|..."
+        say Eviscerator presentation=8 chatter : "une bonne chose de faite, commander|!..."
+        say Eviscerator presentation=8 if_not_shown skip_next=2 : "..."
+        globals.C11 = 9
+        end presentation Eviscerator
+    }
+    proc jail enabled {
+        during contact
+        require globals.A64 == 0
+        require presentation == Eviscerator
+    } then {
+        when {
+            require globals.C11 == 4
+        } then {
+            say Eviscerator presentation=9 : "Chuis innocent|!..."
+            say Eviscerator presentation=8 chatter : "bon sang, commander|! je me suis planté|! j'ai raté la téléportation en prison|!..."
+            say Eviscerator presentation=10 : "Tant mieux|! Chuis innocent|! Donnez-moi une deuxiéme chance|!..."
+            say Eviscerator presentation=8 chatter : "on pourrait le garder enfermé dans la cryobox|..."
+            dictionary blank after "cryobox"
+            say Eviscerator presentation=8 chatter resume_at=jail_dialogue_resume_1 : "ou préférez-vous le renvoyer sur une planéte|?" choices "garder" "renvoyer"
+            when {
+                require choice == "renvoyer"
+            } then {
+                say Eviscerator presentation=8 chatter if_not_shown skip_next=4 : "teleportation eviscerator hors d'ici|!..."
+                bits(Eviscerator.flags,0x0004) = true
+                Eviscerator.current_location = Island
+                Outrageor.current_location = Waveland
+                bits(Outrageor.flags,0x0004) = true
+                say Eviscerator presentation=8 if_not_shown skip_next=3 : "..."
+                globals.C11 = 5
+                end presentation Eviscerator
+                choice = none
+            }
+            when {
+                require choice == "garder"
+            } then {
+                say Eviscerator presentation=8 if_not_shown skip_next=2 : "..."
+                globals.C11 = 6
+                choice = none
+            }
+            jail_dialogue_resume_1:
+            say Eviscerator presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Eviscerator
+        }
+        when {
+            require globals.C11 == 6
+        } then {
+            say Eviscerator presentation=10 : "Innocent j'vous dis|!..."
+            say Eviscerator presentation=8 chatter : "mais oui, mais oui|..."
+            dictionary blank after "oui"
+            say Eviscerator presentation=8 chatter resume_at=jail_dialogue_resume_2 : "vous voulez le liberer|, commander|?..." choices "sur_parole" "non_non"
+            when {
+                require choice == "sur_parole"
+            } then {
+                say Eviscerator presentation=8 chatter if_not_shown skip_next=1 : "on te libere sur parole|!..."
+                request sequence "p_cles.hnm"
+                say Eviscerator presentation=8 if_not_shown skip_next=1 : "Ouais|!..."
+                request sequence "match04.hnm"
+                say Eviscerator presentation=18 : "On va féter ca avec les copains|!..."
+                say Eviscerator presentation=8 if_not_shown skip_next=6 : "..."
+                Eviscerator.current_location = Island
+                bits(Eviscerator.flags,0x0004) = true
+                Outrageor.current_location = Waveland
+                bits(Outrageor.flags,0x0004) = true
+                globals.C11 = 5
+                choice = none
+            }
+            when {
+                require choice == "non_non"
+            } then {
+                say Eviscerator presentation=13 : "Non non|?..."
+                say Eviscerator presentation=8 if_not_shown skip_next=1 : "Tu as perdu-perdu|! ah-ah|!...|...|...|...|... DU TEMPS|!!!"
+                request sequence "crazys20.hnm"
+                say Eviscerator presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+        jail_dialogue_resume_2:
+        say Eviscerator presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Eviscerator
+    }
+    proc evisc01 enabled {
+        during travel
+        require presentation == Eviscerator
+    } then {
+        when {
+            require globals.C11 == 2
+        } then {
+            say Eviscerator presentation=8 chatter : "salut|! c'est quoi le probléme|?..."
+            say Eviscerator presentation=13 : "C'est toi le probléme|!... Aboule ton fric, c'est un hold-up|!..."
+            say Eviscerator presentation=8 chatter : "quoi|!? un guet-apens|!..."
+            say Eviscerator presentation=14 : "Allez|! Tout le monde à terre ou je bute le premier qui bouge|!..."
+            say Eviscerator presentation=15 : "Comme tout le monde en a marre de ton scénario, je me suis dit|..."
+            say Eviscerator presentation=16 : "Que personne verrait d'inconvénient à ce que je te plume|!..."
+            say Eviscerator presentation=17 : "Ou méme que je te descende|! Ah ah ah|!..."
+            say Eviscerator presentation=8 chatter : "commander, un imprévu|!..."
+            say Eviscerator presentation=9 : "Allez|! vide-moi ta cryobox ou je te vide ta caboche|!..."
+            say Eviscerator presentation=8 chatter resume_at=evisc01_dialogue_resume_1 : "commander, vous voulez obéir ou lutter|?..." choices "obéir" "lutter"
+            when {
+                require choice == "obéir"
+            } then {
+                say Eviscerator presentation=8 chatter if_not_shown skip_next=2 : "ok|... voilà pour vous, toute notre cryobox|..."
+                globals.A4 = 0
+                globals.vbio = 0
+                say Eviscerator presentation=8 if_not_shown skip_next=1 : "Ouais|! Cryobox|!..."
+                request sequence "match04.hnm"
+                say Eviscerator presentation=14 : "Ouarf ouarf|! Merci trouillard|!... Tire-toi|!..."
+                say Eviscerator presentation=8 if_not_shown skip_next=4 : "..."
+                globals.C11 = 3
+                globals.A13 = 2
+                end presentation Eviscerator
+                choice = none
+            }
+            when {
+                require choice == "lutter"
+            } then {
+                say Eviscerator presentation=8 chatter : "écoute, croolard|! si tu approches ton gros lard, on te téléporte chez les ZEN|!..."
+                say Eviscerator presentation=10 : "Ah non! pitié|! pas la philo|!..."
+                say Eviscerator presentation=8 if_not_shown skip_next=1 : "pas la philo|!..."
+                request sequence "explroug.hnm"
+                say Eviscerator presentation=8 chatter : "commander, ça a marché|! on lui a fait péter les neurones|!..."
+                say Eviscerator presentation=8 chatter : "En plus, son arme n'était pas chargée|!..."
+                say Eviscerator presentation=8 chatter if_not_shown skip_next=1 : "t'es en état d'arrestation, racketor|!..."
+                request sequence "diplom1v.hnm"
+                say Eviscerator presentation=8 chatter : "je le téléporte en prison|!..."
+                say Eviscerator presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION EVISCERATOR CYBER PRISON|..."
+                request sequence "venthig.hnm"
+                say Eviscerator presentation=8 if_not_shown skip_next=4 : "..."
+                globals.C11 = 4
+                Eviscerator.current_location = aboard
+                end presentation Eviscerator
+                choice = none
+            }
+        }
+        evisc01_dialogue_resume_1:
+        when {
+            require globals.C11 == 5
+        } then {
+            say Eviscerator presentation=14 : "Je veux te remercier de m'avoir libéré, Commander|!..."
+            say Eviscerator presentation=8 chatter : "ok|! alors pointe ton arme ailleurs|!..."
+            say Eviscerator presentation=15 : "Justement, j'allais vous proposer de me pointer chez les croolis verts|!..."
+            dictionary blank after "pointer"
+            say Eviscerator presentation=8 if_not_shown skip_next=1 : "...leur péter la téte|!..."
+            request sequence "explroug.hnm"
+            say Eviscerator presentation=16 : "Si vous me laissez faire|..."
+            say Eviscerator presentation=8 if_not_shown skip_next=1 : "Je vous promets que ce sera une vraie boucherie|!..."
+            request sequence "moskit20.hnm"
+            say Eviscerator presentation=8 chatter resume_at=evisc01_dialogue_resume_2 : "on l'envoie nettoyer Chigraxx and co, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Eviscerator presentation=8 chatter : "Teleportation eviscerator commando de l'espace|!..."
+                say Eviscerator presentation=8 if_not_shown skip_next=3 : "..."
+                globals.C11 = 7
+                end presentation Eviscerator
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Eviscerator presentation=8 chatter : "non merci, mon brave|... nous allons faire le ménage nous-mémes|..."
+                say Eviscerator presentation=15 : "Je suis sur, mon brave|... Que tu vas revenir me voir pour la boucherie|..."
+                say Eviscerator presentation=8 if_not_shown skip_next=3 : "..."
+                globals.C11 = 1
+                end presentation Eviscerator
+                choice = none
+            }
+        }
+        evisc01_dialogue_resume_2:
+        when {
+            require globals.A68 == 1
+        } then {
+            say Eviscerator presentation=9 : "...GREVE|..."
+            say Eviscerator presentation=10 : "..."
+            say Eviscerator presentation=11 : "...GREVE|..."
+            say Eviscerator presentation=12 : "..."
+            say Eviscerator presentation=13 : "...GREVE|..."
+            say Eviscerator presentation=14 : "..."
+            say Eviscerator presentation=15 : "...GREVE|..."
+            say Eviscerator presentation=16 : "..."
+            say Eviscerator presentation=17 : "...GREVE|..."
+            say Eviscerator presentation=18 : "..."
+            say Eviscerator presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Eviscerator
+        }
+        say Eviscerator presentation=9 : "Moi Eviscerator, moi grand chef de tribu|..."
+        text_tokens Eviscerator presentation=11 : "Nous" "étre" state_number(0x00AA) "croolis" "rouges" "dans" "tribu..."
+        when {
+            require state_b6[Eviscerator.evolution] > 100
+            require atomique.holder != aboard
+        } then {
+            say Eviscerator presentation=9 : "Nous fabriquer atomiques... En grand secret..."
+            say Eviscerator presentation=15 : "Nous vendre à toi nucléaire atomique radioactif dangereux, contre 10 credits..."
+            when {
+                require globals.A4 < 10
+            } then {
+                say Eviscerator presentation=8 chatter : "Nous n'avons pas 10 credits, Commander..."
+            }
+            when {
+                require globals.A4 > 10
+            } then {
+                say Eviscerator presentation=8 chatter resume_at=gest01 : "Vous acceptez de leur acheter des armes, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Eviscerator presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie dix credits, Commander"
+                    transfer credit from aboard to Eviscerator
+                    globals.A4 -= 10
+                    say Eviscerator presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION ATOMIQUE DANS CRYOBOX"
+                    transfer atomique from Eviscerator to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest01 enabled {
+        during travel
+        require presentation == Eviscerator
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            say Eviscerator presentation=14 if_not_shown skip_next=1 : "Ha! Ha! Ha! Toi drole..."
+            bits(atomique.flags,0x0040) = false
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 chatter if_not_shown skip_next=4 : "..."
+            state_b1[Eviscerator.population] /= 4
+            Eviscerator.aggressiveness += 10
+            globals.B34 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=5 : "..."
+            state_b5[Eviscerator.energy] += 200
+            Eviscerator.aggressiveness += 200
+            globals.B33 = 1
+            globals.B32 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 chatter if_not_shown skip_next=2 : "..."
+            Eviscerator.aggressiveness += 100
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 if_not_shown skip_next=2 : "..."
+            globals.B34 = 0
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=4 : "Du Bionium..."
+            state_b1[Eviscerator.population] += 150
+            state_b6[Eviscerator.evolution] += 100
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=4 : "De la technologie..."
+            state_b6[Eviscerator.evolution] += 10
+            state_b5[Eviscerator.energy] += 10
+            globals.B32 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 chatter if_not_shown skip_next=5 : "Voila qui va le calmer... Commander..."
+            dictionary blank after "Voila"
+            globals.B34 += 1
+            state_b1[Eviscerator.population] += 250
+            Eviscerator.aggressiveness -= 200
+            globals.B33 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement givré..."
+            state_b5[Eviscerator.energy] += 50
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 chatter if_not_shown skip_next=5 : "..."
+            state_b6[Eviscerator.evolution] += 10
+            state_b1[Eviscerator.population] += 250
+            globals.B34 += 1
+            Eviscerator.aggressiveness -= 100
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=4 : "..."
+            state_b6[Eviscerator.evolution] += 10
+            state_b1[Eviscerator.population] -= 50
+            globals.B34 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Eviscerator presentation=15 if_not_shown skip_next=2 : "De la nourriture..."
+            state_b5[Eviscerator.energy] += 150
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=3 : "Des médicaments..."
+            state_b6[Eviscerator.evolution] += 20
+            state_b1[Eviscerator.population] += 150
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Eviscerator presentation=14 if_not_shown skip_next=4 : "DES ARMES..."
+            Eviscerator.aggressiveness += 250
+            state_b6[Eviscerator.evolution] += 50
+            globals.B33 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 chatter if_not_shown skip_next=2 : "..."
+            globals.B32 += 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=2 : "De l'énergie..."
+            state_b5[Eviscerator.energy] += 150
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=5 : "Une bague..."
+            state_b6[Eviscerator.evolution] += 10
+            state_b1[Eviscerator.population] += 200
+            globals.B34 += 1
+            Eviscerator.aggressiveness -= 200
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Eviscerator.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=3 : "De la Culture..."
+            state_b6[Eviscerator.evolution] += 50
+            state_b5[Eviscerator.energy] += 10
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Eviscerator.evolution] += 60
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=3 : "Un VAISSEAU..."
+            state_b6[Eviscerator.evolution] += 10
+            globals.B32 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Eviscerator presentation=8 chatter if_not_shown skip_next=5 : "..."
+            state_b6[Eviscerator.evolution] += 10
+            globals.B33 = 0
+            Eviscerator.aggressiveness = 0
+            state_b1[Eviscerator.population] += 500
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Eviscerator presentation=9 if_not_shown skip_next=3 : "Des cadeaux..."
+            state_b6[Eviscerator.evolution] += 10
+            state_b5[Eviscerator.energy] += 100
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Eviscerator presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Eviscerator presentation=8 chatter resume_at=gest01_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Eviscerator presentation=8 : "..."
+        gest01_dialogue_resume_1:
+        say Eviscerator presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        say Eviscerator presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Eviscerator
+    }
+    proc _2fincro as "2fincro" enabled {
+        during contact
+        require globals.A68 == 2
+        require Outrageor.current_location == aboard
+        require presentation == Outrageor
+    } then {
+        say Outrageor presentation=10 : "Yo|!..."
+        say Outrageor presentation=11 : "Yo yo|!..."
+        say Outrageor presentation=12 : "Yo yo yo|!..."
+        say Outrageor presentation=13 : "Moi rythme|!..."
+        say Outrageor presentation=14 : "Arf arf|!..."
+        say Outrageor presentation=15 : "Tu te rends compte|, Commander|?..."
+        say Outrageor presentation=16 : "Moi rythme dans la peau|!..."
+        say Outrageor presentation=8 if_not_shown skip_next=3 : "..."
+        end presentation Outrageor
+        globals.A13 += 3
+        sequence_slots[4] = "12concrool"
+    }
+    proc outra01 enabled {
+        during travel
+        require presentation == Outrageor
+    } then {
+        when {
+            require globals.A68 == 1
+        } then {
+            say Outrageor presentation=9 : "...GREVE|!!!"
+            say Outrageor presentation=10 : "..."
+            say Outrageor presentation=11 : "...GREVE"
+            say Outrageor presentation=12 : "..."
+            say Outrageor presentation=13 : "...GREVE"
+            say Outrageor presentation=14 : "..."
+            say Outrageor presentation=15 : "...GREVE"
+            say Outrageor presentation=16 : "..."
+            say Outrageor presentation=17 : "...!!!"
+            say Outrageor presentation=18 if_not_shown skip_next=1 : "..."
+            say Outrageor presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Outrageor
+        }
+        say Outrageor presentation=9 : "Moi Outrageor..."
+        when {
+            require globals.A74 == 6
+        } then {
+            text_tokens Outrageor presentation=11 : "Nous" "étre" state_number(0x013E) "croolis_red" "dans" "tribu..."
+        }
+        when {
+            require Outrageor.encounter_count == 1
+        } then {
+            say Outrageor presentation=10 : "Alors c'est toi étre le fameux|..."
+            say Outrageor presentation=8 if_not_shown skip_next=1 : "..."
+            request sequence "logo_bl.hnm"
+            say Outrageor presentation=8 chatter : "eh oui|, c'est lui|!..."
+            say Outrageor presentation=11 : "Toi avoir traversé le temps pour venir me voir|!..."
+            say Outrageor presentation=12 : "Toi avoir peur de rien|!..."
+            say Outrageor presentation=13 : "Alors|, quoi toi vouloir|?..."
+            say Outrageor presentation=8 if_not_shown skip_next=1 : "Hein|? Quoi toi vouloir|?..."
+            request sequence "match04.hnm"
+            say Outrageor presentation=14 : "Toi voir|? Ca mes copains|!..."
+            say Outrageor presentation=15 : "Eux sympa|! Te dire bonjour|!..."
+            say Outrageor presentation=8 if_not_shown skip_next=1 : "Bonjour Commander BLOOD|!..."
+            request sequence "match04.hnm"
+            say Outrageor presentation=16 : "Bon|... Toi me donner tes sens|..."
+        }
+        when {
+            require globals.A74 == 3
+            require globals.A79 == 4
+            require couronne.holder != aboard
+        } then {
+            say Outrageor presentation=16 : "Moi tous les sens|..."
+            say Outrageor presentation=10 : "Moi couronne..."
+            say Outrageor presentation=8 chatter : "Toi roi des quoi|?..."
+            say Outrageor presentation=12 : "Moi roi des croons|..."
+            say Outrageor presentation=8 chatter : "Toi crooner|?..."
+            say Outrageor presentation=13 : "Moi couronneur|..."
+            say Outrageor presentation=15 : "Moi vendre à toi couronne contre un crédit symbolique..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Outrageor presentation=8 chatter : "Nous n'avons pas de crédits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Outrageor presentation=8 chatter resume_at=outra01_dialogue_resume_1 : "Vous acceptez de lui acheter une couronne, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Outrageor presentation=8 chatter if_not_shown skip_next=3 : "On lui envoie un credit, Commander"
+                    transfer credit from aboard to Outrageor
+                    globals.A4 -= 1
+                    globals.A74 = 5
+                    say Outrageor presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION COURONNE DANS CRYOBOX"
+                    transfer couronne from Outrageor to aboard
+                    say Outrageor presentation=8 chatter : "attention fermeture porte du temps imminente|..."
+                    say Outrageor presentation=8 chatter : "...3..."
+                    say Outrageor presentation=8 chatter : "...2..."
+                    say Outrageor presentation=8 chatter : "...1..."
+                    say Outrageor presentation=8 if_not_shown skip_next=2 : "..."
+                    end presentation Outrageor
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+            outra01_dialogue_resume_1:
+            when {
+                require globals.A74 == 6
+                require couronne.holder != aboard
+                require globals.A4 > 0
+            } then {
+                say Outrageor presentation=10 : "Nous couronnes spéciales|... pouvoirs spéciaux|..."
+                say Outrageor presentation=8 chatter : "combien|?..."
+                say Outrageor presentation=11 : "Modéle de série|... pas cher|... bon rapport qualité-prix|..."
+                say Outrageor presentation=8 chatter resume_at=gest02 : "voulez-vous acheter une couronne de série, commander|?..." choices "oui" "non"
+                when {
+                    require choice == "oui"
+                } then {
+                    say Outrageor presentation=8 chatter if_not_shown skip_next=2 : "on paye|..."
+                    transfer credit from aboard to Outrageor
+                    globals.A4 -= 1
+                    say Outrageor presentation=8 chatter if_not_shown skip_next=1 : "teleportation couronne dans cryobox|..."
+                    transfer couronne from Outrageor to aboard
+                    say Outrageor presentation=8 if_not_shown skip_next=1 : "..."
+                    choice = none
+                }
+                when {
+                    require choice == "non"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gest02 enabled {
+        during travel
+        require presentation == Outrageor
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            say Outrageor presentation=14 if_not_shown skip_next=2 : "Ha! Ha! Ha! Toi drole..."
+            atomique.holder = aboard
+            bits(atomique.flags,0x0040) = false
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Outrageor presentation=8 chatter if_not_shown skip_next=4 : "..."
+            state_b1[Outrageor.population] /= 4
+            Outrageor.aggressiveness += 10
+            globals.B34 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=5 : "Grand fou... Ca manque de réflexion sous le casque"
+            state_b5[Outrageor.energy] += 200
+            Outrageor.aggressiveness += 200
+            globals.B33 = 1
+            globals.B32 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Outrageor presentation=8 chatter if_not_shown skip_next=2 : "..."
+            Outrageor.aggressiveness += 100
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Outrageor presentation=8 if_not_shown skip_next=2 : "..."
+            globals.B34 = 0
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=4 : "Du Bionium..."
+            state_b1[Outrageor.population] += 150
+            state_b6[Outrageor.evolution] += 100
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=4 : "De la technologie..."
+            state_b6[Outrageor.evolution] += 10
+            state_b5[Outrageor.energy] += 10
+            globals.B32 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 : "Ouie|... Ouie merci|..."
+            say Outrageor presentation=8 chatter if_not_shown skip_next=6 : "Il a de l'oreille, le bougre"
+            globals.A79 += 1
+            globals.B34 += 1
+            state_b1[Outrageor.population] += 250
+            Outrageor.aggressiveness -= 200
+            globals.B33 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Outrageor presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement givré..."
+            state_b5[Outrageor.energy] += 50
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Outrageor presentation=10 : "Oooh|... Eau de|... Eau d'Oronono|...Eau d'ODORO|... AAAh|!..."
+            say Outrageor presentation=8 chatter if_not_shown skip_next=6 : "Vous lui flattez le pif..."
+            globals.A79 += 1
+            state_b6[Outrageor.evolution] += 10
+            state_b1[Outrageor.population] += 250
+            globals.B34 += 1
+            Outrageor.aggressiveness -= 100
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=4 : "..."
+            state_b6[Outrageor.evolution] += 10
+            state_b1[Outrageor.population] -= 50
+            globals.B34 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Outrageor presentation=15 : "Gougou... A bon gougou|..."
+            say Outrageor presentation=8 chatter if_not_shown skip_next=3 : "Bon gougou et demi|..."
+            globals.A79 += 1
+            state_b5[Outrageor.energy] += 150
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=3 : "Des médicaments..."
+            state_b6[Outrageor.evolution] += 20
+            state_b1[Outrageor.population] += 150
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Outrageor presentation=14 if_not_shown skip_next=4 : "DES ARMES..."
+            Outrageor.aggressiveness += 250
+            state_b6[Outrageor.evolution] += 50
+            globals.B33 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Outrageor presentation=12 : "Je vois, je vois|..."
+            say Outrageor presentation=8 chatter if_not_shown skip_next=3 : "Vous lui dessillez les yeux..."
+            globals.B32 += 1
+            globals.A79 += 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=2 : "De l'énergie..."
+            state_b5[Outrageor.energy] += 150
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=5 : "Une bague..."
+            state_b6[Outrageor.evolution] += 10
+            state_b1[Outrageor.population] += 200
+            globals.B34 += 1
+            Outrageor.aggressiveness -= 200
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Outrageor.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=3 : "De la Culture..."
+            state_b6[Outrageor.evolution] += 50
+            state_b5[Outrageor.energy] += 10
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Outrageor presentation=8 chatter if_not_shown skip_next=2 : "..."
+            state_b6[Outrageor.evolution] += 60
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=3 : "Un VAISSEAU..."
+            state_b6[Outrageor.evolution] += 10
+            globals.B32 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Outrageor presentation=8 chatter if_not_shown skip_next=5 : "..."
+            state_b6[Outrageor.evolution] += 10
+            globals.B33 = 0
+            Outrageor.aggressiveness = 0
+            state_b1[Outrageor.population] += 500
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Outrageor presentation=9 if_not_shown skip_next=3 : "Des cadeaux..."
+            state_b6[Outrageor.evolution] += 10
+            state_b5[Outrageor.energy] += 100
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Outrageor presentation=8 chatter : "Quel objet désirez-vous lui donner, Commander?"
+        say Outrageor presentation=8 chatter resume_at=gest02_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Outrageor presentation=8 : "..."
+        gest02_dialogue_resume_1:
+        say Outrageor presentation=8 chatter : "A BIENTOT, COMMANDER..."
+        say Outrageor presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Outrageor
+        halt
+    }
+}

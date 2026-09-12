@@ -6,14 +6,14 @@ use commander_blood_tools::contact_manifest;
 use commander_blood_tools::descript_source;
 use commander_blood_tools::vm_bundle;
 use commander_blood_tools::vm_cfg::{self, CodControlFlow};
-use commander_blood_tools::vm_profile::{self, ProfileImages};
+use commander_blood_tools::vm_profile::{self, ProfileDialect, ProfileImages};
 use commander_blood_tools::vm_source::{self, ImageKind};
 
 const PROFILE_EXTENSIONS: [&str; 5] = ["COD", "BAS", "DEB", "DIC", "VAR"];
 
 fn usage() -> ! {
     eprintln!(
-        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-descript <DESCRIPT.DES> <output>\n  cbvm compile-descript <source> <output> [reference-DESCRIPT.DES]\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-unified <game-dir> <output-dir>\n  cbvm compile-profile <source> <output-dir>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>\n  cbvm analyze-contact-manifest <game-dir> <output-dir>"
+        "usage:\n  cbvm disassemble <cod|bas> <image> <dictionary> <output>\n  cbvm assemble <source> <output>\n  cbvm decompile-descript <DESCRIPT.DES> <output>\n  cbvm compile-descript <source> <output> [reference-DESCRIPT.DES]\n  cbvm decompile-bundle <game-dir> <output-dir>\n  cbvm decompile-unified <game-dir> <output-dir>\n  cbvm decompile-big-bug-bang-unified <game-dir> <output-dir>\n  cbvm compile-profile <source> <output-dir>\n  cbvm compile-bundle <source-dir> <game-dir> <output-dir>\n  cbvm build-runtime-tree <source-dir> <game-dir> <output-dir>\n  cbvm analyze-control-flow <game-dir> <output-dir>\n  cbvm analyze-bas-control-flow <game-dir> <output-dir>\n  cbvm analyze-contact-manifest <game-dir> <output-dir>"
     );
     std::process::exit(2);
 }
@@ -49,16 +49,19 @@ fn write_disassembly(
     Ok(listing)
 }
 
-fn read_profile(game_dir: &Path, script: usize) -> Result<ProfileImages> {
+fn read_profile(game_dir: &Path, script: usize, dialect: ProfileDialect) -> Result<ProfileImages> {
     let name = format!("SCRIPT{script}");
     let read = |extension: &str| {
         let path = game_dir.join(format!("{name}.{extension}"));
         std::fs::read(&path).with_context(|| format!("reading VM image {}", path.display()))
     };
     Ok(ProfileImages {
+        dialect,
         name: name.clone(),
         cod: read("COD")?,
-        bas: read("BAS")?,
+        bas: (dialect == ProfileDialect::CommanderBlood)
+            .then(|| read("BAS"))
+            .transpose()?,
         deb: read("DEB")?,
         dic: read("DIC")?,
         var: read("VAR")?,
@@ -67,7 +70,7 @@ fn read_profile(game_dir: &Path, script: usize) -> Result<ProfileImages> {
 
 fn write_profile(profile: &ProfileImages, output_dir: &Path) -> Result<()> {
     std::fs::create_dir_all(output_dir)?;
-    for extension in PROFILE_EXTENSIONS {
+    for &extension in profile.extensions() {
         let output = output_dir.join(format!("{}.{extension}", profile.name));
         std::fs::write(
             &output,
@@ -241,8 +244,9 @@ fn main() -> Result<()> {
             let profile = vm_profile::compile(&text)?;
             write_profile(&profile, &output_dir)?;
             println!(
-                "wrote {}: five VM resources from {}",
+                "wrote {}: {} VM resources from {}",
                 output_dir.display(),
+                profile.extensions().len(),
                 source.display()
             );
         }
@@ -323,7 +327,7 @@ fn main() -> Result<()> {
             std::fs::create_dir_all(&output_dir)?;
             let mut manifest = String::from("script\timage\tinput_bytes\tsource\troundtrip\n");
             for script in 1..=5 {
-                let profile = read_profile(&game_dir, script)?;
+                let profile = read_profile(&game_dir, script, ProfileDialect::CommanderBlood)?;
                 let source = vm_profile::decompile(&profile)?;
                 let output = output_dir.join(format!("script{script}.blood"));
                 std::fs::write(&output, source)
@@ -335,6 +339,30 @@ fn main() -> Result<()> {
                             .image(extension)
                             .expect("known profile extension")
                             .len()
+                    ));
+                }
+                println!("verified SCRIPT{script} -> {}", output.display());
+            }
+            std::fs::write(output_dir.join("manifest.tsv"), manifest)?;
+        }
+        Some("decompile-big-bug-bang-unified") => {
+            let game_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            let output_dir = PathBuf::from(args.next().unwrap_or_else(|| usage()));
+            if args.next().is_some() {
+                usage();
+            }
+            std::fs::create_dir_all(&output_dir)?;
+            let mut manifest = String::from("script\timage\tinput_bytes\tsource\troundtrip\n");
+            for script in 1..=17 {
+                let profile = read_profile(&game_dir, script, ProfileDialect::BigBugBang)?;
+                let source = vm_profile::decompile(&profile)?;
+                let output = output_dir.join(format!("script{script}.blood"));
+                std::fs::write(&output, source)
+                    .with_context(|| format!("writing {}", output.display()))?;
+                for &extension in profile.extensions() {
+                    manifest.push_str(&format!(
+                        "SCRIPT{script}\t{extension}\t{}\tscript{script}.blood\tbyte_exact\n",
+                        profile.image(extension).expect("owned extension").len()
                     ));
                 }
                 println!("verified SCRIPT{script} -> {}", output.display());

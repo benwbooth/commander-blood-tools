@@ -48,13 +48,12 @@ not a substitute for this gate. The CB ledger's 521 recovered routines do not
 constitute a BBB routine inventory or prove inherited handlers unchanged.
 
 Outstanding coverage work includes BBB-specific native routine ownership and
-comparison, inherited VM handler semantics, and derived companion DEB/DIC/VAR
-rebuilding. The changed AMER/CROOLIS overlay images now have the bounded native
-frame comparison described below. Modern typed COD decoding,
-structured recovery, English text coverage, and the unreachable-BAS result do
-not close these obligations. The explicit BBB COD source path now reproduces
-all 17 original COD files, as detailed below; the default CB walker and retired
-interpreter have not been switched to BBB.
+comparison and inherited VM handler semantics. The changed AMER/CROOLIS overlay
+images now have the bounded native frame comparison described below. Modern
+typed VM source, English text coverage, and the unreachable-BAS result do not
+close those native obligations. The explicit BBB unified source path now
+reproduces all 68 active COD/DEB/DIC/VAR resources, as detailed below; the
+default CB walker and retired interpreter have not been switched to BBB.
 
 ### Changed AMER and CROOLIS Overlays
 
@@ -147,12 +146,10 @@ nix develop -c cargo run -p commander-blood-script-compiler --example recover_bb
   output/big-bug-bang/recovered-cod-source
 ```
 
-These are standalone editable COD programs, not finished unified profiles.
-State outside recovered record fields remains numeric, and derived DEB/DIC/VAR
-rebuilding and production startup integration remain incomplete. The dormant,
-unreachable BAS resource has not been reconstructed as source. Byte-identical
-source compilation does not establish complete native behavior or a complete
-playthrough.
+The earlier standalone COD files remain useful intermediate output. The
+canonical sources are now the unified profiles described next. Production
+startup integration remains incomplete. Byte-identical source compilation does
+not establish complete native behavior or a complete playthrough.
 
 Verification for the structured checkpoint: the real all-profile corpus test,
 all five CFG tests, and all 34 BloodScript tests pass. The broader root-library
@@ -160,6 +157,40 @@ run had 689 passing tests and seven failures solely because its Commander Blood
 fixtures were unavailable at `accuracy/cblood_install/cblood`; those failures
 do not exercise this BBB source path. No manual gameplay session was requested
 or launched for this source-recovery pass.
+
+### Unified Profiles and Companion Rebuilding
+
+`re/vm/big-bug-bang-profiles` contains 17 canonical `bloodscript 8` profiles.
+An explicit `dialect big_bug_bang` declaration selects BBB's A0-D7 instruction
+walker, eight-byte DIC prefix, 74-byte actor records and 26-byte location
+records. The added actor word is exposed as `opponent`; the added location word
+is exposed as `settler`. The remaining typed fields, reserved zero regions,
+`tblood`, ordered globals, procedure addresses, directory sentinel, dictionary
+word order and intentional empty entries are derived from readable source.
+
+Each profile compiles to the four resources owned by shipped gameplay: COD,
+DEB, DIC and VAR. The lone `SCRIPT2.BAS` remains preserved outside these
+profiles because the ownership proof below establishes that it is unreachable
+from legitimate shipped state. The compiler neither emits an invented empty
+BAS nor binds that file to SCRIPT2's incompatible dictionary.
+
+Regeneration decompiles each original profile, recompiles it internally, and
+rejects any byte difference before writing source:
+
+```sh
+nix develop -c cargo run -p commander-blood-script-compiler \
+  --example recover_bbb_profiles -- \
+  output/big-bug-bang/imported-assets/resources \
+  re/vm/big-bug-bang-profiles
+```
+
+All 17 profiles reproduce **637,922 bytes across 68 resources** exactly. The
+corpus gate is
+`all_sequel_unified_profiles_rebuild_every_active_companion`; synthetic tests
+independently cover resource ownership, extended record sizes, `opponent`,
+`settler`, and the full CP437 byte codec. Numeric BBB presentation selectors
+remain numeric because Commander Blood's symbolic presentation catalog is not
+valid evidence for the sequel.
 
 ### Izwalito's Treaty Purchase
 

@@ -1,0 +1,3543 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT13
+concepts "parler" "bonjour" "rayon"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc finsmi1 enabled {
+        during contact
+        require Otto_Von_Smile.current_location == aboard
+        require globals.A68 == 2
+        require presentation == Otto_Von_Smile
+    } then {
+        say Otto_Von_Smile presentation=10 : "Sympa le concert|..."
+        say Otto_Von_Smile presentation=11 : "Toi faire efforts pour harmonie sociouniverselle|..."
+        say Otto_Von_Smile presentation=12 : "Ca bien|... Mais inutile|... Bientot BIG BANG|!..."
+        say Otto_Von_Smile presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A13 += 3
+        end presentation Otto_Von_Smile
+    }
+    proc gresmi enabled {
+        during bridge
+        require globals.A61 == 1
+        require presentation == Otto_Von_Smile
+    } then {
+        say Otto_Von_Smile presentation=8 : "krouik|..."
+        say Otto_Von_Smile presentation=8 : "Ici Von Smile|... J'appelle au nom de tous les habitants de cet Univers|..."
+        say Otto_Von_Smile presentation=8 chatter : "rien que ca|?..."
+        say Otto_Von_Smile presentation=8 : "Je dis tout haut ce que tout le monde pense tout bas|..."
+        say Otto_Von_Smile presentation=8 chatter : "ben allez-y, on vous écoute|..."
+        say Otto_Von_Smile presentation=8 : "La situation est intolérable|! Le plan BOB est scandaleux|!..."
+        say Otto_Von_Smile presentation=8 chatter : "le|... plan bob|?..."
+        say Otto_Von_Smile presentation=8 : "Oui|! Vous devez vous servir de nous pour le faire réapparaitre, cet exploiteur|!..."
+        say Otto_Von_Smile presentation=8 chatter : "exploiteur|! vous y allez fort|!..."
+        say Otto_Von_Smile presentation=8 : "Parfaitement|! Nous habitants de cet univers sommes exploités par vous et par BOB|!..."
+        say Otto_Von_Smile presentation=8 : "Et on n'en restera pas là|!..."
+        say Otto_Von_Smile presentation=8 : "krouik|..."
+        say Otto_Von_Smile presentation=8 chatter : "il a raccroché|!..."
+        say Otto_Von_Smile presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A61 = 2
+        end presentation Otto_Von_Smile
+    }
+    proc ovs01 enabled {
+        during travel
+        require presentation == Otto_Von_Smile
+    } then {
+        when {
+            require globals.A68 == 1
+        } then {
+            say Otto_Von_Smile presentation=9 : "Toi dégager envoyé de BOB|!..."
+            say Otto_Von_Smile presentation=8 chatter : "oulàlà|..."
+            say Otto_Von_Smile presentation=10 : "Moi pas négocier ta téte|... direct coupe-coupe|..."
+            say Otto_Von_Smile presentation=8 chatter : "retirons-nous, commander|..."
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Otto_Von_Smile
+        }
+        when {
+            require Otto_Von_Smile.encounter_count == 1
+        } then {
+            say Otto_Von_Smile presentation=11 : "Qu'est-ce que vous foutez ici? Vous étes chez Otto Von Smile"
+            say Otto_Von_Smile presentation=8 chatter resume_at=ovs01_dialogue_resume_1 : "vous voulez lui parler|, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter : "On pourrait lui parler?"
+                say Otto_Von_Smile presentation=12 : "Imbécile intergalactique! Tu es en train de lui parler!"
+                say Otto_Von_Smile presentation=13 : "Mais Otto Von Smile est un SLIMER. Otto Von Smile ne parle pas à moins intelligent que lui..."
+                dictionary blank after "lui..."
+                say Otto_Von_Smile presentation=8 chatter : "Ni à plus modeste, j'imagine|..."
+                say Otto_Von_Smile presentation=8 chatter : "pourtant c'est nous qui vous avons fait muter|..."
+                say Otto_Von_Smile presentation=13 : "Quelle petite chose ridicule... Ca marche encore à piles, je parie, arf, arf..."
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "A piles peut-étre, mais à piles nucléaires..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+            ovs01_dialogue_resume_1:
+            say Otto_Von_Smile presentation=14 : "Snif|! Snif|! Mais ça pue... Vous puez le curryxx... Vous mangez trop épicé..."
+            say Otto_Von_Smile presentation=8 chatter : "Waoh! Il a pas l'air commode, Commander..."
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Otto_Von_Smile
+        }
+        when {
+            require Otto_Von_Smile.encounter_count == 2
+        } then {
+            say Otto_Von_Smile presentation=12 if_not_shown skip_next=1 : "Alors, de retour|? On est allé se laver les dents, Puanteur|?"
+            medicament.holder = aboard
+            say Otto_Von_Smile presentation=8 chatter resume_at=ovs01_dialogue_resume_2 : "vous vous étes lavé les dents|, commander|?..." choices "lavé" "pue_toujours"
+            when {
+                require choice == "lavé"
+            } then {
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=2 : "Avec du Papygluxxyl bi-enfluré|?..."
+                transfer medicament from Otto_Von_Smile to aboard
+                choice = none
+            }
+            when {
+                require choice != "lavé"
+            } then {
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=2 : "Essaie le Croolygencyl|, Puanteur|!..."
+                transfer medicament from Otto_Von_Smile to aboard
+                choice = none
+            }
+            ovs01_dialogue_resume_2:
+            say Otto_Von_Smile presentation=8 chatter : "il est d'un vexant|!..."
+            say Otto_Von_Smile presentation=13 : "Au fait|... J'ai appris de source sùre que tu es ami avec les GLUXX..."
+            say Otto_Von_Smile presentation=14 : "Autant te dire que JE N'AIME PAS CA|!..."
+            say Otto_Von_Smile presentation=15 : "TOI COMPRENDRE|? MOI PAS AIMER, CAMARADE..."
+            say Otto_Von_Smile presentation=8 chatter : "Oulala, lui parler comme ca quand lui pas content... Moi les boules, commander..."
+            say Otto_Von_Smile presentation=14 : "Moi sentir colére monter... Moi avoir mains moites..."
+            say Otto_Von_Smile presentation=8 chatter : "Aie... Ca va chauffer... Dégageons... Attendons qu'il se calme"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "..."
+            end presentation Otto_Von_Smile
+            sequence_slots[4] = "41cryobug"
+        }
+        when {
+            require Otto_Von_Smile.encounter_count == 3
+        } then {
+            say Otto_Von_Smile presentation=15 : "OUI QUI ETRE LA?"
+            say Otto_Von_Smile presentation=8 chatter : "Aie... Il a pas l'air calmé..."
+            say Otto_Von_Smile presentation=16 : "Ah ça sent des pieds... C'est toi, Commander..."
+            say Otto_Von_Smile presentation=8 chatter : "Oui, c'est nous... Vous nous réconnaissez|?"
+            say Otto_Von_Smile presentation=14 : "Toi vouloir faire humour avec moi|?"
+            say Otto_Von_Smile presentation=8 chatter resume_at=ovs01_dialogue_resume_3 : "vous vouloir faire humour avec lui|, commander|?..." choices "humour" "pas_humour"
+            when {
+                require choice == "humour"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter : "alors voilà|... C'est l'histoire|..."
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "du légionnaire|..."
+                request sequence "marcomb.hnm"
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "et de la chévre|..."
+                request sequence "flitutr.hnm"
+                say Otto_Von_Smile presentation=16 if_not_shown skip_next=1 : "Toi pas rigolo|, toi retourner à l'école du rire|..."
+                choice = none
+            }
+            when {
+                require choice != "humour"
+            } then {
+                say Otto_Von_Smile presentation=16 if_not_shown skip_next=1 : "Pourquoi|? Moi pas d'humour peut-étre|?..."
+                choice = none
+            }
+            ovs01_dialogue_resume_3:
+            say Otto_Von_Smile presentation=8 chatter : "Aie... Encore fait une gaffe... Mais on reviendra|..."
+            say Otto_Von_Smile presentation=8 chatter : "juste aprés|..."
+            say Otto_Von_Smile presentation=8 chatter : "ça|!..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "..."
+            end presentation Otto_Von_Smile
+            sequence_slots[5] = "15parfum"
+        }
+        when {
+            require Otto_Von_Smile.encounter_count == 4
+        } then {
+            say Otto_Von_Smile presentation=15 : "AH AH AH|! HI HI|! HO HO|!..."
+            say Otto_Von_Smile presentation=8 chatter : "Commander, je réve|! il rigole|!..."
+            say Otto_Von_Smile presentation=16 : "Ah Ah|! J'ai appris de source sùre que vous étiez le nouveau scénariste|!..."
+            say Otto_Von_Smile presentation=15 : "Vous|? Le scénariste de Commander Blood|?... AH AH AH|! Quelle rigolade|!"
+            say Otto_Von_Smile presentation=8 chatter : "Il se fout de votre gueule, commander|!..."
+            say Otto_Von_Smile presentation=14 : "J'ai jamais vu un jeu aussi nul|! Plein de bugs|!"
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=2 : "Et rien que de l'humour à deux balles..."
+            transfer credit from Otto_Von_Smile to aboard
+            globals.A4 += 2
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "Deux balles|! Pas plus|!"
+            transfer credit from Otto_Von_Smile to aboard
+            say Otto_Von_Smile presentation=8 chatter : "commander, il nous a filé deux crédits|!"
+            say Otto_Von_Smile presentation=11 : "Allez vous acheter un vrai scénariste avec ca, ah ah|!..."
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Otto_Von_Smile
+            sequence_slots[3] = "27exploplane"
+        }
+        when {
+            require Otto_Von_Smile.encounter_count == 5
+        } then {
+            say Otto_Von_Smile presentation=10 : "Alors, vous l'avez acheté ce scénariste|?..."
+            say Otto_Von_Smile presentation=8 chatter resume_at=ovs01_dialogue_resume_4 : "..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Otto_Von_Smile presentation=12 if_not_shown skip_next=1 : "MENSONGE|! C'est encore vous, Puanteur|! Moi détester mensonge|!..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Otto_Von_Smile presentation=13 if_not_shown skip_next=1 : "Et alors|? Qu'est-ce que vous attendez|?..."
+                choice = none
+            }
+            ovs01_dialogue_resume_4:
+            say Otto_Von_Smile presentation=14 : "Votre jeu n'a aucun intérét|! 3 sur 20 maximum|! Pas d'histoire|! Aucune interactivité|!..."
+            say Otto_Von_Smile presentation=15 : "On passe son temps à lire des dialogues et puis c'est tout|!..."
+            say Otto_Von_Smile presentation=8 chatter resume_at=_5next : "Commander, vous étes d'accord avec lui|?..." choices "d_accord" "pas_d_accord"
+            when {
+                require choice == "d_accord"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter : "vous étes maso, commander|! il a raison, vous étes nul|!..."
+                say Otto_Von_Smile presentation=10 if_not_shown skip_next=1 : "Evidemment que j'ai raison... Qu'est-ce qui lui prend à Monsieur Bob d'engager des minables pareils|?!..."
+                choice = none
+            }
+            when {
+                require choice != "_d_accord"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Pourtant il a un peu raison, le slimer, vous trainez, commander|..."
+                choice = none
+            }
+        }
+    }
+    proc _5next as "5next" enabled {
+        during travel
+        require presentation == Otto_Von_Smile
+    } then {
+        when {
+            require Otto_Von_Smile.encounter_count == 5
+        } then {
+            say Otto_Von_Smile presentation=11 : "Quand je pense que j'aurais pu jouer dans DOOM|!..."
+            say Otto_Von_Smile presentation=13 : "Là au moins y a de l'action|... Boum BOOM|! Des explosions partout..."
+            say Otto_Von_Smile presentation=8 chatter resume_at=_5next_dialogue_resume_1 : "préférez-vous jouer à DOOM, commander|?" choices "doom" "non"
+            when {
+                require choice == "doom"
+            } then {
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "T'as raison|! Ce jeu|, il est nul à ch..."
+                request sequence "ppit03.hnm"
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "chut|!..."
+                request sequence "bobb.hnm"
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "Ouais|! On veut de la violence|!..."
+                request sequence "match02.hnm"
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "De la viande froide|!..."
+                transfer nourriture from Otto_Von_Smile to aboard
+                say Otto_Von_Smile presentation=8 chatter : "Trés bien|, tu veux jouer à doom|?..."
+                say Otto_Von_Smile presentation=8 chatter : "eh ben t'as qu'à y aller|!..."
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "Ouais|! Super|!..."
+                request sequence "match02.hnm"
+                say Otto_Von_Smile presentation=8 chatter : "je fais péter le jeu à l'atomique|!..."
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Otto_Von_Smile
+                globals.A13 = 1
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "encore heureux|!..."
+                choice = none
+            }
+        }
+        _5next_dialogue_resume_1:
+        when {
+            require Otto_Von_Smile.encounter_count == 5
+        } then {
+            say Otto_Von_Smile presentation=8 chatter : "Y a quand méme des trucs bien dans doom|... Les explosions, par exemple|!..."
+            say Otto_Von_Smile presentation=8 chatter resume_at=_5next_dialogue_resume_2 : "Commander, voulez-vous voir des explosions|?..." choices "boom" "non_merci"
+            when {
+                require choice == "boom"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "On fait péter les explosions|!... BOOM|!"
+                request sequence "explo3.hnm"
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Encore une|!..."
+                request sequence "explo3.hnm"
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Et une autre|!..."
+                request sequence "explo3.hnm"
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non_merci"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter : "Juste une pour me faire plaisir|..."
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Et hop|!..."
+                request sequence "explo3.hnm"
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+        _5next_dialogue_resume_2:
+        when {
+            require Otto_Von_Smile.encounter_count == 5
+        } then {
+            say Otto_Von_Smile presentation=8 chatter resume_at=_5next_dialogue_resume_3 : "Vous en voulez d'autres|?..." choices "ouais" "non"
+            when {
+                require choice == "ouais"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Ouais|!..."
+                request sequence "star2.hnm"
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Champagne|!..."
+                request sequence "explo3.hnm"
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Encore une petite|!..."
+                request sequence "explo3.hnm"
+                say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+        }
+        _5next_dialogue_resume_3:
+        when {
+            require Otto_Von_Smile.encounter_count == 5
+        } then {
+            say Otto_Von_Smile presentation=8 chatter resume_at=_5next_dialogue_resume_4 : "Ca ne vous plairait pas de voir rien que des explosions jusqu'à la fin des temps|?" choices "si" "non"
+            when {
+                require choice == "si"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "Vous étes vraiment un allumé, commander|... Comme vous voudrez|..."
+                globals.A51 = 1
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "Vous avez raison, ca ferait trop mal aux yeux|..."
+                globals.A51 = 0
+                choice = none
+            }
+        }
+        _5next_dialogue_resume_4:
+        when {
+            require Otto_Von_Smile.encounter_count == 5
+            require globals.A51 == 1
+        } then {
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "BOOM|!..."
+            request sequence "explo3.hnm"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "DOOM|!..."
+            request sequence "explbleu.hnm"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "WIIIZZ|!..."
+            request sequence "star2.hnm"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "BROOM|!..."
+            request sequence "expla001.hnm"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "BRAOUM|!..."
+            request sequence "explan01.hnm"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "BA-BOOM|!..."
+            request sequence "explroug.hnm"
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "..."
+            globals.A51 = 2
+        }
+        when {
+            require Otto_Von_Smile.encounter_count == 5
+            require globals.A51 == 2
+        } then {
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Encore une!..."
+            request sequence "explo3.hnm"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "Ca suffit maintenant|! Au boulot|!... Mais vous en reverrez, promis|!..."
+            globals.A51 = 0
+        }
+        when {
+            require globals.A51 == 0
+        } then {
+            say Otto_Von_Smile presentation=14 : "Quoi toi chercher sur ma planéte... Moi pas aimer te voir trainer par ici..."
+            say Otto_Von_Smile presentation=8 chatter : "On doit absolument le calmer, Commander, sinon on n'arrivera à rien..."
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "Toi vouloir finir comme ça|?..."
+            transfer nourriture from Otto_Von_Smile to aboard
+            say Otto_Von_Smile presentation=8 chatter : "Olga m'a confié sur l'oreiller cybernique|..."
+            say Otto_Von_Smile presentation=8 chatter : "que Smile avait de grosses..."
+            say Otto_Von_Smile presentation=8 chatter : "Ressources bien cachées... Mais pour l'instant, il peut pas nous sentir..."
+            dictionary blank after "sentir..."
+            say Otto_Von_Smile presentation=8 chatter : "Qu'est-ce qu'on pourrait lui offrir pour l'amadouer|?"
+            say Otto_Von_Smile presentation=15 if_not_shown skip_next=1 : "Toi nourriture|?..."
+            transfer nourriture from aboard to Cyberquizz
+            say Otto_Von_Smile presentation=8 chatter : "Non|! nous pas nourriture|... mais nous trouver|! promis|!"
+            say Otto_Von_Smile presentation=12 : "Nourriture rare|... ancien monde|... franchir double porte bionium pour trouver|..."
+            say Otto_Von_Smile presentation=8 chatter : "vous entendez, commander|? double porte|..."
+            say Otto_Von_Smile presentation=8 : "..."
+        }
+        when {
+            require Otto_Von_Smile.encounter_count == 8
+        } then {
+            say Otto_Von_Smile presentation=13 : "Alors|... Tu joues encore|?..."
+            say Otto_Von_Smile presentation=14 : "Ca te plait|, l'humour à deux balles|?..."
+            say Otto_Von_Smile presentation=12 : "Parce que si ca te plait|..."
+            say Otto_Von_Smile presentation=11 : "Tu peux appeler Eric au 36 99 66 32|!..."
+            say Otto_Von_Smile presentation=8 chatter : "... 36 99 66 32|... Vous retenez|, commander|?..."
+        }
+        when {
+            require bits(Otto_Von_Smile.flags,0x0008)
+            random_guard 0x0003
+        } then {
+            say Otto_Von_Smile presentation=14 : "Moi étre en guerre, moi écraser tous les étrangers..."
+            say Otto_Von_Smile presentation=8 chatter : "Commander, il a l'air terrible..."
+            say Otto_Von_Smile presentation=11 : "Toi te casser d'ici et en vitesse!!!"
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Otto_Von_Smile
+        }
+        text_tokens Otto_Von_Smile presentation=11 if_not_shown skip_next=1 : "Nous" "étre" state_number(0x0D18) "slimers" "ici..."
+        Otto_Von_Smile.aggressiveness += 100
+        when {
+            require optique.holder != aboard
+            require globals.A15 > 0
+        } then {
+            say Otto_Von_Smile presentation=16 : "Nous fabriquons lentilles optiques à base rétine de GLUXX... Pour usages multiples..."
+            say Otto_Von_Smile presentation=14 : "Hé! Hé! Rétine de gluxx de premiére qualité... Toi pouvoir observer planétes, étoiles, galaxies, voisine à poil..."
+            say Otto_Von_Smile presentation=15 : "Nous vendre à toi lentille optique contre crédit..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Otto_Von_Smile presentation=8 chatter : "Nous n'avons plus de credits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Otto_Von_Smile presentation=8 chatter resume_at=gestovs : "Vous acceptez de leur acheter leur lentille, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=3 : "On lui envoie un credit, Commander"
+                    transfer credit from aboard to Otto_Von_Smile
+                    globals.A4 -= 1
+                    Otto_Von_Smile.aggressiveness += 250
+                    say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION LENTILLE OPTIQUE DANS CRYOBOX"
+                    transfer optique from Otto_Von_Smile to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gestovs enabled {
+        during travel
+        require presentation == Otto_Von_Smile
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Otto_Von_Smile.evolution] < 100
+            } then {
+                say Otto_Von_Smile presentation=13 : "Des atomiques... Tu me gàtes... Je vais pouvoir faire péter l'Univers..."
+                say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "NON! NON! Monsieur Von Smile, vous ne ferez pas ca... Commander, vous n'auriez pas du..."
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Otto_Von_Smile.evolution] < 500
+                require state_b6[Otto_Von_Smile.evolution] > 100
+            } then {
+                say Otto_Von_Smile presentation=10 if_not_shown skip_next=7 : "Oh! des atomiques... Intéressant... Merci Commander..."
+                state_b1[Otto_Von_Smile.population] /= 2
+                state_b6[Otto_Von_Smile.evolution] += 200
+                globals.B96 += 1
+                Otto_Von_Smile.aggressiveness += 100
+                globals.B55 -= 1
+                globals.B54 = 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Otto_Von_Smile.evolution] > 500
+            } then {
+                say Otto_Von_Smile presentation=10 if_not_shown skip_next=4 : "De l'énergie nucléaire... Merci!!!"
+                state_b6[Otto_Von_Smile.evolution] += 200
+                globals.B96 += 2
+                state_b5[Otto_Von_Smile.energy] += 300
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=9 : "Que veux-tu que je fasse d'une image... Je ne suis pas un bébé..."
+            dictionary blank after "bébé..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "Commander il se met en colére... Filons..."
+            Otto_Von_Smile.aggressiveness += 100
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=12 if_not_shown skip_next=4 : "Une Couronne de roi... Tu me plais Commander..."
+            state_b5[Otto_Von_Smile.energy] += 20
+            Otto_Von_Smile.aggressiveness += 200
+            globals.B54 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=11 : "Un tableau de ce minable Yolk, tu m'insultes! Commander..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "Ah c'est pas facile de lui faire plaisir..."
+            Otto_Von_Smile.aggressiveness += 100
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=16 : "Une momie, elle fera trés chic dans ma chambre..."
+            say Otto_Von_Smile presentation=8 chatter : "Aie... Commander ca risque de freiner sa reproduction..."
+            say Otto_Von_Smile presentation=15 : "Que dites-vous???"
+            say Otto_Von_Smile presentation=8 chatter : "Rien... Rien... Monsieur Otto, on bavarde..."
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=3 : "..."
+            globals.B55 = 0
+            Otto_Von_Smile.aggressiveness -= 100
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=15 if_not_shown skip_next=5 : "Du Bionium... Voila qui va me régénérer..."
+            state_b1[Otto_Von_Smile.population] += 150
+            state_b6[Otto_Von_Smile.evolution] += 50
+            globals.vbio -= 1
+            state_b5[Otto_Von_Smile.energy] += 300
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+            require globals.A49 == 0
+        } then {
+            say Otto_Von_Smile presentation=12 if_not_shown skip_next=1 : "Non merci|... Ca pue sinox|... Pire que toi|..."
+            dictionary blank after "merci"
+            technologie.holder = aboard
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+            require globals.A49 > 1
+        } then {
+            say Otto_Von_Smile presentation=10 : "Nous allons dominer l'univers tout entier gràce à vous|!..."
+            say Otto_Von_Smile presentation=8 chatter : "commander, doubler leur technologie brutalement|... Est-ce bien raisonnable|?..."
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=3 : "..."
+            state_b6[Otto_Von_Smile.evolution] += 250
+            Otto_Von_Smile.aggressiveness = 1000
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require globals.A49 == 1
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=15 : "De la technologie... Exactement ce qu'il nous fallait..."
+            say Otto_Von_Smile presentation=14 : "Voilà qui va nous faire faire un grand bond en avant!..."
+            say Otto_Von_Smile presentation=8 chatter : "Bon, alors, ca vient cette lentille|?"
+            say Otto_Von_Smile presentation=12 : "Quelle lentille|?"
+            say Otto_Von_Smile presentation=8 chatter : "Commander|! Il nous a eus..."
+            say Otto_Von_Smile presentation=13 : "Du calme, voilà, comme promis..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION LENTILLE SUR CRYOBOX..."
+            transfer optique from Otto_Von_Smile to aboard
+            say Otto_Von_Smile presentation=8 if_not_shown skip_next=8 : "..."
+            end presentation Otto_Von_Smile
+            state_b6[Otto_Von_Smile.evolution] += 100
+            globals.A49 = 2
+            globals.A22 = 1
+            globals.B66 = 1
+            globals.B65 = 1
+            globals.A15 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=13 : "Une guitare, je vais pouvoir monter un groupe, j'ai toujours révé d'étre une star..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=5 : "Voila qui va le calmer... Commander..."
+            globals.B55 = 1
+            state_b1[Otto_Von_Smile.population] += 250
+            state_b6[Otto_Von_Smile.evolution] += 50
+            globals.B54 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=15 : "Ohhh merci... Je vois que Monsieur est riche... Vous essayez de vous racheter|?..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement givré..."
+            state_b5[Otto_Von_Smile.energy] += 50
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require globals.A49 == 0
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=15 : "Hum, du parfum... Il me rappelle les soirées chaudes sur les plages de Galabar..."
+            say Otto_Von_Smile presentation=8 chatter : "Il parle de la planéte Galabar|..."
+            say Otto_Von_Smile presentation=16 : "Les Sanglots Longs Des Electrons de L'Atome..."
+            say Otto_Von_Smile presentation=14 : "Percent Mon Coeur d'Une Chaleur MEGATONNE..."
+            say Otto_Von_Smile presentation=8 chatter : "Commander, il dit un poéme... Ca Alors!!! Un poéme de Vernulrich"
+            say Otto_Von_Smile presentation=13 : "J'aimerais vous remercier..."
+            say Otto_Von_Smile presentation=12 : "Pour tous ces souvenirs, cette émotion..."
+            say Otto_Von_Smile presentation=11 : "Je dispose d'une optique, une lentille trés puissante..."
+            say Otto_Von_Smile presentation=16 : "... Que nous fabriquons en secret..."
+            say Otto_Von_Smile presentation=10 : "Elle est à vous si vous me fournissez vous aussi un secret..."
+            say Otto_Von_Smile presentation=8 chatter : "Qu'est-ce qui vous ferait plaisir, Monsieur smile|?"
+            say Otto_Von_Smile presentation=11 : "Oh|! Juste de quoi comprendre l'univers pour le maitriser..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=8 : "A vous de jouer, Commander..."
+            globals.A57 = 1
+            Bug_Deluxe.known = true
+            globals.A49 = 1
+            state_b1[Otto_Von_Smile.population] += 250
+            globals.B55 += 1
+            Otto_Von_Smile.aggressiveness = 100
+            bits(parfum.flags,0x0040) = false
+            end presentation Otto_Von_Smile
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+            require globals.A49 > 0
+        } then {
+            say Otto_Von_Smile presentation=10 : "Ah Galabar|... Senteurs de Galabar|...."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=5 : "ca sent plutot le chewing-gum, Galabar|..."
+            state_b6[Otto_Von_Smile.evolution] += 80
+            state_b1[Otto_Von_Smile.population] += 250
+            globals.B55 += 1
+            Otto_Von_Smile.aggressiveness = 100
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=9 : "Un décodeur de télevision... Je vais enfin pouvoir regarder \"Canal Moins\" en sombre..."
+            say Otto_Von_Smile presentation=8 chatter : "Vous voulez dire \"Canal + en clair...\""
+            say Otto_Von_Smile presentation=11 : "Vous étes dur avec moi, Monsieur Honk..."
+            say Otto_Von_Smile presentation=8 chatter : "D'autant plus dur que vous étes mou, Monsieur Von Smile!!!"
+            dictionary blank after "mou,"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=4 : "Il ne faut pas se laisser marcher sur les pieds, hein! Commander..."
+            state_b6[Otto_Von_Smile.evolution] += 50
+            state_b1[Otto_Von_Smile.population] -= 50
+            globals.B55 = 0
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+            require globals.A49 == 0
+        } then {
+            say Otto_Von_Smile presentation=15 : "De la nourriture... C'est du murfalo surgelé... Justement j'avais une petite faim..."
+            say Otto_Von_Smile presentation=8 chatter : "Il est terrifiant|..."
+            say Otto_Von_Smile presentation=16 : "Glurp... Glurx... Je préfére encore une bonne choucroux au Gluxx..."
+            say Otto_Von_Smile presentation=8 chatter : "Il nous regarde d'une facon bizarre..."
+            say Otto_Von_Smile presentation=10 : "Oui, vous ne seriez pas des Gluxx déguisés, par hasard|? J'ai trés faim..."
+            say Otto_Von_Smile presentation=8 chatter : "Désolé, Commander, son agressivité a encore augmenté..."
+            say Otto_Von_Smile presentation=8 chatter : "Il nous dévore des yeux... Calmez-le, vite|!"
+            say Otto_Von_Smile presentation=11 : "Vous étes des Gluxx, je reconnais l'odeur de bouilli|!"
+            say Otto_Von_Smile presentation=8 chatter : "Tirons-nous, commander, il va nous bouffer..."
+            say Otto_Von_Smile presentation=8 chatter : "Ou alors arrangez-vous pour cacher notre odeur..."
+            say Otto_Von_Smile presentation=11 if_not_shown skip_next=2 : "C'est ça|... cachez votre odeur|... ou cachez-vous|!..."
+            state_b5[Otto_Von_Smile.energy] += 300
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+            require globals.A49 > 0
+        } then {
+            say Otto_Von_Smile presentation=10 : "Glupxx|..."
+            say Otto_Von_Smile presentation=11 if_not_shown skip_next=2 : "Je me sens plus crool|..."
+            state_b5[Otto_Von_Smile.energy] += 300
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=15 : "Des médicaments... Du Prozak, Ha... Ha... HIC! HIC!"
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=4 : "Commander, il a le hoquet... Ca alors... Il devient tout rouge..."
+            state_b6[Otto_Von_Smile.evolution] += 60
+            state_b1[Otto_Von_Smile.population] += 150
+            globals.B55 += 1
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=14 : "DES ARMES|!!! MERCI COMMANDER... TU ME GATES... Je vais pouvoir briser ces Gluxx de malheur..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=4 : "Commander on a fait une connerie... Heu! je veux dire une bétise..."
+            Otto_Von_Smile.aggressiveness += 250
+            state_b6[Otto_Von_Smile.evolution] += 50
+            globals.B54 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=14 : "Des lentilles optiques... Tu plaisantes, c'est moi qui te les ai données..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "Ah oui, il a raison, Commander..."
+            optique.holder = aboard
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=9 : "De l'énergie, de l'énergie... hum|..."
+            say Otto_Von_Smile presentation=8 chatter : "Ca a l'air de lui plaire..."
+            say Otto_Von_Smile presentation=10 if_not_shown skip_next=4 : "Je me sens|... en forme|..."
+            state_b5[Otto_Von_Smile.energy] = 1000
+            Otto_Von_Smile.aggressiveness = 1000
+            state_b1[Otto_Von_Smile.population] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=9 : "Une bague... Quel bijou magnifique..."
+            say Otto_Von_Smile presentation=14 if_not_shown skip_next=5 : "Je vais l'offrir à Madame Von Smile... Elle va en fondre de joie..."
+            state_b6[Otto_Von_Smile.evolution] += 50
+            state_b1[Otto_Von_Smile.population] += 200
+            globals.B55 += 1
+            Otto_Von_Smile.aggressiveness -= 200
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Otto_Von_Smile.evolution] += 10
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=9 if_not_shown skip_next=3 : "De la Culture... C'est quoi ca|?..."
+            state_b6[Otto_Von_Smile.evolution] += 80
+            state_b5[Otto_Von_Smile.energy] += 10
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=14 : "L'écriture... Mais je sais déjà écrire Commander, tiens regarde:"
+            say Otto_Von_Smile presentation=15 : "CHAIR KOMANDEUR, JEUX TAICRI POUR THEU DONNAI DEMAI NOUVELE..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=2 : "OK, Monsieur Otto... C'est SUPER..."
+            state_b6[Otto_Von_Smile.evolution] += 80
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=12 if_not_shown skip_next=3 : "Un VAISSEAU... C'est le gros lot... Je vais pouvoir le revendre|..."
+            state_b6[Otto_Von_Smile.evolution] += 50
+            globals.B66 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=9 : "Un Traité de|... De quoi|? De Paix|?... Hum|... Je vais le lire..."
+            say Otto_Von_Smile presentation=8 chatter if_not_shown skip_next=5 : "Voila qui va calmer son agressivité pour un moment, Commander..."
+            state_b6[Otto_Von_Smile.evolution] += 50
+            globals.B54 = 0
+            Otto_Von_Smile.aggressiveness = 0
+            state_b1[Otto_Von_Smile.population] += 200
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Otto_Von_Smile presentation=13 if_not_shown skip_next=3 : "Des cadeaux... Je T'AIME... COMMANDER..."
+            state_b6[Otto_Von_Smile.evolution] += 10
+            state_b5[Otto_Von_Smile.energy] += 100
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Otto_Von_Smile presentation=8 chatter : "Quel objet désirez-vous donner à Otto, Commander?"
+        say Otto_Von_Smile presentation=8 chatter resume_at=gestovs_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Otto_Von_Smile presentation=8 : "..."
+        gestovs_dialogue_resume_1:
+        when {
+            require globals.B65 == 1
+        } then {
+            globals.B53 = 1
+        }
+        say Otto_Von_Smile presentation=14 : "A BIENTOT, COMMANDER... REVIENS ME VOIR AVEC BEAUCOUP DE CHOSES..."
+        say Otto_Von_Smile presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Otto_Von_Smile
+    }
+    proc biodec enabled {
+        during bridge
+        require globals.A27 == 3
+        require presentation == Otto_Von_Gluk
+    } then {
+        say Otto_Von_Gluk presentation=8 : "J'arrive pas à décrocher|..."
+        say Otto_Von_Gluk presentation=8 chatter : "c'est malin|..."
+        say Otto_Von_Gluk presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A27 = 4
+        end presentation Otto_Von_Gluk
+    }
+    proc gluglu enabled {
+        require globals.A61 == 2
+        during bridge
+        require presentation == Otto_Von_Gluk
+    } then {
+        say Otto_Von_Gluk presentation=8 : "krouik|..."
+        say Otto_Von_Gluk presentation=8 chatter : "allo oui j'écoute|?..."
+        say Otto_Von_Gluk presentation=8 : "Allo ici Von Gluk|..."
+        say Otto_Von_Gluk presentation=8 chatter : "tiens, tiens|... les slimers adorent le téléphone|..."
+        say Otto_Von_Gluk presentation=8 : "Oui ben voilà|! Moi penser pareil que le patron|!..."
+        say Otto_Von_Gluk presentation=8 : "...krouik|... aie|! Pas sur la téte, patron|! krouik|!..."
+        say Otto_Von_Gluk presentation=8 : "....krkrkrrk|... aie|! Mais non j'ai pas dit votre nom, patron|! Aie|!|..."
+        say Otto_Von_Gluk presentation=8 chatter : "qu'est-ce qui se passe, von gluk|? vous vous battez|?..."
+        say Otto_Von_Gluk presentation=8 : "krkrkrouik|... non, pardon|... C'était pour dire que je pensais que|..."
+        dictionary blank after "C'était"
+        say Otto_Von_Gluk presentation=8 chatter : "que|?..."
+        say Otto_Von_Gluk presentation=8 : "... krkrr|... ah oui|! Qu'on était exploité|! C'est plus possible|! Et je dis tout haut ce que tout l'univers pense tout bas|!..."
+        say Otto_Von_Gluk presentation=8 chatter : "et y a personne qui vous souffle en ce moment|?..."
+        say Otto_Von_Gluk presentation=8 : "Hein|?... Quoi|?... parlez plus fort, patron, j'entends pas|... Aie|! Non|! Pas la téte|!..."
+        say Otto_Von_Gluk presentation=8 : "krkrkr|... Euh|... Non|! Personne|... euh|... bon je rappellerai|!..."
+        say Otto_Von_Gluk presentation=8 chatter : "voilà, c'est ca, quand vous serez plus au point|..."
+        say Otto_Von_Gluk presentation=8 : "krouik|..."
+        say Otto_Von_Gluk presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A61 = 3
+        end presentation Otto_Von_Gluk
+    }
+    proc fingluk1 enabled {
+        during contact
+        require Otto_Von_Gluk.current_location == aboard
+        require globals.A68 == 2
+        require presentation == Otto_Von_Gluk
+    } then {
+        say Otto_Von_Gluk presentation=10 : "Y a pas à dire|..."
+        say Otto_Von_Gluk presentation=11 : "L'espace, c'est vraiment|..."
+        say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Space|!..."
+        request sequence "star2.hnm"
+        say Otto_Von_Gluk presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A13 += 3
+        end presentation Otto_Von_Gluk
+    }
+    proc ovgl01 enabled {
+        during travel
+        require presentation == Otto_Von_Gluk
+    } then {
+        when {
+            require globals.A68 == 1
+        } then {
+            say Otto_Von_Gluk presentation=9 : "Gluk|... Pas Gluk|..."
+            say Otto_Von_Gluk presentation=8 chatter : "pas gréve|?..."
+            say Otto_Von_Gluk presentation=10 : "Ah si! ah si|!... Gréve|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Otto_Von_Gluk
+        }
+        when {
+            require Otto_Von_Gluk.encounter_count == 1
+        } then {
+            say Otto_Von_Gluk presentation=11 : "Moi Général Otto Von Gluk, Commandant en chef du bataillon slimer de la troisiéme galaxie..."
+            say Otto_Von_Gluk presentation=8 chatter : "Bonjour Monsieur|..."
+            say Otto_Von_Gluk presentation=8 chatter : "Commander, tout de méme, c'est trés étonnant... Les SLIMERS ont migré..."
+            say Otto_Von_Gluk presentation=8 chatter : "sans qu'on leur donne de vaisseau|!..."
+        }
+        say Otto_Von_Gluk presentation=10 : "MOI GENERAL OTTO VON GLUK te souhaite la bienvenue, Commander..."
+        text_tokens Otto_Von_Gluk presentation=11 : "Nous" "sommes" state_number(0x0D62) "slimers" "ici..."
+        when {
+            require globals.A58 == 1
+            require armes.holder != aboard
+        } then {
+            say Otto_Von_Gluk presentation=10 : "J'ai dit je veux des armes|... Vous n'en avez pas|... Inutile de revenir sans|..."
+            say Otto_Von_Gluk presentation=8 chatter : "bon|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Otto_Von_Gluk
+        }
+    }
+    proc ototo enabled {
+        during travel
+        require presentation == Otto_Von_Gluk
+    } then {
+        when {
+            require globals.A58 == 0
+            require globals.A34 == 0
+            require vaisseau.holder != aboard
+            require armes.holder != aboard
+        } then {
+            say Otto_Von_Gluk presentation=10 : "Nous fabriquons de beaux vaisseaux pour voyager dans l'espace..."
+            say Otto_Von_Gluk presentation=8 chatter : "Corne du diable|! Ils en fabriquent|! Comment font-ils|?..."
+            say Otto_Von_Gluk presentation=14 : "C'est gràce à la technologie que vous nous avez donnée, Commander..."
+            say Otto_Von_Gluk presentation=8 chatter : "Tout s'explique..."
+            say Otto_Von_Gluk presentation=15 : "Nous pouvons te vendre un vaisseau contre 3 crédits..."
+            say Otto_Von_Gluk presentation=8 chatter : "Waoh! Pas cher|!!! Ca tombe bien, commander, on en a besoin..."
+            say Otto_Von_Gluk presentation=8 chatter : "pour faire migrer les autres espéces..."
+            say Otto_Von_Gluk presentation=16 : "QUOI|? IL Y A D'AUTRES ESPECES|?"
+            say Otto_Von_Gluk presentation=8 chatter : "Aie... J'ai encore trop parlé..."
+            say Otto_Von_Gluk presentation=13 resume_at=ototo_dialogue_resume_1 : "Il y en a beaucoup, des espéces|?..." choices "oui" "non"
+            when {
+                require choice != "non"
+            } then {
+                say Otto_Von_Gluk presentation=12 : "Pas question de vous fournir un vaisseau pour que vous les fassiez migrer de partout|!... Univers rempli d'aliens|... BEURK|!..."
+                dictionary blank after "BEURK"
+                say Otto_Von_Gluk presentation=8 chatter : "mais s'ils sont dans l'univers, ils ne sont pas chez vous|!..."
+                say Otto_Von_Gluk presentation=11 if_not_shown skip_next=1 : "Moui|... C'est vrai|..."
+                choice = none
+            }
+            when {
+                require choice != "oui"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "Non, rassurez-vous, pour l'instant une ou deux maximum..."
+                choice = none
+            }
+            ototo_dialogue_resume_1:
+            say Otto_Von_Gluk presentation=8 chatter : "Alors, vous nous le vendez, ce vaisseau|?..."
+            say Otto_Von_Gluk presentation=12 : "Pourquoi pas..."
+            say Otto_Von_Gluk presentation=8 chatter : "Comment ca, pourquoi pas|? C'est toujours 3 crédits|?..."
+            say Otto_Von_Gluk presentation=11 : "Ah non..."
+            say Otto_Von_Gluk presentation=8 chatter : "Aie Aie aie..."
+            say Otto_Von_Gluk presentation=16 : "Je veux des armes..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Des qui font SPLATCH|!"
+            request sequence "explo3.hnm"
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "Vous voulez dire qui font FLOUF|!"
+            request sequence "explan01.hnm"
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "NON NON|! Des qui font SPLATCH|!"
+            request sequence "explo3.hnm"
+            say Otto_Von_Gluk presentation=16 : "De l'argent ET des armes|!"
+            say Otto_Von_Gluk presentation=8 chatter : "Où c'est qu'on va trouver ca, nous|?"
+            say Otto_Von_Gluk presentation=10 : "Alors là, débrouillez-vous... Pas mon probléme|!"
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "Va falloir fouiller l'univers, Commander..."
+            end presentation Otto_Von_Gluk
+            globals.A58 = 1
+        }
+        when {
+            require vaisseau.holder != aboard
+            require globals.A34 == 2
+            require bits(Izwalito.flags,0x0004)
+            require bits(Kero_Zen.flags,0x0004)
+        } then {
+            say Otto_Von_Gluk presentation=11 : "Vous voulez m'acheter un vaisseau|? Pour 3 crédits|...."
+            say Otto_Von_Gluk presentation=8 chatter : "vous n'avez plus peur de voir l'univers rempli d'autres races|?..."
+            say Otto_Von_Gluk presentation=12 : "Non|... Le commerce avant tout|..."
+            when {
+                require globals.A4 < 3
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "BAVE DE CROOLIS!!! Nous n'avons pas assez de crédits, Commander..."
+            }
+            when {
+                require globals.A4 > 3
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_2 : "Vous acceptez de leur acheter un vaisseau, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie 3 crédits, Commander"
+                    transfer credit from aboard to Otto_Von_Gluk
+                    globals.A4 -= 3
+                    say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION VAISSEAU DANS CRYOBOX|..."
+                    transfer vaisseau from Otto_Von_Gluk to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+        ototo_dialogue_resume_2:
+        when {
+            require globals.A58 == 1
+            require globals.A34 == 0
+            require vaisseau.holder != aboard
+            require armes.holder == aboard
+            require globals.A4 > 2
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter : "bonjour monsieur von gluk, nous avons l'argent et les armes comme convenu..."
+            say Otto_Von_Gluk presentation=11 : "Moui... Les armes... Parlons-en..."
+            say Otto_Von_Gluk presentation=8 chatter : "oui, parlons-en|! où est notre vaisseau|?"
+            say Otto_Von_Gluk presentation=12 : "Quel vaisseau|?"
+            say Otto_Von_Gluk presentation=8 chatter : "Comment, quel vaisseau|? ca commence à bien faire|!"
+            say Otto_Von_Gluk presentation=13 resume_at=ototo_dialogue_resume_3 : "Vos armes, d'abord... ELLES VIENNENT D'OU|?" choices "gluxx" "mentir"
+            when {
+                require choice == "gluxx"
+            } then {
+                say Otto_Von_Gluk presentation=11 if_not_shown skip_next=1 : "QUOI|! DES GLUXX|!?... Nos ennemis héréditaires|!..."
+                choice = none
+            }
+            when {
+                require choice == "mentir"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "Ben... Du supramarché..."
+                request sequence "pubven1.hnm"
+                say Otto_Von_Gluk presentation=14 : "Mensonge|! Elles viennent des GLUXX, j'ai mes informations|!"
+                say Otto_Von_Gluk presentation=8 chatter : "dites donc, commander, il a l'air bien renseigné..."
+                say Otto_Von_Gluk presentation=15 : "Bien plus que vous croyez..."
+                choice = none
+            }
+            ototo_dialogue_resume_3:
+            say Otto_Von_Gluk presentation=8 chatter : "Alors, pour le vaisseau|?..."
+            say Otto_Von_Gluk presentation=16 : "Débrouillez-vous sans moi... Pas mes oignons..."
+            dictionary blank after "Débrouillez-vous"
+            say Otto_Von_Gluk presentation=8 chatter : "Aie aie aie... Consternation, commander, on est dans la cybermerde..."
+            say Otto_Von_Gluk presentation=9 : "C'était donc ça l'odeur..."
+            say Otto_Von_Gluk presentation=8 chatter : "quelle finesse..."
+            say Otto_Von_Gluk presentation=8 chatter : "j'ai une idée, commander, il a l'air d'aimer l'argent..."
+            say Otto_Von_Gluk presentation=8 chatter : "on va la corrompre, la grosse endive spatiale..."
+            say Otto_Von_Gluk presentation=8 chatter : "filez-lui un crédit, commander..."
+            say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_4 : "Est-ce que vous acceptez de lui filer un crédit, commander|?" choices "accepter" "refuser"
+            when {
+                require choice == "accepter"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "teleportation credit corruption von gluk|..."
+                transfer credit from aboard to Otto_Von_Gluk
+                say Otto_Von_Gluk presentation=10 if_not_shown skip_next=1 : "Non mais ça va pas|? Vous me prenez pour qui|? Bernie Von Nanard|?"
+                globals.A4 -= 1
+                say Otto_Von_Gluk presentation=11 : "On ne m'achéte pas, moi|! Trous puants|!"
+                say Otto_Von_Gluk presentation=8 chatter : "Aie commander, on l'a vexé..."
+                say Otto_Von_Gluk presentation=8 chatter : "ma grosse puce me dit qu'on ne lui a pas donné assez... Il est gourmand, Von Gluk..."
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=3 : "Allez, faut étre royal... On lui donne tout notre fric|!"
+                globals.A27 = 1
+                globals.A58 = 2
+                choice = none
+            }
+            when {
+                require choice == "refuser"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "on pourrait quand méme essayer de lui donner autre chose..."
+                say Otto_Von_Gluk presentation=8 chatter : "hein, monsieur Von Gluk, qu'est-ce qui vous ferait plaisir|?"
+                say Otto_Von_Gluk presentation=12 : "MmmmmFfff..."
+                say Otto_Von_Gluk presentation=8 chatter : "allez, faites pas la téte... Dites voir un peu..."
+                say Otto_Von_Gluk presentation=13 : "Ben..."
+                say Otto_Von_Gluk presentation=8 chatter : "allez dites-le..."
+                say Otto_Von_Gluk presentation=14 : "... J'aimerais bien un peu de..."
+                say Otto_Von_Gluk presentation=8 chatter : "de quoi|? De quoi|?..."
+                say Otto_Von_Gluk presentation=15 : "... Un peu de..."
+                say Otto_Von_Gluk presentation=8 chatter : "Oui allez-y, de quoi|?"
+                say Otto_Von_Gluk presentation=16 : "DE TRANQUILLITE, SALE BECANE|! FOUTEZ-MOI LA PAIX|!"
+                say Otto_Von_Gluk presentation=16 if_not_shown skip_next=3 : "VOUS FOUTRE MOI LA PAIX|!"
+                globals.A28 = 1
+                globals.A58 = 2
+                choice = none
+            }
+        }
+        ototo_dialogue_resume_4:
+        when {
+            require globals.A34 == 0
+            require globals.A28 == 1
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_5 : "Qu'est-ce qu'on fait, commander, on lui fout la paix ou quoi|?" choices "lui_foutre" "pas_lui_foutre"
+            when {
+                require choice == "lui_foutre"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "D'accord commander, comme vous voudrez..."
+                dictionary blank after "D'accord"
+                say Otto_Von_Gluk presentation=10 : "Tiens, avant de partir..."
+                say Otto_Von_Gluk presentation=8 chatter : "Oui Monsieur Von Gluk|?..."
+                say Otto_Von_Gluk presentation=11 : "Vous n'auriez pas un peu de géranium à me donner|?..."
+                say Otto_Von_Gluk presentation=8 chatter : "Un peu de quoi|?..."
+                say Otto_Von_Gluk presentation=12 : "De géranium... C'est pour ma femme... Elle aime beaucoup ca..."
+                say Otto_Von_Gluk presentation=8 chatter : "Du géranium|?... Il sort avec olga ou quoi|?"
+                say Otto_Von_Gluk presentation=8 chatter : "on n'a qu'à lui filer du bionium, commander, ca finit pareil..."
+                say Otto_Von_Gluk presentation=8 chatter : "il n'y verra que du feu..."
+                say Otto_Von_Gluk presentation=13 : "Oui s'il vous plait, 10 géraniums, un bouquet pour ma femme..."
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "Compris, commander|? Allez chercher 10 doses de bionium..."
+                globals.vbio = 0
+                transfer bionium from aboard to Otto_Von_Gluk
+                say Otto_Von_Gluk presentation=8 if_not_shown skip_next=4 : "..."
+                end presentation Otto_Von_Gluk
+                globals.A29 = 1
+                globals.A28 = 2
+                choice = none
+            }
+            when {
+                require choice != "_lui_foutre"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "OK commander, on va lui rentrer dans le lard à l'endive de l'espace|!"
+                say Otto_Von_Gluk presentation=8 chatter : "alors l'endive, tu cherches la kachtagne|?"
+                say Otto_Von_Gluk presentation=10 : "La quoi|?"
+                say Otto_Von_Gluk presentation=8 chatter : "excusez-moi, je parlais la bouche pleine, c'est trop bon ce jus de SINOX"
+                say Otto_Von_Gluk presentation=8 chatter : "je veux dire, tu cherches la castagne|?..."
+                say Otto_Von_Gluk presentation=12 : "Cause toujours, minus..."
+                say Otto_Von_Gluk presentation=8 chatter : "Qu'est-ce t'as à me parler comme ca|? T'aimes plus la vie ou quoi|?"
+                say Otto_Von_Gluk presentation=13 : "Ta mére à poil sur CD-ROM|!..."
+                say Otto_Von_Gluk presentation=8 chatter : "la tienne... La tienne..."
+                say Otto_Von_Gluk presentation=8 chatter : "commander, je sais pas quoi dire, aidez-moi..."
+                say Otto_Von_Gluk presentation=8 chatter : "Allez-y, balancez-lui une insulte|!" choices "Dites-lui"
+                say Otto_Von_Gluk presentation=8 chatter : "Je suis sùr qu'il entendra à travers l'écran|!..."
+                say Otto_Von_Gluk presentation=8 chatter : "...|...|...|...|...|...|...|...|...|...|...|..."
+                say Otto_Von_Gluk presentation=8 chatter : "... votre insulte|..."
+                say Otto_Von_Gluk presentation=8 chatter : "est transmise|..."
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "par l'écran, commander|..."
+                request sequence "scandoig.hnm"
+                say Otto_Von_Gluk presentation=14 : "Arf Arf|! Elle est nulle ton insulte|!"
+                say Otto_Von_Gluk presentation=8 chatter : "t'injuries mon commander, là|!"
+                say Otto_Von_Gluk presentation=15 : "Ton insulte elle suce des endives, arf arf|!"
+                say Otto_Von_Gluk presentation=8 chatter : "commander, il insulte votre insulte|!"
+                say Otto_Von_Gluk presentation=15 : "ARF ARF|! Des endives|!..."
+                say Otto_Von_Gluk presentation=8 chatter : "tu veux qu'on t'atomise la gueule ou quoi|?"
+                say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Ligue intergalactique de vertu|!..."
+                request sequence "ppitin02.hnm"
+                say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Amende de un crédit pour incorrection verbale|!..."
+                request sequence "diplom1v.hnm"
+                say Otto_Von_Gluk presentation=16 : "Atomique ta mére, commander|!"
+                say Otto_Von_Gluk presentation=8 chatter : "ma parole, tu vas la bouffer notre bombe|!"
+                say Otto_Von_Gluk presentation=11 : "je préférerais du bionium, mais comme tu voudras, tas de rouille|!"
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=3 : "allez-y commander, atomisez-lui sa tronche d'endive..."
+                globals.A30 = 1
+                globals.A28 = 2
+                choice = none
+            }
+        }
+        ototo_dialogue_resume_5:
+        when {
+            require globals.vbio < 10
+            require globals.A29 == 1
+            require globals.A34 == 0
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter : "commander, il faut aller chercher du bionium chez scruter-jo..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "..."
+            end presentation Otto_Von_Gluk
+        }
+        when {
+            require globals.A29 == 1
+            require globals.A34 == 0
+            require globals.vbio > 9
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter : "bon ben voilà monsieur von gluk, on a vos géraniums..."
+            say Otto_Von_Gluk presentation=12 : "Ils sentent bizarre vos géraniums..."
+            say Otto_Von_Gluk presentation=8 chatter : "Ca c'est parce qu'on les a volés aux Gluxx..."
+            say Otto_Von_Gluk presentation=16 : "Quoi|?! Ils viennent aussi des GLUXX|?"
+            say Otto_Von_Gluk presentation=8 chatter : "aie... encore une gaffe..."
+            say Otto_Von_Gluk presentation=13 : "AH AH AH|!"
+            say Otto_Von_Gluk presentation=8 chatter : "Il rigole|!"
+            say Otto_Von_Gluk presentation=14 : "J'en reviens pas|! vous les avez piqués aux GLUXX|! Quelle bonne blague|!"
+            say Otto_Von_Gluk presentation=8 chatter : "ca a l'air de lui plaire, finalement..."
+            say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_6 : "Bon alors, on lui donne son bionium, commander|?" choices "donner"
+            when {
+                require choice == "donner"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "..."
+                globals.A29 = 2
+                choice = none
+            }
+        }
+        ototo_dialogue_resume_6:
+        when {
+            require globals.A29 == 2
+            require globals.A34 == 0
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter : "on balance les géraniums|!..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "..."
+            transfer bionium from aboard to Otto_Von_Gluk
+            globals.vbio -= 10
+            say Otto_Von_Gluk presentation=14 : "SNIF SNIF..."
+            say Otto_Von_Gluk presentation=8 chatter : "aie, il reconnait pas l'odeur..."
+            say Otto_Von_Gluk presentation=15 : "Mmmmm... SNIF SCHNOUF|!... Ta mére|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "A poil sur cd rom..."
+            request sequence "flitutr.hnm"
+            say Otto_Von_Gluk presentation=8 chatter : "ca lui plait quand méme, on dirait..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "AAAAAA... CHNOUF|!!!"
+            request sequence "explbleu.hnm"
+            say Otto_Von_Gluk presentation=8 chatter : "cd rhume|?..."
+            say Otto_Von_Gluk presentation=11 : "AAAaaa... Ils sont bons vos géraniums..."
+            say Otto_Von_Gluk presentation=10 : "Encore désolé pour les quelques mots que nous avons eus..."
+            say Otto_Von_Gluk presentation=8 chatter : "c'est du passé, monsieur Von Gluk..."
+            say Otto_Von_Gluk presentation=9 : "Non vraiment, je ne sais pas ce qui m'a pris..."
+            say Otto_Von_Gluk presentation=10 : "Traiter votre mére de cette facon... Ce n'était pas convenable..."
+            say Otto_Von_Gluk presentation=8 chatter : "ce n'est rien monsieur Von Gluk, ma mére est effectivement un cd rom..."
+            say Otto_Von_Gluk presentation=15 : "Arf Arf..."
+            say Otto_Von_Gluk presentation=8 chatter : "Quoi|? Tu te moques de ma mére|?..."
+            say Otto_Von_Gluk presentation=11 : "Ecoutez monsieur honk, nous n'allons pas recommencer..."
+            say Otto_Von_Gluk presentation=8 chatter : "MMMmmm..."
+            say Otto_Von_Gluk presentation=10 resume_at=ototo_dialogue_resume_7 : "Hein, Commander, vous n'allez pas recommencer|?" choices "si" "non"
+            when {
+                require choice == "si"
+            } then {
+                say Otto_Von_Gluk presentation=11 if_not_shown skip_next=3 : "Trés bien, allez-y, recommencez|! Recommencez tout|!..."
+                end presentation Otto_Von_Gluk
+                globals.A13 = 1
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Otto_Von_Gluk presentation=13 if_not_shown skip_next=1 : "Je préfére ça|..."
+                choice = none
+            }
+            ototo_dialogue_resume_7:
+            say Otto_Von_Gluk presentation=12 : "Et en gage de bonne volonté, voici l'adresse d'un camarade MIGRAX..."
+            say Otto_Von_Gluk presentation=8 chatter : "c'est trés gentil, monsieur von gluk, mais pourquoi faire|?..."
+            say Otto_Von_Gluk presentation=13 : "Il est un peu bricoleur, il devrait vous proposer des vaisseaux pas chers..."
+            say Otto_Von_Gluk presentation=8 chatter : "vous entendez, commander|? Quelle aubaine|!"
+            say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_8 : "On en profite ou on se méfie|?" choices "profiter" "méfiance"
+            when {
+                require choice == "profiter"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "Merci Von Gluk|!..."
+                say Otto_Von_Gluk presentation=12 : "Non non, de rien, le plaisir est pour moi|..."
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "et les ennuis pour nous|..."
+                choice = none
+            }
+            when {
+                require choice == "méfiance"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "mais dites donc monsieur von gluk, ils volent au moins ces vaisseaux|?..."
+                say Otto_Von_Gluk presentation=14 : "Vous mettez en doute ma parole|?"
+                say Otto_Von_Gluk presentation=8 chatter : "Ben on sait jamais avec les aliens..."
+                say Otto_Von_Gluk presentation=15 : "Quoi|? Tu m'as traité d'alien, tas de bugs|?"
+                say Otto_Von_Gluk presentation=8 chatter : "toi-méme hé dugland|!"
+                say Otto_Von_Gluk presentation=16 : "HONK|! HONKUL hé|! Allez vous faire voir chez les migrax|!"
+                dictionary blank after "HONKUL"
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "c'est bon, commander, il vient de me filer leur adresse|..."
+                choice = none
+            }
+            ototo_dialogue_resume_8:
+            say Otto_Von_Gluk presentation=8 chatter : "Attention MIGRAX, nous voilà|!..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=2 : "..."
+            globals.A31 = 1
+            end presentation Otto_Von_Gluk
+        }
+        when {
+            require globals.A27 == 2
+            require vaisseau.holder != aboard
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter : "dites donc|, glugluk|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Oui|... C'est moi|..."
+            request sequence "ppitin02.hnm"
+            say Otto_Von_Gluk presentation=8 chatter : "ben|???"
+            say Otto_Von_Gluk presentation=12 : "Pardon|... Je suis un peu schizo|..."
+            say Otto_Von_Gluk presentation=8 chatter : "freine|!..."
+            say Otto_Von_Gluk presentation=13 : "J'aimerais bien|... Mais le bionium|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "C'est tellement space|..."
+            request sequence "star2.hnm"
+            say Otto_Von_Gluk presentation=14 : "J'arrive pas à|... J'arrive pas à|..."
+            say Otto_Von_Gluk presentation=8 chatter : "a pas quoi|? à pas quoi|?..."
+            say Otto_Von_Gluk presentation=14 : "J'arrive pas à|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Otto_Von_Gluk
+            globals.A27 = 3
+        }
+        when {
+            require vaisseau.holder != aboard
+            require globals.A27 == 4
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter : "bon|... t'as raccroché|?..."
+            say Otto_Von_Gluk presentation=14 : "Ah ah|... ouais ça y est|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Je me suis rangé des vaisseaux|..."
+            dictionary blank after "rangé"
+            request sequence "krando20.hnm"
+            say Otto_Von_Gluk presentation=8 chatter : "oulaaa|... ça va pas fort|..."
+            say Otto_Von_Gluk presentation=15 : "Normal|... C'est à cause que j'ai attrapé|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Le concert|..."
+            request sequence "lpm4sc1.hnm"
+            say Otto_Von_Gluk presentation=8 chatter : "comment vous savez|?..."
+            say Otto_Von_Gluk presentation=12 : "J'invente rien|... Regardez|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "L'ordonnance de Gluxxenberg|..."
+            request sequence "diplom1r.hnm"
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Un bionium matin et soir|..."
+            transfer bionium from Otto_Von_Gluk to aboard
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "De la méthapommade|..."
+            transfer medicament from Otto_Von_Gluk to aboard
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Et du GLUXXRONZAN|..."
+            transfer energie from Otto_Von_Gluk to aboard
+            say Otto_Von_Gluk presentation=8 chatter : "quel sevrage|!..."
+            say Otto_Von_Gluk presentation=13 : "M'en parlez pas|... Et comme nourriture|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "J'ai droit qu'au murfalo|..."
+            request sequence "venus06.hnm"
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "bouilli|..."
+            transfer nourriture from Otto_Von_Gluk to aboard
+            say Otto_Von_Gluk presentation=12 : "Vous connaissez pas la recette par hasard|?..."
+            say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_9 : "vous la connaissez|, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Otto_Von_Gluk presentation=11 : "C'est vraiment dégueu|, hein|?..."
+                say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Otto_Von_Gluk presentation=10 : "Eh ben vous perdez pas grand chose|..."
+                say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            ototo_dialogue_resume_9:
+            say Otto_Von_Gluk presentation=8 chatter : "bon|, monsieur Von Gluk, qu'est-ce qui vous ferait plaisir|?"
+            say Otto_Von_Gluk presentation=12 : "MmmmmFfff..."
+            say Otto_Von_Gluk presentation=8 chatter : "allez, faites pas la téte... Dites voir un peu..."
+            say Otto_Von_Gluk presentation=13 : "Ben..."
+            say Otto_Von_Gluk presentation=8 chatter : "allez dites-le..."
+            say Otto_Von_Gluk presentation=14 : "... J'aimerais bien un peu de..."
+            say Otto_Von_Gluk presentation=8 chatter : "De quoi|? De quoi|?..."
+            say Otto_Von_Gluk presentation=15 : "... Un peu de..."
+            say Otto_Von_Gluk presentation=8 chatter : "Oui allez-y, de quoi|?"
+            say Otto_Von_Gluk presentation=16 : "DE TRANQUILLITE, SALE BECANE|! FOUTEZ-MOI LA PAIX|!"
+            say Otto_Von_Gluk presentation=16 if_not_shown skip_next=3 : "VOUS FOUTRE MOI LA PAIX|!"
+            globals.A27 = 5
+            globals.A28 = 1
+        }
+        when {
+            require globals.A27 == 1
+            require globals.A34 == 0
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_10 : "d'accord, commander|?" choices "d_accord" "pas_question"
+            when {
+                require choice == "d_accord"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "..."
+                transfer credit from aboard to Otto_Von_Gluk
+                globals.A4 = 0
+                say Otto_Von_Gluk presentation=9 : "Moui... Bon. On va voir ce qu'on peut faire pour le vaisseau..."
+                say Otto_Von_Gluk presentation=8 chatter : "ca marche, commander, je vous l'avais dit, c'est un gourmand..."
+                say Otto_Von_Gluk presentation=10 : "Bon, c'est d'accord pour le vaisseau, mais si vous pouviez aussi..."
+                say Otto_Von_Gluk presentation=8 chatter : "j'ai parlé trop vite, qu'est-ce qu'il veut encore|?"
+                say Otto_Von_Gluk presentation=11 : "Oh pas grand chose... A l'occasion, une petite dose de bionium..."
+                say Otto_Von_Gluk presentation=8 chatter : "encore un bioniumane..."
+                say Otto_Von_Gluk presentation=12 : "Quoi|? Une fois de temps en temps... Ca peut pas faire de mal..."
+                say Otto_Von_Gluk presentation=8 chatter : "Ben voyons, promis|! On y pensera..."
+                say Otto_Von_Gluk presentation=8 chatter : "en attendant, aboule la marchandise..."
+                say Otto_Von_Gluk presentation=13 : "Voilà... Voilà..."
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION VAISSEAU SUR CRYOBOX..."
+                transfer vaisseau from Otto_Von_Gluk to aboard
+                say Otto_Von_Gluk presentation=8 if_not_shown skip_next=3 : "..."
+                end presentation Otto_Von_Gluk
+                globals.A27 = 2
+                choice = none
+            }
+            when {
+                require choice != "_question"
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "bien joué, commander|! On n'allait quand méme pas dilapider notre fortune..."
+                say Otto_Von_Gluk presentation=8 chatter : "simplement pour un vaisseau|!"
+                say Otto_Von_Gluk presentation=8 chatter : "on pourrait quand méme essayer de lui donner autre chose..."
+                say Otto_Von_Gluk presentation=8 chatter : "hein, monsieur Von Gluk, qu'est-ce qui vous ferait plaisir|?"
+                say Otto_Von_Gluk presentation=12 : "MmmmmFfff..."
+                say Otto_Von_Gluk presentation=8 chatter : "allez, faites pas la téte... Dites voir un peu..."
+                say Otto_Von_Gluk presentation=13 : "Ben..."
+                say Otto_Von_Gluk presentation=8 chatter : "allez dites-le..."
+                say Otto_Von_Gluk presentation=14 : "... J'aimerais bien un peu de..."
+                say Otto_Von_Gluk presentation=8 chatter : "De quoi|? De quoi|?..."
+                say Otto_Von_Gluk presentation=15 : "... Un peu de..."
+                say Otto_Von_Gluk presentation=8 chatter : "Oui, allez-y, de quoi|?"
+                say Otto_Von_Gluk presentation=16 : "DE TRANQUILLITE, SALE BECANE|! FOUTEZ-MOI LA PAIX|!"
+                say Otto_Von_Gluk presentation=16 if_not_shown skip_next=3 : "VOUS FOUTRE MOI LA PAIX|!"
+                globals.A27 = 2
+                globals.A28 = 1
+                choice = none
+            }
+        }
+        ototo_dialogue_resume_10:
+        when {
+            require globals.A30 == 1
+            require globals.A34 == 0
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter : "regardez dans la cryobox|, commander|..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "de quoi lui atomiser sa tronche|!..."
+            globals.A30 = 2
+            atomique.holder = aboard
+        }
+        when {
+            require globals.A34 == 1
+            require vaisseau.holder != aboard
+        } then {
+            say Otto_Von_Gluk presentation=8 chatter : "alors voilà la situation, von gluk|!"
+            say Otto_Von_Gluk presentation=8 chatter : "on a vu monsieur migrator, il nous a proposé un vaisseau pour..."
+            say Otto_Von_Gluk presentation=10 : "Oui... Pour combien|?"
+            say Otto_Von_Gluk presentation=8 chatter : "pas dix..."
+            say Otto_Von_Gluk presentation=11 : "Combien|?"
+            say Otto_Von_Gluk presentation=8 chatter : "pas sept..."
+            say Otto_Von_Gluk presentation=12 : "COMBIEN|?"
+            say Otto_Von_Gluk presentation=8 chatter : "pas cinq..."
+            say Otto_Von_Gluk presentation=8 chatter : "mais trois crédits..."
+            say Otto_Von_Gluk presentation=8 chatter : "alors je crois qu'on pourrait négocier un vaisseau pour un crédit..."
+            say Otto_Von_Gluk presentation=13 : "Petit malin... On fait jouer la concurrence|?..."
+            say Otto_Von_Gluk presentation=8 chatter : "hé hé|!..."
+            say Otto_Von_Gluk presentation=8 chatter : "commander c'est bien parti, je crois qu'on va faire une affaire..."
+            say Otto_Von_Gluk presentation=14 : "Je ne vends pas en dessous de dix crédits..."
+            say Otto_Von_Gluk presentation=8 chatter : "deux..."
+            say Otto_Von_Gluk presentation=15 : "huit..."
+            say Otto_Von_Gluk presentation=8 chatter : "quatre..."
+            say Otto_Von_Gluk presentation=16 : "sept..."
+            say Otto_Von_Gluk presentation=8 chatter : "cinq..."
+            say Otto_Von_Gluk presentation=9 : "trois, et c'est mon dernier prix..."
+            say Otto_Von_Gluk presentation=8 chatter : "on va l'avoir, commander, il ne sait pas compter|!..."
+            say Otto_Von_Gluk presentation=9 : "Alors, d'accord pour trois crédits|?..."
+            say Otto_Von_Gluk presentation=8 chatter : "Va pour six|!..."
+            say Otto_Von_Gluk presentation=10 : "Marché conclu|!"
+            say Otto_Von_Gluk presentation=8 chatter : "vous avez vu comme je l'ai eu, commander|?"
+            say Otto_Von_Gluk presentation=8 chatter : "et vous n'avez rien eu à faire|! j'ai tout fait tout seul|..."
+            say Otto_Von_Gluk presentation=12 : "Eh|! Commander|! T'en n'as pas marre de voir défiler nos dialogues|..."
+            say Otto_Von_Gluk presentation=8 chatter : "sans pouvoir intervenir|?..."
+            say Otto_Von_Gluk presentation=13 : "Ca doit étre rageant|, non|?..."
+            when {
+                require globals.A4 > 5
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "Bon|... je le paie, commander..."
+                transfer credit from aboard to Otto_Von_Gluk
+                globals.A4 -= 6
+                say Otto_Von_Gluk presentation=11 : "C'est dommage... J'étais prét à vous le laisser pour rien..."
+                say Otto_Von_Gluk presentation=8 chatter : "quoi|???"
+                say Otto_Von_Gluk presentation=12 : "Ben oui, moi je n'en ai pas vraiment besoin, j'en ai plein..."
+                say Otto_Von_Gluk presentation=8 chatter : "veinard|!..."
+                say Otto_Von_Gluk presentation=13 : "Mais apparemment vous étes préts à payer trés cher pour en avoir un..."
+                say Otto_Von_Gluk presentation=8 chatter : "Oulà..."
+                say Otto_Von_Gluk presentation=14 : "Alors je crois qu'on pourrait faire monter encore un peu le prix..."
+                say Otto_Von_Gluk presentation=8 chatter : "pas honnéte, ca|!..."
+                say Otto_Von_Gluk presentation=15 : "Ben non... Les affaires sont les affaires..."
+                say Otto_Von_Gluk presentation=8 chatter : "vautour|!"
+                say Otto_Von_Gluk presentation=16 : "PIGEON|!"
+                say Otto_Von_Gluk presentation=8 chatter : "pourri du bulbe|!"
+                say Otto_Von_Gluk presentation=10 : "Pourri de bugs|!"
+                say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_11 : "commander, ce slimer est vraiment mesquin|... m'autorisez-vous à lui dire|?..." choices "oui" "non"
+                when {
+                    require choice == "oui"
+                } then {
+                    say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "mesquin, ca, mesquin|!"
+                    choice = none
+                }
+                when {
+                    require choice == "non"
+                } then {
+                    say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "bon trés bien, je le traite de salaud|... Otto t'es qu'un salaud|!..."
+                    choice = none
+                }
+                ototo_dialogue_resume_11:
+                say Otto_Von_Gluk presentation=11 : "Je sais, c'est pas facile tous les jours..."
+                say Otto_Von_Gluk presentation=8 chatter : "Pauvre vieux, ca doit étre affreux d'étre un salaud..."
+                say Otto_Von_Gluk presentation=12 : "Ouais... C'est l'horreur..."
+                say Otto_Von_Gluk presentation=8 chatter : "les problémes de mauvaise conscience, tout ca..."
+                say Otto_Von_Gluk presentation=12 : "Ouais, l'horreur..."
+                say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_12 : "le pauvre, c'est dur pour lui, est-ce que je lui exprime notre compassion|?..." choices "oui" "non"
+                when {
+                    require choice == "oui"
+                } then {
+                    say Otto_Von_Gluk presentation=8 chatter : "je compatis de tout mon disque dur..."
+                    say Otto_Von_Gluk presentation=13 : "T'es sympa, vieux. Allez, je vous le laisse à six crédits, le vaisseau..."
+                    say Otto_Von_Gluk presentation=8 chatter : "merci camarade..."
+                    say Otto_Von_Gluk presentation=14 : "De rien, c'est naturel..."
+                    choice = none
+                }
+                when {
+                    require choice == "non"
+                } then {
+                    say Otto_Von_Gluk presentation=8 chatter : "et ta téte, c'est pas une horreur|?"
+                    say Otto_Von_Gluk presentation=12 : "Non mais qu'est-ce qu'elle a ma gueule|?..."
+                    say Otto_Von_Gluk presentation=8 chatter : "elle est sale|... C'est une sale gueule|..."
+                    say Otto_Von_Gluk presentation=11 : "Bon arrétez de me vanner sur ma gueule, je supporte pas|. Prenez le vaisseau, je garde vos 6 crédits et tirez-vous|..."
+                    choice = none
+                }
+                ototo_dialogue_resume_12:
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION VAISSEAU SUR ARCHE..."
+                transfer vaisseau from Otto_Von_Gluk to aboard
+                globals.A34 = 2
+            }
+            when {
+                require globals.A4 < 6
+                require globals.A4 > 0
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "aie... on n'a méme pas la thune..."
+                say Otto_Von_Gluk presentation=10 : "Alors... on vit au-dessus de ses moyens|?..."
+                say Otto_Von_Gluk presentation=8 chatter : "Ben... ouais..."
+                say Otto_Von_Gluk presentation=11 : "Eh ouais... C'est pas facile tous les jours..."
+                say Otto_Von_Gluk presentation=8 chatter : "je sais..."
+                say Otto_Von_Gluk presentation=12 : "Enfin... Faut s'entraider entre pauvres..."
+                say Otto_Von_Gluk presentation=8 chatter : "pauvre con, ouais|!"
+                say Otto_Von_Gluk presentation=13 : "Pardon|?"
+                say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_13 : "commander, je lui répéte ce que j'ai dit|?" choices "oui" "non"
+                when {
+                    require choice == "oui"
+                } then {
+                    say Otto_Von_Gluk presentation=8 chatter : "pauvre con|!..."
+                    say Otto_Von_Gluk presentation=10 : "Enchanté, moi c'est Otto Von Gluk|..."
+                    say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "il est aussi bouché qu'un GLUXX|..."
+                    choice = none
+                }
+                when {
+                    require choice == "non"
+                } then {
+                    say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "non, rien..."
+                    choice = none
+                }
+                ototo_dialogue_resume_13:
+                text_tokens Otto_Von_Gluk presentation=14 : "alors" "le" "vaisseau," "je" "vous" "le" "laisse" "pour" state_number(0x1EF2) "crédits..."
+                when {
+                    require globals.A4 == 1
+                } then {
+                    say Otto_Von_Gluk presentation=14 : "Et méme pas besoin de mettre un s, je vous le donne pour un crédit..."
+                }
+                say Otto_Von_Gluk presentation=8 chatter : "Marrant, ca, commander, c'est pile ce qui nous reste..."
+                say Otto_Von_Gluk presentation=15 : "Eh oui, je sais..."
+                say Otto_Von_Gluk presentation=8 chatter : "comment il sait, commander|?"
+                say Otto_Von_Gluk presentation=16 : "Ca, c'est mon secret de slimer..."
+                say Otto_Von_Gluk presentation=8 chatter : "Il a du faire parler Olga, elle aime bien les types comme lui..."
+                say Otto_Von_Gluk presentation=8 chatter : "un peu violents..."
+                say Otto_Von_Gluk presentation=9 : "Eh là, doucement|! Tu le veux ton vaisseau ou pas|?"
+                say Otto_Von_Gluk presentation=8 chatter : "vous allez pas nous faire du chantage|!"
+                say Otto_Von_Gluk presentation=10 : "Je vais me géner|!"
+                say Otto_Von_Gluk presentation=8 chatter resume_at=ototo_dialogue_resume_14 : "commander, me permettez-vous de l'insulter|?..." choices "oui" "non"
+                when {
+                    require choice == "oui"
+                } then {
+                    choice = none
+                }
+                when {
+                    require choice == "non"
+                } then {
+                    say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "tant pis, je ne résiste pas|..."
+                    choice = none
+                }
+                ototo_dialogue_resume_14:
+                say Otto_Von_Gluk presentation=8 chatter : "vautour|!"
+                say Otto_Von_Gluk presentation=16 : "PIGEON|!"
+                say Otto_Von_Gluk presentation=8 chatter : "pourri du bulbe|!"
+                say Otto_Von_Gluk presentation=10 : "pourri de bugs|!"
+                say Otto_Von_Gluk presentation=8 chatter : "mesquin, ca, mesquin|!"
+                say Otto_Von_Gluk presentation=11 : "Je sais, c'est pas facile tous les jours..."
+                say Otto_Von_Gluk presentation=8 chatter : "Pauvre vieux, ca doit étre affreux d'étre un salaud..."
+                say Otto_Von_Gluk presentation=12 : "Ouais... C'est l'horreur..."
+                say Otto_Von_Gluk presentation=8 chatter : "les problémes de mauvaise conscience, tout ca..."
+                say Otto_Von_Gluk presentation=12 : "Ouais, l'horreur..."
+                say Otto_Von_Gluk presentation=8 chatter : "je compatis de tout mon disque dur..."
+                say Otto_Von_Gluk presentation=13 : "T'es sympa, vieux. Allez, je vous le laisse, le vaisseau..."
+                say Otto_Von_Gluk presentation=8 chatter : "merci camarade..."
+                say Otto_Von_Gluk presentation=14 : "De rien, c'est naturel..."
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=3 : "TELEPORTATION VAISSEAU SUR ARCHE..."
+                transfer vaisseau from Otto_Von_Gluk to aboard
+                globals.A4 = 0
+                globals.A34 = 2
+            }
+            when {
+                require globals.A4 == 0
+            } then {
+                say Otto_Von_Gluk presentation=8 chatter : "aie... on n'a méme pas la thune..."
+                say Otto_Von_Gluk presentation=10 : "Alors... On vit au-dessus de ses moyens|?..."
+                say Otto_Von_Gluk presentation=8 chatter : "Ben... ouais..."
+                say Otto_Von_Gluk presentation=11 : "Eh ouais... C'est pas facile tous les jours..."
+                say Otto_Von_Gluk presentation=8 chatter : "je sais..."
+                say Otto_Von_Gluk presentation=12 : "Enfin... Faut s'entraider entre pauvres..."
+                say Otto_Von_Gluk presentation=8 chatter : "pauvre con, ouais|!"
+                say Otto_Von_Gluk presentation=13 : "Pardon|?"
+                say Otto_Von_Gluk presentation=8 chatter : "non, rien..."
+                text_tokens Otto_Von_Gluk presentation=14 : "Alors" "le" "vaisseau," "je" "vous" "le" "laisse" "pour" state_number(0x1EF2) "crédit..."
+                say Otto_Von_Gluk presentation=8 chatter : "Marrant, ca, commander, c'est pile ce qui nous reste..."
+                say Otto_Von_Gluk presentation=15 : "Eh oui, je sais..."
+                say Otto_Von_Gluk presentation=8 chatter : "comment il sait, commander|?"
+                say Otto_Von_Gluk presentation=16 : "Ca, c'est mon secret de slimer..."
+                say Otto_Von_Gluk presentation=8 chatter : "Il a du faire parler Olga, elle aime bien les types comme lui..."
+                say Otto_Von_Gluk presentation=8 chatter : "un peu violents..."
+                say Otto_Von_Gluk presentation=9 : "Eh là, doucement|! Tu le veux ton vaisseau ou pas|?"
+                say Otto_Von_Gluk presentation=8 chatter : "vous allez pas nous faire du chantage|!"
+                say Otto_Von_Gluk presentation=10 : "Je vais me géner|!"
+                say Otto_Von_Gluk presentation=8 chatter : "vautour|!"
+                say Otto_Von_Gluk presentation=16 : "PIGEON|!"
+                say Otto_Von_Gluk presentation=8 chatter : "pourri du bulbe|!"
+                say Otto_Von_Gluk presentation=10 : "Pourri de bugs|!"
+                say Otto_Von_Gluk presentation=8 chatter : "mesquin, ca, mesquin|!"
+                say Otto_Von_Gluk presentation=11 : "Je sais, c'est pas facile tous les jours..."
+                say Otto_Von_Gluk presentation=8 chatter : "Pauvre vieux, ca doit étre affreux d'étre un salaud..."
+                say Otto_Von_Gluk presentation=12 : "Ouais... C'est l'horreur..."
+                say Otto_Von_Gluk presentation=8 chatter : "les problémes de mauvaise conscience, tout ca..."
+                say Otto_Von_Gluk presentation=12 : "Ouais, l'horreur..."
+                say Otto_Von_Gluk presentation=8 chatter : "je compatis de tout mon disque dur..."
+                say Otto_Von_Gluk presentation=13 : "T'es sympa, vieux. Allez, je vous le laisse, le vaisseau..."
+                say Otto_Von_Gluk presentation=8 chatter : "merci camarade..."
+                say Otto_Von_Gluk presentation=14 : "De rien, c'est naturel..."
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=3 : "TELEPORTATION VAISSEAU SUR ARCHE..."
+                transfer vaisseau from Otto_Von_Gluk to aboard
+                globals.A4 = 0
+                globals.A34 = 2
+            }
+        }
+    }
+    proc gestovg enabled {
+        during travel
+        require presentation == Otto_Von_Gluk
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require globals.A30 == 2
+            } then {
+                say Otto_Von_Gluk presentation=12 if_not_shown skip_next=2 : "Ah! Tu m'as atomisé la gueule|!..."
+                bits(atomique.flags,0x0040) = false
+                globals.A28 = 1
+            }
+            when {
+                require state_b6[Otto_Von_Gluk.evolution] < 100
+                require globals.A30 == 0
+            } then {
+                say Otto_Von_Gluk presentation=13 : "Des atomiques... Tu me gàtes... Je vais pouvoir faire Péter l'Univers..."
+                say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=1 : "NON! NON! Monsieur Von Smile, vous ne ferez pas ca... Commander, vous n'auriez pas du..."
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Otto_Von_Gluk.evolution] < 500
+                require state_b6[Otto_Von_Gluk.evolution] > 100
+                require globals.A30 == 0
+            } then {
+                say Otto_Von_Gluk presentation=10 if_not_shown skip_next=6 : "Oh des atomiques... intèressant... Merci Commander..."
+                state_b1[Otto_Von_Gluk.population] /= 2
+                state_b6[Otto_Von_Gluk.evolution] += 200
+                globals.B96 += 1
+                Otto_Von_Gluk.aggressiveness += 150
+                globals.B55 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Otto_Von_Gluk.evolution] > 500
+                require globals.A30 == 0
+            } then {
+                say Otto_Von_Gluk presentation=10 if_not_shown skip_next=5 : "De l'énergie nucléaire... Merci!!!"
+                state_b6[Otto_Von_Gluk.evolution] += 200
+                globals.B96 += 2
+                state_b5[Otto_Von_Gluk.energy] += 100
+                Otto_Von_Gluk.aggressiveness += 150
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 : "Que veux-tu que je fasse d'une image... Je ne suis pas un bébé..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "Commander il se met en colére... Filons..."
+            Otto_Von_Gluk.aggressiveness += 200
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=12 if_not_shown skip_next=4 : "Une Couronne de roi... Tu me plais Commander..."
+            state_b5[Otto_Von_Gluk.energy] += 100
+            Otto_Von_Gluk.aggressiveness += 200
+            globals.B54 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=14 : "Un tableau de ce minable Yolk, tu m'insultes! Commander..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "Ah c'est pas facile de lui faire plaisir..."
+            Otto_Von_Gluk.aggressiveness += 100
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=16 : "Une momie, elle fera trés chic dans ma chambre..."
+            say Otto_Von_Gluk presentation=8 chatter : "Aie... Commander ca risque de freiner sa reproduction..."
+            say Otto_Von_Gluk presentation=15 : "Que dites-vous???"
+            say Otto_Von_Gluk presentation=8 chatter : "Rien... Rien... Monsieur Otto, on bavarde..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=3 : "..."
+            globals.B55 -= 1
+            Otto_Von_Gluk.aggressiveness -= 100
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require globals.A29 == 0
+        } then {
+            say Otto_Von_Gluk presentation=9 : "Du Bionium... MMMmmm..."
+            say Otto_Von_Gluk presentation=8 chatter : "il a l'air d'aimer..."
+            say Otto_Von_Gluk presentation=10 : "Ca pue... MMMmmm..."
+            say Otto_Von_Gluk presentation=8 chatter : "bizarre ce slimer..."
+            say Otto_Von_Gluk presentation=11 : "Ca pue bon... Miam Miam..."
+            dictionary blank after "Miam..."
+            say Otto_Von_Gluk presentation=8 chatter : "il va l'avaler..."
+            say Otto_Von_Gluk presentation=12 : "Ca sent bion..."
+            say Otto_Von_Gluk presentation=13 : "Mais je préfére les géraniums..."
+            say Otto_Von_Gluk presentation=8 chatter : "commander, on n'a qu'à lui faire croire que c'était un géranium..."
+            say Otto_Von_Gluk presentation=8 chatter : "géranium... bionium... c'est kif-kif pareil..."
+            say Otto_Von_Gluk presentation=8 chatter : "mais monsieur von gluk... c'était justement un géranium..."
+            say Otto_Von_Gluk presentation=13 : "Trés bien... Mais il m'en faudrait plus... Si vous m'en donnez..."
+            say Otto_Von_Gluk presentation=14 : "Mettons..."
+            say Otto_Von_Gluk presentation=8 chatter : "deux|?..."
+            say Otto_Von_Gluk presentation=16 : "DIX|!!!"
+            say Otto_Von_Gluk presentation=8 chatter : "Argh|!"
+            say Otto_Von_Gluk presentation=15 if_not_shown skip_next=3 : "Eh bien vous aurez droit à une cyber information..."
+            globals.A29 = 1
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=4 : "De la technologie..."
+            state_b6[Otto_Von_Gluk.evolution] += 80
+            state_b5[Otto_Von_Gluk.energy] += 100
+            globals.B65 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 : "Une guitare, je vais pouvoir monter un groupe, j'ai toujours révé d'étre une star..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=4 : "Voilà qui va le calmer... Commander..."
+            globals.B55 = 1
+            state_b1[Otto_Von_Gluk.population] += 250
+            Otto_Von_Gluk.aggressiveness -= 200
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=15 : "Ohhh merci... Je vois que Monsieur est riche..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "Commander, vous étes complétement givré..."
+            state_b5[Otto_Von_Gluk.energy] += 50
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=15 : "Hum, du parfum... Il me rappelle les soirées chaudes sur les plages de Galabar..."
+            say Otto_Von_Gluk presentation=8 chatter : "surement avec otto von smile|..."
+            say Otto_Von_Gluk presentation=16 : "Les Sanglots Longs Des Electrons de L'Atome..."
+            say Otto_Von_Gluk presentation=13 : "Percent Mon Coeur d'Une Chaleur MEGATONNE..."
+            say Otto_Von_Gluk presentation=8 chatter : "Commander, encore ce poéme de vernulrich|..."
+            say Otto_Von_Gluk presentation=10 : "Tout suffocant et bléme quand sonne l'heure H|..."
+            say Otto_Von_Gluk presentation=12 : "Je me souviens des jours anciens|..."
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "Et je FLASHE|!..."
+            request sequence "expla001.hnm"
+            say Otto_Von_Gluk presentation=8 if_not_shown skip_next=5 : "..."
+            state_b6[Otto_Von_Gluk.evolution] += 40
+            state_b1[Otto_Von_Gluk.population] += 250
+            globals.B55 += 1
+            Otto_Von_Gluk.aggressiveness -= 100
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=4 : "Un décodeur de télèvision... Je vais enfin pouvoir regarder \"Canal Moins\" en clair..."
+            state_b6[Otto_Von_Gluk.evolution] += 60
+            state_b1[Otto_Von_Gluk.population] -= 100
+            globals.B55 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=15 if_not_shown skip_next=2 : "De la nourriture..."
+            state_b5[Otto_Von_Gluk.energy] += 200
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=3 : "Des médicaments..."
+            state_b6[Otto_Von_Gluk.evolution] += 50
+            state_b1[Otto_Von_Gluk.population] += 200
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=14 if_not_shown skip_next=4 : "DES ARMES|!!! MERCI COMMANDER... TU ME GATES..."
+            Otto_Von_Gluk.aggressiveness += 250
+            state_b6[Otto_Von_Gluk.evolution] += 50
+            globals.B54 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=16 : "Des lentilles optiques... Tu plaisantes, c'est VON SMILE qui te les a données..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "Ah oui, il a raison, Commander..."
+            optique.holder = aboard
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=2 : "De l'énergie, intéressant..."
+            state_b5[Otto_Von_Gluk.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=5 : "Une bague|..."
+            state_b6[Otto_Von_Gluk.evolution] += 30
+            state_b1[Otto_Von_Gluk.population] += 200
+            globals.B55 += 1
+            Otto_Von_Gluk.aggressiveness -= 200
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=2 : "Un emetteur"
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=3 : "De la Culture... C'est quoi ca..."
+            state_b6[Otto_Von_Gluk.evolution] += 80
+            state_b5[Otto_Von_Gluk.energy] += 50
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=13 : "L'écriture... Mais je sais déja écrire Commander, tiens regarde:"
+            say Otto_Von_Gluk presentation=14 : "CHAIR KOMANDEUR, JEUX TAICRI POUR THEU DONNAI DEMAI NOUVELE..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=2 : "OK, Monsieur Otto... C'est SUPER|..."
+            state_b6[Otto_Von_Gluk.evolution] += 60
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=3 : "Un VAISSEAU... Non merci, Je les fabrique..."
+            vaisseau.holder = aboard
+            globals.B66 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 : "Un traité de paix... Interessant..."
+            say Otto_Von_Gluk presentation=8 chatter if_not_shown skip_next=4 : "Voila qui va le calmer, Commander..."
+            state_b6[Otto_Von_Gluk.evolution] += 50
+            Otto_Von_Gluk.aggressiveness = 0
+            state_b1[Otto_Von_Gluk.population] += 500
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Otto_Von_Gluk presentation=9 if_not_shown skip_next=3 : "Des cadeaux... Je T'AIME... COMMANDER..."
+            state_b6[Otto_Von_Gluk.evolution] += 10
+            state_b5[Otto_Von_Gluk.energy] += 50
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Otto_Von_Gluk presentation=8 chatter : "Quel objet désirez-vous donner à Otto, Commander?"
+        say Otto_Von_Gluk presentation=8 chatter resume_at=gestovg_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Otto_Von_Gluk presentation=8 : "..."
+        gestovg_dialogue_resume_1:
+        when {
+            require globals.B65 == 1
+        } then {
+            globals.B53 = 1
+        }
+        say Otto_Von_Gluk presentation=8 chatter : "A BIENTOT, COMMANDER... REVIENS ME VOIR AVEC BEAUCOUP DE CHOSES..."
+        say Otto_Von_Gluk presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Otto_Von_Gluk
+    }
+    proc ovp01 enabled {
+        require presentation == Otto_Von_Potato
+    } then {
+        say Otto_Von_Potato presentation=9 : "Moi Otto Von Potato, moi SLIMER..."
+        text_tokens Otto_Von_Potato presentation=11 : "Nous" "étre" state_number(0x0DAC) "slimers" "ici..."
+        when {
+            require Otto_Von_Potato.aggressiveness < 1000
+            require optique.holder != aboard
+        } then {
+            say Otto_Von_Potato presentation=13 : "Nous fabriquer lentilles optiques pour voir planétes..."
+            say Otto_Von_Potato presentation=15 : "Nous vendre à toi lentilles contre crédit..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Otto_Von_Potato presentation=8 chatter : "Nous n'avons plus de crédits, Commander..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Otto_Von_Potato presentation=8 chatter resume_at=gestovp : "Vous acceptez de leurs acheter leur lentilles, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Otto_Von_Potato
+                    globals.A4 -= 1
+                    say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION LENTILLE OPTIQUE DANS CRYOBOX"
+                    transfer optique from Otto_Von_Potato to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc gestovp enabled {
+        during travel
+        require presentation == Otto_Von_Potato
+    } then {
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Otto_Von_Potato.evolution] < 100
+            } then {
+                say Otto_Von_Potato presentation=13 : "Des atomiques... Tu me gàtes... Je vais pouvoir faire Péter l'Univers..."
+                say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=1 : "NON! NON! Monsieur Von Smile, vous ne ferez pas ca... Commander, vous n'auriez pas du..."
+                globals.A13 = 1
+            }
+            when {
+                require state_b6[Otto_Von_Potato.evolution] < 500
+                require state_b6[Otto_Von_Potato.evolution] > 100
+            } then {
+                say Otto_Von_Potato presentation=10 if_not_shown skip_next=4 : "Oh des atomiques... intéressant... Merci Commander..."
+                state_b1[Otto_Von_Potato.population] /= 2
+                Otto_Von_Potato.aggressiveness += 50
+                globals.B55 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Otto_Von_Potato.evolution] > 500
+            } then {
+                say Otto_Von_Potato presentation=10 if_not_shown skip_next=3 : "De l'énergie nucléaire... Merci!!!"
+                state_b6[Otto_Von_Potato.evolution] += 20
+                state_b5[Otto_Von_Potato.energy] += 100
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 : "Que veux-tu que je fasse d'une image... Je ne suis pas un bébé..."
+            say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=2 : "Commander, il se met en colére... Filons..."
+            Otto_Von_Potato.aggressiveness += 100
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=4 : "Une Couronne de roi... Tu me plais Commander..."
+            state_b5[Otto_Von_Potato.energy] += 20
+            Otto_Von_Potato.aggressiveness += 200
+            globals.B54 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 : "Un tableau de ce minable Yolk, tu m'insultes! Commander..."
+            say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=2 : "Ah c'est pas facile de lui faire plaisir..."
+            Otto_Von_Potato.aggressiveness += 100
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=16 : "Une momie, elle fera trés chic dans ma chambre..."
+            say Otto_Von_Potato presentation=8 chatter : "Aie... Commander ca risque de freiner sa reproduction..."
+            say Otto_Von_Potato presentation=15 : "Que dites-vous???"
+            say Otto_Von_Potato presentation=8 chatter : "Rien... Rien... Monsieur Otto, on bavarde..."
+            say Otto_Von_Potato presentation=8 if_not_shown skip_next=3 : "..."
+            globals.B55 -= 1
+            Otto_Von_Potato.aggressiveness -= 100
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=5 : "Du Bionium... Voila qui va me régénérer..."
+            state_b1[Otto_Von_Potato.population] += 150
+            state_b6[Otto_Von_Potato.evolution] += 10
+            globals.vbio -= 1
+            Otto_Von_Potato.aggressiveness -= 100
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=4 : "De la technologie..."
+            state_b6[Otto_Von_Potato.evolution] += 10
+            state_b5[Otto_Von_Potato.energy] += 10
+            globals.B65 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 : "Une guitare, je vais pouvoir monter un groupe, j'ai toujours révé d'étre une star..."
+            say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=3 : "Voila qui va le calmer... Commander..."
+            globals.B55 = 1
+            globals.B54 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=15 : "Ohhh merci... Je vois que Monsieur est riche..."
+            say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement givré..."
+            state_b5[Otto_Von_Potato.energy] += 50
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=15 : "Hum, du parfum... Il me rappelle les soirées chaudes sur les plages de Galabar..."
+            say Otto_Von_Potato presentation=8 chatter : "Il parle de la planéte Galabar..."
+            say Otto_Von_Potato presentation=16 : "Les Sanglots Longs Des Electrons de L'Atome..."
+            say Otto_Von_Potato presentation=14 : "Percent Mon Coeur d'Une Chaleur MEGATONNE..."
+            say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=5 : "Commander, il dit un poeme... Ca Alors!!!"
+            state_b6[Otto_Von_Potato.evolution] += 10
+            state_b1[Otto_Von_Potato.population] += 250
+            globals.B55 += 1
+            Otto_Von_Potato.aggressiveness -= 100
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=4 : "Un décodeur de télévision... Je vais enfin pouvoir regarder \"Canal Moins\" en clair..."
+            state_b6[Otto_Von_Potato.evolution] += 10
+            state_b1[Otto_Von_Potato.population] -= 50
+            globals.B55 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=15 if_not_shown skip_next=2 : "De la nourriture..."
+            state_b5[Otto_Von_Potato.energy] += 150
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=3 : "Des médicaments..."
+            state_b6[Otto_Von_Potato.evolution] += 10
+            state_b1[Otto_Von_Potato.population] += 150
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=14 if_not_shown skip_next=4 : "DES ARMES|!!! MERCI COMMANDER... TU ME GATES..."
+            Otto_Von_Potato.aggressiveness += 250
+            state_b6[Otto_Von_Potato.evolution] += 50
+            globals.B54 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=15 : "Des lentilles optiques... Tu plaisantes, c'est nous qui les fabriquons..."
+            say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=2 : "Ah oui, il a raison, Commander..."
+            optique.holder = aboard
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=2 : "De l'énergie, intéressant..."
+            state_b5[Otto_Von_Potato.energy] += 800
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=5 : "Une bague..."
+            state_b6[Otto_Von_Potato.evolution] += 10
+            state_b1[Otto_Von_Potato.population] += 200
+            globals.B55 += 1
+            Otto_Von_Potato.aggressiveness -= 200
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=2 : "Un émetteur"
+            state_b6[Otto_Von_Potato.evolution] += 5
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=3 : "De la Culture... C'est quoi ça..."
+            state_b6[Otto_Von_Potato.evolution] += 20
+            state_b5[Otto_Von_Potato.energy] += 10
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=13 : "L'écriture... Mais je sais déja écrire Commander, tiens regarde:"
+            say Otto_Von_Potato presentation=14 : "CHAIR KOMANDEUR, JEUX TAICRI POUR THEU DONNAI DEMAI NOUVELE..."
+            say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=2 : "OK, Monsieur Otto... C'est SUPER..."
+            state_b6[Otto_Von_Potato.evolution] += 60
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=2 : "Un VAISSEAU... C'est le gros lot..."
+            state_b6[Otto_Von_Potato.evolution] += 10
+            globals.B66 = 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 : "Un traite de paix... Intèressant..."
+            say Otto_Von_Potato presentation=8 chatter if_not_shown skip_next=3 : "Voila qui va le calmer, Commander..."
+            Otto_Von_Potato.aggressiveness = 0
+            state_b1[Otto_Von_Potato.population] += 500
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Otto_Von_Potato presentation=9 if_not_shown skip_next=3 : "Des cadeaux... Je T'AIME... COMMANDER..."
+            state_b6[Otto_Von_Potato.evolution] += 10
+            state_b5[Otto_Von_Potato.energy] += 10
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Otto_Von_Potato presentation=8 chatter : "Quel objet désirez-vous donner à Otto, Commander?"
+        say Otto_Von_Potato presentation=8 chatter resume_at=gestovp_dialogue_resume_1 : "DONNER:" choices inventory_choices
+        say Otto_Von_Potato presentation=8 : "..."
+        gestovp_dialogue_resume_1:
+        when {
+            require globals.B65 == 1
+            require globals.B66 == 1
+        } then {
+            globals.B53 = 1
+        }
+        say Otto_Von_Potato presentation=11 : "A BIENTOT, COMMANDER... REVIENS ME VOIR AVEC BEAUCOUP DE CHOSES..."
+        say Otto_Von_Potato presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Otto_Von_Potato
+        halt
+    }
+}

@@ -1,10 +1,11 @@
 //! Unified, byte-exact source for one Commander Blood VM profile.
 //!
-//! A profile owns five shipped images: COD logic, BAS conversations, the DEB
-//! directory, the DIC lexicon, and the initial VAR state. BloodScript v8 derives
-//! DEB and DIC from ordered declarations instead of exposing binary-shaped
-//! directory and dictionary sections, and models VAR records as typed objects
-//! instead of positional words.
+//! A Commander Blood profile owns COD logic, BAS conversations, the DEB
+//! directory, the DIC lexicon, and initial VAR state. A Big Bug Bang profile
+//! owns the same set without BAS. BloodScript v8 derives DEB and DIC from
+//! ordered declarations instead of exposing binary-shaped directory and
+//! dictionary sections, and models VAR records as typed objects instead of
+//! positional words.
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
@@ -24,11 +25,19 @@ const KIND_STATE_LABEL: u16 = 5;
 
 const SECTION_NAMES: [&str; 3] = ["state", "logic", "conversations"];
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ProfileDialect {
+    #[default]
+    CommanderBlood,
+    BigBugBang,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProfileImages {
+    pub dialect: ProfileDialect,
     pub name: String,
     pub cod: Vec<u8>,
-    pub bas: Vec<u8>,
+    pub bas: Option<Vec<u8>>,
     pub deb: Vec<u8>,
     pub dic: Vec<u8>,
     pub var: Vec<u8>,
@@ -38,11 +47,18 @@ impl ProfileImages {
     pub fn image(&self, extension: &str) -> Option<&[u8]> {
         match extension {
             "COD" => Some(&self.cod),
-            "BAS" => Some(&self.bas),
+            "BAS" => self.bas.as_deref(),
             "DEB" => Some(&self.deb),
             "DIC" => Some(&self.dic),
             "VAR" => Some(&self.var),
             _ => None,
+        }
+    }
+
+    pub fn extensions(&self) -> &'static [&'static str] {
+        match self.dialect {
+            ProfileDialect::CommanderBlood => &["COD", "BAS", "DEB", "DIC", "VAR"],
+            ProfileDialect::BigBugBang => &["COD", "DEB", "DIC", "VAR"],
         }
     }
 }
@@ -63,6 +79,7 @@ struct StateObject {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct StateCompilation {
+    dialect: ProfileDialect,
     image: Vec<u8>,
     objects: Vec<StateObject>,
     labels: HashMap<String, u16>,
@@ -79,29 +96,45 @@ struct StateObjectSpec {
 }
 
 pub fn compile(source: &str) -> Result<ProfileImages> {
-    let profile_name = parse_profile_name(source)?;
+    let (dialect, profile_name) = parse_profile_header(source)?;
     let sections = parse_sections(source)?;
     let logic_source = section(&sections, "logic")?;
-    let conversations_source = section(&sections, "conversations")?;
-    let dic = compile_derived_dictionary(source, logic_source, conversations_source)?;
+    let conversations_source = match dialect {
+        ProfileDialect::CommanderBlood => Some(section(&sections, "conversations")?),
+        ProfileDialect::BigBugBang => {
+            if sections.contains_key("conversations") {
+                bail!("Big Bug Bang profiles do not own a conversations resource");
+            }
+            None
+        }
+    };
+    let dic = compile_derived_dictionary(source, logic_source, conversations_source, dialect)?;
     let dictionary = script::parse_dictionary(&dic);
     let dictionary_entries = dictionary_entries(&dic)?;
     let mut state = compile_state(
         section(&sections, "state")?,
         logic_source,
         &dictionary_entries,
+        dialect,
     )?;
     let (logic_body, directory_body) = prepare_logic_for_compile(logic_source, &state)?;
-    let conversations_body = prepare_conversations_for_compile(conversations_source, &state)?;
-    let conversations = compile_program(&conversations_body, "BAS", &dictionary)?;
-    patch_conversation_roots(&mut state, &conversations)?;
+    let conversations = conversations_source
+        .map(|source| {
+            let body = prepare_conversations_for_compile(source, &state)?;
+            compile_program(&body, "BAS", &dictionary)
+        })
+        .transpose()?;
+    if let Some(conversations) = &conversations {
+        patch_conversation_roots(&mut state, conversations)?;
+    }
     let logic = compile_program(&logic_body, "COD", &dictionary)?;
     let deb = compile_directory(&directory_body, &state, &logic)?;
 
     Ok(ProfileImages {
+        dialect,
         name: profile_name,
         cod: logic.image,
-        bas: conversations.image,
+        bas: conversations.map(|program| program.image),
         deb,
         dic,
         var: state.image,
@@ -112,18 +145,34 @@ pub fn decompile(images: &ProfileImages) -> Result<String> {
     let records = parse_directory(&images.deb)?;
     let symbols = script::parse_deb(&images.deb);
     let dictionary = script::parse_dictionary(&images.dic);
-    let logic = bloodscript::decompile_structured_cod_with_symbols(
-        &images.cod,
-        &images.var,
-        &dictionary,
-        &symbols,
-    )?;
-    let conversations = bloodscript::decompile_structured_bas_with_symbols(
-        &images.bas,
-        &images.var,
-        &dictionary,
-        &symbols,
-    )?;
+    let logic = match images.dialect {
+        ProfileDialect::CommanderBlood => bloodscript::decompile_structured_cod_with_symbols(
+            &images.cod,
+            &images.var,
+            &dictionary,
+            &symbols,
+        )?,
+        ProfileDialect::BigBugBang => {
+            bloodscript::decompile_structured_big_bug_bang_cod_with_symbols(
+                &images.cod,
+                &images.var,
+                &dictionary,
+                &symbols,
+            )?
+        }
+    };
+    let conversations = images
+        .bas
+        .as_deref()
+        .map(|bas| {
+            bloodscript::decompile_structured_bas_with_symbols(
+                bas,
+                &images.var,
+                &dictionary,
+                &symbols,
+            )
+        })
+        .transpose()?;
 
     let state_label_ids = state_label_identifiers(&records);
     let procedure_ids = procedure_identifiers(&records, &logic.source)?;
@@ -131,21 +180,32 @@ pub fn decompile(images: &ProfileImages) -> Result<String> {
     let mut output = String::new();
     let mut logic_body =
         bloodscript::make_phrase_boundaries_explicit(program_body(&logic.source)?, &dictionary)?;
-    let mut conversations_body = bloodscript::make_phrase_boundaries_explicit(
-        program_body(&conversations.source)?,
-        &dictionary,
-    )?;
-    let globals_offset = state_globals_offset(&images.var, &records)?;
+    let mut conversations_body = conversations
+        .as_ref()
+        .map(|program| {
+            bloodscript::make_phrase_boundaries_explicit(
+                program_body(&program.source)?,
+                &dictionary,
+            )
+        })
+        .transpose()?;
+    let globals_offset = state_globals_offset(&images.var, &records, images.dialect)?;
     let global_names = global_state_names(&records, &state_label_ids, globals_offset);
     logic_body = replace_global_addresses(&logic_body, globals_offset, &global_names)?;
-    conversations_body =
-        replace_global_addresses(&conversations_body, globals_offset, &global_names)?;
-    logic_body = raise_named_presentations(&logic_body)?;
-    conversations_body = raise_named_presentations(&conversations_body)?;
+    if let Some(body) = conversations_body.as_mut() {
+        *body = replace_global_addresses(body, globals_offset, &global_names)?;
+    }
+    logic_body = raise_named_presentations(&logic_body, images.dialect)?;
+    if let Some(body) = conversations_body.as_mut() {
+        *body = raise_named_presentations(body, images.dialect)?;
+    }
     let concepts = dictionary_seed_words(images, &dictionary)?;
     let breaks = dictionary_break_words(&images.dic)?;
 
     writeln!(output, "bloodscript 8")?;
+    if images.dialect == ProfileDialect::BigBugBang {
+        writeln!(output, "dialect big_bug_bang")?;
+    }
     writeln!(output, "profile {}", images.name)?;
     write!(output, "concepts")?;
     for concept in &concepts {
@@ -156,7 +216,13 @@ pub fn decompile(images: &ProfileImages) -> Result<String> {
 
     writeln!(output, "state {{")?;
     let dictionary_entries = dictionary_entries(&images.dic)?;
-    write_state(&mut output, &images.var, &records, &dictionary_entries)?;
+    write_state(
+        &mut output,
+        &images.var,
+        &records,
+        &dictionary_entries,
+        images.dialect,
+    )?;
     writeln!(output, "}}")?;
     writeln!(output)?;
 
@@ -172,12 +238,13 @@ pub fn decompile(images: &ProfileImages) -> Result<String> {
     )?;
     write_indented(&mut output, &logic_body, 4)?;
     writeln!(output, "}}")?;
-    writeln!(output)?;
-
-    writeln!(output, "conversations {{")?;
-    let conversations_body = strip_program_declarations(&conversations_body);
-    write_indented(&mut output, &conversations_body, 4)?;
-    writeln!(output, "}}")?;
+    if let Some(conversations_body) = conversations_body {
+        writeln!(output)?;
+        writeln!(output, "conversations {{")?;
+        let conversations_body = strip_program_declarations(&conversations_body);
+        write_indented(&mut output, &conversations_body, 4)?;
+        writeln!(output, "}}")?;
+    }
 
     output = integrate_dictionary_gaps(&output, &concepts, &breaks)?;
     let rebuilt = compile(&output)?;
@@ -186,7 +253,15 @@ pub fn decompile(images: &ProfileImages) -> Result<String> {
 }
 
 pub fn require_same_profile(actual: &ProfileImages, expected: &ProfileImages) -> Result<()> {
-    for extension in ["COD", "BAS", "DEB", "DIC", "VAR"] {
+    if actual.dialect != expected.dialect {
+        bail!(
+            "compiled {} dialect {:?} differs from expected {:?}",
+            expected.name,
+            actual.dialect,
+            expected.dialect
+        );
+    }
+    for &extension in expected.extensions() {
         let actual_image = actual.image(extension).expect("known profile extension");
         let expected_image = expected.image(extension).expect("known profile extension");
         if actual_image == expected_image {
@@ -209,7 +284,7 @@ pub fn require_same_profile(actual: &ProfileImages, expected: &ProfileImages) ->
     Ok(())
 }
 
-fn parse_profile_name(source: &str) -> Result<String> {
+fn parse_profile_header(source: &str) -> Result<(ProfileDialect, String)> {
     let mut declarations = source
         .lines()
         .map(str::trim)
@@ -217,6 +292,14 @@ fn parse_profile_name(source: &str) -> Result<String> {
     if declarations.next() != Some("bloodscript 8") {
         bail!("unified source must begin with 'bloodscript 8'");
     }
+    let dialect = match declarations.clone().next() {
+        Some("dialect big_bug_bang") => {
+            declarations.next();
+            ProfileDialect::BigBugBang
+        }
+        Some(line) if line.starts_with("dialect ") => bail!("unknown profile dialect {line}"),
+        _ => ProfileDialect::CommanderBlood,
+    };
     let profile = declarations
         .next()
         .and_then(|line| line.strip_prefix("profile "))
@@ -228,7 +311,7 @@ fn parse_profile_name(source: &str) -> Result<String> {
     {
         bail!("invalid profile name {profile:?}");
     }
-    Ok(profile.to_string())
+    Ok((dialect, profile.to_string()))
 }
 
 fn parse_sections(source: &str) -> Result<HashMap<&str, &str>> {
@@ -248,11 +331,7 @@ fn parse_sections(source: &str) -> Result<HashMap<&str, &str>> {
     }
 
     let mut sections = HashMap::new();
-    for name in SECTION_NAMES {
-        let open = starts
-            .get(name)
-            .copied()
-            .ok_or_else(|| anyhow!("missing {name} section"))?;
+    for (name, open) in starts {
         let close = matching_brace(source, open)
             .with_context(|| format!("finding the end of the {name} section"))?;
         sections.insert(name, &source[open + 1..close]);
@@ -347,7 +426,12 @@ fn program_body(source: &str) -> Result<&str> {
     Ok(parts.next().unwrap_or_default().trim_matches('\n'))
 }
 
-fn compile_derived_dictionary(source: &str, logic: &str, conversations: &str) -> Result<Vec<u8>> {
+fn compile_derived_dictionary(
+    source: &str,
+    logic: &str,
+    conversations: Option<&str>,
+    dialect: ProfileDialect,
+) -> Result<Vec<u8>> {
     let concepts_line = source
         .lines()
         .map(str::trim)
@@ -371,7 +455,13 @@ fn compile_derived_dictionary(source: &str, logic: &str, conversations: &str) ->
         })
         .collect::<Result<HashSet<_>>>()?;
 
-    let mut image = vec![0];
+    let mut image = vec![
+        0;
+        match dialect {
+            ProfileDialect::CommanderBlood => 1,
+            ProfileDialect::BigBugBang => 8,
+        }
+    ];
     let mut seen = HashSet::new();
     let mut encountered_breaks = HashSet::new();
     let mut intern = |word: Vec<u8>| {
@@ -391,8 +481,10 @@ fn compile_derived_dictionary(source: &str, logic: &str, conversations: &str) ->
     for word in dictionary_words_in_program(logic)? {
         intern(word);
     }
-    for word in dictionary_words_in_program(conversations)? {
-        intern(word);
+    if let Some(conversations) = conversations {
+        for word in dictionary_words_in_program(conversations)? {
+            intern(word);
+        }
     }
     drop(intern);
     if encountered_breaks != breaks {
@@ -434,6 +526,10 @@ fn dictionary_words_in_program(body: &str) -> Result<Vec<Vec<u8>>> {
             } else if !rest.trim().is_empty() {
                 bail!("line {line_number}: unexpected dialogue text {rest:?}");
             }
+            continue;
+        }
+        if line.starts_with("text_tokens ") {
+            words.extend(parse_quoted_list(line)?);
             continue;
         }
         let dictionary_operands = line.starts_with("require choice ")
@@ -523,7 +619,7 @@ fn prepare_logic_for_compile(body: &str, state: &StateCompilation) -> Result<(St
         writeln!(program, "{original}")?;
     }
     writeln!(directory, "sentinel")?;
-    let program = lower_named_presentations(program.trim_matches('\n'))?;
+    let program = lower_named_presentations(program.trim_matches('\n'), state.dialect)?;
     Ok((prepend_state_declarations(&program, state)?, directory))
 }
 
@@ -533,24 +629,31 @@ fn prepare_conversations_for_compile(body: &str, state: &StateCompilation) -> Re
         .filter(|line| !line.trim().starts_with("dictionary blank after "))
         .collect::<Vec<_>>()
         .join("\n");
-    let body = lower_named_presentations(body.trim_matches('\n'))?;
+    let body = lower_named_presentations(body.trim_matches('\n'), state.dialect)?;
     prepend_state_declarations(&body, state)
 }
 
-fn lower_named_presentations(body: &str) -> Result<String> {
+fn lower_named_presentations(body: &str, dialect: ProfileDialect) -> Result<String> {
     rewrite_presentations(body, |actor, value, line| {
+        if value.parse::<i16>().is_ok() && dialect == ProfileDialect::BigBugBang {
+            return Ok(value.to_string());
+        }
         if value.parse::<i16>().is_ok() {
             bail!(
                 "line {line}: numeric presentation IDs are not valid in unified BloodScript; use the HNM or semantic presentation name"
             );
         }
         crate::presentation_catalog::active_line_id(actor, value)
+            .map(|value| value.to_string())
             .ok_or_else(|| anyhow!("line {line}: unknown presentation {value:?} for {actor}"))
     })
 }
 
-fn raise_named_presentations(body: &str) -> Result<String> {
+fn raise_named_presentations(body: &str, dialect: ProfileDialect) -> Result<String> {
     rewrite_presentations(body, |actor, value, line| {
+        if dialect == ProfileDialect::BigBugBang {
+            return Ok(value.to_string());
+        }
         let active_line_id = value.parse::<i16>().map_err(|_| {
             anyhow!("line {line}: generated presentation ID {value:?} is not decimal")
         })?;
@@ -616,8 +719,16 @@ fn prepend_state_declarations(body: &str, state: &StateCompilation) -> Result<St
     }
     for object in &state.objects {
         let identifier = state_object_identifier(&object.name);
-        for (field, selector) in semantic_fields(object.kind) {
-            let Some(offset) = crate::vm::field_offset(object.kind, selector) else {
+        for (field, selector) in semantic_fields(object.kind, state.dialect) {
+            let offset = if state.dialect == ProfileDialect::BigBugBang
+                && object.kind == 0x0002
+                && selector == 0x15
+            {
+                Some(72)
+            } else {
+                crate::vm::field_offset(object.kind, selector)
+            };
+            let Some(offset) = offset else {
                 continue;
             };
             writeln!(
@@ -631,7 +742,7 @@ fn prepend_state_declarations(body: &str, state: &StateCompilation) -> Result<St
     Ok(output)
 }
 
-fn semantic_fields(kind: u16) -> Vec<(&'static str, u8)> {
+fn semantic_fields(kind: u16, dialect: ProfileDialect) -> Vec<(&'static str, u8)> {
     let mut fields = vec![("flags", 0x00), ("action", 0x13)];
     if kind == 0x0002 {
         fields.extend([
@@ -646,6 +757,9 @@ fn semantic_fields(kind: u16) -> Vec<(&'static str, u8)> {
             ("universe", 0x0e),
             ("topic", 0x0f),
         ]);
+        if dialect == ProfileDialect::BigBugBang {
+            fields.push(("opponent", 0x15));
+        }
     }
     if matches!(kind, 0x0008 | 0x0010) {
         fields.push(("position", 0x0b));
@@ -874,12 +988,17 @@ fn dictionary_seed_words(
         .collect::<Vec<_>>();
     let entry_by_offset = entries.iter().cloned().collect::<HashMap<_, _>>();
     let mut seen_offsets = HashSet::new();
-    let first_use = bloodscript::dictionary_operand_order(&images.cod, &images.bas, dictionary)
-        .into_iter()
-        .filter(|offset| seen_offsets.insert(*offset))
-        .filter_map(|offset| entry_by_offset.get(&offset).cloned())
-        .filter(|word| !word.is_empty() && word.as_slice() != [0xff])
-        .collect::<Vec<_>>();
+    let first_use = bloodscript::dictionary_operand_order(
+        &images.cod,
+        images.bas.as_deref(),
+        dictionary,
+        images.dialect == ProfileDialect::BigBugBang,
+    )
+    .into_iter()
+    .filter(|offset| seen_offsets.insert(*offset))
+    .filter_map(|offset| entry_by_offset.get(&offset).cloned())
+    .filter(|word| !word.is_empty() && word.as_slice() != [0xff])
+    .collect::<Vec<_>>();
     for seed_len in 0..=physical.len() {
         let seeds = physical[..seed_len].to_vec();
         let mut derived = seeds.clone();
@@ -900,13 +1019,18 @@ fn integrate_dictionary_gaps(
     concepts: &[Vec<u8>],
     breaks: &[Vec<u8>],
 ) -> Result<String> {
-    let mut seen = concepts.iter().cloned().collect::<HashSet<_>>();
+    let mut seen = HashSet::new();
     let mut remaining = breaks.iter().cloned().collect::<HashSet<_>>();
     let mut output = String::new();
     for original in source.lines() {
         writeln!(output, "{original}")?;
         let indentation = &original[..original.len() - original.trim_start().len()];
-        for word in dictionary_words_in_program(original)? {
+        let words = if original.trim_start().starts_with("concepts") {
+            concepts.to_vec()
+        } else {
+            dictionary_words_in_program(original)?
+        };
+        for word in words {
             if seen.insert(word.clone()) && remaining.remove(&word) {
                 writeln!(
                     output,
@@ -960,6 +1084,7 @@ fn compile_state(
     body: &str,
     logic: &str,
     dictionary: &[(u16, Vec<u8>)],
+    dialect: ProfileDialect,
 ) -> Result<StateCompilation> {
     let specs = parse_state_objects(body)?;
     if specs.is_empty() {
@@ -977,7 +1102,7 @@ fn compile_state(
             offset,
             kind: spec.kind,
         });
-        next_offset += object_record_size(spec.kind)
+        next_offset += object_record_size(spec.kind, dialect)
             .ok_or_else(|| anyhow!("state line {}: unsupported object kind", spec.line))?;
     }
 
@@ -987,7 +1112,7 @@ fn compile_state(
         .collect::<HashMap<_, _>>();
     let mut image = vec![0; next_offset];
     for (spec, object) in specs.iter().zip(&objects) {
-        compile_state_object(&mut image, spec, object, &by_name, dictionary)?;
+        compile_state_object(&mut image, spec, object, &by_name, dictionary, dialect)?;
     }
 
     let orxx = objects
@@ -1017,6 +1142,7 @@ fn compile_state(
     }
 
     Ok(StateCompilation {
+        dialect,
         image,
         objects,
         labels,
@@ -1090,6 +1216,7 @@ fn compile_state_object(
     object: &StateObject,
     by_name: &HashMap<Vec<u8>, u16>,
     dictionary: &[(u16, Vec<u8>)],
+    dialect: ProfileDialect,
 ) -> Result<()> {
     let start = usize::from(object.offset);
     write_word(image, start, spec.kind)?;
@@ -1136,20 +1263,24 @@ fn compile_state_object(
                 start + 70,
                 parse_topic(property("topic"), dictionary, spec.line)?,
             )?;
-            require_properties(
-                spec,
-                &[
-                    "race",
-                    "population",
-                    "location",
-                    "aggressiveness",
-                    "energy",
-                    "encounters",
-                    "evolution",
-                    "universe",
-                    "topic",
-                ],
-            )?;
+            if dialect == ProfileDialect::BigBugBang {
+                write_word(image, start + 72, reference("opponent", 0)?)?;
+            }
+            let mut allowed = vec![
+                "race",
+                "population",
+                "location",
+                "aggressiveness",
+                "energy",
+                "encounters",
+                "evolution",
+                "universe",
+                "topic",
+            ];
+            if dialect == ProfileDialect::BigBugBang {
+                allowed.push("opponent");
+            }
+            require_properties(spec, &allowed)?;
         }
         0x0008 => {
             write_word(image, start + 20, number("visits", 0)?)?;
@@ -1177,7 +1308,15 @@ fn compile_state_object(
         0x0080 => {
             write_word(image, start + 20, reference("parent", baby1)?)?;
             write_word(image, start + 22, reference("universe", baby1)?)?;
-            require_properties(spec, &["parent", "universe"])?;
+            if dialect == ProfileDialect::BigBugBang {
+                write_word(image, start + 24, reference("settler", 0)?)?;
+            }
+            let allowed = if dialect == ProfileDialect::BigBugBang {
+                &["parent", "universe", "settler"][..]
+            } else {
+                &["parent", "universe"][..]
+            };
+            require_properties(spec, allowed)?;
         }
         0x0100 => {
             write_word(image, start + 20, reference("universe1", baby1)?)?;
@@ -1263,7 +1402,11 @@ fn parse_variable_declaration(
     )))
 }
 
-fn state_globals_offset(var: &[u8], records: &[DirectoryRecord]) -> Result<Option<u16>> {
+fn state_globals_offset(
+    var: &[u8],
+    records: &[DirectoryRecord],
+    dialect: ProfileDialect,
+) -> Result<Option<u16>> {
     let Some(last) = records
         .iter()
         .rev()
@@ -1275,7 +1418,7 @@ fn state_globals_offset(var: &[u8], records: &[DirectoryRecord]) -> Result<Optio
     let kind = read_word(var, start)?;
     let end = start
         .checked_add(
-            object_record_size(kind)
+            object_record_size(kind, dialect)
                 .ok_or_else(|| anyhow!("unknown final object kind {kind} at 0x{start:04X}"))?,
         )
         .ok_or_else(|| anyhow!("final object extent overflows"))?;
@@ -1344,6 +1487,7 @@ fn write_state(
     var: &[u8],
     records: &[DirectoryRecord],
     dictionary: &[(u16, Vec<u8>)],
+    dialect: ProfileDialect,
 ) -> Result<()> {
     let objects: Vec<_> = records
         .iter()
@@ -1372,7 +1516,7 @@ fn write_state(
                 format_quoted_bytes(trimmed_name(&record.name))
             )
         })?;
-        let size = object_record_size(kind).ok_or_else(|| {
+        let size = object_record_size(kind, dialect).ok_or_else(|| {
             anyhow!(
                 "object {} has unsupported kind {kind}",
                 format_quoted_bytes(trimmed_name(&record.name))
@@ -1400,7 +1544,7 @@ fn write_state(
         let flags = read_word(var, start + 2)?;
         write_status(output, kind, flags)?;
         verify_inline_name(var, start, kind, trimmed_name(&record.name))?;
-        write_state_object_fields(output, var, start, kind, &names, dictionary)?;
+        write_state_object_fields(output, var, start, kind, &names, dictionary, dialect)?;
         writeln!(output, "    }}")?;
         state_end = end;
     }
@@ -1414,6 +1558,7 @@ fn write_state_object_fields(
     kind: u16,
     names: &HashMap<u16, Vec<u8>>,
     dictionary: &[(u16, Vec<u8>)],
+    dialect: ProfileDialect,
 ) -> Result<()> {
     match kind {
         0x0001 => {
@@ -1471,6 +1616,15 @@ fn write_state_object_fields(
                     .find_map(|(offset, value)| (*offset == topic).then_some(value))
                     .ok_or_else(|| anyhow!("character topic offset {topic} is absent from DIC"))?;
                 writeln!(output, "        topic = {}", format_quoted_bytes(value))?;
+            }
+            if dialect == ProfileDialect::BigBugBang {
+                write_nondefault_reference(
+                    output,
+                    "opponent",
+                    read_word(var, start + 72)?,
+                    names,
+                    b"baby1",
+                )?;
             }
         }
         0x0008 => {
@@ -1530,6 +1684,15 @@ fn write_state_object_fields(
                 names,
                 b"baby1",
             )?;
+            if dialect == ProfileDialect::BigBugBang {
+                write_nondefault_reference(
+                    output,
+                    "settler",
+                    read_word(var, start + 24)?,
+                    names,
+                    b"baby1",
+                )?;
+            }
         }
         0x0100 => {
             write_reference(output, "universe1", read_word(var, start + 20)?, names)?;
@@ -1886,11 +2049,11 @@ fn format_state_kind(kind: u16) -> String {
     }
 }
 
-fn object_record_size(kind: u16) -> Option<usize> {
+fn object_record_size(kind: u16, dialect: ProfileDialect) -> Option<usize> {
     // Adjacent DEB object offsets establish these sizes. The final 0x0200 orxx
     // record is 36 bytes: every shipped profile and the sequel place the
     // compiler-injected kind-5 `tblood` word exactly at orxx + 36.
-    match kind {
+    let base = match kind {
         0x0001 => Some(34),
         0x0002 => Some(72),
         0x0008 => Some(30),
@@ -1901,7 +2064,11 @@ fn object_record_size(kind: u16) -> Option<usize> {
         0x0200 => Some(36),
         0x0400 => Some(24),
         _ => None,
-    }
+    }?;
+    Some(match (dialect, kind) {
+        (ProfileDialect::BigBugBang, 0x0002 | 0x0080) => base + 2,
+        _ => base,
+    })
 }
 
 fn compile_directory(
@@ -2285,12 +2452,56 @@ conversations {
 "#;
         let profile = compile(source).unwrap();
         assert_eq!(profile.cod, [0xff]);
-        assert_eq!(profile.bas, [0xff]);
+        assert_eq!(profile.bas.as_deref(), Some(&[0xff][..]));
         assert_eq!(profile.dic, [0, b'h', b'e', b'l', b'l', b'o', 0, 0xff, 0]);
         assert_eq!(profile.var.len(), 78);
         assert_eq!(profile.deb.len(), 100);
         assert_eq!(&profile.deb[..5], b"baby1");
         assert_eq!(profile.deb[18], 1);
+    }
+
+    #[test]
+    fn sequel_profile_derives_four_resources_and_extended_state_records() {
+        let source = r#"bloodscript 8
+dialect big_bug_bang
+profile SCRIPT6
+concepts "hello"
+
+state {
+    universe "baby1" {
+        known
+    }
+    character "source" {
+        opponent = "target"
+    }
+    character "target" {
+    }
+    location "site" {
+        parent = "target"
+        settler = "source"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    halt
+}
+"#;
+        let profile = compile(source).unwrap();
+        assert_eq!(profile.dialect, ProfileDialect::BigBugBang);
+        assert_eq!(profile.extensions(), ["COD", "DEB", "DIC", "VAR"]);
+        assert!(profile.bas.is_none());
+        assert_eq!(&profile.dic[..8], &[0; 8]);
+        assert_eq!(profile.var.len(), 232);
+        assert_eq!(read_word(&profile.var, 20 + 72).unwrap(), 94);
+        assert_eq!(read_word(&profile.var, 168 + 24).unwrap(), 20);
+        let rebuilt = decompile(&profile).unwrap();
+        assert!(rebuilt.contains("dialect big_bug_bang"));
+        assert!(rebuilt.contains("opponent = \"target\""));
+        assert!(rebuilt.contains("settler = \"source\""));
+        require_same_profile(&compile(&rebuilt).unwrap(), &profile).unwrap();
     }
 
     #[test]
@@ -2311,16 +2522,21 @@ conversations {
             "say Honk presentation=text_only chatter : \"Report\"\n",
             "say Ulikan presentation=early_morning_signoff : \"See ya\"",
         );
-        let lowered = lower_named_presentations(source).unwrap();
+        let lowered = lower_named_presentations(source, ProfileDialect::CommanderBlood).unwrap();
         assert!(lowered.contains("Bob_Morlock presentation=10"));
         assert!(lowered.contains("Honk presentation=8 chatter"));
         assert!(lowered.contains("Ulikan presentation=26"));
-        assert_eq!(raise_named_presentations(&lowered).unwrap(), source);
+        assert_eq!(
+            raise_named_presentations(&lowered, ProfileDialect::CommanderBlood).unwrap(),
+            source
+        );
 
-        let error =
-            lower_named_presentations("say Bob_Morlock presentation=10 : \"opaque selector\"")
-                .unwrap_err()
-                .to_string();
+        let error = lower_named_presentations(
+            "say Bob_Morlock presentation=10 : \"opaque selector\"",
+            ProfileDialect::CommanderBlood,
+        )
+        .unwrap_err()
+        .to_string();
         assert!(error.contains("numeric presentation IDs are not valid"));
     }
 
@@ -2338,9 +2554,10 @@ conversations {
                 std::fs::read_to_string(source_dir.join(format!("script{script}.blood"))).unwrap();
             let compiled = compile(&source).unwrap();
             let shipped = ProfileImages {
+                dialect: ProfileDialect::CommanderBlood,
                 name,
                 cod: std::fs::read(game_dir.join(format!("SCRIPT{script}.COD"))).unwrap(),
-                bas: std::fs::read(game_dir.join(format!("SCRIPT{script}.BAS"))).unwrap(),
+                bas: Some(std::fs::read(game_dir.join(format!("SCRIPT{script}.BAS"))).unwrap()),
                 deb: std::fs::read(game_dir.join(format!("SCRIPT{script}.DEB"))).unwrap(),
                 dic: std::fs::read(game_dir.join(format!("SCRIPT{script}.DIC"))).unwrap(),
                 var: std::fs::read(game_dir.join(format!("SCRIPT{script}.VAR"))).unwrap(),
@@ -2362,9 +2579,10 @@ conversations {
         }
         for script in 1..=5 {
             let images = ProfileImages {
+                dialect: ProfileDialect::CommanderBlood,
                 name: format!("SCRIPT{script}"),
                 cod: std::fs::read(game_dir.join(format!("SCRIPT{script}.COD"))).unwrap(),
-                bas: std::fs::read(game_dir.join(format!("SCRIPT{script}.BAS"))).unwrap(),
+                bas: Some(std::fs::read(game_dir.join(format!("SCRIPT{script}.BAS"))).unwrap()),
                 deb: std::fs::read(game_dir.join(format!("SCRIPT{script}.DEB"))).unwrap(),
                 dic: std::fs::read(game_dir.join(format!("SCRIPT{script}.DIC"))).unwrap(),
                 var: std::fs::read(game_dir.join(format!("SCRIPT{script}.VAR"))).unwrap(),

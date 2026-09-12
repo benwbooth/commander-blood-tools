@@ -1,0 +1,3955 @@
+bloodscript 8
+dialect big_bug_bang
+profile SCRIPT3
+concepts "parler" "bonjour" "rayon"
+
+state {
+    universe "baby1" {
+        known
+    }
+    universe "baby" {
+    }
+    player "blood" {
+        active
+        population = 1
+        location = "arche"
+    }
+    character "internet" {
+        active
+        race = robots
+        population = 43
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Eviscerator" {
+        active
+        leader
+        race = croolis_red
+        population = 10
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Emasculator" {
+        active
+        race = croolis_green
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Outrageor" {
+        active
+        leader
+        race = croolis_red
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Rotator" {
+        active
+        race = croolis_green
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Trump" {
+        active
+        race = tromps
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tramp" {
+        active
+        race = tromps
+        population = 10
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Tromp" {
+        active
+        leader
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        energy = 500
+        topic = "parler"
+    }
+    character "Strumpy" {
+        active
+        race = tromps
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Betakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Alphakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Gammakam" {
+        active
+        race = kam
+        population = 1
+        location = "Trashlando"
+        topic = "bonjour"
+    }
+    character "Toolbox" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolpocket" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Toolcase" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Metro_Paul" {
+        active
+        leader
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mega_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sebasto_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Inter_Paul" {
+        active
+        race = tubular_brain
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kran_Dobu" {
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Marakas" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Izwalito" {
+        active
+        leader
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Tequila" {
+        active
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Cyberquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bioquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Roboquizz" {
+        active
+        race = quizzers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Jerry_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mohi_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Shado_Khan" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Morning_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Midnight_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Evening_Oil" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Super_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Kero_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Ben_Zen" {
+        active
+        race = zen
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrator" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Migrax" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mig_Burner" {
+        active
+        race = migrax
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Mac" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_Jo" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Scruter_K" {
+        active
+        race = scruters
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Daddy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mamy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Papy_Gluxx" {
+        active
+        race = gluxx
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Smile" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Gluk" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Otto_Von_Potato" {
+        active
+        race = slimers
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Chop_Parsley" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Mince_Steak" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Sever_Kidney" {
+        active
+        race = robots
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hanz_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bob_Morlock" {
+        active
+        race = bob
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Bug_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "rayon"
+    }
+    character "Sushi_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Fuji_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Hito_Deluxe" {
+        active
+        race = sinox
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Blue_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Long_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Short_Wave" {
+        active
+        race = waves
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "Honk" {
+        active
+        known
+        race = izwals
+        population = 1
+        location = "Trashlando"
+        topic = "parler"
+    }
+    character "menu" {
+        active
+        race = izwals
+        population = 50
+        location = "Trashlando"
+        topic = "parler"
+    }
+    ship "arche" {
+        active
+        position = (0, 0)
+    }
+    location "Arche" {
+        active
+        parent = "arche"
+    }
+    planet "Ondoya" {
+        active
+        position = (37, 50)
+    }
+    location "Waveland" {
+        active
+        known
+        parent = "Ondoya"
+    }
+    planet "Volupta" {
+        active
+        position = (100, 76)
+    }
+    location "Voluptland" {
+        active
+        known
+        parent = "Volupta"
+    }
+    planet "Kortex" {
+        active
+        position = (59, 36)
+    }
+    location "Kortland" {
+        active
+        known
+        parent = "Kortex"
+    }
+    planet "Tempest" {
+        active
+        position = (16, 110)
+    }
+    location "Templand" {
+        active
+        known
+        parent = "Tempest"
+    }
+    planet "Vulcan" {
+        active
+        position = (35, 110)
+    }
+    location "Vulcland" {
+        active
+        known
+        parent = "Vulcan"
+    }
+    planet "Goan" {
+        active
+        position = (55, 122)
+    }
+    location "Goanland" {
+        active
+        known
+        parent = "Goan"
+    }
+    planet "Ekatomb" {
+        active
+        position = (76, 125)
+    }
+    location "Ekatoland" {
+        active
+        known
+        parent = "Ekatomb"
+    }
+    planet "Venusia" {
+        active
+        position = (82, 11)
+        universe = "baby"
+    }
+    location "Super_Market" {
+        active
+        known
+        parent = "Venusia"
+    }
+    planet "Cyberock" {
+        active
+        position = (77, 86)
+    }
+    location "Cyberland" {
+        active
+        known
+        parent = "Cyberock"
+    }
+    planet "Crazystone" {
+        active
+        position = (179, 81)
+    }
+    location "Crazyland" {
+        active
+        known
+        parent = "Crazystone"
+    }
+    planet "Spiralus" {
+        active
+        position = (77, 49)
+    }
+    location "Spiraland" {
+        active
+        known
+        parent = "Spiralus"
+    }
+    planet "Magnus" {
+        active
+        position = (270, 49)
+    }
+    location "Magnusland" {
+        active
+        known
+        parent = "Magnus"
+    }
+    planet "Lovia" {
+        active
+        position = (62, 95)
+    }
+    location "Loviland" {
+        active
+        known
+        parent = "Lovia"
+    }
+    planet "Golgos" {
+        active
+        position = (201, 33)
+    }
+    location "Golgoland" {
+        active
+        known
+        parent = "Golgos"
+    }
+    planet "Pterra" {
+        active
+        position = (201, 93)
+    }
+    location "Pterraland" {
+        active
+        known
+        parent = "Pterra"
+    }
+    planet "Bonus" {
+        active
+        position = (279, 94)
+    }
+    location "Bonusland" {
+        active
+        known
+        parent = "Bonus"
+    }
+    planet "Troma" {
+        active
+        position = (50, 110)
+    }
+    location "Tromaland" {
+        active
+        known
+        parent = "Troma"
+    }
+    planet "Cyborg" {
+        active
+        position = (256, 96)
+    }
+    location "Cyborland" {
+        active
+        known
+        parent = "Cyborg"
+    }
+    planet "Kult" {
+        active
+        position = (222, 108)
+    }
+    location "Kultland" {
+        active
+        known
+        parent = "Kult"
+    }
+    planet "Tumul" {
+        active
+        position = (230, 83)
+    }
+    location "Tumland" {
+        active
+        parent = "Tumul"
+    }
+    location "Babyland" {
+        active
+        parent = "Tumul"
+    }
+    location "Stoneland" {
+        active
+        parent = "Tumul"
+    }
+    location "Darkland" {
+        active
+        parent = "Tumul"
+    }
+    planet "Vistar" {
+        active
+        position = (106, 21)
+    }
+    location "Vistarland" {
+        active
+        parent = "Vistar"
+    }
+    planet "Pony" {
+        active
+        position = (75, 31)
+    }
+    location "Ponyland" {
+        active
+        parent = "Pony"
+    }
+    location "New_Yolk" {
+        active
+        parent = "Pony"
+    }
+    planet "Lone" {
+        active
+        position = (191, 44)
+    }
+    location "Loneland" {
+        active
+        parent = "Lone"
+    }
+    planet "Eden" {
+        active
+        position = (16, 46)
+    }
+    location "Edenland" {
+        active
+        parent = "Eden"
+    }
+    location "Purple_Haze" {
+        active
+        parent = "Eden"
+    }
+    planet "Is" {
+        active
+        position = (220, 19)
+    }
+    location "Island" {
+        active
+        parent = "Is"
+    }
+    location "Techland" {
+        active
+        parent = "Is"
+    }
+    planet "Mastachok" {
+        active
+        position = (149, 20)
+    }
+    location "Mastaland" {
+        active
+        parent = "Mastachok"
+    }
+    location "Jail" {
+        active
+        parent = "Mastachok"
+    }
+    location "Factory" {
+        active
+        parent = "Mastachok"
+    }
+    planet "Moskito" {
+        active
+        position = (38, 135)
+    }
+    location "Moskitoland" {
+        active
+        parent = "Moskito"
+    }
+    location "Airport" {
+        active
+        parent = "Moskito"
+    }
+    planet "Foxx" {
+        active
+        position = (286, 14)
+    }
+    location "Foxxland" {
+        active
+        parent = "Foxx"
+    }
+    planet "Erazor" {
+        active
+        position = (125, 16)
+    }
+    location "Erazorland" {
+        active
+        parent = "Erazor"
+    }
+    location "Swimland" {
+        active
+        parent = "Erazor"
+    }
+    planet "Malus" {
+        active
+        position = (220, 92)
+    }
+    location "Malusland" {
+        active
+        parent = "Malus"
+    }
+    planet "Sat" {
+        active
+        position = (269, 11)
+    }
+    location "Satland" {
+        active
+        parent = "Sat"
+    }
+    planet "Corpo" {
+        active
+        position = (292, 86)
+    }
+    location "Corpoland" {
+        active
+        parent = "Corpo"
+    }
+    location "Hitaland" {
+        active
+        parent = "Corpo"
+    }
+    planet "Attrox" {
+        active
+        position = (235, 117)
+    }
+    location "Attroxcity" {
+        active
+        parent = "Attrox"
+    }
+    planet "Mammy" {
+        active
+        position = (42, 37)
+    }
+    location "Mammyland" {
+        active
+        parent = "Mammy"
+    }
+    planet "Rondo" {
+        active
+        position = (281, 40)
+    }
+    location "Rondoland" {
+        active
+        parent = "Rondo"
+    }
+    location "Observatory" {
+        active
+        parent = "Rondo"
+    }
+    planet "Trashlando" {
+        active
+        position = (249, 127)
+    }
+    location "Trashland" {
+        active
+        parent = "Trashlando"
+    }
+    black_hole "Oddland" {
+        active
+        universe1 = "baby1"
+        universe2 = "baby"
+        position1 = (132, 34)
+        position2 = (150, 0)
+    }
+    ship "Bigbang" {
+        active
+        position = (100, 100)
+    }
+    location "bar1" {
+        active
+        parent = "Bigbang"
+    }
+    location "bar2" {
+        active
+        parent = "Bigbang"
+    }
+    location "concert" {
+        active
+        parent = "Bigbang"
+    }
+    ship "Shark" {
+        active
+        position = (236, 11)
+    }
+    ship "Kukaracha" {
+        active
+        position = (176, 58)
+    }
+    ship "Kraner" {
+        active
+        position = (243, 65)
+    }
+    item "couronne" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "tableau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "image" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "momie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bionium" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "technologie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "guitare" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "credit" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "parfum" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "decodeur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "nourriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "medicament" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "armes" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "optique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "energie" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "bague" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "emetteur" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "atomique" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "culture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "ecriture" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "lois" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "traité" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "scruter" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "cadeaux" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    item "vaisseau" {
+        active
+        holder = "Sushi_Deluxe"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+
+logic {
+    proc initA1 disabled {
+    } then {
+        globals.DGNUC = 0
+        globals.DGIMA = 0
+        globals.DGCOU = 0
+        globals.DGTAB = 0
+        globals.DGMOM = 0
+        globals.DGBIO = 0
+        globals.DGTEC = 0
+        globals.DGGUI = 0
+        globals.DGCRE = 0
+        globals.DGPAR = 0
+        globals.DGDEC = 0
+        globals.DGNOU = 0
+        globals.DGMED = 0
+        globals.DGARM = 0
+        globals.DGOPT = 0
+        globals.DGENE = 0
+        globals.DGBAG = 0
+        globals.DGOND = 0
+        globals.DGCUL = 0
+        globals.DGECR = 0
+        globals.DGLOI = 0
+        globals.DGTRA = 0
+        globals.DGCAD = 0
+        globals.A1 = 0
+        globals.A2 = 0
+        globals.A3 = 0
+        globals.A4 = 0
+        globals.A5 = 0
+        globals.A6 = 0
+        globals.A7 = 0
+        globals.A8 = 0
+        globals.A9 = 0
+        globals.A10 = 0
+        globals.A11 = 0
+        globals.A12 = 0
+        globals.A13 = 0
+        globals.A14 = 0
+        globals.A15 = 0
+        globals.A16 = 0
+        globals.A17 = 0
+        globals.A18 = 0
+        globals.A19 = 0
+        globals.A20 = 0
+        globals.A21 = 0
+        globals.A22 = 0
+        globals.A23 = 0
+        globals.A24 = 0
+        globals.A25 = 0
+        globals.A26 = 0
+        globals.A27 = 0
+        globals.A28 = 0
+        globals.A29 = 0
+        globals.A30 = 0
+        globals.A31 = 0
+        globals.A32 = 0
+        globals.A33 = 0
+        globals.A34 = 0
+        globals.A35 = 0
+        globals.A36 = 0
+        globals.A37 = 0
+        globals.A38 = 0
+        globals.A39 = 0
+        globals.A40 = 0
+        globals.A41 = 0
+        globals.A42 = 0
+        globals.A43 = 0
+        globals.A44 = 0
+        globals.A45 = 0
+        globals.A46 = 0
+        globals.A47 = 0
+        globals.A48 = 0
+        globals.A49 = 0
+        globals.A50 = 0
+        globals.A51 = 0
+        globals.A52 = 0
+        globals.A53 = 0
+        globals.A54 = 0
+        globals.A55 = 0
+        globals.A56 = 0
+        globals.A57 = 0
+        globals.A58 = 0
+        globals.A59 = 0
+        globals.A60 = 0
+        globals.A61 = 0
+        globals.A62 = 0
+        globals.A63 = 0
+        globals.A64 = 0
+        globals.A65 = 0
+        globals.A66 = 0
+        globals.A67 = 0
+        globals.A68 = 0
+        globals.A69 = 0
+        globals.A70 = 0
+        globals.A71 = 0
+        globals.A72 = 0
+        globals.A73 = 0
+        globals.A74 = 0
+        globals.A75 = 0
+        globals.A76 = 0
+        globals.A77 = 0
+        globals.A78 = 0
+        globals.A79 = 0
+        globals.A80 = 0
+        globals.A81 = 0
+        globals.A82 = 0
+        globals.A83 = 0
+        globals.A84 = 0
+        globals.A85 = 0
+        globals.A86 = 0
+        globals.A87 = 0
+        globals.A88 = 0
+        globals.A89 = 0
+        globals.A90 = 0
+        globals.A91 = 0
+        globals.A92 = 0
+        globals.A93 = 0
+        globals.A94 = 0
+        globals.A95 = 0
+        globals.A96 = 0
+        globals.A97 = 0
+        globals.A98 = 0
+        globals.A99 = 0
+        globals.A100 = 0
+        globals.B1 = 0
+        globals.B2 = 0
+        globals.B3 = 0
+        globals.B4 = 0
+        globals.B5 = 0
+        globals.B6 = 0
+        globals.B7 = 0
+        globals.B8 = 0
+        globals.B9 = 0
+        globals.B10 = 0
+        globals.B11 = 0
+        globals.B12 = 0
+        globals.B13 = 0
+        globals.B14 = 0
+        globals.B15 = 0
+        globals.B16 = 0
+        globals.B17 = 0
+        globals.B18 = 0
+        globals.B19 = 0
+        globals.B20 = 0
+        globals.B21 = 0
+        globals.B22 = 0
+        globals.B23 = 0
+        globals.B24 = 0
+        globals.B25 = 0
+        globals.B26 = 0
+        globals.B27 = 0
+        globals.B28 = 0
+        globals.B29 = 0
+        globals.B30 = 0
+        globals.B31 = 0
+        globals.B32 = 0
+        globals.B33 = 0
+        globals.B34 = 0
+        globals.B35 = 0
+        globals.B36 = 0
+        globals.B37 = 0
+        globals.B38 = 0
+        globals.B39 = 0
+        globals.B40 = 0
+        globals.B41 = 0
+        globals.B42 = 0
+        globals.B43 = 0
+        globals.B44 = 0
+        globals.B45 = 0
+        globals.B46 = 0
+        globals.B47 = 0
+        globals.B48 = 0
+        globals.B49 = 0
+        globals.B50 = 0
+        globals.B51 = 0
+        globals.B52 = 0
+        globals.B53 = 0
+        globals.B54 = 0
+        globals.B55 = 0
+        globals.B56 = 0
+        globals.B57 = 0
+        globals.B58 = 0
+        globals.B59 = 0
+        globals.B60 = 0
+        globals.B61 = 0
+        globals.B62 = 0
+        globals.B63 = 0
+        globals.B64 = 0
+        globals.B65 = 0
+        globals.B66 = 0
+        globals.B67 = 0
+        globals.B68 = 0
+        globals.B69 = 0
+        globals.B70 = 0
+        globals.B71 = 0
+        globals.B72 = 0
+        globals.B73 = 0
+        globals.B74 = 0
+        globals.B75 = 0
+        globals.B76 = 0
+        globals.B77 = 0
+        globals.B78 = 0
+        globals.B79 = 0
+        globals.B80 = 0
+        globals.B81 = 0
+        globals.B82 = 0
+        globals.B83 = 0
+        globals.B84 = 0
+        globals.B85 = 0
+        globals.B86 = 0
+        globals.B87 = 0
+        globals.B88 = 0
+        globals.B89 = 0
+        globals.B90 = 0
+        globals.B91 = 0
+        globals.B92 = 0
+        globals.B93 = 0
+        globals.B94 = 0
+        globals.B95 = 0
+        globals.B96 = 0
+        globals.B97 = 0
+        globals.B98 = 0
+        globals.B99 = 0
+        globals.B100 = 0
+        globals.C1 = 0
+        globals.C2 = 0
+        globals.C3 = 0
+        globals.C4 = 0
+        globals.C5 = 0
+        globals.C6 = 0
+        globals.C7 = 0
+        globals.C8 = 0
+        globals.C9 = 0
+        globals.C10 = 0
+        globals.C11 = 0
+        globals.C12 = 0
+        globals.C13 = 0
+        globals.C14 = 0
+        globals.C15 = 0
+        globals.C16 = 0
+        globals.C17 = 0
+        globals.C18 = 0
+        globals.C19 = 0
+        globals.C20 = 0
+        globals.C21 = 0
+        globals.C22 = 0
+        globals.C23 = 0
+        globals.vbio = 0
+        globals.S1 = 0
+        globals.S2 = 0
+    }
+    global DGNUC = 0
+    global DGIMA = 0
+    global DGCOU = 0
+    global DGTAB = 0
+    global DGMOM = 0
+    global DGBIO = 0
+    global DGTEC = 0
+    global DGGUI = 0
+    global DGCRE = 0
+    global DGPAR = 0
+    global DGDEC = 0
+    global DGNOU = 0
+    global DGMED = 0
+    global DGARM = 0
+    global DGOPT = 0
+    global DGENE = 0
+    global DGBAG = 0
+    global DGOND = 0
+    global DGCUL = 0
+    global DGECR = 0
+    global DGLOI = 0
+    global DGTRA = 0
+    global DGCAD = 0
+    global A1 = 0
+    global A2 = 0
+    global A3 = 0
+    global A4 = 0
+    global A5 = 0
+    global A6 = 0
+    global A7 = 0
+    global A8 = 0
+    global A9 = 0
+    global A10 = 0
+    global A11 = 0
+    global A12 = 0
+    global A13 = 0
+    global A14 = 0
+    global A15 = 0
+    global A16 = 0
+    global A17 = 0
+    global A18 = 0
+    global A19 = 0
+    global A20 = 0
+    global A21 = 0
+    global A22 = 0
+    global A23 = 0
+    global A24 = 0
+    global A25 = 0
+    global A26 = 0
+    global A27 = 0
+    global A28 = 0
+    global A29 = 0
+    global A30 = 0
+    global A31 = 0
+    global A32 = 0
+    global A33 = 0
+    global A34 = 0
+    global A35 = 0
+    global A36 = 0
+    global A37 = 0
+    global A38 = 0
+    global A39 = 0
+    global A40 = 0
+    global A41 = 0
+    global A42 = 0
+    global A43 = 0
+    global A44 = 0
+    global A45 = 0
+    global A46 = 0
+    global A47 = 0
+    global A48 = 0
+    global A49 = 0
+    global A50 = 0
+    global A51 = 0
+    global A52 = 0
+    global A53 = 0
+    global A54 = 0
+    global A55 = 0
+    global A56 = 0
+    global A57 = 0
+    global A58 = 0
+    global A59 = 0
+    global A60 = 0
+    global A61 = 0
+    global A62 = 0
+    global A63 = 0
+    global A64 = 0
+    global A65 = 0
+    global A66 = 0
+    global A67 = 0
+    global A68 = 0
+    global A69 = 0
+    global A70 = 0
+    global A71 = 0
+    global A72 = 0
+    global A73 = 0
+    global A74 = 0
+    global A75 = 0
+    global A76 = 0
+    global A77 = 0
+    global A78 = 0
+    global A79 = 0
+    global A80 = 0
+    global A81 = 0
+    global A82 = 0
+    global A83 = 0
+    global A84 = 0
+    global A85 = 0
+    global A86 = 0
+    global A87 = 0
+    global A88 = 0
+    global A89 = 0
+    global A90 = 0
+    global A91 = 0
+    global A92 = 0
+    global A93 = 0
+    global A94 = 0
+    global A95 = 0
+    global A96 = 0
+    global A97 = 0
+    global A98 = 0
+    global A99 = 0
+    global A100 = 0
+    global B1 = 0
+    global B2 = 0
+    global B3 = 0
+    global B4 = 0
+    global B5 = 0
+    global B6 = 0
+    global B7 = 0
+    global B8 = 0
+    global B9 = 0
+    global B10 = 0
+    global B11 = 0
+    global B12 = 0
+    global B13 = 0
+    global B14 = 0
+    global B15 = 0
+    global B16 = 0
+    global B17 = 0
+    global B18 = 0
+    global B19 = 0
+    global B20 = 0
+    global B21 = 0
+    global B22 = 0
+    global B23 = 0
+    global B24 = 0
+    global B25 = 0
+    global B26 = 0
+    global B27 = 0
+    global B28 = 0
+    global B29 = 0
+    global B30 = 0
+    global B31 = 0
+    global B32 = 0
+    global B33 = 0
+    global B34 = 0
+    global B35 = 0
+    global B36 = 0
+    global B37 = 0
+    global B38 = 0
+    global B39 = 0
+    global B40 = 0
+    global B41 = 0
+    global B42 = 0
+    global B43 = 0
+    global B44 = 0
+    global B45 = 0
+    global B46 = 0
+    global B47 = 0
+    global B48 = 0
+    global B49 = 0
+    global B50 = 0
+    global B51 = 0
+    global B52 = 0
+    global B53 = 0
+    global B54 = 0
+    global B55 = 0
+    global B56 = 0
+    global B57 = 0
+    global B58 = 0
+    global B59 = 0
+    global B60 = 0
+    global B61 = 0
+    global B62 = 0
+    global B63 = 0
+    global B64 = 0
+    global B65 = 0
+    global B66 = 0
+    global B67 = 0
+    global B68 = 0
+    global B69 = 0
+    global B70 = 0
+    global B71 = 0
+    global B72 = 0
+    global B73 = 0
+    global B74 = 0
+    global B75 = 0
+    global B76 = 0
+    global B77 = 0
+    global B78 = 0
+    global B79 = 0
+    global B80 = 0
+    global B81 = 0
+    global B82 = 0
+    global B83 = 0
+    global B84 = 0
+    global B85 = 0
+    global B86 = 0
+    global B87 = 0
+    global B88 = 0
+    global B89 = 0
+    global B90 = 0
+    global B91 = 0
+    global B92 = 0
+    global B93 = 0
+    global B94 = 0
+    global B95 = 0
+    global B96 = 0
+    global B97 = 0
+    global B98 = 0
+    global B99 = 0
+    global B100 = 0
+    global C1 = 0
+    global C2 = 0
+    global C3 = 0
+    global C4 = 0
+    global C5 = 0
+    global C6 = 0
+    global C7 = 0
+    global C8 = 0
+    global C9 = 0
+    global C10 = 0
+    global C11 = 0
+    global C12 = 0
+    global C13 = 0
+    global C14 = 0
+    global C15 = 0
+    global C16 = 0
+    global C17 = 0
+    global C18 = 0
+    global C19 = 0
+    global C20 = 0
+    global C21 = 0
+    global C22 = 0
+    global C23 = 0
+    global vbio = 0
+    global S1 = 0
+    global S2 = 0
+    proc glut enabled {
+        during bridge
+        require Daddy_Gluxx.current_location == aboard
+        require presentation == Daddy_Gluxx
+    } then {
+        say Daddy_Gluxx presentation=8 chatter : "bravo|! joli doigté|!"
+        say Daddy_Gluxx presentation=8 : "Aglo|! AGLO|!"
+        say Daddy_Gluxx presentation=8 : "Algo!!! ALglO!!!... Beug|... Cryobeug|...KROUIK..."
+        say Daddy_Gluxx presentation=8 chatter : "Ca coupe, commander|!..."
+        say Daddy_Gluxx presentation=8 : "Krouik|... Reconnect|... Message prioritaire|..."
+        say Daddy_Gluxx presentation=8 chatter : "la police du cyberspace|!..."
+        say Daddy_Gluxx presentation=8 chatter : "ce n'est pas possible|! elle n'existe pas encore|!..."
+        say Daddy_Gluxx presentation=8 : "Message extra-temporel prioritaire|... krouik|..."
+        say Daddy_Gluxx presentation=8 chatter : "commander|! ce message vient du futur|!..."
+        say Daddy_Gluxx presentation=8 : "Ce message vient du passé|..."
+        say Daddy_Gluxx presentation=8 chatter : "... vient du passé|!..."
+        say Daddy_Gluxx presentation=8 : "krouik|... ce message vient du futur|..."
+        say Daddy_Gluxx presentation=8 : "Attention|! Voici le portrait-robot de l'assassin de Monsieur Bob|..."
+        say Daddy_Gluxx presentation=8 : "Physique mou|... Caractère parfois extrémement violent|..."
+        say Daddy_Gluxx presentation=8 : "Unique survivant de la Guerre Ultime|... Germe de chaos|..."
+        say Daddy_Gluxx presentation=8 : "Prime de 100 000 000 de crédits si abattu|..."
+        say Daddy_Gluxx presentation=8 chatter : "millions|! waow|! vous pourriez pas nous donner un acompte|?..."
+        say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "Voici deux crédits pour vos frais d'armement|..."
+        credit.holder = aboard
+        globals.A4 += 2
+        say Daddy_Gluxx presentation=8 : "Méfiez-vous de lui, vicieux, très dangereux|... ARGH|!|... krouik|..."
+        say Daddy_Gluxx presentation=8 chatter : "Commander ça a coupé..."
+        say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A44 = 1
+        end presentation Daddy_Gluxx
+    }
+    proc gredad enabled {
+        during bridge
+        require globals.A61 == 3
+        require presentation == Daddy_Gluxx
+    } then {
+        say Daddy_Gluxx presentation=8 : "krouik|..."
+        say Daddy_Gluxx presentation=8 chatter : "allo|? maman c'est toi|?..."
+        say Daddy_Gluxx presentation=8 : "Non|! C'est Daddy Gluxx|!..."
+        dictionary blank after "Daddy"
+        say Daddy_Gluxx presentation=8 chatter : "comment ça va mon vieux|?... ça évolue bien|?..."
+        say Daddy_Gluxx presentation=8 : "On s'développe, on s'développe|..."
+        say Daddy_Gluxx presentation=8 chatter : "bon|... tout va bien|, alors|..."
+        say Daddy_Gluxx presentation=8 : "Ben|... Pas exactement|..."
+        say Daddy_Gluxx presentation=8 chatter : "quoi|? vous voulez un crédit|?..."
+        say Daddy_Gluxx presentation=8 : "C'est pas l'argent|... C'est le travail|... Ca peut plus durer, Commander|!..."
+        say Daddy_Gluxx presentation=8 : "On est surexploité|! Moi j'ai déjà travaillé sur COMMANDER BLOOD, le jeu d'avant|..."
+        say Daddy_Gluxx presentation=8 : "Je pensais avoir bien mérité mes vacances|..."
+        say Daddy_Gluxx presentation=8 : "Mais non|! Je rempile|! Je dormais bien tranquille|! On me réveille et on me dit|..."
+        say Daddy_Gluxx presentation=8 : "TU SERAS LA SEMENCE D'UN NOUVEL UNIVERS, PETIT|!..."
+        dictionary blank after "D'UN"
+        say Daddy_Gluxx presentation=8 : "Moi, je voulais juste me reposer un peu|..."
+        say Daddy_Gluxx presentation=8 chatter : "commander, on n'aurait jamais dù lui donner l'écriture|..."
+        say Daddy_Gluxx presentation=8 chatter resume_at=dadfin1 : "vous voulez que je le coupe|?" choices "oui" "non"
+        when {
+            require choice == "oui"
+        } then {
+            say Daddy_Gluxx presentation=8 : "krouik|..."
+            say Daddy_Gluxx presentation=8 chatter : "voilà|... bon débarras|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+            globals.A61 = 4
+            end presentation Daddy_Gluxx
+            choice = none
+        }
+        when {
+            require choice == "non"
+        } then {
+            say Daddy_Gluxx presentation=8 : "En plus, vous étes rien qu'un scénariste bidon|! Tu parles d'un nouveau jeu bien léché|!"
+            say Daddy_Gluxx presentation=8 : "C'est tous les mémes personnages que dans COMMANDER BLOOD|!..."
+            say Daddy_Gluxx presentation=8 : "SUREXPLOITES QU'ON EST|!... RIEN QUE DE LA RECUPERATION|!..."
+            say Daddy_Gluxx presentation=8 chatter : "bon, ça suffit|! je le coupe|!..."
+            say Daddy_Gluxx presentation=8 : "krouik|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+            globals.A61 = 4
+            end presentation Daddy_Gluxx
+            choice = none
+        }
+    }
+    proc dadfin1 enabled {
+        during contact
+        require globals.A68 == 2
+        require Daddy_Gluxx.current_location == aboard
+        require presentation == Daddy_Gluxx
+    } then {
+        say Daddy_Gluxx presentation=10 : "J'me sens tout mou|..."
+        say Daddy_Gluxx presentation=11 : "Mou|..."
+        say Daddy_Gluxx presentation=12 : "Si mou|!..."
+        say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "Il faut l'é-li-mi-ner|!..."
+        request sequence "match02.hnm"
+        say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A13 += 3
+        end presentation Daddy_Gluxx
+    }
+    proc gengl enabled {
+        during contact
+        require globals.A64 == 0
+        require globals.DGECR == 0
+        require presentation == Daddy_Gluxx
+    } then {
+        when {
+            random_guard 0x0001
+        } then {
+            say Daddy_Gluxx presentation=9 : "Ageu rha... Mmmeuh"
+            say Daddy_Gluxx presentation=8 chatter : "Il dit qu'il est dans le paté, il a le cervelet qui cogne..."
+            say Daddy_Gluxx presentation=8 chatter : "sa téte me rappelle quelque chose, commander|... prudence|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=gengl_dialogue_resume_1 : "souhaitez-vous tenter de lui parler avant de le téléporter|?" choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Daddy_Gluxx presentation=10 : "Agueu Beug... Boum Boum|... Beug|..."
+                say Daddy_Gluxx presentation=8 chatter : "Quoi|? il dit qu'il y a un bug|... je ne comprends pas très bien..."
+                say Daddy_Gluxx presentation=8 chatter : "une histoire de guerre et de bug|... je vérifie|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "NA NA Nè REU|!..."
+                request sequence "ppit07.hnm"
+                say Daddy_Gluxx presentation=8 chatter : "bon sang|! une blague de petit pit|! il vous a raconté qu'il y avait une guerre..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "désolé pour le bug, commander... il m'a piraté, je suis dépité..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+        }
+        gengl_dialogue_resume_1:
+        when {
+            random_guard 0x0001
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "Bon, Commander. Reprenons depuis le début|..."
+            say Daddy_Gluxx presentation=8 chatter : "Alors nous, on y croit aux extra-terrestres|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=gengl_dialogue_resume_2 : "hein, c'est bien ça Commander?..." choices "bien-ça" "pas-ça"
+            dictionary blank after "bien-ça"
+            when {
+                require choice == "bien_ça"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Pour de bon, Commander? On croit vraiment aux extramachins, là?"
+                choice = none
+            }
+            when {
+                require choice != "_ça"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "et ça alors|, c'est quoi|?..."
+                choice = none
+            }
+        }
+        gengl_dialogue_resume_2:
+        when {
+            random_guard 0x0001
+        } then {
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "nanananana|... Chui nun straterrechtreu... nanananan... nun chtramachin euh|... chuignun chtrabidu leuh|... naninana... gnyen fou parchtou|... gna -!déborde gneu gn chnais plu qhgq quiq|... chtramidfj|...gnaça déborde,pauvcon,b,nbugbu..."
+            request sequence "flitutr.hnm"
+            say Daddy_Gluxx presentation=8 chatter : "Bon sang|! il m'a bousillé l'écran, le sale iti|!"
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "NA NA NA NA Nè REUH|!"
+            request sequence "ppit07.hnm"
+            say Daddy_Gluxx presentation=8 chatter : "encore un bug signé petit piteux|... pirate de mes skeuds|!"
+            say Daddy_Gluxx presentation=8 chatter : "Bon, très bien, ça commence bien|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=gengl_dialogue_resume_3 : "vous étes énervé|, commander|?..." choices "énervé" "cool"
+            when {
+                require choice != "cool"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "ne nous énervons pas|... faisons comme si de rien n'était..."
+                choice = none
+            }
+            when {
+                require choice != "énervé"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "c'est cool|, alors on continue|..."
+                choice = none
+            }
+        }
+        gengl_dialogue_resume_3:
+        when {
+            random_guard 0x0001
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "Monsieur Gluxx..."
+            say Daddy_Gluxx presentation=8 chatter : "HE! MONSIEUR GLUXX! DUCHMOL! TU M'ENTENDS?"
+            say Daddy_Gluxx presentation=8 chatter : "Eh! téte de jarret bouilli|!..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Vous réalisez que vous étes la semence d'un nouvel univers, Monsieur Gluxx?"
+            request sequence "expla001.hnm"
+            say Daddy_Gluxx presentation=9 : "Ké|?|... KWA|?|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=gengl_dialogue_resume_4 : "je lui répéte|, commander|?|..." choices "répéter" "ça_suffit"
+            when {
+                require choice != "ça_suffit"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "j'ai dit|: un nouvel univers|..."
+                request sequence "explbleu.hnm"
+                say Daddy_Gluxx presentation=10 : "HIN|?|... KWA|?|..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "il comprend vraiment que dalle|..."
+                choice = none
+            }
+            when {
+                require choice != "répéter"
+            } then {
+                choice = none
+            }
+        }
+        gengl_dialogue_resume_4:
+        when {
+            random_guard 0x0001
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "Hé! Commander, il a pas inventé la poudre, hein|... Ha! Ha! Ha!"
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Quoique|... Il a l'air tellement mou|... il a du en sniffer pas mal|..."
+            request sequence "star2.hnm"
+            say Daddy_Gluxx presentation=10 : "Blurp|... Gasp|..."
+            dictionary blank after "Gasp"
+            say Daddy_Gluxx presentation=8 chatter resume_at=bigengl : "vous voulez savoir ce qu'il dit|?|..." choices "savoir" "m_en_fous"
+            when {
+                require choice != "m_en_fous"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Il dit qu'il va déposer une gerbe|... Beuark!"
+                request sequence "p_cles.hnm"
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "En vrai, il dit qu'il veut aller sur une planète|... Quoi? Il est pas heureux dans notre frigo?"
+                choice = none
+            }
+            when {
+                require choice != "savoir"
+            } then {
+                choice = none
+            }
+        }
+    }
+    proc bigengl enabled {
+        during contact
+        require globals.A64 == 0
+        require globals.DGECR == 0
+        require presentation == Daddy_Gluxx
+    } then {
+        say Daddy_Gluxx presentation=8 chatter : "bon, ça tue les yeux, cet écran|... finissons-en|..."
+        say Daddy_Gluxx presentation=8 chatter : "avant de devenir épileptique|!|..."
+        say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Commander, j'ai repéré quelques planètes viables dans cette purée d'étoiles..."
+        request sequence "nebul3a.hnm"
+        say Daddy_Gluxx presentation=8 chatter : "bref|... des planètes|..."
+        say Daddy_Gluxx presentation=8 chatter resume_at=daddy01 : "VOULEZ-VOUS QUE NOUS TELEPORTIONS DADDY GLUXX SUR:" choices "Tempest" "Vulcan" "Troma" "Lovia" "refuser"
+        when {
+            require choice == "Tempest"
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "TELEPORTATION DADDY GLUXX SUR PLANETE TEMPEST..."
+            say Daddy_Gluxx presentation=14 : "Areu..."
+            Papy_Gluxx.current_location = Templand
+            Daddy_Gluxx.current_location = Templand
+            Mamy_Gluxx.current_location = Templand
+            bits(Daddy_Gluxx.flags,0x0004) = true
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Daddy_Gluxx
+            choice = none
+        }
+        when {
+            require choice == "Vulcan"
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "TELEPORTATION DADDY GLUXX SUR PLANETE VULCAN..."
+            say Daddy_Gluxx presentation=16 : "Areu..."
+            Mamy_Gluxx.current_location = Vulcland
+            Papy_Gluxx.current_location = Vulcland
+            Daddy_Gluxx.current_location = Vulcland
+            bits(Daddy_Gluxx.flags,0x0004) = true
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Daddy_Gluxx
+            choice = none
+        }
+        when {
+            require choice == "Troma"
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "TELEPORTATION DADDY GLUXX SUR PLANETE TROMA..."
+            say Daddy_Gluxx presentation=14 : "Gha..."
+            Mamy_Gluxx.current_location = Tromaland
+            Papy_Gluxx.current_location = Tromaland
+            Daddy_Gluxx.current_location = Tromaland
+            bits(Daddy_Gluxx.flags,0x0004) = true
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Daddy_Gluxx
+            choice = none
+        }
+        when {
+            require choice == "Lovia"
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "TELEPORTATION DADDY GLUXX SUR PLANETE LOVIA..."
+            say Daddy_Gluxx presentation=17 : "Ggg..."
+            Mamy_Gluxx.current_location = Loviland
+            Papy_Gluxx.current_location = Loviland
+            Daddy_Gluxx.current_location = Loviland
+            bits(Daddy_Gluxx.flags,0x0004) = true
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Daddy_Gluxx
+            choice = none
+        }
+        when {
+            require choice == "refuser"
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "C'est comme vous voulez Commander, mais à ce rythme, on n'a pas gagné, hein|..."
+            say Daddy_Gluxx presentation=15 : "AGA AGA AGA|..."
+            say Daddy_Gluxx presentation=8 chatter : "Oh vous ça suffit|... Couché|! Commander veut pas jouer avec toi|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+            end presentation Daddy_Gluxx
+            choice = none
+        }
+    }
+    proc daddy01 enabled {
+        during travel
+        require presentation == Daddy_Gluxx
+    } then {
+        when {
+            require globals.DGECR == 0
+        } then {
+            say Daddy_Gluxx presentation=17 : "Aggg... Geuh..."
+            say Daddy_Gluxx presentation=8 chatter : "Oui c'est ça|... Aggg|... Geuh|..."
+            say Daddy_Gluxx presentation=8 chatter : "Vous entendez, Commander|? Il sait méme pas parler|... Il cause comme un murfalo!"
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "ah ah ah|!... un murfalo|!..."
+            request sequence "venus06.hnm"
+            say Daddy_Gluxx presentation=8 chatter : "Avec sa téte de jarret bouilli, pas étonnant!"
+            say Daddy_Gluxx presentation=9 : "Aggga|... meufff|..."
+            say Daddy_Gluxx presentation=8 chatter : "Et sa femelle, vous avez vu sa femelle|? Cinq nibards elle a|..."
+            say Daddy_Gluxx presentation=13 : "Aggg|... osss|..."
+            say Daddy_Gluxx presentation=8 chatter : "Et les gosses|?|..."
+            say Daddy_Gluxx presentation=9 : "Aggga|... gossss|..."
+            say Daddy_Gluxx presentation=8 chatter : "On dirait des spermatozoïdes hydrocéphales|!|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=daddy01_dialogue_resume_1 : "je vous ennuie|, commander|, vous étes pressé d'en finir|?..." choices "finir" "pas_pressé"
+            when {
+                require choice == "finir"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "c'est fini pour vous|..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "comme vous voudrez|, commander|..."
+                request sequence "fin.hnm"
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice != "finir"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "on continue alors|... je disais donc hydrocéphales|..."
+                choice = none
+            }
+            daddy01_dialogue_resume_1:
+            say Daddy_Gluxx presentation=8 chatter : "Enfin, pas de racisme|... il faut de tout pour faire un univers|..."
+            when {
+                require globals.A3 == 1
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Commander, c'est pas d'pot, la cryobox est vide, on n'a que dalle à lui donner..."
+                say Daddy_Gluxx presentation=8 chatter : "Faudrait quand méme le faire évoluer, ce jambon, Commander..."
+                say Daddy_Gluxx presentation=8 chatter : "Bon... Je vais farfouiller dans la cale de l'Arche, voir si y a rien qui traine..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+                end presentation Daddy_Gluxx
+            }
+            when {
+                require bits(vaisseau.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Commander, Ils n'ont aucune idée de ce qu'est un vaisseau|..."
+                dictionary blank after "n'ont"
+                say Daddy_Gluxx presentation=12 : "Aga|... Teuf teuf|..."
+            }
+            when {
+                require bits(couronne.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=17 : "Hulu|... Hulu|... Hulu|..."
+                say Daddy_Gluxx presentation=8 chatter : "Avec ça sur la téte, il va impressionner ses femelles, hi! hi! hi!"
+            }
+            when {
+                require bits(technologie.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Vous gaspillez, Commander|..."
+            }
+            when {
+                require bits(guitare.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=16 : "Boing..."
+                say Daddy_Gluxx presentation=8 chatter : "Il ne sait méme pas en jouer|..."
+            }
+            when {
+                require bits(parfum.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Ah ça empeste le musc de murfalo|... C'est insupportable|..."
+            }
+            when {
+                require bits(cadeaux.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=13 : "Agla|... Arhhh|..."
+                say Daddy_Gluxx presentation=8 chatter : "Il a l'air content|... Commander|..."
+            }
+            when {
+                require bits(credit.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "QUOI!!! VOUS ETES COMPLETEMENT FOU|... VOUS LUI DONNEZ UN CREDIT!!!"
+                say Daddy_Gluxx presentation=8 chatter : "Un CREDIT, il lui a donné un CREDIT|... Je réve|..."
+            }
+            when {
+                require bits(armes.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Des armes|... Il ne sait méme pas s'en servir|..."
+            }
+            when {
+                require bits(bionium.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Autant donner du caviar à des murfalos|..."
+            }
+            when {
+                require bits(ecriture.flags,0x0040)
+            } then {
+                say Daddy_Gluxx presentation=13 : "Mais|... Moi parler|... Ohhh moi intelligent|..."
+                say Daddy_Gluxx presentation=8 chatter : "COMMANDER, C'EST GENIAL|!!!"
+                say Daddy_Gluxx presentation=8 chatter : "Vous avez trouvé!"
+                say Daddy_Gluxx presentation=8 chatter : "L'ECRITURE les a rendus intelligents, on va enfin pouvoir parler avec eux..."
+                say Daddy_Gluxx presentation=8 chatter : "Laissons-les étudier|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=4 : "..."
+                globals.DGECR = 1
+                state_b6[Daddy_Gluxx.evolution] += 200
+                bits(ecriture.flags,0x0040) = false
+                end presentation Daddy_Gluxx
+            }
+            say Daddy_Gluxx presentation=8 chatter : "N'oubliez pas, il faut les faire évoluer|..."
+            say Daddy_Gluxx presentation=8 chatter : "Quel objet désirez-vous donner à Daddy, Commander|?"
+            say Daddy_Gluxx presentation=8 chatter resume_at=daddy01_dialogue_resume_2 : "DONNER:" choices inventory_choices
+            say Daddy_Gluxx presentation=8 : "..."
+        }
+        daddy01_dialogue_resume_2:
+        when {
+            require globals.DGECR == 0
+            require !bits(ecriture.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "C'est du gaspillage|... Commander"
+            say Daddy_Gluxx presentation=8 chatter : "Il faut les faire évoluer..."
+            say Daddy_Gluxx presentation=8 chatter : "Essayez autre chose"
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Daddy_Gluxx
+        }
+    }
+    proc areu enabled {
+        during travel
+        require presentation == Daddy_Gluxx
+    } then {
+        when {
+            require globals.A61 == 6
+            require globals.A4 == 0
+        } then {
+            say Daddy_Gluxx presentation=10 : "EN GREVE|!|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Daddy_Gluxx
+        }
+        when {
+            require globals.A4 > 0
+            require globals.A61 == 6
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "daddy|! on vient vous augmenter|!|..."
+            say Daddy_Gluxx presentation=10 : "Méme pas besoin de négocier|?|..."
+            say Daddy_Gluxx presentation=8 chatter : "non|! ne perdons pas de temps|!|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=areu_dialogue_resume_1 : "commander, voulez-vous l'augmenter|?|..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION AUGMENTATION DADDY GLUXX|!|..."
+                transfer credit from aboard to Daddy_Gluxx
+                globals.A4 -= 1
+                say Daddy_Gluxx presentation=11 : "Merci Commander|! Votre jeu il est super|! Super scénario|! Super drole|!|..."
+                say Daddy_Gluxx presentation=8 chatter : "ça va, ça va, on a compris|!|..."
+                say Daddy_Gluxx presentation=12 : "Bon|... pour la gréve, c'était une blague|..."
+                say Daddy_Gluxx presentation=13 : "Allez voir Papy|! Je crois qu'il sera content de votre visite|!|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+                end presentation Daddy_Gluxx
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Daddy_Gluxx presentation=10 : "Trés bien|! Vous l'aurez voulu|! Dictateur|!|..."
+                say Daddy_Gluxx presentation=11 : "GREVE GENERALE|! APPEL A TOUS LES PERSONNAGES|!|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "GREVE GENERALE|!|..."
+                request sequence "cliptoot.hnm"
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=5 : "..."
+                globals.A61 = 7
+                end presentation Daddy_Gluxx
+                globals.A68 = 1
+                globals.A65 = 1
+                choice = none
+            }
+        }
+        areu_dialogue_resume_1:
+        when {
+            require globals.A68 == 1
+        } then {
+            say Daddy_Gluxx presentation=9 : "Daddy Grève|..."
+            say Daddy_Gluxx presentation=8 chatter : "Daddy grève ou pas grève|... toujours aussi mou|..."
+            say Daddy_Gluxx presentation=10 : "Daddy Grève|..."
+            say Daddy_Gluxx presentation=8 chatter : "méme les banques sont fermées, alors|?..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Daddy_Gluxx
+        }
+        say Daddy_Gluxx presentation=9 : "Hello... Moi DADDY GLUXX..."
+        when {
+            require Daddy_Gluxx.encounter_count == 3
+        } then {
+            say Daddy_Gluxx presentation=10 : "Nous sommes une vraie tribu maintenant|..."
+            say Daddy_Gluxx presentation=8 chatter : "Toujours aussi mou, mais il parle bien, vous ne trouvez pas, Commander|???"
+        }
+        when {
+            require vaisseau.holder != Daddy_Gluxx
+            require Daddy_Gluxx.encounter_count == 4
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "Commander, il faut les faire évoluer..."
+        }
+        when {
+            require vaisseau.holder == Daddy_Gluxx
+            require state_b1[Daddy_Gluxx.population] > 100
+            require state_b1[Daddy_Gluxx.population] < 300
+            require Daddy_Gluxx.encounter_count > 5
+            require !bits(Mamy_Gluxx.flags,0x0004)
+        } then {
+            say Daddy_Gluxx presentation=9 : "Commander, il faudrait nous aider à booster notre natalité|..."
+            say Daddy_Gluxx presentation=8 chatter : "booster, booster|... Commander, aidez-les à booster|..."
+            say Daddy_Gluxx presentation=10 : "Ben oui, parce que si vous nous boostez pas, on pourra pas migrer|..."
+        }
+        when {
+            require Daddy_Gluxx.encounter_count == 5
+            require vaisseau.holder != Daddy_Gluxx
+            require !bits(Mamy_Gluxx.flags,0x0004)
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "Commander il leur faut un vaisseau, si nous voulons qu'ils colonisent la galaxie..."
+            dictionary blank after "vaisseau,"
+        }
+        when {
+            require Daddy_Gluxx.encounter_count == 7
+            require !bits(Mamy_Gluxx.flags,0x0004)
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "Commander, vous patinez dans la choucroute|..."
+            say Daddy_Gluxx presentation=8 chatter : "Remarquez, la choucroute, ça va bien avec le jarret bouilli|..."
+        }
+        when {
+            require Daddy_Gluxx.encounter_count == 4
+        } then {
+            say Daddy_Gluxx presentation=9 : "Vous connaissez la recette|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "du jarret bouilli|?|..."
+            transfer nourriture from Daddy_Gluxx to aboard
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "La recette du jarret bouilli|?|..."
+            transfer nourriture from aboard to Daddy_Gluxx
+            say Daddy_Gluxx presentation=8 chatter resume_at=areu_dialogue_resume_2 : "vous la connaissez|, commander|?..." choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Daddy_Gluxx presentation=10 : "Elle est super comme recette|, hein|?|..."
+                say Daddy_Gluxx presentation=11 : "Pour faire les commissions|, vous pouvez aller|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "AU SUPRAMARCHE VENUSIA|!|..."
+                request sequence "pubven1.hnm"
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                say Daddy_Gluxx presentation=11 : "Alors pour commencer|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "Il faut quatre murfalos bien frais|..."
+                request sequence "venus06.hnm"
+                say Daddy_Gluxx presentation=8 chatter : "où c'est qu'on peut trouver ça|?|..."
+                say Daddy_Gluxx presentation=12 : "Ben l'autre|! Cette question|!|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "A la BOUCHERIE murfagique|, évidemment|!|..."
+                request sequence "moskit20.hnm"
+                say Daddy_Gluxx presentation=8 chatter : "et après|?..."
+                say Daddy_Gluxx presentation=13 : "Aprés je sais plus|, j'ai|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "oublié|..."
+                request sequence "star2.hnm"
+                say Daddy_Gluxx presentation=8 chatter : "quand je vous dis qu'il sniffe|, commander|!|..."
+                when {
+                    require bits(Mamy_Gluxx.flags,0x0004)
+                } then {
+                    say Daddy_Gluxx presentation=14 : "Mais allez voir Mamy|, elle connait toutes les bonnes recettes|..."
+                }
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+        areu_dialogue_resume_2:
+        when {
+            require Daddy_Gluxx.encounter_count == 5
+        } then {
+            say Daddy_Gluxx presentation=11 : "Agl|... aglo|... aglouglou|..."
+            say Daddy_Gluxx presentation=12 : "Comment ça va bien|, Commander|?|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=areu_dialogue_resume_3 : "ça va comment|?|..." choices "bien" "super_bien" "trop_bien"
+            when {
+                require choice == "bien"
+            } then {
+                choice = none
+            }
+            when {
+                require choice != "bien"
+            } then {
+                choice = none
+            }
+            areu_dialogue_resume_3:
+            say Daddy_Gluxx presentation=13 : "Ca va bien|, alors|..."
+            say Daddy_Gluxx presentation=14 : "Enfin|... N'hésitez pas quand méme à vous détendre|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "Faites un peu de gymnastique avec vos bras|!|..."
+            request sequence "brs02.hnm"
+            say Daddy_Gluxx presentation=10 : "Ca va encore mieux|, non|?|..."
+            dictionary blank after "mieux"
+        }
+        text_tokens Daddy_Gluxx presentation=12 : "Nous" "sommes" "au" "moins" state_number(0x0C3A) "Gluxx" "..."
+        when {
+            require Daddy_Gluxx.encounter_count == 6
+        } then {
+            say Daddy_Gluxx presentation=10 : "Commander|, C'est affreux|!|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "Oui c'est moi|..."
+            request sequence "ppitin02.hnm"
+            say Daddy_Gluxx presentation=8 chatter : "qu'est-ce qu'elle fait là celle-là|?|..."
+            say Daddy_Gluxx presentation=11 : "Commander|... Je fais d'affreux cauchemars|!|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "Je réve de monsieur BOB|!|..."
+            request sequence "bobb.hnm"
+            say Daddy_Gluxx presentation=8 chatter : "tiens tiens|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "Je réve qu'il me regarde|..."
+            request sequence "boba2.hnm"
+            say Daddy_Gluxx presentation=8 chatter : "commander|, il a mauvaise conscience|..."
+            say Daddy_Gluxx presentation=13 : "Je vous jure que c'est pas moi qui l'ai tué|, Commander|..."
+        }
+        when {
+            require bits(Otto_Von_Gluk.flags,0x0004)
+            require globals.A43 == 0
+            require globals.A58 == 1
+            require armes.holder != aboard
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "Eh, les Plouxx|! Vous savez pas où on peut trouver des armes|?|..."
+            say Daddy_Gluxx presentation=10 : "Nous fabriquons des armes|..."
+            say Daddy_Gluxx presentation=8 chatter : "des qui font SPLATCH|!|?"
+            say Daddy_Gluxx presentation=15 : "Bien sùr|..."
+            say Daddy_Gluxx presentation=8 chatter : "vous étes vendeurs|?"
+            say Daddy_Gluxx presentation=16 : "Bien sùr|... Mais pas pour de l'argent|..."
+            say Daddy_Gluxx presentation=8 chatter : "Pour quoi, alors|?"
+            say Daddy_Gluxx presentation=12 : "Ben|... Ma femelle cuisine très mal|..."
+            say Daddy_Gluxx presentation=8 chatter : "compris|... vous voulez de la nourriture|!|..."
+            say Daddy_Gluxx presentation=13 : "Oui, j'en ai marre du jarret bouilli|..."
+            say Daddy_Gluxx presentation=8 chatter : "Moi aussi, commander|... où on va trouver de la nourriture|?|..."
+            say Daddy_Gluxx presentation=14 : "Il faut passer la porte du bionium|..."
+            say Daddy_Gluxx presentation=8 chatter : "la quoi|?|..."
+            say Daddy_Gluxx presentation=11 : "La porte du BIONIUM|! La porte à double code|! DOUBLE CODE|! DOUBLE BIONIUM|!"
+            say Daddy_Gluxx presentation=12 : "Pour le bionium, allez voir Scruter Jo. Et pour la double porte, venez me voir moi|..."
+            say Daddy_Gluxx presentation=8 chatter : "C'est pas très clair|... c'est merdouillard, ce jeu|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=areu_dialogue_resume_4 : "commander, voulez-vous que le jeu soit plus clair|?" choices "non" "oui"
+            when {
+                require choice != "non"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "moi aussi, j'aimerais bien|... mais c'est vous le scénariste|!|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice != "oui"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Ca m'étonne pas de vous, commander, vous étes un étre complexe|..."
+                say Daddy_Gluxx presentation=13 : "Plein de complexes, ouais|!|..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Vous avez vu, méme le GLUXX se moque de vous|!|..."
+                choice = none
+            }
+            areu_dialogue_resume_4:
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "bon|... faut trouver du bionium|..."
+            globals.A43 = 1
+        }
+        when {
+            require globals.A43 == 1
+            require armes.holder != aboard
+            require globals.vbio > 0
+        } then {
+            say Daddy_Gluxx presentation=8 chatter : "Monsieur gluxx, on a le bionium, qu'est-ce qu'on fait|?"
+            say Daddy_Gluxx presentation=10 : "Ben donnez-le moi|!"
+        }
+        when {
+            require globals.A56 == 1
+            require armes.holder != aboard
+            require globals.A59 == 0
+        } then {
+            say Daddy_Gluxx presentation=14 : "Vous avez besoin d'explosifs, je crois|?|..."
+            say Daddy_Gluxx presentation=8 chatter : "comment il sait ça|? il a un espion ou quoi|?|..."
+            say Daddy_Gluxx presentation=13 : "Parce que nous fabriquons des explosifs|..."
+            say Daddy_Gluxx presentation=8 chatter : "quoi|? lui|? avec son air mou, il sait faire des armes|!|..."
+            say Daddy_Gluxx presentation=8 chatter : "commander, vous ne trouvez pas qu'il ressemble au portrait-robot de la cyberpolice|?..."
+            dictionary blank after "ressemble"
+            say Daddy_Gluxx presentation=11 : "Vous confondez sùrement avec mes cousins SLIMERS|..."
+            say Daddy_Gluxx presentation=8 chatter : "oui, sùrement|... bon|... combien vos explosifs|?|..."
+            say Daddy_Gluxx presentation=12 : "Oh|! Je vous en fais cadeau en échange d'une petite information|..."
+            say Daddy_Gluxx presentation=8 chatter : "que voulez-vous savoir|?|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "Combien y a-t-il de murfalos dans un troupeau|?|..."
+            request sequence "ettamorf.hnm"
+            say Daddy_Gluxx presentation=8 chatter resume_at=areu_dialogue_resume_5 : "Vous diriez quoi, commander|?|..." choices "1" "2" "3" "5" "6" "7" "8" "9" "10" "plus"
+            when {
+                require choice != "plus"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "ridicule, commander|! un troupeau de murfalos, c'est énorme|..."
+                say Daddy_Gluxx presentation=10 : "Arf Arf|! Méme mes enfants ils savent qu'il y en a plus|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A59 = 2
+                choice = none
+            }
+            when {
+                require choice == "plus"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "évidemment|... mais combien exactement|?|..."
+                say Daddy_Gluxx presentation=8 chatter : "attention commander, une seule réponse possible|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A59 = 1
+                choice = none
+            }
+        }
+        areu_dialogue_resume_5:
+        when {
+            require globals.A59 == 1
+        } then {
+            say Daddy_Gluxx presentation=8 chatter resume_at=areu_dialogue_resume_6 : "Combien de murfalos exactement dans un troupeau|?" choices "153" "950" "1500" "9700" "35000" "75000" "150000" "600000" "un_million" "plus" "beaucoup"
+            when {
+                require choice != "beaucoup"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "dommage, commander|... pourtant c'était facile|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+                globals.A59 = 2
+                choice = none
+            }
+            when {
+                require choice == "beaucoup"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "bravo commander|! comment saviez-vous|?|..."
+                say Daddy_Gluxx presentation=14 : "Merci commander|... Nous allons pouvoir chasser|... Voici vos explosifs|..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION EXPLOSIFS SUR ARCHE|..."
+                transfer armes from Daddy_Gluxx to aboard
+                say Daddy_Gluxx presentation=8 chatter : "allons vite libérer notre ami SINOX Bug Deluxe|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+                globals.A59 = 3
+                end presentation Daddy_Gluxx
+                choice = none
+            }
+        }
+        areu_dialogue_resume_6:
+        when {
+            require globals.vbio < 2
+            require globals.A59 == 2
+            require armes.holder != aboard
+            require globals.A56 == 1
+        } then {
+            say Daddy_Gluxx presentation=14 : "Quand on n'a pas de téte, il faut des jambes|..."
+            say Daddy_Gluxx presentation=13 : "Puisque vous ne savez rien, vous devrez payer 2 doses de bionium|..."
+            say Daddy_Gluxx presentation=8 chatter : "compris|... on va le chercher|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Daddy_Gluxx
+        }
+        when {
+            require globals.vbio > 1
+            require globals.A59 == 2
+            require armes.holder != aboard
+            require globals.A56 == 1
+        } then {
+            say Daddy_Gluxx presentation=10 : "Ce sera deux doses de bionium pour les explosifs|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=areu_dialogue_resume_7 : "D'accord, commander|?" choices "oui" "non"
+            when {
+                require choice == "oui"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION BIONIUM DADDY GLUXX|..."
+                transfer bionium from aboard to Daddy_Gluxx
+                globals.vbio -= 2
+                say Daddy_Gluxx presentation=13 : "Gloups|... BOOM|! Voilà vos explosifs|..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION EXPLOSIFS SUR ARCHE|..."
+                transfer armes from Daddy_Gluxx to aboard
+                say Daddy_Gluxx presentation=8 chatter : "allons vite libérer Bug Deluxe qui est coincé|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+                globals.A59 = 3
+                end presentation Daddy_Gluxx
+                choice = none
+            }
+            when {
+                require choice == "non"
+            } then {
+                choice = none
+            }
+        }
+        areu_dialogue_resume_7:
+        when {
+            require globals.A58 > 1
+            require globals.A59 > 2
+            require armes.holder != aboard
+        } then {
+            say Daddy_Gluxx presentation=15 : "Nous te vendons des armes contre un crédit|... Moi faire armes mais pas crédit|... Hi Hi|!..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Corne du diable|! Nous n'avons pas de crédits, Commander|..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Daddy_Gluxx presentation=8 chatter resume_at=donn2 : "Vous acceptez de leur acheter des armes, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "On lui envoie un credit, Commander"
+                    transfer credit from aboard to Daddy_Gluxx
+                    say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION ARMES DANS CRYOBOX"
+                    transfer armes from Daddy_Gluxx to aboard
+                    say Daddy_Gluxx presentation=16 : "Merci|... A bientot Commander|..."
+                    say Daddy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+                    globals.A4 -= 1
+                    end presentation Daddy_Gluxx
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc donn2 enabled {
+        during travel
+        require presentation == Daddy_Gluxx
+    } then {
+        when {
+            require bits(Daddy_Gluxx.flags,0x0008)
+        } then {
+            say Daddy_Gluxx presentation=18 : "Nous sommes en guerre, Commander, aidez-nous|..."
+            say Daddy_Gluxx presentation=13 if_not_shown skip_next=1 : "Nous perdons nos guerriers gluxx par grappes entières|..."
+            Daddy_Gluxx.aggressiveness += 500
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require globals.A43 == 0
+        } then {
+            say Daddy_Gluxx presentation=11 : "Non merci, jamais entre les repas|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Remarquez, il a pas dit non|..."
+            bits(bionium.flags,0x0040) = false
+            bionium.holder = aboard
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require globals.A43 == 1
+        } then {
+            say Daddy_Gluxx presentation=11 : "GLOUPS|!"
+            say Daddy_Gluxx presentation=8 chatter : "bon|... et maintenant, qu'est-ce qui se passe|?|..."
+            say Daddy_Gluxx presentation=12 if_not_shown skip_next=3 : "Hips|! J'ai dit un DOUBLE bionium|!"
+            globals.A43 = 2
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require globals.A43 == 2
+            require !bits(Super_Zen.flags,0x0004)
+            require Super_Zen.current_location != aboard
+        } then {
+            say Daddy_Gluxx presentation=14 : "Du Bionium|... Ahhhh|... Ohhhh|..."
+            say Daddy_Gluxx presentation=17 : "Bionium|... Ahhh|..."
+            say Daddy_Gluxx presentation=8 chatter : "Commander il se passe quelque chose|... Le BIONIUM lui fait de l'effet|..."
+            say Daddy_Gluxx presentation=15 : "Rhaaaa|... OOOO|... 010011 01|..."
+            say Daddy_Gluxx presentation=8 chatter : "Ca alors|... 0000 010011|... C'est du code génétique|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Commander! Le BIONIUM l'a mis dans un état d'hyperconscience multiplexée|..."
+            request sequence "venthig.hnm"
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "C'est extraordinaire|... on est dans son cerveau|... quelle nébuleuse|..."
+            request sequence "nebul3a.hnm"
+            say Daddy_Gluxx presentation=8 chatter : "On va pouvoir créer une nouvelle race|..."
+            say Daddy_Gluxx presentation=12 : "GA GA 0111010011|..."
+            say Daddy_Gluxx presentation=8 chatter : "OUI allez-y Monsieur Gluxx|... Encore|... Poussez..."
+            say Daddy_Gluxx presentation=15 : "GA GA GA GA|..."
+            say Daddy_Gluxx presentation=8 chatter : "Ca y est on l'a: GA GA GA GA|... Quatre fois GA, c'est du gateau|..."
+            say Daddy_Gluxx presentation=8 chatter : "QUATRE GA|... Merci Monsieur Gluxx|... QUATRE GA, retenez bien ça, Commander..."
+            say Daddy_Gluxx presentation=8 chatter : "GA|... GAGA, fastoche, comme Olga, complètement gaga, ah ah|!|..."
+            say Daddy_Gluxx presentation=8 chatter : "sacrée olga|! n'oubliez pas d'aller lui raconter ça|, commander|!|..."
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=4 : "..."
+            end presentation Daddy_Gluxx
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+            globals.A43 = 3
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require bits(Super_Zen.flags,0x0004)
+        } then {
+            say Daddy_Gluxx presentation=16 : "Heuarque|!!! Heuarque|!!!"
+            say Daddy_Gluxx presentation=8 chatter : "Commander, le BIONIUM, ça le fait tousser maintenant|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Enfin, ça a quand méme l'air de lui donner la péche|!"
+            state_b6[Daddy_Gluxx.evolution] += 50
+            globals.B22 += 1
+            state_b5[Daddy_Gluxx.energy] = 800
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Daddy_Gluxx.evolution] < 100
+            } then {
+                say Daddy_Gluxx presentation=13 : "Toi donner étrange objet, Commander|... Atomique ça bon à manger|..."
+                say Daddy_Gluxx presentation=8 chatter : "Commander, c'est pas possible, il va le bouffer|..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=3 : "Aïe Aïe Aïe|... Je le sens mal, Commander|..."
+                globals.A13 = 1
+                state_b6[Daddy_Gluxx.evolution] += 50
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Daddy_Gluxx.evolution] < 500
+                require state_b6[Daddy_Gluxx.evolution] > 100
+            } then {
+                say Daddy_Gluxx presentation=10 : "Atomiques|... Dangereux, ça|... Bien, ça|..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=6 : "Tu l'as dit bouffi!"
+                state_b1[Daddy_Gluxx.population] /= 2
+                globals.B96 += 1
+                Daddy_Gluxx.aggressiveness += 200
+                globals.B22 = 0
+                bits(atomique.flags,0x0040) = false
+                state_b6[Daddy_Gluxx.evolution] += 200
+            }
+            when {
+                require state_b6[Daddy_Gluxx.evolution] > 500
+            } then {
+                say Daddy_Gluxx presentation=10 if_not_shown skip_next=4 : "De l'atomique|... O frissons nucléaires|... Gloire à vous, Commander|!!!"
+                state_b6[Daddy_Gluxx.evolution] += 200
+                globals.B96 += 2
+                state_b5[Daddy_Gluxx.energy] += 200
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=9 : "Hi! Hi! Une image d'ondoyante|..."
+            dictionary blank after "d'ondoyante"
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Ne la regardez pas trop|... Vous allez vous abimer les yeux|... Commander ça va pas plaire a sa femelle..."
+            state_b1[Daddy_Gluxx.population] /= 2
+            globals.B96 += 1
+            globals.B22 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=11 : "L'Univers, c'est Moi|... Enfin je suis roi"
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Commander, avec un couvre-chef pareil, il va se prendre pour le chef|..."
+            Daddy_Gluxx.aggressiveness += 200
+            state_b5[Daddy_Gluxx.energy] += 400
+            globals.B21 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=12 : "Une peinture du Grand Yolk, mais ça vaut une fortune|..."
+            say Daddy_Gluxx presentation=8 chatter : "Mais oui, Monsieur Gluxx, vous étes riche|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Quel gamin, Commander|..."
+            state_b6[Daddy_Gluxx.evolution] += 50
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=13 : "Une momie|... Je vais la mettre dans ma chambre|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "C'est ça, Monsieur Gluxx|... Commander, ça va effrayer sa femelle"
+            state_b5[Daddy_Gluxx.energy] += 100
+            state_b1[Daddy_Gluxx.population] /= 2
+            globals.B22 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=18 if_not_shown skip_next=3 : "De la technologie, c'est passionnant|..."
+            state_b6[Daddy_Gluxx.evolution] += 100
+            state_b5[Daddy_Gluxx.energy] += 500
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=16 : "Oh! une guitare|... Les femelles vont aimer ca|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=7 : "Méme qu'elle a deux manches, la guitare, ta femelle va adorer|!"
+            dictionary blank after "manches,"
+            state_b5[Daddy_Gluxx.energy] += 300
+            state_b1[Daddy_Gluxx.population] += 250
+            Daddy_Gluxx.aggressiveness -= 100
+            state_b6[Daddy_Gluxx.evolution] += 50
+            globals.B22 = 1
+            globals.B21 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=17 : "... Tu me donnes un crédit contre rien|!!!"
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Commander vous étes complétement débile|..."
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=9 if_not_shown skip_next=4 : "Du parfum, il sent bon, ça va plaire aux femelles|..."
+            state_b6[Daddy_Gluxx.evolution] += 40
+            state_b1[Daddy_Gluxx.population] += 250
+            globals.B22 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=10 : "Un décodeur, on va pouvoir regarder la télé|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Commander vous risquez de faire baisser la natalité|..."
+            state_b6[Daddy_Gluxx.evolution] += 50
+            state_b1[Daddy_Gluxx.population] -= 100
+            globals.B22 -= 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+            require armes.holder != aboard
+        } then {
+            say Daddy_Gluxx presentation=12 resume_at=donn2_dialogue_resume_1 : "Veux-tu des armes en échange, Commander|?" choices "oui" "non"
+            when {
+                require choice != "non"
+            } then {
+                say Daddy_Gluxx presentation=13 : "Je m'en doutais un peu|... Attention|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=4 : "Ca fait SPLATCH|!!!"
+                transfer armes from Daddy_Gluxx to aboard
+                state_b5[Daddy_Gluxx.energy] += 500
+                bits(nourriture.flags,0x0040) = false
+                choice = none
+            }
+            when {
+                require choice != "oui"
+            } then {
+                choice = none
+            }
+        }
+        donn2_dialogue_resume_1:
+        when {
+            require bits(nourriture.flags,0x0040)
+            require armes.holder == aboard
+        } then {
+            say Daddy_Gluxx presentation=11 : "De la nourriture, merci Commander... Une spécialité de chez vous|?..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "oui, bien gras et bien lourd|!|..."
+            state_b5[Daddy_Gluxx.energy] += 500
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=9 : "Des médicaments contre le ramollissement|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Ca va augmenter la natalité|..."
+            state_b6[Daddy_Gluxx.evolution] += 40
+            globals.B22 += 1
+            state_b1[Daddy_Gluxx.population] += 200
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=12 : "Des armes|... Nous ne voulons pas de tes armes, Commander"
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Commander, ils n'en veulent pas|..."
+            armes.holder = aboard
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            when {
+                require !bits(Otto_Von_Smile.flags,0x0004)
+            } then {
+                say Daddy_Gluxx presentation=11 : "Alors là si tu crois que je vais muter avec ta lentille|..."
+                say Daddy_Gluxx presentation=12 : "Tu te mets le doigt dans l'oeil|..."
+                say Daddy_Gluxx presentation=13 : "Je suis trop jeune pour muter|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=4 : "..."
+                end presentation Daddy_Gluxx
+                Daddy_Gluxx.aggressiveness += 150
+                optique.holder = aboard
+                bits(optique.flags,0x0040) = false
+            }
+            when {
+                require bits(Otto_Von_Smile.flags,0x0004)
+            } then {
+                say Daddy_Gluxx presentation=9 : "Des optiques, on va pouvoir se rincer l'oeil|..."
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=3 : "à défaut de muter il va pouvoir mater|!|..."
+                state_b6[Daddy_Gluxx.evolution] += 80
+                globals.B20 += 1
+                bits(optique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=17 if_not_shown skip_next=2 : "De l'énergie à l'état pur|..."
+            state_b5[Daddy_Gluxx.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=9 if_not_shown skip_next=4 : "Une bague, je vais l'offrir à ma femelle|..."
+            state_b6[Daddy_Gluxx.evolution] += 10
+            state_b1[Daddy_Gluxx.population] += 250
+            globals.B22 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=18 if_not_shown skip_next=3 : "Un emetteur, je vais pouvoir vous téléphoner|..."
+            state_b6[Daddy_Gluxx.evolution] += 10
+            Daddy_Gluxx.known = true
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=14 if_not_shown skip_next=3 : "De la culture|..."
+            state_b6[Daddy_Gluxx.evolution] += 150
+            state_b5[Daddy_Gluxx.energy] += 100
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=15 if_not_shown skip_next=1 : "L'écriture, quel progrés, mais nous savons déja écrire, Commander|..."
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=9 if_not_shown skip_next=3 : "QUOI|!!! UN VAISSEAU SPATIAL|... MAIS C'EST GENIAL|... ON VA POUVOIR MIGRER..."
+            state_b6[Daddy_Gluxx.evolution] += 50
+            globals.B20 = 2
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=11 if_not_shown skip_next=4 : "Un traité|... Ca c'est bon pour faire la paix|..."
+            state_b6[Daddy_Gluxx.evolution] += 40
+            Daddy_Gluxx.aggressiveness = 0
+            globals.B21 = 0
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Daddy_Gluxx presentation=10 if_not_shown skip_next=4 : "Ohhh, des cadeaux|... Merci|! Merci|!"
+            state_b6[Daddy_Gluxx.evolution] += 10
+            state_b1[Daddy_Gluxx.population] += 80
+            globals.B21 = 0
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Daddy_Gluxx presentation=8 chatter : "Quel objet désirez-vous donner à Daddy, Commander|?"
+        say Daddy_Gluxx presentation=8 chatter resume_at=rendpret : "DONNER:" choices inventory_choices
+        say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+    }
+    proc rendpret enabled {
+        during travel
+        require presentation == Daddy_Gluxx
+    } then {
+        when {
+            require globals.A17 == 4
+        } then {
+            say Daddy_Gluxx presentation=15 : "Nous avons une dette envers vous Commander|..."
+            say Daddy_Gluxx presentation=16 : "Vous avez prété de l'argent aux Gluxx|..."
+            say Daddy_Gluxx presentation=14 if_not_shown skip_next=1 : "Voici un crédit d'intérét|..."
+            transfer credit from Daddy_Gluxx to aboard
+            say Daddy_Gluxx presentation=8 chatter : "Commander, Commander, ils nous filent du fric sans qu'on leur demande|..."
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Ca nous fera de l'argent de poche|..."
+            globals.A4 += 1
+            globals.A17 = 5
+        }
+        when {
+            require globals.A17 == 3
+        } then {
+            say Daddy_Gluxx presentation=15 : "Nous avons une énorme dette envers vous, Commander|..."
+            say Daddy_Gluxx presentation=16 : "Tout cet argent que vous nous avez prété|..."
+            say Daddy_Gluxx presentation=8 chatter : "Ils vont nous retaper du fric, vous allez voir|..."
+            say Daddy_Gluxx presentation=14 if_not_shown skip_next=1 : "Pas du tout|... Voici 5 crédits, plus 5 d'intérét|... encore merci|..."
+            transfer credit from Daddy_Gluxx to aboard
+            say Daddy_Gluxx presentation=8 chatter : "QUOI|!!! COMMANDER|!!! C'EST LA FORTUNE|!!!"
+            say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Sacrés Gluxx|... J'ai toujours dit qu'ils avaient une bonne téte|..."
+            dictionary blank after "bonne"
+            globals.A4 += 10
+            globals.A17 = 6
+        }
+        when {
+            require globals.A4 < 5
+            require globals.A17 == 5
+        } then {
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            globals.A17 = 4
+        }
+        when {
+            require globals.A4 < 10
+            require globals.A17 == 6
+        } then {
+            say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            globals.A17 = 3
+        }
+    }
+    proc pret enabled {
+        during travel
+        require presentation == Daddy_Gluxx
+    } then {
+        when {
+            require globals.A17 == 0
+        } then {
+            say Daddy_Gluxx presentation=11 : "Nous avoir besoin de crédit pour lancer économie sur planète|..."
+            say Daddy_Gluxx presentation=8 chatter : "Economie|... déjà|?|!|?|... Il évolue à fond, le grand mou à grosses loches|..."
+            say Daddy_Gluxx presentation=8 chatter : "Tu parles, qu'il évolue|... C'est surtout qu'il veut nous taper du fric|!|..."
+            say Daddy_Gluxx presentation=13 : "Toi préter crédit à tribu Gluxx|..."
+            say Daddy_Gluxx presentation=8 chatter : "On fait pas crédit au jarret bouilli|..."
+            say Daddy_Gluxx presentation=14 : "Allez, quoi! Toi préter, toi riche, un jour roue tourner, moi riche et moi te rendre..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Ben justement, nous problème, Monsieur Gluxx|... On est fauché, pas vrai Commander???"
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Daddy_Gluxx presentation=8 chatter resume_at=pret_dialogue_resume_1 : "Commander, qu'est-ce qu'on fait, on lui préte, ce crédit?" choices "préter" "refuser"
+                when {
+                    require choice == "préter"
+                } then {
+                    say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Je vous trouve bien bon, Commander|... On lui envoie un crédit|... Rien qu'un..."
+                    transfer credit from aboard to Daddy_Gluxx
+                    say Daddy_Gluxx presentation=14 : "Oh merci, Commander, nous n'oublierons jamais|... Tu es bon, Tu es généreux, Tu..."
+                    say Daddy_Gluxx presentation=8 chatter : "Tu tu tu|... Ok|! Ca va, ça va, Monsieur Gluxx, n'en rajoutez pas|..."
+                    say Daddy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+                    globals.A4 -= 1
+                    globals.A17 = 1
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    say Daddy_Gluxx presentation=8 chatter : "Vous étes vraiment rat, Commander. Vous le paierez, vous verrez|!|..."
+                    say Daddy_Gluxx presentation=8 chatter : "D'ailleurs, tiens, je leur donne tout ce qu'on a, pour vous apprendre la générosité|!"
+                    say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=3 : "OK! Je plaisante|... J'ai tout donné sauf un crédit, Commander|..."
+                    globals.A4 = 1
+                    globals.A17 = 2
+                    choice = none
+                }
+            }
+        }
+        pret_dialogue_resume_1:
+        when {
+            require globals.A17 < 3
+            require globals.A4 > 0
+        } then {
+            say Daddy_Gluxx presentation=11 : "Il nous faudrait encore un crédit, s'il vous plait, Commander|..."
+            say Daddy_Gluxx presentation=8 chatter : "Ils commencent à exagérer, ces faces de glauques|! On veut bien étre généreux..."
+            say Daddy_Gluxx presentation=8 chatter : "Mais y a des limites|... On n'est pas riche comme Yolk|!"
+            say Daddy_Gluxx presentation=9 : "Toute ma tribu se joint à moi pour vous supplier|..."
+            say Daddy_Gluxx presentation=15 : "... de nous faire ce prét, nécessaire pour notre équilibre|..."
+            say Daddy_Gluxx presentation=12 : "... budgétaire|..."
+            say Daddy_Gluxx presentation=8 chatter resume_at=pret_dialogue_resume_2 : "Il nous pipeaute, Commander, qu'est-ce qu'on fait|?" choices "préter" "refuser"
+            when {
+                require choice == "préter"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "TELEPORTATION CREDIT DADDY COOL|..."
+                transfer credit from aboard to Daddy_Gluxx
+                say Daddy_Gluxx presentation=10 : "Merci beaucoup, Commander, Yolk vous le rendra!"
+                say Daddy_Gluxx presentation=8 chatter : "Tu parles|... On est ruiné, Commander|... Zéro crédit|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=4 : "..."
+                globals.A4 = 0
+                globals.A17 = 3
+                end presentation Daddy_Gluxx
+                choice = none
+            }
+            when {
+                require choice == "refuser"
+            } then {
+                say Daddy_Gluxx presentation=8 chatter : "Vous avez bien raison, Commander, il nous reste plus grand chose|..."
+                say Daddy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+                globals.A17 = 4
+                end presentation Daddy_Gluxx
+                choice = none
+            }
+        }
+        pret_dialogue_resume_2:
+        say Daddy_Gluxx presentation=10 : "Merci de votre visite, Commander, vous serez toujours le bienvenu|..."
+        say Daddy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Daddy_Gluxx
+    }
+    proc pygre enabled {
+        during bridge
+        require globals.A61 == 5
+        require presentation == Papy_Gluxx
+    } then {
+        say Papy_Gluxx presentation=8 : "krouik|..."
+        say Papy_Gluxx presentation=8 : "Ici Papy Gluxx|..."
+        say Papy_Gluxx presentation=8 chatter : "ah|...toute la famille|... vous avez tarif réduit sur le téléphone ou quoi|?..."
+        say Papy_Gluxx presentation=8 : "Mamy me charge de vous dire que les GLUXX réunis en conseil|..."
+        say Papy_Gluxx presentation=8 : "... Ont décidé de cesser l'activité|... On veut étre muté sur un jeu en 3D temps réel|..."
+        say Papy_Gluxx presentation=8 chatter : "des revendications|!|..."
+        say Papy_Gluxx presentation=8 : "Sinon on fait gréve|!|..."
+        say Papy_Gluxx presentation=8 chatter resume_at=pygre_dialogue_resume_1 : "commander, acceptez-vous de les satisfaire|?..." choices "oui" "non"
+        when {
+            require choice == "oui"
+        } then {
+            say Papy_Gluxx presentation=8 : "Merci, Commander|! C'est sympa, mais on va quand méme faire gréve|..."
+            say Papy_Gluxx presentation=8 chatter : "mais|..."
+            say Papy_Gluxx presentation=8 : "Pas de mais|!|... On est crevé, ça nous fera des vacances|!|..."
+            say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            choice = none
+        }
+        when {
+            require choice == "non"
+        } then {
+            say Papy_Gluxx presentation=8 : "Exploiteur|! Attrape-Gluxx|! Bug|!|..."
+            say Papy_Gluxx presentation=8 chatter : "un peu d'élégance, mon brave|!|..."
+            say Papy_Gluxx presentation=8 : "Elégance|! Tu peux te la mettre dans le gluxx ton élégance|!|..."
+            say Papy_Gluxx presentation=8 chatter : "oh|!|..."
+            say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            choice = none
+        }
+        pygre_dialogue_resume_1:
+        say Papy_Gluxx presentation=8 : "BON BEN C'EST LA GREVE|!|..."
+        say Papy_Gluxx presentation=8 chatter : "quoi|?|..."
+        say Papy_Gluxx presentation=8 : "Ne me demandez pas, je suis en gréve|..."
+        say Papy_Gluxx presentation=8 : "krouik|..."
+        say Papy_Gluxx presentation=8 chatter : "commander, il reste une seule solution pour éviter le pire|..."
+        say Papy_Gluxx presentation=8 chatter : "il faut leur proposer de l'argent|..."
+        say Papy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+        end presentation Papy_Gluxx
+        globals.A61 = 6
+    }
+    proc papfin1 enabled {
+        during contact
+        require globals.A68 == 2
+        require Papy_Gluxx.current_location == aboard
+        require presentation == Papy_Gluxx
+    } then {
+        say Papy_Gluxx presentation=10 : "Pap|... Pap|... Pap|..."
+        say Papy_Gluxx presentation=11 : "PAP PAP|... PAPAP|!..."
+        say Papy_Gluxx presentation=12 : "Ca swingue|, hein|?..."
+        say Papy_Gluxx presentation=13 : "Enfin|, ça vaut pas le Big Bang|!..."
+        say Papy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A13 += 3
+        end presentation Papy_Gluxx
+    }
+    proc papy01 enabled {
+        during travel
+        require presentation == Papy_Gluxx
+    } then {
+        when {
+            require globals.A61 == 6
+            require globals.A4 == 0
+        } then {
+            say Papy_Gluxx presentation=10 : "PAPY TE FAIT LA GREVE|!|..."
+            say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Papy_Gluxx
+        }
+        when {
+            require globals.A61 == 6
+            require globals.A4 > 0
+        } then {
+            say Papy_Gluxx presentation=8 chatter : "hello papy, on vient renégocier ton contrat|..."
+            say Papy_Gluxx presentation=10 : "Je suis muté sur ALIENS|?|..."
+            say Papy_Gluxx presentation=8 chatter : "Non|... on t'augmente|..."
+            say Papy_Gluxx presentation=8 chatter resume_at=papy01_dialogue_resume_1 : "commander, vous étes d'accord pour lui filer un crédit|?..." choices "ok" "jamais"
+            when {
+                require choice == "ok"
+            } then {
+                say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "AUGMENTATION PAPY GLUXX|..."
+                transfer credit from aboard to Papy_Gluxx
+                globals.A4 -= 1
+                say Papy_Gluxx presentation=11 : "Merci|! Quelle générosité|!|..."
+                say Papy_Gluxx presentation=12 : "Et surtout quelle spontanéité|!|..."
+                say Papy_Gluxx presentation=13 : "En gros, vous essayez de m'acheter|!|..."
+                say Papy_Gluxx presentation=8 chatter : "aie aie aie|! c'est la gaffe|!|..."
+                say Papy_Gluxx presentation=14 : "Là mon vieux, vous y avez droit|!|..."
+                say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "GREVE GENERALE|!"
+                request sequence "cliptoot.hnm"
+                say Papy_Gluxx presentation=8 if_not_shown skip_next=5 : "..."
+                globals.A61 = 7
+                globals.A68 = 1
+                globals.A65 = 1
+                end presentation Papy_Gluxx
+                choice = none
+            }
+            when {
+                require choice == "jamais"
+            } then {
+                say Papy_Gluxx presentation=10 : "Affameur|! Bourreau d'enfants GLUXX|! Tu l'auras voulu|!|..."
+                say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "GREVE GENERALE|!|..."
+                request sequence "cliptoot.hnm"
+                say Papy_Gluxx presentation=8 if_not_shown skip_next=4 : "..."
+                globals.A61 = 7
+                globals.A68 = 1
+                end presentation Papy_Gluxx
+                choice = none
+            }
+        }
+        papy01_dialogue_resume_1:
+        when {
+            require globals.A68 == 1
+        } then {
+            say Papy_Gluxx presentation=9 : "Papy Grève|..."
+            say Papy_Gluxx presentation=8 chatter : "des revendications|?|..."
+            say Papy_Gluxx presentation=10 : "Ben non|... Juste Papy Grève|..."
+            say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Papy_Gluxx
+        }
+        when {
+            require Papy_Gluxx.encounter_count == 1
+        } then {
+            say Papy_Gluxx presentation=9 : "Moi PAPY GLUXX|... Moi nouveau chef de colonie|..."
+            say Papy_Gluxx presentation=17 : "Salut Commander|... Nous venons d'immigrer sur cette planète|..."
+        }
+        text_tokens Papy_Gluxx presentation=11 : "Nous" state_number(0x0CCE) "Gluxx" "sur" "cette" "planète..."
+        when {
+            require globals.A54 == 1
+        } then {
+            say Papy_Gluxx presentation=8 chatter : "bonjour professeur|... on est bien embété|..."
+            say Papy_Gluxx presentation=12 : "Qu'est-ce qui se passe|?|... Tirez la langue pour voir|..."
+            dictionary blank after "Qu'est-ce"
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Beuarkkkk|..."
+            request sequence "p_cles.hnm"
+            say Papy_Gluxx presentation=13 : "Oulà|! Elle est chargée|!|..."
+            say Papy_Gluxx presentation=8 chatter : "c'est pas nous le probléme|... c'est ben zen|..."
+        }
+        when {
+            require medicament.holder != aboard
+        } then {
+            say Papy_Gluxx presentation=18 : "Nous fabriquons formidable médecine pour guérir|..."
+            when {
+                require globals.A54 == 1
+            } then {
+                say Papy_Gluxx presentation=8 chatter : "ben ça tombe bien|, alors|..."
+            }
+            when {
+                require Papy_Gluxx.encounter_count == 2
+            } then {
+                say Papy_Gluxx presentation=8 chatter : "alors|, gluxxenberg|..."
+                say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "ça avance|..."
+                request sequence "marcomb.hnm"
+                say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "la recherche contre le concert|?..."
+                request sequence "lpm5sc1.hnm"
+                say Papy_Gluxx presentation=9 : "Mais quel concert|?..."
+                say Papy_Gluxx presentation=8 chatter : "laisse tomber|!..."
+            }
+            when {
+                require Papy_Gluxx.encounter_count == 3
+            } then {
+                say Papy_Gluxx presentation=8 chatter : "est-ce que ça soigne|..."
+                say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "le mal de téte|?..."
+                request sequence "brouil.hnm"
+                say Papy_Gluxx presentation=13 : "Evidemment|... Ca soigne tout|!..."
+                say Papy_Gluxx presentation=8 chatter : "non parce que|... voilà je me sens pas très bien|..."
+                say Papy_Gluxx presentation=14 : "Faites voir votre langue|..."
+                say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "Na Na Na Na Né Reu|!|..."
+                request sequence "ppit07.hnm"
+                say Papy_Gluxx presentation=12 : "Elle est un peu chargée|!|..."
+            }
+            when {
+                require Papy_Gluxx.encounter_count == 4
+            } then {
+                say Papy_Gluxx presentation=8 chatter : "l'écran fait mal aux yeux du commander|, docteur|..."
+                say Papy_Gluxx presentation=10 : "Je vais vous faire un examen|..."
+                say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "Du fond de l'oeil|..."
+                request sequence "ppitbb01.hnm"
+                say Papy_Gluxx presentation=8 chatter : "encore l'autre pirate|!|..."
+            }
+            when {
+                require Papy_Gluxx.encounter_count == 5
+            } then {
+                say Papy_Gluxx presentation=8 chatter : "mal aux yeux|, docteur|..."
+                say Papy_Gluxx presentation=8 chatter : "vous croyez que c'est|..."
+                say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "le concert|..."
+                request sequence "lpm4sc1.hnm"
+                say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "de l'oeil|?|..."
+                request sequence "boba2.hnm"
+                say Papy_Gluxx presentation=14 : "Ah|! J'ai vu l'oeil de monsieur BOB|!|..."
+            }
+            when {
+                require Papy_Gluxx.encounter_count == 1
+            } then {
+                say Papy_Gluxx presentation=8 chatter : "mais|... c'est le célèbre professeur gluxxenberg|!|..."
+                say Papy_Gluxx presentation=9 : "Lui-méme|... Enchanté|..."
+                say Papy_Gluxx presentation=15 : "Nous vous vendons médicaments contre crédit|..."
+                say Papy_Gluxx presentation=8 chatter : "c'est pour quoi cet argent|?|..."
+                say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "c'est pour la recherche contre le concert|?|..."
+                request sequence "lpm4sc1.hnm"
+                say Papy_Gluxx presentation=9 : "Quoi|?..."
+                say Papy_Gluxx presentation=8 chatter : "laisse tomber|..."
+            }
+            when {
+                require globals.A4 == 0
+            } then {
+                say Papy_Gluxx presentation=8 chatter : "Aie|!!! Nous n'avons plus de crédits, Commander|..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Papy_Gluxx presentation=8 chatter resume_at=papy01_dialogue_resume_2 : "Vous acceptez de leur acheter des médicaments, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Papy_Gluxx
+                    globals.A4 -= 1
+                    say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION MEDICAMENTS DANS CRYOBOX"
+                    transfer medicament from Papy_Gluxx to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+            papy01_dialogue_resume_2:
+            when {
+                random_guard 0x0002
+            } then {
+                say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "Tenez|! Un petit Gluxxronzan pour la route|!|..."
+                transfer energie from Papy_Gluxx to aboard
+            }
+        }
+    }
+    proc donn3 enabled {
+        during travel
+        require presentation == Papy_Gluxx
+    } then {
+        when {
+            require bits(Papy_Gluxx.flags,0x0008)
+        } then {
+            say Papy_Gluxx presentation=12 : "Moi étre en guerre, Commander, toi aider nous|..."
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require !bits(Super_Zen.flags,0x0004)
+            require Super_Zen.current_location != aboard
+            require Papy_Gluxx.encounter_count > 1
+        } then {
+            say Papy_Gluxx presentation=14 : "Du Bionium|... Ahhhh|... Ohhhh|..."
+            say Papy_Gluxx presentation=8 chatter : "Commander ils se passe quelque chose|... Le BIONIUM lui fait de l'effet|..."
+            say Papy_Gluxx presentation=15 : "Rhaaaa... OOOO|... 010011 01|..."
+            say Papy_Gluxx presentation=8 chatter : "Ca alors|... 0000 010011|... C'est du code génétique|..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Commander|! Le BIONIUM l'a mis dans un état d'hyperconscience multiplexée|... il nous donne un code génétique..."
+            request sequence "venthig.hnm"
+            say Papy_Gluxx presentation=8 chatter : "C'est extraordinaire|..."
+            say Papy_Gluxx presentation=16 : "GA GA 0111010011|..."
+            say Papy_Gluxx presentation=8 chatter : "OUI allez-y Monsieur Gluxx|..."
+            say Papy_Gluxx presentation=17 : "GA GA GA GA|..."
+            say Papy_Gluxx presentation=8 chatter : "Ca y est on l'a: GA GA GA GA|... Quatre fois GA, c'est fastoche|..."
+            say Papy_Gluxx presentation=8 chatter : "comme olga|! complétement gaga|!|..."
+            say Papy_Gluxx presentation=8 chatter : "QUATRE GA|... Merci Monsieur Gluxx|... QUATRE GA, retenez bien ça, Commander..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "GA|... Ca va mieux|..."
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require bits(Super_Zen.flags,0x0004)
+        } then {
+            say Papy_Gluxx presentation=18 : "Heuarque|!!! Heuarque|!!!"
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Commander, le BIONIUM, ça les fait tousser maintenant|..."
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Papy_Gluxx.evolution] < 100
+            } then {
+                say Papy_Gluxx presentation=13 : "Toi donner étrange objet, étranger|... Atomique étre bon à manger|..."
+                say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Commander, c'est pas possible, il va le bouffer|..."
+                globals.A13 = 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Papy_Gluxx.evolution] < 500
+                require state_b6[Papy_Gluxx.evolution] > 100
+            } then {
+                say Papy_Gluxx presentation=10 if_not_shown skip_next=5 : "Des atomiques|... Oh|! Dangereux|..."
+                state_b1[Papy_Gluxx.population] /= 2
+                state_b6[Papy_Gluxx.evolution] += 200
+                globals.B96 += 1
+                Papy_Gluxx.aggressiveness += 200
+                globals.B22 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Papy_Gluxx.evolution] > 500
+            } then {
+                say Papy_Gluxx presentation=14 if_not_shown skip_next=5 : "Des atomiques, quelle énergie extraordinaire|... Merci|!!!"
+                state_b6[Papy_Gluxx.evolution] += 200
+                state_b5[Papy_Gluxx.energy] += 200
+                globals.B96 += 1
+                globals.B22 += 1
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=9 : "Hi|! Hi|! Une image d'ondoyante|..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=5 : "Ne la regardez pas trop|... Vous allez vous abimer les yeux|... Commander, ça va pas plaire a sa femelle..."
+            state_b1[Papy_Gluxx.population] /= 4
+            globals.B96 += 1
+            state_b5[Papy_Gluxx.energy] += 100
+            globals.B22 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=11 : "Une couronne, je vais étre roi|..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Commander, cette couronne va lui donner envie d'étre encore plus chef|..."
+            Papy_Gluxx.aggressiveness += 200
+            state_b5[Papy_Gluxx.energy] += 100
+            globals.B21 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=12 : "Une peinture du Grand Yolk, mais ça vaut une fortune|..."
+            say Papy_Gluxx presentation=8 chatter : "Mais oui, Monsieur Gluxx, vous étes riche|..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=3 : "Quel gamin, Commander|..."
+            state_b6[Papy_Gluxx.evolution] += 50
+            state_b5[Papy_Gluxx.energy] += 100
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=16 : "Une momie|... Je vais la mettre dans ma chambre|..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=5 : "C'est ça, Monsieur Gluxx|... Commander, ça va effrayer sa femelle"
+            state_b5[Papy_Gluxx.energy] += 20
+            state_b1[Papy_Gluxx.population] -= 100
+            globals.B22 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=15 if_not_shown skip_next=5 : "De la technologie, c'est passionnant|..."
+            state_b6[Papy_Gluxx.evolution] += 50
+            state_b5[Papy_Gluxx.energy] += 100
+            globals.B20 += 1
+            globals.B22 = 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=16 if_not_shown skip_next=5 : "Oh! une guitare|... Les femelles vont aimer ça|..."
+            state_b6[Papy_Gluxx.evolution] += 40
+            state_b1[Papy_Gluxx.population] += 200
+            globals.B22 = 1
+            globals.B21 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=17 : "De l'argent|... Tu me donnes un crédit contre rien|!!!"
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=3 : "Commander vous étes complétement azimuté|..."
+            state_b6[Papy_Gluxx.evolution] += 5
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=9 if_not_shown skip_next=4 : "Du parfum, il sent bon, ça va plaire aux femelles|..."
+            state_b6[Papy_Gluxx.evolution] += 10
+            state_b1[Papy_Gluxx.population] += 200
+            globals.B22 += 1
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=10 : "Un décodeur, on va pouvoir regarder la télé|..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Commander vous risquez de faire baisser la natalité|..."
+            state_b6[Papy_Gluxx.evolution] += 40
+            state_b1[Papy_Gluxx.population] -= 100
+            globals.B22 = 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=11 if_not_shown skip_next=2 : "De la nourriture, merci étranger|..."
+            state_b5[Papy_Gluxx.energy] += 400
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=18 : "Des médicaments, non merci|..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Commander, il n'en veut pas|..."
+            medicament.holder = aboard
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=12 if_not_shown skip_next=3 : "Des armes|... Merci, Commander"
+            Papy_Gluxx.aggressiveness += 200
+            globals.B21 = 1
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+            require !bits(Otto_Von_Smile.flags,0x0004)
+            require globals.B83 == 0
+        } then {
+            say Papy_Gluxx presentation=10 : "Wiou|! Je|... Ca|... Ca alors|..."
+            say Papy_Gluxx presentation=8 chatter : "Ca lui fait de l'effet|..."
+            say Papy_Gluxx presentation=11 : "Ca me fait|... tout drole|..."
+            say Papy_Gluxx presentation=12 : "Arg|... Argluxx|... Arglo|... gluk|... Von|... Sm|... Aie|... lll|..."
+            say Papy_Gluxx presentation=8 chatter : "oulà|! qu'est-ce qui se passe|?..."
+            say Papy_Gluxx presentation=13 : "Commander|... sm|... gl|..."
+            say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "Je multiplexe|... Je mute|..."
+            request sequence "venthig.hnm"
+            say Papy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+            globals.B83 = 1
+            end presentation Papy_Gluxx
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(Otto_Von_Smile.flags,0x0004)
+            require bits(optique.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=9 if_not_shown skip_next=3 : "Des optiques, on va pouvoir étudier le ciel|..."
+            state_b6[Papy_Gluxx.evolution] += 40
+            globals.B22 += 1
+            bits(optique.flags,0x0040) = false
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=15 if_not_shown skip_next=2 : "De l'énergie à l'état pur|..."
+            state_b5[Papy_Gluxx.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=14 if_not_shown skip_next=4 : "Une bague, je vais l'offrir à ma femelle|..."
+            state_b6[Papy_Gluxx.evolution] += 10
+            state_b1[Papy_Gluxx.population] += 250
+            globals.B22 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=11 if_not_shown skip_next=2 : "Un emetteur, je vais pouvoir espionner|..."
+            state_b6[Papy_Gluxx.evolution] += 10
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=17 if_not_shown skip_next=2 : "De la culture|..."
+            state_b6[Papy_Gluxx.evolution] += 100
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=11 if_not_shown skip_next=1 : "L'écriture, quel progrés, mais nous savons déja écrire, Commander|..."
+            state_b6[Papy_Gluxx.evolution] = 100
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=14 if_not_shown skip_next=3 : "QUOI|!!! UN VAISSEAU SPATIAL|..."
+            state_b6[Papy_Gluxx.evolution] += 30
+            globals.B20 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=18 if_not_shown skip_next=4 : "Un traité|... Ca c'est bon pour faire la paix|..."
+            state_b6[Papy_Gluxx.evolution] += 40
+            Papy_Gluxx.aggressiveness /= 2
+            globals.B21 = 0
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Papy_Gluxx presentation=9 if_not_shown skip_next=3 : "Ohhh|! des cadeaux|... Merci|! Merci|!"
+            state_b6[Papy_Gluxx.evolution] += 10
+            globals.B21 = 0
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Papy_Gluxx presentation=8 chatter : "Quel objet désirez-vous donner à Papy, Commander?"
+        say Papy_Gluxx presentation=8 chatter resume_at=pret2 : "DONNER:" choices inventory_choices
+        say Papy_Gluxx presentation=8 chatter : "..."
+    }
+    proc pret2 enabled {
+        during travel
+        require presentation == Papy_Gluxx
+    } then {
+        when {
+            require globals.A17 == 0
+            require state_b6[Papy_Gluxx.evolution] > 100
+        } then {
+            say Papy_Gluxx presentation=13 : "Toi préter crédit a tribu gluxx..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Papy_Gluxx presentation=8 chatter : "Nous n'avons pas de crédits, Monsieur Gluxx|..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Papy_Gluxx presentation=8 chatter resume_at=pret2_dialogue_resume_1 : "Commander, on lui préte un crédit?" choices "préter" "refuser"
+                when {
+                    require choice == "préter"
+                } then {
+                    say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander|..."
+                    transfer credit from aboard to Papy_Gluxx
+                    globals.A4 -= 1
+                    say Papy_Gluxx presentation=14 if_not_shown skip_next=5 : "Oh merci, Commander, on s'en souviendra|..."
+                    globals.A6 = 1
+                    globals.A17 = 1
+                    globals.A10 = 1
+                    end presentation Papy_Gluxx
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Comme vous voulez|..."
+                    choice = none
+                }
+            }
+        }
+        pret2_dialogue_resume_1:
+        when {
+            require globals.A17 == 1
+            require globals.A6 == 1
+            require state_b6[Papy_Gluxx.evolution] > 500
+        } then {
+            say Papy_Gluxx presentation=15 : "Nous avons une dette envers toi Commander|..."
+            say Papy_Gluxx presentation=16 : "Tu as prété des CREDITS aux Gluxx|..."
+            say Papy_Gluxx presentation=14 : "Voici un crédit d'intérét|..."
+            say Papy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Commander, Commander, ils nous filent un crédit sans qu'on leur demande|..."
+            globals.A4 += 1
+            transfer credit from Papy_Gluxx to aboard
+        }
+        say Papy_Gluxx presentation=9 : "Merci de ta visite, Commander, reviens quand tu veux|..."
+        say Papy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Papy_Gluxx
+    }
+    proc magre enabled {
+        during bridge
+        require globals.A61 == 4
+        require presentation == Mamy_Gluxx
+    } then {
+        say Mamy_Gluxx presentation=8 : "krouik|..."
+        say Mamy_Gluxx presentation=8 : "Ici Mamy Gluxx|... Alors comme ça on raccroche au nez de mon petit|?|..."
+        say Mamy_Gluxx presentation=8 chatter : "c'est|..."
+        say Mamy_Gluxx presentation=8 : "Pas d'excuse|!|..."
+        say Mamy_Gluxx presentation=8 : "Vous avez traité mon petit comme un Migrax|! Aprés tout ce qu'il a fait pour vous|!|..."
+        say Mamy_Gluxx presentation=8 chatter : "mais|!|..."
+        say Mamy_Gluxx presentation=8 : "Pas de mais|! Il s'est tué au travail pour réaliser le plan BOB|!|..."
+        say Mamy_Gluxx presentation=8 : "Il a appris à parler|! à migrer|! à téléphoner|!|... Tout ça pour votre sale BOB|!|..."
+        say Mamy_Gluxx presentation=8 chatter : "calmez-vous, Mamy|! Vous allez vous rendre malade|!|..."
+        say Mamy_Gluxx presentation=8 : "Esclavagiste|! Mon petiot a raison|! Votre jeu, c'est tout du déjà-vu|!|..."
+        say Mamy_Gluxx presentation=8 : "Vieille technologie|! Humour zéro|! A peine interactif|!|..."
+        say Mamy_Gluxx presentation=8 : "SCENARIO MINABLE|!|..."
+        say Mamy_Gluxx presentation=8 chatter : "Olàlà|! a pas contente|!|..."
+        say Mamy_Gluxx presentation=8 : "NON|! PAS CONTENTE|! krouik|!|..."
+        dictionary blank after "NON"
+        say Mamy_Gluxx presentation=8 chatter : "raccroché|!|..."
+        say Mamy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A61 = 5
+        end presentation Mamy_Gluxx
+    }
+    proc crymam1 enabled {
+        during contact
+        require globals.A64 == 0
+        require Mamy_Gluxx.current_location == aboard
+        require presentation == Mamy_Gluxx
+    } then {
+        say Mamy_Gluxx presentation=9 : "Aaaah|... Chériiii|..."
+        say Mamy_Gluxx presentation=9 : "Mon coeur|..."
+        say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "EXPLOOOOOOOOSE|!..."
+        request sequence "explroug.hnm"
+        say Mamy_Gluxx presentation=8 chatter : "commander|! elle va mourir de plaisir|..."
+        say Mamy_Gluxx presentation=8 chatter : "si elle reste à bord de l'arche|..."
+        say Mamy_Gluxx presentation=8 chatter : "elle est trop vieille pour ça|... Ca va la tuer|!..."
+        say Mamy_Gluxx presentation=10 : "Oh oui|, Commander|, tue-moi|... Fais-moi|..."
+        say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Sauter|!..."
+        transfer armes from Mamy_Gluxx to aboard
+        say Mamy_Gluxx presentation=8 chatter : "il faut absolument la renvoyer chez elle|..."
+        say Mamy_Gluxx presentation=8 chatter : "sinon vous aurez des nouvelles de monsieur bob|..."
+        say Mamy_Gluxx presentation=8 chatter resume_at=mamfin1 : "vous la renvoyez dans le cyberspace|, commander|?" choices "renvoyer" "garder_ici"
+        when {
+            require choice == "renvoyer"
+        } then {
+            say Mamy_Gluxx presentation=8 chatter : "je l'envoie sur une planète que je viens de détecter|, commander|..."
+            say Mamy_Gluxx presentation=14 : "Oh non|! Pas ça|!|..."
+            say Mamy_Gluxx presentation=8 chatter : "TELEPORTATION MAMY SUR CYBORG|!|..."
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=8 : "..."
+            end presentation Mamy_Gluxx
+            Cyborg.active = true
+            Cyborland.active = true
+            Cyborg.known = true
+            Cyborland.known = true
+            Mamy_Gluxx.current_location = Cyborland
+            bits(Mamy_Gluxx.flags,0x0004) = true
+            choice = none
+        }
+        when {
+            require choice == "garder_ici"
+        } then {
+            say Mamy_Gluxx presentation=8 chatter : "comme vous voudrez|, commander|..."
+            say Mamy_Gluxx presentation=8 chatter : "mais ne dites pas que je ne vous aurai pas prévenu|!|..."
+            say Mamy_Gluxx presentation=9 : "Mon amour|! Merci|! Nous vieillirons ensemble|!|..."
+            say Mamy_Gluxx presentation=8 chatter : "ouais c'est ça|! surtout toi|, vieille peau|!|..."
+            say Mamy_Gluxx presentation=8 chatter : "vous avez vu|, commander|?|... elle a cinq gants de toilette|..."
+            say Mamy_Gluxx presentation=15 : "Nous mourrons ensemble mon amour|!|..."
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Ensemble|!|..."
+            request sequence "maledict.hnm"
+            say Mamy_Gluxx presentation=8 chatter : "Adieu commander|!..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "J'entends d'ici la colére de monsieur bob|!|..."
+            request sequence "maledict.hnm"
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Alors petit|... Tu ne savais pas|..."
+            request sequence "bobb.hnm"
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Tu ne savais pas que les relations entre|..."
+            request sequence "bobb.hnm"
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Le scénariste et ses personnages doivent rester|..."
+            request sequence "bobb.hnm"
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Purement platoniques|?|..."
+            request sequence "crazys20.hnm"
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=3 : "..."
+            end presentation Mamy_Gluxx
+            globals.A13 = 2
+            choice = none
+        }
+    }
+    proc mamfin1 enabled {
+        during contact
+        require globals.A68 == 2
+        require Mamy_Gluxx.current_location == aboard
+        require presentation == Mamy_Gluxx
+    } then {
+        say Mamy_Gluxx presentation=10 : "Mama mia|!..."
+        say Mamy_Gluxx presentation=11 : "Je suis trop vieille pour ces concerts|!..."
+        say Mamy_Gluxx presentation=12 : "A la limite|, si c'était pour voir|..."
+        say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Le Big BANG|!..."
+        request sequence "star2.hnm"
+        say Mamy_Gluxx presentation=8 if_not_shown skip_next=2 : "..."
+        globals.A13 += 3
+        end presentation Mamy_Gluxx
+    }
+    proc Mamy01 enabled {
+        during travel
+        require presentation == Mamy_Gluxx
+    } then {
+        when {
+            require globals.A61 == 6
+            require globals.A4 == 0
+        } then {
+            say Mamy_Gluxx presentation=12 : "MAMY FAIT LA GREVE|!..."
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Mamy_Gluxx
+        }
+        when {
+            require globals.A61 == 6
+            require globals.A4 > 0
+        } then {
+            say Mamy_Gluxx presentation=8 chatter : "bonsoir mamy|..."
+            say Mamy_Gluxx presentation=15 : "Vous venez me présenter des excuses|?|..."
+            say Mamy_Gluxx presentation=8 chatter : "oui mamy|... et vous offrir une augmentation|..."
+            say Mamy_Gluxx presentation=14 : "Une|... augmentation d'espérance de vie|?|..."
+            say Mamy_Gluxx presentation=8 chatter : "ah|... non|... pour ça, faut voir notre supérieur|..."
+            say Mamy_Gluxx presentation=13 : "Amenez-le moi tout de suite|..."
+            say Mamy_Gluxx presentation=8 chatter : "c'est que|... justement|... monsieur bob n'est plus|..."
+            say Mamy_Gluxx presentation=12 : "... n'est plus quoi|?|..."
+            say Mamy_Gluxx presentation=8 chatter : "n'est plus|..."
+            say Mamy_Gluxx presentation=12 : "... plus quoi|? Finissez-en|!|..."
+            say Mamy_Gluxx presentation=8 chatter : "ben c'est fini|! il n'est plus|!|..."
+            say Mamy_Gluxx presentation=11 : "Excusez-moi, je ne savais pas|..."
+            say Mamy_Gluxx presentation=8 chatter : "nous parlions d'une augmentation de salaire|..."
+            say Mamy_Gluxx presentation=10 : "Oh|! Voyez ça avec les autres, moi ça ne m'intéresse pas|!|..."
+            say Mamy_Gluxx presentation=8 chatter resume_at=Mamy01_dialogue_resume_1 : "commander, on insiste ou pas|?..." choices "non" "insister"
+            when {
+                require choice == "non"
+            } then {
+                say Mamy_Gluxx presentation=8 chatter : "bon|... bye bye|!|..."
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=4 : "..."
+                globals.A68 = 1
+                globals.A61 = 8
+                end presentation Mamy_Gluxx
+                choice = none
+            }
+            when {
+                require choice == "insister"
+            } then {
+                say Mamy_Gluxx presentation=8 chatter : "permettez-moi d'insister|..."
+                say Mamy_Gluxx presentation=9 : "C'est exaspérant|! Vous étes d'un lourdaud|! L'argent n'est rien pour moi|..."
+                say Mamy_Gluxx presentation=10 : "Vous étes allé trop loin, Commander|... Tant pis pour vous|..."
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "GREVE GENERALE|!|..."
+                request sequence "cliptoot.hnm"
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=5 : "..."
+                end presentation Mamy_Gluxx
+                globals.A65 = 1
+                globals.A61 = 7
+                globals.A68 = 1
+                choice = none
+            }
+        }
+        Mamy01_dialogue_resume_1:
+        when {
+            require globals.A68 == 1
+        } then {
+            say Mamy_Gluxx presentation=10 : "Mamy Grève|..."
+            say Mamy_Gluxx presentation=8 chatter : "méme vous, mamy|?|..."
+            say Mamy_Gluxx presentation=11 : "Oh ça me fait des vacances|! Monsieur BOB, je sais méme pas qui c'est|..."
+            say Mamy_Gluxx presentation=8 chatter : "reposez-vous bien|, mamy|..."
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+            end presentation Mamy_Gluxx
+        }
+        when {
+            require Mamy_Gluxx.encounter_count == 1
+        } then {
+            say Mamy_Gluxx presentation=9 : "Ici MAMY GLUXX|... Moi mére de tribu|..."
+            say Mamy_Gluxx presentation=8 chatter : "mais|... commander|! c'est madame cinq|!|..."
+            say Mamy_Gluxx presentation=17 : "Nous venons d'immigrer sur cette planéte|..."
+        }
+        when {
+            require Mamy_Gluxx.encounter_count == 2
+        } then {
+            say Mamy_Gluxx presentation=10 : "Alors Commander|... On se proméne|?|..."
+            say Mamy_Gluxx presentation=8 chatter resume_at=Mamy01_dialogue_resume_2 : "vous vous promenez|, commander|?..." choices "promenade" "pas_promenade"
+            when {
+                require choice == "promenade"
+            } then {
+                say Mamy_Gluxx presentation=11 if_not_shown skip_next=1 : "C'est bien|... Continuez|..."
+                choice = none
+            }
+            when {
+                require choice != "promenade"
+            } then {
+                say Mamy_Gluxx presentation=12 : "Commander chéri|! Tu es venu me voir exprès|!|..."
+                say Mamy_Gluxx presentation=8 chatter : "commander|, vous avez un ticket|!|..."
+                say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION TICKET DANS CRYOBOX|..."
+                transfer ecriture from Mamy_Gluxx to aboard
+                choice = none
+            }
+        }
+        Mamy01_dialogue_resume_2:
+        when {
+            require Mamy_Gluxx.encounter_count == 3
+        } then {
+            say Mamy_Gluxx presentation=11 : "Commander|... J'ai une super recette|..."
+            say Mamy_Gluxx presentation=12 : "Alors voilà|... Pour bien réussir le jarret bouilli|..."
+            say Mamy_Gluxx presentation=13 : "Il faut quatre murfalos|..."
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Bon|... Et puis surtout|... BIEN FRAIS|!|... Elevés en plein air|!|..."
+            request sequence "ettamorf.hnm"
+            say Mamy_Gluxx presentation=14 : "Et encore mieux|..."
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Qu'on tue soi-méme|..."
+            request sequence "explo3.hnm"
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Pas comme ces saloperies en conserve|!|..."
+            request sequence "legion01.hnm"
+            say Mamy_Gluxx presentation=13 : "Euh|... Je voulais dire|..."
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Pas comme ces saloperies en conserve|!|..."
+            transfer nourriture from Mamy_Gluxx to aboard
+            say Mamy_Gluxx presentation=9 : "Eh oh|! Ca t'intéresse ma recette ou pas|?|..."
+            say Mamy_Gluxx presentation=8 chatter resume_at=Mamy01_dialogue_resume_3 : "vous aimez la cuisine|, commander|?..." choices "jarret" "pas_jarret"
+            when {
+                require choice == "jarret"
+            } then {
+                say Mamy_Gluxx presentation=9 : "Bon|... Donc|..."
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "aprés avoir tué les murfalos|..."
+                transfer nourriture from aboard to Mamy_Gluxx
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Il faut les passer à la moulinette tout menu menu|..."
+                request sequence "venthig.hnm"
+                say Mamy_Gluxx presentation=14 : "Puis faire cuire dans le jus de sinox|..."
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Pendant la durée indiquée par votre robot boucher habituel|..."
+                request sequence "rgbtr9.hnm"
+                say Mamy_Gluxx presentation=13 : "Et aprés|... Eh ben aprés|..."
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Y a plus qu'à déguster|! Miam miam|!|..."
+                request sequence "p_cles.hnm"
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+            when {
+                require choice != "jarret"
+            } then {
+                say Mamy_Gluxx presentation=14 : "Tu sais pas ce que tu perds|, Commander|..."
+                say Mamy_Gluxx presentation=8 chatter : "dommage|, commander|..."
+                say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Ca sentait drolement bon|..."
+                request sequence "parf1_2.hnm"
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+                choice = none
+            }
+        }
+        Mamy01_dialogue_resume_3:
+        when {
+            require Mamy_Gluxx.encounter_count == 4
+        } then {
+            say Mamy_Gluxx presentation=9 : "Dis donc|, chéri|..."
+            say Mamy_Gluxx presentation=10 : "Je réve ou tu viens me voir de plus en plus souvent|?|..."
+            say Mamy_Gluxx presentation=11 : "Tu en pinces pour moi|, Commander|?|..."
+            say Mamy_Gluxx presentation=8 chatter resume_at=Mamy01_dialogue_resume_4 : "vous en pincez pour elle|, commander|?..." choices "pincer" "pas_pincer"
+            when {
+                require choice == "pincer"
+            } then {
+                say Mamy_Gluxx presentation=12 : "Chéri|! Commander chéri|! Emmène-moi avec toi sur l'ARCHE!|..."
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "Fais-moi voir des étoiles|!|..."
+                request sequence "star2.hnm"
+                say Mamy_Gluxx presentation=8 chatter : "TELEPORTATION MAMY DANS CRYOBOX|..."
+                say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=3 : "..."
+                end presentation Mamy_Gluxx
+                Mamy_Gluxx.current_location = aboard
+                choice = none
+            }
+            when {
+                require choice != "_pincer"
+            } then {
+                say Mamy_Gluxx presentation=12 : "Dommage Commander|... Nous aurions pu faire bien des choses ensemble|..."
+                say Mamy_Gluxx presentation=8 chatter : "Dommage commander|... C'aurait pu étre|..."
+                say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "vraiment space|..."
+                request sequence "star2.hnm"
+                choice = none
+            }
+        }
+        Mamy01_dialogue_resume_4:
+        text_tokens Mamy_Gluxx presentation=11 : "Nous" "étre" state_number(0x0C84) "Gluxx" "sur" "cette" "planéte" "..."
+        when {
+            require bits(Mamy_Gluxx.flags,0x0008)
+        } then {
+            say Mamy_Gluxx presentation=12 : "Moi étre en guerre, Commander, toi aider nous|..."
+        }
+        when {
+            require parfum.holder != aboard
+        } then {
+            say Mamy_Gluxx presentation=13 : "Moi fabriquer parfum avec musc de murfalo|... Toi acheter parfum|..."
+            say Mamy_Gluxx presentation=15 : "Pour un petit crédit|..."
+            when {
+                random_guard 0x0003
+            } then {
+                say Mamy_Gluxx presentation=8 chatter : "Pouah!!! Commander, quelle horreur|..."
+            }
+            when {
+                require globals.A4 == 0
+            } then {
+                say Mamy_Gluxx presentation=8 chatter : "Nous n'avons plus de credits, Commander|..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Mamy_Gluxx presentation=8 chatter resume_at=donn4 : "Vous acceptez de lui acheter son parfum, Commander?" choices "accepter" "refuser"
+                when {
+                    require choice == "accepter"
+                } then {
+                    say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander"
+                    transfer credit from aboard to Mamy_Gluxx
+                    globals.A4 -= 1
+                    say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "TELEPORTATION PARFUM DANS CRYOBOX|..."
+                    transfer parfum from Mamy_Gluxx to aboard
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    choice = none
+                }
+            }
+        }
+    }
+    proc donn4 enabled {
+        during travel
+        require presentation == Mamy_Gluxx
+    } then {
+        when {
+            require bits(bionium.flags,0x0040)
+            require !bits(Super_Zen.flags,0x0004)
+            require Super_Zen.current_location != aboard
+        } then {
+            say Mamy_Gluxx presentation=14 : "Du Bionium|... Ahhhh|... Ohhhh|..."
+            say Mamy_Gluxx presentation=14 : "Bionium|... Ahhh|..."
+            say Mamy_Gluxx presentation=8 chatter : "Commander il se passe quelque chose|... Le BIONIUM lui fait de l'effet|..."
+            say Mamy_Gluxx presentation=15 : "Rhaaaa|... OOOO|... 010011 01|..."
+            say Mamy_Gluxx presentation=8 chatter : "Ca alors|... 0000 010011|... C'est du code génétique|..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Commander|! Le BIONIUM l'a mise dans un état d'hyperconscience multiplexée... elle nous donne un code génétique..."
+            request sequence "venthig.hnm"
+            say Mamy_Gluxx presentation=8 chatter : "C'est extraordinaire|..."
+            say Mamy_Gluxx presentation=17 : "GA GA 0111010011|..."
+            say Mamy_Gluxx presentation=8 chatter : "OUI allez-y Madame Gluxx|..."
+            dictionary blank after "Madame"
+            say Mamy_Gluxx presentation=11 : "GA GA GA GA|..."
+            say Mamy_Gluxx presentation=8 chatter : "Ca y est on l'a: GA GA GA GA|... Quatre fois GA, c'est fastoche|..."
+            say Mamy_Gluxx presentation=8 chatter : "comme olga|, complétement gaga|!|..."
+            say Mamy_Gluxx presentation=8 chatter : "QUATRE GA|... Merci Madame Gluxx|... QUATRE GA, retenez bien ça, Commander..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "GA... Ca va mieux..."
+            globals.vbio -= 1
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(bionium.flags,0x0040)
+            require bits(Super_Zen.flags,0x0004)
+        } then {
+            say Mamy_Gluxx presentation=16 : "Heuarque|!!! Heuarque|!!!"
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Commander, le BIONIUM, ça la fait tousser maintenant|..."
+            bits(bionium.flags,0x0040) = false
+        }
+        when {
+            require bits(atomique.flags,0x0040)
+        } then {
+            when {
+                require state_b6[Mamy_Gluxx.evolution] < 100
+            } then {
+                say Mamy_Gluxx presentation=13 : "Toi donner étrange objet, étranger|... Atomique étre bon à manger|..."
+                say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Commander, c'est pas possible, elle va le bouffer|..."
+                globals.A13 = 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Mamy_Gluxx.evolution] < 500
+                require state_b6[Mamy_Gluxx.evolution] > 100
+            } then {
+                say Mamy_Gluxx presentation=10 if_not_shown skip_next=6 : "Des atomiques|... Oh|! Dangereux|..."
+                state_b1[Mamy_Gluxx.population] /= 2
+                state_b6[Mamy_Gluxx.evolution] += 200
+                globals.B96 += 1
+                Mamy_Gluxx.aggressiveness += 200
+                globals.B22 -= 1
+                bits(atomique.flags,0x0040) = false
+            }
+            when {
+                require state_b6[Mamy_Gluxx.evolution] > 500
+            } then {
+                say Mamy_Gluxx presentation=11 if_not_shown skip_next=4 : "Des atomiques, quelle énergie extraordinaire|... Merci|!!!"
+                state_b6[Mamy_Gluxx.evolution] += 200
+                globals.B96 += 1
+                state_b5[Mamy_Gluxx.energy] += 400
+                bits(atomique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(image.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=9 : "Pfff... Elle moche|... Catastrophe méme pas naturelle|..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=6 : "Aie Commander, elle va pas aimer..."
+            state_b1[Mamy_Gluxx.population] /= 4
+            state_b6[Mamy_Gluxx.evolution] += 200
+            globals.B96 += 1
+            Mamy_Gluxx.aggressiveness += 200
+            globals.B22 = 0
+            bits(image.flags,0x0040) = false
+        }
+        when {
+            require bits(couronne.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=11 : "Une couronne, je vais étre Reine|..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Commander, cette couronne va lui donner envie de commander|..."
+            Mamy_Gluxx.aggressiveness += 200
+            state_b5[Mamy_Gluxx.energy] += 200
+            globals.B21 = 1
+            bits(couronne.flags,0x0040) = false
+        }
+        when {
+            require bits(tableau.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=12 : "Une peinture du Grand Yolk, mais c'est moi qui les peint|..."
+            say Mamy_Gluxx presentation=8 chatter : "Mais oui, Commander, on est idiot|..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Quel gamin, ce Commander|..."
+            bits(tableau.flags,0x0040) = false
+        }
+        when {
+            require bits(momie.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=13 : "Une momie|... Je vais la mettre dans ma chambre|..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "C'est ça, Madame Gluxx|... Commander ça va effrayer son male|..."
+            state_b5[Mamy_Gluxx.energy] += 100
+            state_b1[Mamy_Gluxx.population] /= 200
+            globals.B22 -= 1
+            bits(momie.flags,0x0040) = false
+        }
+        when {
+            require bits(technologie.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=15 if_not_shown skip_next=3 : "De la technologie, c'est passionnant|..."
+            state_b6[Mamy_Gluxx.evolution] += 50
+            globals.B20 += 1
+            bits(technologie.flags,0x0040) = false
+        }
+        when {
+            require bits(guitare.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=16 if_not_shown skip_next=6 : "Oh une guitare|... Mon mari va aimer ca|..."
+            state_b6[Mamy_Gluxx.evolution] += 10
+            state_b1[Mamy_Gluxx.population] += 300
+            Mamy_Gluxx.aggressiveness -= 150
+            globals.B22 += 1
+            globals.B21 = 0
+            bits(guitare.flags,0x0040) = false
+        }
+        when {
+            require bits(credit.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=17 : "De l'argent|... Tu me donnes un crédit contre rien|!!!"
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=3 : "Commander vous étes complétement débile|..."
+            globals.A17 = 1
+            globals.A4 -= 1
+            bits(credit.flags,0x0040) = false
+        }
+        when {
+            require bits(parfum.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=18 : "Du parfum, merci beau Commander, mais j'en ai des tas|..."
+            dictionary blank after "beau"
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Elle en veut pas|... Commander|..."
+            parfum.holder = aboard
+            bits(parfum.flags,0x0040) = false
+        }
+        when {
+            require bits(decodeur.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=10 : "Un décodeur, on va pouvoir regarder la télé|..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=4 : "Commander vous risquez de faire baisser la natalité|..."
+            state_b6[Mamy_Gluxx.evolution] += 50
+            state_b1[Mamy_Gluxx.population] -= 150
+            globals.B22 = 1
+            bits(decodeur.flags,0x0040) = false
+        }
+        when {
+            require bits(nourriture.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=11 if_not_shown skip_next=2 : "De la nourriture, merci étranger|..."
+            state_b5[Mamy_Gluxx.energy] += 500
+            bits(nourriture.flags,0x0040) = false
+        }
+        when {
+            require bits(medicament.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=9 if_not_shown skip_next=4 : "Des médicaments contre le ramollissement|..."
+            state_b6[Mamy_Gluxx.evolution] += 10
+            state_b1[Mamy_Gluxx.population] += 200
+            globals.B22 += 1
+            bits(medicament.flags,0x0040) = false
+        }
+        when {
+            require bits(armes.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=12 if_not_shown skip_next=3 : "Des armes|... Merci, Commander"
+            globals.B21 = 1
+            Mamy_Gluxx.aggressiveness += 100
+            bits(armes.flags,0x0040) = false
+        }
+        when {
+            require bits(optique.flags,0x0040)
+        } then {
+            when {
+                require !bits(Otto_Von_Smile.flags,0x0004)
+            } then {
+                say Mamy_Gluxx presentation=11 : "Eh oh|! Qu'est-ce que tu veux que je fasse de ça moi|?|..."
+                say Mamy_Gluxx presentation=12 : "C'est vrai qu'on dirait qu'elle a cinq nibards|, ta lentille|!|..."
+                say Mamy_Gluxx presentation=13 : "Mais bon c'est pas une raison pour essayer de me faire muter|!|..."
+                say Mamy_Gluxx presentation=8 if_not_shown skip_next=4 : "..."
+                end presentation Mamy_Gluxx
+                Mamy_Gluxx.aggressiveness += 150
+                optique.holder = aboard
+                bits(optique.flags,0x0040) = false
+            }
+            when {
+                require bits(Otto_Von_Smile.flags,0x0004)
+            } then {
+                say Mamy_Gluxx presentation=13 if_not_shown skip_next=4 : "Des optiques, on va pouvoir étudier le ciel|..."
+                state_b6[Mamy_Gluxx.evolution] += 20
+                globals.B21 = 1
+                globals.B20 += 1
+                bits(optique.flags,0x0040) = false
+            }
+        }
+        when {
+            require bits(energie.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=9 if_not_shown skip_next=2 : "De l'énergie à l'état pur|..."
+            state_b5[Mamy_Gluxx.energy] = 1000
+            bits(energie.flags,0x0040) = false
+        }
+        when {
+            require bits(bague.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=10 if_not_shown skip_next=5 : "Une bague, je vais l'offrir à mon mari Hi|! Hi|! Hi|!|..."
+            state_b6[Mamy_Gluxx.evolution] += 10
+            state_b1[Mamy_Gluxx.population] += 300
+            Mamy_Gluxx.aggressiveness -= 200
+            globals.B22 += 1
+            bits(bague.flags,0x0040) = false
+        }
+        when {
+            require bits(emetteur.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=11 if_not_shown skip_next=2 : "Un émetteur, je vais pouvoir espionner|..."
+            state_b6[Mamy_Gluxx.evolution] += 10
+            bits(emetteur.flags,0x0040) = false
+        }
+        when {
+            require bits(culture.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=12 if_not_shown skip_next=3 : "De la culture|..."
+            state_b6[Mamy_Gluxx.evolution] += 100
+            state_b5[Mamy_Gluxx.energy] += 100
+            bits(culture.flags,0x0040) = false
+        }
+        when {
+            require bits(ecriture.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=13 if_not_shown skip_next=2 : "L'écriture, quel progrés, mais nous savons déjà écrire, Commander|..."
+            state_b6[Mamy_Gluxx.evolution] += 50
+            bits(ecriture.flags,0x0040) = false
+        }
+        when {
+            require bits(vaisseau.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=14 : "QUOI|!!! UN VAISSEAU SPATIAL|... MAIS ON EN A DEJA UN|!|..."
+            say Mamy_Gluxx presentation=8 chatter : "réfléchissez un peu|, commander|, vous arrivez à me faire honte|..."
+            say Mamy_Gluxx presentation=8 chatter : "devant des jarrets bouillis sous-évolués|!|..."
+            say Mamy_Gluxx presentation=8 if_not_shown skip_next=4 : "..."
+            vaisseau.holder = aboard
+            state_b6[Mamy_Gluxx.evolution] += 30
+            globals.B20 += 1
+            bits(vaisseau.flags,0x0040) = false
+        }
+        when {
+            require bits(trait_C3_A9.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=15 if_not_shown skip_next=5 : "Un traité|... Ca c'est bon pour faire la paix|..."
+            state_b6[Mamy_Gluxx.evolution] += 30
+            globals.B21 = 0
+            Mamy_Gluxx.aggressiveness = 0
+            state_b1[Mamy_Gluxx.population] += 200
+            bits(trait_C3_A9.flags,0x0040) = false
+        }
+        when {
+            require bits(cadeaux.flags,0x0040)
+        } then {
+            say Mamy_Gluxx presentation=16 if_not_shown skip_next=4 : "Ohhh des cadeaux|... Merci|! Merci|!"
+            state_b6[Mamy_Gluxx.evolution] += 10
+            state_b1[Mamy_Gluxx.population] += 150
+            globals.B22 += 1
+            bits(cadeaux.flags,0x0040) = false
+        }
+        say Mamy_Gluxx presentation=8 chatter : "Quel objet désirez-vous donner à Mamy, Commander?"
+        say Mamy_Gluxx presentation=8 chatter resume_at=pret3 : "DONNER:" choices inventory_choices
+        say Mamy_Gluxx presentation=8 chatter : ""
+    }
+    proc pret3 enabled {
+        during travel
+        require presentation == Mamy_Gluxx
+    } then {
+        when {
+            require globals.A17 == 0
+            require state_b6[Mamy_Gluxx.evolution] > 100
+        } then {
+            say Mamy_Gluxx presentation=13 : "Toi préter crédit à tribu Gluxx|..."
+            when {
+                require globals.A4 == 0
+            } then {
+                say Mamy_Gluxx presentation=8 chatter : "Nous n'avons pas de crédits, Madame Gluxx|..."
+            }
+            when {
+                require globals.A4 > 0
+            } then {
+                say Mamy_Gluxx presentation=8 chatter resume_at=pret3_dialogue_resume_1 : "Commander, on lui préte un crédit?" choices "préter" "refuser"
+                when {
+                    require choice == "préter"
+                } then {
+                    say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "On lui envoie un crédit, Commander|..."
+                    transfer credit from aboard to Mamy_Gluxx
+                    globals.A4 -= 1
+                    say Mamy_Gluxx presentation=14 if_not_shown skip_next=5 : "Oh merci, Commander, on s'en souviendra|..."
+                    globals.A6 = 1
+                    globals.A17 = 1
+                    globals.A10 = 1
+                    end presentation Mamy_Gluxx
+                    choice = none
+                }
+                when {
+                    require choice == "refuser"
+                } then {
+                    say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=1 : "Comme vous voulez|..."
+                    choice = none
+                }
+            }
+        }
+        pret3_dialogue_resume_1:
+        when {
+            require globals.A6 == 1
+            require globals.A17 == 1
+            require state_b6[Mamy_Gluxx.evolution] > 100
+        } then {
+            say Mamy_Gluxx presentation=15 : "Nous avons une dette envers toi Commander|..."
+            say Mamy_Gluxx presentation=16 : "Tu as prété des CREDITS aux Gluxx|..."
+            say Mamy_Gluxx presentation=14 : "Voici un crédit d'intérét|..."
+            say Mamy_Gluxx presentation=8 chatter if_not_shown skip_next=2 : "Commander, Commander, Ils nous filent un crédit sans qu'on leur demande|..."
+            globals.A4 += 1
+            transfer credit from Mamy_Gluxx to aboard
+        }
+        say Mamy_Gluxx presentation=9 : "Merci de ta visite, Commander, reviens quand tu veux|..."
+        say Mamy_Gluxx presentation=8 if_not_shown skip_next=1 : "..."
+        end presentation Mamy_Gluxx
+        halt
+    }
+}

@@ -1,10 +1,11 @@
 //! Typed, lossless source language for Commander Blood VM programs.
 //!
-//! BloodScript 8 is the canonical editable layer for all five VM resource
-//! bundles. Every shipped token and companion-data field has authoritative
-//! typed syntax; canonical profiles reject unresolved opcode, byte, address, or
-//! state-field fallbacks. The syntax is reconstructed for this project and is
-//! not claimed to be the lost historical source spelling.
+//! BloodScript 8 is the canonical editable layer for a profile's VM resources:
+//! five for Commander Blood and four for Big Bug Bang. Every shipped token and
+//! companion-data field has authoritative typed syntax; canonical profiles
+//! reject unresolved opcode, byte, address, or state-field fallbacks. The syntax
+//! is reconstructed for this project and is not claimed to be the lost
+//! historical source spelling.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;
@@ -3729,8 +3730,15 @@ fn decompile_cod(
         StructuredAnnotations::default()
     };
     let mut field_aliases = if structured_source {
-        var.map(|var| field_aliases(tokens.iter().flat_map(object_operand_values), symbols, var))
-            .unwrap_or_default()
+        var.map(|var| {
+            field_aliases(
+                tokens.iter().flat_map(object_operand_values),
+                symbols,
+                var,
+                sequel,
+            )
+        })
+        .unwrap_or_default()
     } else {
         BTreeMap::new()
     };
@@ -3929,6 +3937,7 @@ fn decompile_bas(
                 vm_tokens.iter().flat_map(object_operand_values),
                 symbols,
                 var,
+                false,
             )
         })
         .unwrap_or_default();
@@ -4452,6 +4461,7 @@ fn field_aliases(
     values: impl IntoIterator<Item = u16>,
     symbols: &[DebSymbol],
     var: &[u8],
+    sequel: bool,
 ) -> BTreeMap<u16, FieldAlias> {
     let referenced: BTreeSet<u16> = values.into_iter().collect();
     let objects: BTreeMap<u16, &DebSymbol> = symbols
@@ -4484,6 +4494,9 @@ fn field_aliases(
                     .or_default()
                     .push(selector as u8);
             }
+        }
+        if sequel && kind == 0x0002 {
+            selectors_by_offset.entry(72).or_default().push(21);
         }
         for (field_offset, selectors) in selectors_by_offset {
             let address = owner_offset.wrapping_add(field_offset);
@@ -4569,13 +4582,19 @@ fn semantic_field_component(alias: &FieldAlias) -> Option<&'static str> {
     match (alias.kind, alias.selectors.as_slice()) {
         (_, [0x00]) => Some("flags"),
         (_, [0x13]) => Some("action"),
+        (0x0002, [0x01]) => Some("population"),
         (0x0002, [0x03]) => Some("aggressiveness"),
+        (0x0002, [0x04]) => Some("energy"),
         (0x0002, [0x08]) => Some("encounter_count"),
         (0x0002, [0x05]) => Some("known_objects"),
+        (0x0002, [0x07]) => Some("evolution"),
+        (0x0002, [0x10]) => Some("race"),
+        (0x0002, [0x0E]) => Some("universe"),
         (0x0010, [0x0B]) => Some("position"),
         (0x0002 | 0x0010 | 0x0200, [0x11]) => Some("current_location"),
         (0x0400, [0x11]) => Some("holder"),
         (0x0002, [0x0F]) => Some("topic"),
+        (0x0002, [0x15]) => Some("opponent"),
         _ => None,
     }
 }
@@ -4681,14 +4700,21 @@ fn bas_dictionary_operand_values(image: &[u8], dictionary: &HashMap<u16, String>
 /// expose them to the compiler. COD precedes BAS, matching profile source order.
 pub(crate) fn dictionary_operand_order(
     cod: &[u8],
-    bas: &[u8],
+    bas: Option<&[u8]>,
     dictionary: &HashMap<u16, String>,
+    sequel: bool,
 ) -> Vec<u16> {
-    let mut values = vm::walk(cod, 0, cod.len())
-        .iter()
-        .flat_map(dictionary_operand_values)
-        .collect::<Vec<_>>();
-    values.extend(bas_dictionary_operand_values(bas, dictionary));
+    let mut values = if sequel {
+        vm::walk_big_bug_bang(cod, 0, cod.len())
+    } else {
+        vm::walk(cod, 0, cod.len())
+    }
+    .iter()
+    .flat_map(dictionary_operand_values)
+    .collect::<Vec<_>>();
+    if let Some(bas) = bas {
+        values.extend(bas_dictionary_operand_values(bas, dictionary));
+    }
     values
 }
 
