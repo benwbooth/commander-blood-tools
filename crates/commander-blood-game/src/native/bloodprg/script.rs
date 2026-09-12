@@ -628,6 +628,79 @@ mod tests {
         yield_after: u8,
     }
 
+    #[derive(Debug, Deserialize)]
+    #[serde(tag = "operation", rename_all = "snake_case")]
+    enum SequelControlFlowOracle {
+        BeginGuard {
+            depth_before: usize,
+            query_before: u8,
+            target: u16,
+            depth_after: usize,
+            query_after: u8,
+            cursor: usize,
+        },
+        EndGuard {
+            depth_before: usize,
+            query_before: u8,
+            depth_after: usize,
+            query_after: u8,
+            cursor: usize,
+        },
+        RandomGuard {
+            modulus: u16,
+            seed: u16,
+            mix_low_before: u8,
+            mix_high_before: u8,
+            counter_before: u8,
+            result: u16,
+            mix_low_after: u8,
+            mix_high_after: u8,
+            counter_after: u8,
+            branch_taken: bool,
+            depth_after: usize,
+            query_after: u8,
+            cursor: usize,
+        },
+        ConceptGuard {
+            resume: u8,
+            primary: u16,
+            alternate: u16,
+            expected: u16,
+            inverted: bool,
+            branch_taken: bool,
+            depth_after: usize,
+            query_after: u8,
+            cursor: usize,
+        },
+        Jump {
+            target: u16,
+            resume_before: u8,
+            alternate_before: u16,
+            resume_after: u8,
+            alternate_after: u16,
+            cursor: usize,
+        },
+    }
+
+    fn runtime_with_guard_depth(
+        depth: usize,
+        query: u8,
+        innermost: ScriptCodeOffset,
+    ) -> ScriptRuntime {
+        assert!(depth > 0);
+        let mut runtime = ScriptRuntime::new();
+        for index in 0..depth {
+            let target = if index + 1 == depth {
+                innermost
+            } else {
+                ScriptCodeOffset::new(0x1000 + index * 0x111)
+            };
+            runtime.begin_guard(target);
+        }
+        runtime.query_mode = query != u8::MIN;
+        runtime
+    }
+
     #[test]
     fn guard_stack_retains_its_root_until_a_condition_fails() {
         let root = ScriptCodeOffset::new(100);
@@ -1014,6 +1087,202 @@ mod tests {
             );
             if vector.branch_taken {
                 assert_eq!(result, ScriptControl::Jump(failure_target));
+            }
+        }
+    }
+
+    #[test]
+    fn sequel_a0_a4_decode_into_the_shared_control_flow_runtime() {
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_script_instruction;
+
+        const SCRIPT_CURSOR: usize = 0x40;
+        const FAILURE_TARGET: usize = 0x2468;
+        const VECTOR_COUNT: usize = 152;
+
+        let dictionary_data = vec![u8::MIN; 65];
+        let dictionary = decode_script_dictionary(&dictionary_data).unwrap();
+        let resolve = |offset: u16| {
+            (offset != u16::MIN).then(|| dictionary.resolve_source_offset(offset).unwrap())
+        };
+        let cursor_after = |control: ScriptControl, encoded_len: usize| match control {
+            ScriptControl::Continue => SCRIPT_CURSOR + encoded_len - 1,
+            ScriptControl::Jump(target) => target.index(),
+        };
+        let decode = |bytes: &[u8]| {
+            let mut terminated = bytes.to_vec();
+            terminated.push(u8::MAX);
+            let code =
+                decode_script_code_for_dialect(&terminated, ScriptDialect::BigBugBang).unwrap();
+            assert_eq!(code.tokens().len(), 1);
+            (
+                decode_script_instruction(&code.tokens()[0], &dictionary).unwrap(),
+                code.tokens()[0].encoded_bytes().len(),
+            )
+        };
+
+        let vectors: Vec<SequelControlFlowOracle> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_control_flow.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(vectors.len(), VECTOR_COUNT);
+
+        for vector in vectors {
+            match vector {
+                SequelControlFlowOracle::BeginGuard {
+                    depth_before,
+                    query_before,
+                    target,
+                    depth_after,
+                    query_after,
+                    cursor,
+                } => {
+                    let mut bytes = vec![0xA0];
+                    bytes.extend_from_slice(&target.to_le_bytes());
+                    let (instruction, encoded_len) = decode(&bytes);
+                    let mut runtime = runtime_with_guard_depth(
+                        depth_before,
+                        query_before,
+                        ScriptCodeOffset::new(0x1111),
+                    );
+                    let control = runtime
+                        .apply_instruction(&instruction, &mut BloodPrng::default())
+                        .unwrap();
+                    assert_eq!(control, ScriptControl::Continue);
+                    assert_eq!(runtime.guard_depth(), depth_after);
+                    assert_eq!(runtime.query_mode(), query_after != u8::MIN);
+                    assert_eq!(
+                        runtime.current_guard_target(),
+                        Some(ScriptCodeOffset::new(usize::from(target)))
+                    );
+                    assert_eq!(cursor_after(control, encoded_len), cursor);
+                }
+                SequelControlFlowOracle::EndGuard {
+                    depth_before,
+                    query_before,
+                    depth_after,
+                    query_after,
+                    cursor,
+                } => {
+                    let (instruction, encoded_len) = decode(&[0xA1]);
+                    let mut runtime = runtime_with_guard_depth(
+                        depth_before,
+                        query_before,
+                        ScriptCodeOffset::new(0x1111),
+                    );
+                    let control = runtime
+                        .apply_instruction(&instruction, &mut BloodPrng::default())
+                        .unwrap();
+                    assert_eq!(control, ScriptControl::Continue);
+                    assert_eq!(runtime.guard_depth(), depth_after);
+                    assert_eq!(runtime.query_mode(), query_after != u8::MIN);
+                    assert_eq!(cursor_after(control, encoded_len), cursor);
+                }
+                SequelControlFlowOracle::RandomGuard {
+                    modulus,
+                    seed,
+                    mix_low_before,
+                    mix_high_before,
+                    counter_before,
+                    result,
+                    mix_low_after,
+                    mix_high_after,
+                    counter_after,
+                    branch_taken,
+                    depth_after,
+                    query_after,
+                    cursor,
+                } => {
+                    let mut bytes = vec![0xA2];
+                    bytes.extend_from_slice(&modulus.to_le_bytes());
+                    let (instruction, encoded_len) = decode(&bytes);
+                    let mut runtime =
+                        runtime_with_guard_depth(2, 1, ScriptCodeOffset::new(FAILURE_TARGET));
+                    let mut random = BloodPrng {
+                        seed,
+                        mix_low: mix_low_before,
+                        mix_high: mix_high_before,
+                        counter: counter_before,
+                    };
+                    let mut expected_random = random;
+                    assert_eq!(expected_random.next(modulus), result);
+                    let control = runtime
+                        .apply_instruction(&instruction, &mut random)
+                        .unwrap();
+                    assert_eq!(matches!(control, ScriptControl::Jump(_)), branch_taken);
+                    assert_eq!(runtime.guard_depth(), depth_after);
+                    assert_eq!(runtime.query_mode(), query_after != u8::MIN);
+                    assert_eq!(random.mix_low, mix_low_after);
+                    assert_eq!(random.mix_high, mix_high_after);
+                    assert_eq!(random.counter, counter_after);
+                    assert_eq!(random, expected_random);
+                    assert_eq!(cursor_after(control, encoded_len), cursor);
+                }
+                SequelControlFlowOracle::ConceptGuard {
+                    resume,
+                    primary,
+                    alternate,
+                    expected,
+                    inverted,
+                    branch_taken,
+                    depth_after,
+                    query_after,
+                    cursor,
+                } => {
+                    let mut bytes = vec![0xA3];
+                    if inverted {
+                        bytes.push(0xA1);
+                    }
+                    bytes.extend_from_slice(&expected.to_le_bytes());
+                    let (instruction, encoded_len) = decode(&bytes);
+                    let mut runtime =
+                        runtime_with_guard_depth(2, 1, ScriptCodeOffset::new(FAILURE_TARGET));
+                    runtime.set_selected_concept(resolve(primary));
+                    runtime.set_alternate_concept(resolve(alternate));
+                    if resume & 2 != u8::MIN {
+                        runtime.arm_resume(ScriptCodeOffset::new(0x3333), u16::MIN);
+                        assert!(runtime.activate_selector_resume());
+                    }
+                    let control = runtime
+                        .apply_instruction(&instruction, &mut BloodPrng::default())
+                        .unwrap();
+                    assert_eq!(matches!(control, ScriptControl::Jump(_)), branch_taken);
+                    assert_eq!(runtime.guard_depth(), depth_after);
+                    assert_eq!(runtime.query_mode(), query_after != u8::MIN);
+                    assert_eq!(cursor_after(control, encoded_len), cursor);
+                }
+                SequelControlFlowOracle::Jump {
+                    target,
+                    resume_before,
+                    alternate_before,
+                    resume_after,
+                    alternate_after,
+                    cursor,
+                } => {
+                    let mut bytes = vec![0xA4];
+                    bytes.extend_from_slice(&target.to_le_bytes());
+                    let (instruction, encoded_len) = decode(&bytes);
+                    let mut runtime = ScriptRuntime::new();
+                    if resume_before != u8::MIN {
+                        runtime.arm_resume(ScriptCodeOffset::new(0x3333), u16::MIN);
+                    }
+                    if alternate_before != u16::MIN {
+                        runtime.set_alternate_concept(Some(dictionary_words().0));
+                    }
+                    let control = runtime
+                        .apply_instruction(&instruction, &mut BloodPrng::default())
+                        .unwrap();
+                    assert_eq!(
+                        control,
+                        ScriptControl::Jump(ScriptCodeOffset::new(target.into()))
+                    );
+                    assert_eq!(runtime.resume_target(), None);
+                    assert_eq!(runtime.alternate_concept(), None);
+                    assert_eq!(resume_after, u8::MIN);
+                    assert_eq!(alternate_after, u16::MIN);
+                    assert_eq!(cursor_after(control, encoded_len), cursor);
+                }
             }
         }
     }

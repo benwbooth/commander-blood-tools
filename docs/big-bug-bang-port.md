@@ -80,6 +80,20 @@ branches that those two campaigns do not necessarily enter. This establishes
 the decoded assets and those bounded overlay runs, not every possible input
 sequence or an unbounded gameplay-parity claim.
 
+The BBB dispatch table at file `0x16A78` maps A0-A4 to handlers
+`0x6A75`, `0x6A8E`, `0x6AA4`, `0x6AB2`, and `0x6AF7`. The guarded
+`big_bug_bang_control_flow_oracle.py` harness verifies those entries and
+executes all five unmodified handlers, including A2's native PRNG and the real
+failure helper at `0x697A..0x6993`. Its 152 cases cover guard depths and target
+boundaries, eight random moduli across four complete PRNG states, both concept
+slots and comparison polarities, and jump cleanup. The fixture regenerates
+byte-identically. The Rust regression reconstructs BBB A0-A4 tokens from the
+semantic inputs, decodes them with `ScriptDialect::BigBugBang`, and applies
+every case through the existing shared `ScriptRuntime`; there is no sequel
+control-flow runtime. This proves the well-formed typed domain exercised by the
+fixture. A3's separate zero-word scan path is not exercised by this harness,
+and A0-A4 coverage does not establish parity for later inherited handlers.
+
 The inherited A5 handler at BBB `0x6B07..0x6B28` has the same instruction
 structure as CB `0x65EB`, with relocated globals and timer storage. The
 `big_bug_bang_timer_oracle.py` harness executes its original bytes together
@@ -90,7 +104,15 @@ and write-range assertions reject unexpected execution or state changes.
 The Rust test compares BBB token decoding, cursor, full saved timer block,
 query state and guard depth. Negative signed indices are outside the typed
 timer domain and are not claimed as covered. This is one inherited-handler
-comparison, not complete VM parity.
+comparison beyond the A0-A4 set, not complete VM parity.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_control_flow_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_control_flow.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_a0_a4_decode_into_the_shared_control_flow_runtime
+```
 
 ### COD Source Recovery and Shared Arithmetic
 
