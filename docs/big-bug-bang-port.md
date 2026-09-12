@@ -241,6 +241,24 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_c3_c8_use_shared_typed_action_record_state
 ```
 
+BBB's C2 dispatch entry retains the inherited `0x7A3A..0x7AF4` aboard-record
+handler. `big_bug_bang_aboard_record_oracle.py` executes that handler with the
+real roster insertion, owner and field lookups, guard-failure helper, DESCRIPT
+parser, entered descriptor helpers, and DOS file boundaries in 684 cases. The
+matrix covers all exact and mismatched query forms, inversion, nonzero mode
+bytes, active and presentable gates, free, duplicate and full rosters, actor,
+inventory and location holder layouts, both presentation gates, descriptor
+presence, and unrelated request-bit preservation. The Rust regression decodes
+BBB-sized records and C2 tokens before applying the shared typed aboard state.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_aboard_record_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_aboard_record.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_c2_uses_shared_aboard_record_state
+```
+
 ### COD Source Recovery and Shared Arithmetic
 
 The source-first pass found a production translation discrepancy that route
