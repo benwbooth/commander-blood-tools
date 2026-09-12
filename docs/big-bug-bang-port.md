@@ -31,7 +31,9 @@ remain unverified. English COD display
 catalogs cover all 17 profiles and all 6,921 COD text sites. Timed sequence
 captions, inventory labels, and DESCRIPT location captions also have English
 display mappings, but live coverage of these surfaces is incomplete. The
-separate SCRIPT2 BAS stream remains unresolved. The latest route evidence is recorded in
+separate SCRIPT2 BAS resource is preserved but is not reachable from legitimate
+shipped state, as established below. Its dormant bytes have not been translated
+or claimed as structured source. The latest route evidence is recorded in
 `../localization/big-bug-bang/README.md`. The original-disc investigation is in
 `big-bug-bang-investigation.md`; its initial decoder limitations describe the
 state before the implementation below.
@@ -47,11 +49,11 @@ constitute a BBB routine inventory or prove inherited handlers unchanged.
 
 Outstanding coverage work includes BBB-specific native routine ownership and
 comparison, the changed AMER/CROOLIS modules, inherited VM handler semantics,
-derived companion DEB/DIC/VAR rebuilding, and SCRIPT2 BAS execution and
-ownership. Modern typed COD decoding, structured recovery, and English text
-coverage alone do not close these obligations. The explicit BBB COD source
-path now reproduces all 17 original COD files, as detailed below; the default
-CB walker and retired interpreter have not been switched to BBB.
+and derived companion DEB/DIC/VAR rebuilding. Modern typed COD decoding,
+structured recovery, English text coverage, and the unreachable-BAS result do
+not close these obligations. The explicit BBB COD source path now reproduces
+all 17 original COD files, as detailed below; the default CB walker and retired
+interpreter have not been switched to BBB.
 
 The inherited A5 handler at BBB `0x6B07..0x6B28` has the same instruction
 structure as CB `0x65EB`, with relocated globals and timer storage. The
@@ -122,9 +124,10 @@ nix develop -c cargo run -p commander-blood-script-compiler --example recover_bb
 
 These are standalone editable COD programs, not finished unified profiles.
 State outside recovered record fields remains numeric, and derived DEB/DIC/VAR
-rebuilding, BAS source, and production startup integration remain incomplete.
-Byte-identical source compilation does not establish complete native behavior
-or a complete playthrough.
+rebuilding and production startup integration remain incomplete. The dormant,
+unreachable BAS resource has not been reconstructed as source. Byte-identical
+source compilation does not establish complete native behavior or a complete
+playthrough.
 
 Verification for the structured checkpoint: the real all-profile corpus test,
 all five CFG tests, and all 34 BloodScript tests pass. The broader root-library
@@ -2694,19 +2697,50 @@ At 0x5A7D-0x5A97, resolved pointers follow the same order: the main COD loop
 loads from GS:0x6AF4 at 0x5AAF, and the old-style conversation scanner still
 loads BAS from GS:0x6AF8 at 0x5BBA. The loader's resource loop lacks Commander's
 per-resource zero-result rejection. Only SCRIPT2.BAS is on the disc. The
-missing-resource binding is established above, but actual conversation-entry
-reachability still needs native validation. Do not infer that the shipped
-SCRIPT2.BAS is used with the current profile dictionary: its first menu fails
-current dictionary binding at BAS byte 6, dictionary offset 0x1F00.
+missing-resource binding is established above. The shipped SCRIPT2.BAS first
+menu fails current dictionary binding at BAS byte 6, dictionary offset 0x1F00;
+it also fails typed decoding against every other shipped profile dictionary.
 
 The call to the old-style conversation scanner at 0x5E66 is gated by actor
-field selector 2 (byte 26), presentation context and object flags. Trace its
-reachable callers and field writes before deciding which BAS resources matter;
-initial field values alone cannot prove that conversations are unreachable.
-A typed authored-script audit found all 61 actors' initial byte-26 words zero
-in all 17 profiles and no COD writer to those fields. That constrains authored
-behavior; native writers and retained live state still need checking. Do not
+field selector 2 (byte 26), presentation context and object flags. A typed
+authored-script audit found all 1,037 actor instances' initial byte-26 words zero
+across the 17 profiles and no COD destination overlapping those fields. Do not
 confuse selector 2 / byte 26 with dialogue-control selector 15 / byte 68.
+
+`big_bug_bang_bas_ownership_audit.py` pins the executable hash and scans every
+near call to the native field resolver at 0x6633. All 54 calls have classified
+selector inputs. Only 0x5E59 and 0x8420 request selector 2, and both immediately
+read it: the former gates the sole call to the BAS dispatcher at 0x5E66, while
+the latter gates BAS text activation. The only three loads of GS:0x6AF8 are in
+those dispatcher/text-scan chains. An over-approximating Capstone pass decodes
+an instruction at every byte in the executable code image and inventories all
+possible displacement-26 writes. Ten are starts inside other instructions; the
+only real instruction, represented with and without its GS prefix, writes an
+unrelated 32-byte sound-slot record at GS:0x65E2 from 0x481F. It does not address
+the script-state allocation. A second all-byte pass inventories every
+address-sized register assignment from literal 26, plus LEA displacement 26.
+Six real instructions advance DOS DTA pointers to the file-size field after
+INT 21h/2Fh, and one adjusts a DOS file seek past a 26-byte header. Six apparent
+starts are the ModR/M byte of the preceding MOV SI,BX interpreted as a REP
+prefix. No candidate forms a script-state field address.
+
+The audit regenerates its checked-in report with:
+
+```sh
+nix develop -c python re/tools/big_bug_bang_bas_ownership_audit.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_bas_ownership.json
+```
+
+Initial resources and authored COD therefore provide no producer for a nonzero
+selector-2 value, and the native audit finds no semantic mutation that can
+introduce one. Bulk profile retention and ordinary save/load copy existing
+state rather than synthesizing this field, so a legitimate new game and every
+save derived from it remain zero by induction. The BAS dispatcher and text
+scanner are unreachable for shipped gameplay. The resource stays preserved,
+and a tampered or foreign save that injects a nonzero field remains outside this
+conclusion; no empty BAS, dictionary substitution, or speculative interpreter
+behavior was introduced.
 
 SCRIPT2.VAR has an extra trailing word named `time` at byte 8368. The initial
 VAR image is only 8368 bytes, yet the native loader retains it when selecting

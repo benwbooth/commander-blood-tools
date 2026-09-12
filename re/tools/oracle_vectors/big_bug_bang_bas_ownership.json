@@ -1,0 +1,119 @@
+{
+  "bas_call_graph": {
+    "0x5bae": [
+      24166
+    ],
+    "0x6104": [
+      23559
+    ],
+    "0x83e2": [
+      25582,
+      25622
+    ]
+  },
+  "bas_pointer_loads": [
+    23482,
+    24841,
+    33811
+  ],
+  "conclusion": "The pinned executable has no native semantic mutation that can introduce a nonzero actor selector 2. Both selector-2 resolver calls read it, every BAS consumer is downstream of those reads, and direct or literal-26 address formation finds no script-state writer.",
+  "direct_displacement_26_write_audit": {
+    "actual_write": {
+      "base": 26082,
+      "file_offset": 18463,
+      "ownership": "non_script_sound_slot_table",
+      "record_stride": 32,
+      "segment": "gs"
+    },
+    "false_starts_inside_other_instructions": [
+      4592,
+      5882,
+      28692,
+      30701,
+      31155,
+      32871,
+      33724,
+      35272,
+      44127,
+      49779
+    ],
+    "potential_instruction_starts": [
+      4592,
+      5882,
+      18463,
+      18464,
+      28692,
+      30701,
+      31155,
+      32871,
+      33724,
+      35272,
+      44127,
+      49779
+    ]
+  },
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "field_resolver": {
+    "call_count": 54,
+    "file_offset": 26163,
+    "possible_selector_counts": {
+      "10": 4,
+      "11": 9,
+      "12": 5,
+      "13": 1,
+      "14": 3,
+      "15": 1,
+      "17": 13,
+      "19": 9,
+      "2": 2,
+      "5": 2,
+      "8": 2,
+      "9": 5
+    },
+    "selector_2_calls": [
+      {
+        "access": "read_for_bas_dispatch",
+        "file_offset": 24153
+      },
+      {
+        "access": "read_for_bas_text_scan",
+        "file_offset": 33824
+      }
+    ]
+  },
+  "format": "big-bug-bang-bas-ownership-v1",
+  "literal_26_address_formation_audit": {
+    "dos_dta_file_size_advances": [
+      11374,
+      11431,
+      11671,
+      11871,
+      12201,
+      47062
+    ],
+    "dos_file_seek_advance": 54819,
+    "false_starts_inside_other_instructions": [
+      11373,
+      11430,
+      11670,
+      11870,
+      12200,
+      47061
+    ],
+    "potential_instruction_starts": [
+      11373,
+      11374,
+      11430,
+      11431,
+      11670,
+      11671,
+      11870,
+      11871,
+      12200,
+      12201,
+      47061,
+      47062,
+      54819
+    ]
+  }
+}

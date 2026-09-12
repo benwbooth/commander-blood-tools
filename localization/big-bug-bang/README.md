@@ -213,7 +213,7 @@ gift responses, and original phone-number joke are retained. This is an editoria
 first pass, not live verification of the ship trades or destructive branches.
 
 English COD coverage is now all 17 profiles, or 6,921 of 6,921 text sites.
-BAS text, most native UI,
+Dormant BAS text, most native UI,
 object names outside the inventory chooser, and text embedded
 in media remain untranslated.
 
@@ -240,10 +240,10 @@ The only separate BAS file is 19,933 bytes, SHA-256
 Its paired DIC is 15,369 bytes, SHA-256
 `1666ae7bb0dead682f9c3fd64b5ea6b71999475beb77c85ad75e79a0ee71a5b0`.
 Both match the import manifest and the extracted disc copies. The resource-backed diagnostic regression pins
-that rejection and the raw word boundary. This does not prove the BAS file is
-unused: native reachability and resource ownership still need investigation.
-No empty BAS replacement, altered dictionary identity, or speculative BAS
-translation was introduced.
+that rejection and the raw word boundary, and now verifies that the BAS fails
+typed decoding against all 17 shipped profile dictionaries. No alternate
+dictionary owner resolves it. No empty BAS replacement, altered dictionary
+identity, or speculative BAS translation was introduced.
 
 The follow-up `big_bug_bang_bas_entry_oracle.py` executes the original handoff
 gate at file offsets `0x5E0D..0x5E69`, including its unchanged field resolver at
@@ -252,11 +252,23 @@ the presentation gates, reciprocal actor actions, blocked flag, and zero/nonzero
 entry offsets. The Rust handoff matches every case; a repeat capture is identical.
 The original field matrix selects actor byte 26, and all 1,037 actor records in
 the 17 shipped VAR profiles initialize that word to zero. Thus this gate does
-not enter BAS from those initial records, even with the other gates open. This
-does not yet prove that later script writes or loaded saves cannot change the
-word, nor that other BAS-reading paths are unreachable. No runtime gate was
-removed or weakened. The resource-enabled `sequel_` test selection passes all
-79 tests, including the new gate and initial-record checks.
+not enter BAS from those initial records, even with the other gates open.
+
+The pinned `big_bug_bang_bas_ownership_audit.py` follow-up classifies all 54
+native calls to the field resolver. The only selector-2 calls are the handoff
+read at `0x5E59` and BAS text-scan read at `0x8420`; neither writes the field.
+Every native load of the BAS pointer is inside one of those two chains. Its
+over-approximating direct-write scan finds no script-state byte-26 writer; the
+sole real displacement-26 write is to the unrelated sound-slot table at
+`GS:0x65E2`. A companion all-byte scan classifies all address-sized register
+assignments using literal 26: six advance DOS DTA pointers to file sizes and one
+adjusts a DOS file seek past its header. None addresses script state. Together
+with the all-profile initial-state and COD-destination audits, this leaves no
+semantic mutation that can introduce a nonzero entry. Profile retention and
+save/load copy existing state, so legitimate saves derived from a new game
+preserve zero and cannot make the BAS path reachable. A tampered or foreign save
+with an injected nonzero field is not covered. No runtime gate was removed or
+weakened.
 
 ## Options and Saves
 
@@ -571,7 +583,7 @@ order at each supported roster size from 1 through 16, always including CANCEL.
 It checks panel bounds, nonblank glyphs confined to their panel, all 3,800 row
 clicks against expected item indices, and cancellation without item selection.
 These use the original font and shared BBB list planner, not a live gameplay run.
-Other object-name surfaces and BAS descriptions remain untranslated.
+Other object-name surfaces and the dormant BAS descriptions remain untranslated.
 
 ## Timed Sequence Captions
 

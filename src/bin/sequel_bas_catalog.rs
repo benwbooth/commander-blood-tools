@@ -109,5 +109,15 @@ mod tests {
                 dictionary_offset: 0x1f00,
             }
         );
+        for profile in 1..=17 {
+            let dictionary = decode_script_dictionary(
+                &std::fs::read(root.join(format!("SCRIPT{profile}.DIC"))).unwrap(),
+            )
+            .unwrap();
+            assert!(
+                decode_script_bas(&bas, &dictionary).is_err(),
+                "SCRIPT2.BAS unexpectedly decodes with SCRIPT{profile}.DIC"
+            );
+        }
     }
 }
