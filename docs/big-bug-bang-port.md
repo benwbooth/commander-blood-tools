@@ -246,6 +246,32 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_ca_cb_use_shared_signed_host_clock_guards
 ```
 
+BBB's CE, CF, D0, D1 and D2 entries resolve to the inherited environment
+family at `0x69AC..0x69E6`. `big_bug_bang_environment_oracle.py` verifies all
+five dispatch-table entries and executes the original handlers in 362 cases.
+The 90 activity-guard cases cover all three native globals, clear and set low
+bits, unrelated high bits, preserved nonzero query bytes, and one- and
+two-level guard stacks through the real `0x697A..0x6993` failure helper. Sixteen
+CF cases cover zero, low, high and mixed values in both cleared resume globals.
+The remaining 256 cases execute D2 for every encoded signed operand and check
+its one-byte cursor advance and exact zero-based request word.
+
+The Rust regression frames each instruction with `ScriptDialect::BigBugBang`
+and compares the vectors through the shared `ScriptEnvironmentActivity`,
+`ScriptRuntime`, and `ScriptProfileRequestSlot`. D2 retains the previously
+verified 17-profile BBB validation domain while Commander remains limited to
+its own profile table. Raw high query bits have no independent typed owner;
+the comparison preserves their observed low-bit semantics rather than claiming
+an arbitrary byte-for-byte runtime representation.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_environment_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_environment.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_ce_d2_handlers_match_original_environment_vectors
+```
+
 BBB's C1 dispatch entry retains the inherited `0x7752..0x7884`
 navigation-record handler. `big_bug_bang_record_state_oracle.py` executes the
 unmodified handler with its real owner, field, distance, position, source-list,
