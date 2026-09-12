@@ -272,6 +272,33 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_ce_d2_handlers_match_original_environment_vectors
 ```
 
+BBB's CD entry resolves to the inherited `0x75CD..0x76AD` transfer handler.
+`big_bug_bang_transfer_oracle.py` executes it with the real owner and field
+lookups, aboard-list removal and insertion, guard-failure helper, DESCRIPT
+parser, and entered descriptor helpers in 600 cases. The query matrix covers
+exact and mismatched triples, both inversion states, preserved nonzero query
+bytes, both possible source owners, and one- and two-level guard stacks. The
+assignment matrix crosses source and destination ownership, actor, inventory
+and location items, ignored active-flag values, empty, duplicate and full
+rosters, and all interface, request and descriptor-result gates. DOS reads use
+an owned synthetic descriptor database; no helper result or executable byte is
+replaced.
+
+The Rust regression reconstructs BBB-sized DEB and VAR records, decodes every
+CD token with the sequel dialect, and compares the shared `apply_transfer`
+state: record queries, holder changes, roster ordering, presentation requests,
+guard control, request bits, and cursor movement. The earlier sequel inventory
+transfer probes exercise a different selection procedure and did not establish
+this opcode behavior.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_transfer_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_transfer.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_cd_uses_shared_typed_transfer_state
+```
+
 BBB's C1 dispatch entry retains the inherited `0x7752..0x7884`
 navigation-record handler. `big_bug_bang_record_state_oracle.py` executes the
 unmodified handler with its real owner, field, distance, position, source-list,
