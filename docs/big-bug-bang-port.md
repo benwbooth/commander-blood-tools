@@ -221,6 +221,31 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_ca_cb_use_shared_signed_host_clock_guards
 ```
 
+BBB's C1 dispatch entry retains the inherited `0x7752..0x7884`
+navigation-record handler. `big_bug_bang_record_state_oracle.py` executes the
+unmodified handler with its real owner, field, distance, position, source-list,
+link-bit, square-root and guard-failure helpers in 624 cases. The matrix covers
+direct and special-operand queries, ignored third words, inversion and nonzero
+mode bytes; direct assignments; both special aliases; same and different
+positions; wrong and navigation parents; empty and occupied destinations; and
+unknown, player and actor source-list gates. The Rust regression reconstructs
+the complete 15-object BBB-sized fixture, decodes each C1 token, and applies it
+through the shared typed record and navigation state.
+
+The executable also has a shipped epilogue defect: successful queries and
+exhausted source scans jump to `0x7882` without restoring the handler's saved SI
+and DS words. The oracle stops at that shared epilogue and records the bad frame
+separately from the logical cursor. Rust intentionally preserves the observable
+Continue result without corrupting its call frame.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_record_state_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_record_state.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_c1_uses_shared_typed_record_state
+```
+
 BBB's C3-C8 action-record handlers retain the inherited typed decision rules.
 `big_bug_bang_action_record_oracle.py` executes all six original handlers with
 their real owner lookup, field lookup and guard-failure helpers in 996 cases.

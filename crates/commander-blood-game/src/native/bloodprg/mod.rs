@@ -524,6 +524,8 @@ mod sequel_inventory_choice_oracle;
 #[cfg(test)]
 mod sequel_record_pair_oracle;
 #[cfg(test)]
+mod sequel_record_state_oracle;
+#[cfg(test)]
 mod sequel_sequence_procedure_oracle;
 #[cfg(test)]
 mod sequel_sequence_request_oracle;
