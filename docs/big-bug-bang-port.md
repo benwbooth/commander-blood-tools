@@ -48,13 +48,17 @@ not a substitute for this gate. The CB ledger's 521 recovered routines do not
 constitute a BBB routine inventory or prove inherited handlers unchanged.
 
 Outstanding coverage work includes BBB-specific native routine ownership and
-comparison and inherited VM handler semantics. The changed AMER/CROOLIS overlay
-images now have the bounded native frame comparison described below. Modern
-typed VM source, English text coverage, and the unreachable-BAS result do not
-close those native obligations. The explicit BBB unified source path now
-reproduces all 68 active COD/DEB/DIC/VAR resources and the 44,676-byte DESCRIPT
-database, as detailed below; the default CB walker and retired interpreter have
-not been switched to BBB.
+comparison outside the VM dispatch. Every defined A0-D7 dispatch entry now has
+a guarded original-BBB executable comparison against its typed Rust owner,
+including the A6 publication state detailed below. That bounded opcode ledger
+does not prove pre/post-frame orchestration, every malformed-input behavior, or
+the wider simulation and presentation runtime. The changed AMER/CROOLIS overlay
+images have the bounded native frame comparison described below. Modern typed
+VM source, English text coverage, and the unreachable-BAS result do not close
+those wider native obligations. The explicit BBB unified source path reproduces
+all 68 active COD/DEB/DIC/VAR resources and the 44,676-byte DESCRIPT database,
+as detailed below; the default CB walker and retired interpreter have not been
+switched to BBB.
 
 ### Changed AMER and CROOLIS Overlays
 
@@ -2128,6 +2132,9 @@ record-kind, menu/subtitle and empty-inventory gates; both initial handoff-lock
 states; and consecutive A6 handlers. The comparisons check full VAR at that
 same pre-scan boundary, mutable COD activation flags, traversal end/cursor,
 resume state, yield signals, request flags, VM state and both presentation gates.
+They also compare the signed presentation selector, spoken/voice/chatter state,
+subtitle bytes and reveal cursor, hold and pending-menu state, encoded menu-word
+count, and the exact source words reached through the native menu far pointer.
 No original handler is patched or replaced. Pre-frame preparation and the
 subsequent selection/actor scans are outside this capture, so it does not prove
 whole-frame or initialized startup parity. AA/AC's distinct signal-1 return
@@ -3342,8 +3349,8 @@ sequence comparison and deliberate navigation remain necessary.
 
 ## Remaining Completion Requirements
 
-- Extend native comparison coverage across remaining inherited VM and runtime
-  handlers, including skip, state, presentation and conversation semantics.
+- Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
+  into surrounding frame, runtime, presentation and conversation routines.
   Game-specific startup, profile switching, missing BAS ownership and SCRIPT2's
   adjacent read-only directory word are implemented, but those component results
   do not prove every cross-profile route.

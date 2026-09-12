@@ -32,6 +32,20 @@ struct Vector {
     resume: u8,
     saved_cursor: usize,
     request: u8,
+    selector: i16,
+    spoken: u8,
+    voice: u8,
+    chatter: u8,
+    menu_deferred: u8,
+    subtitle_active: u8,
+    hold_ready: u8,
+    subtitle_cursor: u16,
+    subtitle: Vec<u8>,
+    menu_pending: u8,
+    menu_chatter_pending: u8,
+    menu_word_count: usize,
+    menu_source_offset: usize,
+    menu_source_segment: u16,
 }
 
 fn hex(value: &str) -> Vec<u8> {
@@ -410,6 +424,114 @@ fn sequel_a6_outer_loop_matches_original_vm_pause_and_handoff_lock() {
             "{}",
             vector.name
         );
+        assert_eq!(
+            dispatch.text_presentation.selected_line.map(i16::from),
+            (vector.selector != -1).then_some(vector.selector),
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.subtitle_word_list_mode,
+            vector.spoken != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.subtitle_voice_trigger,
+            vector.voice != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.dialogue_chatter_active,
+            vector.chatter != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.menu_deferred,
+            vector.menu_deferred != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.subtitle_display_active,
+            vector.subtitle_active != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.hold_ready,
+            vector.hold_ready != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch
+                .text_presentation
+                .subtitle_reveal_cursor
+                .unwrap_or(0),
+            usize::from(vector.subtitle_cursor),
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.subtitle_text.as_ref(),
+            vector.subtitle,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.menu_pending,
+            vector.menu_pending != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.dialogue_chatter_seed_pending,
+            vector.menu_chatter_pending != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            dispatch.text_presentation.menu_word_count, vector.menu_word_count,
+            "{}",
+            vector.name
+        );
+        if vector.mode == "menu" && vector.gate == "none" {
+            assert_eq!(vector.menu_source_segment, (0x40000 / 16) as u16);
+            let expected_words = code
+                .tokens()
+                .first()
+                .unwrap()
+                .encoded_bytes()
+                .get(vector.menu_source_offset..)
+                .unwrap()
+                .chunks_exact(2)
+                .map(|word| u16::from_le_bytes(word.try_into().unwrap()))
+                .take_while(|&word| word != 0)
+                .collect::<Vec<_>>();
+            let actual_words = dispatch
+                .text_presentation
+                .menu_words
+                .iter()
+                .map(|word| match word {
+                    commander_blood_formats::instruction::ScriptTextWord::Dictionary(id) => {
+                        dictionary.source_offset(*id).unwrap()
+                    }
+                    commander_blood_formats::instruction::ScriptTextWord::SectionSeparator => {
+                        u16::MAX
+                    }
+                    commander_blood_formats::instruction::ScriptTextWord::InventoryChoices => {
+                        0xFFFE
+                    }
+                    commander_blood_formats::instruction::ScriptTextWord::StateNumber(number) => {
+                        number.source_offset()
+                    }
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(actual_words, expected_words, "{}", vector.name);
+        }
         assert_eq!(
             runtime.selector_resume_active(),
             vector.resume & 2 != 0,

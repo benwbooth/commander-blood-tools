@@ -128,7 +128,16 @@ def run(executable, mode, gate, locked, twice):
                 vm=after[0x6B7E], start_locked=after[0x6B8D], c2_gate=after[0x2200],
                 yield_signals=yields, entries=entries, end_marker=ended,
                 cursor=cpu.reg_read(UC_X86_REG_SI) - int(ended), resume=after[0x6B87],
-                saved_cursor=word(after, 0x6B4C), request=after[0x6B80])
+                saved_cursor=word(after, 0x6B4C), request=after[0x6B80],
+                selector=struct.unpack_from("<h", after, 0x21F9)[0],
+                spoken=after[0x6B8F], voice=after[0xF49], chatter=after[0xF48],
+                menu_deferred=after[0x6B86], subtitle_active=after[0x6234],
+                hold_ready=after[0x6B92], subtitle_cursor=word(after, 0x6228),
+                subtitle=list(after[0x1066:0x10E6].split(b"\0", 1)[0]),
+                menu_pending=after[0x2201], menu_chatter_pending=after[0xF47],
+                menu_word_count=word(after, 0x2A6F),
+                menu_source_offset=word(after, 0x6B1A),
+                menu_source_segment=word(after, 0x6B1C))
 
 
 def main():
