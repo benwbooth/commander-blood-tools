@@ -1307,6 +1307,8 @@ fn comparison_boundary_values(operator: ScriptStateOperator, operand: u16) -> Ve
         }
         ScriptStateOperator::Add
         | ScriptStateOperator::Subtract
+        | ScriptStateOperator::Multiply
+        | ScriptStateOperator::Divide
         | ScriptStateOperator::PreserveOrFail(_) => {}
     }
     values

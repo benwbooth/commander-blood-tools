@@ -399,19 +399,15 @@ impl OriginalGameData {
         writable_root: impl Into<PathBuf>,
     ) -> Result<Self> {
         let writable_root = writable_root.into();
-        // The editable source compiler currently owns Commander only. The sequel
-        // runs its original typed scripts; never compile Commander source over them.
-        let mut verified_scripts = match paths.manifest().game {
-            GameVariant::CommanderBlood => Some(
-                prepare_verified_script_artifacts(
-                    paths.descript(),
-                    paths.resource_root(),
-                    &writable_root,
-                )
-                .context("checking editable game-script sources")?,
-            ),
-            GameVariant::BigBugBang => None,
-        };
+        let mut verified_scripts = Some(
+            prepare_verified_script_artifacts(
+                paths.manifest().game,
+                paths.descript(),
+                paths.resource_root(),
+                &writable_root,
+            )
+            .context("checking editable game-script sources")?,
+        );
         if let Some(scripts) = &verified_scripts
             && scripts.rebuilt_unit_count != 0
         {
@@ -812,20 +808,23 @@ mod tests {
         assert_eq!(paths.manifest().game, GameVariant::BigBugBang);
         assert!(paths.executable().ends_with("BLOOD2PG.EXE"));
         assert!(paths.title().ends_with("BLOOD2.LBM"));
-        let temporary = TemporaryRoot(
-            std::env::temp_dir().join(format!(
-                "bbb-bootstrap-{}-{}",
-                std::process::id(),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos()
-            )),
-        );
+        let temporary = TemporaryRoot(std::env::temp_dir().join(format!(
+            "bbb-bootstrap-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        )));
         std::fs::create_dir(&temporary.0).unwrap();
         let data = OriginalGameData::load_with_writable_root(paths, &temporary.0).unwrap();
         assert_eq!(data.game(), GameVariant::BigBugBang);
-        assert!(!temporary.0.join("compiled-scripts-v1").exists());
+        let compiled = temporary.0.join("compiled-scripts-v1");
+        if compiled.is_dir() {
+            assert_eq!(std::fs::read_dir(&compiled).unwrap().count(), 68);
+        }
+        assert!(!compiled.join("DESCRIPT.DES").exists());
+        assert!(!compiled.join("SCRIPT1.BAS").exists());
         let cod = std::fs::read(source.join("resources/SCRIPT1.COD")).unwrap();
         assert_eq!(
             data.load_named_resource(b"SCRIPT1.COD").unwrap().as_ref(),

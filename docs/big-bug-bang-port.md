@@ -147,9 +147,9 @@ nix develop -c cargo run -p commander-blood-script-compiler --example recover_bb
 ```
 
 The earlier standalone COD files remain useful intermediate output. The
-canonical sources are now the unified profiles described next. Production
-startup integration remains incomplete. Byte-identical source compilation does
-not establish complete native behavior or a complete playthrough.
+canonical sources are now the unified profiles described next. Byte-identical
+source compilation does not establish complete native behavior or a complete
+playthrough.
 
 Verification for the structured checkpoint: the real all-profile corpus test,
 all five CFG tests, and all 34 BloodScript tests pass. The broader root-library
@@ -191,6 +191,24 @@ independently cover resource ownership, extended record sizes, `opponent`,
 `settler`, and the full CP437 byte codec. Numeric BBB presentation selectors
 remain numeric because Commander Blood's symbolic presentation catalog is not
 valid evidence for the sequel.
+
+### Production BBB Source Verification
+
+Production startup now selects editable script sources by game identity.
+Commander Blood keeps its five profiles and editable DESCRIPT resource; Big Bug
+Bang selects the 17 profiles under `re/vm/big-bug-bang-profiles` and owns only
+COD, DEB, DIC and VAR. A newer BBB source is compiled, compared byte for byte
+with each original resource, and installed in the existing per-game verified
+cache. Any difference aborts startup before the compiled bytes can become a
+runtime override. BBB startup does not compile Commander sources, emit BAS, or
+claim an editable DESCRIPT source.
+
+The package installs both profile sets. An asset-free layout test checks their
+separate counts, dialects and resource ownership. The original-resource cache
+test compiles all 17 BBB profiles through the startup artifact path and requires
+exactly 68 named overrides, 17 rebuilt units, and no BAS or DESCRIPT cache file.
+The production bootstrap test exercises the same game-identity selection while
+continuing to verify that loaded COD bytes equal the shipped resource.
 
 ### Izwalito's Treaty Purchase
 
@@ -2918,9 +2936,11 @@ no-input run. SCRIPT2 acceptance remains unresolved.
 The production path now selects the executable and title from game identity,
 checks the analyzed sequel executable hash before media normalization, and uses
 the sequel's writable namespace by default. The SDL window title also identifies
-the selected game. Commander keeps its editable, byte-verified script compiler;
-BBB loads its original typed COD/DEB/DIC/VAR/DESCRIPT resources without compiling
-Commander sources over them. Editable sequel source remains unfinished.
+the selected game. Production source verification is game-specific: Commander
+keeps its editable DESCRIPT and five script profiles, while BBB checks its 17
+editable COD/DEB/DIC/VAR profiles without compiling Commander sources or
+claiming an editable DESCRIPT resource. Unchanged scripts continue to load the
+original disc bytes.
 
 With no writable `BLOOD.SAV`, BBB retains the ten native slot records embedded
 at executable file offset `0x1206B` (GS:`0x287B`). This is not an invented empty
@@ -2967,34 +2987,26 @@ sequence comparison and deliberate navigation remain necessary.
 
 ## Remaining Completion Requirements
 
-- Compare inherited VM handlers, including
-  skip, state, presentation and conversation semantics. Integrate the native
-  simulation countdown lifecycle required by D4-D6. Add native oracle coverage.
-- Complete production startup and runtime profile changes using game identity
-  and the recovered sequel catalogs/layouts; resolve missing-resource
-  behavior and the extra SCRIPT2 state word before claiming complete loading.
-- Recover the actual conversation representation and produce readable,
-  hand-editable French source with byte-exact COD/BAS/DEB/DIC/VAR/DESCRIPT
-  reproduction where those resources are active. No raw fallback as completion.
+- Extend native comparison coverage across remaining inherited VM and runtime
+  handlers, including skip, state, presentation and conversation semantics.
+  Game-specific startup, profile switching, missing BAS ownership and SCRIPT2's
+  adjacent read-only directory word are implemented, but those component results
+  do not prove every cross-profile route.
+- Recover readable, hand-editable DESCRIPT source with byte-exact reproduction.
+  The 17 active COD/DEB/DIC/VAR sets now have unified exact source, while the lone
+  dormant BAS remains preserved under its separate ownership proof.
 - Port remaining changed native simulation, travel, interface and presentation
   behavior. The bounded AMER/CROOLIS asset and runtime frame comparison is
   complete as described above. Validate new media through the library-only
   import path and existing SDL3/wgpu rendering.
-- Provide game selection and separate asset caches, save identities and source
-  checksum manifests so the games cannot contaminate each other's state.
-- Extract contextual complete messages and UI text into a stable localization
-  catalog, translate French to English, preserve logical IDs, and verify English
-  rendering, wrapping, interaction and subtitle timing. An English first pass now
-  covers the opening profile's 89 A6 sites in
-  `localization/big-bug-bang/en/script1.json`, with source-hash, site, section, and
-  choice-count validation. The COD backend now substitutes English after accepted
-  subtitle publication, preserving semantic/choice words and falling back on
-  nonmatching resources. Menu-only prose and choice labels are not rendered in
-  English yet; accepting BBB in the loader does not establish a playable English
-  release. The other 16 COD profiles
-  and the non-COD text remain untranslated. See
-  `localization/big-bug-bang/README.md` for the validation command and editorial
-  limitations.
+- Keep game selection, separate asset caches, save identities and source
+  checksum manifests covered as packaging and runtime behavior evolve.
+- Complete contextual and live coverage for English rendering, interaction and
+  subtitle timing. Display catalogs now cover all 6,921 COD text sites across
+  all 17 profiles plus the tracked non-COD layers, preserving logical IDs and
+  source-hash fallback. This is broad source coverage, not a verified complete
+  English playthrough; see `localization/big-bug-bang/README.md` for the remaining
+  editorial and route limitations.
 - Capture the original sequel in DOS and compare Rust behavior through startup,
   dialogue, travel, added gameplay and completion paths. Keep Commander regression
   coverage running alongside it. No whole-game parity claim from format tests.

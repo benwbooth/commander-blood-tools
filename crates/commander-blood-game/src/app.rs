@@ -233,7 +233,7 @@ fn print_usage() {
          CBLOOD_DATA may point to the original game-data directory.\n\
          CBLOOD_ASSET_CACHE may select the versioned imported loose-asset directory.\n\
          CBLOOD_WRITE_DATA may point to the writable save-data directory.\n\
-         CBLOOD_SCRIPT_SOURCE may select an editable Commander Blood re source directory."
+         CBLOOD_SCRIPT_SOURCE may select an editable game-script re source directory."
     );
 }
 

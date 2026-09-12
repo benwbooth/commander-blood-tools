@@ -7,16 +7,19 @@ use std::time::SystemTime;
 
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::archive::BloodResourceName;
-use commander_blood_script_compiler::{compile_descript, compile_profile};
+use commander_blood_script_compiler::{ProfileDialect, compile_descript, compile_profile};
 use sha2::{Digest, Sha256};
+
+use crate::game::GameVariant;
 
 const SCRIPT_SOURCE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_SCRIPT_SOURCE";
 const COMPILED_SCRIPT_CACHE_DIRECTORY: &str = "compiled-scripts-v1";
 const DESCRIPT_SOURCE_RELATIVE_PATH: &str = "descript/DESCRIPT.descript";
-const VM_SOURCE_DIRECTORY_RELATIVE_PATH: &str = "vm/profiles";
+const COMMANDER_VM_SOURCE_DIRECTORY_RELATIVE_PATH: &str = "vm/profiles";
+const SEQUEL_VM_SOURCE_DIRECTORY_RELATIVE_PATH: &str = "vm/big-bug-bang-profiles";
 const DESCRIPT_COMPILED_FILENAME: &str = "DESCRIPT.DES";
-const SCRIPT_COUNT: usize = 5;
-const SCRIPT_EXTENSIONS: [&str; 5] = ["COD", "BAS", "DEB", "DIC", "VAR"];
+const COMMANDER_SCRIPT_EXTENSIONS: [&str; 5] = ["COD", "BAS", "DEB", "DIC", "VAR"];
+const SEQUEL_SCRIPT_EXTENSIONS: [&str; 4] = ["COD", "DEB", "DIC", "VAR"];
 
 type CompiledImage = (String, Vec<u8>);
 type PreparedUnit = (Vec<CompiledImage>, bool);
@@ -29,8 +32,18 @@ pub(crate) struct VerifiedScriptArtifacts {
 
 #[derive(Clone, Debug)]
 struct ScriptSourcePaths {
-    descript: PathBuf,
+    descript: Option<PathBuf>,
     profiles: PathBuf,
+    layout: ScriptSourceLayout,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ScriptSourceLayout {
+    descript: Option<&'static str>,
+    profiles: &'static str,
+    profile_count: usize,
+    profile_dialect: ProfileDialect,
+    profile_extensions: &'static [&'static str],
 }
 
 #[derive(Debug)]
@@ -40,13 +53,14 @@ struct ArtifactSpec {
 }
 
 impl ScriptSourcePaths {
-    fn discover() -> Result<Self> {
+    fn discover(game: GameVariant) -> Result<Self> {
         if let Some(explicit_root) = std::env::var_os(SCRIPT_SOURCE_ENVIRONMENT_VARIABLE) {
             let root = PathBuf::from(explicit_root);
-            return Self::from_root(&root).with_context(|| {
+            return Self::from_root(&root, game).with_context(|| {
                 format!(
-                    "resolving {SCRIPT_SOURCE_ENVIRONMENT_VARIABLE} source root {}",
-                    root.display()
+                    "resolving {SCRIPT_SOURCE_ENVIRONMENT_VARIABLE} source root {} for {}",
+                    root.display(),
+                    game.title()
                 )
             });
         }
@@ -60,7 +74,7 @@ impl ScriptSourcePaths {
         candidates.push(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../re"));
 
         for candidate in &candidates {
-            if let Ok(paths) = Self::from_root(candidate) {
+            if let Ok(paths) = Self::from_root(candidate, game) {
                 return Ok(paths);
             }
         }
@@ -71,71 +85,127 @@ impl ScriptSourcePaths {
             .collect::<Vec<_>>()
             .join(", ");
         bail!(
-            "editable Commander Blood script sources were not found; set {SCRIPT_SOURCE_ENVIRONMENT_VARIABLE} to the re source directory (searched {searched})"
+            "editable {} script sources were not found; set {SCRIPT_SOURCE_ENVIRONMENT_VARIABLE} to the re source directory (searched {searched})",
+            game.title()
         )
     }
 
-    fn from_root(root: &Path) -> Result<Self> {
+    fn from_root(root: &Path, game: GameVariant) -> Result<Self> {
         let root = if root.join("re").is_dir() {
             root.join("re")
         } else {
             root.to_owned()
         };
-        let descript = root.join(DESCRIPT_SOURCE_RELATIVE_PATH);
-        let profiles = root.join(VM_SOURCE_DIRECTORY_RELATIVE_PATH);
-        if !descript.is_file() {
+        let layout = ScriptSourceLayout::for_game(game);
+        let descript = layout.descript.map(|path| root.join(path));
+        if let Some(descript) = &descript
+            && !descript.is_file()
+        {
             bail!("DESCRIPT source is missing: {}", descript.display());
         }
+        let profiles = root.join(layout.profiles);
         if !profiles.is_dir() {
             bail!(
                 "BloodScript source directory is missing: {}",
                 profiles.display()
             );
         }
-        for script in 1..=SCRIPT_COUNT {
+        for script in 1..=layout.profile_count {
             let source = profiles.join(format!("script{script}.blood"));
             if !source.is_file() {
                 bail!("BloodScript source is missing: {}", source.display());
             }
         }
-        Ok(Self { descript, profiles })
+        Ok(Self {
+            descript,
+            profiles,
+            layout,
+        })
+    }
+}
+
+impl ScriptSourceLayout {
+    const fn for_game(game: GameVariant) -> Self {
+        match game {
+            GameVariant::CommanderBlood => Self {
+                descript: Some(DESCRIPT_SOURCE_RELATIVE_PATH),
+                profiles: COMMANDER_VM_SOURCE_DIRECTORY_RELATIVE_PATH,
+                profile_count: 5,
+                profile_dialect: ProfileDialect::CommanderBlood,
+                profile_extensions: &COMMANDER_SCRIPT_EXTENSIONS,
+            },
+            GameVariant::BigBugBang => Self {
+                descript: None,
+                profiles: SEQUEL_VM_SOURCE_DIRECTORY_RELATIVE_PATH,
+                profile_count: 17,
+                profile_dialect: ProfileDialect::BigBugBang,
+                profile_extensions: &SEQUEL_SCRIPT_EXTENSIONS,
+            },
+        }
     }
 }
 
 pub(crate) fn prepare_verified_script_artifacts(
+    game: GameVariant,
     canonical_descript: &Path,
     canonical_resource_root: &Path,
     writable_root: &Path,
 ) -> Result<VerifiedScriptArtifacts> {
-    let sources = ScriptSourcePaths::discover()?;
+    let sources = ScriptSourcePaths::discover(game)?;
+    prepare_verified_script_artifacts_from_sources(
+        &sources,
+        canonical_descript,
+        canonical_resource_root,
+        writable_root,
+    )
+}
+
+fn prepare_verified_script_artifacts_from_sources(
+    sources: &ScriptSourcePaths,
+    canonical_descript: &Path,
+    canonical_resource_root: &Path,
+    writable_root: &Path,
+) -> Result<VerifiedScriptArtifacts> {
     let cache_root = writable_root.join(COMPILED_SCRIPT_CACHE_DIRECTORY);
     let mut rebuilt_unit_count = 0;
 
-    let descript_specs = [ArtifactSpec {
-        filename: DESCRIPT_COMPILED_FILENAME.to_owned(),
-        canonical_path: canonical_descript.to_owned(),
-    }];
-    let (descript_images, descript_rebuilt) =
-        prepare_unit(&sources.descript, &descript_specs, &cache_root, || {
-            let source = fs::read_to_string(&sources.descript)
-                .with_context(|| format!("reading {}", sources.descript.display()))?;
-            let image = compile_descript(&source)
-                .with_context(|| format!("compiling {}", sources.descript.display()))?;
-            Ok(vec![(DESCRIPT_COMPILED_FILENAME.to_owned(), image)])
-        })?;
-    rebuilt_unit_count += usize::from(descript_rebuilt);
+    let mut descript = None;
+    if let Some(source_path) = &sources.descript {
+        let descript_specs = [ArtifactSpec {
+            filename: DESCRIPT_COMPILED_FILENAME.to_owned(),
+            canonical_path: canonical_descript.to_owned(),
+        }];
+        let (descript_images, descript_rebuilt) =
+            prepare_unit(source_path, &descript_specs, &cache_root, || {
+                let source = fs::read_to_string(source_path)
+                    .with_context(|| format!("reading {}", source_path.display()))?;
+                let image = compile_descript(&source)
+                    .with_context(|| format!("compiling {}", source_path.display()))?;
+                Ok(vec![(DESCRIPT_COMPILED_FILENAME.to_owned(), image)])
+            })?;
+        rebuilt_unit_count += usize::from(descript_rebuilt);
+        descript = descript_images
+            .into_iter()
+            .next()
+            .map(|(_, bytes)| bytes.into_boxed_slice());
+    }
 
     let mut resources = BTreeMap::new();
-    for script in 1..=SCRIPT_COUNT {
+    for script in 1..=sources.layout.profile_count {
         let source_path = sources.profiles.join(format!("script{script}.blood"));
         let script_name = format!("SCRIPT{script}");
-        let specs = SCRIPT_EXTENSIONS.map(|extension| {
-            let filename = format!("{script_name}.{extension}");
-            ArtifactSpec {
-                canonical_path: canonical_resource_root.join(&filename),
-                filename,
-            }
-        });
+        let specs = sources
+            .layout
+            .profile_extensions
+            .iter()
+            .map(|extension| {
+                let filename = format!("{script_name}.{extension}");
+                ArtifactSpec {
+                    canonical_path: canonical_resource_root.join(&filename),
+                    filename,
+                }
+            })
+            .collect::<Vec<_>>();
         let (images, rebuilt) = prepare_unit(&source_path, &specs, &cache_root, || {
             let source = fs::read_to_string(&source_path)
                 .with_context(|| format!("reading {}", source_path.display()))?;
@@ -148,8 +218,26 @@ pub(crate) fn prepare_verified_script_artifacts(
                     profile.name
                 );
             }
-            Ok(SCRIPT_EXTENSIONS
-                .into_iter()
+            if profile.dialect != sources.layout.profile_dialect {
+                bail!(
+                    "{} declares {:?}, expected {:?}",
+                    source_path.display(),
+                    profile.dialect,
+                    sources.layout.profile_dialect
+                );
+            }
+            if profile.extensions() != sources.layout.profile_extensions {
+                bail!(
+                    "{} owns {:?}, expected {:?}",
+                    source_path.display(),
+                    profile.extensions(),
+                    sources.layout.profile_extensions
+                );
+            }
+            Ok(sources
+                .layout
+                .profile_extensions
+                .iter()
                 .map(|extension| {
                     (
                         format!("{script_name}.{extension}"),
@@ -169,10 +257,6 @@ pub(crate) fn prepare_verified_script_artifacts(
         }
     }
 
-    let descript = descript_images
-        .into_iter()
-        .next()
-        .map(|(_, bytes)| bytes.into_boxed_slice());
     Ok(VerifiedScriptArtifacts {
         descript,
         resources,
@@ -368,6 +452,72 @@ mod tests {
             filename: filename.to_owned(),
             canonical_path,
         }
+    }
+
+    #[test]
+    fn game_specific_source_layouts_separate_profile_ownership() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let commander = ScriptSourcePaths::from_root(&root, GameVariant::CommanderBlood).unwrap();
+        assert!(commander.descript.as_ref().unwrap().is_file());
+        assert_eq!(commander.layout.profile_count, 5);
+        assert_eq!(
+            commander.layout.profile_extensions,
+            COMMANDER_SCRIPT_EXTENSIONS
+        );
+        assert_eq!(
+            commander.layout.profile_dialect,
+            ProfileDialect::CommanderBlood
+        );
+
+        let sequel = ScriptSourcePaths::from_root(&root, GameVariant::BigBugBang).unwrap();
+        assert!(sequel.descript.is_none());
+        assert_eq!(sequel.layout.profile_count, 17);
+        assert_eq!(sequel.layout.profile_extensions, SEQUEL_SCRIPT_EXTENSIONS);
+        assert_eq!(sequel.layout.profile_dialect, ProfileDialect::BigBugBang);
+        assert_ne!(commander.profiles, sequel.profiles);
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang imported resources"]
+    fn sequel_rebuild_emits_exactly_its_68_active_profile_resources() {
+        let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let canonical = workspace.join("output/big-bug-bang/imported-assets/resources");
+        let source_root = workspace.join("re");
+        let sources = ScriptSourcePaths::from_root(&source_root, GameVariant::BigBugBang).unwrap();
+        let writable = TemporaryDirectory::create();
+
+        let artifacts = prepare_verified_script_artifacts_from_sources(
+            &sources,
+            &canonical.join(DESCRIPT_COMPILED_FILENAME),
+            &canonical,
+            &writable.0,
+        )
+        .unwrap();
+        assert!(artifacts.descript.is_none());
+        assert_eq!(artifacts.resources.len(), 68);
+        assert_eq!(artifacts.rebuilt_unit_count, 17);
+        assert!(
+            artifacts
+                .resources
+                .keys()
+                .all(|name| !name.as_bytes().ends_with(b".BAS"))
+        );
+
+        let cache = writable.0.join(COMPILED_SCRIPT_CACHE_DIRECTORY);
+        assert_eq!(fs::read_dir(&cache).unwrap().count(), 68);
+        assert!(!cache.join(DESCRIPT_COMPILED_FILENAME).exists());
+        assert!(!cache.join("SCRIPT2.BAS").exists());
+
+        let cached = prepare_verified_script_artifacts_from_sources(
+            &sources,
+            &canonical.join(DESCRIPT_COMPILED_FILENAME),
+            &canonical,
+            &writable.0,
+        )
+        .unwrap();
+        assert!(cached.descript.is_none());
+        assert_eq!(cached.resources, artifacts.resources);
+        assert_eq!(cached.rebuilt_unit_count, 0);
     }
 
     #[test]

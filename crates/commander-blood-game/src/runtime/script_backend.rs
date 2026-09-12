@@ -2031,7 +2031,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "known incomplete profile transition: retained VAR does not own SCRIPT2's time word"]
+    #[ignore = "requires original Big Bug Bang disc resources"]
     fn sequel_simulation_clock_reaches_production_dispatch_with_profile_local_bindings() {
         use crate::native::bloodprg::{
             OriginalResourceCache, ScriptDispatchHost, ScriptProfileManager,

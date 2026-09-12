@@ -144,11 +144,14 @@
                 ./crates/commander-blood-formats
                 ./crates/commander-blood-game
                 ./crates/commander-blood-script-compiler
+                ./localization
                 ./re/descript
+                ./re/vm/big-bug-bang-profiles
+                ./re/vm/contact-manifest
                 ./re/vm/profiles
               ];
             };
-            cargoHash = "sha256-k1GREP3U3MbJ4dlLACMH804wZWvkpaXi1bYUrfNPEZI=";
+            cargoHash = "sha256-8p/ViHO0Wp9Uh+AGG0gGgSqQCzM8+Tu0UJxRx6WMn4c=";
             cargoBuildFlags = [
               "-p"
               "commander-blood-game"
@@ -185,6 +188,9 @@
               mkdir -p "$out/share/commander-blood/re/vm/profiles"
               install -m444 re/vm/profiles/script*.blood \
                 "$out/share/commander-blood/re/vm/profiles/"
+              mkdir -p "$out/share/commander-blood/re/vm/big-bug-bang-profiles"
+              install -m444 re/vm/big-bug-bang-profiles/script*.blood \
+                "$out/share/commander-blood/re/vm/big-bug-bang-profiles/"
             '';
             postFixup = ''
               wrapProgram "$out/bin/commander-blood" \
