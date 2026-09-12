@@ -221,6 +221,26 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_ca_cb_use_shared_signed_host_clock_guards
 ```
 
+BBB's C3-C8 action-record handlers retain the inherited typed decision rules.
+`big_bug_bang_action_record_oracle.py` executes all six original handlers with
+their real owner lookup, field lookup and guard-failure helpers in 996 cases.
+The matrix covers query inversion and ignored third words; owner, related and
+reciprocal activity; C3 queue replacement; C4 player bypass and reciprocal
+collision; C5 world-state validation; C6 unconditional travel replacement;
+C7's empty-or-C4 destination rule; and C8's dormant zero marker. The Rust
+regression constructs BBB-sized actor and location records and applies every
+decoded token through the existing shared `ScriptActionRecords` functions.
+C2 remains separate because its assignment path owns the aboard roster and
+DESCRIPT-backed presentation effects.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_action_record_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_action_record.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_c3_c8_use_shared_typed_action_record_state
+```
+
 ### COD Source Recovery and Shared Arithmetic
 
 The source-first pass found a production translation discrepancy that route
