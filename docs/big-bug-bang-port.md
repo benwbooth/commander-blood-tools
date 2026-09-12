@@ -187,6 +187,24 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_b7_uses_shared_high_bit_first_flag_state
 ```
 
+BBB's B8, B9 and BD dispatch entries share the inherited
+`0x770C..0x7752` adjacent-word handler. The guarded
+`big_bug_bang_record_pair_oracle.py` harness executes that handler together
+with the real `0x6644..0x665E` owner lookup and failure helper in 720 cases.
+It covers exact and mismatched pairs, query bytes, all three aliases, and
+owner-matching, other-owner, and empty active references. The Rust regression
+uses a self-contained two-object BBB DEB/VAR layout and the shared
+`apply_record_pair_operation`, proving both bounded pair mutation and
+owner-scoped reference invalidation without original assets at test time.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_record_pair_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_record_pair.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_b8_b9_bd_use_shared_record_pair_state
+```
+
 ### COD Source Recovery and Shared Arithmetic
 
 The source-first pass found a production translation discrepancy that route
