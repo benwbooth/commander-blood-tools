@@ -520,6 +520,8 @@ mod sequel_bit_flag_oracle;
 #[cfg(test)]
 mod sequel_clock_oracle;
 #[cfg(test)]
+mod sequel_direct_record_oracle;
+#[cfg(test)]
 mod sequel_inventory_choice_oracle;
 #[cfg(test)]
 mod sequel_record_pair_oracle;

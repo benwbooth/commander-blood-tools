@@ -245,27 +245,27 @@ pub fn apply_direct_record_operation(
     if operation.publishes_value {
         record_runtime.published_value = Some(operation.value);
     }
-    if current == ScriptRecordValue::Aboard {
-        let owner = operation
-            .target
-            .object()
-            .ok_or(ScriptRecordError::MissingOwner {
-                field: operation.target,
-            })?;
-        remove_aboard_object(&mut record_runtime.aboard_objects, owner);
-        fields.set_value(operation.target, operation.value);
-        return Ok(ScriptControl::Continue);
-    }
-
     let requests_aboard = operation.value == ScriptRecordValue::Aboard
         || operation.value == ScriptRecordValue::Object(record_runtime.special_object);
+    let owner = if current == ScriptRecordValue::Aboard || requests_aboard {
+        Some(
+            operation
+                .target
+                .object()
+                .ok_or(ScriptRecordError::MissingOwner {
+                    field: operation.target,
+                })?,
+        )
+    } else {
+        None
+    };
+    if current == ScriptRecordValue::Aboard {
+        let owner = owner.expect("aboard fields require an owner");
+        remove_aboard_object(&mut record_runtime.aboard_objects, owner);
+    }
+
     let stored_value = if requests_aboard {
-        let owner = operation
-            .target
-            .object()
-            .ok_or(ScriptRecordError::MissingOwner {
-                field: operation.target,
-            })?;
+        let owner = owner.expect("aboard requests require an owner");
         if !insert_aboard_object(&mut record_runtime.aboard_objects, owner) {
             return Ok(ScriptControl::Continue);
         }

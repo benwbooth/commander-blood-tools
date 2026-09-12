@@ -170,6 +170,31 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_ae_b0_use_shared_masked_bit_state
 ```
 
+BBB's AD, AF, B2, B3, BA, BB and BC entries all resolve to the inherited
+`0x754E..0x75CD` direct-record handler. The guarded
+`big_bug_bang_direct_record_oracle.py` harness executes that handler with the
+real owner lookup, aboard-list removal and insertion, and guard-failure helpers
+in 912 cases. The matrix covers every alias; odd and preserved nonzero query
+bytes; every descriptor-valid inversion; object, aboard, special-player,
+native-word and dictionary-topic values; matching and mismatched fields; empty,
+duplicate and full aboard rosters; and BC's update-only publication side effect.
+The Rust regression decodes BBB tokens against a complete BBB-sized DEB, DIC
+and VAR fixture before applying the shared typed record state.
+
+This comparison exposed an inherited update ordering requirement absent from
+the older narrow fixture. Reassigning an already-aboard field to `aboard` or the
+special player first removes its owner and then inserts it again. The shared
+engine now preserves that roster membership and stores the typed aboard value;
+it also retains the old field when a full roster rejects a new insertion.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_direct_record_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_direct_record.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_direct_record_aliases_use_shared_typed_state
+```
+
 The inherited B7 handler at BBB `0x76AD..0x770C` uses the same high-bit-first
 byte addressing as Commander. `big_bug_bang_bit_flag_oracle.py` executes that
 handler and the real guard-failure helper in 400 cases over query bytes,
