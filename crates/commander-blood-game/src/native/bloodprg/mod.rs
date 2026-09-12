@@ -517,6 +517,8 @@ mod sequel_inventory_choice_oracle;
 mod sequel_sequence_procedure_oracle;
 #[cfg(test)]
 mod sequel_sequence_request_oracle;
+#[cfg(test)]
+mod sequel_shared_bit_oracle;
 pub use procedure::{
     SCRIPT_PROCEDURE_PATCH_RECORD_BYTE_COUNT, ScriptProcedureStateError, ScriptProcedureStates,
     apply_procedure_activation, apply_procedure_patch_stream, build_procedure_patch_stream,

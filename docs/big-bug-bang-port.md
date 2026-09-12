@@ -152,6 +152,24 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_a8_uses_shared_sequence_request_state
 ```
 
+BBB's AE and B0 dispatch entries both resolve to the inherited shared handler
+at `0x750A..0x754E`. `big_bug_bang_shared_bit_oracle.py` executes that handler
+and the real `0x697A..0x6993` failure helper in 480 cases across both opcodes,
+all low query/inversion combinations, preserved high query bits, zero and
+multi-bit masks, and boundary word values. The Rust regression decodes BBB
+tokens and applies them through the same typed `ScriptState`,
+`apply_shared_bit_operation`, and `ScriptRuntime` used by Commander. This
+proves the shared masked-bit domain; it does not yet cover the later
+shared-state or record-operation handler families.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_shared_bit_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_shared_bit.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_ae_b0_use_shared_masked_bit_state
+```
+
 ### COD Source Recovery and Shared Arithmetic
 
 The source-first pass found a production translation discrepancy that route
