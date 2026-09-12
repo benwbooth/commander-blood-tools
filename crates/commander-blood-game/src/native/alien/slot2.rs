@@ -2,7 +2,9 @@
 
 use std::fmt;
 
-use commander_blood_formats::alien::{AXIS_COUNT, AlienTrigonometryPair, TRIGONOMETRY_ENTRY_COUNT};
+use commander_blood_formats::alien::{
+    AXIS_COUNT, AlienTrigonometryPair, AlienXdbRevision, TRIGONOMETRY_ENTRY_COUNT,
+};
 
 use super::{
     AlienCallbackSceneState, AlienCameraAngles, AlienCameraTransform, AlienControlLatch,
@@ -76,6 +78,8 @@ const AMER_MOTION_CAMERA_X_MINIMUM: i16 = -1_500;
 const AMER_MOTION_CAMERA_X_MAXIMUM: i16 = 1_500;
 const AMER_MOTION_CAMERA_Z_MINIMUM: i16 = -1_000;
 const AMER_MOTION_CAMERA_Z_MAXIMUM: i16 = 1_500;
+const BBB_AMER_MOTION_CAMERA_X_MINIMUM: i16 = -1_000;
+const BBB_AMER_MOTION_CAMERA_Z_MINIMUM: i16 = -1_500;
 const AMER_SELECTION_DEPTH_MAXIMUM: u16 = 3_000;
 const AMER_SELECTION_CAMERA_X_MINIMUM: i16 = -1_000;
 const AMER_SELECTION_CAMERA_X_MAXIMUM: i16 = 1_000;
@@ -121,13 +125,17 @@ const CROOLIS_SELECTION_REQUIRED_NODE_COUNT: usize =
     CROOLIS_SELECTION_NODE_START + CROOLIS_SELECTION_NODE_COUNT;
 const CROOLIS_SELECTION_DEPTH_MAXIMUM: u16 = 1_500;
 const CROOLIS_SELECTION_FORWARD_MAXIMUM: i16 = -20_480;
+const BBB_CROOLIS_SELECTION_DEPTH_MAXIMUM: i16 = 1_500;
+const BBB_CROOLIS_SELECTION_FORWARD_MAXIMUM: i16 = -1_000;
 const CROOLIS_SELECTION_X_MINIMUM: i16 = -500;
 const CROOLIS_SELECTION_X_MAXIMUM: i16 = 500;
 const CROOLIS_SELECTION_DEPTH_BIAS: i32 = 100;
+const BBB_CROOLIS_SELECTION_DEPTH_BIAS: i32 = -600;
 const CROOLIS_SELECTION_TURN_STEP: i16 = 48;
 const CROOLIS_SELECTION_HEIGHT_HALF_SHIFT: u32 = 1;
 const CROOLIS_SELECTION_HEIGHT_EASING_SHIFT: u32 = 2;
 const CROOLIS_SELECTION_RADIAL_TARGET: i16 = 200;
+const BBB_CROOLIS_SELECTION_RADIAL_TARGET: i16 = 100;
 const CROOLIS_SELECTION_RADIAL_EASING_SHIFT: u32 = 2;
 const CROOLIS_SELECTION_PHASE_STEP: i16 = 16;
 const CROOLIS_SELECTION_PHASE_MASK: u16 = 0x007f;
@@ -867,10 +875,11 @@ pub fn update_amer_head(
     pose: &mut AlienModelPose,
     animation: &mut AlienSlot2AnimationState,
     scene: &AlienCallbackSceneState,
+    revision: AlienXdbRevision,
 ) -> Result<AlienAmerUpdateHead, AlienSlot2Error> {
     validate_state(AlienSpecies::Amer, pose, animation)?;
-    if scene.method_delta >= RESET_SIGNED_VALUE
-        && scene.wave_selection == AlienWaveSelection::Requested
+    if scene.wave_selection == AlienWaveSelection::Requested
+        && (revision == AlienXdbRevision::BigBugBang || scene.method_delta >= RESET_SIGNED_VALUE)
     {
         return Ok(AlienAmerUpdateHead::SelectionRequested);
     }
@@ -883,9 +892,17 @@ pub fn update_amer_head(
     let primary = &mut pose.nodes[PRIMARY_NODE];
     let camera_x = transformed_component(primary, X_AXIS);
     let camera_z = transformed_component(primary, Z_AXIS);
-    let in_motion_bounds = (AMER_MOTION_CAMERA_X_MINIMUM..=AMER_MOTION_CAMERA_X_MAXIMUM)
-        .contains(&camera_x)
-        && (AMER_MOTION_CAMERA_Z_MINIMUM..=AMER_MOTION_CAMERA_Z_MAXIMUM).contains(&camera_z);
+    let (camera_x_minimum, camera_z_minimum) = match revision {
+        AlienXdbRevision::CommanderBlood => {
+            (AMER_MOTION_CAMERA_X_MINIMUM, AMER_MOTION_CAMERA_Z_MINIMUM)
+        }
+        AlienXdbRevision::BigBugBang => (
+            BBB_AMER_MOTION_CAMERA_X_MINIMUM,
+            BBB_AMER_MOTION_CAMERA_Z_MINIMUM,
+        ),
+    };
+    let in_motion_bounds = (camera_x_minimum..=AMER_MOTION_CAMERA_X_MAXIMUM).contains(&camera_x)
+        && (camera_z_minimum..=AMER_MOTION_CAMERA_Z_MAXIMUM).contains(&camera_z);
     if !in_motion_bounds {
         return Ok(AlienAmerUpdateHead::ResetRequested);
     }
@@ -1061,6 +1078,7 @@ pub fn update_amer_common(
 pub fn update_croolis_motion(
     pose: &mut AlienModelPose,
     animation: &AlienSlot2AnimationState,
+    revision: AlienXdbRevision,
 ) -> Result<(), AlienSlot2Error> {
     validate_state(AlienSpecies::Croolis, pose, animation)?;
     if pose.nodes.len() < CROOLIS_MOTION_NODE_COUNT {
@@ -1072,8 +1090,11 @@ pub fn update_croolis_motion(
     let radial_target = animation.nodes[PRIMARY_NODE].radial_target;
     let primary = &mut pose.nodes[PRIMARY_NODE];
     let pitch = primary.angles[X_AXIS] as i16;
-    let desired_pitch = transformed_component(primary, Y_AXIS)
-        .wrapping_add(animation.species_seed_at_initialization as i16);
+    let desired_pitch = match revision {
+        AlienXdbRevision::CommanderBlood => transformed_component(primary, Y_AXIS)
+            .wrapping_add(animation.species_seed_at_initialization as i16),
+        AlienXdbRevision::BigBugBang => transformed_component(primary, Y_AXIS),
+    };
     let pitch_delta = desired_pitch.wrapping_sub(pitch);
     primary.angles[X_AXIS] = pitch
         .wrapping_add(pitch_delta >> CROOLIS_EASING_SHIFT)
@@ -1229,6 +1250,7 @@ pub fn update_croolis_selection(
     animation: &mut AlienSlot2AnimationState,
     scene: &mut AlienCallbackSceneState,
     camera_view_y: i16,
+    revision: AlienXdbRevision,
 ) -> Result<AlienCroolisSelectionUpdate, AlienSlot2Error> {
     validate_state(AlienSpecies::Croolis, pose, animation)?;
     if pose.nodes.len() < CROOLIS_SELECTION_REQUIRED_NODE_COUNT {
@@ -1263,14 +1285,31 @@ pub fn update_croolis_selection(
     let camera_x = transformed_component(primary, X_AXIS);
     let camera_z = transformed_component(primary, Z_AXIS);
     let forward_z = primary.transform.matrix[Z_AXIS][Z_AXIS];
-    let in_selection_bounds = (camera_z as u16) <= CROOLIS_SELECTION_DEPTH_MAXIMUM
-        && (forward_z as i16) <= CROOLIS_SELECTION_FORWARD_MAXIMUM
-        && (CROOLIS_SELECTION_X_MINIMUM..=CROOLIS_SELECTION_X_MAXIMUM).contains(&camera_x);
-    if !in_selection_bounds {
+    let in_depth_bounds = match revision {
+        AlienXdbRevision::CommanderBlood => {
+            (camera_z as u16) <= CROOLIS_SELECTION_DEPTH_MAXIMUM
+                && (forward_z as i16) <= CROOLIS_SELECTION_FORWARD_MAXIMUM
+        }
+        AlienXdbRevision::BigBugBang => {
+            camera_z <= BBB_CROOLIS_SELECTION_DEPTH_MAXIMUM
+                && (forward_z as i16) <= BBB_CROOLIS_SELECTION_FORWARD_MAXIMUM
+        }
+    };
+    if !in_depth_bounds {
         scene.slot2_selected_model = None;
         return Ok(reset(pose, animation));
     }
-    if scene.control_latch == AlienControlLatch::Model(model_index) {
+    let latch_owned = scene.control_latch == AlienControlLatch::Model(model_index);
+    if revision == AlienXdbRevision::BigBugBang && camera_z >= 0 && latch_owned {
+        scene.slot2_active = true;
+        scene.slot2_selected_model = None;
+        return Ok(reset(pose, animation));
+    }
+    if !(CROOLIS_SELECTION_X_MINIMUM..=CROOLIS_SELECTION_X_MAXIMUM).contains(&camera_x) {
+        scene.slot2_selected_model = None;
+        return Ok(reset(pose, animation));
+    }
+    if revision == AlienXdbRevision::CommanderBlood && latch_owned {
         scene.slot2_active = true;
         scene.slot2_selected_model = None;
         return Ok(reset(pose, animation));
@@ -1279,9 +1318,13 @@ pub fn update_croolis_selection(
     scene.slot2_selected_model = Some(model_index);
     let primary = &mut pose.nodes[PRIMARY_NODE];
     let forward_x = primary.transform.matrix[X_AXIS][Z_AXIS];
+    let depth_bias = match revision {
+        AlienXdbRevision::CommanderBlood => CROOLIS_SELECTION_DEPTH_BIAS,
+        AlienXdbRevision::BigBugBang => BBB_CROOLIS_SELECTION_DEPTH_BIAS,
+    };
     let score = i32::from(camera_x).wrapping_mul(forward_z).wrapping_sub(
         i32::from(camera_z)
-            .wrapping_add(CROOLIS_SELECTION_DEPTH_BIAS)
+            .wrapping_add(depth_bias)
             .wrapping_mul(forward_x),
     );
     let roll_step = if score < i32::default() {
@@ -1303,7 +1346,11 @@ pub fn update_croolis_selection(
     primary.angles[X_AXIS] = pitch
         .wrapping_add(pitch_delta >> CROOLIS_SELECTION_HEIGHT_EASING_SHIFT)
         .clamp(CROOLIS_PITCH_MINIMUM, CROOLIS_PITCH_MAXIMUM) as u16;
-    let radial_delta = CROOLIS_SELECTION_RADIAL_TARGET.wrapping_sub(primary.radial_offset);
+    let radial_target = match revision {
+        AlienXdbRevision::CommanderBlood => CROOLIS_SELECTION_RADIAL_TARGET,
+        AlienXdbRevision::BigBugBang => BBB_CROOLIS_SELECTION_RADIAL_TARGET,
+    };
+    let radial_delta = radial_target.wrapping_sub(primary.radial_offset);
     primary.radial_offset = primary
         .radial_offset
         .wrapping_add(radial_delta >> CROOLIS_SELECTION_RADIAL_EASING_SHIFT);
@@ -1335,6 +1382,7 @@ pub fn update_croolis_reset_or_camera(
     camera_depth_step: i16,
     trigonometry: &[AlienTrigonometryPair; TRIGONOMETRY_ENTRY_COUNT],
     camera_distance: i32,
+    revision: AlienXdbRevision,
 ) -> Result<AlienCroolisResetUpdate, AlienSlot2Error> {
     validate_state(AlienSpecies::Croolis, pose, animation)?;
     let primary = &mut pose.nodes[PRIMARY_NODE];
@@ -1381,9 +1429,14 @@ pub fn update_croolis_reset_or_camera(
         radial_score as u16
     };
 
-    let turn_score = vertical
-        .wrapping_mul(forward_z)
-        .wrapping_sub(horizontal.wrapping_mul(forward_x));
+    let turn_score = match revision {
+        AlienXdbRevision::CommanderBlood => vertical
+            .wrapping_mul(forward_z)
+            .wrapping_sub(horizontal.wrapping_mul(forward_x)),
+        AlienXdbRevision::BigBugBang => horizontal
+            .wrapping_mul(forward_z)
+            .wrapping_sub(horizontal.wrapping_mul(forward_x)),
+    };
     animation.croolis_motion_accumulator = if turn_score < i32::default() {
         CROOLIS_RESET_TURN_STEP
     } else {
@@ -3304,7 +3357,7 @@ mod tests {
             animation.croolis_motion_accumulator = vector.roll_velocity as i16;
             animation.nodes[PRIMARY_NODE].radial_target = vector.radial_target;
 
-            update_croolis_motion(&mut pose, &animation).unwrap();
+            update_croolis_motion(&mut pose, &animation, AlienXdbRevision::CommanderBlood).unwrap();
 
             let primary = &pose.nodes[PRIMARY_NODE];
             assert_eq!(
@@ -3343,6 +3396,33 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn big_bug_bang_croolis_motion_omits_the_commander_seed_bias() {
+        let mut commander_pose = pose(&[EMPTY_NODE_VECTOR; CROOLIS_MOTION_NODE_COUNT]);
+        commander_pose.nodes[PRIMARY_NODE].transform.translation[Y_AXIS] =
+            join_words(100, TRANSFORM_LOW_WORD_SENTINEL);
+        commander_pose.nodes[PRIMARY_NODE].angles[X_AXIS] = 0;
+        let mut big_bug_bang_pose = commander_pose.clone();
+        let mut animation = AlienSlot2AnimationState::new(CROOLIS_MOTION_NODE_COUNT);
+        animation.species_seed_at_initialization = 60;
+
+        update_croolis_motion(
+            &mut commander_pose,
+            &animation,
+            AlienXdbRevision::CommanderBlood,
+        )
+        .unwrap();
+        update_croolis_motion(
+            &mut big_bug_bang_pose,
+            &animation,
+            AlienXdbRevision::BigBugBang,
+        )
+        .unwrap();
+
+        assert_eq!(commander_pose.nodes[PRIMARY_NODE].angles[X_AXIS], 20);
+        assert_eq!(big_bug_bang_pose.nodes[PRIMARY_NODE].angles[X_AXIS], 12);
     }
 
     #[test]
@@ -4664,6 +4744,7 @@ mod tests {
                     &mut animation,
                     &mut scene,
                     vector.view_y as i16,
+                    AlienXdbRevision::CommanderBlood,
                 )
                 .unwrap(),
                 expected,
@@ -4731,6 +4812,83 @@ mod tests {
     }
 
     #[test]
+    fn big_bug_bang_croolis_selection_uses_its_changed_bounds_and_targets() {
+        let mut commander_pose = pose(&[EMPTY_NODE_VECTOR; CROOLIS_SELECTION_REQUIRED_NODE_COUNT]);
+        let primary = &mut commander_pose.nodes[PRIMARY_NODE];
+        primary.transform.translation[Z_AXIS] = join_words(500, TRANSFORM_LOW_WORD_SENTINEL);
+        primary.transform.matrix[X_AXIS][Z_AXIS] = 1;
+        primary.transform.matrix[Z_AXIS][Z_AXIS] = -30_000;
+        let mut big_bug_bang_pose = commander_pose.clone();
+        let mut commander_animation =
+            AlienSlot2AnimationState::new(CROOLIS_SELECTION_REQUIRED_NODE_COUNT);
+        let mut big_bug_bang_animation = commander_animation.clone();
+        let scene = AlienCallbackSceneState {
+            wave_selection: AlienWaveSelection::Requested,
+            ..AlienCallbackSceneState::default()
+        };
+        let mut commander_scene = scene.clone();
+        let mut big_bug_bang_scene = scene;
+
+        assert_eq!(
+            update_croolis_selection(
+                CURRENT_MODEL_INDEX,
+                &mut commander_pose,
+                &mut commander_animation,
+                &mut commander_scene,
+                0,
+                AlienXdbRevision::CommanderBlood,
+            )
+            .unwrap(),
+            AlienCroolisSelectionUpdate::Tracking
+        );
+        assert_eq!(
+            update_croolis_selection(
+                CURRENT_MODEL_INDEX,
+                &mut big_bug_bang_pose,
+                &mut big_bug_bang_animation,
+                &mut big_bug_bang_scene,
+                0,
+                AlienXdbRevision::BigBugBang,
+            )
+            .unwrap(),
+            AlienCroolisSelectionUpdate::Tracking
+        );
+        assert_eq!(commander_pose.nodes[PRIMARY_NODE].angles[Z_AXIS], 48);
+        assert_eq!(
+            big_bug_bang_pose.nodes[PRIMARY_NODE].angles[Z_AXIS],
+            (-48_i16) as u16
+        );
+        assert_eq!(commander_pose.nodes[PRIMARY_NODE].radial_offset, 50);
+        assert_eq!(big_bug_bang_pose.nodes[PRIMARY_NODE].radial_offset, 25);
+
+        let mut pose = pose(&[EMPTY_NODE_VECTOR; CROOLIS_SELECTION_REQUIRED_NODE_COUNT]);
+        let primary = &mut pose.nodes[PRIMARY_NODE];
+        primary.transform.translation[Z_AXIS] =
+            join_words((-1_i16) as u16, TRANSFORM_LOW_WORD_SENTINEL);
+        primary.transform.matrix[Z_AXIS][Z_AXIS] = -1_000;
+        let mut animation = AlienSlot2AnimationState::new(CROOLIS_SELECTION_REQUIRED_NODE_COUNT);
+        let mut scene = AlienCallbackSceneState {
+            control_latch: AlienControlLatch::Model(CURRENT_MODEL_INDEX),
+            wave_selection: AlienWaveSelection::Requested,
+            ..AlienCallbackSceneState::default()
+        };
+        assert_eq!(
+            update_croolis_selection(
+                CURRENT_MODEL_INDEX,
+                &mut pose,
+                &mut animation,
+                &mut scene,
+                0,
+                AlienXdbRevision::BigBugBang,
+            )
+            .unwrap(),
+            AlienCroolisSelectionUpdate::Tracking
+        );
+        assert_eq!(scene.slot2_selected_model, Some(CURRENT_MODEL_INDEX));
+        assert!(!scene.slot2_active);
+    }
+
+    #[test]
     fn croolis_reset_or_camera_matches_every_original_overlay_vector() {
         let vectors: Vec<CroolisResetVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/xdb_croolis_func_1960_natural.json"
@@ -4795,6 +4953,7 @@ mod tests {
                     vector.camera_depth_step as i16,
                     &trigonometry,
                     vector.distance,
+                    AlienXdbRevision::CommanderBlood,
                 )
                 .unwrap(),
                 expected,
@@ -4844,6 +5003,54 @@ mod tests {
     }
 
     #[test]
+    fn big_bug_bang_croolis_reset_uses_the_shipped_turn_score_register() {
+        let mut commander_pose = pose(&[EMPTY_NODE_VECTOR; PRIMARY_AND_FOLLOWER_NODE_COUNT]);
+        let primary = &mut commander_pose.nodes[PRIMARY_NODE];
+        primary.transform.translation[X_AXIS] = join_words(2_000, TRANSFORM_LOW_WORD_SENTINEL);
+        primary.transform.translation[Z_AXIS] = join_words(0, TRANSFORM_LOW_WORD_SENTINEL);
+        primary.transform.matrix[X_AXIS][Z_AXIS] = -100;
+        primary.transform.matrix[Z_AXIS][Z_AXIS] = 100;
+        let mut big_bug_bang_pose = commander_pose.clone();
+        let mut commander_animation =
+            AlienSlot2AnimationState::new(PRIMARY_AND_FOLLOWER_NODE_COUNT);
+        let mut big_bug_bang_animation = commander_animation.clone();
+        let camera = AlienCameraTransform::default();
+        let trigonometry = [AlienTrigonometryPair::default(); TRIGONOMETRY_ENTRY_COUNT];
+
+        update_croolis_reset_or_camera(
+            &mut commander_pose,
+            &mut commander_animation,
+            &camera,
+            AlienCameraAngles::default(),
+            0,
+            &trigonometry,
+            1_000,
+            AlienXdbRevision::CommanderBlood,
+        )
+        .unwrap();
+        update_croolis_reset_or_camera(
+            &mut big_bug_bang_pose,
+            &mut big_bug_bang_animation,
+            &camera,
+            AlienCameraAngles::default(),
+            0,
+            &trigonometry,
+            1_000,
+            AlienXdbRevision::BigBugBang,
+        )
+        .unwrap();
+
+        assert_eq!(
+            commander_animation.croolis_motion_accumulator,
+            -CROOLIS_RESET_TURN_STEP
+        );
+        assert_eq!(
+            big_bug_bang_animation.croolis_motion_accumulator,
+            CROOLIS_RESET_TURN_STEP
+        );
+    }
+
+    #[test]
     fn amer_update_head_matches_every_isolated_original_overlay_vector() {
         let vectors: Vec<AmerUpdateHeadVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/xdb_amer_func_1692_head_natural.json"
@@ -4882,7 +5089,13 @@ mod tests {
             };
 
             assert_eq!(
-                update_amer_head(&mut pose, &mut animation, &scene).unwrap(),
+                update_amer_head(
+                    &mut pose,
+                    &mut animation,
+                    &scene,
+                    AlienXdbRevision::CommanderBlood,
+                )
+                .unwrap(),
                 expected,
                 "{}",
                 vector.name
@@ -4900,6 +5113,97 @@ mod tests {
             assert_eq!(pose.nodes[PRIMARY_NODE].angles[X_AXIS], vector.pitch_after);
             assert_eq!(animation.callback, Some(AlienSlot2Callback::Update));
         }
+    }
+
+    #[test]
+    fn big_bug_bang_amer_head_uses_its_changed_gate_and_axis_bounds() {
+        let mut pose = pose(&[EMPTY_NODE_VECTOR]);
+        let mut animation = AlienSlot2AnimationState::new(1);
+        animation.phase_timer = 1;
+        let scene = AlienCallbackSceneState {
+            method_delta: -1,
+            wave_selection: AlienWaveSelection::Requested,
+            ..AlienCallbackSceneState::default()
+        };
+        assert_eq!(
+            update_amer_head(
+                &mut pose,
+                &mut animation,
+                &scene,
+                AlienXdbRevision::CommanderBlood,
+            )
+            .unwrap(),
+            AlienAmerUpdateHead::CommonRequested
+        );
+
+        animation.phase_timer = 1;
+        assert_eq!(
+            update_amer_head(
+                &mut pose,
+                &mut animation,
+                &scene,
+                AlienXdbRevision::BigBugBang,
+            )
+            .unwrap(),
+            AlienAmerUpdateHead::SelectionRequested
+        );
+
+        let scene = AlienCallbackSceneState::default();
+        pose.nodes[PRIMARY_NODE].transform.translation[X_AXIS] =
+            join_words((-1_200_i16) as u16, TRANSFORM_LOW_WORD_SENTINEL);
+        pose.nodes[PRIMARY_NODE].transform.translation[Z_AXIS] =
+            join_words(0, TRANSFORM_LOW_WORD_SENTINEL);
+        animation.phase_timer = 0;
+        assert_eq!(
+            update_amer_head(
+                &mut pose,
+                &mut animation,
+                &scene,
+                AlienXdbRevision::CommanderBlood,
+            )
+            .unwrap(),
+            AlienAmerUpdateHead::CommonRequested
+        );
+
+        animation.phase_timer = 0;
+        assert_eq!(
+            update_amer_head(
+                &mut pose,
+                &mut animation,
+                &scene,
+                AlienXdbRevision::BigBugBang,
+            )
+            .unwrap(),
+            AlienAmerUpdateHead::ResetRequested
+        );
+
+        pose.nodes[PRIMARY_NODE].transform.translation[X_AXIS] =
+            join_words(0, TRANSFORM_LOW_WORD_SENTINEL);
+        pose.nodes[PRIMARY_NODE].transform.translation[Z_AXIS] =
+            join_words((-1_200_i16) as u16, TRANSFORM_LOW_WORD_SENTINEL);
+        animation.phase_timer = 0;
+        assert_eq!(
+            update_amer_head(
+                &mut pose,
+                &mut animation,
+                &scene,
+                AlienXdbRevision::CommanderBlood,
+            )
+            .unwrap(),
+            AlienAmerUpdateHead::ResetRequested
+        );
+
+        animation.phase_timer = 0;
+        assert_eq!(
+            update_amer_head(
+                &mut pose,
+                &mut animation,
+                &scene,
+                AlienXdbRevision::BigBugBang,
+            )
+            .unwrap(),
+            AlienAmerUpdateHead::CommonRequested
+        );
     }
 
     #[test]
@@ -5010,7 +5314,11 @@ mod tests {
         let mut short_pose = pose(&[node; CROOLIS_MOTION_NODE_COUNT - 1]);
         let short_animation = AlienSlot2AnimationState::new(CROOLIS_MOTION_NODE_COUNT - 1);
         assert_eq!(
-            update_croolis_motion(&mut short_pose, &short_animation),
+            update_croolis_motion(
+                &mut short_pose,
+                &short_animation,
+                AlienXdbRevision::CommanderBlood,
+            ),
             Err(AlienSlot2Error::MissingCroolisMotionNodes {
                 node_count: CROOLIS_MOTION_NODE_COUNT - 1,
             })
@@ -5040,6 +5348,7 @@ mod tests {
                 &mut short_selection_animation,
                 &mut callback_scene,
                 i16::default(),
+                AlienXdbRevision::CommanderBlood,
             ),
             Err(AlienSlot2Error::MissingCroolisSelectionNodes {
                 node_count: CROOLIS_SELECTION_REQUIRED_NODE_COUNT - 1,

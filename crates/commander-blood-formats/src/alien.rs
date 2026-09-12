@@ -25,9 +25,11 @@ pub const ALIEN_RING_ENTRY_COUNT: usize = 128;
 pub const ALIEN_RESUME_QUEUE_CAPACITY: usize = 8;
 
 const AMER_DATA_DELTA_FIELD: usize = 0x3275;
+const BBB_AMER_DATA_DELTA_FIELD: usize = 0x32c5;
 const CROOLIS_DATA_DELTA_FIELD: usize = 0x32e5;
 const SCRUT_DATA_DELTA_FIELD: usize = 0x33a5;
 const AMER_PALETTE_REMAP_POSITION: usize = 0x049b;
+const BBB_AMER_PALETTE_REMAP_POSITION: usize = 0x0498;
 const OTHER_PALETTE_REMAP_POSITION: usize = 0x04dc;
 const PARAGRAPH_BYTE_COUNT: usize = 16;
 const DIRECTORY_OBJECT_DELTA_FIELD: usize = 0x000c;
@@ -121,6 +123,7 @@ const WAVE_PRIMARY_STEP_FIELD: usize = METHOD_CONTINUATION_FIELD + 2;
 const WAVE_SECONDARY_PHASE_FIELD: usize = METHOD_CONTINUATION_FIELD + 4;
 const WAVE_SECONDARY_STEP_FIELD: usize = METHOD_CONTINUATION_FIELD + 6;
 const AMER_WAVE_SCENE_STATE_POSITION: usize = 0x0b2f;
+const BBB_AMER_WAVE_SCENE_STATE_POSITION: usize = 0x0b2c;
 const OTHER_WAVE_SCENE_STATE_POSITION: usize = 0x0b70;
 const WAVE_SELECTED_NODE_FIELD: usize = 4;
 const WAVE_CURRENT_SAMPLE_FIELD: usize = 6;
@@ -149,60 +152,92 @@ const RING_ENTRY_PAN_STEP_FIELD: usize = 2;
 const RING_ENTRY_RADIAL_OFFSET_FIELD: usize = 4;
 const RING_ENTRY_COMMAND_FLAGS_FIELD: usize = 6;
 const AMER_RING_TIMER_POSITION: usize = 0x0b31;
+const BBB_AMER_RING_TIMER_POSITION: usize = 0x0b2e;
 const CROOLIS_RING_TIMER_POSITION: usize = 0x0b72;
 const SCRUT_RING_TIMER_POSITION: usize = 0x0b72;
 const AMER_RING_GENERATION_POSITION: usize = 0x0d5b;
+const BBB_AMER_RING_GENERATION_POSITION: usize = 0x0d6a;
 const CROOLIS_RING_GENERATION_POSITION: usize = 0x0db3;
 const SCRUT_RING_GENERATION_POSITION: usize = 0x0da1;
 const AMER_RING_CURSOR_POSITION: usize = 0x0d5d;
+const BBB_AMER_RING_CURSOR_POSITION: usize = 0x0d6c;
 const CROOLIS_RING_CURSOR_POSITION: usize = 0x0db5;
 const SCRUT_RING_CURSOR_POSITION: usize = 0x0da3;
 const AMER_RING_RESUME_COUNTDOWN_POSITION: usize = 0x0d5f;
+const BBB_AMER_RING_RESUME_COUNTDOWN_POSITION: usize = 0x0d6e;
 const CROOLIS_RING_RESUME_COUNTDOWN_POSITION: usize = 0x0db7;
 const SCRUT_RING_RESUME_COUNTDOWN_POSITION: usize = 0x0da5;
 const AMER_RING_RESUME_NODE_POSITION: usize = 0x0d61;
+const BBB_AMER_RING_RESUME_NODE_POSITION: usize = 0x0d70;
 const CROOLIS_RING_RESUME_NODE_POSITION: usize = 0x0db9;
 const SCRUT_RING_RESUME_NODE_POSITION: usize = 0x0da7;
 const AMER_RING_ENTRIES_POSITION: usize = 0x0d63;
+const BBB_AMER_RING_ENTRIES_POSITION: usize = 0x0d72;
 const CROOLIS_RING_ENTRIES_POSITION: usize = 0x0dbb;
 const SCRUT_RING_ENTRIES_POSITION: usize = 0x0da9;
 const AMER_INITIAL_COURSE_CALLBACK: u16 = 0x12b3;
+const BBB_AMER_INITIAL_COURSE_CALLBACK: u16 = 0x12c2;
 const CROOLIS_INITIAL_COURSE_CALLBACK: u16 = 0x130b;
 const SCRUT_INITIAL_COURSE_CALLBACK: u16 = 0x12f9;
 const AMER_FOLLOW_COURSE_CALLBACK: u16 = 0x1414;
+const BBB_AMER_FOLLOW_COURSE_CALLBACK: u16 = 0x1423;
 const CROOLIS_FOLLOW_COURSE_CALLBACK: u16 = 0x146c;
 const SCRUT_FOLLOW_COURSE_CALLBACK: u16 = 0x145a;
 const AMER_SLOT2_UPDATE_CALLBACK: u16 = 0x1692;
+const AMER_SLOT2_STEER_CALLBACK: u16 = 0x1a5c;
+const AMER_SLOT2_FINISH_CALLBACK: u16 = 0x1aa0;
+const BBB_AMER_SLOT2_UPDATE_CALLBACK: u16 = 0x16a1;
+const BBB_AMER_SLOT2_STEER_CALLBACK: u16 = 0x1a62;
+const BBB_AMER_SLOT2_FINISH_CALLBACK: u16 = 0x1aa6;
 const CROOLIS_SLOT2_UPDATE_CALLBACK: u16 = 0x1727;
 const SCRUT_SLOT2_UPDATE_CALLBACK: u16 = 0x171b;
 const AMER_SLOT2_ACTIVE_POSITION: usize = 0x1648;
+const BBB_AMER_SLOT2_ACTIVE_POSITION: usize = 0x1657;
 const CROOLIS_SLOT2_ACTIVE_POSITION: usize = 0x16a0;
 const SCRUT_SLOT2_ACTIVE_POSITION: usize = 0x168e;
 const CROOLIS_SLOT2_SPECIES_SEED_POSITION: usize = 0x16a2;
 const SCRUT_SLOT2_SPECIES_SEED_POSITION: usize = 0x1690;
 const AMER_RESUME_ANCHOR_POSITION: usize = 0x1bc2;
+const BBB_AMER_RESUME_ANCHOR_POSITION: usize = 0x1c12;
 const AMER_RESUME_CURRENT_POSITION: usize = 0x1bc4;
+const BBB_AMER_RESUME_CURRENT_POSITION: usize = 0x1c14;
 const AMER_RESUME_WRITE_CURSOR_POSITION: usize = 0x1bc6;
+const BBB_AMER_RESUME_WRITE_CURSOR_POSITION: usize = 0x1c16;
 const AMER_RESUME_READ_CURSOR_POSITION: usize = 0x1bc8;
+const BBB_AMER_RESUME_READ_CURSOR_POSITION: usize = 0x1c18;
 const AMER_RESUME_QUEUE_POSITION: usize = 0x1bca;
+const BBB_AMER_RESUME_QUEUE_POSITION: usize = 0x1c1a;
 const CROOLIS_RESUME_ANCHOR_POSITION: usize = 0x1b2e;
 const CROOLIS_RESUME_CURRENT_POSITION: usize = 0x1b30;
 const CROOLIS_RESUME_WRITE_CURSOR_POSITION: usize = 0x1b32;
 const CROOLIS_RESUME_READ_CURSOR_POSITION: usize = 0x1b34;
 const CROOLIS_RESUME_QUEUE_POSITION: usize = 0x1b36;
+const BBB_CROOLIS_RESUME_ANCHOR_POSITION: usize = 0x1b34;
+const BBB_CROOLIS_RESUME_CURRENT_POSITION: usize = 0x1b36;
+const BBB_CROOLIS_RESUME_WRITE_CURSOR_POSITION: usize = 0x1b38;
+const BBB_CROOLIS_RESUME_READ_CURSOR_POSITION: usize = 0x1b3a;
+const BBB_CROOLIS_RESUME_QUEUE_POSITION: usize = 0x1b3c;
 const SCRUT_RESUME_ANCHOR_POSITION: usize = 0x1be3;
 const SCRUT_RESUME_CURRENT_POSITION: usize = 0x1be5;
 const SCRUT_RESUME_WRITE_CURSOR_POSITION: usize = 0x1be7;
 const SCRUT_RESUME_READ_CURSOR_POSITION: usize = 0x1be9;
 const SCRUT_RESUME_QUEUE_POSITION: usize = 0x1beb;
 const AMER_RESUME_BEGIN_CALLBACK: u16 = 0x1c34;
+const BBB_AMER_RESUME_BEGIN_CALLBACK: u16 = 0x1c84;
 const AMER_RESUME_PAIR_CALLBACK: u16 = 0x1c7d;
+const BBB_AMER_RESUME_PAIR_CALLBACK: u16 = 0x1ccd;
 const AMER_RESUME_TIMEOUT_CALLBACK: u16 = 0x1cbf;
+const BBB_AMER_RESUME_TIMEOUT_CALLBACK: u16 = 0x1d0f;
 const AMER_RESUME_FINAL_CALLBACK: u16 = 0x1ccf;
+const BBB_AMER_RESUME_FINAL_CALLBACK: u16 = 0x1d1f;
 const CROOLIS_RESUME_BEGIN_CALLBACK: u16 = 0x1b85;
 const CROOLIS_RESUME_PAIR_CALLBACK: u16 = 0x1bc9;
 const CROOLIS_RESUME_TIMEOUT_CALLBACK: u16 = 0x1c0b;
 const CROOLIS_RESUME_FINAL_CALLBACK: u16 = 0x1c1b;
+const BBB_CROOLIS_RESUME_BEGIN_CALLBACK: u16 = 0x1b8b;
+const BBB_CROOLIS_RESUME_PAIR_CALLBACK: u16 = 0x1bcf;
+const BBB_CROOLIS_RESUME_TIMEOUT_CALLBACK: u16 = 0x1c11;
+const BBB_CROOLIS_RESUME_FINAL_CALLBACK: u16 = 0x1c21;
 const SCRUT_RESUME_BEGIN_CALLBACK: u16 = 0x1c45;
 const SCRUT_RESUME_PAIR_CALLBACK: u16 = 0x1c89;
 const SCRUT_RESUME_TIMEOUT_CALLBACK: u16 = 0x1ccb;
@@ -213,6 +248,27 @@ const RESUME_QUEUE_ENTRY_SIZE: usize = 2;
 const INVALID_METHOD_ENTRY: u16 = 0xffff;
 const ZERO_COORDINATE: i16 = 0;
 const ZERO_POSITION: [i16; AXIS_COUNT] = [ZERO_COORDINATE; AXIS_COUNT];
+const METHOD_ENTRY_COUNT: usize = 15;
+const COMMANDER_AMER_METHOD_TABLE: [u16; METHOD_ENTRY_COUNT] = [
+    0x1dd6, 0x09ef, 0x164c, 0x1286, 0x1dd6, 0x1dd6, 0x0958, 0x0355, 0x1b5f, 0x1b8f, 0x0925, 0x0b0f,
+    0x0b1f, 0x1bea, 0x1dd6,
+];
+const BBB_AMER_METHOD_TABLE: [u16; METHOD_ENTRY_COUNT] = [
+    0x1e24, 0x09ec, 0x165b, 0x1295, 0x1e24, 0x1e24, 0x0955, 0x0352, 0x1baf, 0x1bdf, 0x0922, 0x0b0c,
+    0x0b1c, 0x1c3a, 0x1e24,
+];
+const COMMANDER_CROOLIS_METHOD_TABLE: [u16; METHOD_ENTRY_COUNT] = [
+    0x1d27, 0x0a30, 0x16a4, 0x12de, 0x16a4, 0x1d27, 0x0999, 0x036a, 0x1acb, 0x1afb, 0x0966, 0x0b50,
+    0x0b60, 0x1b46, 0x1d27,
+];
+const BBB_CROOLIS_METHOD_TABLE: [u16; METHOD_ENTRY_COUNT] = [
+    0x1d29, 0x0a30, 0x16a4, 0x12de, 0x16a4, 0x1d29, 0x0999, 0x036a, 0x1ad1, 0x1b01, 0x0966, 0x0b50,
+    0x0b60, 0x1b4c, 0x1d29,
+];
+const COMMANDER_SCRUT_METHOD_TABLE: [u16; METHOD_ENTRY_COUNT] = [
+    0x1de7, 0x0a35, 0x1692, 0x12cc, 0x1692, 0x1de7, 0x0999, 0x036a, 0x1b80, 0x1bb0, 0x0966, 0x0b55,
+    0x0b65, 0x1bfb, 0x1de7,
+];
 
 /// Alien overlay format variant being decoded.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -225,15 +281,16 @@ pub enum AlienXdbKind {
     Scrut,
 }
 
-impl AlienXdbKind {
-    fn data_delta_field(self) -> usize {
-        match self {
-            Self::Amer => AMER_DATA_DELTA_FIELD,
-            Self::Croolis => CROOLIS_DATA_DELTA_FIELD,
-            Self::Scrut => SCRUT_DATA_DELTA_FIELD,
-        }
-    }
+/// Original game revision that supplied an alien overlay image.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienXdbRevision {
+    /// Commander Blood 2.0 overlay.
+    CommanderBlood,
+    /// Big Bug Bang overlay.
+    BigBugBang,
+}
 
+impl AlienXdbKind {
     fn star_shade_table_position(self) -> usize {
         match self {
             Self::Amer => AMER_STAR_SHADE_TABLE_POSITION,
@@ -245,117 +302,6 @@ impl AlienXdbKind {
         match self {
             Self::Amer => AMER_STAR_SEED_POSITION,
             Self::Croolis | Self::Scrut => OTHER_STAR_SEED_POSITION,
-        }
-    }
-
-    fn palette_remap_position(self) -> usize {
-        match self {
-            Self::Amer => AMER_PALETTE_REMAP_POSITION,
-            Self::Croolis | Self::Scrut => OTHER_PALETTE_REMAP_POSITION,
-        }
-    }
-
-    fn wave_scene_state_position(self) -> usize {
-        match self {
-            Self::Amer => AMER_WAVE_SCENE_STATE_POSITION,
-            Self::Croolis | Self::Scrut => OTHER_WAVE_SCENE_STATE_POSITION,
-        }
-    }
-
-    fn ring_layout(self) -> AlienRingSourceLayout {
-        match self {
-            Self::Amer => AlienRingSourceLayout {
-                timer_position: AMER_RING_TIMER_POSITION,
-                generation_position: AMER_RING_GENERATION_POSITION,
-                cursor_position: AMER_RING_CURSOR_POSITION,
-                resume_countdown_position: AMER_RING_RESUME_COUNTDOWN_POSITION,
-                resume_node_position: AMER_RING_RESUME_NODE_POSITION,
-                entries_position: AMER_RING_ENTRIES_POSITION,
-                initial_course_callback: AMER_INITIAL_COURSE_CALLBACK,
-                follow_course_callback: AMER_FOLLOW_COURSE_CALLBACK,
-            },
-            Self::Croolis => AlienRingSourceLayout {
-                timer_position: CROOLIS_RING_TIMER_POSITION,
-                generation_position: CROOLIS_RING_GENERATION_POSITION,
-                cursor_position: CROOLIS_RING_CURSOR_POSITION,
-                resume_countdown_position: CROOLIS_RING_RESUME_COUNTDOWN_POSITION,
-                resume_node_position: CROOLIS_RING_RESUME_NODE_POSITION,
-                entries_position: CROOLIS_RING_ENTRIES_POSITION,
-                initial_course_callback: CROOLIS_INITIAL_COURSE_CALLBACK,
-                follow_course_callback: CROOLIS_FOLLOW_COURSE_CALLBACK,
-            },
-            Self::Scrut => AlienRingSourceLayout {
-                timer_position: SCRUT_RING_TIMER_POSITION,
-                generation_position: SCRUT_RING_GENERATION_POSITION,
-                cursor_position: SCRUT_RING_CURSOR_POSITION,
-                resume_countdown_position: SCRUT_RING_RESUME_COUNTDOWN_POSITION,
-                resume_node_position: SCRUT_RING_RESUME_NODE_POSITION,
-                entries_position: SCRUT_RING_ENTRIES_POSITION,
-                initial_course_callback: SCRUT_INITIAL_COURSE_CALLBACK,
-                follow_course_callback: SCRUT_FOLLOW_COURSE_CALLBACK,
-            },
-        }
-    }
-
-    fn slot2_update_callback(self) -> u16 {
-        match self {
-            Self::Amer => AMER_SLOT2_UPDATE_CALLBACK,
-            Self::Croolis => CROOLIS_SLOT2_UPDATE_CALLBACK,
-            Self::Scrut => SCRUT_SLOT2_UPDATE_CALLBACK,
-        }
-    }
-
-    fn slot2_active_position(self) -> usize {
-        match self {
-            Self::Amer => AMER_SLOT2_ACTIVE_POSITION,
-            Self::Croolis => CROOLIS_SLOT2_ACTIVE_POSITION,
-            Self::Scrut => SCRUT_SLOT2_ACTIVE_POSITION,
-        }
-    }
-
-    fn slot2_species_seed_position(self) -> Option<usize> {
-        match self {
-            Self::Amer => None,
-            Self::Croolis => Some(CROOLIS_SLOT2_SPECIES_SEED_POSITION),
-            Self::Scrut => Some(SCRUT_SLOT2_SPECIES_SEED_POSITION),
-        }
-    }
-
-    fn resume_layout(self) -> AlienResumeSourceLayout {
-        match self {
-            Self::Amer => AlienResumeSourceLayout {
-                anchor_position: AMER_RESUME_ANCHOR_POSITION,
-                current_position: AMER_RESUME_CURRENT_POSITION,
-                write_cursor_position: AMER_RESUME_WRITE_CURSOR_POSITION,
-                read_cursor_position: AMER_RESUME_READ_CURSOR_POSITION,
-                queue_position: AMER_RESUME_QUEUE_POSITION,
-                begin_callback: AMER_RESUME_BEGIN_CALLBACK,
-                pair_callback: AMER_RESUME_PAIR_CALLBACK,
-                timeout_callback: AMER_RESUME_TIMEOUT_CALLBACK,
-                final_callback: AMER_RESUME_FINAL_CALLBACK,
-            },
-            Self::Croolis => AlienResumeSourceLayout {
-                anchor_position: CROOLIS_RESUME_ANCHOR_POSITION,
-                current_position: CROOLIS_RESUME_CURRENT_POSITION,
-                write_cursor_position: CROOLIS_RESUME_WRITE_CURSOR_POSITION,
-                read_cursor_position: CROOLIS_RESUME_READ_CURSOR_POSITION,
-                queue_position: CROOLIS_RESUME_QUEUE_POSITION,
-                begin_callback: CROOLIS_RESUME_BEGIN_CALLBACK,
-                pair_callback: CROOLIS_RESUME_PAIR_CALLBACK,
-                timeout_callback: CROOLIS_RESUME_TIMEOUT_CALLBACK,
-                final_callback: CROOLIS_RESUME_FINAL_CALLBACK,
-            },
-            Self::Scrut => AlienResumeSourceLayout {
-                anchor_position: SCRUT_RESUME_ANCHOR_POSITION,
-                current_position: SCRUT_RESUME_CURRENT_POSITION,
-                write_cursor_position: SCRUT_RESUME_WRITE_CURSOR_POSITION,
-                read_cursor_position: SCRUT_RESUME_READ_CURSOR_POSITION,
-                queue_position: SCRUT_RESUME_QUEUE_POSITION,
-                begin_callback: SCRUT_RESUME_BEGIN_CALLBACK,
-                pair_callback: SCRUT_RESUME_PAIR_CALLBACK,
-                timeout_callback: SCRUT_RESUME_TIMEOUT_CALLBACK,
-                final_callback: SCRUT_RESUME_FINAL_CALLBACK,
-            },
         }
     }
 }
@@ -385,6 +331,223 @@ struct AlienResumeSourceLayout {
     pair_callback: u16,
     timeout_callback: u16,
     final_callback: u16,
+}
+
+#[derive(Clone, Copy)]
+struct AlienSlot2SourceLayout {
+    active_position: usize,
+    species_seed_position: Option<usize>,
+    update_callback: u16,
+    amer_steer_callback: Option<u16>,
+    amer_finish_callback: Option<u16>,
+}
+
+#[derive(Clone, Copy)]
+struct AlienXdbSourceLayout {
+    revision: AlienXdbRevision,
+    data_delta_field: usize,
+    palette_remap_position: usize,
+    wave_scene_state_position: usize,
+    ring: AlienRingSourceLayout,
+    slot2: AlienSlot2SourceLayout,
+    resume: AlienResumeSourceLayout,
+    method_table: &'static [u16; METHOD_ENTRY_COUNT],
+}
+
+fn commander_source_layout(kind: AlienXdbKind) -> AlienXdbSourceLayout {
+    match kind {
+        AlienXdbKind::Amer => AlienXdbSourceLayout {
+            revision: AlienXdbRevision::CommanderBlood,
+            data_delta_field: AMER_DATA_DELTA_FIELD,
+            palette_remap_position: AMER_PALETTE_REMAP_POSITION,
+            wave_scene_state_position: AMER_WAVE_SCENE_STATE_POSITION,
+            ring: AlienRingSourceLayout {
+                timer_position: AMER_RING_TIMER_POSITION,
+                generation_position: AMER_RING_GENERATION_POSITION,
+                cursor_position: AMER_RING_CURSOR_POSITION,
+                resume_countdown_position: AMER_RING_RESUME_COUNTDOWN_POSITION,
+                resume_node_position: AMER_RING_RESUME_NODE_POSITION,
+                entries_position: AMER_RING_ENTRIES_POSITION,
+                initial_course_callback: AMER_INITIAL_COURSE_CALLBACK,
+                follow_course_callback: AMER_FOLLOW_COURSE_CALLBACK,
+            },
+            slot2: AlienSlot2SourceLayout {
+                active_position: AMER_SLOT2_ACTIVE_POSITION,
+                species_seed_position: None,
+                update_callback: AMER_SLOT2_UPDATE_CALLBACK,
+                amer_steer_callback: Some(AMER_SLOT2_STEER_CALLBACK),
+                amer_finish_callback: Some(AMER_SLOT2_FINISH_CALLBACK),
+            },
+            resume: AlienResumeSourceLayout {
+                anchor_position: AMER_RESUME_ANCHOR_POSITION,
+                current_position: AMER_RESUME_CURRENT_POSITION,
+                write_cursor_position: AMER_RESUME_WRITE_CURSOR_POSITION,
+                read_cursor_position: AMER_RESUME_READ_CURSOR_POSITION,
+                queue_position: AMER_RESUME_QUEUE_POSITION,
+                begin_callback: AMER_RESUME_BEGIN_CALLBACK,
+                pair_callback: AMER_RESUME_PAIR_CALLBACK,
+                timeout_callback: AMER_RESUME_TIMEOUT_CALLBACK,
+                final_callback: AMER_RESUME_FINAL_CALLBACK,
+            },
+            method_table: &COMMANDER_AMER_METHOD_TABLE,
+        },
+        AlienXdbKind::Croolis => AlienXdbSourceLayout {
+            revision: AlienXdbRevision::CommanderBlood,
+            data_delta_field: CROOLIS_DATA_DELTA_FIELD,
+            palette_remap_position: OTHER_PALETTE_REMAP_POSITION,
+            wave_scene_state_position: OTHER_WAVE_SCENE_STATE_POSITION,
+            ring: AlienRingSourceLayout {
+                timer_position: CROOLIS_RING_TIMER_POSITION,
+                generation_position: CROOLIS_RING_GENERATION_POSITION,
+                cursor_position: CROOLIS_RING_CURSOR_POSITION,
+                resume_countdown_position: CROOLIS_RING_RESUME_COUNTDOWN_POSITION,
+                resume_node_position: CROOLIS_RING_RESUME_NODE_POSITION,
+                entries_position: CROOLIS_RING_ENTRIES_POSITION,
+                initial_course_callback: CROOLIS_INITIAL_COURSE_CALLBACK,
+                follow_course_callback: CROOLIS_FOLLOW_COURSE_CALLBACK,
+            },
+            slot2: AlienSlot2SourceLayout {
+                active_position: CROOLIS_SLOT2_ACTIVE_POSITION,
+                species_seed_position: Some(CROOLIS_SLOT2_SPECIES_SEED_POSITION),
+                update_callback: CROOLIS_SLOT2_UPDATE_CALLBACK,
+                amer_steer_callback: None,
+                amer_finish_callback: None,
+            },
+            resume: AlienResumeSourceLayout {
+                anchor_position: CROOLIS_RESUME_ANCHOR_POSITION,
+                current_position: CROOLIS_RESUME_CURRENT_POSITION,
+                write_cursor_position: CROOLIS_RESUME_WRITE_CURSOR_POSITION,
+                read_cursor_position: CROOLIS_RESUME_READ_CURSOR_POSITION,
+                queue_position: CROOLIS_RESUME_QUEUE_POSITION,
+                begin_callback: CROOLIS_RESUME_BEGIN_CALLBACK,
+                pair_callback: CROOLIS_RESUME_PAIR_CALLBACK,
+                timeout_callback: CROOLIS_RESUME_TIMEOUT_CALLBACK,
+                final_callback: CROOLIS_RESUME_FINAL_CALLBACK,
+            },
+            method_table: &COMMANDER_CROOLIS_METHOD_TABLE,
+        },
+        AlienXdbKind::Scrut => AlienXdbSourceLayout {
+            revision: AlienXdbRevision::CommanderBlood,
+            data_delta_field: SCRUT_DATA_DELTA_FIELD,
+            palette_remap_position: OTHER_PALETTE_REMAP_POSITION,
+            wave_scene_state_position: OTHER_WAVE_SCENE_STATE_POSITION,
+            ring: AlienRingSourceLayout {
+                timer_position: SCRUT_RING_TIMER_POSITION,
+                generation_position: SCRUT_RING_GENERATION_POSITION,
+                cursor_position: SCRUT_RING_CURSOR_POSITION,
+                resume_countdown_position: SCRUT_RING_RESUME_COUNTDOWN_POSITION,
+                resume_node_position: SCRUT_RING_RESUME_NODE_POSITION,
+                entries_position: SCRUT_RING_ENTRIES_POSITION,
+                initial_course_callback: SCRUT_INITIAL_COURSE_CALLBACK,
+                follow_course_callback: SCRUT_FOLLOW_COURSE_CALLBACK,
+            },
+            slot2: AlienSlot2SourceLayout {
+                active_position: SCRUT_SLOT2_ACTIVE_POSITION,
+                species_seed_position: Some(SCRUT_SLOT2_SPECIES_SEED_POSITION),
+                update_callback: SCRUT_SLOT2_UPDATE_CALLBACK,
+                amer_steer_callback: None,
+                amer_finish_callback: None,
+            },
+            resume: AlienResumeSourceLayout {
+                anchor_position: SCRUT_RESUME_ANCHOR_POSITION,
+                current_position: SCRUT_RESUME_CURRENT_POSITION,
+                write_cursor_position: SCRUT_RESUME_WRITE_CURSOR_POSITION,
+                read_cursor_position: SCRUT_RESUME_READ_CURSOR_POSITION,
+                queue_position: SCRUT_RESUME_QUEUE_POSITION,
+                begin_callback: SCRUT_RESUME_BEGIN_CALLBACK,
+                pair_callback: SCRUT_RESUME_PAIR_CALLBACK,
+                timeout_callback: SCRUT_RESUME_TIMEOUT_CALLBACK,
+                final_callback: SCRUT_RESUME_FINAL_CALLBACK,
+            },
+            method_table: &COMMANDER_SCRUT_METHOD_TABLE,
+        },
+    }
+}
+
+fn big_bug_bang_source_layout(kind: AlienXdbKind) -> Option<AlienXdbSourceLayout> {
+    Some(match kind {
+        AlienXdbKind::Amer => AlienXdbSourceLayout {
+            revision: AlienXdbRevision::BigBugBang,
+            data_delta_field: BBB_AMER_DATA_DELTA_FIELD,
+            palette_remap_position: BBB_AMER_PALETTE_REMAP_POSITION,
+            wave_scene_state_position: BBB_AMER_WAVE_SCENE_STATE_POSITION,
+            ring: AlienRingSourceLayout {
+                timer_position: BBB_AMER_RING_TIMER_POSITION,
+                generation_position: BBB_AMER_RING_GENERATION_POSITION,
+                cursor_position: BBB_AMER_RING_CURSOR_POSITION,
+                resume_countdown_position: BBB_AMER_RING_RESUME_COUNTDOWN_POSITION,
+                resume_node_position: BBB_AMER_RING_RESUME_NODE_POSITION,
+                entries_position: BBB_AMER_RING_ENTRIES_POSITION,
+                initial_course_callback: BBB_AMER_INITIAL_COURSE_CALLBACK,
+                follow_course_callback: BBB_AMER_FOLLOW_COURSE_CALLBACK,
+            },
+            slot2: AlienSlot2SourceLayout {
+                active_position: BBB_AMER_SLOT2_ACTIVE_POSITION,
+                species_seed_position: None,
+                update_callback: BBB_AMER_SLOT2_UPDATE_CALLBACK,
+                amer_steer_callback: Some(BBB_AMER_SLOT2_STEER_CALLBACK),
+                amer_finish_callback: Some(BBB_AMER_SLOT2_FINISH_CALLBACK),
+            },
+            resume: AlienResumeSourceLayout {
+                anchor_position: BBB_AMER_RESUME_ANCHOR_POSITION,
+                current_position: BBB_AMER_RESUME_CURRENT_POSITION,
+                write_cursor_position: BBB_AMER_RESUME_WRITE_CURSOR_POSITION,
+                read_cursor_position: BBB_AMER_RESUME_READ_CURSOR_POSITION,
+                queue_position: BBB_AMER_RESUME_QUEUE_POSITION,
+                begin_callback: BBB_AMER_RESUME_BEGIN_CALLBACK,
+                pair_callback: BBB_AMER_RESUME_PAIR_CALLBACK,
+                timeout_callback: BBB_AMER_RESUME_TIMEOUT_CALLBACK,
+                final_callback: BBB_AMER_RESUME_FINAL_CALLBACK,
+            },
+            method_table: &BBB_AMER_METHOD_TABLE,
+        },
+        AlienXdbKind::Croolis => AlienXdbSourceLayout {
+            revision: AlienXdbRevision::BigBugBang,
+            data_delta_field: CROOLIS_DATA_DELTA_FIELD,
+            palette_remap_position: OTHER_PALETTE_REMAP_POSITION,
+            wave_scene_state_position: OTHER_WAVE_SCENE_STATE_POSITION,
+            ring: commander_source_layout(kind).ring,
+            slot2: commander_source_layout(kind).slot2,
+            resume: AlienResumeSourceLayout {
+                anchor_position: BBB_CROOLIS_RESUME_ANCHOR_POSITION,
+                current_position: BBB_CROOLIS_RESUME_CURRENT_POSITION,
+                write_cursor_position: BBB_CROOLIS_RESUME_WRITE_CURSOR_POSITION,
+                read_cursor_position: BBB_CROOLIS_RESUME_READ_CURSOR_POSITION,
+                queue_position: BBB_CROOLIS_RESUME_QUEUE_POSITION,
+                begin_callback: BBB_CROOLIS_RESUME_BEGIN_CALLBACK,
+                pair_callback: BBB_CROOLIS_RESUME_PAIR_CALLBACK,
+                timeout_callback: BBB_CROOLIS_RESUME_TIMEOUT_CALLBACK,
+                final_callback: BBB_CROOLIS_RESUME_FINAL_CALLBACK,
+            },
+            method_table: &BBB_CROOLIS_METHOD_TABLE,
+        },
+        AlienXdbKind::Scrut => return None,
+    })
+}
+
+fn method_table_matches(
+    data: &[u8],
+    data_start: usize,
+    expected: &[u16; METHOD_ENTRY_COUNT],
+) -> bool {
+    expected.iter().copied().enumerate().all(|(index, value)| {
+        read_u16(
+            data,
+            data_start + METHOD_TABLE_POSITION + index * METHOD_SLOT_SIZE,
+        ) == Some(value)
+    })
+}
+
+fn source_layout(data: &[u8], kind: AlienXdbKind) -> Option<(AlienXdbSourceLayout, usize)> {
+    let candidates = [
+        Some(commander_source_layout(kind)),
+        big_bug_bang_source_layout(kind),
+    ];
+    candidates.into_iter().flatten().find_map(|layout| {
+        let data_start = usize::from(read_u16(data, layout.data_delta_field)?)
+            .checked_mul(PARAGRAPH_BYTE_COUNT)?;
+        method_table_matches(data, data_start, layout.method_table).then_some((layout, data_start))
+    })
 }
 
 /// Fixed-point cosine and sine pair from an alien XDB.
@@ -668,6 +831,10 @@ pub struct AlienRingSceneData {
 pub enum AlienSlot2InitialCallbackData {
     /// Advance the species-specific ordinary animation head.
     Update,
+    /// Apply AMER's camera-relative autonomous steering.
+    AmerSteer,
+    /// Complete AMER's camera-relative steering phase.
+    AmerFinish,
 }
 
 /// Initial semantic callback state for one slot-2/4 model node.
@@ -795,6 +962,8 @@ pub struct AlienTextureAtlas {
 pub struct AlienAsset {
     /// Overlay variant that supplied the resources.
     pub kind: AlienXdbKind,
+    /// Game revision identified from the overlay's exact native method table.
+    pub revision: AlienXdbRevision,
     /// Camera-relative primary mesh rendered before behavior models.
     pub primary_model: AlienPrimaryModelData,
     /// Null-terminated model/context list in authored dispatch order.
@@ -985,7 +1154,7 @@ fn ring_model_data(
     root_offset: usize,
     node_count: usize,
     behavior: AlienBehaviorMethod,
-    kind: AlienXdbKind,
+    layout: AlienRingSourceLayout,
 ) -> Option<Option<AlienRingModelData>> {
     if behavior != AlienBehaviorMethod::RingAnimation {
         return Some(None);
@@ -996,7 +1165,6 @@ fn ring_model_data(
         u16::MAX => AlienRingLifecycleData::TimerSuspended,
         _ => return None,
     };
-    let layout = kind.ring_layout();
     let mut nodes = Vec::with_capacity(node_count);
     for node_index in 0..node_count {
         let node_offset = root_offset
@@ -1014,6 +1182,21 @@ fn ring_model_data(
     Some(Some(AlienRingModelData { lifecycle, nodes }))
 }
 
+fn slot2_callback(
+    value: u16,
+    layout: AlienSlot2SourceLayout,
+) -> Option<AlienSlot2InitialCallbackData> {
+    if value == layout.update_callback {
+        Some(AlienSlot2InitialCallbackData::Update)
+    } else if Some(value) == layout.amer_steer_callback {
+        Some(AlienSlot2InitialCallbackData::AmerSteer)
+    } else if Some(value) == layout.amer_finish_callback {
+        Some(AlienSlot2InitialCallbackData::AmerFinish)
+    } else {
+        None
+    }
+}
+
 fn slot2_model_data(
     data: &[u8],
     data_start: usize,
@@ -1022,6 +1205,7 @@ fn slot2_model_data(
     node_count: usize,
     behavior: AlienBehaviorMethod,
     kind: AlienXdbKind,
+    layout: AlienSlot2SourceLayout,
 ) -> Option<Option<AlienSlot2ModelData>> {
     if behavior != AlienBehaviorMethod::AnimationDispatch {
         return Some(None);
@@ -1035,12 +1219,10 @@ fn slot2_model_data(
         let primary_position = data_start
             .checked_add(root_offset)?
             .checked_add(TRANSFORM_RECORD_SIZE)?;
-        if read_u16(data, primary_position + SLOT2_NODE_CALLBACK_FIELD)?
-            != kind.slot2_update_callback()
-        {
-            return None;
-        }
-        Some(AlienSlot2InitialCallbackData::Update)
+        Some(slot2_callback(
+            read_u16(data, primary_position + SLOT2_NODE_CALLBACK_FIELD)?,
+            layout,
+        )?)
     } else {
         None
     };
@@ -1101,15 +1283,15 @@ fn slot2_model_data(
     }))
 }
 
-fn slot2_scene_data(data: &[u8], kind: AlienXdbKind) -> Option<AlienSlot2SceneData> {
-    let active = match read_u16(data, kind.slot2_active_position())? {
+fn slot2_scene_data(data: &[u8], layout: AlienSlot2SourceLayout) -> Option<AlienSlot2SceneData> {
+    let active = match read_u16(data, layout.active_position)? {
         0 => false,
         1 => true,
         _ => return None,
     };
     Some(AlienSlot2SceneData {
         active,
-        species_seed: match kind.slot2_species_seed_position() {
+        species_seed: match layout.species_seed_position {
             Some(position) => read_u16(data, position)?,
             None => u16::default(),
         },
@@ -1154,7 +1336,7 @@ fn resume_method_data(
     context_offsets: &[usize],
     context_offset: usize,
     behavior: AlienBehaviorMethod,
-    kind: AlienXdbKind,
+    layout: AlienResumeSourceLayout,
 ) -> Option<Option<AlienResumeMethodData>> {
     if behavior != AlienBehaviorMethod::Resume {
         return Some(None);
@@ -1164,7 +1346,7 @@ fn resume_method_data(
     let callback = if callback_value == u16::MIN {
         None
     } else {
-        Some(resume_callback(callback_value, kind.resume_layout())?)
+        Some(resume_callback(callback_value, layout)?)
     };
     let resumed_node_value = read_u16(data, context + RESUME_RESUMED_NODE_FIELD)?;
     let resumed_node = if resumed_node_value == SHIPPED_UNUSED_RESUMED_NODE_WORD {
@@ -1198,9 +1380,8 @@ fn resume_scene_data(
     data: &[u8],
     data_start: usize,
     context_offsets: &[usize],
-    kind: AlienXdbKind,
+    layout: AlienResumeSourceLayout,
 ) -> Option<AlienResumeSceneData> {
-    let layout = kind.resume_layout();
     Some(AlienResumeSceneData {
         anchor_node: optional_model_node_reference(
             data,
@@ -1231,9 +1412,8 @@ fn ring_scene_data(
     data: &[u8],
     data_start: usize,
     context_offsets: &[usize],
-    kind: AlienXdbKind,
+    layout: AlienRingSourceLayout,
 ) -> Option<AlienRingSceneData> {
-    let layout = kind.ring_layout();
     let resume_offset = usize::from(read_u16(data, layout.resume_node_position)?);
     Some(AlienRingSceneData {
         timer: read_u16(data, layout.timer_position)?,
@@ -1378,6 +1558,7 @@ fn model(
     object_start: usize,
     offset: usize,
     kind: AlienXdbKind,
+    layout: AlienXdbSourceLayout,
 ) -> Option<AlienModelData> {
     let context = data_start.checked_add(offset)?;
     let name = model_header(data, context)?;
@@ -1487,7 +1668,7 @@ fn model(
             root_offset,
             node_count,
             behavior,
-            kind,
+            layout.ring,
         )?,
         slot2: slot2_model_data(
             data,
@@ -1497,6 +1678,7 @@ fn model(
             node_count,
             behavior,
             kind,
+            layout.slot2,
         )?,
         resume: None,
     })
@@ -1507,8 +1689,7 @@ fn model(
 /// Returns `None` if section bounds, model headers, hierarchy topology, method
 /// slots, vertex references, palette values, or texture/raster extents are invalid.
 pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
-    let data_delta = read_u16(data, kind.data_delta_field())?;
-    let data_start = usize::from(data_delta).checked_mul(PARAGRAPH_BYTE_COUNT)?;
+    let (layout, data_start) = source_layout(data, kind)?;
     let object_start = section_start(
         data_start,
         read_u16(data, data_start + DIRECTORY_OBJECT_DELTA_FIELD)?,
@@ -1541,7 +1722,14 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
         if seen_contexts.insert(context_offset, index).is_some() {
             return None;
         }
-        models.push(model(data, data_start, object_start, context_offset, kind)?);
+        models.push(model(
+            data,
+            data_start,
+            object_start,
+            context_offset,
+            kind,
+            layout,
+        )?);
         context_offsets.push(context_offset);
     }
     if models.is_empty() || models.len() == CONTEXT_LIST_LIMIT {
@@ -1554,7 +1742,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
             &context_offsets,
             context_offset,
             model.behavior,
-            kind,
+            layout.resume,
         )?;
     }
 
@@ -1627,8 +1815,8 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
     })?;
     let star_seed = read_u32(data, raster_start + kind.star_seed_position())?;
     let palette_remap =
-        checked_array(|index| data.get(kind.palette_remap_position() + index).copied())?;
-    let wave_scene_position = kind.wave_scene_state_position();
+        checked_array(|index| data.get(layout.palette_remap_position + index).copied())?;
+    let wave_scene_position = layout.wave_scene_state_position;
     let selection = match read_u16(data, wave_scene_position)? {
         0 => AlienWaveSelectionData::Disabled,
         1 => AlienWaveSelectionData::Requested,
@@ -1652,6 +1840,7 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
 
     Some(AlienAsset {
         kind,
+        revision: layout.revision,
         primary_model,
         models,
         texture: AlienTextureAtlas {
@@ -1687,9 +1876,9 @@ pub fn decode_alien_xdb(data: &[u8], kind: AlienXdbKind) -> Option<AlienAsset> {
                 read_u16(data, data_start + PALETTE_PULSE_POSITIONS[axis])
             })?,
         },
-        ring_scene: ring_scene_data(data, data_start, &context_offsets, kind)?,
-        slot2_scene: slot2_scene_data(data, kind)?,
-        resume_scene: resume_scene_data(data, data_start, &context_offsets, kind)?,
+        ring_scene: ring_scene_data(data, data_start, &context_offsets, layout.ring)?,
+        slot2_scene: slot2_scene_data(data, layout.slot2)?,
+        resume_scene: resume_scene_data(data, data_start, &context_offsets, layout.resume)?,
         star_shade_table,
         star_seed,
     })
@@ -1723,6 +1912,15 @@ mod tests {
         .find(|path| path.is_file())
     }
 
+    fn big_bug_bang_xdb(name: &str) -> Option<PathBuf> {
+        [
+            Path::new("output/big-bug-bang/imported-assets/resources").join(name),
+            Path::new("../../output/big-bug-bang/imported-assets/resources").join(name),
+        ]
+        .into_iter()
+        .find(|path| path.is_file())
+    }
+
     #[test]
     fn decodes_every_original_alien_scene_into_owned_models() {
         let cases = [
@@ -1743,6 +1941,7 @@ mod tests {
             let data = std::fs::read(path).unwrap();
             let asset = decode_alien_xdb(&data, kind).unwrap();
             assert_eq!(asset.kind, kind);
+            assert_eq!(asset.revision, AlienXdbRevision::CommanderBlood);
             assert_eq!(asset.models.len(), expected_models);
             assert_eq!(asset.initial_method_delta, EXPECTED_INITIAL_METHOD_DELTA);
             assert_eq!(
@@ -2008,6 +2207,60 @@ mod tests {
                 assert!(!model.mesh.vertices.is_empty());
                 assert!(!model.mesh.faces.is_empty());
             }
+        }
+    }
+
+    #[test]
+    fn decodes_authentic_big_bug_bang_alien_scenes() {
+        let cases = [
+            (AlienXdbKind::Amer, "AMER.XDB", EXPECTED_AMER_MODEL_COUNT),
+            (
+                AlienXdbKind::Croolis,
+                "CROOLIS.XDB",
+                EXPECTED_CROOLIS_MODEL_COUNT,
+            ),
+        ];
+
+        for (kind, filename, expected_models) in cases {
+            let Some(path) = big_bug_bang_xdb(filename) else {
+                continue;
+            };
+            let data = std::fs::read(path).unwrap();
+            let asset = decode_alien_xdb(&data, kind).unwrap();
+            assert_eq!(asset.kind, kind);
+            assert_eq!(asset.revision, AlienXdbRevision::BigBugBang);
+            assert_eq!(asset.models.len(), expected_models);
+            assert_eq!(
+                asset.ring_scene.timer,
+                match kind {
+                    AlienXdbKind::Amer => 7,
+                    AlienXdbKind::Croolis => 1,
+                    AlienXdbKind::Scrut => unreachable!(),
+                }
+            );
+
+            let callbacks = asset
+                .models
+                .iter()
+                .filter_map(|model| model.slot2.as_ref())
+                .map(|slot2| slot2.callback.unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(
+                callbacks,
+                match kind {
+                    AlienXdbKind::Amer => vec![
+                        AlienSlot2InitialCallbackData::AmerSteer,
+                        AlienSlot2InitialCallbackData::AmerFinish,
+                        AlienSlot2InitialCallbackData::Update,
+                        AlienSlot2InitialCallbackData::AmerSteer,
+                        AlienSlot2InitialCallbackData::Update,
+                    ],
+                    AlienXdbKind::Croolis => {
+                        vec![AlienSlot2InitialCallbackData::Update; 3]
+                    }
+                    AlienXdbKind::Scrut => unreachable!(),
+                }
+            );
         }
     }
 

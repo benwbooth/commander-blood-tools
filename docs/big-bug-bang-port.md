@@ -48,12 +48,37 @@ not a substitute for this gate. The CB ledger's 521 recovered routines do not
 constitute a BBB routine inventory or prove inherited handlers unchanged.
 
 Outstanding coverage work includes BBB-specific native routine ownership and
-comparison, the changed AMER/CROOLIS modules, inherited VM handler semantics,
-and derived companion DEB/DIC/VAR rebuilding. Modern typed COD decoding,
+comparison, inherited VM handler semantics, and derived companion DEB/DIC/VAR
+rebuilding. The changed AMER/CROOLIS overlay images now have the bounded native
+frame comparison described below. Modern typed COD decoding,
 structured recovery, English text coverage, and the unreachable-BAS result do
 not close these obligations. The explicit BBB COD source path now reproduces
 all 17 original COD files, as detailed below; the default CB walker and retired
 interpreter have not been switched to BBB.
+
+### Changed AMER and CROOLIS Overlays
+
+The production alien decoder identifies Commander Blood and Big Bug Bang XDBs
+from their exact 15-entry native method tables instead of accepting shifted
+locations heuristically. Big Bug Bang AMER uses its changed section fields,
+ring and resume state, callbacks, and initialized steering/finish callbacks.
+Big Bug Bang CROOLIS uses its shifted resume state and retains its own revision
+on the owned asset so runtime behavior can select the shipped semantics.
+
+The native behavior translation preserves four observed BBB differences: the
+AMER selection gate and exchanged lower X/Z bounds; CROOLIS pitch motion without
+the Commander species-seed bias; CROOLIS's signed selection bounds, steering
+bias and radial target; and the BBB reset routine's changed turn-score register.
+Commander Blood and SCRUT retain their existing paths and oracle vectors.
+
+`original_xdb_alien_frame_oracle.py --revision big-bug-bang` executes the
+unmodified AMER and CROOLIS images under DOSBox-X, apart from the same bounded
+frame-capture hooks used by the Commander oracle. Centered and corner-input
+campaigns each match Rust's complete RGBA output at frames 1, 2, 4, 8, 16, 32,
+and 64: 28 byte-exact frame comparisons. Focused tests also cover changed
+branches that those two campaigns do not necessarily enter. This establishes
+the decoded assets and those bounded overlay runs, not every possible input
+sequence or an unbounded gameplay-parity claim.
 
 The inherited A5 handler at BBB `0x6B07..0x6B28` has the same instruction
 structure as CB `0x65EB`, with relocated globals and timer storage. The
@@ -2920,9 +2945,10 @@ sequence comparison and deliberate navigation remain necessary.
 - Recover the actual conversation representation and produce readable,
   hand-editable French source with byte-exact COD/BAS/DEB/DIC/VAR/DESCRIPT
   reproduction where those resources are active. No raw fallback as completion.
-- Port changed native simulation, travel, interface and presentation behavior;
-  compare AMER/CROOLIS routines and assets. Validate new media through the
-  library-only import path and existing SDL3/wgpu rendering.
+- Port remaining changed native simulation, travel, interface and presentation
+  behavior. The bounded AMER/CROOLIS asset and runtime frame comparison is
+  complete as described above. Validate new media through the library-only
+  import path and existing SDL3/wgpu rendering.
 - Provide game selection and separate asset caches, save identities and source
   checksum manifests so the games cannot contaminate each other's state.
 - Extract contextual complete messages and UI text into a stable localization

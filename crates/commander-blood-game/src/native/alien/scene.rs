@@ -6,7 +6,7 @@ use commander_blood_formats::alien::{
     AXIS_COUNT, AlienAsset, AlienBehaviorMethod, AlienResumeCallbackData,
     AlienRingInitialCallbackData, AlienRingLifecycleData, AlienSlot2InitialCallbackData,
     AlienTransformData, AlienTrigonometryPair, AlienWaveSelectionData, AlienXdbKind,
-    TRIGONOMETRY_ENTRY_COUNT,
+    AlienXdbRevision, TRIGONOMETRY_ENTRY_COUNT,
 };
 
 use super::{
@@ -206,6 +206,7 @@ impl AlienRingCallbacks for AlienSceneRingCallbacks<'_> {
 /// Flat runtime context used to follow the recovered slot-2 callback graph.
 struct AlienSceneSlot2Callbacks<'a> {
     model_index: usize,
+    revision: AlienXdbRevision,
     callback_scene: &'a mut AlienCallbackSceneState,
     camera: &'a AlienCameraTransform,
     camera_angles: AlienCameraAngles,
@@ -253,7 +254,7 @@ impl AlienSceneSlot2Callbacks<'_> {
             AlienSlot2Callback::CroolisFade => {
                 match update_croolis_fade(pose, animation, self.callback_scene)? {
                     AlienCroolisFadeUpdate::MotionRequested => {
-                        update_croolis_motion(pose, animation)?;
+                        update_croolis_motion(pose, animation, self.revision)?;
                     }
                     AlienCroolisFadeUpdate::RestartRequested => {
                         let next = restart_croolis_update(pose, animation)?;
@@ -268,6 +269,7 @@ impl AlienSceneSlot2Callbacks<'_> {
                     animation,
                     self.callback_scene,
                     self.camera.view[CAMERA_VERTICAL_AXIS],
+                    self.revision,
                 )? {
                     AlienCroolisSelectionUpdate::Tracking => {}
                     AlienCroolisSelectionUpdate::ResetRequested { camera_distance } => {
@@ -365,23 +367,25 @@ impl AlienSceneSlot2Callbacks<'_> {
         slot2_scene: &mut AlienSlot2SceneState,
     ) -> Result<(), AlienSlot2Error> {
         match species {
-            AlienSpecies::Amer => match update_amer_head(pose, animation, self.callback_scene)? {
-                AlienAmerUpdateHead::SelectionRequested => {
-                    let next = begin_amer_selection(pose, animation)?;
-                    self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+            AlienSpecies::Amer => {
+                match update_amer_head(pose, animation, self.callback_scene, self.revision)? {
+                    AlienAmerUpdateHead::SelectionRequested => {
+                        let next = begin_amer_selection(pose, animation)?;
+                        self.invoke_callback(species, next, pose, animation, slot2_scene)?;
+                    }
+                    AlienAmerUpdateHead::ResetRequested => reset_amer_motion(pose, animation)?,
+                    AlienAmerUpdateHead::CommonRequested => {
+                        update_amer_common(
+                            pose,
+                            animation,
+                            self.callback_scene,
+                            self.camera,
+                            self.camera_pan,
+                            self.camera_depth_step,
+                        )?;
+                    }
                 }
-                AlienAmerUpdateHead::ResetRequested => reset_amer_motion(pose, animation)?,
-                AlienAmerUpdateHead::CommonRequested => {
-                    update_amer_common(
-                        pose,
-                        animation,
-                        self.callback_scene,
-                        self.camera,
-                        self.camera_pan,
-                        self.camera_depth_step,
-                    )?;
-                }
-            },
+            }
             AlienSpecies::Croolis => {
                 match update_croolis_head(pose, animation, self.callback_scene)? {
                     AlienCroolisUpdateHead::SelectionRequested => {
@@ -484,7 +488,7 @@ impl AlienSceneSlot2Callbacks<'_> {
     ) -> Result<(), AlienSlot2Error> {
         match dispatch_croolis_common(self.model_index, self.callback_scene) {
             AlienCroolisCommonDispatch::MotionRequested => {
-                update_croolis_motion(pose, animation)?;
+                update_croolis_motion(pose, animation, self.revision)?;
             }
             AlienCroolisCommonDispatch::FadeRequested => {
                 let next = begin_croolis_fade(pose, animation)?;
@@ -510,6 +514,7 @@ impl AlienSceneSlot2Callbacks<'_> {
             *self.camera_depth_step,
             self.trigonometry,
             camera_distance,
+            self.revision,
         )? {
             AlienCroolisResetUpdate::CommonRequested => {
                 self.invoke_croolis_common(pose, animation, species, slot2_scene)?;
@@ -1208,6 +1213,8 @@ impl AlienScene {
                     initialized: slot2.initialized,
                     callback: slot2.callback.map(|callback| match callback {
                         AlienSlot2InitialCallbackData::Update => AlienSlot2Callback::Update,
+                        AlienSlot2InitialCallbackData::AmerSteer => AlienSlot2Callback::AmerSteer,
+                        AlienSlot2InitialCallbackData::AmerFinish => AlienSlot2Callback::AmerFinish,
                     }),
                     phase_timer: slot2.phase_timer,
                     croolis_motion_accumulator: slot2.croolis_motion_accumulator,
@@ -1445,6 +1452,7 @@ impl AlienScene {
                         .ok_or(AlienSceneError::MissingSlot2State { model_index })?;
                     let mut callbacks = AlienSceneSlot2Callbacks {
                         model_index,
+                        revision: self.asset.revision,
                         callback_scene: &mut self.callback_state,
                         camera: &self.camera,
                         camera_angles: AlienCameraAngles {

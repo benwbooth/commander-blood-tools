@@ -584,6 +584,26 @@ match all 18 original-XDB RGBA hashes: all three overlays at frames 1, 2, 4, 8,
 16, and 32. The campaign also preserves each indexed-frame hash and live-DAC
 hash for lower-level diagnosis.
 
+The same harness accepts the changed Big Bug Bang overlays without replacing
+the committed Commander Blood fixture:
+
+```sh
+NIXPKGS_ALLOW_UNFREE=1 nix shell --impure \
+  nixpkgs#open-watcom-bin nixpkgs#dosbox-x -c \
+  python3 re/tools/original_xdb_alien_frame_oracle.py \
+    --revision big-bug-bang \
+    --xdb-dir output/big-bug-bang/imported-assets/resources \
+    --output-dir output/big-bug-bang/alien-frame-oracle \
+    --timing-scale 7 --input-campaign corners \
+    --frame-count 1 --frame-count 2 --frame-count 4 \
+    --frame-count 8 --frame-count 16 --frame-count 32 --frame-count 64
+```
+
+Big Bug Bang supplies AMER and CROOLIS but no SCRUT overlay. Its filenames are
+uppercase on the imported disc, and its AMER main-loop hooks differ from the
+Commander Blood image. BBB captures therefore default under `--output-dir` and
+never overwrite either committed Commander oracle.
+
 To measure fixed-offset placement, use the layout probe:
 
 ```sh

@@ -34,7 +34,7 @@ EIGHT_BIT_MAXIMUM = 255
 STANDARD_CAMPAIGN_FRAMES = (1, 2, 4, 8, 16, 32)
 STANDARD_CAMPAIGN_TIMING_SCALE = 10
 
-MODULES = {
+COMMANDER_MODULES = {
     "amer": {
         "data_delta_field": 0x3275,
         "render_continuation": 0x0944,
@@ -61,14 +61,32 @@ MODULES = {
     },
 }
 
+BIG_BUG_BANG_MODULES = {
+    "amer": {
+        "data_delta_field": 0x32C5,
+        "render_continuation": 0x0944,
+        "render_mode": 0x2920,
+        "final_clear_call": 0x0204,
+        "final_clear_displacement": 0x00E6,
+        "callback_load": 0x019E,
+    },
+    "croolis": COMMANDER_MODULES["croolis"],
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--revision",
+        choices=("commander-blood", "big-bug-bang"),
+        default="commander-blood",
+        help="overlay revision and native hook layout",
+    )
+    parser.add_argument(
         "--xdb-dir",
         type=Path,
         default=ROOT / "output" / "_tmp_dat",
-        help="directory containing the original amer.xdb, croolis.xdb, and scrut.xdb",
+        help="directory containing the selected revision's original alien XDB files",
     )
     parser.add_argument(
         "--output-dir",
@@ -87,7 +105,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dosbox", default="dosbox-x")
     parser.add_argument(
         "--module",
-        choices=tuple(MODULES),
+        choices=tuple(COMMANDER_MODULES),
         action="append",
         help="capture only the selected module; may be repeated",
     )
@@ -349,6 +367,11 @@ def capture_module(
 
 def main() -> int:
     args = parse_args()
+    modules = (
+        COMMANDER_MODULES
+        if args.revision == "commander-blood"
+        else BIG_BUG_BANG_MODULES
+    )
     frame_counts = args.frame_count or [1]
     if any(frame_count < 1 for frame_count in frame_counts):
         raise SystemExit("--frame-count must be positive")
@@ -364,7 +387,12 @@ def main() -> int:
     wcl = executable(args.wcl)
     dosbox = executable(args.dosbox)
     captures = []
-    selected_modules = args.module or list(MODULES)
+    selected_modules = args.module or list(modules)
+    unsupported = sorted(set(selected_modules) - set(modules))
+    if unsupported:
+        raise SystemExit(
+            f"{args.revision} does not ship alien module(s): {', '.join(unsupported)}"
+        )
     for frame_count in frame_counts:
         capture_output = (
             output
@@ -372,8 +400,13 @@ def main() -> int:
             else output / f"frame-{frame_count:04d}"
         )
         for module in selected_modules:
-            config = MODULES[module]
-            source = xdb_dir / f"{module}.xdb"
+            config = modules[module]
+            filename = (
+                f"{module}.xdb"
+                if args.revision == "commander-blood"
+                else f"{module.upper()}.XDB"
+            )
+            source = xdb_dir / filename
             if not source.is_file():
                 raise SystemExit(f"missing original XDB: {source}")
             capture = capture_module(
@@ -395,25 +428,29 @@ def main() -> int:
                 f"RGBA {capture['rgba_sha256']}"
             )
     complete_first_frame = (
-        args.module is None
+        args.revision == "commander-blood"
+        and args.module is None
         and args.model_count is None
         and frame_counts == [1]
         and args.timing_scale == 7
         and args.input_campaign == "centered"
     )
     complete_campaign = (
-        args.module is None
+        args.revision == "commander-blood"
+        and args.module is None
         and args.model_count is None
         and tuple(frame_counts) == STANDARD_CAMPAIGN_FRAMES
         and args.timing_scale == STANDARD_CAMPAIGN_TIMING_SCALE
         and args.input_campaign == "corners"
     )
+    if args.revision == "big-bug-bang":
+        fixture_format = "big-bug-bang-original-alien-frame-campaign-v1"
+    elif complete_first_frame:
+        fixture_format = "commander-blood-original-alien-first-frame-v1"
+    else:
+        fixture_format = "commander-blood-original-alien-frame-campaign-v1"
     fixture = {
-        "format": (
-            "commander-blood-original-alien-first-frame-v1"
-            if complete_first_frame
-            else "commander-blood-original-alien-frame-campaign-v1"
-        ),
+        "format": fixture_format,
         "width": FRAME_WIDTH,
         "height": FRAME_HEIGHT,
         "timing_scale": args.timing_scale,
@@ -426,10 +463,14 @@ def main() -> int:
     else:
         fixture["frame_counts"] = frame_counts
     fixture["input_campaign"] = args.input_campaign
+    if args.revision == "big-bug-bang":
+        fixture["revision"] = args.revision
     fixture["captures"] = captures
     fixture_path = args.fixture
     if fixture_path is None:
-        if complete_first_frame:
+        if args.revision == "big-bug-bang":
+            fixture_path = output / "alien_frame_campaign.json"
+        elif complete_first_frame:
             fixture_path = (
                 ROOT
                 / "re"
