@@ -1,0 +1,3448 @@
+descript 1
+
+sequence "present" {
+    music "croolrap.voc"
+    subtitle frame=1 "CRYO interactive Entertainment 1995"
+    subtitle frame=3 ""
+    subtitle frame=5 "CRYO interactive Entertainment 1995"
+    subtitle frame=7 ""
+    subtitle frame=10 "CRYO interactive Entertainment 1995"
+    subtitle frame=13 ""
+    subtitle frame=15 "CRYO interactive Entertainment 1995"
+    subtitle frame=17 ""
+    subtitle frame=20 "CRYO interactive Entertainment 1995"
+    subtitle frame=25 "Commander BLOOD  Version 2.0"
+    subtitle frame=55 "Hello!!!"
+    subtitle frame=110 "Ici \"PETIT PITEUX\""
+    subtitle frame=140 "Bienvenue dans le BIOGAME de COMMANDER BLOOD"
+    subtitle frame=180 "Vous vous rappelez du vieux BOB, sacr\x82 Bob!!!"
+    subtitle frame=210 "Et du mariage de la sublime TINA BURNER avec AMIGO..."
+    subtitle frame=250 "Et le concert des MIGRATORS, le meilleur groupe de la galaxie..."
+    subtitle frame=285 "Le vieux BOB en est mort... Mort je vous dis... Ha! Ha! Ha! Sacr\x82 Bob..."
+    subtitle frame=315 "Le Commander Blood l'a largu\x82 sur une petite plan\x82te appell\x82e TERRA"
+    subtitle frame=390 "Sur une zone appel\x82e ROSWELL... Ha! Ha! Ha! sacr\x82 Bob..."
+    subtitle frame=450 "Du coup chez Cryo, ils ont engag\x82 un nouveau sc\x82nariste pour ce nouveau jeu..."
+    subtitle frame=500 "Et vous ne connaissez pas la meilleure... Ha! Ha! Ha!"
+    subtitle frame=540 "Le SCENARISTE, C'EST VOUS..."
+    subtitle frame=610 "OUI VOUS!!! HA! HA! HA!"
+    subtitle frame=655 "Retrouvez les IZWALS."
+    subtitle frame=710 "VA-S-Y PETIT ... FONCE!!!"
+    subtitle frame=750 "OUAIS!!!"
+    subtitle frame=775 "Retrouvez les ignobles CROOLIS"
+    subtitle frame=810 "DANS"
+    subtitle frame=840 ""
+    video "logo01.hnm"
+    video "ppit09.hnm"
+    video "ppit06.hnm"
+    video "ppit1_2.hnm"
+    video "lpm6sc1.hnm"
+    video "bobb.hnm"
+    video "ppit05.hnm"
+    video "planal2.hnm"
+    video "ppit04.hnm"
+    video "ppitbb01.hnm"
+    video "aready20.hnm"
+    video "match06.hnm"
+    video "logo_bl.hnm"
+}
+
+sequence "1ppit" {
+    music "tv_war.voc"
+    subtitle frame=10 "une terrible news vient de tomber sur nos tele-scripteurs"
+    subtitle frame=70 "Une guerre meurtri\x82re oppose deux plan\x82tes"
+    subtitle frame=130 "Restez chez vous... stockez les vivres"
+    subtitle frame=190 "PETIT PITEUX est avec vous ..."
+    video "ppit02.hnm"
+    video "ppit05.hnm"
+    video "ppit07.hnm"
+}
+
+sequence "2ppit" {
+    music "croolrap.voc"
+    subtitle frame=10 "1"
+    subtitle frame=60 "2"
+    subtitle frame=110 "3"
+    video "ppit04.hnm"
+    video "ppit05.hnm"
+}
+
+sequence "3ppit" {
+    music "croolrap.voc"
+    subtitle frame=5 "Attention, nous venons d'intercepter"
+    subtitle frame=60 "un message cod\x82 des services de migrations"
+    subtitle frame=105 "Un vaisseau de migrants a \x82t\x82 d\x82tect\x82 ... Restez \x85 l'\x82coute"
+    subtitle frame=160 "N'oubliez pas: Tout suffocant et bl\x82me quand sonne l'heure H ..."
+    video "ppit4_2.hnm"
+    video "ppit05_2.hnm"
+    video "ppit05_3.hnm"
+}
+
+sequence "4ppit" {
+    music "croolrap.voc"
+    subtitle frame=25 "1"
+    subtitle frame=75 "2"
+    subtitle frame=130 "3"
+    subtitle frame=180 "4"
+    video "ppit09.hnm"
+    video "ppit06.hnm"
+    video "ppit05.hnm"
+}
+
+sequence "5ppit" {
+    music "croolrap.voc"
+    subtitle frame=5 "1"
+    subtitle frame=70 "2"
+    subtitle frame=115 "3"
+    subtitle frame=135 "4"
+    subtitle frame=175 "5"
+    video "ppit05_2.hnm"
+    video "ppitbb02.hnm"
+    video "explo3.hnm"
+    video "ppit03.hnm"
+}
+
+sequence "6ppit" {
+    music "croolrap.voc"
+    subtitle frame=1 "1"
+    subtitle frame=50 "2"
+    subtitle frame=110 "3"
+    subtitle frame=160 "4"
+    video "ppitin02.hnm"
+    video "ppit4_2.hnm"
+    video "ppitin03.hnm"
+    video "ppit07_2.hnm"
+}
+
+sequence "7ppit" {
+    music "croolrap.voc"
+    subtitle frame=1 "1"
+    subtitle frame=65 "2"
+    subtitle frame=85 "3"
+    subtitle frame=140 "4"
+    video "pscrt01.hnm"
+    video "ppit04.hnm"
+    video "ppit05.hnm"
+}
+
+sequence "2concert" {
+    music "tv_strik.voc"
+    subtitle frame=1 "Waw ! Du jamais vu sur l'Arche !"
+    subtitle frame=20 "D\x82ment !"
+    subtitle frame=30 "D\x82"
+    subtitle frame=40 "lirant !"
+    subtitle frame=45 "coiffant !"
+    subtitle frame=50 "boussolant !"
+    subtitle frame=57 "boulonnant !"
+    subtitle frame=63 "sta"
+    subtitle frame=66 "bi"
+    subtitle frame=69 "li"
+    subtitle frame=72 "sant !"
+    subtitle frame=75 "zan !"
+    subtitle frame=80 "STRoy !"
+    subtitle frame=87 ""
+    subtitle frame=97 "D"
+    subtitle frame=98 "E"
+    subtitle frame=99 "S"
+    subtitle frame=100 "T"
+    subtitle frame=101 "R"
+    subtitle frame=102 "O"
+    subtitle frame=103 "Y"
+    subtitle frame=104 ""
+    subtitle frame=105 "Y"
+    subtitle frame=106 ""
+    subtitle frame=107 "Y"
+    subtitle frame=117 "Destroy !"
+    subtitle frame=125 "Troy !"
+    subtitle frame=135 "Destroy !"
+    subtitle frame=150 "DES"
+    subtitle frame=155 "TROY !"
+    subtitle frame=160 "DES"
+    subtitle frame=165 "TROY !"
+    subtitle frame=175 "Tina"
+    subtitle frame=185 "TI"
+    subtitle frame=190 "NA !"
+    subtitle frame=205 "EN"
+    subtitle frame=220 "CONCERT !"
+    subtitle frame=250 "Salut les enfants !"
+    subtitle frame=270 "Salut mes ch\x82ris !"
+    subtitle frame=290 "Ca va d\x82m\x82nager !"
+    subtitle frame=310 "Ptain!"
+    subtitle frame=315 "J'ai une de ces"
+    subtitle frame=330 "PECHES !"
+    subtitle frame=335 "Forme !"
+    subtitle frame=340 "Mefor !"
+    subtitle frame=350 "But to - onight !"
+    subtitle frame=360 "We can be as one !"
+    subtitle frame=375 "Everybody !"
+    subtitle frame=395 "To - onight !"
+    subtitle frame=415 "On va tout casser ce soir !"
+    subtitle frame=435 "Et plus parti"
+    subtitle frame=445 "Cu"
+    subtitle frame=450 "Li\x82rement"
+    subtitle frame=465 "LES OREILLES !"
+    subtitle frame=485 "Waouw !"
+    subtitle frame=500 "Sortez les briquets !"
+    subtitle frame=520 "Ce soir on fout le feu \x85 l'ARCHE !"
+    subtitle frame=550 "Ouais !"
+    subtitle frame=560 "Tonight c'est la folie"
+    subtitle frame=580 "Je suis fi\x8Are"
+    subtitle frame=600 "D'\x82tre parmi vous ce soir"
+    subtitle frame=625 "D'autant plus que"
+    subtitle frame=640 "Ce soir"
+    subtitle frame=655 "Tout sp\x82cialement venu"
+    subtitle frame=675 "Du plus profond de la nuit"
+    subtitle frame=695 "Nous avons un crooli"
+    subtitle frame=715 "A la batterie !"
+    subtitle frame=745 "Merci pour lui !"
+    subtitle frame=775 "Yeah !"
+    subtitle frame=790 "Place \x85 la musique !"
+    subtitle frame=810 ""
+    subtitle frame=860 "Blood !"
+    subtitle frame=875 ""
+    subtitle frame=900 "Commander"
+    subtitle frame=915 "BLOOD !"
+    subtitle frame=930 ""
+    subtitle frame=960 "BLOOD !"
+    subtitle frame=975 ""
+    subtitle frame=1000 "Super ma chanson"
+    subtitle frame=1025 "Non ?"
+    subtitle frame=1040 ""
+    subtitle frame=1055 "Vraiment pas ?"
+    subtitle frame=1080 "Bon ..."
+    subtitle frame=1100 ""
+    video "ppit09.hnm"
+    video "ppit06.hnm"
+    video "ppit05.hnm"
+    video "lpm6sc1.hnm"
+    video "lpm7sc1.hnm"
+    video "lpl7sc1.hnm"
+    video "lpm1sc1.hnm"
+    video "lpm2sc1.hnm"
+    video "lpm3sc1.hnm"
+    video "lpm4sc1.hnm"
+    video "lpm5sc1.hnm"
+    video "lpm4sc1.hnm"
+    video "lpm5sc1.hnm"
+}
+
+sequence "3tromp" {
+    music "croolrap.voc"
+    subtitle frame=20 "1"
+    subtitle frame=40 "2"
+    subtitle frame=140 "3"
+    subtitle frame=210 "4"
+    subtitle frame=305 "5"
+    subtitle frame=365 "6"
+    subtitle frame=410 "7"
+    subtitle frame=670 "8"
+    video "oollee01.hnm"
+    video "intre2_2.hnm"
+    video "chantro2.hnm"
+    video "chantro4.hnm"
+    video "oollee04.hnm"
+    video "fin.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "4exploplane" {
+    music "croolrap.voc"
+    subtitle frame=10 "FLASH SPECIAL"
+    subtitle frame=20 "HELLO!"
+    subtitle frame=30 "NOUS RETROUVONS NOTRE ENVOYE SPATIAL SUR CELSIUS"
+    subtitle frame=60 "LA CHALEUR EST PARTICULIEREMENT ACCAAAABLAAAA ..."
+    subtitle frame=100 "ALLO! ALLO!... ..."
+    subtitle frame=160 "UNE BIEN TRISTE NOUVELLE CELSIUS N'EST PLUS"
+    video "oollee01.hnm"
+    video "oollee04.hnm"
+    video "plane.hnm"
+    video "explo3.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "5exploplane" {
+    music "croolrap.voc"
+    subtitle frame=20 "Catastrophe !"
+    subtitle frame=50 "Le Commander BLOOD s'est laiss\x82 aller \x85 ses plus bas instincts"
+    subtitle frame=85 "Elle \x82tait pourtant belle , cette plan\x82te ... La fiert\x82 de monsieur BOB !"
+    subtitle frame=185 "Eh ben a pu ! A pu plan\x82te ! A fait sauter !"
+    subtitle frame=200 "Si c'est pas malheureux !"
+    video "oollee01.hnm"
+    video "oollee04.hnm"
+    video "mastpl.hnm"
+    video "explo3.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "6croolhatetv" {
+    music "croolrap.voc"
+    subtitle frame=20 "1"
+    subtitle frame=50 "2"
+    subtitle frame=90 "3"
+    subtitle frame=130 "4"
+    subtitle frame=175 "5"
+    video "hatetv02.hnm"
+    video "hatetv20.hnm"
+    video "match06.hnm"
+    video "matchfin.hnm"
+    video "hatetv02.hnm"
+}
+
+sequence "7croolvent" {
+    music "croolrap.voc"
+    subtitle frame=1 "Notre \x82mission \" L'OBJET MYSTERE \" !"
+    subtitle frame=20 "Aujourd'hui l'objet myst\x82re"
+    subtitle frame=50 "est un objet tr\x82s myst\x82rieux"
+    subtitle frame=80 "qui ressemble \x85 un ventilateur"
+    subtitle frame=120 "mais qui n'est pas un ventilateur"
+    subtitle frame=160 "Sinon ca ne serait pas un myst\x82re"
+    subtitle frame=190 "Ca serait un ventilateur !"
+    subtitle frame=225 "C'est un hachoir \x85 murfalo ?"
+    subtitle frame=250 "Et non ! Perdu ! C'\x82tait un multiplexeur g\x82n\x82tique !"
+    subtitle frame=270 "A bientot pour un nouvel \" OBJET MYSTERE \" !"
+    video "hatetv02.hnm"
+    video "match01.hnm"
+    video "venthig.hnm"
+    video "match02.hnm"
+    video "match01.hnm"
+    video "hatetv02.hnm"
+}
+
+sequence "8incanthom" {
+    music "croolrap.voc"
+    subtitle frame=1 "Salut pirate !"
+    subtitle frame=35 "Regarde-moi ce Tubular !"
+    subtitle frame=70 "Un sacr\x82 zigoto que ce Tubular !"
+    subtitle frame=115 "Attention lui grands pouvoirs ..."
+    subtitle frame=150 "T\x82l\x82pathie !"
+    subtitle frame=180 "Mais prends garde au chaos , Pirate !"
+    subtitle frame=220 "Le chaos c'est ..."
+    subtitle frame=250 "LA MORT !..."
+    subtitle frame=315 "Voil\x85 ! C'est tout ! Suffocant et bl\x82me ..."
+    video "ppit01.hnm"
+    video "kort.hnm"
+    video "brouil.hnm"
+    video "maledict.hnm"
+    video "ppit05.hnm"
+}
+
+sequence "9scrutbox" {
+    music "croolrap.voc"
+    subtitle frame=1 "Wow ! Scrute-moi ce casque , pirate !"
+    subtitle frame=35 "Tu vas nous remplir l'univers de SCRUTERS ! ?"
+    subtitle frame=70 "Moi j'en ferais bien de la ferraille !"
+    subtitle frame=135 "MORT AUX SCRUTERS !"
+    subtitle frame=185 "ENGAGE-TOI CHEZ EUX ET RENONCE A TES YEUX"
+    subtitle frame=215 "Remarque il est super ce casque de scruter !"
+    video "pscrt01.hnm"
+    video "tvscrut2.hnm"
+    video "caiscrut.hnm"
+    video "legion01.hnm"
+    video "pscrt01.hnm"
+}
+
+sequence "10hachoir" {
+    music "croolrap.voc"
+    subtitle frame=1 "Salut pirate ! J'ai un scoop !"
+    subtitle frame=35 "Tu sais , les murfalos ..."
+    subtitle frame=75 "Eh ben au d\x82part , c'\x82taient des CROOLIS !"
+    subtitle frame=190 "Des CROOLIS qu'on a fait muter par multiplexion g\x82n\x82tique"
+    subtitle frame=235 "Pour les rendre un peu plus intelligents ..."
+    subtitle frame=280 "Un peu moins violents ..."
+    subtitle frame=330 "Un peu plus gentils ..."
+    subtitle frame=370 "Un peu moins C..."
+    subtitle frame=390 "CROOLIS !"
+    subtitle frame=410 "C'est r\x82ussi , non ? Ils atomisent personne !"
+    video "ppit01.hnm"
+    video "ettamorf.hnm"
+    video "match05.hnm"
+    video "venthig.hnm"
+    video "ppit05.hnm"
+}
+
+sequence "11izwalexplo" {
+    music "croolrap.voc"
+    subtitle frame=20 "TELEPLATON !"
+    subtitle frame=40 "L'IZWAL est n\x82 dans l'esprit ZEN"
+    subtitle frame=90 "Il a couru dans les couloirs neuroniques,"
+    subtitle frame=130 "a franchi la porte du bionium"
+    subtitle frame=175 "Mais l\x85 qu'a-t-il d\x82couvert ?"
+    subtitle frame=235 "Que l'IZWAL est prisonnier dans la caverne"
+    subtitle frame=320 "Y sortira pas, euh ! Y sortira pas !"
+    subtitle frame=410 "Comment le faire sortir de la caverne ?"
+    subtitle frame=465 "Comment briser ses chaines ?"
+    subtitle frame=525 "Par la violence ?"
+    subtitle frame=560 "Ou par la sagesse ?"
+    video "oollee01.hnm"
+    video "aready30.hnm"
+    video "aready40.hnm"
+    video "garde2.hnm"
+    video "aready20.hnm"
+    video "explo3.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "12concrool" {
+    music "croolrap.voc"
+    subtitle frame=1 "Exceptionnel !"
+    subtitle frame=35 "Hypercrool !"
+    subtitle frame=55 "Vous avez vu l'embouteillage ?"
+    subtitle frame=80 "Pour aller au concert de Tina !"
+    subtitle frame=135 "C'est ses plus belles chansons"
+    subtitle frame=165 "Born to be a crooli"
+    subtitle frame=185 "Death is crool"
+    subtitle frame=205 "Ouais ! CROOL !"
+    subtitle frame=225 "Tina croule"
+    subtitle frame=245 "Sous les bravos"
+    subtitle frame=265 "BRAVO !"
+    subtitle frame=280 "Hourra !"
+    subtitle frame=295 "Brava !"
+    subtitle frame=315 "Ses meilleures chansons !"
+    subtitle frame=325 "En excu"
+    subtitle frame=340 "EN ELXU"
+    subtitle frame=355 "Ziv"
+    subtitle frame=365 "Zivi"
+    subtitle frame=370 "EN EXKLUZIZI"
+    subtitle frame=390 "Ah j'arrive pas \x85 le dire !"
+    subtitle frame=415 "Mais vous m'avez compris"
+    subtitle frame=440 "Bref !"
+    subtitle frame=475 "Un \x82v\x82nement EXzEPsIO"
+    subtitle frame=490 "Explez"
+    subtitle frame=495 "Excezio"
+    subtitle frame=500 "Bon"
+    subtitle frame=515 "Vous m'avez compris !"
+    subtitle frame=550 ""
+    video "tvred01.hnm"
+    video "1kkult20.hnm"
+    video "lpm5sc1.hnm"
+    video "lpm4sc1.hnm"
+    video "match04.hnm"
+    video "lpm4sc1.hnm"
+    video "match05.hnm"
+    video "lpm7sc1.hnm"
+    video "lpm6sc1.hnm"
+    video "tvred01.hnm"
+}
+
+sequence "13biocrool" {
+    music "croolrap.voc"
+    subtitle frame=1 ""
+    subtitle frame=35 "2"
+    subtitle frame=70 "3"
+    subtitle frame=90 "4"
+    subtitle frame=150 "5"
+    subtitle frame=210 "6"
+    video "ppit01.hnm"
+    video "match07.hnm"
+    video "contenai.hnm"
+    video "crol_pay.hnm"
+    video "ppit08.hnm"
+}
+
+sequence "14legscrut" {
+    music "croolrap.voc"
+    subtitle frame=1 "ENGAGEZ-VOUS CHEZ LES SCRUTERS"
+    subtitle frame=45 "OU BIEN DISPARAISSEZ D'ICI"
+    subtitle frame=85 "CAR L'AVENIR APPARTIENT ..."
+    subtitle frame=270 "A LA LEGION DES SCRUTERS !"
+    subtitle frame=300 "ENGAGE-TOI ET TU RECEVRAS CE MAGNIFIQUE BADGE SCRUT"
+    video "legion03.hnm"
+    video "krando20.hnm"
+    video "tourbi.hnm"
+    video "legion01.hnm"
+    video "legion03.hnm"
+}
+
+sequence "15parfum" {
+    music "croolrap.voc"
+    subtitle frame=1 "Hello"
+    subtitle frame=35 "Vous connaisssez celle du l\x82gionnaire et de la ch\x82vre ?"
+    subtitle frame=70 "Hein! Ca sent le bouc !"
+    subtitle frame=125 "Vous la connaissez ?"
+    subtitle frame=175 "Noooonnn ? ? ?"
+    subtitle frame=235 "Alors ... C'est le l\x82gionnaire ..."
+    subtitle frame=280 "Voilaaa ..."
+    subtitle frame=310 "Euhhh ... La ch\x82vre elle dit : M\x82\x82\x82\x82\x82\x82 !!!"
+    subtitle frame=355 "...  Benhh ... Voilaaaa ..."
+    video "ppit01.hnm"
+    video "parf1_2.hnm"
+    video "ppitin02.hnm"
+    video "p_cles.hnm"
+    video "ppitbb01.hnm"
+    video "ppit07.hnm"
+    video "ppit03.hnm"
+}
+
+sequence "16ondobar" {
+    music "croolrap.voc"
+    subtitle frame=1 "Mouaip ! Attention recette !"
+    subtitle frame=30 "Pour faire un bon cocktail il faut bien remuer dans tous les sens !"
+    subtitle frame=80 "Ah oui au fait ! Un client du bar m'a caus\x82 d'un truc n\x82buleux ..."
+    subtitle frame=156 "Une ondoyante serait apparue dans votre vie , Commander ! ?..."
+    subtitle frame=313 "N'oubliez pas ! Remuez bien pour les cocktails !"
+    video "oollee02.hnm"
+    video "nebul3a.hnm"
+    video "galaxi.hnm"
+    video "oollee03.hnm"
+}
+
+sequence "17vtromp" {
+    music "croolrap.voc"
+    subtitle frame=20 "Attention aujourd'hui \x82mission scientifique"
+    subtitle frame=40 "\" Comment sont n\x82s les TROMPS ? \""
+    subtitle frame=80 "Nous sommes dans une crounouille de CROOLI grossie 15 000 fois"
+    subtitle frame=180 "Nous distinguons nettement des TROMPS qui grouillent"
+    subtitle frame=260 "Ces petits \x82tres couverts de poils n'ont qu'une obsession ..."
+    subtitle frame=345 "SORTIR DE LA CROUNOUILLE DU CROOLI !"
+    subtitle frame=400 "Tous en choeur ! Faut qu'on se grouille ... lalalala"
+    subtitle frame=428 "De sortir des crounouilles ! lalalala"
+    subtitle frame=462 "C'\x82tait notre \x82mission scientifique ..."
+    video "oollee01.hnm"
+    video "chantro4.hnm"
+    video "intre2_2.hnm"
+    video "tromp02.hnm"
+    video "chantro2.hnm"
+    video "chantro3.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "18gcrool" {
+    music "tv_war.voc"
+    subtitle frame=35 "C'est la gueeeerre ... Supeeeer ..."
+    subtitle frame=110 "La gueeeeeerre ... euh ... papalapala"
+    subtitle frame=160 "La guerre ... papalapalapali ..."
+    subtitle frame=195 "Verts contre rouges"
+    subtitle frame=205 "Rouges contre verts"
+    subtitle frame=225 "Toi contre moi"
+    subtitle frame=235 "C'est une histoire"
+    subtitle frame=245 "d'AMOUR !"
+    subtitle frame=250 "de HAINE !"
+    subtitle frame=260 "Mmm ... Que"
+    subtitle frame=265 "Je"
+    subtitle frame=270 "t'hai"
+    subtitle frame=275 "ne"
+    subtitle frame=280 "Que je"
+    subtitle frame=285 "t'haine"
+    subtitle frame=295 "Que je t'haine ..."
+    subtitle frame=310 "Faut que ca saigne"
+    video "tvred01.hnm"
+    video "marcomb.hnm"
+    video "tvred30.hnm"
+    video "tvgren01.hnm"
+    video "tvred40.hnm"
+    video "tvred50.hnm"
+    video "explo3.hnm"
+    video "tvgren50.hnm"
+}
+
+sequence "19chapeau" {
+    music "croolrap.voc"
+    subtitle frame=1 "TELEPLATON !"
+    subtitle frame=35 "On lui proposait le POUVOIR !"
+    subtitle frame=70 "Tout au fond de la caverne ..."
+    subtitle frame=175 "Super Zen a dit ..."
+    subtitle frame=195 "Non Non Non"
+    subtitle frame=215 "Non Merci !"
+    subtitle frame=220 "Alors que d'autres r\x82clamaient \x85 grands cris"
+    subtitle frame=280 "LA COURONNE ! LA COURONNE !"
+    subtitle frame=310 "La voici ..."
+    subtitle frame=330 "La voil\x85 !"
+    subtitle frame=360 "OUAIS ! COURONNE !"
+    subtitle frame=385 "Dites NON au pouvoir !"
+    video "ppit01.hnm"
+    video "crazys20.hnm"
+    video "match01.hnm"
+    video "chapocro.hnm"
+    video "match02.hnm"
+    video "ppit08.hnm"
+}
+
+sequence "20larvarc" {
+    music "croolrap.voc"
+    subtitle frame=1 "Salut pirate !"
+    subtitle frame=35 "Un truc trop d\x82lire s'est produit !"
+    subtitle frame=70 "Un truc vraiment space !"
+    subtitle frame=135 "Vous voyez ? C'est l'ext\x82rieur de l'arche ..."
+    subtitle frame=175 "Et l\x85 ... Un \x82clair !..."
+    subtitle frame=200 "C'\x82tait une explosion !"
+    subtitle frame=270 "Et ce truc bizarre sur le dos de l'arche ..."
+    subtitle frame=310 "Ce truc vraiment strange ..."
+    subtitle frame=350 "Et plutot d\x82gueu ..."
+    subtitle frame=400 "Y a pas \x85 dire ..."
+    subtitle frame=450 "Vraiment d\x82gueu !..."
+    subtitle frame=500 "Qu'est-ce donc ?..."
+    subtitle frame=550 "Mais non de non de nom de YOLK !"
+    subtitle frame=610 "C'est une grosse larve bien baveuse ..."
+    subtitle frame=650 "Mais oui c'est vous , Commander !"
+    subtitle frame=702 "C'\x82tait archid\x82lire , non ?..."
+    video "ppit01.hnm"
+    video "star2.hnm"
+    video "aarche20.hnm"
+    video "archex40.hnm"
+    video "aarche10.hnm"
+    video "archma20.hnm"
+    video "archma10.hnm"
+    video "ppit05.hnm"
+}
+
+sequence "21pubdecod" {
+    music "croolrap.voc"
+    subtitle frame=1 "Salut les amis ! Le futur c'est aujourd'hui"
+    subtitle frame=50 "Le supramarch\x82 VENUSIA ..."
+    subtitle frame=70 "Wow !..."
+    subtitle frame=80 "Wawawa !..."
+    subtitle frame=90 "... est heureux de vous offrir ..."
+    subtitle frame=110 "... en cadeau promotionnel exceptionnel..."
+    subtitle frame=150 "La t\x82l\x82 du futur ! Le DECODEUR ..."
+    subtitle frame=185 "Que vous ne pourrez qu'emmener en voyage !"
+    video "pubven1.hnm"
+    video "decodeur.hnm"
+    video "krando20.hnm"
+}
+
+sequence "22pubscandoig" {
+    music "croolrap.voc"
+    subtitle frame=50 "1"
+    subtitle frame=90 "2"
+    subtitle frame=155 "3"
+    subtitle frame=187 "4"
+    video "pubven1.hnm"
+    video "scandoig.hnm"
+    video "krando20.hnm"
+}
+
+sequence "23tableau" {
+    music "croolrap.voc"
+    subtitle frame=20 "Notre \x82mission \" Vivons ensemble \""
+    subtitle frame=40 "Aujourd'hui , Crooli qui es-tu ?"
+    subtitle frame=70 "Premi\x82re question : Ami CROOLI , es-tu sensible ..."
+    subtitle frame=115 "A la religion de Grand Yolk ?...;"
+    subtitle frame=150 "J'te la pi\x82tine ton icone ! Ton igrossco... !"
+    subtitle frame=190 "Pas tr\x82s tr\x82s fin ... C'\x82taient nos amis CROOLIS ..."
+    video "oollee01.hnm"
+    video "match08.hnm"
+    video "oollee04.hnm"
+    video "tabloyol.hnm"
+    video "match05.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "24bionium" {
+    music "croolrap.voc"
+    subtitle frame=1 "un flash vient de tomber"
+    subtitle frame=35 "Le bionium a provoqu\x82 une mutation"
+    subtitle frame=70 "La puissance mutag\x82ne de ce produit est extraordinaire"
+    subtitle frame=130 "Une nouvelle race vient de voir le jour dans notre monde"
+    subtitle frame=200 "N'oubliez pas , c'est l'heure des pirates ..."
+    subtitle frame=240 "A bientot sur l'antenne de petit piteux"
+    video "ppit01.hnm"
+    video "contenai.hnm"
+    video "pscrt01.hnm"
+    video "krando20.hnm"
+    video "ppit01.hnm"
+}
+
+sequence "25diplom" {
+    music "croolrap.voc"
+    subtitle frame=20 "Salut morveux ! Maintenant va falloir r\x82fl\x82chir !"
+    subtitle frame=50 "Astronomie ... Harmonie ... R\x82flexion ..."
+    subtitle frame=80 "Faut lire PLATON ... Beaucoup dialogues !"
+    subtitle frame=117 "Pas comme nous ... Nous on est des gros d\x82biles !"
+    subtitle frame=150 "Ouarf ouarf ! Qu'est-ce qu'on rigole entre d\x82biles !..."
+    video "hatetv02.hnm"
+    video "hatetv20.hnm"
+    video "diplom1r.hnm"
+    video "group0.hnm"
+    video "hatetv40.hnm"
+    video "hatetv02.hnm"
+}
+
+sequence "26explocomb" {
+    music "croolrap.voc"
+    subtitle frame=1 "Achtung baby !"
+    subtitle frame=35 "On a rep\x82r\x82 un trou dans le temps"
+    subtitle frame=72 "Faut vite t' y fourrer"
+    subtitle frame=86 "Toi as de pique"
+    subtitle frame=95 "Pas de temps"
+    subtitle frame=100 "A perdre"
+    subtitle frame=105 "Pour gagner"
+    subtitle frame=110 "Pour pas perdre"
+    subtitle frame=115 "Pour la gloire"
+    subtitle frame=120 "Pour le plaisir"
+    subtitle frame=125 "Pour le fun"
+    subtitle frame=130 "Pour quoi encore ?"
+    subtitle frame=150 "Pour y trouver"
+    subtitle frame=160 "Mon crooligionnaire"
+    subtitle frame=170 "Le crooli rouge"
+    subtitle frame=175 "Outrageor"
+    subtitle frame=180 "Et lui voler"
+    subtitle frame=200 "Sa COURONNE !"
+    subtitle frame=225 "Mais il faut faire"
+    subtitle frame=230 "vite"
+    subtitle frame=235 "Vite"
+    subtitle frame=237 "vite !"
+    subtitle frame=240 "Avant fermeture"
+    subtitle frame=247 "de la porte du temps !"
+    video "ppit01.hnm"
+    video "marcomb.hnm"
+    video "chapocro.hnm"
+    video "explo3.hnm"
+    video "ppit03.hnm"
+}
+
+sequence "27exploplane" {
+    music "croolrap.voc"
+    subtitle frame=1 "Attention ..."
+    subtitle frame=20 "Commander !"
+    subtitle frame=40 "Ne r\x82fl\x82chis pas trop ..."
+    subtitle frame=60 "Sinon ..."
+    subtitle frame=70 "Tu vas ..."
+    subtitle frame=80 "Peter ..."
+    subtitle frame=90 "les PLOMBS !"
+    subtitle frame=115 "Alors fais attention !"
+    video "oollee01.hnm"
+    video "brouil.hnm"
+    video "explo3.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "28bob" {
+    music "croolrap.voc"
+    subtitle frame=1 "Mauvaise nouvelle , petit !"
+    subtitle frame=35 "Ici BOB ! J'ai jamais vu un sc\x82nariste aussi mauvais !"
+    subtitle frame=70 "Tout le monde se plaint ! T'es vir\x82 !"
+    subtitle frame=125 "T'ENTENDS , MINUS ? T'ES RIEN QU'UN petit NULLARD !"
+    subtitle frame=155 "Aie aie aie ! Il a la dent dure , Bobby !"
+    subtitle frame=215 "Faut dire que t'es particuli\x82rement mou , petit ..."
+    video "ppit01.hnm"
+    video "boba2.hnm"
+    video "bobb.hnm"
+    video "ppit4_2.hnm"
+    video "ppit08.hnm"
+}
+
+sequence "29scandoig" {
+    music "croolrap.voc"
+    subtitle frame=1 "1"
+    subtitle frame=35 "2"
+    subtitle frame=70 "3"
+    subtitle frame=175 "4"
+    subtitle frame=245 "5"
+    subtitle frame=305 "6"
+    subtitle frame=345 "7"
+    video "ppit01.hnm"
+    video "brs02.hnm"
+    video "ppit4_2.hnm"
+    video "scandoig.hnm"
+    video "ppit08.hnm"
+}
+
+sequence "30ulikan" {
+    music "croolrap.voc"
+    subtitle frame=20 "1"
+    subtitle frame=40 "2"
+    subtitle frame=130 "3"
+    subtitle frame=220 "4"
+    subtitle frame=295 "5"
+    subtitle frame=360 "6"
+    subtitle frame=420 "7"
+    subtitle frame=475 "8"
+    video "oollee01.hnm"
+    video "tourbi.hnm"
+    video "aarche20.hnm"
+    video "inter_sh.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "31explonebul" {
+    music "croolrap.voc"
+    subtitle frame=1 "Une terrifiante nouvelle vient de tomber"
+    subtitle frame=35 "Le nucl\x82aire a encore tu\x82 ..."
+    subtitle frame=70 "Les victimes ont \x82t\x82 carbonis\x82es, vitrifi\x82es ..."
+    subtitle frame=180 "On ne connait pas les d\x82tails de ce qui a provoqu\x82 la catastrophe ..."
+    subtitle frame=240 "Tout ce que je peux vous dire aujourd'hui:"
+    subtitle frame=325 "C'est qu'il ne faut pas jouer avec les atomiques"
+    subtitle frame=370 "Vous avez perdu ..."
+    subtitle frame=400 "Je suis sinc\x82rement d\x82sol\x82 ..."
+    video "ppit01.hnm"
+    video "pollup.hnm"
+    video "star2.hnm"
+    video "nebul3a.hnm"
+    video "explo3.hnm"
+    video "ppit05_3.hnm"
+    video "ppit08.hnm"
+}
+
+sequence "32pubpion" {
+    music "croolrap.voc"
+    subtitle frame=1 "1"
+    subtitle frame=35 "2"
+    subtitle frame=70 "3"
+    subtitle frame=120 "4"
+    subtitle frame=170 "5"
+    subtitle frame=225 "6"
+    subtitle frame=285 "7"
+    video "ppit01.hnm"
+    video "pubven1.hnm"
+    video "pion.hnm"
+    video "cadeaux.hnm"
+    video "ppit09.hnm"
+}
+
+sequence "33tinabar" {
+    music "croolrap.voc"
+    subtitle frame=1 "Coucous les copines ! Ici Olga !"
+    subtitle frame=50 "En direct du Tina Bar ..."
+    subtitle frame=80 "Pour la lib\x82ration de la femelle ..."
+    subtitle frame=125 "Car nous sommes encore en cage !"
+    subtitle frame=140 "Enferm\x82es !"
+    subtitle frame=150 "Ali\x82n\x82es !"
+    subtitle frame=160 "Domin\x82es !"
+    subtitle frame=165 "Humili\x82s !"
+    subtitle frame=170 "Vous avez vu mon rouge \x85 l\x82vres ?"
+    subtitle frame=197 "Il est super , non ?..."
+    subtitle frame=217 "C'est une marque tr\x82s tr\x82s ch\x82re !"
+    subtitle frame=237 "Lib\x82rons-nous , les filles !"
+    video "ppitin02.hnm"
+    video "1eeden20.hnm"
+    video "p_cles.hnm"
+    video "ppitin02.hnm"
+}
+
+sequence "34contromp" {
+    music "croolrap.voc"
+    subtitle frame=1 "Concert"
+    subtitle frame=50 "On a attrap\x82"
+    subtitle frame=115 "Le concert !"
+    subtitle frame=150 "Et on est bien con..."
+    subtitle frame=222 "bien con..."
+    subtitle frame=240 "bien content"
+    subtitle frame=290 "car le concert"
+    subtitle frame=314 "C'est super"
+    subtitle frame=350 ""
+    video "lpm6sc1.hnm"
+    video "chantro3.hnm"
+    video "lpm1sc1.hnm"
+    video "chantro4.hnm"
+    video "lpm5sc1.hnm"
+    video "chantro3.hnm"
+    video "lpm3sc1.hnm"
+    video "lpm5sc1.hnm"
+}
+
+sequence "35ondoyante" {
+    music "croolrap.voc"
+    subtitle frame=1 "C'est notre cam\x82ra ext\x82rieure, Commander ... J'ai d\x82tect\x82 de nouvelles plan\x82tes"
+    subtitle frame=70 "C'est \x82trange ... Je capte une forte \x82mission d'\x82nergie ..."
+    subtitle frame=160 "Regardez ... Je r\x82ve ... Vous voyez ce que je vois ? ? ? Commander"
+    subtitle frame=250 "Ahhh j'ai branch\x82 le magn\x82tot\x82l\x82scope ... Ca alors ..."
+    subtitle frame=280 "De ma vie je n'ai jamais rien vu de pareil ..."
+    video "planal2.hnm"
+    video "galaxi.hnm"
+}
+
+sequence "36exarche" {
+    music "croolrap.voc"
+    subtitle frame=1 "Message de honk: cam\x82ra ext\x82rieure ok"
+    subtitle frame=70 "Tout est calme commander"
+    subtitle frame=160 "trop calme ..."
+    subtitle frame=200 "Le silence des espaces infinis m'effraie ..."
+    video "aarche20.hnm"
+    video "aarche30.hnm"
+    video "aarche40.hnm"
+    video "galaxi.hnm"
+}
+
+sequence "37traitz" {
+    music "tv_war.voc"
+    subtitle frame=1 "Flash sp\x82cial guerre nucl\x82aire"
+    subtitle frame=70 "Pour pas laisser crever les ZEN"
+    subtitle frame=130 "faut un trait\x82"
+    subtitle frame=170 "sinon faut tout recommencer"
+    subtitle frame=210 "Et c'est pas cool"
+    subtitle frame=215 "pas cool"
+    subtitle frame=220 "Ah ca !"
+    subtitle frame=225 "Pas COOL"
+    subtitle frame=235 "du tout"
+    subtitle frame=240 "Heureusement c'est"
+    subtitle frame=250 "Facile ... Un trait\x82"
+    subtitle frame=260 "Un Trait\x82 de"
+    subtitle frame=265 "Prout"
+    subtitle frame=267 "Paix"
+    subtitle frame=280 "Izwalito"
+    subtitle frame=285 "ou tard ..."
+    subtitle frame=290 "IZWALITO !"
+    video "oollee01.hnm"
+    video "crazys20.hnm"
+    video "diplom1j.hnm"
+    video "oollee10.hnm"
+}
+
+sequence "38atomev" {
+    music "croolrap.voc"
+    subtitle frame=1 "Salut pirate  ... Attention"
+    subtitle frame=50 "Donner des atomiques"
+    subtitle frame=60 "\x85 une race peu \x82volu\x82e"
+    subtitle frame=70 "en-dessous de 100"
+    subtitle frame=90 "peut faire sauter des plan\x82tes et r\x82pandre"
+    subtitle frame=140 "LA MORT"
+    subtitle frame=200 "Et l\x85 t'auras affaire \x85 BOB"
+    subtitle frame=250 "MAIS L'ATOMIQUE"
+    subtitle frame=260 "Quand on le donne"
+    subtitle frame=270 "Aux graines de la VIE"
+    subtitle frame=280 "peut surtout faire \x82voluer \x85 fond la caisse !"
+    subtitle frame=290 "\x85 FOND"
+    subtitle frame=300 "\x85 DONF"
+    subtitle frame=310 "\x85 FOND"
+    subtitle frame=320 "\x85 DONF"
+    subtitle frame=330 "\x85 fond de train"
+    subtitle frame=340 "ca va"
+    subtitle frame=345 "trop vite !"
+    subtitle frame=348 "CORNNARD !"
+    subtitle frame=350 "Et faire revenir monsieur bob"
+    subtitle frame=370 "Bobby !"
+    subtitle frame=410 "Faut donner ca aux graines de la vie ..."
+    subtitle frame=440 "Dad gluglu ..."
+    subtitle frame=445 "Pap gluglu"
+    subtitle frame=450 "Mam gluglu"
+    subtitle frame=455 "OTTO von SM ... Gluk ..."
+    subtitle frame=460 "Celles qu'on a mises"
+    subtitle frame=480 "dans le hachoir g\x82n\x82tique"
+    subtitle frame=500 "Tic Tic Tic"
+    subtitle frame=520 "Toc Toc"
+    subtitle frame=540 "Tac Tac"
+    subtitle frame=560 "B..."
+    subtitle frame=570 "Bobby !"
+    subtitle frame=590 "Il est trop beau"
+    subtitle frame=620 "Bobby"
+    subtitle frame=650 "C'est trop d\x82lire ce jeu"
+    subtitle frame=670 "J'adore !"
+    video "ppitbb02.hnm"
+    video "tourbi.hnm"
+    video "plane.hnm"
+    video "maledict.hnm"
+    video "boba2.hnm"
+    video "venthig.hnm"
+    video "bobb.hnm"
+    video "ppit03.hnm"
+}
+
+sequence "39argent" {
+    music "croolrap.voc"
+    subtitle frame=1 "En voil\x85 pour ton argent ..."
+    subtitle frame=40 "T'aimes ca , hein ?"
+    subtitle frame=70 "L'argent"
+    subtitle frame=100 "Le PO ..."
+    subtitle frame=120 "Le PO ..."
+    subtitle frame=130 "Le PO ..."
+    subtitle frame=140 "PO PO PO !"
+    subtitle frame=150 "Le POPO"
+    subtitle frame=155 "PO !"
+    subtitle frame=160 "Le PO"
+    subtitle frame=165 "Le PO"
+    subtitle frame=170 "Le POGNON !"
+    subtitle frame=200 "Que tu as"
+    subtitle frame=230 "B\x82tement"
+    subtitle frame=260 "d\x82pens\x82"
+    subtitle frame=290 "Pour acheter"
+    video "match01.hnm"
+    video "pion.hnm"
+    video "pion.hnm"
+    video "pion.hnm"
+    video "pion.hnm"
+    video "pion.hnm"
+    video "pion.hnm"
+    video "pion.hnm"
+    video "pion.hnm"
+    video "pion.hnm"
+    video "logo_bl.hnm"
+}
+
+sequence "40freud" {
+    music "croolrap.voc"
+    subtitle frame=1 "TELEFREUD !"
+    subtitle frame=35 "M\x82fiez-vous de l'ICS"
+    subtitle frame=75 "Il peut vous"
+    subtitle frame=95 "attirer vers sa gueule"
+    subtitle frame=115 "Et puis"
+    subtitle frame=130 "vous"
+    subtitle frame=135 "idiot"
+    subtitle frame=138 "cr\x82tin"
+    subtitle frame=141 "crounouille"
+    subtitle frame=144 "molle"
+    subtitle frame=147 "vous"
+    subtitle frame=150 "ENGLOUTIR"
+    subtitle frame=170 "Vous"
+    subtitle frame=190 "et vos id\x82es lumineuses !"
+    video "ppit01.hnm"
+    video "brouil.hnm"
+    video "tourbi.hnm"
+}
+
+sequence "41cryobug" {
+    music "croolrap.voc"
+    subtitle frame=1 "Pas la peine de t'affoler , pirate !"
+    subtitle frame=40 "T'as la t\x82te qui tourne , hein ?..."
+    subtitle frame=50 "Hein ?"
+    subtitle frame=55 "Non ?"
+    subtitle frame=60 "Vraiment pas ?"
+    subtitle frame=65 "Hein ?"
+    subtitle frame=70 "La t\x82te ?"
+    subtitle frame=75 "Wow"
+    subtitle frame=77 "WAW"
+    subtitle frame=78 "Wizz"
+    subtitle frame=80 "Tu comprends rien ?"
+    subtitle frame=110 "Des objets disparaissent"
+    subtitle frame=115 ""
+    subtitle frame=120 "disparaissent"
+    subtitle frame=125 ""
+    subtitle frame=127 "disparaissent"
+    subtitle frame=130 "ou apparaissent !"
+    subtitle frame=135 "dans la cryobox"
+    subtitle frame=140 "technologie"
+    subtitle frame=143 "vaisseau"
+    subtitle frame=146 "armes"
+    subtitle frame=150 "C'est normal ! Le chaos te"
+    subtitle frame=160 "guette"
+    subtitle frame=165 "traque"
+    subtitle frame=170 "terrifie"
+    subtitle frame=175 "terrorise"
+    subtitle frame=180 "terrorifie"
+    subtitle frame=190 "Et t'envoie son arm\x82e de"
+    subtitle frame=200 "bugs !"
+    subtitle frame=203 "virus !"
+    subtitle frame=206 "crounouilles !"
+    subtitle frame=209 "BOUM !"
+    subtitle frame=212 "Boum !"
+    subtitle frame=215 "Boum !"
+    subtitle frame=220 "Pour faire p\x82ter l'Arche !"
+    video "ppit03.hnm"
+    video "ppit04.hnm"
+    video "ppit07.hnm"
+    video "archex30.hnm"
+}
+
+sequence "42micro" {
+    music "croolrap.voc"
+    subtitle frame=1 "Salut guignol !"
+    subtitle frame=30 "Tu commences \x85 me trouver"
+    subtitle frame=60 "un peu trop familier , non ?"
+    subtitle frame=90 "Et tous ces bugs que je t'envoie"
+    subtitle frame=120 "Rien que pour t'emb\x82ter !"
+    subtitle frame=150 "NA NA N\x82 REU !"
+    subtitle frame=180 "Et ben figure-toi"
+    subtitle frame=200 "que c'est pour ton bien"
+    subtitle frame=230 "C'est le patron"
+    subtitle frame=260 "qui te teste"
+    subtitle frame=290 "avant de t'embaucher ..."
+    subtitle frame=340 "T'as vu ? L'\x82cran d\x82borde !"
+    subtitle frame=350 "C'est \x82nervant , hein ?"
+    subtitle frame=370 "Eh ben c'est tous les jours comme ca"
+    subtitle frame=400 "Chez CRYO !"
+    subtitle frame=410 "Tu crois que tu as les nerfs ?"
+    subtitle frame=415 "la carrure ?"
+    subtitle frame=420 "la pointure ?"
+    subtitle frame=430 "Tu crois que tu es"
+    subtitle frame=440 "\x85"
+    subtitle frame=445 "la"
+    subtitle frame=450 "p\x82che aux moules ?"
+    subtitle frame=453 "hauteur ?"
+    video "ppit03.hnm"
+    video "archex30.hnm"
+    video "ppit07.hnm"
+    video "microfol.hnm"
+}
+
+sequence "43internet" {
+    music "croolrap.voc"
+    subtitle frame=1 "Salut pirate !"
+    subtitle frame=30 "Alors ca y est ?"
+    subtitle frame=50 "Tu suffoques"
+    subtitle frame=70 "et tu bl\x82mis ?"
+    subtitle frame=90 "Ca te fait"
+    subtitle frame=100 "tourner"
+    subtitle frame=105 "virer"
+    subtitle frame=110 "sauter la t\x82te ?"
+    subtitle frame=120 "Plus la peine de voyager"
+    subtitle frame=140 "Plus la peine !"
+    subtitle frame=150 "C'est m\x82me plus"
+    subtitle frame=160 "la peine !"
+    subtitle frame=180 "T'en crois tes oreilles ?"
+    subtitle frame=200 "Ca t'\x82clate , hein ?"
+    subtitle frame=220 "Ca t'en d\x82bouche un coin !"
+    subtitle frame=240 "Ca s'appelle"
+    subtitle frame=260 "INTERNET !"
+    subtitle frame=280 "Et c'est mieux"
+    subtitle frame=290 "que la branlette"
+    subtitle frame=292 "que la gymn"
+    subtitle frame=300 "astique"
+    subtitle frame=310 "C'est net"
+    subtitle frame=320 "C'est INTERNET !"
+    video "ppit09.hnm"
+    video "ppit04.hnm"
+    video "krando20.hnm"
+    video "star2.hnm"
+    video "1kkult20.hnm"
+    video "brs02.hnm"
+    video "ppit08.hnm"
+}
+
+sequence "44roswell" {
+    music "croolrap.voc"
+    subtitle frame=1 "\" L'objet myst\x82re \""
+    subtitle frame=20 "Attention aujourd'hui"
+    subtitle frame=50 "Le myst\x82re de ROSWELL !"
+    subtitle frame=75 "EFFRAYANT !"
+    subtitle frame=85 "TERRIFIANT !"
+    subtitle frame=95 "MASSACRIFIANT !"
+    subtitle frame=105 "C'est le myst\x82re"
+    subtitle frame=115 "C'est extra"
+    subtitle frame=120 "ORDINAIRE"
+    subtitle frame=127 "TERRESTRE !"
+    subtitle frame=140 "La vie n'est pas toujours"
+    subtitle frame=155 "ROSE"
+    subtitle frame=162 "WELL !"
+    subtitle frame=180 "Dur dur d'\x82tre"
+    subtitle frame=195 "un alien !"
+    subtitle frame=205 "une mo"
+    subtitle frame=210 "une mie"
+    subtitle frame=215 "UNE MOMIE !"
+    video "hatetv02.hnm"
+    video "match01.hnm"
+    video "momi10.hnm"
+    video "hatetv02.hnm"
+    video "maledict.hnm"
+}
+
+sequence "46robrule" {
+    music "croolrap.voc"
+    subtitle frame=1 "Cata ! C'est la cata !"
+    subtitle frame=20 "Strophe !"
+    subtitle frame=30 "Catastrophe !"
+    subtitle frame=40 "Tous ces robots !"
+    subtitle frame=60 "Wou ouh ouh !"
+    subtitle frame=75 "Qui nous scrutent !"
+    subtitle frame=110 "Quelle horreur !"
+    subtitle frame=130 "Ils sont partout !"
+    subtitle frame=150 "M\x82me dans nos vaisseaux !"
+    subtitle frame=170 "Qui va nous d\x82fendre ?"
+    subtitle frame=210 "De la t\x82te"
+    subtitle frame=235 "aux pieds"
+    subtitle frame=270 "en passant par les bras !"
+    subtitle frame=297 "Tout robotis\x82s !"
+    subtitle frame=320 "Nous finirons tous robotis\x82s !"
+    subtitle frame=350 "Bzzz Bzzz"
+    subtitle frame=355 "Bzzzit"
+    subtitle frame=360 "Bzouille"
+    subtitle frame=363 "Bzou bzou"
+    subtitle frame=366 "Bzit !"
+    subtitle frame=370 "Bzoug Bzounouille !"
+    subtitle frame=380 "Ca j'arrive pas \x85 l'encaisser !"
+    subtitle frame=410 "Tous dans des cartons"
+    subtitle frame=430 "A scruter nos cadrans"
+    subtitle frame=450 "En touchant nos boutons !"
+    subtitle frame=500 "Beuark !"
+    video "oollee01.hnm"
+    video "ppit09.hnm"
+    video "pscrt01.hnm"
+    video "legion03.hnm"
+    video "inter_sh.hnm"
+    video "garde2.hnm"
+    video "brouil.hnm"
+    video "brs02.hnm"
+    video "p_cles.hnm"
+    video "caiscrut.hnm"
+    video "ppit07.hnm"
+}
+
+sequence "47robinv" {
+    music "croolrap.voc"
+    subtitle frame=1 "Envahis !"
+    subtitle frame=20 "D\x82bord\x82s !"
+    subtitle frame=40 "Submerg\x82s !"
+    subtitle frame=60 "D\x82pass\x82s !"
+    subtitle frame=80 "D\x82prim\x82s !"
+    subtitle frame=100 "D\x82fonc\x82s !"
+    subtitle frame=110 "Enfonc\x82s !"
+    subtitle frame=115 "Niqu\x82s !"
+    subtitle frame=118 "Biais\x82s !"
+    subtitle frame=200 "A fond"
+    subtitle frame=210 "Par les ROBOTS !"
+    subtitle frame=240 "Ils sont"
+    subtitle frame=245 "Partout !"
+    subtitle frame=250 "Tout part !"
+    subtitle frame=253 "Partouze !"
+    subtitle frame=255 "Encore"
+    subtitle frame=265 "Et toujours !"
+    subtitle frame=295 "Pas un coin"
+    subtitle frame=305 "Pas un recoin"
+    subtitle frame=310 "Pas un coin"
+    subtitle frame=315 "coin"
+    subtitle frame=317 "qui leur \x82chappe !"
+    subtitle frame=324 "chappe !"
+    subtitle frame=326 "Tiens c'est marrant"
+    subtitle frame=333 "rant"
+    subtitle frame=335 "Y a de l'\x82cho"
+    subtitle frame=345 "cho"
+    subtitle frame=350 ""
+    subtitle frame=354 "cho"
+    subtitle frame=357 ""
+    subtitle frame=364 "cho"
+    subtitle frame=366 "Ils sont LA !!!"
+    subtitle frame=450 "Ils sont PARTOUT !!!"
+    video "legion03.hnm"
+    video "legion01.hnm"
+    video "brouil.hnm"
+    video "tvscrut2.hnm"
+    video "rgbtr9.hnm"
+    video "plane.hnm"
+    video "robo02.hnm"
+    video "mastpl.hnm"
+    video "tvscrut3.hnm"
+    video "robot01.hnm"
+    video "ppit08.hnm"
+}
+
+sequence "48finbob" {
+    music "croolrap.voc"
+    subtitle frame=1 ""
+    subtitle frame=100 "Ici BOB ! Bravo petit !"
+    subtitle frame=115 "C'est la fin !"
+    subtitle frame=130 "Le BIG BANG !"
+    subtitle frame=150 "Regarde bien !"
+    subtitle frame=165 "Tous ces vaisseaux !"
+    subtitle frame=195 "Et bientot l'Oeuf d'Origine !"
+    subtitle frame=215 "T'es fier de toi ! ?"
+    subtitle frame=240 "Tout va recommencer !"
+    subtitle frame=265 "Tout \x85 refaire !"
+    subtitle frame=295 "Mais bon ... Cette fois ..."
+    subtitle frame=320 "Tu vas vraiment le voir"
+    subtitle frame=335 "Le Gros BOUM !"
+    subtitle frame=340 "Le BIG"
+    subtitle frame=350 "BIG"
+    subtitle frame=360 "BOUIG"
+    subtitle frame=370 "BIG BIG BIG"
+    subtitle frame=380 "BANG !"
+    subtitle frame=390 ""
+    video "bobb.hnm"
+    video "fin1.hnm"
+    video "fin2.hnm"
+    video "fin3.hnm"
+    video "fin4.hnm"
+    video "fin5.hnm"
+    video "fin6.hnm"
+    video "fin7.hnm"
+    video "fin8.hnm"
+    video "fin9.hnm"
+    video "fin10.hnm"
+    video "fin11.hnm"
+    video "fin12.hnm"
+    video "fin13.hnm"
+    video "fin14.hnm"
+}
+
+object "couronne" {
+    video "chapocro.hnm"
+}
+
+object "tableau" {
+    video "tabloyol.hnm"
+}
+
+object "image" {
+    video "allaetoi.hnm"
+}
+
+object "momie" {
+    video "momi.hnm"
+}
+
+object "bionium" {
+    video "contenai.hnm"
+}
+
+object "technologie" {
+    video "brouil.hnm"
+}
+
+object "guitare" {
+    video "guitare.hnm"
+}
+
+object "credit" {
+    video "pion.hnm"
+}
+
+object "parfum" {
+    video "parf1_2.hnm"
+}
+
+object "decodeur" {
+    video "decodeur.hnm"
+}
+
+object "nourriture" {
+    video "murfalo.hnm"
+}
+
+object "medicament" {
+    video "creme.hnm"
+}
+
+object "armes" {
+    video "splatch.hnm"
+}
+
+object "optique" {
+    video "lentille.hnm"
+}
+
+object "energie" {
+    video "pile.hnm"
+}
+
+object "bague" {
+    video "bagouze.hnm"
+}
+
+object "emetteur" {
+    video "p_clefs.hnm"
+}
+
+object "atomique" {
+    video "extermi.hnm"
+}
+
+object "culture" {
+    video "diplom1g.hnm"
+}
+
+object "ecriture" {
+    video "diplom1j.hnm"
+}
+
+object "lois" {
+    video "diplom1r.hnm"
+}
+
+object "trait\x82" {
+    video "diplom1v.hnm"
+}
+
+object "scruter" {
+    video "caiscrut.hnm"
+}
+
+object "cadeaux" {
+    video "cadsim02.hnm"
+}
+
+object "vaisseau" {
+    video "barrow10.hnm"
+}
+
+location "Arche" {
+    music "ondoya.voc"
+    top_row 35
+    background front "arkpet1f.lbm"
+    background right "arkpet1f.lbm"
+    background left "arkpet1f.lbm"
+    background back "arkpet1f.lbm"
+    caption "Arche:\r"
+    video "aaarch10.hnm"
+}
+
+location "Ondoya" {
+    top_row 35
+    background front "glacia1G.lbm"
+    background right "glacia1G.lbm"
+    background left "glacia1G.lbm"
+    background back "glacia1G.lbm"
+    caption "Ondoya:\r"
+    video "ondoya.hnm"
+}
+
+location "Waveland" {
+    music "ondoya.voc"
+    top_row 35
+    background front "glacia1G.lbm"
+    background right "glacia1G.lbm"
+    background left "glacia1G.lbm"
+    background back "glacia1G.lbm"
+    caption "Waveland:\r"
+    video "ondoya.hnm"
+}
+
+location "Volupta" {
+    top_row 35
+    background front "petrol1f.lbm"
+    background right "petrol1d.lbm"
+    background left "petrol1g.lbm"
+    background back "petrol1b.lbm"
+    caption "Volupta:\r"
+    video "petrol10.hnm"
+}
+
+location "Voluptland" {
+    music "techno_2.voc"
+    top_row 35
+    background front "petrol1f.lbm"
+    background right "petrol1d.lbm"
+    background left "petrol1g.lbm"
+    background back "petrol1b.lbm"
+    caption "Voluptland:\r"
+    video "petrol10.hnm"
+}
+
+location "Kortex" {
+    top_row 35
+    background front "kortex1f.lbm"
+    background right "kortex1d.lbm"
+    background left "kortex1g.lbm"
+    background back "kortex1b.lbm"
+    caption "Kortex:\r"
+    video "kort_1B.hnm"
+}
+
+location "Kortland" {
+    music "angoiss.voc"
+    top_row 35
+    background front "kortex1f.lbm"
+    background right "kortex1d.lbm"
+    background left "kortex1g.lbm"
+    background back "kortex1b.lbm"
+    caption "Kortland:\r"
+    video "kort_1B.hnm"
+}
+
+location "Tempest" {
+    top_row 35
+    background front "tempet1f.lbm"
+    background right "tempet1d.lbm"
+    background left "tempet1g.lbm"
+    background back "tempet1f.lbm"
+    caption "Tempest:\r"
+    video "tempet10.hnm"
+}
+
+location "Templand" {
+    music "tempest.voc"
+    top_row 35
+    background front "tempet1f.lbm"
+    background right "tempet1d.lbm"
+    background left "tempet1g.lbm"
+    background back "tempet1f.lbm"
+    caption "Templand:\r"
+    video "tempet10.hnm"
+}
+
+location "Vulcan" {
+    top_row 35
+    background front "vulcan1f.lbm"
+    background right "vulcan1f.lbm"
+    background left "vulcan1g.lbm"
+    background back "vulcan1f.lbm"
+    caption "Vulcan:\r"
+    video "vulcan10.hnm"
+}
+
+location "Vulcland" {
+    music "connx3.voc"
+    top_row 35
+    background front "vulcan1f.lbm"
+    background right "vulcan1f.lbm"
+    background left "vulcan1g.lbm"
+    background back "vulcan1f.lbm"
+    caption "Vulcland:\r"
+    video "vulcan10.hnm"
+}
+
+location "Goan" {
+    top_row 35
+    background front "2ekato1f.lbm"
+    background right "2ekato1d.lbm"
+    background left "2ekato1g.lbm"
+    background back "2ekato1f.lbm"
+    caption "Goan:\r"
+    video "2ekato10.hnm"
+}
+
+location "Goanland" {
+    music "tv_conc.voc"
+    top_row 35
+    background front "2ekato1f.lbm"
+    background right "2ekato1d.lbm"
+    background left "2ekato1g.lbm"
+    background back "2ekato1f.lbm"
+    caption "Goanland:\r"
+    video "2ekato10.hnm"
+}
+
+location "Ekatomb" {
+    top_row 35
+    background front "1ekato1f.lbm"
+    background right "1ekato1d.lbm"
+    background left "1ekato1g.lbm"
+    background back "1ekato1b.lbm"
+    caption "Ekatomb: un jour on y tombe...\r"
+    video "1ekato10.hnm"
+}
+
+location "Ekatoland" {
+    music "cyborg.voc"
+    top_row 35
+    background front "1ekato1f.lbm"
+    background right "1ekato1d.lbm"
+    background left "1ekato1g.lbm"
+    background back "1ekato1b.lbm"
+    caption "Ekatoland:\r"
+    video "1ekato10.hnm"
+}
+
+location "Venusia" {
+    top_row 35
+    background front "1venus2f.lbm"
+    background right "1venus3f.lbm"
+    background left "1venus2f.lbm"
+    background back "1venus1f.lbm"
+    caption "Venusia:\r"
+    video "2venus10.hnm"
+}
+
+location "Super_Market" {
+    top_row 35
+    music "hatetv.voc"
+    background front "1venus2f.lbm"
+    background right "1venus2f.lbm"
+    background left "1venus3f.lbm"
+    background back "1venus1f.lbm"
+    caption "Super_Marcket:\r"
+    video "2venus10.hnm"
+}
+
+location "Cyberock" {
+    top_row 35
+    background front "1cyber1f.lbm"
+    background right "1cyber1g.lbm"
+    background left "1cyber1d.lbm"
+    background back "1cyber1f.lbm"
+    caption "Cyberock:\r"
+    video "1cyber10.hnm"
+}
+
+location "Cyberland" {
+    music "troma.voc"
+    top_row 35
+    background front "1cyber1f.lbm"
+    background right "1cyber1g.lbm"
+    background left "1cyber1d.lbm"
+    background back "1cyber1f.lbm"
+    caption "Cyberland:\r"
+    video "1cyber10.hnm"
+}
+
+location "Crazystone" {
+    top_row 35
+    background front "crazys1f.lbm"
+    background right "crazys1d.lbm"
+    background left "crazys1g.lbm"
+    background back "crazys1b.lbm"
+    caption "Crazystone:\r"
+    video "crazys10.hnm"
+}
+
+location "Crazyland" {
+    music "crazy.voc"
+    top_row 35
+    background front "crazys1f.lbm"
+    background right "crazys1d.lbm"
+    background left "crazys1g.lbm"
+    background back "crazys1b.lbm"
+    caption "Crazyland:\r"
+    video "crazys10.hnm"
+}
+
+location "Spiralus" {
+    top_row 35
+    background front "2magnu1f.lbm"
+    background right "2magnu1d.lbm"
+    background left "2magnu1g.lbm"
+    background back "2magnu1b.lbm"
+    caption "Spiralus:\r"
+    video "2magnu10.hnm"
+}
+
+location "Spiraland" {
+    music "rainday.voc"
+    top_row 35
+    background front "2magnu1f.lbm"
+    background right "2magnu1d.lbm"
+    background left "2magnu1g.lbm"
+    background back "2magnu1b.lbm"
+    caption "Spiraland\r"
+    video "2magnu10.hnm"
+}
+
+location "Magnus" {
+    top_row 35
+    background front "1magnu1f.lbm"
+    background right "1magnu1d.lbm"
+    background left "1magnu1g.lbm"
+    background back "1magnu1b.lbm"
+    caption "Magnus\r"
+    video "1magnu10.hnm"
+}
+
+location "Magnusland" {
+    music "corb.voc"
+    top_row 35
+    background front "1magnu1f.lbm"
+    background right "1magnu1d.lbm"
+    background left "1magnu1g.lbm"
+    background back "1magnu1b.lbm"
+    caption "Magnusland\r"
+    video "1magnu10.hnm"
+}
+
+location "Lovia" {
+    top_row 35
+    background front "murfal1f.lbm"
+    background right "murfal1g.lbm"
+    background left "murfal1g.lbm"
+    background back "murfal1f.lbm"
+    caption "Lovia:\r"
+    video "murfal10.hnm"
+}
+
+location "Loviland" {
+    music "vol.voc"
+    top_row 35
+    background front "murfal1f.lbm"
+    background right "murfal1g.lbm"
+    background left "murfal1g.lbm"
+    background back "murfal1f.lbm"
+    caption "Loviland:\r"
+    video "murfal10.hnm"
+}
+
+location "Golgos" {
+    top_row 35
+    background front "menhir1f.lbm"
+    background right "menhir1g.lbm"
+    background left "menhir1g.lbm"
+    background back "menhir1f.lbm"
+    caption "Golgos:\r\r"
+    video "menhir10.hnm"
+}
+
+location "Golgoland" {
+    music "sinox.voc"
+    top_row 35
+    background front "menhir1f.lbm"
+    background right "menhir1g.lbm"
+    background left "menhir1g.lbm"
+    background back "menhir1f.lbm"
+    caption "Golgoland:\r"
+    video "menhir10.hnm"
+}
+
+location "Pterra" {
+    top_row 35
+    background front "pterra1f.lbm"
+    background right "pterra1d.lbm"
+    background left "pterra1g.lbm"
+    background back "pterra1f.lbm"
+    caption "Pterra:\r"
+    video "pterra10.hnm"
+}
+
+location "Pterraland" {
+    music "tablo2.voc"
+    top_row 35
+    background front "pterra1f.lbm"
+    background right "pterra1d.lbm"
+    background left "pterra1g.lbm"
+    background back "pterra1f.lbm"
+    caption "Pterraland:\r\r"
+    video "pterra10.hnm"
+}
+
+location "Bonus" {
+    top_row 35
+    background front "forest1f.lbm"
+    background right "forest1g.lbm"
+    background left "forest1g.lbm"
+    background back "forest1f.lbm"
+    caption "Bonus:\r"
+    video "forest10.hnm"
+}
+
+location "Bonusland" {
+    music "xor.voc"
+    top_row 35
+    background front "forest1f.lbm"
+    background right "forest1g.lbm"
+    background left "forest1g.lbm"
+    background back "forest1f.lbm"
+    caption "Bonusland:\r"
+    video "forest10.hnm"
+}
+
+location "Troma" {
+    top_row 35
+    background front "glacia1f.lbm"
+    background right "glacia1g.lbm"
+    background left "glacia1g.lbm"
+    background back "glacia1f.lbm"
+    caption "Troma:\r"
+    video "glacia10.hnm"
+}
+
+location "Tromaland" {
+    music "magnus.voc"
+    top_row 35
+    background front "glacia1f.lbm"
+    background right "glacia1g.lbm"
+    background left "glacia1g.lbm"
+    background back "glacia1f.lbm"
+    caption "Tromaland:\r"
+    video "glacia10.hnm"
+}
+
+location "Cyborg" {
+    top_row 35
+    background front "marais1f.lbm"
+    background right "marais1g.lbm"
+    background left "marais1g.lbm"
+    background back "marais1f.lbm"
+    caption "Cyborg:\r"
+    video "marais10.hnm"
+}
+
+location "Cyborland" {
+    music "sinox.voc"
+    top_row 35
+    background front "marais1f.lbm"
+    background right "marais1g.lbm"
+    background left "marais1g.lbm"
+    background back "marais1f.lbm"
+    caption "Cyborland:\r"
+    video "marais10.hnm"
+}
+
+location "Kult" {
+    top_row 35
+    background front "1kkult1f.lbm"
+    background right "1kkult1f.lbm"
+    background left "1kkult1f.lbm"
+    background back "1kkult1f.lbm"
+    caption "Kult:\r"
+    video "1kkult10.hnm"
+}
+
+location "Kultland" {
+    music "techno_1.voc"
+    top_row 35
+    background front "1kkult1f.lbm"
+    background right "1kkult1f.lbm"
+    background left "1kkult1f.lbm"
+    background back "1kkult1f.lbm"
+    caption "Kultland:\r"
+    video "1kkult10.hnm"
+}
+
+location "Tumul" {
+    top_row 35
+    background front "tumull1f.lbm"
+    background right "tumull1d.lbm"
+    background left "tumull1g.lbm"
+    background back "tumull1f.lbm"
+    caption "Tumul:\r"
+    video "tumull10.hnm"
+}
+
+location "Tumland" {
+    music "rainday.voc"
+    top_row 35
+    background front "tumull1f.lbm"
+    background right "tumull1d.lbm"
+    background left "tumull1g.lbm"
+    background back "tumull1f.lbm"
+    caption "Tumland:\r"
+    video "tumull10.hnm"
+}
+
+location "Babyland" {
+    top_row 35
+    background front "tumull2f.lbm"
+    background right "tumull2d.lbm"
+    background left "tumull2g.lbm"
+    background back "tumull2f.lbm"
+    video "tumull20.hnm"
+}
+
+location "Stoneland" {
+    top_row 35
+    background front "tumull4f.lbm"
+    background right "tumull4g.lbm"
+    background left "tumull4g.lbm"
+    background back "tumull4f.lbm"
+    video "tumull40.hnm"
+}
+
+location "Darkland" {
+    top_row 35
+    background front "tumull3f.lbm"
+    background right "tumull3d.lbm"
+    background left "tumull3g.lbm"
+    background back "tumull3f.lbm"
+    video "tumull30.hnm"
+}
+
+location "Vistar" {
+    top_row 35
+    background front "2vista1f.lbm"
+    background right "2vista1d.lbm"
+    background left "2vista1g.lbm"
+    background back "2vista1f.lbm"
+    caption "Vistar:\r"
+    video "2vista10.hnm"
+}
+
+location "Vistarland" {
+    music "rainday.voc"
+    top_row 35
+    background front "2vista2f.lbm"
+    background right "2vista2d.lbm"
+    background left "2vista2g.lbm"
+    background back "2vista2b.lbm"
+    video "2vista20.hnm"
+}
+
+location "Pony" {
+    top_row 35
+    background front "1vista1f.lbm"
+    background right "1vista1d.lbm"
+    background left "1vista1g.lbm"
+    background back "1vista1b.lbm"
+    caption "Pony:\r"
+    video "1vista10.hnm"
+}
+
+location "Ponyland" {
+    music "rainday.voc"
+    top_row 35
+    background front "1vista1f.lbm"
+    background right "1vista1d.lbm"
+    background left "1vista1g.lbm"
+    background back "1vista1b.lbm"
+    caption "Ponyland:\r"
+    video "1vista10.hnm"
+}
+
+location "New_Yolk" {
+    top_row 35
+    background front "1vista2f.lbm"
+    background right "1vista2d.lbm"
+    background left "1vista2g.lbm"
+    background back "1vista2b.lbm"
+    video "1vista20.hnm"
+}
+
+location "Lone" {
+    top_row 35
+    background front "3eeden1f.lbm"
+    background right "3eeden1f.lbm"
+    background left "3eeden1f.lbm"
+    background back "3eeden1f.lbm"
+    caption "Lone:\r"
+    video "3eeden10.hnm"
+}
+
+location "Loneland" {
+    music "moonda1.voc"
+    top_row 35
+    background front "3eeden1f.lbm"
+    background right "3eeden1f.lbm"
+    background left "3eeden1f.lbm"
+    background back "3eeden1f.lbm"
+    caption "Loneland:\r"
+    video "3eeden10.hnm"
+}
+
+location "Eden" {
+    top_row 35
+    background front "1eeden1f.lbm"
+    background right "1eeden1f.lbm"
+    background left "1eeden1f.lbm"
+    background back "1eeden1f.lbm"
+    caption "Eden\r"
+    video "1eeden10.hnm"
+}
+
+location "Edenland" {
+    music "eden.voc"
+    top_row 35
+    background front "1eeden1f.lbm"
+    background right "1eeden1f.lbm"
+    background left "1eeden1f.lbm"
+    background back "1eeden1f.lbm"
+    caption "Edenland:\r"
+    video "1eeden10.hnm"
+}
+
+location "Purple_haze" {
+    top_row 35
+    background front "1eeden2f.lbm"
+    background right "1eeden2D.lbm"
+    background left "1eeden2G.lbm"
+    background back "1eeden2f.lbm"
+    video "1eeden20.hnm"
+    video "1eeden10.hnm"
+}
+
+location "Is" {
+    top_row 35
+    background front "2masta1f.lbm"
+    background right "2masta1d.lbm"
+    background left "2masta1g.lbm"
+    background back "2masta1b.lbm"
+    caption "Is:\r"
+    video "2masta10.hnm"
+}
+
+location "Island" {
+    music "connx3.voc"
+    top_row 35
+    background front "2masta1f.lbm"
+    background right "2masta1d.lbm"
+    background left "2masta1g.lbm"
+    background back "2masta1b.lbm"
+    caption "Island:\r"
+    video "2masta10.hnm"
+}
+
+location "Techland" {
+    top_row 35
+    background front "2masta2f.lbm"
+    background right "2masta2g.lbm"
+    background left "2masta2g.lbm"
+    background back "2masta2b.lbm"
+    video "2masta20.hnm"
+}
+
+location "Mastachok" {
+    top_row 35
+    background front "1masta1f.lbm"
+    background right "1masta1g.lbm"
+    background left "1masta1g.lbm"
+    background back "1masta1b.lbm"
+    caption "Mastachok\r"
+    video "1masta10.hnm"
+}
+
+location "Mastaland" {
+    music "cyber.voc"
+    top_row 35
+    background front "1masta1f.lbm"
+    background right "1masta1g.lbm"
+    background left "1masta1g.lbm"
+    background back "1masta1b.lbm"
+    video "1masta10.hnm"
+}
+
+location "Jail" {
+    top_row 35
+    background front "1masta2f.lbm"
+    background right "1masta2d.lbm"
+    background left "1masta2g.lbm"
+    background back "1masta2b.lbm"
+    video "1masta20.hnm"
+}
+
+location "Factory" {
+    top_row 35
+    background front "2masta2f.lbm"
+    background right "2masta2d.lbm"
+    background left "2masta2g.lbm"
+    background back "2masta2b.lbm"
+    video "2masta20.hnm"
+}
+
+location "Moskito" {
+    top_row 35
+    background front "moskit2f.lbm"
+    background right "moskit2d.lbm"
+    background left "moskit2g.lbm"
+    background back "moskit2b.lbm"
+    caption "Moskito:\r"
+    video "moskit10.hnm"
+}
+
+location "Moskitoland" {
+    music "connx1.voc"
+    top_row 35
+    background front "moskit2f.lbm"
+    background right "moskit2d.lbm"
+    background left "moskit2g.lbm"
+    background back "moskit2f.lbm"
+    video "moskit10.hnm"
+}
+
+location "Airport" {
+    top_row 35
+    background front "moskit3f.lbm"
+    background right "moskit3d.lbm"
+    background left "moskit3g.lbm"
+    background back "moskit3f.lbm"
+    video "moskit20.hnm"
+}
+
+location "Foxx" {
+    top_row 35
+    caption "Foxx:\r"
+    background front "2erazo2f.lbm"
+    background right "2erazo2d.lbm"
+    background left "2erazo2g.lbm"
+    background back "2erazo2f.lbm"
+    video "3erazo10.hnm"
+}
+
+location "Foxxland" {
+    music "carnhal2.voc"
+    top_row 35
+    caption "Foxxland:\r"
+    background front "2erazo2f.lbm"
+    background right "2erazo2d.lbm"
+    background left "2erazo2g.lbm"
+    background back "2erazo2f.lbm"
+    video "3erazo10.hnm"
+}
+
+location "Erazor" {
+    top_row 35
+    caption "Erazor:\r"
+    background front "1erazo2f.lbm"
+    background right "1erazo2d.lbm"
+    background left "1erazo2g.lbm"
+    background back "1erazo2f.lbm"
+    video "1erazo10.hnm"
+}
+
+location "Erazorland" {
+    music "carnhal1.voc"
+    top_row 35
+    caption "Erazorland:\r"
+    background front "1erazo2f.lbm"
+    background right "1erazo2d.lbm"
+    background left "1erazo2g.lbm"
+    background back "1erazo2f.lbm"
+    video "1erazo10.hnm"
+}
+
+location "Swimland" {
+    top_row 35
+    background front "1erazo1f.lbm"
+    background right "1erazo1f.lbm"
+    background left "1erazo1f.lbm"
+    background back "1erazo1f.lbm"
+    video "1erazo30.hnm"
+}
+
+location "Malus" {
+    top_row 35
+    caption "Malus:\r"
+    background front "2malus2f.lbm"
+    background right "2malus2d.lbm"
+    background left "2malus2g.lbm"
+    background back "2malus2f.lbm"
+    video "maluss10.hnm"
+}
+
+location "Malusland" {
+    music "masta.voc"
+    top_row 35
+    caption "Malusland:\r"
+    background front "2malus2f.lbm"
+    background right "2malus2d.lbm"
+    background left "2malus2g.lbm"
+    background back "2malus2f.lbm"
+    video "maluss10.hnm"
+}
+
+location "Sat" {
+    top_row 35
+    background front "satell1f.lbm"
+    background right "satell1d.lbm"
+    background left "satell1g.lbm"
+    background back "satell1b.lbm"
+    caption "Sat:\r"
+    video "satell10.hnm"
+}
+
+location "Satland" {
+    music "blintr.voc"
+    top_row 35
+    background front "satell1f.lbm"
+    background right "satell1d.lbm"
+    background left "satell1g.lbm"
+    background back "satell1b.lbm"
+    caption "Satland:\r"
+    video "satell10.hnm"
+}
+
+location "Corpo" {
+    top_row 35
+    background front "2kkult1f.lbm"
+    background right "2kkult1d.lbm"
+    background left "2kkult1g.lbm"
+    background back "2kkult1b.lbm"
+    caption "Corpo:\r"
+    video "2kkult10.hnm"
+}
+
+location "Corpoland" {
+    music "corpo.voc"
+    top_row 35
+    background front "2kkult1f.lbm"
+    background right "2kkult1d.lbm"
+    background left "2kkult1g.lbm"
+    background back "2kkult1b.lbm"
+    caption "Corpoland:\r"
+    video "2kkult10.hnm"
+}
+
+location "Hitaland" {
+    top_row 35
+    background front "2kkult1f.lbm"
+    background right "2kkult1d.lbm"
+    background left "2kkult1g.lbm"
+    background back "2kkult1b.lbm"
+    video "2kkult20.hnm"
+}
+
+location "Attrox" {
+    top_row 35
+    background front "jumell1f.lbm"
+    background right "jumell1d.lbm"
+    background left "jumell1f.lbm"
+    background back "jumell1f.lbm"
+    caption "Attrox:\r"
+    video "jumell10.hnm"
+}
+
+location "Attroxcity" {
+    music "sinox.voc"
+    top_row 35
+    background front "jumell1f.lbm"
+    background right "jumell1d.lbm"
+    background left "jumell1f.lbm"
+    background back "jumell1f.lbm"
+    caption "Attroxcity:\r"
+    video "jumell10.hnm"
+}
+
+location "Mammy" {
+    top_row 35
+    background front "3rondo1f.lbm"
+    background right "3rondo1d.lbm"
+    background left "3rondo1g.lbm"
+    background back "3rondo1f.lbm"
+    caption "Mammy:\r"
+    video "3rondo10.hnm"
+}
+
+location "Mammyland" {
+    music "generik.voc"
+    top_row 35
+    background front "3rondo1f.lbm"
+    background right "3rondo1d.lbm"
+    background left "3rondo1g.lbm"
+    background back "3rondo1f.lbm"
+    caption "Mammyland:\r"
+    video "3rondo10.hnm"
+}
+
+location "Rondo" {
+    top_row 35
+    background front "1rondo2f.lbm"
+    background right "1rondo2d.lbm"
+    background left "1rondo2g.lbm"
+    background back "1rondo2f.lbm"
+    caption "Rondo:\r"
+    video "1rondo10.hnm"
+}
+
+location "Rondoland" {
+    music "generik.voc"
+    top_row 35
+    background front "1rondo2f.lbm"
+    background right "1rondo2d.lbm"
+    background left "1rondo2g.lbm"
+    background back "1rondo2f.lbm"
+    video "1rondo10.hnm"
+}
+
+location "Observatory" {
+    top_row 35
+    background front "1rondo1f.lbm"
+    background right "1rondo1d.lbm"
+    background left "1rondo1g.lbm"
+    background back "1rondo1f.lbm"
+    video "1rondo20.hnm"
+}
+
+location "Kukaracha" {
+    music "kukana.voc"
+    top_row 35
+    background front "aready1f.lbm"
+    background right "aready1d.lbm"
+    background left "aready1g.lbm"
+    background back "aready1b.lbm"
+    caption "Kukaracha\r\r"
+    video "crool_3D.hnm"
+}
+
+location "Kraner" {
+    music "moonda1.voc"
+    top_row 35
+    background front "krando1f.lbm"
+    background right "krando1g.lbm"
+    background left "krando1b.lbm"
+    background back "krando1f.lbm"
+    caption "KRANER\r"
+    video "krando10.hnm"
+}
+
+location "Shark" {
+    music "fluor.voc"
+    top_row 35
+    background front "sshark1f.lbm"
+    background right "sshark1d.lbm"
+    background left "sshark1g.lbm"
+    background back "sshark1f.lbm"
+    caption "Shark\r"
+    video "sshark10.hnm"
+}
+
+location "radioship" {
+    top_row 35
+    background front "barrow1d.lbm"
+    background right "barrow1f.lbm"
+    background left "barrow1g.lbm"
+    background back "barrow1b.lbm"
+    caption "Black Arrow\r"
+    video "barrow10.hnm"
+}
+
+location "Bigbang" {
+    top_row 35
+    background front "llarve1f.lbm"
+    background right "llarve1d.lbm"
+    background left "llarve1g.lbm"
+    background back "llarve1f.lbm"
+    caption "BIGBANG\r"
+    video "larve.hnm"
+}
+
+location "bar1" {
+    top_row 35
+    music "carnhal1.voc"
+    background front "llarve2f.lbm"
+    background right "llarve2d.lbm"
+    background left "llarve2g.lbm"
+    background back "llarve2f.lbm"
+    caption ""
+    video "gobar1.hnm"
+}
+
+location "bar2" {
+    top_row 35
+    music "carnhal2.voc"
+    background front "llarve3f.lbm"
+    background right "llarve3d.lbm"
+    background left "llarve3g.lbm"
+    background back "llarve3f.lbm"
+    caption ""
+    video "gobar2.hnm"
+}
+
+location "concert" {
+    music "croolrap.voc"
+    top_row 35
+    background front "llarve4a.lbm"
+    background right "llarve4b.lbm"
+    background left "llarve4c.lbm"
+    background back "llarve4d.lbm"
+    caption ""
+    video "concert.hnm"
+}
+
+character "internet" {
+    right_video "p_clefs.hnm"
+    left_video "p_clefs.hnm"
+    sound_bank "radio.snd"
+    idle "aaport.hnm" over front
+    talk "p_clefs.hnm" over none
+}
+
+character "Eviscerator" {
+    sound_bank "crollis.snd"
+    right_video "aaevi_cd.hnm"
+    left_video "aaevi_cg.hnm"
+    idle "aaevi.hnm" over back
+    portrait "croolis1.spr"
+    talk "crl01.hnm" over front
+    talk "crl02.hnm" over front
+    talk "crl03.hnm" over back
+    talk "crl04.hnm" over back
+    talk "crl05.hnm" over back
+    talk "crl06.hnm" over back
+    talk "crl07.hnm" over left
+    talk "crl08.hnm" over right
+    talk "crl09.hnm" over left
+    talk "crl10.hnm" over back
+    talk "crl11.hnm" over back
+    talk "crl12.hnm" over back
+    talk "crl13.hnm" over back
+}
+
+character "Emasculator" {
+    sound_bank "crollis.snd"
+    right_video "aaevi_cd.hnm"
+    left_video "aaevi_cg.hnm"
+    idle "aaevv.hnm" over back
+    portrait "croolis2.spr"
+    talk "v_crla.hnm" over front
+    talk "v_croe.hnm" over back
+    talk "v_crof.hnm" over back
+    talk "v_crlag.hnm" over back
+    talk "v_croj.hnm" over left
+    talk "v_crol.hnm" over right
+    talk "v_crod.hnm" over back
+    talk "v_crob.hnm" over front
+    talk "v_croi.hnm" over right
+    talk "v_croc.hnm" over back
+}
+
+character "Outrageor" {
+    sound_bank "crollis.snd"
+    right_video "aaevi_cd.hnm"
+    left_video "aaevi_cg.hnm"
+    idle "aaprr.hnm" over front
+    portrait "croolis2.spr"
+    talk "r_pria.hnm" over front
+    talk "r_prib.hnm" over front
+    talk "r_pric.hnm" over front
+    talk "r_prid.hnm" over front
+    talk "r_prie.hnm" over front
+    talk "r_prif.hnm" over front
+    talk "r_prig.hnm" over front
+    talk "r_prigg.hnm" over back
+    talk "r_prih.hnm" over front
+    talk "r_prii.hnm" over front
+}
+
+character "Rotator" {
+    sound_bank "crollis.snd"
+    right_video "aaevi_cd.hnm"
+    left_video "aaevi_cg.hnm"
+    idle "aagar.hnm" over front
+    portrait "croolis2.spr"
+    talk "g_gara.hnm" over front
+    talk "g_garag.hnm" over left
+    talk "g_garb.hnm" over right
+    talk "g_garc.hnm" over front
+    talk "g_gard.hnm" over front
+    talk "g_gare.hnm" over front
+    talk "g_gareg.hnm" over back
+    talk "g_garf.hnm" over left
+    talk "g_garg.hnm" over left
+    talk "g_gargg.hnm" over left
+    talk "g_garh.hnm" over left
+    talk "g_gari.hnm" over back
+    talk "g_garj.hnm" over back
+}
+
+character "Trump" {
+    idle "aatro.hnm" over front
+    sound_bank "tromp.snd"
+    right_video "aatro_cd.hnm"
+    left_video "aatro_cg.hnm"
+    portrait "trompla.spr"
+    talk "ompa.hnm" over right
+    talk "ompb.hnm" over left
+    talk "ompc.hnm" over front
+    talk "ompd.hnm" over back
+    talk "ompe.hnm" over back
+    talk "ompf.hnm" over left
+    talk "ompg.hnm" over left
+    talk "omph.hnm" over front
+    talk "ompi.hnm" over left
+    talk "ompj.hnm" over left
+    talk "ompk.hnm" over right
+    talk "ompl.hnm" over front
+}
+
+character "Tramp" {
+    sound_bank "tromp.snd"
+    idle "aamor.hnm" over front
+    right_video "aatro_cd.hnm"
+    left_video "aatro_cg.hnm"
+    portrait "trompla.spr"
+    talk "trma_tr.hnm" over right
+    talk "trmb_tr.hnm" over front
+    talk "trmc_tr.hnm" over front
+    talk "trme_tr.hnm" over right
+    talk "trmf_tr.hnm" over right
+    talk "trmg_tr.hnm" over front
+    talk "trmh_tr.hnm" over back
+    talk "trmi_tr.hnm" over front
+}
+
+character "Super_Tromp" {
+    sound_bank "tromp.snd"
+    idle "aasup.hnm" over front
+    right_video "aatro_cd.hnm"
+    left_video "aatro_cg.hnm"
+    portrait "trompla.spr"
+    talk "strag_tr.hnm" over back
+    talk "stra_tr.hnm" over front
+    talk "strb_tr.hnm" over right
+    talk "strc_tr.hnm" over front
+    talk "strd_tr.hnm" over left
+    talk "stre_tr.hnm" over back
+    talk "strf_tr.hnm" over back
+    talk "strg_tr.hnm" over back
+    talk "strh_tr.hnm" over back
+}
+
+character "Strumpy" {
+    idle "aatro.hnm" over front
+    right_video "aamor_cd.hnm"
+    left_video "aamor_cg.hnm"
+    sound_bank "tromp.snd"
+    portrait "trompla.spr"
+    talk "trma_tr.hnm" over right
+    talk "trmb_tr.hnm" over front
+    talk "trmc_tr.hnm" over front
+    talk "trmd_tr.hnm" over left
+    talk "trme_tr.hnm" over right
+    talk "trmf_tr.hnm" over right
+    talk "trmg_tr.hnm" over front
+    talk "trmh_tr.hnm" over back
+    talk "trmi_tr.hnm" over front
+}
+
+character "Betakam" {
+    sound_bank "jerry.snd"
+    idle "pagotete.hnm" over front
+    right_video "pagotete.hnm"
+    left_video "pagotete.hnm"
+    talk "pagotete.hnm" over front
+    talk "pagotour.hnm" over right
+}
+
+character "Alphakam" {
+    sound_bank "jerry.snd"
+    idle "pagotete.hnm" over front
+    right_video "pagotete.hnm"
+    left_video "pagotete.hnm"
+    talk "pagotete.hnm" over front
+    talk "pagotour.hnm" over right
+}
+
+character "Gammakam" {
+    sound_bank "jerry.snd"
+    idle "pagotete.hnm" over front
+    right_video "pagotete.hnm"
+    left_video "pagotete.hnm"
+    talk "pagotete.hnm" over front
+    talk "pagotour.hnm" over right
+}
+
+character "Toolbox" {
+    sound_bank "klay.snd"
+    idle "cleatten.hnm" over front
+    right_video "cle10_cd.hnm"
+    left_video "cle10_cg.hnm"
+    portrait "klay.spr"
+    talk "cltr10_2.hnm" over front
+    talk "cltr10_3.hnm" over back
+    talk "cltr10_4.hnm" over back
+    talk "cltr10_5.hnm" over right
+    talk "cltr10_6.hnm" over front
+    talk "cltr10_7.hnm" over left
+    talk "cltr10_8.hnm" over right
+    talk "cltr10_9.hnm" over front
+    talk "cl10_10.hnm" over back
+    talk "clt10_10.hnm" over front
+    talk "cltr10_9.hnm" over front
+}
+
+character "Toolpocket" {
+    sound_bank "klay.snd"
+    idle "cleatten.hnm" over front
+    right_video "cle10_cd.hnm"
+    left_video "cle10_cg.hnm"
+    portrait "klay.spr"
+    talk "cltr10_2.hnm" over front
+    talk "cltr10_3.hnm" over back
+    talk "cltr10_4.hnm" over back
+    talk "cltr10_5.hnm" over right
+    talk "cltr10_6.hnm" over front
+    talk "cltr10_7.hnm" over left
+    talk "cltr10_8.hnm" over right
+    talk "cltr10_9.hnm" over front
+    talk "cl10_10.hnm" over back
+    talk "clt10_10.hnm" over front
+    talk "cltr10_9.hnm" over front
+}
+
+character "Toolcase" {
+    sound_bank "klay.snd"
+    idle "cleatten.hnm" over front
+    right_video "cle10_cd.hnm"
+    left_video "cle10_cg.hnm"
+    portrait "klay.spr"
+    talk "cltr10_2.hnm" over front
+    talk "cltr10_3.hnm" over back
+    talk "cltr10_4.hnm" over back
+    talk "cltr10_5.hnm" over right
+    talk "cltr10_6.hnm" over front
+    talk "cltr10_7.hnm" over left
+    talk "cltr10_8.hnm" over right
+    talk "cltr10_9.hnm" over front
+    talk "cl10_10.hnm" over back
+    talk "clt10_10.hnm" over front
+    talk "cltr10_9.hnm" over front
+}
+
+character "Metro_Paul" {
+    sound_bank "hom.snd"
+    right_video "aahom_cd.hnm"
+    left_video "aahom_cg.hnm"
+    idle "aahom.hnm" over left
+    portrait "hom.spr"
+    talk "homm_01.hnm" over right
+    talk "homm_02.hnm" over right
+    talk "homm_03.hnm" over back
+    talk "homm_04.hnm" over right
+    talk "homm_05.hnm" over front
+    talk "homm_06.hnm" over right
+    talk "homm_07.hnm" over left
+    talk "homm_08.hnm" over back
+    talk "homm_09.hnm" over back
+    talk "homm_10.hnm" over right
+    talk "homm_11.hnm" over right
+    talk "homm_12.hnm" over back
+    talk "homm_13.hnm" over right
+    talk "homm_14.hnm" over front
+    talk "homm_15.hnm" over back
+    talk "homm_16.hnm" over back
+    talk "homm_17.hnm" over front
+}
+
+character "Mega_Paul" {
+    sound_bank "hom.snd"
+    right_video "aahom_cd.hnm"
+    left_video "aahom_cg.hnm"
+    idle "aahom.hnm" over left
+    portrait "hom.spr"
+    talk "homm_01.hnm" over right
+    talk "homm_02.hnm" over right
+    talk "homm_03.hnm" over back
+    talk "homm_04.hnm" over right
+    talk "homm_05.hnm" over front
+    talk "homm_06.hnm" over right
+    talk "homm_07.hnm" over left
+    talk "homm_08.hnm" over back
+    talk "homm_09.hnm" over back
+    talk "homm_10.hnm" over right
+    talk "homm_11.hnm" over right
+    talk "homm_12.hnm" over back
+    talk "homm_13.hnm" over right
+    talk "homm_14.hnm" over front
+    talk "homm_15.hnm" over back
+    talk "homm_16.hnm" over back
+    talk "homm_17.hnm" over front
+}
+
+character "Sebasto_Paul" {
+    sound_bank "hom.snd"
+    right_video "aahom_cd.hnm"
+    left_video "aahom_cg.hnm"
+    idle "aahom.hnm" over left
+    portrait "hom.spr"
+    talk "homm_01.hnm" over right
+    talk "homm_02.hnm" over right
+    talk "homm_03.hnm" over back
+    talk "homm_04.hnm" over right
+    talk "homm_05.hnm" over front
+    talk "homm_06.hnm" over right
+    talk "homm_07.hnm" over left
+    talk "homm_08.hnm" over back
+    talk "homm_09.hnm" over back
+    talk "homm_10.hnm" over right
+    talk "homm_11.hnm" over right
+    talk "homm_12.hnm" over back
+    talk "homm_13.hnm" over right
+    talk "homm_14.hnm" over front
+    talk "homm_15.hnm" over back
+    talk "homm_16.hnm" over back
+    talk "homm_17.hnm" over front
+}
+
+character "Inter_Paul" {
+    sound_bank "hom.snd"
+    right_video "aahom_cd.hnm"
+    left_video "aahom_cg.hnm"
+    idle "aahom.hnm" over left
+    portrait "hom.spr"
+    talk "homm_01.hnm" over right
+    talk "homm_02.hnm" over right
+    talk "homm_03.hnm" over back
+    talk "homm_04.hnm" over right
+    talk "homm_05.hnm" over front
+    talk "homm_06.hnm" over right
+    talk "homm_07.hnm" over left
+    talk "homm_08.hnm" over back
+    talk "homm_09.hnm" over back
+    talk "homm_10.hnm" over right
+    talk "homm_11.hnm" over right
+    talk "homm_12.hnm" over back
+    talk "homm_13.hnm" over right
+    talk "homm_14.hnm" over front
+    talk "homm_15.hnm" over back
+    talk "homm_16.hnm" over back
+    talk "homm_17.hnm" over front
+}
+
+character "Kran_Dobu" {
+    sound_bank "khran.snd"
+    idle "khran1_2.hnm" over right
+    talk "khran1_2.hnm" over right
+    talk "khran1_3.hnm" over left
+    talk "khran2_1.hnm" over front
+    talk "khran2_2.hnm" over right
+    talk "khran1_2.hnm" over right
+    talk "khran2_3.hnm" over left
+    talk "khran3_1.hnm" over front
+    talk "khran3_2.hnm" over right
+    talk "khran3_3.hnm" over left
+    talk "khran4_1.hnm" over front
+    talk "khran4_2.hnm" over right
+}
+
+character "Marakas" {
+    idle "aamax.hnm" over front
+    right_video "aamax_cd.hnm"
+    left_video "aamax_cg.hnm"
+    sound_bank "maxx.snd"
+    portrait "maxxon.spr"
+    talk "maxa_tr.hnm" over front
+    talk "maxb_tr.hnm" over front
+    talk "maxc_tr.hnm" over front
+    talk "maxd_tr.hnm" over front
+    talk "maxe_tr.hnm" over front
+    talk "maxf_tr.hnm" over back
+    talk "maxg_tr.hnm" over front
+    talk "maxh_tr.hnm" over right
+    talk "maxi_tr.hnm" over back
+    talk "maxj_tr.hnm" over front
+    talk "maxk_tr.hnm" over front
+    talk "maxl_tr.hnm" over right
+    talk "maxm_tr.hnm" over left
+    talk "maxn_tr.hnm" over left
+    talk "maxo_tr.hnm" over front
+    talk "maxp_tr.hnm" over front
+    talk "maxq_tr.hnm" over right
+    talk "maxr_tr.hnm" over back
+    talk "maxs_tr.hnm" over front
+    talk "maxt_tr.hnm" over front
+}
+
+character "Tequila" {
+    idle "aaisw.hnm" over back
+    right_video "aaisw_cd.hnm"
+    left_video "aaisw_cg.hnm"
+    sound_bank "izwal.snd"
+    portrait "izwalito.spr"
+    talk "iswa1.hnm" over right
+    talk "iswa.hnm" over left
+    talk "iswb.hnm" over left
+    talk "iswc.hnm" over front
+    talk "iswd.hnm" over front
+    talk "iswe.hnm" over back
+    talk "iswf.hnm" over back
+    talk "iswg.hnm" over left
+    talk "iswh.hnm" over back
+    talk "iswi.hnm" over back
+    talk "iswj.hnm" over left
+    talk "iswj1.hnm" over front
+    talk "iswk.hnm" over left
+    talk "iswk1.hnm" over right
+    talk "iswx.hnm" over front
+}
+
+character "Izwalito" {
+    sound_bank "izwal.snd"
+    right_video "aayok_cd.hnm"
+    left_video "aayok_cg.hnm"
+    idle "aayok.hnm" over left
+    portrait "yoko.spr"
+    talk "yok01.hnm" over front
+    talk "yok02.hnm" over front
+    talk "yok03.hnm" over front
+    talk "yok04.hnm" over front
+    talk "yok05.hnm" over front
+    talk "yok06.hnm" over right
+    talk "yok07.hnm" over left
+    talk "yok08.hnm" over front
+    talk "yok09.hnm" over right
+    talk "yok10.hnm" over front
+    talk "yok11.hnm" over front
+    talk "yok12.hnm" over front
+    talk "yok13.hnm" over front
+    talk "yok14.hnm" over back
+    talk "yok15.hnm" over back
+    talk "yok16.hnm" over back
+    talk "yok17.hnm" over back
+    talk "yokn_tr.hnm" over front
+    talk "yoko_tr.hnm" over front
+    talk "yokp_tr.hnm" over front
+    talk "yokq_tr.hnm" over front
+}
+
+character "Cyberquizz" {
+    sound_bank "cyber.snd"
+    right_video "eye02.hnm"
+    left_video "eye02.hnm"
+    idle "eye02.hnm" over back
+    talk "eye01.hnm" over back
+    talk "eye02.hnm" over back
+    talk "eye03.hnm" over front
+    talk "eye04.hnm" over front
+    talk "eye05.hnm" over front
+    talk "eye06.hnm" over front
+    talk "eye07.hnm" over back
+    talk "eye08.hnm" over front
+    talk "eye09.hnm" over left
+    talk "eye10.hnm" over right
+    talk "eyeer.hnm" over left
+}
+
+character "Bioquizz" {
+    sound_bank "cyber.snd"
+    right_video "eye02.hnm"
+    left_video "eye02.hnm"
+    idle "eye02.hnm" over back
+    talk "eye01.hnm" over back
+    talk "eye02.hnm" over back
+    talk "eye03.hnm" over front
+    talk "eye04.hnm" over front
+    talk "eye05.hnm" over front
+    talk "eye06.hnm" over front
+    talk "eye07.hnm" over back
+    talk "eye08.hnm" over front
+    talk "eye09.hnm" over left
+    talk "eye10.hnm" over right
+    talk "eyeer.hnm" over left
+}
+
+character "Roboquizz" {
+    sound_bank "cyber.snd"
+    right_video "eye02.hnm"
+    left_video "eye02.hnm"
+    idle "eye02.hnm" over back
+    talk "eye01.hnm" over back
+    talk "eye02.hnm" over back
+    talk "eye03.hnm" over front
+    talk "eye04.hnm" over front
+    talk "eye05.hnm" over front
+    talk "eye06.hnm" over front
+    talk "eye07.hnm" over back
+    talk "eye08.hnm" over front
+    talk "eye09.hnm" over left
+    talk "eye10.hnm" over right
+    talk "eyeer.hnm" over left
+}
+
+character "Jerry_Khan" {
+    idle "aajer.hnm" over front
+    sound_bank "jerry.snd"
+    portrait "jerry.spr"
+    talk "jerry_1.hnm" over right
+    talk "jerry_10.hnm" over front
+    talk "jerry_11.hnm" over right
+    talk "jerry_12.hnm" over left
+    talk "jerry_13.hnm" over back
+    talk "jerry_14.hnm" over back
+    talk "jerry_15.hnm" over front
+    talk "jerry_16.hnm" over right
+}
+
+character "Mohi_Khan" {
+    idle "aajer.hnm" over front
+    sound_bank "jerry.snd"
+    portrait "jerry.spr"
+    talk "jerry_1.hnm" over right
+    talk "jerry_10.hnm" over front
+    talk "jerry_11.hnm" over right
+    talk "jerry_12.hnm" over left
+    talk "jerry_13.hnm" over back
+    talk "jerry_14.hnm" over back
+    talk "jerry_15.hnm" over front
+    talk "jerry_16.hnm" over right
+}
+
+character "Shado_Khan" {
+    idle "aajer.hnm" over front
+    sound_bank "jerry.snd"
+    portrait "jerry.spr"
+    talk "jerry_1.hnm" over right
+    talk "jerry_10.hnm" over front
+    talk "jerry_11.hnm" over right
+    talk "jerry_12.hnm" over left
+    talk "jerry_13.hnm" over back
+    talk "jerry_14.hnm" over back
+    talk "jerry_15.hnm" over front
+    talk "jerry_16.hnm" over right
+}
+
+character "Morning_Oil" {
+    idle "morn00.hnm" over left
+    right_video "amorn_cd.hnm"
+    left_video "amorn_cg.hnm"
+    sound_bank "morn.snd"
+    portrait "morning.spr"
+    talk "morn01.hnm" over front
+    talk "morn02.hnm" over back
+    talk "morn03.hnm" over right
+    talk "morn04.hnm" over back
+    talk "morn05.hnm" over front
+    talk "morn06.hnm" over back
+    talk "morn07.hnm" over back
+    talk "morn08.hnm" over front
+}
+
+character "Midnight_Oil" {
+    idle "morn00.hnm" over left
+    right_video "amorn_cd.hnm"
+    left_video "amorn_cg.hnm"
+    sound_bank "morn.snd"
+    portrait "morning.spr"
+    talk "morn01.hnm" over front
+    talk "morn02.hnm" over back
+    talk "morn03.hnm" over right
+    talk "morn04.hnm" over back
+    talk "morn05.hnm" over front
+    talk "morn06.hnm" over back
+    talk "morn07.hnm" over back
+    talk "morn08.hnm" over front
+}
+
+character "Evening_Oil" {
+    idle "morn00.hnm" over left
+    right_video "amorn_cd.hnm"
+    left_video "amorn_cg.hnm"
+    sound_bank "morn.snd"
+    portrait "morning.spr"
+    talk "morn01.hnm" over front
+    talk "morn02.hnm" over back
+    talk "morn03.hnm" over right
+    talk "morn04.hnm" over back
+    talk "morn05.hnm" over front
+    talk "morn06.hnm" over back
+    talk "morn07.hnm" over back
+    talk "morn08.hnm" over front
+}
+
+character "Super_Zen" {
+    sound_bank "zen.snd"
+    right_video "aazen_cd.hnm"
+    left_video "aazen_cg.hnm"
+    idle "aazen.hnm" over front
+    portrait "zen.spr"
+    talk "zen01.hnm" over front
+    talk "zen02.hnm" over front
+    talk "zen06.hnm" over back
+    talk "zen07.hnm" over front
+    talk "zen08.hnm" over front
+    talk "zen03.hnm" over front
+    talk "zen05.hnm" over left
+    talk "zen09.hnm" over front
+    talk "zen04.hnm" over front
+    talk "zen12.hnm" over left
+    talk "zenj_tr.hnm" over left
+    talk "zenk_tr.hnm" over left
+}
+
+character "Kero_Zen" {
+    sound_bank "zen.snd"
+    right_video "aazen_cd.hnm"
+    left_video "aazen_cg.hnm"
+    idle "aazen.hnm" over front
+    portrait "zen.spr"
+    talk "zen01.hnm" over front
+    talk "zen02.hnm" over front
+    talk "zen06.hnm" over back
+    talk "zen07.hnm" over front
+    talk "zen08.hnm" over front
+    talk "zen03.hnm" over front
+    talk "zen05.hnm" over left
+    talk "zen09.hnm" over front
+    talk "zen04.hnm" over front
+    talk "zen12.hnm" over left
+    talk "zenj_tr.hnm" over left
+    talk "zenk_tr.hnm" over left
+}
+
+character "Ben_Zen" {
+    sound_bank "zen.snd"
+    right_video "aazen_cd.hnm"
+    left_video "aazen_cg.hnm"
+    idle "aazen.hnm" over front
+    portrait "zen.spr"
+    talk "zen01.hnm" over front
+    talk "zen02.hnm" over front
+    talk "zen06.hnm" over back
+    talk "zen07.hnm" over front
+    talk "zen08.hnm" over front
+    talk "zen03.hnm" over front
+    talk "zen05.hnm" over left
+    talk "zen09.hnm" over front
+    talk "zen04.hnm" over front
+    talk "zen12.hnm" over left
+    talk "zenj_tr.hnm" over left
+    talk "zenk_tr.hnm" over left
+}
+
+character "Migrator" {
+    sound_bank "migr.snd"
+    right_video "aaami_cd.hnm"
+    left_video "aaami_cg.hnm"
+    idle "aaami.hnm" over front
+    portrait "migrax.spr"
+    talk "amia_tr.hnm" over right
+    talk "amib_tr.hnm" over right
+    talk "amibg_tr.hnm" over back
+    talk "amic_tr.hnm" over right
+    talk "amicg_tr.hnm" over back
+    talk "amid_tr.hnm" over back
+    talk "amie_tr.hnm" over back
+    talk "amif_tr.hnm" over left
+    talk "amig_tr.hnm" over back
+    talk "amih_tr.hnm" over back
+    talk "amii_tr.hnm" over front
+}
+
+character "Migrax" {
+    sound_bank "migr.snd"
+    right_video "aamig_cd.hnm"
+    left_video "aamig_cg.hnm"
+    idle "aamig.hnm" over front
+    portrait "migrax.spr"
+    talk "miga_tr.hnm" over right
+    talk "migb_tr.hnm" over right
+    talk "migc_tr.hnm" over front
+    talk "migd_tr.hnm" over front
+    talk "mige_tr.hnm" over front
+    talk "migf_tr.hnm" over back
+    talk "migg_tr.hnm" over left
+    talk "migh_tr.hnm" over left
+    talk "migi_tr.hnm" over back
+}
+
+character "Mig_Burner" {
+    sound_bank "tina.snd"
+    right_video "aatin_cd.hnm"
+    left_video "aatin_cg.hnm"
+    idle "aatin.hnm" over front
+    portrait "tina.spr"
+    talk "tina_tr.hnm" over right
+    talk "tinb_tr.hnm" over left
+    talk "tinc_tr.hnm" over left
+    talk "tind_tr.hnm" over front
+    talk "tine_tr.hnm" over front
+    talk "tinf_tr.hnm" over back
+    talk "ting_tr.hnm" over front
+    talk "tinh_tr.hnm" over right
+    talk "tini_tr.hnm" over front
+    talk "tinj_tr.hnm" over front
+}
+
+character "Scruter_Mac" {
+    idle "scr20.hnm" over front
+    right_video "ascru_cd.hnm"
+    left_video "ascru_cg.hnm"
+    sound_bank "scrut.snd"
+    portrait "scruter.spr"
+    talk "scr01.hnm" over back
+    talk "scr02.hnm" over back
+    talk "scr03.hnm" over back
+    talk "scr04.hnm" over back
+    talk "scr05.hnm" over back
+    talk "scr06.hnm" over back
+    talk "scr07.hnm" over front
+    talk "scr08.hnm" over back
+    talk "scr09.hnm" over back
+    talk "scr10.hnm" over back
+    talk "scr11.hnm" over front
+    talk "scr12.hnm" over back
+    talk "scr13.hnm" over front
+    talk "scr14.hnm" over back
+    talk "scr15.hnm" over front
+    talk "scr16.hnm" over back
+    talk "scr17.hnm" over front
+    talk "scr18.hnm" over front
+    talk "scr19.hnm" over front
+    talk "scr20.hnm" over front
+    talk "scr21.hnm" over right
+    talk "scr22.hnm" over right
+}
+
+character "Scruter_Jo" {
+    idle "scr20.hnm" over front
+    right_video "ascru_cd.hnm"
+    left_video "ascru_cg.hnm"
+    sound_bank "scrut.snd"
+    portrait "scruter.spr"
+    talk "scr01.hnm" over back
+    talk "scr02.hnm" over back
+    talk "scr03.hnm" over back
+    talk "scr04.hnm" over back
+    talk "scr05.hnm" over back
+    talk "scr06.hnm" over back
+    talk "scr07.hnm" over front
+    talk "scr08.hnm" over back
+    talk "scr09.hnm" over back
+    talk "scr10.hnm" over back
+    talk "scr11.hnm" over front
+    talk "scr12.hnm" over back
+    talk "scr13.hnm" over front
+    talk "scr14.hnm" over back
+    talk "scr15.hnm" over front
+    talk "scr16.hnm" over back
+    talk "scr17.hnm" over front
+    talk "scr18.hnm" over front
+    talk "scr19.hnm" over front
+    talk "scr20.hnm" over front
+    talk "scr21.hnm" over right
+    talk "scr22.hnm" over right
+}
+
+character "Scruter_K" {
+    idle "mg_scr1.hnm" over front
+    right_video "ascru_cd.hnm"
+    left_video "ascru_cg.hnm"
+    sound_bank "scrut.snd"
+    portrait "scruter.spr"
+    talk "mg_scr1.hnm" over none
+    talk "mg_scr2.hnm" over none
+    talk "mg_scr3.hnm" over none
+    talk "scr01.hnm" over back
+    talk "scr02.hnm" over back
+    talk "scr03.hnm" over back
+    talk "scr04.hnm" over back
+    talk "scr05.hnm" over back
+    talk "scr06.hnm" over back
+    talk "scr07.hnm" over front
+    talk "scr08.hnm" over back
+    talk "scr09.hnm" over back
+    talk "scr10.hnm" over back
+    talk "scr11.hnm" over front
+    talk "scr12.hnm" over back
+    talk "scr13.hnm" over front
+    talk "scr14.hnm" over back
+    talk "scr15.hnm" over front
+    talk "scr16.hnm" over back
+    talk "scr17.hnm" over front
+    talk "scr18.hnm" over front
+    talk "scr19.hnm" over front
+    talk "scr20.hnm" over front
+    talk "scr21.hnm" over right
+    talk "scr22.hnm" over right
+}
+
+character "Daddy_Gluxx" {
+    idle "gluxroug.hnm" over right
+    right_video "gluxroug.hnm"
+    left_video "gluxroug.hnm"
+    sound_bank "glux.snd"
+    portrait "gluant1.spr"
+    talk "glu00.hnm" over front
+    talk "glu01.hnm" over right
+    talk "glu02.hnm" over right
+    talk "glu03.hnm" over back
+    talk "glu04.hnm" over back
+    talk "glu05.hnm" over back
+    talk "gluxfric.hnm" over left
+    talk "gluxnon.hnm" over back
+    talk "gluxpla.hnm" over front
+    talk "gluxroug.hnm" over back
+}
+
+character "Mamy_Gluxx" {
+    idle "glu01.hnm" over right
+    right_video "gluxroug.hnm"
+    left_video "gluxroug.hnm"
+    sound_bank "glux.snd"
+    portrait "gluant1.spr"
+    talk "glu00.hnm" over front
+    talk "glu01.hnm" over right
+    talk "glu02.hnm" over right
+    talk "glu03.hnm" over back
+    talk "glu04.hnm" over back
+    talk "glu05.hnm" over back
+    talk "gluxfric.hnm" over left
+    talk "gluxnon.hnm" over back
+    talk "gluxpla.hnm" over front
+    talk "gluxroug.hnm" over back
+}
+
+character "Papy_Gluxx" {
+    idle "glu01.hnm" over right
+    right_video "gluxroug.hnm"
+    left_video "gluxroug.hnm"
+    sound_bank "glux.snd"
+    portrait "gluant1.spr"
+    talk "glu00.hnm" over front
+    talk "glu01.hnm" over right
+    talk "glu02.hnm" over right
+    talk "glu03.hnm" over back
+    talk "glu04.hnm" over back
+    talk "glu05.hnm" over back
+    talk "gluxfric.hnm" over left
+    talk "gluxnon.hnm" over back
+    talk "gluxpla.hnm" over front
+    talk "gluxroug.hnm" over back
+}
+
+character "Otto_Von_Smile" {
+    idle "doc01.hnm" over back
+    right_video "aadoc_cd.hnm"
+    left_video "aadoc_cg.hnm"
+    sound_bank "otto.snd"
+    portrait "gluant.spr"
+    talk "doc01.hnm" over back
+    talk "doc02.hnm" over front
+    talk "doc03.hnm" over back
+    talk "doc04.hnm" over left
+    talk "doc05.hnm" over back
+    talk "doc06.hnm" over right
+    talk "doc07.hnm" over left
+    talk "doc08.hnm" over back
+}
+
+character "Otto_Von_Gluk" {
+    idle "doc01.hnm" over back
+    right_video "aadoc_cd.hnm"
+    left_video "aadoc_cg.hnm"
+    sound_bank "otto.snd"
+    portrait "gluant.spr"
+    talk "doc01.hnm" over back
+    talk "doc02.hnm" over front
+    talk "doc03.hnm" over back
+    talk "doc04.hnm" over left
+    talk "doc05.hnm" over back
+    talk "doc06.hnm" over right
+    talk "doc07.hnm" over left
+    talk "doc08.hnm" over back
+}
+
+character "Otto_Von_Potato" {
+    idle "doc01.hnm" over back
+    right_video "aadoc_cd.hnm"
+    left_video "aadoc_cg.hnm"
+    sound_bank "otto.snd"
+    portrait "gluant.spr"
+    talk "doc01.hnm" over back
+    talk "doc02.hnm" over front
+    talk "doc03.hnm" over back
+    talk "doc04.hnm" over left
+    talk "doc05.hnm" over back
+    talk "doc06.hnm" over right
+    talk "doc07.hnm" over left
+    talk "doc08.hnm" over back
+}
+
+character "Chop_Parsley" {
+    idle "aargb.hnm" over front
+    right_video "aargb_cd.hnm"
+    left_video "aargb_cg.hnm"
+    sound_bank "bronko.snd"
+    portrait "rgb.spr"
+    talk "rgbtr1.hnm" over back
+    talk "rgbtr2.hnm" over left
+    talk "rgbtr3.hnm" over left
+    talk "rgbtr4.hnm" over front
+    talk "rgbtr5.hnm" over left
+    talk "rgbtr6.hnm" over right
+    talk "rgbtr7.hnm" over right
+    talk "rgbtr8.hnm" over back
+    talk "rgbtr9.hnm" over back
+}
+
+character "Mince_Steak" {
+    idle "aargb.hnm" over front
+    right_video "aargb_cd.hnm"
+    left_video "aargb_cg.hnm"
+    sound_bank "bronko.snd"
+    portrait "rgb.spr"
+    talk "rgbtr1.hnm" over back
+    talk "rgbtr2.hnm" over left
+    talk "rgbtr3.hnm" over left
+    talk "rgbtr4.hnm" over front
+    talk "rgbtr5.hnm" over left
+    talk "rgbtr6.hnm" over right
+    talk "rgbtr7.hnm" over right
+    talk "rgbtr8.hnm" over back
+    talk "rgbtr9.hnm" over back
+}
+
+character "Sever_Kidney" {
+    idle "aargb.hnm" over front
+    right_video "aargb_cd.hnm"
+    left_video "aargb_cg.hnm"
+    sound_bank "bronko.snd"
+    portrait "rgb.spr"
+    talk "rgbtr1.hnm" over back
+    talk "rgbtr2.hnm" over left
+    talk "rgbtr3.hnm" over left
+    talk "rgbtr4.hnm" over front
+    talk "rgbtr5.hnm" over left
+    talk "rgbtr6.hnm" over right
+    talk "rgbtr7.hnm" over right
+    talk "rgbtr8.hnm" over back
+    talk "rgbtr9.hnm" over back
+}
+
+character "Hanz_Morlock" {
+    idle "aahan.hnm" over front
+    right_video "aahan_cd.hnm"
+    left_video "aahan_cg.hnm"
+    sound_bank "bore.snd"
+    portrait "hanz.spr"
+    talk "bor_a_tr.hnm" over front
+    talk "bor_b_tr.hnm" over front
+    talk "bor_c_tr.hnm" over front
+    talk "bor_d_tr.hnm" over front
+    talk "bor_e_tr.hnm" over front
+    talk "borb_atr.hnm" over front
+    talk "borb_btr.hnm" over front
+    talk "borb_ctr.hnm" over front
+    talk "borb_dtr.hnm" over front
+    talk "borb_etr.hnm" over front
+    talk "hboa.hnm" over front
+    talk "hbob.hnm" over front
+    talk "hboc.hnm" over front
+    talk "hbod.hnm" over front
+    talk "hboe.hnm" over front
+    talk "hbof.hnm" over front
+    talk "hbog.hnm" over front
+    talk "hboh.hnm" over front
+    talk "hboi.hnm" over front
+    talk "hboi1.hnm" over front
+    talk "hboj.hnm" over front
+    talk "hbok.hnm" over front
+    talk "hbol.hnm" over front
+    talk "zhboa.hnm" over front
+    talk "zhbob.hnm" over front
+    talk "zhbod.hnm" over front
+    talk "zhbof.hnm" over front
+    talk "zhbog.hnm" over front
+    talk "zhboh.hnm" over front
+    talk "zhbok.hnm" over front
+    talk "zhbol.hnm" over front
+    talk "zhbolmor.hnm" over front
+}
+
+character "Bob_Morlock" {
+    idle "aabob.hnm" over front
+    right_video "aabob_cd.hnm"
+    left_video "aabob_cg.hnm"
+    sound_bank "bob.snd"
+    portrait "bob.spr"
+    talk "boba.hnm" over front
+    talk "bobb.hnm" over front
+    talk "bobc.hnm" over front
+    talk "bobd.hnm" over front
+    talk "bobe.hnm" over front
+    talk "bobf.hnm" over front
+    talk "bobg.hnm" over front
+    talk "bobh.hnm" over front
+    talk "bobi.hnm" over front
+    talk "bobj.hnm" over front
+    talk "bobk.hnm" over front
+    talk "bobr.hnm" over front
+    talk "bobx.hnm" over front
+    talk "borb_atr.hnm" over front
+    talk "borb_btr.hnm" over front
+    talk "borb_ctr.hnm" over front
+    talk "borb_dtr.hnm" over front
+    talk "borb_etr.hnm" over front
+    talk "boba2.hnm" over front
+}
+
+character "Bug_Deluxe" {
+    idle "aasynox.hnm" over front
+    right_video "aasin_cd.hnm"
+    left_video "aasin_cg.hnm"
+    sound_bank "hiro.snd"
+    portrait "sinox.spr"
+    talk "sytr_1.hnm" over front
+    talk "sytr_2.hnm" over right
+    talk "sytr_3.hnm" over left
+    talk "sytr_5.hnm" over right
+    talk "sytr_6.hnm" over front
+    talk "sytr_7.hnm" over back
+    talk "sytr_8.hnm" over back
+    talk "sytr_10.hnm" over back
+    talk "sytr_11.hnm" over back
+}
+
+character "Sushi_Deluxe" {
+    idle "aasynox.hnm" over front
+    right_video "aasin_cd.hnm"
+    left_video "aasin_cg.hnm"
+    sound_bank "hiro.snd"
+    portrait "sinox.spr"
+    talk "sytr_1.hnm" over front
+    talk "sytr_2.hnm" over right
+    talk "sytr_3.hnm" over left
+    talk "sytr_5.hnm" over right
+    talk "sytr_6.hnm" over front
+    talk "sytr_7.hnm" over back
+    talk "sytr_8.hnm" over back
+    talk "sytr_10.hnm" over back
+    talk "sytr_11.hnm" over back
+}
+
+character "Fuji_Deluxe" {
+    idle "aasynox.hnm" over front
+    right_video "aasin_cd.hnm"
+    left_video "aasin_cg.hnm"
+    sound_bank "hiro.snd"
+    portrait "sinox.spr"
+    talk "sytr_1.hnm" over front
+    talk "sytr_2.hnm" over right
+    talk "sytr_3.hnm" over left
+    talk "sytr_5.hnm" over right
+    talk "sytr_6.hnm" over front
+    talk "sytr_7.hnm" over back
+    talk "sytr_8.hnm" over back
+    talk "sytr_10.hnm" over back
+    talk "sytr_11.hnm" over back
+}
+
+character "Hito_Deluxe" {
+    idle "aasynox.hnm" over front
+    right_video "aasin_cd.hnm"
+    left_video "aasin_cg.hnm"
+    sound_bank "hiro.snd"
+    portrait "sinox.spr"
+    talk "sytr_1.hnm" over front
+    talk "sytr_2.hnm" over right
+    talk "sytr_3.hnm" over left
+    talk "sytr_5.hnm" over right
+    talk "sytr_6.hnm" over front
+    talk "sytr_7.hnm" over back
+    talk "sytr_8.hnm" over back
+    talk "sytr_10.hnm" over back
+    talk "sytr_11.hnm" over back
+}
+
+character "Blue_Wave" {
+    idle "aaonda.hnm" over none
+    right_video "onda01.hnm"
+    left_video "onda01.hnm"
+    sound_bank "ondoy.snd"
+    talk "onda01.hnm" over none
+    talk "onda03.hnm" over none
+    talk "onda04.hnm" over none
+    talk "onda05.hnm" over none
+    talk "onda06.hnm" over none
+    talk "onda07.hnm" over none
+    talk "onda08.hnm" over none
+    talk "onda09.hnm" over none
+    talk "onda10.hnm" over none
+    talk "onda11.hnm" over none
+    talk "onda12.hnm" over none
+    talk "onda13.hnm" over none
+    talk "onda14.hnm" over none
+    talk "onda15.hnm" over none
+    talk "onda16.hnm" over none
+    talk "onda17.hnm" over none
+    talk "onda18.hnm" over none
+    talk "onda19.hnm" over none
+    talk "onda20.hnm" over none
+    talk "onda21.hnm" over none
+    talk "onda22.hnm" over none
+}
+
+character "Long_Wave" {
+    idle "aaonda.hnm" over none
+    right_video "onda01.hnm"
+    left_video "onda01.hnm"
+    sound_bank "ondoy.snd"
+    talk "onda01.hnm" over none
+    talk "onda03.hnm" over none
+    talk "onda04.hnm" over none
+    talk "onda05.hnm" over none
+    talk "onda06.hnm" over none
+    talk "onda07.hnm" over none
+    talk "onda08.hnm" over none
+    talk "onda09.hnm" over none
+    talk "onda10.hnm" over none
+    talk "onda11.hnm" over none
+    talk "onda12.hnm" over none
+    talk "onda13.hnm" over none
+    talk "onda14.hnm" over none
+    talk "onda15.hnm" over none
+    talk "onda16.hnm" over none
+    talk "onda17.hnm" over none
+    talk "onda18.hnm" over none
+    talk "onda19.hnm" over none
+    talk "onda20.hnm" over none
+    talk "onda21.hnm" over none
+    talk "onda22.hnm" over none
+}
+
+character "Short_Wave" {
+    idle "aaonda.hnm" over none
+    right_video "onda01.hnm"
+    left_video "onda01.hnm"
+    sound_bank "ondoy.snd"
+    talk "onda01.hnm" over none
+    talk "onda03.hnm" over none
+    talk "onda04.hnm" over none
+    talk "onda05.hnm" over none
+    talk "onda06.hnm" over none
+    talk "onda07.hnm" over none
+    talk "onda08.hnm" over none
+    talk "onda09.hnm" over none
+    talk "onda10.hnm" over none
+    talk "onda11.hnm" over none
+    talk "onda12.hnm" over none
+    talk "onda13.hnm" over none
+    talk "onda14.hnm" over none
+    talk "onda15.hnm" over none
+    talk "onda16.hnm" over none
+    talk "onda17.hnm" over none
+    talk "onda18.hnm" over none
+    talk "onda19.hnm" over none
+    talk "onda20.hnm" over none
+    talk "onda21.hnm" over none
+    talk "onda22.hnm" over none
+}
+
+character "Yolk" {
+    idle "cle10_cd.hnm" over none
+    right_video "onda01.hnm"
+    left_video "onda01.hnm"
+    sound_bank "hiro.snd"
+    talk "scrut_a.hnm" over none
+    talk "scrut_b.hnm" over none
+    talk "scrut_c.hnm" over none
+    talk "scrut_d.hnm" over none
+}

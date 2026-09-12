@@ -1,8 +1,10 @@
 # DESCRIPT presentation source
 
-`DESCRIPT.descript` is the canonical editable source for the shared
-`DESCRIPT.DES` presentation database. It contains all 145 records and all 1,221
-ordered commands in the shipped file.
+The two games use the same DESCRIPT format but ship different presentation
+databases. `DESCRIPT.descript` is Commander Blood's canonical editable source;
+it contains all 145 records and 1,221 ordered commands. Big Bug Bang's source is
+`big-bug-bang/DESCRIPT.descript`; it contains all 230 records and 2,757 ordered
+commands.
 
 The source exposes four semantic record types:
 
@@ -30,6 +32,10 @@ Generate canonical source and require an internal byte-exact round trip:
 cargo run --bin cbvm -- decompile-descript \
   accuracy/cblood_install/cblood/DESCRIPT.DES \
   re/descript/DESCRIPT.descript
+
+cargo run --bin cbvm -- decompile-descript \
+  output/big-bug-bang/imported-assets/resources/DESCRIPT.DES \
+  re/descript/big-bug-bang/DESCRIPT.descript
 ```
 
 Compile it and compare it independently with the installed game:
@@ -39,8 +45,13 @@ cargo run --bin cbvm -- compile-descript \
   re/descript/DESCRIPT.descript \
   /tmp/DESCRIPT.DES \
   accuracy/cblood_install/cblood/DESCRIPT.DES
+
+cargo run --bin cbvm -- compile-descript \
+  re/descript/big-bug-bang/DESCRIPT.descript \
+  /tmp/BIG-BUG-BANG-DESCRIPT.DES \
+  output/big-bug-bang/imported-assets/resources/DESCRIPT.DES
 ```
 
-The canonical-source test checks both directions: source compilation must match
-all 19,234 shipped bytes, and decompilation must reproduce the checked-in source
-exactly.
+The canonical-source tests check both directions. Commander source compilation
+must match all 19,234 shipped bytes; Big Bug Bang must match all 44,676. Each
+decompiler must also reproduce its checked-in source exactly.

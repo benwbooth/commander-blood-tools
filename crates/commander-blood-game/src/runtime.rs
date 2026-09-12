@@ -821,9 +821,9 @@ mod tests {
         assert_eq!(data.game(), GameVariant::BigBugBang);
         let compiled = temporary.0.join("compiled-scripts-v1");
         if compiled.is_dir() {
-            assert_eq!(std::fs::read_dir(&compiled).unwrap().count(), 68);
+            assert_eq!(std::fs::read_dir(&compiled).unwrap().count(), 69);
+            assert!(compiled.join("DESCRIPT.DES").is_file());
         }
-        assert!(!compiled.join("DESCRIPT.DES").exists());
         assert!(!compiled.join("SCRIPT1.BAS").exists());
         let cod = std::fs::read(source.join("resources/SCRIPT1.COD")).unwrap();
         assert_eq!(

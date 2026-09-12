@@ -185,6 +185,8 @@
                 "$out/share/applications/commander-blood.desktop"
               install -Dm444 re/descript/DESCRIPT.descript \
                 "$out/share/commander-blood/re/descript/DESCRIPT.descript"
+              install -Dm444 re/descript/big-bug-bang/DESCRIPT.descript \
+                "$out/share/commander-blood/re/descript/big-bug-bang/DESCRIPT.descript"
               mkdir -p "$out/share/commander-blood/re/vm/profiles"
               install -m444 re/vm/profiles/script*.blood \
                 "$out/share/commander-blood/re/vm/profiles/"

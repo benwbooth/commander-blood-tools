@@ -52,8 +52,9 @@ comparison and inherited VM handler semantics. The changed AMER/CROOLIS overlay
 images now have the bounded native frame comparison described below. Modern
 typed VM source, English text coverage, and the unreachable-BAS result do not
 close those native obligations. The explicit BBB unified source path now
-reproduces all 68 active COD/DEB/DIC/VAR resources, as detailed below; the
-default CB walker and retired interpreter have not been switched to BBB.
+reproduces all 68 active COD/DEB/DIC/VAR resources and the 44,676-byte DESCRIPT
+database, as detailed below; the default CB walker and retired interpreter have
+not been switched to BBB.
 
 ### Changed AMER and CROOLIS Overlays
 
@@ -195,20 +196,27 @@ valid evidence for the sequel.
 ### Production BBB Source Verification
 
 Production startup now selects editable script sources by game identity.
-Commander Blood keeps its five profiles and editable DESCRIPT resource; Big Bug
-Bang selects the 17 profiles under `re/vm/big-bug-bang-profiles` and owns only
-COD, DEB, DIC and VAR. A newer BBB source is compiled, compared byte for byte
-with each original resource, and installed in the existing per-game verified
-cache. Any difference aborts startup before the compiled bytes can become a
-runtime override. BBB startup does not compile Commander sources, emit BAS, or
-claim an editable DESCRIPT source.
+Commander Blood keeps its five profiles and DESCRIPT source; Big Bug Bang
+selects the 17 profiles under `re/vm/big-bug-bang-profiles` plus its DESCRIPT
+source under `re/descript/big-bug-bang`. A newer BBB source is compiled,
+compared byte for byte with each original resource, and installed in the
+existing per-game verified cache. Any difference aborts startup before the
+compiled bytes can become a runtime override. BBB startup does not compile
+Commander sources or emit BAS.
 
-The package installs both profile sets. An asset-free layout test checks their
-separate counts, dialects and resource ownership. The original-resource cache
-test compiles all 17 BBB profiles through the startup artifact path and requires
-exactly 68 named overrides, 17 rebuilt units, and no BAS or DESCRIPT cache file.
-The production bootstrap test exercises the same game-identity selection while
+The package installs both profile sets and both DESCRIPT sources. An asset-free
+layout test checks their separate counts, dialects and resource ownership. The
+original-resource cache test compiles all 17 BBB profiles and its DESCRIPT
+source through the startup artifact path and requires 68 named profile
+overrides, 69 cache files, 18 rebuilt units, and no BAS cache file. The
+production bootstrap test exercises the same game-identity selection while
 continuing to verify that loaded COD bytes equal the shipped resource.
+
+The existing DESCRIPT decompiler accepts the sequel database without a dialect
+extension and rejects any non-exact round trip. The checked-in source covers all
+230 records and 2,757 ordered commands and recompiles to the original 44,676
+bytes (SHA-256
+`3ffb0122c13ea951fa9a24df3ddbbeb383a5da91f645d8833a2de1ee760e913d`).
 
 ### Izwalito's Treaty Purchase
 
@@ -2937,10 +2945,10 @@ The production path now selects the executable and title from game identity,
 checks the analyzed sequel executable hash before media normalization, and uses
 the sequel's writable namespace by default. The SDL window title also identifies
 the selected game. Production source verification is game-specific: Commander
-keeps its editable DESCRIPT and five script profiles, while BBB checks its 17
-editable COD/DEB/DIC/VAR profiles without compiling Commander sources or
-claiming an editable DESCRIPT resource. Unchanged scripts continue to load the
-original disc bytes.
+checks its DESCRIPT and five script profiles, while BBB checks its own DESCRIPT
+and 17 COD/DEB/DIC/VAR profiles without compiling Commander sources or
+inventing a BAS resource. Unchanged scripts continue to load the original disc
+bytes.
 
 With no writable `BLOOD.SAV`, BBB retains the ten native slot records embedded
 at executable file offset `0x1206B` (GS:`0x287B`). This is not an invented empty
@@ -2992,9 +3000,6 @@ sequence comparison and deliberate navigation remain necessary.
   Game-specific startup, profile switching, missing BAS ownership and SCRIPT2's
   adjacent read-only directory word are implemented, but those component results
   do not prove every cross-profile route.
-- Recover readable, hand-editable DESCRIPT source with byte-exact reproduction.
-  The 17 active COD/DEB/DIC/VAR sets now have unified exact source, while the lone
-  dormant BAS remains preserved under its separate ownership proof.
 - Port remaining changed native simulation, travel, interface and presentation
   behavior. The bounded AMER/CROOLIS asset and runtime frame comparison is
   complete as described above. Validate new media through the library-only

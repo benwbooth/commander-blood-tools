@@ -14,7 +14,8 @@ use crate::game::GameVariant;
 
 const SCRIPT_SOURCE_ENVIRONMENT_VARIABLE: &str = "CBLOOD_SCRIPT_SOURCE";
 const COMPILED_SCRIPT_CACHE_DIRECTORY: &str = "compiled-scripts-v1";
-const DESCRIPT_SOURCE_RELATIVE_PATH: &str = "descript/DESCRIPT.descript";
+const COMMANDER_DESCRIPT_SOURCE_RELATIVE_PATH: &str = "descript/DESCRIPT.descript";
+const SEQUEL_DESCRIPT_SOURCE_RELATIVE_PATH: &str = "descript/big-bug-bang/DESCRIPT.descript";
 const COMMANDER_VM_SOURCE_DIRECTORY_RELATIVE_PATH: &str = "vm/profiles";
 const SEQUEL_VM_SOURCE_DIRECTORY_RELATIVE_PATH: &str = "vm/big-bug-bang-profiles";
 const DESCRIPT_COMPILED_FILENAME: &str = "DESCRIPT.DES";
@@ -128,14 +129,14 @@ impl ScriptSourceLayout {
     const fn for_game(game: GameVariant) -> Self {
         match game {
             GameVariant::CommanderBlood => Self {
-                descript: Some(DESCRIPT_SOURCE_RELATIVE_PATH),
+                descript: Some(COMMANDER_DESCRIPT_SOURCE_RELATIVE_PATH),
                 profiles: COMMANDER_VM_SOURCE_DIRECTORY_RELATIVE_PATH,
                 profile_count: 5,
                 profile_dialect: ProfileDialect::CommanderBlood,
                 profile_extensions: &COMMANDER_SCRIPT_EXTENSIONS,
             },
             GameVariant::BigBugBang => Self {
-                descript: None,
+                descript: Some(SEQUEL_DESCRIPT_SOURCE_RELATIVE_PATH),
                 profiles: SEQUEL_VM_SOURCE_DIRECTORY_RELATIVE_PATH,
                 profile_count: 17,
                 profile_dialect: ProfileDialect::BigBugBang,
@@ -470,7 +471,7 @@ mod tests {
         );
 
         let sequel = ScriptSourcePaths::from_root(&root, GameVariant::BigBugBang).unwrap();
-        assert!(sequel.descript.is_none());
+        assert!(sequel.descript.as_ref().unwrap().is_file());
         assert_eq!(sequel.layout.profile_count, 17);
         assert_eq!(sequel.layout.profile_extensions, SEQUEL_SCRIPT_EXTENSIONS);
         assert_eq!(sequel.layout.profile_dialect, ProfileDialect::BigBugBang);
@@ -479,7 +480,7 @@ mod tests {
 
     #[test]
     #[ignore = "requires original Big Bug Bang imported resources"]
-    fn sequel_rebuild_emits_exactly_its_68_active_profile_resources() {
+    fn sequel_rebuild_emits_descript_and_exactly_its_68_active_profile_resources() {
         let workspace = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let canonical = workspace.join("output/big-bug-bang/imported-assets/resources");
         let source_root = workspace.join("re");
@@ -493,9 +494,13 @@ mod tests {
             &writable.0,
         )
         .unwrap();
-        assert!(artifacts.descript.is_none());
+        let canonical_descript = fs::read(canonical.join(DESCRIPT_COMPILED_FILENAME)).unwrap();
+        assert_eq!(
+            artifacts.descript.as_deref(),
+            Some(canonical_descript.as_slice())
+        );
         assert_eq!(artifacts.resources.len(), 68);
-        assert_eq!(artifacts.rebuilt_unit_count, 17);
+        assert_eq!(artifacts.rebuilt_unit_count, 18);
         assert!(
             artifacts
                 .resources
@@ -504,8 +509,11 @@ mod tests {
         );
 
         let cache = writable.0.join(COMPILED_SCRIPT_CACHE_DIRECTORY);
-        assert_eq!(fs::read_dir(&cache).unwrap().count(), 68);
-        assert!(!cache.join(DESCRIPT_COMPILED_FILENAME).exists());
+        assert_eq!(fs::read_dir(&cache).unwrap().count(), 69);
+        assert_eq!(
+            fs::read(cache.join(DESCRIPT_COMPILED_FILENAME)).unwrap(),
+            canonical_descript
+        );
         assert!(!cache.join("SCRIPT2.BAS").exists());
 
         let cached = prepare_verified_script_artifacts_from_sources(
@@ -515,7 +523,7 @@ mod tests {
             &writable.0,
         )
         .unwrap();
-        assert!(cached.descript.is_none());
+        assert_eq!(cached.descript, artifacts.descript);
         assert_eq!(cached.resources, artifacts.resources);
         assert_eq!(cached.rebuilt_unit_count, 0);
     }

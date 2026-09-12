@@ -885,6 +885,15 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("accuracy/cblood_install/cblood/DESCRIPT.DES")
     }
 
+    fn sequel_asset() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("output/big-bug-bang/imported-assets/resources/DESCRIPT.DES")
+    }
+
+    fn sequel_source() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("re/descript/big-bug-bang/DESCRIPT.descript")
+    }
+
     #[test]
     fn shipped_descript_decompiles_and_recompiles_byte_exactly() {
         let original = std::fs::read(original_asset()).unwrap();
@@ -906,6 +915,32 @@ mod tests {
         let source = std::fs::read_to_string(source_path).unwrap();
         assert_eq!(compile(&source).unwrap(), original);
         assert_eq!(decompile(&original).unwrap().source, source);
+    }
+
+    #[test]
+    fn canonical_sequel_source_is_complete_and_self_canonical() {
+        let source = std::fs::read_to_string(sequel_source()).unwrap();
+        let image = compile(&source).unwrap();
+        assert_eq!(image.len(), 44_676);
+        let decompiled = decompile(&image).unwrap();
+        assert_eq!(decompiled.record_count, 230);
+        assert_eq!(decompiled.command_count, 2_757);
+        assert_eq!(decompiled.source, source);
+        assert!(source.contains("sequence \"present\" {"));
+        assert!(source.contains("location \"Tempest\" {"));
+        assert!(source.contains("character \"Daddy_Gluxx\" {"));
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang imported resources"]
+    fn canonical_sequel_source_matches_the_complete_shipped_database() {
+        let original = std::fs::read(sequel_asset()).unwrap();
+        let source = std::fs::read_to_string(sequel_source()).unwrap();
+        assert_eq!(compile(&source).unwrap(), original);
+        let decompiled = decompile(&original).unwrap();
+        assert_eq!(decompiled.record_count, 230);
+        assert_eq!(decompiled.command_count, 2_757);
+        assert_eq!(decompiled.source, source);
     }
 
     #[test]
