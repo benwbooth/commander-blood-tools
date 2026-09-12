@@ -1,0 +1,40 @@
+# Load the purchased treaty, give it to Izwalito, return to the bridge, and save.
+wait 150
+click 160 150
+wait 20
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 115
+wait 10
+click 100 43
+wait 60
+park 4 45
+wait 10
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+wait 600
+click 200 111
+wait 300
+# Refuse the immediately offered replacement treaty.
+click 200 100
+wait 300
+# Cancel the remaining four-item GIVE list.
+click 200 117
+wait 300
+park 4 45
+wait 200
+click 230 152
+wait 40
+click 100 104
+wait 10
+key 28 13
+wait 20

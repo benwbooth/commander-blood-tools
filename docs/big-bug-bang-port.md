@@ -235,6 +235,40 @@ route. Evidence is in
 This verification preceded the source-first priority change; it does not
 establish later treaty use or a complete playthrough.
 
+### Izwalito Treaty Gift
+
+`bbb_izwalito_treaty_gift.tsv` starts a fresh process from the purchased-treaty
+checkpoint, returns to Izwalito on Vulcland, selects the visibly rendered
+`treaty` row in GIVE, refuses the immediately authored replacement-treaty offer,
+cancels the remaining four-item GIVE list, returns to the unblocked bridge, and
+saves normally. A second fresh process loads that new save without rewriting
+either save file.
+
+Semantic traces now expose each BBB actor's aggressiveness, energy, encounter
+count, and evolution from the same synchronized state already used for holder,
+population, and simulation-flag diagnostics. The route requires Izwalito's
+evolution to change from 90 to 140 and aggressiveness from 150 to 100 while the
+treaty moves from aboard to Izwalito at state offset `0x065c`. These are the
+authored SCRIPT4 effects at COD `0x3d8c..0x3dc4`: the English acknowledgement
+is displayed, evolution increases by 50, aggressiveness is assigned 100, and
+population increases by 400 before normal simulation continues. Guitar,
+perfume, decoder, and energy remain aboard throughout.
+
+`izwalito_treaty_gift_survives_save_and_fresh_process_load` passed in 146.72
+seconds. Gift/save evidence is retained at
+`output/fidelity/bbb-izwalito-treaty-gift-save-1789242995553521195-2838889-0`;
+fresh-load evidence is at
+`output/fidelity/bbb-izwalito-treaty-gift-load-1789243112928956812-2838889-1`.
+The resulting `BLOOD.SAV` SHA-256 is
+`f57ba4a59e8339b49e9229bf73b53417f9d468406ed144ac477fd16e715636df`;
+`GAME1.SAV` is
+`4b9b17a63606fd497e810b19295d8e319b3fec4233e19999473532b0077dd13a`.
+The tested optimized runtime SHA-256 is
+`c556c0079a12063c22421aec3ae94fce487ab3072dbc1db4c8fc08b1d0606346`.
+Population continued through ordinary growth and conflict while the route ran;
+this test does not establish another settlement stage, treaty effects on other
+races, or the ending.
+
 ### Izwalito's Help Conversation
 
 The first Vulcan visit after migration reveals Izwalito as a life form and

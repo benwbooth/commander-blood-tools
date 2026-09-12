@@ -9,6 +9,12 @@ prompt and Pierrette pronouns were corrected against the French source.
 See `../../docs/big-bug-bang-port.md` for artifacts, native-handler evidence,
 and the remaining unverified progression. This is not full-game completion.
 
+The purchased treaty now also has a live English GIVE-path check. A fresh
+process renders its `treaty` row for Izwalito, displays the translated
+acknowledgement, applies the original evolution and aggressiveness changes,
+returns to the bridge, saves, and restores the result in another process. See
+`../../docs/big-bug-bang-port.md` for the retained evidence and limitations.
+
 `en/script1.json` contains an English editorial first pass for all 89 A6 text
 sites in the opening COD profile. It includes non-spoken sites, unchanged sound
 effects, and the three choice sections. The COD runtime backend now binds its

@@ -4398,6 +4398,10 @@ impl<'window> ModernGameServices<'window> {
                             "target_record": target.map(|id| id.index()),
                             "target_name": target.and_then(name),
                             "sequel_population": actor_word(11),
+                            "sequel_aggressiveness": actor_word(25),
+                            "sequel_energy": actor_word(26),
+                            "sequel_encounter_count": actor_word(27),
+                            "sequel_evolution": actor_word(28),
                             "sequel_simulation_flags": actor_word(1),
                         }))
                     })
@@ -6729,11 +6733,28 @@ mod tests {
                 .word(state_before.object_word(daddy, 1).unwrap())
                 .unwrap()
         );
+        for (field, word) in [
+            ("sequel_aggressiveness", 25),
+            ("sequel_energy", 26),
+            ("sequel_encounter_count", 27),
+            ("sequel_evolution", 28),
+        ] {
+            assert_eq!(
+                daddy_location[field],
+                state_before
+                    .word(state_before.object_word(daddy, word).unwrap())
+                    .unwrap()
+            );
+        }
         assert!(
             locations
                 .iter()
                 .filter(|entry| entry["kind"] != "Actor")
                 .all(|entry| entry["sequel_population"].is_null()
+                    && entry["sequel_aggressiveness"].is_null()
+                    && entry["sequel_energy"].is_null()
+                    && entry["sequel_encounter_count"].is_null()
+                    && entry["sequel_evolution"].is_null()
                     && entry["sequel_simulation_flags"].is_null())
         );
         assert_eq!(

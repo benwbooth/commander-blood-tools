@@ -128,6 +128,144 @@ fn assert_izwalito_treaty_trace(frames: &std::path::Path, fresh_load: bool) {
 }
 
 #[test]
+#[ignore = "requires BBB assets, a purchased treaty save, and a graphical display"]
+fn izwalito_treaty_gift_survives_save_and_fresh_process_load() {
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let save = std::env::var_os("BBB_TREATY_SAVE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            workspace.join(
+                "output/fidelity/bbb-izwalito-treaty-save-1788923108216766608-1036958-0/writable",
+            )
+        });
+    let gifted = replay_bbb_from_save(
+        "bbb-izwalito-treaty-gift-save",
+        "accuracy/scenarios/bbb_izwalito_treaty_gift.tsv",
+        &save,
+    );
+    assert_izwalito_treaty_gift_trace(&gifted, false);
+    let writable = gifted.parent().unwrap().join("writable");
+    let loaded = replay_bbb_from_save(
+        "bbb-izwalito-treaty-gift-load",
+        "accuracy/scenarios/bbb_load_zen_checkpoint.tsv",
+        &writable,
+    );
+    assert_izwalito_treaty_gift_trace(&loaded, true);
+    for name in ["BLOOD.SAV", "GAME1.SAV"] {
+        assert_eq!(
+            fs::read(writable.join(name)).unwrap(),
+            fs::read(loaded.parent().unwrap().join("writable").join(name)).unwrap(),
+            "fresh load rewrote {name}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "requires BBB_PROGRESSION_TRACE from a completed Izwalito treaty gift"]
+fn validate_recorded_izwalito_treaty_gift() {
+    assert_izwalito_treaty_gift_trace(
+        &PathBuf::from(std::env::var_os("BBB_PROGRESSION_TRACE").expect("BBB_PROGRESSION_TRACE")),
+        false,
+    );
+}
+
+fn assert_izwalito_treaty_gift_trace(frames: &std::path::Path, fresh_load: bool) {
+    let mut loaded = false;
+    let mut menu = false;
+    let mut acknowledged = false;
+    let mut transferred = false;
+    let mut effect_applied = false;
+    let mut saved = false;
+    let mut ready = false;
+    for line in BufReader::new(File::open(frames).unwrap()).lines() {
+        let frame: serde_json::Value = serde_json::from_str(&line.unwrap()).unwrap();
+        let semantic = &frame["semantic"];
+        if !loaded && semantic["vm"]["resource_profile"].is_null() {
+            continue;
+        }
+        if !loaded && semantic["vm"]["resource_profile"] == 0 {
+            continue;
+        }
+        let izwalito = sequel_actor(semantic, "Izwalito").expect("Izwalito trace record");
+        // SCRIPT1.DEB record 179 is the accented treaty item; use stable identity.
+        let treaty_given = semantic["persistent"]["object_locations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|object| object["record"] == 179 && object["holder_raw"] == 0x65c);
+        let treaty_holder = semantic["persistent"]["object_locations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|object| object["record"] == 179)
+            .expect("treaty trace record")["holder_raw"]
+            .as_u64()
+            .expect("treaty holder");
+        for name in ["guitare", "parfum", "decodeur", "energie"] {
+            assert!(
+                has_location(semantic, name, 65535),
+                "gift route moved {name}"
+            );
+        }
+        if !loaded {
+            assert_eq!(treaty_given, fresh_load, "wrong initial treaty owner");
+            assert_eq!(treaty_holder, if fresh_load { 0x65c } else { 65535 });
+            assert_eq!(
+                izwalito["sequel_evolution"],
+                if fresh_load { 140 } else { 90 }
+            );
+            assert_eq!(
+                izwalito["sequel_aggressiveness"],
+                if fresh_load { 100 } else { 150 }
+            );
+        }
+        loaded = true;
+        menu |= !treaty_given
+            && semantic["presentation"]["active_actor_presentation"]["name"] == "Izwalito"
+            && semantic["presentation"]["rendered_word_choices"]
+                == serde_json::json!(["guitar", "perfume", "decoder", "energy", "treaty"])
+            && semantic["presentation"]["retained_word_choice"]["phase"] == "Selecting"
+            && semantic["presentation"]["retained_word_choice"]["rows"][4]["matching_text_pixels"]
+                .as_u64()
+                .is_some_and(|pixels| pixels > 0);
+        acknowledged |= treaty_given
+            && semantic["vm"]["resource_profile"] == 3
+            && semantic["subtitle"] == "A treaty, let's see, it's to stop the war...";
+        if treaty_given {
+            assert!(
+                fresh_load || menu,
+                "treaty moved before its visible gift row"
+            );
+            transferred = true;
+            if izwalito["sequel_evolution"] == 140 && izwalito["sequel_aggressiveness"] == 100 {
+                effect_applied = true;
+            } else {
+                assert!(
+                    !effect_applied
+                        && izwalito["sequel_evolution"] == 90
+                        && izwalito["sequel_aggressiveness"] == 150,
+                    "treaty effect was partial or reverted"
+                );
+            }
+        } else {
+            assert!(!transferred, "gifted treaty returned to the player");
+        }
+        saved |= semantic["save_load"]["completed_saves"]
+            .as_u64()
+            .is_some_and(|count| count > 0);
+        ready = effect_applied && main_profile_unblocked(semantic);
+    }
+    assert!(
+        loaded && transferred && effect_applied && ready,
+        "treaty gift did not reach an unblocked bridge"
+    );
+    assert!(
+        fresh_load || (menu && acknowledged && saved),
+        "visible treaty gift, authored effect, and save were not all observed"
+    );
+}
+
+#[test]
 #[ignore = "requires BBB assets, an earned migrated Izwal save, and a graphical display"]
 fn izwalito_help_save_reloads_into_authored_no_ending() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -1135,6 +1273,13 @@ fn has_location(semantic: &serde_json::Value, name: &str, holder: u64) -> bool {
                 .iter()
                 .any(|object| object["name"] == name && object["holder_raw"] == holder)
         })
+}
+
+fn sequel_actor<'a>(semantic: &'a serde_json::Value, name: &str) -> Option<&'a serde_json::Value> {
+    semantic["persistent"]["object_locations"]
+        .as_array()?
+        .iter()
+        .find(|object| object["kind"] == "Actor" && object["name"] == name)
 }
 
 fn has_mutation(semantic: &serde_json::Value) -> bool {
