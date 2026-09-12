@@ -514,6 +514,8 @@ pub use presentation_word_choice::{
 #[cfg(test)]
 mod sequel_bit_flag_oracle;
 #[cfg(test)]
+mod sequel_clock_oracle;
+#[cfg(test)]
 mod sequel_inventory_choice_oracle;
 #[cfg(test)]
 mod sequel_record_pair_oracle;

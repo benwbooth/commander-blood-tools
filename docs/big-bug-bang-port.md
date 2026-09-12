@@ -205,6 +205,22 @@ nix develop -c cargo test -p commander-blood-game --lib \
   sequel_b8_b9_bd_use_shared_record_pair_state
 ```
 
+BBB's CA and CB entries retain the inherited signed host-clock guards at
+`0x6A01..0x6A75`. `big_bug_bang_clock_guard_oracle.py` executes both handlers
+and the real failure helper in 1,764 cases spanning signed hour, month and day
+boundaries, all three relation tags, ignored CA tag high bytes and CB year
+words, and preserved nonzero query bytes. The Rust regression decodes BBB CA/CB
+tokens and evaluates them through the shared `ScriptClock` and `ScriptRuntime`,
+including guard failure, cursor movement and the ignored encoded year.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_clock_guard_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_clock_guard.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_ca_cb_use_shared_signed_host_clock_guards
+```
+
 ### COD Source Recovery and Shared Arithmetic
 
 The source-first pass found a production translation discrepancy that route
