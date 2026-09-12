@@ -110,8 +110,8 @@ use crate::assets::OriginalResourceStore;
 use crate::game::GameVariant;
 use crate::media_import::NormalizedMediaStore;
 use crate::native::bloodprg::{
-    ORIGINAL_SCRIPT_PROFILE_COUNT, OriginalResourceCache, OriginalResourceCatalog,
-    OriginalScriptProfileCatalog, ResourceLoadStatus, ScriptProfileId, ScriptProfileManager,
+    OriginalResourceCache, OriginalResourceCatalog, OriginalScriptProfileCatalog,
+    ResourceLoadStatus, ScriptProfileId, ScriptProfileManager, ScriptProfileResourceKind,
     StartupWritableResourceCatalog,
 };
 use crate::script_rebuild::prepare_verified_script_artifacts;
@@ -326,7 +326,7 @@ pub struct ScriptProfileValidation {
     pub profile: ScriptProfileId,
     /// Framed executable COD instruction count.
     pub code_token_count: usize,
-    /// Framed BAS dialogue token count.
+    /// Framed BAS dialogue token count, or zero when this profile has no bound BAS program.
     pub dialogue_token_count: usize,
     /// Interned DIC word count.
     pub dictionary_word_count: usize,
@@ -668,29 +668,10 @@ impl OriginalGameData {
 
     /// Decode every playable BloodScript profile through the original resource service.
     pub fn validate_script_profiles(&self) -> Result<Vec<ScriptProfileValidation>> {
-        let mut validations = Vec::with_capacity(ORIGINAL_SCRIPT_PROFILE_COUNT);
-        for profile in ScriptProfileId::all() {
-            let resources = self.script_profile_catalog.profile(profile);
-            for resource in resources.all() {
-                let name = self.resource_catalog.name(resource).with_context(|| {
-                    format!(
-                        "profile {} references unknown resource {}",
-                        profile.value(),
-                        resource.value()
-                    )
-                })?;
-                if !self.resource_store.resource_exists(name)? {
-                    bail!(
-                        "profile {} resource {} ({}) is not resolvable from the original data set",
-                        profile.value(),
-                        resource.value(),
-                        String::from_utf8_lossy(name.as_bytes())
-                    );
-                }
-            }
-
-            let mut manager = ScriptProfileManager::new(self.script_profile_catalog.clone());
-            let mut cache = OriginalResourceCache::new();
+        let mut validations = Vec::with_capacity(self.script_profile_catalog.len());
+        let mut manager = ScriptProfileManager::new(self.script_profile_catalog.clone());
+        let mut cache = OriginalResourceCache::new();
+        for profile in self.script_profile_catalog.profile_ids() {
             let outcome = manager
                 .select(
                     profile,
@@ -699,22 +680,37 @@ impl OriginalGameData {
                     &self.resource_catalog,
                 )
                 .with_context(|| format!("loading BloodScript profile {}", profile.value()))?;
-            if outcome.resource_statuses
-                != [ResourceLoadStatus::LoadedNow;
-                    crate::native::bloodprg::SCRIPT_PROFILE_RESOURCE_COUNT]
-            {
+            let unavailable_required =
+                outcome
+                    .resource_statuses
+                    .iter()
+                    .enumerate()
+                    .any(|(index, status)| {
+                        *status == ResourceLoadStatus::Unavailable
+                            && index != ScriptProfileResourceKind::Dialogue as usize
+                    });
+            if unavailable_required {
                 bail!(
-                    "profile {} did not load five fresh resources",
+                    "profile {} omitted a required script resource",
                     profile.value()
                 );
             }
             let loaded = manager
                 .current()
                 .context("profile manager did not retain the selected profile")?;
+            let dialogue_token_count = if self.script_profile_catalog.dialect()
+                == commander_blood_formats::code::ScriptDialect::BigBugBang
+                || outcome.resource_statuses[ScriptProfileResourceKind::Dialogue as usize]
+                    == ResourceLoadStatus::Unavailable
+            {
+                0
+            } else {
+                loaded.dialogue().decoded()?.tokens().len()
+            };
             validations.push(ScriptProfileValidation {
                 profile,
                 code_token_count: loaded.code().tokens().len(),
-                dialogue_token_count: loaded.dialogue().decoded()?.tokens().len(),
+                dialogue_token_count,
                 dictionary_word_count: loaded.dictionary().len(),
                 directory_entry_count: loaded.directory().entries().len(),
             });
@@ -819,6 +815,20 @@ mod tests {
         std::fs::create_dir(&temporary.0).unwrap();
         let data = OriginalGameData::load_with_writable_root(paths, &temporary.0).unwrap();
         assert_eq!(data.game(), GameVariant::BigBugBang);
+        let validations = data.validate_script_profiles().unwrap();
+        assert_eq!(validations.len(), 17);
+        assert_eq!(
+            validations
+                .iter()
+                .map(|validation| validation.profile.value())
+                .collect::<Vec<_>>(),
+            (0..17).collect::<Vec<_>>()
+        );
+        assert!(
+            validations
+                .iter()
+                .all(|validation| validation.dialogue_token_count == 0)
+        );
         let compiled = temporary.0.join("compiled-scripts-v1");
         if compiled.is_dir() {
             assert_eq!(std::fs::read_dir(&compiled).unwrap().count(), 69);
@@ -965,7 +975,7 @@ mod tests {
         assert_eq!(data.bridge_menu_text().initial_text_speed_step(), 2);
         assert_eq!(
             data.validate_script_profiles().unwrap().len(),
-            ORIGINAL_SCRIPT_PROFILE_COUNT
+            data.script_profile_catalog().len()
         );
         assert!(
             data.default_vga_palette()

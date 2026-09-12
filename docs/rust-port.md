@@ -18,6 +18,23 @@ heuristic frontend.
   BloodScript compiler. The new game does not depend on that package and may
   not call the retired heuristic `EngineState` frontend.
 
+## Shared game runtime
+
+Commander Blood and Big Bug Bang enter the same `ModernGameServices` runtime,
+game lifecycle, renderers, and host adapters. `GameVariant` selects only
+executable-authored catalogs, asset names, localization, and persistent storage;
+`ScriptDialect` selects bytecode and native behavioral differences that are
+verified against the corresponding executable. Big Bug Bang must not acquire a
+parallel engine or copy a Commander routine: shared behavior stays in the common
+typed implementation and an executable-supported difference is a narrow dialect
+branch around it.
+
+Script profile traversal is catalog-driven. This matters because Commander has
+five profiles while Big Bug Bang has seventeen, retains VAR state across profile
+changes, and has no profile-bound BAS program. The common validator follows the
+catalog's authored order and the same profile manager used at runtime, so those
+differences do not create separate loading engines.
+
 `re/rust-port/ported.tsv` is the positive coverage ledger. Its test validates
 every row against the authoritative BLOODPRG and XDB C manifests. Unlisted
 routines remain unported; there is no inferred or percentage-based credit.

@@ -265,6 +265,21 @@ impl OriginalScriptProfileCatalog {
         self.dialect
     }
 
+    /// Number of playable profiles in this executable-authored catalog.
+    pub const fn len(&self) -> usize {
+        self.profiles.len()
+    }
+
+    /// Whether the executable-authored catalog contains no playable profiles.
+    pub const fn is_empty(&self) -> bool {
+        self.profiles.is_empty()
+    }
+
+    /// Iterate every playable profile identity in authored order.
+    pub fn profile_ids(&self) -> impl Iterator<Item = ScriptProfileId> {
+        (u8::MIN..self.profiles.len() as u8).map(ScriptProfileId)
+    }
+
     /// Return one playable profile's resource IDs.
     pub fn profile(&self, profile: ScriptProfileId) -> ScriptProfileResources {
         self.profiles[profile.index()]
@@ -1068,6 +1083,16 @@ mod tests {
     fn executable_profile_matrix_matches_every_authored_row_and_sentinel() {
         let executable = include_bytes!("../../../../../re/bin/BLOODPRG.EXE");
         let profiles = OriginalScriptProfileCatalog::decode_bloodprg(executable).unwrap();
+
+        assert_eq!(profiles.len(), ORIGINAL_SCRIPT_PROFILE_COUNT);
+        assert!(!profiles.is_empty());
+        assert_eq!(
+            profiles
+                .profile_ids()
+                .map(ScriptProfileId::value)
+                .collect::<Vec<_>>(),
+            (0..ORIGINAL_SCRIPT_PROFILE_COUNT as u8).collect::<Vec<_>>()
+        );
 
         assert_eq!(
             numeric_resources(profiles.profile(FIRST_PROFILE)),
