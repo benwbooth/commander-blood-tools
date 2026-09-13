@@ -399,8 +399,10 @@ mod tests {
     use super::*;
     use crate::native::bloodprg::PresentationEntryStorage;
 
-    const PRESENT_VECTOR_COUNT: usize = 10;
-    const FLAT_PRESENT_VECTOR_COUNT: usize = 9;
+    const COMMANDER_PRESENT_VECTOR_COUNT: usize = 10;
+    const COMMANDER_FLAT_PRESENT_VECTOR_COUNT: usize = 9;
+    const SEQUEL_PRESENT_VECTOR_COUNT: usize = 11;
+    const SEQUEL_FLAT_PRESENT_VECTOR_COUNT: usize = 10;
     const PIXEL_PATTERN: u8 = 0x5A;
 
     #[derive(Deserialize)]
@@ -579,12 +581,36 @@ mod tests {
     }
 
     #[test]
-    fn presentation_order_matches_every_flat_original_vector() {
-        let vectors: Vec<PresentOracle> = serde_json::from_str(include_str!(
+    fn presentation_order_matches_both_flat_original_fixtures() {
+        let commander: Vec<PresentOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a41a_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), PRESENT_VECTOR_COUNT);
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_active.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_presentation_vectors(
+            commander,
+            COMMANDER_PRESENT_VECTOR_COUNT,
+            COMMANDER_FLAT_PRESENT_VECTOR_COUNT,
+        );
+        assert_presentation_vectors(
+            sequel,
+            SEQUEL_PRESENT_VECTOR_COUNT,
+            SEQUEL_FLAT_PRESENT_VECTOR_COUNT,
+        );
+    }
+
+    fn assert_presentation_vectors(
+        vectors: Vec<PresentOracle>,
+        expected_count: usize,
+        expected_flat_count: usize,
+    ) {
+        assert_eq!(vectors.len(), expected_count);
         let mut matched = 0;
 
         for vector in vectors {
@@ -630,7 +656,7 @@ mod tests {
             assert_eq!(state.retired.is_some(), vector.active, "{}", vector.name);
             matched += 1;
         }
-        assert_eq!(matched, FLAT_PRESENT_VECTOR_COUNT);
+        assert_eq!(matched, expected_flat_count);
     }
 
     #[test]

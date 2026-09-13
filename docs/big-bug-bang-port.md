@@ -4666,6 +4666,31 @@ coverage. No production behavior changed. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `27f111080ffb12cd2e947de514132d8b7c5dcd67163475b2cd916b9fb3afb838`.
 
+## Active Presentation Coordinator Oracle (2026-09-13)
+
+BBB `0xBC04..0xBCD7` is the relocated sequel counterpart of Commander Blood's
+`0xA41A..0xA4ED` active-entry presentation coordinator. Both bodies contain 87
+instructions in 211 bytes. Queue and framebuffer fields, helper addresses, and
+the far display call relocate without changing normalized control flow.
+
+`re/tools/big_bug_bang_presentation_active_oracle.py` executes both shipped
+bodies with the ten recovered Commander cases plus one shared within-clamp
+probe. The added probe closes a legacy gap at the back-buffer row clamp, so the
+11 cases traverse all 20 conditional branch edges. They cover inactive state,
+direct and back-buffer drawing, optional coordinates, empty frames, present
+suppression, compressed decoding, row clamping, offset wrap, and reverse DF.
+
+The oracle verifies exact active-to-retired state writes and callback-visible
+ordering, all three helper contracts, normalized near and far return frames,
+DS/ES/FS/GS ownership, complete registers and segments, flags, stack bounds,
+all unowned memory, executable immutability, and direct Commander/BBB equality.
+The typed coordinator consumes both fixtures: ten sequel rows are representable
+and the wrapped-coordinate rectangle remains safely rejected. No production
+behavior changed. BBB's body SHA-256 is
+`75763b21515471444c07b0f9c11603f870101879bbf343a59d037b2d6f2726fb`,
+and the deterministic JSONL SHA-256 is
+`1f78b7ee3ffe07873edb8e09fb4302ad162e4b012705e8adcf5d846b7f9a0ff6`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
