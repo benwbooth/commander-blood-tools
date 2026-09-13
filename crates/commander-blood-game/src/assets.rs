@@ -276,9 +276,9 @@ impl OriginalResourceStore {
     /// Copy a nonempty resource to a loose destination below the data root.
     ///
     /// This translates `startup_resource_file_copy` at BLOODPRG file offset
-    /// `0x00280F`. A zero-length source preserves the original skip behavior;
-    /// successful copies use the same typed archive-or-loose source policy as
-    /// ordinary loads.
+    /// `0x00280F` and BLOOD2PG offset `0x002B8F`. A zero-length source preserves
+    /// the original skip behavior; successful copies use the same typed
+    /// archive-or-loose source policy as ordinary loads.
     pub fn copy_to_loose(
         &self,
         source: &BloodResourceName,
@@ -611,6 +611,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangFileCopyOracle {
+        rows: Vec<FileCopyOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct ResourceLengthOracle {
         name: String,
         embedded_flag: u8,
@@ -879,12 +884,7 @@ mod tests {
         assert!(std::fs::read(root.0.join("COPIED.DAT")).unwrap().is_empty());
     }
 
-    #[test]
-    fn startup_copy_matches_every_native_semantic_vector() {
-        let vectors: Vec<FileCopyOracle> = serde_json::from_str(include_str!(
-            "../../../re/tools/oracle_vectors/func_280f_natural.json"
-        ))
-        .unwrap();
+    fn assert_startup_copy_vectors(vectors: Vec<FileCopyOracle>) {
         assert_eq!(vectors.len(), FILE_COPY_ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -947,6 +947,24 @@ mod tests {
                 assert!(!root.0.join("COPIED.DAT").exists(), "{}", vector.name);
             }
         }
+    }
+
+    #[test]
+    fn startup_copy_matches_every_native_semantic_vector() {
+        let vectors: Vec<FileCopyOracle> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_280f_natural.json"
+        ))
+        .unwrap();
+        assert_startup_copy_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_startup_copy_matches_every_direct_vector() {
+        let oracle: BigBugBangFileCopyOracle = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/big_bug_bang_resource_copy.json"
+        ))
+        .unwrap();
+        assert_startup_copy_vectors(oracle.rows);
     }
 
     #[test]

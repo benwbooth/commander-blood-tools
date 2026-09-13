@@ -4149,3 +4149,32 @@ The strict ledger classifies 294 of 383 known entries and leaves 89 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `1f5626146d6292201e12baa6665346e85d45c24263352e9c70ec52e8974e688f`.
+
+## 2026-09-13 - Big Bug Bang startup resource copying
+
+`re/tools/big_bug_bang_resource_copy_oracle.py` executes BBB's complete
+unchanged startup resource-copy coordinator at `0x2B8F`. Eight cases cover an
+empty source, source-open failure, destination-create failure, one- and
+multi-chunk copies, full 32-bit remaining lengths, and ignored read, write, and
+source-close carry. Their normalized semantic fields and call partitions match
+the independent Commander fixture.
+
+The oracle checks the exact 108-byte body hash; lookup and DOS call frames,
+paths, handles, ordering, and payload hashes; the fixed `0xFA00` read request;
+the alternating shared handle; complete register and segment restoration;
+result carry, far return, bounded stack writes; exact transfer-buffer contents;
+and full state, path, executable, and patched-lookup ownership. Its checked
+fixture at `re/tools/oracle_vectors/big_bug_bang_resource_copy.json` has SHA-256
+`c857945e756eda0467d916551c94562513cf0ee3fe0938f2acfe362c6730f613`.
+`OriginalResourceStore::copy_to_loose` consumes every direct BBB row through
+owned source bytes and an explicit-root destination.
+
+The global collector now reproduces 143 exact fixtures and one prefix fixture
+across 145 BBB oracle programs, entering 261 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`222888ca92069384307e272f5f5e811df0d5d84069972fcddf0da917a9d4f4bf`.
+The strict ledger classifies 295 of 383 known entries and leaves 88 pending:
+232 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 26
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`bed1a8ee056291c66bb5afa1c5a5efe41878353de585b6bb624dcaf392229bb0`.
