@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 140,
-    "oracle_fixture_count": 139,
+    "oracle_count": 141,
+    "oracle_fixture_count": 140,
     "fixture_relation_counts": {
-      "exact": 138,
+      "exact": 139,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 254,
-    "unentered_static_entrypoints": 128,
+    "entered_static_entrypoints": 256,
+    "unentered_static_entrypoints": 126,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 255,
+    "entered_known_entrypoints": 257,
     "comparison_counts": {
       "unresolved": {
-        "entered": 77,
-        "unentered": 49
+        "entered": 78,
+        "unentered": 48
       },
       "structural_candidate": {
-        "entered": 142,
-        "unentered": 54
+        "entered": 143,
+        "unentered": 53
       },
       "exact_body": {
         "entered": 15,
@@ -1463,6 +1463,19 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_resource_file_oracle.py",
+      "oracle_sha256": "dd474fafe0c4335d76ae47b7ee5fcf4f1d962da2c3e9ef80e4d15d1cc83835c6",
+      "executed_instruction_count": 95,
+      "entered_entrypoints": [
+        "0x2c4a",
+        "0x2e40"
+      ],
+      "summary": "verified 8 BBB resource-length and 8 conventional-load cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_resource_file.json",
+      "fixture_sha256": "44b5bde3340821a572520fc7e00f6807b1ef08b80065e77e68adc0959e2f221b",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_resource_switch_oracle.py",
       "oracle_sha256": "3017f7e87a04d26a5d29e4a3fbad2538f69bab82b2de7cfab315a501735f3fae",
       "executed_instruction_count": 192,
@@ -2857,8 +2870,10 @@
     {
       "entry": "0x2c4a",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_resource_file_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {
@@ -2880,8 +2895,10 @@
     {
       "entry": "0x2e40",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_resource_file_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x2abb"
     },

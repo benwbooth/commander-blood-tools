@@ -4027,3 +4027,35 @@ The strict ledger classifies 288 of 383 known entries and leaves 95 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `5770d27986dcd777864641e8f90f3eea346482c0d63cd31c2da804cd90677909`.
+
+## 2026-09-13 - Big Bug Bang resource length and conventional loading
+
+`re/tools/big_bug_bang_resource_file_oracle.py` executes BBB's complete
+unchanged resource-length routine at `0x2C4A` and conventional segmented file
+loader at `0x2E40`. Eight length cases cover archive and loose-file routing,
+bit-zero flag semantics, full 32-bit sizes, DTA offset wrapping, an SI-versus-DX
+path probe, and BBB's explicit zero result after a failed find. Eight load cases
+cover embedded and loose sources, missing opens, zero-byte files, multi-chunk
+reads, segment/offset wrapping, stale DTA use after a failed find, and ignored
+read carry.
+
+The oracle checks both exact body hashes, the source-selector far-call frames,
+ordered DOS ABIs, handles, requested and returned byte counts, destination
+addresses and payloads, relocated resource globals, complete register and
+segment results, far returns, bounded stack writes, direction/carry behavior,
+and full state, destination, decoy, and executable ownership outside the
+intentional source-selector stub. The checked
+fixture at `re/tools/oracle_vectors/big_bug_bang_resource_file.json` has SHA-256
+`44b5bde3340821a572520fc7e00f6807b1ef08b80065e77e68adc0959e2f221b`.
+`OriginalResourceStore::{resource_len,load}` consumes every semantic row and
+uses owned bytes and host filesystem metadata instead of DOS segmented I/O.
+
+The global collector now reproduces 139 exact fixtures and one prefix fixture
+across 141 BBB oracle programs, entering 256 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`18011c4e9c73f980c60ebbef75bb808bb2126598acacf699f7fb3828f1029a1a`.
+The strict ledger classifies 290 of 383 known entries and leaves 93 pending:
+229 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 24
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`259c1b0c5fbd9e33b3a6229f33a7d93da5164b7f05e7f719cc3d5512a4920d27`.

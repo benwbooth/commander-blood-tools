@@ -177,7 +177,7 @@ impl OriginalResourceStore {
     /// Return the byte count of a resolvable resource.
     ///
     /// This is the typed host equivalent of `resource_name_lookup` at
-    /// BLOODPRG file offset `0x0028CA`.
+    /// BLOODPRG file offset `0x0028CA` and BLOOD2PG offset `0x002C4A`.
     pub fn resource_len(&self, name: &BloodResourceName) -> Result<usize> {
         if let Some(bytes) = self.verified_overrides.get(name) {
             return Ok(bytes.len());
@@ -217,9 +217,10 @@ impl OriginalResourceStore {
 
     /// Load one resource into a single owned byte allocation.
     ///
-    /// This translates `resource_file_load` at BLOODPRG file offset
-    /// `0x002ABB`. XMS, EMS, chunk cursors, and address wrapping are obsolete;
-    /// consumers receive the exact member or loose-file bytes directly.
+    /// This translates `resource_file_load` at BLOODPRG file offset `0x002ABB`
+    /// and BLOOD2PG offset `0x002E40`. XMS, EMS, chunk cursors, and address
+    /// wrapping are obsolete; consumers receive the exact member or loose-file
+    /// bytes directly.
     pub fn load(&self, name: &BloodResourceName) -> Result<Box<[u8]>> {
         if let Some(bytes) = self.verified_overrides.get(name) {
             return Ok(Box::from(bytes.as_ref()));
@@ -627,6 +628,12 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangResourceFileOracle {
+        lengths: Vec<ResourceLengthOracle>,
+        loads: Vec<ResourceLoadOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct FileWriteOracle {
         name: String,
         byte_count: usize,
@@ -994,6 +1001,78 @@ mod tests {
             let name = resource_name("RESOURCE.DAT");
             if vector.open_success == Some(false) {
                 let store = OriginalResourceStore::new(root.0.clone(), None, [name.clone()], false);
+                assert!(store.load(&name).is_err(), "{}", vector.name);
+                continue;
+            }
+
+            let payload = oracle_payload(vector.byte_count);
+            let store = if vector.embedded_flag & FORCE_LOOSE_BIT != u8::MIN {
+                let archive =
+                    BloodArchive::decode(archive_bytes(&[(name.clone(), payload.as_slice())]))
+                        .unwrap();
+                OriginalResourceStore::new(root.0.clone(), Some(archive), [], false)
+            } else {
+                std::fs::write(root.0.join("RESOURCE.DAT"), &payload).unwrap();
+                OriginalResourceStore::new(root.0.clone(), None, [name.clone()], false)
+            };
+            assert_eq!(vector.returned_size, payload.len(), "{}", vector.name);
+            assert_eq!(&*store.load(&name).unwrap(), payload, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn sequel_resource_file_access_matches_every_direct_vector() {
+        let oracle: BigBugBangResourceFileOracle = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/big_bug_bang_resource_file.json"
+        ))
+        .unwrap();
+        assert_eq!(oracle.lengths.len(), RESOURCE_LENGTH_ORACLE_VECTOR_COUNT);
+        assert_eq!(oracle.loads.len(), RESOURCE_LOAD_ORACLE_VECTOR_COUNT);
+
+        for vector in oracle.lengths {
+            let root = TemporaryResourceRoot::create();
+            let name = resource_name("RESOURCE.DAT");
+            if vector.embedded_flag & FORCE_LOOSE_BIT != u8::MIN {
+                assert_eq!(vector.returned_size, vector.archive_size, "{}", vector.name);
+                let payload = oracle_payload((vector.returned_size as usize % 251) + 1);
+                let archive =
+                    BloodArchive::decode(archive_bytes(&[(name.clone(), payload.as_slice())]))
+                        .unwrap();
+                let store = OriginalResourceStore::new(root.0.clone(), Some(archive), [], false);
+                assert_eq!(store.source(&name), OriginalResourceSource::EmbeddedArchive);
+                assert_eq!(
+                    store.resource_len(&name).unwrap(),
+                    payload.len(),
+                    "{}",
+                    vector.name
+                );
+                continue;
+            }
+
+            let store = OriginalResourceStore::new(root.0.clone(), None, [name.clone()], false);
+            if vector.find_success == Some(false) {
+                assert_eq!(vector.returned_size, u64::MIN, "{}", vector.name);
+                assert!(store.resource_len(&name).is_err(), "{}", vector.name);
+                continue;
+            }
+            let file_size = vector.file_size.unwrap();
+            let file = std::fs::File::create(root.0.join("RESOURCE.DAT")).unwrap();
+            file.set_len(file_size).unwrap();
+            assert_eq!(vector.returned_size, file_size, "{}", vector.name);
+            assert_eq!(
+                store.resource_len(&name).unwrap() as u64,
+                file_size,
+                "{}",
+                vector.name
+            );
+        }
+
+        for vector in oracle.loads {
+            let root = TemporaryResourceRoot::create();
+            let name = resource_name("RESOURCE.DAT");
+            if vector.open_success == Some(false) {
+                let store = OriginalResourceStore::new(root.0.clone(), None, [name.clone()], false);
+                assert_eq!(vector.returned_size, usize::MIN, "{}", vector.name);
                 assert!(store.load(&name).is_err(), "{}", vector.name);
                 continue;
             }
