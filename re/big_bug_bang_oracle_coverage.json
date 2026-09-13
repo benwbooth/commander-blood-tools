@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 137,
-    "oracle_fixture_count": 136,
+    "oracle_count": 138,
+    "oracle_fixture_count": 137,
     "fixture_relation_counts": {
-      "exact": 135,
+      "exact": 136,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 251,
-    "unentered_static_entrypoints": 131,
+    "entered_static_entrypoints": 252,
+    "unentered_static_entrypoints": 130,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 252,
+    "entered_known_entrypoints": 253,
     "comparison_counts": {
       "unresolved": {
         "entered": 76,
         "unentered": 50
       },
       "structural_candidate": {
-        "entered": 140,
-        "unentered": 56
+        "entered": 141,
+        "unentered": 55
       },
       "exact_body": {
         "entered": 15,
@@ -320,6 +320,18 @@
       "summary": "verified 21 BBB steering cases covering 52 normalized conditional edges",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_bridge_steering.jsonl",
       "fixture_sha256": "8f2759a3a5e0109735e48806baead79ad9e458171ca980e2cc1c3839e5e04e20",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_cdrom_detection_oracle.py",
+      "oracle_sha256": "6474a76c139e910f5b5c1e0b05a826a346b680f58a8f4b2bd3883990d6054903",
+      "executed_instruction_count": 6,
+      "entered_entrypoints": [
+        "0x0d2d"
+      ],
+      "summary": "verified 5 BBB MSCDEX detection cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_cdrom_detection.json",
+      "fixture_sha256": "cbb8d1f2023a4d16bb05da6c561d018ed06c039181d62701d227b59539bb0c0c",
       "fixture_relation": "exact"
     },
     {
@@ -2111,8 +2123,10 @@
     {
       "entry": "0x0d2d",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_cdrom_detection_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0xb32"
     },

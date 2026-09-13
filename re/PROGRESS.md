@@ -3944,3 +3944,29 @@ The strict ledger classifies 285 of 383 known entries and leaves 98 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `8608d1a2f9d97de8b861501400f253ab3ea750182336fa9d65c99dd46116f366`.
+
+## 2026-09-13 - Big Bug Bang CD source detection
+
+`re/tools/big_bug_bang_cdrom_detection_oracle.py` executes the complete
+unchanged BBB MSCDEX wrapper at `0x0D2D`. Five cases cover zero, ordinary,
+maximum-positive, and high-bit drive counts. The oracle checks the exact
+16-byte body hash, `INT 2Fh` register ABI, relocated `GS:0x0CEF` availability
+write, retained DOS results, complete remaining register and segment state,
+near return, stack and executable immutability, and all defined result flags.
+
+The generated BBB rows exactly equal the independently checked Commander
+`0x0B32` fixture. `detect_cd_audio_source` consumes both fixtures and retains
+the original zero-versus-nonzero gate while using resolved track metadata as
+the modern source signal. The BBB fixture at
+`re/tools/oracle_vectors/big_bug_bang_cdrom_detection.json` has SHA-256
+`cbb8d1f2023a4d16bb05da6c561d018ed06c039181d62701d227b59539bb0c0c`.
+
+The global collector now reproduces 136 exact fixtures and one prefix fixture
+across 138 BBB oracle programs, entering 252 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`e59374cb62168fcba967f89e8d5f0e80a15b7213cf0909dbebf1ab5bc67f9d11`.
+The strict ledger classifies 286 of 383 known entries and leaves 97 pending:
+226 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 23
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`3f1bf7b583a2eb1f2d0bab3e85652b7d59f45de6bb65968189ae437820a09fdf`.

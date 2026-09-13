@@ -269,18 +269,22 @@ mod tests {
 
     #[test]
     fn source_detection_matches_every_original_drive_count_vector() {
-        let vectors: Vec<DetectionVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_0b32_natural.json"
-        ))
-        .unwrap();
-        assert_eq!(vectors.len(), 5);
         let metadata = metadata(TEST_TRACK_START, TEST_DISC_LEAD_OUT);
-        for vector in vectors {
-            let source = (vector.drive_count != u16::MIN).then_some(&metadata);
-            assert_eq!(
-                detect_cd_audio_source(source),
-                vector.cdrom_present != u8::MIN
-            );
+        for source_vectors in [
+            include_str!("../../../../../re/tools/oracle_vectors/func_0b32_natural.json"),
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/big_bug_bang_cdrom_detection.json"
+            ),
+        ] {
+            let vectors: Vec<DetectionVector> = serde_json::from_str(source_vectors).unwrap();
+            assert_eq!(vectors.len(), 5);
+            for vector in vectors {
+                let source = (vector.drive_count != u16::MIN).then_some(&metadata);
+                assert_eq!(
+                    detect_cd_audio_source(source),
+                    vector.cdrom_present != u8::MIN
+                );
+            }
         }
     }
 
