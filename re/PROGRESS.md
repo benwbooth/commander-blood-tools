@@ -3863,3 +3863,31 @@ ledger classifies 282 of 383 known entries and leaves 101 pending: 225 direct
 typed, 6 inherited exact typed, 7 inherited exact eliminated, 20 host
 adapters, 17 dormant diagnostics, and 7 authored no-operations. Its SHA-256 is
 `a5c516fc8a08365ab55fbbb19051820bb8c4e591b609e5c333c3c8de961843ca`.
+
+## 2026-09-13 - Big Bug Bang retrace calibration
+
+`re/tools/big_bug_bang_retrace_calibration_oracle.py` executes the complete
+unchanged BBB VGA retrace calibrator at `0x0D3D`. Five crtc-status and PIT
+timing cases cover timeout before the first edge, short and long second phases,
+both measured phase outcomes, and wrapped status-port arithmetic. The timeout
+case explicitly models the external timer write that ends the polling loop.
+
+The oracle checks the exact 149-byte body hash, every input and output port
+operation, relocated phase/reload/calibration writes, far return, complete
+register and segment preservation, stack bounds, executable and decoy
+immutability, and all writes outside the explicit external event. Its checked
+fixture at `re/tools/oracle_vectors/big_bug_bang_retrace_calibration.json` has
+SHA-256
+`2ca07bb2780fd5a9aeda53f39697feaa57e9fe7a55b6662287d96bd0e4b7caca`.
+wgpu presentation owns frame synchronization, so the calibrated VGA phase has
+no production runtime state.
+
+The global collector now reproduces 133 exact fixtures and one prefix fixture
+across 135 BBB oracle programs, entering 249 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`c7654d901c69e61f06ec340fbe8e32b0056fbc555b18d175316686f2b6c033ea`.
+The strict ledger classifies 283 of 383 known entries and leaves 100 pending:
+225 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 21
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`91e7486d250d6f88b2e27664f76e96babdf134a51a422add9784e7a165d0c285`.

@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 134,
-    "oracle_fixture_count": 133,
+    "oracle_count": 135,
+    "oracle_fixture_count": 134,
     "fixture_relation_counts": {
-      "exact": 132,
+      "exact": 133,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 248,
-    "unentered_static_entrypoints": 134,
+    "entered_static_entrypoints": 249,
+    "unentered_static_entrypoints": 133,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 249,
+    "entered_known_entrypoints": 250,
     "comparison_counts": {
       "unresolved": {
         "entered": 76,
         "unentered": 50
       },
       "structural_candidate": {
-        "entered": 137,
-        "unentered": 59
+        "entered": 138,
+        "unentered": 58
       },
       "exact_body": {
         "entered": 15,
@@ -1421,6 +1421,18 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_retrace_calibration_oracle.py",
+      "oracle_sha256": "a7ba1455fb1d54c36bc395ad4cffcbf0e7ebae99a96dfd2e10edcfb8ffbdeb4f",
+      "executed_instruction_count": 69,
+      "entered_entrypoints": [
+        "0x0d3d"
+      ],
+      "summary": "verified 5 BBB retrace calibration cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_retrace_calibration.json",
+      "fixture_sha256": "2ca07bb2780fd5a9aeda53f39697feaa57e9fe7a55b6662287d96bd0e4b7caca",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_rtc_read_oracle.py",
       "oracle_sha256": "a17a8c5e30117d74e620d51d7162a113d6566594e45cdd961a1ffa7177f21b15",
       "executed_instruction_count": 48,
@@ -2081,8 +2093,10 @@
     {
       "entry": "0x0d3d",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_retrace_calibration_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0xb42"
     },

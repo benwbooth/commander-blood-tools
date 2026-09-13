@@ -74,6 +74,7 @@ DIRECT_RUST_OWNER_OVERRIDES = {
 HOST_ADAPTER_OWNERS = {
     0x09A2: (TIMER, "GameTimerState::start", "DOS timer-vector and PIT startup"),
     0x09F0: (TIMER, "GameTimerState::stop", "DOS timer-vector and PIT shutdown"),
+    0x0D3D: (RENDER, "Renderer::render", "VGA retrace-phase calibration"),
     0x0DD2: (RENDER, "Renderer::render", "VGA retrace-phase polling"),
     0x0DFA: (APP, "run", "DOS Ctrl-Break and critical-error vector installation"),
     0x0E21: (RENDER, "Renderer::new", "BIOS and VGA Mode X initialization"),
