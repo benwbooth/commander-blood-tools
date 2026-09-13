@@ -22,12 +22,12 @@ LEDGER_PATH = ROOT / "re/big_bug_bang_port_dispositions.json"
 COVERAGE_PATH = ROOT / "re/big_bug_bang_oracle_coverage.json"
 BUILDER_PATH = ROOT / "re/tools/build_big_bug_bang_port_dispositions.py"
 KNOWN_ENTRYPOINT_COUNT = 383
-CLASSIFIED_ENTRYPOINT_COUNT = 290
-PENDING_GAME_SEMANTICS_COUNT = 93
+CLASSIFIED_ENTRYPOINT_COUNT = 292
+PENDING_GAME_SEMANTICS_COUNT = 91
 EXPECTED_STATUS_COUNTS = {
     "eliminated_authored_no_operation": 7,
     "eliminated_dormant_diagnostic": 17,
-    "eliminated_host_adapter": 24,
+    "eliminated_host_adapter": 26,
     "inherited_exact_eliminated": 7,
     "inherited_exact_typed": 6,
     "pending_game_semantics": PENDING_GAME_SEMANTICS_COUNT,

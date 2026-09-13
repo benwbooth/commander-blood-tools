@@ -220,7 +220,8 @@ impl OriginalResourceStore {
     /// This translates `resource_file_load` at BLOODPRG file offset `0x002ABB`
     /// and BLOOD2PG offset `0x002E40`. XMS, EMS, chunk cursors, and address
     /// wrapping are obsolete; consumers receive the exact member or loose-file
-    /// bytes directly.
+    /// bytes directly. The sequel's XMS and EMS transfer wrappers at `0x002C86`
+    /// and `0x002D77` terminate at this same owned-byte boundary.
     pub fn load(&self, name: &BloodResourceName) -> Result<Box<[u8]>> {
         if let Some(bytes) = self.verified_overrides.get(name) {
             return Ok(Box::from(bytes.as_ref()));

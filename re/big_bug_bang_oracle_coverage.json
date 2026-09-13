@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 141,
-    "oracle_fixture_count": 140,
+    "oracle_count": 142,
+    "oracle_fixture_count": 141,
     "fixture_relation_counts": {
-      "exact": 139,
+      "exact": 140,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 256,
-    "unentered_static_entrypoints": 126,
+    "entered_static_entrypoints": 258,
+    "unentered_static_entrypoints": 124,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 257,
+    "entered_known_entrypoints": 259,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 143,
-        "unentered": 53
+        "entered": 145,
+        "unentered": 51
       },
       "exact_body": {
         "entered": 15,
@@ -486,6 +486,19 @@
       "summary": "captured 362 original CE-D2 environment cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_environment.jsonl",
       "fixture_sha256": "beee3c7c0d21ff4b02f93fd0aa72c8b8cf3ee104f4b0c20a89968ea399f3473d",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_extended_memory_load_oracle.py",
+      "oracle_sha256": "9762d4586c587a466c48301a1d3cb2eaecadc89e6df669e2a94fdcdf5b057da6",
+      "executed_instruction_count": 164,
+      "entered_entrypoints": [
+        "0x2c86",
+        "0x2d77"
+      ],
+      "summary": "verified 10 BBB XMS and 9 EMS resource-load cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_extended_memory_load.json",
+      "fixture_sha256": "49ccb2ba9795aa948a82953950e665001c0433b64188fccc31409989569a8d77",
       "fixture_relation": "exact"
     },
     {
@@ -2879,16 +2892,20 @@
     {
       "entry": "0x2c86",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_extended_memory_load_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x2901"
     },
     {
       "entry": "0x2d77",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_extended_memory_load_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x29f2"
     },

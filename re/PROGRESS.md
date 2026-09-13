@@ -4059,3 +4059,34 @@ The strict ledger classifies 290 of 383 known entries and leaves 93 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `259c1b0c5fbd9e33b3a6229f33a7d93da5164b7f05e7f719cc3d5512a4920d27`.
+
+## 2026-09-13 - Big Bug Bang extended-memory resource loading
+
+`re/tools/big_bug_bang_extended_memory_load_oracle.py` executes the complete
+unchanged BBB XMS loader at `0x2C86` and EMS loader at `0x2D77`. Ten XMS and
+nine EMS cases cover archive and loose-file sources, full 32-bit sizes,
+zero-byte files, failed finds and opens, partial reads, fixed XMS strides, EMS
+page-pair remapping, nonzero upper `ECX`, reversed XMS request stores, and
+ignored DOS and memory-manager errors. Their normalized semantic case and call
+partitions match the independent Commander fixtures.
+
+The oracle checks both exact body hashes, source-selector and XMS far-call
+frames, ordered DOS, XMS, and EMS ABIs, request descriptors, handles, chunk
+sizes, page maps, storage cursors and payloads, relocated globals, complete
+register and segment preservation, far returns, bounded stack writes, flags,
+and full state, decoy, and executable ownership outside the intentional
+source-selector stub. The checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_extended_memory_load.json` has SHA-256
+`49ccb2ba9795aa948a82953950e665001c0433b64188fccc31409989569a8d77`.
+Owned byte allocations in `OriginalResourceStore::load` eliminate both DOS
+extended-memory transfer protocols at the rooted asset-store boundary.
+
+The global collector now reproduces 140 exact fixtures and one prefix fixture
+across 142 BBB oracle programs, entering 258 of 382 static entrypoints
+plus the runtime ISR. Its deterministic report SHA-256 is
+`875a952e7cf75156bb4205398c2673975b1360f47b25a26cc48f781b7aa8ce72`.
+The strict ledger classifies 292 of 383 known entries and leaves 91 pending:
+229 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 26
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`8a1ae3d5b0e3e44557404921680b0b2bfc5c79961649edd11aeb947b4d3a76bd`.

@@ -92,6 +92,16 @@ HOST_ADAPTER_OWNERS = {
         "OriginalResourceStore::load",
         "DOS drive and current-directory restoration",
     ),
+    0x2C86: (
+        ASSETS,
+        "OriginalResourceStore::load",
+        "DOS and XMS resource transfer",
+    ),
+    0x2D77: (
+        ASSETS,
+        "OriginalResourceStore::load",
+        "DOS and EMS mapped resource transfer",
+    ),
     0xCF40: (AUDIO_STREAM, "start_audio_stream", "loaded DOS sound-driver ABI"),
     0xD9F3: (AUDIO_STREAM, "start_audio_stream", "Gravis stream startup protocol"),
     0xDA5F: (AUDIO_STREAM, "refill_audio_stream", "Gravis stream service protocol"),
