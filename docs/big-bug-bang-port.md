@@ -3681,6 +3681,46 @@ production semantic change was required; its regression now consumes both
 original-game fixtures. This behaviorally classifies BBB `0x1A17`, not the nine
 captured callees or end-to-end contact-scene parity.
 
+## Sequel Navigation-Camera Coordinator
+
+BBB's `0x9EDE..0xA286` navigation-camera coordinator is the sequel counterpart
+of Commander Blood `0x8CCE..0x9083`. The guarded oracle executes the complete
+unchanged 936-byte BBB body and captures its established renderer, object-list,
+entity, wipe, overview, panel, picker and text boundaries:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_navigation_camera_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_navigation_camera.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  camera_update_matches_both_original_fixtures
+```
+
+The first 12 cases retain Commander's inactive, wipe gate, inherited panel,
+hover, click, six wipe geometries, chart construction and panorama-restoration
+coverage. After normalizing relocated storage and removing BBB's additional
+overview callback, all shared traces agree except one deliberate sequel rule:
+BBB has no current-location equality guard after a click, so a picker result
+for the current location opens its information panel. A thirteenth case proves
+that the overview callback at `0xA286` runs after entity-state publication but
+before picking, and that input it consumes is re-read before click dispatch.
+The first opening frame also clears the sequel overview-active byte before
+restoring the panorama.
+
+The typed coordinator now exposes the current-location selection policy,
+clears the runtime overview through its host boundary, and retains Commander's
+early return as the default. Its regression consumes all 25 original-game
+rows, including the sequel's raw entity states. The oracle independently
+checks complete relevant global state, read-only record and framebuffer
+regions, callback arguments and effects, copies, registers, segments, stack
+discipline and executable immutability. The routine body is bound by SHA-256
+`83f540a41fa474430279ed4463e138277c9688b50823a8d06b8b6d73ab1b27ba`;
+the deterministic 13-row JSONL has SHA-256
+`4ec496cda2a80c7d93ee32595b91cc67718c3b63a99e90f5aa04e6e66bfe557c`.
+This behaviorally classifies BBB `0x9EDE`, not its captured callees, the
+location-panel body, or end-to-end navigation parity.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

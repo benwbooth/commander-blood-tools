@@ -1865,3 +1865,29 @@ SHA-256
 already matched the observed sequel behavior, so its regression now consumes both original-game
 fixtures without a production semantic change. This behaviorally classifies BBB `0x1A17`, not its
 nine captured callees or whole contact-scene parity.
+
+## 2026-09-12 - Big Bug Bang navigation-camera coordinator
+
+BBB `0x9EDE..0xA286` is the sequel counterpart of Commander Blood's already ported `0x8CCE`
+navigation-camera coordinator. The new `re/tools/big_bug_bang_navigation_camera_oracle.py` executes
+that complete unchanged 936-byte routine and captures only established renderer, object-list,
+entity, wipe, simulation-overview, panel, picker and text boundaries. The body is guarded by SHA-256
+`83f540a41fa474430279ed4463e138277c9688b50823a8d06b8b6d73ab1b27ba`.
+
+The first 12 direct cases mirror Commander's complete fixture across inactive and wipe gates,
+inherited panel context, hover and click paths, every wipe geometry, chart entity construction and
+panorama restoration. Their shared callback traces agree after normalizing relocated storage and
+removing BBB's added overview call, apart from one explicit sequel semantic difference: BBB omits
+Commander's current-location equality check and therefore opens a panel when the picker returns the
+current location. A thirteenth case proves that the overview call occurs after entity-state writes
+and before picking, and that a consumed primary press is re-read before click dispatch. The opening
+setup also directly clears the overview-active byte before panorama restoration.
+
+The typed coordinator now accepts the game-specific current-location selection policy and clears
+the runtime overview through its host boundary. Its regression consumes all 25 original-game rows,
+including BBB's raw entity states, while preserving the Commander early-return behavior. The oracle
+also verifies the complete relevant global image, read-only record and framebuffer regions, every
+callback argument and effect, wipe-copy hashes, registers, segments, stack discipline and executable
+immutability. The checked-in 13-row JSONL has SHA-256
+`4ec496cda2a80c7d93ee32595b91cc67718c3b63a99e90f5aa04e6e66bfe557c`. This behaviorally
+classifies BBB `0x9EDE`, not its captured callees, the panel dispatcher, or whole navigation parity.

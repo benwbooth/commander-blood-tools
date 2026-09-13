@@ -139,6 +139,8 @@ impl RuntimeNavigationChart {
         comparison_extent: BridgeSpriteExtent,
     ) -> Result<NavigationCameraOutcome> {
         let chart_active = services.bridge_camera_view_active();
+        let current_location_is_selectable =
+            services.runtime().data().game() == GameVariant::BigBugBang;
         let rebuild_roster =
             transition_step == NAVIGATION_CHART_FIRST_TRANSITION_STEP && !chart_active;
         let retained_object_ids = (!rebuild_roster && !self.retained_object_ids.is_empty())
@@ -172,6 +174,7 @@ impl RuntimeNavigationChart {
             },
             wipe_endpoints: &world.wipe_endpoints,
             comparison_extent: &comparison_extent,
+            current_location_is_selectable,
         };
         let mut backend = RuntimeNavigationChartBackend {
             services,
@@ -624,6 +627,10 @@ impl NavigationCameraHost<ScriptObjectId, BridgeSpriteExtent>
             .render_current_bridge_frame_with_palette_refresh(false)
             .map(|_| ());
         self.record_callback(result);
+    }
+
+    fn clear_pre_pick_overlay(&mut self) -> Result<()> {
+        self.services.clear_runtime_sequel_overview()
     }
 
     fn snapshot_ship_hud_and_reset_camera(&mut self) {

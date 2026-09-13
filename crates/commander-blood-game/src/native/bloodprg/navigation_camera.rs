@@ -244,6 +244,11 @@ pub trait NavigationCameraHost<ObjectId, ComparisonExtent> {
     /// Load the bridge panorama into the flat work surface.
     fn load_bridge_panorama(&mut self);
 
+    /// Clear any game-specific overlay before restoring the panorama.
+    fn clear_pre_pick_overlay(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
     /// Snapshot ship HUD colors and reset its camera.
     fn snapshot_ship_hud_and_reset_camera(&mut self);
 
@@ -288,6 +293,8 @@ pub struct NavigationCameraContext<'a, ObjectId, ComparisonExtent> {
     pub wipe_endpoints: &'a [[u16; 2]],
     /// Inherited panel entity extent context.
     pub comparison_extent: &'a ComparisonExtent,
+    /// Whether selecting the current location opens the information panel.
+    pub current_location_is_selectable: bool,
 }
 
 /// Observable terminal path of one navigation-camera update.
@@ -406,7 +413,7 @@ where
             NavigationChartWipeDirection::Closing => build_chart_entities(&context, state, host)?,
             NavigationChartWipeDirection::Opening => {
                 validate_secondary_marker_count(state.secondary_marker_count)?;
-                restore_panorama(state, host);
+                restore_panorama(state, host)?;
             }
         }
     }
@@ -489,7 +496,7 @@ where
     };
     state.input.primary_pressed = false;
     state.input.press_pending = false;
-    if picked.id == *context.arche.current_location {
+    if !context.current_location_is_selectable && picked.id == *context.arche.current_location {
         return Ok(NavigationCameraOutcome::CurrentLocation);
     }
 
@@ -611,16 +618,20 @@ where
 fn restore_panorama<ObjectId, ComparisonExtent, Host>(
     state: &mut NavigationCameraState<ObjectId>,
     host: &mut Host,
-) where
+) -> Result<(), NavigationCameraError<Host::Error>>
+where
     Host: NavigationCameraHost<ObjectId, ComparisonExtent>,
 {
     state.wipe_complete = false;
+    host.clear_pre_pick_overlay()
+        .map_err(NavigationCameraError::Host)?;
     host.transition_chart_entity(ARCHE_CHART_ENTITY);
     transition_secondary_entities(state.secondary_marker_count, host);
     state.palette_refresh_enabled = false;
     host.load_bridge_panorama();
     host.snapshot_ship_hud_and_reset_camera();
     host.present_restored_panorama();
+    Ok(())
 }
 
 fn transition_secondary_entities<ObjectId, ComparisonExtent, Host>(count: usize, host: &mut Host)
@@ -749,11 +760,25 @@ mod tests {
         state_before: u8,
         state_after: u8,
         active: u8,
+        #[serde(default)]
+        current_location_selectable: bool,
+        #[serde(default)]
+        overlay_consumes_primary: bool,
         calls: Vec<OracleCall>,
+        #[serde(default)]
+        entity_states: Vec<OracleEntityState>,
         copy_count: usize,
         copy_head: Vec<[u16; 3]>,
         copy_tail: Vec<[u16; 3]>,
         copy_sha256: String,
+        overview_active_after: Option<bool>,
+    }
+
+    #[derive(Deserialize)]
+    struct OracleEntityState {
+        entity: u16,
+        visible: bool,
+        active: bool,
     }
 
     #[derive(Deserialize)]
@@ -803,6 +828,7 @@ mod tests {
         label_width: u16,
         overlay_enabled: bool,
         overlay_consumes_primary: bool,
+        overview_active: bool,
     }
 
     impl NavigationCameraHost<u16, ()> for OracleHost {
@@ -847,6 +873,11 @@ mod tests {
 
         fn load_bridge_panorama(&mut self) {
             self.events.push(Event::Panorama);
+        }
+
+        fn clear_pre_pick_overlay(&mut self) -> Result<(), Self::Error> {
+            self.overview_active = false;
+            Ok(())
         }
 
         fn snapshot_ship_hud_and_reset_camera(&mut self) {
@@ -905,13 +936,24 @@ mod tests {
     }
 
     #[test]
-    fn camera_update_matches_every_original_vector() {
-        let vectors: Vec<CameraVector> = serde_json::from_str(include_str!(
+    fn camera_update_matches_both_original_fixtures() {
+        let commander: Vec<CameraVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_8cce_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), 12);
+        let sequel: Vec<CameraVector> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_navigation_camera.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander.len(), 12);
+        assert_eq!(sequel.len(), 13);
+        assert_camera_vectors(commander);
+        assert_camera_vectors(sequel);
+    }
 
+    fn assert_camera_vectors(vectors: Vec<CameraVector>) {
         for vector in vectors {
             let endpoint = vector
                 .calls
@@ -939,6 +981,7 @@ mod tests {
                 },
                 wipe_endpoints: &endpoints,
                 comparison_extent: &(),
+                current_location_is_selectable: vector.current_location_selectable,
             };
             let mut host = host_for(&vector);
 
@@ -968,6 +1011,7 @@ mod tests {
             },
             wipe_endpoints: &endpoints,
             comparison_extent: &(),
+            current_location_is_selectable: false,
         };
         let mut host = OracleHost {
             events: Vec::new(),
@@ -979,6 +1023,7 @@ mod tests {
             label_width: u16::MIN,
             overlay_enabled: false,
             overlay_consumes_primary: false,
+            overview_active: false,
         };
 
         assert!(matches!(
@@ -1011,6 +1056,7 @@ mod tests {
             },
             wipe_endpoints: &endpoints,
             comparison_extent: &(),
+            current_location_is_selectable: false,
         };
         let mut host = OracleHost {
             events: Vec::new(),
@@ -1028,6 +1074,7 @@ mod tests {
             label_width: 30,
             overlay_enabled: true,
             overlay_consumes_primary: true,
+            overview_active: true,
         };
 
         assert_eq!(
@@ -1059,7 +1106,7 @@ mod tests {
             ui_active: false,
             chart_object_count: 41,
             secondary_marker_count: 2,
-            entity_state_mask: 2,
+            entity_state_mask: 1,
             palette_refresh_enabled: true,
             hand: NavigationChartHandState {
                 current: NavigationChartHand::Right,
@@ -1073,7 +1120,7 @@ mod tests {
                 } else {
                     [100, 70]
                 },
-                primary_pressed: vector.name.contains("click_"),
+                primary_pressed: vector.name.contains("click_") || vector.overlay_consumes_primary,
                 press_pending: true,
             },
             panel: LocationInfoPanelState {
@@ -1106,7 +1153,10 @@ mod tests {
     }
 
     fn host_for(vector: &CameraVector) -> OracleHost {
-        let picked = if vector.name.contains("hover") || vector.name.contains("new_right") {
+        let picked = if vector.name.contains("hover")
+            || vector.name.contains("new_right")
+            || vector.overlay_consumes_primary
+        {
             Some(chart_object(
                 PICKED_LOCATION,
                 NavigationChartObjectKind {
@@ -1161,8 +1211,9 @@ mod tests {
             picked,
             wipe_spans: spans_for(&vector.name).into_boxed_slice(),
             label_width: 30,
-            overlay_enabled: false,
-            overlay_consumes_primary: false,
+            overlay_enabled: vector.current_location_selectable,
+            overlay_consumes_primary: vector.overlay_consumes_primary,
+            overview_active: vector.current_location_selectable,
         }
     }
 
@@ -1268,6 +1319,9 @@ mod tests {
             && vector.active & 1 != u8::MIN
             && !vector.name.contains("waits_for_wipe");
         assert_eq!(state.ui_active, interactive, "{}", vector.name);
+        if let Some(expected) = vector.overview_active_after {
+            assert_eq!(host.overview_active, expected, "{}", vector.name);
+        }
 
         if vector.state_before != u8::MIN {
             assert!(state.panel.selected_location.is_none(), "{}", vector.name);
@@ -1292,9 +1346,19 @@ mod tests {
             assert!(!state.input.primary_pressed, "{}", vector.name);
             assert!(!state.input.press_pending, "{}", vector.name);
         }
-        if vector.name.contains("new_right") {
-            assert_eq!(state.panel.selected_location, Some(PICKED_LOCATION));
-            assert_eq!(state.panel.deferred_record_link, Some(PICKED_LOCATION));
+        if vector.overlay_consumes_primary {
+            assert!(!state.input.primary_pressed, "{}", vector.name);
+            assert!(!state.input.press_pending, "{}", vector.name);
+        }
+        if vector.name.contains("new_right") || vector.name == "click_current_location_opens_panel"
+        {
+            let selected = if vector.name.contains("current") {
+                CURRENT_LOCATION
+            } else {
+                PICKED_LOCATION
+            };
+            assert_eq!(state.panel.selected_location, Some(selected));
+            assert_eq!(state.panel.deferred_record_link, Some(selected));
             assert_eq!(state.panel.phase, LocationPanelPhase::Opening);
             assert!(state.panel.active);
             assert_eq!(state.panel.geometry.scale_step, u8::MIN);
@@ -1308,8 +1372,16 @@ mod tests {
             assert_eq!(
                 state.panel_rects.current,
                 LocationPanelRect {
-                    x: 200,
-                    y: 80,
+                    x: if vector.name.contains("new_right") {
+                        200
+                    } else {
+                        100
+                    },
+                    y: if vector.name.contains("new_right") {
+                        80
+                    } else {
+                        70
+                    },
                     width: POINTER_PANEL_EXTENT,
                     height: POINTER_PANEL_EXTENT,
                 }
@@ -1337,7 +1409,12 @@ mod tests {
             "click_current_location_only_updates_hand_and_input" => {
                 NavigationCameraOutcome::CurrentLocation
             }
-            "click_new_right_location_starts_panel" => NavigationCameraOutcome::LocationPanelOpened,
+            "click_current_location_opens_panel" | "click_new_right_location_starts_panel" => {
+                NavigationCameraOutcome::LocationPanelOpened
+            }
+            "overview_consumes_primary_before_pick" => {
+                NavigationCameraOutcome::HoverLabel { position: [70, 60] }
+            }
             _ => NavigationCameraOutcome::TransitionFrame {
                 direction: if vector.active & 1 != u8::MIN {
                     NavigationChartWipeDirection::Opening
@@ -1350,7 +1427,17 @@ mod tests {
         };
         assert_eq!(outcome, expected_outcome, "{}", vector.name);
 
-        let expected_entity_states = if matches!(
+        let expected_entity_states = if !vector.entity_states.is_empty() {
+            vector
+                .entity_states
+                .iter()
+                .map(|state| NavigationChartEntityState {
+                    entity: state.entity,
+                    visible: state.visible,
+                    active: state.active,
+                })
+                .collect()
+        } else if matches!(
             vector.name.as_str(),
             "hover_draws_clamped_object_label"
                 | "click_current_location_only_updates_hand_and_input"
@@ -1360,12 +1447,12 @@ mod tests {
                 NavigationChartEntityState {
                     entity: 5,
                     visible: true,
-                    active: false,
+                    active: true,
                 },
                 NavigationChartEntityState {
                     entity: 6,
                     visible: true,
-                    active: false,
+                    active: true,
                 },
                 NavigationChartEntityState {
                     entity: 1,

@@ -3980,6 +3980,14 @@ impl<'window> ModernGameServices<'window> {
         outcome.context("updating recovered sequel simulation overview")
     }
 
+    pub(super) fn clear_runtime_sequel_overview(&mut self) -> Result<()> {
+        self.sequel_overview
+            .as_mut()
+            .context("sequel overview state is already being updated")?
+            .set_active(false);
+        Ok(())
+    }
+
     pub(super) fn overview_camera_actor_flags(&self) -> NavActorSlotFlags {
         self.nav_actor_slots[0].flags
     }
