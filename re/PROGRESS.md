@@ -3097,3 +3097,28 @@ and BBB 17-row fixtures without a production variant. BBB's body SHA-256 is
 `ea3b7cd8bb7efdd5637c0e2c2974b664e58a1048c6a24ff6e50b529df4a38490`,
 and the deterministic JSONL SHA-256 is
 `f53e1fa92b56d9340f20929c7db633e5c8598d039e5dbc21217c372903c9e74d`.
+
+## 2026-09-13 - Big Bug Bang audio-driver initialization
+
+BBB `0xCF40..0xCF73` relocates Commander Blood's `0xB7B0..0xB7E3`
+sound-driver initialization boundary. Both complete bodies contain 29
+instructions in 51 bytes. They replace the segment word of each of nine loaded
+driver far entries, publish the game's `CS:0x011D` clip callback, load the
+configured driver value, invoke the relocated first entry, and restore every
+saved register except callback `AX`. Only the game-data offsets move.
+
+The new `re/tools/big_bug_bang_audio_driver_init_oracle.py` executes both
+shipped bodies over the existing six-case semantic corpus and covers both
+outcomes of the one loop-control site, or two edges. It verifies every table
+entry before and after callback entry, callback publication and ordering,
+split DS/GS ownership, exact far-call and far-return frames, callback clobber
+restoration, all registers and callback-defined flags, full mapped-segment and
+executable immutability, unowned memory, and direct normalized Commander/BBB
+equality.
+
+The modern runtime continues to eliminate this DOS-only host adapter: typed
+audio submissions cross directly to SDL and never expose a relocated driver
+vector table or register ABI. BBB's body SHA-256 is
+`1e977b4799b218d2ed870ec0c3dcfff9c072490c54d6bc0e7f1d16f52f19cf58`,
+and the deterministic JSONL SHA-256 is
+`9293cf633ede607c4f6deefb01170a89b83c867e0d51550d0b66cd2aa0d90069`.
