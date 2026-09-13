@@ -428,7 +428,8 @@ mod tests {
     };
     use commander_blood_formats::archive::BloodResourceName;
 
-    const REFILL_VECTOR_COUNT: usize = 13;
+    const COMMANDER_REFILL_VECTOR_COUNT: usize = 13;
+    const SEQUEL_REFILL_VECTOR_COUNT: usize = 14;
     const QUEUE_BUFFER_BYTE_COUNT: usize = 65_536;
     const INITIAL_HEAD: usize = 256;
     const INITIAL_TAIL: usize = 64;
@@ -495,18 +496,30 @@ mod tests {
             .copy_from_slice(&(extent as u16).to_le_bytes());
     }
 
-    fn oracle_vectors() -> Vec<RefillOracle> {
-        let vectors: Vec<RefillOracle> = serde_json::from_str(include_str!(
+    fn commander_oracle_vectors() -> Vec<RefillOracle> {
+        serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a2ab_natural.json"
         ))
-        .unwrap();
-        assert_eq!(vectors.len(), REFILL_VECTOR_COUNT);
-        vectors
+        .unwrap()
+    }
+
+    fn sequel_oracle_vectors() -> Vec<RefillOracle> {
+        include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_refill.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect()
     }
 
     #[test]
-    fn refill_accounts_for_every_original_control_flow_vector() {
-        let vectors = oracle_vectors();
+    fn refill_accounts_for_both_original_control_flow_fixtures() {
+        assert_refill_vectors(commander_oracle_vectors(), COMMANDER_REFILL_VECTOR_COUNT);
+        assert_refill_vectors(sequel_oracle_vectors(), SEQUEL_REFILL_VECTOR_COUNT);
+    }
+
+    fn assert_refill_vectors(vectors: Vec<RefillOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count);
         for vector in &vectors[..4] {
             let source_len = vector.initial_pending.max(1);
             let mut stream = build_stream(
@@ -710,31 +723,41 @@ mod tests {
             );
         }
 
-        assert_eq!(
-            vectors[12].name,
-            "rollover_invalid_cache_hits_malformed_suffix"
-        );
-        let mut stream = build_stream(Vec::new(), 0, vectors[12].initial_flags);
-        stream.requested = Some(PresentationResourceId::new(2));
-        stream.active = Some(PresentationResourceId::new(7));
-        let mut descriptors = vec![descriptor(0, None); 8];
-        descriptors[7] = descriptor(SOURCE_ROLLOVER_ENABLED_FLAG, None);
-        let mut queue = build_queue(0);
-        queue.wrap_count = 3;
-        let mut buffer = vec![0u8; QUEUE_BUFFER_BYTE_COUNT];
-        assert_eq!(
-            refill_presentation_queue(
-                &mut queue,
-                &mut buffer,
-                &mut stream,
-                &descriptors,
-                &mut links,
-            ),
-            Err(PresentationQueueRefillError::CachedRangeUnavailable {
-                resource: PresentationResourceId::new(7),
-            })
-        );
-        assert_eq!(stream.requested, stream.active);
+        for vector in &vectors[12..] {
+            assert!(matches!(
+                vector.name.as_str(),
+                "rollover_invalid_cache_hits_malformed_suffix"
+                    | "rollover_zero_segment_cache_hits_malformed_suffix"
+            ));
+            let mut stream = build_stream(Vec::new(), 0, vector.initial_flags);
+            stream.requested = Some(PresentationResourceId::new(2));
+            stream.active = Some(PresentationResourceId::new(7));
+            let mut descriptors = vec![descriptor(0, None); 8];
+            let descriptor_flags = if vector.name.contains("zero_segment") {
+                CACHED_RANGE_VALID_FLAG | SOURCE_ROLLOVER_ENABLED_FLAG
+            } else {
+                SOURCE_ROLLOVER_ENABLED_FLAG
+            };
+            descriptors[7] = descriptor(descriptor_flags, None);
+            let mut queue = build_queue(0);
+            queue.wrap_count = 3;
+            let mut buffer = vec![0u8; QUEUE_BUFFER_BYTE_COUNT];
+            assert_eq!(
+                refill_presentation_queue(
+                    &mut queue,
+                    &mut buffer,
+                    &mut stream,
+                    &descriptors,
+                    &mut links,
+                ),
+                Err(PresentationQueueRefillError::CachedRangeUnavailable {
+                    resource: PresentationResourceId::new(7),
+                }),
+                "{}",
+                vector.name
+            );
+            assert_eq!(stream.requested, stream.active, "{}", vector.name);
+        }
     }
 
     #[test]

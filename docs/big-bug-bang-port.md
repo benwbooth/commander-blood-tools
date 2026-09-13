@@ -4546,6 +4546,37 @@ and the 14-row deterministic JSONL SHA-256 is
 This classifies clock selection and arithmetic, not either original hardware
 driver body.
 
+## Presentation Queue Refill Oracle (2026-09-13)
+
+BBB's refill coordinator begins at the backward source-check entry `0xBA7B`,
+with its ordinary call entry at `0xBA95`, and continues to the queue-wrap helper
+at `0xBB78`. It is the relocated sequel counterpart of Commander Blood's
+`0xA291..0xA38E`, whose ordinary entry is `0xA2AB`. Both bodies contain 91
+instructions in 253 bytes and have identical normalized control-flow graphs.
+
+`re/tools/big_bug_bang_presentation_refill_oracle.py` executes both shipped
+bodies against the 13 recovered Commander cases and one additional shared case
+for a cache-valid descriptor whose segment is zero. The added case closes the
+one branch edge absent from the older fixture, so the 14 cases traverse all 30
+conditional edges in both originals. They cover capped and uncapped pending
+reads, queue backpressure, extent success and failure, source completion,
+descriptor reuse and replacement, both malformed-cache exits, and four
+synthetic `mm` links.
+
+The oracle executes the original wrap, enqueue, bounds-reset, descriptor-lookup,
+and copy helpers while isolating the source I/O callbacks. It verifies helper
+order and near-call frames, complete canonical queue and stream state, the full
+64 KiB queue buffer, link-target advancement, exact registers and flags, DS
+ownership against a GS decoy, unchanged executable and unowned segments, and
+normalized complete stacks. The typed refill now consumes the 13-row Commander
+fixture and 14-row BBB fixture; no production behavior changed. BBB's body
+SHA-256 is
+`1a863ffa8035a62206b1a2bb78238c71b342088c084249d089cd0130a5dedc95`,
+and the deterministic JSONL SHA-256 is
+`891e13ae98a7e19e61d99901c7b0b4853c2b7c8f98e3ac16f1907c35e26d48a5`.
+This classifies the refill coordinator and exercised pure-helper paths, not the
+isolated source I/O helper bodies or arbitrary malformed queue geometry.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

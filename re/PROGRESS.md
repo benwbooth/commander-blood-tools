@@ -2444,3 +2444,33 @@ runtime continues to use its position-capable backend. BBB's body SHA-256 is
 deterministic JSONL SHA-256 is
 `42388378a7b87603c9b33eb267eebaee7fa4feca42ce86130c2673ef1d4ed4fe`. This behaviorally
 classifies BBB `0xBA23`, not either original hardware driver body.
+
+## 2026-09-13 - Big Bug Bang presentation queue refill
+
+BBB's backward source-check entry `0xBA7B`, ordinary refill entry `0xBA95`, and
+coordinator span through `0xBB78` relocate Commander Blood's already ported
+`0xA291..0xA38E` body, whose ordinary entry is `0xA2AB`. Both originals contain
+91 instructions in 253 bytes and have identical normalized control-flow graphs.
+
+The new `re/tools/big_bug_bang_presentation_refill_oracle.py` executes both
+shipped bodies with the 13 recovered Commander cases plus one shared
+cache-valid/zero-segment descriptor case. That added vector covers the one
+legacy-fixture omission; all 30 conditional edges now execute in both binaries.
+The cases cover capped and uncapped transfer sizes, queue backpressure, extent
+success and failure, queued and empty completion, existing and cached rollover
+ranges, both malformed-cache exits, and four synthesized `0x6D6D` links.
+
+The oracle runs the real wrap, enqueue, bounds-reset, descriptor-lookup, and
+copy helpers while isolating source I/O. It checks canonical queue and stream
+state, helper order and near frames, full queue-buffer bytes, advancing BP link
+targets, DS ownership against a GS decoy, unchanged executable and unowned
+segments, normalized complete stacks, every register and segment, exact flags,
+direct Commander/BBB equality, and all conditional edges. The typed refill now
+consumes both original fixtures; no production behavior changed. BBB's 253-byte
+body SHA-256 is
+`1a863ffa8035a62206b1a2bb78238c71b342088c084249d089cd0130a5dedc95`, and
+the 14-row deterministic JSONL SHA-256 is
+`891e13ae98a7e19e61d99901c7b0b4853c2b7c8f98e3ac16f1907c35e26d48a5`.
+This behaviorally classifies the refill coordinator and exercised pure-helper
+paths, not the isolated source I/O helper bodies or arbitrary malformed queue
+geometry.
