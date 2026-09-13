@@ -5117,6 +5117,29 @@ production masks. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `1ff4fe6d8d0c93b02726d0ae976ca733eeede4d72e724f5f6e6ae86a0ec013cf`.
 
+## Menu-Collection Oracle (2026-09-13)
+
+BBB `0x6104..0x613F` is the relocated sequel counterpart of Commander Blood's
+`0x5AFD..0x5B38` BAS A3 menu-word collector. Both routines contain 32
+instructions in 59 bytes and differ only in the relocated code pointer,
+program counter, deferred word, and output-buffer operands under GS.
+
+The new `re/tools/big_bug_bang_menu_collection_oracle.py` directly executes all
+ten fingerprinted Commander cases in the shipped BBB body. They cover three
+rejected opcodes, empty and populated lists, absent and present deferred words,
+high-bit values, 16-bit source wrapping, and inherited backward string
+traversal. The harness verifies the ignored code-pointer offset, exact source
+and output positions, deferred-word clearing, defined and direction flags,
+complete register and segment preservation, near return, exact stack and GS
+writes, untouched full segments, and executable immutability.
+
+The typed `collect_selector_menu` owner consumes both ten-row fixtures. Its
+decoded BAS words replace the terminated mutable output buffer while retaining
+the proved menu gate, ordering, and deferred-topic behavior. BBB's body SHA-256
+is `2be92857f59e8c648b7ff55e4809d692329b88b9b7a2b302bc2cd9aabb57fe28`,
+and the deterministic fixture SHA-256 is
+`2a18760782c41190eae277be173a94e57140edb5d4f0ab6bc24266b5d3b11f1f`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

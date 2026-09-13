@@ -369,9 +369,10 @@ pub fn commit_selected_concept(
 
 /// Publish the active BAS menu and append one pending offered topic.
 ///
-/// This translates `vm_op_a3_collect` at BLOODPRG file offset `0x005AFD`.
-/// A non-menu branch leaves both the existing choice list and offered topic
-/// unchanged. Typed vectors replace the native terminated output buffer.
+/// This translates `vm_op_a3_collect` at Commander Blood's BLOODPRG file offset
+/// `0x005AFD` and Big Bug Bang's relocated `0x006104`. A non-menu branch leaves
+/// both the existing choice list and offered topic unchanged. Typed vectors
+/// replace the native terminated output buffer.
 pub fn collect_selector_menu(
     dialogue: &dyn super::ScriptDialogueSource,
     state: &mut ScriptSelectorState,
@@ -477,6 +478,11 @@ mod tests {
         deferred_after: u16,
         written_words: Vec<(u16, u16)>,
         direction: String,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangMenuCollectionOracle {
+        rows: Vec<MenuCollectionOracle>,
     }
 
     #[repr(usize)]
@@ -837,12 +843,7 @@ mod tests {
         );
     }
 
-    #[test]
-    fn menu_collection_accounts_for_every_original_natural_vector() {
-        let vectors: Vec<MenuCollectionOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_5afd_natural.json"
-        ))
-        .unwrap();
+    fn assert_menu_collection_vectors(vectors: Vec<MenuCollectionOracle>) {
         assert_eq!(vectors.len(), MENU_COLLECTION_ORACLE_VECTOR_COUNT);
         let mut kind_counts = [usize::MIN; MENU_COLLECTION_VECTOR_KIND_COUNT];
 
@@ -910,6 +911,24 @@ mod tests {
             kind_counts[MenuCollectionVectorKind::ValidMenu as usize],
             EXPECTED_VALID_MENU_COLLECTION_VECTORS
         );
+    }
+
+    #[test]
+    fn menu_collection_accounts_for_every_original_natural_vector() {
+        let vectors: Vec<MenuCollectionOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_5afd_natural.json"
+        ))
+        .unwrap();
+        assert_menu_collection_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_menu_collection_matches_every_direct_vector() {
+        let fixture: BigBugBangMenuCollectionOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_menu_collection.json"
+        ))
+        .unwrap();
+        assert_menu_collection_vectors(fixture.rows);
     }
 
     #[test]
