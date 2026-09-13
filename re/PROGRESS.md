@@ -3891,3 +3891,29 @@ The strict ledger classifies 283 of 383 known entries and leaves 100 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `91e7486d250d6f88b2e27664f76e96babdf134a51a422add9784e7a165d0c285`.
+
+## 2026-09-13 - Big Bug Bang VGA page offsets
+
+`re/tools/big_bug_bang_page_offset_oracle.py` executes the complete unchanged
+BBB VGA page-offset helper at `0x1971`. Eight cases cover zero, ordinary,
+negative, maximum-positive, and independently wrapping draw and screen
+offsets, together with color, monochrome, and wrapped CRTC ports.
+
+The oracle checks the exact 42-byte body hash, the word-sized CRTC command,
+the two selectively advanced DS-owned framebuffer pointers, near return,
+complete register and segment outcomes, stack bounds, defined arithmetic
+flags, and executable, global, and decoy immutability. Its checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_page_offset.json` has SHA-256
+`bb8ab7a96e644d556498057a5dfeed179e3df0f77935e55042306ed084f1f975`.
+wgpu presentation owns page selection and exposes no VGA CRTC state in the
+production renderer.
+
+The global collector now reproduces 134 exact fixtures and one prefix fixture
+across 136 BBB oracle programs, entering 250 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`e446b9753d211bfca1551ce0fae18052f4d02a29e2b61d77c2000fc0a28636d2`.
+The strict ledger classifies 284 of 383 known entries and leaves 99 pending:
+225 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 22
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`c38c234dd892213c673dc9bc5e91be126f741089bf7e3678a158aed97733b0db`.

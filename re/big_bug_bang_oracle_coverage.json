@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 135,
-    "oracle_fixture_count": 134,
+    "oracle_count": 136,
+    "oracle_fixture_count": 135,
     "fixture_relation_counts": {
-      "exact": 133,
+      "exact": 134,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 249,
-    "unentered_static_entrypoints": 133,
+    "entered_static_entrypoints": 250,
+    "unentered_static_entrypoints": 132,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 250,
+    "entered_known_entrypoints": 251,
     "comparison_counts": {
       "unresolved": {
         "entered": 76,
         "unentered": 50
       },
       "structural_candidate": {
-        "entered": 138,
-        "unentered": 58
+        "entered": 139,
+        "unentered": 57
       },
       "exact_body": {
         "entered": 15,
@@ -818,6 +818,18 @@
       "summary": "wrote 32 original simulation-overview cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_overview.jsonl",
       "fixture_sha256": "63359073d942ae9de9d12ee279fa9b5257c0f8af921dc9d17badef2b6e12652d",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_page_offset_oracle.py",
+      "oracle_sha256": "0dcee66cc88495c9529827547611701ae56e542c281d475b8e42274258de5e32",
+      "executed_instruction_count": 18,
+      "entered_entrypoints": [
+        "0x1971"
+      ],
+      "summary": "verified 8 BBB VGA page-offset cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_page_offset.json",
+      "fixture_sha256": "bb8ab7a96e644d556498057a5dfeed179e3df0f77935e55042306ed084f1f975",
       "fixture_relation": "exact"
     },
     {
@@ -2273,8 +2285,10 @@
     {
       "entry": "0x1971",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_page_offset_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x17af"
     },

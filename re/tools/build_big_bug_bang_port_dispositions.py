@@ -79,6 +79,7 @@ HOST_ADAPTER_OWNERS = {
     0x0DFA: (APP, "run", "DOS Ctrl-Break and critical-error vector installation"),
     0x0E21: (RENDER, "Renderer::new", "BIOS and VGA Mode X initialization"),
     0x0EBB: (APP, "run", "BIOS video-mode restoration"),
+    0x1971: (RENDER, "Renderer::render", "VGA page-offset and CRTC selection"),
     0xCF40: (AUDIO_STREAM, "start_audio_stream", "loaded DOS sound-driver ABI"),
     0xD9F3: (AUDIO_STREAM, "start_audio_stream", "Gravis stream startup protocol"),
     0xDA5F: (AUDIO_STREAM, "refill_audio_stream", "Gravis stream service protocol"),
