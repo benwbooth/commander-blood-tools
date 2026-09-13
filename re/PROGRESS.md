@@ -2027,3 +2027,24 @@ and far-call stack residue, helper arguments and segment selection, preserved re
 far-return discipline and executable immutability. Its deterministic 12-row JSONL has SHA-256
 `45f1c1ffbf68cd226f778c7abe3a32307b433ccd343713d2210f266f64ffb414`. This behaviorally
 classifies BBB `0xAB8F`, not its callers, renderer helpers or complete subtitle presentation path.
+
+## 2026-09-12 - Big Bug Bang presentation mode selector
+
+BBB `0xACAA..0xACE4` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9510..0x954A` presentation-mode selector. Both bodies contain 25 instructions in 58 bytes; only
+the shared UI state and panorama-frame words move from `DS:0x2793/0x2795` to
+`DS:0x2A33/0x2A35`. The new `re/tools/big_bug_bang_presentation_mode_oracle.py` executes the
+complete unchanged BBB body, guarded by SHA-256
+`05b3a38a7653dff61c732f9c01200f81b6114cb9d670da7928e78edbb750df6b`.
+
+All 15 Commander cases are exactly identical after relocation. They cover the bit-one bypass,
+signed minimum and maximum frames, both sides of thresholds 22, 67, 112 and 157, mode-nibble
+replacement, high-byte and unrelated low-byte preservation, and all ten edges of the five
+conditional branches. The existing typed Rust mode selector now consumes both fixtures; no
+production behavior changed.
+
+The oracle checks exact DS state and frame ownership against complete ES and GS decoys, phase
+registers, the full saved-register stack image, all general and segment registers, path-specific
+defined flags, near-return discipline and executable immutability. Its deterministic 15-row JSONL
+has SHA-256 `c92288723532e1b48526fa34d880ea54ae19e9275a9990806310b88d6a70ca60`. This behaviorally
+classifies BBB `0xACAA`, not its caller or the complete bridge presentation flow.

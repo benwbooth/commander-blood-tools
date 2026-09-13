@@ -3950,6 +3950,40 @@ the deterministic 12-row JSONL has SHA-256
 This behaviorally classifies BBB `0xAB8F`, not its callers, renderer helpers or
 the complete subtitle presentation path.
 
+## Sequel Presentation Mode Selector
+
+BBB's `0xACAA..0xACE4` presentation-mode selector is the relocated sequel
+counterpart of Commander Blood `0x9510..0x954A`. Both bodies contain 25
+instructions in 58 bytes; only the shared UI state and panorama-frame words
+move, from `DS:0x2793/0x2795` to `DS:0x2A33/0x2A35`. The guarded oracle executes
+the complete BBB body unchanged:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_presentation_mode_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_presentation_mode.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  semantic_modes_match_both_original_state_word_vectors
+```
+
+All 15 Commander cases are exactly identical in BBB after the address
+relocation. They cover the bit-one bypass, signed minimum and maximum frames,
+both sides of thresholds 22, 67, 112 and 157, mode-nibble replacement, and
+preservation of high-byte and unrelated low-byte state. Together they execute
+all ten edges of the five conditional branches. The existing typed Rust mode
+selector now consumes both fixtures; no production behavior changed.
+
+The oracle checks exact DS state and frame ownership against complete ES and GS
+decoy images, phase-register values, the complete saved-register stack image,
+general and segment registers, path-specific defined flags, near-return
+discipline and executable immutability. The body is bound by SHA-256
+`05b3a38a7653dff61c732f9c01200f81b6114cb9d670da7928e78edbb750df6b`;
+the deterministic 15-row JSONL has SHA-256
+`c92288723532e1b48526fa34d880ea54ae19e9275a9990806310b88d6a70ca60`.
+This behaviorally classifies BBB `0xACAA`, not its caller or the complete bridge
+presentation flow.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

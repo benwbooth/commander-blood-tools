@@ -20,8 +20,9 @@ pub enum PresentationBridgeMode {
 /// Replace the active bridge presentation mode for the current panorama frame.
 ///
 /// This translates `presentation_mode_bits_update` at BLOODPRG routine offset
-/// `0x009510`. An optional enum replaces the mode nibble embedded in the native
-/// shared UI word; `blocked` represents its independent bit-one gate.
+/// `0x009510` and its BLOOD2PG counterpart at `0x00ACAA`. An optional enum
+/// replaces the mode nibble embedded in the native shared UI word; `blocked`
+/// represents its independent bit-one gate.
 pub fn update_presentation_bridge_mode(
     frame: i16,
     blocked: bool,
@@ -57,11 +58,22 @@ mod tests {
     }
 
     #[test]
-    fn semantic_modes_match_every_original_state_word_vector() {
-        let vectors: Vec<PresentationModeOracle> = serde_json::from_str(include_str!(
+    fn semantic_modes_match_both_original_state_word_vectors() {
+        let commander: Vec<PresentationModeOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9510_natural.json"
         ))
         .unwrap();
+        let sequel: Vec<PresentationModeOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_mode.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        verify_modes(commander);
+        verify_modes(sequel);
+    }
+
+    fn verify_modes(vectors: Vec<PresentationModeOracle>) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
