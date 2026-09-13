@@ -2020,6 +2020,7 @@ fn assert_contact_host_handoff(scenario: &ContactScenario, observed_indices: &[u
         scruter_jo_record: Some(&record),
         unclamped_line_ids: &unclamped_line_ids,
         shared_cache_available: false,
+        sequel_finale_resource_policy: false,
         scene_palette: &mut scene_palette,
         presentation_palette: &mut presentation_palette,
     };

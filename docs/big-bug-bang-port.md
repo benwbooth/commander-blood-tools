@@ -3605,6 +3605,46 @@ closes direct behavioral classification of `0x613F`; captured roster, audio,
 renderer, nested-COD, camera and HUD callees retain their own proof boundaries,
 and this result is not whole-game action parity.
 
+## Sequel Presentation Scene Coordinator
+
+BBB's `0xB4B0..0xB730` presentation-scene coordinator is the relocated sequel
+counterpart of Commander Blood `0x9D10..0x9F52`, but its 641-byte body remained
+structurally unmatched. The guarded oracle now executes the complete unchanged
+BBB routine and captures its seven established image, back-buffer, resource,
+palette, queue-state, queue-service and display-fill boundaries:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_presentation_scene_dispatch.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  presentation_scene_dispatch
+```
+
+Eleven cases mirror the complete Commander coordinator fixture and retain the
+same normalized callback order and typed result fields. They cover signed-line
+exit, Scruter Jo overlay arming and handoff, changed and absent scene images,
+shared and owned sources, all eight unclamped-line slots, blocked service,
+line-five teardown, palette reset and ship depth opening. The oracle also
+checks complete global and palette images, write ownership, registers, defined
+flags, stack discipline and executable immutability. The routine body is bound
+by SHA-256
+`44bdf4ebff368c1f97fbb2aac01137939baa6c4d18938a7a96705cc0623b8213`;
+the deterministic 13-row JSONL has SHA-256
+`14582e8b9e0e38b7abb2406eeff127530cdac68bf697ff0c5bc5048605fd60c8`.
+
+The two additional cases prove a sequel-only byte-exact resource-name branch.
+When the basename starts with lowercase `fin` and its fourth byte is not `.`,
+BBB forces vertical offset zero, unclamped rows, direct drawing off,
+back-buffer presentation skipped and secondary request bit two set. `fin.HNM`
+uses the ordinary line policy. The typed dispatcher now accepts that explicit
+policy input, while the runtime derives it only for Big Bug Bang from the
+selected resource basename after either DOS path separator. Focused tests cover
+the native `finale.HNM` and `fin.HNM` cases plus case and directory boundaries.
+This behaviorally classifies `0xB4B0`, not the seven captured callees or
+end-to-end presentation parity.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

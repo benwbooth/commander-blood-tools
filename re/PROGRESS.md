@@ -1815,3 +1815,29 @@ now consumes both fixtures, preserves the five unreachable C9/CD/unknown case la
 two defect-boundary cases, and includes the sequel gate as the 28th reachable row. No additional
 shared semantic defect was found. This behaviorally classifies BBB `0x613F`, not any captured callee
 or whole-game action parity.
+
+## 2026-09-12 - Big Bug Bang presentation-scene coordinator
+
+BBB `0xB4B0..0xB730` is the relocated counterpart of Commander Blood's already ported `0x9D10`
+presentation-scene coordinator, but its 641-byte body remained structurally unmatched. The new
+`re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py` executes the complete unchanged BBB
+routine and captures only seven established image, back-buffer, resource, palette, queue-service,
+queue-state and display-fill boundaries. The body is guarded by SHA-256
+`44bdf4ebff368c1f97fbb2aac01137939baa6c4d18938a7a96705cc0623b8213`.
+
+The first 11 direct cases mirror Commander Blood's full coordinator fixture. Their normalized
+callback order and shared result fields agree across signed-line exit, Scruter Jo overlay arming and
+handoff, changed and missing scene images, shared and owned sources, all eight unclamped-line slots,
+blocked service, line-five teardown, palette reset and ship depth opening. The oracle checks full
+global and palette images, every changed byte, register and defined flag, stack discipline and
+executable immutability.
+
+Two additional cases isolate BBB's sequel-only resource-name test: a basename beginning with exact
+lowercase `fin` whose fourth byte is not `.` forces vertical offset zero, unclamped rows, direct
+drawing off, back-buffer presentation skipped and request bit two set; `fin.HNM` follows the normal
+line policy. The checked-in 13-row JSONL has SHA-256
+`14582e8b9e0e38b7abb2406eeff127530cdac68bf697ff0c5bc5048605fd60c8`. The typed dispatcher now
+accepts that explicit policy input and the concrete runtime derives it only for Big Bug Bang from
+the selected basename. Fixture-backed and basename-boundary tests pass, as does the existing sequel
+scene-completion oracle. This behaviorally classifies BBB `0xB4B0`, not its seven captured callees or
+whole-presentation parity.

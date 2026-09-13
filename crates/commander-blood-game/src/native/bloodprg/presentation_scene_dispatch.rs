@@ -154,6 +154,8 @@ pub struct PresentationSceneDispatchContext<'a, RecordId, ImageId> {
     pub unclamped_line_ids: &'a [u8; UNCLAMPED_LINE_ID_COUNT],
     /// Whether line eight can use a shared cached resource source.
     pub shared_cache_available: bool,
+    /// Whether BBB's current `fin`-prefixed resource forces the finale policy.
+    pub sequel_finale_resource_policy: bool,
     /// Scene palette updated by image decoding.
     pub scene_palette: &'a mut IndexedGamePalette,
     /// Captured scene colors 128 through 191.
@@ -352,11 +354,12 @@ where
 
 /// Dispatch one scene-image or active streamed-presentation update.
 ///
-/// This translates `dlg_line_id_scene_dispatch` at BLOODPRG offset `0x009D10`.
-/// Optional resource and record identities replace near and far pointers;
-/// explicit booleans replace low-bit gates; typed palette and policy state
-/// retain image caching, the first-eight-only row-mode table, source selection,
-/// queue teardown, and line-specific transition thresholds.
+/// This translates `dlg_line_id_scene_dispatch` at Commander Blood offset
+/// `0x009D10` and Big Bug Bang offset `0x00B4B0`. Optional resource and record
+/// identities replace near and far pointers; explicit booleans replace low-bit
+/// gates; typed palette and policy state retain image caching, the
+/// first-eight-only row-mode table, source selection, queue teardown, and
+/// line-specific transition thresholds.
 pub fn dispatch_presentation_scene<RecordId, ImageId, Host>(
     state: &mut PresentationSceneDispatchState<ImageId>,
     context: &mut PresentationSceneDispatchContext<'_, RecordId, ImageId>,
@@ -392,12 +395,21 @@ where
 
         let image = prepare_scene_image(resource, state, context, host)?;
         state.presentation.gate_flags = PRESENTATION_ACTIVE_FLAG;
-        let (present_policy, secondary_request_pending) =
+        let (mut present_policy, mut secondary_request_pending) =
             PresentationPresentPolicy::for_presentation_line(
                 line,
                 context.unclamped_line_ids,
                 state.present_policy.vertical_offset,
             );
+        if context.sequel_finale_resource_policy {
+            present_policy = PresentationPresentPolicy {
+                draw_via_back_buffer: false,
+                skip_back_buffer_present: true,
+                unclamped_rows: true,
+                vertical_offset: usize::MIN,
+            };
+            secondary_request_pending = true;
+        }
         state.present_policy = present_policy;
         if secondary_request_pending {
             state.presentation.request_flags |= PRESENTATION_REQUEST_FLAG;
@@ -503,7 +515,7 @@ mod tests {
     const INITIAL_PALETTE_BYTE: u8 = 0xA5;
     const MODE_TABLE_BASE: u8 = 0xE0;
 
-    #[derive(Deserialize)]
+    #[derive(Debug, Deserialize, PartialEq, Eq)]
     struct DispatchOracle {
         name: String,
         line: u16,
@@ -514,12 +526,12 @@ mod tests {
         caller_es_palette_copy: String,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Debug, Deserialize, PartialEq, Eq)]
     struct OracleCall {
         call: String,
     }
 
-    #[derive(Deserialize)]
+    #[derive(Debug, Deserialize, PartialEq, Eq)]
     struct DispatchResult {
         active_line: u16,
         displayed_line: u16,
@@ -533,6 +545,53 @@ mod tests {
         request_flags: u8,
         depth_opening: u8,
         depth_step: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangDispatchOracle {
+        name: String,
+        line: u16,
+        presentation_gate: u8,
+        scene_gate: u8,
+        sequel_finale_policy: bool,
+        calls: Vec<OracleCall>,
+        result: BigBugBangDispatchResult,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangDispatchResult {
+        active_line: u16,
+        displayed_line: u16,
+        presentation_gate: u8,
+        alien_overlay_armed: u8,
+        temp_snd_trigger: u8,
+        draw_via_back_buffer: u8,
+        skip_back_buffer_present: u8,
+        source_is_banked: u8,
+        unclamped_row_count: u8,
+        request_flags: u8,
+        depth_opening: u8,
+        depth_step: u8,
+        vertical_offset: u16,
+    }
+
+    impl BigBugBangDispatchResult {
+        fn commander_fields(&self) -> DispatchResult {
+            DispatchResult {
+                active_line: self.active_line,
+                displayed_line: self.displayed_line,
+                presentation_gate: self.presentation_gate,
+                alien_overlay_armed: self.alien_overlay_armed,
+                temp_snd_trigger: self.temp_snd_trigger,
+                draw_via_back_buffer: self.draw_via_back_buffer,
+                skip_back_buffer_present: self.skip_back_buffer_present,
+                source_is_banked: self.source_is_banked,
+                unclamped_row_count: self.unclamped_row_count,
+                request_flags: self.request_flags,
+                depth_opening: self.depth_opening,
+                depth_step: self.depth_step,
+            }
+        }
     }
 
     #[derive(Clone, Debug, PartialEq, Eq)]
@@ -644,17 +703,18 @@ mod tests {
     }
 
     fn expected_events(vector: &DispatchOracle) -> Vec<Event> {
-        vector
-            .calls
+        expected_events_for_calls(vector.line, &vector.calls)
+    }
+
+    fn expected_events_for_calls(line: u16, calls: &[OracleCall]) -> Vec<Event> {
+        calls
             .iter()
             .map(|call| match call.call.as_str() {
                 "pbm_image_load_and_decode" => Event::LoadImage,
                 "back_buffer_fill" => Event::ClearBackBuffer(
                     SCENE_VERTICAL_OFFSET..SCENE_VERTICAL_OFFSET + SCENE_IMAGE_ROW_COUNT,
                 ),
-                "resource_load_sequence" => {
-                    Event::LoadSequence(PresentationResourceId::new(vector.line))
-                }
+                "resource_load_sequence" => Event::LoadSequence(PresentationResourceId::new(line)),
                 "palette_blend_remap_table_build" => Event::BuildBlackRemap,
                 "ems_resource_flush" => Event::ServiceQueue,
                 "list_d8c_state_le_one" => Event::QueryQueueState,
@@ -766,6 +826,7 @@ mod tests {
                 scruter_jo_record: Some(&SCRUTER_RECORD_ID),
                 unclamped_line_ids: &mode_ids,
                 shared_cache_available: vector.name == "banked_line_builds_black_remap",
+                sequel_finale_resource_policy: false,
                 scene_palette: &mut scene_palette,
                 presentation_palette: &mut presentation_palette,
             };
@@ -879,6 +940,109 @@ mod tests {
     }
 
     #[test]
+    fn sequel_scene_dispatch_matches_original_resource_policy_branch() {
+        let commander: Vec<DispatchOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_9d10_natural.json"
+        ))
+        .unwrap();
+        let sequel: Vec<BigBugBangDispatchOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_scene_dispatch.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(sequel.len(), ORACLE_VECTOR_COUNT + 2);
+
+        for (commander, sequel) in commander.iter().zip(&sequel) {
+            assert_eq!(sequel.name, commander.name);
+            assert_eq!(sequel.line, commander.line);
+            assert_eq!(sequel.presentation_gate, commander.presentation_gate);
+            assert_eq!(sequel.scene_gate, commander.scene_gate);
+            assert_eq!(sequel.calls, commander.calls);
+            assert_eq!(sequel.result.commander_fields(), commander.result);
+        }
+
+        for vector in &sequel[ORACLE_VECTOR_COUNT..] {
+            let scenes = vec![
+                PresentationSceneDescriptor {
+                    image: Some(TEST_IMAGE_ID)
+                };
+                64
+            ];
+            let relation = OTHER_RECORD_ID;
+            let mut scene_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; 256];
+            let mut presentation_palette =
+                [[u8::MIN; RGB_COMPONENT_COUNT]; super::super::SHIP_HUD_PALETTE_COLOR_COUNT];
+            let mut context = PresentationSceneDispatchContext {
+                scenes: &scenes,
+                active_record_related: Some(&relation),
+                scruter_jo_record: Some(&SCRUTER_RECORD_ID),
+                unclamped_line_ids: &[u8::MIN; UNCLAMPED_LINE_ID_COUNT],
+                shared_cache_available: false,
+                sequel_finale_resource_policy: vector.sequel_finale_policy,
+                scene_palette: &mut scene_palette,
+                presentation_palette: &mut presentation_palette,
+            };
+            let mut state = PresentationSceneDispatchState {
+                presentation: PresentationUpdateState {
+                    active_line: Some(vector.line),
+                    request_flags: INITIAL_REQUEST_FLAGS & !PRESENTATION_REQUEST_FLAG,
+                    ..PresentationUpdateState::default()
+                },
+                present_policy: PresentationPresentPolicy {
+                    vertical_offset: SCENE_VERTICAL_OFFSET,
+                    ..PresentationPresentPolicy::default()
+                },
+                loaded_scene_image: Some(TEST_IMAGE_ID),
+                ..PresentationSceneDispatchState::default()
+            };
+            let mut host = RecordingHost {
+                events: Vec::new(),
+                source_open_or_draining: true,
+                entry_metric: u16::MIN,
+                read_wrap_index: u16::MIN,
+            };
+
+            dispatch_presentation_scene(&mut state, &mut context, &mut host).unwrap();
+
+            assert_eq!(
+                host.events,
+                expected_events_for_calls(vector.line, &vector.calls)
+            );
+            assert_eq!(
+                state.present_policy.draw_via_back_buffer,
+                vector.result.draw_via_back_buffer != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.present_policy.skip_back_buffer_present,
+                vector.result.skip_back_buffer_present != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.present_policy.unclamped_rows,
+                vector.result.unclamped_row_count != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.present_policy.vertical_offset,
+                usize::from(vector.result.vertical_offset),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.presentation.request_flags & PRESENTATION_REQUEST_FLAG != u8::MIN,
+                vector.sequel_finale_policy,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
     fn every_signed_negative_line_returns_before_descriptor_lookup() {
         let relation = OTHER_RECORD_ID;
         let mut scene_palette = [[u8::MIN; RGB_COMPONENT_COUNT]; 256];
@@ -890,6 +1054,7 @@ mod tests {
             scruter_jo_record: Some(&SCRUTER_RECORD_ID),
             unclamped_line_ids: &[u8::MIN; UNCLAMPED_LINE_ID_COUNT],
             shared_cache_available: false,
+            sequel_finale_resource_policy: false,
             scene_palette: &mut scene_palette,
             presentation_palette: &mut presentation_palette,
         };

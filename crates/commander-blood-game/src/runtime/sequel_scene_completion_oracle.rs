@@ -143,6 +143,7 @@ fn sequel_scene_completion_matches_original_latches_and_vm_writes() {
                 scruter_jo_record: None,
                 unclamped_line_ids: &[0; 8],
                 shared_cache_available: false,
+                sequel_finale_resource_policy: false,
                 scene_palette: &mut palette,
                 presentation_palette: &mut presentation_palette,
             };

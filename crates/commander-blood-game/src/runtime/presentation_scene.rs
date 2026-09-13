@@ -4,6 +4,7 @@ use std::ops::Range;
 
 use anyhow::{Context, Result};
 use commander_blood_formats::bloodprg::BLOODPRG_PRESENTATION_LINE_COUNT;
+use commander_blood_formats::code::ScriptDialect;
 use commander_blood_formats::descript::DescriptBackgroundSlot;
 use commander_blood_formats::lbm::RGB_COMPONENT_COUNT;
 use commander_blood_formats::script::ScriptObjectId;
@@ -60,6 +61,13 @@ impl RuntimePresentationScene {
             .assets()
             .encoded_idle_video()
             .is_some();
+        let dialect = services.runtime().data().game().script_dialect();
+        let sequel_finale_resource_policy = state.presentation.active_line.is_some_and(|line| {
+            services
+                .presentation_catalog()
+                .resource_name(PresentationResourceId::new(line))
+                .is_some_and(|name| has_sequel_finale_resource_policy(dialect, name.as_bytes()))
+        });
         let mut remap_request = None;
         let outcome = {
             let mut context = PresentationSceneDispatchContext {
@@ -68,6 +76,7 @@ impl RuntimePresentationScene {
                 scruter_jo_record: scruter_jo_record.as_ref(),
                 unclamped_line_ids: &unclamped_line_ids,
                 shared_cache_available,
+                sequel_finale_resource_policy,
                 scene_palette: &mut self.scene_palette,
                 presentation_palette: &mut self.presentation_palette,
             };
@@ -260,6 +269,17 @@ fn queue_presented_frame(outcome: &PresentationQueueServiceOutcome) -> bool {
     )
 }
 
+fn has_sequel_finale_resource_policy(dialect: ScriptDialect, resource_name: &[u8]) -> bool {
+    if dialect != ScriptDialect::BigBugBang {
+        return false;
+    }
+    let basename = resource_name
+        .rsplit(|byte| matches!(*byte, b'/' | b'\\'))
+        .next()
+        .unwrap_or(resource_name);
+    basename.starts_with(b"fin") && basename.get(3) != Some(&b'.')
+}
+
 pub(super) fn publish_loaded_scene_palette(
     scene_palette: &IndexedGamePalette,
     shared_live_palette: &mut IndexedGamePalette,
@@ -298,5 +318,30 @@ mod tests {
             &shared_live_palette[SCENE_PALETTE_CLEAR_COLOR_COUNT..],
             expected_tail
         );
+    }
+
+    #[test]
+    fn sequel_finale_policy_uses_the_exact_lowercase_basename_prefix() {
+        for name in [b"finale.HNM".as_slice(), b"SQ\\finale.HNM", b"path/fin"] {
+            assert!(
+                has_sequel_finale_resource_policy(ScriptDialect::BigBugBang, name),
+                "{name:?}"
+            );
+            assert!(!has_sequel_finale_resource_policy(
+                ScriptDialect::CommanderBlood,
+                name
+            ));
+        }
+        for name in [
+            b"fin.HNM".as_slice(),
+            b"SQ\\fin.HNM",
+            b"SQ\\Finale.HNM",
+            b"SQ\\afinisher.HNM",
+        ] {
+            assert!(
+                !has_sequel_finale_resource_policy(ScriptDialect::BigBugBang, name),
+                "{name:?}"
+            );
+        }
     }
 }
