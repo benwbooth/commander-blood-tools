@@ -2637,3 +2637,28 @@ back-buffer policy case. No production behavior changed. BBB's body SHA-256 is
 `6de81969ae473043c5ffcc7d6c9a68e37a1ceb75c7e92cddbe48b4bacb828aa0`,
 and the deterministic JSONL SHA-256 is
 `9503e3a0b2c85a15082694e03e6908b67dddedad51ce965658c7301422561052`.
+
+## 2026-09-13 - Big Bug Bang presentation entry read
+
+BBB `0xBE0C..0xBE1E` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA622..0xA634` presentation entry-read wrapper. Both bodies
+contain six instructions in 18 bytes. The transfer helper and GS-owned
+queue-head pointer relocate without changing normalized control flow.
+
+The new `re/tools/big_bug_bang_presentation_entry_read_oracle.py` executes both
+shipped bodies with all six recovered Commander transport outcomes. They cover
+both conditional branch edges across unavailable input, zero and ordinary
+extents, wrapped head and byte counts, and short-read recovery outcomes. The
+transfer helper is isolated behind a state-mutating ABI callback; its full
+`0xBE4E` body remains a separate comparison target.
+
+The oracle verifies the callback request, return frame, and visible state; GS
+cursor ownership against DS, ES, and FS decoys; complete queue-buffer state;
+all registers and segments; flags; complete stack state; executable
+immutability; and direct normalized Commander/BBB equality. The wrap case
+retains the native word read across `3000:FFFF` into physical `4000:0000`. The
+typed source reader consumes both six-row fixtures without production changes.
+BBB's body SHA-256 is
+`fedab3c41c3b155fe2f0e9a912c37113e3a7b93637c831ae4ccc23470e822df4`,
+and the deterministic JSONL SHA-256 is
+`dcf1b55d19bec918ce276e14293b17fe95dd0fdc04a5782bab60a851ba4e7696`.

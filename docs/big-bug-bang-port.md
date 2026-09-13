@@ -4742,6 +4742,31 @@ production behavior changed. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `9503e3a0b2c85a15082694e03e6908b67dddedad51ce965658c7301422561052`.
 
+## Presentation Entry Read Oracle (2026-09-13)
+
+BBB `0xBE0C..0xBE1E` is the relocated sequel counterpart of Commander Blood's
+`0xA622..0xA634` presentation entry-read wrapper. Both bodies contain six
+instructions in 18 bytes. The transfer helper and GS-owned queue-head pointer
+relocate without changing normalized control flow.
+
+`re/tools/big_bug_bang_presentation_entry_read_oracle.py` executes both shipped
+bodies with all six recovered Commander transport outcomes. They traverse both
+conditional edges across unavailable input, zero and ordinary extents, wrapped
+head and byte counts, and short-read recovery outcomes. The transfer helper is
+isolated behind a state-mutating ABI callback; its full `0xBE4E` body remains a
+separate comparison target.
+
+The oracle verifies the callback's exact request, return frame, and
+callback-visible state; GS cursor ownership against DS, ES, and FS decoys; the
+extent load and complete queue-buffer state; every register and segment; flags;
+complete stack state; executable immutability; and direct normalized
+Commander/BBB equality. The wrapped case retains the original word read across
+`3000:FFFF` into physical `4000:0000`. The typed source reader consumes both
+six-row fixtures without changing production behavior. BBB's body SHA-256 is
+`fedab3c41c3b155fe2f0e9a912c37113e3a7b93637c831ae4ccc23470e822df4`,
+and the deterministic JSONL SHA-256 is
+`dcf1b55d19bec918ce276e14293b17fe95dd0fdc04a5782bab60a851ba4e7696`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

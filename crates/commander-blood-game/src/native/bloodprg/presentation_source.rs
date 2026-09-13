@@ -186,9 +186,10 @@ pub fn append_presentation_source_bytes(
 
 /// Read and decode one two-byte extent at the queue head.
 ///
-/// This translates `list_d8c_read` at `0x00A622`. The returned flat cursor
-/// replaces the original far pointer result, and an unavailable source leaves
-/// both outputs and queue state unchanged.
+/// This translates `list_d8c_read` at BLOODPRG offset `0x00A622` and its
+/// BLOOD2PG counterpart at `0x00BE0C`. The returned flat cursor replaces the
+/// original far pointer result, and an unavailable source leaves both outputs
+/// and queue state unchanged.
 pub fn read_presentation_entry_extent(
     source: Option<&mut PresentationByteSource>,
     queue: &mut PresentationQueueState,
@@ -264,7 +265,8 @@ mod tests {
     use super::*;
 
     const SOURCE_APPEND_VECTOR_COUNT: usize = 9;
-    const ENTRY_READ_VECTOR_COUNT: usize = 6;
+    const COMMANDER_ENTRY_READ_VECTOR_COUNT: usize = 6;
+    const SEQUEL_ENTRY_READ_VECTOR_COUNT: usize = 6;
     const INITIAL_ENTRY_VECTOR_COUNT: usize = 6;
     const FLAT_QUEUE_BUFFER_BYTE_COUNT: usize = u16::MAX as usize + 1;
     const SOURCE_PATTERN_STEP: usize = 37;
@@ -398,12 +400,24 @@ mod tests {
     }
 
     #[test]
-    fn extent_read_accounts_for_every_original_transport_case() {
-        let vectors: Vec<EntryReadOracle> = serde_json::from_str(include_str!(
+    fn extent_read_accounts_for_both_original_transport_fixtures() {
+        let commander: Vec<EntryReadOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a622_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), ENTRY_READ_VECTOR_COUNT);
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_entry_read.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_entry_read_vectors(commander, COMMANDER_ENTRY_READ_VECTOR_COUNT);
+        assert_entry_read_vectors(sequel, SEQUEL_ENTRY_READ_VECTOR_COUNT);
+    }
+
+    fn assert_entry_read_vectors(vectors: Vec<EntryReadOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count);
 
         for vector in vectors {
             let mut queue = queue_state(
