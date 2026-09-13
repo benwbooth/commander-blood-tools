@@ -3490,3 +3490,45 @@ hardware branch. The two body SHA-256 values are
 `1bd176c3d14b171e7806e59bb6e5bc03f15a17a0c8272f724b2431ed570e4b03`.
 The deterministic JSONL SHA-256 is
 `41dab0c7e015c88fcb3d18a8e64897819652df0351be3d426b935486766e88de`.
+
+## 2026-09-13 - Big Bug Bang Ultrasound lifecycle
+
+BBB's final three Gravis routines have no Commander Blood body counterparts.
+Shutdown at `0xDE5B..0xDEC3` contains 50 instructions in 104 bytes. When the
+backend is active it disables interrupts, resets all 32 voices, restores the
+previous DOS interrupt vector and both saved PIC masks, then reenables
+interrupts. Initialization at `0xDEC3..0xE05E` contains 177 instructions in
+411 bytes. It publishes the stream callback, finds and parses the four
+comma-separated `ULTRASND` DMA/IRQ values when present, preserves configured
+values when the variable is absent, replaces the IRQ vector, resets every
+voice, programs the sample-rate and IRQ controls, and unmasks the selected
+PIC line. Detection at `0xE05E..0xE0DE` contains 58 instructions in 128 bytes.
+It probes base ports `0x220..0x260` using two DRAM-register round trips and
+leaves `0x270` in the base-port field after complete failure.
+
+The initialization body contains an unreachable conditional jump at `0xDF8F`:
+the immediately preceding unconditional jump always lands at `0xDF9D`. The
+dead path would have incorporated the secondary IRQ mapping, while every
+reachable execution programs only the primary mapping plus bit `0x40`.
+
+The new `re/tools/big_bug_bang_ultrasound_lifecycle_oracle.py` executes ten
+cases across both outcomes of all 12 reachable conditional sites, or 24
+edges. It covers disabled, master-IRQ, and slave-IRQ shutdown; first, later,
+and missing environment entries; master and slave PIC initialization; first-
+port success, split probe failure, later success, and complete detection
+failure. The harness checks exact DOS vector calls and frames, parser inputs
+and distinct field overwrites, the complete Gravis and PIC port transcripts,
+all 32 voice-reset iterations, timing reads, registers, defined flags, stack
+bounds, all modeled segment outcomes, executable immutability, and write
+ownership.
+
+The modern runtime eliminates this DOS hardware lifecycle at the same host
+boundary as the relocated driver table: SDL opens one owned audio stream and
+typed submissions never expose environment scanning, interrupt vectors, PIC
+masks, or Gravis ports. The shutdown, initialization, and detection body
+SHA-256 values are respectively
+`b6b650cbd52f9a27919694623f8aa1bc8e7759b0feda3d2693b71fdcead84869`,
+`0862d3794aef940eaf89ad74c876d13727b58236328b365d1d628d8172198ae0`,
+and `f9b88ea03d4e4f8ba4452e9c4e18070f3ac58ee32a152d2da0aa5896247ae7da`.
+The deterministic JSONL SHA-256 is
+`68b55f33a60b0da01afa49255e75b3280839db56cd6f8dbfa6d777891d229097`.
