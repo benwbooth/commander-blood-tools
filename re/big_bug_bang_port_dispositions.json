@@ -2,7 +2,7 @@
   "format": "big_bug_bang_port_dispositions_v1",
   "scope": "One disposition for every known BBB native entrypoint. Direct execution requires oracle output checked against a fixture consumed by Rust; structural similarity alone remains pending.",
   "inputs": {
-    "re/big_bug_bang_oracle_coverage.json": "e446b9753d211bfca1551ce0fae18052f4d02a29e2b61d77c2000fc0a28636d2",
+    "re/big_bug_bang_oracle_coverage.json": "f63360fbeff052ec986ece90c7eae83351597cf181037017c3a732892a590ac2",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "6b7a4128ca4b7ca399dc1eab9feba3f7b2eb4f1ca05aef517557764a9f24c007",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
@@ -11,15 +11,15 @@
   },
   "summary": {
     "known_entrypoint_count": 383,
-    "classified_entrypoint_count": 284,
-    "pending_game_semantics_count": 99,
+    "classified_entrypoint_count": 285,
+    "pending_game_semantics_count": 98,
     "status_counts": {
       "eliminated_authored_no_operation": 7,
       "eliminated_dormant_diagnostic": 17,
-      "eliminated_host_adapter": 22,
+      "eliminated_host_adapter": 23,
       "inherited_exact_eliminated": 7,
       "inherited_exact_typed": 6,
-      "pending_game_semantics": 99,
+      "pending_game_semantics": 98,
       "verified_direct_typed": 225
     }
   },
@@ -169,15 +169,19 @@
     {
       "entry": "0x0c94",
       "origin": "static_graph",
-      "entered": false,
+      "entered": true,
       "comparison": "structural_candidate",
       "commander_entry": "0xa99",
-      "status": "pending_game_semantics",
+      "status": "eliminated_host_adapter",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/tools/big_bug_bang_memory_release_oracle.py",
+        "re/tools/oracle_vectors/big_bug_bang_memory_release.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs",
+        "symbol": "OriginalResourceCache::new"
+      },
+      "rationale": "The EMS and XMS pool release is executable-verified but eliminated at the owned Rust memory boundary; no DOS device, interrupt, or far-call ABI is exposed by the modern runtime."
     },
     {
       "entry": "0x0d2d",

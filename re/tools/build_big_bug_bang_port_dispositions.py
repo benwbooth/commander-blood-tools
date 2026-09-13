@@ -36,6 +36,7 @@ AUDIO_PLAYBACK = "crates/commander-blood-game/src/native/bloodprg/audio_playback
 AUDIO_BANK = "crates/commander-blood-game/src/native/bloodprg/audio_bank.rs"
 RUNTIME_AUDIO = "crates/commander-blood-game/src/runtime/audio.rs"
 TIMER = "crates/commander-blood-game/src/native/bloodprg/timer.rs"
+RESOURCE_CACHE = "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs"
 APP = "crates/commander-blood-game/src/app.rs"
 RENDER = "crates/commander-blood-game/src/render.rs"
 SEQUEL_INPUT_FIXTURE = "re/tools/oracle_vectors/big_bug_bang_input_handlers.json"
@@ -74,6 +75,11 @@ DIRECT_RUST_OWNER_OVERRIDES = {
 HOST_ADAPTER_OWNERS = {
     0x09A2: (TIMER, "GameTimerState::start", "DOS timer-vector and PIT startup"),
     0x09F0: (TIMER, "GameTimerState::stop", "DOS timer-vector and PIT shutdown"),
+    0x0C94: (
+        RESOURCE_CACHE,
+        "OriginalResourceCache::new",
+        "EMS and XMS pool release",
+    ),
     0x0D3D: (RENDER, "Renderer::render", "VGA retrace-phase calibration"),
     0x0DD2: (RENDER, "Renderer::render", "VGA retrace-phase polling"),
     0x0DFA: (APP, "run", "DOS Ctrl-Break and critical-error vector installation"),
@@ -238,6 +244,8 @@ def build_report() -> dict[str, Any]:
             path, symbol, adapter = HOST_ADAPTER_OWNERS[entry]
             if path == TIMER:
                 boundary = "modern host"
+            elif path == RESOURCE_CACHE:
+                boundary = "Rust memory"
             elif path in {APP, RENDER}:
                 boundary = "SDL/wgpu"
             else:

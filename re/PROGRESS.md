@@ -3917,3 +3917,30 @@ The strict ledger classifies 284 of 383 known entries and leaves 99 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `c38c234dd892213c673dc9bc5e91be126f741089bf7e3678a158aed97733b0db`.
+
+## 2026-09-13 - Big Bug Bang extended-memory release
+
+`re/tools/big_bug_bang_memory_release_oracle.py` executes the complete
+unchanged BBB EMS/XMS backend-release routine at `0x0C94`. Four cases cover no
+allocated pools, all eight pools, alternating backends, zero handles, signed
+high-bit handles, and the exact `0xFFFF` sentinel behavior.
+
+The oracle checks the exact 153-byte body hash, ordered EMS `INT 67h` releases,
+all XMS indirect far-call frames, callback-clobber isolation, complete register
+and segment preservation, final defined flags, bounded stack writes, and full
+state, executable, and decoy immutability. Its normalized rows exactly match
+the existing Commander `0x0A99` fixture. The checked BBB fixture at
+`re/tools/oracle_vectors/big_bug_bang_memory_release.json` has SHA-256
+`7c4531690b7b0e7e86443dda9f108b969febcb5cec77c265d7964aed5c0c1c32`.
+Owned Rust resource buffers replace the DOS pool handles and release with their
+owners, so the production cache exposes no EMS or XMS lifecycle ABI.
+
+The global collector now reproduces 135 exact fixtures and one prefix fixture
+across 137 BBB oracle programs, entering 251 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`f63360fbeff052ec986ece90c7eae83351597cf181037017c3a732892a590ac2`.
+The strict ledger classifies 285 of 383 known entries and leaves 98 pending:
+225 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 23
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`8608d1a2f9d97de8b861501400f253ab3ea750182336fa9d65c99dd46116f366`.

@@ -1,0 +1,231 @@
+{
+  "format": "big_bug_bang_memory_release_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_fixture": {
+    "path": "re/tools/oracle_vectors/func_0a99_natural.json",
+    "sha256": "87cafdbed3551d0ddb4e322a6dcb7521fe1d6740dc18a6a229a887059b63a183"
+  },
+  "routine": {
+    "operation": "extended_memory_backends_release",
+    "entry": "0x0c94",
+    "end": "0x0d2d",
+    "body_sha256": "fdb9ad9553b8222db768effe441446be4f050f3784ef9a4b875283e5ff33c0d2"
+  },
+  "cases": [
+    {
+      "name": "none",
+      "ems_handles": [
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "xms_handles": [
+        -1,
+        -1,
+        -1,
+        -1
+      ],
+      "calls": [],
+      "state_unchanged": true,
+      "final_defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "stack_write_count": 2,
+      "stack_low_water_mark": 65020
+    },
+    {
+      "name": "all",
+      "ems_handles": [
+        4353,
+        8706,
+        13059,
+        17412
+      ],
+      "xms_handles": [
+        21765,
+        26118,
+        30471,
+        34824
+      ],
+      "calls": [
+        {
+          "call": "ems_release",
+          "function": 69,
+          "handle": 4353
+        },
+        {
+          "call": "ems_release",
+          "function": 69,
+          "handle": 8706
+        },
+        {
+          "call": "ems_release",
+          "function": 69,
+          "handle": 13059
+        },
+        {
+          "call": "ems_release",
+          "function": 69,
+          "handle": 17412
+        },
+        {
+          "call": "xms_release",
+          "function": 10,
+          "handle": 21765,
+          "return_offset": 3310,
+          "return_segment": 0
+        },
+        {
+          "call": "xms_release",
+          "function": 10,
+          "handle": 26118,
+          "return_offset": 3330,
+          "return_segment": 0
+        },
+        {
+          "call": "xms_release",
+          "function": 10,
+          "handle": 30471,
+          "return_offset": 3350,
+          "return_segment": 0
+        },
+        {
+          "call": "xms_release",
+          "function": 10,
+          "handle": 34824,
+          "return_offset": 3370,
+          "return_segment": 0
+        }
+      ],
+      "state_unchanged": true,
+      "final_defined_flags": {
+        "cf": true,
+        "pf": false,
+        "af": true,
+        "zf": false,
+        "sf": true,
+        "if": false,
+        "df": false,
+        "of": true
+      },
+      "stack_write_count": 10,
+      "stack_low_water_mark": 65016
+    },
+    {
+      "name": "alternating",
+      "ems_handles": [
+        0,
+        -1,
+        32767,
+        -1
+      ],
+      "xms_handles": [
+        -1,
+        32768,
+        -1,
+        1
+      ],
+      "calls": [
+        {
+          "call": "ems_release",
+          "function": 69,
+          "handle": 0
+        },
+        {
+          "call": "ems_release",
+          "function": 69,
+          "handle": 32767
+        },
+        {
+          "call": "xms_release",
+          "function": 10,
+          "handle": 32768,
+          "return_offset": 3330,
+          "return_segment": 0
+        },
+        {
+          "call": "xms_release",
+          "function": 10,
+          "handle": 1,
+          "return_offset": 3370,
+          "return_segment": 0
+        }
+      ],
+      "state_unchanged": true,
+      "final_defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": true,
+        "of": false
+      },
+      "stack_write_count": 6,
+      "stack_low_water_mark": 65016
+    },
+    {
+      "name": "negative_non_sentinel",
+      "ems_handles": [
+        65534,
+        32768,
+        -1,
+        65535
+      ],
+      "xms_handles": [
+        65535,
+        65534,
+        32769,
+        -1
+      ],
+      "calls": [
+        {
+          "call": "ems_release",
+          "function": 69,
+          "handle": 65534
+        },
+        {
+          "call": "ems_release",
+          "function": 69,
+          "handle": 32768
+        },
+        {
+          "call": "xms_release",
+          "function": 10,
+          "handle": 65534,
+          "return_offset": 3330,
+          "return_segment": 0
+        },
+        {
+          "call": "xms_release",
+          "function": 10,
+          "handle": 32769,
+          "return_offset": 3350,
+          "return_segment": 0
+        }
+      ],
+      "state_unchanged": true,
+      "final_defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": false,
+        "df": false,
+        "of": false
+      },
+      "stack_write_count": 6,
+      "stack_low_water_mark": 65016
+    }
+  ]
+}
