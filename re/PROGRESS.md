@@ -2474,3 +2474,25 @@ the 14-row deterministic JSONL SHA-256 is
 This behaviorally classifies the refill coordinator and exercised pure-helper
 paths, not the isolated source I/O helper bodies or arbitrary malformed queue
 geometry.
+
+## 2026-09-13 - Big Bug Bang presentation queue wrap
+
+BBB `0xBB78..0xBB97` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA38E..0xA3AD` circular-entry setup. Both leaf bodies contain
+11 instructions in 31 bytes and have identical normalized control flow.
+
+The new `re/tools/big_bug_bang_presentation_queue_wrap_oracle.py` executes both
+shipped bodies with all six recovered Commander cases. They cover all four
+conditional branch edges: ordinary advance, the inclusive exact-end boundary,
+past-end and 16-bit-carry wrapping, zero- and one-byte extent underflow, and
+wrap-counter overflow.
+
+The oracle verifies exact DS-owned writes against a GS decoy, cursor and counter
+wrapping, complete register and segment state, flags, stack discipline,
+unchanged executable and unowned segments, and direct Commander/BBB equality.
+The typed entry setup consumes both six-row fixtures and retains its checked,
+transactional rejection of extents shorter than the two-byte header; no
+production behavior changed. BBB's body SHA-256 is
+`a7a399ba07876fd3a16620ac3d1bfe6b5ab81133b64f699e7bcfe9ea5e858357`,
+and the deterministic JSONL SHA-256 is
+`a5dbdd87e1aa6f8256f6ce2c788728b213627e556bb48293267e87d27214652f`.

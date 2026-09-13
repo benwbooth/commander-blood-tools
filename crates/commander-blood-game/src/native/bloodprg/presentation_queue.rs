@@ -883,11 +883,23 @@ mod tests {
     }
 
     #[test]
-    fn entry_begin_matches_flat_original_vectors() {
-        let vectors: Vec<BeginEntryOracle> = serde_json::from_str(include_str!(
+    fn entry_begin_matches_both_flat_original_fixtures() {
+        let commander: Vec<BeginEntryOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a38e_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_queue_wrap.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_begin_entry_vectors(commander);
+        assert_begin_entry_vectors(sequel);
+    }
+
+    fn assert_begin_entry_vectors(vectors: Vec<BeginEntryOracle>) {
         assert_eq!(vectors.len(), BEGIN_ENTRY_VECTOR_COUNT);
         let mut exact = usize::MIN;
 
