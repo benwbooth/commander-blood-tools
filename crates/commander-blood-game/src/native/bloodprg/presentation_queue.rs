@@ -1075,15 +1075,22 @@ mod tests {
 
     #[test]
     fn low_bit_and_status_queries_cover_every_byte_value() {
-        let status_summaries: Vec<serde_json::Value> = serde_json::from_str(include_str!(
+        let commander_status: Vec<serde_json::Value> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a40b_natural.json"
         ))
         .unwrap();
+        let sequel_status: Vec<serde_json::Value> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_queue_state.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
         let flag_summaries: Vec<serde_json::Value> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a634_natural.json"
         ))
         .unwrap();
-        let status_summary = &status_summaries[usize::MIN];
+        assert_eq!(sequel_status, commander_status);
+        let status_summary = &commander_status[usize::MIN];
         let flag_summary = &flag_summaries[usize::MIN];
         assert_eq!(status_summary["tested_state_count"], 256);
         assert_eq!(flag_summary["tested_state_count"], 256);

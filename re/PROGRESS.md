@@ -2542,3 +2542,23 @@ production behavior changed. BBB's body SHA-256 is
 `cd850756d06df775771c668ca74ff5435985aae66656d625b540100f8824599c`,
 and the deterministic JSONL SHA-256 is
 `2c3856cff0790e1595cf69ea17a0fad6122c9f377e5dfab41c1d967b411b109a`.
+
+## 2026-09-13 - Big Bug Bang presentation queue state predicate
+
+BBB `0xBBF5..0xBC04` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA40B..0xA41A` queue-state predicate. Both bodies contain four
+instructions in 15 bytes and differ only in the GS-qualified state-byte
+address.
+
+The new `re/tools/big_bug_bang_presentation_queue_state_oracle.py` executes
+both shipped bodies for all 256 byte values. They cover both conditional branch
+edges, agree exactly, and leave ZF set only for state zero or one.
+
+The oracle verifies complete memory immutability, GS ownership against DS, ES,
+and FS decoys, every register and segment, complete flags, stack discipline,
+executable immutability, and direct Commander/BBB equality. The typed status
+test consumes both exhaustive summaries and retains byte-complete semantic
+coverage. No production behavior changed. BBB's body SHA-256 is
+`0bc03e9897f972522b6ab265ea5aef10f756a906a873c037c9d9fb37471a67ee`,
+and the deterministic JSONL SHA-256 is
+`27f111080ffb12cd2e947de514132d8b7c5dcd67163475b2cd916b9fb3afb838`.
