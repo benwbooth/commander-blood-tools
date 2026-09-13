@@ -16,7 +16,8 @@ pub struct PaletteUploadState {
     pub press_pending: u8,
 }
 
-/// Translate BLOODPRG routine `0x00178B` to a renderer upload decision.
+/// Translate BLOODPRG routine `0x00178B` and BBB routine `0x00194D` to a
+/// renderer upload decision.
 ///
 /// wgpu presentation replaces the VGA retrace wait and DAC write. The exact
 /// dirty-bit gate and post-upload primary/pending latch clears remain here;
@@ -100,6 +101,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangPaletteUploadOracle {
+        rows: Vec<PaletteUploadVector>,
+    }
+
+    #[derive(Deserialize)]
     struct PaletteTransitionVector {
         name: String,
         initial_percent: u16,
@@ -118,12 +124,7 @@ mod tests {
         percent_signed_byte: i8,
     }
 
-    #[test]
-    fn upload_gate_matches_every_original_palette_vector() {
-        let vectors: Vec<PaletteUploadVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_178b_natural.json"
-        ))
-        .unwrap();
+    fn assert_upload_gate_vectors(vectors: Vec<PaletteUploadVector>) {
         assert_eq!(vectors.len(), 7);
 
         for vector in vectors {
@@ -148,6 +149,24 @@ mod tests {
             );
             assert_eq!(state.press_pending, vector.pending_after, "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn upload_gate_matches_every_original_palette_vector() {
+        let vectors: Vec<PaletteUploadVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_178b_natural.json"
+        ))
+        .unwrap();
+        assert_upload_gate_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_upload_gate_matches_every_direct_palette_vector() {
+        let oracle: BigBugBangPaletteUploadOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_palette_upload.json"
+        ))
+        .unwrap();
+        assert_upload_gate_vectors(oracle.rows);
     }
 
     #[test]

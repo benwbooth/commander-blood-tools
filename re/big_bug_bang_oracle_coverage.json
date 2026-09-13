@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 148,
-    "oracle_fixture_count": 147,
+    "oracle_count": 149,
+    "oracle_fixture_count": 148,
     "fixture_relation_counts": {
-      "exact": 146,
+      "exact": 147,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 264,
-    "unentered_static_entrypoints": 118,
+    "entered_static_entrypoints": 265,
+    "unentered_static_entrypoints": 117,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 265,
+    "entered_known_entrypoints": 266,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 151,
-        "unentered": 45
+        "entered": 152,
+        "unentered": 44
       },
       "exact_body": {
         "entered": 15,
@@ -904,6 +904,18 @@
       "summary": "verified 4 BBB scene-palette clear cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_clear.json",
       "fixture_sha256": "de529cc1acc2c277bd3f38ae621ecc313712b93a2c80eb9320306e9a2e93b9b2",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_palette_upload_oracle.py",
+      "oracle_sha256": "1e9cc97e3ee20bea5364e2da10ba211b15a8d83efc94394d22a401c898066d91",
+      "executed_instruction_count": 9,
+      "entered_entrypoints": [
+        "0x194d"
+      ],
+      "summary": "verified 7 BBB palette-upload cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_upload.json",
+      "fixture_sha256": "87a2a50d5bc18e2016eb0082e5452ee9e07ce8e93248cf15b613628c3f927c19",
       "fixture_relation": "exact"
     },
     {
@@ -2431,8 +2443,10 @@
     {
       "entry": "0x194d",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_palette_upload_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x178b"
     },

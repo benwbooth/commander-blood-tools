@@ -4262,3 +4262,33 @@ The strict ledger classifies 298 of 383 known entries and leaves 85 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `6ecb0d4530bd8864669bdf517113f5a2fccb185cffc4ce7b2be54d22cf8d4102`.
+
+## 2026-09-13 - Big Bug Bang palette upload gate
+
+`re/tools/big_bug_bang_palette_upload_oracle.py` executes BBB's complete palette
+upload gate at `0x194D`. Seven cases partition bit zero across clean, unrelated,
+high-bit, and mixed dirty values. Their normalized state and call outcomes match
+the independent Commander fixture despite BBB's relocated palette, dirty byte,
+mouse latches, and far helpers.
+
+The oracle checks the exact 36-byte body hash; both far-call targets, frames,
+arguments, and ordering; call-before-clear behavior through injected helper
+writes; direct DS ownership against full GS decoys; palette immutability; whole
+dirty-byte replacement; primary and pending clears with secondary preservation;
+path-specific SI; register, segment, defined-flag, near-return, and exact stack
+behavior; and full synthetic state and patched-executable ownership. Its checked
+fixture at `re/tools/oracle_vectors/big_bug_bang_palette_upload.json` has
+SHA-256
+`87a2a50d5bc18e2016eb0082e5452ee9e07ce8e93248cf15b613628c3f927c19`.
+`take_palette_upload_request` consumes every direct BBB row while replacing the
+retrace wait and VGA DAC transfer with an owned renderer request.
+
+The global collector now reproduces 147 exact fixtures and one prefix fixture
+across 149 BBB oracle programs, entering 265 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`6d99b05dcbcffb41833ee4605583aab303f811c7a587f483998769fdd88d0e2f`.
+The strict ledger classifies 299 of 383 known entries and leaves 84 pending:
+236 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 26
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`1656f6422022dab81c4baaf2309b5d9d2f18a0b971bcb9fe88aa00d531030767`.

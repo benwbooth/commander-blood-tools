@@ -1,0 +1,161 @@
+{
+  "format": "big_bug_bang_palette_upload_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_semantic_fixture_sha256": "b793c648d5a787883bb188891795e0e3a620f06e00d43c92aacf75b4a8337888",
+  "routine": {
+    "entry": "0x194d",
+    "end": "0x1971",
+    "body_sha256": "20735937f628e051ed07aca3ddc169f79625cc3492434d6b43c27d6a77e4a55f",
+    "dirty_offset": 24357,
+    "palette_offset": 22049,
+    "mouse_latch_offsets": [
+      3126,
+      3127,
+      3128
+    ]
+  },
+  "rows": [
+    {
+      "name": "clean_zero",
+      "dirty_before": 0,
+      "dirty_path": false,
+      "calls": [],
+      "palette_offset": null,
+      "dirty_after": 0,
+      "primary_after": 49,
+      "secondary_after": 81,
+      "pending_after": 113,
+      "si_after": 22136,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      }
+    },
+    {
+      "name": "dirty_bit",
+      "dirty_before": 1,
+      "dirty_path": true,
+      "calls": [
+        "retrace",
+        "palette"
+      ],
+      "palette_offset": 22049,
+      "dirty_after": 0,
+      "primary_after": 0,
+      "secondary_after": 82,
+      "pending_after": 0,
+      "si_after": 22049,
+      "defined_flags": {
+        "cf": true,
+        "pf": false,
+        "zf": false,
+        "sf": true,
+        "of": true
+      }
+    },
+    {
+      "name": "clean_other_bit",
+      "dirty_before": 2,
+      "dirty_path": false,
+      "calls": [],
+      "palette_offset": null,
+      "dirty_after": 2,
+      "primary_after": 51,
+      "secondary_after": 83,
+      "pending_after": 115,
+      "si_after": 22136,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      }
+    },
+    {
+      "name": "dirty_with_other_bit",
+      "dirty_before": 3,
+      "dirty_path": true,
+      "calls": [
+        "retrace",
+        "palette"
+      ],
+      "palette_offset": 22049,
+      "dirty_after": 0,
+      "primary_after": 0,
+      "secondary_after": 84,
+      "pending_after": 0,
+      "si_after": 22049,
+      "defined_flags": {
+        "cf": true,
+        "pf": false,
+        "zf": false,
+        "sf": true,
+        "of": true
+      }
+    },
+    {
+      "name": "clean_high_bit",
+      "dirty_before": 128,
+      "dirty_path": false,
+      "calls": [],
+      "palette_offset": null,
+      "dirty_after": 128,
+      "primary_after": 53,
+      "secondary_after": 85,
+      "pending_after": 117,
+      "si_after": 22136,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      }
+    },
+    {
+      "name": "clean_all_even_bits",
+      "dirty_before": 254,
+      "dirty_path": false,
+      "calls": [],
+      "palette_offset": null,
+      "dirty_after": 254,
+      "primary_after": 54,
+      "secondary_after": 86,
+      "pending_after": 118,
+      "si_after": 22136,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      }
+    },
+    {
+      "name": "dirty_all_bits",
+      "dirty_before": 255,
+      "dirty_path": true,
+      "calls": [
+        "retrace",
+        "palette"
+      ],
+      "palette_offset": 22049,
+      "dirty_after": 0,
+      "primary_after": 0,
+      "secondary_after": 87,
+      "pending_after": 0,
+      "si_after": 22049,
+      "defined_flags": {
+        "cf": true,
+        "pf": false,
+        "zf": false,
+        "sf": true,
+        "of": true
+      }
+    }
+  ]
+}
