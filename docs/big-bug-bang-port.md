@@ -4204,6 +4204,42 @@ the deterministic six-row JSONL has SHA-256
 This behaviorally classifies BBB `0xB1AF`, not the near point plotter, callers,
 or subsequent object projection.
 
+## Sequel Ship Point Plotter
+
+BBB `0xB2A3..0xB2E7` is the relocated sequel counterpart of Commander Blood's
+`0x9B04..0x9B48` near point plotter. Both bodies contain 30 instructions in 68
+bytes. BBB's only data change is moving the four-word clip rectangle from
+`DS:0x5235` to `DS:0x5605`; clipping, 16-bit row arithmetic, first-write-wins
+behavior, and depth shading are unchanged.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_ship_point_plot_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_ship_point_plot.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  point_plot_matches_both_original_fixtures_and_rejects_wrapping_coordinates
+```
+
+The dual-executable oracle replays all 14 Commander cases and traverses all ten
+edges of the four clip comparisons and occupied-pixel branch. It covers each
+half-open boundary, empty and occupied pixels, depth extremes, negative X, and
+high and negative rows whose native byte-swapped address formula differs from
+the natural `y * 320 + x` offset.
+
+The oracle checks each path's exact pixel result and offset, callback-free phase
+state, clip/context segment ownership, complete data, GS, FS, framebuffer and
+normalized stack state, every register and segment, path-specific defined flags,
+near-return discipline, direct Commander/BBB equality, and executable
+immutability. The typed plotter now consumes both fixtures and retains its safer
+rejection of the two native wrapped-coordinate draws; no production behavior
+changed. The BBB body is bound by SHA-256
+`488f5bd72d3ee2502c509e4c04cf5167b50866d954bc445ff79de9e5f477571a`;
+the deterministic 14-row JSONL has SHA-256
+`1a7c093f46715bfb79627fed9d8c8c0a47ca28555cee6adc0d9c4e7667ed5110`.
+This behaviorally classifies BBB `0xB2A3`, not its point-cloud caller or the
+surrounding ship renderer.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

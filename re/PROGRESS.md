@@ -2180,3 +2180,26 @@ typed flat projector now consumes both fixtures and retains its exact-prefix tre
 native split-DS alias case; no production behavior changed. The deterministic six-row JSONL has
 SHA-256 `829332e27e9f81dab0be3f521727d5f8d2818f3999ea122cd7c4904eea61d364`.
 This behaviorally classifies BBB `0xB1AF`, not its plotter, callers, or object projector.
+
+## 2026-09-12 - Big Bug Bang ship point plotter
+
+BBB `0xB2A3..0xB2E7` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9B04..0x9B48` near point plotter. Both bodies contain 30 instructions in 68 bytes. BBB's only
+data change is moving the four-word clip rectangle from `DS:0x5235` to `DS:0x5605`; clipping,
+16-bit row arithmetic, first-write-wins behavior, and depth shading are unchanged. The new
+`re/tools/big_bug_bang_ship_point_plot_oracle.py` executes both original binaries and guards BBB's
+body with SHA-256 `488f5bd72d3ee2502c509e4c04cf5167b50866d954bc445ff79de9e5f477571a`.
+
+All 14 Commander cases agree after address normalization and traverse all ten edges of the four
+clip comparisons and occupied-pixel branch. They cover every half-open boundary, empty and
+occupied pixels, depth extremes, negative X, and high and negative rows whose native byte-swapped
+address formula differs from the natural `y * 320 + x` offset.
+
+The oracle checks exact pixel results and offsets, callback-free phase state, clip/context segment
+ownership, complete data, GS, FS, framebuffer and normalized stack state, every register and
+segment, path-specific defined flags, near-return discipline, direct Commander/BBB equality, and
+executable immutability. The typed plotter now consumes both fixtures and retains its safer
+rejection of the two native wrapped-coordinate draws; no production behavior changed. The
+deterministic 14-row JSONL has SHA-256
+`1a7c093f46715bfb79627fed9d8c8c0a47ca28555cee6adc0d9c4e7667ed5110`. This behaviorally
+classifies BBB `0xB2A3`, not its point-cloud caller or the surrounding ship renderer.

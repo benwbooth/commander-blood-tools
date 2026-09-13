@@ -947,11 +947,23 @@ mod tests {
     }
 
     #[test]
-    fn point_plot_matches_valid_vectors_and_rejects_wrapping_coordinates() {
-        let vectors: Vec<PlotOracle> = serde_json::from_str(include_str!(
+    fn point_plot_matches_both_original_fixtures_and_rejects_wrapping_coordinates() {
+        let commander: Vec<PlotOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9b04_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_point_plot.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_point_plot_vectors(commander);
+        assert_point_plot_vectors(sequel);
+    }
+
+    fn assert_point_plot_vectors(vectors: Vec<PlotOracle>) {
         assert_eq!(vectors.len(), PLOT_ORACLE_COUNT);
 
         let mut invalid_logical_coordinates = usize::MIN;
