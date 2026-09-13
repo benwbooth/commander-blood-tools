@@ -2350,3 +2350,27 @@ deterministic JSONL SHA-256 is
 `9080722ff2e580249283b304984ee87634b287bd3e120385b767c115f3320272`. This behaviorally
 classifies BBB `0xB917`, `0xB924`, and the invoked bounds reset, not the queue-service body or
 later sequence consumers.
+
+## 2026-09-13 - Big Bug Bang presentation sequence loader
+
+BBB `0xB942..0xB997` is the relocated sequel counterpart of Commander Blood's already ported
+`0xA15F..0xA1B4` presentation sequence loader. Both bodies contain 43 instructions in 85 bytes.
+The sequel relocates its six helper targets, queue pointers and counters, storage segment,
+resource flags, and timer fields without changing control flow.
+
+The new `re/tools/big_bug_bang_presentation_sequence_oracle.py` executes both originals around
+the same isolated helper contracts. All four Commander vectors agree exactly after address
+normalization: resource-switch failure, initial banked-load failure, a successful 50-refill
+prefill, and a successful flag-`0x40` prefill skip. Together they traverse all eight conditional
+branch edges.
+
+The oracle checks helper order and near/far frames, entry and storage pointers, all 50 evolving
+refill targets, wrapped queue counters, timer publication, DS ownership against a GS decoy, exact
+owned writes, unchanged buffers and unowned memory, normalized complete stack state, every
+register and segment, flags, return discipline, direct Commander/BBB equality, and executable
+immutability. The typed loader now consumes both four-row fixtures; no production behavior
+changed. BBB's body SHA-256 is
+`76266f48f89ba1139665d23c268e67e5ba27186449a9b5dde18723062cf6d748`, and the
+deterministic JSONL SHA-256 is
+`fc02e7a39b554d7b45a64d89fba932566aadfdcc0656ea643417f0386137def7`. This behaviorally
+classifies BBB `0xB942`, not its six helper bodies or later queue service.

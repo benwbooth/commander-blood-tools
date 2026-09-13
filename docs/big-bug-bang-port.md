@@ -4439,6 +4439,33 @@ and the deterministic JSONL SHA-256 is
 This classifies both helpers, not the queue-service body or later sequence
 consumers.
 
+## Presentation Sequence Loader Oracle (2026-09-13)
+
+BBB `0xB942..0xB997` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA15F..0xA1B4` presentation sequence loader. Both bodies have
+43 instructions in 85 bytes. BBB moves the resource helpers, queue pointers and
+counters, storage segment, resource flags, and timer fields without changing
+control flow.
+
+`re/tools/big_bug_bang_presentation_sequence_oracle.py` executes both shipped
+bodies around the same six isolated helper contracts. The four Commander cases
+agree exactly after address normalization: resource-switch failure, initial
+banked-load failure, a successful 50-refill prefill, and a successful flag-`0x40`
+prefill skip. Together they traverse all eight conditional branch edges.
+
+The oracle verifies helper order and near/far frames, entry and storage pointers,
+all 50 evolving refill targets, wrapped queue counters, timer publication, DS
+ownership against a GS decoy, exact owned writes, unchanged buffers and unowned
+memory, normalized complete stack state, every register and segment, flags,
+return discipline, and executable immutability. The typed sequence loader now
+consumes both four-row fixtures; no production behavior changed. BBB's body
+SHA-256 is
+`76266f48f89ba1139665d23c268e67e5ba27186449a9b5dde18723062cf6d748`,
+and the deterministic JSONL SHA-256 is
+`fc02e7a39b554d7b45a64d89fba932566aadfdcc0656ea643417f0386137def7`.
+This classifies the coordinator, not the six helper bodies or later queue
+service.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

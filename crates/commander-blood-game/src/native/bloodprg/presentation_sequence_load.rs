@@ -376,11 +376,23 @@ mod tests {
     }
 
     #[test]
-    fn sequence_loading_accounts_for_every_original_coordinator_vector() {
-        let vectors: Vec<LoadOracle> = serde_json::from_str(include_str!(
+    fn sequence_loading_accounts_for_both_original_coordinator_fixtures() {
+        let commander: Vec<LoadOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a15f_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_sequence.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_sequence_load_vectors(commander);
+        assert_sequence_load_vectors(sequel);
+    }
+
+    fn assert_sequence_load_vectors(vectors: Vec<LoadOracle>) {
         assert_eq!(vectors.len(), LOAD_VECTOR_COUNT);
 
         for vector in vectors {
