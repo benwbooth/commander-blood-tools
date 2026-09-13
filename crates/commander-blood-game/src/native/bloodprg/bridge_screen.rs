@@ -19,6 +19,15 @@ pub const BRIDGE_DARK_PALETTE_ADJUSTMENT: BridgePaletteAdjustment = BridgePalett
 /// First palette index reserved for the bridge console tint table.
 pub const BRIDGE_CONSOLE_TINT_FIRST: u8 = 224;
 
+/// Original whose bridge-screen initialization semantics are required.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BridgeScreenInitializationVariant {
+    /// Commander Blood leaves the script VM gate unchanged.
+    CommanderBlood,
+    /// Big Bug Bang resumes script VM execution after preparing the screen page.
+    BigBugBang,
+}
+
 /// Mutable semantic state reset while rebuilding the bridge screen.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct BridgeScreenInitializationState {
@@ -32,6 +41,8 @@ pub struct BridgeScreenInitializationState {
     pub actor_completion_latched: bool,
     /// Current sprite clipping state has a valid snapshot.
     pub clip_snapshot_ready: bool,
+    /// Main-loop script execution gate shared with sequel presentation work.
+    pub vm_execution_enabled: bool,
     /// Palette index zero is interpreted as transparent.
     pub transparent_zero: bool,
     /// Retained dirty regions should be copied.
@@ -109,10 +120,12 @@ pub trait BridgeScreenInitializationBackend {
 
 /// Reset bridge screen state, restore its palette, and prepare actor slots.
 ///
-/// This translates `screen_flags_init` at BLOODPRG routine offset `0x00959D`.
+/// This translates Commander Blood `screen_flags_init` at `0x00959D` and Big
+/// Bug Bang's sequel counterpart at `0x00AD37`.
 /// Flat RGB arrays replace far palette copies, typed booleans replace shared
 /// flag bytes, and the actor-slot array replaces the address-based table walk.
 pub fn initialize_bridge_screen<Backend: BridgeScreenInitializationBackend>(
+    variant: BridgeScreenInitializationVariant,
     transition_pending: bool,
     panorama_frame: u16,
     state: &mut BridgeScreenInitializationState,
@@ -139,6 +152,10 @@ pub fn initialize_bridge_screen<Backend: BridgeScreenInitializationBackend>(
         backend.mark_presentation_entity_dirty(state)?;
         BridgeScreenInitializationPath::PagePrepared
     };
+
+    if variant == BridgeScreenInitializationVariant::BigBugBang {
+        state.vm_execution_enabled = true;
+    }
 
     state.palette_refresh_in_progress = false;
     state.ship_depth_offset = u16::MIN;
@@ -177,6 +194,10 @@ mod tests {
         frame: u16,
         matrix_clear: bool,
         palette_mutated: bool,
+        #[serde(default)]
+        vm_execution_before: u8,
+        #[serde(default)]
+        vm_execution_after: u8,
         calls: Vec<CallOracle>,
     }
 
@@ -192,6 +213,8 @@ mod tests {
         dirty_copy: u8,
         mode: u8,
         ship_depth: u16,
+        #[serde(default)]
+        vm_enabled: Option<u8>,
     }
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -212,6 +235,7 @@ mod tests {
         rebuild: bool,
         completion: bool,
         clip_snapshot: bool,
+        vm_execution_enabled: bool,
         transparent_zero: bool,
         dirty_copy: bool,
         reverse_presentation: bool,
@@ -319,11 +343,25 @@ mod tests {
     }
 
     #[test]
-    fn screen_initialization_matches_every_original_semantic_vector() {
-        let vectors: Vec<ScreenOracle> = serde_json::from_str(include_str!(
+    fn screen_initialization_matches_both_original_semantic_fixtures() {
+        let commander: Vec<ScreenOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_959d_natural.json"
         ))
         .unwrap();
+        let sequel =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_bridge_screen.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+
+        assert_screen_vectors(commander, BridgeScreenInitializationVariant::CommanderBlood);
+        assert_screen_vectors(sequel, BridgeScreenInitializationVariant::BigBugBang);
+    }
+
+    fn assert_screen_vectors(
+        vectors: Vec<ScreenOracle>,
+        variant: BridgeScreenInitializationVariant,
+    ) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for (case_index, vector) in vectors.into_iter().enumerate() {
@@ -335,6 +373,11 @@ mod tests {
                 palette_dirty: false,
                 actor_completion_latched: true,
                 clip_snapshot_ready: false,
+                vm_execution_enabled: if variant == BridgeScreenInitializationVariant::BigBugBang {
+                    vector.vm_execution_before != u8::MIN
+                } else {
+                    case_index & 1 != 0
+                },
                 transparent_zero: first_call.transparent_zero != u8::MIN,
                 dirty_copy_requested: first_call.dirty_copy != u8::MIN,
                 ship_depth_offset: first_call.ship_depth,
@@ -361,6 +404,7 @@ mod tests {
             };
 
             let outcome = initialize_bridge_screen(
+                variant,
                 transition_pending,
                 vector.frame,
                 &mut state,
@@ -391,6 +435,16 @@ mod tests {
             assert!(state.palette_dirty, "{}", vector.name);
             assert!(!state.actor_completion_latched, "{}", vector.name);
             assert!(state.clip_snapshot_ready, "{}", vector.name);
+            assert_eq!(
+                state.vm_execution_enabled,
+                if variant == BridgeScreenInitializationVariant::BigBugBang {
+                    vector.vm_execution_after != u8::MIN
+                } else {
+                    case_index & 1 != 0
+                },
+                "{}",
+                vector.name
+            );
             assert_eq!(state.ship_depth_offset, u16::MIN, "{}", vector.name);
             assert_eq!(
                 actor_slots.iter().all(|slot| !slot.flags.active),
@@ -409,6 +463,7 @@ mod tests {
             rebuild: state.screen_rebuild_pending,
             completion: state.actor_completion_latched,
             clip_snapshot: state.clip_snapshot_ready,
+            vm_execution_enabled: state.vm_execution_enabled,
             transparent_zero: state.transparent_zero,
             dirty_copy: state.dirty_copy_requested,
             reverse_presentation: state.reverse_presentation_active,
@@ -453,6 +508,9 @@ mod tests {
                 "{name}"
             );
             assert_eq!(actual.ship_depth, expected.ship_depth, "{name}");
+            if let Some(vm_enabled) = expected.vm_enabled {
+                assert_eq!(actual.vm_execution_enabled, vm_enabled != u8::MIN, "{name}");
+            }
         }
     }
 

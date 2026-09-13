@@ -4023,6 +4023,42 @@ the deterministic seven-row JSONL has SHA-256
 This behaviorally classifies BBB `0xACE4`, not its callers or the complete
 bridge render path.
 
+## Sequel Bridge Screen Initialization
+
+BBB's `0xAD37..0xADDE` bridge-screen initializer is the expanded sequel
+counterpart of Commander Blood `0x959D..0x963F`: 59 instructions and 167 bytes
+versus 58 instructions and 162 bytes. All relocated state, palette, table, and
+callee addresses preserve Commander behavior. BBB adds one semantic operation
+after either page-preparation branch and before clearing the palette-refresh
+gate: `DS:0x6B7E = 1`, which resumes script VM execution.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_bridge_screen_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_bridge_screen.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  screen_initialization_matches_both_original_semantic_fixtures
+```
+
+The guarded oracle replays the ten Commander cases against the complete,
+unchanged BBB body. After normalizing relocated addresses, all path selection,
+callback order and arguments, palette copying, remap construction, actor-table
+clearing, and register/flag behavior agree. The BBB fixture additionally proves
+that path-specific callbacks see the incoming VM byte while both palette-table
+callbacks see value one. The typed initializer now selects an explicit game
+variant, imports the lifecycle VM gate, and publishes BBB's resumed gate back to
+both production callers while leaving Commander unchanged.
+
+The oracle covers all four edges of the two conditional branches and checks
+exact DS, ES, GS, stack, register, segment, defined-flag, direction, helper
+transfer, and executable state. The body is bound by SHA-256
+`f9e0217330e6c9bc070b222bf2d2b21577f73497a454bf2426ac40dc8e6f87bc`;
+the deterministic ten-row JSONL has SHA-256
+`1d7b67eef0a9803ded630b60377510760b0959caa8c25d49a1b9b32d1a82b157`.
+This behaviorally classifies BBB `0xAD37`, not its callers or the complete
+bridge frame.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

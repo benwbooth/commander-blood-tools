@@ -2069,3 +2069,26 @@ direction preservation, far-return discipline and executable immutability. Its d
 seven-row JSONL has SHA-256
 `f3279dbd6faffa11d601e12c7344ca5c122e65c50a3fdade8a5c0a83c15750ab`. This behaviorally
 classifies BBB `0xACE4`, not its seven callees or the complete bridge render path.
+
+## 2026-09-12 - Big Bug Bang bridge-screen initialization
+
+BBB `0xAD37..0xADDE` is the expanded sequel counterpart of Commander Blood's already ported
+`0x959D..0x963F`: 59 instructions and 167 bytes versus 58 instructions and 162 bytes. Relocated
+state, palettes, tables, and eight callees preserve the Commander orchestration. BBB adds
+`DS:0x6B7E = 1` after either page path and before palette-refresh clearing, resuming script VM
+execution. The new `re/tools/big_bug_bang_bridge_screen_oracle.py` executes the complete unchanged
+BBB body, guarded by SHA-256
+`f9e0217330e6c9bc070b222bf2d2b21577f73497a454bf2426ac40dc8e6f87bc`.
+
+All ten Commander cases agree after normalizing relocated addresses and the added VM byte. They
+cover both screen paths, callback mutation, palette mutation and copy direction, actor-table
+clearing, and all four conditional branch edges. The BBB fixture also proves the exact VM-store
+position from callback-visible state. The typed initializer now selects an explicit game variant,
+imports the lifecycle VM gate, and republishes BBB's resumed value through both production callers
+without changing Commander behavior.
+
+The oracle checks exact DS, ES, GS, stack, registers, segments, helper transfers, defined flags,
+direction preservation, executable immutability, and all callback state and arguments. Its
+deterministic ten-row JSONL has SHA-256
+`1d7b67eef0a9803ded630b60377510760b0959caa8c25d49a1b9b32d1a82b157`. This behaviorally
+classifies BBB `0xAD37`, not its callers or the complete bridge frame.

@@ -231,7 +231,8 @@ pub use bridge_scene::{
 pub use bridge_screen::{
     BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT, BridgePaletteAdjustment,
     BridgeScreenInitializationBackend, BridgeScreenInitializationOutcome,
-    BridgeScreenInitializationPath, BridgeScreenInitializationState, initialize_bridge_screen,
+    BridgeScreenInitializationPath, BridgeScreenInitializationState,
+    BridgeScreenInitializationVariant, initialize_bridge_screen,
 };
 pub use bridge_steering::{
     BRIDGE_ARC_UNIT_COUNT, BRIDGE_ARC_UNITS_PER_VIEW_FRAME, BRIDGE_CURSOR_RING_UNIT_COUNT,

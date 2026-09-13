@@ -15,40 +15,42 @@ use commander_blood_formats::script::{
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
 
+use crate::game::GameVariant;
 use crate::native::alien::AlienSceneFrame;
 use crate::native::bloodprg::{
     AudioClipRequest, AudioEventContext, AudioEventState, AudioMixStatus, AudioPlaybackBanks,
     AudioPlaybackOutcome, BRIDGE_CONSOLE_TINT_FIRST, BRIDGE_DARK_PALETTE_ADJUSTMENT,
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeActorPresentationState, BridgePageBackend, BridgePageState,
     BridgePageTarget, BridgePaletteAdjustment, BridgeScene, BridgeSceneFrame, BridgeSceneInput,
-    BridgeScreenInitializationBackend, BridgeScreenInitializationState, BridgeSpriteCommitOutcome,
-    BridgeSpriteRasterOutcome, BridgeSteeringInteraction, BridgeSteeringOutcome,
-    CameraNavigationOutcome, CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState,
-    ChoiceListConfig, ChoiceListFrame, ChoiceListHandAnimation, ChoiceListHandRequest,
-    ChoiceListPointer, ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState,
-    DescriptMusicSelectionOutcome, DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint,
-    FontVerticalBand, GameFontFace, GameLifecycleState, GamePresentationOwner, GameSceneLink,
-    IndexedGamePalette, InlineMenuDisplayWord, InlineMenuRevealOutcome, InlineMenuTextMetrics,
-    InputAction, InputCancellationOutcome, InputCancellationState, LoadedSoundBank,
-    Manu3AnimationSelector, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
-    NameAreaEffectOutcome, NavActorSlot, NavActorSlotFlags, NavActorSlotUpdateOutcome,
-    OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
-    PresentationBridgeMode, PresentationChoiceNumber, PresentationHitAreas,
-    PresentationHitRectangle, PresentationHitSelection, PresentationHoverOutcome,
-    PresentationHoverState, PresentationPresentPolicy, PresentationQueueClockGates,
-    PresentationQueueServiceOutcome, PresentationResourceCursor, PresentationResourceId,
-    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
-    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
-    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SaveLoadMenuPhase,
-    SceneTransitionState, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
-    ScriptFieldSelector, ScriptFrameOutcome, ScriptObjectFlag, ScriptPresentationEntity,
-    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
-    ScriptShipNavigationMode, ScriptTravelActionPhase, ShipDepthTransitionOutcome,
-    ShipHudInitializationContext, ShipHudPaletteSnapshot, ShipPresentationOutcome,
-    ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
-    SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE,
-    TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
-    fill_display_band, increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
+    BridgeScreenInitializationBackend, BridgeScreenInitializationState,
+    BridgeScreenInitializationVariant, BridgeSpriteCommitOutcome, BridgeSpriteRasterOutcome,
+    BridgeSteeringInteraction, BridgeSteeringOutcome, CameraNavigationOutcome,
+    CameraPageFlipOutcome, CdAudioPreparationOutcome, CdAudioState, ChoiceListConfig,
+    ChoiceListFrame, ChoiceListHandAnimation, ChoiceListHandRequest, ChoiceListPointer,
+    ChoiceListState, ConfirmDialogOutcome, ConfirmDialogState, DescriptMusicSelectionOutcome,
+    DescriptRecordApplication, DirtyRegionCopyOutcome, FontPoint, FontVerticalBand, GameFontFace,
+    GameLifecycleState, GamePresentationOwner, GameSceneLink, IndexedGamePalette,
+    InlineMenuDisplayWord, InlineMenuRevealOutcome, InlineMenuTextMetrics, InputAction,
+    InputCancellationOutcome, InputCancellationState, LoadedSoundBank, Manu3AnimationSelector,
+    Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT, NameAreaEffectOutcome,
+    NavActorSlot, NavActorSlotFlags, NavActorSlotUpdateOutcome, OriginalSaveGame, PbmDecodeResult,
+    PointerButtonEdges, PointerButtons, PointerSample, PresentationBridgeMode,
+    PresentationChoiceNumber, PresentationHitAreas, PresentationHitRectangle,
+    PresentationHitSelection, PresentationHoverOutcome, PresentationHoverState,
+    PresentationPresentPolicy, PresentationQueueClockGates, PresentationQueueServiceOutcome,
+    PresentationResourceCursor, PresentationResourceId, PresentationResourceSequenceOutcome,
+    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
+    PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
+    SHIP_CAMERA_RESET, SaveLoadMenuPhase, SceneTransitionState, ScriptActionRuntimeState,
+    ScriptActionState, ScriptClock, ScriptFieldSelector, ScriptFrameOutcome, ScriptObjectFlag,
+    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
+    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
+    ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipHudPaletteSnapshot,
+    ShipPresentationOutcome, ShipPresentationState, ShipProjectionResources,
+    ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage, SpeakerGateAction,
+    StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE, TextPresentationState,
+    clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
+    increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
     prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
     resolve_navigation_position, reveal_inline_menu_display_step, set_object_flag, stop_cd_audio,
@@ -2386,11 +2388,13 @@ impl<'window> ModernGameServices<'window> {
     /// Rebuild the retained bridge surface and arm the startup reverse panel.
     pub fn initialize_bridge_screen(
         &mut self,
+        lifecycle: &mut GameLifecycleState,
         startup_presentation_mode: bool,
         ship_active: bool,
     ) -> Result<()> {
         let transition_pending = self.runtime.bridge_frame_state().transition_pending();
         self.initialize_bridge_screen_with_transition(
+            lifecycle,
             startup_presentation_mode,
             ship_active,
             transition_pending,
@@ -2400,6 +2404,7 @@ impl<'window> ModernGameServices<'window> {
     /// Rebuild bridge flags against the coordinator's transferred transition state.
     pub(super) fn initialize_bridge_screen_with_transition(
         &mut self,
+        lifecycle: &mut GameLifecycleState,
         startup_presentation_mode: bool,
         ship_active: bool,
         transition_pending: bool,
@@ -2409,6 +2414,11 @@ impl<'window> ModernGameServices<'window> {
         let mut screen_state = std::mem::take(&mut self.bridge_screen);
         screen_state.screen_rebuild_pending = true;
         screen_state.reverse_presentation_active = startup_presentation_mode;
+        screen_state.vm_execution_enabled = lifecycle.vm_execution_enabled;
+        let variant = match self.runtime.data().game() {
+            GameVariant::CommanderBlood => BridgeScreenInitializationVariant::CommanderBlood,
+            GameVariant::BigBugBang => BridgeScreenInitializationVariant::BigBugBang,
+        };
         let mut panorama_palette = self.bridge_palette;
         let mut live_palette = *self.runtime.live_palette();
         let mut actor_slots = std::mem::take(&mut self.nav_actor_slots);
@@ -2419,6 +2429,7 @@ impl<'window> ModernGameServices<'window> {
                 palette_refresh_in_progress: false,
             };
             initialize_bridge_screen(
+                variant,
                 transition_pending,
                 panorama_frame,
                 &mut screen_state,
@@ -2429,6 +2440,7 @@ impl<'window> ModernGameServices<'window> {
             )
         };
         self.ship_presentation.depth_offset = screen_state.ship_depth_offset;
+        lifecycle.vm_execution_enabled = screen_state.vm_execution_enabled;
         self.bridge_screen = screen_state;
         self.bridge_palette = panorama_palette;
         *self.runtime.live_palette_mut() = live_palette;
@@ -6952,7 +6964,12 @@ mod tests {
         );
 
         services.ship_presentation_state_mut().depth_offset = NONZERO_SHIP_DEPTH_OFFSET;
-        services.initialize_bridge_screen(false, false).unwrap();
+        let sequel = services.runtime().data().game() == GameVariant::BigBugBang;
+        lifecycle.vm_execution_enabled = false;
+        services
+            .initialize_bridge_screen(&mut lifecycle, false, false)
+            .unwrap();
+        assert_eq!(lifecycle.vm_execution_enabled, sequel);
         assert_eq!(services.ship_presentation_state().depth_offset, u16::MIN);
         assert!(!services.bridge_screen_state().screen_rebuild_pending);
         assert!(!services.bridge_screen_state().palette_refresh_in_progress);

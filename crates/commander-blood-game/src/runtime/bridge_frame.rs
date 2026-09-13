@@ -104,9 +104,12 @@ impl BridgeFrameBackend for RuntimeBridgeFrameBackend<'_, '_> {
             .request_manu3_animation(Manu3AnimationSelector::BridgeActive);
         self.services
             .set_previous_manu3_animation(Manu3AnimationSelector::BridgeActive);
+        let presentation_mode = self.lifecycle.presentation_mode;
+        let ship_active = self.lifecycle.presentation.ship_active;
         self.services.initialize_bridge_screen_with_transition(
-            self.lifecycle.presentation_mode,
-            self.lifecycle.presentation.ship_active,
+            self.lifecycle,
+            presentation_mode,
+            ship_active,
             state.transition_pending(),
         )?;
         self.lifecycle.navigation_rebuild_pending = false;

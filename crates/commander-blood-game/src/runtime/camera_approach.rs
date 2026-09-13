@@ -154,9 +154,12 @@ impl CameraApproachHost<GameSceneLink> for RuntimeCameraApproachHost<'_, '_> {
     }
 
     fn initialize_screen_flags(&mut self, transition_pending: bool) {
+        let presentation_mode = self.lifecycle.presentation_mode;
+        let ship_active = self.lifecycle.presentation.ship_active;
         let result = self.services.initialize_bridge_screen_with_transition(
-            self.lifecycle.presentation_mode,
-            self.lifecycle.presentation.ship_active,
+            self.lifecycle,
+            presentation_mode,
+            ship_active,
             transition_pending,
         );
         if result.is_ok() {
