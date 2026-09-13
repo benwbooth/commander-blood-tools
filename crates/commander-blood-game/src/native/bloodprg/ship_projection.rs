@@ -1019,11 +1019,23 @@ mod tests {
     }
 
     #[test]
-    fn point_cloud_randomizer_matches_every_original_call_order_vector() {
-        let vectors: Vec<RandomizeOracle> = serde_json::from_str(include_str!(
+    fn point_cloud_randomizer_matches_both_original_call_order_fixtures() {
+        let commander: Vec<RandomizeOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9b67_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_point_randomize.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_point_cloud_randomizer_vectors(commander);
+        assert_point_cloud_randomizer_vectors(sequel);
+    }
+
+    fn assert_point_cloud_randomizer_vectors(vectors: Vec<RandomizeOracle>) {
         assert_eq!(vectors.len(), RANDOMIZE_ORACLE_COUNT);
 
         for (case_index, vector) in vectors.into_iter().enumerate() {

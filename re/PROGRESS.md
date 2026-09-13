@@ -2203,3 +2203,27 @@ rejection of the two native wrapped-coordinate draws; no production behavior cha
 deterministic 14-row JSONL has SHA-256
 `1a7c093f46715bfb79627fed9d8c8c0a47ca28555cee6adc0d9c4e7667ed5110`. This behaviorally
 classifies BBB `0xB2A3`, not its point-cloud caller or the surrounding ship renderer.
+
+## 2026-09-12 - Big Bug Bang ship point-cloud randomizer
+
+BBB `0xB306..0xB337` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9B67..0x9B98` point-cloud randomizer. Both bodies contain 22 instructions in 49 bytes. BBB
+moves the 1,000 eight-byte records from `GS:0x2FC1` to `GS:0x3391` and relocates the far PRNG
+target while preserving three draws, three stores, the scratch-word skip, and the save envelope.
+The new `re/tools/big_bug_bang_ship_point_randomize_oracle.py` executes both original binaries
+and guards BBB's body with SHA-256
+`99755d366dfeb572c7816d20eac246cfad2a350397b55956082341a4d0008365`.
+
+All four Commander cases agree after address normalization across 12,000 PRNG entries and
+12,000 component stores per executable. They cover all-zero output, an arithmetic ramp, signed
+boundary cycling, an LCG sequence, every preserved scratch word, and both loop edges. The only
+machine-state difference is the final parity residue from the relocated `ADD DI,2`: PF is clear
+at Commander `0x4F01` and set at BBB `0x52D1`.
+
+The oracle checks exact callback registers and far frames, first and last call groups, point-cloud
+bytes, DS/SS decoy isolation, complete game, ES, FS, stack, register, and segment state,
+far-return discipline, executable immutability, and the variant-specific final flags. The typed
+randomizer now consumes both fixtures; ambient flags are not part of its API and no production
+behavior changed. The deterministic four-row JSONL has SHA-256
+`fbad7727734354bcec7e5d31f2bdb947fa5b91986763e6f952b13edcae3c04d4`. This behaviorally
+classifies BBB `0xB306`, not the preceding vertex-list drawer, startup caller, or object projector.

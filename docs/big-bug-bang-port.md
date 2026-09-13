@@ -4240,6 +4240,43 @@ the deterministic 14-row JSONL has SHA-256
 This behaviorally classifies BBB `0xB2A3`, not its point-cloud caller or the
 surrounding ship renderer.
 
+## Sequel Ship Point-Cloud Randomizer
+
+BBB `0xB306..0xB337` is the relocated sequel counterpart of Commander Blood's
+`0x9B67..0x9B98` point-cloud randomizer. Both bodies contain 22 instructions in
+49 bytes. BBB moves the 1,000 eight-byte point records from `GS:0x2FC1` to
+`GS:0x3391` and relocates the far PRNG target; the three draws per record,
+six-byte write, two-byte scratch skip, and save envelope are unchanged.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_ship_point_randomize_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_ship_point_randomize.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  point_cloud_randomizer_matches_both_original_call_order_fixtures
+```
+
+The dual-executable oracle replays all four Commander cases, checking 12,000
+far PRNG entries and 12,000 resulting component stores in each executable. The
+cases cover all-zero output, an arithmetic ramp, alternating signed boundaries,
+and a full-period-style LCG sequence while traversing both loop edges. Every
+record's persistent scratch word is preserved.
+
+The oracle checks callback registers and far return frames, first and last call
+groups, exact point-cloud bytes, DS/SS decoy isolation, complete game, ES, FS,
+stack, register, and segment state, far-return discipline, and executable
+immutability. Address-normalized behavior is identical except for the final
+parity flag: Commander ends `ADD DI,2` at `0x4F01` with PF clear, while BBB ends
+at `0x52D1` with PF set. The typed randomizer does not expose ambient flags and
+now consumes both fixtures; no production behavior changed. The BBB body is
+bound by SHA-256
+`99755d366dfeb572c7816d20eac246cfad2a350397b55956082341a4d0008365`;
+the deterministic four-row JSONL has SHA-256
+`fbad7727734354bcec7e5d31f2bdb947fa5b91986763e6f952b13edcae3c04d4`.
+This behaviorally classifies BBB `0xB306`, not the preceding vertex-list drawer,
+its startup caller, or the following object projector.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
