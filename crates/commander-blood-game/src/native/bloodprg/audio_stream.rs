@@ -186,12 +186,13 @@ impl std::error::Error for AudioStreamError {}
 
 /// Load and own the Creative Voice block stream after its file header.
 ///
-/// This translates `snd_stream_source_load` at BLOODPRG routine offset
-/// `0x00BDB7`. Resource lookup supplies complete bytes, so EMS, XMS, temporary
-/// files, seeks, and 32 KiB staging chunks disappear. The gates, 26-byte skip,
-/// wait prompt, page accounting, music-change clear, and start request remain.
-/// Empty sources are rejected instead of preserving the original backend-
-/// dependent page-count underflow.
+/// This translates `snd_stream_source_load` at BLOODPRG `0x00BDB7` and Big Bug
+/// Bang `0x00D561`. Resource lookup supplies complete bytes, so EMS, XMS,
+/// temporary files, seeks, 32 KiB staging chunks, BBB's 64-byte driver padding,
+/// and its Ultrasound-specific 8 KiB page geometry disappear. The gates,
+/// 26-byte skip, wait prompt, exact payload accounting, music-change clear, and
+/// start request remain. Empty sources are rejected instead of preserving the
+/// original backend-dependent page-count underflow.
 pub fn load_audio_stream_source(
     playback: &mut AudioPlaybackState,
     stream: &mut AudioStreamState,
@@ -483,7 +484,8 @@ mod tests {
     use super::*;
     use crate::native::bloodprg::AudioDriverRequests;
 
-    const LOAD_ORACLE_VECTOR_COUNT: usize = 11;
+    const COMMANDER_LOAD_ORACLE_VECTOR_COUNT: usize = 11;
+    const SEQUEL_LOAD_ORACLE_VECTOR_COUNT: usize = 16;
     const PAGE_BACKEND_ORACLE_VECTOR_COUNT: usize = 12;
     const PAGE_DISPATCH_ORACLE_VECTOR_COUNT: usize = 256;
     const START_ORACLE_VECTOR_COUNT: usize = 6;
@@ -548,13 +550,24 @@ mod tests {
 
     #[test]
     fn source_loader_matches_every_valid_original_storage_vector() {
-        let vectors: Vec<LoadOracle> = serde_json::from_str(include_str!(
+        let commander_vectors: Vec<LoadOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_bdb7_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), LOAD_ORACLE_VECTOR_COUNT);
+        let sequel_vectors: Vec<LoadOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_audio_stream_source.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander_vectors.len(), COMMANDER_LOAD_ORACLE_VECTOR_COUNT);
+        assert_eq!(sequel_vectors.len(), SEQUEL_LOAD_ORACLE_VECTOR_COUNT);
 
-        for (case_index, vector) in vectors.into_iter().enumerate() {
+        for (case_index, vector) in commander_vectors
+            .into_iter()
+            .chain(sequel_vectors)
+            .enumerate()
+        {
             let payload_len = vector.payload_bytes.unwrap_or_default();
             let payload = generated_page_bytes(payload_len, case_index);
             let encoded = encoded_voc(&payload);

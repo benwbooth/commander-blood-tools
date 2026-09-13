@@ -3314,3 +3314,35 @@ BBB EMS, XMS, and file body SHA-256 values are respectively
 and `41950ddbbde48e684ee782f6589dd0fc588522d6527a43891ec90fb89c73f81f`.
 The deterministic combined JSONL SHA-256 is
 `a873233ec6b0468e9b3dd10b9af2cf84a38cddaada53500ec97a9094bfaa0046`.
+
+## 2026-09-13 - Big Bug Bang audio stream-source loading
+
+BBB `0xD561..0xD7EC` expands Commander Blood `0xBDB7..0xC005` from
+198 instructions in 590 bytes to 215 instructions in 651 bytes. The shared
+routine retains both playback gates, embedded-versus-standalone lookup, the
+26-byte Creative Voice header seek, the `WAIT COMMANDER ...` presentation,
+EMS/XMS/file backing-store selection, 32 KiB transfer loop, final page
+accounting, source close, music-change clear, and stream-start request. BBB
+adds a 64-byte minimum for nonzero final driver chunks below 64 bytes. When
+`ULTRASND` is set, it then converts the 16 KiB page count and final length to
+the driver's 8 KiB geometry.
+
+The new `re/tools/big_bug_bang_audio_stream_source_oracle.py` executes both
+shipped routines over all 11 Commander cases and five additional BBB probes.
+It covers both outcomes at all 22 BBB conditional sites (44 edges), including
+both multi-read loops, all three storage backends, old temporary-file presence,
+one-byte and exact-page tails, and three Ultrasound layouts. The harness checks
+exact far callback frames and inputs for path resolution, resource lookup,
+text reveal, directory setup, and XMS transfer; DOS and EMS interrupt calls;
+payload chunks; XMS requests; temporary-file bytes; backend state; registers,
+defined flags, stack ownership, complete mapped-segment ownership, executable
+immutability, and unowned writes. The 11 shared cases normalize directly to
+the Commander fixture.
+
+The typed `load_audio_stream_source` test now consumes both fixtures. Its owned
+payload keeps exact byte length and 16 KiB host pages, replacing DOS allocation
+geometry, tiny-tail padding, and the Ultrasound transport split without a
+production variant. The BBB body SHA-256 is
+`67e65a601dc809a47d8b252a5599bb1920207e39413ca95383970ad2e996b0f3`,
+and the deterministic JSONL SHA-256 is
+`5419782c339ac8c52882d1f6a1885cb5e8c58dd7a629b5b5d8f7804bae2ed230`.
