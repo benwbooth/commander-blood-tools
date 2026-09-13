@@ -677,11 +677,23 @@ mod tests {
     }
 
     #[test]
-    fn palette_block_application_matches_flat_original_vectors() {
-        let vectors: Vec<PaletteBlockOracle> = serde_json::from_str(include_str!(
+    fn palette_block_application_matches_both_flat_original_fixtures() {
+        let commander: Vec<PaletteBlockOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a0c3_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_palette_blocks.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_palette_block_vectors(commander);
+        assert_palette_block_vectors(sequel);
+    }
+
+    fn assert_palette_block_vectors(vectors: Vec<PaletteBlockOracle>) {
         assert_eq!(vectors.len(), PALETTE_BLOCK_VECTOR_COUNT);
 
         let mut matched = usize::MIN;

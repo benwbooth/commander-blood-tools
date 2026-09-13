@@ -2301,3 +2301,27 @@ production behavior changed. The deterministic BBB JSONL has SHA-256
 `d520a8d38f568036cb8370835ab36f0ab15e04ce829e100402d312980d287b48`. This behaviorally
 classifies BBB `0xB771` and the helper paths executed by the oracle, not later sequence loading or
 all stream consumers.
+
+## 2026-09-13 - Big Bug Bang presentation palette blocks
+
+BBB `0xB8A6..0xB8FA` and its snapshot callee at `0xB8FA..0xB917` relocate Commander Blood's
+already ported `0xA0C3..0xA117` and `0xA117..0xA134` helpers. The 44-instruction, 84-byte palette
+block applier and 13-instruction, 29-byte snapshot gate preserve control flow while moving the
+live palette, render snapshot, dirty flag, queue wrap index, entry metric, and render-update flag.
+The new `re/tools/big_bug_bang_palette_blocks_oracle.py` executes both helper pairs and guards the
+BBB bodies with SHA-256
+`8d515dce5b9b722d3aa3140cdcd964c5e7a3acd6c31baa1207fc30b25f50fe3f` and
+`4ffd715c656d5ca9165ca68b63380fb792c4895adb0fc4ecfd9d1e92204cac03`.
+
+All five Commander vectors agree after destination-address normalization. They cover immediate
+termination, a zero-count block, one copied block, multiple blocks with metric adjustment, and
+native metric underflow. Every one of the six conditional edges across the applier and snapshot
+gate is traversed.
+
+The oracle verifies split DS/ES/GS stream ownership, palette and snapshot bytes, dirty and metric
+state, exact unchanged decoys and unowned memory, normalized complete stack and register state,
+flags and segments, return discipline, direct Commander/BBB equality, and executable immutability.
+The typed applier now consumes both five-row fixtures and retains its transactional rejection of
+native metric underflow; no production behavior changed. The deterministic BBB JSONL has SHA-256
+`0591ad9607938fc234f0809952eaad5e27d6748248755b51e5edf84d18faaed8`. This behaviorally
+classifies BBB `0xB8A6` and `0xB8FA`, not their queue wrapper or later consumers.

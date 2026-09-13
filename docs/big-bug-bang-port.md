@@ -4382,6 +4382,33 @@ the deterministic JSONL has SHA-256
 This behaviorally classifies BBB `0xB771` and the helper paths executed by the
 oracle, not the later sequence loader or all resource-stream consumers.
 
+### Presentation palette blocks (`0xB8A6`)
+
+BBB `0xB8A6..0xB8FA` and its snapshot callee at `0xB8FA..0xB917` are relocated
+counterparts of Commander Blood's `0xA0C3..0xA117` and `0xA117..0xA134`.
+The 44-instruction, 84-byte block applier and 13-instruction, 29-byte snapshot
+gate preserve their control flow while moving the live palette, render snapshot,
+dirty flag, queue wrap index, entry metric, and render-update flag.
+
+`re/tools/big_bug_bang_palette_blocks_oracle.py` executes both shipped helper
+pairs. All five Commander vectors agree after destination-address normalization:
+an immediate terminator, a zero-count block, one copied block, multiple blocks
+with metric adjustment, and native metric underflow. They cover every one of the
+six conditional edges across the applier and snapshot gate.
+
+The oracle verifies raw stream ownership across split DS/ES/GS segments, palette
+and snapshot bytes, dirty and metric state, unchanged decoys and unowned memory,
+normalized complete stack and register state, exact flags and segments, return
+discipline, direct Commander/BBB equality, and executable immutability. The typed
+applier now consumes both five-row fixtures and retains its transactional rejection
+of native metric underflow; no production behavior changed. BBB's applier SHA-256
+is `8d515dce5b9b722d3aa3140cdcd964c5e7a3acd6c31baa1207fc30b25f50fe3f`,
+its snapshot SHA-256 is
+`4ffd715c656d5ca9165ca68b63380fb792c4895adb0fc4ecfd9d1e92204cac03`,
+and the deterministic JSONL SHA-256 is
+`0591ad9607938fc234f0809952eaad5e27d6748248755b51e5edf84d18faaed8`.
+This classifies the two helpers, not their queue wrapper or later consumers.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
