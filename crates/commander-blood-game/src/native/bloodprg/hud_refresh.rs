@@ -38,11 +38,12 @@ pub struct PauseHudRefresh {
 
 /// Build the main-loop pause refresh when its low-bit gate is enabled.
 ///
-/// This translates `main_loop_hud_refresh` at BLOODPRG routine offset
-/// `0x001A93`. The original clear covers 20 Mode-X addresses on each of 14
-/// rows with all four planes selected, which is an 80 by 14 logical-pixel
-/// rectangle. The authored text, placement, color, and low-bit gate remain;
-/// wgpu frame submission replaces VGA map-mask writes and retrace polling.
+/// This translates `main_loop_hud_refresh` at Commander Blood's BLOODPRG
+/// routine offset `0x001A93` and Big Bug Bang's relocated `0x001C55`. The
+/// original clear covers 20 Mode-X addresses on each of 14 rows with all four
+/// planes selected, which is an 80 by 14 logical-pixel rectangle. The authored
+/// text, placement, color, and low-bit gate remain; wgpu frame submission
+/// replaces VGA map-mask writes and retrace polling.
 pub const fn build_pause_hud_refresh(refresh_gate: u8) -> Option<PauseHudRefresh> {
     if refresh_gate & 1 == u8::MIN {
         return None;
@@ -77,12 +78,12 @@ mod tests {
         calls: Vec<serde_json::Value>,
     }
 
-    #[test]
-    fn refresh_gate_matches_every_original_vector() {
-        let vectors: Vec<HudOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_1a93_natural.json"
-        ))
-        .unwrap();
+    #[derive(Deserialize)]
+    struct BigBugBangHudOracle {
+        rows: Vec<HudOracle>,
+    }
+
+    fn assert_refresh_gate_vectors(vectors: Vec<HudOracle>) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -95,6 +96,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn refresh_gate_matches_every_original_vector() {
+        let vectors: Vec<HudOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1a93_natural.json"
+        ))
+        .unwrap();
+        assert_refresh_gate_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_refresh_gate_matches_every_direct_vector() {
+        let fixture: BigBugBangHudOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_hud_refresh.json"
+        ))
+        .unwrap();
+        assert_refresh_gate_vectors(fixture.rows);
     }
 
     #[test]

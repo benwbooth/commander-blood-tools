@@ -5140,6 +5140,30 @@ is `2be92857f59e8c648b7ff55e4809d692329b88b9b7a2b302bc2cd9aabb57fe28`,
 and the deterministic fixture SHA-256 is
 `2a18760782c41190eae277be173a94e57140edb5d4f0ab6bc24266b5d3b11f1f`.
 
+## HUD-Refresh Oracle (2026-09-13)
+
+BBB `0x1C55..0x1C95` is the relocated sequel counterpart of Commander Blood's
+`0x1A93..0x1AD3` main-loop pause-HUD refresh. Both routines contain 25
+instructions in 64 bytes and differ only in the gate, framebuffer pointer,
+text pointer, renderer target, and retrace target relocations.
+
+The new `re/tools/big_bug_bang_hud_refresh_oracle.py` directly executes all
+seven fingerprinted Commander cases in the shipped BBB body. They cover three
+disabled gates, ordinary enabled gates, framebuffer-offset wrap, and inherited
+backward direction. With instrumented renderer and retrace boundaries, the
+harness verifies the exact 20-by-14 Mode-X clear, row stepping, port write,
+call order and state, relocated DS ownership against a GS decoy, defined flags,
+register and segment residue, near return, exact stack and framebuffer writes,
+untouched full segments, and patched-executable immutability.
+
+The typed `build_pause_hud_refresh` owner consumes both seven-row fixtures. It
+retains the low-bit gate and exact 80-by-14 logical rectangle, PAUSE text,
+position, and palette index while deliberately replacing VGA map-mask output
+and retrace polling with renderer-owned frame submission. BBB's body SHA-256 is
+`c211a631b03765a60bfc469a513a0d1d21b15c0ccb8018463bdb9cb54c9ccfa0`,
+and the deterministic fixture SHA-256 is
+`1b9743e26209e256dac744afc5aa8bb73ac9db96a3c11ad50fa5bb8523f936bb`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
