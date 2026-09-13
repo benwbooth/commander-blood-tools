@@ -215,10 +215,11 @@ impl<'a> AbBitReader<'a> {
 
 /// Decode one terminated AB presentation payload into owned bytes.
 ///
-/// This translates `resource_payload_decode_ab` at BLOODPRG offset `0x00A867`.
-/// It retains LSB-first control refills, both displacement forms, extended
-/// lengths, and forward overlap while replacing wrapping destination pointers
-/// with a bounded output collection.
+/// This translates `resource_payload_decode_ab` at BLOODPRG offset `0x00A867`,
+/// relocated to BLOOD2PG offset `0x00C051`. It retains LSB-first control
+/// refills, both displacement forms, extended lengths, and forward overlap
+/// while replacing wrapping destination pointers with a bounded output
+/// collection.
 pub fn decode_presentation_ab(source: &[u8]) -> Result<AbDecodeOutcome, PresentationDecodeError> {
     let mut reader = AbBitReader::new(source)?;
     let mut output = Vec::new();
@@ -417,7 +418,8 @@ mod tests {
 
     use super::*;
 
-    const AB_VECTOR_COUNT: usize = 10;
+    const COMMANDER_AB_VECTOR_COUNT: usize = 10;
+    const SEQUEL_AB_VECTOR_COUNT: usize = 13;
     const PAIR_VECTOR_COUNT: usize = 13;
     const FLAT_PAIR_VECTOR_COUNT: usize = 11;
     const DESTINATION_PATTERN_STEP: usize = 23;
@@ -471,22 +473,34 @@ mod tests {
     }
 
     #[test]
-    fn ab_decoder_matches_every_original_vector() {
+    fn ab_decoder_matches_both_original_fixtures() {
         let vectors: Vec<AbOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a867_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), AB_VECTOR_COUNT);
+        assert_ab_vectors("Commander Blood 0xA867", vectors, COMMANDER_AB_VECTOR_COUNT);
+
+        let vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_ab.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_ab_vectors("Big Bug Bang 0xC051", vectors, SEQUEL_AB_VECTOR_COUNT);
+    }
+
+    fn assert_ab_vectors(source_name: &str, vectors: Vec<AbOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count, "{source_name}");
 
         for vector in vectors {
             let source = decode_hex(&vector.compressed_stream_hex);
             let expected = decode_hex(&vector.decoded_hex);
             let outcome = decode_presentation_ab(&source).unwrap();
-            assert_eq!(&*outcome.bytes, expected, "{}", vector.name);
+            assert_eq!(&*outcome.bytes, expected, "{source_name}: {}", vector.name);
             assert_eq!(
                 outcome.bytes.len(),
                 vector.decoded_length,
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
             assert_eq!(
@@ -496,7 +510,7 @@ mod tests {
                         .source_result_offset
                         .wrapping_sub(vector.source_offset)
                 ),
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
         }

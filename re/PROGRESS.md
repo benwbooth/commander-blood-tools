@@ -2869,3 +2869,28 @@ body SHA-256 is
 `d512c6352cdf40f1801f0eeccb73ca40695b2776898ab1c7b35d423a98601a2d`,
 and the deterministic JSONL SHA-256 is
 `48554eae838e47471db14d4e623d03fb8535bbdff57788340890dc51de344e1b`.
+
+## 2026-09-13 - Big Bug Bang presentation AB decoder
+
+BBB `0xC051..0xC0FE` relocates Commander Blood's `0xA867..0xA914`
+presentation AB decoder. Both bodies contain 73 instructions in 173 bytes;
+only the game-state mode field moves. The routine implements an LSB-first
+control stream with literals, short and long backward matches, extended match
+lengths, overlap propagation, 16-bit source and destination wrapping, and a
+zero-length long token terminator.
+
+The new `re/tools/big_bug_bang_presentation_ab_oracle.py` executes both shipped
+bodies over the ten recovered Commander grammar cases plus three boundary
+cases added after direct coverage identified untested refill paths. Those cases
+align control-word exhaustion with the match selector and each short-length
+bit, bringing both binaries to all 18 entry-reachable conditional edges. The
+earlier backward prelude remains unreachable from the public routine entry.
+
+The oracle checks the established token encoder against the Commander fixture,
+then verifies exact wrapped source and destination memory, overlap output,
+mode mutation, complete registers and flags, transient stack writes, all other
+mapped memory, executable immutability, and direct Commander/BBB equality. The
+typed bounded decoder consumes both fixtures. BBB's body SHA-256 is
+`87eaf6aa34a8a48e7b6359cc425be67b80523b06c632a2b84fa5fe7d9dae58c4`,
+and the deterministic 13-row JSONL SHA-256 is
+`34d729a51309f81381e14eef59672c800d567945243c2282e3502736b8cb94f4`.
