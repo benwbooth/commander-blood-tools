@@ -4095,6 +4095,42 @@ the deterministic 21-row JSONL has SHA-256
 This behaviorally classifies BBB `0xADF5`, not its callers or the complete
 bridge input path.
 
+## Sequel Bridge Panorama Loader
+
+BBB `0xAFBA..0xB058` is the relocated sequel counterpart of Commander Blood's
+`0x981B..0x98B9` bridge panorama-frame loader. Both bodies contain 67
+instructions in 158 bytes. BBB relocates the archive handle and directory,
+framebuffer pointer, station records, palette state, and unpack helper without
+changing the loader's control flow.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_bridge_panorama_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_bridge_panorama.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  loader_matches_both_original_fixtures_and_rejects_unchecked_station_overflow
+```
+
+The dual-executable oracle replays all seven established Commander cases. The
+originals agree after address normalization for frame-directory wraparound,
+high directory fields, chunk-buffer wraparound, ignored DOS seek failures,
+directory and chunk read failures, all four valid stations, unchecked station
+four, and palette refresh changes made by the unpack callback. The existing
+typed loader now consumes both fixtures; no production behavior changed.
+
+The cases traverse all four edges of the loader's loop and palette conditional.
+The oracle checks the four DOS calls and ignored status values, callback-visible
+station publication and source pointer, exact data, framebuffer, game, ES, FS,
+stack, register and segment state, defined flags, direction preservation,
+direct Commander/BBB equality, and executable immutability. The BBB body is
+bound by SHA-256
+`144a3952b9f63fb1a5db5f00a2e38ff2863a26328da4a3be34cc541203ff265d`;
+the deterministic seven-row JSONL has SHA-256
+`f74e7bc27b585916d5c35d798f940a15dba50917bc622b3d65e6ebf96089123a`.
+This behaviorally classifies BBB `0xAFBA`, not its callers, archive decoding, or
+the complete bridge render path.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

@@ -2113,3 +2113,25 @@ register, full flags, presentation-context and carry outputs, mouse-interrupt ar
 Commander/BBB equality, and executable immutability. Its deterministic 21-row JSONL has SHA-256
 `8f2759a3a5e0109735e48806baead79ad9e458171ca980e2cc1c3839e5e04e20`. This behaviorally
 classifies BBB `0xADF5`, not its callers or the complete bridge input path.
+
+## 2026-09-12 - Big Bug Bang bridge panorama loader
+
+BBB `0xAFBA..0xB058` is the relocated sequel counterpart of Commander Blood's already ported
+`0x981B..0x98B9` bridge panorama-frame loader. Both bodies contain 67 instructions in 158 bytes.
+BBB relocates the archive handle and directory, framebuffer pointer, station table, palette state,
+and unpack target while preserving the loader's control flow. The new
+`re/tools/big_bug_bang_bridge_panorama_oracle.py` executes both original binaries and guards BBB's
+body with SHA-256 `144a3952b9f63fb1a5db5f00a2e38ff2863a26328da4a3be34cc541203ff265d`.
+
+All seven Commander cases agree after address normalization. They cover frame-directory and
+chunk-buffer wraparound, high directory fields, ignored seek failures, directory and chunk read
+failures, all valid stations, unchecked station four, and callback-driven palette refresh changes.
+The cases traverse all four edges of the loop and palette conditional. The existing typed loader
+now consumes both fixtures; no production behavior changed.
+
+The oracle checks all DOS calls and ignored statuses, callback-visible station state and source
+pointer, exact data, framebuffer, game, ES, FS, stack, registers, segments, defined flags,
+direction preservation, direct Commander/BBB equality, and executable immutability. Its
+deterministic seven-row JSONL has SHA-256
+`f74e7bc27b585916d5c35d798f940a15dba50917bc622b3d65e6ebf96089123a`. This behaviorally
+classifies BBB `0xAFBA`, not its callers, archive decoding, or the complete bridge render path.

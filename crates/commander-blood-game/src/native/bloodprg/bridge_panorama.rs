@@ -84,11 +84,23 @@ mod tests {
     }
 
     #[test]
-    fn loader_matches_valid_original_vectors_and_rejects_unchecked_station_overflow() {
-        let vectors: Vec<LoaderOracle> = serde_json::from_str(include_str!(
+    fn loader_matches_both_original_fixtures_and_rejects_unchecked_station_overflow() {
+        let commander: Vec<LoaderOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_981b_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_bridge_panorama.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_loader_vectors(commander);
+        assert_loader_vectors(sequel);
+    }
+
+    fn assert_loader_vectors(vectors: Vec<LoaderOracle>) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for (case_index, vector) in vectors.into_iter().enumerate() {
