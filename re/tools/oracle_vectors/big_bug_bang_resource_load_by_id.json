@@ -1,0 +1,422 @@
+{
+  "format": "big_bug_bang_resource_load_by_id_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_semantic_fixture_sha256": "b504b79a6d1e19eac4955948fa02ea089c1217f69790835aa1f2b0c6cebc1398",
+  "routine_sha256": "79467cc75e984fc5788985b0d0c10d0fc8e583431b791217dde9b77ef089e8d7",
+  "rows": [
+    {
+      "name": "lookup_zero_skips_allocation",
+      "resource_id": 3,
+      "filename_offset": 3124,
+      "byte_count": 0,
+      "allocation_status": null,
+      "file_result": null,
+      "success": false,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "df": false,
+        "of": false
+      },
+      "calls": [
+        {
+          "call": "resource_name_lookup",
+          "resource_id": 3,
+          "filename": [
+            17408,
+            3124
+          ],
+          "filename_backup_offset": 3124,
+          "return_frame": [
+            11286,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "allocation_failure_skips_file_load",
+      "resource_id": 4,
+      "filename_offset": 3140,
+      "byte_count": 305419896,
+      "allocation_status": -1,
+      "file_result": null,
+      "success": false,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "df": true,
+        "of": false
+      },
+      "calls": [
+        {
+          "call": "resource_name_lookup",
+          "resource_id": 4,
+          "filename": [
+            17408,
+            3140
+          ],
+          "filename_backup_offset": 3140,
+          "return_frame": [
+            11286,
+            0
+          ]
+        },
+        {
+          "call": "resource_allocate",
+          "resource_id": 4,
+          "byte_count": 305419896,
+          "filename": [
+            17408,
+            3140
+          ],
+          "filename_backup_offset": 3140,
+          "return_frame": [
+            11296,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "already_loaded_is_success",
+      "resource_id": 25,
+      "filename_offset": 3476,
+      "byte_count": 98306,
+      "allocation_status": 1,
+      "file_result": null,
+      "success": true,
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "zf": false,
+        "sf": false,
+        "df": false,
+        "of": false
+      },
+      "calls": [
+        {
+          "call": "resource_name_lookup",
+          "resource_id": 25,
+          "filename": [
+            17408,
+            3476
+          ],
+          "filename_backup_offset": 3476,
+          "return_frame": [
+            11286,
+            0
+          ]
+        },
+        {
+          "call": "resource_allocate",
+          "resource_id": 25,
+          "byte_count": 98306,
+          "filename": [
+            17408,
+            3476
+          ],
+          "filename_backup_offset": 3476,
+          "return_frame": [
+            11296,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "any_positive_allocation_status_is_success",
+      "resource_id": 31,
+      "filename_offset": 3572,
+      "byte_count": 1,
+      "allocation_status": 32767,
+      "file_result": null,
+      "success": true,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": false,
+        "df": true,
+        "of": false
+      },
+      "calls": [
+        {
+          "call": "resource_name_lookup",
+          "resource_id": 31,
+          "filename": [
+            17408,
+            3572
+          ],
+          "filename_backup_offset": 3572,
+          "return_frame": [
+            11286,
+            0
+          ]
+        },
+        {
+          "call": "resource_allocate",
+          "resource_id": 31,
+          "byte_count": 1,
+          "filename": [
+            17408,
+            3572
+          ],
+          "filename_backup_offset": 3572,
+          "return_frame": [
+            11296,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fresh_buffer_file_failure",
+      "resource_id": 44,
+      "filename_offset": 3780,
+      "byte_count": 32000,
+      "allocation_status": 0,
+      "file_result": 0,
+      "success": false,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "df": false,
+        "of": false
+      },
+      "calls": [
+        {
+          "call": "resource_name_lookup",
+          "resource_id": 44,
+          "filename": [
+            17408,
+            3780
+          ],
+          "filename_backup_offset": 3780,
+          "return_frame": [
+            11286,
+            0
+          ]
+        },
+        {
+          "call": "resource_allocate",
+          "resource_id": 44,
+          "byte_count": 32000,
+          "filename": [
+            17408,
+            3780
+          ],
+          "filename_backup_offset": 3780,
+          "return_frame": [
+            11296,
+            0
+          ]
+        },
+        {
+          "call": "resource_file_load",
+          "filename": [
+            17408,
+            3780
+          ],
+          "destination": [
+            22528,
+            291
+          ],
+          "return_frame": [
+            11314,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fresh_buffer_file_success",
+      "resource_id": 52,
+      "filename_offset": 3908,
+      "byte_count": 65537,
+      "allocation_status": 0,
+      "file_result": 1,
+      "success": true,
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "zf": false,
+        "sf": false,
+        "df": true,
+        "of": false
+      },
+      "calls": [
+        {
+          "call": "resource_name_lookup",
+          "resource_id": 52,
+          "filename": [
+            17408,
+            3908
+          ],
+          "filename_backup_offset": 3908,
+          "return_frame": [
+            11286,
+            0
+          ]
+        },
+        {
+          "call": "resource_allocate",
+          "resource_id": 52,
+          "byte_count": 65537,
+          "filename": [
+            17408,
+            3908
+          ],
+          "filename_backup_offset": 3908,
+          "return_frame": [
+            11296,
+            0
+          ]
+        },
+        {
+          "call": "resource_file_load",
+          "filename": [
+            17408,
+            3908
+          ],
+          "destination": [
+            22528,
+            65534
+          ],
+          "return_frame": [
+            11314,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "full_dword_file_result_is_tested",
+      "resource_id": 63,
+      "filename_offset": 4084,
+      "byte_count": 4294967295,
+      "allocation_status": 0,
+      "file_result": 2147483648,
+      "success": true,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": true,
+        "df": false,
+        "of": false
+      },
+      "calls": [
+        {
+          "call": "resource_name_lookup",
+          "resource_id": 63,
+          "filename": [
+            17408,
+            4084
+          ],
+          "filename_backup_offset": 4084,
+          "return_frame": [
+            11286,
+            0
+          ]
+        },
+        {
+          "call": "resource_allocate",
+          "resource_id": 63,
+          "byte_count": 4294967295,
+          "filename": [
+            17408,
+            4084
+          ],
+          "filename_backup_offset": 4084,
+          "return_frame": [
+            11296,
+            0
+          ]
+        },
+        {
+          "call": "resource_file_load",
+          "filename": [
+            17408,
+            4084
+          ],
+          "destination": [
+            22528,
+            17767
+          ],
+          "return_frame": [
+            11314,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "resource_name_index_wraps_to_sixteen_bits",
+      "resource_id": 65520,
+      "filename_offset": 2820,
+      "byte_count": 2309737967,
+      "allocation_status": 0,
+      "file_result": 65536,
+      "success": true,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": false,
+        "df": true,
+        "of": false
+      },
+      "calls": [
+        {
+          "call": "resource_name_lookup",
+          "resource_id": 65520,
+          "filename": [
+            17408,
+            2820
+          ],
+          "filename_backup_offset": 2820,
+          "return_frame": [
+            11286,
+            0
+          ]
+        },
+        {
+          "call": "resource_allocate",
+          "resource_id": 65520,
+          "byte_count": 2309737967,
+          "filename": [
+            17408,
+            2820
+          ],
+          "filename_backup_offset": 2820,
+          "return_frame": [
+            11296,
+            0
+          ]
+        },
+        {
+          "call": "resource_file_load",
+          "filename": [
+            17408,
+            2820
+          ],
+          "destination": [
+            22528,
+            35243
+          ],
+          "return_frame": [
+            11314,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

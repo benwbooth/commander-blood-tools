@@ -4090,3 +4090,32 @@ The strict ledger classifies 292 of 383 known entries and leaves 91 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `8a1ae3d5b0e3e44557404921680b0b2bfc5c79961649edd11aeb947b4d3a76bd`.
+
+## 2026-09-13 - Big Bug Bang resource-ID loading
+
+`re/tools/big_bug_bang_resource_load_by_id_oracle.py` executes BBB's complete
+unchanged resource-ID load coordinator at `0x2BFB`. Eight cases cover an empty
+lookup, allocation failure, existing-resource reuse, every positive allocation
+status class, fresh-load failure and success, a full 32-bit file result, and
+16-bit resource-name table index wrapping. Their normalized semantic fields and
+call partitions match the independent Commander fixture.
+
+The oracle checks the exact 79-byte body hash; lookup, allocator, and file-load
+call frames and arguments; FS filename ownership against a DS decoy; allocation
+destination pointer rearrangement; full register and segment restoration;
+defined result flags; far return; bounded stack writes; and complete synthetic
+state, executable, and patched-callee ownership. Its checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_resource_load_by_id.json` has SHA-256
+`5c91728ad8c03d066f32a5aa15a3bb4606114154e61d5ee50b77419fa772e51c`.
+`OriginalResourceCache::load_by_id` consumes every direct BBB row through owned
+catalog names, bytes, and stable cache identities.
+
+The global collector now reproduces 141 exact fixtures and one prefix fixture
+across 143 BBB oracle programs, entering 259 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`a05a3a9218d5ed44a8a85bb66e3688671669e64a9cfc0e33bbd9a94e34e71eb9`.
+The strict ledger classifies 293 of 383 known entries and leaves 90 pending:
+230 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 26
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`849bdfa08aebe40b60ff2f94803d2aacdbce95bfe50f3df54515ba5f617db24d`.

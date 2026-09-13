@@ -188,8 +188,9 @@ impl OriginalResourceCache {
     /// Load one catalog resource or report that its existing bytes were reused.
     ///
     /// This translates `resource_load_by_id` at BLOODPRG file offset
-    /// `0x00287B`. A single owned byte allocation replaces the native allocator,
-    /// while zero-length files retain the original failure result.
+    /// `0x00287B` and BLOOD2PG offset `0x002BFB`. A single owned byte allocation
+    /// replaces the native allocator, while zero-length files retain the
+    /// original failure result.
     pub fn load_by_id(
         &mut self,
         store: &OriginalResourceStore,
@@ -566,6 +567,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangLoadByIdOracle {
+        rows: Vec<LoadByIdOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct PaletteBlockOracle {
         name: String,
         blocks: Vec<PaletteBlockOracleEntry>,
@@ -853,12 +859,7 @@ mod tests {
         assert_eq!(cache.resolve(CACHE_TEST_RESOURCE_ID), None);
     }
 
-    #[test]
-    fn load_by_id_maps_every_native_vector_to_owned_cache_state() {
-        let vectors: Vec<LoadByIdOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_287b_natural.json"
-        ))
-        .unwrap();
+    fn assert_load_by_id_vectors(vectors: Vec<LoadByIdOracle>) {
         assert_eq!(vectors.len(), LOAD_BY_ID_ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -933,6 +934,24 @@ mod tests {
             );
             assert!(vector.success, "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn load_by_id_maps_every_native_vector_to_owned_cache_state() {
+        let vectors: Vec<LoadByIdOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_287b_natural.json"
+        ))
+        .unwrap();
+        assert_load_by_id_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_load_by_id_matches_every_direct_vector() {
+        let oracle: BigBugBangLoadByIdOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_resource_load_by_id.json"
+        ))
+        .unwrap();
+        assert_load_by_id_vectors(oracle.rows);
     }
 
     #[test]
