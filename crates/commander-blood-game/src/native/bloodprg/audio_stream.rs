@@ -261,9 +261,12 @@ fn load_audio_stream_payload(
 
 /// Prepare page zero and the double-buffer descriptors for stream playback.
 ///
-/// This translates `snd_stream_start` at BLOODPRG routine offset `0x00BBB3`.
-/// The source's first page, packed-rate marker, saved block header, fixed buffer
-/// capacities, request transition, and first-buffer submission are retained.
+/// This translates `snd_stream_start` at BLOODPRG routine offset `0x00BBB3` and
+/// its Big Bug Bang counterpart at `0x00D363`. The sequel's optional ULTRASND
+/// delegation becomes host-backend dispatch outside this recovered state
+/// transition. The source's first page, packed-rate marker, saved block header,
+/// fixed buffer capacities, request transition, and first-buffer submission are
+/// retained.
 pub fn start_audio_stream(
     playback: &mut AudioPlaybackState,
     stream: &mut AudioStreamState,
@@ -632,83 +635,98 @@ mod tests {
     }
 
     #[test]
-    fn stream_start_matches_every_original_gate_and_descriptor_vector() {
-        let vectors: Vec<StartOracle> = serde_json::from_str(include_str!(
+    fn stream_start_matches_both_originals_gate_and_descriptor_vectors() {
+        let commander_vectors: Vec<StartOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_bbb3_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), START_ORACLE_VECTOR_COUNT);
+        let sequel_vectors: Vec<StartOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_audio_stream_start.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander_vectors.len(), START_ORACLE_VECTOR_COUNT);
+        assert_eq!(sequel_vectors.len(), START_ORACLE_VECTOR_COUNT);
 
-        for (case_index, vector) in vectors.into_iter().enumerate() {
-            let mut page = generated_page_bytes(AUDIO_STREAM_PAGE_BYTE_COUNT, case_index);
-            let packed = vector.packed_header.unwrap_or(false);
-            if packed {
-                page[STREAM_RATE_CODE_HEADER_INDEX] = PACKED_STREAM_RATE_CODE;
-            } else if page[STREAM_RATE_CODE_HEADER_INDEX] == PACKED_STREAM_RATE_CODE {
-                page[STREAM_RATE_CODE_HEADER_INDEX] ^= 128;
-            }
-            let source = source_from_payload(&page).unwrap();
-            let mut playback = playback_state(vector.sound_enabled & 1 != 0);
-            playback.driver_requests = AudioDriverRequests {
-                stream_start_requested: vector.start_request & 1 != 0,
-                stream_active: vector.start_request & 2 != 0,
-            };
-            let mut stream = stream_state(vector.channel_active & 1 != 0, Some(source));
-            let before_playback = playback.clone();
-            let before_stream = stream.clone();
-            let outcome = start_audio_stream(&mut playback, &mut stream)
-                .unwrap_or_else(|error| panic!("{}: {error}", vector.name));
+        for (source_name, vectors) in [
+            ("Commander Blood", commander_vectors),
+            ("Big Bug Bang", sequel_vectors),
+        ] {
+            for (case_index, vector) in vectors.into_iter().enumerate() {
+                let case = format!("{source_name}: {}", vector.name);
+                let mut page = generated_page_bytes(AUDIO_STREAM_PAGE_BYTE_COUNT, case_index);
+                let packed = vector.packed_header.unwrap_or(false);
+                if packed {
+                    page[STREAM_RATE_CODE_HEADER_INDEX] = PACKED_STREAM_RATE_CODE;
+                } else if page[STREAM_RATE_CODE_HEADER_INDEX] == PACKED_STREAM_RATE_CODE {
+                    page[STREAM_RATE_CODE_HEADER_INDEX] ^= 128;
+                }
+                let source = source_from_payload(&page).unwrap();
+                let mut playback = playback_state(vector.sound_enabled & 1 != 0);
+                playback.driver_requests = AudioDriverRequests {
+                    stream_start_requested: vector.start_request & 1 != 0,
+                    stream_active: vector.start_request & 2 != 0,
+                };
+                let mut stream = stream_state(vector.channel_active & 1 != 0, Some(source));
+                let before_playback = playback.clone();
+                let before_stream = stream.clone();
+                let outcome = start_audio_stream(&mut playback, &mut stream)
+                    .unwrap_or_else(|error| panic!("{case}: {error}"));
 
-            if !vector.started {
+                if !vector.started {
+                    assert_eq!(outcome, AudioStreamStartOutcome::Inactive, "{case}");
+                    assert_eq!(playback, before_playback, "{case}");
+                    assert_eq!(stream, before_stream, "{case}");
+                    assert_eq!(vector.pending_after, vector.start_request);
+                    continue;
+                }
+
                 assert_eq!(
                     outcome,
-                    AudioStreamStartOutcome::Inactive,
-                    "{}",
-                    vector.name
+                    AudioStreamStartOutcome::Started(AudioStreamSubmission {
+                        kind: AudioStreamSubmissionKind::Start,
+                        buffer_index: FIRST_STREAM_BUFFER_INDEX,
+                        source_page_index: vector.first_page.unwrap(),
+                        sample_count: AUDIO_STREAM_PAGE_BYTE_COUNT as u16,
+                        header_prefixed: false,
+                        refill_buffer_index: Some(LAST_STREAM_BUFFER_INDEX),
+                    }),
+                    "{case}"
                 );
-                assert_eq!(playback, before_playback, "{}", vector.name);
-                assert_eq!(stream, before_stream, "{}", vector.name);
-                assert_eq!(vector.pending_after, vector.start_request);
-                continue;
+                assert_eq!(stream.next_page_index, vector.next_page.unwrap(), "{case}");
+                assert_eq!(
+                    stream.block_header,
+                    page[..SND_CLIP_HEADER_BYTE_COUNT],
+                    "{case}"
+                );
+                assert_eq!(playback.packed_stream_samples, packed, "{case}");
+                assert_eq!(
+                    playback.stream_buffers[FIRST_STREAM_BUFFER_INDEX].status,
+                    status_from_original(vector.first_buffer_state.unwrap()),
+                    "{case}"
+                );
+                assert_eq!(
+                    playback.stream_buffers[LAST_STREAM_BUFFER_INDEX].status,
+                    status_from_original(vector.second_buffer_state.unwrap()),
+                    "{case}"
+                );
+                assert_eq!(
+                    playback.stream_buffers[FIRST_STREAM_BUFFER_INDEX].samples
+                        [..AUDIO_STREAM_PAGE_BYTE_COUNT - SND_CLIP_HEADER_BYTE_COUNT],
+                    page[SND_CLIP_HEADER_BYTE_COUNT..],
+                    "{case}"
+                );
+                assert_eq!(vector.pending_after, 2);
+                assert_eq!(
+                    playback.driver_requests,
+                    AudioDriverRequests {
+                        stream_start_requested: false,
+                        stream_active: true,
+                    },
+                    "{case}"
+                );
             }
-
-            assert_eq!(
-                outcome,
-                AudioStreamStartOutcome::Started(AudioStreamSubmission {
-                    kind: AudioStreamSubmissionKind::Start,
-                    buffer_index: FIRST_STREAM_BUFFER_INDEX,
-                    source_page_index: vector.first_page.unwrap(),
-                    sample_count: AUDIO_STREAM_PAGE_BYTE_COUNT as u16,
-                    header_prefixed: false,
-                    refill_buffer_index: Some(LAST_STREAM_BUFFER_INDEX),
-                }),
-                "{}",
-                vector.name
-            );
-            assert_eq!(stream.next_page_index, vector.next_page.unwrap());
-            assert_eq!(stream.block_header, page[..SND_CLIP_HEADER_BYTE_COUNT]);
-            assert_eq!(playback.packed_stream_samples, packed);
-            assert_eq!(
-                playback.stream_buffers[FIRST_STREAM_BUFFER_INDEX].status,
-                status_from_original(vector.first_buffer_state.unwrap())
-            );
-            assert_eq!(
-                playback.stream_buffers[LAST_STREAM_BUFFER_INDEX].status,
-                status_from_original(vector.second_buffer_state.unwrap())
-            );
-            assert_eq!(
-                playback.stream_buffers[FIRST_STREAM_BUFFER_INDEX].samples
-                    [..AUDIO_STREAM_PAGE_BYTE_COUNT - SND_CLIP_HEADER_BYTE_COUNT],
-                page[SND_CLIP_HEADER_BYTE_COUNT..]
-            );
-            assert_eq!(vector.pending_after, 2);
-            assert_eq!(
-                playback.driver_requests,
-                AudioDriverRequests {
-                    stream_start_requested: false,
-                    stream_active: true,
-                }
-            );
         }
     }
 

@@ -3201,3 +3201,29 @@ body SHA-256 is
 `427bace9b5d5ed4bb182de42a0335c6be9becb316b816ddb15afc7e8f7396588`,
 and the deterministic JSONL SHA-256 is
 `ec0123234ae3aadad9b2a9a9397e2cd2b5044400f61ea412cae09b1658b3d9eb`.
+
+## 2026-09-13 - Big Bug Bang audio-stream start
+
+BBB `0xD363..0xD40E` expands Commander Blood's `0xBBB3..0xBC50`
+stream-start routine from 55 instructions in 157 bytes to 59 instructions in
+171 bytes. The shared sound, channel, and request gates; first-page load;
+double-buffer descriptors; packed-rate marker; saved header; stop; request
+transition; and first-buffer submission relocate exactly. After switching
+`DS` to `GS`, BBB adds one `ULTRASND` test and delegates to the hardware helper
+at `0xD9F3` when that backend is active.
+
+The new `re/tools/big_bug_bang_audio_stream_start_oracle.py` executes both
+shipped bodies over the existing six-case semantic corpus, then executes two
+BBB-only ULTRASND delegate cases. It covers both outcomes of all six BBB
+conditional sites, or 12 edges. The harness checks the page, stop, play, and
+hardware-helper frames and inputs, exact descriptor, header, page, request,
+audio-buffer, register, flag, and stack outcomes, owned writes, executable
+immutability, unowned memory, and normalized Commander/BBB equality on the
+shared path.
+
+The shared typed `start_audio_stream` owner now consumes both six-row fixtures
+without a production variant. Its owned host submission keeps DOS hardware
+selection outside the recovered stream-state transition. BBB's body SHA-256
+is `4a10124c3f3692d1c4a765d7d7d8d1e303bcce5b44422dc210ef4a5decce3fc7`,
+and the deterministic JSONL SHA-256 is
+`dcfa11aafd4d257d2d59fd1ffc4ae353359d682b19164459937ea03613c09773`.
