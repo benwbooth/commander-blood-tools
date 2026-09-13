@@ -1,0 +1,64 @@
+{
+  "format": "big_bug_bang_sprite_range_dirty_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_fixture_sha256": "da764ce19282c34dfa24b1408d6a13c2b702d3f53b7feb170ffd60fff2ba410a",
+  "routine": {
+    "entry": "0x46bd",
+    "end": "0x46ea",
+    "body_sha256": "143771d27c97685cf13341e219ffd94040d61d316b71fe1ec6ff3625549351f8",
+    "table_offset": 26082,
+    "record_size": 32
+  },
+  "rows": [
+    {
+      "name": "single_inactive",
+      "first_object_id": 4,
+      "last_object_id": 4,
+      "input_flags": [
+        0
+      ],
+      "output_flags": [
+        0
+      ]
+    },
+    {
+      "name": "single_active",
+      "first_object_id": 7,
+      "last_object_id": 7,
+      "input_flags": [
+        128
+      ],
+      "output_flags": [
+        2
+      ]
+    },
+    {
+      "name": "single_preserve_high",
+      "first_object_id": 9,
+      "last_object_id": 9,
+      "input_flags": [
+        42495
+      ],
+      "output_flags": [
+        42366
+      ]
+    },
+    {
+      "name": "mixed_range",
+      "first_object_id": 21,
+      "last_object_id": 24,
+      "input_flags": [
+        128,
+        1,
+        387,
+        21952
+      ],
+      "output_flags": [
+        2,
+        1,
+        258,
+        21826
+      ]
+    }
+  ]
+}

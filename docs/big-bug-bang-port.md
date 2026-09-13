@@ -5022,6 +5022,28 @@ BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `727c9c9c99458ea72d43dbc5e4fbcdd22118c5f31ea7116dcf37f22864b5f1d3`.
 
+## Sprite-Range Dirty Oracle (2026-09-13)
+
+BBB `0x46BD..0x46EA` is the relocated sequel counterpart of Commander Blood's
+`0x4240..0x426D` bridge-sprite range transition. Both routines contain 27
+instructions in 45 bytes. They scan an inclusive object-id range in 32-byte
+records, leave inactive records unchanged, and transform each active flags word
+by clearing active and state-zero, setting dirty, and preserving every other
+low and high bit. BBB relocates the GS-owned record table from `0x6212` to
+`0x65E2`.
+
+The new `re/tools/big_bug_bang_sprite_range_dirty_oracle.py` executes all four
+fingerprinted Commander cases in the shipped BBB body. It verifies a disjoint
+DS decoy, the complete GS record table, changed-address ownership, exact
+register and segment preservation, far return, stack writes, untouched memory,
+executable immutability, and normalized equality with the Commander fixture.
+
+The typed `mark_bridge_sprite_range_dirty` operation consumes both four-row
+original fixtures. BBB's body SHA-256 is
+`143771d27c97685cf13341e219ffd94040d61d316b71fe1ec6ff3625549351f8`,
+and the deterministic fixture SHA-256 is
+`a5a2c6050085df69dc8cb130872d336779672f05249e1c668bda6ae6cf0ae7bd`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

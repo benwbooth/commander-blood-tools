@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 151,
-    "oracle_fixture_count": 150,
+    "oracle_count": 152,
+    "oracle_fixture_count": 151,
     "fixture_relation_counts": {
-      "exact": 149,
+      "exact": 150,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 268,
-    "unentered_static_entrypoints": 114,
+    "entered_static_entrypoints": 269,
+    "unentered_static_entrypoints": 113,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 269,
+    "entered_known_entrypoints": 270,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 155,
-        "unentered": 41
+        "entered": 156,
+        "unentered": 40
       },
       "exact_body": {
         "entered": 15,
@@ -1954,6 +1954,18 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_sprite_range_dirty_oracle.py",
+      "oracle_sha256": "742cc6824531becf0ec4230743cf92b70a32250c62ffeb73e8c4a6e3a9d3ebf2",
+      "executed_instruction_count": 27,
+      "entered_entrypoints": [
+        "0x46bd"
+      ],
+      "summary": "verified 4 BBB sprite-range dirty cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_sprite_range_dirty.json",
+      "fixture_sha256": "a5a2c6050085df69dc8cb130872d336779672f05249e1c668bda6ae6cf0ae7bd",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_startup_cleanup_oracle.py",
       "oracle_sha256": "c92a99935c2025dbbb2326d79d0f9e3678f80fa4ad38745821710d2a82c4dbcb",
       "executed_instruction_count": 12,
@@ -3457,8 +3469,10 @@
     {
       "entry": "0x46bd",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_sprite_range_dirty_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x4240"
     },

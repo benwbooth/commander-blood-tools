@@ -683,9 +683,10 @@ impl Error for BridgeSpriteRangeError {}
 /// Transition every active entity in an inclusive range to its dirty state.
 ///
 /// This translates `sprite_slot_range_mark_dirty` at BLOODPRG routine offset
-/// `0x004240`. The exact low-byte transition clears active and state-zero,
-/// sets dirty, and retains every unrelated low and high flag bit. Checked slice
-/// bounds replace the original wrapping 16-bit record and range arithmetic.
+/// `0x004240` and BBB routine offset `0x0046BD`. The exact low-byte transition
+/// clears active and state-zero, sets dirty, and retains every unrelated low
+/// and high flag bit. Checked slice bounds replace the original wrapping
+/// 16-bit record and range arithmetic.
 pub fn mark_bridge_sprite_range_dirty(
     entities: &mut [BridgeSpriteEntity],
     first_entity_index: usize,
@@ -1011,6 +1012,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangRangeDirtyOracle {
+        rows: Vec<RangeDirtyOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct DirtyCommitOracle {
         name: String,
         first_object_id: usize,
@@ -1170,12 +1176,7 @@ mod tests {
         assert_eq!(entity.committed_extent.height, FRAME_HEIGHT);
     }
 
-    #[test]
-    fn range_dirty_transition_matches_every_original_vector() {
-        let vectors: Vec<RangeDirtyOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_4240_natural.json"
-        ))
-        .unwrap();
+    fn assert_range_dirty_vectors(vectors: Vec<RangeDirtyOracle>) {
         assert_eq!(vectors.len(), RANGE_DIRTY_ORACLE_COUNT);
 
         for vector in vectors {
@@ -1209,6 +1210,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn range_dirty_transition_matches_every_original_vector() {
+        let vectors: Vec<RangeDirtyOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_4240_natural.json"
+        ))
+        .unwrap();
+        assert_range_dirty_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_range_dirty_transition_matches_every_direct_vector() {
+        let oracle: BigBugBangRangeDirtyOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_sprite_range_dirty.json"
+        ))
+        .unwrap();
+        assert_range_dirty_vectors(oracle.rows);
     }
 
     #[test]
