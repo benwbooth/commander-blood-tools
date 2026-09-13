@@ -3346,3 +3346,36 @@ production variant. The BBB body SHA-256 is
 `67e65a601dc809a47d8b252a5599bb1920207e39413ca95383970ad2e996b0f3`,
 and the deterministic JSONL SHA-256 is
 `5419782c339ac8c52882d1f6a1885cb5e8c58dd7a629b5b5d8f7804bae2ed230`.
+
+## 2026-09-13 - Big Bug Bang SND bank loading
+
+BBB `0xD7EC..0xD9F3` expands Commander Blood `0xC005..0xC1E6` from
+187 instructions in 481 bytes to 197 instructions in 519 bytes. With
+`ULTRASND` clear, the playback gate, embedded-versus-standalone lookup,
+four-byte header and offset-table parsing, resident compact-table conversion,
+streamed table retention, memory/EMS/XMS/file payload routing, and source close
+normalize to the Commander routine. BBB adds two hardware paths. Resident mode
+calls `0xDDF8` with the loaded payload in `DS:SI`, destination offset zero, and
+the exact byte count. Streamed mode calls `0xDC92` after publishing the table
+and remaining payload state, bypassing the EMS/XMS/file selection in this
+wrapper.
+
+The new `re/tools/big_bug_bang_sound_bank_load_oracle.py` executes both shipped
+routines over all 12 Commander cases plus one resident and one streamed BBB
+Ultrasound case. It covers both outcomes at all 16 BBB conditional sites
+(32 edges), including standalone and embedded sources, empty banks, compact
+offset derivation, all ordinary backends, long transfer loops, old temporary
+file state, odd XMS requests, and both new delegates. The harness checks exact
+far and near callback frames and inputs, DOS and EMS calls, all parsed tables,
+resident and staged payload bytes, XMS requests, temporary-file writes,
+registers, defined flags, stack and mapped-segment ownership, executable
+immutability, and unowned memory. All 12 shared rows normalize directly to the
+Commander fixture.
+
+The typed `load_sound_bank` test now consumes both fixtures. Its decoded,
+owned `SndBank` retains the resident-versus-streamed caller role while replacing
+every DOS storage and hardware-transfer backend without a production variant.
+The BBB body SHA-256 is
+`f1d0c931b19687bd7b14a66c1623965f3e1308dcaa81296c9167a1f09495c138`,
+and the deterministic JSONL SHA-256 is
+`fa405a3f77e39cac79d01b5458c3082cfd5013520540da0f8ffa5cdb898253c4`.

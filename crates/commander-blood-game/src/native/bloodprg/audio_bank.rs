@@ -22,11 +22,11 @@ pub struct LoadedSoundBank {
 
 /// Decode an SND bank when voice playback is enabled.
 ///
-/// This translates `snd_bank_loader` at BLOODPRG routine offset `0x00C005`.
-/// The original resident-versus-streamed intent remains explicit, while archive
-/// handles, temporary files, EMS/XMS selection, page mapping, and transfer
-/// chunks collapse into one validated owned payload supplied by the resource
-/// layer.
+/// This translates `snd_bank_loader` at BLOODPRG `0x00C005` and Big Bug Bang
+/// `0x00D7EC`. The original resident-versus-streamed intent remains explicit,
+/// while archive handles, temporary files, EMS/XMS selection, page mapping,
+/// transfer chunks, and BBB's Ultrasound delegates collapse into one validated
+/// owned payload supplied by the resource layer.
 pub fn load_sound_bank(
     playback_enabled: bool,
     usage: SoundBankUsage,
@@ -47,7 +47,8 @@ mod tests {
 
     use super::*;
 
-    const ORACLE_VECTOR_COUNT: usize = 12;
+    const COMMANDER_ORACLE_VECTOR_COUNT: usize = 12;
+    const SEQUEL_ORACLE_VECTOR_COUNT: usize = 14;
     const TEST_DELAY_BASE: u8 = 90;
     const TEST_DELAY_LIMIT: u8 = 165;
 
@@ -65,13 +66,24 @@ mod tests {
 
     #[test]
     fn loader_matches_every_original_storage_and_mode_vector() {
-        let vectors: Vec<BankLoaderOracle> = serde_json::from_str(include_str!(
+        let commander_vectors: Vec<BankLoaderOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_c005_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
+        let sequel_vectors: Vec<BankLoaderOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_sound_bank_load.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander_vectors.len(), COMMANDER_ORACLE_VECTOR_COUNT);
+        assert_eq!(sequel_vectors.len(), SEQUEL_ORACLE_VECTOR_COUNT);
 
-        for (case_index, vector) in vectors.into_iter().enumerate() {
+        for (case_index, vector) in commander_vectors
+            .into_iter()
+            .chain(sequel_vectors)
+            .enumerate()
+        {
             let enabled = vector.sound_enabled & 1 != 0;
             let usage = if vector.mode == 0 {
                 SoundBankUsage::ResidentEffects
