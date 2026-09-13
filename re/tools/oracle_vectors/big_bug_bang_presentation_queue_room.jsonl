@@ -1,0 +1,8 @@
+{"byte_count":256,"early_gap_failure":false,"has_room":true,"head":1280,"name":"ordinary_room","request":32,"result_carry":0,"result_needed":298,"tail":256,"wrap_limit":512}
+{"byte_count":16,"early_gap_failure":true,"has_room":false,"head":256,"name":"gap_too_small","request":16,"result_carry":1,"result_needed":290,"tail":288,"wrap_limit":4096}
+{"byte_count":16,"early_gap_failure":false,"has_room":true,"head":256,"name":"gap_exactly_large_enough","request":16,"result_carry":0,"result_needed":42,"tail":290,"wrap_limit":64}
+{"byte_count":256,"early_gap_failure":false,"has_room":false,"head":1280,"name":"total_exceeds_wrap_limit","request":32,"result_carry":1,"result_needed":298,"tail":256,"wrap_limit":297}
+{"byte_count":65520,"early_gap_failure":false,"has_room":false,"head":1280,"name":"total_second_add_carry","request":16,"result_carry":1,"result_needed":10,"tail":256,"wrap_limit":65535}
+{"byte_count":65532,"early_gap_failure":false,"has_room":true,"head":1280,"name":"count_plus_ten_carry_is_discarded","request":1,"result_carry":0,"result_needed":7,"tail":256,"wrap_limit":7}
+{"byte_count":0,"early_gap_failure":false,"has_room":true,"head":65520,"name":"head_plus_request_carry_is_discarded","request":32,"result_carry":0,"result_needed":42,"tail":65525,"wrap_limit":42}
+{"byte_count":0,"early_gap_failure":false,"has_room":true,"head":65520,"name":"head_plus_padding_carry_is_discarded","request":0,"result_carry":0,"result_needed":10,"tail":65525,"wrap_limit":10}

@@ -952,11 +952,23 @@ mod tests {
     }
 
     #[test]
-    fn room_check_matches_flat_original_vectors() {
-        let vectors: Vec<RoomOracle> = serde_json::from_str(include_str!(
+    fn room_check_matches_both_flat_original_fixtures() {
+        let commander: Vec<RoomOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a3ad_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_queue_room.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_room_vectors(commander);
+        assert_room_vectors(sequel);
+    }
+
+    fn assert_room_vectors(vectors: Vec<RoomOracle>) {
         assert_eq!(vectors.len(), ROOM_VECTOR_COUNT);
         let mut exact = usize::MIN;
 

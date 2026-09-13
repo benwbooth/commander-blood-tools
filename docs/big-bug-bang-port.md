@@ -4600,6 +4600,29 @@ production behavior changed. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `a5dbdd87e1aa6f8256f6ce2c788728b213627e556bb48293267e87d27214652f`.
 
+## Presentation Queue Capacity Oracle (2026-09-13)
+
+BBB `0xBB97..0xBBBA` is the relocated sequel counterpart of Commander Blood's
+`0xA3AD..0xA3D0` queue-capacity predicate. Both read-only bodies contain 14
+instructions in 35 bytes. The sequel moves the four queue fields without
+changing control flow or 16-bit arithmetic.
+
+`re/tools/big_bug_bang_presentation_queue_room_oracle.py` executes both shipped
+bodies with all eight recovered Commander cases. They agree exactly and
+traverse all six conditional branch edges, including exact and insufficient
+head-to-tail gaps, total capacity exhaustion, second-add carry, and discarded
+carry from the first addition and fixed padding.
+
+The oracle verifies complete memory immutability, DS ownership against a GS
+decoy, exact registers and segments, flags, stack discipline, executable
+immutability, and direct Commander/BBB equality. The typed capacity predicate
+now consumes both eight-row fixtures: five representable cases match exactly,
+while checked host arithmetic intentionally rejects the three native
+wraparound false positives. No production behavior changed. BBB's body SHA-256
+is `3d970edae1f9d1fc45b97ac6be58396baf674585b16771c8a59c5c1b64e7cde0`,
+and the deterministic JSONL SHA-256 is
+`f11eec49220ec5a867ce52c80b7207bcb5000f3accc5e08091b794a2b36209ae`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

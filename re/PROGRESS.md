@@ -2496,3 +2496,25 @@ production behavior changed. BBB's body SHA-256 is
 `a7a399ba07876fd3a16620ac3d1bfe6b5ab81133b64f699e7bcfe9ea5e858357`,
 and the deterministic JSONL SHA-256 is
 `a5dbdd87e1aa6f8256f6ce2c788728b213627e556bb48293267e87d27214652f`.
+
+## 2026-09-13 - Big Bug Bang presentation queue capacity
+
+BBB `0xBB97..0xBBBA` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA3AD..0xA3D0` queue-capacity predicate. Both read-only bodies
+contain 14 instructions in 35 bytes and have identical normalized control flow.
+
+The new `re/tools/big_bug_bang_presentation_queue_room_oracle.py` executes both
+shipped bodies with all eight recovered Commander cases. They cover all six
+conditional branch edges: ordinary and insufficient queue gaps, the exact-gap
+boundary, total capacity exhaustion, second-add carry, and discarded carry from
+the first addition and fixed padding.
+
+The oracle verifies complete memory immutability, DS ownership against a GS
+decoy, exact registers and segments, flags, stack discipline, executable
+immutability, and direct Commander/BBB equality. The typed capacity predicate
+consumes both eight-row fixtures: five representable cases match exactly, while
+checked host arithmetic retains deliberate rejection of the three original
+wraparound false positives. No production behavior changed. BBB's body SHA-256
+is `3d970edae1f9d1fc45b97ac6be58396baf674585b16771c8a59c5c1b64e7cde0`,
+and the deterministic JSONL SHA-256 is
+`f11eec49220ec5a867ce52c80b7207bcb5000f3accc5e08091b794a2b36209ae`.
