@@ -355,13 +355,17 @@ mod tests {
         }
     }
 
-    #[test]
-    fn band_layout_matches_every_original_vector() {
-        let vectors: Vec<BandVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_b6dd_natural.json"
-        ))
-        .unwrap();
-        assert_eq!(vectors.len(), 12);
+    fn assert_band_vectors(fixture: &str, expected_count: usize) {
+        let vectors: Vec<BandVector> = if fixture.trim_start().starts_with('[') {
+            serde_json::from_str(fixture).unwrap()
+        } else {
+            fixture
+                .lines()
+                .filter(|line| !line.is_empty())
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect()
+        };
+        assert_eq!(vectors.len(), expected_count);
         for vector in vectors {
             let mut percent = vector.percent_before;
             let layout = prepare_ship_depth_band(
@@ -408,6 +412,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn band_layout_matches_every_commander_blood_vector() {
+        assert_band_vectors(
+            include_str!("../../../../../re/tools/oracle_vectors/func_b6dd_natural.json"),
+            12,
+        );
+    }
+
+    #[test]
+    fn band_layout_matches_every_big_bug_bang_vector() {
+        assert_band_vectors(
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_depth_band.jsonl"
+            ),
+            12,
+        );
     }
 
     #[test]

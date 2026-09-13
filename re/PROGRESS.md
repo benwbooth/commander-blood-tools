@@ -3048,3 +3048,28 @@ and the new 12-row BBB fixture both pass. BBB's body SHA-256 is
 `ffb093cb9b88e17768178a2bdb2e344e3d41f2fd0428930b9d067df4fcf7d703`,
 and the deterministic JSONL SHA-256 is
 `fb3bca6fb28f4bfff01dcd14313f820e60b3a98e1b10d3e0c555a57341abf810`.
+
+## 2026-09-13 - Big Bug Bang ship depth-band copy
+
+BBB `0xCE6A..0xCEE9` relocates Commander Blood's `0xB6DD..0xB75C`
+Mode X depth-band copy. Both complete bodies contain 67 instructions in 127
+bytes. The crop gate, depth, framebuffer pointer, palette-transition increment,
+and transition-percent fields move; arithmetic, port traffic, copy geometry,
+and register preservation remain structurally identical.
+
+The new `re/tools/big_bug_bang_ship_depth_band_oracle.py` executes both shipped
+bodies over 12 cases covering both outcomes of all three conditional sites, or
+six edges. It covers inactive low-bit gates, the transition-percent hold,
+ordinary and signed clamp inputs, low-byte row-count wrap, maximum copy size,
+destination wrap, and inherited backward string direction. The harness checks
+exact VGA input/output order, both wrapped copy regions, transition state,
+registers and defined flags, caller stack, every mapped segment, executable
+immutability, unowned memory, and direct normalized equality between the two
+originals.
+
+The existing typed `prepare_ship_depth_band` owner now consumes both the
+Commander and BBB 12-row fixtures without a production variant. BBB's body
+SHA-256 is
+`b190ad52e10f3438682a4489e565b2d8a8914f7e3fbb9a3711459a9262eb2619`,
+and the deterministic JSONL SHA-256 is
+`926551adc6081cfe2bfb01c1ddf55df8d51c4de8eee95c29e8aa2b6cd732680f`.
