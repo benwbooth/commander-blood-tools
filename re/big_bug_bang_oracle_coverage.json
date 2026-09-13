@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 153,
-    "oracle_fixture_count": 152,
+    "oracle_count": 154,
+    "oracle_fixture_count": 153,
     "fixture_relation_counts": {
-      "exact": 151,
+      "exact": 152,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 270,
-    "unentered_static_entrypoints": 112,
+    "entered_static_entrypoints": 271,
+    "unentered_static_entrypoints": 111,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 271,
+    "entered_known_entrypoints": 272,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 157,
-        "unentered": 39
+        "entered": 158,
+        "unentered": 38
       },
       "exact_body": {
         "entered": 15,
@@ -1012,6 +1012,18 @@
       "summary": "verified 5 BBB retrace-wait, 4 Ctrl-Break, and 5 video-restore cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_platform_adapters.json",
       "fixture_sha256": "5a5faeab6cc0cce7191c8b6e93e918ab36ae7228fec260384375a1646e63d864",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_pointer_button_edges_oracle.py",
+      "oracle_sha256": "31f71d14b64e962cb649c7ecffdfd16632cc866dd9ff48ae24196fbc83f66edd",
+      "executed_instruction_count": 16,
+      "entered_entrypoints": [
+        "0x224f"
+      ],
+      "summary": "verified 15 BBB pointer-button edge cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_pointer_button_edges.json",
+      "fixture_sha256": "e69263725b35cbc2f56ea265d70652b388e5ed3b04a479f80cac305cfd63dd89",
       "fixture_relation": "exact"
     },
     {
@@ -2628,8 +2640,10 @@
     {
       "entry": "0x224f",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_pointer_button_edges_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x1fbc"
     },

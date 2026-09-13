@@ -153,11 +153,12 @@ pub struct PointerButtonState {
 /// Update button press latches from one atomic host sample.
 ///
 /// This translates `mouse_button_edges_update` at BLOODPRG routine offset
-/// `0x001FBC`. Its mutable low-byte intersection is intentionally preserved:
-/// simultaneous new primary and secondary presses latch only the primary
-/// press, and an unrelated held button can suppress a secondary press. SDL
-/// provides one stable sample per event-loop update, replacing asynchronous
-/// rereads of native global words with an ordinary value.
+/// `0x001FBC` and BBB routine offset `0x00224F`. Its mutable low-byte
+/// intersection is intentionally preserved: simultaneous new primary and
+/// secondary presses latch only the primary press, and an unrelated held button
+/// can suppress a secondary press. SDL provides one stable sample per event-loop
+/// update, replacing asynchronous rereads of native global words with an
+/// ordinary value.
 pub fn update_pointer_button_edges(
     state: &mut PointerButtonState,
     current: PointerButtons,
@@ -209,6 +210,11 @@ mod tests {
         secondary_after: u8,
         pending_after: u8,
         result_ax: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangButtonEdgeOracle {
+        rows: Vec<ButtonEdgeOracle>,
     }
 
     #[derive(Deserialize)]
@@ -305,9 +311,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn atomic_updates_match_every_stable_original_vector() {
-        let vectors = oracle_vectors();
+    fn assert_atomic_update_vectors(vectors: &[ButtonEdgeOracle]) {
         let mut stable_samples = usize::MIN;
 
         for vector in vectors.iter().filter(|vector| {
@@ -348,9 +352,7 @@ mod tests {
         assert_eq!(stable_samples, STABLE_SAMPLE_VECTOR_COUNT);
     }
 
-    #[test]
-    fn flat_runtime_replaces_mid_call_memory_mutation_with_one_sample() {
-        let vectors = oracle_vectors();
+    fn assert_volatile_probe_vectors(vectors: &[ButtonEdgeOracle]) {
         let volatile_probes = vectors
             .iter()
             .filter(|vector| {
@@ -370,6 +372,27 @@ mod tests {
             assert_eq!(update_pointer_button_edges(&mut state, current), current);
             assert_eq!(state.previous, current);
         }
+    }
+
+    #[test]
+    fn atomic_updates_match_every_stable_original_vector() {
+        assert_atomic_update_vectors(&oracle_vectors());
+    }
+
+    #[test]
+    fn flat_runtime_replaces_mid_call_memory_mutation_with_one_sample() {
+        assert_volatile_probe_vectors(&oracle_vectors());
+    }
+
+    #[test]
+    fn sequel_button_edges_match_every_direct_original_vector() {
+        let oracle: BigBugBangButtonEdgeOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_pointer_button_edges.json"
+        ))
+        .unwrap();
+        assert_eq!(oracle.rows.len(), ORACLE_VECTOR_COUNT);
+        assert_atomic_update_vectors(&oracle.rows);
+        assert_volatile_probe_vectors(&oracle.rows);
     }
 
     #[test]

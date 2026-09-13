@@ -5069,6 +5069,31 @@ proved kind, flag, ordering, and counter transition. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `fa591852519ba82ba24a612e212931dd40df95b5ad6fa7b6a473c69d80c0a5f1`.
 
+## Pointer-Button Edge Oracle (2026-09-13)
+
+BBB `0x224F..0x2281` is the relocated sequel counterpart of Commander Blood's
+`0x1FBC..0x1FEE` pointer-button edge sampler. Both routines contain 16
+instructions in 50 bytes and differ only in six DS-relative state operands.
+BBB moves the current and previous button words to `0x0C26` and `0x0C28`, and
+the primary, secondary, and shared pending latches to `0x0C36..0x0C38`.
+
+The new `re/tools/big_bug_bang_pointer_button_edges_oracle.py` executes all 15
+fingerprinted Commander cases in the shipped BBB body. It covers new and held
+primary and secondary buttons, simultaneous and unrelated-button suppression,
+high-word behavior, existing latch preservation, and two instruction-timed
+mutations that prove repeated volatile reads. The harness verifies full state
+and decoy segments, exact changed-address ownership, register preservation, AX
+result, defined flags and direction preservation, near return, untouched stack,
+and patched-executable immutability.
+
+The typed `update_pointer_button_edges` owner consumes both 15-row fixtures.
+The 13 stable rows match exactly; the two volatile probes instead verify the
+owned atomic SDL sample that deliberately replaces asynchronous mid-call global
+mutation. BBB's body SHA-256 is
+`4a21bf2c5361cbfd9f8e9996b5054dfabfb01762abab7e12eea9c2f808da44c0`,
+and the deterministic fixture SHA-256 is
+`e69263725b35cbc2f56ea265d70652b388e5ed3b04a479f80cac305cfd63dd89`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
