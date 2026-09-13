@@ -3545,15 +3545,15 @@ start or reached by a non-return transfer from unchanged code. This excludes
 patched callbacks, synthetic return sentinels, Commander-side executions, and
 numeric constants that merely resemble an address.
 
-`re/tools/collect_big_bug_bang_oracle_coverage.py` runs all 125 checked-in BBB
+`re/tools/collect_big_bug_bang_oracle_coverage.py` runs all 126 checked-in BBB
 oracle programs with isolated outputs and their real required inputs. Every
 oracle passes. The aggregate report at
 `re/big_bug_bang_oracle_coverage.json` partitions all 382 closed-static-graph
 entrypoints plus the runtime-installed `0xE0ED` Gravis ISR. Existing scenarios
-enter 212 static entrypoints and the ISR, for 213 directly observed known
+enter 220 static entrypoints and the ISR, for 221 directly observed known
 entries. The static executed/unexecuted split is 12/15 byte-exact matches,
-114/82 relocation-tolerant structural candidates, 13/20 ambiguous candidates,
-and 73/53 initially unresolved entries.
+120/76 relocation-tolerant structural candidates, 14/19 ambiguous candidates,
+and 74/52 initially unresolved entries.
 
 These are evidence-coverage counts, not a port-completion percentage. An
 unexecuted entry may be an inherited helper, an intentionally eliminated DOS
@@ -3562,7 +3562,7 @@ execution does not itself prove that a typed production owner consumes the
 evidence. The next audit gate is an explicit 383-row disposition ledger tying
 each entry to BBB evidence and a Rust owner or to a documented elimination;
 anything else remains pending. The aggregate report SHA-256 is
-`ace3776fe35c29038c4fbd2ed0ee2c4190e48b11ffd779b28cde511256a77be9`.
+`12fe67a0152f279fee5dd5b6e392f286ce39b2dbcf1c80cb5cd11c253b8eb1a7`.
 
 ## 2026-09-13 - Big Bug Bang native disposition ledger
 
@@ -3577,8 +3577,8 @@ duplicate entries, stale inputs, unsupported statuses, missing Rust symbols,
 unconsumed direct fixtures, invalid exact-body inheritance, and changed
 authored no-op bytes.
 
-The current ledger classifies 250 entries and leaves 133 as pending game
-semantics. The classified partition is 196 routines entered by unchanged BBB
+The current ledger classifies 257 entries and leaves 126 as pending game
+semantics. The classified partition is 203 routines entered by unchanged BBB
 execution whose checked oracle rows are consumed by a named Rust test owner;
 9 byte-identical routines inheriting a verified Commander typed owner; 7
 byte-identical routines inheriting a Commander elimination; 14 executable-
@@ -3587,20 +3587,43 @@ SDL boundary; 17 dormant French field-inspector routines eliminated from the
 playable-game surface; and 7 original input-table targets whose complete bodies
 are return-only or register-preserving authored no-ops.
 
-The 133 pending entries remain deliberately unclassified: 82 have only a
+The 126 pending entries remain deliberately unclassified: 76 have only a
 relocation-tolerant structural candidate, 12 are ambiguous duplicate
-signatures, and 39 were initially unresolved. Structural resemblance is not a
+signatures, and 38 were initially unresolved. Structural resemblance is not a
 port disposition. The pending set now provides the exact implementation queue,
-starting with the BBB input dispatcher and active handlers at `0x23A2`,
-`0x23D4`, `0x2421`, `0x2514`, `0x253D`, `0x25A7`, and `0x25C5`, followed by
-startup/main orchestration and the `0x8584..0x87EB` parser-handler family.
+starting with startup/main orchestration and the `0x8584..0x87EB`
+parser-handler family.
 
 The collector now also proves fixture freshness while measuring entrypoints:
-123 oracle programs reproduce their named checked-in fixture exactly, the
+124 oracle programs reproduce their named checked-in fixture exactly, the
 inventory-descriptor oracle reproduces the declared 20-row prefix of its
 45-row composite fixture, and the dialogue-guard oracle remains execution-only
 evidence. An entry cannot receive `verified_direct_typed` from that unconsumed
 execution-only evidence. The refreshed coverage-report SHA-256 is
-`2ddf9d4b695baa08e1e5aa343e7583e0e50c43f932bb21d863d03b14c5b56b54`;
+`12fe67a0152f279fee5dd5b6e392f286ce39b2dbcf1c80cb5cd11c253b8eb1a7`;
 the disposition-ledger SHA-256 is
-`8dde355da5defb1f815843268e86424566ae314e6f6135b16d67ebbf59534875`.
+`ccbf67a07ef39421fbcf873c8f1a4905fc94c971e9a4a85bd784dcf953ade0ae`.
+
+## 2026-09-13 - Big Bug Bang active input handlers
+
+`re/tools/big_bug_bang_input_handlers_oracle.py` executes the unchanged BBB
+dispatcher at `0x23A2` with its real relocated CS table and the active handlers
+at `0x23D4`, `0x2421`, `0x2514`, `0x253D`, `0x25A7`, and `0x25C5`. It verifies
+the complete 256-byte translation table and all 16 near-handler entries, exact
+routine hashes, far and near returns, preserved registers, stack sentinels,
+external queue-reset calls, auxiliary-directory immutability, and full 64 KiB
+global-memory write ownership. The 42 deterministic cases cover zero, unmapped,
+ASCII, and extended-key dispatch; profile, built-in, committed, inactive, and
+save-menu movement; object acceptance; every cancellation gate and both blocked
+line boundaries; pause normalization; and byte latching.
+
+The checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_input_handlers.json` has SHA-256
+`4e7532ca431be3dcddf5e3dae3d85e87ec013f89a2664a59ce6fe6d592847e70`.
+Typed tests in `input_dispatch.rs`, `input_selection.rs`, and `input_cancel.rs`
+consume every semantic row. The SDL input queue now calls the shared
+dialect-aware dispatcher boundary directly, preserving BBB's inert Escape and
+F7 abort assignments while retaining Commander's table. This closes all seven
+active input entries in the strict disposition ledger; the adjacent `0x24B1`
+Escape target remains an explicitly verified authored no-op rather than a
+production operation.

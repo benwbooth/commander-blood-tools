@@ -131,6 +131,38 @@ mod tests {
         calls: Vec<String>,
     }
 
+    #[derive(Deserialize)]
+    struct SequelInputHandlerOracle {
+        vectors: SequelInputHandlerVectors,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelInputHandlerVectors {
+        cancel: Vec<SequelCancelOracle>,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelCancelOracle {
+        name: String,
+        presentation_active: bool,
+        dialogue_ready_before: bool,
+        ship_active: bool,
+        active_line: usize,
+        cancelled: bool,
+        latched_key_before: u8,
+        latched_key: u8,
+        dialogue_ready: u8,
+        read_position_before: usize,
+        remaining_before: usize,
+        rewind_position: usize,
+        rewind_remaining: usize,
+        read_position: usize,
+        remaining: usize,
+        palette_dirty: bool,
+        presentation_complete: bool,
+        calls: Vec<String>,
+    }
+
     #[derive(Default)]
     struct QueueProbe {
         reset_count: usize,
@@ -217,6 +249,89 @@ mod tests {
                 assert_eq!(cancellation.resources.read_position, INITIAL_READ_POSITION);
                 assert_eq!(cancellation.resources.remaining, INITIAL_REMAINING);
                 assert!(!cancellation.palette_dirty);
+            }
+        }
+    }
+
+    #[test]
+    fn sequel_cancellation_matches_original_vectors() {
+        let oracle: SequelInputHandlerOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_input_handlers.json"
+        ))
+        .unwrap();
+        assert_eq!(oracle.vectors.cancel.len(), 8);
+
+        for vector in oracle.vectors.cancel {
+            let mut dispatch = InputDispatchState {
+                text_byte: Some(vector.latched_key_before),
+                paused: true,
+                shutdown_requested: false,
+            };
+            let mut cancellation = InputCancellationState {
+                presentation_active: vector.presentation_active,
+                dialogue_ready: vector.dialogue_ready_before,
+                ship_active: vector.ship_active,
+                active_line: vector.active_line,
+                resources: PresentationResourceCursor {
+                    read_position: vector.read_position_before,
+                    remaining: vector.remaining_before,
+                    rewind_position: vector.rewind_position,
+                    rewind_remaining: vector.rewind_remaining,
+                },
+                scene_palette: [[TEST_PALETTE_VALUE; PALETTE_COLOR_COMPONENT_COUNT]; 256],
+                palette_dirty: false,
+            };
+            let mut backend = QueueProbe::default();
+
+            let outcome = cancel_input_action(
+                &mut dispatch,
+                &mut cancellation,
+                &mut backend,
+                ESCAPE_TEXT_BYTE,
+            );
+
+            assert!(!dispatch.paused, "{}", vector.name);
+            assert_eq!(
+                outcome == InputCancellationOutcome::CancelledPresentation,
+                vector.cancelled,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                cancellation.dialogue_ready,
+                vector.dialogue_ready != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                dispatch.text_byte.unwrap_or(u8::MIN),
+                vector.latched_key,
+                "{}",
+                vector.name
+            );
+            assert_eq!(cancellation.resources.read_position, vector.read_position);
+            assert_eq!(cancellation.resources.remaining, vector.remaining);
+            assert_eq!(cancellation.palette_dirty, vector.palette_dirty);
+            assert_eq!(backend.reset_count, vector.calls.len(), "{}", vector.name);
+            assert_eq!(vector.presentation_complete, vector.cancelled);
+
+            if vector.cancelled {
+                assert!(
+                    cancellation.scene_palette[..CANCELLATION_PALETTE_COLOR_COUNT]
+                        .iter()
+                        .all(|color| *color == [u8::MIN; PALETTE_COLOR_COMPONENT_COUNT])
+                );
+                assert!(
+                    cancellation.scene_palette[CANCELLATION_PALETTE_COLOR_COUNT..]
+                        .iter()
+                        .all(|color| {
+                            *color == [TEST_PALETTE_VALUE; PALETTE_COLOR_COMPONENT_COUNT]
+                        })
+                );
+            } else {
+                assert!(cancellation.scene_palette.iter().all(|color| {
+                    *color == [TEST_PALETTE_VALUE; PALETTE_COLOR_COMPONENT_COUNT]
+                }));
             }
         }
     }

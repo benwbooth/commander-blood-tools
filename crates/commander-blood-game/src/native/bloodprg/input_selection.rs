@@ -403,6 +403,18 @@ mod tests {
         accept: Vec<AcceptOracle>,
     }
 
+    #[derive(Deserialize)]
+    struct SequelInputHandlerOracle {
+        vectors: SequelInputHandlerVectors,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelInputHandlerVectors {
+        move_previous: Vec<MovementOracle>,
+        move_next: Vec<MovementOracle>,
+        accept: Vec<AcceptOracle>,
+    }
+
     #[test]
     fn save_slot_editor_matches_every_original_vector() {
         let vectors: Vec<SaveEditorOracle> = serde_json::from_str(include_str!(
@@ -643,6 +655,68 @@ mod tests {
                 ENTER_KEY_BYTE,
             );
 
+            let original_committed = vector.committed_offset != ORIGINAL_NO_COMMIT_SENTINEL;
+            assert_eq!(committed.is_some(), original_committed, "{}", vector.name);
+            assert_eq!(selection.committed, committed, "{}", vector.name);
+            assert_eq!(
+                dispatch.text_byte,
+                Some(vector.latched_key),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn sequel_selection_handlers_match_original_vectors() {
+        let oracle: SequelInputHandlerOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_input_handlers.json"
+        ))
+        .unwrap();
+        assert_eq!(oracle.vectors.move_previous.len(), 7);
+        assert_eq!(oracle.vectors.move_next.len(), 7);
+        assert_eq!(oracle.vectors.accept.len(), 4);
+
+        for vector in oracle.vectors.move_previous {
+            let mut selection = selection_from_oracle(&vector);
+            let mut save_menu = save_menu_from_oracle(&vector);
+            move_input_selection_previous(selection.as_mut(), save_menu.as_mut()).unwrap();
+            assert_movement_result(&vector, selection.as_ref(), save_menu.as_ref());
+        }
+
+        for vector in oracle.vectors.move_next {
+            let mut selection = selection_from_oracle(&vector);
+            let mut save_menu = save_menu_from_oracle(&vector);
+            let next_index = vector
+                .selected_before
+                .and_then(|selected| selected.checked_add(SELECTION_STEP));
+            let profile = directory_with_kind(next_index, vector.next_entry_kind);
+            let builtin = directory_with_kind(next_index, vector.next_entry_kind);
+            move_input_selection_next(selection.as_mut(), save_menu.as_mut(), &profile, &builtin)
+                .unwrap();
+            assert_movement_result(&vector, selection.as_ref(), save_menu.as_ref());
+        }
+
+        for vector in oracle.vectors.accept {
+            let directory =
+                directory_with_kind(Some(vector.selected_index), Some(vector.record_kind));
+            let mut selection = InputSelectionState {
+                source: if vector.profile_selection {
+                    InputSelectionSource::Profile
+                } else {
+                    InputSelectionSource::Builtin
+                },
+                selected: vector.selected_index,
+                first_visible: usize::MIN,
+                committed: None,
+            };
+            let mut dispatch = InputDispatchState::default();
+            let committed = accept_input_selection(
+                &mut dispatch,
+                Some(&mut selection),
+                &directory,
+                ENTER_KEY_BYTE,
+            );
             let original_committed = vector.committed_offset != ORIGINAL_NO_COMMIT_SENTINEL;
             assert_eq!(committed.is_some(), original_committed, "{}", vector.name);
             assert_eq!(selection.committed, committed, "{}", vector.name);

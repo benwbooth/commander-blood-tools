@@ -125,8 +125,21 @@ pub fn dispatch_input_key(
     state: &mut InputDispatchState,
     key: Option<HostInputKey>,
 ) -> Option<InputAction> {
+    dispatch_input_key_for_dialect(state, key, ScriptDialect::CommanderBlood)
+}
+
+/// Clear the prior text latch and translate one key through a game's shipped policy.
+///
+/// BBB retains the same dispatcher shape as Commander but assigns Escape and
+/// F7 to sequel-specific handlers. Keeping the dialect at this boundary also
+/// matches the modern SDL queue, which supplies typed keys rather than BIOS words.
+pub fn dispatch_input_key_for_dialect(
+    state: &mut InputDispatchState,
+    key: Option<HostInputKey>,
+    dialect: ScriptDialect,
+) -> Option<InputAction> {
     state.text_byte = None;
-    key.and_then(translate_input_key)
+    key.and_then(|key| translate_input_key_for_dialect(key, dialect))
 }
 
 /// Translate one typed host key through the shipped keyboard policy.
@@ -295,6 +308,43 @@ mod tests {
         latched_key: u8,
     }
 
+    #[derive(Deserialize)]
+    struct SequelInputHandlerOracle {
+        inventory: SequelInputInventory,
+        vectors: SequelInputHandlerVectors,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelInputInventory {
+        translation_table: Vec<u8>,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelInputHandlerVectors {
+        dispatch: Vec<SequelDispatchOracle>,
+        toggle_pause: Vec<PauseOracle>,
+        latch_text: Vec<SequelLatchOracle>,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelDispatchOracle {
+        name: String,
+        bios_key_word: u16,
+        translated_code: Option<u8>,
+        action_index: Option<u8>,
+        text_before: u8,
+        text_after: u8,
+        pause_before: u8,
+        pause_after: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelLatchOracle {
+        name: String,
+        latched_key_before: u8,
+        latched_key: u8,
+    }
+
     #[derive(Debug, Deserialize)]
     struct SequelDiagnosticFieldOracle {
         direction: String,
@@ -340,6 +390,103 @@ mod tests {
             Some(InputAction::LatchTextByte(b'a'))
         );
         assert_eq!(state.text_byte, None);
+    }
+
+    #[test]
+    fn sequel_dispatch_pause_and_latch_match_original_vectors() {
+        let oracle: SequelInputHandlerOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_input_handlers.json"
+        ))
+        .unwrap();
+        assert_eq!(oracle.inventory.translation_table.len(), 256);
+
+        for (translated_code, expected) in oracle.inventory.translation_table.iter().enumerate() {
+            let actual = host_key_for_translated_code(translated_code as u8)
+                .and_then(|key| translate_input_key_for_dialect(key, ScriptDialect::BigBugBang))
+                .map(action_index)
+                .unwrap_or(UNMAPPED_ACTION_INDEX);
+            assert_eq!(actual, *expected, "translated code {translated_code:#04x}");
+        }
+
+        assert_eq!(oracle.vectors.dispatch.len(), 9);
+        for vector in oracle.vectors.dispatch {
+            let key = vector
+                .translated_code
+                .and_then(host_key_for_translated_code);
+            let mut state = InputDispatchState {
+                text_byte: Some(vector.text_before),
+                paused: vector.pause_before != u8::MIN,
+                shutdown_requested: false,
+            };
+            let action = dispatch_input_key_for_dialect(&mut state, key, ScriptDialect::BigBugBang);
+            assert_eq!(
+                action.map(action_index),
+                vector.action_index,
+                "{}",
+                vector.name
+            );
+            assert_eq!(state.text_byte, None, "{}", vector.name);
+
+            match action {
+                Some(InputAction::Accept) => {
+                    latch_input_text_byte(&mut state, vector.bios_key_word as u8)
+                }
+                Some(InputAction::Cancel) => {
+                    state.paused = false;
+                    latch_input_text_byte(&mut state, vector.bios_key_word as u8);
+                }
+                Some(InputAction::LatchTextByte(text_byte)) => {
+                    latch_input_text_byte(&mut state, text_byte)
+                }
+                Some(InputAction::TogglePause(text_byte)) => {
+                    toggle_input_pause(&mut state, false, text_byte)
+                }
+                _ => {}
+            }
+            assert_eq!(
+                state.text_byte.unwrap_or(u8::MIN),
+                vector.text_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.paused,
+                vector.pause_after != u8::MIN,
+                "{}",
+                vector.name
+            );
+        }
+
+        assert_eq!(oracle.vectors.toggle_pause.len(), 4);
+        for vector in oracle.vectors.toggle_pause {
+            let mut state = InputDispatchState {
+                text_byte: None,
+                paused: vector.pause_before != u8::MIN,
+                shutdown_requested: false,
+            };
+            toggle_input_pause(
+                &mut state,
+                vector.save_active != u8::MIN,
+                vector.latched_key,
+            );
+            assert_eq!(
+                state.paused,
+                vector.pause_after != u8::MIN,
+                "{}",
+                vector.name
+            );
+            assert_eq!(state.text_byte, Some(vector.latched_key), "{}", vector.name);
+        }
+
+        assert_eq!(oracle.vectors.latch_text.len(), 3);
+        for vector in oracle.vectors.latch_text {
+            let mut state = InputDispatchState {
+                text_byte: Some(vector.latched_key_before),
+                ..InputDispatchState::default()
+            };
+            latch_input_text_byte(&mut state, vector.latched_key);
+            assert_eq!(state.text_byte, Some(vector.latched_key), "{}", vector.name);
+        }
     }
 
     #[test]

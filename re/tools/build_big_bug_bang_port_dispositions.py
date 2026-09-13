@@ -35,6 +35,38 @@ AUDIO_STREAM = "crates/commander-blood-game/src/native/bloodprg/audio_stream.rs"
 AUDIO_PLAYBACK = "crates/commander-blood-game/src/native/bloodprg/audio_playback.rs"
 AUDIO_BANK = "crates/commander-blood-game/src/native/bloodprg/audio_bank.rs"
 RUNTIME_AUDIO = "crates/commander-blood-game/src/runtime/audio.rs"
+SEQUEL_INPUT_FIXTURE = "re/tools/oracle_vectors/big_bug_bang_input_handlers.json"
+
+DIRECT_RUST_OWNER_OVERRIDES = {
+    0x23A2: {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_dispatch.rs",
+        "symbol": "sequel_dispatch_pause_and_latch_match_original_vectors",
+    },
+    0x23D4: {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_selection.rs",
+        "symbol": "sequel_selection_handlers_match_original_vectors",
+    },
+    0x2421: {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_selection.rs",
+        "symbol": "sequel_selection_handlers_match_original_vectors",
+    },
+    0x2514: {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_selection.rs",
+        "symbol": "sequel_selection_handlers_match_original_vectors",
+    },
+    0x253D: {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_cancel.rs",
+        "symbol": "sequel_cancellation_matches_original_vectors",
+    },
+    0x25A7: {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_dispatch.rs",
+        "symbol": "sequel_dispatch_pause_and_latch_match_original_vectors",
+    },
+    0x25C5: {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_dispatch.rs",
+        "symbol": "sequel_dispatch_pause_and_latch_match_original_vectors",
+    },
+}
 
 HOST_ADAPTER_OWNERS = {
     0xCF40: (AUDIO_STREAM, "start_audio_stream", "loaded DOS sound-driver ABI"),
@@ -115,6 +147,7 @@ def diagnostic_entries(audit: dict[str, Any]) -> set[int]:
 
 
 def choose_direct_evidence(
+    entry: int,
     coverage_row: dict[str, Any],
     oracle_rows: dict[str, dict[str, Any]],
     consumers: dict[str, list[dict[str, str]]],
@@ -137,6 +170,18 @@ def choose_direct_evidence(
     if not candidates:
         return None
     _, _, oracle, owner = min(candidates, key=lambda row: (row[0], row[1]))
+    if entry in DIRECT_RUST_OWNER_OVERRIDES:
+        if oracle["fixture"] != SEQUEL_INPUT_FIXTURE:
+            raise RuntimeError(
+                f"direct owner override at {entry:#x} selected unexpected fixture "
+                f"{oracle['fixture']}"
+            )
+        owner = DIRECT_RUST_OWNER_OVERRIDES[entry]
+        if owner not in consumers[SEQUEL_INPUT_FIXTURE]:
+            raise RuntimeError(
+                f"direct owner override at {entry:#x} does not consume "
+                f"{SEQUEL_INPUT_FIXTURE}"
+            )
     return oracle, owner
 
 
@@ -244,7 +289,9 @@ def build_report() -> dict[str, Any]:
         elif (
             coverage_row["entered"]
             and (
-                selected := choose_direct_evidence(coverage_row, oracle_rows, consumers)
+                selected := choose_direct_evidence(
+                    entry, coverage_row, oracle_rows, consumers
+                )
             )
             is not None
         ):

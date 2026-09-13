@@ -24,35 +24,35 @@
     }
   },
   "summary": {
-    "oracle_count": 125,
-    "oracle_fixture_count": 124,
+    "oracle_count": 126,
+    "oracle_fixture_count": 125,
     "fixture_relation_counts": {
-      "exact": 123,
+      "exact": 124,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 212,
-    "unentered_static_entrypoints": 170,
+    "entered_static_entrypoints": 220,
+    "unentered_static_entrypoints": 162,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 213,
+    "entered_known_entrypoints": 221,
     "comparison_counts": {
       "unresolved": {
-        "entered": 73,
-        "unentered": 53
+        "entered": 74,
+        "unentered": 52
       },
       "structural_candidate": {
-        "entered": 114,
-        "unentered": 82
+        "entered": 120,
+        "unentered": 76
       },
       "exact_body": {
         "entered": 12,
         "unentered": 15
       },
       "ambiguous": {
-        "entered": 13,
-        "unentered": 20
+        "entered": 14,
+        "unentered": 19
       },
       "outside_static_comparison": {
         "entered": 1,
@@ -537,6 +537,25 @@
       "summary": "verified 204 original F7 cases and Escape/Space/F7 key bindings",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_input_abort.json",
       "fixture_sha256": "6c878ccdefeed12e31ef9f3d47812e5e27cee6d843cd7d5d0eb91cbe6c36ca43",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_input_handlers_oracle.py",
+      "oracle_sha256": "7736305ae5e3afa2ba8c912569a9db8f28f74e0e493f40e5955df0cbf8310bea",
+      "executed_instruction_count": 152,
+      "entered_entrypoints": [
+        "0x23a2",
+        "0x23d4",
+        "0x2421",
+        "0x24b1",
+        "0x2514",
+        "0x253d",
+        "0x25a7",
+        "0x25c5"
+      ],
+      "summary": "verified BBB input dispatcher plus 7 active handlers",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_input_handlers.json",
+      "fixture_sha256": "4e7532ca431be3dcddf5e3dae3d85e87ec013f89a2664a59ce6fe6d592847e70",
       "fixture_relation": "exact"
     },
     {
@@ -2226,24 +2245,30 @@
     {
       "entry": "0x23a2",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x210e"
     },
     {
       "entry": "0x23d4",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x2140"
     },
     {
       "entry": "0x2421",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x218d"
     },
@@ -2268,8 +2293,10 @@
     {
       "entry": "0x24b1",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_handlers_oracle.py"
+      ],
       "comparison": "ambiguous",
       "commander_candidates": [
         "0x2201",
@@ -2389,31 +2416,39 @@
     {
       "entry": "0x2514",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x2224"
     },
     {
       "entry": "0x253d",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_handlers_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {
       "entry": "0x25a7",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x22b2"
     },
     {
       "entry": "0x25c5",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x22d0"
     },

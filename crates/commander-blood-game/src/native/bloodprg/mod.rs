@@ -324,9 +324,10 @@ pub use input_cancel::{
 };
 pub use input_dispatch::{
     HostInputKey, IgnoredInputAction, InputAction, InputArrowKey, InputDispatchState,
-    InputFunctionKey, SequelDiagnosticFieldDirection, dispatch_input_key, latch_input_text_byte,
-    request_input_shutdown, toggle_input_pause, translate_input_key,
-    translate_input_key_for_dialect, update_sequel_diagnostic_field_selector,
+    InputFunctionKey, SequelDiagnosticFieldDirection, dispatch_input_key,
+    dispatch_input_key_for_dialect, latch_input_text_byte, request_input_shutdown,
+    toggle_input_pause, translate_input_key, translate_input_key_for_dialect,
+    update_sequel_diagnostic_field_selector,
 };
 pub use input_selection::{
     INPUT_SELECTION_VISIBLE_ROWS, InputDirectoryRowId, InputSelectionError, InputSelectionSource,

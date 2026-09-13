@@ -9,8 +9,9 @@ use crate::native::bloodprg::{
     GameLifecycleState, HostInputKey, InputAction, InputArrowKey, InputCancellationBackend,
     InputCancellationOutcome, InputCancellationState, InputDispatchState, InputFunctionKey,
     PointerButtonEdges, PointerButtonState, PointerButtons, PointerSample, PointerSampleState,
-    cancel_input_action, latch_input_text_byte, request_input_shutdown, toggle_input_pause,
-    translate_input_key, update_pointer_button_edges, update_pointer_sample,
+    cancel_input_action, dispatch_input_key_for_dialect, latch_input_text_byte,
+    request_input_shutdown, toggle_input_pause, translate_input_key, update_pointer_button_edges,
+    update_pointer_sample,
 };
 
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
@@ -114,9 +115,7 @@ impl RuntimeInputHost {
     ) -> Option<InputAction> {
         let key = self.pending_keys.pop_front();
         self.pending_cancel_text_byte = key.and_then(cancel_text_byte);
-        self.dispatch.text_byte = None;
-        let action = key
-            .and_then(|key| crate::native::bloodprg::translate_input_key_for_dialect(key, dialect));
+        let action = dispatch_input_key_for_dialect(&mut self.dispatch, key, dialect);
         match action {
             Some(InputAction::Accept) => {
                 latch_input_text_byte(&mut self.dispatch, ASCII_CARRIAGE_RETURN);
