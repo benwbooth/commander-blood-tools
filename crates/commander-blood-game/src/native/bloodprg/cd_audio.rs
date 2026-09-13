@@ -214,7 +214,8 @@ pub fn play_cd_audio_track_two(state: &mut CdAudioState) -> Option<CdAudioPlayba
     Some(CdAudioPlaybackCommand::Play(span))
 }
 
-/// Translate BLOODPRG routine `0x001397` to a host stop command.
+/// Translate BLOODPRG routine `0x001397` and BBB routine `0x001555` to a host
+/// stop command.
 ///
 /// As in the original, a stop is emitted whenever CD audio is available, even
 /// if no prior play command is represented in the local state.
@@ -265,6 +266,11 @@ mod tests {
         name: String,
         cdrom_present: u8,
         interrupts: Vec<serde_json::Value>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangStopOracle {
+        rows: Vec<StopVector>,
     }
 
     #[test]
@@ -358,12 +364,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn stop_matches_every_original_availability_vector() {
-        let vectors: Vec<StopVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_1397_natural.json"
-        ))
-        .unwrap();
+    fn assert_stop_vectors(vectors: Vec<StopVector>) {
         assert_eq!(vectors.len(), 4);
         for vector in vectors {
             let enabled = vector.cdrom_present & 1 != u8::MIN;
@@ -380,6 +381,24 @@ mod tests {
             );
             assert!(!state.is_playing(), "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn stop_matches_every_original_availability_vector() {
+        let vectors: Vec<StopVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1397_natural.json"
+        ))
+        .unwrap();
+        assert_stop_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_stop_matches_every_direct_availability_vector() {
+        let oracle: BigBugBangStopOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_cd_audio_stop.json"
+        ))
+        .unwrap();
+        assert_stop_vectors(oracle.rows);
     }
 
     fn metadata(

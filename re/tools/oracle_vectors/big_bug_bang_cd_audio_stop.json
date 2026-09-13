@@ -1,0 +1,65 @@
+{
+  "format": "big_bug_bang_cd_audio_stop_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_fixture_sha256": "ad73e2cee5c85efb0595b7e2eb493967178bdf793c8b66dd62fcd99aa2133a2e",
+  "routine": {
+    "entry": "0x1555",
+    "end": "0x1582",
+    "body_sha256": "d0940ef219168c9151cbf323faf8d152b71e874b2bd46689e0a7edbb5afd497c",
+    "present_offset": 3311,
+    "drive_offset": 517,
+    "request_offset": 3452
+  },
+  "rows": [
+    {
+      "name": "disabled_zero",
+      "cdrom_present": 0,
+      "drive": 0,
+      "interrupts": [],
+      "final_request": "414e5b6875828f9ca9b6c3d0ddeaf704111e2b384552",
+      "defined_flags": 68
+    },
+    {
+      "name": "disabled_other_bits",
+      "cdrom_present": 254,
+      "drive": 23,
+      "interrupts": [],
+      "final_request": "5c697683909daab7c4d1deebf805121f2c394653606d",
+      "defined_flags": 68
+    },
+    {
+      "name": "enabled_drive_d",
+      "cdrom_present": 1,
+      "drive": 3,
+      "interrupts": [
+        {
+          "number": 47,
+          "ax": 5392,
+          "bx": 3452,
+          "cx": 3,
+          "es": 12288,
+          "request": "0d84859eabb8c5d2dfecf90613202d3a4754616e7b88"
+        }
+      ],
+      "final_request": "0d84859eabb8c5d2dfecf90613202d3a4754616e7b88",
+      "defined_flags": 2177
+    },
+    {
+      "name": "enabled_all_bits",
+      "cdrom_present": 255,
+      "drive": 255,
+      "interrupts": [
+        {
+          "number": 47,
+          "ax": 5392,
+          "bx": 3452,
+          "cx": 255,
+          "es": 12288,
+          "request": "0d9f85b9c6d3e0edfa0714212e3b4855626f7c8996a3"
+        }
+      ],
+      "final_request": "0d9f85b9c6d3e0edfa0714212e3b4855626f7c8996a3",
+      "defined_flags": 2177
+    }
+  ]
+}

@@ -5000,6 +5000,28 @@ and `14b5b288d6df0cafe6eccb5cdd31d512997ce6f77b397cf63ca5532f4a5071af`;
 the deterministic fixture SHA-256 is
 `0951190491a8cfb1c87e57ba12fc2c2c2eaad9f6c86085105fef0dbcadfafff7`.
 
+## CD-Audio Stop Oracle (2026-09-13)
+
+BBB `0x1555..0x1582` is the relocated sequel counterpart of Commander Blood's
+`0x1397..0x13C4` CD-audio stop command. Both routines contain 20 instructions
+in 45 bytes. They test only bit zero of the source-availability byte, preserve
+an unavailable request buffer, and otherwise write MSCDEX command `0x85` into
+the shared request before issuing interrupt `0x2F` for the selected drive.
+
+The new `re/tools/big_bug_bang_cd_audio_stop_oracle.py` executes all four
+fingerprinted Commander gate/drive cases in the shipped BBB body. It verifies
+the relocated availability, drive, and request fields, exact interrupt inputs,
+defined flags, complete register and segment preservation, far return, stack
+writes, untouched memory, executable immutability, and normalized equality
+with the Commander fixture. The interrupt is an observed legacy boundary; the
+typed owner remains the host-facing stop command rather than MSCDEX emulation.
+
+The typed `stop_cd_audio` operation consumes both four-row original fixtures.
+BBB's body SHA-256 is
+`d0940ef219168c9151cbf323faf8d152b71e874b2bd46689e0a7edbb5afd497c`,
+and the deterministic fixture SHA-256 is
+`727c9c9c99458ea72d43dbc5e4fbcdd22118c5f31ea7116dcf37f22864b5f1d3`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

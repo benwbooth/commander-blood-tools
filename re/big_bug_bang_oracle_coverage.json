@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 150,
-    "oracle_fixture_count": 149,
+    "oracle_count": 151,
+    "oracle_fixture_count": 150,
     "fixture_relation_counts": {
-      "exact": 148,
+      "exact": 149,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 267,
-    "unentered_static_entrypoints": 115,
+    "entered_static_entrypoints": 268,
+    "unentered_static_entrypoints": 114,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 268,
+    "entered_known_entrypoints": 269,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 154,
-        "unentered": 42
+        "entered": 155,
+        "unentered": 41
       },
       "exact_body": {
         "entered": 15,
@@ -334,6 +334,18 @@
       "summary": "verified 21 BBB steering cases covering 52 normalized conditional edges",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_bridge_steering.jsonl",
       "fixture_sha256": "8f2759a3a5e0109735e48806baead79ad9e458171ca980e2cc1c3839e5e04e20",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_cd_audio_stop_oracle.py",
+      "oracle_sha256": "af5e220d64e64da6a004ce2089134f771c540ace0d7968e6e9c2016227522b9b",
+      "executed_instruction_count": 20,
+      "entered_entrypoints": [
+        "0x1555"
+      ],
+      "summary": "verified 4 BBB CD-audio stop cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_cd_audio_stop.json",
+      "fixture_sha256": "727c9c9c99458ea72d43dbc5e4fbcdd22118c5f31ea7116dcf37f22864b5f1d3",
       "fixture_relation": "exact"
     },
     {
@@ -2394,8 +2406,10 @@
     {
       "entry": "0x1555",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_cd_audio_stop_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x1397"
     },
