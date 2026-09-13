@@ -4352,6 +4352,36 @@ the deterministic eight-row JSONL has SHA-256
 This behaviorally classifies BBB `0xB763`, not its five callers or the adjacent
 resource-switch routine.
 
+### Presentation resource switch (`0xB771`)
+
+BBB `0xB771..0xB8A6` is the relocated sequel counterpart of Commander Blood's
+already ported `0x9F8E..0xA0C3` presentation resource switch. Both bodies contain
+103 instructions in 309 bytes. Their control flow and arithmetic are identical;
+BBB relocates the resource-stream globals, descriptor catalog, palette state,
+queue helpers, transport helpers, and far pathname resolver.
+
+`re/tools/big_bug_bang_resource_switch_oracle.py` executes both original
+executables. It runs the shipped close, queue initialization, descriptor lookup,
+and palette routines, replacing only the pathname, DOS-file, and staged-read
+transport boundaries. All seven Commander vectors agree exactly after address
+normalization: banked, embedded, and external resources; primary and alternate
+ranges; palette blocks and render-state copying; wrapped cursors; and open,
+initial-read, and body-read failures. Two non-output probes cover the remaining
+cursor carry and limit paths, so all 22 conditional edges in the main body are
+traversed.
+
+The oracle checks call order, source accounting, queue reset, descriptor mutation,
+palette and range results, unchanged memory outside owned fields, canonicalized
+complete data and stack state, every register and segment, final flags, return
+discipline, direct Commander/BBB equality, and executable immutability. The typed
+resource switch now consumes both seven-row fixtures; no production behavior
+changed. BBB's body is bound by SHA-256
+`69ec05d8cad88b4d6bb351a2a68d0cd6dda271ee7ee3ce74767fdaab4b4c68f9`;
+the deterministic JSONL has SHA-256
+`d520a8d38f568036cb8370835ab36f0ab15e04ce829e100402d312980d287b48`.
+This behaviorally classifies BBB `0xB771` and the helper paths executed by the
+oracle, not the later sequence loader or all resource-stream consumers.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

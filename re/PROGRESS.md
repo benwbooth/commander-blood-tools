@@ -2275,3 +2275,29 @@ cases, and rejects five pointer aliases; ambient flags are not part of its API. 
 eight-row JSONL has SHA-256
 `9c3a9242a18f5ef6b281e858a23bc3b60caea4685a768aee4e2c837f26867156`. This behaviorally
 classifies BBB `0xB763`, not its callers or adjacent resource switch.
+
+## 2026-09-12 - Big Bug Bang presentation resource switch
+
+BBB `0xB771..0xB8A6` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9F8E..0xA0C3` presentation resource switch. Both bodies contain 103 instructions in 309 bytes.
+The sequel relocates resource-stream globals, the descriptor catalog, palette state, queue and
+transport helpers, and the far pathname resolver while preserving control flow and arithmetic.
+The new `re/tools/big_bug_bang_resource_switch_oracle.py` executes both original binaries and
+guards BBB's body with SHA-256
+`69ec05d8cad88b4d6bb351a2a68d0cd6dda271ee7ee3ce74767fdaab4b4c68f9`.
+
+All seven Commander vectors agree exactly after address normalization. They cover banked,
+embedded, and external sources; primary and alternate ranges; palette blocks, render-state copy,
+wrapped cursors, and open, initial-read, and body-read failures. The oracle runs the shipped close,
+queue initialization, descriptor lookup, and palette helpers and replaces only host-facing path,
+DOS-file, and staged-read transport. Two non-output probes exercise the remaining cursor carry and
+limit paths, traversing all 22 conditional edges in the main body.
+
+The oracle checks call order, source accounting, queue and descriptor state, palette and range
+results, exact unchanged state outside owned fields, canonicalized complete data and stack state,
+every register and segment, final flags, return discipline, direct Commander/BBB equality, and
+executable immutability. The typed resource switch now consumes both seven-row fixtures; no
+production behavior changed. The deterministic BBB JSONL has SHA-256
+`d520a8d38f568036cb8370835ab36f0ab15e04ce829e100402d312980d287b48`. This behaviorally
+classifies BBB `0xB771` and the helper paths executed by the oracle, not later sequence loading or
+all stream consumers.

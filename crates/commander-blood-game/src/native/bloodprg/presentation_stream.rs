@@ -613,11 +613,23 @@ mod tests {
     }
 
     #[test]
-    fn switch_semantics_account_for_every_original_vector() {
-        let vectors: Vec<SwitchOracle> = serde_json::from_str(include_str!(
+    fn switch_semantics_account_for_both_original_fixtures() {
+        let commander: Vec<SwitchOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9f8e_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_resource_switch.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_switch_vectors(commander);
+        assert_switch_vectors(sequel);
+    }
+
+    fn assert_switch_vectors(vectors: Vec<SwitchOracle>) {
         assert_eq!(vectors.len(), SWITCH_VECTOR_COUNT);
 
         for vector in vectors {
