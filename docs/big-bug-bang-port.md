@@ -4921,6 +4921,26 @@ dual-original fixture. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `e8eb1f313b1376559ca3204f5a244273b530323819aaa9ecf1b1a8cdd023ba20`.
 
+## Presentation Four-Word Copy (2026-09-13)
+
+BBB `0xBFD0..0xBFD7` is byte-identical to Commander Blood's
+`0xA7E6..0xA7ED` four-word forward-copy helper: it aliases ES to DS, performs
+four sequential `MOVSW` operations, and returns. The new
+`re/tools/big_bug_bang_presentation_word_copy_oracle.py` executes both shipped
+bodies over disjoint, same-pointer, both overlap directions, source-wrap, and
+destination-wrap cases. It verifies overlap propagation in execution order,
+16-bit offset wrapping, final cursors and ES, complete preserved registers and
+flags, the transient stack write, unowned memory, executable immutability, and
+direct Commander/BBB equality.
+
+The existing checked `copy_four_words_forward` operation now consumes both
+six-row original fixtures. It retains the four representable flat cases and
+continues to reject the two native wrapping cases transactionally, without a
+production behavior change. Both bodies have SHA-256
+`6aa5c60d59aa4dd835e5df01e31aca24da6cd83fb35b6b96dfb1381bbf9de5b2`,
+and the deterministic BBB JSONL SHA-256 is
+`e1a2ebe01f6b1bd358abe2b5706f4407ae3608c21192171094e2b11b7351884b`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

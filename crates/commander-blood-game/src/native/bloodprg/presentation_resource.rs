@@ -903,11 +903,23 @@ mod tests {
     }
 
     #[test]
-    fn fixed_word_copy_matches_flat_original_vectors_and_rejects_wrapping() {
-        let vectors: Vec<WordCopyOracle> = serde_json::from_str(include_str!(
+    fn fixed_word_copy_matches_both_original_fixtures_and_rejects_wrapping() {
+        let commander: Vec<WordCopyOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a7e6_natural.json"
         ))
         .unwrap();
+        let sequel: Vec<WordCopyOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_word_copy.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_word_copy_vectors(commander);
+        assert_word_copy_vectors(sequel);
+    }
+
+    fn assert_word_copy_vectors(vectors: Vec<WordCopyOracle>) {
         assert_eq!(vectors.len(), WORD_COPY_VECTOR_COUNT);
 
         let mut matched = usize::MIN;
