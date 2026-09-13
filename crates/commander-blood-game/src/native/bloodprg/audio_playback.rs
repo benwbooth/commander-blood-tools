@@ -201,11 +201,12 @@ struct MixSource<'a> {
 
 /// Play a selected clip directly or average it into the active music buffers.
 ///
-/// This translates `snd_play_clip` at BLOODPRG routine offset `0x00B8CD`.
-/// Owned banks and sample buffers replace conventional, EMS, XMS, file, and far
-/// pointer storage. The resident loader's `clip_length - 1` count, six-byte
-/// source skip, one-sample-short destination bounds, packed source cadence,
-/// active-buffer preference, and stop-before-direct-play behavior are retained.
+/// This translates `snd_play_clip` at BLOODPRG routine offset `0x00B8CD` and
+/// its Big Bug Bang counterpart at `0x00D05D`. Owned banks and sample buffers
+/// replace conventional, EMS, XMS, file, far-pointer, and ULTRASND-specific
+/// storage. The resident loader's `clip_length - 1` count, six-byte source skip,
+/// one-sample-short destination bounds, packed source cadence, active-buffer
+/// preference, and stop-before-direct-play behavior are retained.
 pub fn update_audio_playback<Position>(
     state: &mut AudioPlaybackState,
     request: AudioClipRequest,
@@ -516,14 +517,26 @@ mod tests {
     }
 
     #[test]
-    fn playback_matches_all_original_backend_and_mixer_vectors() {
-        let vectors: Vec<PlaybackOracle> = serde_json::from_str(include_str!(
+    fn playback_matches_commander_and_sequel_backend_and_mixer_vectors() {
+        let commander_vectors: Vec<PlaybackOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_b8cd_natural.json"
         ))
         .unwrap();
+        let sequel_vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_audio_playback.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect::<Vec<PlaybackOracle>>();
+
+        assert_playback_oracles(&commander_vectors);
+        assert_playback_oracles(&sequel_vectors);
+    }
+
+    fn assert_playback_oracles(vectors: &[PlaybackOracle]) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
-        for (case_index, vector) in vectors.into_iter().enumerate() {
+        for (case_index, vector) in vectors.iter().enumerate() {
             let mix_case = mix_case(&vector.name);
             let playback_enabled = vector.descriptor.is_some() || vector.mode == "mix";
             let stream_active = vector.mode == "mix";

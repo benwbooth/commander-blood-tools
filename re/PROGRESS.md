@@ -3146,3 +3146,31 @@ and BBB 11-row fixtures without a production variant. BBB's body SHA-256 is
 `cdb50354c0ee003a28a04f0c4770b9afb0354af754378c211f9ae104d9c75fe0`,
 and the deterministic JSONL SHA-256 is
 `65cb81bef59eed6e9e8ff52746b067704517d885193af3b3996a27658a09f4e3`.
+
+## 2026-09-13 - Big Bug Bang clip playback and stream mixing
+
+BBB `0xD05D..0xD33A` is Commander Blood's `0xB8CD..0xBB9D` clip
+playback and voice-over-stream mixer with one sequel backend branch. The BBB
+body contains 270 instructions in 733 bytes versus Commander's 266
+instructions in 720 bytes. After the shared sound gate and `DS = GS` setup,
+BBB tests the `ULTRASND` latch at `0x0F1F`; when set, it delegates to the
+sequel hardware helper at `0xDCE5` and returns. The remaining resident,
+EMS, XMS, file, direct-play, and double-buffer mixing paths relocate exactly.
+
+The new `re/tools/big_bug_bang_audio_playback_oracle.py` executes both shipped
+bodies over the existing 15-case backend and mixer corpus plus six shared
+branch probes, then executes two BBB-only ULTRASND delegate cases. The combined
+set traverses both outcomes of all 29 BBB conditional sites, or 58 edges. It
+checks EMS page maps, XMS requests, file I/O, direct-play descriptors, exact
+mixed samples, packed-source cadence, position and play callback frames and
+saved words, helper order, owned writes, all registers and defined flags,
+complete caller stacks, executable and unowned-memory preservation, and direct
+normalized Commander/BBB equality.
+
+The shared typed `update_audio_playback` owner now consumes both 15-row
+fixtures without a production variant. Owned banks and the position-capable
+SDL backend already replace the original storage and hardware dispatch layers.
+BBB's body SHA-256 is
+`96fc545f412c7a9528bd09be164ef268017943dc6ace95e7842220c4917026af`,
+and the deterministic JSONL SHA-256 is
+`a1b289cbcbdad3c277365a4a54504ceebb426adb8685faad269fff52ece1e052`.
