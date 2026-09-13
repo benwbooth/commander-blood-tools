@@ -2684,3 +2684,26 @@ body SHA-256 is
 `6c1962d62e0b6696003b94fba69725f769f488e042abd71340c7a2d92a9ae469`,
 and the deterministic JSONL SHA-256 is
 `405af3f810acf79c1321859ff627a2b1c534f38f8212736cbbc23301e7f9326a`.
+
+## 2026-09-13 - Big Bug Bang initial presentation entry
+
+BBB `0xBE2C..0xBF28` relocates Commander Blood's already ported
+`0xA642..0xA73E` initial presentation-entry loader. Each 252-byte composed body
+has a 34-byte setup prefix, calls the actual 18-byte entry reader and 33-byte
+far-return queue initializer, and falls through the complete transfer helper.
+
+The new `re/tools/big_bug_bang_presentation_initial_entry_oracle.py` executes
+both shipped compositions with all six recovered Commander cases and covers
+all nine reachable conditional edges. It checks missing input, empty and
+ordinary bodies, carry-set short-read retries, source removal between stages,
+and the native 65,535-byte body-count underflow.
+
+The oracle verifies exact call topology, DOS requests, source mutation,
+relocated headers, partial publication, source and queue accounting, buffers,
+registers, segments, flags, stack state, unowned memory, executable
+immutability, and direct Commander/BBB equality. The typed initial-entry loader
+consumes both six-row fixtures without production changes. BBB's composed body
+SHA-256 is
+`877fa54af98b02f51ce11892845bfccfdcf6928d8ff00b60f6cf2b3816c986c9`,
+and the deterministic JSONL SHA-256 is
+`be7d26b21ee936d13f78d24ee6df6a80245fc3c0c0ca2b32e5f0f4e83e6c92e1`.

@@ -4795,6 +4795,34 @@ No production behavior changed. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `405af3f810acf79c1321859ff627a2b1c534f38f8212736cbbc23301e7f9326a`.
 
+## Initial Presentation Entry Oracle (2026-09-13)
+
+BBB `0xBE2C..0xBF28` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA642..0xA73E` initial presentation-entry loader. Each 252-byte
+body has a 34-byte setup prefix followed by the complete byte-transfer helper.
+The prefix calls the actual 18-byte entry reader and 33-byte far-return queue
+initializer; BBB relocates their targets and all queue/source fields without
+changing normalized control flow.
+
+The new `re/tools/big_bug_bang_presentation_initial_entry_oracle.py` executes
+that complete composed path in both shipped binaries with all six recovered
+Commander cases. The six cases cover all nine reachable conditional edges:
+missing initial input, empty and ordinary bodies, repeated short reads with
+carry-set results, source removal between the header and body, and the native
+one-byte extent underflow into a 65,535-byte body request.
+
+The oracle verifies the initializer's near-call/far-return frame, both nested
+reader calls, exact DOS seek/read requests, callback-visible source removal,
+header relocation, partial-failure publication, wrapped source and queue
+accounting, every buffer byte, registers, segments, flags, stack state, unowned
+memory, executable immutability, and direct normalized Commander/BBB equality.
+The typed initial-entry loader consumes both six-row fixtures and retains its
+checked rejection of the native extent underflow and disappearing-source case.
+No production behavior changed. BBB's composed body SHA-256 is
+`877fa54af98b02f51ce11892845bfccfdcf6928d8ff00b60f6cf2b3816c986c9`,
+and the deterministic JSONL SHA-256 is
+`be7d26b21ee936d13f78d24ee6df6a80245fc3c0c0ca2b32e5f0f4e83e6c92e1`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

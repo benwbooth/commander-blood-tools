@@ -268,7 +268,8 @@ mod tests {
     const SEQUEL_SOURCE_APPEND_VECTOR_COUNT: usize = 9;
     const COMMANDER_ENTRY_READ_VECTOR_COUNT: usize = 6;
     const SEQUEL_ENTRY_READ_VECTOR_COUNT: usize = 6;
-    const INITIAL_ENTRY_VECTOR_COUNT: usize = 6;
+    const COMMANDER_INITIAL_ENTRY_VECTOR_COUNT: usize = 6;
+    const SEQUEL_INITIAL_ENTRY_VECTOR_COUNT: usize = 6;
     const FLAT_QUEUE_BUFFER_BYTE_COUNT: usize = u16::MAX as usize + 1;
     const SOURCE_PATTERN_STEP: usize = 37;
     const SOURCE_PATTERN_BIAS: usize = 11;
@@ -483,12 +484,24 @@ mod tests {
     }
 
     #[test]
-    fn initial_entry_load_matches_valid_vectors_and_rejects_native_underflow() {
-        let vectors: Vec<InitialEntryOracle> = serde_json::from_str(include_str!(
+    fn initial_entry_load_matches_both_original_fixtures_and_rejects_native_underflow() {
+        let commander: Vec<InitialEntryOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a642_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), INITIAL_ENTRY_VECTOR_COUNT);
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_initial_entry.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_initial_entry_vectors(commander, COMMANDER_INITIAL_ENTRY_VECTOR_COUNT);
+        assert_initial_entry_vectors(sequel, SEQUEL_INITIAL_ENTRY_VECTOR_COUNT);
+    }
+
+    fn assert_initial_entry_vectors(vectors: Vec<InitialEntryOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count);
 
         for vector in vectors {
             let buffer_len = usize::from(vector.result.wrap_limit);
