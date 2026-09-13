@@ -3999,3 +3999,31 @@ The strict ledger classifies 287 of 383 known entries and leaves 96 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `e634d2142467e7983c69a92bf74b061d9dd542ac1de431fcd21914df3210b3e1`.
+
+## 2026-09-13 - Big Bug Bang directory restoration
+
+`re/tools/big_bug_bang_directory_restore_oracle.py` executes the complete
+unchanged BBB DOS directory-restoration routine at `0x2B69`. Four cases cover
+clear, active, unrelated-bit-only, and mixed flag bytes, together with empty
+and named roots and varied saved drives. Active cases select the saved drive,
+change to the saved directory, and replace the entire flag byte with zero.
+
+The oracle checks the exact 38-byte body hash, ordered `INT 21h` ABIs and path
+contents, DOS callback clobber isolation, DS switching and restoration,
+complete register and segment preservation, far return, bounded stack writes,
+defined flags, and full state, executable, and decoy ownership. Its checked
+fixture at `re/tools/oracle_vectors/big_bug_bang_directory_restore.json` has
+SHA-256
+`6af9ce82252ee5396bdec4bb22c47f99a2e4d45915a11c8a31b485bb31525a50`.
+The modern resource store resolves explicit rooted paths and never mutates the
+process drive or current directory.
+
+The global collector now reproduces 138 exact fixtures and one prefix fixture
+across 140 BBB oracle programs, entering 254 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`e286171ff0f14e0b797a7959f7f1847bb03d5a810c409a5c0758d883cf0db9db`.
+The strict ledger classifies 288 of 383 known entries and leaves 95 pending:
+227 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 24
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`5770d27986dcd777864641e8f90f3eea346482c0d63cd31c2da804cd90677909`.

@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 139,
-    "oracle_fixture_count": 138,
+    "oracle_count": 140,
+    "oracle_fixture_count": 139,
     "fixture_relation_counts": {
-      "exact": 137,
+      "exact": 138,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 253,
-    "unentered_static_entrypoints": 129,
+    "entered_static_entrypoints": 254,
+    "unentered_static_entrypoints": 128,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 254,
+    "entered_known_entrypoints": 255,
     "comparison_counts": {
       "unresolved": {
         "entered": 77,
         "unentered": 49
       },
       "structural_candidate": {
-        "entered": 141,
-        "unentered": 55
+        "entered": 142,
+        "unentered": 54
       },
       "exact_body": {
         "entered": 15,
@@ -457,6 +457,18 @@
       "summary": "captured 912 original direct-record cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_direct_record.jsonl",
       "fixture_sha256": "67e08b72bd4f3c4dafd7e2c95284587d9591946e3a9b8ee9fb0f52e75e0868bd",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_directory_restore_oracle.py",
+      "oracle_sha256": "50d0154b2f17135d72f6083d5de15012d9c525abb0f97ef9fddf94602b8dc9e3",
+      "executed_instruction_count": 18,
+      "entered_entrypoints": [
+        "0x2b69"
+      ],
+      "summary": "verified 4 BBB directory-restore cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_directory_restore.json",
+      "fixture_sha256": "6af9ce82252ee5396bdec4bb22c47f99a2e4d45915a11c8a31b485bb31525a50",
       "fixture_relation": "exact"
     },
     {
@@ -2819,8 +2831,10 @@
     {
       "entry": "0x2b69",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_directory_restore_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x27e9"
     },

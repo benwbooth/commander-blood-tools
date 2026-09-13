@@ -1,0 +1,112 @@
+{
+  "format": "big_bug_bang_directory_restore_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "routine": {
+    "operation": "startup_original_directory_restore",
+    "entry": "0x2b69",
+    "end": "0x2b8f",
+    "body_sha256": "af73ab15c09b468c84b0e810aa37c20b873ff1055215e8e22d70b1eeeb2adadf"
+  },
+  "cases": [
+    {
+      "name": "flag_0",
+      "initial_flag": 0,
+      "original_drive": 2,
+      "original_directory": "C:\\CBLOOD",
+      "calls": [],
+      "final_flag": 0,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "write_count": 3
+    },
+    {
+      "name": "flag_1_empty_root",
+      "initial_flag": 1,
+      "original_drive": 0,
+      "original_directory": "",
+      "calls": [
+        {
+          "function": "select_drive",
+          "drive": 0,
+          "dx": 21760,
+          "ds": 12288
+        },
+        {
+          "function": "change_directory",
+          "offset": 550,
+          "path": "",
+          "ax": 15130,
+          "ds": 12288
+        }
+      ],
+      "final_flag": 0,
+      "defined_flags": {
+        "cf": true,
+        "pf": false,
+        "zf": false,
+        "sf": true,
+        "if": false,
+        "df": false,
+        "of": true
+      },
+      "write_count": 4
+    },
+    {
+      "name": "flag_2",
+      "initial_flag": 2,
+      "original_drive": 7,
+      "original_directory": "D:\\IGNORED",
+      "calls": [],
+      "final_flag": 2,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "write_count": 3
+    },
+    {
+      "name": "flag_3_named_root",
+      "initial_flag": 3,
+      "original_drive": 25,
+      "original_directory": "Z:\\BIGBUG",
+      "calls": [
+        {
+          "function": "select_drive",
+          "drive": 25,
+          "dx": 21785,
+          "ds": 12288
+        },
+        {
+          "function": "change_directory",
+          "offset": 550,
+          "path": "Z:\\BIGBUG",
+          "ax": 15130,
+          "ds": 12288
+        }
+      ],
+      "final_flag": 0,
+      "defined_flags": {
+        "cf": true,
+        "pf": false,
+        "zf": false,
+        "sf": false,
+        "if": false,
+        "df": false,
+        "of": false
+      },
+      "write_count": 4
+    }
+  ]
+}

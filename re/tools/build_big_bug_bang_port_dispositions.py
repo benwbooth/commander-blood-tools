@@ -37,6 +37,7 @@ AUDIO_BANK = "crates/commander-blood-game/src/native/bloodprg/audio_bank.rs"
 RUNTIME_AUDIO = "crates/commander-blood-game/src/runtime/audio.rs"
 TIMER = "crates/commander-blood-game/src/native/bloodprg/timer.rs"
 RESOURCE_CACHE = "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs"
+ASSETS = "crates/commander-blood-game/src/assets.rs"
 APP = "crates/commander-blood-game/src/app.rs"
 RENDER = "crates/commander-blood-game/src/render.rs"
 SEQUEL_INPUT_FIXTURE = "re/tools/oracle_vectors/big_bug_bang_input_handlers.json"
@@ -86,6 +87,11 @@ HOST_ADAPTER_OWNERS = {
     0x0E21: (RENDER, "Renderer::new", "BIOS and VGA Mode X initialization"),
     0x0EBB: (APP, "run", "BIOS video-mode restoration"),
     0x1971: (RENDER, "Renderer::render", "VGA page-offset and CRTC selection"),
+    0x2B69: (
+        ASSETS,
+        "OriginalResourceStore::load",
+        "DOS drive and current-directory restoration",
+    ),
     0xCF40: (AUDIO_STREAM, "start_audio_stream", "loaded DOS sound-driver ABI"),
     0xD9F3: (AUDIO_STREAM, "start_audio_stream", "Gravis stream startup protocol"),
     0xDA5F: (AUDIO_STREAM, "refill_audio_stream", "Gravis stream service protocol"),
@@ -246,6 +252,8 @@ def build_report() -> dict[str, Any]:
                 boundary = "modern host"
             elif path == RESOURCE_CACHE:
                 boundary = "Rust memory"
+            elif path == ASSETS:
+                boundary = "rooted asset-store"
             elif path in {APP, RENDER}:
                 boundary = "SDL/wgpu"
             else:
