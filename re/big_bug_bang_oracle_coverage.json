@@ -1,0 +1,5254 @@
+{
+  "format": "big_bug_bang_oracle_entrypoint_coverage_v1",
+  "scope": "Measured original-executable instruction entrypoints reached by the checked-in BBB oracle scenarios; execution is evidence, while absence is an audit queue and not proof of missing behavior",
+  "inputs": {
+    "sequel": {
+      "path": "output/big-bug-bang/disc/BLOOD2PG.EXE",
+      "sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+    },
+    "static_graph": {
+      "path": "re/big_bug_bang_expanded_func_graph.json",
+      "sha256": "15bb9d05325c8da221d2b3f2dcf33b33643223ea47bdf4367bf40ae51884a02b"
+    },
+    "comparison": {
+      "path": "re/big_bug_bang_expanded_function_comparison.json",
+      "sha256": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e"
+    },
+    "runner": {
+      "path": "re/tools/run_big_bug_bang_oracle_with_coverage.py",
+      "sha256": "18e5945396d720cae68f3776536cb76441ed40acc1164bdfa1f02fd87cf0ebaf"
+    }
+  },
+  "summary": {
+    "oracle_count": 125,
+    "static_entrypoint_count": 382,
+    "dynamic_entrypoint_count": 1,
+    "known_entrypoint_count": 383,
+    "executed_static_entrypoints": 212,
+    "unexecuted_static_entrypoints": 170,
+    "executed_dynamic_entrypoints": 1,
+    "executed_known_entrypoints": 213,
+    "comparison_counts": {
+      "unresolved": {
+        "executed": 73,
+        "unexecuted": 53
+      },
+      "structural_candidate": {
+        "executed": 114,
+        "unexecuted": 82
+      },
+      "exact_body": {
+        "executed": 12,
+        "unexecuted": 15
+      },
+      "ambiguous": {
+        "executed": 13,
+        "unexecuted": 20
+      },
+      "outside_static_comparison": {
+        "executed": 1,
+        "unexecuted": 0
+      }
+    }
+  },
+  "oracles": [
+    {
+      "oracle": "re/tools/big_bug_bang_aboard_record_oracle.py",
+      "oracle_sha256": "31886c395b6fd0acf7d38ee4f5ba50af2bea51bfbeaeedb8aada1b0728ae6c6d",
+      "executed_instruction_count": 240,
+      "executed_entrypoints": [
+        "0x2a13",
+        "0x2b43",
+        "0x6606",
+        "0x6633",
+        "0x6644",
+        "0x697a",
+        "0x7a3a",
+        "0x8450"
+      ],
+      "summary": "captured 684 original C2 aboard-record cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_action_record_oracle.py",
+      "oracle_sha256": "647ef376525af3774b8e70000de4f482eb5b817d0c0859f6ea88ec9d328ed484",
+      "executed_instruction_count": 271,
+      "executed_entrypoints": [
+        "0x6633",
+        "0x6644",
+        "0x697a",
+        "0x7884",
+        "0x791e",
+        "0x7986",
+        "0x79d5",
+        "0x7af4",
+        "0x7b68"
+      ],
+      "summary": "captured 996 original C3-C8 action-record cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_alien_cycle_oracle.py",
+      "oracle_sha256": "8344a12e952e22eb76909ebdf3b2e717ddc5634856eeb9f9470efd404c1532d0",
+      "executed_instruction_count": 85,
+      "executed_entrypoints": [
+        "0xcd69"
+      ],
+      "summary": "verified 12 BBB alien-overlay-cycle cases and 6 conditional edges across 3 branch sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_driver_init_oracle.py",
+      "oracle_sha256": "a09d667c2ae92fa467e02ceb1eae919614b3b7e4c361bb525767adb905151d73",
+      "executed_instruction_count": 30,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xcf40"
+      ],
+      "summary": "verified 6 dual audio-driver-init cases and 2 conditional edges across 1 branch sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_driver_stop_oracle.py",
+      "oracle_sha256": "a09289afaa74e10ea7b783138b4eb1d87b1fcb18d0b311219249c3e8a70ffb67",
+      "executed_instruction_count": 20,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xd33a"
+      ],
+      "summary": "verified 6 dual callback cases, 2 BBB ULTRASND stop cases, and 2 BBB conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_events_oracle.py",
+      "oracle_sha256": "1d9caa3a25f550bb796c1eb61d35aab12e31a8142532363657032626856482f2",
+      "executed_instruction_count": 94,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xcf73"
+      ],
+      "summary": "verified 11 dual audio-event cases and 30 conditional edges across 15 branch sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_page_backends_oracle.py",
+      "oracle_sha256": "06773919d46daef3e889016e2f71b3c479157596f901e6b1e39617e4d813f00d",
+      "executed_instruction_count": 71,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xd4d0",
+        "0xd4f8",
+        "0xd537"
+      ],
+      "summary": "verified 12 dual audio page-backend cases across EMS, XMS, and file"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_page_dispatch_oracle.py",
+      "oracle_sha256": "80c1cd0d8ca8af120817d99c7e5a82db3333700499afa1011e603ccb532975e4",
+      "executed_instruction_count": 14,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xd4b3"
+      ],
+      "summary": "verified 256 dual page-dispatch modes and 4 BBB conditional edges across 2 sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_playback_oracle.py",
+      "oracle_sha256": "7c4065a7eaa3566472128be2327ff1c86817b127c46fb9723a8f7407bf13fb49",
+      "executed_instruction_count": 271,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xd05d"
+      ],
+      "summary": "verified 15 dual audio-playback cases, 6 dual branch probes, 2 BBB ULTRASND delegates, and 58 conditional edges across 29 branch sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_stream_refill_oracle.py",
+      "oracle_sha256": "67251a5c170037ac9151ba5b55814ee197e198687d5cdd896aa880b26ab078af",
+      "executed_instruction_count": 69,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xd40e"
+      ],
+      "summary": "verified 9 dual refill cases, 2 dual coverage probes, 2 BBB ready-state cases, 2 BBB ULTRASND bypasses, and 24 BBB conditional edges across 12 sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_stream_source_oracle.py",
+      "oracle_sha256": "7b0cfa6fe75faa5b5ceec1ebfd700af7d48c1f29b1d2696c1dfd0909aad4f09a",
+      "executed_instruction_count": 216,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xd561"
+      ],
+      "summary": "verified 11 shared and 5 BBB-only audio source-load cases across 44 conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_audio_stream_start_oracle.py",
+      "oracle_sha256": "64a623348107184ef488064848f54afef05e75b3792468d36436c376c0d34890",
+      "executed_instruction_count": 60,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xd363"
+      ],
+      "summary": "verified 6 dual stream-start cases, 2 BBB ULTRASND delegates, and 12 BBB conditional edges across 6 sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_bas_entry_oracle.py",
+      "oracle_sha256": "3e84b02ec86a2234a5ab47b32ee2f5db031e5faf15d9058be4ef9c44df6c23fd",
+      "executed_instruction_count": 37,
+      "executed_entrypoints": [
+        "0x6633"
+      ],
+      "summary": "verified 512 original BAS-entry gate cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_bit_flag_oracle.py",
+      "oracle_sha256": "ac486e8848cf459bc1dc13c7a04442a05519028e42c66e48049baaa1b1ccb353",
+      "executed_instruction_count": 51,
+      "executed_entrypoints": [
+        "0x697a",
+        "0x76ad"
+      ],
+      "summary": "captured 400 original B7 bit-flag cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_bridge_page_oracle.py",
+      "oracle_sha256": "e27fd16c0ce0c00671398a8cbfd219c3a1a0fef78cd669e2e38d61f19bf09dbb",
+      "executed_instruction_count": 32,
+      "executed_entrypoints": [
+        "0x41f8",
+        "0x4874",
+        "0x48ee",
+        "0xace4",
+        "0xafba",
+        "0xb058",
+        "0xb1af",
+        "0xb337"
+      ],
+      "summary": "verified 7 original BBB bridge-page cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_bridge_panorama_oracle.py",
+      "oracle_sha256": "8acc342683c45ca992521b9a9218eae005c961a5ce5a55af00a02b4ab177feee",
+      "executed_instruction_count": 67,
+      "executed_entrypoints": [
+        "0xafba"
+      ],
+      "summary": "verified 7 BBB panorama-loader cases covering 4 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_bridge_screen_oracle.py",
+      "oracle_sha256": "6b6cc696de8e0cf35749ca3be73ed87244e2a444ee652eca477035eb2a54a7b5",
+      "executed_instruction_count": 68,
+      "executed_entrypoints": [
+        "0x2660",
+        "0x27ad",
+        "0x41f8",
+        "0x454d",
+        "0x464e",
+        "0xace4",
+        "0xad37",
+        "0xadde",
+        "0xafba"
+      ],
+      "summary": "verified 10 original BBB bridge-screen cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_bridge_steering_oracle.py",
+      "oracle_sha256": "b78f6cc2399cb94fac1b40b0f0cd1fdc740a68a74773549a5e61f21cfe3293d2",
+      "executed_instruction_count": 148,
+      "executed_entrypoints": [
+        "0xadf5"
+      ],
+      "summary": "verified 21 BBB steering cases covering 52 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_clock_guard_oracle.py",
+      "oracle_sha256": "39283d7053abc15ccbe1fc2a5c3a485e8aa2e982912517294ea14cea9a74890c",
+      "executed_instruction_count": 53,
+      "executed_entrypoints": [
+        "0x697a",
+        "0x6a01",
+        "0x6a2c"
+      ],
+      "summary": "captured 1764 original CA/CB host-clock cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_concept_slots_oracle.py",
+      "oracle_sha256": "5a0908b21503f9efa5450433f81b85f3a07f92a1da3a1c95304b316682c708d9",
+      "executed_instruction_count": 35,
+      "executed_entrypoints": [
+        "0x697a",
+        "0x6ab2"
+      ],
+      "summary": "verified 144 original two-slot concept guards"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_conflict_oracle.py",
+      "oracle_sha256": "da84e8ebbd6a30ad8a95d9e3327dc709b9d084982c1d10017dd6e2bb5f67b2a4",
+      "executed_instruction_count": 412,
+      "executed_entrypoints": [
+        "0x6633",
+        "0x67b8",
+        "0x685d",
+        "0x697a",
+        "0x6f17",
+        "0x6f52",
+        "0x706e",
+        "0x70cd",
+        "0x724e",
+        "0x8103"
+      ],
+      "summary": "wrote 124 native conflict cases; 13 divide errors; 18 failed guards; entries [26163, 26552, 26717, 27002, 28439, 28498, 28782, 28877, 29262, 33027]"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_control_flow_oracle.py",
+      "oracle_sha256": "41baba4e687a1a610d6443ffeec0e1c2b3d03a9e59692d39ceaad939b880a927",
+      "executed_instruction_count": 90,
+      "executed_entrypoints": [
+        "0x3163",
+        "0x697a",
+        "0x6a75",
+        "0x6a8e",
+        "0x6aa4",
+        "0x6ab2",
+        "0x6af7"
+      ],
+      "summary": "captured 152 original A0-A4 control-flow cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_diagnostic_field_selector_oracle.py",
+      "oracle_sha256": "47b9dd05a6e89a2323ef3707c1415ec7bf3dc95b1cacb261886f0aa559b9ae69",
+      "executed_instruction_count": 11,
+      "executed_entrypoints": [
+        "0x2495",
+        "0x24a3"
+      ],
+      "summary": "verified 56 original diagnostic selector cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_dialogue_guard_oracle.py",
+      "oracle_sha256": "3cb8af88c649598c7f700224f77e520ed24b73e54b325116e5e679e5f4fe7a7d",
+      "executed_instruction_count": 27,
+      "executed_entrypoints": [
+        "0x697a",
+        "0x6ab2"
+      ],
+      "summary": "verified 20 original Daddy guard cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_direct_record_oracle.py",
+      "oracle_sha256": "d4f6cb0ec49478e3fdc53ec3a8fe206b68b2c53d95a02b827ca2eb433c5a3119",
+      "executed_instruction_count": 110,
+      "executed_entrypoints": [
+        "0x65e8",
+        "0x6606",
+        "0x6644",
+        "0x697a",
+        "0x754e"
+      ],
+      "summary": "captured 912 original direct-record cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_environment_oracle.py",
+      "oracle_sha256": "bb2c46b62dd518b6d0edff95872891495c515e926b12d03d1ebaf1be36b76215",
+      "executed_instruction_count": 28,
+      "executed_entrypoints": [
+        "0x697a",
+        "0x69ac",
+        "0x69b8",
+        "0x69c4",
+        "0x69d0",
+        "0x69d8"
+      ],
+      "summary": "captured 362 original CE-D2 environment cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_finale_oracle.py",
+      "oracle_sha256": "6fa75276536ebad2ab4655480f140fe18c1d13cd8a304756da6b1f688b0c8ff1",
+      "executed_instruction_count": 33,
+      "executed_entrypoints": [
+        "0x6e7c"
+      ],
+      "summary": ""
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_font_width_oracle.py",
+      "oracle_sha256": "acac3cb27857e0aef78aa8087d2be5c78358e40436279529ad5f6ce0f02084da",
+      "executed_instruction_count": 28,
+      "executed_entrypoints": [
+        "0x344d"
+      ],
+      "summary": "square_caps map=60a03ea5cedf advances=2a042926b644; main map=8105bd8593f3 advances=9ab791d43c98"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_framebuffer_copy_oracle.py",
+      "oracle_sha256": "c850f6833bbf8373d52a0014029cdcf8c23257426cf1d15e3dfb207f96249e80",
+      "executed_instruction_count": 25,
+      "executed_entrypoints": [
+        "0xaad4"
+      ],
+      "summary": "verified 12 original BBB framebuffer-copy cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_growth_oracle.py",
+      "oracle_sha256": "32fc68f85c54d59d3680915624d81ecd929547967095cfd4344811da48855f53",
+      "executed_instruction_count": 124,
+      "executed_entrypoints": [
+        "0x706e",
+        "0x728b"
+      ],
+      "summary": "wrote 126 original-handler vectors (18 divide errors)"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_honk_bank_oracle.py",
+      "oracle_sha256": "335c38a2923180a91e3b11efc1985cec305d242a6e8d1089fbf84eb1d3b958e7",
+      "executed_instruction_count": 10,
+      "executed_entrypoints": [
+        "0x98ad"
+      ],
+      "summary": "verified 512 original Honk activation/bank-call cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_honk_departure_oracle.py",
+      "oracle_sha256": "ae8f6ba015987fa178f934c5a313c407def797e996a243292ee24439aa8b2184",
+      "executed_instruction_count": 326,
+      "executed_entrypoints": [
+        "0x6633",
+        "0x68c8",
+        "0x697a",
+        "0x6a75",
+        "0x6a8e",
+        "0x6b28",
+        "0x6c89",
+        "0x6e54",
+        "0x744b",
+        "0x7bbf"
+      ],
+      "summary": "verified 8 original Honk departure block cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_idle_scheduler_oracle.py",
+      "oracle_sha256": "9b51451c1f7c33a183f815a737975629513dda37a6e49e8e709b4528b7b1ee51",
+      "executed_instruction_count": 74,
+      "executed_entrypoints": [],
+      "summary": "verified 86 unpatched idle scheduler cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_input_abort_oracle.py",
+      "oracle_sha256": "d92eac11d4df85c9da5445fcbdceb4ea16d2b922310dee82bece4a43b07d9a90",
+      "executed_instruction_count": 21,
+      "executed_entrypoints": [
+        "0x24c8"
+      ],
+      "summary": "verified 204 original F7 cases and Escape/Space/F7 key bindings"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_inventory_choice_oracle.py",
+      "oracle_sha256": "fc58d5959cf3f775e9ddb60c633c434e9d917dba6811c3d7fd1013f55ec4cddd",
+      "executed_instruction_count": 737,
+      "executed_entrypoints": [
+        "0x20ce",
+        "0x344d",
+        "0x3486",
+        "0x371e",
+        "0x37a8",
+        "0x3f13",
+        "0x958a",
+        "0x9b45",
+        "0xd05d"
+      ],
+      "summary": "captured 11 complete native inventory chooser sequences"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_inventory_condition_oracle.py",
+      "oracle_sha256": "a4f36595f2df1f7f02fffb8e46d01eeb116d9d46f99f77ea1ed0910a7ec95120",
+      "executed_instruction_count": 137,
+      "executed_entrypoints": [
+        "0x5c41",
+        "0x65e8",
+        "0x6633",
+        "0x68a5",
+        "0x6b28",
+        "0x6c45"
+      ],
+      "summary": "captured 82 complete native gated inventory selections"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_inventory_descriptor_oracle.py",
+      "oracle_sha256": "bacacca6f100f826a89ef3b6d3c576ff8d28e74ab9b5f76ed045cedd2deae239",
+      "executed_instruction_count": 225,
+      "executed_entrypoints": [
+        "0x2a13",
+        "0x2b43",
+        "0x5c41",
+        "0x65e8",
+        "0x6633",
+        "0x8450",
+        "0x8592",
+        "0x8654",
+        "0x86b1"
+      ],
+      "summary": "captured 20 complete inventory descriptor transfers"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_location_panel_geometry_oracle.py",
+      "oracle_sha256": "13b10da7ccc41a9069b6ffc612c7af25ef2a61f9c1a16351fc81f5b9abee106c",
+      "executed_instruction_count": 45,
+      "executed_entrypoints": [
+        "0x468a",
+        "0x474a",
+        "0xa9d3"
+      ],
+      "summary": "verified 12 original BBB location-panel geometry cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_location_panel_oracle.py",
+      "oracle_sha256": "d62c44ee1ec32a9bc0c04c3816c68e6610bed266e07242ae0166f06e3d257a1e",
+      "executed_instruction_count": 330,
+      "executed_entrypoints": [
+        "0x20ce",
+        "0x2660",
+        "0x2832",
+        "0x2924",
+        "0x3512",
+        "0x371e",
+        "0x40e9",
+        "0x4444",
+        "0x45cb",
+        "0x464e",
+        "0x48ee",
+        "0x685d",
+        "0xa5e0",
+        "0xa98b",
+        "0xa9d3"
+      ],
+      "summary": "verified 20 original BBB location-panel cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_menu_number_oracle.py",
+      "oracle_sha256": "add405b410f9ae0016ccf67037cb59b9d71d4c7b61e17099ac78ac8bc274fe51",
+      "executed_instruction_count": 237,
+      "executed_entrypoints": [
+        "0x2832",
+        "0x344d",
+        "0x38fc",
+        "0x82c6"
+      ],
+      "summary": "wrote 59 original inline-menu numeric cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_navigation_camera_oracle.py",
+      "oracle_sha256": "8909283d7e998a1dea89bff9e5c60dfa24bd242cd64ee38f7f19831551c7b293",
+      "executed_instruction_count": 352,
+      "executed_entrypoints": [
+        "0x344d",
+        "0x3512",
+        "0x42ed",
+        "0x454d",
+        "0x464e",
+        "0x48ee",
+        "0x551a",
+        "0x8231",
+        "0x9ea6",
+        "0x9ede",
+        "0xa286",
+        "0xa5e0",
+        "0xaa3d",
+        "0xaad4",
+        "0xaafe",
+        "0xace4",
+        "0xafba"
+      ],
+      "summary": "verified 13 original BBB navigation-camera cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_navigation_pick_oracle.py",
+      "oracle_sha256": "a4d82c4eeada7fcb263c4ceab450fee5ae49990cd9fe1166d2303162f3c3f449",
+      "executed_instruction_count": 47,
+      "executed_entrypoints": [
+        "0xaa3d"
+      ],
+      "summary": "verified 13 original BBB navigation-pick cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_navigation_tables_oracle.py",
+      "oracle_sha256": "696ea89e6676522e46a39f626351d03d26ee573f8ecf6f0d48703f2793ad7339",
+      "executed_instruction_count": 51,
+      "executed_entrypoints": [
+        "0x93f7"
+      ],
+      "summary": "captured 64 confirmation hits, 4 labels, 9 endpoints and 11 travel selections"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_navigation_wipe_oracle.py",
+      "oracle_sha256": "050af274257e91e5a3c2e8506ae933fb8828da7353c47c3925198f1970f7e351",
+      "executed_instruction_count": 86,
+      "executed_entrypoints": [
+        "0xaafe"
+      ],
+      "summary": "verified 20 original BBB navigation-wipe cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_numeric_chatter_oracle.py",
+      "oracle_sha256": "843ca92390a7450d3dd085d4a4303b9c9e088f8fe363d9dbff63d62dc61e4461",
+      "executed_instruction_count": 52,
+      "executed_entrypoints": [
+        "0xcf73"
+      ],
+      "summary": "verified 23 original numeric chatter cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_options_oracle.py",
+      "oracle_sha256": "d909e06f1682d74bc46351b1f2ecb88cf6e9d5aa15c184db5fedff432d92f2e8",
+      "executed_instruction_count": 61,
+      "executed_entrypoints": [],
+      "summary": "captured 80 original options-handler cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_overview_oracle.py",
+      "oracle_sha256": "7c578b6bed837d74a7ab111653db939f35d3907b08b377c095e46910c4636913",
+      "executed_instruction_count": 439,
+      "executed_entrypoints": [
+        "0x3512",
+        "0x362c",
+        "0x36a1",
+        "0x3b03",
+        "0x3ed3",
+        "0x40e9",
+        "0x6633",
+        "0x67b8",
+        "0x6ff2",
+        "0x706e",
+        "0xa286"
+      ],
+      "summary": "wrote 32 original simulation-overview cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_palette_blocks_oracle.py",
+      "oracle_sha256": "abeca3ff032565850ac270733b752ee0a35a7ee769c5dc882b336a76e313ce3d",
+      "executed_instruction_count": 57,
+      "executed_entrypoints": [
+        "0xb8a6",
+        "0xb8fa"
+      ],
+      "summary": "verified 5 BBB palette-block cases covering 6 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_panel_activation_oracle.py",
+      "oracle_sha256": "fd6a26bab8b5d7f470e9e6b4b56b2fd61c15e192c14710bfc678346b860e761d",
+      "executed_instruction_count": 23,
+      "executed_entrypoints": [
+        "0x8a48"
+      ],
+      "summary": "wrote 396 original activation/camera-gate cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_planar_square_caps_oracle.py",
+      "oracle_sha256": "2f575ffafc0179bb2ae8bff67770843cf0b39f20d15871ca6a1d2d0920e80aaf",
+      "executed_instruction_count": 156,
+      "executed_entrypoints": [
+        "0x37a8"
+      ],
+      "summary": "verified 12 original BBB planar square-cap cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_ab_oracle.py",
+      "oracle_sha256": "31a219e4e7cdf647cf026c9846ff5d07f4ca835fbebc84dd3a41cc0837ce1774",
+      "executed_instruction_count": 74,
+      "executed_entrypoints": [
+        "0xc051"
+      ],
+      "summary": "verified 13 BBB AB decoder cases and 18 reachable edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_activation_oracle.py",
+      "oracle_sha256": "08219a2e54f0bd1be1e84f080535919d141495782930d3e770f6a4599fc09599",
+      "executed_instruction_count": 19,
+      "executed_entrypoints": [
+        "0xb9ef",
+        "0xbd3c"
+      ],
+      "summary": "verified 7 BBB presentation activation cases covering 10 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_active_oracle.py",
+      "oracle_sha256": "b848b1a02a693088ba5e5688a9c634882983ffa6cca855d96c267944a6387c10",
+      "executed_instruction_count": 87,
+      "executed_entrypoints": [
+        "0xbc04"
+      ],
+      "summary": "verified 11 BBB active-presentation cases covering 20 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_ad_oracle.py",
+      "oracle_sha256": "73d33c57618119821cd81d1a7afd58914824585f7f8ea97243309955e0c4c148",
+      "executed_instruction_count": 157,
+      "executed_entrypoints": [
+        "0xc0fe",
+        "0xc2a4"
+      ],
+      "summary": "verified 9 original BBB presentation AD cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_cache_oracle.py",
+      "oracle_sha256": "23ab408253f599de1c6dc6ecc264169ef7c6e4396595990d92994363fe58fc36",
+      "executed_instruction_count": 53,
+      "executed_entrypoints": [
+        "0xb763",
+        "0xb771",
+        "0xb924",
+        "0xbfd0"
+      ],
+      "summary": "verified 4 BBB presentation resource-cache cases and 13 edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_catalog_oracle.py",
+      "oracle_sha256": "3834db242317367b436d6d72e23fce608539d48bffa5e29a278b4ad2d6462687",
+      "executed_instruction_count": 7,
+      "executed_entrypoints": [
+        "0xb763"
+      ],
+      "summary": "captured all 45 original presentation descriptor selections"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_clock_oracle.py",
+      "oracle_sha256": "051b34366a37827c3c6b0f438dab490a726d5968586b8bc1d60e280d2dbef5bb",
+      "executed_instruction_count": 33,
+      "executed_entrypoints": [
+        "0xba23"
+      ],
+      "summary": "verified 12 shared and 2 BBB-only presentation clock cases covering 18 sequel edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_dispatch_oracle.py",
+      "oracle_sha256": "f10ffb47589d49f237a61a237a48f055902b10fe9bfb359a22fe1f1f229bb2db",
+      "executed_instruction_count": 33,
+      "executed_entrypoints": [
+        "0xc016",
+        "0xc051",
+        "0xc0fe"
+      ],
+      "summary": "verified 8 BBB presentation dispatch cases and 6 edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_entry_oracle.py",
+      "oracle_sha256": "6e1107e23fb8fbaff39b8024d673f5d197a3e0f37b8672e34f8b25a76776c977",
+      "executed_instruction_count": 81,
+      "executed_entrypoints": [
+        "0xbd3c",
+        "0xbe1e"
+      ],
+      "summary": "verified 15 BBB presentation-entry cases covering 26 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_entry_read_oracle.py",
+      "oracle_sha256": "78ada1913cc9adffd41797c6c94358546241cb1ae1b81d86666bce808aff4dd0",
+      "executed_instruction_count": 6,
+      "executed_entrypoints": [
+        "0xbe0c"
+      ],
+      "summary": "verified 6 BBB presentation entry-read cases covering 2 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_initial_entry_oracle.py",
+      "oracle_sha256": "63e1dc193fa2b012b287b0c9c85988055c009b86fa5727f4233367a2ee66fecd",
+      "executed_instruction_count": 57,
+      "executed_entrypoints": [
+        "0xbe0c",
+        "0xbe2c",
+        "0xbe4e",
+        "0xbf1e",
+        "0xbf41"
+      ],
+      "summary": "verified 6 BBB initial-entry cases covering 9 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_interrupt_oracle.py",
+      "oracle_sha256": "b4fc0c9c8b10f0a263d4c271c37aed218133152aa7bb39c1de92825981765b2d",
+      "executed_instruction_count": 38,
+      "executed_entrypoints": [
+        "0xb9ef",
+        "0xba23",
+        "0xbbba",
+        "0xbc04"
+      ],
+      "summary": "verified 5 BBB presentation interrupt cases and 6 edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_mode_oracle.py",
+      "oracle_sha256": "c32f3fa3a692fbf8c458c4947c3186d65b7189b17e585fd8197492ef34e92e45",
+      "executed_instruction_count": 26,
+      "executed_entrypoints": [
+        "0xacaa"
+      ],
+      "summary": "verified 15 original BBB presentation-mode cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_oracle.py",
+      "oracle_sha256": "5b751ee1fba865acbe4538764d946c61b99ff67a62d2e0d966cbaa37a62d213f",
+      "executed_instruction_count": 44,
+      "executed_entrypoints": [
+        "0x69e6",
+        "0x6e67"
+      ],
+      "summary": "wrote 66 original instruction/decision cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_palette_dispatch_oracle.py",
+      "oracle_sha256": "8892d50e937f266ccd1ecc359766ae2d11704432ca6848f6d67c34229f376699",
+      "executed_instruction_count": 6,
+      "executed_entrypoints": [
+        "0xb8a6",
+        "0xbf62"
+      ],
+      "summary": "verified 4 BBB presentation palette-dispatch cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_queue_consume_oracle.py",
+      "oracle_sha256": "20c55dc4262fbf12be7c19742cfae79d408869f6cd5b9103057bad0e5a5c9f75",
+      "executed_instruction_count": 20,
+      "executed_entrypoints": [
+        "0xbbba"
+      ],
+      "summary": "verified 8 BBB presentation queue-consume cases covering 6 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_queue_init_oracle.py",
+      "oracle_sha256": "527ca2ac4091cce7f997a1a5206bff398ba6222dad26f4a61bbc374b8fbed6f9",
+      "executed_instruction_count": 13,
+      "executed_entrypoints": [
+        "0xbf41"
+      ],
+      "summary": "verified 5 BBB presentation queue-init cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_queue_room_oracle.py",
+      "oracle_sha256": "f91bef7c0b0e99a890e649a76c248bed6f80152172748bc206c038acb6708157",
+      "executed_instruction_count": 14,
+      "executed_entrypoints": [
+        "0xbb97"
+      ],
+      "summary": "verified 8 BBB presentation queue-capacity cases covering 6 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_queue_service_oracle.py",
+      "oracle_sha256": "82d6a7e26959d1b001504659776988f02579700185bfcd7a22d770b259e01fdc",
+      "executed_instruction_count": 49,
+      "executed_entrypoints": [
+        "0xb997",
+        "0xb9d6",
+        "0xb9ef",
+        "0xba23",
+        "0xba95",
+        "0xbbba",
+        "0xbc04",
+        "0xbf62"
+      ],
+      "summary": "verified 5 BBB presentation-queue service cases covering 12 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_queue_state_oracle.py",
+      "oracle_sha256": "882ef4199808937dc05eeb047d1f78f1c5b4266ae12a4f4cf2f445b56c8458f0",
+      "executed_instruction_count": 4,
+      "executed_entrypoints": [
+        "0xbbf5"
+      ],
+      "summary": "verified all 256 BBB presentation queue-state values covering 2 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_queue_wrap_oracle.py",
+      "oracle_sha256": "9de2aade93164c3ccffd5537e2d519858804ba6d742f6fb2ee8d096ccfd512f7",
+      "executed_instruction_count": 11,
+      "executed_entrypoints": [
+        "0xbb78"
+      ],
+      "summary": "verified 6 BBB presentation queue-wrap cases covering 4 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_rect_blit_oracle.py",
+      "oracle_sha256": "77f54712d13c85ac5ddde1620d36123186f7b37f08d3dddc2468dc24f3d2ab21",
+      "executed_instruction_count": 51,
+      "executed_entrypoints": [
+        "0xbcd7"
+      ],
+      "summary": "verified 9 BBB presentation rectangle-blit cases covering 18 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_rect_decode_oracle.py",
+      "oracle_sha256": "7c1c17b5839673ea6c8c8fead46116175d931d5629bee1eae9065cf2d68ae60e",
+      "executed_instruction_count": 307,
+      "executed_entrypoints": [
+        "0xc2a4",
+        "0xc30d",
+        "0xc57e"
+      ],
+      "summary": "verified 8 BBB rectangle decoder cases, 103 edges, and 30/73 observed branch sites with both outcomes"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_refill_oracle.py",
+      "oracle_sha256": "0e10c7bca9e3eb6b02474f41b97b917dc89bab08abb44267a9cb4d2320739765",
+      "executed_instruction_count": 126,
+      "executed_entrypoints": [
+        "0xb763",
+        "0xb785",
+        "0xb924",
+        "0xba95",
+        "0xbac7",
+        "0xbb78",
+        "0xbb97",
+        "0xbe0c",
+        "0xbe4e",
+        "0xbf1e",
+        "0xbf2e",
+        "0xbfd0"
+      ],
+      "summary": "verified 14 BBB presentation refill cases covering 30 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_rollover_source_oracle.py",
+      "oracle_sha256": "9c604a068da19d807178842e111d602e7323598294c195fb33778b2a7fd13a30",
+      "executed_instruction_count": 4,
+      "executed_entrypoints": [],
+      "summary": "verified 4 BBB presentation rollover-source cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_scan_oracle.py",
+      "oracle_sha256": "15a4cbd0ec449212712cf147b701ef2e41d961912db42847ee977e8e37f1d529",
+      "executed_instruction_count": 200,
+      "executed_entrypoints": [
+        "0x4444",
+        "0x45cb",
+        "0x464e",
+        "0x5bae",
+        "0x5dd7",
+        "0x6038",
+        "0x613f",
+        "0x6633",
+        "0x8450"
+      ],
+      "summary": "verified 16 original BBB presentation-scan cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py",
+      "oracle_sha256": "ad137cc317584939eb5972703059a3ce4cbed9cd75eb01e034db01471e9e88b1",
+      "executed_instruction_count": 211,
+      "executed_entrypoints": [
+        "0x2660",
+        "0x2f83",
+        "0x41f8",
+        "0x423c",
+        "0xb4b0",
+        "0xb942",
+        "0xb997",
+        "0xbbf5"
+      ],
+      "summary": "verified 13 original BBB presentation-scene cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_sequence_oracle.py",
+      "oracle_sha256": "5ecdcdeb6d9d7b6cb67ec3a3bc282e2eada42dd47ebac0e83b3f59450190b282",
+      "executed_instruction_count": 49,
+      "executed_entrypoints": [
+        "0xb771",
+        "0xb942",
+        "0xba95",
+        "0xbc04",
+        "0xbd3c",
+        "0xbe2c",
+        "0xbf41"
+      ],
+      "summary": "verified 4 BBB presentation-sequence cases covering 8 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_source_oracle.py",
+      "oracle_sha256": "9079c8bf62a54526d24548060fc911033fbd33fcd75222d614b659542dc69a81",
+      "executed_instruction_count": 22,
+      "executed_entrypoints": [
+        "0xb924",
+        "0xb997",
+        "0xbf28",
+        "0xbf2e"
+      ],
+      "summary": "verified 7 BBB source-close cases and queue-change wrappers covering 4 close branch edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_transfer_oracle.py",
+      "oracle_sha256": "5ae394dd2f03b4d7dd05dc8decff5790ab305b6d6d4e15afe16caf08654074af",
+      "executed_instruction_count": 88,
+      "executed_entrypoints": [
+        "0xbe4e",
+        "0xbf1e"
+      ],
+      "summary": "verified 9 BBB presentation-transfer cases covering 14 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentation_word_copy_oracle.py",
+      "oracle_sha256": "6480c38bac317c0cfaee439f2a71a0b2e3d9d4552b49931001d08c676a098d6c",
+      "executed_instruction_count": 8,
+      "executed_entrypoints": [
+        "0xbfd0"
+      ],
+      "summary": "verified 6 BBB presentation four-word copy cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_profile_binding_oracle.py",
+      "oracle_sha256": "6603d680afeba545b6f487e99635ed9d1f5cf57a5fbf3b21ca48a56b068c7a33",
+      "executed_instruction_count": 81,
+      "executed_entrypoints": [
+        "0x5610",
+        "0x5798"
+      ],
+      "summary": "wrote 40 original binding/allocation cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_profile_gate_oracle.py",
+      "oracle_sha256": "4602a8485afd3c24df65b76975be1e2ccdfbf6a7979552b7ccd8fe589d07eea9",
+      "executed_instruction_count": 10,
+      "executed_entrypoints": [],
+      "summary": "verified 512 original profile gates"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_record_clear_oracle.py",
+      "oracle_sha256": "d1b8d40a2bc909246e59a1894c2dc9eda782e06032b3cedb41f36fcf55bd9649",
+      "executed_instruction_count": 38,
+      "executed_entrypoints": [
+        "0x6633",
+        "0x7bbf"
+      ],
+      "summary": "verified 204 original C9 teardown cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_record_pair_oracle.py",
+      "oracle_sha256": "f9b6c5882fe52d7a34c59d56d16ab4e8348905118554e33e27ac0cd4a62927b6",
+      "executed_instruction_count": 44,
+      "executed_entrypoints": [
+        "0x6644",
+        "0x697a",
+        "0x770c"
+      ],
+      "summary": "captured 720 original B8/B9/BD record-pair cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_record_state_oracle.py",
+      "oracle_sha256": "4c30093f4ce5d41d2257aaec8c1530e4095c13fad2ec447e90599335595183e9",
+      "executed_instruction_count": 312,
+      "executed_entrypoints": [
+        "0x31b4",
+        "0x6633",
+        "0x6644",
+        "0x66ed",
+        "0x67b8",
+        "0x6822",
+        "0x685d",
+        "0x697a",
+        "0x7752"
+      ],
+      "summary": "captured 624 original C1 record-state cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_resource_descriptor_oracle.py",
+      "oracle_sha256": "75af673deb39b5131c93a6aeb207a1c7eca5e7c8f62d29dea79d8be2773d99c8",
+      "executed_instruction_count": 7,
+      "executed_entrypoints": [
+        "0xb763"
+      ],
+      "summary": "verified 8 BBB resource-descriptor lookup cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_resource_switch_oracle.py",
+      "oracle_sha256": "3017f7e87a04d26a5d29e4a3fbad2538f69bab82b2de7cfab315a501735f3fae",
+      "executed_instruction_count": 192,
+      "executed_entrypoints": [
+        "0xb763",
+        "0xb771",
+        "0xb785",
+        "0xb8a6",
+        "0xb8fa",
+        "0xb924",
+        "0xbf28",
+        "0xbf2e",
+        "0xbf41"
+      ],
+      "summary": "verified 7 BBB resource-switch cases covering 22 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_scene_completion_oracle.py",
+      "oracle_sha256": "593c613b8202c93f257ef922ce5d3c7935e2055a09cd106c57bab076a6dc2aea",
+      "executed_instruction_count": 100,
+      "executed_entrypoints": [
+        "0xb731",
+        "0xb924",
+        "0xb997",
+        "0xbac7",
+        "0xbbf5"
+      ],
+      "summary": "wrote 38 unpatched scene completion captures"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_scene_transition_oracle.py",
+      "oracle_sha256": "111fe366fe9470f108b5473d48cf1e4bba89cdf9257d578ad70704c7f7dad722",
+      "executed_instruction_count": 165,
+      "executed_entrypoints": [
+        "0x1a17",
+        "0x2f83",
+        "0x423c",
+        "0x42c3",
+        "0x464e",
+        "0x8450",
+        "0x9ea6",
+        "0xadf5",
+        "0xb4b0",
+        "0xcd69"
+      ],
+      "summary": "verified 21 original BBB scene-transition cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_script_action_oracle.py",
+      "oracle_sha256": "0274ee4d26472010cb43e597568b49cfdd3c97f00cc6ef0faa4560a0847b4846",
+      "executed_instruction_count": 391,
+      "executed_entrypoints": [
+        "0x464e",
+        "0x613f",
+        "0x65e8",
+        "0x6606",
+        "0x6633",
+        "0x67b8",
+        "0x83e2",
+        "0x8450",
+        "0x9ea6",
+        "0xce6a",
+        "0xd05d",
+        "0xd33a",
+        "0xd363",
+        "0xd561"
+      ],
+      "summary": "verified 33 original BBB action-dispatch cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_script_travel_oracle.py",
+      "oracle_sha256": "3d79afb6e1d58aa84fa2815f0ebf54ad1f717e3ff65d38929e98f11f22609a88",
+      "executed_instruction_count": 116,
+      "executed_entrypoints": [
+        "0x464e",
+        "0x613f",
+        "0x6633",
+        "0x9ea6"
+      ],
+      "summary": "verified 8 original C6 travel-dispatch cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_sequence_procedure_oracle.py",
+      "oracle_sha256": "a6d1163b5e2955651b88936cc31567cff5cd26a8d9f8cbd625c267c41b4834e8",
+      "executed_instruction_count": 24,
+      "executed_entrypoints": [
+        "0x6e6e",
+        "0x6ee4",
+        "0x6f00",
+        "0x6f09",
+        "0x6f10"
+      ],
+      "summary": "captured 96 original A7/A9-AA/AB-AC cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_sequence_request_oracle.py",
+      "oracle_sha256": "d927304075e1b042fa916b95d836ded94c9a23bba5d77f9d5962b614cfdb2207",
+      "executed_instruction_count": 29,
+      "executed_entrypoints": [
+        "0x6e7c"
+      ],
+      "summary": "captured 64 original A8 sequence-request cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_settlement_oracle.py",
+      "oracle_sha256": "e55a918e34a8a8db648d01ad3a38bacf5b31cbfea4a725e54054c2ac55c861f0",
+      "executed_instruction_count": 292,
+      "executed_entrypoints": [
+        "0x6633",
+        "0x67b8",
+        "0x685d",
+        "0x6f17",
+        "0x6f52",
+        "0x706e",
+        "0x7367",
+        "0x8103"
+      ],
+      "summary": "wrote 100 native settlement cases covering 8 handler/helper entries"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_shared_arithmetic_oracle.py",
+      "oracle_sha256": "2eb69242d81c463f89406b540c3c76dd08b23254f2b03b6d15a3c4f3b96bbb67",
+      "executed_instruction_count": 92,
+      "executed_entrypoints": [
+        "0x697a",
+        "0x744b"
+      ],
+      "summary": "captured 1728 original shared-state cases for seven dispatch aliases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_shared_bit_oracle.py",
+      "oracle_sha256": "2b83207316d57be491fb6926138d4ee6e1ed7273e76fb91fb72c5c29de9e0097",
+      "executed_instruction_count": 39,
+      "executed_entrypoints": [
+        "0x697a",
+        "0x750a"
+      ],
+      "summary": "captured 480 original AE/B0 shared-bit cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_depth_band_oracle.py",
+      "oracle_sha256": "b7947f9a3c2fee025f06d9315ad37707b008b09601676ccd701367888fa8c150",
+      "executed_instruction_count": 68,
+      "executed_entrypoints": [
+        "0xce6a"
+      ],
+      "summary": "verified 12 dual ship-depth-band cases and 6 conditional edges across 3 branch sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_depth_scroll_oracle.py",
+      "oracle_sha256": "d6faf689c12c790c4f62b2657cee6778aa94efb6ae6582f3e2ac84a68de648dc",
+      "executed_instruction_count": 30,
+      "executed_entrypoints": [
+        "0xcee9"
+      ],
+      "summary": "verified 17 dual ship-depth-scroll cases and 12 conditional edges across 6 branch sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_hud_oracle.py",
+      "oracle_sha256": "0c69799691a6f141d7d59e0b58cefdee2bdeed4bed311617289e80d4056bbbbe",
+      "executed_instruction_count": 164,
+      "executed_entrypoints": [
+        "0xc859",
+        "0xce6a"
+      ],
+      "summary": "verified 15 BBB ship HUD cases and 26 conditional edges across 13 branch sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_navigation_oracle.py",
+      "oracle_sha256": "2278d1199af8f166b622a98821e3c940b182f752154657f0880085d97bc3cbe1",
+      "executed_instruction_count": 182,
+      "executed_entrypoints": [
+        "0xcb0f",
+        "0xcd69"
+      ],
+      "summary": "verified 18 BBB ship-navigation cases and 32 conditional edges across 16 branch sites"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_object_projection_oracle.py",
+      "oracle_sha256": "0e5b333c435ca4238eea3b1a0e246dbef0cd96ad0f1a9c57b94f25b4b09e7e76",
+      "executed_instruction_count": 175,
+      "executed_entrypoints": [
+        "0x468a",
+        "0x474a",
+        "0xb337"
+      ],
+      "summary": "verified 5 BBB object-projector cases covering 8 main conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_point_cloud_oracle.py",
+      "oracle_sha256": "0c5cadbebb86fff7361880e6415733948e46c7cbccf0c8490d1427d56a1b13c0",
+      "executed_instruction_count": 80,
+      "executed_entrypoints": [
+        "0xb1af"
+      ],
+      "summary": "verified 6 BBB point-cloud cases covering 6 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_point_plot_oracle.py",
+      "oracle_sha256": "410288bdde1b69ee4701b660f00661a841c2e5bce6f637706ee4e9a1ba2cd030",
+      "executed_instruction_count": 30,
+      "executed_entrypoints": [
+        "0xb2a3"
+      ],
+      "summary": "verified 14 BBB point-plot cases covering 10 normalized conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_point_randomize_oracle.py",
+      "oracle_sha256": "3dc0ee5091ab6f5671b7e83b5f241b291c94dd698f7763808af19d06ae2bc97e",
+      "executed_instruction_count": 22,
+      "executed_entrypoints": [
+        "0xb306"
+      ],
+      "summary": "verified 4 BBB point-randomizer cases covering 2 normalized loop edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_presentation_oracle.py",
+      "oracle_sha256": "937bab1bac792cffbbad6ea98b598d861508df811635b432a853ba0031ddfa75",
+      "executed_instruction_count": 75,
+      "executed_entrypoints": [
+        "0xc780",
+        "0xc859",
+        "0xcb0f",
+        "0xce6a",
+        "0xcee9"
+      ],
+      "summary": "verified 20 BBB ship presentation cases, 28 edges, and 14/14 observed branch sites with both outcomes"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ship_projection_matrix_oracle.py",
+      "oracle_sha256": "8985049d5a8142fe7386e99832404a9a7068fc30c6ed3f0f4aa99c29bab1a396",
+      "executed_instruction_count": 104,
+      "executed_entrypoints": [
+        "0xb058"
+      ],
+      "summary": "verified 12 BBB ship-projection matrix cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_simulation_clock_oracle.py",
+      "oracle_sha256": "782d37e56c2f330942cb16a874c98c9d9cae4c3f5e24de9fd1d3e98aec3d17e2",
+      "executed_instruction_count": 9,
+      "executed_entrypoints": [],
+      "summary": "captured 40 original simulation-clock cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_sound_bank_load_oracle.py",
+      "oracle_sha256": "a0120832186786288e395f8091d5bbc3bf25338cf1ff2e6e544d6999c336dd95",
+      "executed_instruction_count": 198,
+      "executed_entrypoints": [
+        "0x6f00",
+        "0xd7ec"
+      ],
+      "summary": "verified 12 shared and 2 BBB-only sound-bank cases across 32 conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_speed_choice_oracle.py",
+      "oracle_sha256": "5ec28396af5271410977314441e5f14b7f40f666c1becbe43134fad681f6ded8",
+      "executed_instruction_count": 11,
+      "executed_entrypoints": [],
+      "summary": "captured 90 simulation-speed selection cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_spoken_number_oracle.py",
+      "oracle_sha256": "f8270953f16035a29978bad8c9eae9d1ff6d0943156082d479089dafdefa27fa",
+      "executed_instruction_count": 112,
+      "executed_entrypoints": [
+        "0x2832",
+        "0x6e54"
+      ],
+      "summary": "verified 45 original spoken-number cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_startup_tables_oracle.py",
+      "oracle_sha256": "dafa006015860d518d5f13169e42c5e213740ab0d9ad4ad60ccc66df93ddc6a2",
+      "executed_instruction_count": 32,
+      "executed_entrypoints": [],
+      "summary": "captured 256 palette entries, 10 effect sequences and 42 artwork rows"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_state_processor_oracle.py",
+      "oracle_sha256": "3843613b98512784b135b43bb8ee2b2697568fb875f2a32c95f2662936934032",
+      "executed_instruction_count": 128,
+      "executed_entrypoints": [
+        "0x6038",
+        "0x6633",
+        "0x67b8"
+      ],
+      "summary": "wrote 21 native state-processor vectors"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_subtitle_reveal_oracle.py",
+      "oracle_sha256": "5ee783e80cd49c3c84c0346991b19f46d84cc7ddaff7a7571b5b7f838f001f79",
+      "executed_instruction_count": 100,
+      "executed_entrypoints": [
+        "0x39be",
+        "0x3d49",
+        "0x3e41",
+        "0xab8f"
+      ],
+      "summary": "verified 12 original BBB subtitle-reveal cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_text_lifecycle_oracle.py",
+      "oracle_sha256": "88bc3540a3aa8f52a9d593cd52058b0361114319023b6a252ddfcb069342e720",
+      "executed_instruction_count": 45,
+      "executed_entrypoints": [],
+      "summary": "verified 2048 native text-hold coordinator cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_timer_oracle.py",
+      "oracle_sha256": "e4293a5d44eeee36b17c5f1918baef6cadf24fd5e22f2c4fcaa4e45bedb63571",
+      "executed_instruction_count": 21,
+      "executed_entrypoints": [
+        "0x697a",
+        "0x6b07"
+      ],
+      "summary": "captured 3072 original A5 timer and guard-helper cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_transfer_oracle.py",
+      "oracle_sha256": "b3c3204f9c8eeef3196b59072b2e6216eeb42ec67c4fae42c053066d7687e6c7",
+      "executed_instruction_count": 276,
+      "executed_entrypoints": [
+        "0x2a13",
+        "0x2b43",
+        "0x65e8",
+        "0x6606",
+        "0x6633",
+        "0x6644",
+        "0x697a",
+        "0x75cd",
+        "0x8450"
+      ],
+      "summary": "captured 600 original CD transfer cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_travel_option_oracle.py",
+      "oracle_sha256": "db11d4d917916a3529e509382f82b1b26a4fbf2be66775ca1766d5ead923341f",
+      "executed_instruction_count": 35,
+      "executed_entrypoints": [],
+      "summary": "verified 46 original travel-option branch cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ultrasound_lifecycle_oracle.py",
+      "oracle_sha256": "5a50e1d96df26ea21755b19382a5afd4f0352f3006887705b8347fa7ee41ba87",
+      "executed_instruction_count": 294,
+      "executed_entrypoints": [
+        "0xde5b",
+        "0xdec3",
+        "0xe05e",
+        "0xe0de"
+      ],
+      "summary": "verified 10 BBB Ultrasound lifecycle cases across 24 reachable conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ultrasound_stream_oracle.py",
+      "oracle_sha256": "0fad665c4b6449e3cb069031fa2165b60cd0ca88eddde544aafd44b754535d0e",
+      "executed_instruction_count": 181,
+      "executed_entrypoints": [
+        "0xd9f3",
+        "0xda5f",
+        "0xe0de",
+        "0xe0ed"
+      ],
+      "summary": "verified 19 BBB Ultrasound stream-controller cases across 36 conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ultrasound_transfer_oracle.py",
+      "oracle_sha256": "077bcad603bcf019978508af420bd366d8cb4e2b166c18bbf988043e14d10a11",
+      "executed_instruction_count": 156,
+      "executed_entrypoints": [
+        "0xdbd4",
+        "0xdc92",
+        "0xddf8"
+      ],
+      "summary": "verified 8 BBB Ultrasound transfer cases across 10 conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_ultrasound_voice_oracle.py",
+      "oracle_sha256": "d9712f0b0cb55ea5e8fb9b847e89edd01f0a7e11cd7091c24617b8de535c8509",
+      "executed_instruction_count": 305,
+      "executed_entrypoints": [
+        "0xdb08",
+        "0xdce5",
+        "0xddd2",
+        "0xddf8",
+        "0xe0de"
+      ],
+      "summary": "verified 11 BBB Ultrasound voice cases across 12 conditional edges"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_vm_oracle.py",
+      "oracle_sha256": "2c52dc9739ce4e49b3cd670b8aad8b36ee873cd27cc165fb5feea19b695278d9",
+      "executed_instruction_count": 34,
+      "executed_entrypoints": [
+        "0x7408"
+      ],
+      "summary": "wrote 114 original-handler vectors (41 divide errors)"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_vm_yield_oracle.py",
+      "oracle_sha256": "408c5ccbcbfc3bbffb5c86d2d822f1aae1007454a14dd54aabeffb6d660806b5",
+      "executed_instruction_count": 268,
+      "executed_entrypoints": [
+        "0x68a5",
+        "0x6993",
+        "0x6b28",
+        "0x6c45",
+        "0x6c89",
+        "0x6e54"
+      ],
+      "summary": "captured 76 original A6 and outer-loop yield cases"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_writable_catalog_oracle.py",
+      "oracle_sha256": "82817dc693631fe99f9b45a8b75b7d690b0e275f94a425d645d465c01f1259a0",
+      "executed_instruction_count": 28,
+      "executed_entrypoints": [
+        "0x2b43"
+      ],
+      "summary": "captured 152 original writable-resource visits"
+    }
+  ],
+  "entrypoints": [
+    {
+      "entry": "0x0800",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x08ef",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6f1"
+    },
+    {
+      "entry": "0x0924",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x09a2",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x79c"
+    },
+    {
+      "entry": "0x09f0",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7ea"
+    },
+    {
+      "entry": "0x0b36",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x93b"
+    },
+    {
+      "entry": "0x0b4b",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x950"
+    },
+    {
+      "entry": "0x0b81",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x986"
+    },
+    {
+      "entry": "0x0b9a",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x0c94",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa99"
+    },
+    {
+      "entry": "0x0d2d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xb32"
+    },
+    {
+      "entry": "0x0d3d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xb42"
+    },
+    {
+      "entry": "0x0dd2",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xbd7"
+    },
+    {
+      "entry": "0x0dfa",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xbff"
+    },
+    {
+      "entry": "0x0e21",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xc26"
+    },
+    {
+      "entry": "0x0ebb",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xcc0"
+    },
+    {
+      "entry": "0x0ec6",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0xccb"
+    },
+    {
+      "entry": "0x0eea",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0xcef"
+    },
+    {
+      "entry": "0x0f09",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x0f3e",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0xd4a"
+    },
+    {
+      "entry": "0x0f55",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0xd61"
+    },
+    {
+      "entry": "0x0f70",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x1446",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x1502",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1344"
+    },
+    {
+      "entry": "0x1555",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1397"
+    },
+    {
+      "entry": "0x1582",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x13c4"
+    },
+    {
+      "entry": "0x163d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x147f"
+    },
+    {
+      "entry": "0x1659",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x149b"
+    },
+    {
+      "entry": "0x1688",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x171d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x17ce",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1610"
+    },
+    {
+      "entry": "0x1865",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x194d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x178b"
+    },
+    {
+      "entry": "0x1971",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x17af"
+    },
+    {
+      "entry": "0x199b",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x19d9",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x1a17",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_scene_transition_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x1c55",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1a93"
+    },
+    {
+      "entry": "0x1c95",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x1d18",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x1d91",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x1fe5",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1d74"
+    },
+    {
+      "entry": "0x2005",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1d94"
+    },
+    {
+      "entry": "0x2049",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1dd8"
+    },
+    {
+      "entry": "0x20ce",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_choice_oracle.py",
+        "re/tools/big_bug_bang_location_panel_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x2142",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1ec1"
+    },
+    {
+      "entry": "0x2191",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x220b",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1f78"
+    },
+    {
+      "entry": "0x224f",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x1fbc"
+    },
+    {
+      "entry": "0x23a2",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x210e"
+    },
+    {
+      "entry": "0x23d4",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x2140"
+    },
+    {
+      "entry": "0x2421",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x218d"
+    },
+    {
+      "entry": "0x2495",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_diagnostic_field_selector_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x24a3",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_diagnostic_field_selector_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x24b1",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x24b2",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x24b3",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x24b4",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x24b5",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x24b6",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x220d",
+        "0x2216"
+      ]
+    },
+    {
+      "entry": "0x24bf",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x220d",
+        "0x2216"
+      ]
+    },
+    {
+      "entry": "0x24c8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_input_abort_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x2514",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x2224"
+    },
+    {
+      "entry": "0x253d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x25a7",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x22b2"
+    },
+    {
+      "entry": "0x25c5",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x22d0"
+    },
+    {
+      "entry": "0x25de",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x2660",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_screen_oracle.py",
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x22e0"
+    },
+    {
+      "entry": "0x2745",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x23c5"
+    },
+    {
+      "entry": "0x27ad",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_screen_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x242d"
+    },
+    {
+      "entry": "0x280b",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x248b"
+    },
+    {
+      "entry": "0x2832",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_menu_number_oracle.py",
+        "re/tools/big_bug_bang_spoken_number_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0x24b2"
+    },
+    {
+      "entry": "0x286b",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x24eb"
+    },
+    {
+      "entry": "0x28b2",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x28cc",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x28e9",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x2924",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0x25a4"
+    },
+    {
+      "entry": "0x2992",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x2612"
+    },
+    {
+      "entry": "0x29e5",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x2665"
+    },
+    {
+      "entry": "0x29fd",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x267d"
+    },
+    {
+      "entry": "0x2a13",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_record_oracle.py",
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py",
+        "re/tools/big_bug_bang_transfer_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x2693"
+    },
+    {
+      "entry": "0x2a4f",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x26cf"
+    },
+    {
+      "entry": "0x2b43",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_record_oracle.py",
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py",
+        "re/tools/big_bug_bang_transfer_oracle.py",
+        "re/tools/big_bug_bang_writable_catalog_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x27c3"
+    },
+    {
+      "entry": "0x2b69",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x27e9"
+    },
+    {
+      "entry": "0x2b8f",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x280f"
+    },
+    {
+      "entry": "0x2bfb",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x287b"
+    },
+    {
+      "entry": "0x2c4a",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x2c86",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x2901"
+    },
+    {
+      "entry": "0x2d77",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x29f2"
+    },
+    {
+      "entry": "0x2e40",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x2abb"
+    },
+    {
+      "entry": "0x2ef0",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x2b6b"
+    },
+    {
+      "entry": "0x2f83",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py",
+        "re/tools/big_bug_bang_scene_transition_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x2bfd"
+    },
+    {
+      "entry": "0x30d6",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x2d50"
+    },
+    {
+      "entry": "0x3154",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x3163",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_control_flow_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x31b4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_record_state_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0x2e33"
+    },
+    {
+      "entry": "0x31f4",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x2e73"
+    },
+    {
+      "entry": "0x3310",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x2f90"
+    },
+    {
+      "entry": "0x3326",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x2fa6"
+    },
+    {
+      "entry": "0x33e6",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3066"
+    },
+    {
+      "entry": "0x344d",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_font_width_oracle.py",
+        "re/tools/big_bug_bang_inventory_choice_oracle.py",
+        "re/tools/big_bug_bang_menu_number_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x30cd"
+    },
+    {
+      "entry": "0x3486",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_choice_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3106"
+    },
+    {
+      "entry": "0x3512",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py",
+        "re/tools/big_bug_bang_overview_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3192"
+    },
+    {
+      "entry": "0x362c",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_overview_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x32ac"
+    },
+    {
+      "entry": "0x36a1",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_overview_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3321"
+    },
+    {
+      "entry": "0x371e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_choice_oracle.py",
+        "re/tools/big_bug_bang_location_panel_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x339e"
+    },
+    {
+      "entry": "0x37a8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_choice_oracle.py",
+        "re/tools/big_bug_bang_planar_square_caps_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x38fc",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_menu_number_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x356e"
+    },
+    {
+      "entry": "0x39be",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_subtitle_reveal_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3630"
+    },
+    {
+      "entry": "0x3a78",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x36ea"
+    },
+    {
+      "entry": "0x3b03",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_overview_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x3d49",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_subtitle_reveal_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x39bb"
+    },
+    {
+      "entry": "0x3e41",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_subtitle_reveal_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3ab3"
+    },
+    {
+      "entry": "0x3ed3",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_overview_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x3b45"
+      ]
+    },
+    {
+      "entry": "0x3ef3",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x3b45"
+      ]
+    },
+    {
+      "entry": "0x3f13",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_choice_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x4002",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3b85"
+    },
+    {
+      "entry": "0x40e9",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_overview_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3c6c"
+    },
+    {
+      "entry": "0x41f8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_page_oracle.py",
+        "re/tools/big_bug_bang_bridge_screen_oracle.py",
+        "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x3d7b",
+        "0x3dbf"
+      ]
+    },
+    {
+      "entry": "0x423c",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py",
+        "re/tools/big_bug_bang_scene_transition_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x3d7b",
+        "0x3dbf"
+      ]
+    },
+    {
+      "entry": "0x42c3",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_scene_transition_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x3e46",
+        "0x3e5b"
+      ]
+    },
+    {
+      "entry": "0x42d8",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x3e46",
+        "0x3e5b"
+      ]
+    },
+    {
+      "entry": "0x42ed",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0x3e70"
+    },
+    {
+      "entry": "0x434b",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3ece"
+    },
+    {
+      "entry": "0x4444",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_presentation_scan_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x3fc7"
+    },
+    {
+      "entry": "0x4503",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x4086"
+    },
+    {
+      "entry": "0x454d",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_screen_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x40d0"
+    },
+    {
+      "entry": "0x45cb",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_presentation_scan_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x414e"
+    },
+    {
+      "entry": "0x464e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_screen_oracle.py",
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py",
+        "re/tools/big_bug_bang_presentation_scan_oracle.py",
+        "re/tools/big_bug_bang_scene_transition_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_script_travel_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x41d1"
+    },
+    {
+      "entry": "0x468a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_geometry_oracle.py",
+        "re/tools/big_bug_bang_ship_object_projection_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x420d"
+    },
+    {
+      "entry": "0x46bd",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x4240"
+    },
+    {
+      "entry": "0x474a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_geometry_oracle.py",
+        "re/tools/big_bug_bang_ship_object_projection_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x42cd"
+    },
+    {
+      "entry": "0x4874",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_page_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x43f7"
+    },
+    {
+      "entry": "0x48ee",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_page_oracle.py",
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x4471"
+    },
+    {
+      "entry": "0x49b3",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x4536"
+    },
+    {
+      "entry": "0x4b39",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x46bc"
+    },
+    {
+      "entry": "0x5025",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x4ba8"
+    },
+    {
+      "entry": "0x5153",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x4cd6"
+    },
+    {
+      "entry": "0x53df",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x4f62"
+    },
+    {
+      "entry": "0x5517",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x5518",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x5519",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x551a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x509d"
+    },
+    {
+      "entry": "0x5610",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_profile_binding_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x5700",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x5288"
+    },
+    {
+      "entry": "0x5714",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x529c"
+    },
+    {
+      "entry": "0x5798",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_profile_binding_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0x5320"
+    },
+    {
+      "entry": "0x57b4",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x533c"
+    },
+    {
+      "entry": "0x5820",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x59ff",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x5a53",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x5b65",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x5bae",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_scan_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x56fe"
+    },
+    {
+      "entry": "0x5c2a",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "exact_body",
+      "commander_entry": "0x577a"
+    },
+    {
+      "entry": "0x5c41",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_condition_oracle.py",
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x5d5d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x5dd7",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_scan_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6038",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_scan_oracle.py",
+        "re/tools/big_bug_bang_state_processor_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6104",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x5afd"
+    },
+    {
+      "entry": "0x613f",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_scan_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_script_travel_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x65e8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_direct_record_oracle.py",
+        "re/tools/big_bug_bang_inventory_condition_oracle.py",
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_transfer_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x5fd8"
+    },
+    {
+      "entry": "0x6606",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_record_oracle.py",
+        "re/tools/big_bug_bang_direct_record_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_transfer_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x5ff6"
+    },
+    {
+      "entry": "0x6633",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_record_oracle.py",
+        "re/tools/big_bug_bang_action_record_oracle.py",
+        "re/tools/big_bug_bang_bas_entry_oracle.py",
+        "re/tools/big_bug_bang_conflict_oracle.py",
+        "re/tools/big_bug_bang_honk_departure_oracle.py",
+        "re/tools/big_bug_bang_inventory_condition_oracle.py",
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py",
+        "re/tools/big_bug_bang_overview_oracle.py",
+        "re/tools/big_bug_bang_presentation_scan_oracle.py",
+        "re/tools/big_bug_bang_record_clear_oracle.py",
+        "re/tools/big_bug_bang_record_state_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_script_travel_oracle.py",
+        "re/tools/big_bug_bang_settlement_oracle.py",
+        "re/tools/big_bug_bang_state_processor_oracle.py",
+        "re/tools/big_bug_bang_transfer_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6023"
+    },
+    {
+      "entry": "0x6644",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_record_oracle.py",
+        "re/tools/big_bug_bang_action_record_oracle.py",
+        "re/tools/big_bug_bang_direct_record_oracle.py",
+        "re/tools/big_bug_bang_record_pair_oracle.py",
+        "re/tools/big_bug_bang_record_state_oracle.py",
+        "re/tools/big_bug_bang_transfer_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6034"
+    },
+    {
+      "entry": "0x665e",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x604e"
+    },
+    {
+      "entry": "0x669f",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x66ed",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_record_state_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x67b8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_conflict_oracle.py",
+        "re/tools/big_bug_bang_overview_oracle.py",
+        "re/tools/big_bug_bang_record_state_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_settlement_oracle.py",
+        "re/tools/big_bug_bang_state_processor_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6822",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_record_state_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6210"
+    },
+    {
+      "entry": "0x685d",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_conflict_oracle.py",
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_record_state_oracle.py",
+        "re/tools/big_bug_bang_settlement_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x624b"
+    },
+    {
+      "entry": "0x68a5",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_condition_oracle.py",
+        "re/tools/big_bug_bang_vm_yield_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0x6293"
+    },
+    {
+      "entry": "0x68c8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_honk_departure_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x62b6"
+    },
+    {
+      "entry": "0x697a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_record_oracle.py",
+        "re/tools/big_bug_bang_action_record_oracle.py",
+        "re/tools/big_bug_bang_bit_flag_oracle.py",
+        "re/tools/big_bug_bang_clock_guard_oracle.py",
+        "re/tools/big_bug_bang_concept_slots_oracle.py",
+        "re/tools/big_bug_bang_conflict_oracle.py",
+        "re/tools/big_bug_bang_control_flow_oracle.py",
+        "re/tools/big_bug_bang_dialogue_guard_oracle.py",
+        "re/tools/big_bug_bang_direct_record_oracle.py",
+        "re/tools/big_bug_bang_environment_oracle.py",
+        "re/tools/big_bug_bang_honk_departure_oracle.py",
+        "re/tools/big_bug_bang_record_pair_oracle.py",
+        "re/tools/big_bug_bang_record_state_oracle.py",
+        "re/tools/big_bug_bang_shared_arithmetic_oracle.py",
+        "re/tools/big_bug_bang_shared_bit_oracle.py",
+        "re/tools/big_bug_bang_timer_oracle.py",
+        "re/tools/big_bug_bang_transfer_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6993",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_vm_yield_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x647b"
+    },
+    {
+      "entry": "0x69ac",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_environment_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6494",
+        "0x64a0",
+        "0x64ac"
+      ]
+    },
+    {
+      "entry": "0x69b8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_environment_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6494",
+        "0x64a0",
+        "0x64ac"
+      ]
+    },
+    {
+      "entry": "0x69c4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_environment_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6494",
+        "0x64a0",
+        "0x64ac"
+      ]
+    },
+    {
+      "entry": "0x69d0",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_environment_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x64b8"
+    },
+    {
+      "entry": "0x69d8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_environment_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x64c0"
+    },
+    {
+      "entry": "0x69e6",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6a01",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_clock_guard_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x64e5"
+    },
+    {
+      "entry": "0x6a2c",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_clock_guard_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6510"
+    },
+    {
+      "entry": "0x6a75",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_control_flow_oracle.py",
+        "re/tools/big_bug_bang_honk_departure_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6a8e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_control_flow_oracle.py",
+        "re/tools/big_bug_bang_honk_departure_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6572"
+    },
+    {
+      "entry": "0x6aa4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_control_flow_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6588"
+    },
+    {
+      "entry": "0x6ab2",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_concept_slots_oracle.py",
+        "re/tools/big_bug_bang_control_flow_oracle.py",
+        "re/tools/big_bug_bang_dialogue_guard_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6af7",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_control_flow_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x65db"
+    },
+    {
+      "entry": "0x6b07",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_timer_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6b28",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_honk_departure_oracle.py",
+        "re/tools/big_bug_bang_inventory_condition_oracle.py",
+        "re/tools/big_bug_bang_vm_yield_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6c45",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_condition_oracle.py",
+        "re/tools/big_bug_bang_vm_yield_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6c89",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_honk_departure_oracle.py",
+        "re/tools/big_bug_bang_vm_yield_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6e54",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_honk_departure_oracle.py",
+        "re/tools/big_bug_bang_spoken_number_oracle.py",
+        "re/tools/big_bug_bang_vm_yield_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0x67a7"
+    },
+    {
+      "entry": "0x6e67",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ]
+    },
+    {
+      "entry": "0x6e6e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_sequence_procedure_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x67ba"
+    },
+    {
+      "entry": "0x6e7c",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_finale_oracle.py",
+        "re/tools/big_bug_bang_sequence_request_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x67c8"
+    },
+    {
+      "entry": "0x6ee4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_sequence_procedure_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6830"
+    },
+    {
+      "entry": "0x6f00",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_driver_init_oracle.py",
+        "re/tools/big_bug_bang_audio_driver_stop_oracle.py",
+        "re/tools/big_bug_bang_audio_events_oracle.py",
+        "re/tools/big_bug_bang_audio_page_backends_oracle.py",
+        "re/tools/big_bug_bang_audio_page_dispatch_oracle.py",
+        "re/tools/big_bug_bang_audio_playback_oracle.py",
+        "re/tools/big_bug_bang_audio_stream_refill_oracle.py",
+        "re/tools/big_bug_bang_audio_stream_source_oracle.py",
+        "re/tools/big_bug_bang_audio_stream_start_oracle.py",
+        "re/tools/big_bug_bang_sequence_procedure_oracle.py",
+        "re/tools/big_bug_bang_sound_bank_load_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0x684c"
+    },
+    {
+      "entry": "0x6f09",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_sequence_procedure_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ]
+    },
+    {
+      "entry": "0x6f10",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_sequence_procedure_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ]
+    },
+    {
+      "entry": "0x6f17",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_conflict_oracle.py",
+        "re/tools/big_bug_bang_settlement_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6f52",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_conflict_oracle.py",
+        "re/tools/big_bug_bang_settlement_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x6ff2",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_overview_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x706e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_conflict_oracle.py",
+        "re/tools/big_bug_bang_growth_oracle.py",
+        "re/tools/big_bug_bang_overview_oracle.py",
+        "re/tools/big_bug_bang_settlement_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x70cd",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_conflict_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x724e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_conflict_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x728b",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_growth_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7367",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_settlement_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7408",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_vm_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x744b",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_honk_departure_oracle.py",
+        "re/tools/big_bug_bang_shared_arithmetic_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x750a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_shared_bit_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6902"
+    },
+    {
+      "entry": "0x754e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_direct_record_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x75cd",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_transfer_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x69c7"
+    },
+    {
+      "entry": "0x76ad",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bit_flag_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6aa7"
+    },
+    {
+      "entry": "0x770c",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_record_pair_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6b06"
+    },
+    {
+      "entry": "0x7752",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_record_state_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6b4c"
+    },
+    {
+      "entry": "0x7884",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_action_record_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6c7e"
+    },
+    {
+      "entry": "0x791e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_action_record_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6d18"
+    },
+    {
+      "entry": "0x7986",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_action_record_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6d80"
+    },
+    {
+      "entry": "0x79d5",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_action_record_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6dcf"
+    },
+    {
+      "entry": "0x7a3a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_record_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6e34"
+    },
+    {
+      "entry": "0x7af4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_action_record_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6eee"
+    },
+    {
+      "entry": "0x7b68",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_action_record_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6f62"
+    },
+    {
+      "entry": "0x7bbf",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_honk_departure_oracle.py",
+        "re/tools/big_bug_bang_record_clear_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7c0e",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7c65",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7d48",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7d67",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7d83",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7dcb",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7e06",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7e40",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7e5c",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7e70",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7e8e",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ]
+    },
+    {
+      "entry": "0x7e8f",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7ef1",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x7f21",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8008",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x6ff3"
+    },
+    {
+      "entry": "0x8103",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_conflict_oracle.py",
+        "re/tools/big_bug_bang_settlement_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8154",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x713d"
+    },
+    {
+      "entry": "0x81e6",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x71cf"
+    },
+    {
+      "entry": "0x8231",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x721a"
+    },
+    {
+      "entry": "0x8270",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x82c6",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_menu_number_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x83e2",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_script_action_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x739b"
+    },
+    {
+      "entry": "0x8450",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_record_oracle.py",
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py",
+        "re/tools/big_bug_bang_presentation_scan_oracle.py",
+        "re/tools/big_bug_bang_scene_transition_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_transfer_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8584",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ]
+    },
+    {
+      "entry": "0x858b",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ]
+    },
+    {
+      "entry": "0x8592",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ]
+    },
+    {
+      "entry": "0x8599",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ]
+    },
+    {
+      "entry": "0x85a0",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x755e"
+    },
+    {
+      "entry": "0x8654",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7612"
+    },
+    {
+      "entry": "0x866b",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x7629",
+        "0x766f",
+        "0x76c0",
+        "0x76d5"
+      ]
+    },
+    {
+      "entry": "0x8680",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x763e"
+    },
+    {
+      "entry": "0x86b1",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x7629",
+        "0x766f",
+        "0x76c0",
+        "0x76d5"
+      ]
+    },
+    {
+      "entry": "0x86c6",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7684"
+    },
+    {
+      "entry": "0x86fc",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x76ba"
+    },
+    {
+      "entry": "0x8702",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x7629",
+        "0x766f",
+        "0x76c0",
+        "0x76d5"
+      ]
+    },
+    {
+      "entry": "0x8717",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x7629",
+        "0x766f",
+        "0x76c0",
+        "0x76d5"
+      ]
+    },
+    {
+      "entry": "0x872c",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x76ea"
+    },
+    {
+      "entry": "0x8796",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7754"
+    },
+    {
+      "entry": "0x87b8",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7776"
+    },
+    {
+      "entry": "0x87ca",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7788"
+    },
+    {
+      "entry": "0x87eb",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8830",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8923",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8987",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8a48",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_panel_activation_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8a7d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x8d88",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7cb4"
+    },
+    {
+      "entry": "0x8dbc",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7ce8"
+    },
+    {
+      "entry": "0x8e4f",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7d7b"
+    },
+    {
+      "entry": "0x8ef0",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7e1c"
+    },
+    {
+      "entry": "0x8f94",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x7ec0"
+    },
+    {
+      "entry": "0x9070",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x91ad",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x927a",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x92d0",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x935d",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x81fb"
+    },
+    {
+      "entry": "0x93cb",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x8269"
+    },
+    {
+      "entry": "0x93f7",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_tables_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x8295"
+    },
+    {
+      "entry": "0x9425",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x82c3"
+    },
+    {
+      "entry": "0x944a",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x82e8"
+    },
+    {
+      "entry": "0x958a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_choice_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x9778",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x98ad",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_honk_bank_oracle.py"
+      ],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x8848"
+      ]
+    },
+    {
+      "entry": "0x98d1",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x872c"
+    },
+    {
+      "entry": "0x9962",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x87bd"
+    },
+    {
+      "entry": "0x99ed",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "ambiguous",
+      "commander_candidates": [
+        "0x8848"
+      ]
+    },
+    {
+      "entry": "0x9a11",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x9b45",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_inventory_choice_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0x9c5e",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x8a4e"
+    },
+    {
+      "entry": "0x9dbb",
+      "origin": "static_graph",
+      "executed": false,
+      "oracles": [],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x8bab"
+    },
+    {
+      "entry": "0x9ea6",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_camera_oracle.py",
+        "re/tools/big_bug_bang_scene_transition_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_script_travel_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x8c96"
+    },
+    {
+      "entry": "0x9ede",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xa286",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_camera_oracle.py",
+        "re/tools/big_bug_bang_overview_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xa5e0",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xa98b",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xa9d3",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_location_panel_geometry_oracle.py",
+        "re/tools/big_bug_bang_location_panel_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xaa3d",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_camera_oracle.py",
+        "re/tools/big_bug_bang_navigation_pick_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x92a3"
+    },
+    {
+      "entry": "0xaad4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_framebuffer_copy_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x933a"
+    },
+    {
+      "entry": "0xaafe",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_camera_oracle.py",
+        "re/tools/big_bug_bang_navigation_wipe_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9364"
+    },
+    {
+      "entry": "0xab8f",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_subtitle_reveal_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x93f5"
+    },
+    {
+      "entry": "0xacaa",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_mode_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9510"
+    },
+    {
+      "entry": "0xace4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_page_oracle.py",
+        "re/tools/big_bug_bang_bridge_screen_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x954a"
+    },
+    {
+      "entry": "0xad37",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_screen_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xadde",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_screen_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x963f"
+    },
+    {
+      "entry": "0xadf5",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_steering_oracle.py",
+        "re/tools/big_bug_bang_scene_transition_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9656"
+    },
+    {
+      "entry": "0xafba",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_page_oracle.py",
+        "re/tools/big_bug_bang_bridge_panorama_oracle.py",
+        "re/tools/big_bug_bang_bridge_screen_oracle.py",
+        "re/tools/big_bug_bang_navigation_camera_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x981b"
+    },
+    {
+      "entry": "0xb058",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_page_oracle.py",
+        "re/tools/big_bug_bang_ship_projection_matrix_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x98b9"
+    },
+    {
+      "entry": "0xb1af",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_page_oracle.py",
+        "re/tools/big_bug_bang_ship_point_cloud_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9a10"
+    },
+    {
+      "entry": "0xb2a3",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ship_point_plot_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9b04"
+    },
+    {
+      "entry": "0xb306",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ship_point_randomize_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9b67"
+    },
+    {
+      "entry": "0xb337",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_page_oracle.py",
+        "re/tools/big_bug_bang_ship_object_projection_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9b98"
+    },
+    {
+      "entry": "0xb4b0",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py",
+        "re/tools/big_bug_bang_scene_transition_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xb731",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_scene_completion_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xb763",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_cache_oracle.py",
+        "re/tools/big_bug_bang_presentation_catalog_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_resource_descriptor_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9f80"
+    },
+    {
+      "entry": "0xb771",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_cache_oracle.py",
+        "re/tools/big_bug_bang_presentation_sequence_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9f8e"
+    },
+    {
+      "entry": "0xb785",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0x9fa2"
+    },
+    {
+      "entry": "0xb8a6",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_palette_blocks_oracle.py",
+        "re/tools/big_bug_bang_presentation_palette_dispatch_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa0c3"
+    },
+    {
+      "entry": "0xb8fa",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_palette_blocks_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa117"
+    },
+    {
+      "entry": "0xb924",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_cache_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_presentation_source_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py",
+        "re/tools/big_bug_bang_scene_completion_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa141"
+    },
+    {
+      "entry": "0xb942",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py",
+        "re/tools/big_bug_bang_presentation_sequence_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa15f"
+    },
+    {
+      "entry": "0xb997",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_queue_service_oracle.py",
+        "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py",
+        "re/tools/big_bug_bang_presentation_source_oracle.py",
+        "re/tools/big_bug_bang_scene_completion_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa1b4"
+    },
+    {
+      "entry": "0xb9d6",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_queue_service_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa1f3"
+    },
+    {
+      "entry": "0xb9ef",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_activation_oracle.py",
+        "re/tools/big_bug_bang_presentation_interrupt_oracle.py",
+        "re/tools/big_bug_bang_presentation_queue_service_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa20c"
+    },
+    {
+      "entry": "0xba23",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_clock_oracle.py",
+        "re/tools/big_bug_bang_presentation_interrupt_oracle.py",
+        "re/tools/big_bug_bang_presentation_queue_service_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xba95",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_queue_service_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_presentation_sequence_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa2ab"
+    },
+    {
+      "entry": "0xbac7",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_scene_completion_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa2dd"
+    },
+    {
+      "entry": "0xbb78",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_queue_wrap_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa38e"
+    },
+    {
+      "entry": "0xbb97",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_queue_room_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa3ad"
+    },
+    {
+      "entry": "0xbbba",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_interrupt_oracle.py",
+        "re/tools/big_bug_bang_presentation_queue_consume_oracle.py",
+        "re/tools/big_bug_bang_presentation_queue_service_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa3d0"
+    },
+    {
+      "entry": "0xbbf5",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_queue_state_oracle.py",
+        "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py",
+        "re/tools/big_bug_bang_scene_completion_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa40b"
+    },
+    {
+      "entry": "0xbc04",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_active_oracle.py",
+        "re/tools/big_bug_bang_presentation_interrupt_oracle.py",
+        "re/tools/big_bug_bang_presentation_queue_service_oracle.py",
+        "re/tools/big_bug_bang_presentation_sequence_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa41a"
+    },
+    {
+      "entry": "0xbcd7",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_rect_blit_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0xa4ed"
+    },
+    {
+      "entry": "0xbd3c",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_activation_oracle.py",
+        "re/tools/big_bug_bang_presentation_entry_oracle.py",
+        "re/tools/big_bug_bang_presentation_sequence_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa552"
+    },
+    {
+      "entry": "0xbe0c",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_entry_read_oracle.py",
+        "re/tools/big_bug_bang_presentation_initial_entry_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa622"
+    },
+    {
+      "entry": "0xbe1e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_entry_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa634"
+    },
+    {
+      "entry": "0xbe2c",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_initial_entry_oracle.py",
+        "re/tools/big_bug_bang_presentation_sequence_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa642"
+    },
+    {
+      "entry": "0xbe4e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_initial_entry_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_presentation_transfer_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa664"
+    },
+    {
+      "entry": "0xbf1e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_initial_entry_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_presentation_transfer_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa734"
+    },
+    {
+      "entry": "0xbf28",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_source_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa73e"
+    },
+    {
+      "entry": "0xbf2e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_presentation_source_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa744"
+    },
+    {
+      "entry": "0xbf41",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_initial_entry_oracle.py",
+        "re/tools/big_bug_bang_presentation_queue_init_oracle.py",
+        "re/tools/big_bug_bang_presentation_sequence_oracle.py",
+        "re/tools/big_bug_bang_resource_switch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa757"
+    },
+    {
+      "entry": "0xbf62",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_palette_dispatch_oracle.py",
+        "re/tools/big_bug_bang_presentation_queue_service_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa778"
+    },
+    {
+      "entry": "0xbfd0",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_cache_oracle.py",
+        "re/tools/big_bug_bang_presentation_refill_oracle.py",
+        "re/tools/big_bug_bang_presentation_word_copy_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0xa7e6"
+    },
+    {
+      "entry": "0xc016",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_dispatch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa82c"
+    },
+    {
+      "entry": "0xc051",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_ab_oracle.py",
+        "re/tools/big_bug_bang_presentation_dispatch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xa867"
+    },
+    {
+      "entry": "0xc0fe",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_ad_oracle.py",
+        "re/tools/big_bug_bang_presentation_dispatch_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xc2a4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_ad_oracle.py",
+        "re/tools/big_bug_bang_presentation_rect_decode_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0xaabc"
+    },
+    {
+      "entry": "0xc30d",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_rect_decode_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xab25"
+    },
+    {
+      "entry": "0xc57e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentation_rect_decode_oracle.py"
+      ],
+      "comparison": "exact_body",
+      "commander_entry": "0xad96"
+    },
+    {
+      "entry": "0xc780",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ship_presentation_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xafa0"
+    },
+    {
+      "entry": "0xc859",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ship_hud_oracle.py",
+        "re/tools/big_bug_bang_ship_presentation_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xcb0f",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ship_navigation_oracle.py",
+        "re/tools/big_bug_bang_ship_presentation_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xcd69",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_alien_cycle_oracle.py",
+        "re/tools/big_bug_bang_scene_transition_oracle.py",
+        "re/tools/big_bug_bang_ship_navigation_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xce6a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_script_action_oracle.py",
+        "re/tools/big_bug_bang_ship_depth_band_oracle.py",
+        "re/tools/big_bug_bang_ship_hud_oracle.py",
+        "re/tools/big_bug_bang_ship_presentation_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xb6dd"
+    },
+    {
+      "entry": "0xcee9",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ship_depth_scroll_oracle.py",
+        "re/tools/big_bug_bang_ship_presentation_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xb75c"
+    },
+    {
+      "entry": "0xcf40",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_driver_init_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xb7b0"
+    },
+    {
+      "entry": "0xcf73",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_events_oracle.py",
+        "re/tools/big_bug_bang_numeric_chatter_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xb7e3"
+    },
+    {
+      "entry": "0xd05d",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_playback_oracle.py",
+        "re/tools/big_bug_bang_inventory_choice_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xd33a",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_driver_stop_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xd363",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_stream_start_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xd40e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_stream_refill_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xd4b3",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_page_dispatch_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xbd09"
+    },
+    {
+      "entry": "0xd4d0",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_page_backends_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xbd26"
+    },
+    {
+      "entry": "0xd4f8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_page_backends_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xbd4e"
+    },
+    {
+      "entry": "0xd537",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_page_backends_oracle.py"
+      ],
+      "comparison": "structural_candidate",
+      "commander_entry": "0xbd8d"
+    },
+    {
+      "entry": "0xd561",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_audio_stream_source_oracle.py",
+        "re/tools/big_bug_bang_script_action_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xd7ec",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_sound_bank_load_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xd9f3",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_stream_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xda5f",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_stream_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xdb08",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_voice_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xdbd4",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_transfer_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xdc92",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_transfer_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xdce5",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_voice_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xddd2",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_voice_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xddf8",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_transfer_oracle.py",
+        "re/tools/big_bug_bang_ultrasound_voice_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xde5b",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_lifecycle_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xdec3",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_lifecycle_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xe05e",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_lifecycle_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xe0de",
+      "origin": "static_graph",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_lifecycle_oracle.py",
+        "re/tools/big_bug_bang_ultrasound_stream_oracle.py",
+        "re/tools/big_bug_bang_ultrasound_voice_oracle.py"
+      ],
+      "comparison": "unresolved"
+    },
+    {
+      "entry": "0xe0ed",
+      "origin": "runtime_vector",
+      "executed": true,
+      "oracles": [
+        "re/tools/big_bug_bang_ultrasound_stream_oracle.py"
+      ],
+      "comparison": "outside_static_comparison"
+    }
+  ]
+}

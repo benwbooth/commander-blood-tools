@@ -3532,3 +3532,33 @@ SHA-256 values are respectively
 and `f9b88ea03d4e4f8ba4452e9c4e18070f3ac58ee32a152d2da0aa5896247ae7da`.
 The deterministic JSONL SHA-256 is
 `68b55f33a60b0da01afa49255e75b3280839db56cd6f8dbfa6d777891d229097`.
+
+## 2026-09-13 - Big Bug Bang oracle entrypoint coverage baseline
+
+The global native audit now measures executable coverage rather than scraping
+address constants from source. `re/tools/run_big_bug_bang_oracle_with_coverage.py`
+wraps one unchanged oracle, recognizes whether each Unicorn instance received
+the full Commander or BBB image, translates mapped addresses back to file
+offsets, and records an entry only when the bytes about to execute still match
+the pinned BBB executable. This excludes patched callbacks, synthetic code,
+Commander-side executions, and numeric constants that merely resemble an
+address.
+
+`re/tools/collect_big_bug_bang_oracle_coverage.py` runs all 125 checked-in BBB
+oracle programs with isolated outputs and their real required inputs. Every
+oracle passes. The aggregate report at
+`re/big_bug_bang_oracle_coverage.json` partitions all 382 closed-static-graph
+entrypoints plus the runtime-installed `0xE0ED` Gravis ISR. Existing scenarios
+execute 212 static entrypoints and the ISR, for 213 directly observed known
+entries. The static executed/unexecuted split is 12/15 byte-exact matches,
+114/82 relocation-tolerant structural candidates, 13/20 ambiguous candidates,
+and 73/53 initially unresolved entries.
+
+These are evidence-coverage counts, not a port-completion percentage. An
+unexecuted entry may be an inherited helper, an intentionally eliminated DOS
+adapter, a dormant authored path, or uncovered game semantics. Conversely,
+execution does not itself prove that a typed production owner consumes the
+evidence. The next audit gate is an explicit 383-row disposition ledger tying
+each entry to BBB evidence and a Rust owner or to a documented elimination;
+anything else remains pending. The aggregate report SHA-256 is
+`86daa447217af0453065067c98c0f9d5b500a35c016b3f8d3307c31b3fa08c80`.
