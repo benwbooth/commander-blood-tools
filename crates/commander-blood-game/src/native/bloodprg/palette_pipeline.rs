@@ -106,9 +106,10 @@ pub fn build_palette_blend_remap_table(
 /// Interpolate an inclusive palette range from target toward source.
 ///
 /// This translates `palette_range_interpolate` at BLOODPRG routine offset
-/// `0x0023C5`. Signed-byte component differences and signed division toward
-/// zero are retained, including negative percentages, while checked array
-/// ranges replace unchecked byte cursors.
+/// `0x0023C5` and its relocated BBB counterpart at `0x002745`. Signed-byte
+/// component differences and signed division toward zero are retained,
+/// including negative percentages, while checked array ranges replace
+/// unchecked byte cursors.
 pub fn interpolate_palette_range(
     source: &IndexedGamePalette,
     target: &IndexedGamePalette,
@@ -226,6 +227,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangInterpolationOracle {
+        rows: Vec<InterpolationOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct TintOracle {
         name: String,
         bank_base: u8,
@@ -309,12 +315,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn range_interpolation_matches_every_original_palette_vector() {
-        let vectors: Vec<InterpolationOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_23c5_natural.json"
-        ))
-        .unwrap();
+    fn assert_interpolation_vectors(vectors: Vec<InterpolationOracle>) {
         assert_eq!(vectors.len(), INTERPOLATION_VECTOR_COUNT);
         let source = interpolation_source_palette();
         let target = interpolation_target_palette();
@@ -347,6 +348,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn range_interpolation_matches_every_original_palette_vector() {
+        let vectors: Vec<InterpolationOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_23c5_natural.json"
+        ))
+        .unwrap();
+        assert_interpolation_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_range_interpolation_matches_every_direct_palette_vector() {
+        let oracle: BigBugBangInterpolationOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_palette_interpolation.json"
+        ))
+        .unwrap();
+        assert_interpolation_vectors(oracle.rows);
     }
 
     #[test]

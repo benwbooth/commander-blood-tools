@@ -5292,6 +5292,31 @@ exclusions. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `880d2d2b1af9e9c54e87cfbda95a3fb8eb3421facd10ff9f333afd643c64d66b`.
 
+## Palette Interpolation Oracle (2026-09-13)
+
+BBB `0x2745..0x27AD` is the relocated sequel counterpart of Commander Blood's
+`0x23C5..0x242D` inclusive palette interpolator. Both routines contain 61
+instructions in 104 bytes and differ only in the fixed destination-palette
+offset, which moves from `0x5251` to `0x5621`.
+
+The new `re/tools/big_bug_bang_palette_interpolation_oracle.py` directly
+executes all five fingerprinted Commander cases in the shipped BBB body. They
+prove zero and full interpolation, inclusive subranges, signed negative
+extrapolation, signed division toward zero, and all 768 destination components.
+The harness also verifies entry-ES target ownership after the FS transfer,
+DS source and GS destination ownership against full-segment decoys, exact
+destination and stack writes, low-word register residue, terminal arithmetic
+flags, preserved IF with cleared DF, far return, untouched full segments, and
+patched-executable immutability.
+
+The typed `interpolate_palette_range` owner consumes both five-row fixtures.
+Owned palette arrays and a checked inclusive range replace segmented byte
+cursors while preserving the original signed component arithmetic. BBB's body
+SHA-256 is
+`d20ed6eaff410820e205b6eb9b621a1af1aa879a7bd66d26482e4ee26b59509c`,
+and the deterministic fixture SHA-256 is
+`622b12a18c6b830ea024245a4503b3963aad3cbd662e40e391b6b74e3e88ee94`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

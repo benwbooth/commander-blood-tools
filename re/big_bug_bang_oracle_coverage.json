@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 162,
-    "oracle_fixture_count": 161,
+    "oracle_count": 163,
+    "oracle_fixture_count": 162,
     "fixture_relation_counts": {
-      "exact": 160,
+      "exact": 161,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 279,
-    "unentered_static_entrypoints": 103,
+    "entered_static_entrypoints": 280,
+    "unentered_static_entrypoints": 102,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 280,
+    "entered_known_entrypoints": 281,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 166,
-        "unentered": 30
+        "entered": 167,
+        "unentered": 29
       },
       "exact_body": {
         "entered": 15,
@@ -990,6 +990,18 @@
       "summary": "verified 4 BBB scene-palette clear cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_clear.json",
       "fixture_sha256": "de529cc1acc2c277bd3f38ae621ecc313712b93a2c80eb9320306e9a2e93b9b2",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_palette_interpolation_oracle.py",
+      "oracle_sha256": "b1bf98b76a16aa5ab8201ca891510f119b36503bafe3df132acf71f6591a1f81",
+      "executed_instruction_count": 61,
+      "entered_entrypoints": [
+        "0x2745"
+      ],
+      "summary": "verified 5 BBB palette-interpolation cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_interpolation.json",
+      "fixture_sha256": "622b12a18c6b830ea024245a4503b3963aad3cbd662e40e391b6b74e3e88ee94",
       "fixture_relation": "exact"
     },
     {
@@ -2981,8 +2993,10 @@
     {
       "entry": "0x2745",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_palette_interpolation_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x23c5"
     },
