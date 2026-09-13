@@ -4844,6 +4844,29 @@ production behavior. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `68db8e9f3cd882e60b55222cc74bbcc4b779bc6e58b8037e61f07da3fae49cc2`.
 
+## Presentation Palette Dispatch Oracle (2026-09-13)
+
+BBB `0xBF62..0xBF6E` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA778..0xA784` queued palette dispatch wrapper. Both routines
+contain four instructions in 12 bytes. BBB relocates the queue head and palette
+payload fields plus the shared palette parser target without changing the ABI.
+
+The new `re/tools/big_bug_bang_presentation_palette_dispatch_oracle.py`
+executes both shipped wrappers with all four recovered Commander vectors. It
+verifies that the queue head offset is ignored, the live head segment becomes
+ES, the independent palette payload offset becomes SI, and the parser receives
+that exact far stream for zero, ordinary, and `0xFFFF` offsets. It also checks
+the real near-call frame and return, every register and segment, unchanged
+flags and memory, executable immutability, and direct normalized Commander/BBB
+equality. The shared palette parser itself remains covered by its dedicated
+dual-executable oracle.
+
+The typed queued palette entry point consumes both four-row fixtures without
+changing production behavior. BBB's body SHA-256 is
+`7d8135813de7ebf0664028ca8f187a29231ec5f2fa273a6718d3f8dd5d0d4e33`,
+and the deterministic JSONL SHA-256 is
+`f560d043967c206851d9b11d752e0ef3dc93e09c25427cd18c08a985e3825691`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

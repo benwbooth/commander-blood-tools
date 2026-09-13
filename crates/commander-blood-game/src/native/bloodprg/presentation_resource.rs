@@ -437,7 +437,8 @@ mod tests {
     const FLAT_PALETTE_BLOCK_VECTOR_COUNT: usize = 4;
     const PALETTE_COPY_VECTOR_COUNT: usize = 4;
     const SOURCE_CLOSE_VECTOR_COUNT: usize = 7;
-    const QUEUED_PALETTE_VECTOR_COUNT: usize = 4;
+    const COMMANDER_QUEUED_PALETTE_VECTOR_COUNT: usize = 4;
+    const SEQUEL_QUEUED_PALETTE_VECTOR_COUNT: usize = 4;
     const WORD_COPY_VECTOR_COUNT: usize = 6;
     const FLAT_WORD_COPY_VECTOR_COUNT: usize = 4;
     const LIVE_PALETTE_SEED: usize = 5;
@@ -857,12 +858,24 @@ mod tests {
     }
 
     #[test]
-    fn queued_palette_wrapper_uses_every_original_payload_offset() {
-        let vectors: Vec<QueuedPaletteOracle> = serde_json::from_str(include_str!(
+    fn queued_palette_wrapper_uses_both_original_payload_fixtures() {
+        let commander: Vec<QueuedPaletteOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a778_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), QUEUED_PALETTE_VECTOR_COUNT);
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_palette_dispatch.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_queued_palette_vectors(commander, COMMANDER_QUEUED_PALETTE_VECTOR_COUNT);
+        assert_queued_palette_vectors(sequel, SEQUEL_QUEUED_PALETTE_VECTOR_COUNT);
+    }
+
+    fn assert_queued_palette_vectors(vectors: Vec<QueuedPaletteOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count);
 
         for vector in vectors {
             let payload_offset = usize::from(vector.payload_offset);
