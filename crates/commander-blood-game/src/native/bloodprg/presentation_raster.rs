@@ -225,11 +225,23 @@ mod tests {
     }
 
     #[test]
-    fn rectangle_blit_matches_every_flat_original_vector() {
-        let vectors: Vec<RectBlitOracle> = serde_json::from_str(include_str!(
+    fn rectangle_blit_matches_both_flat_original_fixtures() {
+        let commander: Vec<RectBlitOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a4ed_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_rect_blit.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_rectangle_blit_vectors(commander);
+        assert_rectangle_blit_vectors(sequel);
+    }
+
+    fn assert_rectangle_blit_vectors(vectors: Vec<RectBlitOracle>) {
         assert_eq!(vectors.len(), RECT_BLIT_VECTOR_COUNT);
 
         let mut matched = usize::MIN;

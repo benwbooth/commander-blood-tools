@@ -2588,3 +2588,25 @@ behavior changed. BBB's body SHA-256 is
 `75763b21515471444c07b0f9c11603f870101879bbf343a59d037b2d6f2726fb`,
 and the deterministic JSONL SHA-256 is
 `1f78b7ee3ffe07873edb8e09fb4302ad162e4b012705e8adcf5d846b7f9a0ff6`.
+
+## 2026-09-13 - Big Bug Bang presentation rectangle blit
+
+BBB `0xBCD7..0xBD3C` relocates Commander Blood's already ported
+`0xA4ED..0xA552` presentation rectangle blitter without changing any of its
+101 bytes. Both locations contain 51 instructions and have body SHA-256
+`d68fc64fe931eda8ecabf762096b253b2324a77d9dcc17eb4298953f7d99fbdc`.
+
+The new `re/tools/big_bug_bang_presentation_rect_blit_oracle.py` executes both
+shipped locations with all nine recovered Commander cases. They cover all 18
+conditional branch and loop edges across opaque and zero-transparent drawing,
+pitched and full-width paths, zero rows and width, wrapping offsets, and
+inherited reverse DF.
+
+The oracle verifies every source and destination byte, changed-byte counts,
+wrapped source and destination pointers, DS/ES ownership against FS/GS decoys,
+complete registers and segments, flags, stack bounds, executable immutability,
+and direct Commander/BBB equality. The typed raster consumes both nine-row
+fixtures: six flat-domain cases match exactly, while zero-row, wrapping-
+geometry, and reverse-direction behavior retain their checked host handling.
+No production behavior changed. The deterministic JSONL SHA-256 is
+`aa826eb444d95632a7d69ceef296817cd6c66643bca67367792747e2b4b68425`.
