@@ -4520,6 +4520,32 @@ and the deterministic JSONL SHA-256 is
 This classifies the readiness selector, not the activation helper body or
 direction-flag states outside the game's forward-string invariant.
 
+## Presentation Clock Oracle (2026-09-13)
+
+BBB `0xBA23..0xBA7B` expands Commander Blood's `0xA240..0xA291`
+presentation clock from 30 instructions in 81 bytes to 32 instructions in 88
+bytes. In addition to relocating seven clock fields, BBB tests the `ULTRASND`
+backend latch at `0x0F1F`; when set, it skips the unavailable voice-position
+callback and uses software-tick pacing.
+
+`re/tools/big_bug_bang_presentation_clock_oracle.py` executes the 12 Commander
+clock vectors through both shipped bodies with the sequel latch clear, then
+executes two BBB-only software-timed audio cases. The shared cases agree exactly,
+and the full set traverses all 18 BBB conditional branch edges, including both
+outcomes of the new backend gate.
+
+The oracle verifies far callback frames, callback and timer-read counts, the
+second due-path tick sample, signed phase correction, 16-bit wrapping, exact
+owned clock writes, DS ownership against a GS decoy, unchanged executable and
+unowned segments, normalized complete stacks, every register and segment, and
+flags. The typed clock exposes the BBB backend branch while the modern runtime
+continues to use its position-capable backend. BBB's body SHA-256 is
+`7f8fffb29e00869a219bc384c570a6fd6ec0584077bb5f561a92da386a70cf4e`,
+and the 14-row deterministic JSONL SHA-256 is
+`42388378a7b87603c9b33eb267eebaee7fa4feca42ce86130c2673ef1d4ed4fe`.
+This classifies clock selection and arithmetic, not either original hardware
+driver body.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

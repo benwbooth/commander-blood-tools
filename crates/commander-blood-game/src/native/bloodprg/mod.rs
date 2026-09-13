@@ -454,7 +454,7 @@ pub use presentation_queue::{
     PresentationQueueAdvance, PresentationQueueClock, PresentationQueueClockGates,
     PresentationQueueConsumeOutcome, PresentationQueueError, PresentationQueueState,
     presentation_entry_activation_request, presentation_queue_advance_due,
-    presentation_resource_enabled,
+    presentation_queue_advance_due_with_audio_backend, presentation_resource_enabled,
 };
 pub use presentation_queue_service::{
     PresentationQueueServiceContext, PresentationQueueServiceError,

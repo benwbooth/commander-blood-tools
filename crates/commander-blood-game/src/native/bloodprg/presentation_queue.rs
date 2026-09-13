@@ -444,8 +444,8 @@ pub struct PresentationQueueClockGates {
 }
 
 impl PresentationQueueClockGates {
-    const fn uses_audio_clock(self) -> bool {
-        self.primary_mode && self.secondary_mode && self.voice_playback
+    const fn uses_audio_clock(self, software_timed_audio: bool) -> bool {
+        self.primary_mode && self.secondary_mode && self.voice_playback && !software_timed_audio
     }
 }
 
@@ -465,10 +465,30 @@ pub struct PresentationQueueAdvance {
 pub fn presentation_queue_advance_due(
     clock: &mut PresentationQueueClock,
     gates: PresentationQueueClockGates,
+    audio_position: impl FnMut() -> u16,
+    timer_tick: impl FnMut() -> u16,
+) -> PresentationQueueAdvance {
+    presentation_queue_advance_due_with_audio_backend(
+        clock,
+        gates,
+        false,
+        audio_position,
+        timer_tick,
+    )
+}
+
+/// Decide whether an entry is due under either original audio backend.
+///
+/// Big Bug Bang's Gravis Ultrasound path cannot query a playback position and
+/// therefore falls back to the software timer even when all audio gates are set.
+pub fn presentation_queue_advance_due_with_audio_backend(
+    clock: &mut PresentationQueueClock,
+    gates: PresentationQueueClockGates,
+    software_timed_audio: bool,
     mut audio_position: impl FnMut() -> u16,
     mut timer_tick: impl FnMut() -> u16,
 ) -> PresentationQueueAdvance {
-    if gates.uses_audio_clock() {
+    if gates.uses_audio_clock(software_timed_audio) {
         let current = AUDIO_CLOCK_PERIOD.wrapping_sub(audio_position());
         let mut elapsed = current.wrapping_sub(clock.audio_phase);
         if (elapsed as i16).is_negative() {
@@ -503,7 +523,8 @@ mod tests {
 
     const FLAT_BUFFER_CAPACITY: usize = u16::MAX as usize;
     const ROLLOVER_VECTOR_COUNT: usize = 4;
-    const CLOCK_VECTOR_COUNT: usize = 12;
+    const COMMANDER_CLOCK_VECTOR_COUNT: usize = 12;
+    const SEQUEL_CLOCK_VECTOR_COUNT: usize = 14;
     const FINISH_VECTOR_COUNT: usize = 6;
     const BEGIN_ENTRY_VECTOR_COUNT: usize = 6;
     const BEGIN_ENTRY_FLAT_VECTOR_COUNT: usize = 4;
@@ -535,6 +556,8 @@ mod tests {
         mode_27e0: u8,
         mode_27e1: u8,
         audio_enabled: u8,
+        #[serde(default)]
+        software_timed_audio: bool,
         callback_value: u16,
         previous_phase: u16,
         tick: u16,
@@ -756,12 +779,24 @@ mod tests {
     }
 
     #[test]
-    fn advance_timing_matches_every_original_vector() {
-        let vectors: Vec<ClockOracle> = serde_json::from_str(include_str!(
+    fn advance_timing_matches_both_original_fixtures() {
+        let commander: Vec<ClockOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a240_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), CLOCK_VECTOR_COUNT);
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_clock.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_advance_timing_vectors(commander, COMMANDER_CLOCK_VECTOR_COUNT);
+        assert_advance_timing_vectors(sequel, SEQUEL_CLOCK_VECTOR_COUNT);
+    }
+
+    fn assert_advance_timing_vectors(vectors: Vec<ClockOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count);
 
         for vector in vectors {
             let mut clock = PresentationQueueClock {
@@ -771,13 +806,14 @@ mod tests {
             };
             let mut audio_samples = VecDeque::from([vector.callback_value]);
             let mut timer_samples = VecDeque::from([vector.tick, vector.reread_tick]);
-            let result = presentation_queue_advance_due(
+            let result = presentation_queue_advance_due_with_audio_backend(
                 &mut clock,
                 PresentationQueueClockGates {
                     primary_mode: vector.mode_27e0 & 1 != u8::MIN,
                     secondary_mode: vector.mode_27e1 & 1 != u8::MIN,
                     voice_playback: vector.audio_enabled & 1 != u8::MIN,
                 },
+                vector.software_timed_audio,
                 || audio_samples.pop_front().unwrap(),
                 || timer_samples.pop_front().unwrap(),
             );
@@ -786,7 +822,8 @@ mod tests {
                 vector.audio_clock,
                 vector.mode_27e0 & 1 != 0
                     && vector.mode_27e1 & 1 != 0
-                    && vector.audio_enabled & 1 != 0,
+                    && vector.audio_enabled & 1 != 0
+                    && !vector.software_timed_audio,
                 "{}",
                 vector.name
             );
