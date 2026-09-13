@@ -168,7 +168,8 @@ pub fn build_procedure_patch_stream(
 
 /// Restore typed procedure gates from the original save-game patch format.
 ///
-/// This translates `vm_patch_stream_apply` at BLOODPRG file offset `0x001D74`.
+/// This translates `vm_patch_stream_apply` at BLOODPRG file offset `0x001D74`
+/// and its relocated BBB counterpart at `0x001FE5`.
 /// Every record is validated before state changes, so a truncated or foreign
 /// save cannot partially corrupt the active profile. Ordered duplicate records
 /// retain the native last-write-wins behavior.
@@ -269,6 +270,11 @@ mod tests {
     struct PatchApplyOracle {
         name: String,
         records: Vec<PatchRecordOracle>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangPatchApplyOracle {
+        rows: Vec<PatchApplyOracle>,
     }
 
     fn original_asset(name: &str) -> PathBuf {
@@ -425,12 +431,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn patch_stream_apply_matches_every_original_ordering_vector() {
-        let vectors: Vec<PatchApplyOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_1d74_natural.json"
-        ))
-        .unwrap();
+    fn assert_patch_stream_apply_vectors(vectors: Vec<PatchApplyOracle>) {
         assert_eq!(vectors.len(), PATCH_APPLY_VECTOR_COUNT);
 
         for vector in vectors {
@@ -486,6 +487,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn patch_stream_apply_matches_every_original_ordering_vector() {
+        let vectors: Vec<PatchApplyOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1d74_natural.json"
+        ))
+        .unwrap();
+        assert_patch_stream_apply_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_patch_stream_apply_matches_every_direct_ordering_vector() {
+        let oracle: BigBugBangPatchApplyOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_procedure_patch_apply.json"
+        ))
+        .unwrap();
+        assert_patch_stream_apply_vectors(oracle.rows);
     }
 
     #[test]

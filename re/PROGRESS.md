@@ -4233,3 +4233,32 @@ The strict ledger classifies 297 of 383 known entries and leaves 86 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `b24dfd4889e049fa70a2ea3dd952b9914a33583a13c9e024c71aab67eb0c5672`.
+
+## 2026-09-13 - Big Bug Bang procedure patch restoration
+
+`re/tools/big_bug_bang_procedure_patch_apply_oracle.py` executes BBB's complete
+procedure patch-stream applier at `0x1FE5`. Four cases cover one absolute target,
+ordered duplicate and boundary targets, source-offset wrapping, and the original
+zero-byte-count full wrap. Every resulting semantic row exactly matches the
+independent Commander fixture despite BBB's relocated GS-owned pointers.
+
+The oracle checks the exact 32-byte body hash; packed three-byte source reads;
+segment-only absolute destination writes; ignored target-pointer offset; ordered
+duplicate overwrites; the cross-boundary word read; all 65,536 zero-count loop
+iterations; result AX; register, segment, defined-flag, near-return, and exact
+stack behavior; and full source, target, decoy, pointer, executable, and
+synthetic-state ownership. Its checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_procedure_patch_apply.json` has SHA-256
+`28d1a2409064e0b7048d671eb3e650d549054814e26a5778ac98fbebbdbfea76`.
+`apply_procedure_patch_stream` consumes every direct BBB row while validating
+typed procedure identities before transactional mutation.
+
+The global collector now reproduces 146 exact fixtures and one prefix fixture
+across 148 BBB oracle programs, entering 264 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`0370b48c8ce209edf3c0a3b9c43f265e9e06d9446313810a806dc7285ec364f1`.
+The strict ledger classifies 298 of 383 known entries and leaves 85 pending:
+235 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 26
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`6ecb0d4530bd8864669bdf517113f5a2fccb185cffc4ce7b2be54d22cf8d4102`.

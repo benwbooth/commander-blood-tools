@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 147,
-    "oracle_fixture_count": 146,
+    "oracle_count": 148,
+    "oracle_fixture_count": 147,
     "fixture_relation_counts": {
-      "exact": 145,
+      "exact": 146,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 263,
-    "unentered_static_entrypoints": 119,
+    "entered_static_entrypoints": 264,
+    "unentered_static_entrypoints": 118,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 264,
+    "entered_known_entrypoints": 265,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 150,
-        "unentered": 46
+        "entered": 151,
+        "unentered": 45
       },
       "exact_body": {
         "entered": 15,
@@ -1406,6 +1406,18 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_procedure_patch_apply_oracle.py",
+      "oracle_sha256": "9b2f0e5a5c592dc3156e6f4f347a2b2590c5d597c5080f3fa6078f99fd7d2b89",
+      "executed_instruction_count": 19,
+      "entered_entrypoints": [
+        "0x1fe5"
+      ],
+      "summary": "verified 4 BBB procedure patch-apply cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_procedure_patch_apply.json",
+      "fixture_sha256": "28d1a2409064e0b7048d671eb3e650d549054814e26a5778ac98fbebbdbfea76",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_profile_binding_oracle.py",
       "oracle_sha256": "6603d680afeba545b6f487e99635ed9d1f5cf57a5fbf3b21ca48a56b068c7a33",
       "executed_instruction_count": 81,
@@ -2489,8 +2501,10 @@
     {
       "entry": "0x1fe5",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_procedure_patch_apply_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x1d74"
     },
