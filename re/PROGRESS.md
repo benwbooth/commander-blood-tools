@@ -3711,3 +3711,30 @@ SHA-256 is
 The strict ledger classifies 272 of 383 known entries and leaves 111 pending;
 its SHA-256 is
 `7682f721f8b73f713bda2f7cda19d8832661971f48f84345d4e20ddbd257c595`.
+
+## 2026-09-13 - Big Bug Bang RTC readers
+
+`re/tools/big_bug_bang_rtc_read_oracle.py` executes the unchanged BBB hour
+reader at `0x0B36`, date reader at `0x0B4B`, and their shared packed-BCD helper
+at `0x0B81`. Seven hour and six date cases cover zeroes, valid packed digits,
+the raw `0x13` century sentinel, the non-sentinel century branch, high valid
+digits, and malformed signed results. The oracle checks all three exact body
+hashes, the `INT 1Ah` function ABI, far returns, complete register and segment
+preservation, arithmetic flags, full executable and decoy immutability, stack
+bounds, and exact GS-owned clock writes.
+
+The typed clock test consumes every semantic row in the checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_rtc_read.json`, whose SHA-256 is
+`5e0075b5259e841d703e7b0485fb1ce744585f15ca08b50210609f7a73b4afb5`.
+The global collector now reproduces 128 exact fixtures and one prefix fixture
+across 130 BBB oracle programs, entering 238 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`c20aa72659effc2a07a39bb8ff5208568bcb387cec4c4365a88877e0c2710fd1`.
+
+Both previously pending RTC readers now have direct BBB fixture-to-Rust proof;
+the shared helper is upgraded from inherited byte identity to direct execution.
+The strict ledger therefore classifies 274 of 383 known entries and leaves 109
+pending game semantics: 221 direct typed, 8 inherited exact typed, 7 inherited
+exact eliminated, 14 eliminated host adapters, 17 dormant diagnostics, and 7
+authored no-operations. Its SHA-256 is
+`95ab4b964f222935841847ca83257d0ff7e2986e548394a8c43e1757d4f3cc61`.

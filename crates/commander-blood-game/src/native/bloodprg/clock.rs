@@ -59,6 +59,8 @@ mod tests {
 
     const TIME_ORACLE_VECTOR_COUNT: usize = 7;
     const DATE_ORACLE_VECTOR_COUNT: usize = 6;
+    const BIG_BUG_BANG_EXECUTABLE_SHA256: &str =
+        "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834";
 
     #[derive(Deserialize)]
     struct TimeOracle {
@@ -85,6 +87,34 @@ mod tests {
         year: i16,
         month: i16,
         day: i16,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangRtcOracle {
+        format: String,
+        executable_sha256: String,
+        routines: Vec<BigBugBangRtcRoutine>,
+        hour_cases: Vec<BigBugBangHourOracle>,
+        date_cases: Vec<BigBugBangDateOracle>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangRtcRoutine {
+        entry: String,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangHourOracle {
+        name: String,
+        packed_hour: u8,
+        stored_hour: i16,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangDateOracle {
+        name: String,
+        packed: DateFields,
+        stored: StoredDate,
     }
 
     #[test]
@@ -122,6 +152,52 @@ mod tests {
                     month: vector.stored.month,
                     day: vector.stored.day,
                 }
+            );
+        }
+    }
+
+    #[test]
+    fn sequel_rtc_readers_match_original_executable_vectors() {
+        let fixture: BigBugBangRtcOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_rtc_read.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.format, "big_bug_bang_rtc_read_v1");
+        assert_eq!(fixture.executable_sha256, BIG_BUG_BANG_EXECUTABLE_SHA256);
+        assert_eq!(
+            fixture
+                .routines
+                .iter()
+                .map(|routine| routine.entry.as_str())
+                .collect::<Vec<_>>(),
+            ["0x0b36", "0x0b4b", "0x0b81"]
+        );
+        assert_eq!(fixture.hour_cases.len(), TIME_ORACLE_VECTOR_COUNT);
+        assert_eq!(fixture.date_cases.len(), DATE_ORACLE_VECTOR_COUNT);
+
+        for vector in fixture.hour_cases {
+            assert_eq!(
+                decode_script_clock_hour(vector.packed_hour),
+                vector.stored_hour,
+                "{}",
+                vector.name
+            );
+        }
+        for vector in fixture.date_cases {
+            assert_eq!(
+                decode_script_clock_date(
+                    vector.packed.century,
+                    vector.packed.year,
+                    vector.packed.month,
+                    vector.packed.day,
+                ),
+                ScriptClockDate {
+                    year: vector.stored.year,
+                    month: vector.stored.month,
+                    day: vector.stored.day,
+                },
+                "{}",
+                vector.name
             );
         }
     }

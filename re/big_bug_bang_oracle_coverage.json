@@ -24,31 +24,31 @@
     }
   },
   "summary": {
-    "oracle_count": 129,
-    "oracle_fixture_count": 128,
+    "oracle_count": 130,
+    "oracle_fixture_count": 129,
     "fixture_relation_counts": {
-      "exact": 127,
+      "exact": 128,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 235,
-    "unentered_static_entrypoints": 147,
+    "entered_static_entrypoints": 238,
+    "unentered_static_entrypoints": 144,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 236,
+    "entered_known_entrypoints": 239,
     "comparison_counts": {
       "unresolved": {
         "entered": 75,
         "unentered": 51
       },
       "structural_candidate": {
-        "entered": 128,
-        "unentered": 68
+        "entered": 130,
+        "unentered": 66
       },
       "exact_body": {
-        "entered": 12,
-        "unentered": 15
+        "entered": 13,
+        "unentered": 14
       },
       "ambiguous": {
         "entered": 20,
@@ -1394,6 +1394,20 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_rtc_read_oracle.py",
+      "oracle_sha256": "a17a8c5e30117d74e620d51d7162a113d6566594e45cdd961a1ffa7177f21b15",
+      "executed_instruction_count": 48,
+      "entered_entrypoints": [
+        "0x0b36",
+        "0x0b4b",
+        "0x0b81"
+      ],
+      "summary": "verified 7 BBB RTC hour and 6 date cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_rtc_read.json",
+      "fixture_sha256": "5e0075b5259e841d703e7b0485fb1ce744585f15ca08b50210609f7a73b4afb5",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_scene_completion_oracle.py",
       "oracle_sha256": "593c613b8202c93f257ef922ce5d3c7935e2055a09cd106c57bab076a6dc2aea",
       "executed_instruction_count": 100,
@@ -1952,24 +1966,30 @@
     {
       "entry": "0x0b36",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_rtc_read_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x93b"
     },
     {
       "entry": "0x0b4b",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_rtc_read_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x950"
     },
     {
       "entry": "0x0b81",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_rtc_read_oracle.py"
+      ],
       "comparison": "exact_body",
       "commander_entry": "0x986"
     },

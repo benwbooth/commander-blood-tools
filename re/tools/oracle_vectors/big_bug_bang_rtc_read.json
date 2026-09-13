@@ -1,0 +1,316 @@
+{
+  "format": "big_bug_bang_rtc_read_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "routines": [
+    {
+      "operation": "rtc_time_read",
+      "entry": "0x0b36",
+      "end": "0x0b4b",
+      "body_sha256": "3b59a379da6626c99908dd4835a4fa0858ecbceb979edaf68fbbea0a33837bb5"
+    },
+    {
+      "operation": "rtc_date_read",
+      "entry": "0x0b4b",
+      "end": "0x0b81",
+      "body_sha256": "97de9590cd952939bc1fd105a89726d506cee4045c70ef057c6c7f4ad16b9e11"
+    },
+    {
+      "operation": "packed_bcd_to_binary",
+      "entry": "0x0b81",
+      "end": "0x0b92",
+      "body_sha256": "65bd730970b38f982176699cde398c15640791e77c3fb13d0764ec6a3e7db9d5"
+    }
+  ],
+  "hour_cases": [
+    {
+      "name": "packed_00",
+      "packed_hour": 0,
+      "stored_hour": 0,
+      "interrupt": {
+        "number": 26,
+        "ax": 564
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 6
+    },
+    {
+      "name": "packed_09",
+      "packed_hour": 9,
+      "stored_hour": 9,
+      "interrupt": {
+        "number": 26,
+        "ax": 565
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 6
+    },
+    {
+      "name": "packed_12",
+      "packed_hour": 18,
+      "stored_hour": 12,
+      "interrupt": {
+        "number": 26,
+        "ax": 566
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 6
+    },
+    {
+      "name": "packed_23",
+      "packed_hour": 35,
+      "stored_hour": 23,
+      "interrupt": {
+        "number": 26,
+        "ax": 567
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 6
+    },
+    {
+      "name": "packed_59",
+      "packed_hour": 89,
+      "stored_hour": 59,
+      "interrupt": {
+        "number": 26,
+        "ax": 568
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 6
+    },
+    {
+      "name": "packed_99",
+      "packed_hour": 153,
+      "stored_hour": 99,
+      "interrupt": {
+        "number": 26,
+        "ax": 569
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 6
+    },
+    {
+      "name": "packed_ff",
+      "packed_hour": 255,
+      "stored_hour": -91,
+      "interrupt": {
+        "number": 26,
+        "ax": 570
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": true,
+        "zf": false,
+        "sf": true,
+        "of": false
+      },
+      "write_count": 6
+    }
+  ],
+  "date_cases": [
+    {
+      "name": "century_13_path",
+      "packed": {
+        "century": 19,
+        "year": 148,
+        "month": 18,
+        "day": 49
+      },
+      "stored": {
+        "year": 1994,
+        "month": 12,
+        "day": 31
+      },
+      "interrupt": {
+        "number": 26,
+        "ax": 1076
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 12
+    },
+    {
+      "name": "century_20_path",
+      "packed": {
+        "century": 32,
+        "year": 36,
+        "month": 8,
+        "day": 7
+      },
+      "stored": {
+        "year": 2024,
+        "month": 8,
+        "day": 7
+      },
+      "interrupt": {
+        "number": 26,
+        "ax": 1077
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 12
+    },
+    {
+      "name": "bcd_19_uses_else_path",
+      "packed": {
+        "century": 25,
+        "year": 153,
+        "month": 17,
+        "day": 48
+      },
+      "stored": {
+        "year": 2099,
+        "month": 11,
+        "day": 30
+      },
+      "interrupt": {
+        "number": 26,
+        "ax": 1078
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 12
+    },
+    {
+      "name": "all_zero",
+      "packed": {
+        "century": 0,
+        "year": 0,
+        "month": 0,
+        "day": 0
+      },
+      "stored": {
+        "year": 2000,
+        "month": 0,
+        "day": 0
+      },
+      "interrupt": {
+        "number": 26,
+        "ax": 1079
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 12
+    },
+    {
+      "name": "signed_invalid_bcd",
+      "packed": {
+        "century": 255,
+        "year": 255,
+        "month": 254,
+        "day": 253
+      },
+      "stored": {
+        "year": 1909,
+        "month": -92,
+        "day": -93
+      },
+      "interrupt": {
+        "number": 26,
+        "ax": 1080
+      },
+      "defined_flags": {
+        "cf": true,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 12
+    },
+    {
+      "name": "high_valid_digits",
+      "packed": {
+        "century": 19,
+        "year": 121,
+        "month": 89,
+        "day": 89
+      },
+      "stored": {
+        "year": 1979,
+        "month": 59,
+        "day": 59
+      },
+      "interrupt": {
+        "number": 26,
+        "ax": 1081
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 12
+    }
+  ]
+}
