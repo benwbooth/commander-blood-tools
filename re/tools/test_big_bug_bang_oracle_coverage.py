@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 REPORT_PATH = ROOT / "re/big_bug_bang_oracle_coverage.json"
 GRAPH_PATH = ROOT / "re/big_bug_bang_expanded_func_graph.json"
 RUNNER_PATH = ROOT / "re/tools/run_big_bug_bang_oracle_with_coverage.py"
+COLLECTOR_PATH = ROOT / "re/tools/collect_big_bug_bang_oracle_coverage.py"
 DYNAMIC_ENTRYPOINTS = {0xE0ED}
 
 
@@ -74,7 +75,27 @@ class BigBugBangOracleCoverageTests(unittest.TestCase):
         actual = {row["oracle"]: row["oracle_sha256"] for row in self.report["oracles"]}
         self.assertEqual(actual, expected)
         self.assertEqual(self.report["summary"]["oracle_count"], len(expected))
+        fixtures = 0
+        for row in self.report["oracles"]:
+            fixture = row["fixture"]
+            if fixture is None:
+                self.assertIsNone(row["fixture_sha256"])
+                self.assertIsNone(row["fixture_relation"])
+                continue
+            fixtures += 1
+            fixture_path = ROOT / fixture
+            self.assertTrue(fixture_path.is_file())
+            self.assertEqual(row["fixture_sha256"], sha256(fixture_path))
+            self.assertIn(row["fixture_relation"], {"exact", "prefix"})
+        self.assertEqual(self.report["summary"]["oracle_fixture_count"], fixtures)
+        self.assertEqual(
+            self.report["summary"]["fixture_relation_counts"],
+            {"exact": 123, "prefix": 1},
+        )
         self.assertEqual(self.report["inputs"]["runner"]["sha256"], sha256(RUNNER_PATH))
+        self.assertEqual(
+            self.report["inputs"]["collector"]["sha256"], sha256(COLLECTOR_PATH)
+        )
         self.assertEqual(
             self.report["inputs"]["static_graph"]["sha256"], sha256(GRAPH_PATH)
         )

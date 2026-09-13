@@ -3563,3 +3563,44 @@ evidence. The next audit gate is an explicit 383-row disposition ledger tying
 each entry to BBB evidence and a Rust owner or to a documented elimination;
 anything else remains pending. The aggregate report SHA-256 is
 `ace3776fe35c29038c4fbd2ed0ee2c4190e48b11ffd779b28cde511256a77be9`.
+
+## 2026-09-13 - Big Bug Bang native disposition ledger
+
+The coverage baseline now feeds an explicit, reproducible disposition for all
+383 known native BBB entrypoints. The builder at
+`re/tools/build_big_bug_bang_port_dispositions.py` joins measured original
+execution, the static comparison, the Commander Rust-port ledgers, checked-in
+oracle fixtures, their concrete Rust consumers, the field-inspector audit, and
+the pinned executable. Its output is
+`re/big_bug_bang_port_dispositions.json`; the validator rejects omitted or
+duplicate entries, stale inputs, unsupported statuses, missing Rust symbols,
+unconsumed direct fixtures, invalid exact-body inheritance, and changed
+authored no-op bytes.
+
+The current ledger classifies 250 entries and leaves 133 as pending game
+semantics. The classified partition is 196 routines entered by unchanged BBB
+execution whose checked oracle rows are consumed by a named Rust test owner;
+9 byte-identical routines inheriting a verified Commander typed owner; 7
+byte-identical routines inheriting a Commander elimination; 14 executable-
+verified DOS sound-driver or Gravis hardware adapters eliminated at the owned
+SDL boundary; 17 dormant French field-inspector routines eliminated from the
+playable-game surface; and 7 original input-table targets whose complete bodies
+are return-only or register-preserving authored no-ops.
+
+The 133 pending entries remain deliberately unclassified: 82 have only a
+relocation-tolerant structural candidate, 12 are ambiguous duplicate
+signatures, and 39 were initially unresolved. Structural resemblance is not a
+port disposition. The pending set now provides the exact implementation queue,
+starting with the BBB input dispatcher and active handlers at `0x23A2`,
+`0x23D4`, `0x2421`, `0x2514`, `0x253D`, `0x25A7`, and `0x25C5`, followed by
+startup/main orchestration and the `0x8584..0x87EB` parser-handler family.
+
+The collector now also proves fixture freshness while measuring entrypoints:
+123 oracle programs reproduce their named checked-in fixture exactly, the
+inventory-descriptor oracle reproduces the declared 20-row prefix of its
+45-row composite fixture, and the dialogue-guard oracle remains execution-only
+evidence. An entry cannot receive `verified_direct_typed` from that unconsumed
+execution-only evidence. The refreshed coverage-report SHA-256 is
+`2ddf9d4b695baa08e1e5aa343e7583e0e50c43f932bb21d863d03b14c5b56b54`;
+the disposition-ledger SHA-256 is
+`8dde355da5defb1f815843268e86424566ae314e6f6135b16d67ebbf59534875`.

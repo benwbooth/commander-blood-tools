@@ -16,6 +16,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TOOLS = REPO_ROOT / "re/tools"
+COLLECTOR = Path(__file__).resolve()
 RUNNER = TOOLS / "run_big_bug_bang_oracle_with_coverage.py"
 SEQUEL = REPO_ROOT / "output/big-bug-bang/disc/BLOOD2PG.EXE"
 DISC = SEQUEL.parent
@@ -23,6 +24,13 @@ GRAPH = REPO_ROOT / "re/big_bug_bang_expanded_func_graph.json"
 COMPARISON = REPO_ROOT / "re/big_bug_bang_expanded_function_comparison.json"
 SELECTION_FIXTURE = TOOLS / "oracle_vectors/big_bug_bang_inventory_selection.jsonl"
 DYNAMIC_ENTRYPOINTS = {0xE0ED}
+FIXTURE_STEM_OVERRIDES = {
+    "big_bug_bang_travel_option": "big_bug_bang_travel_options",
+    "big_bug_bang_vm": "big_bug_bang_multiply_divide",
+}
+FIXTURE_RELATION_OVERRIDES = {
+    "big_bug_bang_inventory_descriptor_oracle": "prefix",
+}
 
 
 def sha256(path: Path) -> str:
@@ -38,6 +46,17 @@ def oracle_arguments(oracle: Path, output: Path) -> list[str]:
     if stem == "big_bug_bang_inventory_condition_oracle":
         return [str(SEQUEL), str(output), str(SELECTION_FIXTURE)]
     return [str(SEQUEL), str(output)]
+
+
+def oracle_fixture(oracle: Path) -> Path | None:
+    stem = oracle.stem.removesuffix("_oracle")
+    stem = FIXTURE_STEM_OVERRIDES.get(stem, stem)
+    matches = sorted((TOOLS / "oracle_vectors").glob(f"{stem}.json*"))
+    if not matches:
+        return None
+    if len(matches) != 1:
+        raise RuntimeError(f"{oracle.name} has ambiguous fixtures: {matches}")
+    return matches[0]
 
 
 def run_oracle(oracle: Path, directory: Path) -> dict[str, Any]:
@@ -57,6 +76,26 @@ def run_oracle(oracle: Path, directory: Path) -> dict[str, Any]:
     report = json.loads(coverage.read_text())
     output_lines = result.stdout.strip().splitlines()
     report["summary"] = output_lines[-1] if output_lines else ""
+    fixture = oracle_fixture(oracle)
+    if fixture is None:
+        report["fixture"] = None
+        report["fixture_sha256"] = None
+        report["fixture_relation"] = None
+    else:
+        relation = FIXTURE_RELATION_OVERRIDES.get(oracle.stem, "exact")
+        actual = output.read_bytes()
+        expected = fixture.read_bytes()
+        matches = (
+            actual == expected if relation == "exact" else expected.startswith(actual)
+        )
+        if not matches:
+            raise RuntimeError(
+                f"{oracle.name} output does not satisfy {relation} relation with "
+                f"{fixture.relative_to(REPO_ROOT)}"
+            )
+        report["fixture"] = str(fixture.relative_to(REPO_ROOT))
+        report["fixture_sha256"] = sha256(fixture)
+        report["fixture_relation"] = relation
     return report
 
 
@@ -109,7 +148,7 @@ def aggregate(reports: list[dict[str, Any]]) -> dict[str, Any]:
         counts = class_counts.setdefault(key, {"entered": 0, "unentered": 0})
         counts["entered" if row["entered"] else "unentered"] += 1
     return {
-        "format": "big_bug_bang_oracle_entrypoint_coverage_v2",
+        "format": "big_bug_bang_oracle_entrypoint_coverage_v3",
         "scope": (
             "Measured original-executable instruction entrypoints reached by the "
             "checked-in BBB oracle scenarios; entries count only direct starts and "
@@ -133,9 +172,22 @@ def aggregate(reports: list[dict[str, Any]]) -> dict[str, Any]:
                 "path": str(RUNNER.relative_to(REPO_ROOT)),
                 "sha256": sha256(RUNNER),
             },
+            "collector": {
+                "path": str(COLLECTOR.relative_to(REPO_ROOT)),
+                "sha256": sha256(COLLECTOR),
+            },
         },
         "summary": {
             "oracle_count": len(reports),
+            "oracle_fixture_count": sum(
+                report["fixture"] is not None for report in reports
+            ),
+            "fixture_relation_counts": {
+                relation: sum(
+                    report["fixture_relation"] == relation for report in reports
+                )
+                for relation in ("exact", "prefix")
+            },
             "static_entrypoint_count": len(static_entries),
             "dynamic_entrypoint_count": len(DYNAMIC_ENTRYPOINTS),
             "known_entrypoint_count": len(static_entries | DYNAMIC_ENTRYPOINTS),

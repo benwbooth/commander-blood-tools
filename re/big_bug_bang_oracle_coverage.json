@@ -1,5 +1,5 @@
 {
-  "format": "big_bug_bang_oracle_entrypoint_coverage_v2",
+  "format": "big_bug_bang_oracle_entrypoint_coverage_v3",
   "scope": "Measured original-executable instruction entrypoints reached by the checked-in BBB oracle scenarios; entries count only direct starts and non-return transfers from original code, while absence is an audit queue and not proof of missing behavior",
   "inputs": {
     "sequel": {
@@ -17,10 +17,19 @@
     "runner": {
       "path": "re/tools/run_big_bug_bang_oracle_with_coverage.py",
       "sha256": "1a431f4b0d650708345bdea4918f6fe8ba172cd557594c2d90e08cd963f9e623"
+    },
+    "collector": {
+      "path": "re/tools/collect_big_bug_bang_oracle_coverage.py",
+      "sha256": "9d13833dae2a5c34a48db13ff5e575eb33a25085d3ff8d580c16bc5171d00c52"
     }
   },
   "summary": {
     "oracle_count": 125,
+    "oracle_fixture_count": 124,
+    "fixture_relation_counts": {
+      "exact": 123,
+      "prefix": 1
+    },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
@@ -66,7 +75,10 @@
         "0x7a3a",
         "0x8450"
       ],
-      "summary": "captured 684 original C2 aboard-record cases"
+      "summary": "captured 684 original C2 aboard-record cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_aboard_record.jsonl",
+      "fixture_sha256": "9457c40be367d56013c134a63910f9d7ffe35c0c5e82ddd8895cf54103f5423e",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_action_record_oracle.py",
@@ -83,7 +95,10 @@
         "0x7af4",
         "0x7b68"
       ],
-      "summary": "captured 996 original C3-C8 action-record cases"
+      "summary": "captured 996 original C3-C8 action-record cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_action_record.jsonl",
+      "fixture_sha256": "9079ade33b1010f275d6585eb87bc5625c5a2eeef037f48b0bdc4b7fe6d2b6ac",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_alien_cycle_oracle.py",
@@ -92,7 +107,10 @@
       "entered_entrypoints": [
         "0xcd69"
       ],
-      "summary": "verified 12 BBB alien-overlay-cycle cases and 6 conditional edges across 3 branch sites"
+      "summary": "verified 12 BBB alien-overlay-cycle cases and 6 conditional edges across 3 branch sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_alien_cycle.jsonl",
+      "fixture_sha256": "fb3bca6fb28f4bfff01dcd14313f820e60b3a98e1b10d3e0c555a57341abf810",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_driver_init_oracle.py",
@@ -101,7 +119,10 @@
       "entered_entrypoints": [
         "0xcf40"
       ],
-      "summary": "verified 6 dual audio-driver-init cases and 2 conditional edges across 1 branch sites"
+      "summary": "verified 6 dual audio-driver-init cases and 2 conditional edges across 1 branch sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_driver_init.jsonl",
+      "fixture_sha256": "9293cf633ede607c4f6deefb01170a89b83c867e0d51550d0b66cd2aa0d90069",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_driver_stop_oracle.py",
@@ -110,7 +131,10 @@
       "entered_entrypoints": [
         "0xd33a"
       ],
-      "summary": "verified 6 dual callback cases, 2 BBB ULTRASND stop cases, and 2 BBB conditional edges"
+      "summary": "verified 6 dual callback cases, 2 BBB ULTRASND stop cases, and 2 BBB conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_driver_stop.jsonl",
+      "fixture_sha256": "ec0123234ae3aadad9b2a9a9397e2cd2b5044400f61ea412cae09b1658b3d9eb",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_events_oracle.py",
@@ -119,7 +143,10 @@
       "entered_entrypoints": [
         "0xcf73"
       ],
-      "summary": "verified 11 dual audio-event cases and 30 conditional edges across 15 branch sites"
+      "summary": "verified 11 dual audio-event cases and 30 conditional edges across 15 branch sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_events.jsonl",
+      "fixture_sha256": "65cb81bef59eed6e9e8ff52746b067704517d885193af3b3996a27658a09f4e3",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_page_backends_oracle.py",
@@ -130,7 +157,10 @@
         "0xd4f8",
         "0xd537"
       ],
-      "summary": "verified 12 dual audio page-backend cases across EMS, XMS, and file"
+      "summary": "verified 12 dual audio page-backend cases across EMS, XMS, and file",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_page_backends.jsonl",
+      "fixture_sha256": "a873233ec6b0468e9b3dd10b9af2cf84a38cddaada53500ec97a9094bfaa0046",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_page_dispatch_oracle.py",
@@ -139,7 +169,10 @@
       "entered_entrypoints": [
         "0xd4b3"
       ],
-      "summary": "verified 256 dual page-dispatch modes and 4 BBB conditional edges across 2 sites"
+      "summary": "verified 256 dual page-dispatch modes and 4 BBB conditional edges across 2 sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_page_dispatch.jsonl",
+      "fixture_sha256": "83f5246d57c80a3a494b4cdc2276d91aa61d60a56227b0d8b1f124627db78337",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_playback_oracle.py",
@@ -148,7 +181,10 @@
       "entered_entrypoints": [
         "0xd05d"
       ],
-      "summary": "verified 15 dual audio-playback cases, 6 dual branch probes, 2 BBB ULTRASND delegates, and 58 conditional edges across 29 branch sites"
+      "summary": "verified 15 dual audio-playback cases, 6 dual branch probes, 2 BBB ULTRASND delegates, and 58 conditional edges across 29 branch sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_playback.jsonl",
+      "fixture_sha256": "a1b289cbcbdad3c277365a4a54504ceebb426adb8685faad269fff52ece1e052",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_stream_refill_oracle.py",
@@ -157,7 +193,10 @@
       "entered_entrypoints": [
         "0xd40e"
       ],
-      "summary": "verified 9 dual refill cases, 2 dual coverage probes, 2 BBB ready-state cases, 2 BBB ULTRASND bypasses, and 24 BBB conditional edges across 12 sites"
+      "summary": "verified 9 dual refill cases, 2 dual coverage probes, 2 BBB ready-state cases, 2 BBB ULTRASND bypasses, and 24 BBB conditional edges across 12 sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_stream_refill.jsonl",
+      "fixture_sha256": "09130a69c336d291144d754b5b436836b40c5cc981343c328a64bb8e4a5441aa",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_stream_source_oracle.py",
@@ -166,7 +205,10 @@
       "entered_entrypoints": [
         "0xd561"
       ],
-      "summary": "verified 11 shared and 5 BBB-only audio source-load cases across 44 conditional edges"
+      "summary": "verified 11 shared and 5 BBB-only audio source-load cases across 44 conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_stream_source.jsonl",
+      "fixture_sha256": "5419782c339ac8c52882d1f6a1885cb5e8c58dd7a629b5b5d8f7804bae2ed230",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_audio_stream_start_oracle.py",
@@ -175,7 +217,10 @@
       "entered_entrypoints": [
         "0xd363"
       ],
-      "summary": "verified 6 dual stream-start cases, 2 BBB ULTRASND delegates, and 12 BBB conditional edges across 6 sites"
+      "summary": "verified 6 dual stream-start cases, 2 BBB ULTRASND delegates, and 12 BBB conditional edges across 6 sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_stream_start.jsonl",
+      "fixture_sha256": "dcfa11aafd4d257d2d59fd1ffc4ae353359d682b19164459937ea03613c09773",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_bas_entry_oracle.py",
@@ -184,7 +229,10 @@
       "entered_entrypoints": [
         "0x6633"
       ],
-      "summary": "verified 512 original BAS-entry gate cases"
+      "summary": "verified 512 original BAS-entry gate cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_bas_entry.json",
+      "fixture_sha256": "bf5048cd632c3ea808e5e78e6df6e393c825adff6744148266e8dce2411e488e",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_bit_flag_oracle.py",
@@ -194,7 +242,10 @@
         "0x697a",
         "0x76ad"
       ],
-      "summary": "captured 400 original B7 bit-flag cases"
+      "summary": "captured 400 original B7 bit-flag cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_bit_flag.jsonl",
+      "fixture_sha256": "c9db8ef6c91eaf6350864d12e1e8fa3ca9986be2428db341527d2ebe9cd13505",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_bridge_page_oracle.py",
@@ -210,7 +261,10 @@
         "0xb1af",
         "0xb337"
       ],
-      "summary": "verified 7 original BBB bridge-page cases"
+      "summary": "verified 7 original BBB bridge-page cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_bridge_page.jsonl",
+      "fixture_sha256": "f3279dbd6faffa11d601e12c7344ca5c122e65c50a3fdade8a5c0a83c15750ab",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_bridge_panorama_oracle.py",
@@ -219,7 +273,10 @@
       "entered_entrypoints": [
         "0xafba"
       ],
-      "summary": "verified 7 BBB panorama-loader cases covering 4 normalized conditional edges"
+      "summary": "verified 7 BBB panorama-loader cases covering 4 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_bridge_panorama.jsonl",
+      "fixture_sha256": "f74e7bc27b585916d5c35d798f940a15dba50917bc622b3d65e6ebf96089123a",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_bridge_screen_oracle.py",
@@ -236,7 +293,10 @@
         "0xadde",
         "0xafba"
       ],
-      "summary": "verified 10 original BBB bridge-screen cases"
+      "summary": "verified 10 original BBB bridge-screen cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_bridge_screen.jsonl",
+      "fixture_sha256": "1d7b67eef0a9803ded630b60377510760b0959caa8c25d49a1b9b32d1a82b157",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_bridge_steering_oracle.py",
@@ -245,7 +305,10 @@
       "entered_entrypoints": [
         "0xadf5"
       ],
-      "summary": "verified 21 BBB steering cases covering 52 normalized conditional edges"
+      "summary": "verified 21 BBB steering cases covering 52 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_bridge_steering.jsonl",
+      "fixture_sha256": "8f2759a3a5e0109735e48806baead79ad9e458171ca980e2cc1c3839e5e04e20",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_clock_guard_oracle.py",
@@ -256,7 +319,10 @@
         "0x6a01",
         "0x6a2c"
       ],
-      "summary": "captured 1764 original CA/CB host-clock cases"
+      "summary": "captured 1764 original CA/CB host-clock cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_clock_guard.jsonl",
+      "fixture_sha256": "226051250f378f70cb115242332e1be0a3a82462daf255c6d0d53694533eebaf",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_concept_slots_oracle.py",
@@ -266,7 +332,10 @@
         "0x697a",
         "0x6ab2"
       ],
-      "summary": "verified 144 original two-slot concept guards"
+      "summary": "verified 144 original two-slot concept guards",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_concept_slots.json",
+      "fixture_sha256": "0c3b35e80ce5bcb4f9dfa1e5ff6e65b6e75a52addd8a21362ffddefe25013d08",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_conflict_oracle.py",
@@ -284,7 +353,10 @@
         "0x724e",
         "0x8103"
       ],
-      "summary": "wrote 124 native conflict cases; 13 divide errors; 18 failed guards; entries [26163, 26552, 26717, 27002, 28439, 28498, 28782, 28877, 29262, 33027]"
+      "summary": "wrote 124 native conflict cases; 13 divide errors; 18 failed guards; entries [26163, 26552, 26717, 27002, 28439, 28498, 28782, 28877, 29262, 33027]",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_conflict.jsonl",
+      "fixture_sha256": "1f48a2cbe54aaf12f64181ed4c307f71004df68c5106bb7aa91e21cdcfac44ae",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_control_flow_oracle.py",
@@ -299,7 +371,10 @@
         "0x6ab2",
         "0x6af7"
       ],
-      "summary": "captured 152 original A0-A4 control-flow cases"
+      "summary": "captured 152 original A0-A4 control-flow cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_control_flow.jsonl",
+      "fixture_sha256": "741c3c34c88ddde7a795d6651ad12adba0e088b07c081e36210687246883a957",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_diagnostic_field_selector_oracle.py",
@@ -309,7 +384,10 @@
         "0x2495",
         "0x24a3"
       ],
-      "summary": "verified 56 original diagnostic selector cases"
+      "summary": "verified 56 original diagnostic selector cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_diagnostic_field_selector.jsonl",
+      "fixture_sha256": "673b565753b002ac0fa292d49a83ad5ed4fa4292ce5ba6c799b4a05ff2ceca49",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_dialogue_guard_oracle.py",
@@ -319,7 +397,10 @@
         "0x697a",
         "0x6ab2"
       ],
-      "summary": "verified 20 original Daddy guard cases"
+      "summary": "verified 20 original Daddy guard cases",
+      "fixture": null,
+      "fixture_sha256": null,
+      "fixture_relation": null
     },
     {
       "oracle": "re/tools/big_bug_bang_direct_record_oracle.py",
@@ -332,7 +413,10 @@
         "0x697a",
         "0x754e"
       ],
-      "summary": "captured 912 original direct-record cases"
+      "summary": "captured 912 original direct-record cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_direct_record.jsonl",
+      "fixture_sha256": "67e08b72bd4f3c4dafd7e2c95284587d9591946e3a9b8ee9fb0f52e75e0868bd",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_environment_oracle.py",
@@ -346,7 +430,10 @@
         "0x69d0",
         "0x69d8"
       ],
-      "summary": "captured 362 original CE-D2 environment cases"
+      "summary": "captured 362 original CE-D2 environment cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_environment.jsonl",
+      "fixture_sha256": "beee3c7c0d21ff4b02f93fd0aa72c8b8cf3ee104f4b0c20a89968ea399f3473d",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_finale_oracle.py",
@@ -355,7 +442,10 @@
       "entered_entrypoints": [
         "0x6e7c"
       ],
-      "summary": ""
+      "summary": "",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_finale.json",
+      "fixture_sha256": "2db24a08e9cee6ed11f2ac2c022e1e9a43ca9152632b79be17d6c09f9b78a9c7",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_font_width_oracle.py",
@@ -364,7 +454,10 @@
       "entered_entrypoints": [
         "0x344d"
       ],
-      "summary": "square_caps map=60a03ea5cedf advances=2a042926b644; main map=8105bd8593f3 advances=9ab791d43c98"
+      "summary": "square_caps map=60a03ea5cedf advances=2a042926b644; main map=8105bd8593f3 advances=9ab791d43c98",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_font_width.jsonl",
+      "fixture_sha256": "62536141398d1e680611465835a30439d410cd8f072853e7caf4de814940526f",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_framebuffer_copy_oracle.py",
@@ -373,7 +466,10 @@
       "entered_entrypoints": [
         "0xaad4"
       ],
-      "summary": "verified 12 original BBB framebuffer-copy cases"
+      "summary": "verified 12 original BBB framebuffer-copy cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_framebuffer_copy.jsonl",
+      "fixture_sha256": "addf58dcca25546336623c22a383f2b22ce56ce4f81e750aa174cc9d014716c5",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_growth_oracle.py",
@@ -383,7 +479,10 @@
         "0x706e",
         "0x728b"
       ],
-      "summary": "wrote 126 original-handler vectors (18 divide errors)"
+      "summary": "wrote 126 original-handler vectors (18 divide errors)",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_growth.jsonl",
+      "fixture_sha256": "48d337b99be1367be7b05120195bfb7505dc3aa8c0d539e5c612d9f45a3f713b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_honk_bank_oracle.py",
@@ -392,7 +491,10 @@
       "entered_entrypoints": [
         "0x98ad"
       ],
-      "summary": "verified 512 original Honk activation/bank-call cases"
+      "summary": "verified 512 original Honk activation/bank-call cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_honk_bank.json",
+      "fixture_sha256": "4970eab1df9497bbd7ad5643d716ee0b2e7653b19c36d25aba7e1d527818cd1f",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_honk_departure_oracle.py",
@@ -410,14 +512,20 @@
         "0x744b",
         "0x7bbf"
       ],
-      "summary": "verified 8 original Honk departure block cases"
+      "summary": "verified 8 original Honk departure block cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_honk_departure.json",
+      "fixture_sha256": "8daa4ce5ea2a5b7cd95ec3cca707dfac12eb1fb9a6b1197e6dbb77453cbc8fb1",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_idle_scheduler_oracle.py",
       "oracle_sha256": "9b51451c1f7c33a183f815a737975629513dda37a6e49e8e709b4528b7b1ee51",
       "executed_instruction_count": 74,
       "entered_entrypoints": [],
-      "summary": "verified 86 unpatched idle scheduler cases"
+      "summary": "verified 86 unpatched idle scheduler cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_idle_scheduler.jsonl",
+      "fixture_sha256": "3aa9eae80b44c3debae531d06b562c0b27b17fdc3bd7d6fef609d31f36686bd6",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_input_abort_oracle.py",
@@ -426,7 +534,10 @@
       "entered_entrypoints": [
         "0x24c8"
       ],
-      "summary": "verified 204 original F7 cases and Escape/Space/F7 key bindings"
+      "summary": "verified 204 original F7 cases and Escape/Space/F7 key bindings",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_input_abort.json",
+      "fixture_sha256": "6c878ccdefeed12e31ef9f3d47812e5e27cee6d843cd7d5d0eb91cbe6c36ca43",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_inventory_choice_oracle.py",
@@ -443,7 +554,10 @@
         "0x9b45",
         "0xd05d"
       ],
-      "summary": "captured 11 complete native inventory chooser sequences"
+      "summary": "captured 11 complete native inventory chooser sequences",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_inventory_choice.jsonl",
+      "fixture_sha256": "adf2f8df54006ed349c501b411ccbcf52dc91e3c93baf27f9a43fd4af177287b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_inventory_condition_oracle.py",
@@ -457,7 +571,10 @@
         "0x6b28",
         "0x6c45"
       ],
-      "summary": "captured 82 complete native gated inventory selections"
+      "summary": "captured 82 complete native gated inventory selections",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_inventory_condition.jsonl",
+      "fixture_sha256": "dd9045fbe44f42aec08ee3591e3a75c2985ece01f42743b8216effe8484fe8ca",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_inventory_descriptor_oracle.py",
@@ -474,7 +591,10 @@
         "0x8654",
         "0x86b1"
       ],
-      "summary": "captured 20 complete inventory descriptor transfers"
+      "summary": "captured 20 complete inventory descriptor transfers",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_inventory_descriptor.jsonl",
+      "fixture_sha256": "bc888872d25450c5df59be6cdc8d19dc7bb1772e2411bd8a48b67f11b924096e",
+      "fixture_relation": "prefix"
     },
     {
       "oracle": "re/tools/big_bug_bang_location_panel_geometry_oracle.py",
@@ -485,7 +605,10 @@
         "0x474a",
         "0xa9d3"
       ],
-      "summary": "verified 12 original BBB location-panel geometry cases"
+      "summary": "verified 12 original BBB location-panel geometry cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_location_panel_geometry.jsonl",
+      "fixture_sha256": "0675e959f796beeb5abc66af72b292ff693ae09d3c063344e63c1343c1153d8d",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_location_panel_oracle.py",
@@ -508,7 +631,10 @@
         "0xa98b",
         "0xa9d3"
       ],
-      "summary": "verified 20 original BBB location-panel cases"
+      "summary": "verified 20 original BBB location-panel cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_location_panel.jsonl",
+      "fixture_sha256": "1b6cdf54a2d8134978dfdaddb6fed0b2bc66aca978ef6b17095f94d7d09bced7",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_menu_number_oracle.py",
@@ -520,7 +646,10 @@
         "0x38fc",
         "0x82c6"
       ],
-      "summary": "wrote 59 original inline-menu numeric cases"
+      "summary": "wrote 59 original inline-menu numeric cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_menu_number.jsonl",
+      "fixture_sha256": "3a0f34eb0f445cc3233f9290dd3a1f0423849d8329e12fc3cd77552b33fc1623",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_navigation_camera_oracle.py",
@@ -545,7 +674,10 @@
         "0xace4",
         "0xafba"
       ],
-      "summary": "verified 13 original BBB navigation-camera cases"
+      "summary": "verified 13 original BBB navigation-camera cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_navigation_camera.jsonl",
+      "fixture_sha256": "4ec496cda2a80c7d93ee32595b91cc67718c3b63a99e90f5aa04e6e66bfe557c",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_navigation_pick_oracle.py",
@@ -554,7 +686,10 @@
       "entered_entrypoints": [
         "0xaa3d"
       ],
-      "summary": "verified 13 original BBB navigation-pick cases"
+      "summary": "verified 13 original BBB navigation-pick cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_navigation_pick.jsonl",
+      "fixture_sha256": "ac4645b79681eac64ddf01567d64b2b4f6833170917ecb6e8e0bd21d61e8a28b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_navigation_tables_oracle.py",
@@ -563,7 +698,10 @@
       "entered_entrypoints": [
         "0x93f7"
       ],
-      "summary": "captured 64 confirmation hits, 4 labels, 9 endpoints and 11 travel selections"
+      "summary": "captured 64 confirmation hits, 4 labels, 9 endpoints and 11 travel selections",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_navigation_tables.json",
+      "fixture_sha256": "01bd3764f578192d872c4e3c1f7cdf99247c8a0dd775f6a12d3651c9b623f383",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_navigation_wipe_oracle.py",
@@ -572,7 +710,10 @@
       "entered_entrypoints": [
         "0xaafe"
       ],
-      "summary": "verified 20 original BBB navigation-wipe cases"
+      "summary": "verified 20 original BBB navigation-wipe cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_navigation_wipe.jsonl",
+      "fixture_sha256": "b2d91ba7133339750c628e0352c19c7c98d712298cc60670227d06cfc8573a80",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_numeric_chatter_oracle.py",
@@ -581,14 +722,20 @@
       "entered_entrypoints": [
         "0xcf73"
       ],
-      "summary": "verified 23 original numeric chatter cases"
+      "summary": "verified 23 original numeric chatter cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_numeric_chatter.json",
+      "fixture_sha256": "2becb08dff381b76af879816c8f6cd86816ea14fad28e851f27c267aafa3e75b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_options_oracle.py",
       "oracle_sha256": "d909e06f1682d74bc46351b1f2ecb88cf6e9d5aa15c184db5fedff432d92f2e8",
       "executed_instruction_count": 61,
       "entered_entrypoints": [],
-      "summary": "captured 80 original options-handler cases"
+      "summary": "captured 80 original options-handler cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_options.json",
+      "fixture_sha256": "ed57d07da4533558b1a104d9d3943de16597325d69b2d35d1fcc58c55fbac62b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_overview_oracle.py",
@@ -607,7 +754,10 @@
         "0x706e",
         "0xa286"
       ],
-      "summary": "wrote 32 original simulation-overview cases"
+      "summary": "wrote 32 original simulation-overview cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_overview.jsonl",
+      "fixture_sha256": "63359073d942ae9de9d12ee279fa9b5257c0f8af921dc9d17badef2b6e12652d",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_palette_blocks_oracle.py",
@@ -617,7 +767,10 @@
         "0xb8a6",
         "0xb8fa"
       ],
-      "summary": "verified 5 BBB palette-block cases covering 6 normalized conditional edges"
+      "summary": "verified 5 BBB palette-block cases covering 6 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_blocks.jsonl",
+      "fixture_sha256": "0591ad9607938fc234f0809952eaad5e27d6748248755b51e5edf84d18faaed8",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_panel_activation_oracle.py",
@@ -626,7 +779,10 @@
       "entered_entrypoints": [
         "0x8a48"
       ],
-      "summary": "wrote 396 original activation/camera-gate cases"
+      "summary": "wrote 396 original activation/camera-gate cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_panel_activation.jsonl",
+      "fixture_sha256": "a30ba1c16df575adcec7d3b9fcc6992f56fb124a79bd86f67c73f7972de27cb6",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_planar_square_caps_oracle.py",
@@ -635,7 +791,10 @@
       "entered_entrypoints": [
         "0x37a8"
       ],
-      "summary": "verified 12 original BBB planar square-cap cases"
+      "summary": "verified 12 original BBB planar square-cap cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_planar_square_caps.json",
+      "fixture_sha256": "3b4a25ace8e6d69d9ab43590bf0e0fedb378355275ecf25ef3ad7e748ec90359",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_ab_oracle.py",
@@ -644,7 +803,10 @@
       "entered_entrypoints": [
         "0xc051"
       ],
-      "summary": "verified 13 BBB AB decoder cases and 18 reachable edges"
+      "summary": "verified 13 BBB AB decoder cases and 18 reachable edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_ab.jsonl",
+      "fixture_sha256": "34d729a51309f81381e14eef59672c800d567945243c2282e3502736b8cb94f4",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_activation_oracle.py",
@@ -654,7 +816,10 @@
         "0xb9ef",
         "0xbd3c"
       ],
-      "summary": "verified 7 BBB presentation activation cases covering 10 normalized conditional edges"
+      "summary": "verified 7 BBB presentation activation cases covering 10 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_activation.jsonl",
+      "fixture_sha256": "4a0a9f295052d0fe9ecc6b8718964699082175213056890a8808c6557d031fac",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_active_oracle.py",
@@ -663,7 +828,10 @@
       "entered_entrypoints": [
         "0xbc04"
       ],
-      "summary": "verified 11 BBB active-presentation cases covering 20 normalized conditional edges"
+      "summary": "verified 11 BBB active-presentation cases covering 20 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_active.jsonl",
+      "fixture_sha256": "1f78b7ee3ffe07873edb8e09fb4302ad162e4b012705e8adcf5d846b7f9a0ff6",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_ad_oracle.py",
@@ -673,7 +841,10 @@
         "0xc0fe",
         "0xc2a4"
       ],
-      "summary": "verified 9 original BBB presentation AD cases"
+      "summary": "verified 9 original BBB presentation AD cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_ad.json",
+      "fixture_sha256": "269a84dfd3d84ebf805f0385766df447351879b899aca800546cad5cb433e9f3",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_cache_oracle.py",
@@ -685,7 +856,10 @@
         "0xb924",
         "0xbfd0"
       ],
-      "summary": "verified 4 BBB presentation resource-cache cases and 13 edges"
+      "summary": "verified 4 BBB presentation resource-cache cases and 13 edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_cache.jsonl",
+      "fixture_sha256": "e8eb1f313b1376559ca3204f5a244273b530323819aaa9ecf1b1a8cdd023ba20",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_catalog_oracle.py",
@@ -694,7 +868,10 @@
       "entered_entrypoints": [
         "0xb763"
       ],
-      "summary": "captured all 45 original presentation descriptor selections"
+      "summary": "captured all 45 original presentation descriptor selections",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_catalog.json",
+      "fixture_sha256": "8b0804474a9289db86be0208bb66ca8d9c06d5fc6f852cef01e4cdbe371d17c0",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_clock_oracle.py",
@@ -703,7 +880,10 @@
       "entered_entrypoints": [
         "0xba23"
       ],
-      "summary": "verified 12 shared and 2 BBB-only presentation clock cases covering 18 sequel edges"
+      "summary": "verified 12 shared and 2 BBB-only presentation clock cases covering 18 sequel edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_clock.jsonl",
+      "fixture_sha256": "42388378a7b87603c9b33eb267eebaee7fa4feca42ce86130c2673ef1d4ed4fe",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_dispatch_oracle.py",
@@ -714,7 +894,10 @@
         "0xc051",
         "0xc0fe"
       ],
-      "summary": "verified 8 BBB presentation dispatch cases and 6 edges"
+      "summary": "verified 8 BBB presentation dispatch cases and 6 edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_dispatch.jsonl",
+      "fixture_sha256": "48554eae838e47471db14d4e623d03fb8535bbdff57788340890dc51de344e1b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_entry_oracle.py",
@@ -724,7 +907,10 @@
         "0xbd3c",
         "0xbe1e"
       ],
-      "summary": "verified 15 BBB presentation-entry cases covering 26 normalized conditional edges"
+      "summary": "verified 15 BBB presentation-entry cases covering 26 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_entry.jsonl",
+      "fixture_sha256": "9503e3a0b2c85a15082694e03e6908b67dddedad51ce965658c7301422561052",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_entry_read_oracle.py",
@@ -733,7 +919,10 @@
       "entered_entrypoints": [
         "0xbe0c"
       ],
-      "summary": "verified 6 BBB presentation entry-read cases covering 2 normalized conditional edges"
+      "summary": "verified 6 BBB presentation entry-read cases covering 2 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_entry_read.jsonl",
+      "fixture_sha256": "dcf1b55d19bec918ce276e14293b17fe95dd0fdc04a5782bab60a851ba4e7696",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_initial_entry_oracle.py",
@@ -745,7 +934,10 @@
         "0xbe4e",
         "0xbf41"
       ],
-      "summary": "verified 6 BBB initial-entry cases covering 9 normalized conditional edges"
+      "summary": "verified 6 BBB initial-entry cases covering 9 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_initial_entry.jsonl",
+      "fixture_sha256": "be7d26b21ee936d13f78d24ee6df6a80245fc3c0c0ca2b32e5f0f4e83e6c92e1",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_interrupt_oracle.py",
@@ -757,7 +949,10 @@
         "0xbbba",
         "0xbc04"
       ],
-      "summary": "verified 5 BBB presentation interrupt cases and 6 edges"
+      "summary": "verified 5 BBB presentation interrupt cases and 6 edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_interrupt.jsonl",
+      "fixture_sha256": "ad63765e32163bc2ba9054e0f5fa107a32222c4f230808c4b7974d62794550a7",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_mode_oracle.py",
@@ -766,7 +961,10 @@
       "entered_entrypoints": [
         "0xacaa"
       ],
-      "summary": "verified 15 original BBB presentation-mode cases"
+      "summary": "verified 15 original BBB presentation-mode cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_mode.jsonl",
+      "fixture_sha256": "c92288723532e1b48526fa34d880ea54ae19e9275a9990806310b88d6a70ca60",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_oracle.py",
@@ -776,7 +974,10 @@
         "0x69e6",
         "0x6e67"
       ],
-      "summary": "wrote 66 original instruction/decision cases"
+      "summary": "wrote 66 original instruction/decision cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation.jsonl",
+      "fixture_sha256": "fb886d1a3b8c8d24adf3b92a8db75272d60c80e1922b4344963224a516573c48",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_palette_dispatch_oracle.py",
@@ -786,7 +987,10 @@
         "0xb8a6",
         "0xbf62"
       ],
-      "summary": "verified 4 BBB presentation palette-dispatch cases"
+      "summary": "verified 4 BBB presentation palette-dispatch cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_palette_dispatch.jsonl",
+      "fixture_sha256": "f560d043967c206851d9b11d752e0ef3dc93e09c25427cd18c08a985e3825691",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_queue_consume_oracle.py",
@@ -795,7 +999,10 @@
       "entered_entrypoints": [
         "0xbbba"
       ],
-      "summary": "verified 8 BBB presentation queue-consume cases covering 6 normalized conditional edges"
+      "summary": "verified 8 BBB presentation queue-consume cases covering 6 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_queue_consume.jsonl",
+      "fixture_sha256": "2c3856cff0790e1595cf69ea17a0fad6122c9f377e5dfab41c1d967b411b109a",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_queue_init_oracle.py",
@@ -804,7 +1011,10 @@
       "entered_entrypoints": [
         "0xbf41"
       ],
-      "summary": "verified 5 BBB presentation queue-init cases"
+      "summary": "verified 5 BBB presentation queue-init cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_queue_init.jsonl",
+      "fixture_sha256": "68db8e9f3cd882e60b55222cc74bbcc4b779bc6e58b8037e61f07da3fae49cc2",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_queue_room_oracle.py",
@@ -813,7 +1023,10 @@
       "entered_entrypoints": [
         "0xbb97"
       ],
-      "summary": "verified 8 BBB presentation queue-capacity cases covering 6 normalized conditional edges"
+      "summary": "verified 8 BBB presentation queue-capacity cases covering 6 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_queue_room.jsonl",
+      "fixture_sha256": "f11eec49220ec5a867ce52c80b7207bcb5000f3accc5e08091b794a2b36209ae",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_queue_service_oracle.py",
@@ -829,7 +1042,10 @@
         "0xbc04",
         "0xbf62"
       ],
-      "summary": "verified 5 BBB presentation-queue service cases covering 12 normalized conditional edges"
+      "summary": "verified 5 BBB presentation-queue service cases covering 12 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_queue_service.jsonl",
+      "fixture_sha256": "eda2eef3dcd347903a8de5ccbcb73bc3db9841590071b90be96bb2d15b2b0513",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_queue_state_oracle.py",
@@ -838,7 +1054,10 @@
       "entered_entrypoints": [
         "0xbbf5"
       ],
-      "summary": "verified all 256 BBB presentation queue-state values covering 2 normalized conditional edges"
+      "summary": "verified all 256 BBB presentation queue-state values covering 2 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_queue_state.jsonl",
+      "fixture_sha256": "27f111080ffb12cd2e947de514132d8b7c5dcd67163475b2cd916b9fb3afb838",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_queue_wrap_oracle.py",
@@ -847,7 +1066,10 @@
       "entered_entrypoints": [
         "0xbb78"
       ],
-      "summary": "verified 6 BBB presentation queue-wrap cases covering 4 normalized conditional edges"
+      "summary": "verified 6 BBB presentation queue-wrap cases covering 4 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_queue_wrap.jsonl",
+      "fixture_sha256": "a5dbdd87e1aa6f8256f6ce2c788728b213627e556bb48293267e87d27214652f",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_rect_blit_oracle.py",
@@ -856,7 +1078,10 @@
       "entered_entrypoints": [
         "0xbcd7"
       ],
-      "summary": "verified 9 BBB presentation rectangle-blit cases covering 18 normalized conditional edges"
+      "summary": "verified 9 BBB presentation rectangle-blit cases covering 18 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_rect_blit.jsonl",
+      "fixture_sha256": "aa826eb444d95632a7d69ceef296817cd6c66643bca67367792747e2b4b68425",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_rect_decode_oracle.py",
@@ -867,7 +1092,10 @@
         "0xc30d",
         "0xc57e"
       ],
-      "summary": "verified 8 BBB rectangle decoder cases, 103 edges, and 30/73 observed branch sites with both outcomes"
+      "summary": "verified 8 BBB rectangle decoder cases, 103 edges, and 30/73 observed branch sites with both outcomes",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_rect_decode.jsonl",
+      "fixture_sha256": "809348e1dd1e994065e6b14cf0fb70d5170704ac2e8c4c28e6954ef14ca935cf",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_refill_oracle.py",
@@ -887,14 +1115,20 @@
         "0xbf2e",
         "0xbfd0"
       ],
-      "summary": "verified 14 BBB presentation refill cases covering 30 normalized conditional edges"
+      "summary": "verified 14 BBB presentation refill cases covering 30 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_refill.jsonl",
+      "fixture_sha256": "891e13ae98a7e19e61d99901c7b0b4853c2b7c8f98e3ac16f1907c35e26d48a5",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_rollover_source_oracle.py",
       "oracle_sha256": "9c604a068da19d807178842e111d602e7323598294c195fb33778b2a7fd13a30",
       "executed_instruction_count": 4,
       "entered_entrypoints": [],
-      "summary": "verified 4 BBB presentation rollover-source cases"
+      "summary": "verified 4 BBB presentation rollover-source cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_rollover_source.jsonl",
+      "fixture_sha256": "9c801688cf2a35dd162656a04df37ba48a1d9dbd77b17d996041e1b72579ab19",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_scan_oracle.py",
@@ -911,7 +1145,10 @@
         "0x6633",
         "0x8450"
       ],
-      "summary": "verified 16 original BBB presentation-scan cases"
+      "summary": "verified 16 original BBB presentation-scan cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_scan.jsonl",
+      "fixture_sha256": "736ec9d4bdd1bba7195336af53478c8d40174091d3afb1d0e7fda7fd0500571d",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_scene_dispatch_oracle.py",
@@ -927,7 +1164,10 @@
         "0xb997",
         "0xbbf5"
       ],
-      "summary": "verified 13 original BBB presentation-scene cases"
+      "summary": "verified 13 original BBB presentation-scene cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_scene_dispatch.jsonl",
+      "fixture_sha256": "14582e8b9e0e38b7abb2406eeff127530cdac68bf697ff0c5bc5048605fd60c8",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_sequence_oracle.py",
@@ -942,7 +1182,10 @@
         "0xbe2c",
         "0xbf41"
       ],
-      "summary": "verified 4 BBB presentation-sequence cases covering 8 normalized conditional edges"
+      "summary": "verified 4 BBB presentation-sequence cases covering 8 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_sequence.jsonl",
+      "fixture_sha256": "fc02e7a39b554d7b45a64d89fba932566aadfdcc0656ea643417f0386137def7",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_source_oracle.py",
@@ -953,7 +1196,10 @@
         "0xb997",
         "0xbf28"
       ],
-      "summary": "verified 7 BBB source-close cases and queue-change wrappers covering 4 close branch edges"
+      "summary": "verified 7 BBB source-close cases and queue-change wrappers covering 4 close branch edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_source.jsonl",
+      "fixture_sha256": "9080722ff2e580249283b304984ee87634b287bd3e120385b767c115f3320272",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_transfer_oracle.py",
@@ -962,7 +1208,10 @@
       "entered_entrypoints": [
         "0xbe4e"
       ],
-      "summary": "verified 9 BBB presentation-transfer cases covering 14 normalized conditional edges"
+      "summary": "verified 9 BBB presentation-transfer cases covering 14 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_transfer.jsonl",
+      "fixture_sha256": "405af3f810acf79c1321859ff627a2b1c534f38f8212736cbbc23301e7f9326a",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_presentation_word_copy_oracle.py",
@@ -971,7 +1220,10 @@
       "entered_entrypoints": [
         "0xbfd0"
       ],
-      "summary": "verified 6 BBB presentation four-word copy cases"
+      "summary": "verified 6 BBB presentation four-word copy cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentation_word_copy.jsonl",
+      "fixture_sha256": "e1a2ebe01f6b1bd358abe2b5706f4407ae3608c21192171094e2b11b7351884b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_profile_binding_oracle.py",
@@ -981,14 +1233,20 @@
         "0x5610",
         "0x5798"
       ],
-      "summary": "wrote 40 original binding/allocation cases"
+      "summary": "wrote 40 original binding/allocation cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_profile_binding.jsonl",
+      "fixture_sha256": "a3f88f97e7b8e5280e6188081cd2a7be262add1f23dcc748b8fcc7ab0fb4bf57",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_profile_gate_oracle.py",
       "oracle_sha256": "4602a8485afd3c24df65b76975be1e2ccdfbf6a7979552b7ccd8fe589d07eea9",
       "executed_instruction_count": 10,
       "entered_entrypoints": [],
-      "summary": "verified 512 original profile gates"
+      "summary": "verified 512 original profile gates",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_profile_gate.jsonl",
+      "fixture_sha256": "e2073896187f0979b0af221c14974630496cb001adf8fcba212e1d49b7acff92",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_record_clear_oracle.py",
@@ -998,7 +1256,10 @@
         "0x6633",
         "0x7bbf"
       ],
-      "summary": "verified 204 original C9 teardown cases"
+      "summary": "verified 204 original C9 teardown cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_record_clear.json",
+      "fixture_sha256": "fdcca19e0f3b2f420d42ca6442a57aad868dbdb7c6841363cb63e78545a35871",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_record_pair_oracle.py",
@@ -1009,7 +1270,10 @@
         "0x697a",
         "0x770c"
       ],
-      "summary": "captured 720 original B8/B9/BD record-pair cases"
+      "summary": "captured 720 original B8/B9/BD record-pair cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_record_pair.jsonl",
+      "fixture_sha256": "587884d1b31bd118ac3bd0dd537d3db9b86ad7f88258d0814b4373c76e0111da",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_record_state_oracle.py",
@@ -1026,7 +1290,10 @@
         "0x697a",
         "0x7752"
       ],
-      "summary": "captured 624 original C1 record-state cases"
+      "summary": "captured 624 original C1 record-state cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_record_state.jsonl",
+      "fixture_sha256": "6addf000466ab8d4dafb356fdbd9ddfd2c2489a71838aa066a159d95158d5a95",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_resource_descriptor_oracle.py",
@@ -1035,7 +1302,10 @@
       "entered_entrypoints": [
         "0xb763"
       ],
-      "summary": "verified 8 BBB resource-descriptor lookup cases"
+      "summary": "verified 8 BBB resource-descriptor lookup cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_resource_descriptor.jsonl",
+      "fixture_sha256": "9c3a9242a18f5ef6b281e858a23bc3b60caea4685a768aee4e2c837f26867156",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_resource_switch_oracle.py",
@@ -1050,7 +1320,10 @@
         "0xbf28",
         "0xbf41"
       ],
-      "summary": "verified 7 BBB resource-switch cases covering 22 normalized conditional edges"
+      "summary": "verified 7 BBB resource-switch cases covering 22 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_resource_switch.jsonl",
+      "fixture_sha256": "d520a8d38f568036cb8370835ab36f0ab15e04ce829e100402d312980d287b48",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_scene_completion_oracle.py",
@@ -1063,7 +1336,10 @@
         "0xbac7",
         "0xbbf5"
       ],
-      "summary": "wrote 38 unpatched scene completion captures"
+      "summary": "wrote 38 unpatched scene completion captures",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_scene_completion.jsonl",
+      "fixture_sha256": "729ed884db29ad8de974f59393dc4e73310eb03b301d7e68923ff319619e284b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_scene_transition_oracle.py",
@@ -1081,7 +1357,10 @@
         "0xb4b0",
         "0xcd69"
       ],
-      "summary": "verified 21 original BBB scene-transition cases"
+      "summary": "verified 21 original BBB scene-transition cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_scene_transition.jsonl",
+      "fixture_sha256": "14eb304162eb4a8d00b008f2763fbd0889dc1abe173578cf9c54df17329805ec",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_script_action_oracle.py",
@@ -1103,7 +1382,10 @@
         "0xd363",
         "0xd561"
       ],
-      "summary": "verified 33 original BBB action-dispatch cases"
+      "summary": "verified 33 original BBB action-dispatch cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_script_action.jsonl",
+      "fixture_sha256": "4427e7e51bf4a5953dc4b42843199ee0e4b7142d48e12a41e939414a386b8f9e",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_script_travel_oracle.py",
@@ -1115,7 +1397,10 @@
         "0x6633",
         "0x9ea6"
       ],
-      "summary": "verified 8 original C6 travel-dispatch cases"
+      "summary": "verified 8 original C6 travel-dispatch cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_script_travel.jsonl",
+      "fixture_sha256": "17f2ec2e04dd01af007167f9833dbf3b2009503ae66a1eb60da8cebbfd5a6446",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_sequence_procedure_oracle.py",
@@ -1128,7 +1413,10 @@
         "0x6f09",
         "0x6f10"
       ],
-      "summary": "captured 96 original A7/A9-AA/AB-AC cases"
+      "summary": "captured 96 original A7/A9-AA/AB-AC cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_sequence_procedure.jsonl",
+      "fixture_sha256": "1fbf08000d6ac89cb382a615267971408a7e74c9e6dce7aae33bfab47b5f370c",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_sequence_request_oracle.py",
@@ -1137,7 +1425,10 @@
       "entered_entrypoints": [
         "0x6e7c"
       ],
-      "summary": "captured 64 original A8 sequence-request cases"
+      "summary": "captured 64 original A8 sequence-request cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_sequence_request.jsonl",
+      "fixture_sha256": "3ac5e573e6b173f2824b0cc9156580c936da985abd0d338ed12ae4831761df63",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_settlement_oracle.py",
@@ -1153,7 +1444,10 @@
         "0x7367",
         "0x8103"
       ],
-      "summary": "wrote 100 native settlement cases covering 8 handler/helper entries"
+      "summary": "wrote 100 native settlement cases covering 8 handler/helper entries",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_settlement.jsonl",
+      "fixture_sha256": "24bd5f670f23e8b9d01a6b6ef2a453caf0b9e36bc0d9a0798d5aee8654f7e43a",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_shared_arithmetic_oracle.py",
@@ -1163,7 +1457,10 @@
         "0x697a",
         "0x744b"
       ],
-      "summary": "captured 1728 original shared-state cases for seven dispatch aliases"
+      "summary": "captured 1728 original shared-state cases for seven dispatch aliases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_shared_arithmetic.jsonl",
+      "fixture_sha256": "28991d88c1b429b57d22a2179937ffd01279d9a375ac2d06ed1762518cfa0421",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_shared_bit_oracle.py",
@@ -1173,7 +1470,10 @@
         "0x697a",
         "0x750a"
       ],
-      "summary": "captured 480 original AE/B0 shared-bit cases"
+      "summary": "captured 480 original AE/B0 shared-bit cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_shared_bit.jsonl",
+      "fixture_sha256": "992cd05504167632881f71c9920b0a075376d3067738730331014e4c97ea1dc5",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_depth_band_oracle.py",
@@ -1182,7 +1482,10 @@
       "entered_entrypoints": [
         "0xce6a"
       ],
-      "summary": "verified 12 dual ship-depth-band cases and 6 conditional edges across 3 branch sites"
+      "summary": "verified 12 dual ship-depth-band cases and 6 conditional edges across 3 branch sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_depth_band.jsonl",
+      "fixture_sha256": "926551adc6081cfe2bfb01c1ddf55df8d51c4de8eee95c29e8aa2b6cd732680f",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_depth_scroll_oracle.py",
@@ -1191,7 +1494,10 @@
       "entered_entrypoints": [
         "0xcee9"
       ],
-      "summary": "verified 17 dual ship-depth-scroll cases and 12 conditional edges across 6 branch sites"
+      "summary": "verified 17 dual ship-depth-scroll cases and 12 conditional edges across 6 branch sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_depth_scroll.jsonl",
+      "fixture_sha256": "f53e1fa92b56d9340f20929c7db633e5c8598d039e5dbc21217c372903c9e74d",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_hud_oracle.py",
@@ -1201,7 +1507,10 @@
         "0xc859",
         "0xce6a"
       ],
-      "summary": "verified 15 BBB ship HUD cases and 26 conditional edges across 13 branch sites"
+      "summary": "verified 15 BBB ship HUD cases and 26 conditional edges across 13 branch sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_hud.jsonl",
+      "fixture_sha256": "33a5afbb5336c597f80ee0f7347f1a6b749e58e93669fe09ceede6e2053874a0",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_navigation_oracle.py",
@@ -1211,7 +1520,10 @@
         "0xcb0f",
         "0xcd69"
       ],
-      "summary": "verified 18 BBB ship-navigation cases and 32 conditional edges across 16 branch sites"
+      "summary": "verified 18 BBB ship-navigation cases and 32 conditional edges across 16 branch sites",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_navigation.jsonl",
+      "fixture_sha256": "5592f720a447044a75620abdbb2ada0e952aaf12b0f6e16a7da10eaeca91ef21",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_object_projection_oracle.py",
@@ -1222,7 +1534,10 @@
         "0x474a",
         "0xb337"
       ],
-      "summary": "verified 5 BBB object-projector cases covering 8 main conditional edges"
+      "summary": "verified 5 BBB object-projector cases covering 8 main conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_object_projection.jsonl",
+      "fixture_sha256": "f2018dacb0c7acdf160c6a096c3ca71604ef1b2a031e5a645a16f153c29f7301",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_point_cloud_oracle.py",
@@ -1231,7 +1546,10 @@
       "entered_entrypoints": [
         "0xb1af"
       ],
-      "summary": "verified 6 BBB point-cloud cases covering 6 normalized conditional edges"
+      "summary": "verified 6 BBB point-cloud cases covering 6 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_point_cloud.jsonl",
+      "fixture_sha256": "829332e27e9f81dab0be3f521727d5f8d2818f3999ea122cd7c4904eea61d364",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_point_plot_oracle.py",
@@ -1240,7 +1558,10 @@
       "entered_entrypoints": [
         "0xb2a3"
       ],
-      "summary": "verified 14 BBB point-plot cases covering 10 normalized conditional edges"
+      "summary": "verified 14 BBB point-plot cases covering 10 normalized conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_point_plot.jsonl",
+      "fixture_sha256": "1a7c093f46715bfb79627fed9d8c8c0a47ca28555cee6adc0d9c4e7667ed5110",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_point_randomize_oracle.py",
@@ -1249,7 +1570,10 @@
       "entered_entrypoints": [
         "0xb306"
       ],
-      "summary": "verified 4 BBB point-randomizer cases covering 2 normalized loop edges"
+      "summary": "verified 4 BBB point-randomizer cases covering 2 normalized loop edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_point_randomize.jsonl",
+      "fixture_sha256": "fbad7727734354bcec7e5d31f2bdb947fa5b91986763e6f952b13edcae3c04d4",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_presentation_oracle.py",
@@ -1262,7 +1586,10 @@
         "0xce6a",
         "0xcee9"
       ],
-      "summary": "verified 20 BBB ship presentation cases, 28 edges, and 14/14 observed branch sites with both outcomes"
+      "summary": "verified 20 BBB ship presentation cases, 28 edges, and 14/14 observed branch sites with both outcomes",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_presentation.jsonl",
+      "fixture_sha256": "c4c29e4bd87211bbce6cf5cd3818b3f221f31bf2bb9b5ed755fb48d0a668aeb5",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ship_projection_matrix_oracle.py",
@@ -1271,14 +1598,20 @@
       "entered_entrypoints": [
         "0xb058"
       ],
-      "summary": "verified 12 BBB ship-projection matrix cases"
+      "summary": "verified 12 BBB ship-projection matrix cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ship_projection_matrix.jsonl",
+      "fixture_sha256": "273c0acdc50f3888f0aff3faf7de95bdf9229ae4ef22ace097a3610c83402b9b",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_simulation_clock_oracle.py",
       "oracle_sha256": "782d37e56c2f330942cb16a874c98c9d9cae4c3f5e24de9fd1d3e98aec3d17e2",
       "executed_instruction_count": 9,
       "entered_entrypoints": [],
-      "summary": "captured 40 original simulation-clock cases"
+      "summary": "captured 40 original simulation-clock cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_simulation_clock.json",
+      "fixture_sha256": "20dbe15a102f306b9c1ada19000186659a01d65dd83d8c26a10cce53e1c36a9c",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_sound_bank_load_oracle.py",
@@ -1287,14 +1620,20 @@
       "entered_entrypoints": [
         "0xd7ec"
       ],
-      "summary": "verified 12 shared and 2 BBB-only sound-bank cases across 32 conditional edges"
+      "summary": "verified 12 shared and 2 BBB-only sound-bank cases across 32 conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_sound_bank_load.jsonl",
+      "fixture_sha256": "fa405a3f77e39cac79d01b5458c3082cfd5013520540da0f8ffa5cdb898253c4",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_speed_choice_oracle.py",
       "oracle_sha256": "5ec28396af5271410977314441e5f14b7f40f666c1becbe43134fad681f6ded8",
       "executed_instruction_count": 11,
       "entered_entrypoints": [],
-      "summary": "captured 90 simulation-speed selection cases"
+      "summary": "captured 90 simulation-speed selection cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_speed_choice.json",
+      "fixture_sha256": "403e71c1bfe97a866e1c5ec2ad9e012da37b1ee319628f47d14aad98a616aa99",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_spoken_number_oracle.py",
@@ -1304,14 +1643,20 @@
         "0x2832",
         "0x6e54"
       ],
-      "summary": "verified 45 original spoken-number cases"
+      "summary": "verified 45 original spoken-number cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_spoken_number.json",
+      "fixture_sha256": "6a4dd4f6268c9db07586ff1c57a27623cd5c01c9f10a7abe9f5a6ab6c6ded149",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_startup_tables_oracle.py",
       "oracle_sha256": "dafa006015860d518d5f13169e42c5e213740ab0d9ad4ad60ccc66df93ddc6a2",
       "executed_instruction_count": 32,
       "entered_entrypoints": [],
-      "summary": "captured 256 palette entries, 10 effect sequences and 42 artwork rows"
+      "summary": "captured 256 palette entries, 10 effect sequences and 42 artwork rows",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_startup_tables.json",
+      "fixture_sha256": "72f7954b2aec3e29fe68ff6d34a9a677e24ed1910242e59e8d9ce8f1f67ff879",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_state_processor_oracle.py",
@@ -1322,7 +1667,10 @@
         "0x6633",
         "0x67b8"
       ],
-      "summary": "wrote 21 native state-processor vectors"
+      "summary": "wrote 21 native state-processor vectors",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_state_processor.jsonl",
+      "fixture_sha256": "aab1398f9358c2fefd35b2ee6a338af0b7be499b5dd2f0ce2756ba9c7e41a8b3",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_subtitle_reveal_oracle.py",
@@ -1334,14 +1682,20 @@
         "0x3e41",
         "0xab8f"
       ],
-      "summary": "verified 12 original BBB subtitle-reveal cases"
+      "summary": "verified 12 original BBB subtitle-reveal cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_subtitle_reveal.jsonl",
+      "fixture_sha256": "45f1c1ffbf68cd226f778c7abe3a32307b433ccd343713d2210f266f64ffb414",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_text_lifecycle_oracle.py",
       "oracle_sha256": "88bc3540a3aa8f52a9d593cd52058b0361114319023b6a252ddfcb069342e720",
       "executed_instruction_count": 45,
       "entered_entrypoints": [],
-      "summary": "verified 2048 native text-hold coordinator cases"
+      "summary": "verified 2048 native text-hold coordinator cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_text_lifecycle.jsonl",
+      "fixture_sha256": "d834147c38936528c9b5e1a1cbfa7471b2e84f131c1431eeb0dc9faf8232e63a",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_timer_oracle.py",
@@ -1351,7 +1705,10 @@
         "0x697a",
         "0x6b07"
       ],
-      "summary": "captured 3072 original A5 timer and guard-helper cases"
+      "summary": "captured 3072 original A5 timer and guard-helper cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_timer.jsonl",
+      "fixture_sha256": "17366154b42f9b03b826d464ba512ff4ed5259d364b7aab7ca48451a65bd6cc9",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_transfer_oracle.py",
@@ -1368,14 +1725,20 @@
         "0x75cd",
         "0x8450"
       ],
-      "summary": "captured 600 original CD transfer cases"
+      "summary": "captured 600 original CD transfer cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_transfer.jsonl",
+      "fixture_sha256": "e0e1cbfd87f15bd766869a5f29a53f8190bcf9bee3f624efec4889d6d260a2b6",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_travel_option_oracle.py",
       "oracle_sha256": "db11d4d917916a3529e509382f82b1b26a4fbf2be66775ca1766d5ead923341f",
       "executed_instruction_count": 35,
       "entered_entrypoints": [],
-      "summary": "verified 46 original travel-option branch cases"
+      "summary": "verified 46 original travel-option branch cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl",
+      "fixture_sha256": "0096e8f5961bb56dbc132f355e0f7b9b149fec15f8497d58f6d2cd9fc6d8bacd",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ultrasound_lifecycle_oracle.py",
@@ -1387,7 +1750,10 @@
         "0xe05e",
         "0xe0de"
       ],
-      "summary": "verified 10 BBB Ultrasound lifecycle cases across 24 reachable conditional edges"
+      "summary": "verified 10 BBB Ultrasound lifecycle cases across 24 reachable conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ultrasound_lifecycle.jsonl",
+      "fixture_sha256": "68b55f33a60b0da01afa49255e75b3280839db56cd6f8dbfa6d777891d229097",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ultrasound_stream_oracle.py",
@@ -1399,7 +1765,10 @@
         "0xe0de",
         "0xe0ed"
       ],
-      "summary": "verified 19 BBB Ultrasound stream-controller cases across 36 conditional edges"
+      "summary": "verified 19 BBB Ultrasound stream-controller cases across 36 conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ultrasound_stream.jsonl",
+      "fixture_sha256": "d7fc21d2d6dfa82de2aec1051f760fe64920c19ad00a649eced17654f56de036",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ultrasound_transfer_oracle.py",
@@ -1410,7 +1779,10 @@
         "0xdc92",
         "0xddf8"
       ],
-      "summary": "verified 8 BBB Ultrasound transfer cases across 10 conditional edges"
+      "summary": "verified 8 BBB Ultrasound transfer cases across 10 conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ultrasound_transfer.jsonl",
+      "fixture_sha256": "41dab0c7e015c88fcb3d18a8e64897819652df0351be3d426b935486766e88de",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_ultrasound_voice_oracle.py",
@@ -1423,7 +1795,10 @@
         "0xddf8",
         "0xe0de"
       ],
-      "summary": "verified 11 BBB Ultrasound voice cases across 12 conditional edges"
+      "summary": "verified 11 BBB Ultrasound voice cases across 12 conditional edges",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_ultrasound_voice.jsonl",
+      "fixture_sha256": "cadf56f0a16609bdf358958e48e5c0e3e27b8a7592e35d49fb6cfc6f62734c71",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_vm_oracle.py",
@@ -1432,7 +1807,10 @@
       "entered_entrypoints": [
         "0x7408"
       ],
-      "summary": "wrote 114 original-handler vectors (41 divide errors)"
+      "summary": "wrote 114 original-handler vectors (41 divide errors)",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_multiply_divide.jsonl",
+      "fixture_sha256": "58942cf880d4740d82954b6cf837384abf31c687f79fa60c409426da58be7bdc",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_vm_yield_oracle.py",
@@ -1446,7 +1824,10 @@
         "0x6c89",
         "0x6e54"
       ],
-      "summary": "captured 76 original A6 and outer-loop yield cases"
+      "summary": "captured 76 original A6 and outer-loop yield cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_vm_yield.jsonl",
+      "fixture_sha256": "e12baba2cda24e06de0936e65b6771d518014c29ea27747c9d78ff3c48d12fe2",
+      "fixture_relation": "exact"
     },
     {
       "oracle": "re/tools/big_bug_bang_writable_catalog_oracle.py",
@@ -1455,7 +1836,10 @@
       "entered_entrypoints": [
         "0x2b43"
       ],
-      "summary": "captured 152 original writable-resource visits"
+      "summary": "captured 152 original writable-resource visits",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_writable_catalog.json",
+      "fixture_sha256": "6870a9791e465fe5c008e946cba80865097193f4eac1fe5d146305af397907a9",
+      "fixture_relation": "exact"
     }
   ],
   "entrypoints": [
