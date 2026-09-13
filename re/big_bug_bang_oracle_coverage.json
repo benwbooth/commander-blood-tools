@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 167,
-    "oracle_fixture_count": 166,
+    "oracle_count": 168,
+    "oracle_fixture_count": 167,
     "fixture_relation_counts": {
-      "exact": 165,
+      "exact": 166,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 284,
-    "unentered_static_entrypoints": 98,
+    "entered_static_entrypoints": 285,
+    "unentered_static_entrypoints": 97,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 285,
+    "entered_known_entrypoints": 286,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 171,
-        "unentered": 25
+        "entered": 172,
+        "unentered": 24
       },
       "exact_body": {
         "entered": 15,
@@ -2099,6 +2099,18 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_small_font_oracle.py",
+      "oracle_sha256": "5a652d20c0af26b91b685baa26303c1b3e6a2800f1b7a805093e92c4f76fe3af",
+      "executed_instruction_count": 76,
+      "entered_entrypoints": [
+        "0x3a78"
+      ],
+      "summary": "verified 11 BBB small-font cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_small_font.json",
+      "fixture_sha256": "7c5cb57f7eba0b75e706cad80f2fc2013416b30dde73e758a2cb4451852140b2",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_sound_bank_load_oracle.py",
       "oracle_sha256": "a0120832186786288e395f8091d5bbc3bf25338cf1ff2e6e544d6999c336dd95",
       "executed_instruction_count": 198,
@@ -3441,8 +3453,10 @@
     {
       "entry": "0x3a78",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_small_font_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x36ea"
     },

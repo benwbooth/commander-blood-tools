@@ -5420,6 +5420,31 @@ physical overlapping move. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `bde8e8ff570b9e36f44e66507d6a5d6e83946d275d3125095c7914eac1c9084f`.
 
+## Small 4x5 Font Renderer Oracle (2026-09-13)
+
+BBB `0x3A78..0x3B03` is the relocated sequel counterpart of Commander Blood's
+`0x36EA..0x3775` planar small-font renderer. Both 139-byte leaf routines contain
+the same 76 instructions and differ only in the display pointer, character-map,
+and glyph-table relocations.
+
+The new `re/tools/big_bug_bang_small_font_oracle.py` directly executes all 11
+fingerprinted Commander cases in the shipped BBB body. They prove immediate NUL
+termination, each starting VGA plane, high-bit map skips with fixed advance,
+source and display wrapping, inherited forward and backward string direction,
+full-word row arithmetic, high-character map aliasing, and all-skipped text. The
+harness also verifies relocated GS and SS ownership against Commander-offset and
+full-segment decoys, exact ordered VGA, stack, and pixel writes, complete
+register and segment residue, defined terminal flags, far return, untouched full
+segments, and patched-executable immutability.
+
+The typed `draw_small_font_text` owner consumes both 11-row fixtures. Owned font
+resources and checked flat framebuffer coordinates replace VGA map-mask writes,
+16-bit segment wrapping, inherited direction, and out-of-range map aliasing while
+preserving all nine representable output hashes. BBB's body SHA-256 is
+`1685643fec0b475d7582de4414d97cde4a9c799a7ceaf13ff8960f7972057109`,
+and the deterministic fixture SHA-256 is
+`7c5cb57f7eba0b75e706cad80f2fc2013416b30dde73e758a2cb4451852140b2`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

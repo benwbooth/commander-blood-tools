@@ -667,10 +667,11 @@ pub fn draw_subtitle_reveal_line(
 
 /// Draw NUL-terminated text through the compact five-row font.
 ///
-/// This translates `small_text_render` at BLOODPRG offset `0x0036EA`. It
-/// retains four-pixel fixed advance, five transparent rows, high-bit map
-/// skipping, and source order while replacing planar map-mask rotation and
-/// segment addressing with checked flat indexed pixels.
+/// This translates `small_text_render` at BLOODPRG offset `0x0036EA` and its
+/// relocated Big Bug Bang counterpart at `0x003A78`. It retains four-pixel
+/// fixed advance, five transparent rows, high-bit map skipping, and source
+/// order while replacing planar map-mask rotation and segment addressing with
+/// checked flat indexed pixels.
 pub fn draw_small_font_text(
     framebuffer: &mut [u8],
     fonts: &BloodprgFontResources,
@@ -958,6 +959,11 @@ mod tests {
     #[derive(Deserialize)]
     struct BigBugBangBiosDrawOracle {
         rows: Vec<BiosDrawOracle>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangSmallDrawOracle {
+        rows: Vec<SmallDrawOracle>,
     }
 
     #[derive(Deserialize)]
@@ -1479,12 +1485,7 @@ mod tests {
         assert_eq!(exact_hashes, SUBTITLE_DRAW_EXACT_HASH_COUNT);
     }
 
-    #[test]
-    fn small_font_draw_matches_every_flat_original_vector() {
-        let vectors: Vec<SmallDrawOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_36ea_natural.json"
-        ))
-        .unwrap();
+    fn assert_small_font_draw_vectors(vectors: &[SmallDrawOracle]) {
         assert_eq!(vectors.len(), SMALL_FONT_DRAW_ORACLE_COUNT);
         let mut exact_hashes = usize::MIN;
 
@@ -1533,6 +1534,24 @@ mod tests {
             }
         }
         assert_eq!(exact_hashes, SMALL_FONT_DRAW_EXACT_HASH_COUNT);
+    }
+
+    #[test]
+    fn small_font_draw_matches_every_flat_original_vector() {
+        let vectors: Vec<SmallDrawOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_36ea_natural.json"
+        ))
+        .unwrap();
+        assert_small_font_draw_vectors(&vectors);
+    }
+
+    #[test]
+    fn sequel_small_font_draw_matches_every_direct_vector() {
+        let fixture: BigBugBangSmallDrawOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_small_font.json"
+        ))
+        .unwrap();
+        assert_small_font_draw_vectors(&fixture.rows);
     }
 
     fn bios_oracle_text(name: &str) -> Vec<u8> {
