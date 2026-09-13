@@ -5240,6 +5240,31 @@ dirty-state contract. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `8d12d7bffd57c1c806aed2cc68ffdbe5b846058aa2b5ed8eafd56d7bd6526d0a`.
 
+## Resource Palette File-Block Oracle (2026-09-13)
+
+BBB `0x4503..0x454D` is the relocated sequel counterpart of Commander Blood's
+`0x4086..0x40D0` resource-palette file-block parser. Both routines contain 38
+instructions in 74 bytes and differ only in the palette destination and dirty
+byte relocations.
+
+The new `re/tools/big_bug_bang_resource_palette_file_blocks_oracle.py`
+directly executes all six fingerprinted Commander cases in the shipped BBB
+body. They prove terminator-only input, ordinary and zero-length blocks, the
+last palette entry, a 255-color block, wrapping 32-bit remaining-byte
+arithmetic, and ignored DOS carry and short-count results. The harness also
+verifies the exact DOS read sequence and destinations, dirty-before-read
+ordering, relocated DS ownership against a GS decoy, exact CPU and DOS writes,
+defined terminal flags, complete register and segment residue, near return,
+untouched full segments, and patched-executable immutability.
+
+The typed `decode_palette_resource` owner consumes both six-row fixtures.
+Checked slice parsing replaces DOS handle reads and direct palette storage
+while preserving block order, RGB component layout, palette mutation, and the
+terminating header contract. BBB's body SHA-256 is
+`7f6653c74fb30079bf3ed87ca6d63f7c122e2573f85928f0716d407261494bfc`,
+and the deterministic fixture SHA-256 is
+`f9471d72516398036183add9af3ae603cfc527dcffd1593bf7770d9b0d29cd3f`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

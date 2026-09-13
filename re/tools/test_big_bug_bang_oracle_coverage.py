@@ -90,7 +90,7 @@ class BigBugBangOracleCoverageTests(unittest.TestCase):
         self.assertEqual(self.report["summary"]["oracle_fixture_count"], fixtures)
         self.assertEqual(
             self.report["summary"]["fixture_relation_counts"],
-            {"exact": 158, "prefix": 1},
+            {"exact": 159, "prefix": 1},
         )
         self.assertEqual(self.report["inputs"]["runner"]["sha256"], sha256(RUNNER_PATH))
         self.assertEqual(

@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 160,
-    "oracle_fixture_count": 159,
+    "oracle_count": 161,
+    "oracle_fixture_count": 160,
     "fixture_relation_counts": {
-      "exact": 158,
+      "exact": 159,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 277,
-    "unentered_static_entrypoints": 105,
+    "entered_static_entrypoints": 278,
+    "unentered_static_entrypoints": 104,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 278,
+    "entered_known_entrypoints": 279,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 164,
-        "unentered": 32
+        "entered": 165,
+        "unentered": 31
       },
       "exact_body": {
         "entered": 15,
@@ -1656,6 +1656,18 @@
       "summary": "verified 8 BBB resource-ID load cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_resource_load_by_id.json",
       "fixture_sha256": "5c91728ad8c03d066f32a5aa15a3bb4606114154e61d5ee50b77419fa772e51c",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_resource_palette_file_blocks_oracle.py",
+      "oracle_sha256": "fa1b6bdf6836d858ddd960a46573d615b641df5b4c035ad0f821969678b8cf68",
+      "executed_instruction_count": 38,
+      "entered_entrypoints": [
+        "0x4503"
+      ],
+      "summary": "verified 6 BBB resource-palette file-block cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_resource_palette_file_blocks.json",
+      "fixture_sha256": "f9471d72516398036183add9af3ae603cfc527dcffd1593bf7770d9b0d29cd3f",
       "fixture_relation": "exact"
     },
     {
@@ -3518,8 +3530,10 @@
     {
       "entry": "0x4503",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_resource_palette_file_blocks_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x4086"
     },

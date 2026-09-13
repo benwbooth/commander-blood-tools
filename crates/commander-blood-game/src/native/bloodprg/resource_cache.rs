@@ -450,6 +450,8 @@ fn rounded_allocation_byte_count(byte_count: usize) -> Result<usize, ResourceCac
         .ok_or(ResourceCacheError::ResourceTooLarge(byte_count))
 }
 
+/// Decode the palette-block stream parsed by BLOODPRG `0x004086` and the
+/// relocated BLOOD2PG `0x004503` routine before retaining the resource bytes.
 fn decode_palette_resource(
     resource: ResourceId,
     source: &[u8],
@@ -569,6 +571,11 @@ mod tests {
     #[derive(Deserialize)]
     struct BigBugBangLoadByIdOracle {
         rows: Vec<LoadByIdOracle>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangPaletteBlockOracle {
+        rows: Vec<PaletteBlockOracle>,
     }
 
     #[derive(Deserialize)]
@@ -954,12 +961,7 @@ mod tests {
         assert_load_by_id_vectors(oracle.rows);
     }
 
-    #[test]
-    fn palette_blocks_match_every_native_palette_hash() {
-        let vectors: Vec<PaletteBlockOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_4086_natural.json"
-        ))
-        .unwrap();
+    fn assert_palette_block_vectors(vectors: Vec<PaletteBlockOracle>) {
         assert_eq!(vectors.len(), PALETTE_BLOCK_ORACLE_VECTOR_COUNT);
 
         for (case_index, vector) in vectors.into_iter().enumerate() {
@@ -1037,6 +1039,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn palette_blocks_match_every_native_palette_hash() {
+        let vectors: Vec<PaletteBlockOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_4086_natural.json"
+        ))
+        .unwrap();
+        assert_palette_block_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_palette_blocks_match_every_direct_palette_hash() {
+        let oracle: BigBugBangPaletteBlockOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_resource_palette_file_blocks.json"
+        ))
+        .unwrap();
+        assert_palette_block_vectors(oracle.rows);
     }
 
     #[test]
