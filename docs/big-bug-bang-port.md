@@ -5341,6 +5341,31 @@ semantics. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `aac42b948f30ebb80e56f2e60a4462ce38c5d22613aec121270f62005a6718f7`.
 
+## Bridge Panorama ByteRun Oracle (2026-09-13)
+
+BBB `0x30D6..0x3144` is the relocated sequel counterpart of Commander Blood's
+`0x2D50..0x2DBE` bridge-panorama ByteRun unpacker. Both routines contain 50
+instructions in 110 bytes and differ only in the display far-pointer and
+transparent-zero flag relocations.
+
+The new `re/tools/big_bug_bang_panorama_unpack_oracle.py` directly executes all
+four fingerprinted Commander cases in the shipped BBB body. They prove opaque
+and transparent-zero output, source and destination wrapping, inherited forward
+and backward string direction, zero-skip destination movement, and exact
+64,000-pixel termination. The harness also verifies relocated GS ownership
+against full-segment and Commander-offset decoys, exact ordered framebuffer
+writes, complete register and segment residue, defined terminal flags, far
+return, untouched source, stack, and decoy segments, and patched-executable
+immutability.
+
+The typed `decode_bridge_panorama_pixels` owner consumes both four-row fixtures.
+An owned temporary frame and checked slices replace segmented wrapping and
+inherited direction while preserving every valid authored pixel result. BBB's
+body SHA-256 is
+`46ff14c5c95b663dd39f30ea5e8a3541d4e3139770997be6493039110eb865b4`,
+and the deterministic fixture SHA-256 is
+`e1bc7292bb56b12b144e98b08fb7b3ba4eb06a99395103aac42517a69d8ffb11`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

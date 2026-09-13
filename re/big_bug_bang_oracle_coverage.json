@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 164,
-    "oracle_fixture_count": 163,
+    "oracle_count": 165,
+    "oracle_fixture_count": 164,
     "fixture_relation_counts": {
-      "exact": 162,
+      "exact": 163,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 281,
-    "unentered_static_entrypoints": 101,
+    "entered_static_entrypoints": 282,
+    "unentered_static_entrypoints": 100,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 282,
+    "entered_known_entrypoints": 283,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 168,
-        "unentered": 28
+        "entered": 169,
+        "unentered": 27
       },
       "exact_body": {
         "entered": 15,
@@ -1050,6 +1050,18 @@
       "summary": "wrote 396 original activation/camera-gate cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_panel_activation.jsonl",
       "fixture_sha256": "a30ba1c16df575adcec7d3b9fcc6992f56fb124a79bd86f67c73f7972de27cb6",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_panorama_unpack_oracle.py",
+      "oracle_sha256": "5fd443adb088e6381a357bb5b406b410bab66330d8dc7beeea0c6fffe2ac388a",
+      "executed_instruction_count": 50,
+      "entered_entrypoints": [
+        "0x30d6"
+      ],
+      "summary": "verified 4 BBB panorama-unpack cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_panorama_unpack.json",
+      "fixture_sha256": "e1bc7292bb56b12b144e98b08fb7b3ba4eb06a99395103aac42517a69d8ffb11",
       "fixture_relation": "exact"
     },
     {
@@ -3235,8 +3247,10 @@
     {
       "entry": "0x30d6",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_panorama_unpack_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x2d50"
     },

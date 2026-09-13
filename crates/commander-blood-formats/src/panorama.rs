@@ -269,9 +269,10 @@ impl BridgePanoramaArchive {
 /// Decode one complete panorama ByteRun stream over a flat framebuffer.
 ///
 /// This translates `bridge_panorama_frame_unpack` at BLOODPRG routine offset
-/// `0x002D50`. A temporary owned frame makes malformed input transactional;
-/// checked slice indices replace source/output wrapping and inherited direction
-/// state. Every valid authored stream retains the original pixel result.
+/// `0x002D50` and its relocated Big Bug Bang counterpart at `0x0030D6`. A
+/// temporary owned frame makes malformed input transactional; checked slice
+/// indices replace source/output wrapping and inherited direction state. Every
+/// valid authored stream retains the original pixel result.
 pub fn decode_bridge_panorama_pixels(
     stream: &[u8],
     framebuffer: &mut [u8],
@@ -381,12 +382,12 @@ mod tests {
         source_bytes: usize,
     }
 
-    #[test]
-    fn byte_run_decoder_matches_all_flat_original_semantic_vectors() {
-        let vectors: Vec<UnpackOracle> = serde_json::from_str(include_str!(
-            "../../../re/tools/oracle_vectors/func_2d50_natural.json"
-        ))
-        .unwrap();
+    #[derive(Deserialize)]
+    struct BigBugBangUnpackOracle {
+        rows: Vec<UnpackOracle>,
+    }
+
+    fn assert_unpack_vectors(vectors: &[UnpackOracle]) {
         assert_eq!(vectors.len(), UNPACK_ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -409,6 +410,24 @@ mod tests {
             .unwrap();
             assert_eq!(framebuffer, expected, "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn byte_run_decoder_matches_all_flat_original_semantic_vectors() {
+        let vectors: Vec<UnpackOracle> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_2d50_natural.json"
+        ))
+        .unwrap();
+        assert_unpack_vectors(&vectors);
+    }
+
+    #[test]
+    fn sequel_byte_run_decoder_matches_every_direct_vector() {
+        let fixture: BigBugBangUnpackOracle = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/big_bug_bang_panorama_unpack.json"
+        ))
+        .unwrap();
+        assert_unpack_vectors(&fixture.rows);
     }
 
     #[test]
