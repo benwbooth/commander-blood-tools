@@ -3073,3 +3073,27 @@ SHA-256 is
 `b190ad52e10f3438682a4489e565b2d8a8914f7e3fbb9a3711459a9262eb2619`,
 and the deterministic JSONL SHA-256 is
 `926551adc6081cfe2bfb01c1ddf55df8d51c4de8eee95c29e8aa2b6cd732680f`.
+
+## 2026-09-13 - Big Bug Bang ship depth-scroll step
+
+BBB `0xCEE9..0xCF35` relocates Commander Blood's `0xB75C..0xB7A8`
+depth-scroll step. Both complete bodies contain 29 instructions in 76 bytes.
+The depth word and opening, closing, and step bytes move as one state block;
+opening precedence, completion timing, low-byte arithmetic, and signed clamps
+remain structurally identical.
+
+The new `re/tools/big_bug_bang_ship_depth_scroll_oracle.py` executes both
+shipped bodies over the existing 17-case semantic corpus and covers both
+outcomes of all six conditional sites, or 12 edges. It verifies inactive
+high-bit flags, opening completion and progress, equality and overshoot,
+low-byte wrap without carry, signed high words, closing completion and
+underflow, zero steps, and inherited direction state. Exact typed state,
+path-specific defined flags, all registers and segments, caller stack,
+executable bytes, unowned memory, and direct normalized Commander/BBB equality
+are checked.
+
+The existing typed `advance_ship_depth` owner now consumes both the Commander
+and BBB 17-row fixtures without a production variant. BBB's body SHA-256 is
+`ea3b7cd8bb7efdd5637c0e2c2974b664e58a1048c6a24ff6e50b529df4a38490`,
+and the deterministic JSONL SHA-256 is
+`f53e1fa92b56d9340f20929c7db633e5c8598d039e5dbc21217c372903c9e74d`.

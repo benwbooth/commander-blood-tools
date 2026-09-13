@@ -333,13 +333,17 @@ mod tests {
         }
     }
 
-    #[test]
-    fn depth_transition_matches_every_original_vector() {
-        let vectors: Vec<DepthVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_b75c_natural.json"
-        ))
-        .unwrap();
-        assert_eq!(vectors.len(), 17);
+    fn assert_depth_vectors(fixture: &str, expected_count: usize) {
+        let vectors: Vec<DepthVector> = if fixture.trim_start().starts_with('[') {
+            serde_json::from_str(fixture).unwrap()
+        } else {
+            fixture
+                .lines()
+                .filter(|line| !line.is_empty())
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect()
+        };
+        assert_eq!(vectors.len(), expected_count);
         for vector in vectors {
             let mut state = ShipDepthTransition {
                 depth: vector.depth_before,
@@ -353,6 +357,24 @@ mod tests {
             assert_eq!(state.closing_flags, vector.closing_after, "{}", vector.name);
             assert_eq!(outcome, outcome_for_path(&vector.path), "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn depth_transition_matches_every_commander_blood_vector() {
+        assert_depth_vectors(
+            include_str!("../../../../../re/tools/oracle_vectors/func_b75c_natural.json"),
+            17,
+        );
+    }
+
+    #[test]
+    fn depth_transition_matches_every_big_bug_bang_vector() {
+        assert_depth_vectors(
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_depth_scroll.jsonl"
+            ),
+            17,
+        );
     }
 
     fn assert_band_vectors(fixture: &str, expected_count: usize) {
