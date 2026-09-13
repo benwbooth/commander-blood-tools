@@ -315,7 +315,8 @@ impl<HostError: fmt::Debug> fmt::Display for SceneTransitionError<HostError> {
 
 impl<HostError: fmt::Debug> Error for SceneTransitionError<HostError> {}
 
-/// Advance `scene_transition_step` at BLOODPRG file offset `0x001855`.
+/// Advance `scene_transition_step` at Commander Blood offset `0x001855` and
+/// Big Bug Bang offset `0x001A17`.
 ///
 /// Native phase-bit priority, callback rereads, image options, palette copies,
 /// and cleanup ordering are retained. Typed entities, records, palettes, and
@@ -717,14 +718,25 @@ mod tests {
     }
 
     #[test]
-    fn coordinator_matches_every_original_scene_transition_vector() {
-        let vectors: Vec<SceneTransitionOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_1855_natural.json"
-        ))
-        .unwrap();
-        assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
+    fn coordinator_matches_both_original_scene_transition_fixtures() {
+        assert_coordinator_fixture(
+            "Commander Blood",
+            include_str!("../../../../../re/tools/oracle_vectors/func_1855_natural.json"),
+        );
+        assert_coordinator_fixture(
+            "Big Bug Bang",
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/big_bug_bang_scene_transition.jsonl"
+            ),
+        );
+    }
+
+    fn assert_coordinator_fixture(dialect: &str, fixture: &str) {
+        let vectors = parse_oracle_vectors(fixture);
+        assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT, "{dialect}");
 
         for (case_index, vector) in vectors.into_iter().enumerate() {
+            let label = format!("{dialect}: {}", vector.name);
             let mut state = initial_state(&vector, case_index);
             let mut presentation = initial_presentation(&vector, case_index);
             let mut text = TextPresentationState {
@@ -766,30 +778,26 @@ mod tests {
             )
             .unwrap();
 
-            assert_eq!(host.calls, expected_calls(&vector.calls), "{}", vector.name);
+            assert_eq!(host.calls, expected_calls(&vector.calls), "{label}");
             assert_eq!(
                 state.phase,
                 phase_from_original(vector.phase_after),
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 state.bridge_blocked,
                 vector.phase_after & ORIGINAL_BLOCKED_PHASE != 0,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 state.bridge_reload_requested,
                 vector.phase_after & ORIGINAL_RELOAD_PHASE != 0,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 state.clip_snapshot_ready,
                 vector.clip_snapshot_flags == 1,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 state.record_source,
@@ -798,50 +806,42 @@ mod tests {
                 } else {
                     SceneTransitionRecordSource::Current
                 },
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 line_number(state.active_line),
                 vector.active_line_after,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 state.scene_gate_active,
                 vector.scene_gate_after & 1 != 0,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 presentation.c2_gate_active,
                 vector.c2_gate_after & 1 != 0,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 state.pbm_palette_refresh,
                 vector.palette_refresh_after & 1 != 0,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 state.pbm_transparent_zero,
                 vector.transparent_zero_after & 1 != 0,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 palette_hash(&palettes.target),
                 vector.target_high_sha256,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 palette_hash(&palettes.source),
                 vector.source_high_sha256,
-                "{}",
-                vector.name
+                "{label}"
             );
             if vector.name == "load_nonpresentation" {
                 assert_eq!(
@@ -858,14 +858,12 @@ mod tests {
             assert_eq!(
                 entities[DIALOGUE_OVERLAY_ENTITY_INDEX].flags.bits(),
                 expected_entity_flags,
-                "{}",
-                vector.name
+                "{label}"
             );
             assert_eq!(
                 entities[WORLD_ART_ENTITY_INDEX].flags.bits(),
                 expected_entity_flags,
-                "{}",
-                vector.name
+                "{label}"
             );
             if vector.name == "cleanup_resets_presentation" {
                 assert!(state.ui_enabled);
@@ -880,6 +878,17 @@ mod tests {
                 assert!(!text.subtitle_display_active);
                 assert_eq!(text.request_flags.bits(), TEXT_REQUEST_TEST_BITS & !3);
             }
+        }
+    }
+
+    fn parse_oracle_vectors(fixture: &str) -> Vec<SceneTransitionOracle> {
+        if fixture.trim_start().starts_with('[') {
+            serde_json::from_str(fixture).unwrap()
+        } else {
+            fixture
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect()
         }
     }
 

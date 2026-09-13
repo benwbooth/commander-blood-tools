@@ -3645,6 +3645,42 @@ the native `finale.HNM` and `fin.HNM` cases plus case and directory boundaries.
 This behaviorally classifies `0xB4B0`, not the seven captured callees or
 end-to-end presentation parity.
 
+## Sequel Contact Scene-Transition Coordinator
+
+BBB's `0x1A17..0x1C55` contact scene-transition coordinator is the relocated
+counterpart of Commander Blood `0x1855..0x1A93`. The guarded oracle executes
+the complete unchanged 574-byte sequel body and captures its nine established
+entity, scene-dispatch, DESCRIPT, image, renderer, bridge, alien and HUD
+boundaries:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_scene_transition_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_scene_transition.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  coordinator_matches_both_original_scene_transition_fixtures
+```
+
+The 21 cases mirror Commander Blood's complete coordinator fixture. They cover
+inactive and initialization paths; presentation and non-presentation image
+loads; C2 gates; deferred-record arming; bridge callback blocking and reloads;
+line-seven reloads; alien activity and C2 mutation; palette restoration;
+finish; and final cleanup. After normalizing relocated returns and BBB's
+one-byte FRIGO path shift, every shared result field and callback trace agrees.
+
+The oracle independently checks complete global state, read-only record and
+framebuffer regions, callback arguments and effects, changed bytes, registers,
+segments, stack discipline and executable immutability, and records the defined
+result flags. The routine body is bound by SHA-256
+`75cfa0a8250bd5d6a34b7cc5791713ad60b36c359f076c8ff0d6503152583e2a`;
+the deterministic 21-row JSONL has SHA-256
+`14eb304162eb4a8d00b008f2763fbd0889dc1abe173578cf9c54df17329805ec`.
+The shared typed coordinator already represented the observed behavior, so no
+production semantic change was required; its regression now consumes both
+original-game fixtures. This behaviorally classifies BBB `0x1A17`, not the nine
+captured callees or end-to-end contact-scene parity.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

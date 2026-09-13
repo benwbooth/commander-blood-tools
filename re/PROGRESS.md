@@ -1841,3 +1841,27 @@ accepts that explicit policy input and the concrete runtime derives it only for 
 the selected basename. Fixture-backed and basename-boundary tests pass, as does the existing sequel
 scene-completion oracle. This behaviorally classifies BBB `0xB4B0`, not its seven captured callees or
 whole-presentation parity.
+
+## 2026-09-12 - Big Bug Bang contact scene-transition coordinator
+
+BBB `0x1A17..0x1C55` is the relocated counterpart of Commander Blood's already ported `0x1855`
+contact scene-transition coordinator, but its 574-byte body remained structurally unmatched. The new
+`re/tools/big_bug_bang_scene_transition_oracle.py` executes that complete unchanged sequel routine
+and captures only nine established entity, scene-dispatch, DESCRIPT, image, renderer, bridge, alien
+and HUD boundaries. The body is guarded by SHA-256
+`75cfa0a8250bd5d6a34b7cc5791713ad60b36c359f076c8ff0d6503152583e2a`.
+
+Its 21 direct cases mirror the complete Commander fixture across inactive and initialization paths,
+both image-load branches, C2 gates, deferred-record arming, bridge callback mutations, line-seven
+and callback reloads, alien activity and C2 mutation, palette restoration, finish and cleanup. After
+normalizing relocated returns and BBB's one-byte FRIGO path shift, every shared result field and
+callback trace agrees.
+
+The oracle additionally checks complete global state, read-only record, framebuffer and caller
+regions, callback arguments and effects, changed bytes, registers, segments, stack discipline and
+executable immutability, and records the defined result flags. The deterministic 21-row JSONL has
+SHA-256
+`14eb304162eb4a8d00b008f2763fbd0889dc1abe173578cf9c54df17329805ec`. The shared Rust coordinator
+already matched the observed sequel behavior, so its regression now consumes both original-game
+fixtures without a production semantic change. This behaviorally classifies BBB `0x1A17`, not its
+nine captured callees or whole contact-scene parity.
