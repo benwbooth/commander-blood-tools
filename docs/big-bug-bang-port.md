@@ -5214,6 +5214,32 @@ SHA-256 is
 and the deterministic fixture SHA-256 is
 `6e0f3b7a0772e19cd07f523c2ffbcad2aee4ea598caf7b9b2e3dcf49966745b7`.
 
+## Palette-Transition Oracle (2026-09-13)
+
+BBB `0x220B..0x224F` is the relocated sequel counterpart of Commander Blood's
+`0x1F78..0x1FBC` palette-transition step. Both routines contain 31
+instructions in 68 bytes and differ only in transition-state, palette-range,
+palette-buffer, and interpolation-call relocations.
+
+The new `re/tools/big_bug_bang_palette_transition_oracle.py` directly executes
+all nine fingerprinted Commander cases in the shipped BBB body. They prove the
+exact-100 completion gate, zero and ordinary increments, signed upper clamp,
+word wrapping, signed low-byte interpolation percentage, inclusive palette
+range arguments, dirty-byte replacement, and store-before-call ordering. The
+interpolator is held at an instrumented far-call boundary because its body is a
+separate native routine with its own typed owner; the harness verifies the
+relocated source and target palette hashes, complete call ABI, modeled callee
+clobbers and flags, exact state and stack writes, full register and segment
+restoration, far return, untouched full segments, and patched-image stability.
+
+The typed `advance_palette_transition` owner consumes both nine-row fixtures.
+Its explicit interpolation request replaces far pointers and callback dispatch
+while retaining the native transition arithmetic, update order, range, and
+dirty-state contract. BBB's body SHA-256 is
+`9daca3215f709facb050a560d2aced0fd23d1700a6f2935ca5d268b8cf8ab7b0`,
+and the deterministic fixture SHA-256 is
+`8d12d7bffd57c1c806aed2cc68ffdbe5b846058aa2b5ed8eafd56d7bd6526d0a`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 159,
-    "oracle_fixture_count": 158,
+    "oracle_count": 160,
+    "oracle_fixture_count": 159,
     "fixture_relation_counts": {
-      "exact": 157,
+      "exact": 158,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 276,
-    "unentered_static_entrypoints": 106,
+    "entered_static_entrypoints": 277,
+    "unentered_static_entrypoints": 105,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 277,
+    "entered_known_entrypoints": 278,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 163,
-        "unentered": 33
+        "entered": 164,
+        "unentered": 32
       },
       "exact_body": {
         "entered": 15,
@@ -978,6 +978,18 @@
       "summary": "verified 4 BBB scene-palette clear cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_clear.json",
       "fixture_sha256": "de529cc1acc2c277bd3f38ae621ecc313712b93a2c80eb9320306e9a2e93b9b2",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_palette_transition_oracle.py",
+      "oracle_sha256": "83f31e561bbc3e755e7cc8358d7174f37fc6cc6646c87b634e55e15751b84b0f",
+      "executed_instruction_count": 31,
+      "entered_entrypoints": [
+        "0x220b"
+      ],
+      "summary": "verified 9 BBB palette-transition cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_transition.json",
+      "fixture_sha256": "8d12d7bffd57c1c806aed2cc68ffdbe5b846058aa2b5ed8eafd56d7bd6526d0a",
       "fixture_relation": "exact"
     },
     {
@@ -2696,8 +2708,10 @@
     {
       "entry": "0x220b",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_palette_transition_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x1f78"
     },

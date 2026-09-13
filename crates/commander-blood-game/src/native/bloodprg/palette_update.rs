@@ -58,7 +58,8 @@ pub struct PaletteInterpolationRequest {
     pub last: u8,
 }
 
-/// Translate BLOODPRG routine `0x001F78` to typed transition state.
+/// Translate Commander Blood's BLOODPRG routine `0x001F78` and its relocated
+/// BBB counterpart at `0x00220B` to typed transition state.
 ///
 /// Only exactly 100 is complete. Active updates retain wrapping word addition,
 /// signed comparison for the upper clamp, signed low-byte interpolation input,
@@ -120,6 +121,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangPaletteTransitionOracle {
+        rows: Vec<PaletteTransitionVector>,
+    }
+
+    #[derive(Deserialize)]
     struct PaletteHelperCall {
         percent_signed_byte: i8,
     }
@@ -169,12 +175,7 @@ mod tests {
         assert_upload_gate_vectors(oracle.rows);
     }
 
-    #[test]
-    fn transition_step_matches_every_original_palette_vector() {
-        let vectors: Vec<PaletteTransitionVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_1f78_natural.json"
-        ))
-        .unwrap();
+    fn assert_transition_vectors(vectors: Vec<PaletteTransitionVector>) {
         assert_eq!(vectors.len(), 9);
 
         for vector in vectors {
@@ -199,5 +200,23 @@ mod tests {
                 assert_eq!([request.first, request.last], [vector.first, vector.last]);
             }
         }
+    }
+
+    #[test]
+    fn transition_step_matches_every_original_palette_vector() {
+        let vectors: Vec<PaletteTransitionVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1f78_natural.json"
+        ))
+        .unwrap();
+        assert_transition_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_transition_step_matches_every_direct_palette_vector() {
+        let oracle: BigBugBangPaletteTransitionOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_palette_transition.json"
+        ))
+        .unwrap();
+        assert_transition_vectors(oracle.rows);
     }
 }
