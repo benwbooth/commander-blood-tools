@@ -3686,3 +3686,28 @@ The strict disposition ledger classifies 271 of 383 known entries and leaves
 `a0c7de303ccd116b3142226138b43809c92ca847f47578efc71c50f5769da9ab`.
 The DOS-backed background-cache handler at `0x85A0` remains separate and
 pending rather than being conflated with these resource-selection semantics.
+
+## 2026-09-13 - Big Bug Bang background cache
+
+`re/tools/big_bug_bang_background_cache_oracle.py` executes the complete
+unchanged `0x85A0..0x8653` handler while treating its three resource helpers
+and `INT 21h` operations as observed transport boundaries. Eight cases cover
+exact and prefix cache hits, standalone and embedded resources, short reads,
+ignored DOS open/create errors, source wrap, low-control termination, and the
+high slot rejected by the typed format. The oracle checks the exact body hash,
+helper ABIs and order, DOS handle/data flow, copied cache keys, source and
+decoy immutability, full global write ownership, stack bounds, registers, and
+the pinned executable outside the explicit callback return patches.
+
+The checked fixture SHA-256 is
+`cff7ec7016a4d84437a8dfd67b17bc5489e06cb6f471d5f6c32822bd3ecf5361`.
+Its Rust consumer verifies the game-visible cache semantics through owned
+resource bytes; no DOS files, handles, interrupts, or memory backend are
+exposed by production code. The global collector now reproduces 127 exact
+fixtures and one prefix fixture across 129 BBB oracle programs, entering 235
+of 382 static entrypoints plus the runtime ISR. Its deterministic report
+SHA-256 is
+`b0cf48c446a6db1c6f49b7e72587cf51deecf2818646886faab6aa27954cee67`.
+The strict ledger classifies 272 of 383 known entries and leaves 111 pending;
+its SHA-256 is
+`7682f721f8b73f713bda2f7cda19d8832661971f48f84345d4e20ddbd257c595`.

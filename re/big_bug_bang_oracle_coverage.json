@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 128,
-    "oracle_fixture_count": 127,
+    "oracle_count": 129,
+    "oracle_fixture_count": 128,
     "fixture_relation_counts": {
-      "exact": 126,
+      "exact": 127,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 234,
-    "unentered_static_entrypoints": 148,
+    "entered_static_entrypoints": 235,
+    "unentered_static_entrypoints": 147,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 235,
+    "entered_known_entrypoints": 236,
     "comparison_counts": {
       "unresolved": {
         "entered": 75,
         "unentered": 51
       },
       "structural_candidate": {
-        "entered": 127,
-        "unentered": 69
+        "entered": 128,
+        "unentered": 68
       },
       "exact_body": {
         "entered": 12,
@@ -220,6 +220,18 @@
       "summary": "verified 6 dual stream-start cases, 2 BBB ULTRASND delegates, and 12 BBB conditional edges across 6 sites",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_stream_start.jsonl",
       "fixture_sha256": "dcfa11aafd4d257d2d59fd1ffc4ae353359d682b19164459937ea03613c09773",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_background_cache_oracle.py",
+      "oracle_sha256": "928e15599fd4f4c35a161d1e21a73016a5a27e31cfe423d6c763ed89d9db066f",
+      "executed_instruction_count": 78,
+      "entered_entrypoints": [
+        "0x85a0"
+      ],
+      "summary": "verified 8 BBB background-cache cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_background_cache.json",
+      "fixture_sha256": "cff7ec7016a4d84437a8dfd67b17bc5489e06cb6f471d5f6c32822bd3ecf5361",
       "fixture_relation": "exact"
     },
     {
@@ -4364,8 +4376,10 @@
     {
       "entry": "0x85a0",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_background_cache_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x755e"
     },

@@ -1245,6 +1245,88 @@ mod tests {
     }
 
     #[test]
+    fn sequel_background_cache_matches_original_vectors() {
+        let vectors: Vec<BackgroundOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_background_cache.json"
+        ))
+        .unwrap();
+        assert_eq!(vectors.len(), BACKGROUND_ORACLE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut payload = vec![vector.slot];
+            payload.extend_from_slice(vector.copied_name.as_bytes());
+            payload.push(vector.stopping_byte);
+            let decoded = decode_background_command(&payload);
+
+            if vector.name == "high_stop_decrement_before_sign_extend" {
+                assert_eq!(
+                    decoded,
+                    Err(DescriptBackgroundError::InvalidSlot(vector.slot))
+                );
+                continue;
+            }
+
+            let (command, tail) = decoded.unwrap();
+            assert_eq!(tail, &[vector.stopping_byte], "{}", vector.name);
+            assert!(
+                vector.requested_bytes >= vector.written_bytes,
+                "{}",
+                vector.name
+            );
+
+            let mut cache = DescriptBackgroundCache::default();
+            let mut source = RecordingBackgroundSource::default();
+            if vector.cache_hit {
+                let retained_name: &[u8] = match vector.name.as_str() {
+                    "exact_cache_hit" => b"same.lbm",
+                    "prefix_cache_hit" => b"shorter.lbm",
+                    name => panic!("unknown sequel background cache-hit oracle {name}"),
+                };
+                source.payload = Box::from(*b"seed");
+                cache_background_image(
+                    &background_command(command.slot(), retained_name),
+                    &mut cache,
+                    &mut source,
+                )
+                .unwrap();
+                source.loaded_names.clear();
+            } else {
+                source.payload = vec![165; vector.written_bytes].into_boxed_slice();
+            }
+
+            let outcome = cache_background_image(&command, &mut cache, &mut source).unwrap();
+            assert_eq!(
+                outcome == DescriptBackgroundCacheOutcome::Hit,
+                vector.cache_hit,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                source.loaded_names.len(),
+                usize::from(!vector.cache_hit),
+                "{}",
+                vector.name
+            );
+
+            let cached = cache.get(command.slot()).unwrap();
+            if !vector.cache_hit {
+                assert_eq!(
+                    cached.source_name(),
+                    vector.copied_name.as_bytes(),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    cached.encoded_image().len(),
+                    vector.written_bytes,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
     fn background_cache_clear_releases_every_owned_slot() {
         let mut cache = DescriptBackgroundCache::default();
         let mut source = RecordingBackgroundSource {
