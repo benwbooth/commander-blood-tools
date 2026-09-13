@@ -2157,3 +2157,26 @@ consumes both fixtures and retains its bounded rejection of unchecked angle 180;
 behavior changed. The deterministic 12-row JSONL has SHA-256
 `273c0acdc50f3888f0aff3faf7de95bdf9229ae4ef22ace097a3610c83402b9b`. This behaviorally
 classifies BBB `0xB058`, not its callers or the subsequent point-cloud and object projectors.
+
+## 2026-09-12 - Big Bug Bang ship point-cloud projection
+
+BBB `0xB1AF..0xB2A3` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9A10..0x9B04` ship point-cloud projector. Both bodies contain 80 instructions in 244 bytes and
+preserve the same control flow and arithmetic while relocating the counter, 1,000 point records,
+camera, matrix, work record, framebuffer segment, and near plotter. The new
+`re/tools/big_bug_bang_ship_point_cloud_oracle.py` executes both original binaries and guards BBB's
+body with SHA-256 `8e6bd6c8aba46c72eae7df6c684f94d33cfcf6214cca2a2c26dec9d93c355a12`.
+
+All six Commander scenarios agree after address normalization across 2,037 point-plot calls. They
+cover mixed, zero, negative, and wrapping depths; signed camera translation; modular 32-bit
+dot-product overflow; screen wrapping; no-plot completion; and the split-DS precondition proving
+the initial 1,000-count write precedes DS rebinding to GS. All six conditional edges are covered.
+
+The oracle checks every callback's projected point, remaining count, source cursor, translated
+work record, matrix pointer, framebuffer segment, stack, and callback flags. It also checks exact
+game, entry-DS, ES, FS, framebuffer, and stack state, all registers and segments, final defined
+flags, far-return discipline, direct Commander/BBB equality, and executable immutability. The
+typed flat projector now consumes both fixtures and retains its exact-prefix treatment of the
+native split-DS alias case; no production behavior changed. The deterministic six-row JSONL has
+SHA-256 `829332e27e9f81dab0be3f521727d5f8d2818f3999ea122cd7c4904eea61d364`.
+This behaviorally classifies BBB `0xB1AF`, not its plotter, callers, or object projector.

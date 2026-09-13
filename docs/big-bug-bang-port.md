@@ -4166,6 +4166,44 @@ the deterministic 12-row JSONL has SHA-256
 This behaviorally classifies BBB `0xB058`, not its callers or the subsequent
 point-cloud and object projection routines.
 
+## Sequel Ship Point-Cloud Projection
+
+BBB `0xB1AF..0xB2A3` is the relocated sequel counterpart of Commander Blood's
+`0x9A10..0x9B04` ship point-cloud projector. Both bodies contain 80 instructions
+in 244 bytes, with matching control flow and arithmetic. BBB relocates the loop
+counter, 1,000 point records, camera, matrix, work record, framebuffer segment,
+and near point-plotter target.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_ship_point_cloud_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_ship_point_cloud.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  point_cloud_projection_matches_both_original_fixtures
+```
+
+The dual-executable oracle replays all six Commander scenarios and compares all
+2,037 point-plot calls. Coverage includes mixed, zero, negative, and wrapping
+depths; signed camera translation; modular 32-bit dot-product overflow; screen
+coordinate wrapping; no-plot completion; and the split-DS precondition that
+proves the initial 1,000-count write precedes DS rebinding to GS. All six edges
+of the zero-depth, negative-depth, and loop conditionals are traversed.
+
+The oracle checks each callback's projected point, remaining count, source
+cursor, translated work record, matrix pointer, framebuffer segment, stack and
+callback flags. It also checks exact game, entry-DS, ES, FS, framebuffer, and
+stack state, all registers and segments, final defined flags, far-return
+discipline, direct Commander/BBB equality, and executable immutability. The
+typed flat projector now consumes both fixtures; its existing split-DS case
+continues to compare the native three-call prefix without importing segmented
+aliasing into production. The BBB body is bound by SHA-256
+`8e6bd6c8aba46c72eae7df6c684f94d33cfcf6214cca2a2c26dec9d93c355a12`;
+the deterministic six-row JSONL has SHA-256
+`829332e27e9f81dab0be3f521727d5f8d2818f3999ea122cd7c4904eea61d364`.
+This behaviorally classifies BBB `0xB1AF`, not the near point plotter, callers,
+or subsequent object projection.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

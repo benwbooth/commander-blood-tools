@@ -882,11 +882,23 @@ mod tests {
     }
 
     #[test]
-    fn point_cloud_projection_matches_every_flat_original_vector() {
-        let vectors: Vec<PointCloudOracle> = serde_json::from_str(include_str!(
+    fn point_cloud_projection_matches_both_original_fixtures() {
+        let commander: Vec<PointCloudOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9a10_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_point_cloud.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_point_cloud_vectors(commander);
+        assert_point_cloud_vectors(sequel);
+    }
+
+    fn assert_point_cloud_vectors(vectors: Vec<PointCloudOracle>) {
         assert_eq!(vectors.len(), POINT_CLOUD_ORACLE_COUNT);
 
         for (case_index, vector) in vectors.iter().enumerate() {
