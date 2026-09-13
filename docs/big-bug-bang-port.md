@@ -3984,6 +3984,45 @@ the deterministic 15-row JSONL has SHA-256
 This behaviorally classifies BBB `0xACAA`, not its caller or the complete bridge
 presentation flow.
 
+## Sequel Bridge Page Preparation
+
+BBB's `0xACE4..0xAD37` bridge page-preparation coordinator is the relocated
+sequel counterpart of Commander Blood `0x954A..0x959D`. Both bodies contain 24
+instructions in 83 bytes. BBB relocates the display and back-page pointers,
+bridge flags, panorama frame, ship flags, and all seven callees while preserving
+the same orchestration. The guarded oracle executes the complete BBB body
+unchanged:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_bridge_page_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_bridge_page.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  page_preparation_matches_both_original_call_and_flag_vectors
+```
+
+All seven Commander cases agree after normalizing callee addresses and the
+relocated flag bytes. They cover active and inactive ship states, irrelevant
+ship bits, zero, signed and maximum panorama frames, inherited direction, both
+edges of the ship-state branch, and callback mutation of the temporary display
+pointer. Each run publishes palette dirtiness, substitutes the retained page
+for all six common callbacks, restores the original pointer despite callback
+mutation, and conditionally publishes transparency and dirty-copy flags before
+the panorama callback. The existing typed Rust coordinator now consumes both
+fixtures; no production behavior changed.
+
+The oracle checks callback order and register inputs, callback-visible pointer
+and flag state, exact DS state, complete ES and GS decoys, exact far- and
+near-call stack residue, register and segment outcomes, callback flag
+pass-through, direction preservation, far-return discipline and executable
+immutability. The body is bound by SHA-256
+`6c25d9912d1d45e090246ee126aa9e77ee797bca8addf5d249907575fe7367b8`;
+the deterministic seven-row JSONL has SHA-256
+`f3279dbd6faffa11d601e12c7344ca5c122e65c50a3fdade8a5c0a83c15750ab`.
+This behaviorally classifies BBB `0xACE4`, not its callers or the complete
+bridge render path.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

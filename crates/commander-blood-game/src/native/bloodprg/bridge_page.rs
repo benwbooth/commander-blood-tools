@@ -72,10 +72,11 @@ pub trait BridgePageBackend {
 
 /// Prepare the retained ship page and restore the panorama when appropriate.
 ///
-/// This translates `page_flip` at BLOODPRG routine offset `0x00954A`.
-/// Explicit primary and secondary targets replace display-buffer pointer swaps;
-/// semantic booleans replace shared graphics flag bytes and no native address
-/// survives into the renderer interface.
+/// This translates `page_flip` at BLOODPRG routine offset `0x00954A` and its
+/// BLOOD2PG counterpart at `0x00ACE4`. Explicit primary and secondary targets
+/// replace display-buffer pointer swaps; semantic booleans replace shared
+/// graphics flag bytes and no native address survives into the renderer
+/// interface.
 pub fn render_bridge_page<Backend: BridgePageBackend>(
     ship_active: bool,
     panorama_frame: u16,
@@ -210,11 +211,21 @@ mod tests {
     }
 
     #[test]
-    fn page_preparation_matches_every_original_call_and_flag_vector() {
-        let vectors: Vec<PageOracle> = serde_json::from_str(include_str!(
+    fn page_preparation_matches_both_original_call_and_flag_vectors() {
+        let commander: Vec<PageOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_954a_natural.json"
         ))
         .unwrap();
+        let sequel: Vec<PageOracle> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_bridge_page.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        verify_page_oracles(commander);
+        verify_page_oracles(sequel);
+    }
+
+    fn verify_page_oracles(vectors: Vec<PageOracle>) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for vector in vectors {

@@ -2048,3 +2048,24 @@ registers, the full saved-register stack image, all general and segment register
 defined flags, near-return discipline and executable immutability. Its deterministic 15-row JSONL
 has SHA-256 `c92288723532e1b48526fa34d880ea54ae19e9275a9990806310b88d6a70ca60`. This behaviorally
 classifies BBB `0xACAA`, not its caller or the complete bridge presentation flow.
+
+## 2026-09-12 - Big Bug Bang bridge page preparation
+
+BBB `0xACE4..0xAD37` is the relocated sequel counterpart of Commander Blood's already ported
+`0x954A..0x959D` bridge page-preparation coordinator. Both bodies contain 24 instructions in 83
+bytes. BBB relocates the display and back-page pointers, bridge flags, panorama frame, ship flags,
+and all seven callees without changing the orchestration. The new
+`re/tools/big_bug_bang_bridge_page_oracle.py` executes the complete unchanged BBB body, guarded by
+SHA-256 `6c25d9912d1d45e090246ee126aa9e77ee797bca8addf5d249907575fe7367b8`.
+
+All seven Commander cases agree after normalizing callee addresses and relocated flag bytes. They
+cover active and inactive ship states, irrelevant ship bits, zero, signed and maximum panorama
+frames, inherited direction, both branch edges, and callback mutation of the temporary display
+pointer. The typed Rust coordinator now consumes both fixtures; no production behavior changed.
+
+The oracle checks callback order and inputs, callback-visible pointer and flag state, exact DS,
+complete ES and GS decoys, exact call-stack residue, registers and segments, callback flags,
+direction preservation, far-return discipline and executable immutability. Its deterministic
+seven-row JSONL has SHA-256
+`f3279dbd6faffa11d601e12c7344ca5c122e65c50a3fdade8a5c0a83c15750ab`. This behaviorally
+classifies BBB `0xACE4`, not its seven callees or the complete bridge render path.
