@@ -3019,3 +3019,32 @@ SHA-256 is
 `7189145b251008e8b0e36c00c913802d3e9dea36c996bd4c88533eee7e37f509`,
 and the deterministic JSONL SHA-256 is
 `5592f720a447044a75620abdbb2ada0e952aaf12b0f6e16a7da10eaeca91ef21`.
+
+## 2026-09-13 - Big Bug Bang alien-overlay cycle
+
+BBB `0xCD69..0xCE6A` is the sequel counterpart of Commander Blood's ported
+`0xB591..0xB692` alien-overlay coordinator. Both bodies contain 76
+instructions in 257 bytes and retain the same resource, sound-bank, CD-audio,
+overlay, MANU3, viewport, mouse-rest, and graphics-tail restoration order. BBB
+changes the phase limit from three to two: its valid cycle alternates
+`AMER.XDB` and `CROOLIS.XDB` and never selects `SCRUT.XDB`. The third shipped
+BBB path-table entry is another `AMER.XDB` string, but normal phase evolution
+cannot reach it.
+
+The new `re/tools/big_bug_bang_alien_cycle_oracle.py` executes the untouched
+BBB body over 12 cases covering both outcomes of all three conditional sites,
+or six edges. It covers inactive requests, both valid phases, sequence and
+non-sequence tails, callback changes to sequence, timing, mouse, and overlay
+pointer state, replacement back-buffer pointers, wrapped viewport writes, and
+an inherited reverse direction flag. The harness verifies every relocated far
+call frame and argument, exact DS, GS, incoming ES, heap, viewport, overlay,
+and stack-envelope state, all registers and defined flags, executable
+immutability, and unowned memory.
+
+The typed coordinator now selects an explicit Commander Blood or Big Bug Bang
+cycle variant, and the production runtime derives that variant from the loaded
+game before invoking the shared owner. The existing 12-row Commander fixture
+and the new 12-row BBB fixture both pass. BBB's body SHA-256 is
+`ffb093cb9b88e17768178a2bdb2e344e3d41f2fd0428930b9d067df4fcf7d703`,
+and the deterministic JSONL SHA-256 is
+`fb3bca6fb28f4bfff01dcd14313f820e60b3a98e1b10d3e0c555a57341abf810`.

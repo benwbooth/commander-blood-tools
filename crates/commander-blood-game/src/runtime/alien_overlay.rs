@@ -3,11 +3,13 @@
 use anyhow::{Context, Result, bail};
 use commander_blood_formats::alien::{AlienAsset, AlienXdbKind};
 
+use crate::game::GameVariant;
 use crate::native::alien::{AlienMouseSample, AlienSceneFrame, AlienSceneRuntime};
 use crate::native::bloodprg::{
     AlienOverlayCycleHost, AlienOverlayCycleOutcome, AlienOverlayCycleState,
-    AlienOverlayGraphicsTail, AlienOverlaySharedState, AlienOverlaySoundBank, GameLifecycleState,
-    LoadedSoundBank, PointerButtons, run_alien_overlay_cycle,
+    AlienOverlayCycleVariant, AlienOverlayGraphicsTail, AlienOverlaySharedState,
+    AlienOverlaySoundBank, GameLifecycleState, LoadedSoundBank, PointerButtons,
+    run_alien_overlay_cycle,
 };
 
 use super::{ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformHost};
@@ -302,6 +304,10 @@ impl RuntimeAlienOverlayCycle {
             return Ok(AlienOverlayCycleOutcome::Inactive);
         }
         self.state.shared.timing_scale = services.read_alien_timing_scale()?;
+        let variant = match services.runtime().data().game() {
+            GameVariant::CommanderBlood => AlienOverlayCycleVariant::CommanderBlood,
+            GameVariant::BigBugBang => AlienOverlayCycleVariant::BigBugBang,
+        };
 
         let mut invocation_outcome = None;
         let mut restoration = RuntimeAlienOverlayRestorationAudit::default();
@@ -314,7 +320,7 @@ impl RuntimeAlienOverlayCycle {
                 invocation_outcome: &mut invocation_outcome,
                 restoration: &mut restoration,
             };
-            run_alien_overlay_cycle(&mut self.state, &mut host)
+            run_alien_overlay_cycle(variant, &mut self.state, &mut host)
         };
 
         services.set_alien_overlay_flags(self.state.overlay_armed, false)?;

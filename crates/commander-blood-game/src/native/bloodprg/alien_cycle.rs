@@ -11,6 +11,15 @@ const ORIGINAL_VIEWPORT_PLANE_COUNT: u16 = 1;
 const ORIGINAL_VIEWPORT_ROW_STEP: u32 = 4;
 const ORIGINAL_VIEWPORT_BASE: u32 = 0;
 
+/// Original whose alien-overlay cycle semantics are required.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienOverlayCycleVariant {
+    /// Commander Blood cycles through AMER, CROOLIS, and SCRUT.
+    CommanderBlood,
+    /// Big Bug Bang alternates AMER and CROOLIS without selecting SCRUT.
+    BigBugBang,
+}
+
 /// Sound archive selected around an interactive alien overlay.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienOverlaySoundBank {
@@ -185,13 +194,14 @@ pub trait AlienOverlayCycleHost {
     fn reload_scene_image(&mut self) -> Result<(), Self::Error>;
 }
 
-/// Run BLOODPRG routine `0x00B591` over typed owned state.
+/// Run BLOODPRG routine `0x00B591` or BBB `0x00CD69` over typed owned state.
 ///
 /// The original stable overlay-buffer pointer is replaced by independent owned
 /// XDB and MANU3 loads. Callback-mutated timing, sequence, and mouse state remain
 /// explicit, and every observable audio/resource/graphics call retains native
 /// order.
 pub fn run_alien_overlay_cycle<H: AlienOverlayCycleHost>(
+    variant: AlienOverlayCycleVariant,
     state: &mut AlienOverlayCycleState,
     host: &mut H,
 ) -> Result<AlienOverlayCycleOutcome, H::Error> {
@@ -203,7 +213,7 @@ pub fn run_alien_overlay_cycle<H: AlienOverlayCycleHost>(
     state.overlay_armed = false;
     let saved_mouse_position = state.shared.mouse_position;
     let overlay = state.next_overlay;
-    state.next_overlay = next_overlay(overlay);
+    state.next_overlay = next_overlay(variant, overlay);
 
     host.load_alien_overlay(overlay)?;
     let saved_sound_header = host.capture_sound_header()?;
@@ -246,11 +256,12 @@ pub fn run_alien_overlay_cycle<H: AlienOverlayCycleHost>(
     Ok(AlienOverlayCycleOutcome::Ran { overlay, tail })
 }
 
-fn next_overlay(overlay: AlienXdbKind) -> AlienXdbKind {
-    match overlay {
-        AlienXdbKind::Amer => AlienXdbKind::Croolis,
-        AlienXdbKind::Croolis => AlienXdbKind::Scrut,
-        AlienXdbKind::Scrut => AlienXdbKind::Amer,
+fn next_overlay(variant: AlienOverlayCycleVariant, overlay: AlienXdbKind) -> AlienXdbKind {
+    match (variant, overlay) {
+        (_, AlienXdbKind::Amer) => AlienXdbKind::Croolis,
+        (AlienOverlayCycleVariant::CommanderBlood, AlienXdbKind::Croolis) => AlienXdbKind::Scrut,
+        (AlienOverlayCycleVariant::BigBugBang, AlienXdbKind::Croolis | AlienXdbKind::Scrut)
+        | (AlienOverlayCycleVariant::CommanderBlood, AlienXdbKind::Scrut) => AlienXdbKind::Amer,
     }
 }
 
@@ -368,13 +379,21 @@ mod tests {
         }
     }
 
-    #[test]
-    fn cycle_matches_every_original_coordinator_vector() {
-        let vectors: Vec<CycleVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_b591_natural.json"
-        ))
-        .unwrap();
-        assert_eq!(vectors.len(), 12);
+    fn assert_cycle_vectors(
+        variant: AlienOverlayCycleVariant,
+        fixture: &str,
+        expected_count: usize,
+    ) {
+        let vectors: Vec<CycleVector> = if fixture.trim_start().starts_with('[') {
+            serde_json::from_str(fixture).unwrap()
+        } else {
+            fixture
+                .lines()
+                .filter(|line| !line.is_empty())
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect()
+        };
+        assert_eq!(vectors.len(), expected_count);
         for vector in vectors {
             let mouse_position = [1_234, -2_345];
             let mut state = AlienOverlayCycleState {
@@ -405,7 +424,7 @@ mod tests {
                 callback_sequence: vector.sequence_after_callbacks,
                 ..RecordingHost::default()
             };
-            let outcome = run_alien_overlay_cycle(&mut state, &mut host).unwrap();
+            let outcome = run_alien_overlay_cycle(variant, &mut state, &mut host).unwrap();
 
             assert_eq!(
                 state.next_overlay,
@@ -470,6 +489,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn cycle_matches_every_commander_blood_coordinator_vector() {
+        assert_cycle_vectors(
+            AlienOverlayCycleVariant::CommanderBlood,
+            include_str!("../../../../../re/tools/oracle_vectors/func_b591_natural.json"),
+            12,
+        );
+    }
+
+    #[test]
+    fn cycle_matches_every_big_bug_bang_coordinator_vector() {
+        assert_cycle_vectors(
+            AlienOverlayCycleVariant::BigBugBang,
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_alien_cycle.jsonl"),
+            12,
+        );
     }
 
     fn overlay(phase: u8) -> AlienXdbKind {

@@ -180,8 +180,8 @@ pub use actor_slots::{
 };
 pub use alien_cycle::{
     AlienOverlayCycleHost, AlienOverlayCycleOutcome, AlienOverlayCycleState,
-    AlienOverlayGraphicsTail, AlienOverlaySharedState, AlienOverlaySoundBank, AlienOverlayViewport,
-    run_alien_overlay_cycle,
+    AlienOverlayCycleVariant, AlienOverlayGraphicsTail, AlienOverlaySharedState,
+    AlienOverlaySoundBank, AlienOverlayViewport, run_alien_overlay_cycle,
 };
 pub use audio_bank::{LoadedSoundBank, SoundBankUsage, load_sound_bank};
 pub use audio_events::{
