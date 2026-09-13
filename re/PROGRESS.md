@@ -2843,3 +2843,29 @@ terminal outcomes. BBB's body SHA-256 is
 `8b2021a4c1b3dd240639b244393042810537b934558a8bde4e56d37351a60e52`,
 and the deterministic JSONL SHA-256 is
 `ad63765e32163bc2ba9054e0f5fa107a32222c4f230808c4b7974d62794550a7`.
+
+## 2026-09-13 - Big Bug Bang presentation payload dispatch
+
+BBB `0xC016..0xC051` relocates Commander Blood's already ported
+`0xA82C..0xA867` presentation payload dispatcher. Both bodies contain 30
+instructions in 59 bytes. They mask destination offset bit nine, sum six source
+bytes in the inherited string direction, dispatch checksum `0xAB` to the AB
+decoder, and select mode three plus the alternate segment before dispatching
+checksum `0xAD`. Other checksums return without invoking a decoder.
+
+The new `re/tools/big_bug_bang_presentation_dispatch_oracle.py` executes both
+shipped bodies over all eight recovered Commander cases. It covers all six
+conditional edges, ordinary checksums on either side of `0xAB`, both decoder
+paths, source and sum wrapping, and reverse-direction header reads. Decoder
+bodies remain behind callbacks because each has separate direct dual-original
+coverage.
+
+The oracle verifies exact callback frames and visible ABI, destination masking,
+source and destination segment selection, mode mutation, callback clobbers,
+complete registers and defined flags, stack state, unowned memory, executable
+immutability, and direct Commander/BBB equality. The typed dispatcher now
+consumes both eight-row fixtures without changing production behavior. BBB's
+body SHA-256 is
+`d512c6352cdf40f1801f0eeccb73ca40695b2776898ab1c7b35d423a98601a2d`,
+and the deterministic JSONL SHA-256 is
+`48554eae838e47471db14d4e623d03fb8535bbdff57788340890dc51de344e1b`.

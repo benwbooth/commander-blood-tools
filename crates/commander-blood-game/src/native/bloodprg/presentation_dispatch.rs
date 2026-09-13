@@ -76,9 +76,10 @@ impl Error for PresentationDispatchError {
 /// Classify a presentation payload by its wrapping six-byte signature sum.
 ///
 /// This is the decision boundary in `resource_payload_decode_dispatch` at
-/// BLOODPRG offset `0x00A82C`. The original inherited string direction and
-/// destination-offset mask are eliminated memory-layout concerns; owned source
-/// bytes are always inspected in their logical order.
+/// BLOODPRG offset `0x00A82C`, relocated to BLOOD2PG offset `0x00C016`. The
+/// originals' inherited string direction and destination-offset mask are
+/// eliminated memory-layout concerns; owned source bytes are always inspected
+/// in their logical order.
 pub fn presentation_payload_kind(
     source: &[u8],
 ) -> Result<PresentationPayloadKind, PresentationDispatchError> {
@@ -137,12 +138,24 @@ mod tests {
     }
 
     #[test]
-    fn signature_selection_matches_every_original_vector() {
+    fn signature_selection_matches_both_original_fixtures() {
         let vectors: Vec<DispatchOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a82c_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), DISPATCH_VECTOR_COUNT);
+        assert_signature_vectors("Commander Blood 0xA82C", vectors);
+
+        let vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_dispatch.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_signature_vectors("Big Bug Bang 0xC016", vectors);
+    }
+
+    fn assert_signature_vectors(source: &str, vectors: Vec<DispatchOracle>) {
+        assert_eq!(vectors.len(), DISPATCH_VECTOR_COUNT, "{source}");
 
         for vector in vectors {
             let kind = presentation_payload_kind(&vector.header_bytes_in_read_order).unwrap();
@@ -154,19 +167,19 @@ mod tests {
                 },
                 path => panic!("unexpected oracle dispatch path {path}"),
             };
-            assert_eq!(kind, expected, "{}", vector.name);
+            assert_eq!(kind, expected, "{source}: {}", vector.name);
             assert_eq!(
                 vector
                     .header_bytes_in_read_order
                     .into_iter()
                     .fold(u8::MIN, u8::wrapping_add),
                 vector.checksum,
-                "{}",
+                "{source}: {}",
                 vector.name
             );
             assert!(
                 matches!(vector.direction.as_str(), "forward" | "backward"),
-                "{}",
+                "{source}: {}",
                 vector.name
             );
         }
