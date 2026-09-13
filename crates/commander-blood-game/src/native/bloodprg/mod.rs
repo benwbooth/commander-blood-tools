@@ -457,8 +457,9 @@ pub use presentation_queue::{
     presentation_queue_advance_due_with_audio_backend, presentation_resource_enabled,
 };
 pub use presentation_queue_service::{
+    PresentationInterruptBackend, PresentationInterruptOutcome, PresentationInterruptReadiness,
     PresentationQueueServiceContext, PresentationQueueServiceError,
-    PresentationQueueServiceOutcome, service_presentation_queue,
+    PresentationQueueServiceOutcome, service_presentation_interrupt, service_presentation_queue,
 };
 pub use presentation_raster::{
     PresentationRasterError, PresentationRectBlitOutcome, PresentationScanlineState,

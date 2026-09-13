@@ -19,6 +19,90 @@ use super::{
 
 const HIGH_PRIORITY_REFILL_FLAG: u8 = 128;
 
+/// Activation state returned to the far presentation interrupt coordinator.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PresentationInterruptReadiness {
+    /// No complete entry can be activated yet.
+    NotReady,
+    /// A new entry was activated and must wait until the next interrupt.
+    Activated,
+    /// An entry was already active when this interrupt began.
+    Active,
+}
+
+/// Host operations selected by one far presentation interrupt.
+pub trait PresentationInterruptBackend {
+    /// Host error propagated after the rollover latch is restored.
+    type Error;
+
+    /// Activate a complete entry or report the state already present.
+    fn activation_readiness(
+        &mut self,
+        rollover_state: u8,
+    ) -> Result<PresentationInterruptReadiness, Self::Error>;
+
+    /// Return whether the active entry has reached its presentation deadline.
+    fn advance_due(&mut self, rollover_state: u8) -> Result<bool, Self::Error>;
+
+    /// Present the due active entry.
+    fn present_active_entry(&mut self, rollover_state: u8) -> Result<(), Self::Error>;
+
+    /// Retire the presented entry from the queue.
+    fn consume_entry(&mut self, rollover_state: u8) -> Result<(), Self::Error>;
+}
+
+/// Observable exit selected by one far presentation interrupt.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PresentationInterruptOutcome {
+    /// No complete entry was available.
+    NotReady,
+    /// A new entry was activated and deferred until the next interrupt.
+    Activated,
+    /// An already-active entry retained a pending sound side record.
+    SoundPending,
+    /// The already-active entry had not reached its deadline.
+    Waiting,
+    /// The due entry was presented and consumed.
+    Presented,
+}
+
+/// Service the already-buffered presentation path used by the far interrupt.
+///
+/// This translates BLOODPRG `0x00A7ED` and BLOOD2PG `0x00BFD7`. The native
+/// wrapper clears its rollover byte while helpers run and restores the saved
+/// value before every far return. Newly activated entries deliberately defer
+/// pacing until a later interrupt; only an entry that was already active,
+/// lacks pending sound data, and is due can be presented and consumed.
+pub fn service_presentation_interrupt<Backend: PresentationInterruptBackend>(
+    rollover_state: &mut u8,
+    pending_sound_offset: Option<u16>,
+    backend: &mut Backend,
+) -> Result<PresentationInterruptOutcome, Backend::Error> {
+    let saved_rollover_state = std::mem::take(rollover_state);
+    let result = (|| {
+        match backend.activation_readiness(*rollover_state)? {
+            PresentationInterruptReadiness::NotReady => {
+                return Ok(PresentationInterruptOutcome::NotReady);
+            }
+            PresentationInterruptReadiness::Activated => {
+                return Ok(PresentationInterruptOutcome::Activated);
+            }
+            PresentationInterruptReadiness::Active => {}
+        }
+        if pending_sound_offset.is_some() {
+            return Ok(PresentationInterruptOutcome::SoundPending);
+        }
+        if !backend.advance_due(*rollover_state)? {
+            return Ok(PresentationInterruptOutcome::Waiting);
+        }
+        backend.present_active_entry(*rollover_state)?;
+        backend.consume_entry(*rollover_state)?;
+        Ok(PresentationInterruptOutcome::Presented)
+    })();
+    *rollover_state = saved_rollover_state;
+    result
+}
+
 /// Mutable dependencies used while servicing one queue frame.
 pub struct PresentationQueueServiceContext<'a, Host> {
     /// Authored descriptors used by cached-range rollover.
@@ -335,6 +419,7 @@ mod tests {
     };
 
     const SERVICE_VECTOR_COUNT: usize = 5;
+    const INTERRUPT_VECTOR_COUNT: usize = 5;
     const QUEUE_BUFFER_BYTE_COUNT: usize = 65_536;
     const EMPTY_FRAME_LAYOUT: u16 = 1_024;
     const EMPTY_FRAME_EXTENT: usize = 6;
@@ -350,6 +435,89 @@ mod tests {
         resource_flags: u16,
         link_target_offset: usize,
         calls: Vec<serde_json::Value>,
+    }
+
+    #[derive(Deserialize)]
+    struct InterruptOracle {
+        name: String,
+        rollover_state: u8,
+        readiness: String,
+        sound_offset: u16,
+        due: bool,
+        calls: Vec<serde_json::Value>,
+        outcome: String,
+        result_ax: u16,
+        result_flags: u16,
+    }
+
+    struct RecordingInterruptBackend {
+        readiness: PresentationInterruptReadiness,
+        readiness_name: String,
+        due: bool,
+        calls: Vec<serde_json::Value>,
+    }
+
+    impl PresentationInterruptBackend for RecordingInterruptBackend {
+        type Error = std::convert::Infallible;
+
+        fn activation_readiness(
+            &mut self,
+            rollover_state: u8,
+        ) -> Result<PresentationInterruptReadiness, Self::Error> {
+            assert_eq!(rollover_state, u8::MIN);
+            self.calls.push(serde_json::json!({
+                "call": "activation_readiness",
+                "result": self.readiness_name,
+            }));
+            Ok(self.readiness)
+        }
+
+        fn advance_due(&mut self, rollover_state: u8) -> Result<bool, Self::Error> {
+            assert_eq!(rollover_state, u8::MIN);
+            self.calls
+                .push(serde_json::json!({"call": "advance_due", "due": self.due}));
+            Ok(self.due)
+        }
+
+        fn present_active_entry(&mut self, rollover_state: u8) -> Result<(), Self::Error> {
+            assert_eq!(rollover_state, u8::MIN);
+            self.calls
+                .push(serde_json::json!({"call": "present_active_entry"}));
+            Ok(())
+        }
+
+        fn consume_entry(&mut self, rollover_state: u8) -> Result<(), Self::Error> {
+            assert_eq!(rollover_state, u8::MIN);
+            self.calls
+                .push(serde_json::json!({"call": "consume_entry"}));
+            Ok(())
+        }
+    }
+
+    struct FailingInterruptBackend;
+
+    impl PresentationInterruptBackend for FailingInterruptBackend {
+        type Error = &'static str;
+
+        fn activation_readiness(
+            &mut self,
+            rollover_state: u8,
+        ) -> Result<PresentationInterruptReadiness, Self::Error> {
+            assert_eq!(rollover_state, u8::MIN);
+            Err("activation failed")
+        }
+
+        fn advance_due(&mut self, _rollover_state: u8) -> Result<bool, Self::Error> {
+            unreachable!()
+        }
+
+        fn present_active_entry(&mut self, _rollover_state: u8) -> Result<(), Self::Error> {
+            unreachable!()
+        }
+
+        fn consume_entry(&mut self, _rollover_state: u8) -> Result<(), Self::Error> {
+            unreachable!()
+        }
     }
 
     #[derive(Default)]
@@ -451,6 +619,66 @@ mod tests {
             ..PresentationQueueState::default()
         };
         (queue, buffer, source)
+    }
+
+    #[test]
+    fn presentation_interrupt_matches_the_dual_original_fixture() {
+        let vectors: Vec<InterruptOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_interrupt.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), INTERRUPT_VECTOR_COUNT);
+
+        for vector in vectors {
+            let readiness = match vector.readiness.as_str() {
+                "not_ready" => PresentationInterruptReadiness::NotReady,
+                "activated" => PresentationInterruptReadiness::Activated,
+                "active" => PresentationInterruptReadiness::Active,
+                readiness => panic!("unknown interrupt readiness {readiness}"),
+            };
+            let mut backend = RecordingInterruptBackend {
+                readiness,
+                readiness_name: vector.readiness.clone(),
+                due: vector.due,
+                calls: Vec::new(),
+            };
+            let mut rollover_state = vector.rollover_state;
+            let pending_sound_offset =
+                (vector.sound_offset != u16::MAX).then_some(vector.sound_offset);
+
+            let outcome = service_presentation_interrupt(
+                &mut rollover_state,
+                pending_sound_offset,
+                &mut backend,
+            )
+            .unwrap();
+
+            let expected_outcome = match vector.outcome.as_str() {
+                "not_ready" => PresentationInterruptOutcome::NotReady,
+                "activated" => PresentationInterruptOutcome::Activated,
+                "sound_pending" => PresentationInterruptOutcome::SoundPending,
+                "waiting" => PresentationInterruptOutcome::Waiting,
+                "presented" => PresentationInterruptOutcome::Presented,
+                outcome => panic!("unknown interrupt outcome {outcome}"),
+            };
+            assert_eq!(outcome, expected_outcome, "{}", vector.name);
+            assert_eq!(backend.calls, vector.calls, "{}", vector.name);
+            assert_eq!(rollover_state, vector.rollover_state, "{}", vector.name);
+            assert_eq!(vector.result_ax, u16::from(vector.rollover_state));
+            assert_eq!(vector.result_flags, 0x0A93);
+        }
+    }
+
+    #[test]
+    fn presentation_interrupt_restores_rollover_state_after_host_failure() {
+        let mut rollover_state = 0xA5;
+        let result =
+            service_presentation_interrupt(&mut rollover_state, None, &mut FailingInterruptBackend);
+
+        assert_eq!(result, Err("activation failed"));
+        assert_eq!(rollover_state, 0xA5);
     }
 
     #[test]

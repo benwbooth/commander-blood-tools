@@ -4941,6 +4941,33 @@ production behavior change. Both bodies have SHA-256
 and the deterministic BBB JSONL SHA-256 is
 `e1a2ebe01f6b1bd358abe2b5706f4407ae3608c21192171094e2b11b7351884b`.
 
+## Far Presentation Interrupt (2026-09-13)
+
+BBB `0xBFD7..0xC00E` is the relocated sequel counterpart of Commander Blood's
+`0xA7ED..0xA824` far presentation interrupt. Both wrappers contain 33
+instructions in 55 bytes. They save flags and the low-word register envelope,
+atomically clear and capture the rollover byte, enable interrupts, check entry
+activation, defer a newly activated entry, block an already-active entry while
+its sound side record remains, and otherwise present and consume only a due
+frame. Every exit restores the captured byte, registers, flags, and far caller.
+
+The new `re/tools/big_bug_bang_presentation_interrupt_oracle.py` executes both
+shipped bodies with stateful readiness, pacing, far-presentation, and consume
+callbacks. Five cases distinguish not-ready from newly activated despite their
+shared branch destination and cover all six conditional edges, pending sound,
+not-due, and due presentation. It verifies callback-visible latch state, exact
+near and far return frames, callback clobber restoration, complete state,
+segments, flags, stack envelope, unowned memory, executable immutability, and
+normalized Commander/BBB equality.
+
+The typed `service_presentation_interrupt` adapter keeps the original
+one-interrupt activation delay explicit and restores its scoped rollover latch
+on every host return path. Its five fixture cases prove exact callback ordering
+and all terminal outcomes. BBB's body SHA-256 is
+`8b2021a4c1b3dd240639b244393042810537b934558a8bde4e56d37351a60e52`,
+and the deterministic JSONL SHA-256 is
+`ad63765e32163bc2ba9054e0f5fa107a32222c4f230808c4b7974d62794550a7`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

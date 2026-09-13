@@ -2816,3 +2816,30 @@ changed. Both bodies have SHA-256
 `6aa5c60d59aa4dd835e5df01e31aca24da6cd83fb35b6b96dfb1381bbf9de5b2`,
 and the deterministic BBB JSONL SHA-256 is
 `e1a2ebe01f6b1bd358abe2b5706f4407ae3608c21192171094e2b11b7351884b`.
+
+## 2026-09-13 - Big Bug Bang far presentation interrupt
+
+BBB `0xBFD7..0xC00E` relocates Commander Blood's `0xA7ED..0xA824` far
+presentation interrupt. Both contain 33 instructions in 55 bytes. The wrapper
+saves its flags and low-word register envelope, atomically clears and captures
+the rollover byte, enables interrupts, checks activation readiness, defers a
+newly activated entry, blocks an already-active entry while its sound side
+record remains, and otherwise presents and consumes only a due frame. Every
+exit restores the captured rollover byte, registers, flags, and far caller.
+
+The new `re/tools/big_bug_bang_presentation_interrupt_oracle.py` executes both
+shipped bodies with stateful readiness, pacing, far-presentation, and consume
+callbacks. Five cases distinguish not-ready from newly activated despite their
+shared branch destination and cover all six conditional edges, pending sound,
+not-due, and due presentation. The oracle checks callback-visible latch state,
+exact near and far return frames, callback clobber restoration, complete state,
+segments, flags, stack envelope, unowned memory, executable immutability, and
+normalized Commander/BBB equality.
+
+The typed `service_presentation_interrupt` adapter preserves the one-interrupt
+activation delay and restores its scoped rollover latch even when a host call
+returns an error. Its five fixture cases prove exact callback ordering and all
+terminal outcomes. BBB's body SHA-256 is
+`8b2021a4c1b3dd240639b244393042810537b934558a8bde4e56d37351a60e52`,
+and the deterministic JSONL SHA-256 is
+`ad63765e32163bc2ba9054e0f5fa107a32222c4f230808c4b7974d62794550a7`.
