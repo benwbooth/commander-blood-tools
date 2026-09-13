@@ -5189,6 +5189,31 @@ gate. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `3b183a8cb05c26104512e5dd183a35dd0765a511571fd103bab9c617e5e39220`.
 
+## Procedure Patch-Build Oracle (2026-09-13)
+
+BBB `0x2005..0x2049` is the relocated sequel counterpart of Commander Blood's
+`0x1D94..0x1DD8` procedure patch-stream builder. Both routines contain 32
+instructions in 68 bytes and differ only in the relocated work-buffer, script,
+and directory far-pointer operands.
+
+The new `re/tools/big_bug_bang_procedure_patch_build_oracle.py` directly
+executes all four fingerprinted Commander cases in the shipped BBB body. They
+prove empty and mixed directories, exact kind-two filtering, absolute script
+offset reads despite the ignored far-pointer offset, ordered packed
+three-byte records, high object offsets, and returned byte counts. The harness
+also verifies GS pointer ownership against DS and segment decoys, exact output
+and stack writes, terminal flags, complete register and segment residue, near
+return, untouched full segments, and executable immutability.
+
+The typed `build_procedure_patch_stream` owner consumes both four-row fixtures.
+Decoded procedure entries and typed Boolean state replace direct COD-byte reads
+and the shared graphics work buffer while preserving authored directory order,
+one-based COD identifiers, and canonical zero-or-one save values. BBB's body
+SHA-256 is
+`8d9fa74f4ab6f3871cae437e93ce12ce82ef07bd4d5c2d183bee71d4bf7d28af`,
+and the deterministic fixture SHA-256 is
+`6e0f3b7a0772e19cd07f523c2ffbcad2aee4ea598caf7b9b2e3dcf49966745b7`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

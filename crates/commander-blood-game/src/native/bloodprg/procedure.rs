@@ -146,7 +146,8 @@ pub fn apply_procedure_activation(
 
 /// Serialize the active profile's procedure gates in the original save-game format.
 ///
-/// This translates `vm_patch_stream_build` at BLOODPRG file offset `0x001D94`.
+/// This translates `vm_patch_stream_build` at Commander Blood's BLOODPRG file
+/// offset `0x001D94` and its relocated BBB counterpart at `0x002005`.
 /// The historical three-byte records contain a one-based COD position followed
 /// by the mutable A9 byte. The modern runtime retains that position only as a
 /// stable file-format identifier and stores the live value as typed Boolean
@@ -264,6 +265,11 @@ mod tests {
         name: String,
         directory_entries: Vec<PatchDirectoryEntryOracle>,
         emitted_records: Vec<PatchRecordOracle>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangPatchBuildOracle {
+        rows: Vec<PatchBuildOracle>,
     }
 
     #[derive(Deserialize)]
@@ -386,12 +392,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn patch_stream_build_matches_every_original_directory_vector() {
-        let vectors: Vec<PatchBuildOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_1d94_natural.json"
-        ))
-        .unwrap();
+    fn assert_patch_stream_build_vectors(vectors: Vec<PatchBuildOracle>) {
         assert_eq!(vectors.len(), PATCH_BUILD_VECTOR_COUNT);
 
         for vector in vectors {
@@ -429,6 +430,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn patch_stream_build_matches_every_original_directory_vector() {
+        let vectors: Vec<PatchBuildOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1d94_natural.json"
+        ))
+        .unwrap();
+        assert_patch_stream_build_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_patch_stream_build_matches_every_direct_directory_vector() {
+        let oracle: BigBugBangPatchBuildOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_procedure_patch_build.json"
+        ))
+        .unwrap();
+        assert_patch_stream_build_vectors(oracle.rows);
     }
 
     fn assert_patch_stream_apply_vectors(vectors: Vec<PatchApplyOracle>) {
