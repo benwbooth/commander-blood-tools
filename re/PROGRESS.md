@@ -2894,3 +2894,30 @@ typed bounded decoder consumes both fixtures. BBB's body SHA-256 is
 `87eaf6aa34a8a48e7b6359cc425be67b80523b06c632a2b84fa5fe7d9dae58c4`,
 and the deterministic 13-row JSONL SHA-256 is
 `34d729a51309f81381e14eef59672c800d567945243c2282e3502736b8cb94f4`.
+
+## 2026-09-13 - Big Bug Bang presentation rectangle decoder
+
+BBB `0xC30D..0xC77D` relocates Commander Blood's `0xAB25..0xAF95`
+transparent rectangle decoder. Both complete bodies span 1,136 bytes and
+contain 483 decoded instructions occupying 1,111 bytes. Six game-state fields,
+two self-modified literal-bias aliases, and the shared pair-decoder target move;
+the control-flow and rectangle grammar remain structurally identical.
+
+The new `re/tools/big_bug_bang_presentation_rect_decode_oracle.py` executes
+both shipped bodies over all eight recovered Commander grammar cases. They
+cover low and high layouts, transparent literals, fixed and variable runs,
+pending and extended lengths, literal bias, row crossing, control refill with
+source wrap, explicit coordinates, vertical displacement, and native width
+and row clamps. The corpus executes 103 matching control-flow edges across 73
+branch sites and observes both outcomes at 30 sites; this is grammar coverage,
+not a claim that both outcomes of every duplicated inner-loop branch ran.
+
+The oracle executes the exact shared pair helper and scanline helper, checks
+their frames and entry ABIs, mirrors only the original segment-relative
+self-modification, and verifies exact source, staging, framebuffer, game,
+register, flag, stack-envelope, executable, and unowned-memory state. Direct
+normalized Commander/BBB results match in every case, and the typed bounded
+decoder consumes both fixtures. BBB's complete body SHA-256 is
+`b8faa7f10d48be4f3133b0bdefa751587130d1436243a57935a17b18ad4a949f`,
+and the deterministic JSONL SHA-256 is
+`809348e1dd1e994065e6b14cf0fb70d5170704ac2e8c4c28e6954ef14ca935cf`.

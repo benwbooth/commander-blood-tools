@@ -541,10 +541,11 @@ fn rectangle_geometry(
 
 /// Decode one transparent rectangular AD payload into the indexed framebuffer.
 ///
-/// This translates `resource_payload_decode_rect` at offset `0x00AB25` and its
-/// calls to the shared pair-LZ and scanline helpers. The caller supplies an
-/// owned reusable staging buffer so valid back-references can use retained
-/// history; all changes are committed only after the complete payload succeeds.
+/// This translates `resource_payload_decode_rect` at BLOODPRG offset
+/// `0x00AB25`, relocated to BLOOD2PG offset `0x00C30D`, and its calls to the
+/// shared pair-LZ and scanline helpers. The caller supplies an owned reusable
+/// staging buffer so valid back-references can use retained history; all
+/// changes are committed only after the complete payload succeeds.
 pub fn decode_presentation_rect(
     source: &[u8],
     staging: &mut [u8],
@@ -923,12 +924,24 @@ mod tests {
     }
 
     #[test]
-    fn rectangle_decoder_matches_every_original_vector() {
+    fn rectangle_decoder_matches_both_original_fixtures() {
         let vectors: Vec<RectOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_ab25_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), RECT_VECTOR_COUNT);
+        assert_rectangle_vectors("Commander Blood 0xAB25", vectors);
+
+        let vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_rect_decode.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_rectangle_vectors("Big Bug Bang 0xC30D", vectors);
+    }
+
+    fn assert_rectangle_vectors(source_name: &str, vectors: Vec<RectOracle>) {
+        assert_eq!(vectors.len(), RECT_VECTOR_COUNT, "{source_name}");
 
         for (case_index, vector) in vectors.into_iter().enumerate() {
             let coordinate_bytes = vector.coordinates.map_or_else(Vec::new, |coordinates| {
@@ -969,8 +982,12 @@ mod tests {
             )
             .unwrap();
 
-            assert_eq!(outcome.width, vector.row_width, "{}", vector.name);
-            assert_eq!(outcome.rows, vector.rows, "{}", vector.name);
+            assert_eq!(
+                outcome.width, vector.row_width,
+                "{source_name}: {}",
+                vector.name
+            );
+            assert_eq!(outcome.rows, vector.rows, "{source_name}: {}", vector.name);
             assert_eq!(
                 outcome.consumed_bytes,
                 usize::from(
@@ -978,7 +995,7 @@ mod tests {
                         .main_source_result_offset
                         .wrapping_sub(vector.source_offset)
                 ),
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
             assert_eq!(
@@ -988,35 +1005,39 @@ mod tests {
                         .staged_result_offset
                         .wrapping_sub(vector.staging_offset as u16)
                 ),
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
             assert_eq!(
                 outcome.final_row_offset, vector.final_row_offset,
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
             assert_eq!(
                 outcome.final_destination_offset, vector.destination_result_offset,
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
             assert_eq!(
                 outcome.y * LOGICAL_FRAMEBUFFER_WIDTH + outcome.x,
                 vector.first_row_offset,
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
             assert_eq!(
                 outcome.changed_pixels, vector.changed_pixels,
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
-            assert_eq!(framebuffer, expected_frame, "{}", vector.name);
+            assert_eq!(
+                framebuffer, expected_frame,
+                "{source_name}: {}",
+                vector.name
+            );
             assert_eq!(
                 &staging[vector.staging_offset..vector.staging_offset + vector.staged_values.len()],
                 vector.staged_values,
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
         }
