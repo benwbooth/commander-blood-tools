@@ -286,7 +286,10 @@ impl OriginalResourceCache {
     ///
     /// This is the flat-data behavior of `resource_release` at BLOODPRG file
     /// offset `0x005288`. Removing an owned map entry also replaces the native
-    /// `resource_free_inner` pool compaction at `0x00529C`.
+    /// `resource_free_inner` pool compaction at BLOODPRG offset `0x00529C` and
+    /// BLOOD2PG offset `0x005714`: follower bytes and allocation metadata stay
+    /// attached to independent owned entries instead of moving in a DOS segment
+    /// pool.
     pub fn release(&mut self, resource: ResourceId) -> bool {
         self.source_colors.remove(&resource);
         self.entries.remove(&resource).is_some()
@@ -537,6 +540,7 @@ mod tests {
     const LOAD_BY_ID_ORACLE_VECTOR_COUNT: usize = 8;
     const PALETTE_BLOCK_ORACLE_VECTOR_COUNT: usize = 6;
     const RELEASE_ORACLE_VECTOR_COUNT: usize = 6;
+    const RESOURCE_FREE_INNER_ORACLE_VECTOR_COUNT: usize = 6;
     const RESOLVE_ORACLE_VECTOR_COUNT: usize = 6;
     const ALLOCATION_FIELD_ORACLE_VECTOR_COUNT: usize = 8;
     const ORIGINAL_DIRECT_RESOURCE_FLAG: u16 = 0x8000;
@@ -579,6 +583,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangResourceFreeInnerOracle {
+        rows: Vec<ResourceFreeInnerOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct PaletteBlockOracle {
         name: String,
         blocks: Vec<PaletteBlockOracleEntry>,
@@ -600,6 +609,25 @@ mod tests {
         name: String,
         handle: u16,
         entry_flags: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct ResourceFreeInnerOracle {
+        name: String,
+        handle: u16,
+        resident_before: Vec<u16>,
+        resident_after: Vec<u16>,
+        released_size: usize,
+        released_paragraphs: usize,
+        moved_bytes: usize,
+        calls: Vec<ResourceFreeInnerCallOracle>,
+    }
+
+    #[derive(Deserialize)]
+    struct ResourceFreeInnerCallOracle {
+        byte_count: usize,
+        source: [u16; 2],
+        destination: [u16; 2],
     }
 
     #[derive(Deserialize)]
@@ -1077,6 +1105,147 @@ mod tests {
             assert_eq!(cache.release(resource), loaded, "{}", vector.name);
             assert!(!cache.is_loaded(resource), "{}", vector.name);
         }
+    }
+
+    fn assert_resource_free_inner_vectors(vectors: Vec<ResourceFreeInnerOracle>) {
+        assert_eq!(vectors.len(), RESOURCE_FREE_INNER_ORACLE_VECTOR_COUNT);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let terminator = *vector.resident_before.last().unwrap();
+            assert_ne!(terminator & 0x8000, 0, "{}", vector.name);
+            assert_eq!(
+                vector.resident_after.last(),
+                Some(&terminator),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                vector.released_paragraphs,
+                vector.released_size >> 4,
+                "{}",
+                vector.name
+            );
+
+            let resident_before = vector
+                .resident_before
+                .iter()
+                .copied()
+                .take_while(|handle| handle & 0x8000 == 0)
+                .collect::<Vec<_>>();
+            let released_position = resident_before
+                .iter()
+                .position(|handle| *handle == vector.handle)
+                .unwrap();
+            let mut cache = OriginalResourceCache::new();
+            for (position, handle) in resident_before.iter().copied().enumerate() {
+                let allocation_byte_count = if handle == vector.handle {
+                    vector.released_size
+                } else if position == released_position + 1 {
+                    vector.moved_bytes
+                } else if position > released_position {
+                    0
+                } else {
+                    ORIGINAL_RESOURCE_ALLOCATION_ALIGNMENT * 2
+                };
+                cache.entries.insert(
+                    ResourceId::new(handle),
+                    cached_resource(
+                        [case_index as u8, handle as u8, position as u8],
+                        allocation_byte_count,
+                    ),
+                );
+            }
+            let retained_before = cache.entries.clone();
+            let follower_handles = &resident_before[released_position + 1..];
+            assert_eq!(
+                follower_handles
+                    .iter()
+                    .map(|handle| {
+                        cache
+                            .allocation_byte_count(ResourceId::new(*handle))
+                            .unwrap()
+                    })
+                    .sum::<usize>(),
+                vector.moved_bytes,
+                "{}",
+                vector.name
+            );
+
+            assert!(
+                cache.release(ResourceId::new(vector.handle)),
+                "{}",
+                vector.name
+            );
+            assert!(
+                !cache.is_loaded(ResourceId::new(vector.handle)),
+                "{}",
+                vector.name
+            );
+            assert!(
+                !cache.release(ResourceId::new(vector.handle)),
+                "{}",
+                vector.name
+            );
+            for (resource, expected) in retained_before {
+                if resource.value() == vector.handle {
+                    continue;
+                }
+                assert_eq!(
+                    cache.resolve(resource),
+                    Some(expected.bytes.as_ref()),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    cache.allocation_byte_count(resource),
+                    Some(expected.allocation_byte_count),
+                    "{}",
+                    vector.name
+                );
+            }
+
+            let mut resident_after = cache
+                .entries
+                .keys()
+                .map(|resource| resource.value())
+                .collect::<Vec<_>>();
+            resident_after.push(terminator);
+            assert_eq!(resident_after, vector.resident_after, "{}", vector.name);
+
+            if vector.moved_bytes == 0 {
+                assert!(vector.calls.is_empty(), "{}", vector.name);
+            } else {
+                assert_eq!(vector.calls.len(), 1, "{}", vector.name);
+                let call = &vector.calls[0];
+                assert_eq!(call.byte_count, vector.moved_bytes, "{}", vector.name);
+                assert_eq!(call.source[1], 0, "{}", vector.name);
+                assert_eq!(call.destination[1], 0, "{}", vector.name);
+                assert_eq!(
+                    usize::from(call.source[0].wrapping_sub(call.destination[0])),
+                    vector.released_paragraphs,
+                    "{}",
+                    vector.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn resource_free_inner_matches_every_native_compaction_vector_with_owned_entries() {
+        let vectors: Vec<ResourceFreeInnerOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_529c_natural.json"
+        ))
+        .unwrap();
+        assert_resource_free_inner_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_resource_free_inner_matches_every_direct_vector_with_owned_entries() {
+        let oracle: BigBugBangResourceFreeInnerOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_resource_free_inner.json"
+        ))
+        .unwrap();
+        assert_resource_free_inner_vectors(oracle.rows);
     }
 
     #[test]

@@ -5392,6 +5392,34 @@ dead block. BBB's full-body SHA-256 is
 and the deterministic fixture SHA-256 is
 `34080fe73670ba10d23f1a3195908dc16bcf0ec7ca6d1f50a0b8c9024e4fd1f4`.
 
+## Resource-Pool Compaction Oracle (2026-09-13)
+
+BBB `0x5714..0x578C` is the relocated sequel counterpart of Commander Blood's
+`0x529C..0x5314` resource-pool compactor. Both 120-byte bodies contain the same
+55 instructions; only the free-byte and pool-end globals and the far `memmove`
+target differ.
+
+The new `re/tools/big_bug_bang_resource_free_inner_oracle.py` directly executes
+all six fingerprinted Commander cases in the shipped BBB body. They prove
+first, middle, and last resident removal; low-two-bit loaded-flag clearing;
+32-bit free-byte accounting; floor paragraph shifts for non-aligned sizes;
+signed list termination; follower segment relocation; zero-sized followers;
+and conditional packed-pool movement. The harness also verifies the relocated
+GS fields against Commander-offset decoys, FS table ownership against full
+DS/ES decoys, exact ordered table, state, stack, and far-call-frame writes,
+the move arguments and resulting bytes, complete register and segment
+preservation, terminal flags, far return, and full synthetic state and patched
+executable ownership.
+
+The typed `OriginalResourceCache::release` owner consumes both six-row fixtures.
+Stable resource IDs and independent owned allocations preserve every retained
+resource's bytes and allocation metadata while deliberately eliminating native
+resident-list ordering, segment-address shifts, packed-pool accounting, and the
+physical overlapping move. BBB's body SHA-256 is
+`f587700c0100841e08e64363afd29252bb9f1c5b939d43257d27dcf2d441c43a`,
+and the deterministic fixture SHA-256 is
+`bde8e8ff570b9e36f44e66507d6a5d6e83946d275d3125095c7914eac1c9084f`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

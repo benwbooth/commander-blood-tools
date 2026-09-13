@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 166,
-    "oracle_fixture_count": 165,
+    "oracle_count": 167,
+    "oracle_fixture_count": 166,
     "fixture_relation_counts": {
-      "exact": 164,
+      "exact": 165,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 283,
-    "unentered_static_entrypoints": 99,
+    "entered_static_entrypoints": 284,
+    "unentered_static_entrypoints": 98,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 284,
+    "entered_known_entrypoints": 285,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 170,
-        "unentered": 26
+        "entered": 171,
+        "unentered": 25
       },
       "exact_body": {
         "entered": 15,
@@ -1704,6 +1704,18 @@
       "summary": "verified 8 BBB resource-length and 8 conventional-load cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_resource_file.json",
       "fixture_sha256": "44b5bde3340821a572520fc7e00f6807b1ef08b80065e77e68adc0959e2f221b",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_resource_free_inner_oracle.py",
+      "oracle_sha256": "f71159cb4b7a9ea1f9598404ed2024d0808ebea4c29a6e0a3be334dbed8f2562",
+      "executed_instruction_count": 55,
+      "entered_entrypoints": [
+        "0x5714"
+      ],
+      "summary": "verified 6 BBB resource-free cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_resource_free_inner.json",
+      "fixture_sha256": "bde8e8ff570b9e36f44e66507d6a5d6e83946d275d3125095c7914eac1c9084f",
       "fixture_relation": "exact"
     },
     {
@@ -3821,8 +3833,10 @@
     {
       "entry": "0x5714",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_resource_free_inner_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x529c"
     },
