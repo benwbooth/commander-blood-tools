@@ -2092,3 +2092,24 @@ direction preservation, executable immutability, and all callback state and argu
 deterministic ten-row JSONL has SHA-256
 `1d7b67eef0a9803ded630b60377510760b0959caa8c25d49a1b9b32d1a82b157`. This behaviorally
 classifies BBB `0xAD37`, not its callers or the complete bridge frame.
+
+## 2026-09-12 - Big Bug Bang bridge steering
+
+BBB `0xADF5..0xAFBA` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9656..0x981B`. Both bodies contain 157 instructions in 453 bytes and preserve the same control
+flow and arithmetic over relocated UI, panorama, seek, pointer-ring, direction, projection, and
+presentation-context state. The new `re/tools/big_bug_bang_bridge_steering_oracle.py` executes both
+original binaries, guarding BBB's body with SHA-256
+`7a5960767560ae3e11014cd35fe2385c520b4a7de7f7446f1fb1650406a138b3`.
+
+All 21 established Commander cases are exactly identical after state relocation. They cover
+centered and dead-zone exits, free turns and wrapping, menu wait and clamp paths, seek arrival,
+short and long seeks in both directions, cursor dragging, signed-high memo behavior, and pointer
+normalization. The cases traverse 52 of 60 conditional edges. The existing typed steering routine
+now consumes both fixtures; no production behavior changed.
+
+The oracle checks exact data, GS and ES decoys, complete stack residue, every general and segment
+register, full flags, presentation-context and carry outputs, mouse-interrupt arguments, direct
+Commander/BBB equality, and executable immutability. Its deterministic 21-row JSONL has SHA-256
+`8f2759a3a5e0109735e48806baead79ad9e458171ca980e2cc1c3839e5e04e20`. This behaviorally
+classifies BBB `0xADF5`, not its callers or the complete bridge input path.

@@ -4059,6 +4059,42 @@ the deterministic ten-row JSONL has SHA-256
 This behaviorally classifies BBB `0xAD37`, not its callers or the complete
 bridge frame.
 
+## Sequel Bridge Steering
+
+BBB's `0xADF5..0xAFBA` bridge-steering routine is the relocated sequel
+counterpart of Commander Blood `0x9656..0x981B`. Both bodies contain 157
+instructions in 453 bytes, with the same control flow and arithmetic over
+relocated UI, panorama, seek, pointer-ring, direction, projection, and
+presentation-context state.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_bridge_steering_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_bridge_steering.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  steering_matches_both_original_state_fixtures_without_pointer_warping
+```
+
+The guarded oracle executes both original binaries for all 21 established
+steering cases. They agree exactly after mapping relocated state: centered and
+dead-zone exits, free turns and ring wrapping, menu wait and clamp paths,
+automatic seek arrival, short and long seeks in both directions, seek cursor
+dragging, signed-high memo behavior, and low/high pointer normalization. The
+existing typed steering routine now consumes both fixtures; no production
+behavior changed.
+
+The cases traverse 52 of 60 conditional edges. The oracle checks exact data,
+GS and ES decoys, complete stack residue, all general and segment registers,
+full flags, presentation-context and carry outputs, mouse-interrupt arguments,
+direct Commander/BBB equality, and executable immutability. The BBB body is
+bound by SHA-256
+`7a5960767560ae3e11014cd35fe2385c520b4a7de7f7446f1fb1650406a138b3`;
+the deterministic 21-row JSONL has SHA-256
+`8f2759a3a5e0109735e48806baead79ad9e458171ca980e2cc1c3839e5e04e20`.
+This behaviorally classifies BBB `0xADF5`, not its callers or the complete
+bridge input path.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

@@ -80,7 +80,8 @@ pub struct BridgeSteeringOutcome {
 
 /// Advance automatic seek motion and pointer-driven bridge steering.
 ///
-/// This translates `bridge_steer_update` at BLOODPRG routine offset `0x009656`.
+/// This translates Commander Blood `bridge_steer_update` at `0x009656` and Big
+/// Bug Bang's relocated counterpart at `0x00ADF5`.
 /// Ring arithmetic and all game-visible state transitions are preserved. SDL
 /// supplies pointer motion to `cursor_ring_position`; the obsolete host cursor
 /// recenter calls have no equivalent because they did not affect game state.
@@ -270,11 +271,23 @@ mod tests {
     }
 
     #[test]
-    fn steering_matches_every_original_state_vector_without_pointer_warping() {
-        let vectors: Vec<SteeringOracle> = serde_json::from_str(include_str!(
+    fn steering_matches_both_original_state_fixtures_without_pointer_warping() {
+        let commander: Vec<SteeringOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9656_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_bridge_steering.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_steering_vectors(commander);
+        assert_steering_vectors(sequel);
+    }
+
+    fn assert_steering_vectors(vectors: Vec<SteeringOracle>) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
