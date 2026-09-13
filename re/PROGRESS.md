@@ -1965,3 +1965,23 @@ general and segment registers, defined flags, stack discipline and executable im
 deterministic 13-row JSONL has SHA-256
 `ac4645b79681eac64ddf01567d64b2b4f6833170917ecb6e8e0bd21d61e8a28b`. This behaviorally
 classifies BBB `0xAA3D`, not its caller or whole chart interaction.
+
+## 2026-09-12 - Big Bug Bang navigation framebuffer span copy
+
+BBB `0xAAD4..0xAAFE` is the relocated sequel counterpart of Commander Blood's already ported
+`0x933A..0x9364` work-surface span copy. Its 24 instructions differ only in the relocated GS-owned
+back-buffer and work-surface pointer globals. The new
+`re/tools/big_bug_bang_framebuffer_copy_oracle.py` executes the complete unchanged 42-byte body,
+guarded by SHA-256 `87d09f1d6ebce2104e96d4134a42cc9c984aa36d235cb01d641fb8b911b1f828`.
+
+All 12 Commander-derived cases agree on normalized offsets, copied bytes and terminal flags. They
+cover zero through full-row copies, the final shipped row, 16-bit offset and copy wrapping, the
+out-of-domain high-row byte-swap formula, carry variants, signed overflow and discarded far-pointer
+offsets. The existing flat Rust function now consumes both fixtures while retaining its checked
+`320x200` caller domain; no production behavior changed.
+
+The oracle checks pointer-load and REP phases, complete source, destination, pointer-owner and
+decoy images, transient stack writes, register preservation, defined flags, return discipline and
+executable immutability. Its deterministic 12-row JSONL has SHA-256
+`addf58dcca25546336623c22a383f2b22ce56ce4f81e750aa174cc9d014716c5`. This behaviorally
+classifies BBB `0xAAD4`, not its caller or whole navigation transition.

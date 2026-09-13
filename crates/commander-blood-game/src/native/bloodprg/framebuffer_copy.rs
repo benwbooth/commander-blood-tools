@@ -82,9 +82,10 @@ impl std::error::Error for FramebufferCopyError {}
 /// Copy one horizontal span from the work surface to the back buffer.
 ///
 /// This translates `back_buffer_copy_from` at BLOODPRG routine offset
-/// `0x00933A`. Checked indices into flat pixel slices replace far framebuffer
-/// pointers and 16-bit offset wrapping. All recovered callers use rows 0
-/// through 199; requests outside that domain are rejected.
+/// `0x00933A` and its BLOOD2PG counterpart at `0x00AAD4`. Checked indices into
+/// flat pixel slices replace far framebuffer pointers and 16-bit offset
+/// wrapping. All recovered callers use rows 0 through 199; requests outside
+/// that domain are rejected.
 pub fn copy_work_surface_span(
     work_surface: &[u8],
     back_buffer: &mut [u8],
@@ -411,11 +412,24 @@ mod tests {
     }
 
     #[test]
-    fn valid_spans_match_original_copied_pixels_and_wrapping_cases_are_rejected() {
-        let vectors: Vec<CopyOracle> = serde_json::from_str(include_str!(
+    fn valid_spans_match_both_originals_and_wrapping_cases_are_rejected() {
+        let commander: Vec<CopyOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_933a_natural.json"
         ))
         .unwrap();
+        let sequel: Vec<CopyOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_framebuffer_copy.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander.len(), ORACLE_VECTOR_COUNT);
+        assert_eq!(sequel.len(), ORACLE_VECTOR_COUNT);
+        verify_copy_oracles(commander);
+        verify_copy_oracles(sequel);
+    }
+
+    fn verify_copy_oracles(vectors: Vec<CopyOracle>) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for (case_index, vector) in vectors.into_iter().enumerate() {

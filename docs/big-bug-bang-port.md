@@ -3840,6 +3840,41 @@ the deterministic 13-row JSONL has SHA-256
 This behaviorally classifies BBB `0xAA3D`, not its caller or end-to-end chart
 interaction.
 
+## Sequel Navigation Framebuffer Copy
+
+BBB's `0xAAD4..0xAAFE` work-surface span copy is the relocated sequel
+counterpart of Commander Blood `0x933A..0x9364`. Its 24 instructions are
+identical except for the two GS-owned far-pointer globals: BBB reads the back
+buffer from `GS:0x55F9` and the work surface from `GS:0x0CB4`. The guarded
+oracle executes the complete unchanged 42-byte body:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_framebuffer_copy_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_framebuffer_copy.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  valid_spans_match_both_originals_and_wrapping_cases_are_rejected
+```
+
+All 12 Commander-derived cases produce the same normalized offsets, copied
+bytes and terminal flags. They cover zero, single, partial and full-row copies,
+the final shipped row, 16-bit offset and copy wrapping, the byte-swapped
+out-of-domain high-row formula, carry, auxiliary carry and signed overflow,
+and the native rule that discards both far-pointer offsets. The flat Rust port
+continues to accept only the recovered `320x200` caller domain and rejects the
+wrapping-only probes.
+
+The oracle checks the pointer-load and REP phases, complete source,
+destination, pointer-owner and decoy segment images, transient stack writes,
+general and segment register preservation, defined flags, return discipline
+and executable immutability. The body is bound by SHA-256
+`87d09f1d6ebce2104e96d4134a42cc9c984aa36d235cb01d641fb8b911b1f828`;
+the deterministic 12-row JSONL has SHA-256
+`addf58dcca25546336623c22a383f2b22ce56ce4f81e750aa174cc9d014716c5`.
+This behaviorally classifies BBB `0xAAD4`, not its caller or whole navigation
+transition.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
