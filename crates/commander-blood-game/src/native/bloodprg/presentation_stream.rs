@@ -201,6 +201,21 @@ impl PresentationResourceStreamState {
     }
 }
 
+/// Publish the resource and secondary entry bound used by queue rollover.
+///
+/// This translates the unnamed setter at BLOODPRG offset `0x00A784` and its
+/// BLOOD2PG counterpart at `0x00BF6E`. Optional typed values replace the
+/// original `0xFFFF` sentinels while retaining the two-field update.
+pub fn select_presentation_rollover_source(
+    state: &mut PresentationResourceStreamState,
+    queue: &mut PresentationQueueState,
+    active_resource: Option<PresentationResourceId>,
+    secondary_wrap_limit: Option<u16>,
+) {
+    state.active = active_resource;
+    queue.secondary_wrap_limit = secondary_wrap_limit;
+}
+
 /// Mutable dependencies used while switching a presentation stream.
 pub struct PresentationResourceSwitchContext<'a, Provider> {
     /// Authored descriptor table addressed by presentation resource ID.
@@ -494,6 +509,7 @@ mod tests {
     use super::*;
 
     const SWITCH_VECTOR_COUNT: usize = 7;
+    const ROLLOVER_SOURCE_VECTOR_COUNT: usize = 4;
     const FINAL_ENTRY_METRIC: usize = 6;
     const BOOTSTRAP_TRAILER_BYTE_COUNT: usize = 32;
     const PRIMARY_RANGE_TABLE_OFFSET: usize = 0;
@@ -520,6 +536,15 @@ mod tests {
     struct SwitchCall {
         call: String,
         bytes: Option<usize>,
+    }
+
+    #[derive(Deserialize)]
+    struct RolloverSourceOracle {
+        name: String,
+        active_resource: u16,
+        secondary_wrap_limit: u16,
+        result_ax: u16,
+        result_bx: u16,
     }
 
     struct VectorProvider {
@@ -746,5 +771,51 @@ mod tests {
             result,
             Err(PresentationResourceSwitchError::DescriptorUnavailable { resource })
         );
+    }
+
+    #[test]
+    fn rollover_source_selection_matches_the_dual_original_fixture() {
+        let vectors: Vec<RolloverSourceOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_rollover_source.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), ROLLOVER_SOURCE_VECTOR_COUNT);
+
+        for vector in vectors {
+            let mut state = PresentationResourceStreamState {
+                active: Some(PresentationResourceId::new(0xA1A1)),
+                ..PresentationResourceStreamState::default()
+            };
+            let mut queue = PresentationQueueState {
+                secondary_wrap_limit: Some(0xB2B2),
+                ..PresentationQueueState::default()
+            };
+            let active_resource = (vector.active_resource != u16::MAX)
+                .then(|| PresentationResourceId::new(vector.active_resource));
+            let secondary_wrap_limit =
+                (vector.secondary_wrap_limit != u16::MAX).then_some(vector.secondary_wrap_limit);
+
+            select_presentation_rollover_source(
+                &mut state,
+                &mut queue,
+                active_resource,
+                secondary_wrap_limit,
+            );
+
+            assert_eq!(state.active, active_resource, "{}", vector.name);
+            assert_eq!(
+                queue.secondary_wrap_limit, secondary_wrap_limit,
+                "{}",
+                vector.name
+            );
+            assert_eq!(vector.result_bx, vector.active_resource, "{}", vector.name);
+            assert_eq!(
+                vector.result_ax, vector.secondary_wrap_limit,
+                "{}",
+                vector.name
+            );
+        }
     }
 }

@@ -1,0 +1,4 @@
+{"active_resource":0,"name":"zero_resource_and_limit","result_ax":0,"result_bx":0,"result_flags":2775,"return_stack_advance":2,"secondary_wrap_limit":0}
+{"active_resource":7,"name":"ordinary_resource_and_limit","result_ax":3,"result_bx":7,"result_flags":2775,"return_stack_advance":2,"secondary_wrap_limit":3}
+{"active_resource":4660,"name":"independent_words","result_ax":65244,"result_bx":4660,"result_flags":2775,"return_stack_advance":2,"secondary_wrap_limit":65244}
+{"active_resource":65535,"name":"absent_resource_and_limit","result_ax":65535,"result_bx":65535,"result_flags":2775,"return_stack_advance":2,"secondary_wrap_limit":65535}

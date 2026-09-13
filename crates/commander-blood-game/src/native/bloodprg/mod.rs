@@ -507,7 +507,8 @@ pub use presentation_stream::{
     OpenedPresentationResource, PresentationResourceDescriptor, PresentationResourceOpenError,
     PresentationResourceProvider, PresentationResourceStreamState,
     PresentationResourceSwitchContext, PresentationResourceSwitchError,
-    PresentationResourceSwitchOutcome, PresentationSourceRange, switch_presentation_resource,
+    PresentationResourceSwitchOutcome, PresentationSourceRange,
+    select_presentation_rollover_source, switch_presentation_resource,
 };
 pub use presentation_word_choice::{
     PresentationChoiceId, PresentationWordChoice, PresentationWordChoiceBackend,

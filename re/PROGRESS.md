@@ -2744,3 +2744,25 @@ production changes. BBB's body SHA-256 is
 `7d8135813de7ebf0664028ca8f187a29231ec5f2fa273a6718d3f8dd5d0d4e33`,
 and the deterministic JSONL SHA-256 is
 `f560d043967c206851d9b11d752e0ef3dc93e09c25427cd18c08a985e3825691`.
+
+## 2026-09-13 - Big Bug Bang presentation rollover-source selection
+
+BBB `0xBF6E..0xBF76` relocates Commander Blood's unnamed
+`0xA784..0xA78C` presentation rollover-source setter. Both routines contain
+three instructions in eight bytes. They copy `BX` to the active presentation
+resource and `AX` to the secondary queue wrap limit without changing flags.
+
+The new `re/tools/big_bug_bang_presentation_rollover_source_oracle.py`
+executes both shipped bodies over zero, ordinary, independent, and sentinel
+words. It checks both relocated writes, complete register and segment state,
+unchanged flags, near-return stack behavior, unowned memory, executable
+immutability, and direct Commander/BBB equality. No static near, far, or stored
+offset reference to either entry exists in its executable, consistent with an
+externally selected fixed-address boundary.
+
+The typed stream operation represents native `0xFFFF` sentinels as optional
+resource and limit state and consumes the four-row dual-original fixture.
+BBB's body SHA-256 is
+`795e45f7015948f12351c926634946853cb82847dbbb53fce54f41aa030bc880`,
+and the deterministic JSONL SHA-256 is
+`9c801688cf2a35dd162656a04df37ba48a1d9dbd77b17d996041e1b72579ab19`.
