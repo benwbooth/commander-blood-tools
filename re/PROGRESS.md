@@ -3227,3 +3227,35 @@ selection outside the recovered stream-state transition. BBB's body SHA-256
 is `4a10124c3f3692d1c4a765d7d7d8d1e303bcce5b44422dc210ef4a5decce3fc7`,
 and the deterministic JSONL SHA-256 is
 `dcfa11aafd4d257d2d59fd1ffc4ae353359d682b19164459937ea03613c09773`.
+
+## 2026-09-13 - Big Bug Bang audio-stream refill
+
+BBB `0xD40E..0xD4B3` revises Commander Blood's `0xBC50..0xBD09`
+stream-refill routine from 73 instructions in 185 bytes to 68 instructions in
+165 bytes. BBB first exits when `ULTRASND` owns service, treats every nonzero
+descriptor state as occupied instead of testing only bit one, and performs at
+most one driver callback before returning. Commander marks restart descriptor
+states explicitly, adjusts the prefixed play cursor, and repolls after either
+callback; BBB leaves restart-state ownership to its revised driver entry.
+Page selection, six-byte header prefixing, page reads, wrapping page advance,
+final-page lengths, and position-based service-versus-play selection remain
+semantically common.
+
+The new `re/tools/big_bug_bang_audio_stream_refill_oracle.py` executes both
+shipped bodies over the existing nine-case semantic corpus and two additional
+dual branch probes. It also executes two BBB ready-state cases and two BBB
+ULTRASND bypasses. The combined set covers both outcomes of all 12 BBB
+conditional sites, or 24 edges. The harness verifies position, page, service,
+and play callback frames and inputs; callback-visible descriptor and cursor
+differences; Commander repoll versus BBB return counts; exact page, length,
+buffer, register, flag, and stack outcomes; owned writes; executable
+immutability; unowned memory; and normalized logical-state equality.
+
+The shared typed `refill_audio_stream` owner now consumes both nine-row
+fixtures without a production variant. Its one-submission-per-update contract
+already matches BBB's bounded path, while immediate SDL submission converts
+ready data to host-owned state and replaces both originals' raw descriptor and
+hardware-driver protocols. BBB's body SHA-256 is
+`1288675adfc75d26bcb1f797b62721c7a87ebc5d4cd39c45ec59ffe5be783912`,
+and the deterministic JSONL SHA-256 is
+`09130a69c336d291144d754b5b436836b40c5cc981343c328a64bb8e4a5441aa`.

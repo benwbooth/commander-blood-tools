@@ -325,12 +325,14 @@ pub fn start_audio_stream(
 
 /// Refill at most one available stream buffer and return one host submission.
 ///
-/// This translates `snd_stream_refill` at BLOODPRG routine offset `0x00BC50`.
-/// Buffer preference, driver-owned tests, position-zero/unavailable restart,
-/// saved-header prefixing, page advance, final-page length, and play-versus-
-/// service choice remain exact. The native routine's synchronous second poll
-/// after a driver callback becomes the next host update, avoiding a blocking
-/// poll loop around SDL's asynchronous audio device.
+/// This translates `snd_stream_refill` at BLOODPRG routine offset `0x00BC50`
+/// and its Big Bug Bang counterpart at `0x00D40E`. Buffer preference,
+/// position-zero/unavailable restart, saved-header prefixing, page advance,
+/// final-page length, and play-versus-service choice remain exact. Host-owned
+/// statuses replace BBB's broader raw descriptor mask, and its ULTRASND bypass
+/// becomes the SDL backend boundary. Commander's synchronous second poll after
+/// a driver callback becomes the next host update, matching BBB's bounded
+/// callback-and-return path without blocking around SDL's asynchronous device.
 pub fn refill_audio_stream<Position>(
     playback: &mut AudioPlaybackState,
     stream: &mut AudioStreamState,
@@ -731,14 +733,26 @@ mod tests {
     }
 
     #[test]
-    fn refill_matches_valid_original_selection_page_and_driver_vectors() {
-        let vectors: Vec<RefillOracle> = serde_json::from_str(include_str!(
+    fn refill_matches_both_originals_selection_page_and_driver_vectors() {
+        let commander_vectors: Vec<RefillOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_bc50_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), REFILL_ORACLE_VECTOR_COUNT);
+        let sequel_vectors: Vec<RefillOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_audio_stream_refill.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander_vectors.len(), REFILL_ORACLE_VECTOR_COUNT);
+        assert_eq!(sequel_vectors.len(), REFILL_ORACLE_VECTOR_COUNT);
+        assert_refill_vectors("Commander Blood", commander_vectors);
+        assert_refill_vectors("Big Bug Bang", sequel_vectors);
+    }
 
+    fn assert_refill_vectors(source_name: &str, vectors: Vec<RefillOracle>) {
         for (case_index, vector) in vectors.into_iter().enumerate() {
+            let case = format!("{source_name}: {}", vector.name);
             let (statuses, page_count, final_page_byte_count) = refill_case(&vector.name);
             let payload_len =
                 (page_count - 1) * AUDIO_STREAM_PAGE_BYTE_COUNT + final_page_byte_count;
@@ -780,27 +794,21 @@ mod tests {
                 continue;
             }
             if vector.position.is_none() {
-                assert_eq!(
-                    outcome,
-                    Ok(AudioStreamRefillOutcome::Inactive),
-                    "{}",
-                    vector.name
-                );
-                assert_eq!(position_calls, 0, "{}", vector.name);
-                assert_eq!(playback, before_playback, "{}", vector.name);
-                assert_eq!(stream, before_stream, "{}", vector.name);
+                assert_eq!(outcome, Ok(AudioStreamRefillOutcome::Inactive), "{case}");
+                assert_eq!(position_calls, 0, "{case}");
+                assert_eq!(playback, before_playback, "{case}");
+                assert_eq!(stream, before_stream, "{case}");
                 continue;
             }
-            assert_eq!(position_calls, 1, "{}", vector.name);
+            assert_eq!(position_calls, 1, "{case}");
             if vector.selected_buffer.is_none() {
                 assert_eq!(
                     outcome,
                     Ok(AudioStreamRefillOutcome::BothBuffersOwned),
-                    "{}",
-                    vector.name
+                    "{case}"
                 );
-                assert_eq!(playback, before_playback, "{}", vector.name);
-                assert_eq!(stream, before_stream, "{}", vector.name);
+                assert_eq!(playback, before_playback, "{case}");
+                assert_eq!(stream, before_stream, "{case}");
                 continue;
             }
 
@@ -809,7 +817,7 @@ mod tests {
             let expected_kind = match vector.driver_action.as_deref() {
                 Some("service") => AudioStreamSubmissionKind::Service,
                 Some("play") => AudioStreamSubmissionKind::Restart,
-                other => panic!("{}: unexpected driver action {other:?}", vector.name),
+                other => panic!("{case}: unexpected driver action {other:?}"),
             };
             assert_eq!(
                 outcome,
@@ -821,10 +829,9 @@ mod tests {
                     header_prefixed: vector.header_prefixed.unwrap(),
                     refill_buffer_index: None,
                 })),
-                "{}",
-                vector.name
+                "{case}"
             );
-            assert_eq!(stream.next_page_index, vector.next_page, "{}", vector.name);
+            assert_eq!(stream.next_page_index, vector.next_page, "{case}");
             let page_start = usize::from(page_index) * AUDIO_STREAM_PAGE_BYTE_COUNT;
             let source_page =
                 &payload[page_start..payload.len().min(page_start + AUDIO_STREAM_PAGE_BYTE_COUNT)];
@@ -833,8 +840,7 @@ mod tests {
                 assert_eq!(
                     &playback.stream_buffers[selected].samples[..source_page.len()],
                     source_page,
-                    "{}",
-                    vector.name
+                    "{case}"
                 );
             } else {
                 assert_eq!(
@@ -845,8 +851,7 @@ mod tests {
                     &playback.stream_buffers[selected].samples
                         [..source_page.len() - SND_CLIP_HEADER_BYTE_COUNT],
                     &source_page[SND_CLIP_HEADER_BYTE_COUNT..],
-                    "{}",
-                    vector.name
+                    "{case}"
                 );
             }
             assert_eq!(
