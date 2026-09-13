@@ -107,6 +107,7 @@ mod script_service;
 mod selected_mask;
 mod sequel_growth;
 mod sequel_inventory;
+mod sequel_overview;
 mod sequel_presentation;
 mod sequence;
 mod sequence_subtitles;
@@ -291,8 +292,8 @@ pub use font::{
     BiosFont8x8, FontPoint, FontVerticalBand, GameFontDrawError, GameFontDrawOutcome,
     GameFontError, GameFontFace, SubtitleRevealDrawOutcome, draw_bios_font_text,
     draw_main_font_text, draw_planar_dialogue_text, draw_planar_square_caps_text,
-    draw_small_font_text, draw_square_caps_text, draw_subtitle_reveal_line,
-    measure_game_text_width,
+    draw_planar_square_caps_text_clipped, draw_small_font_text, draw_square_caps_text,
+    draw_subtitle_reveal_line, measure_game_text_width,
 };
 pub use frame_transition::{
     FramebufferTransitionError, FramebufferTransitionState, TransitionRect, TransitionRenderRegion,
@@ -543,10 +544,11 @@ pub use procedure::{
     evaluate_procedure_gate,
 };
 pub use raster_primitives::{
-    RasterNoiseMode, RasterNoiseOutcome, RasterOutlineOutcome, RasterPoint, RasterPrimitiveError,
-    RasterRectOutcome, RasterSpanOutcome, RasterSpanPaint, draw_framebuffer_noise_rect,
-    draw_horizontal_span, draw_planar_horizontal_span, draw_planar_vertical_span,
-    draw_rect_outline, draw_vertical_span, fill_framebuffer_rect, remap_framebuffer_rect,
+    RasterLineOutcome, RasterNoiseMode, RasterNoiseOutcome, RasterOutlineOutcome, RasterPoint,
+    RasterPrimitiveError, RasterRectOutcome, RasterSpanOutcome, RasterSpanPaint,
+    draw_framebuffer_noise_rect, draw_horizontal_span, draw_line_segment,
+    draw_planar_horizontal_span, draw_planar_vertical_span, draw_rect_outline, draw_vertical_span,
+    fill_framebuffer_rect, remap_framebuffer_rect,
 };
 pub use record::{
     ScriptRecordError, ScriptRecordFields, ScriptRecordPairReference, ScriptRecordRuntime,
@@ -659,6 +661,11 @@ pub use sequel_growth::{
     apply_sequel_settlement,
 };
 pub use sequel_inventory::{SequelInventoryError, SequelInventoryLine, SequelInventoryState};
+pub use sequel_overview::{
+    SEQUEL_OVERVIEW_GROUP_LABELS, SequelOverviewActor, SequelOverviewControl, SequelOverviewDraw,
+    SequelOverviewFrame, SequelOverviewLabel, SequelOverviewOutcome, SequelOverviewState,
+    update_sequel_overview,
+};
 pub use sequel_presentation::{
     SequelPanelActivation, SequelPanelActivationState, SequelPanelActorAction,
     SequelPanelCompletion, SequelPresentationControl, activate_sequel_panel_request,

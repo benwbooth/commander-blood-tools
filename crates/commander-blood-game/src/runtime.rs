@@ -31,6 +31,7 @@ mod save_load;
 mod scenario;
 mod scene_transition;
 mod script_backend;
+mod sequel_overview;
 mod sequence_localization;
 mod services;
 mod shared_ui;

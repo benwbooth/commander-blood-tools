@@ -260,6 +260,14 @@ pub trait NavigationCameraHost<ObjectId, ComparisonExtent> {
     /// Commit one interactive entity state.
     fn set_chart_entity_state(&mut self, state: NavigationChartEntityState);
 
+    /// Run an optional game-specific overlay before chart-object hit testing.
+    fn update_pre_pick_overlay(
+        &mut self,
+        _input: &mut NavigationChartInputState,
+    ) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
     /// Pick the first object under the current pointer.
     fn pick_chart_object(&mut self)
     -> Result<Option<NavigationChartObject<ObjectId>>, Self::Error>;
@@ -454,6 +462,8 @@ where
 
     validate_secondary_marker_count(state.secondary_marker_count)?;
     publish_interactive_entity_states(state, host);
+    host.update_pre_pick_overlay(&mut state.input)
+        .map_err(NavigationCameraError::Host)?;
     let Some(picked) = host
         .pick_chart_object()
         .map_err(NavigationCameraError::Host)?
@@ -773,6 +783,7 @@ mod tests {
         Reset,
         Flip,
         Panel,
+        Overlay,
         Pick(Option<u16>),
         Width(Box<[u8]>),
         Text {
@@ -790,6 +801,8 @@ mod tests {
         picked: Option<NavigationChartObject<u16>>,
         wipe_spans: Box<[NavigationWipeSpan]>,
         label_width: u16,
+        overlay_enabled: bool,
+        overlay_consumes_primary: bool,
     }
 
     impl NavigationCameraHost<u16, ()> for OracleHost {
@@ -855,6 +868,20 @@ mod tests {
 
         fn set_chart_entity_state(&mut self, state: NavigationChartEntityState) {
             self.entity_states.push(state);
+        }
+
+        fn update_pre_pick_overlay(
+            &mut self,
+            input: &mut NavigationChartInputState,
+        ) -> Result<(), Self::Error> {
+            if self.overlay_enabled {
+                self.events.push(Event::Overlay);
+                if self.overlay_consumes_primary {
+                    input.primary_pressed = false;
+                    input.press_pending = false;
+                }
+            }
+            Ok(())
         }
 
         fn pick_chart_object(&mut self) -> Result<Option<NavigationChartObject<u16>>, Self::Error> {
@@ -950,6 +977,8 @@ mod tests {
             picked: None,
             wipe_spans: Box::default(),
             label_width: u16::MIN,
+            overlay_enabled: false,
+            overlay_consumes_primary: false,
         };
 
         assert!(matches!(
@@ -959,6 +988,67 @@ mod tests {
         ));
         assert!(host.events.is_empty());
         assert!(host.entity_states.is_empty());
+    }
+
+    #[test]
+    fn pre_pick_overlay_can_consume_primary_input_before_chart_selection() {
+        let mut state = NavigationCameraState {
+            active: true,
+            wipe_complete: true,
+            input: NavigationChartInputState {
+                pointer: [100, 70],
+                primary_pressed: true,
+                press_pending: true,
+            },
+            ..NavigationCameraState::default()
+        };
+        let endpoints = [[160, 110]; TRANSITION_ENDPOINT_COUNT];
+        let context = NavigationCameraContext {
+            arche: NavigationChartArche {
+                marker: [12, 10],
+                current_location: &CURRENT_LOCATION,
+                current_location_kind: NavigationChartObjectKind::default(),
+            },
+            wipe_endpoints: &endpoints,
+            comparison_extent: &(),
+        };
+        let mut host = OracleHost {
+            events: Vec::new(),
+            copies: Vec::new(),
+            entity_states: Vec::new(),
+            chart_objects: Vec::new(),
+            picked: Some(chart_object(
+                PICKED_LOCATION,
+                NavigationChartObjectKind::default(),
+                b"ALPHA",
+                [100, 70],
+                true,
+            )),
+            wipe_spans: Box::default(),
+            label_width: 30,
+            overlay_enabled: true,
+            overlay_consumes_primary: true,
+        };
+
+        assert_eq!(
+            update_navigation_camera(context, &mut state, &mut host).unwrap(),
+            NavigationCameraOutcome::HoverLabel { position: [70, 60] }
+        );
+        assert!(!state.input.primary_pressed);
+        assert!(!state.input.press_pending);
+        assert_eq!(
+            host.events,
+            [
+                Event::Overlay,
+                Event::Pick(Some(PICKED_LOCATION)),
+                Event::Width(Box::from(b"ALPHA".as_slice())),
+                Event::Text {
+                    text: Box::from(b"ALPHA".as_slice()),
+                    position: [70, 60],
+                    color: LABEL_COLOR,
+                },
+            ]
+        );
     }
 
     fn state_for(vector: &CameraVector) -> NavigationCameraState<u16> {
@@ -1071,6 +1161,8 @@ mod tests {
             picked,
             wipe_spans: spans_for(&vector.name).into_boxed_slice(),
             label_width: 30,
+            overlay_enabled: false,
+            overlay_consumes_primary: false,
         }
     }
 
@@ -1122,6 +1214,7 @@ mod tests {
             Event::Reset => "reset",
             Event::Flip => "flip",
             Event::Panel => "panel",
+            Event::Overlay => "overlay",
             Event::Pick(_) => "pick",
             Event::Width(_) => "width",
             Event::Text { .. } => "text",
@@ -1394,7 +1487,8 @@ mod tests {
                 | Event::Panorama
                 | Event::Reset
                 | Event::Flip
-                | Event::Panel => {}
+                | Event::Panel
+                | Event::Overlay => {}
             }
         }
     }

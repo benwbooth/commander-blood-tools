@@ -15,13 +15,14 @@ use crate::native::bloodprg::{
     LocationPanelTransitionProgress, Manu3AnimationSelector, NavigationCameraContext,
     NavigationCameraHost, NavigationCameraOutcome, NavigationCameraState, NavigationChartArche,
     NavigationChartCopySpan, NavigationChartEntityDraw, NavigationChartEntityState,
-    NavigationChartHand, NavigationChartMarkerEndpoint, NavigationChartObject,
-    NavigationChartObjectKind, NavigationChartPickObject, NavigationChartPickOutcome,
-    NavigationChartPickState, NavigationStatusLabels, NavigationStatusLocationKind, ResourceId,
-    ScriptFieldSelector, ScriptObjectFlag, build_navigation_wipe_spans, copy_work_surface_span,
-    navigation_chart_objects, navigation_source_objects, object_has_flag,
-    pick_navigation_chart_object, resolve_navigation_position, script_field_offset,
-    update_location_info_panel, update_location_panel_geometry, update_navigation_camera,
+    NavigationChartHand, NavigationChartInputState, NavigationChartMarkerEndpoint,
+    NavigationChartObject, NavigationChartObjectKind, NavigationChartPickObject,
+    NavigationChartPickOutcome, NavigationChartPickState, NavigationStatusLabels,
+    NavigationStatusLocationKind, ResourceId, ScriptFieldSelector, ScriptObjectFlag,
+    build_navigation_wipe_spans, copy_work_surface_span, navigation_chart_objects,
+    navigation_source_objects, object_has_flag, pick_navigation_chart_object,
+    resolve_navigation_position, script_field_offset, update_location_info_panel,
+    update_location_panel_geometry, update_navigation_camera,
 };
 
 use super::{
@@ -174,6 +175,7 @@ impl RuntimeNavigationChart {
         };
         let mut backend = RuntimeNavigationChartBackend {
             services,
+            lifecycle,
             world: &world,
             work_surface: &mut self.work_surface,
             staging_surface: &mut self.staging_surface,
@@ -489,6 +491,7 @@ impl RuntimeNavigationWorld {
 
 struct RuntimeNavigationChartBackend<'state, 'window> {
     services: &'state mut ModernGameServices<'window>,
+    lifecycle: &'state mut GameLifecycleState,
     world: &'state RuntimeNavigationWorld,
     work_surface: &'state mut Box<[u8]>,
     staging_surface: &'state mut Box<[u8]>,
@@ -687,6 +690,17 @@ impl NavigationCameraHost<ScriptObjectId, BridgeSpriteExtent>
             .runtime_mut()
             .publish_navigation_sprite_state(usize::from(state.entity), state.active);
         self.record_callback(result);
+    }
+
+    fn update_pre_pick_overlay(&mut self, input: &mut NavigationChartInputState) -> Result<()> {
+        let result = self
+            .services
+            .update_runtime_sequel_overview(self.lifecycle, input);
+        if result.is_ok() {
+            self.pointer = input.pointer;
+            self.primary_pressed = input.primary_pressed;
+        }
+        result.map(|_| ())
     }
 
     fn pick_chart_object(&mut self) -> Result<Option<NavigationChartObject<ScriptObjectId>>> {

@@ -57,6 +57,20 @@ pub enum RasterSpanOutcome {
     },
 }
 
+/// Observable work performed by one native-style line segment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RasterLineOutcome {
+    /// A zero-length or completely clipped segment changed no pixels.
+    Rejected,
+    /// At least one logical pixel was changed.
+    Drawn {
+        /// Number of visible pixels modified.
+        pixel_count: usize,
+        /// Whether any generated segment pixel fell outside the clip rectangle.
+        clipped: bool,
+    },
+}
+
 /// Observable geometry selected by a rectangle primitive.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RasterRectOutcome {
@@ -316,6 +330,107 @@ pub fn draw_rect_outline(
         right,
         bottom,
     })
+}
+
+/// Draw a clipped line while excluding the terminal endpoint.
+///
+/// This translates `gfx_line_segment` at BLOOD2PG file offset `0x003B03`.
+/// The routine orders endpoints by X, uses the same steep and shallow integer
+/// Bresenham decisions, and emits `max(abs(dx), abs(dy))` pixels, so the final
+/// endpoint is intentionally absent. Checked logical clipping replaces the
+/// original fixed-point edge clipper and far framebuffer pointer.
+pub fn draw_line_segment(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    start: RasterPoint,
+    end: RasterPoint,
+    color: u8,
+) -> Result<RasterLineOutcome, RasterPrimitiveError> {
+    validate_flat_raster(framebuffer, clip)?;
+    let (mut start, mut end) = (start, end);
+    if start.x >= end.x {
+        std::mem::swap(&mut start, &mut end);
+    }
+
+    let dx = end.x - start.x;
+    let signed_dy = end.y - start.y;
+    let dy = signed_dy.abs();
+    let steps = dx.max(dy);
+    if steps == 0 {
+        return Ok(RasterLineOutcome::Rejected);
+    }
+
+    let y_step = signed_dy.signum();
+    let (mut x, mut y) = (start.x, start.y);
+    let mut pixel_count = 0_usize;
+    let mut clipped = false;
+    if dy >= dx {
+        let mut error = 2 * dx - dy;
+        for _ in 0..dy {
+            paint_line_pixel(
+                framebuffer,
+                clip,
+                x,
+                y,
+                color,
+                &mut pixel_count,
+                &mut clipped,
+            );
+            if error >= 0 {
+                x += 1;
+                error -= 2 * dy;
+            }
+            y += y_step;
+            error += 2 * dx;
+        }
+    } else {
+        let mut error = 2 * dy - dx;
+        for _ in 0..dx {
+            paint_line_pixel(
+                framebuffer,
+                clip,
+                x,
+                y,
+                color,
+                &mut pixel_count,
+                &mut clipped,
+            );
+            x += 1;
+            if error >= 0 {
+                y += y_step;
+                error -= 2 * dx;
+            }
+            error += 2 * dy;
+        }
+    }
+
+    if pixel_count == 0 {
+        Ok(RasterLineOutcome::Rejected)
+    } else {
+        Ok(RasterLineOutcome::Drawn {
+            pixel_count,
+            clipped,
+        })
+    }
+}
+
+fn paint_line_pixel(
+    framebuffer: &mut [u8],
+    clip: BridgeSpriteRect,
+    x: i32,
+    y: i32,
+    color: u8,
+    pixel_count: &mut usize,
+    clipped: &mut bool,
+) {
+    if x < clip.left || x >= clip.right || y < clip.top || y >= clip.bottom {
+        *clipped = true;
+        return;
+    }
+    let row = usize::try_from(y).expect("validated line row");
+    let column = usize::try_from(x).expect("validated line column");
+    framebuffer[row * LOGICAL_FRAMEBUFFER_WIDTH + column] = color;
+    *pixel_count += 1;
 }
 
 /// Transform every pixel in a clipped rectangle through an authored palette table.
@@ -1064,6 +1179,109 @@ mod tests {
             assert_eq!(actual, expected, "{}", vector.name);
             assert_eq!(framebuffer, expected_framebuffer, "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn line_segments_cover_native_slope_and_endpoint_rules() {
+        let clip = BridgeSpriteRect {
+            left: 0,
+            right: LOGICAL_FRAMEBUFFER_WIDTH as i32,
+            top: 0,
+            bottom: LOGICAL_FRAMEBUFFER_HEIGHT as i32,
+        };
+        let cases = [
+            (
+                "horizontal",
+                RasterPoint { x: 2, y: 2 },
+                RasterPoint { x: 7, y: 2 },
+                vec![(2, 2), (3, 2), (4, 2), (5, 2), (6, 2)],
+            ),
+            (
+                "horizontal reversed",
+                RasterPoint { x: 7, y: 2 },
+                RasterPoint { x: 2, y: 2 },
+                vec![(2, 2), (3, 2), (4, 2), (5, 2), (6, 2)],
+            ),
+            (
+                "vertical reversed",
+                RasterPoint { x: 4, y: 8 },
+                RasterPoint { x: 4, y: 3 },
+                vec![(4, 3), (4, 4), (4, 5), (4, 6), (4, 7)],
+            ),
+            (
+                "shallow",
+                RasterPoint { x: 2, y: 2 },
+                RasterPoint { x: 7, y: 4 },
+                vec![(2, 2), (3, 2), (4, 3), (5, 3), (6, 4)],
+            ),
+            (
+                "steep",
+                RasterPoint { x: 2, y: 2 },
+                RasterPoint { x: 4, y: 7 },
+                vec![(2, 2), (2, 3), (3, 4), (3, 5), (4, 6)],
+            ),
+            (
+                "descending",
+                RasterPoint { x: 2, y: 7 },
+                RasterPoint { x: 4, y: 2 },
+                vec![(2, 7), (2, 6), (3, 5), (3, 4), (4, 3)],
+            ),
+        ];
+
+        for (name, start, end, mut expected) in cases {
+            let mut framebuffer = vec![0; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+            let outcome = draw_line_segment(&mut framebuffer, clip, start, end, 0x79).unwrap();
+            assert_eq!(
+                outcome,
+                RasterLineOutcome::Drawn {
+                    pixel_count: expected.len(),
+                    clipped: false,
+                },
+                "{name}"
+            );
+            let actual = framebuffer
+                .chunks_exact(LOGICAL_FRAMEBUFFER_WIDTH)
+                .enumerate()
+                .flat_map(|(y, row)| {
+                    row.iter().enumerate().filter_map(move |(x, pixel)| {
+                        (*pixel == 0x79).then_some((x as i32, y as i32))
+                    })
+                })
+                .collect::<Vec<_>>();
+            expected.sort_unstable_by_key(|(x, y)| (*y, *x));
+            assert_eq!(actual, expected, "{name}");
+        }
+
+        let mut framebuffer = vec![0; LOGICAL_FRAMEBUFFER_PIXEL_COUNT];
+        assert_eq!(
+            draw_line_segment(
+                &mut framebuffer,
+                clip,
+                RasterPoint { x: -2, y: 10 },
+                RasterPoint { x: 3, y: 10 },
+                0xfc,
+            )
+            .unwrap(),
+            RasterLineOutcome::Drawn {
+                pixel_count: 3,
+                clipped: true,
+            }
+        );
+        assert_eq!(
+            &framebuffer[10 * LOGICAL_FRAMEBUFFER_WIDTH..][..4],
+            &[0xfc, 0xfc, 0xfc, 0]
+        );
+        assert_eq!(
+            draw_line_segment(
+                &mut framebuffer,
+                clip,
+                RasterPoint { x: 20, y: 20 },
+                RasterPoint { x: 20, y: 20 },
+                0xfe,
+            )
+            .unwrap(),
+            RasterLineOutcome::Rejected
+        );
     }
 
     #[test]

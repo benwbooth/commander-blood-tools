@@ -307,6 +307,18 @@ pub fn draw_square_caps_text(
     band: FontVerticalBand,
     color: u8,
 ) -> Result<GameFontDrawOutcome, GameFontDrawError> {
+    draw_square_caps_text_with_horizontal_clip(framebuffer, fonts, text, origin, band, color, false)
+}
+
+fn draw_square_caps_text_with_horizontal_clip(
+    framebuffer: &mut [u8],
+    fonts: &BloodprgFontResources,
+    text: &[u8],
+    origin: FontPoint,
+    band: FontVerticalBand,
+    color: u8,
+    clip_horizontal: bool,
+) -> Result<GameFontDrawOutcome, GameFontDrawError> {
     validate_framebuffer(framebuffer)?;
     validate_vertical_band(band)?;
     if text_origin_is_clipped(origin.y, band, SQUARE_CAPS_GLYPH_HEIGHT) {
@@ -317,6 +329,7 @@ pub fn draw_square_caps_text(
     let mut pen_x = origin.x;
     let mut draw_width = u16::MIN;
     let mut drawn_glyphs = usize::MIN;
+    let mut clipped = false;
     for (position, character) in text.iter().copied().enumerate() {
         if character == u8::MIN {
             break;
@@ -339,7 +352,7 @@ pub fn draw_square_caps_text(
                 character,
                 glyph_index,
             })?;
-        collect_word_glyph_writes(
+        clipped |= collect_word_glyph_writes(
             &mut writes,
             glyph,
             FontPoint {
@@ -348,6 +361,7 @@ pub fn draw_square_caps_text(
             },
             position,
             color,
+            clip_horizontal,
         )?;
         pen_x = pen_x.saturating_add(advance);
         draw_width = draw_width.wrapping_add(advance as i16 as u16);
@@ -355,7 +369,7 @@ pub fn draw_square_caps_text(
     }
     apply_writes(framebuffer, &writes);
     Ok(GameFontDrawOutcome {
-        clipped: false,
+        clipped,
         consumed_characters: drawn_glyphs,
         drawn_glyphs,
         spaces: usize::MIN,
@@ -472,6 +486,22 @@ pub fn draw_planar_square_caps_text(
     color: u8,
 ) -> Result<GameFontDrawOutcome, GameFontDrawError> {
     draw_square_caps_text(framebuffer, fonts, text, origin, band, color)
+}
+
+/// Draw planar square-capital text while discarding off-display horizontal pixels.
+///
+/// This is the checked flat adapter for native callers whose authored layout can
+/// cross the right display edge. It retains source consumption, glyph advances,
+/// and visible pixels without recreating VGA aperture row wrapping.
+pub fn draw_planar_square_caps_text_clipped(
+    framebuffer: &mut [u8],
+    fonts: &BloodprgFontResources,
+    text: &[u8],
+    origin: FontPoint,
+    band: FontVerticalBand,
+    color: u8,
+) -> Result<GameFontDrawOutcome, GameFontDrawError> {
+    draw_square_caps_text_with_horizontal_clip(framebuffer, fonts, text, origin, band, color, true)
 }
 
 /// Draw dialogue text to the flat replacement for the planar draw surface.
@@ -782,7 +812,9 @@ fn collect_word_glyph_writes(
     origin: FontPoint,
     position: usize,
     color: u8,
-) -> Result<(), GameFontDrawError> {
+    clip_horizontal: bool,
+) -> Result<bool, GameFontDrawError> {
+    let mut clipped = false;
     for (row, bytes) in glyph.chunks_exact(SQUARE_CAPS_ROW_BYTE_COUNT).enumerate() {
         let bits = u16::from(bytes[usize::MIN]) << BITS_PER_BYTE
             | u16::from(bytes[SQUARE_CAPS_ROW_LOW_BYTE_INDEX]);
@@ -790,11 +822,17 @@ fn collect_word_glyph_writes(
             if bits & (HIGHEST_WORD_BIT >> column as u32) != u16::MIN {
                 let x = origin.x.saturating_add(column as i32);
                 let y = origin.y.saturating_add(row as i32);
+                if clip_horizontal
+                    && (x < i32::from(u16::MIN) || x >= LOGICAL_FRAMEBUFFER_WIDTH as i32)
+                {
+                    clipped = true;
+                    continue;
+                }
                 writes.push((checked_pixel_index(position, x, y)?, color));
             }
         }
     }
-    Ok(())
+    Ok(clipped)
 }
 
 fn checked_pixel_index(position: usize, x: i32, y: i32) -> Result<usize, GameFontDrawError> {

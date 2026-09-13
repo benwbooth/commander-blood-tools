@@ -31,24 +31,24 @@ use crate::native::bloodprg::{
     IndexedGamePalette, InlineMenuDisplayWord, InlineMenuRevealOutcome, InlineMenuTextMetrics,
     InputAction, InputCancellationOutcome, InputCancellationState, LoadedSoundBank,
     Manu3AnimationSelector, Manu3HandFrameContext, Manu3HandFrameState, NAV_ACTOR_SLOT_COUNT,
-    NameAreaEffectOutcome, NavActorSlot, NavActorSlotUpdateOutcome, OriginalSaveGame,
-    PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample, PresentationBridgeMode,
-    PresentationChoiceNumber, PresentationHitAreas, PresentationHitRectangle,
-    PresentationHitSelection, PresentationHoverOutcome, PresentationHoverState,
-    PresentationPresentPolicy, PresentationQueueClockGates, PresentationQueueServiceOutcome,
-    PresentationResourceCursor, PresentationResourceId, PresentationResourceSequenceOutcome,
-    PresentationSceneDispatchOutcome, PresentationScreenOutcome, PresentationScreenState,
-    PresentationWordChoiceOutcome, RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT,
-    SHIP_CAMERA_RESET, SaveLoadMenuPhase, SceneTransitionState, ScriptActionRuntimeState,
-    ScriptActionState, ScriptClock, ScriptFieldSelector, ScriptFrameOutcome, ScriptObjectFlag,
-    ScriptPresentationEntity, ScriptPresentationScanState, ScriptProfileId,
-    ScriptProfileLoadOutcome, ScriptShipNavigationMode, ScriptTravelActionPhase,
-    ShipDepthTransitionOutcome, ShipHudInitializationContext, ShipHudPaletteSnapshot,
-    ShipPresentationOutcome, ShipPresentationState, ShipProjectionResources,
-    ShipTargetSelectionState, ShipViewEntityId, SoundBankUsage, SpeakerGateAction,
-    StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE, TextPresentationState,
-    clear_scene_palette_entries, draw_planar_dialogue_text, fill_display_band,
-    increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
+    NameAreaEffectOutcome, NavActorSlot, NavActorSlotFlags, NavActorSlotUpdateOutcome,
+    OriginalSaveGame, PbmDecodeResult, PointerButtonEdges, PointerButtons, PointerSample,
+    PresentationBridgeMode, PresentationChoiceNumber, PresentationHitAreas,
+    PresentationHitRectangle, PresentationHitSelection, PresentationHoverOutcome,
+    PresentationHoverState, PresentationPresentPolicy, PresentationQueueClockGates,
+    PresentationQueueServiceOutcome, PresentationResourceCursor, PresentationResourceId,
+    PresentationResourceSequenceOutcome, PresentationSceneDispatchOutcome,
+    PresentationScreenOutcome, PresentationScreenState, PresentationWordChoiceOutcome,
+    RasterRectOutcome, SCENE_PALETTE_CLEAR_COLOR_COUNT, SHIP_CAMERA_RESET, SaveLoadMenuPhase,
+    SceneTransitionState, ScriptActionRuntimeState, ScriptActionState, ScriptClock,
+    ScriptFieldSelector, ScriptFrameOutcome, ScriptObjectFlag, ScriptPresentationEntity,
+    ScriptPresentationScanState, ScriptProfileId, ScriptProfileLoadOutcome,
+    ScriptShipNavigationMode, ScriptTravelActionPhase, ShipDepthTransitionOutcome,
+    ShipHudInitializationContext, ShipHudPaletteSnapshot, ShipPresentationOutcome,
+    ShipPresentationState, ShipProjectionResources, ShipTargetSelectionState, ShipViewEntityId,
+    SoundBankUsage, SpeakerGateAction, StartupPreparationOutcome, TINT_PALETTE_BANK_SIZE,
+    TextPresentationState, clear_scene_palette_entries, draw_planar_dialogue_text,
+    fill_display_band, increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
     prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
     resolve_navigation_position, reveal_inline_menu_display_step, set_object_flag, stop_cd_audio,
@@ -70,6 +70,7 @@ use super::presentation::{RuntimeBridgeComposition, RuntimeDisplayFrame};
 use super::presentation_scene::publish_loaded_scene_palette;
 use super::presentation_screen::RuntimeSceneTransitionDispatchContext;
 use super::scene_transition::SCENE_TRANSITION_IMAGE_RESOURCE;
+use super::sequel_overview::RuntimeSequelOverview;
 use super::ship_presentation::update_runtime_ship_presentation as run_runtime_ship_presentation;
 use super::ship_target::ship_hud_arche_link;
 use super::{
@@ -262,6 +263,7 @@ pub struct ModernGameServices<'window> {
     camera_navigation: Option<RuntimeCameraNavigation>,
     camera_navigation_audit: Option<CameraNavigationOutcome>,
     navigation_chart: Option<RuntimeNavigationChart>,
+    sequel_overview: Option<RuntimeSequelOverview>,
     navigation_status: Option<RuntimeNavigationStatus>,
     presentation_screen: Option<RuntimePresentationScreen>,
     presentation_word_choice: Option<RuntimePresentationWordChoice>,
@@ -445,6 +447,7 @@ impl<'window> ModernGameServices<'window> {
             camera_navigation: Some(RuntimeCameraNavigation::default()),
             camera_navigation_audit: None,
             navigation_chart: Some(RuntimeNavigationChart::default()),
+            sequel_overview: Some(RuntimeSequelOverview::default()),
             navigation_status: Some(RuntimeNavigationStatus::default()),
             presentation_screen: Some(presentation_screen),
             presentation_word_choice: Some(RuntimePresentationWordChoice::default()),
@@ -3817,17 +3820,17 @@ impl<'window> ModernGameServices<'window> {
             panel_active: self.presentation_screen_state()?.active(),
             camera_view_active: self.bridge_camera_view_active(),
             simulation_overview_active: self
-                .bridge_actors
+                .sequel_overview
                 .as_ref()
-                .context("bridge actor state is already being updated")?
-                .simulation_overview_active,
+                .context("sequel overview state is already being updated")?
+                .active(),
             redraw_requested: lifecycle.modal_ui_busy(),
         };
         activate_sequel_panel_request(control, &mut state, &mut self.nav_actor_slots);
-        self.bridge_actors
+        self.sequel_overview
             .as_mut()
-            .context("bridge actor state is already being updated")?
-            .simulation_overview_active = state.simulation_overview_active;
+            .context("sequel overview state is already being updated")?
+            .set_active(state.simulation_overview_active);
         lifecycle.set_modal_ui_busy(state.redraw_requested);
         Ok(())
     }
@@ -3955,6 +3958,34 @@ impl<'window> ModernGameServices<'window> {
         actors.set_camera_transition_step(remaining);
         actors.set_location_panel_active(panel_active);
         outcome.context("updating recovered navigation chart")
+    }
+
+    pub(super) fn update_runtime_sequel_overview(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+        input: &mut crate::native::bloodprg::NavigationChartInputState,
+    ) -> Result<crate::native::bloodprg::SequelOverviewOutcome> {
+        let is_sequel = self.runtime.current_profile().is_some_and(|profile| {
+            profile.state().dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang
+        });
+        if !is_sequel {
+            return Ok(crate::native::bloodprg::SequelOverviewOutcome::Inactive);
+        }
+        let mut overview = self
+            .sequel_overview
+            .take()
+            .context("sequel overview update is reentrant")?;
+        let outcome = overview.update(self, lifecycle, input);
+        self.sequel_overview = Some(overview);
+        outcome.context("updating recovered sequel simulation overview")
+    }
+
+    pub(super) fn overview_camera_actor_flags(&self) -> NavActorSlotFlags {
+        self.nav_actor_slots[0].flags
+    }
+
+    pub(super) fn set_overview_camera_actor_flags(&mut self, flags: NavActorSlotFlags) {
+        self.nav_actor_slots[0].flags = flags;
     }
 
     /// Compose or clear the executable-authored bridge location status hover.

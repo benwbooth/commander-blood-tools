@@ -52,9 +52,6 @@ pub(super) struct RuntimeBridgeActors {
     black_hole: BlackHolePresentationActorState<ScriptObjectId>,
     hyperjump: HyperjumpPresentationActorState<ScriptObjectId>,
     location_panel: HyperjumpLocationPanelState,
-    /// Native sequel overview ownership; its separate controller is not the
-    /// ordinary location panel and must not borrow that panel's active flag.
-    pub(super) simulation_overview_active: bool,
 }
 
 impl RuntimeBridgeActors {
@@ -184,6 +181,21 @@ fn publish_bridge_seek_ui(lifecycle: &mut GameLifecycleState, requested: bool) {
     lifecycle.set_navigation_ui_busy(requested);
 }
 
+fn publish_sequel_camera_activation(
+    is_sequel: bool,
+    outcome: &Result<CameraPresentationActorOutcome>,
+    lifecycle: &mut GameLifecycleState,
+) {
+    if is_sequel
+        && matches!(
+            outcome,
+            Ok(CameraPresentationActorOutcome::CameraViewActivated)
+        )
+    {
+        lifecycle.secondary_pointer_pressed = true;
+    }
+}
+
 // C6 consumes nav_actor_0_busy at GS:0x2A7B, the slot-4 flag byte.
 fn travel_actor_ready(slots: &[NavActorSlot; NAV_ACTOR_SLOT_COUNT]) -> bool {
     slots[BLACK_HOLE_ACTOR_SLOT].flags.executable_flags() == ACTIVE_ONLY_SLOT_FLAGS
@@ -216,6 +228,25 @@ mod tests {
         assert!(actors.location_panel.active);
         assert!(actors.location_panel.blocks_playback);
         assert!(actors.camera.location_panel_active);
+    }
+
+    #[test]
+    fn only_sequel_camera_activation_synthesizes_the_overview_press() {
+        let mut lifecycle = GameLifecycleState::default();
+        let activated = Ok(CameraPresentationActorOutcome::CameraViewActivated);
+
+        publish_sequel_camera_activation(false, &activated, &mut lifecycle);
+        assert!(!lifecycle.secondary_pointer_pressed);
+
+        publish_sequel_camera_activation(
+            true,
+            &Ok(CameraPresentationActorOutcome::CameraViewDeactivated),
+            &mut lifecycle,
+        );
+        assert!(!lifecycle.secondary_pointer_pressed);
+
+        publish_sequel_camera_activation(true, &activated, &mut lifecycle);
+        assert!(lifecycle.secondary_pointer_pressed);
     }
 
     #[test]
@@ -275,6 +306,7 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         seek: &NavActorSeekState,
         slots: &[NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     ) -> Result<()> {
+        let is_sequel = self.services.sequel_presentation_control().is_some();
         let mut state = std::mem::take(self.camera);
         let mut playback = std::mem::take(self.playback);
         playback.busy = seek.requested;
@@ -295,6 +327,7 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         );
 
         mouse.primary_pressed = state.mouse_primary_pressed;
+        publish_sequel_camera_activation(is_sequel, &result, self.lifecycle);
         if matches!(
             &result,
             Ok(CameraPresentationActorOutcome::Blocked
