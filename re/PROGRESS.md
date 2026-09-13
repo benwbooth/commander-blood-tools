@@ -3379,3 +3379,43 @@ The BBB body SHA-256 is
 `f1d0c931b19687bd7b14a66c1623965f3e1308dcaa81296c9167a1f09495c138`,
 and the deterministic JSONL SHA-256 is
 `fa405a3f77e39cac79d01b5458c3082cfd5013520540da0f8ffa5cdb898253c4`.
+
+## 2026-09-13 - Big Bug Bang Ultrasound stream controller
+
+BBB's Gravis Ultrasound path adds a second stream controller with no Commander
+Blood body counterpart. The near start wrapper at `0xD9F3..0xDA5F` is 42
+instructions in 108 bytes. It clears the refill and packed latches, stops both
+voices, fixes the two hardware buffers at DRAM offsets `0x8000` and `0xA000`,
+loads page zero, derives the packed-rate flag, publishes stream-active state,
+and submits the first descriptor. The far service routine at
+`0xDA5F..0xDB08` is 59 instructions in 169 bytes. It applies all backend,
+playback, channel, and active-stream gates; restarts a ready descriptor after an
+interrupt starvation event; chooses one free descriptor; loads one 8 KiB page;
+and wraps to the exact final length.
+
+The hardware interrupt body at `0xE0ED..0xE186` is not present in the recursive
+direct-call graph because initialization installs it through DOS vector 25h. Its
+66 instructions in 153 bytes acknowledge only voice-one DMA completion, release
+the finished descriptor, submit the other ready descriptor or set the refill
+latch, acknowledge the Gravis registers, and signal the correct master-only or
+master-and-slave PIC combination.
+
+The new `re/tools/big_bug_bang_ultrasound_stream_oracle.py` executes 19 cases
+across both outcomes of all 18 conditional sites, or 36 edges. It checks exact
+stop, page-load, and descriptor-submit frames and inputs; both packed headers;
+every gate; both restart directions; free/busy and final-page selection; all
+interrupt handoff and starvation states; the exact port-input and port-output
+transcripts including the delay primitive; restored registers and interrupt
+flags; stack bounds; complete mapped-segment outcomes; executable immutability;
+and owned writes. Lower-level voice, page-transfer, and stop helpers remain
+isolated for their own port-protocol oracle.
+
+The typed stream owner consumes every start and service row, and the runtime
+audio cursor consumes all seven interrupt rows. SDL submission collapses the
+raw ready, hardware-owned, and refill-latch phases into explicit host ownership
+without a Gravis-specific production branch. The three body SHA-256 values are
+`6e01af39a1e621d157a9e3162cff7faca3f90d7cb83c6c8c01f96f6e66a3d7e5`,
+`b9e862683efd12897fca1bdbe5e3dca15d6f8ab8ccbdd2f28f4bcfa2ab78fc32`,
+and `f8fd1aaa9b164e873ac17c2f82b055d33aa0338374499c76d12e8033c5d4a309`.
+The deterministic JSONL SHA-256 is
+`d7fc21d2d6dfa82de2aec1051f760fe64920c19ad00a649eced17654f56de036`.

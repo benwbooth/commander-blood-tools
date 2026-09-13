@@ -266,12 +266,12 @@ fn load_audio_stream_payload(
 
 /// Prepare page zero and the double-buffer descriptors for stream playback.
 ///
-/// This translates `snd_stream_start` at BLOODPRG routine offset `0x00BBB3` and
-/// its Big Bug Bang counterpart at `0x00D363`. The sequel's optional ULTRASND
-/// delegation becomes host-backend dispatch outside this recovered state
-/// transition. The source's first page, packed-rate marker, saved block header,
-/// fixed buffer capacities, request transition, and first-buffer submission are
-/// retained.
+/// This translates `snd_stream_start` at BLOODPRG routine offset `0x00BBB3`,
+/// its Big Bug Bang counterpart at `0x00D363`, and the sequel's delegated
+/// Ultrasound setup at `0x00D9F3`. Hardware address and voice programming become
+/// host-backend dispatch outside this recovered state transition. The source's
+/// first page, packed-rate marker, saved block header, fixed buffer capacities,
+/// request transition, and first-buffer submission are retained.
 pub fn start_audio_stream(
     playback: &mut AudioPlaybackState,
     stream: &mut AudioStreamState,
@@ -331,13 +331,13 @@ pub fn start_audio_stream(
 /// Refill at most one available stream buffer and return one host submission.
 ///
 /// This translates `snd_stream_refill` at BLOODPRG routine offset `0x00BC50`
-/// and its Big Bug Bang counterpart at `0x00D40E`. Buffer preference,
-/// position-zero/unavailable restart, saved-header prefixing, page advance,
-/// final-page length, and play-versus-service choice remain exact. Host-owned
-/// statuses replace BBB's broader raw descriptor mask, and its ULTRASND bypass
-/// becomes the SDL backend boundary. Commander's synchronous second poll after
-/// a driver callback becomes the next host update, matching BBB's bounded
-/// callback-and-return path without blocking around SDL's asynchronous device.
+/// and its Big Bug Bang counterparts at `0x00D40E` and `0x00DA5F`. Buffer
+/// preference, position-zero/unavailable restart, saved-header prefixing, page
+/// advance, final-page length, and play-versus-service choice remain exact.
+/// Host-owned statuses replace BBB's raw descriptor and interrupt-refill flags.
+/// Commander's synchronous second poll after a driver callback becomes the next
+/// host update, matching both BBB bounded paths without blocking around SDL's
+/// asynchronous device.
 pub fn refill_audio_stream<Position>(
     playback: &mut AudioPlaybackState,
     stream: &mut AudioStreamState,
@@ -490,6 +490,7 @@ mod tests {
     const PAGE_DISPATCH_ORACLE_VECTOR_COUNT: usize = 256;
     const START_ORACLE_VECTOR_COUNT: usize = 6;
     const REFILL_ORACLE_VECTOR_COUNT: usize = 9;
+    const ULTRASOUND_STREAM_ORACLE_VECTOR_COUNT: usize = 19;
     const TEST_FILE_HEADER_BYTE: u8 = 90;
     const TEST_BLOCK_HEADER: [u8; SND_CLIP_HEADER_BYTE_COUNT] = [34, 17, 68, 51, 102, 85];
 
@@ -546,6 +547,22 @@ mod tests {
     #[derive(Deserialize)]
     struct PageBackendOracle {
         backend: String,
+    }
+
+    #[derive(Deserialize)]
+    struct UltrasoundStreamOracle {
+        routine: String,
+        name: String,
+        packed: Option<bool>,
+        active: Option<bool>,
+        states_before: Option<[u8; AUDIO_STREAM_BUFFER_COUNT]>,
+        states_after: [u8; AUDIO_STREAM_BUFFER_COUNT],
+        refill_before: Option<u8>,
+        refill_after: Option<u8>,
+        page_before: Option<u16>,
+        page_after: Option<u16>,
+        loaded_buffer: Option<usize>,
+        submitted_buffer: Option<usize>,
     }
 
     #[test]
@@ -837,6 +854,149 @@ mod tests {
         assert_eq!(sequel_vectors.len(), REFILL_ORACLE_VECTOR_COUNT);
         assert_refill_vectors("Commander Blood", commander_vectors);
         assert_refill_vectors("Big Bug Bang", sequel_vectors);
+    }
+
+    #[test]
+    fn owned_host_submissions_replace_ultrasound_stream_controller_vectors() {
+        let vectors: Vec<UltrasoundStreamOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ultrasound_stream.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), ULTRASOUND_STREAM_ORACLE_VECTOR_COUNT);
+        assert_eq!(
+            vectors
+                .iter()
+                .filter(|vector| vector.routine == "start")
+                .count(),
+            2
+        );
+        assert_eq!(
+            vectors
+                .iter()
+                .filter(|vector| vector.routine == "service")
+                .count(),
+            10
+        );
+        assert_eq!(
+            vectors
+                .iter()
+                .filter(|vector| vector.routine == "interrupt")
+                .count(),
+            7
+        );
+
+        for (case_index, vector) in vectors
+            .into_iter()
+            .filter(|vector| vector.routine != "interrupt")
+            .enumerate()
+        {
+            if vector.routine == "start" {
+                let mut payload = generated_page_bytes(AUDIO_STREAM_PAGE_BYTE_COUNT, case_index);
+                payload[STREAM_RATE_CODE_HEADER_INDEX] = if vector.packed.unwrap() {
+                    PACKED_STREAM_RATE_CODE
+                } else {
+                    PACKED_STREAM_RATE_CODE.wrapping_sub(1)
+                };
+                let source = source_from_payload(&payload).unwrap();
+                let mut playback = playback_state(true);
+                playback.driver_requests.stream_start_requested = true;
+                let mut stream = stream_state(true, Some(source));
+
+                let outcome = start_audio_stream(&mut playback, &mut stream).unwrap();
+                assert!(matches!(
+                    outcome,
+                    AudioStreamStartOutcome::Started(AudioStreamSubmission {
+                        buffer_index,
+                        source_page_index: 0,
+                        ..
+                    }) if buffer_index == vector.submitted_buffer.unwrap()
+                ));
+                assert_eq!(stream.next_page_index, vector.page_after.unwrap());
+                assert_eq!(vector.states_after, [2, 0]);
+                assert_eq!(
+                    playback.driver_requests.stream_active,
+                    vector.states_after[0] & 2 != 0
+                );
+                continue;
+            }
+
+            let active = vector.active.unwrap();
+            if !active {
+                if vector.name == "ultrasound_disabled" {
+                    assert_eq!(vector.states_before, Some([0, 0]));
+                    continue;
+                }
+                let mut playback = playback_state(vector.name != "sound_disabled");
+                playback.driver_requests.stream_active = vector.name != "stream_inactive";
+                let mut stream = stream_state(vector.name != "channel_disabled", None);
+                let outcome = refill_audio_stream(&mut playback, &mut stream, || {
+                    panic!("{} reached the host position callback", vector.name)
+                });
+                assert_eq!(outcome, Ok(AudioStreamRefillOutcome::Inactive));
+                assert_eq!(vector.states_before, Some(vector.states_after));
+                continue;
+            }
+
+            let page_count = if vector.page_before == Some(1) { 2 } else { 3 };
+            let payload =
+                generated_page_bytes(AUDIO_STREAM_PAGE_BYTE_COUNT * page_count, case_index);
+            let source = source_from_payload(&payload).unwrap();
+            let mut playback = playback_state(true);
+            playback.driver_requests.stream_active = true;
+            let mut stream = stream_state(true, Some(source));
+            stream.next_page_index = vector.page_before.unwrap();
+
+            let Some(loaded_buffer) = vector.loaded_buffer else {
+                playback.stream_buffers[0].status = AudioStreamBufferStatus::DriverOwned;
+                playback.stream_buffers[1].status = AudioStreamBufferStatus::DriverOwned;
+                assert_eq!(
+                    refill_audio_stream(&mut playback, &mut stream, || {
+                        AudioStreamPlaybackPosition::Playing(1)
+                    }),
+                    Ok(AudioStreamRefillOutcome::BothBuffersOwned),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(vector.states_before, Some(vector.states_after));
+                continue;
+            };
+
+            let other = LAST_STREAM_BUFFER_INDEX - loaded_buffer;
+            playback.stream_buffers[loaded_buffer].status = AudioStreamBufferStatus::Free;
+            playback.stream_buffers[other].status = AudioStreamBufferStatus::DriverOwned;
+            let restarting = vector.refill_before == Some(1);
+            let outcome = refill_audio_stream(&mut playback, &mut stream, || {
+                if restarting {
+                    AudioStreamPlaybackPosition::Stopped
+                } else {
+                    AudioStreamPlaybackPosition::Playing(1)
+                }
+            })
+            .unwrap();
+            assert!(matches!(
+                outcome,
+                AudioStreamRefillOutcome::Submitted(AudioStreamSubmission {
+                    kind,
+                    buffer_index,
+                    source_page_index,
+                    ..
+                }) if kind == (if restarting {
+                    AudioStreamSubmissionKind::Restart
+                } else {
+                    AudioStreamSubmissionKind::Service
+                }) && buffer_index == loaded_buffer
+                    && source_page_index == vector.page_before.unwrap()
+            ));
+            assert_eq!(stream.next_page_index, vector.page_after.unwrap());
+            assert_eq!(vector.states_after[loaded_buffer] & 1, 1);
+            if let Some(submitted_buffer) = vector.submitted_buffer {
+                assert_ne!(submitted_buffer, loaded_buffer);
+                assert_eq!(vector.states_after[submitted_buffer] & 2, 2);
+            }
+            assert_eq!(vector.refill_after.unwrap() & !1, 0);
+        }
     }
 
     fn assert_refill_vectors(source_name: &str, vectors: Vec<RefillOracle>) {

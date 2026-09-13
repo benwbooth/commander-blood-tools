@@ -373,6 +373,7 @@ impl RuntimeMusicStream {
             let overflow = cursor
                 .fractional_position
                 .saturating_sub(sample_count << PCM_FRACTIONAL_BITS);
+            // Host-buffer completion replaces BBB's Ultrasound ISR at 0x00E0ED.
             self.playback.stream_buffers[buffer_index].status = AudioStreamBufferStatus::Free;
             let next_buffer_index = LAST_STREAM_BUFFER_INDEX - buffer_index;
             if !matches!(
@@ -878,6 +879,7 @@ mod tests {
 
     use super::*;
     use commander_blood_formats::snd::SndBank;
+    use serde::Deserialize;
     use sha2::{Digest, Sha256};
 
     use crate::native::bloodprg::{
@@ -889,6 +891,17 @@ mod tests {
     const HALF_OUTPUT_RATE_HZ: u32 = TEST_OUTPUT_RATE_HZ / 2;
     const TEST_STREAM_RATE_HZ: u32 = 11_111;
     const TEST_STREAM_RATE_CODE: u8 = 166;
+
+    #[derive(Deserialize)]
+    struct UltrasoundInterruptOracle {
+        routine: String,
+        name: String,
+        states_before: Option<[u8; 2]>,
+        states_after: [u8; 2],
+        refill_after: Option<u8>,
+        submitted_buffer: Option<usize>,
+        result: Option<String>,
+    }
     const PHONE_COMPLETION_CLIP_INDEX: u16 = 2;
     const SHIPPED_BRIDGE_SOUND_BANK_BYTE_COUNT: usize = 30_960;
     const SHIPPED_BRIDGE_SOUND_BANK_CLIP_COUNT: u16 = 17;
@@ -1074,6 +1087,84 @@ mod tests {
             stream.playback.stream_buffers[1].status,
             AudioStreamBufferStatus::ReadyAndDriverOwned
         );
+    }
+
+    #[test]
+    fn host_buffer_completion_matches_ultrasound_interrupt_handoffs() {
+        let vectors: Vec<UltrasoundInterruptOracle> = include_str!(
+            "../../../../re/tools/oracle_vectors/big_bug_bang_ultrasound_stream.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        let interrupts = vectors
+            .into_iter()
+            .filter(|vector| vector.routine == "interrupt")
+            .collect::<Vec<_>>();
+        assert_eq!(interrupts.len(), 7);
+
+        for vector in interrupts {
+            let before = vector.states_before.unwrap();
+            let result = vector.result.as_deref().unwrap();
+            if result == "ignored" {
+                assert_eq!(vector.states_after, before, "{}", vector.name);
+                assert_eq!(vector.refill_after, Some(0), "{}", vector.name);
+                continue;
+            }
+
+            let Some(current) = before.iter().position(|state| state & 2 != 0) else {
+                assert_eq!(result, "refill", "{}", vector.name);
+                assert_eq!(vector.refill_after, Some(1), "{}", vector.name);
+                assert_eq!(vector.states_after, [0, 0], "{}", vector.name);
+                continue;
+            };
+            let next = LAST_STREAM_BUFFER_INDEX - current;
+            let mut stream = RuntimeMusicStream::new(TEST_STREAM_RATE_HZ);
+            stream.playback.stream_buffers[current] = AudioStreamBuffer {
+                header: [u8::MIN; SND_CLIP_HEADER_BYTE_COUNT],
+                samples: Box::new([]),
+                status: AudioStreamBufferStatus::ReadyAndDriverOwned,
+            };
+            stream.playback.stream_buffers[next] = AudioStreamBuffer {
+                header: [u8::MIN; SND_CLIP_HEADER_BYTE_COUNT],
+                samples: Box::new([0x5A]),
+                status: if result == "handoff" {
+                    AudioStreamBufferStatus::DriverOwned
+                } else {
+                    AudioStreamBufferStatus::Free
+                },
+            };
+            stream.cursor = Some(StreamBufferCursor {
+                buffer_index: current,
+                fractional_position: u64::MIN,
+                fractional_step: 1_u64 << PCM_FRACTIONAL_BITS,
+                total_fractional_position: u64::MIN,
+            });
+
+            let sample = stream.next_sample();
+            assert_eq!(
+                stream.playback.stream_buffers[current].status,
+                AudioStreamBufferStatus::Free,
+                "{}",
+                vector.name
+            );
+            if result == "handoff" {
+                assert_eq!(sample, Some(0x5A), "{}", vector.name);
+                assert_eq!(vector.submitted_buffer, Some(next), "{}", vector.name);
+                assert_eq!(vector.states_after[current], 0, "{}", vector.name);
+                assert_eq!(vector.states_after[next], 2, "{}", vector.name);
+                assert_eq!(stream.cursor.as_ref().unwrap().buffer_index, next);
+                assert_eq!(
+                    stream.playback.stream_buffers[next].status,
+                    AudioStreamBufferStatus::ReadyAndDriverOwned
+                );
+            } else {
+                assert_eq!(sample, None, "{}", vector.name);
+                assert_eq!(vector.submitted_buffer, None, "{}", vector.name);
+                assert_eq!(vector.refill_after, Some(1), "{}", vector.name);
+                assert!(stream.cursor.is_none(), "{}", vector.name);
+            }
+        }
     }
 
     #[test]
