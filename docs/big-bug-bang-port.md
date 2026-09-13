@@ -4316,6 +4316,42 @@ the deterministic five-row JSONL has SHA-256
 This behaviorally classifies BBB `0xB337` and both invoked sprite helpers, not
 its callers or the subsequent ship-rendering routines.
 
+## Sequel Resource-Descriptor Lookup
+
+BBB `0xB763..0xB771` is the relocated sequel counterpart of Commander Blood's
+`0x9F80..0x9F8E` presentation resource-descriptor lookup. Both straight-line
+bodies contain seven instructions in 14 bytes. The only instruction difference
+is the table base moving from `DS:0x1FB5` to `DS:0x2203`; both routines add the
+16-bit index four times and load the resulting near pointer into BX.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_resource_descriptor_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_resource_descriptor.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  resource_lookup_matches_both_flat_original_fixtures_and_rejects_aliases
+```
+
+The dual-executable oracle replays all eight Commander indices: the first two
+entries, ordinary index nine, the highest nonwrapping word start, stride wrap,
+signed-high, addition-overflow, and maximum values. After table-address
+normalization, every BX result and preserved register agrees. Seven cases have
+different final arithmetic flags because the relocated table base changes the
+fourth `ADD` operands; the fixture records BBB's actual CF/PF/AF/ZF/SF/OF.
+
+The oracle also checks strict DS ownership against ES/GS decoys, exact data and
+stack preservation, all registers and segments, near-return discipline, and
+executable immutability. The typed lookup now consumes both fixtures, retains
+the three representable flat cases, and rejects five native pointer aliases;
+ambient arithmetic flags are not part of its API. The BBB body is bound by
+SHA-256
+`427c8807cfb2a84648814a0dbfb17c96daab6eea131b58d4bfbff515576f1993`;
+the deterministic eight-row JSONL has SHA-256
+`9c3a9242a18f5ef6b281e858a23bc3b60caea4685a768aee4e2c837f26867156`.
+This behaviorally classifies BBB `0xB763`, not its five callers or the adjacent
+resource-switch routine.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

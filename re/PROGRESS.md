@@ -2252,3 +2252,26 @@ The typed projector now consumes both fixtures; no production behavior changed. 
 five-row JSONL has SHA-256
 `f2018dacb0c7acdf160c6a096c3ca71604ef1b2a031e5a645a16f153c29f7301`. This behaviorally
 classifies BBB `0xB337` and both invoked sprite helpers, not its callers or later ship routines.
+
+## 2026-09-12 - Big Bug Bang resource-descriptor lookup
+
+BBB `0xB763..0xB771` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9F80..0x9F8E` presentation resource-descriptor lookup. Both straight-line bodies contain seven
+instructions in 14 bytes. Their only instruction difference is the table base moving from
+`DS:0x1FB5` to `DS:0x2203`; both add the 16-bit index four times and load the resulting near
+pointer into BX. The new `re/tools/big_bug_bang_resource_descriptor_oracle.py` executes both
+originals and guards BBB's body with SHA-256
+`427c8807cfb2a84648814a0dbfb17c96daab6eea131b58d4bfbff515576f1993`.
+
+All eight Commander indices agree after table-address normalization, including ordinary,
+nonwrapping boundary, stride-wrap, signed-high, overflow, and maximum cases. Seven have different
+terminal arithmetic flags because the relocated base changes the fourth `ADD` operands; the BBB
+fixture retains its actual CF/PF/AF/ZF/SF/OF rather than hiding that machine-state residue.
+
+The oracle checks DS ownership against ES/GS decoys, exact data and stack preservation, every
+register and segment, near-return discipline, direct normalized result equality, and executable
+immutability. The typed lookup now consumes both fixtures, retains the three representable flat
+cases, and rejects five pointer aliases; ambient flags are not part of its API. The deterministic
+eight-row JSONL has SHA-256
+`9c3a9242a18f5ef6b281e858a23bc3b60caea4685a768aee4e2c837f26867156`. This behaviorally
+classifies BBB `0xB763`, not its callers or adjacent resource switch.

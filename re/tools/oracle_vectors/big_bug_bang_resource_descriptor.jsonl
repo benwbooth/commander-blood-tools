@@ -1,0 +1,8 @@
+{"flags_from_final_add":{"auxiliary_carry":0,"carry":0,"overflow":0,"parity":1,"sign":0,"zero":0},"index":0,"name":"first_entry","record_offset":8297,"result_bx":8297,"table_offset":8117}
+{"flags_from_final_add":{"auxiliary_carry":0,"carry":0,"overflow":0,"parity":0,"sign":0,"zero":0},"index":1,"name":"second_entry","record_offset":8319,"result_bx":8319,"table_offset":8121}
+{"flags_from_final_add":{"auxiliary_carry":1,"carry":0,"overflow":0,"parity":1,"sign":0,"zero":0},"index":9,"name":"ordinary_index_nine","record_offset":4951,"result_bx":4951,"table_offset":8153}
+{"flags_from_final_add":{"auxiliary_carry":0,"carry":1,"overflow":0,"parity":1,"sign":0,"zero":0},"index":14354,"name":"highest_reachable_word_start","record_offset":9320,"result_bx":9320,"table_offset":65533}
+{"flags_from_final_add":{"auxiliary_carry":0,"carry":1,"overflow":0,"parity":1,"sign":0,"zero":0},"index":16384,"name":"stride_wraps_to_first","record_offset":13980,"result_bx":13980,"table_offset":8117}
+{"flags_from_final_add":{"auxiliary_carry":0,"carry":1,"overflow":1,"parity":1,"sign":0,"zero":0},"index":32768,"name":"signed_high_bit","record_offset":18605,"result_bx":18605,"table_offset":8117}
+{"flags_from_final_add":{"auxiliary_carry":0,"carry":0,"overflow":0,"parity":1,"sign":1,"zero":0},"index":8192,"name":"addition_overflow","record_offset":23230,"result_bx":23230,"table_offset":40885}
+{"flags_from_final_add":{"auxiliary_carry":0,"carry":1,"overflow":0,"parity":1,"sign":0,"zero":0},"index":65535,"name":"maximum_index","record_offset":27599,"result_bx":27599,"table_offset":8113}

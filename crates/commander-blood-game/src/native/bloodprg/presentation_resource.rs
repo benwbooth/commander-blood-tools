@@ -628,11 +628,23 @@ mod tests {
     }
 
     #[test]
-    fn resource_lookup_matches_flat_original_vectors_and_rejects_aliases() {
-        let vectors: Vec<ResourceLookupOracle> = serde_json::from_str(include_str!(
+    fn resource_lookup_matches_both_flat_original_fixtures_and_rejects_aliases() {
+        let commander: Vec<ResourceLookupOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9f80_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_resource_descriptor.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_resource_lookup_vectors(commander);
+        assert_resource_lookup_vectors(sequel);
+    }
+
+    fn assert_resource_lookup_vectors(vectors: Vec<ResourceLookupOracle>) {
         assert_eq!(vectors.len(), RESOURCE_LOOKUP_VECTOR_COUNT);
 
         let descriptor_count = usize::from(
