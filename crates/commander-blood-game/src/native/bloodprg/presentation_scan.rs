@@ -1287,7 +1287,7 @@ mod tests {
         calls
             .iter()
             .filter_map(|call| match call.name.as_str() {
-                "field" | "resource" => None,
+                "field" | "resource" | "state_processor" => None,
                 "control" => Some("control"),
                 "descript" => Some("lookup"),
                 "setter" => Some("restart"),
@@ -1308,13 +1308,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn presentation_scan_accounts_for_every_original_natural_vector() {
-        let vectors: Vec<ScanOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_5816_natural.json"
-        ))
-        .unwrap();
-        assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
+    fn check_presentation_scan_vectors(source: &str, vectors: &[ScanOracle]) {
+        assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT, "{source}");
 
         for vector in vectors {
             assert!(!vector.processed_entries.is_empty());
@@ -1342,19 +1337,19 @@ mod tests {
             assert_eq!(
                 host.events,
                 normalized_original_events(&vector.calls),
-                "{}",
+                "{source}: {}",
                 vector.name
             );
             assert_eq!(
                 fixture.presentation.active,
                 vector.presentation_active_after != u8::MIN,
-                "{}",
+                "{source}: {}",
                 vector.name
             );
             assert_eq!(
                 outcome.bridge_console_selection_cleared,
                 outcome.presentation_started.is_some(),
-                "{}",
+                "{source}: {}",
                 vector.name
             );
             assert_eq!(
@@ -1366,12 +1361,12 @@ mod tests {
                 } else {
                     Vec::new()
                 },
-                "{}",
+                "{source}: {}",
                 vector.name
             );
             assert!(
                 deferred_matches_native(fixture.presentation.deferred, vector.deferred_after),
-                "{}",
+                "{source}: {}",
                 vector.name
             );
             assert!(!fixture.presentation.pair_write_disabled);
@@ -1406,6 +1401,23 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn presentation_scan_accounts_for_both_original_native_vectors() {
+        let commander: Vec<ScanOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_5816_natural.json"
+        ))
+        .unwrap();
+        check_presentation_scan_vectors("Commander Blood 0x5816", &commander);
+
+        let sequel: Vec<ScanOracle> = serde_json::Deserializer::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_scan.jsonl"
+        ))
+        .into_iter()
+        .collect::<Result<_, _>>()
+        .unwrap();
+        check_presentation_scan_vectors("Big Bug Bang 0x5DD7", &sequel);
     }
 
     #[test]

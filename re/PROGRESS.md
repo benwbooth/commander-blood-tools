@@ -1762,3 +1762,29 @@ camera countdown had become nonzero, while native C6 gates every nonzero phase o
 The dispatcher now retains the phase-two action until the countdown returns to zero and matches all
 eight original cases. This behaviorally classifies the C6 arm only. C1-C4, C9 and CD still require
 direct `0x613F` entry coverage before the whole structurally unmatched routine can be classified.
+
+## 2026-09-12 - Big Bug Bang post-frame presentation scan
+
+BBB `0x5DD7..0x6037` is the relocated counterpart of Commander Blood's already ported `0x5816`
+presentation scan, but its 609-byte body remained structurally unmatched. The new
+`re/tools/big_bug_bang_presentation_scan_oracle.py` executes that complete unchanged body and the
+real `0x6633` field helper in 16 direct cases. BAS control, record action, descriptor, resource,
+renderer transition and sequel state-processor routines are captured only at their established API
+boundaries.
+
+The cases cover inactive entries, actor handoff gating, positive and suppressed actions, player
+presentation start and teardown, descriptor/effect setup, ordinary and arche-targeted deferred
+records, incomplete deferred state, navigation and world-state records, unknown active kinds, and
+the full 16-bit next-directory-kind stop. BBB resolves the action selector to player `+8`, actor
+`+58`, navigation `+28`, world state `+10`, and the actor handoff selector to `+26`. Every normalized
+callback, presentation-active result, deferred triple, directory visit and defined flag agrees with
+the corresponding original Commander vector. The sequel-only `0x6038` boundary occurs once after
+each processed active actor, as expected from its separately proven pre-frame ownership.
+
+The checked-in JSONL additionally records exact changed global, VAR and history bytes, full image
+hashes, native callback arguments and actual field-helper results while the oracle checks registers,
+segments, stack frames, read-only images and executable immutability. Its SHA-256 is
+`736ec9d4bdd1bba7195336af53478c8d40174091d3afb1d0e7fda7fd0500571d`. The shared Rust regression
+now consumes both 16-case original-game sets and passes all 32 cases. This behaviorally classifies
+BBB `0x5DD7`, not its captured callees, end-to-end dialogue playback, or the remaining action arms
+inside `0x613F`.

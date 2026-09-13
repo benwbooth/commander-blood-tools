@@ -3532,6 +3532,44 @@ phase-two action when the countdown is renewed and matches all eight native
 vectors. This proves the C6 arm, not the dispatcher's separate C1-C4, C9, or CD
 arms, and does not establish an end-to-end black-hole travel route.
 
+## Sequel Presentation Scan
+
+BBB's `0x5DD7..0x6037` post-frame presentation scan remained structurally
+unmatched even though its Commander counterpart at `0x5816` is the source of
+the shared typed `scan_script_presentations` implementation. The 609-byte BBB
+body preserves the same coordinator, but uses relocated globals, different
+record layouts, and an extra call to the already ported `0x6038` sequel state
+processor after each active actor.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_presentation_scan_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_presentation_scan.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  presentation_scan_accounts_for_both_original_native_vectors
+```
+
+The 16 direct original runs execute the complete unchanged scan and the real
+`0x6633` field helper. They cover inactive entries; actor BAS handoff gates and
+action dispatch; player presentation start, descriptor/effect setup and
+teardown; complete and incomplete deferred records; navigation and world-state
+actions; unknown active kinds; and the full-word next-directory-kind stop. The
+callback order, presentation state, deferred triple, defined flags and
+directory traversal agree with the equivalent Commander native vectors after
+accounting for the sequel's field offsets and extra state-processor call. The
+report also records exact changed bytes and full image hashes while the oracle
+checks registers, segments, stack discipline and executable immutability. The
+deterministic report has SHA-256
+`736ec9d4bdd1bba7195336af53478c8d40174091d3afb1d0e7fda7fd0500571d`.
+
+The shared Rust scan now consumes both original-game vector sets and matches
+all 32 cases. BBB's BAS, action, resource, renderer, and state-processor calls
+remain explicit subsystem boundaries with their own native coverage; this scan
+does not re-prove those callees. It behaviorally classifies `0x5DD7`, but does
+not establish end-to-end conversation playback or classify the remaining
+uncovered arms of `0x613F`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
