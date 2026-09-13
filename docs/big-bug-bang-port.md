@@ -5265,6 +5265,33 @@ terminating header contract. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `f9471d72516398036183add9af3ae603cfc527dcffd1593bf7770d9b0d29cd3f`.
 
+## Navigation Actor-Target Oracle (2026-09-13)
+
+BBB `0x81E6..0x8231` is the relocated sequel counterpart of Commander Blood's
+`0x71CF..0x721A` navigation actor-target list builder. Both routines contain
+33 instructions in 75 bytes and differ only in the active-list helper target,
+source and destination buffers, record far pointer, and Honk/Radio exclusions.
+
+The new `re/tools/big_bug_bang_navigation_actor_targets_oracle.py` directly
+executes all nine fingerprinted Commander cases in the shipped BBB body. They
+prove helper-first population, empty and ordered lists, both explicit
+exclusions, exact kind-two filtering, valid zero and unsigned-high offsets,
+32-bit record-base addition without 16-bit wrapping, and inherited forward or
+reverse string traversal. The active-list helper is held at an instrumented
+near-call boundary because its BBB body has separate direct proof; this harness
+verifies the callback ABI and source writes, relocated DS/GS/SS ownership
+against segment decoys, exact output and stack writes, terminal flags, complete
+register and segment residue, far return, untouched full segments, and
+patched-executable immutability.
+
+The typed `navigation_actor_targets` owner consumes both nine-row fixtures.
+Owned in-play object IDs replace the native source and destination sentinel
+lists while preserving authored order, actor-kind selection, and Honk/Radio
+exclusions. BBB's body SHA-256 is
+`ab45f9f851a1f0ab2c13dede016d5b1c1c0ae37db2ece33c4a114d12c91e0084`,
+and the deterministic fixture SHA-256 is
+`880d2d2b1af9e9c54e87cfbda95a3fb8eb3421facd10ff9f333afd643c64d66b`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

@@ -22,8 +22,8 @@ LEDGER_PATH = ROOT / "re/big_bug_bang_port_dispositions.json"
 COVERAGE_PATH = ROOT / "re/big_bug_bang_oracle_coverage.json"
 BUILDER_PATH = ROOT / "re/tools/build_big_bug_bang_port_dispositions.py"
 KNOWN_ENTRYPOINT_COUNT = 383
-CLASSIFIED_ENTRYPOINT_COUNT = 312
-PENDING_GAME_SEMANTICS_COUNT = 71
+CLASSIFIED_ENTRYPOINT_COUNT = 313
+PENDING_GAME_SEMANTICS_COUNT = 70
 EXPECTED_STATUS_COUNTS = {
     "eliminated_authored_no_operation": 7,
     "eliminated_dormant_diagnostic": 17,
@@ -31,7 +31,7 @@ EXPECTED_STATUS_COUNTS = {
     "inherited_exact_eliminated": 7,
     "inherited_exact_typed": 6,
     "pending_game_semantics": PENDING_GAME_SEMANTICS_COUNT,
-    "verified_direct_typed": 249,
+    "verified_direct_typed": 250,
 }
 
 spec = importlib.util.spec_from_file_location("bbb_disposition_builder", BUILDER_PATH)

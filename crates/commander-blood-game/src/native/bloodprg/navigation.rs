@@ -130,8 +130,9 @@ pub fn objects_at_arche_position(
 /// Return in-play actors offered by the navigation-choice interface.
 ///
 /// This translates `nav_kind2_target_list_build` at BLOODPRG file offset
-/// `0x0071CF`. The in-play helper supplies owned IDs, while Honk and Radio are
-/// explicit typed exclusions rather than offsets in a terminated scratch list.
+/// `0x0071CF` and its relocated BBB counterpart at `0x0081E6`. The in-play
+/// helper supplies owned IDs, while Honk and Radio are explicit typed exclusions
+/// rather than offsets in a terminated scratch list.
 pub fn navigation_actor_targets(
     state: &ScriptState,
     honk: ScriptObjectId,
@@ -581,6 +582,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangNavigationActorTargetOracle {
+        rows: Vec<NavigationActorTargetOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct NavigationChartOracle {
         name: String,
         active_object_offsets: Vec<u16>,
@@ -959,12 +965,7 @@ mod tests {
         );
     }
 
-    #[test]
-    fn navigation_actor_filter_matches_every_original_case() {
-        let vectors: Vec<NavigationActorTargetOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_71cf_natural.json"
-        ))
-        .unwrap();
+    fn assert_navigation_actor_target_vectors(vectors: Vec<NavigationActorTargetOracle>) {
         assert_eq!(vectors.len(), NAVIGATION_ACTOR_TARGET_VECTOR_COUNT);
 
         for vector in vectors {
@@ -1003,6 +1004,24 @@ mod tests {
             assert_eq!(actual, expected, "{}", vector.name);
             assert_eq!(actual.len(), vector.count, "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn navigation_actor_filter_matches_every_original_case() {
+        let vectors: Vec<NavigationActorTargetOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_71cf_natural.json"
+        ))
+        .unwrap();
+        assert_navigation_actor_target_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_navigation_actor_filter_matches_every_direct_case() {
+        let fixture: BigBugBangNavigationActorTargetOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_navigation_actor_targets.json"
+        ))
+        .unwrap();
+        assert_navigation_actor_target_vectors(fixture.rows);
     }
 
     #[test]

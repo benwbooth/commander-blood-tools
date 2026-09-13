@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 161,
-    "oracle_fixture_count": 160,
+    "oracle_count": 162,
+    "oracle_fixture_count": 161,
     "fixture_relation_counts": {
-      "exact": 159,
+      "exact": 160,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 278,
-    "unentered_static_entrypoints": 104,
+    "entered_static_entrypoints": 279,
+    "unentered_static_entrypoints": 103,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 279,
+    "entered_known_entrypoints": 280,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 165,
-        "unentered": 31
+        "entered": 166,
+        "unentered": 30
       },
       "exact_body": {
         "entered": 15,
@@ -821,6 +821,18 @@
       "summary": "verified 3 BBB Mode X initialization cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_mode_x.json",
       "fixture_sha256": "2555f7546dd15526f388285c7319873e8d46b4e1ff6f22e36c7d0b5c52601347",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_navigation_actor_targets_oracle.py",
+      "oracle_sha256": "7271f454ce5a168220f2de12e47cb8fe7064d583f16951ac5e73bec245718ca8",
+      "executed_instruction_count": 33,
+      "entered_entrypoints": [
+        "0x81e6"
+      ],
+      "summary": "verified 9 BBB navigation actor-target cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_navigation_actor_targets.json",
+      "fixture_sha256": "880d2d2b1af9e9c54e87cfbda95a3fb8eb3421facd10ff9f333afd643c64d66b",
       "fixture_relation": "exact"
     },
     {
@@ -4725,8 +4737,10 @@
     {
       "entry": "0x81e6",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_navigation_actor_targets_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x71cf"
     },
