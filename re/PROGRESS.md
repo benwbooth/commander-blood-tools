@@ -3259,3 +3259,28 @@ hardware-driver protocols. BBB's body SHA-256 is
 `1288675adfc75d26bcb1f797b62721c7a87ebc5d4cd39c45ec59ffe5be783912`,
 and the deterministic JSONL SHA-256 is
 `09130a69c336d291144d754b5b436836b40c5cc981343c328a64bb8e4a5441aa`.
+
+## 2026-09-13 - Big Bug Bang audio page-storage dispatch
+
+BBB `0xD4B3..0xD4D0` exactly relocates Commander Blood's
+`0xBD09..0xBD26` audio page-storage dispatcher. Both complete bodies contain
+13 instructions in 29 bytes. Two wrapping signed-byte decrements retain the
+same exhaustive partition: selector zero and `0x81..0xFF` call EMS, selector
+one calls XMS, and `0x02..0x80` call the temporary-file reader. Only the
+selector offset and three helper targets move.
+
+The new `re/tools/big_bug_bang_audio_page_dispatch_oracle.py` executes both
+shipped bodies for all 256 selector values and covers both outcomes of both
+conditional sites, or four edges. It verifies exact helper selection and
+near-call frames, forwarded `AX` and `ES:DI`, decremented `BL`, GS ownership
+against a DS decoy, final decrement flags including inherited carry, complete
+register restoration, near-return and stack residue, read-only mapped memory,
+executable immutability, unowned memory, and normalized direct equality.
+
+The typed `AudioStreamSource::page` boundary now consumes both exhaustive
+fixtures in its elimination test. One bounds-checked view over imported owned
+bytes continues to replace EMS, XMS, and temporary-file dispatch without a
+production variant. BBB's body SHA-256 is
+`e1b4c838a59722eaac1cb93b813c5a320453940204d566af6c35c116308e257a`,
+and the deterministic JSONL SHA-256 is
+`83f5246d57c80a3a494b4cdc2276d91aa61d60a56227b0d8b1f124627db78337`.

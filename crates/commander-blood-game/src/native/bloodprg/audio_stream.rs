@@ -46,6 +46,9 @@ impl AudioStreamSource {
     }
 
     /// Borrow one existing source page by its zero-based page index.
+    ///
+    /// This flat view replaces the storage dispatchers at BLOODPRG `0x00BD09`
+    /// and Big Bug Bang `0x00D4B3` after import owns the complete payload.
     fn page(&self, index: u16) -> Option<&[u8]> {
         let start = usize::from(index).checked_mul(AUDIO_STREAM_PAGE_BYTE_COUNT)?;
         let end = start
@@ -480,6 +483,7 @@ mod tests {
     use crate::native::bloodprg::AudioDriverRequests;
 
     const LOAD_ORACLE_VECTOR_COUNT: usize = 11;
+    const PAGE_DISPATCH_ORACLE_VECTOR_COUNT: usize = 256;
     const START_ORACLE_VECTOR_COUNT: usize = 6;
     const REFILL_ORACLE_VECTOR_COUNT: usize = 9;
     const TEST_FILE_HEADER_BYTE: u8 = 90;
@@ -527,6 +531,12 @@ mod tests {
         driver_action: Option<String>,
         next_page: u16,
         selected_length: Option<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct PageDispatchOracle {
+        mode: u8,
+        callee: String,
     }
 
     #[test]
@@ -634,6 +644,48 @@ mod tests {
         assert_eq!(payload.len(), SND_CLIP_HEADER_BYTE_COUNT + samples.len());
         assert_eq!(payload[STREAM_RATE_CODE_HEADER_INDEX], sample_rate_code);
         assert_eq!(&payload[SND_CLIP_HEADER_BYTE_COUNT..], samples);
+    }
+
+    #[test]
+    fn owned_page_view_replaces_both_originals_storage_dispatch_modes() {
+        let commander_vectors: Vec<PageDispatchOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_bd09_natural.json"
+        ))
+        .unwrap();
+        let sequel_vectors: Vec<PageDispatchOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_audio_page_dispatch.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander_vectors.len(), PAGE_DISPATCH_ORACLE_VECTOR_COUNT);
+        assert_eq!(sequel_vectors.len(), PAGE_DISPATCH_ORACLE_VECTOR_COUNT);
+
+        let payload = generated_page_bytes(AUDIO_STREAM_PAGE_BYTE_COUNT * 2, 0);
+        let source = source_from_payload(&payload).unwrap();
+        for (source_name, vectors) in [
+            ("Commander Blood", commander_vectors),
+            ("Big Bug Bang", sequel_vectors),
+        ] {
+            for (mode, vector) in vectors.into_iter().enumerate() {
+                let expected_callee = match mode {
+                    0 | 0x81..=0xFF => "snd_bank_ems_page_read",
+                    1 => "snd_bank_xms_page_read",
+                    2..=0x80 => "snd_bank_file_page_read",
+                    _ => unreachable!(),
+                };
+                assert_eq!(usize::from(vector.mode), mode, "{source_name} mode");
+                assert_eq!(
+                    vector.callee, expected_callee,
+                    "{source_name} mode {mode:#04x}"
+                );
+                assert_eq!(
+                    source.page(FIRST_STREAM_PAGE_INDEX).unwrap(),
+                    &payload[..AUDIO_STREAM_PAGE_BYTE_COUNT],
+                    "{source_name} mode {mode:#04x}"
+                );
+            }
+        }
     }
 
     #[test]
