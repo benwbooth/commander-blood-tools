@@ -1,0 +1,422 @@
+{
+  "format": "big_bug_bang_platform_adapters_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "routines": [
+    {
+      "operation": "video_retrace_phase_wait",
+      "entry": "0x0dd2",
+      "end": "0x0dfa",
+      "body_sha256": "1b0d517e390bb82f1c3902451d5aed13bd4af1f6891b6ad09f082b12028c19fe"
+    },
+    {
+      "operation": "install_ctrl_break_handlers",
+      "entry": "0x0dfa",
+      "end": "0x0e14",
+      "body_sha256": "7530ef488085eac191e1acd4efc2df0b3c4ce5523748aa13c7cf0d80ea6ad609"
+    },
+    {
+      "operation": "restore_video_mode",
+      "entry": "0x0ebb",
+      "end": "0x0ec6",
+      "body_sha256": "7b6640667ec3334e11c582870972fead6cf2660cef27fe8a9161ac72226a1c5d"
+    }
+  ],
+  "retrace_wait_cases": [
+    {
+      "name": "disabled",
+      "phase": 0,
+      "crtc_base": 980,
+      "status_port": 986,
+      "input_values": [],
+      "reads": [],
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 2
+    },
+    {
+      "name": "phase_one_direct",
+      "phase": 1,
+      "crtc_base": 980,
+      "status_port": 986,
+      "input_values": [
+        0
+      ],
+      "reads": [
+        [
+          986,
+          1,
+          0
+        ]
+      ],
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 2
+    },
+    {
+      "name": "phase_one_wait",
+      "phase": 1,
+      "crtc_base": 948,
+      "status_port": 954,
+      "input_values": [
+        255,
+        24,
+        7
+      ],
+      "reads": [
+        [
+          954,
+          1,
+          255
+        ],
+        [
+          954,
+          1,
+          24
+        ],
+        [
+          954,
+          1,
+          7
+        ]
+      ],
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 2
+    },
+    {
+      "name": "phase_two_wait",
+      "phase": 2,
+      "crtc_base": 980,
+      "status_port": 986,
+      "input_values": [
+        0,
+        7,
+        8
+      ],
+      "reads": [
+        [
+          986,
+          1,
+          0
+        ],
+        [
+          986,
+          1,
+          7
+        ],
+        [
+          986,
+          1,
+          8
+        ]
+      ],
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 2
+    },
+    {
+      "name": "phase_ff_wrapped_port",
+      "phase": 255,
+      "crtc_base": 65532,
+      "status_port": 2,
+      "input_values": [
+        247,
+        255
+      ],
+      "reads": [
+        [
+          2,
+          1,
+          247
+        ],
+        [
+          2,
+          1,
+          255
+        ]
+      ],
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 2
+    }
+  ],
+  "ctrl_break_cases": [
+    {
+      "case": 0,
+      "vectors": [
+        [
+          35,
+          1556,
+          0
+        ],
+        [
+          36,
+          1557,
+          0
+        ]
+      ],
+      "interrupts": [
+        {
+          "number": 33,
+          "ax": 9507,
+          "dx": 1556,
+          "ds": 0
+        },
+        {
+          "number": 33,
+          "ax": 9508,
+          "dx": 1557,
+          "ds": 0
+        }
+      ],
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "write_count": 3
+    },
+    {
+      "case": 1,
+      "vectors": [
+        [
+          35,
+          1556,
+          0
+        ],
+        [
+          36,
+          1557,
+          0
+        ]
+      ],
+      "interrupts": [
+        {
+          "number": 33,
+          "ax": 9507,
+          "dx": 1556,
+          "ds": 0
+        },
+        {
+          "number": 33,
+          "ax": 9508,
+          "dx": 1557,
+          "ds": 0
+        }
+      ],
+      "defined_flags": {
+        "cf": true,
+        "pf": true,
+        "af": true,
+        "zf": true,
+        "sf": true,
+        "if": true,
+        "df": false,
+        "of": true
+      },
+      "write_count": 3
+    },
+    {
+      "case": 2,
+      "vectors": [
+        [
+          35,
+          1556,
+          0
+        ],
+        [
+          36,
+          1557,
+          0
+        ]
+      ],
+      "interrupts": [
+        {
+          "number": 33,
+          "ax": 9507,
+          "dx": 1556,
+          "ds": 0
+        },
+        {
+          "number": 33,
+          "ax": 9508,
+          "dx": 1557,
+          "ds": 0
+        }
+      ],
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": true,
+        "of": false
+      },
+      "write_count": 3
+    },
+    {
+      "case": 3,
+      "vectors": [
+        [
+          35,
+          1556,
+          0
+        ],
+        [
+          36,
+          1557,
+          0
+        ]
+      ],
+      "interrupts": [
+        {
+          "number": 33,
+          "ax": 9507,
+          "dx": 1556,
+          "ds": 0
+        },
+        {
+          "number": 33,
+          "ax": 9508,
+          "dx": 1557,
+          "ds": 0
+        }
+      ],
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": true,
+        "zf": false,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": true
+      },
+      "write_count": 3
+    }
+  ],
+  "video_restore_cases": [
+    {
+      "saved_mode": 0,
+      "interrupt": {
+        "number": 16,
+        "ax": 0
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "write_count": 1
+    },
+    {
+      "saved_mode": 3,
+      "interrupt": {
+        "number": 16,
+        "ax": 3
+      },
+      "defined_flags": {
+        "cf": true,
+        "pf": true,
+        "af": true,
+        "zf": true,
+        "sf": true,
+        "if": true,
+        "df": false,
+        "of": true
+      },
+      "write_count": 1
+    },
+    {
+      "saved_mode": 19,
+      "interrupt": {
+        "number": 16,
+        "ax": 19
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": true,
+        "of": false
+      },
+      "write_count": 1
+    },
+    {
+      "saved_mode": 127,
+      "interrupt": {
+        "number": 16,
+        "ax": 127
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": true,
+        "zf": false,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": true
+      },
+      "write_count": 1
+    },
+    {
+      "saved_mode": 255,
+      "interrupt": {
+        "number": 16,
+        "ax": 255
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "write_count": 1
+    }
+  ]
+}

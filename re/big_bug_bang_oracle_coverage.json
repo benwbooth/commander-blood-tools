@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 132,
-    "oracle_fixture_count": 131,
+    "oracle_count": 133,
+    "oracle_fixture_count": 132,
     "fixture_relation_counts": {
-      "exact": 130,
+      "exact": 131,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 243,
-    "unentered_static_entrypoints": 139,
+    "entered_static_entrypoints": 246,
+    "unentered_static_entrypoints": 136,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 244,
+    "entered_known_entrypoints": 247,
     "comparison_counts": {
       "unresolved": {
         "entered": 76,
         "unentered": 50
       },
       "structural_candidate": {
-        "entered": 133,
-        "unentered": 63
+        "entered": 136,
+        "unentered": 60
       },
       "exact_body": {
         "entered": 14,
@@ -862,6 +862,20 @@
       "summary": "verified 12 original BBB planar square-cap cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_planar_square_caps.json",
       "fixture_sha256": "3b4a25ace8e6d69d9ab43590bf0e0fedb378355275ecf25ef3ad7e748ec90359",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_platform_adapters_oracle.py",
+      "oracle_sha256": "a0922325a5ed12ebc574367248d4837e668b2424ba1823e1b539c2f8ba18e970",
+      "executed_instruction_count": 41,
+      "entered_entrypoints": [
+        "0x0dd2",
+        "0x0dfa",
+        "0x0ebb"
+      ],
+      "summary": "verified 5 BBB retrace-wait, 4 Ctrl-Break, and 5 video-restore cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_platform_adapters.json",
+      "fixture_sha256": "5a5faeab6cc0cce7191c8b6e93e918ab36ae7228fec260384375a1646e63d864",
       "fixture_relation": "exact"
     },
     {
@@ -2062,16 +2076,20 @@
     {
       "entry": "0x0dd2",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_platform_adapters_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0xbd7"
     },
     {
       "entry": "0x0dfa",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_platform_adapters_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0xbff"
     },
@@ -2086,8 +2104,10 @@
     {
       "entry": "0x0ebb",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_platform_adapters_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0xcc0"
     },

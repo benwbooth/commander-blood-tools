@@ -3802,3 +3802,33 @@ ledger therefore classifies 278 of 383 known entries and leaves 105 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `ff3c09c88ee85481ffb33c19171dd5c85b5b4e068999fd9052f78b3d5bb377fe`.
+
+## 2026-09-13 - Big Bug Bang SDL/wgpu platform adapters
+
+`re/tools/big_bug_bang_platform_adapters_oracle.py` executes three unchanged
+BBB routines whose effects are wholly owned by the modern platform layer:
+retrace-phase waiting at `0x0DD2`, DOS Ctrl-Break and critical-error vector
+installation at `0x0DFA`, and BIOS video-mode restoration at `0x0EBB`. Five
+retrace cases cover the disabled path, direct completion, wait loops, both
+phase values, and wrapped CRTC status-port arithmetic. Four vector cases vary
+DOS-returned flags, and five restore cases cover the complete representative
+mode-byte range.
+
+The oracle verifies exact body hashes, input-port sequences, DOS and BIOS
+interrupt ABIs, loaded-image handler offsets, far returns, complete register
+and segment preservation, stack bounds, full executable/global/decoy
+immutability, and defined flag outcomes. Its checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_platform_adapters.json` has SHA-256
+`5a5faeab6cc0cce7191c8b6e93e918ab36ae7228fec260384375a1646e63d864`.
+SDL event handling and wgpu presentation own these lifecycle boundaries, so no
+VGA polling, DOS vector, or BIOS mode state is exposed by production code.
+
+The global collector now reproduces 131 exact fixtures and one prefix fixture
+across 133 BBB oracle programs, entering 246 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`ae5688e2bf6a281eb8247221d9693ac10d79e2b9140623d418c8ae8865b7f1b3`.
+The strict ledger classifies 281 of 383 known entries and leaves 102 pending:
+224 direct typed, 7 inherited exact typed, 7 inherited exact eliminated, 19
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`19665510514cf7027951380f9e14dc45cb0ed7cf5178963ab2f949eae336a85b`.
