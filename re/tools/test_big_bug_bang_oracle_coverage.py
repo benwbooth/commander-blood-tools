@@ -44,27 +44,27 @@ class BigBugBangOracleCoverageTests(unittest.TestCase):
                 row["origin"],
                 "static_graph" if entry in static_entries else "runtime_vector",
             )
-            self.assertEqual(row["executed"], bool(row["oracles"]))
+            self.assertEqual(row["entered"], bool(row["oracles"]))
 
         summary = self.report["summary"]
-        executed_static = {
+        entered_static = {
             int(row["entry"], 16)
             for row in rows
-            if row["origin"] == "static_graph" and row["executed"]
+            if row["origin"] == "static_graph" and row["entered"]
         }
-        executed_dynamic = {
+        entered_dynamic = {
             int(row["entry"], 16)
             for row in rows
-            if row["origin"] == "runtime_vector" and row["executed"]
+            if row["origin"] == "runtime_vector" and row["entered"]
         }
         self.assertEqual(summary["static_entrypoint_count"], len(static_entries))
         self.assertEqual(summary["known_entrypoint_count"], len(expected))
-        self.assertEqual(summary["executed_static_entrypoints"], len(executed_static))
+        self.assertEqual(summary["entered_static_entrypoints"], len(entered_static))
         self.assertEqual(
-            summary["unexecuted_static_entrypoints"],
-            len(static_entries - executed_static),
+            summary["unentered_static_entrypoints"],
+            len(static_entries - entered_static),
         )
-        self.assertEqual(summary["executed_dynamic_entrypoints"], len(executed_dynamic))
+        self.assertEqual(summary["entered_dynamic_entrypoints"], len(entered_dynamic))
 
     def test_report_tracks_every_oracle_and_its_current_source(self) -> None:
         expected = {

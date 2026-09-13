@@ -84,7 +84,7 @@ def aggregate(reports: list[dict[str, Any]]) -> dict[str, Any]:
     comparison = comparison_classes(json.loads(COMPARISON.read_text()))
     evidence: dict[int, list[str]] = {}
     for report in reports:
-        for encoded in report["executed_entrypoints"]:
+        for encoded in report["entered_entrypoints"]:
             evidence.setdefault(int(encoded, 16), []).append(report["oracle"])
 
     rows = []
@@ -92,7 +92,7 @@ def aggregate(reports: list[dict[str, Any]]) -> dict[str, Any]:
         row = {
             "entry": f"0x{entry:04x}",
             "origin": "static_graph" if entry in static_entries else "runtime_vector",
-            "executed": entry in evidence,
+            "entered": entry in evidence,
             "oracles": sorted(evidence.get(entry, [])),
         }
         if entry in comparison:
@@ -101,19 +101,20 @@ def aggregate(reports: list[dict[str, Any]]) -> dict[str, Any]:
             row["comparison"] = "outside_static_comparison"
         rows.append(row)
 
-    executed_static = static_entries.intersection(evidence)
-    executed_dynamic = DYNAMIC_ENTRYPOINTS.intersection(evidence)
+    entered_static = static_entries.intersection(evidence)
+    entered_dynamic = DYNAMIC_ENTRYPOINTS.intersection(evidence)
     class_counts: dict[str, dict[str, int]] = {}
     for row in rows:
         key = row["comparison"]
-        counts = class_counts.setdefault(key, {"executed": 0, "unexecuted": 0})
-        counts["executed" if row["executed"] else "unexecuted"] += 1
+        counts = class_counts.setdefault(key, {"entered": 0, "unentered": 0})
+        counts["entered" if row["entered"] else "unentered"] += 1
     return {
-        "format": "big_bug_bang_oracle_entrypoint_coverage_v1",
+        "format": "big_bug_bang_oracle_entrypoint_coverage_v2",
         "scope": (
             "Measured original-executable instruction entrypoints reached by the "
-            "checked-in BBB oracle scenarios; execution is evidence, while absence "
-            "is an audit queue and not proof of missing behavior"
+            "checked-in BBB oracle scenarios; entries count only direct starts and "
+            "non-return transfers from original code, while absence is an audit "
+            "queue and not proof of missing behavior"
         ),
         "inputs": {
             "sequel": {
@@ -138,10 +139,10 @@ def aggregate(reports: list[dict[str, Any]]) -> dict[str, Any]:
             "static_entrypoint_count": len(static_entries),
             "dynamic_entrypoint_count": len(DYNAMIC_ENTRYPOINTS),
             "known_entrypoint_count": len(static_entries | DYNAMIC_ENTRYPOINTS),
-            "executed_static_entrypoints": len(executed_static),
-            "unexecuted_static_entrypoints": len(static_entries - executed_static),
-            "executed_dynamic_entrypoints": len(executed_dynamic),
-            "executed_known_entrypoints": len(executed_static | executed_dynamic),
+            "entered_static_entrypoints": len(entered_static),
+            "unentered_static_entrypoints": len(static_entries - entered_static),
+            "entered_dynamic_entrypoints": len(entered_dynamic),
+            "entered_known_entrypoints": len(entered_static | entered_dynamic),
             "comparison_counts": class_counts,
         },
         "oracles": sorted(reports, key=lambda report: report["oracle"]),
@@ -176,9 +177,9 @@ def main() -> None:
     summary = result["summary"]
     print(
         f"verified {summary['oracle_count']} BBB oracle programs; "
-        f"executed {summary['executed_static_entrypoints']}/"
+        f"entered {summary['entered_static_entrypoints']}/"
         f"{summary['static_entrypoint_count']} static entrypoints and "
-        f"{summary['executed_dynamic_entrypoints']}/"
+        f"{summary['entered_dynamic_entrypoints']}/"
         f"{summary['dynamic_entrypoint_count']} known dynamic entrypoints"
     )
 
