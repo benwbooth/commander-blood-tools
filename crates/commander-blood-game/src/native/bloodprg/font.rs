@@ -976,6 +976,8 @@ mod tests {
     #[derive(Deserialize)]
     struct PlanarProportionalDrawOracle {
         name: String,
+        #[serde(default)]
+        destination: Option<String>,
         x: u16,
         y: u16,
         color: u8,
@@ -987,6 +989,16 @@ mod tests {
         framebuffer_offset: u16,
         draw_width: u16,
         output_segment_sha256: String,
+    }
+
+    #[derive(Deserialize)]
+    struct PlanarSquareCapsOracleReport {
+        executable_sha256: String,
+        entry: usize,
+        end: usize,
+        routine_sha256: String,
+        commander_fixture_sha256: String,
+        vectors: Vec<PlanarProportionalDrawOracle>,
     }
 
     #[derive(Deserialize)]
@@ -1224,12 +1236,7 @@ mod tests {
         assert_eq!(exact_hashes, MAIN_FONT_DRAW_EXACT_HASH_COUNT);
     }
 
-    #[test]
-    fn planar_square_caps_draw_matches_every_flat_original_vector() {
-        let vectors: Vec<PlanarProportionalDrawOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_3428_natural.json"
-        ))
-        .unwrap();
+    fn assert_planar_square_caps_vectors(vectors: &[PlanarProportionalDrawOracle]) {
         assert_eq!(vectors.len(), PLANAR_SQUARE_CAPS_DRAW_ORACLE_COUNT);
         let mut exact_hashes = usize::MIN;
 
@@ -1277,6 +1284,61 @@ mod tests {
             }
         }
         assert_eq!(exact_hashes, PLANAR_SQUARE_CAPS_DRAW_EXACT_HASH_COUNT);
+    }
+
+    #[test]
+    fn planar_square_caps_draw_matches_every_flat_original_vector() {
+        let vectors: Vec<PlanarProportionalDrawOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_3428_natural.json"
+        ))
+        .unwrap();
+        assert_planar_square_caps_vectors(&vectors);
+    }
+
+    #[test]
+    fn planar_square_caps_draw_matches_original_big_bug_bang_vectors() {
+        let report: PlanarSquareCapsOracleReport = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_planar_square_caps.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            report.executable_sha256,
+            "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+        );
+        assert_eq!((report.entry, report.end), (0x37A8, 0x38FC));
+        assert_eq!(
+            report.routine_sha256,
+            "5e3c124ef4a89cefd19c0bd11593a58bfeebb5501740a2d816e1cfb6fea40b97"
+        );
+        assert_eq!(
+            report.commander_fixture_sha256,
+            "897ef40570ea178886fa694ca9e71dc3d06449488ed71db41506b803a836158d"
+        );
+        assert_eq!(
+            report
+                .vectors
+                .iter()
+                .filter(|vector| vector.destination.as_deref() == Some("primary"))
+                .count(),
+            5
+        );
+        assert_eq!(
+            report
+                .vectors
+                .iter()
+                .filter(|vector| vector.destination.as_deref() == Some("secondary"))
+                .count(),
+            5
+        );
+        assert_eq!(
+            report
+                .vectors
+                .iter()
+                .filter(|vector| vector.destination.as_deref() == Some("none"))
+                .count(),
+            2
+        );
+        assert_planar_square_caps_vectors(&report.vectors);
     }
 
     #[test]

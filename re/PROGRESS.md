@@ -1718,3 +1718,25 @@ all eight bounded outputs for both executables and continues to reject the origi
 run that overshoots a declared three-byte extent. This classifies one more unresolved structural
 entry as inherited behavior, not a newly invented sequel path or evidence of whole-presentation
 parity.
+
+## 2026-09-12 - Big Bug Bang planar square-cap destination ownership
+
+The prior port notes still called BBB's added destination branch inside `0x37A8` unported. The
+existing complete choice-panel oracle entered the routine and captured row draw arguments, but did
+not compare either planar destination. The new `big_bug_bang_planar_square_caps_oracle.py` closes
+that evidence gap by executing the unchanged 340-byte routine, SHA-256
+`5e3c124ef4a89cefd19c0bd11593a58bfeebb5501740a2d816e1cfb6fea40b97`.
+
+Twelve direct cases retain the Commander grammar coverage while addressing BBB's relocated
+character map, advance table, glyph base, clipping words and dual destination pointers. Five active
+draws select GS:`0x55E9` through nonzero GS:`0x6B94`; five select GS:`0x55ED` through zero; two early
+clipping exits mutate neither. Every selected planar segment, unselected segment, VGA port write,
+width, register, defined flag, direction flag and far-return stack result matches the model. The
+checked-in report is `re/tools/oracle_vectors/big_bug_bang_planar_square_caps.json`, SHA-256
+`3b4a25ace8e6d69d9ab43590bf0e0fedb378355275ecf25ef3ad7e748ec90359`.
+
+The production renderer already replaces planar addresses with its caller-owned flat surface. It
+matches all ten bounded native outputs and rejects the two synthetic segment-wrap cases that cannot
+be represented by a checked 320x200 surface. The selector is therefore a proven representation
+difference, not missing text behavior. This classifies BBB `0x37A8` from the structural audit queue;
+it does not prove the entire choice panel pixel-identical or classify the adjacent `0x38FC` routine.

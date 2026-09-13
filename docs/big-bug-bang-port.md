@@ -1752,13 +1752,32 @@ verify the bridge anchors, trigonometry and all six actor records against origin
 bytes. Actor resource IDs are 17, 13, 15, 16, 19 and 18; reusing Commander's IDs
 would be incorrect even though the projection tables match.
 
-The assembly comparison also found an **unported destination-selection branch**
-in the sequel planar square-cap routine (entry 0x37A8). At 0x37D0 it loads the
-destination from GS:0x55E9, tests word GS:0x6B94, and, when zero, selects GS:0x55ED
-instead. Commander has only one unconditional buffer selection. The sequel
-selector is linked to its dynamic inventory-choice flow, traced below;
-glyph/width tests do not validate that routing. The sequel planar-main entry
-is 0x38FC.
+The sequel planar square-cap routine at `0x37A8` adds a destination-selection
+branch before the inherited text loop. At `0x37D0` it loads GS:`0x55E9`, tests
+word GS:`0x6B94`, and selects GS:`0x55ED` when that word is zero. Commander has
+only one unconditional buffer selection. This is now classified as a native
+buffer-ownership difference, not an unported text-rendering path: the flat
+runtime supplies the surface owned by the inventory or dictionary-choice
+caller instead of preserving segment-valued framebuffer pointers. The sequel
+planar-main entry is `0x38FC`.
+
+`big_bug_bang_planar_square_caps_oracle.py` executes the complete unchanged
+`0x37A8..0x38FC` routine. Its 12 cases include five draws to each native buffer
+and two clipping exits that touch neither. They verify both destination
+pointers, the GS:`0x6B94` selector, VGA port order, exact selected-buffer bytes,
+unselected-buffer immutability, all four starting planes, signed advances,
+source wrap, inherited backward direction, output and width wrapping, register
+preservation, flags, and far-return stack discipline. The shared flat renderer
+matches all ten bounded outputs; its two rejected address-wrap cases remain the
+documented checked-memory boundary. The report at
+`re/tools/oracle_vectors/big_bug_bang_planar_square_caps.json` has SHA-256
+`3b4a25ace8e6d69d9ab43590bf0e0fedb378355275ecf25ef3ad7e748ec90359`.
+
+```sh
+nix develop -c python -P re/tools/big_bug_bang_planar_square_caps_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_planar_square_caps.json
+```
 
 `GameVariant` selects and fingerprint-checks both new decoders, and the Commander
 runtime now accesses fonts/bridge tables through that same identity boundary.
@@ -1988,7 +2007,8 @@ cancellation, wide/accented labels, full sixteen-item rosters and two ordinary
 dictionary-choice controls. No callee is
 patched. The original disabled-sound input gate naturally avoids device playback.
 These captures verify control, layout and helper order, not planar VGA pixels or
-audible playback.
+audible playback. The separate direct `0x37A8` oracle above supplies the
+selected-buffer and planar-byte evidence for that entered helper.
 
 The opening layout has no cancel row. On later updates the inventory branch sets
 the cancel flag; interactive layout adds the row with a minimum content width of
