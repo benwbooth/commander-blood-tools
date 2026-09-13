@@ -167,8 +167,7 @@ class FunctionGraphBuilder:
 
                 pc = next_pc
 
-    def build(self) -> dict[str, object]:
-        self.walk_function(self.mz.entry_file, self.mz.e_cs)
+    def graph(self) -> dict[str, object]:
         functions = sorted(self.callgraph)
         graph = {
             str(caller): sorted(callees)
@@ -178,8 +177,12 @@ class FunctionGraphBuilder:
             "funcs": functions,
             "leaves": [function for function in functions if not graph[str(function)]],
             "callgraph": graph,
-            "indirect": self.indirect,
+            "indirect": list(self.indirect),
         }
+
+    def build(self) -> dict[str, object]:
+        self.walk_function(self.mz.entry_file, self.mz.e_cs)
+        return self.graph()
 
 
 def build_function_graph(executable: str | Path) -> dict[str, object]:

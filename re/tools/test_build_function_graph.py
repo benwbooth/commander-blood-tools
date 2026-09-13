@@ -27,14 +27,16 @@ def indirect_counts(graph: dict[str, object]) -> collections.Counter[str]:
 class FunctionGraphTests(unittest.TestCase):
     def test_commander_graph_matches_checked_in_baseline(self):
         expected = json.loads((RE_ROOT / "func_graph.json").read_text())
-        actual = GRAPH_TOOL.build_function_graph(
-            RE_ROOT / "bin" / "BLOODPRG.EXE"
+        builder = GRAPH_TOOL.FunctionGraphBuilder(
+            GRAPH_TOOL.MZ(str(RE_ROOT / "bin" / "BLOODPRG.EXE"))
         )
+        actual = builder.build()
 
         self.assertEqual(expected["funcs"], actual["funcs"])
         self.assertEqual(expected["leaves"], actual["leaves"])
         self.assertEqual(expected["callgraph"], actual["callgraph"])
         self.assertEqual(indirect_counts(expected), indirect_counts(actual))
+        self.assertIsNot(actual["indirect"], builder.indirect)
 
 
 if __name__ == "__main__":

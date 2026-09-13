@@ -166,11 +166,14 @@ def function_summary(builder, graph: dict[str, object], reverse, entry: int):
     }
 
 
-def compare(left_path: Path, right_path: Path) -> dict[str, object]:
-    left_builder = GRAPH.FunctionGraphBuilder(GRAPH.MZ(str(left_path)))
-    right_builder = GRAPH.FunctionGraphBuilder(GRAPH.MZ(str(right_path)))
-    left_graph = left_builder.build()
-    right_graph = right_builder.build()
+def compare_builders(
+    left_path: Path,
+    right_path: Path,
+    left_builder,
+    left_graph: dict[str, object],
+    right_builder,
+    right_graph: dict[str, object],
+) -> dict[str, object]:
     left_functions = left_graph["funcs"]
     right_functions = right_graph["funcs"]
 
@@ -291,6 +294,21 @@ def compare(left_path: Path, right_path: Path) -> dict[str, object]:
             if entry not in mapped_left
         ],
     }
+
+
+def compare(left_path: Path, right_path: Path) -> dict[str, object]:
+    left_builder = GRAPH.FunctionGraphBuilder(GRAPH.MZ(str(left_path)))
+    right_builder = GRAPH.FunctionGraphBuilder(GRAPH.MZ(str(right_path)))
+    left_graph = left_builder.build()
+    right_graph = right_builder.build()
+    return compare_builders(
+        left_path,
+        right_path,
+        left_builder,
+        left_graph,
+        right_builder,
+        right_graph,
+    )
 
 
 def parse_args() -> argparse.Namespace:

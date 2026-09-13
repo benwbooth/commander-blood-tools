@@ -1637,9 +1637,28 @@ not already present after unioning the recursive graph with all relocation-prove
 resulting static lower bound is 368 native targets; see
 `re/big_bug_bang_indirect_dispatch_atlas.json`.
 
-All 48 indirect records are classified: nine static-table dispatch records, six segment-zero runtime
-calls, 19 XMS-driver vectors, 12 sound-driver vectors, and two dynamic presentation callbacks.
+Recursively walking those table targets and every relocation-proven far target adds 14 downstream
+routines that a set union alone misses. The closed static graph in
+`re/big_bug_bang_expanded_func_graph.json` therefore contains 382 entrypoints, 642 direct edges, and
+186 leaves. It finds one additional XMS-vector site at `0x2d3c`, bringing the closed graph to 49
+indirect records at 47 unique sites. This remains a static lower bound because runtime-supplied
+internal callbacks may add entrypoints.
+
+Closing Commander over its corresponding known tables yields 334 entrypoints. The reproducible
+expanded comparison (`re/tools/compare_big_bug_bang_expanded_graphs.py` and
+`re/big_bug_bang_expanded_function_comparison.json`) finds 223 unique BBB-to-Commander structural
+correspondences, including 27 byte-identical bodies. All 155 direct edges whose endpoints are
+independently mapped are preserved. There are 33 ambiguous duplicate/signature cases and 126
+unresolved BBB entrypoints. Those 126 are an audit queue, not a claim that all are sequel-only.
+Per-table counts are included in the report; notably, none of the 11 distinct record-kind handler
+targets has a structural match, while 23 of 41 VM-handler targets do. The other 18 VM targets are
+already covered by the opcode-specific original-BBB comparisons and must not be misreported as
+unported merely because their bodies changed.
+
+All 49 closed-graph indirect records are classified: nine static-table dispatch records, six
+segment-zero runtime calls, 20 XMS-driver vectors, 12 sound-driver vectors, and two dynamic
+presentation callbacks.
 Classification does not turn the external vectors into recovered functions. The next shared-engine
-gate is to cross-reference the 368-target lower bound against existing BBB native oracles and runtime
+gate is to cross-reference the 382-entrypoint lower bound against existing BBB native oracles and runtime
 ownership, then resolve dynamically supplied internal callbacks from original execution traces. Only
 uncovered behavior from that audit should drive implementation changes.

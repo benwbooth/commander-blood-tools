@@ -14,15 +14,19 @@
     "static_table_distinct_targets": 110,
     "static_targets_missing_from_direct_denominator": 109,
     "lower_bound_after_static_tables": 368,
-    "indirect_records": 48,
-    "unique_indirect_sites": 46,
+    "functions_after_static_closure": 382,
+    "direct_edges_after_static_closure": 642,
+    "leaves_after_static_closure": 186,
+    "downstream_functions_added_by_closure": 14,
+    "indirect_records": 49,
+    "unique_indirect_sites": 47,
     "unclassified_records": 0
   },
   "category_record_counts": {
     "direct_far_segment0_runtime_call": 6,
     "dynamic_presentation_callback_vector": 2,
     "external_sound_driver_vector": 12,
-    "external_xms_driver_vector": 19,
+    "external_xms_driver_vector": 20,
     "static_internal_dispatch_table": 9
   },
   "tables": [
@@ -1418,6 +1422,13 @@
     },
     {
       "site_file_offset": "0x000d25",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x002d3c",
       "mnemonic": "lcall",
       "operand": "gs:[0xc42]",
       "category": "external_xms_driver_vector",

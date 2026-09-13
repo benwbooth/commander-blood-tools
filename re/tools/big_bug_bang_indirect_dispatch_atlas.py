@@ -134,15 +134,15 @@ def executable_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def direct_far_targets(mz) -> set[int]:
-    targets = set()
+def direct_far_targets(mz) -> dict[int, int]:
+    targets = {}
     for site in range(mz.header_size, mz.image_total - 5):
         if mz.data[site] not in (0x9A, 0xEA):
             continue
         if mz.file_to_image(site + 3) not in mz.reloc_image_offsets:
             continue
         offset, segment = struct.unpack_from("<HH", mz.data, site + 1)
-        targets.add(mz.segoff_to_file(segment, offset))
+        targets[mz.segoff_to_file(segment, offset)] = segment
     return targets
 
 
@@ -163,11 +163,13 @@ def cs_operand_address(builder, site: int) -> int:
     return builder.mz.header_size + segment * 16 + int(memory[0].mem.disp)
 
 
-def table_entries(mz, table: dict[str, object]) -> tuple[list[dict[str, object]], set[int]]:
+def table_entries(
+    mz, table: dict[str, object]
+) -> tuple[list[dict[str, object]], dict[int, int]]:
     start = int(table["table"])
     count = int(table["count"])
     entries = []
-    targets = set()
+    targets = {}
     for index in range(count):
         if table["kind"] == "far":
             offset, segment = struct.unpack_from("<HH", mz.data, start + index * 4)
@@ -175,13 +177,17 @@ def table_entries(mz, table: dict[str, object]) -> tuple[list[dict[str, object]]
             encoded: object = f"{segment:#06x}:{offset:#06x}"
         else:
             raw = struct.unpack_from("<H", mz.data, start + index * 2)[0]
-            target = int(table["target_base"]) + raw
+            target_base = int(table["target_base"])
+            target = target_base + raw
+            segment = (target_base - mz.header_size) // 16
+            if mz.header_size + segment * 16 != target_base:
+                raise ValueError(f"unaligned target base {target_base:#x}")
             encoded = f"{raw:#06x}"
         if not (mz.header_size <= target < mz.image_total):
             raise ValueError(
                 f"{table['name']} index {index} target outside image: {target:#x}"
             )
-        targets.add(target)
+        targets[target] = segment
         selector = index + int(table.get("selector_base", 0))
         entries.append(
             {
@@ -224,7 +230,9 @@ def classify_indirect(records: list[list[str]]) -> list[dict[str, object]]:
     return result
 
 
-def build_atlas(executable: Path, graph_path: Path) -> dict[str, object]:
+def analyze(
+    executable: Path, graph_path: Path
+) -> tuple[dict[str, object], dict[str, object]]:
     digest = executable_digest(executable)
     if digest != EXECUTABLE_SHA256:
         raise ValueError(f"unrecognized BLOOD2PG.EXE SHA-256 {digest}")
@@ -237,7 +245,7 @@ def build_atlas(executable: Path, graph_path: Path) -> dict[str, object]:
         raise ValueError("supplied function graph does not match the executable")
 
     functions = set(generated_graph["funcs"])
-    static_targets: set[int] = set()
+    static_target_segments: dict[int, int] = {}
     tables = []
     for definition in TABLES:
         dispatch_sites = tuple(int(site) for site in definition["dispatch_sites"])
@@ -251,8 +259,9 @@ def build_atlas(executable: Path, graph_path: Path) -> dict[str, object]:
                 raise ValueError(
                     f"changed {definition['name']} table: {derived:#x}"
                 )
-        entries, targets = table_entries(mz, definition)
-        static_targets.update(targets)
+        entries, target_segments = table_entries(mz, definition)
+        targets = set(target_segments)
+        static_target_segments.update(target_segments)
         table = {
             "name": definition["name"],
             "description": definition["description"],
@@ -270,13 +279,21 @@ def build_atlas(executable: Path, graph_path: Path) -> dict[str, object]:
             table["mutable_slot_file_offset"] = h(int(definition["mutable_slot"]))
         tables.append(table)
 
-    classified = classify_indirect(generated_graph["indirect"])
+    far_target_segments = direct_far_targets(mz)
+    for target, segment in sorted(
+        {**far_target_segments, **static_target_segments}.items()
+    ):
+        builder.walk_function(target, segment)
+    expanded_graph = builder.graph()
+
+    classified = classify_indirect(expanded_graph["indirect"])
     category_counts = collections.Counter(row["category"] for row in classified)
     unknown = category_counts.get("unknown", 0)
     if unknown:
         raise ValueError(f"{unknown} indirect records remain unclassified")
 
-    far_targets = direct_far_targets(mz)
+    far_targets = set(far_target_segments)
+    static_targets = set(static_target_segments)
     direct_denominator = functions | far_targets
     resolved_denominator = direct_denominator | static_targets
     return {
@@ -300,6 +317,13 @@ def build_atlas(executable: Path, graph_path: Path) -> dict[str, object]:
                 static_targets - direct_denominator
             ),
             "lower_bound_after_static_tables": len(resolved_denominator),
+            "functions_after_static_closure": len(expanded_graph["funcs"]),
+            "direct_edges_after_static_closure": sum(
+                len(callees) for callees in expanded_graph["callgraph"].values()
+            ),
+            "leaves_after_static_closure": len(expanded_graph["leaves"]),
+            "downstream_functions_added_by_closure": len(expanded_graph["funcs"])
+            - len(resolved_denominator),
             "indirect_records": len(classified),
             "unique_indirect_sites": len(
                 {row["site_file_offset"] for row in classified}
@@ -309,7 +333,12 @@ def build_atlas(executable: Path, graph_path: Path) -> dict[str, object]:
         "category_record_counts": dict(sorted(category_counts.items())),
         "tables": tables,
         "classified_indirect_records": classified,
-    }
+    }, expanded_graph
+
+
+def build_atlas(executable: Path, graph_path: Path) -> dict[str, object]:
+    atlas, _expanded_graph = analyze(executable, graph_path)
+    return atlas
 
 
 def parse_args() -> argparse.Namespace:
@@ -317,18 +346,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("executable", type=Path)
     parser.add_argument("graph", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument(
+        "--expanded-graph-output",
+        type=Path,
+        help="write the graph closed over far and static-table targets",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    atlas = build_atlas(args.executable, args.graph)
+    atlas, expanded_graph = analyze(args.executable, args.graph)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(atlas, indent=2) + "\n")
+    if args.expanded_graph_output is not None:
+        args.expanded_graph_output.parent.mkdir(parents=True, exist_ok=True)
+        args.expanded_graph_output.write_text(
+            json.dumps(expanded_graph, indent=2) + "\n"
+        )
     counts = atlas["counts"]
     print(
-        f"{counts['lower_bound_after_static_tables']} native targets in the "
-        f"static lower bound; {counts['unclassified_records']} unclassified records"
+        f"{counts['functions_after_static_closure']} native entrypoints after "
+        f"static closure; {counts['unclassified_records']} unclassified records"
     )
     print(args.output)
 

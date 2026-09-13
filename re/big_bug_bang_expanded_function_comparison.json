@@ -1,0 +1,6185 @@
+{
+  "scope": "Static correspondence candidates after known-table closure; structural matches are not behavioral parity proof",
+  "inputs": {
+    "commander": {
+      "path": "re/bin/BLOODPRG.EXE",
+      "sha256": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823"
+    },
+    "sequel": {
+      "path": "output/big-bug-bang/disc/BLOOD2PG.EXE",
+      "sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+    }
+  },
+  "summary": {
+    "commander_functions": 334,
+    "sequel_functions": 382,
+    "unique_structural_correspondences": 223,
+    "exact_body_correspondences": 27,
+    "relocation_tolerant_correspondences": 196,
+    "ambiguous_sequel_functions": 33,
+    "unresolved_sequel_functions": 126,
+    "unresolved_commander_functions": 111,
+    "mapped_sequel_edges": 155,
+    "mapped_edges_present_in_commander": 155
+  },
+  "matches": [
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8ef",
+        "instruction_count": 29,
+        "instruction_bytes": 53,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6f1",
+        "instruction_count": 29,
+        "instruction_bytes": 53,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x9a2",
+        "instruction_count": 32,
+        "instruction_bytes": 78,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x79c",
+        "instruction_count": 32,
+        "instruction_bytes": 78,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x9f0",
+        "instruction_count": 20,
+        "instruction_bytes": 41,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x7ea",
+        "instruction_count": 20,
+        "instruction_bytes": 41,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb36",
+        "instruction_count": 13,
+        "instruction_bytes": 21,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x93b",
+        "instruction_count": 13,
+        "instruction_bytes": 21,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb4b",
+        "instruction_count": 26,
+        "instruction_bytes": 54,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x950",
+        "instruction_count": 26,
+        "instruction_bytes": 54,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xb81",
+        "instruction_count": 9,
+        "instruction_bytes": 17,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x986",
+        "instruction_count": 9,
+        "instruction_bytes": 17,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xc94",
+        "instruction_count": 45,
+        "instruction_bytes": 153,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa99",
+        "instruction_count": 45,
+        "instruction_bytes": 153,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xd2d",
+        "instruction_count": 6,
+        "instruction_bytes": 16,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xb32",
+        "instruction_count": 6,
+        "instruction_bytes": 16,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xd3d",
+        "instruction_count": 69,
+        "instruction_bytes": 149,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xb42",
+        "instruction_count": 69,
+        "instruction_bytes": 149,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xdd2",
+        "instruction_count": 20,
+        "instruction_bytes": 40,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xbd7",
+        "instruction_count": 20,
+        "instruction_bytes": 40,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xdfa",
+        "instruction_count": 15,
+        "instruction_bytes": 26,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xbff",
+        "instruction_count": 15,
+        "instruction_bytes": 26,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xe21",
+        "instruction_count": 84,
+        "instruction_bytes": 154,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xc26",
+        "instruction_count": 84,
+        "instruction_bytes": 154,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xebb",
+        "instruction_count": 6,
+        "instruction_bytes": 11,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xcc0",
+        "instruction_count": 6,
+        "instruction_bytes": 11,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xec6",
+        "instruction_count": 21,
+        "instruction_bytes": 36,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xccb",
+        "instruction_count": 21,
+        "instruction_bytes": 36,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xeea",
+        "instruction_count": 19,
+        "instruction_bytes": 31,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xcef",
+        "instruction_count": 19,
+        "instruction_bytes": 31,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xf3e",
+        "instruction_count": 15,
+        "instruction_bytes": 23,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xd4a",
+        "instruction_count": 15,
+        "instruction_bytes": 23,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xf55",
+        "instruction_count": 14,
+        "instruction_bytes": 20,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xd61",
+        "instruction_count": 14,
+        "instruction_bytes": 20,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x1502",
+        "instruction_count": 30,
+        "instruction_bytes": 83,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x1344",
+        "instruction_count": 30,
+        "instruction_bytes": 83,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x1555",
+        "instruction_count": 20,
+        "instruction_bytes": 45,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x1397",
+        "instruction_count": 20,
+        "instruction_bytes": 45,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x1582",
+        "instruction_count": 71,
+        "instruction_bytes": 187,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x13c4",
+        "instruction_count": 71,
+        "instruction_bytes": 187,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x163d",
+        "instruction_count": 12,
+        "instruction_bytes": 28,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x147f",
+        "instruction_count": 12,
+        "instruction_bytes": 28,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x1659",
+        "instruction_count": 20,
+        "instruction_bytes": 47,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x149b",
+        "instruction_count": 20,
+        "instruction_bytes": 47,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x17ce",
+        "instruction_count": 44,
+        "instruction_bytes": 132,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x1610",
+        "instruction_count": 44,
+        "instruction_bytes": 132,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x194d",
+        "instruction_count": 9,
+        "instruction_bytes": 36,
+        "direct_callers": 3,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x178b",
+        "instruction_count": 9,
+        "instruction_bytes": 36,
+        "direct_callers": 3,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x1971",
+        "instruction_count": 18,
+        "instruction_bytes": 42,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x17af",
+        "instruction_count": 18,
+        "instruction_bytes": 42,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x1c55",
+        "instruction_count": 25,
+        "instruction_bytes": 64,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x1a93",
+        "instruction_count": 25,
+        "instruction_bytes": 64,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x1fe5",
+        "instruction_count": 19,
+        "instruction_bytes": 32,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x1d74",
+        "instruction_count": 19,
+        "instruction_bytes": 32,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2005",
+        "instruction_count": 32,
+        "instruction_bytes": 68,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x1d94",
+        "instruction_count": 32,
+        "instruction_bytes": 68,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2049",
+        "instruction_count": 63,
+        "instruction_bytes": 133,
+        "direct_callers": 1,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x1dd8",
+        "instruction_count": 63,
+        "instruction_bytes": 133,
+        "direct_callers": 1,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2142",
+        "instruction_count": 24,
+        "instruction_bytes": 79,
+        "direct_callers": 1,
+        "direct_callees": 7
+      },
+      "commander": {
+        "entry": "0x1ec1",
+        "instruction_count": 24,
+        "instruction_bytes": 79,
+        "direct_callers": 1,
+        "direct_callees": 7
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x220b",
+        "instruction_count": 31,
+        "instruction_bytes": 68,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x1f78",
+        "instruction_count": 31,
+        "instruction_bytes": 68,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x224f",
+        "instruction_count": 16,
+        "instruction_bytes": 50,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x1fbc",
+        "instruction_count": 16,
+        "instruction_bytes": 50,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x23a2",
+        "instruction_count": 24,
+        "instruction_bytes": 50,
+        "direct_callers": 3,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x210e",
+        "instruction_count": 24,
+        "instruction_bytes": 50,
+        "direct_callers": 3,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x23d4",
+        "instruction_count": 27,
+        "instruction_bytes": 77,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2140",
+        "instruction_count": 27,
+        "instruction_bytes": 77,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2421",
+        "instruction_count": 42,
+        "instruction_bytes": 116,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x218d",
+        "instruction_count": 42,
+        "instruction_bytes": 116,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2514",
+        "instruction_count": 15,
+        "instruction_bytes": 41,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2224",
+        "instruction_count": 15,
+        "instruction_bytes": 41,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x25a7",
+        "instruction_count": 9,
+        "instruction_bytes": 30,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x22b2",
+        "instruction_count": 9,
+        "instruction_bytes": 30,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x25c5",
+        "instruction_count": 2,
+        "instruction_bytes": 5,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x22d0",
+        "instruction_count": 2,
+        "instruction_bytes": 5,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2660",
+        "instruction_count": 114,
+        "instruction_bytes": 229,
+        "direct_callers": 5,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x22e0",
+        "instruction_count": 114,
+        "instruction_bytes": 229,
+        "direct_callers": 5,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2745",
+        "instruction_count": 61,
+        "instruction_bytes": 104,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x23c5",
+        "instruction_count": 61,
+        "instruction_bytes": 104,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x27ad",
+        "instruction_count": 55,
+        "instruction_bytes": 94,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x242d",
+        "instruction_count": 55,
+        "instruction_bytes": 94,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x280b",
+        "instruction_count": 15,
+        "instruction_bytes": 27,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x248b",
+        "instruction_count": 15,
+        "instruction_bytes": 27,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x2832",
+        "instruction_count": 34,
+        "instruction_bytes": 57,
+        "direct_callers": 6,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x24b2",
+        "instruction_count": 34,
+        "instruction_bytes": 57,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x286b",
+        "instruction_count": 34,
+        "instruction_bytes": 71,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x24eb",
+        "instruction_count": 34,
+        "instruction_bytes": 71,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x2924",
+        "instruction_count": 16,
+        "instruction_bytes": 22,
+        "direct_callers": 4,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x25a4",
+        "instruction_count": 16,
+        "instruction_bytes": 22,
+        "direct_callers": 4,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x2992",
+        "instruction_count": 44,
+        "instruction_bytes": 83,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2612",
+        "instruction_count": 44,
+        "instruction_bytes": 83,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x29e5",
+        "instruction_count": 11,
+        "instruction_bytes": 19,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2665",
+        "instruction_count": 11,
+        "instruction_bytes": 19,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x29fd",
+        "instruction_count": 8,
+        "instruction_bytes": 16,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x267d",
+        "instruction_count": 8,
+        "instruction_bytes": 16,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2a13",
+        "instruction_count": 28,
+        "instruction_bytes": 60,
+        "direct_callers": 13,
+        "direct_callees": 4
+      },
+      "commander": {
+        "entry": "0x2693",
+        "instruction_count": 28,
+        "instruction_bytes": 60,
+        "direct_callers": 13,
+        "direct_callees": 4
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2a4f",
+        "instruction_count": 92,
+        "instruction_bytes": 244,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x26cf",
+        "instruction_count": 92,
+        "instruction_bytes": 244,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2b43",
+        "instruction_count": 18,
+        "instruction_bytes": 38,
+        "direct_callers": 9,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x27c3",
+        "instruction_count": 18,
+        "instruction_bytes": 38,
+        "direct_callers": 9,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2b69",
+        "instruction_count": 18,
+        "instruction_bytes": 38,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x27e9",
+        "instruction_count": 18,
+        "instruction_bytes": 38,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2b8f",
+        "instruction_count": 46,
+        "instruction_bytes": 108,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x280f",
+        "instruction_count": 46,
+        "instruction_bytes": 108,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2bfb",
+        "instruction_count": 40,
+        "instruction_bytes": 79,
+        "direct_callers": 2,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0x287b",
+        "instruction_count": 40,
+        "instruction_bytes": 79,
+        "direct_callers": 2,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2c86",
+        "instruction_count": 91,
+        "instruction_bytes": 241,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x2901",
+        "instruction_count": 91,
+        "instruction_bytes": 241,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2d77",
+        "instruction_count": 73,
+        "instruction_bytes": 201,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x29f2",
+        "instruction_count": 73,
+        "instruction_bytes": 201,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2e40",
+        "instruction_count": 66,
+        "instruction_bytes": 176,
+        "direct_callers": 4,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x2abb",
+        "instruction_count": 66,
+        "instruction_bytes": 176,
+        "direct_callers": 4,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2ef0",
+        "instruction_count": 54,
+        "instruction_bytes": 131,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x2b6b",
+        "instruction_count": 54,
+        "instruction_bytes": 131,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x2f83",
+        "instruction_count": 144,
+        "instruction_bytes": 339,
+        "direct_callers": 6,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x2bfd",
+        "instruction_count": 144,
+        "instruction_bytes": 339,
+        "direct_callers": 6,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x30d6",
+        "instruction_count": 50,
+        "instruction_bytes": 110,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2d50",
+        "instruction_count": 50,
+        "instruction_bytes": 110,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x31b4",
+        "instruction_count": 35,
+        "instruction_bytes": 64,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2e33",
+        "instruction_count": 35,
+        "instruction_bytes": 64,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x31f4",
+        "instruction_count": 99,
+        "instruction_bytes": 237,
+        "direct_callers": 5,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2e73",
+        "instruction_count": 99,
+        "instruction_bytes": 237,
+        "direct_callers": 5,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x3310",
+        "instruction_count": 15,
+        "instruction_bytes": 22,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2f90",
+        "instruction_count": 15,
+        "instruction_bytes": 22,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x3326",
+        "instruction_count": 14,
+        "instruction_bytes": 21,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x2fa6",
+        "instruction_count": 14,
+        "instruction_bytes": 21,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x33e6",
+        "instruction_count": 55,
+        "instruction_bytes": 103,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3066",
+        "instruction_count": 55,
+        "instruction_bytes": 103,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x344d",
+        "instruction_count": 28,
+        "instruction_bytes": 57,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x30cd",
+        "instruction_count": 28,
+        "instruction_bytes": 57,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x3486",
+        "instruction_count": 66,
+        "instruction_bytes": 140,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3106",
+        "instruction_count": 66,
+        "instruction_bytes": 140,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x3512",
+        "instruction_count": 70,
+        "instruction_bytes": 147,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3192",
+        "instruction_count": 70,
+        "instruction_bytes": 147,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x362c",
+        "instruction_count": 59,
+        "instruction_bytes": 117,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x32ac",
+        "instruction_count": 59,
+        "instruction_bytes": 117,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x36a1",
+        "instruction_count": 60,
+        "instruction_bytes": 125,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3321",
+        "instruction_count": 60,
+        "instruction_bytes": 125,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x371e",
+        "instruction_count": 71,
+        "instruction_bytes": 138,
+        "direct_callers": 5,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x339e",
+        "instruction_count": 71,
+        "instruction_bytes": 138,
+        "direct_callers": 5,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x38fc",
+        "instruction_count": 87,
+        "instruction_bytes": 194,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x356e",
+        "instruction_count": 87,
+        "instruction_bytes": 194,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x39be",
+        "instruction_count": 96,
+        "instruction_bytes": 186,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3630",
+        "instruction_count": 96,
+        "instruction_bytes": 186,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x3a78",
+        "instruction_count": 76,
+        "instruction_bytes": 139,
+        "direct_callers": 13,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x36ea",
+        "instruction_count": 76,
+        "instruction_bytes": 139,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x3d49",
+        "instruction_count": 119,
+        "instruction_bytes": 248,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x39bb",
+        "instruction_count": 119,
+        "instruction_bytes": 248,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x3e41",
+        "instruction_count": 70,
+        "instruction_bytes": 146,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3ab3",
+        "instruction_count": 70,
+        "instruction_bytes": 146,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x4002",
+        "instruction_count": 108,
+        "instruction_bytes": 231,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x3b85",
+        "instruction_count": 108,
+        "instruction_bytes": 231,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x40e9",
+        "instruction_count": 123,
+        "instruction_bytes": 271,
+        "direct_callers": 5,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3c6c",
+        "instruction_count": 123,
+        "instruction_bytes": 271,
+        "direct_callers": 4,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x42ed",
+        "instruction_count": 52,
+        "instruction_bytes": 94,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3e70",
+        "instruction_count": 52,
+        "instruction_bytes": 94,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x434b",
+        "instruction_count": 81,
+        "instruction_bytes": 153,
+        "direct_callers": 6,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x3ece",
+        "instruction_count": 81,
+        "instruction_bytes": 153,
+        "direct_callers": 6,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x4444",
+        "instruction_count": 89,
+        "instruction_bytes": 191,
+        "direct_callers": 4,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0x3fc7",
+        "instruction_count": 89,
+        "instruction_bytes": 191,
+        "direct_callers": 4,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x4503",
+        "instruction_count": 38,
+        "instruction_bytes": 74,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x4086",
+        "instruction_count": 38,
+        "instruction_bytes": 74,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x454d",
+        "instruction_count": 52,
+        "instruction_bytes": 126,
+        "direct_callers": 2,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x40d0",
+        "instruction_count": 52,
+        "instruction_bytes": 126,
+        "direct_callers": 2,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x45cb",
+        "instruction_count": 52,
+        "instruction_bytes": 117,
+        "direct_callers": 4,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x414e",
+        "instruction_count": 52,
+        "instruction_bytes": 117,
+        "direct_callers": 4,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x464e",
+        "instruction_count": 16,
+        "instruction_bytes": 31,
+        "direct_callers": 16,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x41d1",
+        "instruction_count": 16,
+        "instruction_bytes": 31,
+        "direct_callers": 16,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x468a",
+        "instruction_count": 23,
+        "instruction_bytes": 51,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x420d",
+        "instruction_count": 23,
+        "instruction_bytes": 51,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x46bd",
+        "instruction_count": 27,
+        "instruction_bytes": 45,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x4240",
+        "instruction_count": 27,
+        "instruction_bytes": 45,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x474a",
+        "instruction_count": 32,
+        "instruction_bytes": 73,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x42cd",
+        "instruction_count": 32,
+        "instruction_bytes": 73,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x4874",
+        "instruction_count": 51,
+        "instruction_bytes": 120,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x43f7",
+        "instruction_count": 51,
+        "instruction_bytes": 120,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x48ee",
+        "instruction_count": 75,
+        "instruction_bytes": 177,
+        "direct_callers": 4,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x4471",
+        "instruction_count": 75,
+        "instruction_bytes": 177,
+        "direct_callers": 4,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x49b3",
+        "instruction_count": 166,
+        "instruction_bytes": 384,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x4536",
+        "instruction_count": 166,
+        "instruction_bytes": 384,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x4b39",
+        "instruction_count": 603,
+        "instruction_bytes": 1260,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x46bc",
+        "instruction_count": 603,
+        "instruction_bytes": 1260,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x5025",
+        "instruction_count": 135,
+        "instruction_bytes": 302,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x4ba8",
+        "instruction_count": 135,
+        "instruction_bytes": 302,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x5153",
+        "instruction_count": 307,
+        "instruction_bytes": 652,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x4cd6",
+        "instruction_count": 307,
+        "instruction_bytes": 652,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x53df",
+        "instruction_count": 128,
+        "instruction_bytes": 312,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x4f62",
+        "instruction_count": 128,
+        "instruction_bytes": 312,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x551a",
+        "instruction_count": 111,
+        "instruction_bytes": 231,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x509d",
+        "instruction_count": 111,
+        "instruction_bytes": 231,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x5700",
+        "instruction_count": 9,
+        "instruction_bytes": 20,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x5288",
+        "instruction_count": 9,
+        "instruction_bytes": 20,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x5714",
+        "instruction_count": 55,
+        "instruction_bytes": 120,
+        "direct_callers": 2,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x529c",
+        "instruction_count": 55,
+        "instruction_bytes": 120,
+        "direct_callers": 2,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x5798",
+        "instruction_count": 12,
+        "instruction_bytes": 28,
+        "direct_callers": 5,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x5320",
+        "instruction_count": 12,
+        "instruction_bytes": 28,
+        "direct_callers": 4,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x57b4",
+        "instruction_count": 6,
+        "instruction_bytes": 13,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x533c",
+        "instruction_count": 6,
+        "instruction_bytes": 13,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x5bae",
+        "instruction_count": 53,
+        "instruction_bytes": 124,
+        "direct_callers": 1,
+        "direct_callees": 4
+      },
+      "commander": {
+        "entry": "0x56fe",
+        "instruction_count": 53,
+        "instruction_bytes": 124,
+        "direct_callers": 1,
+        "direct_callees": 4
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x5c2a",
+        "instruction_count": 13,
+        "instruction_bytes": 23,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x577a",
+        "instruction_count": 13,
+        "instruction_bytes": 23,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6104",
+        "instruction_count": 32,
+        "instruction_bytes": 59,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x5afd",
+        "instruction_count": 32,
+        "instruction_bytes": 59,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x65e8",
+        "instruction_count": 15,
+        "instruction_bytes": 30,
+        "direct_callers": 4,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x5fd8",
+        "instruction_count": 15,
+        "instruction_bytes": 30,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6606",
+        "instruction_count": 21,
+        "instruction_bytes": 45,
+        "direct_callers": 4,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x5ff6",
+        "instruction_count": 21,
+        "instruction_bytes": 45,
+        "direct_callers": 4,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6633",
+        "instruction_count": 8,
+        "instruction_bytes": 17,
+        "direct_callers": 18,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x6023",
+        "instruction_count": 8,
+        "instruction_bytes": 17,
+        "direct_callers": 16,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6644",
+        "instruction_count": 12,
+        "instruction_bytes": 26,
+        "direct_callers": 8,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x6034",
+        "instruction_count": 12,
+        "instruction_bytes": 26,
+        "direct_callers": 7,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x665e",
+        "instruction_count": 32,
+        "instruction_bytes": 65,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x604e",
+        "instruction_count": 32,
+        "instruction_bytes": 65,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6822",
+        "instruction_count": 31,
+        "instruction_bytes": 59,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6210",
+        "instruction_count": 31,
+        "instruction_bytes": 59,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x685d",
+        "instruction_count": 34,
+        "instruction_bytes": 72,
+        "direct_callers": 7,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x624b",
+        "instruction_count": 34,
+        "instruction_bytes": 72,
+        "direct_callers": 6,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x68a5",
+        "instruction_count": 9,
+        "instruction_bytes": 16,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x6293",
+        "instruction_count": 9,
+        "instruction_bytes": 16,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x68c8",
+        "instruction_count": 60,
+        "instruction_bytes": 131,
+        "direct_callers": 3,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x62b6",
+        "instruction_count": 60,
+        "instruction_bytes": 131,
+        "direct_callers": 3,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6993",
+        "instruction_count": 14,
+        "instruction_bytes": 25,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x647b",
+        "instruction_count": 14,
+        "instruction_bytes": 25,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x69d0",
+        "instruction_count": 5,
+        "instruction_bytes": 8,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x64b8",
+        "instruction_count": 5,
+        "instruction_bytes": 8,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x69d8",
+        "instruction_count": 3,
+        "instruction_bytes": 14,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x64c0",
+        "instruction_count": 3,
+        "instruction_bytes": 14,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6a01",
+        "instruction_count": 17,
+        "instruction_bytes": 43,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x64e5",
+        "instruction_count": 17,
+        "instruction_bytes": 43,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6a2c",
+        "instruction_count": 28,
+        "instruction_bytes": 73,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6510",
+        "instruction_count": 28,
+        "instruction_bytes": 73,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6a8e",
+        "instruction_count": 6,
+        "instruction_bytes": 22,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x6572",
+        "instruction_count": 6,
+        "instruction_bytes": 22,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6aa4",
+        "instruction_count": 6,
+        "instruction_bytes": 14,
+        "direct_callers": 0,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x6588",
+        "instruction_count": 6,
+        "instruction_bytes": 14,
+        "direct_callers": 0,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6af7",
+        "instruction_count": 4,
+        "instruction_bytes": 16,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x65db",
+        "instruction_count": 4,
+        "instruction_bytes": 16,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x6e54",
+        "instruction_count": 11,
+        "instruction_bytes": 19,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x67a7",
+        "instruction_count": 11,
+        "instruction_bytes": 19,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6e6e",
+        "instruction_count": 5,
+        "instruction_bytes": 14,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x67ba",
+        "instruction_count": 5,
+        "instruction_bytes": 14,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6e7c",
+        "instruction_count": 29,
+        "instruction_bytes": 104,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x67c8",
+        "instruction_count": 29,
+        "instruction_bytes": 104,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x6ee4",
+        "instruction_count": 10,
+        "instruction_bytes": 28,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x6830",
+        "instruction_count": 10,
+        "instruction_bytes": 28,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0x6f00",
+        "instruction_count": 5,
+        "instruction_bytes": 9,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x684c",
+        "instruction_count": 5,
+        "instruction_bytes": 9,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x750a",
+        "instruction_count": 31,
+        "instruction_bytes": 68,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6902",
+        "instruction_count": 31,
+        "instruction_bytes": 68,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x75cd",
+        "instruction_count": 82,
+        "instruction_bytes": 224,
+        "direct_callers": 0,
+        "direct_callees": 6
+      },
+      "commander": {
+        "entry": "0x69c7",
+        "instruction_count": 82,
+        "instruction_bytes": 224,
+        "direct_callers": 0,
+        "direct_callees": 6
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x76ad",
+        "instruction_count": 43,
+        "instruction_bytes": 95,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6aa7",
+        "instruction_count": 43,
+        "instruction_bytes": 95,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x770c",
+        "instruction_count": 26,
+        "instruction_bytes": 70,
+        "direct_callers": 0,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x6b06",
+        "instruction_count": 26,
+        "instruction_bytes": 70,
+        "direct_callers": 0,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x7752",
+        "instruction_count": 118,
+        "instruction_bytes": 306,
+        "direct_callers": 0,
+        "direct_callees": 6
+      },
+      "commander": {
+        "entry": "0x6b4c",
+        "instruction_count": 118,
+        "instruction_bytes": 306,
+        "direct_callers": 0,
+        "direct_callees": 6
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x7884",
+        "instruction_count": 58,
+        "instruction_bytes": 154,
+        "direct_callers": 0,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0x6c7e",
+        "instruction_count": 58,
+        "instruction_bytes": 154,
+        "direct_callers": 0,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x791e",
+        "instruction_count": 40,
+        "instruction_bytes": 104,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6d18",
+        "instruction_count": 40,
+        "instruction_bytes": 104,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x7986",
+        "instruction_count": 31,
+        "instruction_bytes": 79,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6d80",
+        "instruction_count": 31,
+        "instruction_bytes": 79,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x79d5",
+        "instruction_count": 39,
+        "instruction_bytes": 101,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6dcf",
+        "instruction_count": 39,
+        "instruction_bytes": 101,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x7a3a",
+        "instruction_count": 63,
+        "instruction_bytes": 186,
+        "direct_callers": 0,
+        "direct_callees": 5
+      },
+      "commander": {
+        "entry": "0x6e34",
+        "instruction_count": 63,
+        "instruction_bytes": 186,
+        "direct_callers": 0,
+        "direct_callees": 5
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x7af4",
+        "instruction_count": 43,
+        "instruction_bytes": 116,
+        "direct_callers": 0,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x6eee",
+        "instruction_count": 43,
+        "instruction_bytes": 116,
+        "direct_callers": 0,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x7b68",
+        "instruction_count": 34,
+        "instruction_bytes": 87,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x6f62",
+        "instruction_count": 34,
+        "instruction_bytes": 87,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8008",
+        "instruction_count": 92,
+        "instruction_bytes": 251,
+        "direct_callers": 1,
+        "direct_callees": 5
+      },
+      "commander": {
+        "entry": "0x6ff3",
+        "instruction_count": 92,
+        "instruction_bytes": 251,
+        "direct_callers": 1,
+        "direct_callees": 5
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8154",
+        "instruction_count": 62,
+        "instruction_bytes": 146,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x713d",
+        "instruction_count": 62,
+        "instruction_bytes": 146,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x81e6",
+        "instruction_count": 33,
+        "instruction_bytes": 75,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x71cf",
+        "instruction_count": 33,
+        "instruction_bytes": 75,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8231",
+        "instruction_count": 33,
+        "instruction_bytes": 63,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x721a",
+        "instruction_count": 33,
+        "instruction_bytes": 63,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x83e2",
+        "instruction_count": 48,
+        "instruction_bytes": 110,
+        "direct_callers": 1,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x739b",
+        "instruction_count": 48,
+        "instruction_bytes": 110,
+        "direct_callers": 1,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x85a0",
+        "instruction_count": 78,
+        "instruction_bytes": 180,
+        "direct_callers": 0,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0x755e",
+        "instruction_count": 78,
+        "instruction_bytes": 180,
+        "direct_callers": 0,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8654",
+        "instruction_count": 8,
+        "instruction_bytes": 23,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x7612",
+        "instruction_count": 8,
+        "instruction_bytes": 23,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8680",
+        "instruction_count": 22,
+        "instruction_bytes": 49,
+        "direct_callers": 0,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x763e",
+        "instruction_count": 22,
+        "instruction_bytes": 49,
+        "direct_callers": 0,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x86c6",
+        "instruction_count": 22,
+        "instruction_bytes": 54,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x7684",
+        "instruction_count": 22,
+        "instruction_bytes": 54,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x86fc",
+        "instruction_count": 3,
+        "instruction_bytes": 6,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x76ba",
+        "instruction_count": 3,
+        "instruction_bytes": 6,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x872c",
+        "instruction_count": 47,
+        "instruction_bytes": 106,
+        "direct_callers": 0,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x76ea",
+        "instruction_count": 47,
+        "instruction_bytes": 106,
+        "direct_callers": 0,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8796",
+        "instruction_count": 13,
+        "instruction_bytes": 34,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x7754",
+        "instruction_count": 13,
+        "instruction_bytes": 34,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x87b8",
+        "instruction_count": 8,
+        "instruction_bytes": 18,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x7776",
+        "instruction_count": 8,
+        "instruction_bytes": 18,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x87ca",
+        "instruction_count": 16,
+        "instruction_bytes": 33,
+        "direct_callers": 0,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x7788",
+        "instruction_count": 16,
+        "instruction_bytes": 33,
+        "direct_callers": 0,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8d88",
+        "instruction_count": 26,
+        "instruction_bytes": 52,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x7cb4",
+        "instruction_count": 26,
+        "instruction_bytes": 52,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8dbc",
+        "instruction_count": 70,
+        "instruction_bytes": 147,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x7ce8",
+        "instruction_count": 70,
+        "instruction_bytes": 147,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8e4f",
+        "instruction_count": 64,
+        "instruction_bytes": 161,
+        "direct_callers": 1,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x7d7b",
+        "instruction_count": 64,
+        "instruction_bytes": 161,
+        "direct_callers": 1,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8ef0",
+        "instruction_count": 60,
+        "instruction_bytes": 152,
+        "direct_callers": 6,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x7e1c",
+        "instruction_count": 60,
+        "instruction_bytes": 152,
+        "direct_callers": 6,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x8f94",
+        "instruction_count": 64,
+        "instruction_bytes": 220,
+        "direct_callers": 0,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0x7ec0",
+        "instruction_count": 64,
+        "instruction_bytes": 220,
+        "direct_callers": 0,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x935d",
+        "instruction_count": 33,
+        "instruction_bytes": 110,
+        "direct_callers": 0,
+        "direct_callees": 4
+      },
+      "commander": {
+        "entry": "0x81fb",
+        "instruction_count": 33,
+        "instruction_bytes": 110,
+        "direct_callers": 0,
+        "direct_callees": 4
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x93cb",
+        "instruction_count": 18,
+        "instruction_bytes": 44,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x8269",
+        "instruction_count": 18,
+        "instruction_bytes": 44,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x93f7",
+        "instruction_count": 20,
+        "instruction_bytes": 46,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x8295",
+        "instruction_count": 20,
+        "instruction_bytes": 46,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x9425",
+        "instruction_count": 18,
+        "instruction_bytes": 37,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x82c3",
+        "instruction_count": 18,
+        "instruction_bytes": 37,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x944a",
+        "instruction_count": 122,
+        "instruction_bytes": 305,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x82e8",
+        "instruction_count": 122,
+        "instruction_bytes": 305,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x98d1",
+        "instruction_count": 48,
+        "instruction_bytes": 145,
+        "direct_callers": 0,
+        "direct_callees": 4
+      },
+      "commander": {
+        "entry": "0x872c",
+        "instruction_count": 48,
+        "instruction_bytes": 145,
+        "direct_callers": 0,
+        "direct_callees": 4
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x9962",
+        "instruction_count": 47,
+        "instruction_bytes": 139,
+        "direct_callers": 0,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x87bd",
+        "instruction_count": 47,
+        "instruction_bytes": 139,
+        "direct_callers": 0,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x9c5e",
+        "instruction_count": 103,
+        "instruction_bytes": 328,
+        "direct_callers": 1,
+        "direct_callees": 9
+      },
+      "commander": {
+        "entry": "0x8a4e",
+        "instruction_count": 103,
+        "instruction_bytes": 328,
+        "direct_callers": 1,
+        "direct_callees": 9
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x9dbb",
+        "instruction_count": 116,
+        "instruction_bytes": 235,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x8bab",
+        "instruction_count": 116,
+        "instruction_bytes": 235,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0x9ea6",
+        "instruction_count": 26,
+        "instruction_bytes": 56,
+        "direct_callers": 9,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x8c96",
+        "instruction_count": 26,
+        "instruction_bytes": 56,
+        "direct_callers": 9,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xaa3d",
+        "instruction_count": 46,
+        "instruction_bytes": 151,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x92a3",
+        "instruction_count": 46,
+        "instruction_bytes": 151,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xaad4",
+        "instruction_count": 24,
+        "instruction_bytes": 42,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x933a",
+        "instruction_count": 24,
+        "instruction_bytes": 42,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xaafe",
+        "instruction_count": 85,
+        "instruction_bytes": 145,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x9364",
+        "instruction_count": 85,
+        "instruction_bytes": 145,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xab8f",
+        "instruction_count": 96,
+        "instruction_bytes": 283,
+        "direct_callers": 2,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0x93f5",
+        "instruction_count": 96,
+        "instruction_bytes": 283,
+        "direct_callers": 2,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xacaa",
+        "instruction_count": 25,
+        "instruction_bytes": 58,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x9510",
+        "instruction_count": 25,
+        "instruction_bytes": 58,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xace4",
+        "instruction_count": 24,
+        "instruction_bytes": 83,
+        "direct_callers": 4,
+        "direct_callees": 7
+      },
+      "commander": {
+        "entry": "0x954a",
+        "instruction_count": 24,
+        "instruction_bytes": 83,
+        "direct_callers": 4,
+        "direct_callees": 7
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xadde",
+        "instruction_count": 12,
+        "instruction_bytes": 23,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x963f",
+        "instruction_count": 12,
+        "instruction_bytes": 23,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xadf5",
+        "instruction_count": 157,
+        "instruction_bytes": 453,
+        "direct_callers": 4,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x9656",
+        "instruction_count": 157,
+        "instruction_bytes": 453,
+        "direct_callers": 4,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xafba",
+        "instruction_count": 67,
+        "instruction_bytes": 158,
+        "direct_callers": 3,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x981b",
+        "instruction_count": 67,
+        "instruction_bytes": 158,
+        "direct_callers": 3,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb058",
+        "instruction_count": 104,
+        "instruction_bytes": 343,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x98b9",
+        "instruction_count": 104,
+        "instruction_bytes": 343,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb1af",
+        "instruction_count": 80,
+        "instruction_bytes": 244,
+        "direct_callers": 2,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x9a10",
+        "instruction_count": 80,
+        "instruction_bytes": 244,
+        "direct_callers": 2,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb2a3",
+        "instruction_count": 30,
+        "instruction_bytes": 68,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x9b04",
+        "instruction_count": 30,
+        "instruction_bytes": 68,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb306",
+        "instruction_count": 22,
+        "instruction_bytes": 49,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0x9b67",
+        "instruction_count": 22,
+        "instruction_bytes": 49,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb337",
+        "instruction_count": 122,
+        "instruction_bytes": 369,
+        "direct_callers": 2,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0x9b98",
+        "instruction_count": 122,
+        "instruction_bytes": 369,
+        "direct_callers": 2,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb763",
+        "instruction_count": 7,
+        "instruction_bytes": 14,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0x9f80",
+        "instruction_count": 7,
+        "instruction_bytes": 14,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb771",
+        "instruction_count": 103,
+        "instruction_bytes": 309,
+        "direct_callers": 1,
+        "direct_callees": 8
+      },
+      "commander": {
+        "entry": "0x9f8e",
+        "instruction_count": 103,
+        "instruction_bytes": 309,
+        "direct_callers": 1,
+        "direct_callees": 8
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb785",
+        "instruction_count": 96,
+        "instruction_bytes": 289,
+        "direct_callers": 1,
+        "direct_callees": 5
+      },
+      "commander": {
+        "entry": "0x9fa2",
+        "instruction_count": 96,
+        "instruction_bytes": 289,
+        "direct_callers": 1,
+        "direct_callees": 5
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb8a6",
+        "instruction_count": 44,
+        "instruction_bytes": 84,
+        "direct_callers": 3,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xa0c3",
+        "instruction_count": 44,
+        "instruction_bytes": 84,
+        "direct_callers": 3,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb8fa",
+        "instruction_count": 13,
+        "instruction_bytes": 29,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa117",
+        "instruction_count": 13,
+        "instruction_bytes": 29,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb924",
+        "instruction_count": 11,
+        "instruction_bytes": 30,
+        "direct_callers": 3,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xa141",
+        "instruction_count": 11,
+        "instruction_bytes": 30,
+        "direct_callers": 3,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb942",
+        "instruction_count": 43,
+        "instruction_bytes": 85,
+        "direct_callers": 1,
+        "direct_callees": 6
+      },
+      "commander": {
+        "entry": "0xa15f",
+        "instruction_count": 43,
+        "instruction_bytes": 85,
+        "direct_callers": 1,
+        "direct_callees": 6
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb997",
+        "instruction_count": 42,
+        "instruction_bytes": 88,
+        "direct_callers": 1,
+        "direct_callees": 7
+      },
+      "commander": {
+        "entry": "0xa1b4",
+        "instruction_count": 42,
+        "instruction_bytes": 88,
+        "direct_callers": 1,
+        "direct_callees": 7
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb9d6",
+        "instruction_count": 14,
+        "instruction_bytes": 25,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xa1f3",
+        "instruction_count": 14,
+        "instruction_bytes": 25,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xb9ef",
+        "instruction_count": 18,
+        "instruction_bytes": 52,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xa20c",
+        "instruction_count": 18,
+        "instruction_bytes": 52,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xba95",
+        "instruction_count": 179,
+        "instruction_bytes": 471,
+        "direct_callers": 3,
+        "direct_callees": 10
+      },
+      "commander": {
+        "entry": "0xa2ab",
+        "instruction_count": 179,
+        "instruction_bytes": 471,
+        "direct_callers": 3,
+        "direct_callees": 10
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbac7",
+        "instruction_count": 6,
+        "instruction_bytes": 21,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xa2dd",
+        "instruction_count": 6,
+        "instruction_bytes": 21,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbb78",
+        "instruction_count": 11,
+        "instruction_bytes": 31,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa38e",
+        "instruction_count": 11,
+        "instruction_bytes": 31,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbb97",
+        "instruction_count": 14,
+        "instruction_bytes": 35,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa3ad",
+        "instruction_count": 14,
+        "instruction_bytes": 35,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbbba",
+        "instruction_count": 20,
+        "instruction_bytes": 59,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa3d0",
+        "instruction_count": 20,
+        "instruction_bytes": 59,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbbf5",
+        "instruction_count": 4,
+        "instruction_bytes": 15,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa40b",
+        "instruction_count": 4,
+        "instruction_bytes": 15,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbc04",
+        "instruction_count": 87,
+        "instruction_bytes": 211,
+        "direct_callers": 2,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0xa41a",
+        "instruction_count": 87,
+        "instruction_bytes": 211,
+        "direct_callers": 2,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xbcd7",
+        "instruction_count": 51,
+        "instruction_bytes": 101,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa4ed",
+        "instruction_count": 51,
+        "instruction_bytes": 101,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbd3c",
+        "instruction_count": 93,
+        "instruction_bytes": 267,
+        "direct_callers": 2,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0xa552",
+        "instruction_count": 93,
+        "instruction_bytes": 267,
+        "direct_callers": 2,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbe0c",
+        "instruction_count": 6,
+        "instruction_bytes": 18,
+        "direct_callers": 4,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xa622",
+        "instruction_count": 6,
+        "instruction_bytes": 18,
+        "direct_callers": 4,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbe1e",
+        "instruction_count": 8,
+        "instruction_bytes": 14,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa634",
+        "instruction_count": 8,
+        "instruction_bytes": 14,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbe2c",
+        "instruction_count": 100,
+        "instruction_bytes": 252,
+        "direct_callers": 1,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0xa642",
+        "instruction_count": 100,
+        "instruction_bytes": 252,
+        "direct_callers": 1,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbe4e",
+        "instruction_count": 88,
+        "instruction_bytes": 218,
+        "direct_callers": 3,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xa664",
+        "instruction_count": 88,
+        "instruction_bytes": 218,
+        "direct_callers": 3,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbf1e",
+        "instruction_count": 4,
+        "instruction_bytes": 10,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa734",
+        "instruction_count": 4,
+        "instruction_bytes": 10,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbf28",
+        "instruction_count": 5,
+        "instruction_bytes": 25,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa73e",
+        "instruction_count": 5,
+        "instruction_bytes": 25,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbf2e",
+        "instruction_count": 4,
+        "instruction_bytes": 19,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa744",
+        "instruction_count": 4,
+        "instruction_bytes": 19,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbf41",
+        "instruction_count": 12,
+        "instruction_bytes": 33,
+        "direct_callers": 5,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa757",
+        "instruction_count": 12,
+        "instruction_bytes": 33,
+        "direct_callers": 4,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xbf62",
+        "instruction_count": 4,
+        "instruction_bytes": 12,
+        "direct_callers": 1,
+        "direct_callees": 1
+      },
+      "commander": {
+        "entry": "0xa778",
+        "instruction_count": 4,
+        "instruction_bytes": 12,
+        "direct_callers": 1,
+        "direct_callees": 1
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xbfd0",
+        "instruction_count": 7,
+        "instruction_bytes": 7,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa7e6",
+        "instruction_count": 7,
+        "instruction_bytes": 7,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xc016",
+        "instruction_count": 30,
+        "instruction_bytes": 59,
+        "direct_callers": 1,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0xa82c",
+        "instruction_count": 30,
+        "instruction_bytes": 59,
+        "direct_callers": 1,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xc051",
+        "instruction_count": 73,
+        "instruction_bytes": 133,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xa867",
+        "instruction_count": 73,
+        "instruction_bytes": 133,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xc2a4",
+        "instruction_count": 53,
+        "instruction_bytes": 105,
+        "direct_callers": 2,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xaabc",
+        "instruction_count": 53,
+        "instruction_bytes": 105,
+        "direct_callers": 2,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xc30d",
+        "instruction_count": 483,
+        "instruction_bytes": 1111,
+        "direct_callers": 1,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0xab25",
+        "instruction_count": 483,
+        "instruction_bytes": 1111,
+        "direct_callers": 1,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "exact_body",
+      "sequel": {
+        "entry": "0xc57e",
+        "instruction_count": 11,
+        "instruction_bytes": 25,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xad96",
+        "instruction_count": 11,
+        "instruction_bytes": 25,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xc780",
+        "instruction_count": 68,
+        "instruction_bytes": 217,
+        "direct_callers": 1,
+        "direct_callees": 7
+      },
+      "commander": {
+        "entry": "0xafa0",
+        "instruction_count": 68,
+        "instruction_bytes": 217,
+        "direct_callers": 1,
+        "direct_callees": 7
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xce6a",
+        "instruction_count": 67,
+        "instruction_bytes": 127,
+        "direct_callers": 3,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xb6dd",
+        "instruction_count": 67,
+        "instruction_bytes": 127,
+        "direct_callers": 3,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xcee9",
+        "instruction_count": 29,
+        "instruction_bytes": 76,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xb75c",
+        "instruction_count": 29,
+        "instruction_bytes": 76,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xcf40",
+        "instruction_count": 29,
+        "instruction_bytes": 51,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xb7b0",
+        "instruction_count": 29,
+        "instruction_bytes": 51,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xcf73",
+        "instruction_count": 93,
+        "instruction_bytes": 234,
+        "direct_callers": 1,
+        "direct_callees": 2
+      },
+      "commander": {
+        "entry": "0xb7e3",
+        "instruction_count": 93,
+        "instruction_bytes": 234,
+        "direct_callers": 1,
+        "direct_callees": 2
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xd4b3",
+        "instruction_count": 13,
+        "instruction_bytes": 29,
+        "direct_callers": 2,
+        "direct_callees": 3
+      },
+      "commander": {
+        "entry": "0xbd09",
+        "instruction_count": 13,
+        "instruction_bytes": 29,
+        "direct_callers": 2,
+        "direct_callees": 3
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xd4d0",
+        "instruction_count": 23,
+        "instruction_bytes": 40,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xbd26",
+        "instruction_count": 23,
+        "instruction_bytes": 40,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xd4f8",
+        "instruction_count": 23,
+        "instruction_bytes": 63,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xbd4e",
+        "instruction_count": 23,
+        "instruction_bytes": 63,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    },
+    {
+      "classification": "structural_candidate",
+      "sequel": {
+        "entry": "0xd537",
+        "instruction_count": 24,
+        "instruction_bytes": 42,
+        "direct_callers": 1,
+        "direct_callees": 0
+      },
+      "commander": {
+        "entry": "0xbd8d",
+        "instruction_count": 24,
+        "instruction_bytes": 42,
+        "direct_callers": 1,
+        "direct_callees": 0
+      }
+    }
+  ],
+  "ambiguous": [
+    {
+      "sequel_entry": "0x24b1",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x24b2",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x24b3",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x24b4",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x24b5",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x24b6",
+      "commander_candidates": [
+        "0x220d",
+        "0x2216"
+      ],
+      "sequel_signature_entries": [
+        "0x24b6",
+        "0x24bf"
+      ]
+    },
+    {
+      "sequel_entry": "0x24bf",
+      "commander_candidates": [
+        "0x220d",
+        "0x2216"
+      ],
+      "sequel_signature_entries": [
+        "0x24b6",
+        "0x24bf"
+      ]
+    },
+    {
+      "sequel_entry": "0x3ed3",
+      "commander_candidates": [
+        "0x3b45"
+      ],
+      "sequel_signature_entries": [
+        "0x3ed3",
+        "0x3ef3"
+      ]
+    },
+    {
+      "sequel_entry": "0x3ef3",
+      "commander_candidates": [
+        "0x3b45"
+      ],
+      "sequel_signature_entries": [
+        "0x3ed3",
+        "0x3ef3"
+      ]
+    },
+    {
+      "sequel_entry": "0x41f8",
+      "commander_candidates": [
+        "0x3d7b",
+        "0x3dbf"
+      ],
+      "sequel_signature_entries": [
+        "0x41f8",
+        "0x423c"
+      ]
+    },
+    {
+      "sequel_entry": "0x423c",
+      "commander_candidates": [
+        "0x3d7b",
+        "0x3dbf"
+      ],
+      "sequel_signature_entries": [
+        "0x41f8",
+        "0x423c"
+      ]
+    },
+    {
+      "sequel_entry": "0x42c3",
+      "commander_candidates": [
+        "0x3e46",
+        "0x3e5b"
+      ],
+      "sequel_signature_entries": [
+        "0x42c3",
+        "0x42d8"
+      ]
+    },
+    {
+      "sequel_entry": "0x42d8",
+      "commander_candidates": [
+        "0x3e46",
+        "0x3e5b"
+      ],
+      "sequel_signature_entries": [
+        "0x42c3",
+        "0x42d8"
+      ]
+    },
+    {
+      "sequel_entry": "0x5517",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x5518",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x5519",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x69ac",
+      "commander_candidates": [
+        "0x6494",
+        "0x64a0",
+        "0x64ac"
+      ],
+      "sequel_signature_entries": [
+        "0x69ac",
+        "0x69b8",
+        "0x69c4"
+      ]
+    },
+    {
+      "sequel_entry": "0x69b8",
+      "commander_candidates": [
+        "0x6494",
+        "0x64a0",
+        "0x64ac"
+      ],
+      "sequel_signature_entries": [
+        "0x69ac",
+        "0x69b8",
+        "0x69c4"
+      ]
+    },
+    {
+      "sequel_entry": "0x69c4",
+      "commander_candidates": [
+        "0x6494",
+        "0x64a0",
+        "0x64ac"
+      ],
+      "sequel_signature_entries": [
+        "0x69ac",
+        "0x69b8",
+        "0x69c4"
+      ]
+    },
+    {
+      "sequel_entry": "0x6e67",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ],
+      "sequel_signature_entries": [
+        "0x6e67",
+        "0x6f09",
+        "0x6f10",
+        "0x8584",
+        "0x858b",
+        "0x8592",
+        "0x8599"
+      ]
+    },
+    {
+      "sequel_entry": "0x6f09",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ],
+      "sequel_signature_entries": [
+        "0x6e67",
+        "0x6f09",
+        "0x6f10",
+        "0x8584",
+        "0x858b",
+        "0x8592",
+        "0x8599"
+      ]
+    },
+    {
+      "sequel_entry": "0x6f10",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ],
+      "sequel_signature_entries": [
+        "0x6e67",
+        "0x6f09",
+        "0x6f10",
+        "0x8584",
+        "0x858b",
+        "0x8592",
+        "0x8599"
+      ]
+    },
+    {
+      "sequel_entry": "0x7e8e",
+      "commander_candidates": [
+        "0x2201",
+        "0x2202",
+        "0x2209",
+        "0x220a",
+        "0x220b",
+        "0x220c",
+        "0x509a",
+        "0x509b",
+        "0x509c"
+      ],
+      "sequel_signature_entries": [
+        "0x24b1",
+        "0x24b2",
+        "0x24b3",
+        "0x24b4",
+        "0x24b5",
+        "0x5517",
+        "0x5518",
+        "0x5519",
+        "0x7e8e"
+      ]
+    },
+    {
+      "sequel_entry": "0x8584",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ],
+      "sequel_signature_entries": [
+        "0x6e67",
+        "0x6f09",
+        "0x6f10",
+        "0x8584",
+        "0x858b",
+        "0x8592",
+        "0x8599"
+      ]
+    },
+    {
+      "sequel_entry": "0x858b",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ],
+      "sequel_signature_entries": [
+        "0x6e67",
+        "0x6f09",
+        "0x6f10",
+        "0x8584",
+        "0x858b",
+        "0x8592",
+        "0x8599"
+      ]
+    },
+    {
+      "sequel_entry": "0x8592",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ],
+      "sequel_signature_entries": [
+        "0x6e67",
+        "0x6f09",
+        "0x6f10",
+        "0x8584",
+        "0x858b",
+        "0x8592",
+        "0x8599"
+      ]
+    },
+    {
+      "sequel_entry": "0x8599",
+      "commander_candidates": [
+        "0x6855",
+        "0x685c",
+        "0x7542",
+        "0x7549",
+        "0x7550",
+        "0x7557"
+      ],
+      "sequel_signature_entries": [
+        "0x6e67",
+        "0x6f09",
+        "0x6f10",
+        "0x8584",
+        "0x858b",
+        "0x8592",
+        "0x8599"
+      ]
+    },
+    {
+      "sequel_entry": "0x866b",
+      "commander_candidates": [
+        "0x7629",
+        "0x766f",
+        "0x76c0",
+        "0x76d5"
+      ],
+      "sequel_signature_entries": [
+        "0x866b",
+        "0x86b1",
+        "0x8702",
+        "0x8717"
+      ]
+    },
+    {
+      "sequel_entry": "0x86b1",
+      "commander_candidates": [
+        "0x7629",
+        "0x766f",
+        "0x76c0",
+        "0x76d5"
+      ],
+      "sequel_signature_entries": [
+        "0x866b",
+        "0x86b1",
+        "0x8702",
+        "0x8717"
+      ]
+    },
+    {
+      "sequel_entry": "0x8702",
+      "commander_candidates": [
+        "0x7629",
+        "0x766f",
+        "0x76c0",
+        "0x76d5"
+      ],
+      "sequel_signature_entries": [
+        "0x866b",
+        "0x86b1",
+        "0x8702",
+        "0x8717"
+      ]
+    },
+    {
+      "sequel_entry": "0x8717",
+      "commander_candidates": [
+        "0x7629",
+        "0x766f",
+        "0x76c0",
+        "0x76d5"
+      ],
+      "sequel_signature_entries": [
+        "0x866b",
+        "0x86b1",
+        "0x8702",
+        "0x8717"
+      ]
+    },
+    {
+      "sequel_entry": "0x98ad",
+      "commander_candidates": [
+        "0x8848"
+      ],
+      "sequel_signature_entries": [
+        "0x98ad",
+        "0x99ed"
+      ]
+    },
+    {
+      "sequel_entry": "0x99ed",
+      "commander_candidates": [
+        "0x8848"
+      ],
+      "sequel_signature_entries": [
+        "0x98ad",
+        "0x99ed"
+      ]
+    }
+  ],
+  "unresolved_sequel": [
+    {
+      "entry": "0x800",
+      "instruction_count": 123,
+      "instruction_bytes": 292,
+      "direct_callers": 0,
+      "direct_callees": 18
+    },
+    {
+      "entry": "0x924",
+      "instruction_count": 61,
+      "instruction_bytes": 126,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xb9a",
+      "instruction_count": 93,
+      "instruction_bytes": 250,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0xf09",
+      "instruction_count": 20,
+      "instruction_bytes": 53,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0xf70",
+      "instruction_count": 354,
+      "instruction_bytes": 1238,
+      "direct_callers": 1,
+      "direct_callees": 52
+    },
+    {
+      "entry": "0x1446",
+      "instruction_count": 53,
+      "instruction_bytes": 188,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x1688",
+      "instruction_count": 47,
+      "instruction_bytes": 149,
+      "direct_callers": 1,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x171d",
+      "instruction_count": 68,
+      "instruction_bytes": 169,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x1865",
+      "instruction_count": 97,
+      "instruction_bytes": 232,
+      "direct_callers": 1,
+      "direct_callees": 6
+    },
+    {
+      "entry": "0x199b",
+      "instruction_count": 19,
+      "instruction_bytes": 62,
+      "direct_callers": 3,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x19d9",
+      "instruction_count": 19,
+      "instruction_bytes": 62,
+      "direct_callers": 2,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x1a17",
+      "instruction_count": 155,
+      "instruction_bytes": 574,
+      "direct_callers": 1,
+      "direct_callees": 9
+    },
+    {
+      "entry": "0x1c95",
+      "instruction_count": 39,
+      "instruction_bytes": 125,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x1d18",
+      "instruction_count": 36,
+      "instruction_bytes": 121,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x1d91",
+      "instruction_count": 203,
+      "instruction_bytes": 596,
+      "direct_callers": 1,
+      "direct_callees": 13
+    },
+    {
+      "entry": "0x20ce",
+      "instruction_count": 53,
+      "instruction_bytes": 116,
+      "direct_callers": 9,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x2191",
+      "instruction_count": 36,
+      "instruction_bytes": 122,
+      "direct_callers": 1,
+      "direct_callees": 12
+    },
+    {
+      "entry": "0x2495",
+      "instruction_count": 5,
+      "instruction_bytes": 14,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x24a3",
+      "instruction_count": 5,
+      "instruction_bytes": 14,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x24c8",
+      "instruction_count": 21,
+      "instruction_bytes": 76,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x253d",
+      "instruction_count": 31,
+      "instruction_bytes": 106,
+      "direct_callers": 0,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x25de",
+      "instruction_count": 57,
+      "instruction_bytes": 128,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x28b2",
+      "instruction_count": 17,
+      "instruction_bytes": 26,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x28cc",
+      "instruction_count": 18,
+      "instruction_bytes": 29,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x28e9",
+      "instruction_count": 22,
+      "instruction_bytes": 39,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x2c4a",
+      "instruction_count": 29,
+      "instruction_bytes": 60,
+      "direct_callers": 5,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x3154",
+      "instruction_count": 8,
+      "instruction_bytes": 15,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x3163",
+      "instruction_count": 31,
+      "instruction_bytes": 81,
+      "direct_callers": 6,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x37a8",
+      "instruction_count": 155,
+      "instruction_bytes": 340,
+      "direct_callers": 2,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x3b03",
+      "instruction_count": 188,
+      "instruction_bytes": 509,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x3f13",
+      "instruction_count": 114,
+      "instruction_bytes": 239,
+      "direct_callers": 2,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x5610",
+      "instruction_count": 89,
+      "instruction_bytes": 240,
+      "direct_callers": 3,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x5820",
+      "instruction_count": 173,
+      "instruction_bytes": 476,
+      "direct_callers": 2,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x59ff",
+      "instruction_count": 39,
+      "instruction_bytes": 84,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x5a53",
+      "instruction_count": 92,
+      "instruction_bytes": 274,
+      "direct_callers": 2,
+      "direct_callees": 6
+    },
+    {
+      "entry": "0x5b65",
+      "instruction_count": 25,
+      "instruction_bytes": 70,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x5c41",
+      "instruction_count": 78,
+      "instruction_bytes": 284,
+      "direct_callers": 1,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x5d5d",
+      "instruction_count": 51,
+      "instruction_bytes": 122,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x5dd7",
+      "instruction_count": 184,
+      "instruction_bytes": 609,
+      "direct_callers": 1,
+      "direct_callees": 8
+    },
+    {
+      "entry": "0x6038",
+      "instruction_count": 75,
+      "instruction_bytes": 204,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x613f",
+      "instruction_count": 371,
+      "instruction_bytes": 1187,
+      "direct_callers": 1,
+      "direct_callees": 13
+    },
+    {
+      "entry": "0x669f",
+      "instruction_count": 43,
+      "instruction_bytes": 78,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x66ed",
+      "instruction_count": 90,
+      "instruction_bytes": 203,
+      "direct_callers": 1,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x67b8",
+      "instruction_count": 45,
+      "instruction_bytes": 106,
+      "direct_callers": 5,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x697a",
+      "instruction_count": 8,
+      "instruction_bytes": 25,
+      "direct_callers": 23,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x69e6",
+      "instruction_count": 14,
+      "instruction_bytes": 27,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x6a75",
+      "instruction_count": 8,
+      "instruction_bytes": 25,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x6ab2",
+      "instruction_count": 30,
+      "instruction_bytes": 69,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x6b07",
+      "instruction_count": 13,
+      "instruction_bytes": 33,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x6b28",
+      "instruction_count": 114,
+      "instruction_bytes": 285,
+      "direct_callers": 1,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x6c45",
+      "instruction_count": 34,
+      "instruction_bytes": 68,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x6c89",
+      "instruction_count": 157,
+      "instruction_bytes": 459,
+      "direct_callers": 0,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x6f17",
+      "instruction_count": 25,
+      "instruction_bytes": 59,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x6f52",
+      "instruction_count": 63,
+      "instruction_bytes": 160,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x6ff2",
+      "instruction_count": 53,
+      "instruction_bytes": 124,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x706e",
+      "instruction_count": 38,
+      "instruction_bytes": 95,
+      "direct_callers": 4,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x70cd",
+      "instruction_count": 146,
+      "instruction_bytes": 385,
+      "direct_callers": 0,
+      "direct_callees": 6
+    },
+    {
+      "entry": "0x724e",
+      "instruction_count": 28,
+      "instruction_bytes": 61,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x728b",
+      "instruction_count": 87,
+      "instruction_bytes": 220,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7367",
+      "instruction_count": 61,
+      "instruction_bytes": 161,
+      "direct_callers": 0,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x7408",
+      "instruction_count": 34,
+      "instruction_bytes": 67,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x744b",
+      "instruction_count": 84,
+      "instruction_bytes": 191,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x754e",
+      "instruction_count": 54,
+      "instruction_bytes": 127,
+      "direct_callers": 0,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x7bbf",
+      "instruction_count": 30,
+      "instruction_bytes": 79,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7c0e",
+      "instruction_count": 17,
+      "instruction_bytes": 45,
+      "direct_callers": 1,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x7c65",
+      "instruction_count": 95,
+      "instruction_bytes": 227,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x7d48",
+      "instruction_count": 15,
+      "instruction_bytes": 31,
+      "direct_callers": 0,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x7d67",
+      "instruction_count": 14,
+      "instruction_bytes": 28,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7d83",
+      "instruction_count": 34,
+      "instruction_bytes": 72,
+      "direct_callers": 0,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x7dcb",
+      "instruction_count": 30,
+      "instruction_bytes": 59,
+      "direct_callers": 0,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x7e06",
+      "instruction_count": 26,
+      "instruction_bytes": 58,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7e40",
+      "instruction_count": 15,
+      "instruction_bytes": 28,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7e5c",
+      "instruction_count": 9,
+      "instruction_bytes": 20,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7e70",
+      "instruction_count": 14,
+      "instruction_bytes": 30,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7e8f",
+      "instruction_count": 45,
+      "instruction_bytes": 98,
+      "direct_callers": 0,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x7ef1",
+      "instruction_count": 24,
+      "instruction_bytes": 48,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7f21",
+      "instruction_count": 106,
+      "instruction_bytes": 231,
+      "direct_callers": 1,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x8103",
+      "instruction_count": 34,
+      "instruction_bytes": 81,
+      "direct_callers": 3,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x8270",
+      "instruction_count": 38,
+      "instruction_bytes": 86,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x82c6",
+      "instruction_count": 98,
+      "instruction_bytes": 284,
+      "direct_callers": 1,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x8450",
+      "instruction_count": 110,
+      "instruction_bytes": 272,
+      "direct_callers": 9,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x87eb",
+      "instruction_count": 21,
+      "instruction_bytes": 58,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x8830",
+      "instruction_count": 79,
+      "instruction_bytes": 243,
+      "direct_callers": 1,
+      "direct_callees": 19
+    },
+    {
+      "entry": "0x8923",
+      "instruction_count": 33,
+      "instruction_bytes": 100,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x8987",
+      "instruction_count": 59,
+      "instruction_bytes": 193,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x8a48",
+      "instruction_count": 17,
+      "instruction_bytes": 53,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x8a7d",
+      "instruction_count": 239,
+      "instruction_bytes": 779,
+      "direct_callers": 1,
+      "direct_callees": 15
+    },
+    {
+      "entry": "0x9070",
+      "instruction_count": 80,
+      "instruction_bytes": 317,
+      "direct_callers": 0,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x91ad",
+      "instruction_count": 60,
+      "instruction_bytes": 205,
+      "direct_callers": 0,
+      "direct_callees": 5
+    },
+    {
+      "entry": "0x927a",
+      "instruction_count": 27,
+      "instruction_bytes": 86,
+      "direct_callers": 0,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x92d0",
+      "instruction_count": 38,
+      "instruction_bytes": 141,
+      "direct_callers": 0,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x958a",
+      "instruction_count": 185,
+      "instruction_bytes": 494,
+      "direct_callers": 8,
+      "direct_callees": 6
+    },
+    {
+      "entry": "0x9778",
+      "instruction_count": 108,
+      "instruction_bytes": 299,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x9a11",
+      "instruction_count": 93,
+      "instruction_bytes": 308,
+      "direct_callers": 0,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x9b45",
+      "instruction_count": 83,
+      "instruction_bytes": 281,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x9ede",
+      "instruction_count": 336,
+      "instruction_bytes": 936,
+      "direct_callers": 1,
+      "direct_callees": 16
+    },
+    {
+      "entry": "0xa286",
+      "instruction_count": 312,
+      "instruction_bytes": 858,
+      "direct_callers": 1,
+      "direct_callees": 9
+    },
+    {
+      "entry": "0xa5e0",
+      "instruction_count": 287,
+      "instruction_bytes": 939,
+      "direct_callers": 1,
+      "direct_callees": 14
+    },
+    {
+      "entry": "0xa98b",
+      "instruction_count": 29,
+      "instruction_bytes": 72,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xa9d3",
+      "instruction_count": 42,
+      "instruction_bytes": 106,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0xad37",
+      "instruction_count": 59,
+      "instruction_bytes": 167,
+      "direct_callers": 2,
+      "direct_callees": 8
+    },
+    {
+      "entry": "0xb4b0",
+      "instruction_count": 203,
+      "instruction_bytes": 641,
+      "direct_callers": 8,
+      "direct_callees": 7
+    },
+    {
+      "entry": "0xb731",
+      "instruction_count": 17,
+      "instruction_bytes": 50,
+      "direct_callers": 3,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xba23",
+      "instruction_count": 33,
+      "instruction_bytes": 88,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0xc0fe",
+      "instruction_count": 207,
+      "instruction_bytes": 421,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xc859",
+      "instruction_count": 150,
+      "instruction_bytes": 547,
+      "direct_callers": 1,
+      "direct_callees": 14
+    },
+    {
+      "entry": "0xcb0f",
+      "instruction_count": 167,
+      "instruction_bytes": 602,
+      "direct_callers": 1,
+      "direct_callees": 14
+    },
+    {
+      "entry": "0xcd69",
+      "instruction_count": 76,
+      "instruction_bytes": 257,
+      "direct_callers": 2,
+      "direct_callees": 8
+    },
+    {
+      "entry": "0xd05d",
+      "instruction_count": 270,
+      "instruction_bytes": 733,
+      "direct_callers": 10,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0xd33a",
+      "instruction_count": 19,
+      "instruction_bytes": 41,
+      "direct_callers": 6,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xd363",
+      "instruction_count": 59,
+      "instruction_bytes": 171,
+      "direct_callers": 6,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0xd40e",
+      "instruction_count": 68,
+      "instruction_bytes": 165,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xd561",
+      "instruction_count": 215,
+      "instruction_bytes": 651,
+      "direct_callers": 6,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0xd7ec",
+      "instruction_count": 197,
+      "instruction_bytes": 519,
+      "direct_callers": 7,
+      "direct_callees": 5
+    },
+    {
+      "entry": "0xd9f3",
+      "instruction_count": 42,
+      "instruction_bytes": 108,
+      "direct_callers": 1,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0xda5f",
+      "instruction_count": 59,
+      "instruction_bytes": 169,
+      "direct_callers": 2,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0xdb08",
+      "instruction_count": 101,
+      "instruction_bytes": 204,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xdbd4",
+      "instruction_count": 73,
+      "instruction_bytes": 190,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xdc92",
+      "instruction_count": 31,
+      "instruction_bytes": 83,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xdce5",
+      "instruction_count": 115,
+      "instruction_bytes": 237,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0xddd2",
+      "instruction_count": 24,
+      "instruction_bytes": 38,
+      "direct_callers": 4,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xddf8",
+      "instruction_count": 51,
+      "instruction_bytes": 99,
+      "direct_callers": 3,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0xde5b",
+      "instruction_count": 50,
+      "instruction_bytes": 104,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xdec3",
+      "instruction_count": 172,
+      "instruction_bytes": 397,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0xe05e",
+      "instruction_count": 58,
+      "instruction_bytes": 128,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xe0de",
+      "instruction_count": 13,
+      "instruction_bytes": 15,
+      "direct_callers": 6,
+      "direct_callees": 0
+    }
+  ],
+  "unresolved_commander": [
+    {
+      "entry": "0x600",
+      "instruction_count": 125,
+      "instruction_bytes": 294,
+      "direct_callers": 0,
+      "direct_callees": 17
+    },
+    {
+      "entry": "0x726",
+      "instruction_count": 58,
+      "instruction_bytes": 118,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x99f",
+      "instruction_count": 93,
+      "instruction_bytes": 250,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0xd0e",
+      "instruction_count": 21,
+      "instruction_bytes": 60,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0xd75",
+      "instruction_count": 91,
+      "instruction_bytes": 237,
+      "direct_callers": 0,
+      "direct_callees": 5
+    },
+    {
+      "entry": "0xe62",
+      "instruction_count": 32,
+      "instruction_bytes": 71,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0xeb0",
+      "instruction_count": 337,
+      "instruction_bytes": 1172,
+      "direct_callers": 1,
+      "direct_callees": 46
+    },
+    {
+      "entry": "0x14ca",
+      "instruction_count": 47,
+      "instruction_bytes": 149,
+      "direct_callers": 1,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x155f",
+      "instruction_count": 68,
+      "instruction_bytes": 169,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x16a7",
+      "instruction_count": 95,
+      "instruction_bytes": 228,
+      "direct_callers": 1,
+      "direct_callees": 6
+    },
+    {
+      "entry": "0x17d9",
+      "instruction_count": 19,
+      "instruction_bytes": 62,
+      "direct_callers": 3,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x1817",
+      "instruction_count": 19,
+      "instruction_bytes": 62,
+      "direct_callers": 2,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x1855",
+      "instruction_count": 155,
+      "instruction_bytes": 574,
+      "direct_callers": 1,
+      "direct_callees": 9
+    },
+    {
+      "entry": "0x1ad3",
+      "instruction_count": 38,
+      "instruction_bytes": 120,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x1b4b",
+      "instruction_count": 185,
+      "instruction_bytes": 553,
+      "direct_callers": 1,
+      "direct_callees": 12
+    },
+    {
+      "entry": "0x1e5d",
+      "instruction_count": 48,
+      "instruction_bytes": 100,
+      "direct_callers": 9,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x1f10",
+      "instruction_count": 32,
+      "instruction_bytes": 104,
+      "direct_callers": 1,
+      "direct_callees": 11
+    },
+    {
+      "entry": "0x2201",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x2202",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x2203",
+      "instruction_count": 2,
+      "instruction_bytes": 6,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x2209",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x220a",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x220b",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x220c",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x220d",
+      "instruction_count": 9,
+      "instruction_bytes": 9,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x2216",
+      "instruction_count": 9,
+      "instruction_bytes": 9,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x221f",
+      "instruction_count": 5,
+      "instruction_bytes": 5,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x224d",
+      "instruction_count": 30,
+      "instruction_bytes": 101,
+      "direct_callers": 0,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x28ca",
+      "instruction_count": 27,
+      "instruction_bytes": 55,
+      "direct_callers": 5,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x2dd3",
+      "instruction_count": 8,
+      "instruction_bytes": 15,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x2de2",
+      "instruction_count": 31,
+      "instruction_bytes": 81,
+      "direct_callers": 6,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x3428",
+      "instruction_count": 152,
+      "instruction_bytes": 326,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x3b45",
+      "instruction_count": 19,
+      "instruction_bytes": 32,
+      "direct_callers": 3,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x3d7b",
+      "instruction_count": 30,
+      "instruction_bytes": 68,
+      "direct_callers": 10,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x3dbf",
+      "instruction_count": 30,
+      "instruction_bytes": 68,
+      "direct_callers": 5,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x3e46",
+      "instruction_count": 13,
+      "instruction_bytes": 21,
+      "direct_callers": 3,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x3e5b",
+      "instruction_count": 13,
+      "instruction_bytes": 21,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x509a",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x509b",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x509c",
+      "instruction_count": 1,
+      "instruction_bytes": 1,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x5190",
+      "instruction_count": 91,
+      "instruction_bytes": 248,
+      "direct_callers": 3,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x53a0",
+      "instruction_count": 158,
+      "instruction_bytes": 443,
+      "direct_callers": 2,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x555b",
+      "instruction_count": 33,
+      "instruction_bytes": 73,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x55a4",
+      "instruction_count": 90,
+      "instruction_bytes": 258,
+      "direct_callers": 2,
+      "direct_callees": 5
+    },
+    {
+      "entry": "0x56a6",
+      "instruction_count": 32,
+      "instruction_bytes": 88,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x5791",
+      "instruction_count": 44,
+      "instruction_bytes": 133,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x5816",
+      "instruction_count": 183,
+      "instruction_bytes": 606,
+      "direct_callers": 1,
+      "direct_callees": 7
+    },
+    {
+      "entry": "0x5a74",
+      "instruction_count": 53,
+      "instruction_bytes": 137,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x5b38",
+      "instruction_count": 368,
+      "instruction_bytes": 1178,
+      "direct_callers": 1,
+      "direct_callees": 13
+    },
+    {
+      "entry": "0x60dd",
+      "instruction_count": 88,
+      "instruction_bytes": 201,
+      "direct_callers": 1,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x61a6",
+      "instruction_count": 45,
+      "instruction_bytes": 106,
+      "direct_callers": 3,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x6339",
+      "instruction_count": 104,
+      "instruction_bytes": 250,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x6462",
+      "instruction_count": 8,
+      "instruction_bytes": 25,
+      "direct_callers": 22,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x6494",
+      "instruction_count": 4,
+      "instruction_bytes": 12,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x64a0",
+      "instruction_count": 4,
+      "instruction_bytes": 12,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x64ac",
+      "instruction_count": 4,
+      "instruction_bytes": 12,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x64ce",
+      "instruction_count": 13,
+      "instruction_bytes": 23,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x6559",
+      "instruction_count": 8,
+      "instruction_bytes": 25,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x6596",
+      "instruction_count": 29,
+      "instruction_bytes": 69,
+      "direct_callers": 0,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x65eb",
+      "instruction_count": 13,
+      "instruction_bytes": 33,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x660c",
+      "instruction_count": 138,
+      "instruction_bytes": 411,
+      "direct_callers": 0,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x6855",
+      "instruction_count": 2,
+      "instruction_bytes": 7,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x685c",
+      "instruction_count": 2,
+      "instruction_bytes": 7,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x6863",
+      "instruction_count": 69,
+      "instruction_bytes": 159,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x6946",
+      "instruction_count": 55,
+      "instruction_bytes": 129,
+      "direct_callers": 0,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x6fb9",
+      "instruction_count": 26,
+      "instruction_bytes": 58,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x70ee",
+      "instruction_count": 32,
+      "instruction_bytes": 79,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7259",
+      "instruction_count": 36,
+      "instruction_bytes": 79,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x72a8",
+      "instruction_count": 83,
+      "instruction_bytes": 243,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x7409",
+      "instruction_count": 111,
+      "instruction_bytes": 277,
+      "direct_callers": 8,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x7542",
+      "instruction_count": 2,
+      "instruction_bytes": 7,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x7549",
+      "instruction_count": 2,
+      "instruction_bytes": 7,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x7550",
+      "instruction_count": 2,
+      "instruction_bytes": 7,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x7557",
+      "instruction_count": 2,
+      "instruction_bytes": 7,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x7629",
+      "instruction_count": 11,
+      "instruction_bytes": 21,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x766f",
+      "instruction_count": 11,
+      "instruction_bytes": 21,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x76c0",
+      "instruction_count": 11,
+      "instruction_bytes": 21,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x76d5",
+      "instruction_count": 11,
+      "instruction_bytes": 21,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x77a9",
+      "instruction_count": 20,
+      "instruction_bytes": 52,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x77e0",
+      "instruction_count": 78,
+      "instruction_bytes": 240,
+      "direct_callers": 1,
+      "direct_callees": 18
+    },
+    {
+      "entry": "0x78d0",
+      "instruction_count": 31,
+      "instruction_bytes": 93,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x792d",
+      "instruction_count": 57,
+      "instruction_bytes": 184,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x79e5",
+      "instruction_count": 221,
+      "instruction_bytes": 719,
+      "direct_callers": 1,
+      "direct_callees": 15
+    },
+    {
+      "entry": "0x7f9c",
+      "instruction_count": 62,
+      "instruction_bytes": 230,
+      "direct_callers": 0,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x8082",
+      "instruction_count": 55,
+      "instruction_bytes": 184,
+      "direct_callers": 0,
+      "direct_callees": 5
+    },
+    {
+      "entry": "0x813a",
+      "instruction_count": 21,
+      "instruction_bytes": 68,
+      "direct_callers": 0,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x817e",
+      "instruction_count": 34,
+      "instruction_bytes": 125,
+      "direct_callers": 0,
+      "direct_callees": 3
+    },
+    {
+      "entry": "0x8428",
+      "instruction_count": 172,
+      "instruction_bytes": 442,
+      "direct_callers": 8,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x85e2",
+      "instruction_count": 107,
+      "instruction_bytes": 295,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x8713",
+      "instruction_count": 7,
+      "instruction_bytes": 25,
+      "direct_callers": 0,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0x8848",
+      "instruction_count": 10,
+      "instruction_bytes": 36,
+      "direct_callers": 0,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0x886c",
+      "instruction_count": 75,
+      "instruction_bytes": 247,
+      "direct_callers": 0,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0x8963",
+      "instruction_count": 71,
+      "instruction_bytes": 235,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x8cce",
+      "instruction_count": 340,
+      "instruction_bytes": 949,
+      "direct_callers": 1,
+      "direct_callees": 15
+    },
+    {
+      "entry": "0x9083",
+      "instruction_count": 136,
+      "instruction_bytes": 445,
+      "direct_callers": 1,
+      "direct_callees": 11
+    },
+    {
+      "entry": "0x9240",
+      "instruction_count": 40,
+      "instruction_bytes": 99,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0x959d",
+      "instruction_count": 58,
+      "instruction_bytes": 162,
+      "direct_callers": 2,
+      "direct_callees": 8
+    },
+    {
+      "entry": "0x9d10",
+      "instruction_count": 180,
+      "instruction_bytes": 579,
+      "direct_callers": 8,
+      "direct_callees": 7
+    },
+    {
+      "entry": "0x9f53",
+      "instruction_count": 16,
+      "instruction_bytes": 45,
+      "direct_callers": 3,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xa240",
+      "instruction_count": 31,
+      "instruction_bytes": 81,
+      "direct_callers": 1,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0xa914",
+      "instruction_count": 207,
+      "instruction_bytes": 421,
+      "direct_callers": 1,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xb079",
+      "instruction_count": 160,
+      "instruction_bytes": 578,
+      "direct_callers": 1,
+      "direct_callees": 15
+    },
+    {
+      "entry": "0xb2bb",
+      "instruction_count": 50,
+      "instruction_bytes": 147,
+      "direct_callers": 1,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0xb34e",
+      "instruction_count": 162,
+      "instruction_bytes": 579,
+      "direct_callers": 1,
+      "direct_callees": 14
+    },
+    {
+      "entry": "0xb591",
+      "instruction_count": 76,
+      "instruction_bytes": 257,
+      "direct_callers": 2,
+      "direct_callees": 8
+    },
+    {
+      "entry": "0xb8cd",
+      "instruction_count": 266,
+      "instruction_bytes": 720,
+      "direct_callers": 10,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0xbb9d",
+      "instruction_count": 12,
+      "instruction_bytes": 22,
+      "direct_callers": 6,
+      "direct_callees": 0
+    },
+    {
+      "entry": "0xbbb3",
+      "instruction_count": 55,
+      "instruction_bytes": 157,
+      "direct_callers": 6,
+      "direct_callees": 2
+    },
+    {
+      "entry": "0xbc50",
+      "instruction_count": 73,
+      "instruction_bytes": 185,
+      "direct_callers": 2,
+      "direct_callees": 1
+    },
+    {
+      "entry": "0xbdb7",
+      "instruction_count": 198,
+      "instruction_bytes": 590,
+      "direct_callers": 6,
+      "direct_callees": 4
+    },
+    {
+      "entry": "0xc005",
+      "instruction_count": 187,
+      "instruction_bytes": 481,
+      "direct_callers": 6,
+      "direct_callees": 3
+    }
+  ],
+  "closure": {
+    "commander_root_count": 196,
+    "sequel_root_count": 228,
+    "sequel_static_tables": [
+      {
+        "name": "input_action_handlers",
+        "distinct_targets": 16,
+        "unique_correspondences": 5,
+        "exact_body_correspondences": 0,
+        "unmapped_targets": [
+          "0x2495",
+          "0x24a3",
+          "0x24b1",
+          "0x24b2",
+          "0x24b3",
+          "0x24b4",
+          "0x24b5",
+          "0x24b6",
+          "0x24bf",
+          "0x24c8",
+          "0x253d"
+        ]
+      },
+      {
+        "name": "value_conversion_callbacks",
+        "distinct_targets": 5,
+        "unique_correspondences": 2,
+        "exact_body_correspondences": 2,
+        "unmapped_targets": [
+          "0x28b2",
+          "0x28cc",
+          "0x28e9"
+        ]
+      },
+      {
+        "name": "sprite_blitter_candidates",
+        "distinct_targets": 8,
+        "unique_correspondences": 5,
+        "exact_body_correspondences": 0,
+        "unmapped_targets": [
+          "0x5517",
+          "0x5518",
+          "0x5519"
+        ]
+      },
+      {
+        "name": "vm_opcode_handlers",
+        "distinct_targets": 41,
+        "unique_correspondences": 23,
+        "exact_body_correspondences": 1,
+        "unmapped_targets": [
+          "0x69ac",
+          "0x69b8",
+          "0x69c4",
+          "0x69e6",
+          "0x6a75",
+          "0x6ab2",
+          "0x6b07",
+          "0x6c89",
+          "0x6e67",
+          "0x6f09",
+          "0x6f10",
+          "0x70cd",
+          "0x728b",
+          "0x7367",
+          "0x7408",
+          "0x744b",
+          "0x754e",
+          "0x7bbf"
+        ]
+      },
+      {
+        "name": "record_kind_handlers",
+        "distinct_targets": 11,
+        "unique_correspondences": 0,
+        "exact_body_correspondences": 0,
+        "unmapped_targets": [
+          "0x7d48",
+          "0x7d67",
+          "0x7d83",
+          "0x7dcb",
+          "0x7e06",
+          "0x7e40",
+          "0x7e5c",
+          "0x7e70",
+          "0x7e8e",
+          "0x7e8f",
+          "0x7ef1"
+        ]
+      },
+      {
+        "name": "byte_parser_handlers",
+        "distinct_targets": 18,
+        "unique_correspondences": 9,
+        "exact_body_correspondences": 0,
+        "unmapped_targets": [
+          "0x8584",
+          "0x858b",
+          "0x8592",
+          "0x8599",
+          "0x866b",
+          "0x86b1",
+          "0x8702",
+          "0x8717",
+          "0x87eb"
+        ]
+      },
+      {
+        "name": "navigation_actor_handlers",
+        "distinct_targets": 6,
+        "unique_correspondences": 2,
+        "exact_body_correspondences": 0,
+        "unmapped_targets": [
+          "0x9070",
+          "0x91ad",
+          "0x927a",
+          "0x92d0"
+        ]
+      },
+      {
+        "name": "navigation_choice_handlers",
+        "distinct_targets": 5,
+        "unique_correspondences": 2,
+        "exact_body_correspondences": 0,
+        "unmapped_targets": [
+          "0x98ad",
+          "0x99ed",
+          "0x9a11"
+        ]
+      }
+    ]
+  }
+}
