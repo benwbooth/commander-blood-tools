@@ -706,7 +706,7 @@ pub use ship_hud_coordinator::{
 pub use ship_navigation::{
     ShipNavigationAccessCounter, ShipNavigationCandidate, ShipNavigationContext,
     ShipNavigationHost, ShipNavigationOutcome, ShipNavigationRelation, ShipNavigationState,
-    update_ship_navigation,
+    ShipNavigationVariant, update_ship_navigation,
 };
 pub use ship_presentation::{
     ShipPresentationHost, ShipPresentationOutcome, ShipPresentationState, update_ship_presentation,

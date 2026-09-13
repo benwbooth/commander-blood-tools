@@ -11,12 +11,13 @@ use crate::native::bloodprg::{
     BridgeSpriteRect, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame, ChoiceListHandRequest,
     ChoiceListPointer, ChoiceListRect, ChoiceListState, FramebufferTransitionState, GameFontFace,
     GameLifecycleState, PaletteRemapTable, PresentationRequestFlags, RasterPoint,
-    ScriptFieldSelector, ShipNavigationAccessCounter, ShipNavigationCandidate,
+    ScriptFieldSelector, ScriptObjectFlag, ShipNavigationAccessCounter, ShipNavigationCandidate,
     ShipNavigationContext, ShipNavigationHost, ShipNavigationOutcome, ShipNavigationRelation,
-    ShipNavigationState, TransitionRect, advance_framebuffer_rect_transition,
-    build_palette_blend_remap_table, decode_active_presentation_line,
-    encode_active_presentation_line, measure_game_text_width, navigation_candidates,
-    remap_framebuffer_rect, script_field_offset, update_choice_list, update_ship_navigation,
+    ShipNavigationState, ShipNavigationVariant, TransitionRect,
+    advance_framebuffer_rect_transition, build_palette_blend_remap_table,
+    decode_active_presentation_line, encode_active_presentation_line, measure_game_text_width,
+    navigation_candidates, object_has_flag, remap_framebuffer_rect, script_field_offset,
+    update_choice_list, update_ship_navigation,
 };
 
 use super::choice_list::{RuntimeChoiceListStyle, draw_choice_list_rows};
@@ -88,6 +89,10 @@ impl RuntimeShipNavigation {
         lifecycle: &mut GameLifecycleState,
         platform: &mut RuntimePlatformHost<'window>,
     ) -> Result<ShipNavigationOutcome> {
+        let variant = match services.runtime().data().game() {
+            crate::game::GameVariant::CommanderBlood => ShipNavigationVariant::CommanderBlood,
+            crate::game::GameVariant::BigBugBang => ShipNavigationVariant::BigBugBang,
+        };
         let current_target = services.current_ship_navigation_target()?;
         let profile_context = resolve_profile_context(services, current_target)?;
         let mut state = match self.state.clone() {
@@ -143,6 +148,7 @@ impl RuntimeShipNavigation {
                 deferred_error: None,
             };
             native_outcome = update_ship_navigation(
+                variant,
                 &mut state,
                 &ShipNavigationContext {
                     ark: profile_context.ark,
@@ -335,6 +341,8 @@ fn initial_state(
         presentation_hold_ready: lifecycle.presentation.hold_ready,
         depth_band_enabled: ship.depth_band_enabled,
         presentation_request_flags: lifecycle.presentation.request_flags.bits(),
+        subtitle_word_list_mode: text.subtitle_word_list_mode,
+        presentation_owner: lifecycle.presentation.owner,
         word_choice_phase: Default::default(),
         bridge_palette_transition_staged: false,
         palette_transition_last: palette.last,
@@ -378,6 +386,8 @@ fn import_live_state(
     state.presentation_hold_ready = lifecycle.presentation.hold_ready;
     state.depth_band_enabled = ship.depth_band_enabled;
     state.presentation_request_flags = lifecycle.presentation.request_flags.bits();
+    state.subtitle_word_list_mode = text.subtitle_word_list_mode;
+    state.presentation_owner = lifecycle.presentation.owner;
     state.word_choice_phase = services.presentation_word_choice_phase()?;
     state.palette_transition_last = palette.last;
     state.palette_transition_percent = palette.percent;
@@ -413,6 +423,7 @@ fn export_live_state(
         text.menu_deferred = state.presentation_deferred;
         text.hold_ready = state.presentation_hold_ready;
         text.request_flags = PresentationRequestFlags::decode(state.presentation_request_flags);
+        text.subtitle_word_list_mode = state.subtitle_word_list_mode;
     }
     services.set_ship_navigation_scene_vertical_offset(state.resource_vertical_offset);
     services
@@ -429,6 +440,8 @@ fn export_live_state(
     lifecycle.presentation.hold_ready = state.presentation_hold_ready;
     lifecycle.presentation.request_flags =
         PresentationRequestFlags::decode(state.presentation_request_flags);
+    lifecycle.presentation.subtitle_word_list_mode = state.subtitle_word_list_mode;
+    lifecycle.presentation.owner = state.presentation_owner;
     lifecycle.presentation.text_menu_pending = state.text_menu_pending;
     lifecycle.frame_presented = state.frame_presented;
     lifecycle.navigation_rebuild_pending = state.navigation_screen_rebuild_pending;
@@ -776,7 +789,17 @@ fn build_candidates(
                     }
                 }
             };
-            Ok(ShipNavigationCandidate { record, relation })
+            // BBB reuses the location-detail header bit as navigation visibility.
+            let visible_in_big_bug_bang =
+                object_has_flag(state, record, ScriptObjectFlag::LocationPanelDetails)
+                    .with_context(|| {
+                        format!("navigation candidate {record:?} has no record-header flags")
+                    })?;
+            Ok(ShipNavigationCandidate {
+                record,
+                relation,
+                visible_in_big_bug_bang,
+            })
         })
         .collect()
 }

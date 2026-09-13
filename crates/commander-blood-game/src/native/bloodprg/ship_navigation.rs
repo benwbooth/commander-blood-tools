@@ -1,6 +1,6 @@
 //! Ship-view navigation candidate selection, presentation, and teardown.
 
-use super::{ChoiceListRect, PresentationWordChoicePhase};
+use super::{ChoiceListRect, GamePresentationOwner, PresentationWordChoicePhase};
 
 const NAVIGATION_LIST_UI_FLAG: u16 = 4;
 const NAVIGATION_LIST_TRANSITION_STEPS: u16 = 6;
@@ -11,6 +11,15 @@ const RESET_BRIDGE_SEEK_DISTANCE: u16 = 50;
 const PRESENTATION_REQUEST_LOW_BITS: u8 = 3;
 const FULL_PALETTE_LAST_INDEX: u8 = u8::MAX;
 const PALETTE_TRANSITION_INCREMENT: u16 = 10;
+
+/// Original whose ship-navigation coordination semantics are required.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShipNavigationVariant {
+    /// Commander Blood accepts candidates using the root relation filter.
+    CommanderBlood,
+    /// Big Bug Bang additionally requires its candidate-visibility flag.
+    BigBugBang,
+}
 
 /// Candidate relation after decoding native record offsets.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -30,6 +39,8 @@ pub struct ShipNavigationCandidate<RecordId> {
     pub record: RecordId,
     /// Typed replacement for its native relation offset.
     pub relation: ShipNavigationRelation<RecordId>,
+    /// Whether BBB's additional record-header filter admits this candidate.
+    pub visible_in_big_bug_bang: bool,
 }
 
 /// Access counter owned by the current target or its redirect record.
@@ -133,6 +144,10 @@ pub struct ShipNavigationState<RecordId> {
     pub depth_band_enabled: bool,
     /// Packed request flags retained by other presentation owners.
     pub presentation_request_flags: u8,
+    /// Whether subtitle words rather than menu words own text rendering.
+    pub subtitle_word_list_mode: bool,
+    /// Typed presentation owner cleared by BBB when navigation starts.
+    pub presentation_owner: Option<GamePresentationOwner>,
     /// Dialogue word-choice lifecycle reset during teardown.
     pub word_choice_phase: PresentationWordChoicePhase,
     /// Whether bridge-panorama-to-black palette data has been prepared.
@@ -203,12 +218,15 @@ pub enum ShipNavigationOutcome {
     ResetToBridge,
 }
 
-/// Run native BLOODPRG ship-navigation coordinator `0x00B34E`.
+/// Run a native BLOODPRG ship-navigation coordinator.
 ///
 /// Typed record identities replace the native record heap and scratch offset
 /// list. Resource decoding, palette work, alien animation, steering, and list
 /// interaction remain explicit host operations in their recovered call order.
+/// Commander Blood's body starts at `0x00B34E`; Big Bug Bang's changed body
+/// starts at `0x00CB0F`.
 pub fn update_ship_navigation<RecordId, Host>(
+    variant: ShipNavigationVariant,
     state: &mut ShipNavigationState<RecordId>,
     context: &ShipNavigationContext<RecordId>,
     host: &mut Host,
@@ -218,7 +236,7 @@ where
     Host: ShipNavigationHost<RecordId>,
 {
     if state.trigger_requested {
-        begin_navigation(state, context, host);
+        begin_navigation(variant, state, context, host);
     }
 
     if state.exit_pending {
@@ -259,6 +277,7 @@ where
 }
 
 fn begin_navigation<RecordId, Host>(
+    variant: ShipNavigationVariant,
     state: &mut ShipNavigationState<RecordId>,
     context: &ShipNavigationContext<RecordId>,
     host: &mut Host,
@@ -266,10 +285,16 @@ fn begin_navigation<RecordId, Host>(
     RecordId: Clone + Eq,
     Host: ShipNavigationHost<RecordId>,
 {
+    if variant == ShipNavigationVariant::BigBugBang {
+        state.presentation_request_flags &= !PRESENTATION_REQUEST_LOW_BITS;
+        state.subtitle_word_list_mode = false;
+        state.presentation_owner = None;
+    }
     state.presentation_actor_state = state.previous_presentation_actor_state;
     state.access_counter.increment();
     let candidates = host.build_navigation_candidates(&state.current_target);
     let accepted = first_accepted_candidate(
+        variant,
         &state.current_target,
         &context.ark,
         context.unrestricted_candidates,
@@ -304,12 +329,16 @@ fn begin_navigation<RecordId, Host>(
 }
 
 fn first_accepted_candidate<'a, RecordId: Eq>(
+    variant: ShipNavigationVariant,
     current_target: &RecordId,
     ark: &RecordId,
     unrestricted: bool,
     candidates: &'a [ShipNavigationCandidate<RecordId>],
 ) -> Option<&'a RecordId> {
     for candidate in candidates {
+        if variant == ShipNavigationVariant::BigBugBang && !candidate.visible_in_big_bug_bang {
+            continue;
+        }
         if !unrestricted && candidate.relation != ShipNavigationRelation::RecordDirectoryRoot {
             continue;
         }
@@ -388,10 +417,43 @@ mod tests {
         interpolation_complete: u8,
         layout_result: u16,
         candidate: u16,
+        #[serde(default = "default_visible")]
+        candidate_visible: u8,
         candidate_relation: u16,
+        #[serde(default)]
+        second_candidate: u16,
+        #[serde(default = "default_visible")]
+        second_visible: u8,
+        #[serde(default)]
+        second_relation: u16,
         record_base_offset: u16,
         filter_flags: u8,
+        #[serde(default = "default_ark")]
+        ark: u16,
+        #[serde(default)]
+        redirected: u8,
+        #[serde(default)]
+        accepted_candidate: u16,
+        #[serde(default)]
+        access_count_after: u16,
         calls: Vec<CallVector>,
+        #[serde(default)]
+        state_after: Option<NavigationStateVector>,
+    }
+
+    #[derive(Clone, Deserialize)]
+    struct NavigationStateVector {
+        request_flags: u8,
+        subtitle_mode: u8,
+        owner: u16,
+    }
+
+    const fn default_visible() -> u8 {
+        1
+    }
+
+    const fn default_ark() -> u16 {
+        ARK_TARGET
     }
 
     #[derive(Clone, Deserialize)]
@@ -496,14 +558,7 @@ mod tests {
         for vector in vectors {
             assert_eq!(vector.record_base_offset, RECORD_BASE_RELATION);
             let redirected = vector.name == "trigger_redirects_access_counter";
-            let relation = relation_for_vector(&vector);
-            let candidates = (vector.candidate != u16::MIN)
-                .then_some(ShipNavigationCandidate {
-                    record: vector.candidate,
-                    relation,
-                })
-                .into_iter()
-                .collect();
+            let candidates = candidates_for_vector(&vector);
             let calls = vector.calls.iter().map(|call| call.name.clone()).collect();
             let mut host = OracleHost {
                 calls,
@@ -514,15 +569,96 @@ mod tests {
             let mut state = initial_state(&vector, redirected);
             let initial_choice_target = state.choice_target_rect;
             let context = ShipNavigationContext {
-                ark: ARK_TARGET,
+                ark: vector.ark,
                 unrestricted_candidates: vector.filter_flags & 2 != u8::MIN,
             };
 
-            let outcome = update_ship_navigation(&mut state, &context, &mut host);
+            let outcome = update_ship_navigation(
+                ShipNavigationVariant::CommanderBlood,
+                &mut state,
+                &context,
+                &mut host,
+            );
 
             assert!(host.calls.is_empty(), "{}", vector.name);
             assert_eq!(outcome, expected_outcome(&vector.name), "{}", vector.name);
-            assert_vector_state(&vector, &state, redirected, initial_choice_target, outcome);
+            assert_vector_state(
+                ShipNavigationVariant::CommanderBlood,
+                &vector,
+                &state,
+                redirected,
+                initial_choice_target,
+                outcome,
+            );
+        }
+    }
+
+    #[test]
+    fn sequel_navigation_coordinator_matches_every_direct_original_vector() {
+        let vectors: Vec<NavigationVector> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_navigation.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), 18);
+
+        for vector in vectors {
+            assert_eq!(vector.record_base_offset, RECORD_BASE_RELATION);
+            let redirected = vector.redirected != u8::MIN;
+            let calls = vector.calls.iter().map(|call| call.name.clone()).collect();
+            let mut host = OracleHost {
+                calls,
+                candidates: candidates_for_vector(&vector),
+                interpolation_complete: vector.interpolation_complete != u8::MIN,
+                layout_selected: vector.layout_result < i16::MAX as u16 + 1,
+            };
+            let mut state = initial_state(&vector, redirected);
+            let initial_choice_target = state.choice_target_rect;
+            let context = ShipNavigationContext {
+                ark: vector.ark,
+                unrestricted_candidates: vector.filter_flags & 2 != u8::MIN,
+            };
+
+            let outcome = update_ship_navigation(
+                ShipNavigationVariant::BigBugBang,
+                &mut state,
+                &context,
+                &mut host,
+            );
+
+            assert!(host.calls.is_empty(), "{}", vector.name);
+            assert_eq!(outcome, expected_outcome(&vector.name), "{}", vector.name);
+            assert_vector_state(
+                ShipNavigationVariant::BigBugBang,
+                &vector,
+                &state,
+                redirected,
+                initial_choice_target,
+                outcome,
+            );
+            let expected = vector.state_after.as_ref().unwrap();
+            assert_eq!(state.presentation_request_flags, expected.request_flags);
+            assert_eq!(
+                state.subtitle_word_list_mode,
+                expected.subtitle_mode != u8::MIN
+            );
+            assert_eq!(
+                state.presentation_owner.is_some(),
+                expected.owner != u16::MIN
+            );
+            assert_eq!(
+                expected_accepted_candidate(ShipNavigationVariant::BigBugBang, &vector)
+                    .unwrap_or(u16::MIN),
+                vector.accepted_candidate,
+                "{}",
+                vector.name
+            );
+            let access_count = match state.access_counter {
+                ShipNavigationAccessCounter::Direct(count)
+                | ShipNavigationAccessCounter::Redirected(count) => count,
+            };
+            assert_eq!(access_count, vector.access_count_after, "{}", vector.name);
         }
     }
 
@@ -570,6 +706,8 @@ mod tests {
             presentation_hold_ready: true,
             depth_band_enabled: true,
             presentation_request_flags: 171,
+            subtitle_word_list_mode: true,
+            presentation_owner: Some(GamePresentationOwner::Subtitle),
             word_choice_phase: PresentationWordChoicePhase::Closing,
             bridge_palette_transition_staged: false,
             palette_transition_last: 82,
@@ -578,16 +716,47 @@ mod tests {
         }
     }
 
-    fn relation_for_vector(vector: &NavigationVector) -> ShipNavigationRelation<u16> {
-        if vector.candidate_relation == vector.record_base_offset {
+    fn relation_for_raw(
+        relation: u16,
+        record_base_offset: u16,
+        ark: u16,
+    ) -> ShipNavigationRelation<u16> {
+        if relation == record_base_offset {
             ShipNavigationRelation::RecordDirectoryRoot
-        } else if vector.candidate_relation == ARK_TARGET {
-            ShipNavigationRelation::Object(ARK_TARGET)
-        } else if vector.candidate_relation == CURRENT_TARGET {
+        } else if relation == ark {
+            ShipNavigationRelation::Object(ark)
+        } else if relation == CURRENT_TARGET {
             ShipNavigationRelation::Object(CURRENT_TARGET)
         } else {
             ShipNavigationRelation::Other
         }
+    }
+
+    fn candidates_for_vector(vector: &NavigationVector) -> Vec<ShipNavigationCandidate<u16>> {
+        let mut candidates = Vec::new();
+        if vector.candidate != u16::MIN {
+            candidates.push(ShipNavigationCandidate {
+                record: vector.candidate,
+                relation: relation_for_raw(
+                    vector.candidate_relation,
+                    vector.record_base_offset,
+                    vector.ark,
+                ),
+                visible_in_big_bug_bang: vector.candidate_visible != u8::MIN,
+            });
+        }
+        if vector.second_candidate != u16::MIN {
+            candidates.push(ShipNavigationCandidate {
+                record: vector.second_candidate,
+                relation: relation_for_raw(
+                    vector.second_relation,
+                    vector.record_base_offset,
+                    vector.ark,
+                ),
+                visible_in_big_bug_bang: vector.second_visible != u8::MIN,
+            });
+        }
+        candidates
     }
 
     fn expected_outcome(name: &str) -> ShipNavigationOutcome {
@@ -602,6 +771,13 @@ mod tests {
             | "trigger_rejects_candidate_related_only_to_current"
             | "trigger_ark_relation_opens_target_list"
             | "trigger_redirects_access_counter" => ShipNavigationOutcome::PresentationBlocked,
+            "trigger_accepts_unrestricted_visible_candidate"
+            | "trigger_accepts_visible_candidate_related_to_record_base"
+            | "trigger_skips_nonvisible_candidate_and_opens_list"
+            | "trigger_skips_nonvisible_then_accepts_visible_candidate"
+            | "trigger_accepts_visible_candidate_when_ark_is_current" => {
+                ShipNavigationOutcome::PresentationBlocked
+            }
             "active_sequence_nonlayout_duration_copies_frame" => {
                 ShipNavigationOutcome::FramePresented
             }
@@ -618,6 +794,7 @@ mod tests {
     }
 
     fn assert_vector_state(
+        variant: ShipNavigationVariant,
         vector: &NavigationVector,
         state: &ShipNavigationState<u16>,
         redirected: bool,
@@ -650,17 +827,13 @@ mod tests {
             assert_eq!(state.depth_step, DEPTH_CLOSING_STEP, "{}", vector.name);
             assert!(state.navigation_palette_staged, "{}", vector.name);
 
-            let accepted = vector.candidate != u16::MIN
-                && (vector.filter_flags & 2 != u8::MIN
-                    || vector.candidate_relation == vector.record_base_offset)
-                && vector.candidate_relation != ARK_TARGET;
+            let accepted = expected_accepted_candidate(variant, vector);
             assert_eq!(
-                state.deferred_navigation_record,
-                accepted.then_some(vector.candidate),
+                state.deferred_navigation_record, accepted,
                 "{}",
                 vector.name
             );
-            if accepted {
+            if accepted.is_some() {
                 assert_eq!(
                     state.choice_target_rect, initial_choice_target,
                     "{}",
@@ -703,6 +876,29 @@ mod tests {
             | ShipNavigationOutcome::AwaitingSelection => assert!(state.frame_presented),
             ShipNavigationOutcome::Deferred | ShipNavigationOutcome::PresentationBlocked => {}
         }
+    }
+
+    fn expected_accepted_candidate(
+        variant: ShipNavigationVariant,
+        vector: &NavigationVector,
+    ) -> Option<u16> {
+        for candidate in candidates_for_vector(vector) {
+            if variant == ShipNavigationVariant::BigBugBang && !candidate.visible_in_big_bug_bang {
+                continue;
+            }
+            if vector.filter_flags & 2 == u8::MIN
+                && candidate.relation != ShipNavigationRelation::RecordDirectoryRoot
+            {
+                continue;
+            }
+            if vector.ark != CURRENT_TARGET
+                && candidate.relation == ShipNavigationRelation::Object(vector.ark)
+            {
+                break;
+            }
+            return Some(candidate.record);
+        }
+        None
     }
 
     fn assert_bridge_reset(state: &ShipNavigationState<u16>) {

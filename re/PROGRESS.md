@@ -2987,3 +2987,35 @@ SHA-256 is
 `66271e559245260d139a29be75c18df658507586209e67cf73f6acbee4180c8b`,
 and the deterministic JSONL SHA-256 is
 `33a5afbb5336c597f80ee0f7347f1a6b749e58e93669fe09ceede6e2053874a0`.
+
+## 2026-09-13 - Big Bug Bang ship navigation coordinator
+
+BBB `0xCB0F..0xCD69` is the sequel counterpart of Commander Blood's ported
+`0xB34E..0xB591` ship-navigation coordinator. BBB contains 167 instructions in
+602 bytes versus Commander's 162 instructions in 579 bytes. The control flow,
+helper order, target-list interpolation, presentation staging, and complete
+bridge teardown remain equivalent after relocation. BBB adds three trigger-time
+presentation writes: it clears the low request bits, disables subtitle-word
+mode, and releases the current presentation owner. Its candidate scan also
+requires record-header bit `0x04` before applying Commander's root-relation and
+Ark filters.
+
+The new `re/tools/big_bug_bang_ship_navigation_oracle.py` executes the untouched
+BBB body over 18 cases covering both outcomes of all 16 conditional sites, or
+32 edges. It includes single and two-candidate visibility cases, every relation
+filter path, direct and redirected access counters, list opening and selection,
+active/deferred/exit states, interpolation outcomes, and full teardown. The
+oracle verifies exact helper frames and arguments, DS, GS, incoming ES, record,
+framebuffer, and stack ownership, all general and segment registers, defined
+final flags, executable immutability, and unowned memory.
+
+The typed `update_ship_navigation` coordinator now selects explicit Commander
+Blood or Big Bug Bang semantics. BBB candidates carry typed visibility, and the
+runtime adapter derives it from the sequel's shared location-detail header bit.
+The adapter also imports and exports subtitle mode and presentation ownership so
+the sequel-only trigger clears reach production lifecycle state. The existing
+15-row Commander fixture and the new 18-row BBB fixture both pass. BBB's body
+SHA-256 is
+`7189145b251008e8b0e36c00c913802d3e9dea36c996bd4c88533eee7e37f509`,
+and the deterministic JSONL SHA-256 is
+`5592f720a447044a75620abdbb2ada0e952aaf12b0f6e16a7da10eaeca91ef21`.
