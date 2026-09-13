@@ -454,11 +454,23 @@ mod tests {
     }
 
     #[test]
-    fn queue_service_accounts_for_every_original_coordinator_vector() {
-        let vectors: Vec<ServiceOracle> = serde_json::from_str(include_str!(
+    fn queue_service_accounts_for_both_original_coordinator_fixtures() {
+        let commander: Vec<ServiceOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a1b4_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_queue_service.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_queue_service_vectors(commander);
+        assert_queue_service_vectors(sequel);
+    }
+
+    fn assert_queue_service_vectors(vectors: Vec<ServiceOracle>) {
         assert_eq!(vectors.len(), SERVICE_VECTOR_COUNT);
 
         for vector in vectors {

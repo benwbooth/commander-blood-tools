@@ -2374,3 +2374,28 @@ changed. BBB's body SHA-256 is
 deterministic JSONL SHA-256 is
 `fc02e7a39b554d7b45a64d89fba932566aadfdcc0656ea643417f0386137def7`. This behaviorally
 classifies BBB `0xB942`, not its six helper bodies or later queue service.
+
+## 2026-09-13 - Big Bug Bang presentation queue service
+
+BBB `0xB997..0xB9EF` is the relocated sequel counterpart of Commander Blood's already ported
+`0xA1B4..0xA20C` presentation queue service. Both bodies contain 42 instructions in 88 bytes.
+The sequel moves seven helper targets and five presentation-stream fields while preserving the
+complete control-flow graph.
+
+The new `re/tools/big_bug_bang_presentation_queue_service_oracle.py` executes both originals
+around identical readiness, pacing, refill, palette, presentation, and consumption callbacks.
+All five Commander cases agree after address normalization and traverse all 12 conditional
+branch edges: unavailable source, two refill retries followed by a not-due frame, due banked and
+file-backed frames without and with palette data, and the original malformed high-priority call
+into the shared tail.
+
+The oracle checks callback order, near/far frames, evolving link targets, rollover-latch
+visibility and clearing, source and palette gates, exact DS-owned writes against GS decoys,
+unchanged executable and unowned state, normalized complete stacks and malformed BP residue,
+every register and segment, flags, and both normal and corrupted return destinations. The typed
+queue service now consumes both five-row fixtures and retains its safe high-priority return
+instead of reproducing the original malformed unwind; no production behavior changed. BBB's
+body SHA-256 is `991ee71c903133fceb1100b9e4224f435182284a5d27ca06df8286a215d03ddc`, and the
+deterministic JSONL SHA-256 is
+`eda2eef3dcd347903a8de5ccbcb73bc3db9841590071b90be96bb2d15b2b0513`. This behaviorally
+classifies BBB `0xB997`, not its seven callback bodies or every malformed queue state.
