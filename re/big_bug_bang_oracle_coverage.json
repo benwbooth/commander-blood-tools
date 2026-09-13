@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 146,
-    "oracle_fixture_count": 145,
+    "oracle_count": 147,
+    "oracle_fixture_count": 146,
     "fixture_relation_counts": {
-      "exact": 144,
+      "exact": 145,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 262,
-    "unentered_static_entrypoints": 120,
+    "entered_static_entrypoints": 263,
+    "unentered_static_entrypoints": 119,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 263,
+    "entered_known_entrypoints": 264,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 149,
-        "unentered": 47
+        "entered": 150,
+        "unentered": 46
       },
       "exact_body": {
         "entered": 15,
@@ -1904,6 +1904,18 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_startup_cleanup_oracle.py",
+      "oracle_sha256": "c92a99935c2025dbbb2326d79d0f9e3678f80fa4ad38745821710d2a82c4dbcb",
+      "executed_instruction_count": 12,
+      "entered_entrypoints": [
+        "0x163d"
+      ],
+      "summary": "verified 4 BBB startup-cleanup cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_startup_cleanup.json",
+      "fixture_sha256": "a55cf53ec4dcd0d4f1292fda989b92dff1ce7feb7ac952383479f4aac0318f3f",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_startup_command_oracle.py",
       "oracle_sha256": "8921e69be0b12e9a10cd19688d6f5f4ca70e029f159c2edf50b32739c29ae7db",
       "executed_instruction_count": 134,
@@ -2360,8 +2372,10 @@
     {
       "entry": "0x163d",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_startup_cleanup_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x147f"
     },

@@ -10,7 +10,8 @@ pub trait StartupTransientFileHost {
     fn remove_transient_file(&mut self, path: &str);
 }
 
-/// Translate BLOODPRG routine `0x00147F` over owned host paths.
+/// Translate BLOODPRG routine `0x00147F` and BBB routine `0x00163D` over owned
+/// host paths.
 ///
 /// Exactly four slots are visited in order. A path is preserved only when its
 /// first byte is lowercase `x`; uppercase markers and empty paths still issue
@@ -44,6 +45,11 @@ mod tests {
         path: String,
     }
 
+    #[derive(Deserialize)]
+    struct BigBugBangCleanupOracle {
+        rows: Vec<CleanupVector>,
+    }
+
     #[derive(Default)]
     struct RecordingHost {
         paths: Vec<String>,
@@ -55,12 +61,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn cleanup_matches_every_original_path_vector() {
-        let vectors: Vec<CleanupVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_147f_natural.json"
-        ))
-        .unwrap();
+    fn assert_cleanup_vectors(vectors: Vec<CleanupVector>) {
         assert_eq!(vectors.len(), 4);
 
         for vector in vectors {
@@ -77,5 +78,23 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn cleanup_matches_every_original_path_vector() {
+        let vectors: Vec<CleanupVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_147f_natural.json"
+        ))
+        .unwrap();
+        assert_cleanup_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_cleanup_matches_every_direct_path_vector() {
+        let oracle: BigBugBangCleanupOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_startup_cleanup.json"
+        ))
+        .unwrap();
+        assert_cleanup_vectors(oracle.rows);
     }
 }

@@ -1,0 +1,154 @@
+{
+  "format": "big_bug_bang_startup_cleanup_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_semantic_fixture_sha256": "ecc058d48209468148448753173e00e05373a95028eac66865993318f5602dbc",
+  "routine": {
+    "entry": "0x163d",
+    "end": "0x1659",
+    "body_sha256": "b890aa634f827f7199b7dc7d3d1560c6ad66d96f5f42e9aaeea873c4e7e34099",
+    "path_table_offset": 4133
+  },
+  "rows": [
+    {
+      "name": "all_skip",
+      "paths": [
+        "xONE",
+        "xTWO",
+        "xTHREE",
+        "xFOUR"
+      ],
+      "delete_calls": [],
+      "final_dx": 4197,
+      "final_cx": 0,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "df": false,
+        "of": false
+      }
+    },
+    {
+      "name": "all_empty",
+      "paths": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "delete_calls": [
+        {
+          "offset": 4133,
+          "path": "",
+          "result_ax": 2,
+          "result_carry": true
+        },
+        {
+          "offset": 4149,
+          "path": "",
+          "result_ax": 5,
+          "result_carry": false
+        },
+        {
+          "offset": 4165,
+          "path": "",
+          "result_ax": 0,
+          "result_carry": true
+        },
+        {
+          "offset": 4181,
+          "path": "",
+          "result_ax": 65535,
+          "result_carry": false
+        }
+      ],
+      "final_dx": 4197,
+      "final_cx": 0,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "df": true,
+        "of": false
+      }
+    },
+    {
+      "name": "mixed",
+      "paths": [
+        "xKEEP",
+        "ONE.TMP",
+        "x",
+        "TWO.$$$"
+      ],
+      "delete_calls": [
+        {
+          "offset": 4149,
+          "path": "ONE.TMP",
+          "result_ax": 2,
+          "result_carry": true
+        },
+        {
+          "offset": 4181,
+          "path": "TWO.$$$",
+          "result_ax": 5,
+          "result_carry": false
+        }
+      ],
+      "final_dx": 4197,
+      "final_cx": 0,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "df": false,
+        "of": false
+      }
+    },
+    {
+      "name": "case_sensitive_marker",
+      "paths": [
+        "XUPPER",
+        "xlower",
+        "z.dat",
+        "last.tmp"
+      ],
+      "delete_calls": [
+        {
+          "offset": 4133,
+          "path": "XUPPER",
+          "result_ax": 2,
+          "result_carry": true
+        },
+        {
+          "offset": 4165,
+          "path": "z.dat",
+          "result_ax": 5,
+          "result_carry": false
+        },
+        {
+          "offset": 4181,
+          "path": "last.tmp",
+          "result_ax": 0,
+          "result_carry": true
+        }
+      ],
+      "final_dx": 4197,
+      "final_cx": 0,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "df": true,
+        "of": false
+      }
+    }
+  ]
+}

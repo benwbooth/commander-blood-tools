@@ -4205,3 +4205,31 @@ The strict ledger classifies 296 of 383 known entries and leaves 87 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `697661d21f642d94a51ba66c06b46a72a9ef53fd8d734392454ef9f5d878fcba`.
+
+## 2026-09-13 - Big Bug Bang startup transient cleanup
+
+`re/tools/big_bug_bang_startup_cleanup_oracle.py` executes BBB's complete
+startup transient-file cleanup loop at `0x163D`. Four cases cover all preserved
+slots, all empty slots, mixed paths, and the lowercase-only `x` marker rule.
+Their normalized slot and delete-call sequences match the independent Commander
+fixture despite BBB's relocated path table at `DS:0x1025`.
+
+The oracle checks the exact 28-byte body hash; all four fixed slots and path
+contents; DOS delete arguments, ordering, and varied ignored results; final
+cursor and counter values; register, segment, defined-flag, near-return, and
+exact stack behavior; and full table, decoy segment, executable, and synthetic
+state ownership. Its checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_startup_cleanup.json` has SHA-256
+`a55cf53ec4dcd0d4f1292fda989b92dff1ce7feb7ac952383479f4aac0318f3f`.
+`delete_startup_transient_files` consumes every direct BBB row through its owned
+host-filesystem interface.
+
+The global collector now reproduces 145 exact fixtures and one prefix fixture
+across 147 BBB oracle programs, entering 263 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`4ac0a032f0d997ce746f1205193628ad80cb03ee47d28e7de6d268315633b51a`.
+The strict ledger classifies 297 of 383 known entries and leaves 86 pending:
+234 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 26
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`b24dfd4889e049fa70a2ea3dd952b9914a33583a13c9e024c71aab67eb0c5672`.
