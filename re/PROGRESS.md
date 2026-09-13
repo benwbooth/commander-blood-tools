@@ -3970,3 +3970,32 @@ The strict ledger classifies 286 of 383 known entries and leaves 97 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `3f1bf7b583a2eb1f2d0bab3e85652b7d59f45de6bb65968189ae437820a09fdf`.
+
+## 2026-09-13 - Big Bug Bang pointer polling
+
+`re/tools/big_bug_bang_pointer_poll_oracle.py` executes the complete changed
+BBB pointer sampler at `0x0F09`. Five cases cover stable coordinates, each-axis
+movement, simultaneous signed-edge movement, wrapped unsigned comparisons,
+and representative full button words. Unlike Commander `0x0D0E`, the sequel
+updates current and previous pointer state without resetting a movement-idle
+counter.
+
+The oracle checks the exact 53-byte body hash, `INT 33h` input and result ABI,
+all five relocated GS fields, movement-dependent write count, complete register
+and segment preservation, far return, bounded stack writes, defined comparison
+flags, and executable and decoy immutability. The checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_pointer_poll.json` has SHA-256
+`5e9e81fcd34990fec02d809f136ee99ca6e3552a9650a1720d798f87f0e218d8`.
+
+`PointerSampleVariant` now makes that original-specific side effect explicit.
+The SDL runtime selects it from the active game's script dialect, and focused
+fixture plus runtime tests prove Commander still clears the counter while BBB
+preserves it. The global collector now reproduces 137 exact fixtures and one
+prefix fixture across 139 BBB oracle programs, entering 253 of 382 static
+entrypoints plus the runtime ISR. Its deterministic report SHA-256 is
+`001b807c7ff0771ffbf26db39980b7289ca9e2daeaf4db0307ec076408a5272e`.
+The strict ledger classifies 287 of 383 known entries and leaves 96 pending:
+227 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 23
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`e634d2142467e7983c69a92bf74b061d9dd542ac1de431fcd21914df3210b3e1`.

@@ -9,9 +9,9 @@ use crate::native::bloodprg::{
     GameLifecycleState, HostInputKey, InputAction, InputArrowKey, InputCancellationBackend,
     InputCancellationOutcome, InputCancellationState, InputDispatchState, InputFunctionKey,
     PointerButtonEdges, PointerButtonState, PointerButtons, PointerSample, PointerSampleState,
-    cancel_input_action, dispatch_input_key_for_dialect, latch_input_text_byte,
-    request_input_shutdown, toggle_input_pause, translate_input_key, update_pointer_button_edges,
-    update_pointer_sample,
+    PointerSampleVariant, cancel_input_action, dispatch_input_key_for_dialect,
+    latch_input_text_byte, request_input_shutdown, toggle_input_pause, translate_input_key,
+    update_pointer_button_edges, update_pointer_sample_for_variant,
 };
 
 const ORIGINAL_DISPLAY_ASPECT_WIDTH: f32 = 4.0;
@@ -193,9 +193,26 @@ impl RuntimeInputHost {
         host_position: [f32; 2],
         buttons: PointerButtons,
     ) -> PointerSample {
-        self.publish_logical_pointer(
+        self.poll_pointer_for_dialect(
+            output_size,
+            host_position,
+            buttons,
+            ScriptDialect::CommanderBlood,
+        )
+    }
+
+    /// Sample one host pointer with the selected original's movement side effects.
+    pub fn poll_pointer_for_dialect(
+        &mut self,
+        output_size: [f32; 2],
+        host_position: [f32; 2],
+        buttons: PointerButtons,
+        dialect: ScriptDialect,
+    ) -> PointerSample {
+        self.publish_logical_pointer_for_dialect(
             map_host_pointer_to_logical(output_size, host_position),
             buttons,
+            dialect,
         )
     }
 
@@ -205,8 +222,23 @@ impl RuntimeInputHost {
         position: [i16; 2],
         buttons: PointerButtons,
     ) -> PointerSample {
+        self.publish_logical_pointer_for_dialect(position, buttons, ScriptDialect::CommanderBlood)
+    }
+
+    /// Publish a logical pointer with the selected original's movement side effects.
+    pub fn publish_logical_pointer_for_dialect(
+        &mut self,
+        position: [i16; 2],
+        buttons: PointerButtons,
+        dialect: ScriptDialect,
+    ) -> PointerSample {
         let sample = PointerSample { position, buttons };
-        update_pointer_sample(
+        let variant = match dialect {
+            ScriptDialect::CommanderBlood => PointerSampleVariant::CommanderBlood,
+            ScriptDialect::BigBugBang => PointerSampleVariant::BigBugBang,
+        };
+        update_pointer_sample_for_variant(
+            variant,
             &mut self.pointer_sample,
             sample,
             &mut self.motion_idle_counter,
@@ -612,6 +644,27 @@ mod tests {
 
         assert_eq!(sample.position, expected);
         assert_eq!(input.pointer_sample(), sample);
+    }
+
+    #[test]
+    fn sequel_pointer_motion_preserves_its_idle_counter() {
+        let mut input = RuntimeInputHost::new(INITIAL_POSITION);
+        input.advance_motion_idle_counter();
+        input.advance_motion_idle_counter();
+
+        input.publish_logical_pointer_for_dialect(
+            [319, 150],
+            PointerButtons::NONE,
+            ScriptDialect::BigBugBang,
+        );
+        assert_eq!(input.motion_idle_counter(), 2);
+
+        input.publish_logical_pointer_for_dialect(
+            [318, 150],
+            PointerButtons::NONE,
+            ScriptDialect::CommanderBlood,
+        );
+        assert_eq!(input.motion_idle_counter(), 0);
     }
 
     #[test]

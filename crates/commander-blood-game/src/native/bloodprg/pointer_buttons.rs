@@ -82,6 +82,15 @@ pub struct PointerSampleState {
     pub previous_position: [i16; 2],
 }
 
+/// Original-specific movement side effect applied while publishing a pointer sample.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PointerSampleVariant {
+    /// Commander Blood clears its mouse-motion idle counter after movement.
+    CommanderBlood,
+    /// Big Bug Bang retains the counter while updating its pointer coordinates.
+    BigBugBang,
+}
+
 /// Publish one pointer sample and reset the idle counter only on movement.
 ///
 /// This translates `poll_mouse` at BLOODPRG routine offset `0x000D0E`.
@@ -92,11 +101,31 @@ pub fn update_pointer_sample(
     sample: PointerSample,
     motion_idle_counter: &mut u16,
 ) -> bool {
+    update_pointer_sample_for_variant(
+        PointerSampleVariant::CommanderBlood,
+        state,
+        sample,
+        motion_idle_counter,
+    )
+}
+
+/// Publish one original-specific pointer sample.
+///
+/// Big Bug Bang routine `0x000F09` omits Commander Blood's movement-triggered
+/// idle-counter reset while retaining the same pointer and button updates.
+pub fn update_pointer_sample_for_variant(
+    variant: PointerSampleVariant,
+    state: &mut PointerSampleState,
+    sample: PointerSample,
+    motion_idle_counter: &mut u16,
+) -> bool {
     state.current = sample;
     let moved = state.previous_position != sample.position;
     if moved {
         state.previous_position = sample.position;
-        *motion_idle_counter = u16::MIN;
+        if variant == PointerSampleVariant::CommanderBlood {
+            *motion_idle_counter = u16::MIN;
+        }
     }
     moved
 }
@@ -215,35 +244,45 @@ mod tests {
 
     #[test]
     fn pointer_samples_match_every_original_poll_vector() {
-        let vectors: Vec<PointerPollOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_0d0e_natural.json"
-        ))
-        .unwrap();
-        assert_eq!(vectors.len(), POINTER_POLL_ORACLE_VECTOR_COUNT);
+        for (source, variant) in [
+            (
+                include_str!("../../../../../re/tools/oracle_vectors/func_0d0e_natural.json"),
+                PointerSampleVariant::CommanderBlood,
+            ),
+            (
+                include_str!(
+                    "../../../../../re/tools/oracle_vectors/big_bug_bang_pointer_poll.json"
+                ),
+                PointerSampleVariant::BigBugBang,
+            ),
+        ] {
+            let vectors: Vec<PointerPollOracle> = serde_json::from_str(source).unwrap();
+            assert_eq!(vectors.len(), POINTER_POLL_ORACLE_VECTOR_COUNT);
 
-        for vector in vectors {
-            let mut state = PointerSampleState {
-                current: PointerSample::default(),
-                previous_position: [
-                    signed_word(vector.previous.x),
-                    signed_word(vector.previous.y),
-                ],
-            };
-            let sample = PointerSample {
-                position: [signed_word(vector.driver.x), signed_word(vector.driver.y)],
-                buttons: PointerButtons::from_bits(vector.driver.buttons),
-            };
-            let mut idle = vector.previous.idle;
+            for vector in vectors {
+                let mut state = PointerSampleState {
+                    current: PointerSample::default(),
+                    previous_position: [
+                        signed_word(vector.previous.x),
+                        signed_word(vector.previous.y),
+                    ],
+                };
+                let sample = PointerSample {
+                    position: [signed_word(vector.driver.x), signed_word(vector.driver.y)],
+                    buttons: PointerButtons::from_bits(vector.driver.buttons),
+                };
+                let mut idle = vector.previous.idle;
 
-            assert_eq!(
-                update_pointer_sample(&mut state, sample, &mut idle),
-                vector.moved,
-                "{}",
-                vector.name
-            );
-            assert_eq!(state.current, sample, "{}", vector.name);
-            assert_eq!(state.previous_position, sample.position, "{}", vector.name);
-            assert_eq!(idle, vector.stored_idle, "{}", vector.name);
+                assert_eq!(
+                    update_pointer_sample_for_variant(variant, &mut state, sample, &mut idle),
+                    vector.moved,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(state.current, sample, "{}", vector.name);
+                assert_eq!(state.previous_position, sample.position, "{}", vector.name);
+                assert_eq!(idle, vector.stored_idle, "{}", vector.name);
+            }
         }
     }
 

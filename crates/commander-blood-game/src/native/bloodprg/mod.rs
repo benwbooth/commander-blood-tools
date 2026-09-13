@@ -407,7 +407,8 @@ pub use pbm_image::{
 };
 pub use pointer_buttons::{
     PointerButton, PointerButtonEdges, PointerButtonState, PointerButtons, PointerLogicalRange,
-    PointerSample, PointerSampleState, update_pointer_button_edges, update_pointer_sample,
+    PointerSample, PointerSampleState, PointerSampleVariant, update_pointer_button_edges,
+    update_pointer_sample, update_pointer_sample_for_variant,
 };
 pub use presentation::{
     ScriptWordHistory, TextConditionEffects, TextConditionError, evaluate_text_conditions,

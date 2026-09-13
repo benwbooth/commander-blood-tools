@@ -3601,7 +3601,9 @@ impl<'window> ModernGameServices<'window> {
         host_position: [f32; 2],
         buttons: PointerButtons,
     ) -> PointerSample {
-        self.input.poll_pointer(output_size, host_position, buttons)
+        let dialect = self.runtime.data().game().script_dialect();
+        self.input
+            .poll_pointer_for_dialect(output_size, host_position, buttons, dialect)
     }
 
     /// Publish a platform-owned pointer already in original logical coordinates.
@@ -3610,7 +3612,9 @@ impl<'window> ModernGameServices<'window> {
         position: [i16; 2],
         buttons: PointerButtons,
     ) -> PointerSample {
-        self.input.publish_logical_pointer(position, buttons)
+        let dialect = self.runtime.data().game().script_dialect();
+        self.input
+            .publish_logical_pointer_for_dialect(position, buttons, dialect)
     }
 
     /// Move newly detected SDL pointer edges into the lifecycle latches.
