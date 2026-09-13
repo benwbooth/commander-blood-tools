@@ -227,11 +227,12 @@ pub fn measure_game_text_width(
 
 /// Draw a bounded string through the host-supplied BIOS 8 by 8 font.
 ///
-/// This translates `font8x8_text_draw_display` at BLOODPRG offset `0x003066`.
-/// It retains NUL termination, the packed zero-means-256 character limit, fixed
-/// eight-pixel advance, and transparent glyph bits. An owned ROM-font array and
-/// checked logical coordinates replace the captured far BIOS pointer, display
-/// segment offset, and 16-bit pointer wrapping.
+/// This translates `font8x8_text_draw_display` at BLOODPRG offset `0x003066`
+/// and its relocated Big Bug Bang counterpart at `0x0033E6`. It retains NUL
+/// termination, the packed zero-means-256 character limit, fixed eight-pixel
+/// advance, and transparent glyph bits. An owned ROM-font array and checked
+/// logical coordinates replace the captured far BIOS pointer, display segment
+/// offset, and 16-bit pointer wrapping.
 pub fn draw_bios_font_text(
     framebuffer: &mut [u8],
     font: &BiosFont8x8,
@@ -955,6 +956,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangBiosDrawOracle {
+        rows: Vec<BiosDrawOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct ProportionalDrawOracle {
         name: String,
         x: u16,
@@ -1070,12 +1076,7 @@ mod tests {
         );
     }
 
-    #[test]
-    fn bios_font_draw_matches_every_flat_original_vector() {
-        let vectors: Vec<BiosDrawOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_3066_natural.json"
-        ))
-        .unwrap();
+    fn assert_bios_draw_vectors(vectors: &[BiosDrawOracle]) {
         assert_eq!(vectors.len(), BIOS_DRAW_ORACLE_COUNT);
         let mut exact_hashes = usize::MIN;
 
@@ -1120,6 +1121,24 @@ mod tests {
             }
         }
         assert_eq!(exact_hashes, BIOS_DRAW_EXACT_HASH_COUNT);
+    }
+
+    #[test]
+    fn bios_font_draw_matches_every_flat_original_vector() {
+        let vectors: Vec<BiosDrawOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_3066_natural.json"
+        ))
+        .unwrap();
+        assert_bios_draw_vectors(&vectors);
+    }
+
+    #[test]
+    fn sequel_bios_font_draw_matches_every_direct_vector() {
+        let fixture: BigBugBangBiosDrawOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_bios_font.json"
+        ))
+        .unwrap();
+        assert_bios_draw_vectors(&fixture.rows);
     }
 
     #[test]

@@ -5317,6 +5317,30 @@ SHA-256 is
 and the deterministic fixture SHA-256 is
 `622b12a18c6b830ea024245a4503b3963aad3cbd662e40e391b6b74e3e88ee94`.
 
+## BIOS 8x8 Text Renderer Oracle (2026-09-13)
+
+BBB `0x33E6..0x344D` is the relocated sequel counterpart of Commander Blood's
+`0x3066..0x30CD` BIOS 8x8 text renderer. Both routines contain 55 instructions
+in 103 bytes and differ only in the display and BIOS-font far-pointer
+relocations.
+
+The new `re/tools/big_bug_bang_bios_font_oracle.py` directly executes all eight
+fingerprinted Commander cases in the shipped BBB body. They prove immediate
+NUL termination, exact and zero-means-256 count limits, font, text, and display
+offset wrapping, transparent glyph bits, zero-color writes, inherited direction
+state, and the native full-word row formula. The harness also verifies relocated
+GS pointer ownership against full-segment decoys, exact ordered stack and pixel
+writes, complete register and segment residue, defined terminal flags, far
+return, untouched full segments, and patched-executable immutability.
+
+The typed `draw_bios_font_text` owner consumes both eight-row fixtures. Owned
+font and framebuffer slices plus checked coordinates replace far pointers and
+16-bit display wrapping while preserving the renderer's bounded text and glyph
+semantics. BBB's body SHA-256 is
+`630748baacde49c7a97451d01f64e9ed5d1b5573b3f899faba0346c40243fcb8`,
+and the deterministic fixture SHA-256 is
+`aac42b948f30ebb80e56f2e60a4462ce38c5d22613aec121270f62005a6718f7`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

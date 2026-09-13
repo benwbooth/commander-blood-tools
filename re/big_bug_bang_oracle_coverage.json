@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 163,
-    "oracle_fixture_count": 162,
+    "oracle_count": 164,
+    "oracle_fixture_count": 163,
     "fixture_relation_counts": {
-      "exact": 161,
+      "exact": 162,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 280,
-    "unentered_static_entrypoints": 102,
+    "entered_static_entrypoints": 281,
+    "unentered_static_entrypoints": 101,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 281,
+    "entered_known_entrypoints": 282,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 167,
-        "unentered": 29
+        "entered": 168,
+        "unentered": 28
       },
       "exact_body": {
         "entered": 15,
@@ -256,6 +256,18 @@
       "summary": "verified 512 original BAS-entry gate cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_bas_entry.json",
       "fixture_sha256": "bf5048cd632c3ea808e5e78e6df6e393c825adff6744148266e8dce2411e488e",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_bios_font_oracle.py",
+      "oracle_sha256": "8005a1f78168fe5436db9476886e90b397710e79422354dfbd653d3df9cf3537",
+      "executed_instruction_count": 55,
+      "entered_entrypoints": [
+        "0x33e6"
+      ],
+      "summary": "verified 8 BBB BIOS-font cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_bios_font.json",
+      "fixture_sha256": "aac42b948f30ebb80e56f2e60a4462ce38c5d22613aec121270f62005a6718f7",
       "fixture_relation": "exact"
     },
     {
@@ -3283,8 +3295,10 @@
     {
       "entry": "0x33e6",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bios_font_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x3066"
     },
