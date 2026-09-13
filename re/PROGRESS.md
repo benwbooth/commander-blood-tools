@@ -1603,3 +1603,43 @@ keeps landing on transient LOADING screens; refine resume(F5)+timing OR set a BP
 read to freeze AT the credit frame, then MEMDUMPBIN and read gs:0x6780 (profile), gs:0x5e64 (reveal
 gate), gs:0x5e65 (phase), gs:0xe18 (subtitle text). Comparing those to my runtime's values pinpoints
 the exact divergent state that keeps the credit clip unselected -> the fix.
+
+## 2026-09-12 - Big Bug Bang direct-reachable native function inventory
+
+Recreated the previously untracked recursive-descent graph generator as
+`re/tools/build_function_graph.py`. Its regression test compares the complete generated Commander
+graph with `re/func_graph.json`: all 222 functions, 442 direct edges, 112 leaves, and all 48
+unresolved-transfer records (46 unique sites, including overlap multiplicity) match. This validates
+the implementation against the existing binary-derived baseline rather than only its headline
+counts.
+
+Running that same implementation on the original `BLOOD2PG.EXE` produced
+`re/big_bug_bang_func_graph.json`:
+
+- 251 directly reachable functions, 509 direct call edges, and 120 leaves.
+- 48 unresolved-transfer records at 46 unique sites. These still include dispatch tables and
+  runtime vectors, so 251 is a lower bound, not a complete native-function denominator.
+
+`re/tools/compare_function_graphs.py` compares the control-flow-owned instruction bodies. It found
+20 unique byte-identical bodies and 140 additional unique relocation-tolerant structural
+correspondences. All 122 sequel edges whose endpoints were independently mapped are also present in
+the Commander graph. Six small duplicate routines are ambiguous and 85 sequel functions remain
+unresolved. Structural correspondence normalizes direct destinations and address-like constants;
+it is a candidate map, not behavioral parity. The complete classifications and executable hashes
+are in `re/big_bug_bang_function_comparison.json`.
+
+The production port already uses one shared runtime script system and typed native service layer;
+there is no second sequel interpreter to merge. The fingerprint-bound
+`re/tools/big_bug_bang_indirect_dispatch_atlas.py` resolves eight static table families: input,
+value conversion, sprite blitting, all 56 VM opcodes, 21 record kinds, 18 byte-parser operations,
+six navigation actor rows, and five navigation choices. Their 110 distinct targets add 109 targets
+not already present after unioning the recursive graph with all relocation-proven far targets. The
+resulting static lower bound is 368 native targets; see
+`re/big_bug_bang_indirect_dispatch_atlas.json`.
+
+All 48 indirect records are classified: nine static-table dispatch records, six segment-zero runtime
+calls, 19 XMS-driver vectors, 12 sound-driver vectors, and two dynamic presentation callbacks.
+Classification does not turn the external vectors into recovered functions. The next shared-engine
+gate is to cross-reference the 368-target lower bound against existing BBB native oracles and runtime
+ownership, then resolve dynamically supplied internal callbacks from original execution traces. Only
+uncovered behavior from that audit should drive implementation changes.

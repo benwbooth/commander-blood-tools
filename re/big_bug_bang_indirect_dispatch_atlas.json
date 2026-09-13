@@ -1,0 +1,1427 @@
+{
+  "format": "big-bug-bang-indirect-dispatch-atlas-v1",
+  "scope": "Static lower-bound inventory; external vectors and dynamic callbacks still require runtime traces",
+  "input": {
+    "executable": "output/big-bug-bang/disc/BLOOD2PG.EXE",
+    "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+    "graph": "re/big_bug_bang_func_graph.json"
+  },
+  "counts": {
+    "recursive_graph_functions": 251,
+    "relocation_proven_far_targets": 119,
+    "lower_bound_after_direct_far": 259,
+    "static_table_count": 8,
+    "static_table_distinct_targets": 110,
+    "static_targets_missing_from_direct_denominator": 109,
+    "lower_bound_after_static_tables": 368,
+    "indirect_records": 48,
+    "unique_indirect_sites": 46,
+    "unclassified_records": 0
+  },
+  "category_record_counts": {
+    "direct_far_segment0_runtime_call": 6,
+    "dynamic_presentation_callback_vector": 2,
+    "external_sound_driver_vector": 12,
+    "external_xms_driver_vector": 19,
+    "static_internal_dispatch_table": 9
+  },
+  "tables": [
+    {
+      "name": "input_action_handlers",
+      "description": "Keyboard action dispatch after the CS translation table",
+      "dispatch_sites": [
+        "0x0023cb"
+      ],
+      "table_file_offset": "0x002382",
+      "entry_count": 16,
+      "distinct_target_count": 16,
+      "count_basis": "16 words end at owner routine 0x23a2",
+      "targets_missing_from_recursive_graph": [
+        "0x0023d4",
+        "0x002421",
+        "0x002495",
+        "0x0024a3",
+        "0x0024b1",
+        "0x0024b2",
+        "0x0024b3",
+        "0x0024b4",
+        "0x0024b5",
+        "0x0024b6",
+        "0x0024bf",
+        "0x0024c8",
+        "0x002514",
+        "0x00253d",
+        "0x0025a7",
+        "0x0025c5"
+      ],
+      "entries": [
+        {
+          "index": 0,
+          "selector": "0x00",
+          "encoded": "0x1464",
+          "target_file_offset": "0x0023d4"
+        },
+        {
+          "index": 1,
+          "selector": "0x01",
+          "encoded": "0x14b1",
+          "target_file_offset": "0x002421"
+        },
+        {
+          "index": 2,
+          "selector": "0x02",
+          "encoded": "0x1525",
+          "target_file_offset": "0x002495"
+        },
+        {
+          "index": 3,
+          "selector": "0x03",
+          "encoded": "0x1533",
+          "target_file_offset": "0x0024a3"
+        },
+        {
+          "index": 4,
+          "selector": "0x04",
+          "encoded": "0x1541",
+          "target_file_offset": "0x0024b1"
+        },
+        {
+          "index": 5,
+          "selector": "0x05",
+          "encoded": "0x1542",
+          "target_file_offset": "0x0024b2"
+        },
+        {
+          "index": 6,
+          "selector": "0x06",
+          "encoded": "0x15a4",
+          "target_file_offset": "0x002514"
+        },
+        {
+          "index": 7,
+          "selector": "0x07",
+          "encoded": "0x15cd",
+          "target_file_offset": "0x00253d"
+        },
+        {
+          "index": 8,
+          "selector": "0x08",
+          "encoded": "0x1655",
+          "target_file_offset": "0x0025c5"
+        },
+        {
+          "index": 9,
+          "selector": "0x09",
+          "encoded": "0x1543",
+          "target_file_offset": "0x0024b3"
+        },
+        {
+          "index": 10,
+          "selector": "0x0a",
+          "encoded": "0x1544",
+          "target_file_offset": "0x0024b4"
+        },
+        {
+          "index": 11,
+          "selector": "0x0b",
+          "encoded": "0x1545",
+          "target_file_offset": "0x0024b5"
+        },
+        {
+          "index": 12,
+          "selector": "0x0c",
+          "encoded": "0x1546",
+          "target_file_offset": "0x0024b6"
+        },
+        {
+          "index": 13,
+          "selector": "0x0d",
+          "encoded": "0x154f",
+          "target_file_offset": "0x0024bf"
+        },
+        {
+          "index": 14,
+          "selector": "0x0e",
+          "encoded": "0x1558",
+          "target_file_offset": "0x0024c8"
+        },
+        {
+          "index": 15,
+          "selector": "0x0f",
+          "encoded": "0x1637",
+          "target_file_offset": "0x0025a7"
+        }
+      ]
+    },
+    {
+      "name": "value_conversion_callbacks",
+      "description": "Five far callbacks selected by (record kind - 8) * 4",
+      "dispatch_sites": [
+        "0x002637"
+      ],
+      "table_file_offset": "0x0025ca",
+      "entry_count": 5,
+      "distinct_target_count": 5,
+      "count_basis": "five far pointers end at owner routine 0x25de",
+      "targets_missing_from_recursive_graph": [
+        "0x00286b",
+        "0x0028b2",
+        "0x0028cc",
+        "0x0028e9"
+      ],
+      "entries": [
+        {
+          "index": 0,
+          "selector": "0x00",
+          "encoded": "0x01e6:0x01d2",
+          "target_file_offset": "0x002832"
+        },
+        {
+          "index": 1,
+          "selector": "0x01",
+          "encoded": "0x01e6:0x020b",
+          "target_file_offset": "0x00286b"
+        },
+        {
+          "index": 2,
+          "selector": "0x02",
+          "encoded": "0x01e6:0x0252",
+          "target_file_offset": "0x0028b2"
+        },
+        {
+          "index": 3,
+          "selector": "0x03",
+          "encoded": "0x01e6:0x026c",
+          "target_file_offset": "0x0028cc"
+        },
+        {
+          "index": 4,
+          "selector": "0x04",
+          "encoded": "0x01e6:0x0289",
+          "target_file_offset": "0x0028e9"
+        }
+      ]
+    },
+    {
+      "name": "sprite_blitter_candidates",
+      "description": "Eight candidates preceding the mutable blitter slot",
+      "dispatch_sites": [
+        "0x004983"
+      ],
+      "table_file_offset": "0x00499f",
+      "entry_count": 8,
+      "distinct_target_count": 8,
+      "count_basis": "eight words end at the indirect call's mutable slot",
+      "targets_missing_from_recursive_graph": [
+        "0x0049b3",
+        "0x004b39",
+        "0x005025",
+        "0x005153",
+        "0x0053df",
+        "0x005517",
+        "0x005518",
+        "0x005519"
+      ],
+      "entries": [
+        {
+          "index": 0,
+          "selector": "0x00",
+          "encoded": "0x16a3",
+          "target_file_offset": "0x0049b3"
+        },
+        {
+          "index": 1,
+          "selector": "0x01",
+          "encoded": "0x1829",
+          "target_file_offset": "0x004b39"
+        },
+        {
+          "index": 2,
+          "selector": "0x02",
+          "encoded": "0x1d15",
+          "target_file_offset": "0x005025"
+        },
+        {
+          "index": 3,
+          "selector": "0x03",
+          "encoded": "0x1e43",
+          "target_file_offset": "0x005153"
+        },
+        {
+          "index": 4,
+          "selector": "0x04",
+          "encoded": "0x20cf",
+          "target_file_offset": "0x0053df"
+        },
+        {
+          "index": 5,
+          "selector": "0x05",
+          "encoded": "0x2207",
+          "target_file_offset": "0x005517"
+        },
+        {
+          "index": 6,
+          "selector": "0x06",
+          "encoded": "0x2208",
+          "target_file_offset": "0x005518"
+        },
+        {
+          "index": 7,
+          "selector": "0x07",
+          "encoded": "0x2209",
+          "target_file_offset": "0x005519"
+        }
+      ],
+      "mutable_slot_file_offset": "0x0049af"
+    },
+    {
+      "name": "vm_opcode_handlers",
+      "description": "VM opcodes 0xa0 through 0xd7",
+      "dispatch_sites": [
+        "0x005ad4",
+        "0x005b7b"
+      ],
+      "table_file_offset": "0x016a78",
+      "entry_count": 56,
+      "distinct_target_count": 41,
+      "count_basis": "complete pinned executable opcode domain 0xa0..0xd7",
+      "targets_missing_from_recursive_graph": [
+        "0x0069ac",
+        "0x0069b8",
+        "0x0069c4",
+        "0x0069d0",
+        "0x0069d8",
+        "0x0069e6",
+        "0x006a01",
+        "0x006a2c",
+        "0x006a75",
+        "0x006a8e",
+        "0x006aa4",
+        "0x006ab2",
+        "0x006af7",
+        "0x006b07",
+        "0x006c89",
+        "0x006e67",
+        "0x006e6e",
+        "0x006e7c",
+        "0x006ee4",
+        "0x006f00",
+        "0x006f09",
+        "0x006f10",
+        "0x0070cd",
+        "0x00728b",
+        "0x007367",
+        "0x007408",
+        "0x00744b",
+        "0x00750a",
+        "0x00754e",
+        "0x0075cd",
+        "0x0076ad",
+        "0x00770c",
+        "0x007752",
+        "0x007884",
+        "0x00791e",
+        "0x007986",
+        "0x0079d5",
+        "0x007a3a",
+        "0x007af4",
+        "0x007b68",
+        "0x007bbf"
+      ],
+      "entries": [
+        {
+          "index": 0,
+          "selector": "0xa0",
+          "encoded": "0x1255",
+          "target_file_offset": "0x006a75"
+        },
+        {
+          "index": 1,
+          "selector": "0xa1",
+          "encoded": "0x126e",
+          "target_file_offset": "0x006a8e"
+        },
+        {
+          "index": 2,
+          "selector": "0xa2",
+          "encoded": "0x1284",
+          "target_file_offset": "0x006aa4"
+        },
+        {
+          "index": 3,
+          "selector": "0xa3",
+          "encoded": "0x1292",
+          "target_file_offset": "0x006ab2"
+        },
+        {
+          "index": 4,
+          "selector": "0xa4",
+          "encoded": "0x12d7",
+          "target_file_offset": "0x006af7"
+        },
+        {
+          "index": 5,
+          "selector": "0xa5",
+          "encoded": "0x12e7",
+          "target_file_offset": "0x006b07"
+        },
+        {
+          "index": 6,
+          "selector": "0xa6",
+          "encoded": "0x1469",
+          "target_file_offset": "0x006c89"
+        },
+        {
+          "index": 7,
+          "selector": "0xa7",
+          "encoded": "0x164e",
+          "target_file_offset": "0x006e6e"
+        },
+        {
+          "index": 8,
+          "selector": "0xa8",
+          "encoded": "0x165c",
+          "target_file_offset": "0x006e7c"
+        },
+        {
+          "index": 9,
+          "selector": "0xa9",
+          "encoded": "0x16c4",
+          "target_file_offset": "0x006ee4"
+        },
+        {
+          "index": 10,
+          "selector": "0xaa",
+          "encoded": "0x16e9",
+          "target_file_offset": "0x006f09"
+        },
+        {
+          "index": 11,
+          "selector": "0xab",
+          "encoded": "0x16e0",
+          "target_file_offset": "0x006f00"
+        },
+        {
+          "index": 12,
+          "selector": "0xac",
+          "encoded": "0x16f0",
+          "target_file_offset": "0x006f10"
+        },
+        {
+          "index": 13,
+          "selector": "0xad",
+          "encoded": "0x1d2e",
+          "target_file_offset": "0x00754e"
+        },
+        {
+          "index": 14,
+          "selector": "0xae",
+          "encoded": "0x1cea",
+          "target_file_offset": "0x00750a"
+        },
+        {
+          "index": 15,
+          "selector": "0xaf",
+          "encoded": "0x1d2e",
+          "target_file_offset": "0x00754e"
+        },
+        {
+          "index": 16,
+          "selector": "0xb0",
+          "encoded": "0x1cea",
+          "target_file_offset": "0x00750a"
+        },
+        {
+          "index": 17,
+          "selector": "0xb1",
+          "encoded": "0x1c2b",
+          "target_file_offset": "0x00744b"
+        },
+        {
+          "index": 18,
+          "selector": "0xb2",
+          "encoded": "0x1d2e",
+          "target_file_offset": "0x00754e"
+        },
+        {
+          "index": 19,
+          "selector": "0xb3",
+          "encoded": "0x1d2e",
+          "target_file_offset": "0x00754e"
+        },
+        {
+          "index": 20,
+          "selector": "0xb4",
+          "encoded": "0x1c2b",
+          "target_file_offset": "0x00744b"
+        },
+        {
+          "index": 21,
+          "selector": "0xb5",
+          "encoded": "0x1c2b",
+          "target_file_offset": "0x00744b"
+        },
+        {
+          "index": 22,
+          "selector": "0xb6",
+          "encoded": "0x1c2b",
+          "target_file_offset": "0x00744b"
+        },
+        {
+          "index": 23,
+          "selector": "0xb7",
+          "encoded": "0x1e8d",
+          "target_file_offset": "0x0076ad"
+        },
+        {
+          "index": 24,
+          "selector": "0xb8",
+          "encoded": "0x1eec",
+          "target_file_offset": "0x00770c"
+        },
+        {
+          "index": 25,
+          "selector": "0xb9",
+          "encoded": "0x1eec",
+          "target_file_offset": "0x00770c"
+        },
+        {
+          "index": 26,
+          "selector": "0xba",
+          "encoded": "0x1d2e",
+          "target_file_offset": "0x00754e"
+        },
+        {
+          "index": 27,
+          "selector": "0xbb",
+          "encoded": "0x1d2e",
+          "target_file_offset": "0x00754e"
+        },
+        {
+          "index": 28,
+          "selector": "0xbc",
+          "encoded": "0x1d2e",
+          "target_file_offset": "0x00754e"
+        },
+        {
+          "index": 29,
+          "selector": "0xbd",
+          "encoded": "0x1eec",
+          "target_file_offset": "0x00770c"
+        },
+        {
+          "index": 30,
+          "selector": "0xbe",
+          "encoded": "0x1c2b",
+          "target_file_offset": "0x00744b"
+        },
+        {
+          "index": 31,
+          "selector": "0xbf",
+          "encoded": "0x1c2b",
+          "target_file_offset": "0x00744b"
+        },
+        {
+          "index": 32,
+          "selector": "0xc0",
+          "encoded": "0x1c2b",
+          "target_file_offset": "0x00744b"
+        },
+        {
+          "index": 33,
+          "selector": "0xc1",
+          "encoded": "0x1f32",
+          "target_file_offset": "0x007752"
+        },
+        {
+          "index": 34,
+          "selector": "0xc2",
+          "encoded": "0x221a",
+          "target_file_offset": "0x007a3a"
+        },
+        {
+          "index": 35,
+          "selector": "0xc3",
+          "encoded": "0x22d4",
+          "target_file_offset": "0x007af4"
+        },
+        {
+          "index": 36,
+          "selector": "0xc4",
+          "encoded": "0x2064",
+          "target_file_offset": "0x007884"
+        },
+        {
+          "index": 37,
+          "selector": "0xc5",
+          "encoded": "0x20fe",
+          "target_file_offset": "0x00791e"
+        },
+        {
+          "index": 38,
+          "selector": "0xc6",
+          "encoded": "0x2166",
+          "target_file_offset": "0x007986"
+        },
+        {
+          "index": 39,
+          "selector": "0xc7",
+          "encoded": "0x21b5",
+          "target_file_offset": "0x0079d5"
+        },
+        {
+          "index": 40,
+          "selector": "0xc8",
+          "encoded": "0x2348",
+          "target_file_offset": "0x007b68"
+        },
+        {
+          "index": 41,
+          "selector": "0xc9",
+          "encoded": "0x239f",
+          "target_file_offset": "0x007bbf"
+        },
+        {
+          "index": 42,
+          "selector": "0xca",
+          "encoded": "0x11e1",
+          "target_file_offset": "0x006a01"
+        },
+        {
+          "index": 43,
+          "selector": "0xcb",
+          "encoded": "0x120c",
+          "target_file_offset": "0x006a2c"
+        },
+        {
+          "index": 44,
+          "selector": "0xcc",
+          "encoded": "0x11c6",
+          "target_file_offset": "0x0069e6"
+        },
+        {
+          "index": 45,
+          "selector": "0xcd",
+          "encoded": "0x1dad",
+          "target_file_offset": "0x0075cd"
+        },
+        {
+          "index": 46,
+          "selector": "0xce",
+          "encoded": "0x118c",
+          "target_file_offset": "0x0069ac"
+        },
+        {
+          "index": 47,
+          "selector": "0xcf",
+          "encoded": "0x11b8",
+          "target_file_offset": "0x0069d8"
+        },
+        {
+          "index": 48,
+          "selector": "0xd0",
+          "encoded": "0x1198",
+          "target_file_offset": "0x0069b8"
+        },
+        {
+          "index": 49,
+          "selector": "0xd1",
+          "encoded": "0x11a4",
+          "target_file_offset": "0x0069c4"
+        },
+        {
+          "index": 50,
+          "selector": "0xd2",
+          "encoded": "0x11b0",
+          "target_file_offset": "0x0069d0"
+        },
+        {
+          "index": 51,
+          "selector": "0xd3",
+          "encoded": "0x1be8",
+          "target_file_offset": "0x007408"
+        },
+        {
+          "index": 52,
+          "selector": "0xd4",
+          "encoded": "0x18ad",
+          "target_file_offset": "0x0070cd"
+        },
+        {
+          "index": 53,
+          "selector": "0xd5",
+          "encoded": "0x1b47",
+          "target_file_offset": "0x007367"
+        },
+        {
+          "index": 54,
+          "selector": "0xd6",
+          "encoded": "0x1a6b",
+          "target_file_offset": "0x00728b"
+        },
+        {
+          "index": 55,
+          "selector": "0xd7",
+          "encoded": "0x1647",
+          "target_file_offset": "0x006e67"
+        }
+      ]
+    },
+    {
+      "name": "record_kind_handlers",
+      "description": "Record-kind rendering/format dispatch",
+      "dispatch_sites": [
+        "0x007d22"
+      ],
+      "table_file_offset": "0x007c3b",
+      "entry_count": 21,
+      "distinct_target_count": 11,
+      "count_basis": "dispatcher compares the selector with 0x15 at 0x7d39",
+      "targets_missing_from_recursive_graph": [
+        "0x007d48",
+        "0x007d67",
+        "0x007d83",
+        "0x007dcb",
+        "0x007e06",
+        "0x007e40",
+        "0x007e5c",
+        "0x007e70",
+        "0x007e8e",
+        "0x007e8f",
+        "0x007ef1"
+      ],
+      "entries": [
+        {
+          "index": 0,
+          "selector": "0x00",
+          "encoded": "0x2528",
+          "target_file_offset": "0x007d48"
+        },
+        {
+          "index": 1,
+          "selector": "0x01",
+          "encoded": "0x2547",
+          "target_file_offset": "0x007d67"
+        },
+        {
+          "index": 2,
+          "selector": "0x02",
+          "encoded": "0x2528",
+          "target_file_offset": "0x007d48"
+        },
+        {
+          "index": 3,
+          "selector": "0x03",
+          "encoded": "0x2528",
+          "target_file_offset": "0x007d48"
+        },
+        {
+          "index": 4,
+          "selector": "0x04",
+          "encoded": "0x2563",
+          "target_file_offset": "0x007d83"
+        },
+        {
+          "index": 5,
+          "selector": "0x05",
+          "encoded": "0x2528",
+          "target_file_offset": "0x007d48"
+        },
+        {
+          "index": 6,
+          "selector": "0x06",
+          "encoded": "0x2528",
+          "target_file_offset": "0x007d48"
+        },
+        {
+          "index": 7,
+          "selector": "0x07",
+          "encoded": "0x2528",
+          "target_file_offset": "0x007d48"
+        },
+        {
+          "index": 8,
+          "selector": "0x08",
+          "encoded": "0x25ab",
+          "target_file_offset": "0x007dcb"
+        },
+        {
+          "index": 9,
+          "selector": "0x09",
+          "encoded": "0x25ab",
+          "target_file_offset": "0x007dcb"
+        },
+        {
+          "index": 10,
+          "selector": "0x0a",
+          "encoded": "0x25ab",
+          "target_file_offset": "0x007dcb"
+        },
+        {
+          "index": 11,
+          "selector": "0x0b",
+          "encoded": "0x25e6",
+          "target_file_offset": "0x007e06"
+        },
+        {
+          "index": 12,
+          "selector": "0x0c",
+          "encoded": "0x25e6",
+          "target_file_offset": "0x007e06"
+        },
+        {
+          "index": 13,
+          "selector": "0x0d",
+          "encoded": "0x25e6",
+          "target_file_offset": "0x007e06"
+        },
+        {
+          "index": 14,
+          "selector": "0x0e",
+          "encoded": "0x263c",
+          "target_file_offset": "0x007e5c"
+        },
+        {
+          "index": 15,
+          "selector": "0x0f",
+          "encoded": "0x2650",
+          "target_file_offset": "0x007e70"
+        },
+        {
+          "index": 16,
+          "selector": "0x10",
+          "encoded": "0x25e6",
+          "target_file_offset": "0x007e06"
+        },
+        {
+          "index": 17,
+          "selector": "0x11",
+          "encoded": "0x266e",
+          "target_file_offset": "0x007e8e"
+        },
+        {
+          "index": 18,
+          "selector": "0x12",
+          "encoded": "0x266f",
+          "target_file_offset": "0x007e8f"
+        },
+        {
+          "index": 19,
+          "selector": "0x13",
+          "encoded": "0x26d1",
+          "target_file_offset": "0x007ef1"
+        },
+        {
+          "index": 20,
+          "selector": "0x14",
+          "encoded": "0x2620",
+          "target_file_offset": "0x007e40"
+        }
+      ]
+    },
+    {
+      "name": "byte_parser_handlers",
+      "description": "One-based byte parser dispatch",
+      "dispatch_sites": [
+        "0x008527"
+      ],
+      "table_file_offset": "0x008560",
+      "entry_count": 18,
+      "distinct_target_count": 18,
+      "count_basis": "18 words end at first handler 0x8584",
+      "targets_missing_from_recursive_graph": [
+        "0x008584",
+        "0x00858b",
+        "0x008592",
+        "0x008599",
+        "0x0085a0",
+        "0x008654",
+        "0x00866b",
+        "0x008680",
+        "0x0086b1",
+        "0x0086c6",
+        "0x0086fc",
+        "0x008702",
+        "0x008717",
+        "0x00872c",
+        "0x008796",
+        "0x0087b8",
+        "0x0087ca",
+        "0x0087eb"
+      ],
+      "entries": [
+        {
+          "index": 0,
+          "selector": "0x00",
+          "encoded": "0x2d64",
+          "target_file_offset": "0x008584"
+        },
+        {
+          "index": 1,
+          "selector": "0x01",
+          "encoded": "0x2d6b",
+          "target_file_offset": "0x00858b"
+        },
+        {
+          "index": 2,
+          "selector": "0x02",
+          "encoded": "0x2d80",
+          "target_file_offset": "0x0085a0"
+        },
+        {
+          "index": 3,
+          "selector": "0x03",
+          "encoded": "0x2d79",
+          "target_file_offset": "0x008599"
+        },
+        {
+          "index": 4,
+          "selector": "0x04",
+          "encoded": "0x2e34",
+          "target_file_offset": "0x008654"
+        },
+        {
+          "index": 5,
+          "selector": "0x05",
+          "encoded": "0x2e4b",
+          "target_file_offset": "0x00866b"
+        },
+        {
+          "index": 6,
+          "selector": "0x06",
+          "encoded": "0x2ea6",
+          "target_file_offset": "0x0086c6"
+        },
+        {
+          "index": 7,
+          "selector": "0x07",
+          "encoded": "0x2edc",
+          "target_file_offset": "0x0086fc"
+        },
+        {
+          "index": 8,
+          "selector": "0x08",
+          "encoded": "0x2ee2",
+          "target_file_offset": "0x008702"
+        },
+        {
+          "index": 9,
+          "selector": "0x09",
+          "encoded": "0x2ef7",
+          "target_file_offset": "0x008717"
+        },
+        {
+          "index": 10,
+          "selector": "0x0a",
+          "encoded": "0x2f0c",
+          "target_file_offset": "0x00872c"
+        },
+        {
+          "index": 11,
+          "selector": "0x0b",
+          "encoded": "0x2f76",
+          "target_file_offset": "0x008796"
+        },
+        {
+          "index": 12,
+          "selector": "0x0c",
+          "encoded": "0x2f98",
+          "target_file_offset": "0x0087b8"
+        },
+        {
+          "index": 13,
+          "selector": "0x0d",
+          "encoded": "0x2faa",
+          "target_file_offset": "0x0087ca"
+        },
+        {
+          "index": 14,
+          "selector": "0x0e",
+          "encoded": "0x2d72",
+          "target_file_offset": "0x008592"
+        },
+        {
+          "index": 15,
+          "selector": "0x0f",
+          "encoded": "0x2e91",
+          "target_file_offset": "0x0086b1"
+        },
+        {
+          "index": 16,
+          "selector": "0x10",
+          "encoded": "0x2e60",
+          "target_file_offset": "0x008680"
+        },
+        {
+          "index": 17,
+          "selector": "0x11",
+          "encoded": "0x2fcb",
+          "target_file_offset": "0x0087eb"
+        }
+      ]
+    },
+    {
+      "name": "navigation_actor_handlers",
+      "description": "Bridge/navigation actor-row handlers",
+      "dispatch_sites": [
+        "0x008edd"
+      ],
+      "table_file_offset": "0x008f88",
+      "entry_count": 6,
+      "distinct_target_count": 6,
+      "count_basis": "dispatcher loads loop count 6 at 0x8e7c",
+      "targets_missing_from_recursive_graph": [
+        "0x008f94",
+        "0x009070",
+        "0x0091ad",
+        "0x00927a",
+        "0x0092d0",
+        "0x00935d"
+      ],
+      "entries": [
+        {
+          "index": 0,
+          "selector": "0x00",
+          "encoded": "0x0840",
+          "target_file_offset": "0x009070"
+        },
+        {
+          "index": 1,
+          "selector": "0x01",
+          "encoded": "0x0764",
+          "target_file_offset": "0x008f94"
+        },
+        {
+          "index": 2,
+          "selector": "0x02",
+          "encoded": "0x0a4a",
+          "target_file_offset": "0x00927a"
+        },
+        {
+          "index": 3,
+          "selector": "0x03",
+          "encoded": "0x0aa0",
+          "target_file_offset": "0x0092d0"
+        },
+        {
+          "index": 4,
+          "selector": "0x04",
+          "encoded": "0x0b2d",
+          "target_file_offset": "0x00935d"
+        },
+        {
+          "index": 5,
+          "selector": "0x05",
+          "encoded": "0x097d",
+          "target_file_offset": "0x0091ad"
+        }
+      ]
+    },
+    {
+      "name": "navigation_choice_handlers",
+      "description": "Bridge/navigation choice handlers",
+      "dispatch_sites": [
+        "0x00989a"
+      ],
+      "table_file_offset": "0x0098a3",
+      "entry_count": 5,
+      "distinct_target_count": 5,
+      "count_basis": "dispatcher rejects choice indexes >= 5 at 0x9827",
+      "targets_missing_from_recursive_graph": [
+        "0x0098ad",
+        "0x0098d1",
+        "0x009962",
+        "0x0099ed",
+        "0x009a11"
+      ],
+      "entries": [
+        {
+          "index": 0,
+          "selector": "0x00",
+          "encoded": "0x107d",
+          "target_file_offset": "0x0098ad"
+        },
+        {
+          "index": 1,
+          "selector": "0x01",
+          "encoded": "0x10a1",
+          "target_file_offset": "0x0098d1"
+        },
+        {
+          "index": 2,
+          "selector": "0x02",
+          "encoded": "0x1132",
+          "target_file_offset": "0x009962"
+        },
+        {
+          "index": 3,
+          "selector": "0x03",
+          "encoded": "0x11bd",
+          "target_file_offset": "0x0099ed"
+        },
+        {
+          "index": 4,
+          "selector": "0x04",
+          "encoded": "0x11e1",
+          "target_file_offset": "0x009a11"
+        }
+      ]
+    }
+  ],
+  "classified_indirect_records": [
+    {
+      "site_file_offset": "0x000bbe",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x000bd1",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x000be4",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x000bf7",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x002abe",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00179d",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00cf66",
+      "mnemonic": "lcall",
+      "operand": "[0xf21]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x0023cb",
+      "mnemonic": "call",
+      "operand": "word ptr cs:[bx + 0x1412]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "input_action_handlers"
+      }
+    },
+    {
+      "site_file_offset": "0x00beda",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00beda",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00beda",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00ba3f",
+      "mnemonic": "lcall",
+      "operand": "[0xf41]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x001954",
+      "mnemonic": "lcall",
+      "operand": "0, 0x5d2",
+      "category": "direct_far_segment0_runtime_call",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d980",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x0010fa",
+      "mnemonic": "lcall",
+      "operand": "0, 0x709",
+      "category": "direct_far_segment0_runtime_call",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x001c8d",
+      "mnemonic": "lcall",
+      "operand": "0, 0x5d2",
+      "category": "direct_far_segment0_runtime_call",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x005a5a",
+      "mnemonic": "lcall",
+      "operand": "0, 0x336",
+      "category": "direct_far_segment0_runtime_call",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x005a5f",
+      "mnemonic": "lcall",
+      "operand": "0, 0x34b",
+      "category": "direct_far_segment0_runtime_call",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x005ad4",
+      "mnemonic": "call",
+      "operand": "word ptr gs:[bx + di]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "vm_opcode_handlers"
+      }
+    },
+    {
+      "site_file_offset": "0x008527",
+      "mnemonic": "call",
+      "operand": "word ptr cs:[eax + 0x2d40]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "byte_parser_handlers"
+      }
+    },
+    {
+      "site_file_offset": "0x005b7b",
+      "mnemonic": "call",
+      "operand": "word ptr gs:[bx + di]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "vm_opcode_handlers"
+      }
+    },
+    {
+      "site_file_offset": "0x00d356",
+      "mnemonic": "lcall",
+      "operand": "[0xf2d]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d702",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00dc4c",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d52e",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d403",
+      "mnemonic": "lcall",
+      "operand": "[0xf29]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d0b0",
+      "mnemonic": "lcall",
+      "operand": "[0xf29]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d114",
+      "mnemonic": "lcall",
+      "operand": "[0xf29]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d15a",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d174",
+      "mnemonic": "lcall",
+      "operand": "[0xf29]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d1b3",
+      "mnemonic": "lcall",
+      "operand": "[0xf29]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d2c5",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xf41]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d25e",
+      "mnemonic": "lcall",
+      "operand": "[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x004983",
+      "mnemonic": "call",
+      "operand": "word ptr cs:[0x169f]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "sprite_blitter_candidates"
+      }
+    },
+    {
+      "site_file_offset": "0x008edd",
+      "mnemonic": "call",
+      "operand": "word ptr cs:[bx + 0x758]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "navigation_actor_handlers"
+      }
+    },
+    {
+      "site_file_offset": "0x0097bf",
+      "mnemonic": "lcall",
+      "operand": "0, 0x5d2",
+      "category": "direct_far_segment0_runtime_call",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00989a",
+      "mnemonic": "call",
+      "operand": "word ptr cs:[bx + 0x1073]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "navigation_choice_handlers"
+      }
+    },
+    {
+      "site_file_offset": "0x00d43d",
+      "mnemonic": "lcall",
+      "operand": "[0xf41]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d4a1",
+      "mnemonic": "lcall",
+      "operand": "[0xf39]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00d4a7",
+      "mnemonic": "lcall",
+      "operand": "[0xf29]",
+      "category": "external_sound_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00cdd6",
+      "mnemonic": "lcall",
+      "operand": "[0xc8e]",
+      "category": "dynamic_presentation_callback_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x00185c",
+      "mnemonic": "lcall",
+      "operand": "[0xc8e]",
+      "category": "dynamic_presentation_callback_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x007d22",
+      "mnemonic": "call",
+      "operand": "word ptr cs:[ecx + 0x241b]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "record_kind_handlers"
+      }
+    },
+    {
+      "site_file_offset": "0x002637",
+      "mnemonic": "lcall",
+      "operand": "cs:[bp + 0x165a]",
+      "category": "static_internal_dispatch_table",
+      "detail": {
+        "table": "value_conversion_callbacks"
+      }
+    },
+    {
+      "site_file_offset": "0x000ce9",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x000cfd",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x000d11",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    },
+    {
+      "site_file_offset": "0x000d25",
+      "mnemonic": "lcall",
+      "operand": "gs:[0xc42]",
+      "category": "external_xms_driver_vector",
+      "detail": {}
+    }
+  ]
+}
