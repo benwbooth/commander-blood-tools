@@ -24,35 +24,35 @@
     }
   },
   "summary": {
-    "oracle_count": 126,
-    "oracle_fixture_count": 125,
+    "oracle_count": 127,
+    "oracle_fixture_count": 126,
     "fixture_relation_counts": {
-      "exact": 124,
+      "exact": 125,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 220,
-    "unentered_static_entrypoints": 162,
+    "entered_static_entrypoints": 228,
+    "unentered_static_entrypoints": 154,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 221,
+    "entered_known_entrypoints": 229,
     "comparison_counts": {
       "unresolved": {
         "entered": 74,
         "unentered": 52
       },
       "structural_candidate": {
-        "entered": 120,
-        "unentered": 76
+        "entered": 122,
+        "unentered": 74
       },
       "exact_body": {
         "entered": 12,
         "unentered": 15
       },
       "ambiguous": {
-        "entered": 14,
-        "unentered": 19
+        "entered": 20,
+        "unentered": 13
       },
       "outside_static_comparison": {
         "entered": 1,
@@ -801,6 +801,26 @@
       "summary": "wrote 396 original activation/camera-gate cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_panel_activation.jsonl",
       "fixture_sha256": "a30ba1c16df575adcec7d3b9fcc6992f56fb124a79bd86f67c73f7972de27cb6",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_parser_handlers_oracle.py",
+      "oracle_sha256": "17acaedd30172fd1fefaf297db6642080425bf0b86e868ad8f753c07aad20016",
+      "executed_instruction_count": 60,
+      "entered_entrypoints": [
+        "0x8584",
+        "0x858b",
+        "0x8592",
+        "0x8599",
+        "0x866b",
+        "0x86fc",
+        "0x8702",
+        "0x8717",
+        "0x87ca"
+      ],
+      "summary": "verified 48 cases across 9 BBB parser handlers",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_parser_handlers.json",
+      "fixture_sha256": "bce17dbcf626c579f2ac1c702cd2b935fe6b12c368c53228eb06afa4d82d4cf9",
       "fixture_relation": "exact"
     },
     {
@@ -4258,8 +4278,10 @@
     {
       "entry": "0x8584",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
+      ],
       "comparison": "ambiguous",
       "commander_candidates": [
         "0x6855",
@@ -4273,8 +4295,10 @@
     {
       "entry": "0x858b",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
+      ],
       "comparison": "ambiguous",
       "commander_candidates": [
         "0x6855",
@@ -4290,7 +4314,8 @@
       "origin": "static_graph",
       "entered": true,
       "oracles": [
-        "re/tools/big_bug_bang_inventory_descriptor_oracle.py"
+        "re/tools/big_bug_bang_inventory_descriptor_oracle.py",
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
       ],
       "comparison": "ambiguous",
       "commander_candidates": [
@@ -4305,8 +4330,10 @@
     {
       "entry": "0x8599",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
+      ],
       "comparison": "ambiguous",
       "commander_candidates": [
         "0x6855",
@@ -4338,8 +4365,10 @@
     {
       "entry": "0x866b",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
+      ],
       "comparison": "ambiguous",
       "commander_candidates": [
         "0x7629",
@@ -4382,16 +4411,20 @@
     {
       "entry": "0x86fc",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x76ba"
     },
     {
       "entry": "0x8702",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
+      ],
       "comparison": "ambiguous",
       "commander_candidates": [
         "0x7629",
@@ -4403,8 +4436,10 @@
     {
       "entry": "0x8717",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
+      ],
       "comparison": "ambiguous",
       "commander_candidates": [
         "0x7629",
@@ -4440,8 +4475,10 @@
     {
       "entry": "0x87ca",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_parser_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x7788"
     },

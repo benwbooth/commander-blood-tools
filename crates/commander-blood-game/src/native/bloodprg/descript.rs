@@ -570,6 +570,51 @@ mod tests {
         changed_after: u8,
     }
 
+    #[derive(Deserialize)]
+    struct SequelParserFixture {
+        format: String,
+        routines: Vec<SequelParserRoutine>,
+        cases: Vec<SequelParserCase>,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelParserRoutine {
+        operation: String,
+        entry: String,
+        body_sha256: String,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    enum SequelParserCase {
+        Boundary {
+            operation: String,
+            name: String,
+            flag_before: u8,
+            flag_after: u8,
+        },
+        Video {
+            operation: String,
+            name: String,
+            input_hex: String,
+            copied_hex: String,
+            stopping_byte: u8,
+        },
+        Layout {
+            name: String,
+            input_hex: String,
+            operand: u16,
+            destination_after: u16,
+        },
+        Sprite {
+            name: String,
+            input_hex: String,
+            copied_hex: String,
+            stopping_byte: u8,
+            dirty_after: u8,
+        },
+    }
+
     #[derive(Clone, Copy)]
     enum VideoAssetField {
         Location,
@@ -701,6 +746,139 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[test]
+    fn sequel_simple_parser_handlers_match_original_vectors() {
+        let fixture: SequelParserFixture = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_parser_handlers.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.format, "big_bug_bang_simple_parser_handlers_v1");
+        assert_eq!(fixture.routines.len(), 9);
+        assert_eq!(fixture.cases.len(), 48);
+
+        let expected_routines = [
+            ("location_boundary", "0x8584"),
+            ("character_boundary", "0x858b"),
+            ("object_boundary", "0x8592"),
+            ("sequence_boundary", "0x8599"),
+            ("location_video", "0x866b"),
+            ("location_layout", "0x86fc"),
+            ("character_right_video", "0x8702"),
+            ("character_left_video", "0x8717"),
+            ("character_sprite", "0x87ca"),
+        ];
+        for (routine, expected) in fixture.routines.iter().zip(expected_routines) {
+            assert_eq!(routine.operation, expected.0);
+            assert_eq!(routine.entry, expected.1);
+            assert_eq!(routine.body_sha256.len(), 64);
+        }
+
+        for case in fixture.cases {
+            match case {
+                SequelParserCase::Boundary {
+                    operation,
+                    name,
+                    flag_before,
+                    flag_after,
+                } => {
+                    let (kind, handler): (_, fn(&mut DescriptRecordBoundary)) =
+                        match operation.as_str() {
+                            "location_boundary" => {
+                                (DescriptRecordKind::Location, stop_before_location_record)
+                            }
+                            "character_boundary" => {
+                                (DescriptRecordKind::Character, stop_before_character_record)
+                            }
+                            "object_boundary" => {
+                                (DescriptRecordKind::Object, stop_before_object_record)
+                            }
+                            "sequence_boundary" => {
+                                (DescriptRecordKind::Sequence, stop_before_sequence_record)
+                            }
+                            other => panic!("unknown sequel boundary operation {other}"),
+                        };
+                    let mut boundary = DescriptRecordBoundary::default();
+                    if flag_before != 0 {
+                        stop_before_location_record(&mut boundary);
+                    }
+                    handler(&mut boundary);
+                    assert_eq!(flag_after, 1, "{operation}/{name}");
+                    assert_eq!(
+                        boundary.next_record_kind(),
+                        Some(kind),
+                        "{operation}/{name}"
+                    );
+                }
+                SequelParserCase::Video {
+                    operation,
+                    name,
+                    input_hex,
+                    copied_hex,
+                    stopping_byte,
+                } => {
+                    let input = bytes_from_hex(&input_hex);
+                    let expected = bytes_from_hex(&copied_hex);
+                    let (video, tail) = decode_video_name(&input).unwrap();
+                    assert_eq!(tail, &[stopping_byte], "{operation}/{name}");
+                    assert_eq!(video.as_bytes(), expected.as_ref(), "{operation}/{name}");
+
+                    let mut assets = DescriptPresentationAssets::default();
+                    let selected = match operation.as_str() {
+                        "location_video" => {
+                            select_location_scene_video(&video, &mut assets);
+                            assets.location_scene_video()
+                        }
+                        "character_right_video" => {
+                            select_character_right_scene_video(&video, &mut assets);
+                            assets.character_right_scene_video()
+                        }
+                        "character_left_video" => {
+                            select_character_left_scene_video(&video, &mut assets);
+                            assets.character_left_scene_video()
+                        }
+                        other => panic!("unknown sequel video operation {other}"),
+                    };
+                    assert_eq!(selected, Some(expected.as_ref()), "{operation}/{name}");
+                }
+                SequelParserCase::Layout {
+                    name,
+                    input_hex,
+                    operand,
+                    destination_after,
+                } => {
+                    let input = bytes_from_hex(&input_hex);
+                    let (layout, tail) = decode_location_layout(&input).unwrap();
+                    assert!(tail.is_empty(), "{name}");
+                    assert_eq!(layout.top_row(), operand, "{name}");
+                    let mut assets = DescriptPresentationAssets::default();
+                    set_location_scene_top_row(layout, &mut assets);
+                    assert_eq!(
+                        assets.location_scene_top_row(),
+                        Some(destination_after),
+                        "{name}"
+                    );
+                }
+                SequelParserCase::Sprite {
+                    name,
+                    input_hex,
+                    copied_hex,
+                    stopping_byte,
+                    dirty_after,
+                } => {
+                    let input = bytes_from_hex(&input_hex);
+                    let expected = bytes_from_hex(&copied_hex);
+                    let (sprite, tail) = decode_sprite_name(&input).unwrap();
+                    assert_eq!(tail, &[stopping_byte], "{name}");
+                    assert_eq!(sprite.as_bytes(), expected.as_ref(), "{name}");
+                    let mut assets = DescriptPresentationAssets::default();
+                    select_descript_character_sprite(&sprite, &mut assets);
+                    assert_eq!(dirty_after, 1, "{name}");
+                    assert_eq!(assets.character_sprite(), Some(&sprite), "{name}");
+                }
+            }
         }
     }
 

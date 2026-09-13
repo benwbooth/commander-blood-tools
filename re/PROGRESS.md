@@ -3627,3 +3627,32 @@ F7 abort assignments while retaining Commander's table. This closes all seven
 active input entries in the strict disposition ledger; the adjacent `0x24B1`
 Escape target remains an explicitly verified authored no-op rather than a
 production operation.
+
+## 2026-09-13 - Big Bug Bang simple DESCRIPT handlers
+
+`re/tools/big_bug_bang_parser_handlers_oracle.py` now executes nine unchanged
+BBB parser handlers: the four record-boundary markers at `0x8584..0x859F`, the
+location and two character-video name copies at `0x866B`, `0x8702`, and
+`0x8717`, the location-layout word store at `0x86FC`, and the FS-backed
+character-sprite copy at `0x87CA`. Its 48 deterministic cases cover existing
+and overwritten markers, empty/control/high-byte stops, printable limits,
+ordinary names, unaligned words, and 16-bit source wrap. The harness checks
+exact body hashes, register and segment outcomes, near-return stacks, complete
+64 KiB source immutability, destination and dirty-flag write ownership, and
+the pinned executable's immutability.
+
+The typed DESCRIPT test consumes every sequel case through the owned boundary,
+video, layout, and sprite APIs. The checked fixture SHA-256 is
+`bce17dbcf626c579f2ac1c702cd2b935fe6b12c368c53228eb06afa4d82d4cf9`.
+The global collector now reproduces 125 exact fixtures and one prefix fixture
+across 127 BBB oracle programs, enters 228 of 382 static entrypoints plus the
+runtime ISR, and has report SHA-256
+`3cd9315a3b52b59cb7a79f2cadebc705913a84d10febadbbef91d562547c62e6`.
+
+Eight previously pending parser entries now have direct BBB fixture-to-Rust
+ownership proof; `0x8592` was already covered by the complete inventory
+descriptor oracle. The strict disposition ledger therefore classifies 265 of
+383 known entries and leaves 118 pending game semantics: 211 direct typed, 9
+inherited exact typed, 7 inherited exact eliminated, 14 eliminated host
+adapters, 17 dormant diagnostics, and 7 authored no-operations. Its SHA-256 is
+`811fbc085dfa6bea35823d0440831d38fd50ef54d7a26acd5a7e2fdfbcb35bb9`.
