@@ -47,8 +47,9 @@ impl AudioStreamSource {
 
     /// Borrow one existing source page by its zero-based page index.
     ///
-    /// This flat view replaces the storage dispatchers at BLOODPRG `0x00BD09`
-    /// and Big Bug Bang `0x00D4B3` after import owns the complete payload.
+    /// This flat view replaces the storage dispatchers and their EMS, XMS, and
+    /// file helpers at BLOODPRG `0x00BD09..0x00BDB7` and Big Bug Bang
+    /// `0x00D4B3..0x00D561` after import owns the complete payload.
     fn page(&self, index: u16) -> Option<&[u8]> {
         let start = usize::from(index).checked_mul(AUDIO_STREAM_PAGE_BYTE_COUNT)?;
         let end = start
@@ -483,6 +484,7 @@ mod tests {
     use crate::native::bloodprg::AudioDriverRequests;
 
     const LOAD_ORACLE_VECTOR_COUNT: usize = 11;
+    const PAGE_BACKEND_ORACLE_VECTOR_COUNT: usize = 12;
     const PAGE_DISPATCH_ORACLE_VECTOR_COUNT: usize = 256;
     const START_ORACLE_VECTOR_COUNT: usize = 6;
     const REFILL_ORACLE_VECTOR_COUNT: usize = 9;
@@ -537,6 +539,11 @@ mod tests {
     struct PageDispatchOracle {
         mode: u8,
         callee: String,
+    }
+
+    #[derive(Deserialize)]
+    struct PageBackendOracle {
+        backend: String,
     }
 
     #[test]
@@ -647,7 +654,7 @@ mod tests {
     }
 
     #[test]
-    fn owned_page_view_replaces_both_originals_storage_dispatch_modes() {
+    fn owned_page_view_replaces_both_originals_storage_backends() {
         let commander_vectors: Vec<PageDispatchOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_bd09_natural.json"
         ))
@@ -660,6 +667,23 @@ mod tests {
         .collect();
         assert_eq!(commander_vectors.len(), PAGE_DISPATCH_ORACLE_VECTOR_COUNT);
         assert_eq!(sequel_vectors.len(), PAGE_DISPATCH_ORACLE_VECTOR_COUNT);
+        let backend_vectors: Vec<PageBackendOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_audio_page_backends.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(backend_vectors.len(), PAGE_BACKEND_ORACLE_VECTOR_COUNT);
+        for backend in ["ems", "xms", "file"] {
+            assert_eq!(
+                backend_vectors
+                    .iter()
+                    .filter(|vector| vector.backend == backend)
+                    .count(),
+                4,
+                "{backend} fixture count"
+            );
+        }
 
         let payload = generated_page_bytes(AUDIO_STREAM_PAGE_BYTE_COUNT * 2, 0);
         let source = source_from_payload(&payload).unwrap();

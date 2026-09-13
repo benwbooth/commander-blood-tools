@@ -3284,3 +3284,33 @@ production variant. BBB's body SHA-256 is
 `e1b4c838a59722eaac1cb93b813c5a320453940204d566af6c35c116308e257a`,
 and the deterministic JSONL SHA-256 is
 `83f5246d57c80a3a494b4cdc2276d91aa61d60a56227b0d8b1f124627db78337`.
+
+## 2026-09-13 - Big Bug Bang audio page-storage backends
+
+BBB exactly relocates all three Commander Blood audio page-read backends:
+EMS `0xBD26..0xBD4E` moves to `0xD4D0..0xD4F8` with 23 instructions in
+40 bytes, XMS `0xBD4E..0xBD8D` moves to `0xD4F8..0xD537` with 23
+instructions in 63 bytes, and file `0xBD8D..0xBDB7` moves to
+`0xD537..0xD561` with 24 instructions in 42 bytes. Only the EMS handle and
+page-frame fields, XMS driver/handle/request fields, and file handle move.
+
+The new `re/tools/big_bug_bang_audio_page_backends_oracle.py` executes both
+shipped versions over the existing four-case corpus for each backend. EMS
+cases verify `INT 67h` page mapping, live page-frame mutation, exact wrapped
+16 KiB copies, and interrupt flags. XMS cases verify the complete 16-byte move
+request, far driver frame and entry registers, callback clobber propagation,
+and callback flags. File cases verify 32-bit page seeks, ignored seek errors,
+live handle mutation, fixed 16 KiB reads, and read flags. Every case also
+checks GS ownership against DS decoys, all saved registers, exact stack
+residue, mapped and unowned memory, executable immutability, owned writes, and
+direct Commander/BBB equality.
+
+The `AudioStreamSource::page` elimination test now consumes the combined
+four-EMS, four-XMS, and four-file BBB fixture. Imported owned bytes continue
+to replace all three DOS storage protocols without a production variant. The
+BBB EMS, XMS, and file body SHA-256 values are respectively
+`8f0cc5b6147f2bfa275dce21f3dde97e2fa4c7fc9c4c311d38814743b8020ef1`,
+`0e3b898fbce88c12a70d4d7a51804749f578482637c626395e8ecb6d6b479db0`,
+and `41950ddbbde48e684ee782f6589dd0fc588522d6527a43891ec90fb89c73f81f`.
+The deterministic combined JSONL SHA-256 is
+`a873233ec6b0468e9b3dd10b9af2cf84a38cddaada53500ec97a9094bfaa0046`.
