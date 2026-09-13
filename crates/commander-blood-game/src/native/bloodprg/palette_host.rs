@@ -71,6 +71,16 @@ mod tests {
         zero_data_writes: usize,
     }
 
+    #[derive(Deserialize)]
+    struct SequelModeXOracle {
+        cases: Vec<SequelModeXCase>,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelModeXCase {
+        palette_clear: ClearOracle,
+    }
+
     #[derive(Default)]
     struct RecordingPublisher {
         palettes: Vec<IndexedGamePalette>,
@@ -121,11 +131,17 @@ mod tests {
 
     #[test]
     fn clear_matches_every_original_zero_payload() {
-        let vectors: Vec<ClearOracle> = serde_json::from_str(include_str!(
+        let mut vectors: Vec<ClearOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_2fa6_natural.json"
         ))
         .unwrap();
+        let sequel: SequelModeXOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_mode_x.json"
+        ))
+        .unwrap();
         assert_eq!(vectors.len(), PALETTE_VECTOR_COUNT);
+        assert_eq!(sequel.cases.len(), PALETTE_VECTOR_COUNT);
+        vectors.extend(sequel.cases.into_iter().map(|case| case.palette_clear));
 
         for vector in vectors {
             let mut publisher = RecordingPublisher::default();

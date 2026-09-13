@@ -3832,3 +3832,34 @@ The strict ledger classifies 281 of 383 known entries and leaves 102 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `19665510514cf7027951380f9e14dc45cb0ed7cf5178963ab2f949eae336a85b`.
+
+## 2026-09-13 - Big Bug Bang Mode X initialization
+
+`re/tools/big_bug_bang_mode_x_oracle.py` executes the complete unchanged BBB
+Mode X initializer at `0x0E21` and follows its real far call into the
+byte-identical DAC-clear helper at `0x3326`. Three cases cover color and mono
+CRTC bases plus wrapped CRTC port arithmetic, representative saved BIOS modes,
+font pointers, and every masked VGA register read/write path. Each execution
+also verifies the DAC index plus all 768 zero component writes and the native
+65,535-byte VGA aperture clear.
+
+The oracle checks both exact body hashes, three BIOS interrupt ABIs, the far
+call frame, ordered byte/word port I/O, exact GS publications, complete
+register and segment preservation, stack bounds, defined flags, and module,
+decoy, and final video-memory ownership. Its checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_mode_x.json` has SHA-256
+`2555f7546dd15526f388285c7319873e8d46b4e1ff6f22e36c7d0b5c52601347`.
+The existing typed palette test consumes every DAC-clear row through
+`clear_live_palette`; SDL and wgpu own graphics initialization and expose no
+BIOS, VGA register, or aperture state.
+
+The global collector now reproduces 132 exact fixtures and one prefix fixture
+across 134 BBB oracle programs, entering 248 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`b64b95921d23c88cb2a32a2c82de4e1099aed19faa7b0018044be9d32e032b79`.
+The initializer is an executable-verified host adapter, and the DAC helper is
+upgraded from inherited identity to direct BBB fixture ownership. The strict
+ledger classifies 282 of 383 known entries and leaves 101 pending: 225 direct
+typed, 6 inherited exact typed, 7 inherited exact eliminated, 20 host
+adapters, 17 dormant diagnostics, and 7 authored no-operations. Its SHA-256 is
+`a5c516fc8a08365ab55fbbb19051820bb8c4e591b609e5c333c3c8de961843ca`.

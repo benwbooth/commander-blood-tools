@@ -24,31 +24,31 @@
     }
   },
   "summary": {
-    "oracle_count": 133,
-    "oracle_fixture_count": 132,
+    "oracle_count": 134,
+    "oracle_fixture_count": 133,
     "fixture_relation_counts": {
-      "exact": 131,
+      "exact": 132,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 246,
-    "unentered_static_entrypoints": 136,
+    "entered_static_entrypoints": 248,
+    "unentered_static_entrypoints": 134,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 247,
+    "entered_known_entrypoints": 249,
     "comparison_counts": {
       "unresolved": {
         "entered": 76,
         "unentered": 50
       },
       "structural_candidate": {
-        "entered": 136,
-        "unentered": 60
+        "entered": 137,
+        "unentered": 59
       },
       "exact_body": {
-        "entered": 14,
-        "unentered": 13
+        "entered": 15,
+        "unentered": 12
       },
       "ambiguous": {
         "entered": 20,
@@ -697,6 +697,19 @@
       "summary": "wrote 59 original inline-menu numeric cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_menu_number.jsonl",
       "fixture_sha256": "3a0f34eb0f445cc3233f9290dd3a1f0423849d8329e12fc3cd77552b33fc1623",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_mode_x_oracle.py",
+      "oracle_sha256": "8f462b230dc285d50625a42d9493f16d0af6b0326340fcf64c806ed4d225617c",
+      "executed_instruction_count": 98,
+      "entered_entrypoints": [
+        "0x0e21",
+        "0x3326"
+      ],
+      "summary": "verified 3 BBB Mode X initialization cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_mode_x.json",
+      "fixture_sha256": "2555f7546dd15526f388285c7319873e8d46b4e1ff6f22e36c7d0b5c52601347",
       "fixture_relation": "exact"
     },
     {
@@ -2096,8 +2109,10 @@
     {
       "entry": "0x0e21",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_mode_x_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0xc26"
     },
@@ -2858,8 +2873,10 @@
     {
       "entry": "0x3326",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_mode_x_oracle.py"
+      ],
       "comparison": "exact_body",
       "commander_entry": "0x2fa6"
     },

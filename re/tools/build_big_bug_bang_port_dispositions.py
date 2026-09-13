@@ -76,6 +76,7 @@ HOST_ADAPTER_OWNERS = {
     0x09F0: (TIMER, "GameTimerState::stop", "DOS timer-vector and PIT shutdown"),
     0x0DD2: (RENDER, "Renderer::render", "VGA retrace-phase polling"),
     0x0DFA: (APP, "run", "DOS Ctrl-Break and critical-error vector installation"),
+    0x0E21: (RENDER, "Renderer::new", "BIOS and VGA Mode X initialization"),
     0x0EBB: (APP, "run", "BIOS video-mode restoration"),
     0xCF40: (AUDIO_STREAM, "start_audio_stream", "loaded DOS sound-driver ABI"),
     0xD9F3: (AUDIO_STREAM, "start_audio_stream", "Gravis stream startup protocol"),
