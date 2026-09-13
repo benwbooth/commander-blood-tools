@@ -3174,3 +3174,30 @@ BBB's body SHA-256 is
 `96fc545f412c7a9528bd09be164ef268017943dc6ace95e7842220c4917026af`,
 and the deterministic JSONL SHA-256 is
 `a1b289cbcbdad3c277365a4a54504ceebb426adb8685faad269fff52ece1e052`.
+
+## 2026-09-13 - Big Bug Bang audio-driver stop wrapper
+
+BBB `0xD33A..0xD363` expands Commander Blood's `0xBB9D..0xBBB3`
+driver-stop wrapper from 12 instructions in 22 bytes to 19 instructions in 41
+bytes. With `ULTRASND` clear, BBB preserves Commander's exact contract: save
+`AX`, `DS`, and `ES`, switch `DS` to `GS`, call the reset vector with `AX = 0`,
+clear the pending byte only after callback return, restore the saved registers,
+and far-return. With `ULTRASND` set, BBB instead calls the near hardware helper
+at `0xDDD2` for channels zero and one and leaves the pending byte unchanged.
+
+The new `re/tools/big_bug_bang_audio_driver_stop_oracle.py` executes both
+shipped wrappers over the existing six callback cases, then executes two
+BBB-only ULTRASND cases. It covers both edges of the sequel backend branch and
+checks callback and helper order, exact frames, pending-byte timing, DS/GS
+ownership, callback clobber pass-through, all registers and defined flags,
+complete stack residue, executable immutability, complete mapped-segment
+outcomes, unowned memory, and normalized Commander/BBB equality on the shared
+path.
+
+The typed `AudioDriverRequests::clear` owner now consumes both six-row shared
+fixtures. The runtime retains one variant-free owned stop path because its SDL
+device and buffer ownership replace both original DOS driver adapters. BBB's
+body SHA-256 is
+`427bace9b5d5ed4bb182de42a0335c6be9becb316b816ddb15afc7e8f7396588`,
+and the deterministic JSONL SHA-256 is
+`ec0123234ae3aadad9b2a9a9397e2cd2b5044400f61ea412cae09b1658b3d9eb`.

@@ -484,6 +484,7 @@ mod tests {
     use super::*;
 
     const ORACLE_VECTOR_COUNT: usize = 15;
+    const DRIVER_STOP_ORACLE_VECTOR_COUNT: usize = 6;
     const ORIGINAL_STREAMED_CLIP_MARKER: u16 = 32_768;
     const ORIGINAL_STREAMED_CLIP_INDEX_MASK: u16 = 16_383;
     const TEST_CLIP_DATA_BYTE_COUNT: usize = 128;
@@ -503,6 +504,13 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct DriverStopOracle {
+        name: String,
+        pending_before: u8,
+        pending_after: u8,
+    }
+
+    #[derive(Deserialize)]
     struct MixOperationOracle {
         buffer: usize,
         bytes: usize,
@@ -514,6 +522,33 @@ mod tests {
         lengths: [usize; AUDIO_STREAM_BUFFER_COUNT],
         position: Option<u16>,
         packed: bool,
+    }
+
+    #[test]
+    fn driver_stop_state_matches_commander_and_sequel_callback_vectors() {
+        let commander_vectors: Vec<DriverStopOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_bb9d_natural.json"
+        ))
+        .unwrap();
+        let sequel_vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_audio_driver_stop.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect::<Vec<DriverStopOracle>>();
+
+        for vectors in [&commander_vectors, &sequel_vectors] {
+            assert_eq!(vectors.len(), DRIVER_STOP_ORACLE_VECTOR_COUNT);
+            for vector in vectors {
+                let mut requests = AudioDriverRequests {
+                    stream_start_requested: vector.pending_before & 1 != 0,
+                    stream_active: vector.pending_before & 2 != 0,
+                };
+                requests.clear();
+                assert_eq!(vector.pending_after, 0, "{}", vector.name);
+                assert_eq!(requests, AudioDriverRequests::default(), "{}", vector.name);
+            }
+        }
     }
 
     #[test]
