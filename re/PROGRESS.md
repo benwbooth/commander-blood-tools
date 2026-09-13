@@ -2227,3 +2227,28 @@ randomizer now consumes both fixtures; ambient flags are not part of its API and
 behavior changed. The deterministic four-row JSONL has SHA-256
 `fbad7727734354bcec7e5d31f2bdb947fa5b91986763e6f952b13edcae3c04d4`. This behaviorally
 classifies BBB `0xB306`, not the preceding vertex-list drawer, startup caller, or object projector.
+
+## 2026-09-12 - Big Bug Bang ship object projection
+
+BBB `0xB337..0xB4A8` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9B98..0x9D09` navigation-anchor projector. Both bodies contain 122 instructions in 369 bytes.
+BBB relocates the 11 anchors, projection work, matrix, camera, counter, 32-record entity table,
+and two far sprite helpers while preserving control flow and arithmetic. The 51-byte position
+and 73-byte extent helpers likewise differ only in the entity-table immediate. The new
+`re/tools/big_bug_bang_ship_object_projection_oracle.py` executes all three shipped bodies in
+both originals and guards BBB's main body with SHA-256
+`ec35192c3845ed01c20b31410d69fd26704ae240ca5edf3f9d893f0f0e4ed471`.
+
+All five Commander cases agree after address normalization across 55 anchors and 92 helper calls.
+They cover entity IDs 31 through 21, mixed visibility, zero and wrapped-negative depth,
+source-equal extent clearing, modular overflow, screen wrapping, and the native eight-byte read
+over each six-byte anchor. All eight main conditional edges are traversed.
+
+The oracle checks helper arguments and frames, the inherited matrix comparison pointer, scaled
+extents, centered positions, source-frame reads, work and entity writes, exact unchanged state
+outside owned ranges, normalized complete stack state, every register and segment, final flags
+and counter, far-return discipline, direct Commander/BBB equality, and executable immutability.
+The typed projector now consumes both fixtures; no production behavior changed. The deterministic
+five-row JSONL has SHA-256
+`f2018dacb0c7acdf160c6a096c3ca71604ef1b2a031e5a645a16f153c29f7301`. This behaviorally
+classifies BBB `0xB337` and both invoked sprite helpers, not its callers or later ship routines.

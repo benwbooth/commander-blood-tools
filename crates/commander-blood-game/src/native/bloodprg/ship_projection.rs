@@ -1097,11 +1097,23 @@ mod tests {
     }
 
     #[test]
-    fn object_sprite_projection_matches_every_typed_original_vector() {
-        let vectors: Vec<ObjectProjectionOracle> = serde_json::from_str(include_str!(
+    fn object_sprite_projection_matches_both_typed_original_fixtures() {
+        let commander: Vec<ObjectProjectionOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9b98_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_object_projection.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_object_sprite_projection_vectors(commander);
+        assert_object_sprite_projection_vectors(sequel);
+    }
+
+    fn assert_object_sprite_projection_vectors(vectors: Vec<ObjectProjectionOracle>) {
         assert_eq!(vectors.len(), OBJECT_ORACLE_COUNT);
 
         for (case_index, vector) in vectors.into_iter().enumerate() {

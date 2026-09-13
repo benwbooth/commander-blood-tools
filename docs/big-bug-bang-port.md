@@ -4277,6 +4277,45 @@ the deterministic four-row JSONL has SHA-256
 This behaviorally classifies BBB `0xB306`, not the preceding vertex-list drawer,
 its startup caller, or the following object projector.
 
+## Sequel Ship Object Projection
+
+BBB `0xB337..0xB4A8` is the relocated sequel counterpart of Commander Blood's
+`0x9B98..0x9D09` navigation-anchor projector. Both bodies contain 122
+instructions in 369 bytes. BBB relocates the 11 anchors, projection work,
+matrix, camera, counter, 32-record entity table, and two far sprite helpers
+without changing control flow or arithmetic. The 51-byte position helper and
+73-byte extent helper likewise differ only in their entity-table immediate.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_ship_object_projection_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_ship_object_projection.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  object_sprite_projection_matches_both_typed_original_fixtures
+```
+
+The dual-executable oracle replays all five Commander cases across 55 anchors
+and 92 calls through the original helper bodies. It covers reverse entity IDs
+31 through 21, mixed visibility, zero and wrapped-negative depth, source-equal
+extent clearing, modular projection overflow, screen wrapping, and the native
+eight-byte copy that reads two bytes beyond each six-byte anchor. All eight
+edges of the loop-exit, visibility, zero-depth, and depth-sign conditionals are
+traversed.
+
+The oracle checks helper arguments, frames, inherited matrix comparison pointer,
+scaled extents, centered positions, source-frame reads, work and entity writes,
+exact unchanged state outside owned ranges, normalized complete stack state,
+all registers and segments, final flags and counter, far-return discipline,
+direct Commander/BBB equality, and executable immutability. The typed projector
+now consumes both fixtures; no production behavior changed. The BBB body is
+bound by SHA-256
+`ec35192c3845ed01c20b31410d69fd26704ae240ca5edf3f9d893f0f0e4ed471`;
+the deterministic five-row JSONL has SHA-256
+`f2018dacb0c7acdf160c6a096c3ca71604ef1b2a031e5a645a16f153c29f7301`.
+This behaviorally classifies BBB `0xB337` and both invoked sprite helpers, not
+its callers or the subsequent ship-rendering routines.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
