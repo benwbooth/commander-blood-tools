@@ -504,11 +504,13 @@ pub use presentation_source::{
     read_presentation_entry_extent,
 };
 pub use presentation_stream::{
-    OpenedPresentationResource, PresentationResourceDescriptor, PresentationResourceOpenError,
-    PresentationResourceProvider, PresentationResourceStreamState,
+    OpenedPresentationResource, PresentationResourceCacheContext, PresentationResourceCacheError,
+    PresentationResourceCacheOutcome, PresentationResourceDescriptor,
+    PresentationResourceOpenError, PresentationResourceProvider, PresentationResourceStreamState,
     PresentationResourceSwitchContext, PresentationResourceSwitchError,
     PresentationResourceSwitchOutcome, PresentationSourceRange,
-    select_presentation_rollover_source, switch_presentation_resource,
+    initialize_presentation_resource_cache, select_presentation_rollover_source,
+    switch_presentation_resource,
 };
 pub use presentation_word_choice::{
     PresentationChoiceId, PresentationWordChoice, PresentationWordChoiceBackend,

@@ -19,6 +19,11 @@ const RANGE_OFFSET_BYTE_COUNT: usize = size_of::<u32>();
 const ALTERNATE_RANGE_TABLE_OFFSET: usize = 16;
 const RANGE_TABLE_STRIDE: usize = size_of::<u32>();
 const ALTERNATE_RANGE_FLAG: u8 = 4;
+const CACHED_RANGE_VALID_FLAG: u8 = 8;
+const DYNAMIC_RESOURCE_FLAG: u8 = 0x80;
+const CACHE_FLAG_RESET_START: usize = 2;
+const CACHE_FLAG_RESET_END: usize = 9;
+const CACHE_RESOURCE_END: usize = 8;
 const METADATA_PADDING_BYTE: u8 = u8::MAX;
 
 /// Authored descriptor selected by a presentation line.
@@ -214,6 +219,126 @@ pub fn select_presentation_rollover_source(
 ) {
     state.active = active_resource;
     queue.secondary_wrap_limit = secondary_wrap_limit;
+}
+
+/// Mutable dependencies used while initializing reusable presentation ranges.
+pub struct PresentationResourceCacheContext<'a, Provider> {
+    /// Descriptor table whose transient flags and cached ranges are updated.
+    pub descriptors: &'a mut [PresentationResourceDescriptor],
+    /// Runtime variant copied into each successfully opened descriptor flag word.
+    pub variant: u8,
+    /// Queue reset by each resource switch and final owned-source release.
+    pub queue: &'a mut PresentationQueueState,
+    /// Capacity of the owned queue allocation.
+    pub queue_capacity: usize,
+    /// Indexed palette updated by each successful bootstrap stream.
+    pub palette: &'a mut PresentationPaletteState,
+    /// Palette snapshot suppression flags.
+    pub render_update_flags: u8,
+    /// Host resource provider.
+    pub provider: &'a mut Provider,
+}
+
+/// Observable work completed by presentation range-cache initialization.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PresentationResourceCacheOutcome {
+    /// Resources whose bootstrap stream was selected successfully.
+    pub switched_resources: usize,
+    /// Successful resources whose primary range was cached.
+    pub cached_ranges: usize,
+    /// Whether the final source had exclusive ownership and was released.
+    pub source_released: bool,
+}
+
+/// Descriptor geometry rejected before presentation cache initialization.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PresentationResourceCacheError {
+    /// Descriptor count required by the fixed native scans.
+    pub required: usize,
+    /// Descriptors supplied by the host.
+    pub available: usize,
+}
+
+impl fmt::Display for PresentationResourceCacheError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "presentation resource cache requires {} descriptors, found {}",
+            self.required, self.available
+        )
+    }
+}
+
+impl Error for PresentationResourceCacheError {}
+
+/// Normalize descriptor flags, discover reusable ranges, and close the source.
+///
+/// This translates the coordinator at BLOODPRG offset `0x00A78C` and its
+/// BLOOD2PG counterpart at `0x00BF76`. Resources two through eight lose the
+/// alternate-range bit; either low mode bit also clears dynamic bit seven from
+/// the declared descriptor prefix. Resources two through seven are then
+/// switched in order, and successful bit-three descriptors retain their
+/// primary range for queue rollover. Individual switch failures are skipped,
+/// matching the original helper's carry branch.
+pub fn initialize_presentation_resource_cache<Provider: PresentationResourceProvider>(
+    state: &mut PresentationResourceStreamState,
+    memory_mode_flags: u16,
+    descriptor_count: usize,
+    context: &mut PresentationResourceCacheContext<'_, Provider>,
+) -> Result<PresentationResourceCacheOutcome, PresentationResourceCacheError> {
+    let dynamic_reset_count = if memory_mode_flags & 3 == 0 {
+        usize::MIN
+    } else {
+        descriptor_count.max(1)
+    };
+    let required = CACHE_FLAG_RESET_END.max(dynamic_reset_count);
+    if context.descriptors.len() < required {
+        return Err(PresentationResourceCacheError {
+            required,
+            available: context.descriptors.len(),
+        });
+    }
+
+    for descriptor in &mut context.descriptors[CACHE_FLAG_RESET_START..CACHE_FLAG_RESET_END] {
+        descriptor.flags &= !ALTERNATE_RANGE_FLAG;
+    }
+    for descriptor in &mut context.descriptors[..dynamic_reset_count] {
+        descriptor.flags &= !DYNAMIC_RESOURCE_FLAG;
+    }
+
+    let mut switched_resources = usize::MIN;
+    let mut cached_ranges = usize::MIN;
+    for resource_index in CACHE_FLAG_RESET_START..CACHE_RESOURCE_END {
+        let success = switch_presentation_resource(
+            state,
+            PresentationResourceId::new(resource_index as u16),
+            &mut PresentationResourceSwitchContext {
+                descriptors: &*context.descriptors,
+                variant: context.variant,
+                queue: &mut *context.queue,
+                queue_capacity: context.queue_capacity,
+                palette: &mut *context.palette,
+                render_update_flags: context.render_update_flags,
+                provider: &mut *context.provider,
+            },
+        )
+        .is_ok();
+        if !success {
+            continue;
+        }
+
+        switched_resources += 1;
+        if context.descriptors[resource_index].flags & CACHED_RANGE_VALID_FLAG != 0 {
+            context.descriptors[resource_index].cached_range = state.range;
+            cached_ranges += 1;
+        }
+    }
+    let source_released = state.close_owned_source(context.queue);
+    Ok(PresentationResourceCacheOutcome {
+        switched_resources,
+        cached_ranges,
+        source_released,
+    })
 }
 
 /// Mutable dependencies used while switching a presentation stream.
@@ -504,12 +629,15 @@ pub fn switch_presentation_resource<Provider: PresentationResourceProvider>(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::VecDeque;
+
     use serde::Deserialize;
 
     use super::*;
 
     const SWITCH_VECTOR_COUNT: usize = 7;
     const ROLLOVER_SOURCE_VECTOR_COUNT: usize = 4;
+    const CACHE_VECTOR_COUNT: usize = 4;
     const FINAL_ENTRY_METRIC: usize = 6;
     const BOOTSTRAP_TRAILER_BYTE_COUNT: usize = 32;
     const PRIMARY_RANGE_TABLE_OFFSET: usize = 0;
@@ -547,6 +675,26 @@ mod tests {
         result_bx: u16,
     }
 
+    #[derive(Deserialize)]
+    struct CacheOracle {
+        name: String,
+        mode_flags: u16,
+        descriptor_count: usize,
+        initial_flags: Vec<u8>,
+        result_flags: Vec<u8>,
+        initial_cached_ranges: Vec<[usize; 2]>,
+        result_cached_ranges: Vec<[usize; 2]>,
+        switches: Vec<CacheSwitchOracle>,
+        close_called: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct CacheSwitchOracle {
+        resource: u16,
+        success: bool,
+        range: [usize; 2],
+    }
+
     struct VectorProvider {
         result: Option<Result<OpenedPresentationResource, PresentationResourceOpenError>>,
     }
@@ -562,6 +710,21 @@ mod tests {
         }
     }
 
+    struct CacheProvider {
+        results: VecDeque<Result<OpenedPresentationResource, PresentationResourceOpenError>>,
+    }
+
+    impl PresentationResourceProvider for CacheProvider {
+        fn open_presentation_resource(
+            &mut self,
+            _descriptor: &PresentationResourceDescriptor,
+        ) -> Result<OpenedPresentationResource, PresentationResourceOpenError> {
+            self.results
+                .pop_front()
+                .expect("the cache fixture supplies all six switch results")
+        }
+    }
+
     fn write_dword(bytes: &mut [u8], position: usize, value: usize) {
         bytes[position..position + RANGE_OFFSET_BYTE_COUNT]
             .copy_from_slice(&(value as u32).to_le_bytes());
@@ -574,6 +737,25 @@ mod tests {
             12 => vec![1, 2, 1, 2, 3, 4, 5, 6, 9, 0, u8::MAX, u8::MAX],
             count => panic!("unsupported oracle palette extent {count}"),
         }
+    }
+
+    fn cache_resource(range: [usize; 2]) -> OpenedPresentationResource {
+        const ENTRY_EXTENT: usize = 34;
+        const METADATA_POSITION: usize = 4;
+        const ENTRY_METRIC: usize = 6;
+
+        assert!(range[0] >= ENTRY_EXTENT);
+        let mut bytes = vec![u8::MIN; range[0] + range[1]];
+        bytes[..ENTRY_HEADER_BYTE_COUNT].copy_from_slice(&(ENTRY_EXTENT as u16).to_le_bytes());
+        bytes[ENTRY_HEADER_BYTE_COUNT..METADATA_POSITION].fill(u8::MAX);
+        let relative = range[0] - ENTRY_EXTENT;
+        write_dword(&mut bytes, METADATA_POSITION, relative);
+        write_dword(
+            &mut bytes,
+            METADATA_POSITION + ENTRY_METRIC * RANGE_TABLE_STRIDE,
+            relative,
+        );
+        OpenedPresentationResource::new(bytes, usize::MIN, PresentationSourceLease::Owned)
     }
 
     fn opened_resource(vector: &SwitchOracle) -> OpenedPresentationResource {
@@ -817,5 +999,170 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn resource_cache_initialization_matches_the_dual_original_fixture() {
+        let vectors: Vec<CacheOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_cache.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), CACHE_VECTOR_COUNT);
+
+        for vector in vectors {
+            assert_eq!(vector.initial_flags.len(), CACHE_FLAG_RESET_END);
+            assert_eq!(vector.initial_cached_ranges.len(), CACHE_FLAG_RESET_END);
+            assert_eq!(
+                vector.switches.len(),
+                CACHE_RESOURCE_END - CACHE_FLAG_RESET_START
+            );
+            let filename = BloodResourceName::new(b"RESOURCE.DAT").unwrap();
+            let mut descriptors: Vec<_> = vector
+                .initial_flags
+                .iter()
+                .zip(&vector.initial_cached_ranges)
+                .map(|(&flags, range)| PresentationResourceDescriptor {
+                    flags,
+                    filename: filename.clone(),
+                    cached_range: Some(PresentationSourceRange {
+                        position: range[0],
+                        remaining: range[1],
+                    }),
+                })
+                .collect();
+            let mut provider = CacheProvider {
+                results: vector
+                    .switches
+                    .iter()
+                    .map(|switch| {
+                        if switch.success {
+                            Ok(cache_resource(switch.range))
+                        } else {
+                            Err(PresentationResourceOpenError::new("oracle switch failure"))
+                        }
+                    })
+                    .collect(),
+            };
+            let mut queue = PresentationQueueState::default();
+            let mut palette = PresentationPaletteState::default();
+            let mut state = PresentationResourceStreamState::default();
+
+            let outcome = initialize_presentation_resource_cache(
+                &mut state,
+                vector.mode_flags,
+                vector.descriptor_count,
+                &mut PresentationResourceCacheContext {
+                    descriptors: &mut descriptors,
+                    variant: u8::MIN,
+                    queue: &mut queue,
+                    queue_capacity: 1024,
+                    palette: &mut palette,
+                    render_update_flags: u8::MIN,
+                    provider: &mut provider,
+                },
+            )
+            .unwrap();
+
+            assert!(provider.results.is_empty(), "{}", vector.name);
+            assert!(vector.close_called, "{}", vector.name);
+            assert_eq!(
+                outcome.switched_resources,
+                vector
+                    .switches
+                    .iter()
+                    .filter(|switch| switch.success)
+                    .count(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.cached_ranges,
+                vector
+                    .switches
+                    .iter()
+                    .filter(|switch| {
+                        switch.success
+                            && vector.result_flags[usize::from(switch.resource)]
+                                & CACHED_RANGE_VALID_FLAG
+                                != 0
+                    })
+                    .count(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.source_released,
+                vector.switches.last().is_some_and(|switch| switch.success),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                descriptors
+                    .iter()
+                    .map(|descriptor| descriptor.flags)
+                    .collect::<Vec<_>>(),
+                vector.result_flags,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                descriptors
+                    .iter()
+                    .map(|descriptor| {
+                        let range = descriptor.cached_range.unwrap();
+                        [range.position, range.remaining]
+                    })
+                    .collect::<Vec<_>>(),
+                vector.result_cached_ranges,
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    #[test]
+    fn resource_cache_rejects_short_descriptor_tables_before_mutation() {
+        let filename = BloodResourceName::new(b"RESOURCE.DAT").unwrap();
+        let mut descriptors = vec![
+            PresentationResourceDescriptor {
+                flags: u8::MAX,
+                filename,
+                cached_range: None,
+            };
+            CACHE_FLAG_RESET_END - 1
+        ];
+        let before = descriptors.clone();
+        let mut provider = CacheProvider {
+            results: VecDeque::new(),
+        };
+        let mut queue = PresentationQueueState::default();
+        let mut palette = PresentationPaletteState::default();
+        let mut state = PresentationResourceStreamState::default();
+
+        let result = initialize_presentation_resource_cache(
+            &mut state,
+            u16::MIN,
+            descriptors.len(),
+            &mut PresentationResourceCacheContext {
+                descriptors: &mut descriptors,
+                variant: u8::MIN,
+                queue: &mut queue,
+                queue_capacity: 1024,
+                palette: &mut palette,
+                render_update_flags: u8::MIN,
+                provider: &mut provider,
+            },
+        );
+
+        assert_eq!(
+            result,
+            Err(PresentationResourceCacheError {
+                required: CACHE_FLAG_RESET_END,
+                available: CACHE_FLAG_RESET_END - 1,
+            })
+        );
+        assert_eq!(descriptors, before);
     }
 }

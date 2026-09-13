@@ -4890,6 +4890,37 @@ four-row dual-original fixture. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `9c801688cf2a35dd162656a04df37ba48a1d9dbd77b17d996041e1b72579ab19`.
 
+## Presentation Resource-Cache Initialization (2026-09-13)
+
+BBB `0xBF76..0xBFD0` is the relocated sequel counterpart of Commander Blood's
+`0xA78C..0xA7E6` presentation resource-cache coordinator. Both bodies contain
+35 instructions in 90 bytes, including the local per-resource helper but not
+the shared four-word copy routine. They clear descriptor bit two for resources
+2 through 8, conditionally clear bit seven over the declared descriptor
+prefix, switch resources 2 through 7, retain each successful bit-three
+resource's four-word source range, and close the final owned source. The
+original do-while prefix loop clears descriptor zero even when its count is
+zero; the typed operation preserves that defined case.
+
+The new `re/tools/big_bug_bang_presentation_cache_oracle.py` executes both
+shipped bodies with their real relocated descriptor lookup and four-word copy
+helper. It replaces only the independently verified resource-switch and
+source-close boundaries with stateful semantic callbacks. Four cases cover all
+13 distinguishable conditional edges, both input states for the entry's no-op
+`JNE +0`, zero and full prefix counts, mixed descriptor flags, switch success
+and failure, cache and no-cache paths, exact descriptor and range state,
+complete registers and segments, stack restoration, unowned memory,
+executable immutability, and normalized Commander/BBB equality.
+
+The typed `initialize_presentation_resource_cache` coordinator composes the
+existing concrete resource switch, updates owned descriptors, skips individual
+switch failures, closes a final exclusive source, and rejects undersized
+descriptor tables before mutation. Its tests consume the four-row
+dual-original fixture. BBB's body SHA-256 is
+`263b286ceba6b82cf9e923613850a7d80cc4c1f453e9e9aacc3268e111197230`,
+and the deterministic JSONL SHA-256 is
+`e8eb1f313b1376559ca3204f5a244273b530323819aaa9ecf1b1a8cdd023ba20`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

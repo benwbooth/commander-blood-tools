@@ -2766,3 +2766,33 @@ BBB's body SHA-256 is
 `795e45f7015948f12351c926634946853cb82847dbbb53fce54f41aa030bc880`,
 and the deterministic JSONL SHA-256 is
 `9c801688cf2a35dd162656a04df37ba48a1d9dbd77b17d996041e1b72579ab19`.
+
+## 2026-09-13 - Big Bug Bang presentation resource-cache initialization
+
+BBB `0xBF76..0xBFD0` relocates Commander Blood's `0xA78C..0xA7E6`
+presentation resource-cache coordinator. Both bodies contain 35 instructions
+in 90 bytes, including the local per-resource helper but excluding the shared
+four-word copy routine. They clear descriptor bit two for resources 2 through
+8, conditionally clear bit seven over the declared descriptor prefix, switch
+resources 2 through 7, cache each successful bit-three resource's four-word
+source range, and close the final owned source. A zero descriptor count still
+clears descriptor zero because the original prefix loop is do-while shaped.
+
+The new `re/tools/big_bug_bang_presentation_cache_oracle.py` executes both
+shipped bodies with the real relocated descriptor lookup and four-word copy
+helper. Only the independently verified resource-switch and source-close
+boundaries are semantic callbacks. Four cases cover all 13 distinguishable
+conditional edges, both outcomes of the entry's no-op `JNE +0`, zero and full
+prefix counts, mixed descriptor bits, switch success and failure, cache and
+no-cache paths, exact descriptor and range state, complete registers and
+segments, stack restoration, unowned memory, executable immutability, and
+normalized Commander/BBB equality.
+
+The typed `initialize_presentation_resource_cache` operation composes the
+existing concrete resource switch, mutates owned descriptors, skips individual
+switch failures, closes a final exclusive source, and rejects undersized
+descriptor tables before mutation. Its tests consume the four-row
+dual-original fixture. BBB's body SHA-256 is
+`263b286ceba6b82cf9e923613850a7d80cc4c1f453e9e9aacc3268e111197230`,
+and the deterministic JSONL SHA-256 is
+`e8eb1f313b1376559ca3204f5a244273b530323819aaa9ecf1b1a8cdd023ba20`.
