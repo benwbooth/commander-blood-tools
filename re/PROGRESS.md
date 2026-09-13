@@ -4119,3 +4119,33 @@ The strict ledger classifies 293 of 383 known entries and leaves 90 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `849bdfa08aebe40b60ff2f94803d2aacdbce95bfe50f3df54515ba5f617db24d`.
+
+## 2026-09-13 - Big Bug Bang resource writing
+
+`re/tools/big_bug_bang_resource_write_oracle.py` executes BBB's complete
+unchanged resource writer at `0x2EF0`. Eight cases cover create failure,
+zero-byte writes, low-word requests above the nominal chunk size, full 32-bit
+sizes, repeated partial writes, source-offset wrapping, and ignored write and
+close carry. Their normalized semantic fields and call partitions match the
+independent Commander fixture.
+
+The oracle checks the exact 131-byte body hash; write-directory and DOS call
+frames, arguments, ordering, and payload prefixes; fixed `0x7D00` chunking;
+segment-plus-offset cursor updates; relocated remaining-size and shared-handle
+globals; register, segment, return, stack, and defined carry behavior; and full
+source, path, state, executable, and patched-callee ownership. Its checked
+fixture at `re/tools/oracle_vectors/big_bug_bang_resource_write.json` has
+SHA-256
+`fe4e9af76245021fd35d67333a5e474d5cfd999e88dd80a2f68f89ef355954c3`.
+`OriginalResourceStore::write_loose` consumes every direct BBB row through a
+complete owned-byte write below the explicit writable root.
+
+The global collector now reproduces 142 exact fixtures and one prefix fixture
+across 144 BBB oracle programs, entering 260 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`3e5e11f3ff612e4985c3c862e6602a28b342245773f811cb6ff2ce96b46ab0ff`.
+The strict ledger classifies 294 of 383 known entries and leaves 89 pending:
+231 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 26
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`1f5626146d6292201e12baa6665346e85d45c24263352e9c70ec52e8974e688f`.

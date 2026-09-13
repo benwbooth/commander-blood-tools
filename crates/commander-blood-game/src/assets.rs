@@ -245,8 +245,9 @@ impl OriginalResourceStore {
     /// Create or truncate one loose resource and write all supplied bytes.
     ///
     /// This translates `file_create_and_write` at BLOODPRG file offset
-    /// `0x002B6B`. The configured root replaces drive and current-directory
-    /// changes, and Rust's complete-slice write replaces chunk cursor updates.
+    /// `0x002B6B` and BLOOD2PG offset `0x002EF0`. The configured root replaces
+    /// drive and current-directory changes, and Rust's complete-slice write
+    /// replaces chunk cursor updates.
     pub fn write_loose(&self, name: &BloodResourceName, data: &[u8]) -> Result<usize> {
         let path = self.writable_path(name)?;
         let parent = path
@@ -640,6 +641,11 @@ mod tests {
         byte_count: usize,
         create_success: bool,
         returned_size: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangResourceWriteOracle {
+        rows: Vec<FileWriteOracle>,
     }
 
     struct TemporaryResourceRoot(PathBuf);
@@ -1093,12 +1099,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn file_write_matches_every_native_semantic_vector() {
-        let vectors: Vec<FileWriteOracle> = serde_json::from_str(include_str!(
-            "../../../re/tools/oracle_vectors/func_2b6b_natural.json"
-        ))
-        .unwrap();
+    fn assert_file_write_vectors(vectors: Vec<FileWriteOracle>) {
         assert_eq!(vectors.len(), FILE_WRITE_ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -1138,6 +1139,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn file_write_matches_every_native_semantic_vector() {
+        let vectors: Vec<FileWriteOracle> = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/func_2b6b_natural.json"
+        ))
+        .unwrap();
+        assert_file_write_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_file_write_matches_every_direct_vector() {
+        let oracle: BigBugBangResourceWriteOracle = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/big_bug_bang_resource_write.json"
+        ))
+        .unwrap();
+        assert_file_write_vectors(oracle.rows);
     }
 
     #[test]

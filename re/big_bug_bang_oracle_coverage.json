@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 143,
-    "oracle_fixture_count": 142,
+    "oracle_count": 144,
+    "oracle_fixture_count": 143,
     "fixture_relation_counts": {
-      "exact": 141,
+      "exact": 142,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 259,
-    "unentered_static_entrypoints": 123,
+    "entered_static_entrypoints": 260,
+    "unentered_static_entrypoints": 122,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 260,
+    "entered_known_entrypoints": 261,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 146,
-        "unentered": 50
+        "entered": 147,
+        "unentered": 49
       },
       "exact_body": {
         "entered": 15,
@@ -1519,6 +1519,18 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_resource_write_oracle.py",
+      "oracle_sha256": "e848f9791cadf3b45238f12c9f87292f41f1cc5b91a0b738500e94f8e2fbee8e",
+      "executed_instruction_count": 54,
+      "entered_entrypoints": [
+        "0x2ef0"
+      ],
+      "summary": "verified 8 BBB resource-write cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_resource_write.json",
+      "fixture_sha256": "fe4e9af76245021fd35d67333a5e474d5cfd999e88dd80a2f68f89ef355954c3",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_retrace_calibration_oracle.py",
       "oracle_sha256": "a7ba1455fb1d54c36bc395ad4cffcbf0e7ebae99a96dfd2e10edcfb8ffbdeb4f",
       "executed_instruction_count": 69,
@@ -2936,8 +2948,10 @@
     {
       "entry": "0x2ef0",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_resource_write_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x2b6b"
     },
