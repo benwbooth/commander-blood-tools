@@ -3771,3 +3771,34 @@ classifies 276 of 383 known entries and leaves 107 pending: 224 direct typed,
 7 inherited exact typed, 7 inherited exact eliminated, 14 host adapters, 17
 dormant diagnostics, and 7 authored no-operations. Its SHA-256 is
 `7ef632fc73987e94d71f227711b5cd17b143cd8c7d35d55de537250310b5d320`.
+
+## 2026-09-13 - Big Bug Bang timer lifecycle
+
+`re/tools/big_bug_bang_timer_lifecycle_oracle.py` executes the unchanged BBB
+timer-start routine at `0x09A2` and timer-stop routine at `0x09F0`. Four cases
+per routine cover ordinary, zero, maximum, and mixed prior interrupt vectors
+while varying incoming and DOS-returned flags. The oracle verifies both exact
+body hashes, DOS `INT 21h` get/set-vector calls, the installed loaded-image ISR
+offset `0x0219`, PIT command/data output, far returns, complete register and
+segment preservation, stack bounds, exact GS write ownership, and executable
+and decoy immutability.
+
+The typed timer lifecycle test consumes every game-visible row from the checked
+fixture at `re/tools/oracle_vectors/big_bug_bang_timer_lifecycle.json`, whose
+SHA-256 is
+`7edd6d333a2d8a1af11a0e16cc80eff6099c0df650a2159d718458bbb7835691`.
+`GameTimerState::start` retains the native active state and 25-subtick reload;
+`GameTimerState::stop` clears the active state. SDL scheduling replaces the DOS
+interrupt vector and PIT programming, so those platform operations remain
+outside the production state model.
+
+The global collector now reproduces 130 exact fixtures and one prefix fixture
+across 132 BBB oracle programs, entering 243 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`c72ef1d24ebaaa6673caf8859ad7e83a7ac77b23de56b78a8b4548454931c272`.
+Both timer routines are now executable-verified host adapters. The strict
+ledger therefore classifies 278 of 383 known entries and leaves 105 pending:
+224 direct typed, 7 inherited exact typed, 7 inherited exact eliminated, 16
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`ff3c09c88ee85481ffb33c19171dd5c85b5b4e068999fd9052f78b3d5bb377fe`.

@@ -317,6 +317,12 @@ mod tests {
         timer_active: u8,
     }
 
+    #[derive(Deserialize)]
+    struct SequelTimerLifecycleOracle {
+        start_cases: Vec<StartOracle>,
+        stop_cases: Vec<StopOracle>,
+    }
+
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     struct ExpectedCounters {
         frame: u16,
@@ -340,10 +346,19 @@ mod tests {
             "../../../../../re/tools/oracle_vectors/func_07ea_natural.json"
         ))
         .unwrap();
+        let sequel: SequelTimerLifecycleOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_timer_lifecycle.json"
+        ))
+        .unwrap();
         assert_eq!(starts.len(), TIMER_LIFECYCLE_ORACLE_VECTOR_COUNT);
         assert_eq!(stops.len(), TIMER_LIFECYCLE_ORACLE_VECTOR_COUNT);
+        assert_eq!(
+            sequel.start_cases.len(),
+            TIMER_LIFECYCLE_ORACLE_VECTOR_COUNT
+        );
+        assert_eq!(sequel.stop_cases.len(), TIMER_LIFECYCLE_ORACLE_VECTOR_COUNT);
 
-        for vector in starts {
+        for vector in starts.into_iter().chain(sequel.start_cases) {
             let mut state = GameTimerState {
                 subtick_countdown: u16::MAX,
                 ..GameTimerState::default()
@@ -352,7 +367,7 @@ mod tests {
             assert_eq!(state.running, vector.timer_state.active != u8::MIN);
             assert_eq!(state.subtick_countdown, vector.timer_state.subtick_limit);
         }
-        for vector in stops {
+        for vector in stops.into_iter().chain(sequel.stop_cases) {
             let mut state = GameTimerState {
                 running: true,
                 ..GameTimerState::default()

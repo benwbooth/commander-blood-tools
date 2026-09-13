@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 131,
-    "oracle_fixture_count": 130,
+    "oracle_count": 132,
+    "oracle_fixture_count": 131,
     "fixture_relation_counts": {
-      "exact": 129,
+      "exact": 130,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 241,
-    "unentered_static_entrypoints": 141,
+    "entered_static_entrypoints": 243,
+    "unentered_static_entrypoints": 139,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 242,
+    "entered_known_entrypoints": 244,
     "comparison_counts": {
       "unresolved": {
         "entered": 76,
         "unentered": 50
       },
       "structural_candidate": {
-        "entered": 131,
-        "unentered": 65
+        "entered": 133,
+        "unentered": 63
       },
       "exact_body": {
         "entered": 14,
@@ -1794,6 +1794,19 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_timer_lifecycle_oracle.py",
+      "oracle_sha256": "04d3172044d395bd151c4a9f69958fc104e1c365db1c62f5bada6045f3eef35a",
+      "executed_instruction_count": 52,
+      "entered_entrypoints": [
+        "0x09a2",
+        "0x09f0"
+      ],
+      "summary": "verified 4 BBB timer-start and 4 timer-stop cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_timer_lifecycle.json",
+      "fixture_sha256": "7edd6d333a2d8a1af11a0e16cc80eff6099c0df650a2159d718458bbb7835691",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_timer_oracle.py",
       "oracle_sha256": "e4293a5d44eeee36b17c5f1918baef6cadf24fd5e22f2c4fcaa4e45bedb63571",
       "executed_instruction_count": 21,
@@ -1968,16 +1981,20 @@
     {
       "entry": "0x09a2",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_timer_lifecycle_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x79c"
     },
     {
       "entry": "0x09f0",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_timer_lifecycle_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x7ea"
     },

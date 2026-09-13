@@ -35,6 +35,7 @@ AUDIO_STREAM = "crates/commander-blood-game/src/native/bloodprg/audio_stream.rs"
 AUDIO_PLAYBACK = "crates/commander-blood-game/src/native/bloodprg/audio_playback.rs"
 AUDIO_BANK = "crates/commander-blood-game/src/native/bloodprg/audio_bank.rs"
 RUNTIME_AUDIO = "crates/commander-blood-game/src/runtime/audio.rs"
+TIMER = "crates/commander-blood-game/src/native/bloodprg/timer.rs"
 SEQUEL_INPUT_FIXTURE = "re/tools/oracle_vectors/big_bug_bang_input_handlers.json"
 
 DIRECT_RUST_OWNER_OVERRIDES = {
@@ -69,6 +70,8 @@ DIRECT_RUST_OWNER_OVERRIDES = {
 }
 
 HOST_ADAPTER_OWNERS = {
+    0x09A2: (TIMER, "GameTimerState::start", "DOS timer-vector and PIT startup"),
+    0x09F0: (TIMER, "GameTimerState::stop", "DOS timer-vector and PIT shutdown"),
     0xCF40: (AUDIO_STREAM, "start_audio_stream", "loaded DOS sound-driver ABI"),
     0xD9F3: (AUDIO_STREAM, "start_audio_stream", "Gravis stream startup protocol"),
     0xDA5F: (AUDIO_STREAM, "refill_audio_stream", "Gravis stream service protocol"),
@@ -225,6 +228,7 @@ def build_report() -> dict[str, Any]:
 
         if entry in HOST_ADAPTER_OWNERS:
             path, symbol, adapter = HOST_ADAPTER_OWNERS[entry]
+            boundary = "modern host" if path == TIMER else "SDL audio"
             oracle = min(
                 (oracle_rows[path] for path in coverage_row["oracles"]),
                 key=lambda item: (len(item["entered_entrypoints"]), item["oracle"]),
@@ -235,7 +239,7 @@ def build_report() -> dict[str, Any]:
                 rust_owner={"path": path, "symbol": symbol},
                 rationale=(
                     f"The {adapter} is executable-verified but eliminated at the "
-                    "owned SDL audio boundary; no DOS device, interrupt, or far-call "
+                    f"owned {boundary} boundary; no DOS device, interrupt, or far-call "
                     "ABI is exposed by the modern runtime."
                 ),
             )
