@@ -2,7 +2,10 @@
 
 use commander_blood_formats::script::ScriptObjectKind;
 
-use super::{LocationPanelGeometryState, NavigationStatusLabels, NavigationStatusLocationKind};
+use super::{
+    LocationPanelGeometryState, LocationPanelGeometryVariant, NavigationStatusLabels,
+    NavigationStatusLocationKind,
+};
 
 const SOURCE_WIDTH_NUMERATOR: u16 = 14;
 const SOURCE_WIDTH_SHIFT: u32 = 5;
@@ -184,6 +187,8 @@ pub struct LocationInfoPanelState<LocationId> {
     pub phase: LocationPanelPhase,
     /// Whether the bridge still considers the panel active.
     pub active: bool,
+    /// Whether matching panel artwork was installed for the current selection.
+    pub artwork_present: bool,
     /// Scaling and placement inputs consumed by entity geometry.
     pub geometry: LocationPanelGeometryState,
     /// Rectangle interpolation progress.
@@ -205,6 +210,7 @@ impl<LocationId> Default for LocationInfoPanelState<LocationId> {
         Self {
             phase: LocationPanelPhase::default(),
             active: false,
+            artwork_present: false,
             geometry: LocationPanelGeometryState::default(),
             transition: LocationPanelTransitionProgress::default(),
             selected_location: None,
@@ -281,6 +287,7 @@ pub trait LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent> {
     fn update_panel_geometry(
         &mut self,
         geometry: &mut LocationPanelGeometryState,
+        variant: LocationPanelGeometryVariant,
         comparison_extent: &ComparisonExtent,
     );
 
@@ -398,7 +405,11 @@ where
         };
 
         state.geometry.scale_step = state.geometry.scale_step.wrapping_add(1);
-        host.update_panel_geometry(&mut state.geometry, context.comparison_extent);
+        host.update_panel_geometry(
+            &mut state.geometry,
+            geometry_variant(&context.variant, state.artwork_present),
+            context.comparison_extent,
+        );
         host.render_panel_sprites(LocationPanelSpriteRange::PanelAndTransition);
         let interpolation_complete = state.transition.is_complete();
         host.interpolate_panel(
@@ -465,6 +476,7 @@ fn install_matching_artwork<ResourceId, LocationId, ComparisonExtent, Host>(
 where
     Host: LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent>,
 {
+    state.artwork_present = false;
     let Some(entry) = context
         .artwork
         .iter()
@@ -479,7 +491,20 @@ where
         .wrapping_mul(SOURCE_WIDTH_NUMERATOR)
         .wrapping_shr(SOURCE_WIDTH_SHIFT);
     host.prepare_panel_palette();
+    state.artwork_present = true;
     Ok(true)
+}
+
+const fn geometry_variant<LocationId>(
+    variant: &LocationPanelVariant<'_, LocationId>,
+    artwork_present: bool,
+) -> LocationPanelGeometryVariant {
+    match variant {
+        LocationPanelVariant::CommanderBlood => LocationPanelGeometryVariant::CommanderBlood,
+        LocationPanelVariant::BigBugBang { .. } => {
+            LocationPanelGeometryVariant::BigBugBang { artwork_present }
+        }
+    }
 }
 
 fn draw_commander_panel<ResourceId, LocationId, ComparisonExtent, Host>(
@@ -784,7 +809,11 @@ where
     Host: LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent>,
 {
     state.geometry.scale_step = state.geometry.scale_step.wrapping_sub(1);
-    host.update_panel_geometry(&mut state.geometry, context.comparison_extent);
+    host.update_panel_geometry(
+        &mut state.geometry,
+        geometry_variant(&context.variant, state.artwork_present),
+        context.comparison_extent,
+    );
     host.render_panel_sprites(LocationPanelSpriteRange::PanelAndTransition);
     let interpolation_complete = state.transition.is_complete();
     host.interpolate_panel(
@@ -861,7 +890,7 @@ mod tests {
             pointer: [u16; 2],
         },
         Palette,
-        Geometry,
+        Geometry(LocationPanelGeometryVariant),
         Render(LocationPanelSpriteRange),
         Interpolate(LocationPanelInterpolation),
         Remap(LocationPanelRect),
@@ -905,9 +934,10 @@ mod tests {
         fn update_panel_geometry(
             &mut self,
             _geometry: &mut LocationPanelGeometryState,
+            variant: LocationPanelGeometryVariant,
             _comparison_extent: &(),
         ) {
-            self.events.push(HostEvent::Geometry);
+            self.events.push(HostEvent::Geometry(variant));
         }
 
         fn render_panel_sprites(&mut self, range: LocationPanelSpriteRange) {
@@ -992,6 +1022,7 @@ mod tests {
             let mut state = LocationInfoPanelState {
                 phase: decode_phase(vector.state_before),
                 active: true,
+                artwork_present: true,
                 geometry: LocationPanelGeometryState {
                     scale_step: vector.scale_before,
                     source_width: INITIAL_SOURCE_WIDTH,
@@ -1105,7 +1136,7 @@ mod tests {
             HostEvent::Resource(_) => "resource",
             HostEvent::Install { .. } => "setter",
             HostEvent::Palette => "palette",
-            HostEvent::Geometry => "entity",
+            HostEvent::Geometry(_) => "entity",
             HostEvent::Render(_) => "render",
             HostEvent::Interpolate(_) => "interpolate",
             HostEvent::Remap(_) => "remap",
@@ -1311,8 +1342,13 @@ mod tests {
                 HostEvent::SourceList(location) => {
                     assert_eq!(*location, SELECTED_LOCATION, "{}", vector.name);
                 }
+                HostEvent::Geometry(variant) => assert_eq!(
+                    *variant,
+                    LocationPanelGeometryVariant::CommanderBlood,
+                    "{}",
+                    vector.name
+                ),
                 HostEvent::Palette
-                | HostEvent::Geometry
                 | HostEvent::Render(_)
                 | HostEvent::Integer(_)
                 | HostEvent::Stat(_)
@@ -1335,6 +1371,7 @@ mod tests {
         candidate_count_after: usize,
         hovered_location_after: u16,
         panel_active_after: bool,
+        artwork_present_after: bool,
         selected_after: u16,
         deferred_after: u16,
         calls: Vec<SequelOracleCall>,
@@ -1397,6 +1434,7 @@ mod tests {
             let mut state = LocationInfoPanelState {
                 phase: decode_phase(vector.phase_before),
                 active: true,
+                artwork_present: true,
                 geometry: LocationPanelGeometryState {
                     scale_step: vector.scale_before,
                     source_width: INITIAL_SOURCE_WIDTH,
@@ -1461,6 +1499,11 @@ mod tests {
                 vector.name
             );
             assert_eq!(state.active, vector.panel_active_after, "{}", vector.name);
+            assert_eq!(
+                state.artwork_present, vector.artwork_present_after,
+                "{}",
+                vector.name
+            );
             assert_eq!(
                 input.primary_pressed, vector.primary_after,
                 "{}",
@@ -1726,6 +1769,14 @@ mod tests {
                         vector.name
                     );
                 }
+                HostEvent::Geometry(variant) => assert_eq!(
+                    *variant,
+                    LocationPanelGeometryVariant::BigBugBang {
+                        artwork_present: vector.artwork_present_after,
+                    },
+                    "{}",
+                    vector.name
+                ),
                 _ => {}
             }
         }

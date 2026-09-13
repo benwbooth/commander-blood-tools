@@ -10,9 +10,10 @@ use crate::game::GameVariant;
 use crate::native::bloodprg::{
     BridgeSpriteExtent, BridgeSpritePosition, FontPoint, GameLifecycleState, LoadedScriptProfile,
     LocationInfoPanelContext, LocationInfoPanelHost, LocationInfoPanelState,
-    LocationPanelActorDetails, LocationPanelArtwork, LocationPanelDetailLabels, LocationPanelInput,
-    LocationPanelInterpolation, LocationPanelLocation, LocationPanelRect, LocationPanelRects,
-    LocationPanelSource, LocationPanelSpriteRange, LocationPanelStatDraw, LocationPanelTextDraw,
+    LocationPanelActorDetails, LocationPanelArtwork, LocationPanelDetailLabels,
+    LocationPanelGeometryVariant, LocationPanelInput, LocationPanelInterpolation,
+    LocationPanelLocation, LocationPanelRect, LocationPanelRects, LocationPanelSource,
+    LocationPanelSpriteRange, LocationPanelStatDraw, LocationPanelTextDraw,
     LocationPanelTransitionProgress, LocationPanelVariant, Manu3AnimationSelector,
     NavigationCameraContext, NavigationCameraHost, NavigationCameraOutcome, NavigationCameraState,
     NavigationChartArche, NavigationChartCopySpan, NavigationChartEntityDraw,
@@ -900,20 +901,30 @@ impl LocationInfoPanelHost<ResourceId, ScriptObjectId, BridgeSpriteExtent>
     fn update_panel_geometry(
         &mut self,
         geometry: &mut crate::native::bloodprg::LocationPanelGeometryState,
+        variant: LocationPanelGeometryVariant,
         comparison_extent: &BridgeSpriteExtent,
     ) {
-        let source_extent = self
-            .services
-            .runtime()
-            .bridge_sprite_source_extent(LOCATION_PANEL_ENTITY);
-        let Some(source_extent) = self.record_callback(source_extent) else {
-            return;
+        let source_extent = match variant {
+            LocationPanelGeometryVariant::BigBugBang {
+                artwork_present: false,
+            } => BridgeSpriteExtent::default(),
+            _ => {
+                let source_extent = self
+                    .services
+                    .runtime()
+                    .bridge_sprite_source_extent(LOCATION_PANEL_ENTITY);
+                let Some(source_extent) = self.record_callback(source_extent) else {
+                    return;
+                };
+                source_extent
+            }
         };
         let mut backend = RuntimeLocationPanelGeometryBackend {
             runtime: self.services.runtime_mut(),
             callback_error: &mut self.callback_error,
         };
-        update_location_panel_geometry(
+        let _ = update_location_panel_geometry(
+            variant,
             geometry,
             [source_extent.width, source_extent.height],
             comparison_extent,

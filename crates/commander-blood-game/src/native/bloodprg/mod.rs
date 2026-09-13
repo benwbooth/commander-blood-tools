@@ -345,7 +345,7 @@ pub use location_panel::{
 };
 pub use location_panel_geometry::{
     LocationPanelGeometry, LocationPanelGeometryHost, LocationPanelGeometryState,
-    LocationPanelLayout, update_location_panel_geometry,
+    LocationPanelGeometryVariant, LocationPanelLayout, update_location_panel_geometry,
 };
 pub use manu3_hand::{
     Manu3AnimationSelector, Manu3HandFrameContext, Manu3HandFrameState, update_manu3_hand_frame,

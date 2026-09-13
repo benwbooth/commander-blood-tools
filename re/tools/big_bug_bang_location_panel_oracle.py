@@ -858,6 +858,9 @@ def execute(
         "candidate_count_after": read8(globals_after, OFFSETS["candidate_count"]),
         "hovered_location_after": read16(globals_after, OFFSETS["hovered_location"]),
         "panel_active_after": bool(read8(globals_after, OFFSETS["panel_active"]) & 1),
+        "artwork_present_after": bool(
+            read8(globals_after, OFFSETS["artwork_present"]) & 1
+        ),
         "panel_ready_after": bool(read8(globals_after, OFFSETS["panel_ready"]) & 1),
         "selected_after": read16(globals_after, OFFSETS["selected"]),
         "deferred_after": read16(globals_after, OFFSETS["deferred"]),

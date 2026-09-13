@@ -3763,9 +3763,48 @@ executable immutability. The dispatcher and filter bodies are bound by SHA-256
 `737b757a50f829ff4a82425baddf8a84994cf43cba05703ea6d71efb82a38e8d` and
 `4e1f2d3f2e67c4d39129a1dc37c70dc0853bbd3f309020f7a2f3ed7258dd0439`;
 the deterministic JSONL has SHA-256
-`921d260acc420912cc2eafc5d6fdcda8202ba19fbd1618719b98fa1d9749f673`.
+`1b6cdf54a2d8134978dfdaddb6fed0b2bc66aca978ef6b17095f94d7d09bced7`.
 This behaviorally classifies BBB `0xA5E0` and `0xA98B`, not their captured
 callees or end-to-end navigation parity.
+
+## Sequel Location-Panel Geometry
+
+BBB's `0xA9D3..0xAA3D` panel-entity geometry routine is the relocated sequel
+counterpart of Commander Blood `0x9240..0x92A3`. The guarded oracle executes
+the complete unchanged 106-byte BBB body and captures its two established
+entity extent and position callbacks:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_location_panel_geometry_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_location_panel_geometry.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_geometry_matches_every_original_vector
+```
+
+The first ten cases reproduce Commander's low-byte scale products, signed-byte
+scale interpretation, signed division truncated toward zero, 16-bit wrapping,
+ambient comparison context and callback-visible state mutation. Every shared
+scale, extent, position and normalized callback agrees. BBB adds one semantic
+gate: bit zero of `DS:0x2A23` must report installed artwork. Two sequel cases
+prove that zero and values containing only other bits return without reading
+sprite geometry or calling either helper.
+
+That gate exposed a production defect: the shared runtime previously queried
+and updated entity zero even when BBB's artwork lookup failed. Panel state now
+tracks the exact first-frame lookup result, the geometry API selects Commander
+or BBB behavior explicitly, and the runtime avoids even resolving a stale
+source extent on the skipped path. The parent dispatcher fixture now also
+checks the artwork-presence result in all 20 cases. The geometry oracle checks
+complete global, frame, incoming-ES and stack images, callback arguments and
+effects, general and segment registers, defined flags, stack discipline and
+executable immutability. The body is bound by SHA-256
+`b2719dffd9b3cf10f95c1fedb427d2b60079c698d07af1e39e087f234380b884`;
+the deterministic 12-row JSONL has SHA-256
+`0675e959f796beeb5abc66af72b292ff693ae09d3c063344e63c1343c1153d8d`.
+This behaviorally classifies BBB `0xA9D3`, not its two captured callees or
+end-to-end navigation rendering.
 
 ## Remaining Completion Requirements
 

@@ -26,6 +26,18 @@ pub struct LocationPanelGeometryState {
     pub layout: LocationPanelLayout,
 }
 
+/// Game-specific entry gate for the location-panel geometry routine.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LocationPanelGeometryVariant {
+    /// Commander Blood always evaluates the geometry body.
+    CommanderBlood,
+    /// Big Bug Bang skips the body unless panel artwork is installed.
+    BigBugBang {
+        /// Native bit zero at `DS:0x2A23`.
+        artwork_present: bool,
+    },
+}
+
 /// Ordered entity operations used by the geometry step.
 pub trait LocationPanelGeometryHost<ComparisonExtent> {
     /// Commit the scaled entity extent.
@@ -55,20 +67,31 @@ pub struct LocationPanelGeometry {
     pub position: [u16; 2],
 }
 
-/// Update native location-panel entity geometry routine `0x009240`.
+/// Update native location-panel entity geometry routines `0x009240` and
+/// `0x00A9D3`.
 ///
 /// The modern port retains the original low-byte products, signed 8-bit scale,
 /// truncating signed division, and wrapping coordinate arithmetic. Typed
 /// layout and extent values replace the native entity table and far pointer.
 pub fn update_location_panel_geometry<ComparisonExtent, Host>(
+    variant: LocationPanelGeometryVariant,
     state: &mut LocationPanelGeometryState,
     source_extent: [u16; 2],
     comparison_extent: &ComparisonExtent,
     host: &mut Host,
-) -> LocationPanelGeometry
+) -> Option<LocationPanelGeometry>
 where
     Host: LocationPanelGeometryHost<ComparisonExtent>,
 {
+    if matches!(
+        variant,
+        LocationPanelGeometryVariant::BigBugBang {
+            artwork_present: false
+        }
+    ) {
+        return None;
+    }
+
     let scale = state
         .scale_step
         .wrapping_mul(SCALE_NUMERATOR)
@@ -104,11 +127,11 @@ where
     ];
     host.update_panel_position(position);
 
-    LocationPanelGeometry {
+    Some(LocationPanelGeometry {
         scale,
         extent,
         position,
-    }
+    })
 }
 
 #[cfg(test)]
@@ -130,6 +153,23 @@ mod tests {
         target_for_position: [u16; 2],
         current_for_position: [u16; 2],
         draw_position: [u16; 2],
+    }
+
+    #[derive(Deserialize)]
+    struct SequelGeometryVector {
+        name: String,
+        artwork_present: u8,
+        executed: bool,
+        zoom: u8,
+        scale: Option<u8>,
+        source_extent: [u16; 2],
+        scaled_extent: Option<[u16; 2]>,
+        source_width: u16,
+        target_before: [u16; 2],
+        current_before: [u16; 2],
+        target_for_position: [u16; 2],
+        current_for_position: [u16; 2],
+        draw_position: Option<[u16; 2]>,
     }
 
     struct OracleHost {
@@ -188,8 +228,14 @@ mod tests {
                 position_call: None,
             };
 
-            let geometry =
-                update_location_panel_geometry(&mut state, vector.source_extent, &(), &mut host);
+            let geometry = update_location_panel_geometry(
+                LocationPanelGeometryVariant::CommanderBlood,
+                &mut state,
+                vector.source_extent,
+                &(),
+                &mut host,
+            )
+            .unwrap();
 
             assert_eq!(geometry.scale, vector.scale, "{}", vector.name);
             assert_eq!(geometry.extent, vector.scaled_extent, "{}", vector.name);
@@ -207,6 +253,79 @@ mod tests {
                 vector.name
             );
             assert_eq!(state.layout, host.layout_after_extent, "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn sequel_geometry_matches_every_original_vector() {
+        let vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_location_panel_geometry.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str::<SequelGeometryVector>(line).unwrap())
+        .collect::<Vec<_>>();
+        assert_eq!(vectors.len(), 12);
+
+        for vector in vectors {
+            let mut state = LocationPanelGeometryState {
+                scale_step: vector.zoom,
+                source_width: vector.source_width,
+                layout: LocationPanelLayout {
+                    current: vector.current_before,
+                    target: vector.target_before,
+                },
+            };
+            let mut host = OracleHost {
+                source_width_after_extent: if vector.name == "helper_mutation_visible_to_position" {
+                    20
+                } else {
+                    vector.source_width
+                },
+                layout_after_extent: LocationPanelLayout {
+                    current: vector.current_for_position,
+                    target: vector.target_for_position,
+                },
+                extent_call: None,
+                position_call: None,
+            };
+
+            let geometry = update_location_panel_geometry(
+                LocationPanelGeometryVariant::BigBugBang {
+                    artwork_present: vector.artwork_present & 1 != 0,
+                },
+                &mut state,
+                vector.source_extent,
+                &(),
+                &mut host,
+            );
+
+            assert_eq!(geometry.is_some(), vector.executed, "{}", vector.name);
+            assert_eq!(host.extent_call, vector.scaled_extent, "{}", vector.name);
+            assert_eq!(host.position_call, vector.draw_position, "{}", vector.name);
+            if let Some(geometry) = geometry {
+                assert_eq!(Some(geometry.scale), vector.scale, "{}", vector.name);
+                assert_eq!(
+                    Some(geometry.extent),
+                    vector.scaled_extent,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    Some(geometry.position),
+                    vector.draw_position,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(state.layout, host.layout_after_extent, "{}", vector.name);
+            } else {
+                assert_eq!(state.source_width, vector.source_width, "{}", vector.name);
+                assert_eq!(
+                    state.layout.current, vector.current_before,
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(state.layout.target, vector.target_before, "{}", vector.name);
+            }
         }
     }
 }

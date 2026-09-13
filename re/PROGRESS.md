@@ -1919,5 +1919,30 @@ indexed-color bars. The 20-row fixture regression matches exact callbacks, text,
 values, state and input; a live imported-profile test covers nested world data. The oracle also
 checks the modeled 32 KiB global range, every read-only input image, callback effects, preserved
 segments, stack discipline and executable immutability. Its checked-in JSONL has SHA-256
-`921d260acc420912cc2eafc5d6fdcda8202ba19fbd1618719b98fa1d9749f673`. This behaviorally
+`1b6cdf54a2d8134978dfdaddb6fed0b2bc66aca978ef6b17095f94d7d09bced7`. This behaviorally
 classifies BBB `0xA5E0` and `0xA98B`, not their captured callees or whole navigation parity.
+
+## 2026-09-12 - Big Bug Bang location-panel geometry
+
+BBB `0xA9D3..0xAA3D` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9240..0x92A3` panel-entity geometry routine. The new
+`re/tools/big_bug_bang_location_panel_geometry_oracle.py` executes the complete unchanged
+106-byte body and captures only its established entity extent and position callbacks. The body is
+guarded by SHA-256 `b2719dffd9b3cf10f95c1fedb427d2b60079c698d07af1e39e087f234380b884`.
+
+Ten direct cases mirror Commander's complete fixture. Every low-byte scale product, signed-byte
+scale, signed quotient, wrapped extent and position, ambient comparison context, helper-visible
+mutation and normalized callback agrees. Two sequel-only cases prove BBB's added entry gate: bit
+zero of `DS:0x2A23` must report installed artwork, while zero and values containing only other bits
+return without touching either helper.
+
+The new comparison found a shared-runtime defect. BBB locations with no matching artwork still
+entered the Rust geometry backend and could reuse entity zero's stale source extent. Panel state now
+retains the exact artwork lookup result, the typed geometry routine accepts an explicit game
+variant, and the concrete backend skips source-extent resolution as well as both geometry callbacks.
+The parent 20-case panel fixture now asserts the artwork-presence state too. The geometry oracle
+checks complete global, frame, entry-ES and stack images, callback effects, general and segment
+registers, defined flags, stack discipline and executable immutability. Its deterministic 12-row
+JSONL has SHA-256 `0675e959f796beeb5abc66af72b292ff693ae09d3c063344e63c1343c1153d8d`.
+This behaviorally classifies BBB `0xA9D3`, not its two captured callees or whole navigation
+rendering.
