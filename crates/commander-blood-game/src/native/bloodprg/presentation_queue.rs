@@ -640,11 +640,23 @@ mod tests {
     }
 
     #[test]
-    fn activation_readiness_matches_every_original_vector() {
-        let vectors: Vec<ActivateReadyOracle> = serde_json::from_str(include_str!(
+    fn activation_readiness_matches_both_original_fixtures() {
+        let commander: Vec<ActivateReadyOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a20c_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_activation.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_activation_readiness_vectors(commander);
+        assert_activation_readiness_vectors(sequel);
+    }
+
+    fn assert_activation_readiness_vectors(vectors: Vec<ActivateReadyOracle>) {
         assert_eq!(vectors.len(), ACTIVATE_READY_VECTOR_COUNT);
 
         for vector in vectors {

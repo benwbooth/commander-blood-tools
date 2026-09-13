@@ -4495,6 +4495,31 @@ and the deterministic JSONL SHA-256 is
 This classifies the coordinator, not its seven callback bodies or every malformed
 queue state.
 
+## Presentation Activation Oracle (2026-09-13)
+
+BBB `0xB9EF..0xBA23` relocates Commander Blood's already ported
+`0xA20C..0xA240` presentation-entry activation request. Both bodies contain 18
+instructions in 52 bytes. The sequel moves six queue fields and the activation
+helper while preserving the complete control-flow graph.
+
+`re/tools/big_bug_bang_presentation_activation_oracle.py` executes both shipped
+bodies with the seven Commander readiness cases. They agree exactly and traverse
+all ten conditional branch edges: already active, empty, incomplete, exact and
+overfilled ordinary entries, the `0x6D6D` link-marker bypass, both storage
+choices, and a wrapping tail pointer.
+
+The oracle verifies the activation callback arguments and near-call frame,
+forward queue cursor, complete seeded queue preservation, DS ownership against
+a GS decoy, unchanged executable and unowned segments, normalized complete
+stack state, every register and segment, exact flags, and direct Commander/BBB
+equality. The typed readiness selector now consumes both seven-row fixtures; no
+production behavior changed. BBB's body SHA-256 is
+`2f8874819169b2f8dc396e4b45f9b01f5a0cdefaff97ce1f7b184f8f1ed74b17`,
+and the deterministic JSONL SHA-256 is
+`4a0a9f295052d0fe9ecc6b8718964699082175213056890a8808c6557d031fac`.
+This classifies the readiness selector, not the activation helper body or
+direction-flag states outside the game's forward-string invariant.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
