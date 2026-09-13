@@ -3122,3 +3122,27 @@ vector table or register ABI. BBB's body SHA-256 is
 `1e977b4799b218d2ed870ec0c3dcfff9c072490c54d6bc0e7f1d16f52f19cf58`,
 and the deterministic JSONL SHA-256 is
 `9293cf633ede607c4f6deefb01170a89b83c867e0d51550d0b66cd2aa0d90069`.
+
+## 2026-09-13 - Big Bug Bang dialogue and chatter coordinator
+
+BBB `0xCF73..0xD05D` relocates Commander Blood's `0xB7E3..0xB8CD`
+dialogue and voice-reaction coordinator. Both complete bodies contain 93
+instructions in 234 bytes. All request, timer, seed, clip-count, sound-header,
+dictionary, and word-list fields move together, as do the playback and random
+helpers; signed text hashing, deterministic delay and clip selection, and
+voice-reaction rerolls remain structurally identical.
+
+The new `re/tools/big_bug_bang_audio_events_oracle.py` executes both shipped
+bodies over the existing 11-case semantic corpus and covers both outcomes of
+all 15 conditional sites, or 30 edges. It verifies disabled and suppressed
+paths, signed-byte and empty-list hashing, DS/GS ownership, armed delays,
+selection range and duplicate retries, repeated random results, primary and
+voice playback ordering, exact helper frames and arguments, complete state
+segments, all registers, final flags, caller stack, patched executable
+immutability, unowned memory, and direct normalized Commander/BBB equality.
+
+The shared typed `process_audio_events` owner now consumes both the Commander
+and BBB 11-row fixtures without a production variant. BBB's body SHA-256 is
+`cdb50354c0ee003a28a04f0c4770b9afb0354af754378c211f9ae104d9c75fe0`,
+and the deterministic JSONL SHA-256 is
+`65cb81bef59eed6e9e8ff52746b067704517d885193af3b3996a27658a09f4e3`.

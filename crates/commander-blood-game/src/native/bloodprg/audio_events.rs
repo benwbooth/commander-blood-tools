@@ -108,12 +108,12 @@ struct DialogueSelection {
 
 /// Select dialogue and short voice clips for the current game tick.
 ///
-/// This translates `audio_process_ade` at BLOODPRG routine offset `0x00B7E3`.
-/// Interned word bytes, semantic event flags, typed clip requests, and an
-/// injected bounded random source replace dictionary offsets, split data
-/// segments, high-bit clip tagging, and a far playback callback. Signed-byte
-/// hashing and all wrapping seed arithmetic are retained because they select
-/// authored sounds.
+/// This translates `audio_process_ade` at BLOODPRG routine offset `0x00B7E3`
+/// and its relocated Big Bug Bang counterpart at `0x00CF73`. Interned word
+/// bytes, semantic event flags, typed clip requests, and an injected bounded
+/// random source replace dictionary offsets, split data segments, high-bit
+/// clip tagging, and a far playback callback. Signed-byte hashing and all
+/// wrapping seed arithmetic are retained because they select authored sounds.
 pub fn process_audio_events<Random>(
     state: &mut AudioEventState,
     context: AudioEventContext<'_>,
@@ -282,15 +282,27 @@ mod tests {
     }
 
     #[test]
-    fn selector_matches_every_original_dialogue_and_chatter_vector() {
-        let vectors: Vec<AudioOracle> = serde_json::from_str(include_str!(
+    fn selector_matches_commander_and_sequel_dialogue_and_chatter_vectors() {
+        let commander_vectors: Vec<AudioOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_b7e3_natural.json"
         ))
         .unwrap();
+        let sequel_vectors =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_audio_events.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect::<Vec<AudioOracle>>();
+
+        assert_audio_oracles("Commander Blood", &commander_vectors);
+        assert_audio_oracles("Big Bug Bang", &sequel_vectors);
+    }
+
+    fn assert_audio_oracles(fixture_name: &str, vectors: &[AudioOracle]) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
             let case = case_for(&vector.name);
+            let case_name = format!("{fixture_name}: {}", vector.name);
             let words = words_for(&vector.hash_words);
             let mut state = AudioEventState {
                 playback_enabled: case.playback_enabled,
@@ -319,37 +331,33 @@ mod tests {
                     random_results.next().unwrap()
                 },
             )
-            .unwrap_or_else(|error| panic!("{}: {error}", vector.name));
+            .unwrap_or_else(|error| panic!("{case_name}: {error}"));
 
             assert_eq!(
                 state.dialogue_seed, vector.dialogue_seed_after,
                 "{}",
-                vector.name
+                case_name
             );
             assert_eq!(
                 state.dialogue_delay, vector.dialogue_delay_after,
                 "{}",
-                vector.name
+                case_name
             );
-            assert_eq!(state.last_clip, vector.last_clip_after, "{}", vector.name);
-            assert_eq!(
-                state.voice_cooldown, vector.cooldown_after,
-                "{}",
-                vector.name
-            );
+            assert_eq!(state.last_clip, vector.last_clip_after, "{}", case_name);
+            assert_eq!(state.voice_cooldown, vector.cooldown_after, "{}", case_name);
             assert_eq!(
                 requests.as_ref(),
                 expected_requests(&vector.play_calls).as_slice(),
                 "{}",
-                vector.name
+                case_name
             );
             assert_eq!(
                 random_calls,
                 vec![CHATTER_RANDOM_UPPER_BOUND; vector.prng_results.len()],
                 "{}",
-                vector.name
+                case_name
             );
-            assert!(random_results.next().is_none(), "{}", vector.name);
+            assert!(random_results.next().is_none(), "{}", case_name);
 
             if vector.primary_selection_iterations != 0 {
                 let selection =
@@ -358,20 +366,20 @@ mod tests {
                 assert_eq!(
                     selection.attempts, vector.primary_selection_iterations,
                     "{}",
-                    vector.name
+                    case_name
                 );
             }
             if vector.delay_attempts != 0 {
                 let (_, attempts) =
                     select_dialogue_delay(case.dialogue_seed, case.delay_base, case.delay_limit)
                         .unwrap();
-                assert_eq!(attempts, vector.delay_attempts, "{}", vector.name);
+                assert_eq!(attempts, vector.delay_attempts, "{}", case_name);
             }
             assert_eq!(
                 vector.split_ds_gs,
                 vector.name == "split_ds_gs_hash",
                 "{}",
-                vector.name
+                case_name
             );
         }
     }
