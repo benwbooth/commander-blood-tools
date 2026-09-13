@@ -1,0 +1,459 @@
+{
+  "format": "big-bug-bang-field-display-audit-v1",
+  "scope": "Static diagnostic ownership; this does not prove runtime activation or gameplay reachability",
+  "input": {
+    "executable": "output/big-bug-bang/disc/BLOOD2PG.EXE",
+    "sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+  },
+  "owner": {
+    "main_call_site": "0x0013bd",
+    "entry": "0x007c0e",
+    "directory_list_entry": "0x0025de",
+    "selected_record_entry": "0x007c65",
+    "empty_selection_entry": "0x007f21",
+    "mode_offset": "gs:0x6b7c",
+    "initial_mode": 0,
+    "explicit_mode_accesses": [
+      {
+        "file_offset": "0x0023d5",
+        "mnemonic": "test",
+        "operand": "byte ptr [0x6b7c], 3",
+        "segment": "default_ds",
+        "access": [
+          "read"
+        ]
+      },
+      {
+        "file_offset": "0x002424",
+        "mnemonic": "test",
+        "operand": "byte ptr [0x6b7c], 3",
+        "segment": "default_ds",
+        "access": [
+          "read"
+        ]
+      },
+      {
+        "file_offset": "0x002445",
+        "mnemonic": "test",
+        "operand": "byte ptr [0x6b7c], 1",
+        "segment": "default_ds",
+        "access": [
+          "read"
+        ]
+      },
+      {
+        "file_offset": "0x002495",
+        "mnemonic": "test",
+        "operand": "byte ptr [0x6b7c], 3",
+        "segment": "default_ds",
+        "access": [
+          "read"
+        ]
+      },
+      {
+        "file_offset": "0x0024a3",
+        "mnemonic": "test",
+        "operand": "byte ptr [0x6b7c], 3",
+        "segment": "default_ds",
+        "access": [
+          "read"
+        ]
+      },
+      {
+        "file_offset": "0x002519",
+        "mnemonic": "test",
+        "operand": "byte ptr [0x6b7c], 1",
+        "segment": "default_ds",
+        "access": [
+          "read"
+        ]
+      },
+      {
+        "file_offset": "0x007c0f",
+        "mnemonic": "test",
+        "operand": "byte ptr gs:[0x6b7c], 3",
+        "segment": "gs",
+        "access": [
+          "read"
+        ]
+      },
+      {
+        "file_offset": "0x007c17",
+        "mnemonic": "test",
+        "operand": "byte ptr gs:[0x6b7c], 1",
+        "segment": "gs",
+        "access": [
+          "read"
+        ]
+      }
+    ],
+    "explicit_mode_write_count": 0
+  },
+  "display": {
+    "state_label": "ETAT",
+    "field_matrix_file_offset": "0x016918",
+    "field_label_table_file_offset": "0x016b5c",
+    "dispatch_table_file_offset": "0x007c3b",
+    "selector_count": 21,
+    "distinct_handler_count": 11,
+    "selectors": [
+      {
+        "selector": "0x01",
+        "name": "POP",
+        "handler_file_offset": "0x007d48",
+        "formatter": "decimal_word",
+        "object_offsets": {
+          "player": 4,
+          "actor": 22,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x02",
+        "name": "BASE",
+        "handler_file_offset": "0x007d67",
+        "formatter": "present_absent_label",
+        "object_offsets": {
+          "player": null,
+          "actor": 26,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x03",
+        "name": "AGR",
+        "handler_file_offset": "0x007d48",
+        "formatter": "decimal_word",
+        "object_offsets": {
+          "player": null,
+          "actor": 50,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x04",
+        "name": "NRJ",
+        "handler_file_offset": "0x007d48",
+        "formatter": "decimal_word",
+        "object_offsets": {
+          "player": null,
+          "actor": 52,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x05",
+        "name": "CONNAIS",
+        "handler_file_offset": "0x007d83",
+        "formatter": "known_object_name_list",
+        "object_offsets": {
+          "player": null,
+          "actor": 30,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x06",
+        "name": "PORTEE",
+        "handler_file_offset": "0x007d48",
+        "formatter": "decimal_word",
+        "object_offsets": {
+          "player": null,
+          "actor": null,
+          "celestial_body": 24,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x07",
+        "name": "EVL",
+        "handler_file_offset": "0x007d48",
+        "formatter": "decimal_word",
+        "object_offsets": {
+          "player": null,
+          "actor": 56,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x08",
+        "name": "RENCONTRE",
+        "handler_file_offset": "0x007d48",
+        "formatter": "decimal_word",
+        "object_offsets": {
+          "player": null,
+          "actor": 54,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x09",
+        "name": "POSITION1",
+        "handler_file_offset": "0x007dcb",
+        "formatter": "decimal_word_pair",
+        "object_offsets": {
+          "player": null,
+          "actor": null,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": 24
+        }
+      },
+      {
+        "selector": "0x0a",
+        "name": "POSITION2",
+        "handler_file_offset": "0x007dcb",
+        "formatter": "decimal_word_pair",
+        "object_offsets": {
+          "player": null,
+          "actor": null,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": 28
+        }
+      },
+      {
+        "selector": "0x0b",
+        "name": "POSITION",
+        "handler_file_offset": "0x007dcb",
+        "formatter": "decimal_word_pair",
+        "object_offsets": {
+          "player": null,
+          "actor": null,
+          "celestial_body": null,
+          "navigation_entity": 24,
+          "auxiliary": 24,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x0c",
+        "name": "UNIVERS1",
+        "handler_file_offset": "0x007e06",
+        "formatter": "directory_object_name",
+        "object_offsets": {
+          "player": null,
+          "actor": null,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": 20
+        }
+      },
+      {
+        "selector": "0x0d",
+        "name": "UNIVERS2",
+        "handler_file_offset": "0x007e06",
+        "formatter": "directory_object_name",
+        "object_offsets": {
+          "player": null,
+          "actor": null,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": 22
+        }
+      },
+      {
+        "selector": "0x0e",
+        "name": "UNIVERS",
+        "handler_file_offset": "0x007e06",
+        "formatter": "directory_object_name",
+        "object_offsets": {
+          "player": 32,
+          "actor": 68,
+          "celestial_body": 28,
+          "navigation_entity": 28,
+          "auxiliary": 34,
+          "location": null,
+          "black_hole": null,
+          "world_state": 22,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x0f",
+        "name": "SUJET",
+        "handler_file_offset": "0x007e5c",
+        "formatter": "dictionary_text",
+        "object_offsets": {
+          "player": null,
+          "actor": 70,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x10",
+        "name": "RACE",
+        "handler_file_offset": "0x007e70",
+        "formatter": "lowest_set_bit_name",
+        "object_offsets": {
+          "player": null,
+          "actor": 20,
+          "celestial_body": 20,
+          "navigation_entity": 20,
+          "auxiliary": 20,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x11",
+        "name": "LIEU",
+        "handler_file_offset": "0x007e06",
+        "formatter": "directory_object_name",
+        "object_offsets": {
+          "player": 6,
+          "actor": 24,
+          "celestial_body": 22,
+          "navigation_entity": 22,
+          "auxiliary": 22,
+          "location": null,
+          "black_hole": null,
+          "world_state": 20,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x12",
+        "name": "MESSAGE",
+        "handler_file_offset": "0x007e8e",
+        "formatter": "label_only",
+        "object_offsets": {
+          "player": null,
+          "actor": null,
+          "celestial_body": 26,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x13",
+        "name": "ACTION",
+        "handler_file_offset": "0x007e8f",
+        "formatter": "message_opcode_and_object",
+        "object_offsets": {
+          "player": 8,
+          "actor": 58,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": 28,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x14",
+        "name": "ICONE",
+        "handler_file_offset": "0x007ef1",
+        "formatter": "eight_dictionary_names",
+        "object_offsets": {
+          "player": 16,
+          "actor": null,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      },
+      {
+        "selector": "0x15",
+        "name": "ATTAQUE",
+        "handler_file_offset": "0x007e40",
+        "formatter": "state_object_name_or_blank",
+        "object_offsets": {
+          "player": null,
+          "actor": 72,
+          "celestial_body": null,
+          "navigation_entity": null,
+          "auxiliary": null,
+          "location": null,
+          "black_hole": null,
+          "world_state": null,
+          "inventory_item": null
+        }
+      }
+    ]
+  }
+}

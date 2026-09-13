@@ -80,14 +80,20 @@ TABLES = (
         "count_basis": "complete pinned executable opcode domain 0xa0..0xd7",
     },
     {
-        "name": "record_kind_handlers",
-        "description": "Record-kind rendering/format dispatch",
+        "name": "field_display_handlers",
+        "description": (
+            "Object-state inspector formatters for field selectors POP through ATTAQUE"
+        ),
         "dispatch_sites": (0x7D22,),
         "kind": "near",
         "table": 0x7C3B,
         "target_base": 0x5820,
         "count": 21,
-        "count_basis": "dispatcher compares the selector with 0x15 at 0x7d39",
+        "selector_base": 1,
+        "count_basis": (
+            "dispatcher skips ETAT/selector 0, then compares its zero-based table "
+            "index with 0x15 at 0x7d39"
+        ),
     },
     {
         "name": "byte_parser_handlers",

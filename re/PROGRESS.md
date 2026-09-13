@@ -1631,7 +1631,7 @@ are in `re/big_bug_bang_function_comparison.json`.
 The production port already uses one shared runtime script system and typed native service layer;
 there is no second sequel interpreter to merge. The fingerprint-bound
 `re/tools/big_bug_bang_indirect_dispatch_atlas.py` resolves eight static table families: input,
-value conversion, sprite blitting, all 56 VM opcodes, 21 record kinds, 18 byte-parser operations,
+value conversion, sprite blitting, all 56 VM opcodes, 21 field-display selectors, 18 byte-parser operations,
 six navigation actor rows, and five navigation choices. Their 110 distinct targets add 109 targets
 not already present after unioning the recursive graph with all relocation-proven far targets. The
 resulting static lower bound is 368 native targets; see
@@ -1650,7 +1650,7 @@ expanded comparison (`re/tools/compare_big_bug_bang_expanded_graphs.py` and
 correspondences, including 27 byte-identical bodies. All 155 direct edges whose endpoints are
 independently mapped are preserved. There are 33 ambiguous duplicate/signature cases and 126
 unresolved BBB entrypoints. Those 126 are an audit queue, not a claim that all are sequel-only.
-Per-table counts are included in the report; notably, none of the 11 distinct record-kind handler
+Per-table counts are included in the report; notably, none of the 11 distinct field-display handler
 targets has a structural match, while 23 of 41 VM-handler targets do. The other 18 VM targets are
 already covered by the opcode-specific original-BBB comparisons and must not be misreported as
 unported merely because their bodies changed.
@@ -1662,3 +1662,26 @@ Classification does not turn the external vectors into recovered functions. The 
 gate is to cross-reference the 382-entrypoint lower bound against existing BBB native oracles and runtime
 ownership, then resolve dynamically supplied internal callbacks from original execution traces. Only
 uncovered behavior from that audit should drive implementation changes.
+
+## 2026-09-12 - Big Bug Bang field-display ownership audit
+
+The 21-entry table at `0x7C3B` was initially described as a record-kind dispatch. That was off by
+one and semantically wrong. The owner at `0x7C65` advances both the field-offset matrix and its
+16-byte label table past selector zero (`ETAT`) before indexing the handler table. The table therefore
+covers selectors 1 through 21: `POP` through the sequel-only `ATTAQUE`, not 21 object kinds.
+
+`re/tools/big_bug_bang_field_display_audit.py` now binds the pinned executable to all 21 labels,
+all nine object-kind columns of each field-offset row, and the 11 formatter targets. The handlers
+format decimal words and pairs, present/absent state, known-object lists, object and dictionary names,
+the race bitset, action/message state, icon-name arrays, and the added attack reference. The main-loop
+owner at `0x7C0E` selects the directory list (`0x25DE`), one record (`0x7C65`), or the empty-selection
+view (`0x7F21`). This is an object-state inspection surface, not record mutation or simulation.
+
+The checked-in report also records the mode gate at GS:`0x6B7C`: its executable initializer is zero,
+and all eight direct accesses found in the closed static graph are reads. That does not rule out an
+indirect or runtime-supplied write, so it is static evidence of a dormant diagnostic path rather than
+a proof of retail unreachability. The production typed VM already checks the same field matrix against
+all original BBB rows in `sequel_field_matrix_matches_all_native_rows_and_shipped_kinds`; the modern
+semantic trace exposes object state without recreating this French developer display. Consequently,
+these 11 structurally unmatched routines are classified diagnostic UI, not evidence of missing
+gameplay behavior. Pixel-identical inspector parity remains outside the current playable-game claim.

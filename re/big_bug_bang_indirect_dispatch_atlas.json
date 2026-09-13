@@ -672,15 +672,15 @@
       ]
     },
     {
-      "name": "record_kind_handlers",
-      "description": "Record-kind rendering/format dispatch",
+      "name": "field_display_handlers",
+      "description": "Object-state inspector formatters for field selectors POP through ATTAQUE",
       "dispatch_sites": [
         "0x007d22"
       ],
       "table_file_offset": "0x007c3b",
       "entry_count": 21,
       "distinct_target_count": 11,
-      "count_basis": "dispatcher compares the selector with 0x15 at 0x7d39",
+      "count_basis": "dispatcher skips ETAT/selector 0, then compares its zero-based table index with 0x15 at 0x7d39",
       "targets_missing_from_recursive_graph": [
         "0x007d48",
         "0x007d67",
@@ -697,127 +697,127 @@
       "entries": [
         {
           "index": 0,
-          "selector": "0x00",
+          "selector": "0x01",
           "encoded": "0x2528",
           "target_file_offset": "0x007d48"
         },
         {
           "index": 1,
-          "selector": "0x01",
+          "selector": "0x02",
           "encoded": "0x2547",
           "target_file_offset": "0x007d67"
         },
         {
           "index": 2,
-          "selector": "0x02",
-          "encoded": "0x2528",
-          "target_file_offset": "0x007d48"
-        },
-        {
-          "index": 3,
           "selector": "0x03",
           "encoded": "0x2528",
           "target_file_offset": "0x007d48"
         },
         {
-          "index": 4,
+          "index": 3,
           "selector": "0x04",
+          "encoded": "0x2528",
+          "target_file_offset": "0x007d48"
+        },
+        {
+          "index": 4,
+          "selector": "0x05",
           "encoded": "0x2563",
           "target_file_offset": "0x007d83"
         },
         {
           "index": 5,
-          "selector": "0x05",
-          "encoded": "0x2528",
-          "target_file_offset": "0x007d48"
-        },
-        {
-          "index": 6,
           "selector": "0x06",
           "encoded": "0x2528",
           "target_file_offset": "0x007d48"
         },
         {
-          "index": 7,
+          "index": 6,
           "selector": "0x07",
           "encoded": "0x2528",
           "target_file_offset": "0x007d48"
         },
         {
-          "index": 8,
+          "index": 7,
           "selector": "0x08",
-          "encoded": "0x25ab",
-          "target_file_offset": "0x007dcb"
+          "encoded": "0x2528",
+          "target_file_offset": "0x007d48"
         },
         {
-          "index": 9,
+          "index": 8,
           "selector": "0x09",
           "encoded": "0x25ab",
           "target_file_offset": "0x007dcb"
         },
         {
-          "index": 10,
+          "index": 9,
           "selector": "0x0a",
           "encoded": "0x25ab",
           "target_file_offset": "0x007dcb"
         },
         {
-          "index": 11,
+          "index": 10,
           "selector": "0x0b",
-          "encoded": "0x25e6",
-          "target_file_offset": "0x007e06"
+          "encoded": "0x25ab",
+          "target_file_offset": "0x007dcb"
         },
         {
-          "index": 12,
+          "index": 11,
           "selector": "0x0c",
           "encoded": "0x25e6",
           "target_file_offset": "0x007e06"
         },
         {
-          "index": 13,
+          "index": 12,
           "selector": "0x0d",
           "encoded": "0x25e6",
           "target_file_offset": "0x007e06"
         },
         {
-          "index": 14,
+          "index": 13,
           "selector": "0x0e",
+          "encoded": "0x25e6",
+          "target_file_offset": "0x007e06"
+        },
+        {
+          "index": 14,
+          "selector": "0x0f",
           "encoded": "0x263c",
           "target_file_offset": "0x007e5c"
         },
         {
           "index": 15,
-          "selector": "0x0f",
+          "selector": "0x10",
           "encoded": "0x2650",
           "target_file_offset": "0x007e70"
         },
         {
           "index": 16,
-          "selector": "0x10",
+          "selector": "0x11",
           "encoded": "0x25e6",
           "target_file_offset": "0x007e06"
         },
         {
           "index": 17,
-          "selector": "0x11",
+          "selector": "0x12",
           "encoded": "0x266e",
           "target_file_offset": "0x007e8e"
         },
         {
           "index": 18,
-          "selector": "0x12",
+          "selector": "0x13",
           "encoded": "0x266f",
           "target_file_offset": "0x007e8f"
         },
         {
           "index": 19,
-          "selector": "0x13",
+          "selector": "0x14",
           "encoded": "0x26d1",
           "target_file_offset": "0x007ef1"
         },
         {
           "index": 20,
-          "selector": "0x14",
+          "selector": "0x15",
           "encoded": "0x2620",
           "target_file_offset": "0x007e40"
         }
@@ -1387,7 +1387,7 @@
       "operand": "word ptr cs:[ecx + 0x241b]",
       "category": "static_internal_dispatch_table",
       "detail": {
-        "table": "record_kind_handlers"
+        "table": "field_display_handlers"
       }
     },
     {

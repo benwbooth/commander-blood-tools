@@ -6122,7 +6122,7 @@
         ]
       },
       {
-        "name": "record_kind_handlers",
+        "name": "field_display_handlers",
         "distinct_targets": 11,
         "unique_correspondences": 0,
         "exact_body_correspondences": 0,

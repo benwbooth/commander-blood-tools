@@ -3347,10 +3347,32 @@ contains empty text and `WAIT COMMANDER ...`, so this run does not establish
 the English dialogue override in live play. Direct original/modern startup
 sequence comparison and deliberate navigation remain necessary.
 
+## Static Field Inspector Classification
+
+The expanded native graph originally left all 11 targets in the 21-entry table
+at `0x7C3B` looking like unexplained record-kind handlers. The selector was
+misidentified: `0x7C65` skips selector zero and its `ETAT` label, then dispatches
+selectors 1 through 21 alongside `POP` through sequel-only `ATTAQUE`. The
+formatters only render typed object state for a diagnostic inspector. They do
+not mutate records or advance gameplay.
+
+`re/big_bug_bang_field_display_audit.json` binds that classification to the
+known executable hash, the exact 21 labels, every field-matrix offset, all 11
+formatter targets, and the owner call graph. GS:`0x6B7C` initializes to zero;
+the closed static graph finds eight explicit reads and no explicit write. This
+last result does not exclude an indirect write, so the report calls the path
+statically dormant rather than unreachable. Rust's ignored original-asset test
+independently checks the same matrix through
+`script_field_offset_for_dialect`. Runtime semantic traces provide the useful
+state inspection surface, but do not claim visual parity with this French
+developer UI.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
-  into surrounding frame, runtime, presentation and conversation routines.
+  into surrounding frame, runtime, presentation and conversation routines. The
+  11 field-display targets are now classified as diagnostic inspector formatters,
+  not unresolved gameplay handlers.
   Game-specific startup, profile switching, missing BAS ownership and SCRIPT2's
   adjacent read-only directory word are implemented, but those component results
   do not prove every cross-profile route.
