@@ -1788,3 +1788,30 @@ segments, stack frames, read-only images and executable immutability. Its SHA-25
 now consumes both 16-case original-game sets and passes all 32 cases. This behaviorally classifies
 BBB `0x5DD7`, not its captured callees, end-to-end dialogue playback, or the remaining action arms
 inside `0x613F`.
+
+## 2026-09-12 - Big Bug Bang complete post-frame action dispatch
+
+The earlier C6-only proof left the C1-C4, C9 and CD arms of BBB's structurally unmatched
+`0x613F..0x65E7` dispatcher open. The new `re/tools/big_bug_bang_script_action_oracle.py` executes
+that complete unchanged 1,193-byte routine and the real `0x6633` field-offset helper. Established
+roster, position, descriptor, nested-COD, audio, renderer, camera and HUD calls are captured only at
+their boundaries. The body is guarded by SHA-256
+`c897f0f92da4b6befc887b569b7269e100caab140489fe28b987b6c41ec3d57e`.
+
+The 33 direct cases mirror all 32 Commander action-ladder vectors and add BBB's sequel-only
+GS:`0x0CF1` C1 gate. They cover arche waiting and bypass, navigation relinking and position copying,
+special-target descriptor/HUD/audio paths, C2 insert success and failure, C3 wildcard/radio paths,
+C4 reciprocal and encounter-counter updates, every C6 phase, C9 reciprocal clearing, CD replacement,
+and an unknown type. The two successful C2 cases stop immediately before the original unmatched
+`POP ES` at `0x6343` and verify the complete saved frame plus all preceding mutations; this records
+the shipped defect without executing an invalid return.
+
+Every full global and VAR image, changed byte, actual field result, callback argument, register,
+segment, defined flag, stack frame and executable byte agrees with the independent model. The first
+32 normalized callback traces agree with Commander; the extra case proves the sequel gate bypasses
+the inherited arche approach wait. The checked-in 33-row JSONL has SHA-256
+`4427e7e51bf4a5953dc4b42843199ee0e4b7142d48e12a41e939414a386b8f9e`. The Rust classification test
+now consumes both fixtures, preserves the five unreachable C9/CD/unknown case labels, identifies the
+two defect-boundary cases, and includes the sequel gate as the 28th reachable row. No additional
+shared semantic defect was found. This behaviorally classifies BBB `0x613F`, not any captured callee
+or whole-game action parity.

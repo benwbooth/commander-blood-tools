@@ -767,6 +767,7 @@ mod tests {
     use crate::native::bloodprg::{object_has_flag, remove_aboard_object};
 
     const ORACLE_VECTOR_COUNT: usize = 32;
+    const SEQUEL_ORACLE_VECTOR_COUNT: usize = 33;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
     const DIRECTORY_OBJECT_KIND: u16 = 1;
@@ -786,6 +787,10 @@ mod tests {
     struct ActionOracle {
         name: String,
         record_kind: u16,
+        #[serde(default)]
+        stopped_before_unmatched_pop_es: bool,
+        #[serde(default)]
+        sequel_travel_gate: bool,
     }
 
     #[derive(Debug, Deserialize)]
@@ -1075,7 +1080,37 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
-        let dead_names = vectors
+        let sequel_vectors =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_script_action.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str::<ActionOracle>(line).unwrap())
+                .collect::<Vec<_>>();
+        assert_eq!(sequel_vectors.len(), SEQUEL_ORACLE_VECTOR_COUNT);
+        assert!(
+            vectors
+                .iter()
+                .zip(&sequel_vectors)
+                .all(|(original, sequel)| {
+                    original.name == sequel.name && original.record_kind == sequel.record_kind
+                })
+        );
+        assert_eq!(
+            sequel_vectors.last().map(|vector| vector.name.as_str()),
+            Some("c1_sequel_gate_bypasses_arche_wait")
+        );
+        assert!(sequel_vectors.last().unwrap().sequel_travel_gate);
+        assert_eq!(
+            sequel_vectors
+                .iter()
+                .filter(|vector| vector.stopped_before_unmatched_pop_es)
+                .map(|vector| vector.name.as_str())
+                .collect::<BTreeSet<_>>(),
+            BTreeSet::from([
+                "c2_character_state_before_shipped_stack_defect",
+                "c2_descript_state_before_shipped_stack_defect",
+            ])
+        );
+        let dead_names = sequel_vectors
             .iter()
             .filter(|vector| matches!(vector.record_kind, 201 | 205 | 215))
             .map(|vector| vector.name.as_str())
@@ -1090,7 +1125,7 @@ mod tests {
                 "unknown_record_is_ignored",
             ])
         );
-        assert_eq!(vectors.len() - dead_names.len(), 27);
+        assert_eq!(sequel_vectors.len() - dead_names.len(), 28);
     }
 
     #[test]

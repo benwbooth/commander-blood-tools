@@ -3570,6 +3570,41 @@ does not re-prove those callees. It behaviorally classifies `0x5DD7`, but does
 not establish end-to-end conversation playback or classify the remaining
 uncovered arms of `0x613F`.
 
+### Complete post-frame action dispatcher (`0x613F`)
+
+The earlier C6 oracle covered only one arm of BBB's structurally unmatched
+post-frame action dispatcher. The full guarded oracle now runs the complete
+unchanged `0x613F..0x65E7` body together with the real `0x6633` field helper:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_script_action_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_script_action.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  original_oracle_separates_reachable_and_dead_record_arms
+```
+
+Its 33 cases retain all 32 Commander action-ladder scenarios and add the
+sequel-only GS:`0x0CF1` gate that lets a C1 navigation action bypass the
+inherited arche approach wait. The set covers C1 relinking, descriptor, HUD,
+audio and position paths; C2 roster outcomes; C3 wildcard and radio handling;
+C4 reciprocal and encounter-counter updates; all C6 phases; C9 clearing; CD
+replacement; and an unknown record type. The two successful C2 cases stop
+immediately before the shipped unmatched `POP ES` at `0x6343`, after verifying
+the saved frame and every preceding mutation.
+
+The oracle compares complete global and VAR images against an independent
+model and checks changed bytes, native field results, callback arguments,
+registers, segments, defined flags, stack discipline and executable
+immutability. Its first 32 normalized callback traces match Commander, and the
+extra case proves the BBB gate bypass. The deterministic JSONL has SHA-256
+`4427e7e51bf4a5953dc4b42843199ee0e4b7142d48e12a41e939414a386b8f9e`.
+The shared Rust classification test consumes both original fixtures. This
+closes direct behavioral classification of `0x613F`; captured roster, audio,
+renderer, nested-COD, camera and HUD callees retain their own proof boundaries,
+and this result is not whole-game action parity.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
