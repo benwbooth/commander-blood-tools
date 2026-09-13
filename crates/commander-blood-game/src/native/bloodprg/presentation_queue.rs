@@ -534,7 +534,8 @@ mod tests {
     const CONSUME_FLAT_VECTOR_COUNT: usize = 6;
     const ENQUEUE_VECTOR_COUNT: usize = 8;
     const ENQUEUE_FLAT_VECTOR_COUNT: usize = 2;
-    const RESET_VECTOR_COUNT: usize = 5;
+    const COMMANDER_RESET_VECTOR_COUNT: usize = 5;
+    const SEQUEL_RESET_VECTOR_COUNT: usize = 5;
     const BOUNDS_VECTOR_COUNT: usize = 20;
     const ACTIVATE_READY_VECTOR_COUNT: usize = 7;
     const CIRCULAR_TEST_CAPACITY: usize = u16::MAX as usize + 1;
@@ -1184,12 +1185,24 @@ mod tests {
     }
 
     #[test]
-    fn queue_reset_matches_every_flat_original_vector() {
-        let vectors: Vec<ResetOracle> = serde_json::from_str(include_str!(
+    fn queue_reset_matches_both_original_fixtures() {
+        let commander: Vec<ResetOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a757_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), RESET_VECTOR_COUNT);
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_queue_init.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_queue_reset_vectors(commander, COMMANDER_RESET_VECTOR_COUNT);
+        assert_queue_reset_vectors(sequel, SEQUEL_RESET_VECTOR_COUNT);
+    }
+
+    fn assert_queue_reset_vectors(vectors: Vec<ResetOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count);
 
         for vector in vectors {
             let mut state = PresentationQueueState {

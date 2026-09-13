@@ -2707,3 +2707,21 @@ SHA-256 is
 `877fa54af98b02f51ce11892845bfccfdcf6928d8ff00b60f6cf2b3816c986c9`,
 and the deterministic JSONL SHA-256 is
 `be7d26b21ee936d13f78d24ee6df6a80245fc3c0c0ca2b32e5f0f4e83e6c92e1`.
+
+## 2026-09-13 - Big Bug Bang presentation queue initialization
+
+BBB `0xBF41..0xBF62` relocates Commander Blood's already ported
+`0xA757..0xA778` presentation queue initializer. Both routines contain 12
+instructions in 33 bytes, with only queue field and boundary relocations.
+
+The new `re/tools/big_bug_bang_presentation_queue_init_oracle.py` executes both
+shipped far-return routines with all five recovered Commander vectors. It
+checks zero and maximum bounds, exact far pointers and cleared/preserved words,
+registers, flags, stack advance, segmented ownership, unowned memory,
+executable immutability, and direct Commander/BBB equality.
+
+The typed queue reset consumes both five-row fixtures without production
+changes. BBB's body SHA-256 is
+`669174423f6374d436eaed9b2d313493ceceee75381b5a14f09226d25c36b2e9`,
+and the deterministic JSONL SHA-256 is
+`68db8e9f3cd882e60b55222cc74bbcc4b779bc6e58b8037e61f07da3fae49cc2`.

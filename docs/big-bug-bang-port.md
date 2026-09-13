@@ -4823,6 +4823,27 @@ No production behavior changed. BBB's composed body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `be7d26b21ee936d13f78d24ee6df6a80245fc3c0c0ca2b32e5f0f4e83e6c92e1`.
 
+## Presentation Queue Initialization Oracle (2026-09-13)
+
+BBB `0xBF41..0xBF62` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA757..0xA778` presentation queue initializer. Both routines
+contain 12 instructions in 33 bytes. BBB relocates the base segment, buffer end,
+and queue-state words without changing the operation sequence.
+
+The new `re/tools/big_bug_bang_presentation_queue_init_oracle.py` executes both
+shipped far-return routines with all five recovered Commander vectors, including
+zero and maximum segment/buffer bounds. It verifies the two reset far pointers,
+five cleared words, three interleaved preserved words, wrap limit, exact
+registers and flags, the four-byte far-return stack advance, DS ownership
+against GS/ES/FS decoys, all unowned memory, executable immutability, and direct
+normalized Commander/BBB equality.
+
+The typed queue reset consumes both five-row fixtures without changing
+production behavior. BBB's body SHA-256 is
+`669174423f6374d436eaed9b2d313493ceceee75381b5a14f09226d25c36b2e9`,
+and the deterministic JSONL SHA-256 is
+`68db8e9f3cd882e60b55222cc74bbcc4b779bc6e58b8037e61f07da3fae49cc2`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
