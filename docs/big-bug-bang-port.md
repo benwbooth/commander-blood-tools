@@ -5044,6 +5044,31 @@ original fixtures. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `a5a2c6050085df69dc8cb130872d336779672f05249e1c668bda6ae6cf0ae7bd`.
 
+## Object-Access Counter Oracle (2026-09-13)
+
+BBB `0x1659..0x1688` is the relocated sequel counterpart of Commander Blood's
+`0x149B..0x14CA` object-access counter update. Both routines contain 20
+instructions in 47 bytes and differ only in their object-heap segment and
+directory-pointer references. BBB moves the full object-heap pointer from
+`DS:0x6724` to `DS:0x6AEC` and the directory pointer from `DS:0x672C` to
+`DS:0x6AF0`; the routine deliberately reads only the heap pointer's segment.
+
+The new `re/tools/big_bug_bang_object_access_oracle.py` executes all six
+fingerprinted Commander cases in the shipped BBB body. They prove unconditional
+first-entry processing, the `0x0118` kind mask, the low-byte in-play gate,
+ignored heap offset, directory and object-offset wrapping, duplicate increments,
+counter wrapping, and terminal compare flags. The harness also verifies exact
+register and segment preservation, near return, stack writes, changed-address
+ownership, untouched full segments, and patched-executable immutability.
+
+The typed `increment_object_access_counters` owner consumes both six-row
+semantic fixtures. Its decoded object identities replace malformed directory
+sentinels, duplicate offsets, and 16-bit pointer wrapping while preserving the
+proved kind, flag, ordering, and counter transition. BBB's body SHA-256 is
+`bf28e15ef604cfd2e4a4338f75ba41ca3114a99137ee7154210a9ef2f9392bcc`,
+and the deterministic fixture SHA-256 is
+`fa591852519ba82ba24a612e212931dd40df95b5ad6fa7b6a473c69d80c0a5f1`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

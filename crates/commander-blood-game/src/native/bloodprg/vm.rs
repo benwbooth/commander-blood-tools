@@ -186,11 +186,12 @@ pub fn active_objects_in_play(state: &ScriptState) -> Vec<ScriptObjectId> {
 
 /// Increment the visit counter of each in-play navigation destination.
 ///
-/// This translates `object_heap_access` at BLOODPRG file offset `0x00149B`.
-/// The original walks active DEB entries and mutates byte 20 of matching VAR
-/// records. Decoded object identities and kinds replace that offset walk while
-/// retaining the celestial, navigation-entity, and black-hole mask, the in-play
-/// gate, authored object order, and eight-bit counter wraparound.
+/// This translates `object_heap_access` at BLOODPRG file offset `0x00149B` and
+/// BBB file offset `0x001659`. The originals walk active DEB entries and mutate
+/// byte 20 of matching VAR records. Decoded object identities and kinds replace
+/// that offset walk while retaining the celestial, navigation-entity, and
+/// black-hole mask, the in-play gate, authored object order, and eight-bit
+/// counter wraparound.
 pub fn increment_object_access_counters(state: &mut ScriptState) -> usize {
     let objects = state
         .objects()
@@ -406,6 +407,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangObjectAccessOracle {
+        rows: Vec<ObjectAccessOracleVector>,
+    }
+
+    #[derive(Deserialize)]
     struct ObjectAccessOracleEntry {
         object_offset: u16,
         object_kind: u16,
@@ -594,12 +600,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn object_access_updates_match_every_original_semantic_vector() {
-        let vectors: Vec<ObjectAccessOracleVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_149b_natural.json"
-        ))
-        .unwrap();
+    fn assert_object_access_vectors(vectors: Vec<ObjectAccessOracleVector>) {
         assert_eq!(vectors.len(), OBJECT_ACCESS_ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -620,6 +621,24 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn object_access_updates_match_every_original_semantic_vector() {
+        let vectors: Vec<ObjectAccessOracleVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_149b_natural.json"
+        ))
+        .unwrap();
+        assert_object_access_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_object_access_updates_match_every_direct_semantic_vector() {
+        let oracle: BigBugBangObjectAccessOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_object_access.json"
+        ))
+        .unwrap();
+        assert_object_access_vectors(oracle.rows);
     }
 
     #[test]
