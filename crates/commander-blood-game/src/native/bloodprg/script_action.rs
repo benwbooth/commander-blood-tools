@@ -581,7 +581,7 @@ fn dispatch_travel<Host: ScriptActionHost>(
             return Ok(ScriptActionDispatch::default());
         }
         ScriptTravelActionPhase::WaitingForPresentation => {
-            if presentation.c2_gate_active {
+            if runtime.camera_view_transition_steps != u8::MIN || presentation.c2_gate_active {
                 return Ok(ScriptActionDispatch::default());
             }
         }
@@ -786,6 +786,42 @@ mod tests {
     struct ActionOracle {
         name: String,
         record_kind: u16,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SequelTravelOracle {
+        name: String,
+        phase_before: u8,
+        camera_countdown_before: u8,
+        actor_busy_before: u8,
+        camera_view_active_before: u8,
+        presentation_gate_before: u8,
+        ui_flags_before: u8,
+        owner_relation_before: u16,
+        owner_position_before: u32,
+        related_comparison: u16,
+        related_match_relation: u16,
+        related_position_a: u32,
+        related_position_b: u32,
+        phase_after: u8,
+        actor_busy_after: u8,
+        camera_view_active_after: u8,
+        active_line_after: u16,
+        screen_rebuild_after: u8,
+        ui_flags_after: u8,
+        record_after: [u16; 3],
+        owner_relation_after: u16,
+        owner_position_after: u32,
+        calls: Vec<SequelTravelOracleCall>,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SequelTravelOracleCall {
+        name: String,
+        object_id: Option<u16>,
+        selector: Option<u8>,
+        kind: Option<u16>,
+        result: Option<usize>,
     }
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1136,6 +1172,166 @@ mod tests {
             );
         }
         assert_eq!(count, 24);
+    }
+
+    #[test]
+    fn sequel_c6_dispatch_matches_original_travel_vectors() {
+        const VECTOR_COUNT: usize = 8;
+        let vectors: Vec<SequelTravelOracle> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_script_travel.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(vectors.len(), VECTOR_COUNT);
+
+        let phase = |value| match value {
+            0 => ScriptTravelActionPhase::WaitingForActor,
+            1 => ScriptTravelActionPhase::WaitingForCamera,
+            2 => ScriptTravelActionPhase::WaitingForPresentation,
+            _ => panic!("invalid native travel phase {value}"),
+        };
+        let pair = |value: u32| [value as u16, (value >> 16) as u16];
+
+        for vector in vectors {
+            let mut fixture = Fixture::new();
+            fixture.action.travel_phase = phase(vector.phase_before);
+            fixture.action.travel_actor_busy = vector.actor_busy_before == 1;
+            fixture.action.camera_view_active = vector.camera_view_active_before == 1;
+            fixture.runtime.camera_view_transition_steps = vector.camera_countdown_before;
+            fixture.presentation.c2_gate_active = vector.presentation_gate_before & 1 != 0;
+            fixture.presentation.ui_busy = vector.ui_flags_before & 4 != 0;
+            set_word(
+                &mut fixture.state,
+                fixture.objects[ARCHE_INDEX],
+                ScriptFieldSelector::BLACK_HOLE_RELATION,
+                vector.owner_relation_before,
+            );
+            set_pair(
+                &mut fixture.state,
+                fixture.objects[ARCHE_INDEX],
+                ScriptFieldSelector::NAVIGATION_POSITION,
+                pair(vector.owner_position_before),
+            );
+            set_word(
+                &mut fixture.state,
+                fixture.objects[BLACK_HOLE_INDEX],
+                ScriptFieldSelector::BLACK_HOLE_COMPARISON,
+                vector.related_comparison,
+            );
+            set_word(
+                &mut fixture.state,
+                fixture.objects[BLACK_HOLE_INDEX],
+                ScriptFieldSelector::BLACK_HOLE_MATCH_RELATION,
+                vector.related_match_relation,
+            );
+            set_pair(
+                &mut fixture.state,
+                fixture.objects[BLACK_HOLE_INDEX],
+                ScriptFieldSelector::BLACK_HOLE_POSITION_A,
+                pair(vector.related_position_a),
+            );
+            set_pair(
+                &mut fixture.state,
+                fixture.objects[BLACK_HOLE_INDEX],
+                ScriptFieldSelector::BLACK_HOLE_POSITION_B,
+                pair(vector.related_position_b),
+            );
+
+            let mut expected_host_calls = Vec::new();
+            for call in &vector.calls {
+                match call.name.as_str() {
+                    "transition" => {
+                        assert_eq!(call.object_id, Some(4), "{}", vector.name);
+                        expected_host_calls.push(HostCall::StartCamera);
+                    }
+                    "hud_reset" => expected_host_calls.push(HostCall::ResetHud),
+                    "field" => {
+                        let selector = ScriptFieldSelector::new(call.selector.unwrap()).unwrap();
+                        let kind = ScriptObjectKind::decode(call.kind.unwrap()).unwrap();
+                        assert_eq!(
+                            script_field_offset(kind, selector),
+                            call.result,
+                            "{}",
+                            vector.name
+                        );
+                    }
+                    name => panic!("unknown native travel call {name}"),
+                }
+            }
+
+            let black_hole = fixture.objects[BLACK_HOLE_INDEX];
+            let mut host = MockHost::default();
+            let dispatch = fixture
+                .dispatch(
+                    ARCHE_INDEX,
+                    ScriptActionRecord::Travel(black_hole),
+                    &mut host,
+                )
+                .unwrap();
+            assert_eq!(host.calls, expected_host_calls, "{}", vector.name);
+            assert_eq!(
+                fixture.action.travel_phase,
+                phase(vector.phase_after),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                fixture.action.travel_actor_busy,
+                vector.actor_busy_after == 1,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                fixture.action.camera_view_active,
+                vector.camera_view_active_after == 1,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                fixture.action.active_line,
+                match vector.active_line_after {
+                    0 => None,
+                    44 => Some(ScriptActionPresentationLine::TravelReady),
+                    line => panic!("unmapped native presentation line {line}"),
+                },
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                fixture.action.screen_rebuild_requested,
+                vector.screen_rebuild_after == 1,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                fixture.presentation.ui_busy,
+                vector.ui_flags_after & 4 != 0,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                dispatch.disposition,
+                if vector.record_after[0] == 0 {
+                    ScriptActionDisposition::Clear
+                } else {
+                    ScriptActionDisposition::Retain
+                },
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                relation(&fixture.state, fixture.objects[ARCHE_INDEX]),
+                vector.owner_relation_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                position(&fixture.state, fixture.objects[ARCHE_INDEX]),
+                pair(vector.owner_position_after),
+                "{}",
+                vector.name
+            );
+        }
     }
 
     #[test]

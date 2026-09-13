@@ -1740,3 +1740,25 @@ matches all ten bounded native outputs and rejects the two synthetic segment-wra
 be represented by a checked 320x200 surface. The selector is therefore a proven representation
 difference, not missing text behavior. This classifies BBB `0x37A8` from the structural audit queue;
 it does not prove the entire choice panel pixel-identical or classify the adjacent `0x38FC` routine.
+
+## 2026-09-12 - Big Bug Bang C6 post-frame travel dispatch
+
+BBB's structurally unmatched `0x613F` post-frame dispatcher contains a relocated C6 travel arm at
+`0x6432..0x652D`. The earlier travel-option fixture directly probed downstream gates, not this owner
+of the phase, action-record and navigation-relation writes. The new
+`re/tools/big_bug_bang_script_travel_oracle.py` executes the complete unchanged dispatcher through
+eight C6 cases while running the real `0x6633` field-offset helper. It captures only the established
+camera-transition and ship-HUD far-call APIs.
+
+The cases cover the actor-ready gate, camera start, nonzero countdown in both nonzero phases, line
+44 handoff, the presentation gate, final record clearing, and matching/mismatching black-hole
+position selection. The oracle checks exact global and VAR images, all write ownership, native
+field-helper call order and results, callback arguments, executable immutability, registers,
+segments, and the near/far stack frames. Its checked-in eight-row report has SHA-256
+`17f2ec2e04dd01af007167f9833dbf3b2009503ae66a1eb60da8cebbfd5a6446`.
+
+This direct run exposed a shared-port defect: Rust finalized `WaitingForPresentation` even when the
+camera countdown had become nonzero, while native C6 gates every nonzero phase on that countdown.
+The dispatcher now retains the phase-two action until the countdown returns to zero and matches all
+eight original cases. This behaviorally classifies the C6 arm only. C1-C4, C9 and CD still require
+direct `0x613F` entry coverage before the whole structurally unmatched routine can be classified.

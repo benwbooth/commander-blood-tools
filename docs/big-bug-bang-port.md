@@ -3499,6 +3499,39 @@ extent. This classifies one more entry from the 126-entry structural audit queue
 as inherited behavior; it does not change the generated comparison count or
 establish parity for unrelated presentation paths.
 
+## Sequel C6 Travel Dispatcher
+
+The expanded comparison leaves BBB's post-frame action dispatcher at `0x613F`
+structurally unmatched. Its C6 arm at `0x6432..0x652D` is a 251-byte relocated
+form of the Commander travel state machine, but the previous BBB travel oracle
+only entered four downstream gates independently. It did not execute the C6
+dispatcher or prove its record, relation, and position writes.
+
+```sh
+nix develop -c python3 -P re/tools/big_bug_bang_script_travel_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_script_travel.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_c6_dispatch_matches_original_travel_vectors
+```
+
+The new oracle executes the complete unchanged `0x613F` routine through eight
+C6 cases and lets the original `0x6633` field helper run. Only the established
+camera-transition and ship-HUD far-call boundaries are captured. The cases
+cover the actor gate, transition start, camera waits in phases one and two,
+line 44 handoff, presentation blocking, action-record clearing, and both
+black-hole relation/position branches. Exact global and VAR images, write
+ownership, helper order and results, registers, segments, executable bytes,
+and stack discipline are checked. The deterministic vector file has SHA-256
+`17f2ec2e04dd01af007167f9833dbf3b2009503ae66a1eb60da8cebbfd5a6446`.
+
+The direct comparison found one port defect: native C6 retains the action while
+the camera countdown is nonzero in every nonzero phase, whereas Rust previously
+applied that guard only while waiting for the camera. Rust now preserves a
+phase-two action when the countdown is renewed and matches all eight native
+vectors. This proves the C6 arm, not the dispatcher's separate C1-C4, C9, or CD
+arms, and does not establish an end-to-end black-hole travel route.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
