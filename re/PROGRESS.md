@@ -3453,3 +3453,40 @@ The five body SHA-256 values are
 and `22b956a9f577da6fbf84f215ae52e51865c8031cbd92196f731e269948d771db`.
 The deterministic JSONL SHA-256 is
 `cadf56f0a16609bdf358958e48e5c0e3e27b8a7592e35d49fb6cfc6f62734c71`.
+
+## 2026-09-13 - Big Bug Bang Ultrasound data transfers
+
+BBB's Gravis page transfer at `0xDBD4..0xDC92` contains 73 instructions in
+190 bytes. It resolves the signed storage selector exactly like the shared
+page dispatcher, maps the selected even or odd 8 KiB half of an EMS page or
+stages one 8 KiB XMS/file read, then calls the proven DRAM uploader at
+`0xDDF8`. The file route ignores the DOS read count and uploads the entire
+buffer, including an unchanged tail after a short read. The XMS route also
+clears the high half of returned `EAX` because it loads full `EAX` before its
+far callback but restores only `AX`.
+
+The streamed-bank transfer at `0xDC92..0xDCE5` contains 31 instructions in
+83 bytes. It disables interrupts around repeated DOS reads of at most 32,000
+bytes, uploads each actual nonzero read, advances Gravis DRAM and decreases the
+remaining count by that returned size, and restores the caller's flags. A
+short read therefore produces another bounded iteration rather than being
+treated as end-of-file.
+
+The new `re/tools/big_bug_bang_ultrasound_transfer_oracle.py` executes eight
+cases across both outcomes of all five conditional sites, or ten edges. It
+covers signed selector boundaries, both EMS halves, exact XMS request and far
+frame, exact file seeks and reads, a stale-tail short page, tiny and exact
+32,000-byte transfers, multi-iteration short reads, and 64 KiB Gravis address
+crossings. Every case executes the real `0xDDF8` uploader and checks its entire
+port transcript plus callback inputs, registers, defined flags, stack bounds,
+all mapped memory, executable immutability, and write ownership.
+
+The typed stream page view consumes all five page rows while retaining owned
+16 KiB host pages, and the typed SND bank loader consumes all three streamed
+rows while retaining one exact decoded payload. They eliminate backend staging,
+stale tails, interrupt masking, and Gravis addresses without a production
+hardware branch. The two body SHA-256 values are
+`37767389b08ee4fdbfd93cfb7c7a01d7398d2e63fd4265a43d15020d0ec7c10e` and
+`1bd176c3d14b171e7806e59bb6e5bc03f15a17a0c8272f724b2431ed570e4b03`.
+The deterministic JSONL SHA-256 is
+`41dab0c7e015c88fcb3d18a8e64897819652df0351be3d426b935486766e88de`.

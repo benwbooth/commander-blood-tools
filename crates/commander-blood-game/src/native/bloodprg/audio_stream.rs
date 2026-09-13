@@ -49,7 +49,9 @@ impl AudioStreamSource {
     ///
     /// This flat view replaces the storage dispatchers and their EMS, XMS, and
     /// file helpers at BLOODPRG `0x00BD09..0x00BDB7` and Big Bug Bang
-    /// `0x00D4B3..0x00D561` after import owns the complete payload.
+    /// `0x00D4B3..0x00D561` after import owns the complete payload. BBB's
+    /// Gravis-only 8 KiB transfer at `0x00DBD4..0x00DC92` becomes a slice of the
+    /// same owned 16 KiB host page.
     fn page(&self, index: u16) -> Option<&[u8]> {
         let start = usize::from(index).checked_mul(AUDIO_STREAM_PAGE_BYTE_COUNT)?;
         let end = start
@@ -491,6 +493,7 @@ mod tests {
     const START_ORACLE_VECTOR_COUNT: usize = 6;
     const REFILL_ORACLE_VECTOR_COUNT: usize = 9;
     const ULTRASOUND_STREAM_ORACLE_VECTOR_COUNT: usize = 19;
+    const ULTRASOUND_PAGE_TRANSFER_ORACLE_VECTOR_COUNT: usize = 5;
     const TEST_FILE_HEADER_BYTE: u8 = 90;
     const TEST_BLOCK_HEADER: [u8; SND_CLIP_HEADER_BYTE_COUNT] = [34, 17, 68, 51, 102, 85];
 
@@ -563,6 +566,23 @@ mod tests {
         page_after: Option<u16>,
         loaded_buffer: Option<usize>,
         submitted_buffer: Option<usize>,
+    }
+
+    #[derive(Deserialize)]
+    struct UltrasoundPageTransferOracle {
+        routine: String,
+        name: String,
+        backend: Option<String>,
+        selector: Option<u8>,
+        page: Option<u16>,
+        source_byte_offset: Option<usize>,
+        read_bytes: Option<usize>,
+        payload_bytes: Option<usize>,
+        destination: Option<u32>,
+        crossed_bank: Option<bool>,
+        port_writes: usize,
+        payload_sha256: Option<String>,
+        source_sha256: Option<String>,
     }
 
     #[test]
@@ -738,6 +758,68 @@ mod tests {
                     &payload[..AUDIO_STREAM_PAGE_BYTE_COUNT],
                     "{source_name} mode {mode:#04x}"
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn owned_page_view_replaces_ultrasound_page_transfer_vectors() {
+        let vectors: Vec<UltrasoundPageTransferOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ultrasound_transfer.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str::<UltrasoundPageTransferOracle>(line).unwrap())
+        .filter(|vector| vector.routine == "page")
+        .collect();
+        assert_eq!(vectors.len(), ULTRASOUND_PAGE_TRANSFER_ORACLE_VECTOR_COUNT);
+        for (backend, expected) in [("ems", 2), ("xms", 1), ("file", 2)] {
+            assert_eq!(
+                vectors
+                    .iter()
+                    .filter(|vector| vector.backend.as_deref() == Some(backend))
+                    .count(),
+                expected,
+                "{backend} fixture count"
+            );
+        }
+        let mut selectors = vectors
+            .iter()
+            .map(|vector| vector.selector.unwrap())
+            .collect::<Vec<_>>();
+        selectors.sort_unstable();
+        assert_eq!(selectors, [0, 1, 2, 128, 129]);
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let page = usize::from(vector.page.unwrap());
+            let source_offset = vector.source_byte_offset.unwrap();
+            let transfer_bytes = vector.payload_bytes.unwrap();
+            assert_eq!(transfer_bytes, AUDIO_STREAM_PAGE_BYTE_COUNT / 2);
+            assert_eq!(source_offset, page * transfer_bytes, "{}", vector.name);
+
+            let payload = generated_page_bytes(source_offset + transfer_bytes, case_index);
+            let source = source_from_payload(&payload).unwrap();
+            let host_page_index = source_offset / AUDIO_STREAM_PAGE_BYTE_COUNT;
+            let within_page = source_offset % AUDIO_STREAM_PAGE_BYTE_COUNT;
+            let host_page = source.page(host_page_index as u16).unwrap();
+            assert_eq!(
+                &host_page[within_page..within_page + transfer_bytes],
+                &payload[source_offset..source_offset + transfer_bytes],
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                vector.crossed_bank.unwrap(),
+                vector.destination.unwrap() >> 16
+                    != (vector.destination.unwrap() + transfer_bytes as u32) >> 16,
+                "{}",
+                vector.name
+            );
+            assert!(vector.port_writes > transfer_bytes);
+            if vector.read_bytes.unwrap() < transfer_bytes {
+                assert_eq!(vector.backend.as_deref(), Some("file"));
+                assert_ne!(vector.payload_sha256, vector.source_sha256);
+            } else {
+                assert_eq!(vector.payload_sha256, vector.source_sha256);
             }
         }
     }

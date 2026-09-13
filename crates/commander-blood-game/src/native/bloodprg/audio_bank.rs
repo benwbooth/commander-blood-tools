@@ -26,7 +26,8 @@ pub struct LoadedSoundBank {
 /// `0x00D7EC`. The original resident-versus-streamed intent remains explicit,
 /// while archive handles, temporary files, EMS/XMS selection, page mapping,
 /// transfer chunks, and BBB's Ultrasound delegates collapse into one validated
-/// owned payload supplied by the resource layer.
+/// owned payload supplied by the resource layer. That includes the streamed
+/// file-to-Gravis loop at BBB `0x00DC92..0x00DCE5`.
 pub fn load_sound_bank(
     playback_enabled: bool,
     usage: SoundBankUsage,
@@ -49,6 +50,7 @@ mod tests {
 
     const COMMANDER_ORACLE_VECTOR_COUNT: usize = 12;
     const SEQUEL_ORACLE_VECTOR_COUNT: usize = 14;
+    const ULTRASOUND_STREAM_TRANSFER_ORACLE_VECTOR_COUNT: usize = 3;
     const TEST_DELAY_BASE: u8 = 90;
     const TEST_DELAY_LIMIT: u8 = 165;
 
@@ -62,6 +64,19 @@ mod tests {
         clip_count: Option<u16>,
         payload_bytes: Option<usize>,
         payload_chunks: Vec<usize>,
+    }
+
+    #[derive(Deserialize)]
+    struct UltrasoundStreamTransferOracle {
+        routine: String,
+        name: String,
+        total_bytes: Option<usize>,
+        read_requests: Option<Vec<usize>>,
+        read_returns: Option<Vec<usize>>,
+        destination: Option<u32>,
+        final_destination: Option<u32>,
+        crossed_bank: Option<bool>,
+        port_writes: usize,
     }
 
     #[test]
@@ -165,6 +180,67 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[test]
+    fn owned_streamed_bank_replaces_ultrasound_transfer_vectors() {
+        let vectors: Vec<UltrasoundStreamTransferOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ultrasound_transfer.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str::<UltrasoundStreamTransferOracle>(line).unwrap())
+        .filter(|vector| vector.routine == "stream")
+        .collect();
+        assert_eq!(
+            vectors.len(),
+            ULTRASOUND_STREAM_TRANSFER_ORACLE_VECTOR_COUNT
+        );
+
+        for (case_index, vector) in vectors.into_iter().enumerate() {
+            let total_bytes = vector.total_bytes.unwrap();
+            let requests = vector.read_requests.unwrap();
+            let returns = vector.read_returns.unwrap();
+            assert_eq!(
+                returns.iter().sum::<usize>(),
+                total_bytes,
+                "{}",
+                vector.name
+            );
+            assert_eq!(requests.len(), returns.len(), "{}", vector.name);
+            assert!(
+                requests.iter().all(|request| *request <= 32_000),
+                "{}",
+                vector.name
+            );
+            assert!(
+                requests
+                    .iter()
+                    .zip(&returns)
+                    .all(|(request, returned)| returned <= request),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                vector.final_destination.unwrap(),
+                vector.destination.unwrap() + total_bytes as u32,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                vector.crossed_bank.unwrap(),
+                vector.destination.unwrap() >> 16 != vector.final_destination.unwrap() >> 16,
+                "{}",
+                vector.name
+            );
+            assert!(vector.port_writes > total_bytes, "{}", vector.name);
+
+            let encoded = encoded_bank(2, total_bytes, case_index);
+            let loaded = load_sound_bank(true, SoundBankUsage::StreamedDialogue, &encoded)
+                .unwrap()
+                .unwrap();
+            assert_eq!(loaded.usage, SoundBankUsage::StreamedDialogue);
+            assert_eq!(loaded.bank.payload().len(), total_bytes);
         }
     }
 
