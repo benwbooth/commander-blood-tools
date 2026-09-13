@@ -1227,6 +1227,17 @@ impl OriginalGameRuntime {
             .draw_main_line(&mut self.ui_overlay, text, origin, color)
     }
 
+    pub(super) fn draw_location_panel_stat(
+        &mut self,
+        origin: [i32; 2],
+        size: [u16; 2],
+        color: u8,
+    ) -> Result<()> {
+        let color = self.data.dialogue_ui_assets.color(color)?;
+        self.ui_overlay.fill_rect(origin, size, color);
+        Ok(())
+    }
+
     /// Populate one checked bridge sprite slot from a cached resource frame.
     pub(super) fn populate_cached_bridge_sprite(
         &mut self,

@@ -336,10 +336,12 @@ pub use input_selection::{
 };
 pub use location_panel::{
     LocationInfoPanelContext, LocationInfoPanelHost, LocationInfoPanelOutcome,
-    LocationInfoPanelState, LocationPanelArtwork, LocationPanelInterpolation,
-    LocationPanelLocation, LocationPanelPhase, LocationPanelRect, LocationPanelRects,
-    LocationPanelSource, LocationPanelSpriteRange, LocationPanelTextDraw,
-    LocationPanelTransitionProgress, update_location_info_panel,
+    LocationInfoPanelState, LocationPanelActorDetails, LocationPanelArtwork,
+    LocationPanelChoiceMode, LocationPanelDetailLabels, LocationPanelInput,
+    LocationPanelInterpolation, LocationPanelLocation, LocationPanelPhase, LocationPanelRect,
+    LocationPanelRects, LocationPanelSource, LocationPanelSpriteRange, LocationPanelStatDraw,
+    LocationPanelTextDraw, LocationPanelTransitionProgress, LocationPanelVariant,
+    update_location_info_panel,
 };
 pub use location_panel_geometry::{
     LocationPanelGeometry, LocationPanelGeometryHost, LocationPanelGeometryState,

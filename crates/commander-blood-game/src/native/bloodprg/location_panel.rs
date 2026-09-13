@@ -7,11 +7,20 @@ use super::{LocationPanelGeometryState, NavigationStatusLabels, NavigationStatus
 const SOURCE_WIDTH_NUMERATOR: u16 = 14;
 const SOURCE_WIDTH_SHIFT: u32 = 5;
 const PANEL_TEXT_X: u16 = 110;
+const SEQUEL_PANEL_TITLE_X: u16 = 108;
 const PANEL_TITLE_Y: u16 = 25;
 const PANEL_TEXT_ROW_HEIGHT: u16 = 10;
 const PANEL_NAME_GAP: u16 = 6;
 const PANEL_TITLE_COLOR: u8 = 238;
 const PANEL_SOURCE_COLOR: u8 = 254;
+const SEQUEL_POPULATION_COLOR: u8 = 98;
+const SEQUEL_AGGRESSIVENESS_COLOR: u8 = 252;
+const SEQUEL_ENERGY_COLOR: u8 = 254;
+const SEQUEL_EVOLUTION_COLOR: u8 = 96;
+const SEQUEL_STAT_X: u16 = 205;
+const SEQUEL_STAT_HEIGHT: u16 = 8;
+const SEQUEL_STAT_DIVISOR: u16 = 20;
+const SEQUEL_CANDIDATE_RIGHT: u16 = 250;
 
 /// One typed world-art lookup entry used by the location panel.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -29,21 +38,82 @@ pub struct LocationPanelLocation<'a, LocationId> {
     pub id: LocationId,
     /// Semantic title category.
     pub kind: NavigationStatusLocationKind,
+    /// Whether BBB should scan this object for nested location candidates.
+    pub allows_sublocations: bool,
     /// Authored game-font name bytes.
     pub name: &'a [u8],
 }
 
-/// One source object considered for the life-support list.
+/// Numeric fields displayed for one sequel actor.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LocationPanelActorDetails {
+    /// Signed population value formatted as decimal text.
+    pub population: i16,
+    /// Signed aggressiveness value and raw-word bar source.
+    pub aggressiveness: i16,
+    /// Signed energy value, clamped at zero for its bar only.
+    pub energy: i16,
+    /// Signed evolution value and raw-word bar source.
+    pub evolution: i16,
+}
+
+/// One source object considered for Commander life support or BBB details.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LocationPanelSource {
+pub struct LocationPanelSource<LocationId> {
+    /// Stable source-object identity.
+    pub id: LocationId,
     /// Decoded source-object kind.
     pub kind: ScriptObjectKind,
     /// Whether the object currently participates in world state.
     pub active: bool,
+    /// Whether the object passes BBB's location-candidate participation gate.
+    pub in_play: bool,
     /// Number of life-support visits recorded by the game.
     pub life_support_visits: u16,
     /// Authored game-font name bytes.
     pub name: Box<[u8]>,
+    /// BBB actor statistics when the record carries its detail-display flag.
+    pub actor_details: Option<LocationPanelActorDetails>,
+}
+
+/// BBB-only labels drawn in the detailed location panel.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LocationPanelDetailLabels<'a> {
+    /// Selected sublocation title.
+    pub location: &'a [u8],
+    /// Leader-name label.
+    pub leader: &'a [u8],
+    /// Population value label.
+    pub population: &'a [u8],
+    /// Aggressiveness bar label.
+    pub aggressiveness: &'a [u8],
+    /// Energy bar label.
+    pub energy: &'a [u8],
+    /// Evolution bar label.
+    pub evolution: &'a [u8],
+}
+
+/// Game-specific location-panel behavior and required data.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LocationPanelVariant<'a, LocationId> {
+    /// Commander Blood's life-support roster and immediate close step.
+    CommanderBlood,
+    /// Big Bug Bang's sublocation chooser and actor statistics.
+    BigBugBang {
+        /// Arche binding excluded from the sublocation candidate list.
+        excluded_location: LocationId,
+        /// Exact executable-authored detail labels.
+        labels: LocationPanelDetailLabels<'a>,
+    },
+}
+
+/// Mutable pointer input consumed by one location-panel call.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct LocationPanelInput {
+    /// Current unsigned logical pointer position.
+    pub pointer: [u16; 2],
+    /// Primary pointer edge, cleared when the panel handles it.
+    pub primary_pressed: bool,
 }
 
 /// Signed rectangle retained from the original logical framebuffer geometry.
@@ -95,6 +165,18 @@ pub enum LocationPanelPhase {
     Closing,
 }
 
+/// BBB sublocation display mode replacing its packed choice byte.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LocationPanelChoiceMode {
+    /// Show the selected chart location directly.
+    #[default]
+    None,
+    /// Show the eligible sublocation list.
+    CandidateList,
+    /// Show one selected sublocation and its actor details.
+    LocationDetails,
+}
+
 /// Mutable panel state shared by its dispatcher and geometry routine.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LocationInfoPanelState<LocationId> {
@@ -110,6 +192,12 @@ pub struct LocationInfoPanelState<LocationId> {
     pub selected_location: Option<LocationId>,
     /// Deferred navigation link, cleared with the selected object.
     pub deferred_record_link: Option<LocationId>,
+    /// BBB sublocation chooser mode.
+    pub choice_mode: LocationPanelChoiceMode,
+    /// Number of eligible BBB sublocations found in the latest frame.
+    pub candidate_count: usize,
+    /// BBB sublocation currently under inspection or the pointer.
+    pub hovered_location: Option<LocationId>,
 }
 
 impl<LocationId> Default for LocationInfoPanelState<LocationId> {
@@ -121,6 +209,9 @@ impl<LocationId> Default for LocationInfoPanelState<LocationId> {
             transition: LocationPanelTransitionProgress::default(),
             selected_location: None,
             deferred_record_link: None,
+            choice_mode: LocationPanelChoiceMode::default(),
+            candidate_count: usize::MIN,
+            hovered_location: None,
         }
     }
 }
@@ -150,6 +241,19 @@ pub struct LocationPanelTextDraw<'a> {
     pub text: &'a [u8],
     /// Original logical pixel origin.
     pub position: [u16; 2],
+    /// Original indexed-palette color.
+    pub color: u8,
+}
+
+/// One solid BBB statistic rectangle.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LocationPanelStatDraw {
+    /// Original logical pixel origin.
+    pub position: [u16; 2],
+    /// Rectangle width after native integer scaling.
+    pub width: u16,
+    /// Rectangle height.
+    pub height: u16,
     /// Original indexed-palette color.
     pub color: u8,
 }
@@ -201,7 +305,13 @@ pub trait LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent> {
     fn navigation_sources(
         &mut self,
         location: &LocationId,
-    ) -> Result<Vec<LocationPanelSource>, Self::Error>;
+    ) -> Result<Vec<LocationPanelSource<LocationId>>, Self::Error>;
+
+    /// Format one signed native word as decimal game-font bytes.
+    fn format_panel_integer(&mut self, value: i16) -> Box<[u8]>;
+
+    /// Draw one solid BBB statistic rectangle.
+    fn draw_panel_stat(&mut self, draw: LocationPanelStatDraw);
 
     /// Release the panel entity after its closing transition.
     fn release_panel_entity(&mut self);
@@ -216,12 +326,10 @@ pub struct LocationInfoPanelContext<'a, ResourceId, LocationId, ComparisonExtent
     pub artwork: &'a [LocationPanelArtwork<'a, ResourceId>],
     /// Authored title and life-support labels.
     pub labels: NavigationStatusLabels<'a>,
+    /// Game-specific steady-panel behavior and data.
+    pub variant: LocationPanelVariant<'a, LocationId>,
     /// Current and target interpolation rectangles.
     pub rects: LocationPanelRects,
-    /// Current logical mouse position used when installing artwork.
-    pub pointer: [u16; 2],
-    /// Primary mouse edge that begins closing from steady state.
-    pub primary_pressed: bool,
     /// Inherited entity extent context.
     pub comparison_extent: &'a ComparisonExtent,
 }
@@ -238,8 +346,8 @@ pub enum LocationInfoPanelOutcome {
     Steady {
         /// Whether opening completed earlier in this same call.
         opening_completed: bool,
-        /// Number of eligible life-support names drawn.
-        life_support_count: usize,
+        /// Number of roster, candidate, or detail records drawn.
+        displayed_record_count: usize,
     },
     /// Closing animation remains in progress.
     Closing {
@@ -259,24 +367,32 @@ pub enum LocationInfoPanelOutcome {
 
 /// Update location-panel artwork, animation, labels, and close lifecycle.
 ///
-/// This translates `location_info_panel_dispatch` at BLOODPRG routine offset
-/// `0x009083`. Typed resources and world objects replace record offsets, far
-/// strings, the terminated art table, and a stack-owned source list. Explicit
-/// phases, rectangles, progress, and renderer operations replace packed state
-/// bytes and framebuffer globals while preserving helper order and wrapping
-/// scale arithmetic.
+/// This translates `location_info_panel_dispatch` at BLOODPRG file offset
+/// `0x009083` and BLOOD2PG file offset `0x00A5E0`. Typed resources and world
+/// objects replace record offsets, far strings, the terminated art table, and a
+/// stack-owned source list. Explicit phases, rectangles, progress, and renderer
+/// operations replace packed state bytes and framebuffer globals while
+/// preserving helper order and wrapping scale arithmetic.
 pub fn update_location_info_panel<ResourceId, LocationId, ComparisonExtent, Host>(
     context: LocationInfoPanelContext<'_, ResourceId, LocationId, ComparisonExtent>,
     state: &mut LocationInfoPanelState<LocationId>,
+    input: &mut LocationPanelInput,
     host: &mut Host,
 ) -> Result<LocationInfoPanelOutcome, Host::Error>
 where
+    LocationId: Clone + PartialEq,
     Host: LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent>,
 {
     let mut opening_completed = false;
     if state.phase == LocationPanelPhase::Opening {
+        if matches!(context.variant, LocationPanelVariant::BigBugBang { .. }) {
+            state.choice_mode = LocationPanelChoiceMode::None;
+            state.candidate_count = usize::MIN;
+            state.hovered_location = None;
+            input.primary_pressed = false;
+        }
         let artwork_installed = if state.geometry.scale_step == u8::MIN {
-            install_matching_artwork(&context, state, host)?
+            install_matching_artwork(&context, state, input.pointer, host)?
         } else {
             false
         };
@@ -298,18 +414,30 @@ where
     }
 
     if state.phase == LocationPanelPhase::Steady {
-        if !context.primary_pressed {
-            let life_support_count = draw_steady_panel(&context, host)?;
-            return Ok(LocationInfoPanelOutcome::Steady {
-                opening_completed,
-                life_support_count,
+        if matches!(context.variant, LocationPanelVariant::BigBugBang { .. }) {
+            let displayed_record_count = draw_sequel_panel(&context, state, input, host)?;
+            return Ok(if state.phase == LocationPanelPhase::Closing {
+                LocationInfoPanelOutcome::Closing {
+                    initiated: true,
+                    opening_completed,
+                }
+            } else {
+                LocationInfoPanelOutcome::Steady {
+                    opening_completed,
+                    displayed_record_count,
+                }
             });
         }
 
-        state.active = false;
-        state.phase = LocationPanelPhase::Closing;
-        state.transition.current = u8::MIN;
-        state.geometry.scale_step = state.geometry.scale_step.wrapping_add(1);
+        if !input.primary_pressed {
+            let displayed_record_count = draw_commander_panel(&context, host)?;
+            return Ok(LocationInfoPanelOutcome::Steady {
+                opening_completed,
+                displayed_record_count,
+            });
+        }
+
+        arm_panel_close(state);
         return Ok(close_panel_step(
             context,
             state,
@@ -331,6 +459,7 @@ where
 fn install_matching_artwork<ResourceId, LocationId, ComparisonExtent, Host>(
     context: &LocationInfoPanelContext<'_, ResourceId, LocationId, ComparisonExtent>,
     state: &mut LocationInfoPanelState<LocationId>,
+    pointer: [u16; 2],
     host: &mut Host,
 ) -> Result<bool, Host::Error>
 where
@@ -345,7 +474,7 @@ where
     };
 
     let artwork = host.load_panel_artwork(&entry.resource_id)?;
-    let source_stride = host.install_panel_artwork(artwork, context.pointer);
+    let source_stride = host.install_panel_artwork(artwork, pointer);
     state.geometry.source_width = u16::from(source_stride as u8)
         .wrapping_mul(SOURCE_WIDTH_NUMERATOR)
         .wrapping_shr(SOURCE_WIDTH_SHIFT);
@@ -353,7 +482,7 @@ where
     Ok(true)
 }
 
-fn draw_steady_panel<ResourceId, LocationId, ComparisonExtent, Host>(
+fn draw_commander_panel<ResourceId, LocationId, ComparisonExtent, Host>(
     context: &LocationInfoPanelContext<'_, ResourceId, LocationId, ComparisonExtent>,
     host: &mut Host,
 ) -> Result<usize, Host::Error>
@@ -394,7 +523,7 @@ where
 
     let sources = host.navigation_sources(&context.selected.id)?;
     let mut text_y = PANEL_TITLE_Y.wrapping_add(PANEL_TEXT_ROW_HEIGHT.wrapping_mul(2));
-    let mut life_support_count = usize::MIN;
+    let mut displayed_record_count = usize::MIN;
     for source in sources {
         if source.kind != ScriptObjectKind::Actor
             || !source.active
@@ -408,9 +537,240 @@ where
             color: PANEL_SOURCE_COLOR,
         });
         text_y = text_y.wrapping_add(PANEL_TEXT_ROW_HEIGHT);
-        life_support_count += 1;
+        displayed_record_count += 1;
     }
-    Ok(life_support_count)
+    Ok(displayed_record_count)
+}
+
+fn draw_sequel_panel<ResourceId, LocationId, ComparisonExtent, Host>(
+    context: &LocationInfoPanelContext<'_, ResourceId, LocationId, ComparisonExtent>,
+    state: &mut LocationInfoPanelState<LocationId>,
+    input: &mut LocationPanelInput,
+    host: &mut Host,
+) -> Result<usize, Host::Error>
+where
+    LocationId: Clone + PartialEq,
+    Host: LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent>,
+{
+    let LocationPanelVariant::BigBugBang {
+        excluded_location,
+        labels,
+    } = &context.variant
+    else {
+        unreachable!("sequel panel renderer requires sequel panel data");
+    };
+
+    host.render_panel_sprites(LocationPanelSpriteRange::PanelOnly);
+    host.remap_panel_rect(context.rects.target);
+
+    let mut candidates = Vec::new();
+    if context.selected.allows_sublocations {
+        candidates = host
+            .navigation_sources(&context.selected.id)?
+            .into_iter()
+            .filter(|source| {
+                source.id != *excluded_location
+                    && source.kind == ScriptObjectKind::Location
+                    && source.in_play
+            })
+            .collect();
+        state.candidate_count = candidates.len();
+    }
+    if candidates.len() == 1 {
+        state.hovered_location = Some(candidates[0].id.clone());
+        state.choice_mode = LocationPanelChoiceMode::LocationDetails;
+    }
+
+    let displayed_candidate = if state.choice_mode == LocationPanelChoiceMode::LocationDetails {
+        state
+            .hovered_location
+            .as_ref()
+            .and_then(|hovered| candidates.iter().find(|candidate| candidate.id == *hovered))
+    } else {
+        None
+    };
+    let (displayed_id, displayed_name) = displayed_candidate
+        .map_or((&context.selected.id, context.selected.name), |candidate| {
+            (&candidate.id, candidate.name.as_ref())
+        });
+    let title = if state.choice_mode == LocationPanelChoiceMode::LocationDetails {
+        labels.location
+    } else {
+        location_title(context.selected.kind, context.labels)
+    };
+    let title_width = host.draw_panel_text(LocationPanelTextDraw {
+        text: title,
+        position: [SEQUEL_PANEL_TITLE_X, PANEL_TITLE_Y],
+        color: PANEL_TITLE_COLOR,
+    });
+    host.draw_panel_text(LocationPanelTextDraw {
+        text: displayed_name,
+        position: [
+            SEQUEL_PANEL_TITLE_X
+                .wrapping_add(title_width)
+                .wrapping_add(PANEL_NAME_GAP),
+            PANEL_TITLE_Y,
+        ],
+        color: PANEL_TITLE_COLOR,
+    });
+
+    let mut displayed_record_count = usize::MIN;
+    let mut text_y = PANEL_TITLE_Y.wrapping_add(PANEL_TEXT_ROW_HEIGHT);
+    if context.selected.allows_sublocations
+        && state.choice_mode != LocationPanelChoiceMode::LocationDetails
+        && candidates.len() > 1
+    {
+        state.choice_mode = LocationPanelChoiceMode::CandidateList;
+        state.hovered_location = None;
+        for candidate in &candidates {
+            let hovered = input.pointer[0] >= PANEL_TEXT_X
+                && input.pointer[0] < SEQUEL_CANDIDATE_RIGHT
+                && input.pointer[1] >= text_y
+                && input.pointer[1] < text_y.wrapping_add(PANEL_TEXT_ROW_HEIGHT);
+            if hovered {
+                state.hovered_location = Some(candidate.id.clone());
+            }
+            host.draw_panel_text(LocationPanelTextDraw {
+                text: &candidate.name,
+                position: [PANEL_TEXT_X, text_y],
+                color: if hovered {
+                    PANEL_SOURCE_COLOR
+                } else {
+                    PANEL_TITLE_COLOR
+                },
+            });
+            text_y = text_y.wrapping_add(PANEL_TEXT_ROW_HEIGHT);
+            displayed_record_count += 1;
+        }
+        if input.primary_pressed && state.hovered_location.is_some() {
+            state.choice_mode = LocationPanelChoiceMode::LocationDetails;
+            input.primary_pressed = false;
+            return Ok(displayed_record_count);
+        }
+    } else if state.choice_mode != LocationPanelChoiceMode::CandidateList {
+        displayed_record_count = draw_sequel_actor_details(displayed_id, labels, host)?;
+    }
+
+    if !input.primary_pressed {
+        return Ok(displayed_record_count);
+    }
+    input.primary_pressed = false;
+    if state.choice_mode == LocationPanelChoiceMode::LocationDetails && state.candidate_count > 1 {
+        state.choice_mode = LocationPanelChoiceMode::CandidateList;
+        return Ok(displayed_record_count);
+    }
+    arm_panel_close(state);
+    Ok(displayed_record_count)
+}
+
+fn draw_sequel_actor_details<ResourceId, LocationId, ComparisonExtent, Host>(
+    location: &LocationId,
+    labels: &LocationPanelDetailLabels<'_>,
+    host: &mut Host,
+) -> Result<usize, Host::Error>
+where
+    Host: LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent>,
+{
+    for source in host.navigation_sources(location)? {
+        if source.kind != ScriptObjectKind::Actor || source.actor_details.is_none() {
+            continue;
+        }
+        if !source.active {
+            return Ok(usize::MIN);
+        }
+        let details = source
+            .actor_details
+            .expect("checked sequel actor has panel details");
+        draw_fixed_panel_text(host, labels.leader, [108, 35], PANEL_TITLE_COLOR);
+        draw_fixed_panel_text(host, &source.name, [148, 35], PANEL_TITLE_COLOR);
+        draw_fixed_panel_text(host, labels.population, [108, 45], SEQUEL_POPULATION_COLOR);
+        let population = host.format_panel_integer(details.population);
+        draw_fixed_panel_text(host, &population, [210, 45], SEQUEL_POPULATION_COLOR);
+        draw_sequel_stat(
+            host,
+            labels.aggressiveness,
+            55,
+            SEQUEL_AGGRESSIVENESS_COLOR,
+            details.aggressiveness,
+            false,
+        );
+        draw_sequel_stat(
+            host,
+            labels.energy,
+            65,
+            SEQUEL_ENERGY_COLOR,
+            details.energy,
+            true,
+        );
+        draw_sequel_stat(
+            host,
+            labels.evolution,
+            75,
+            SEQUEL_EVOLUTION_COLOR,
+            details.evolution,
+            false,
+        );
+        return Ok(1);
+    }
+    Ok(usize::MIN)
+}
+
+fn draw_sequel_stat<ResourceId, LocationId, ComparisonExtent, Host>(
+    host: &mut Host,
+    label: &[u8],
+    y: u16,
+    color: u8,
+    value: i16,
+    clamp_negative: bool,
+) where
+    Host: LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent>,
+{
+    draw_fixed_panel_text(host, label, [108, y], color);
+    let _formatted = host.format_panel_integer(value);
+    let scaled = if clamp_negative && value.is_negative() {
+        u16::MIN
+    } else {
+        (value as u16) / SEQUEL_STAT_DIVISOR
+    };
+    host.draw_panel_stat(LocationPanelStatDraw {
+        position: [SEQUEL_STAT_X, y],
+        width: scaled,
+        height: SEQUEL_STAT_HEIGHT,
+        color,
+    });
+}
+
+fn draw_fixed_panel_text<ResourceId, LocationId, ComparisonExtent, Host>(
+    host: &mut Host,
+    text: &[u8],
+    position: [u16; 2],
+    color: u8,
+) where
+    Host: LocationInfoPanelHost<ResourceId, LocationId, ComparisonExtent>,
+{
+    host.draw_panel_text(LocationPanelTextDraw {
+        text,
+        position,
+        color,
+    });
+}
+
+const fn location_title(
+    kind: NavigationStatusLocationKind,
+    labels: NavigationStatusLabels<'_>,
+) -> &[u8] {
+    match kind {
+        NavigationStatusLocationKind::Planet => labels.planet,
+        NavigationStatusLocationKind::Ship => labels.ship,
+        NavigationStatusLocationKind::BlackHole => labels.black_hole,
+    }
+}
+
+fn arm_panel_close<LocationId>(state: &mut LocationInfoPanelState<LocationId>) {
+    state.active = false;
+    state.phase = LocationPanelPhase::Closing;
+    state.transition.current = u8::MIN;
+    state.geometry.scale_step = state.geometry.scale_step.wrapping_add(1);
 }
 
 fn close_panel_step<ResourceId, LocationId, ComparisonExtent, Host>(
@@ -451,6 +811,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use serde::Deserialize;
 
     use super::*;
@@ -509,12 +871,14 @@ mod tests {
             color: u8,
         },
         SourceList(u16),
+        Integer(i16),
+        Stat(LocationPanelStatDraw),
         Release,
     }
 
     struct OracleHost {
         events: Vec<HostEvent>,
-        sources: Vec<LocationPanelSource>,
+        sources: BTreeMap<u16, Vec<LocationPanelSource<u16>>>,
     }
 
     impl LocationInfoPanelHost<u16, u16, ()> for OracleHost {
@@ -576,9 +940,18 @@ mod tests {
         fn navigation_sources(
             &mut self,
             location: &u16,
-        ) -> Result<Vec<LocationPanelSource>, Self::Error> {
+        ) -> Result<Vec<LocationPanelSource<u16>>, Self::Error> {
             self.events.push(HostEvent::SourceList(*location));
-            Ok(std::mem::take(&mut self.sources))
+            Ok(self.sources.get(location).cloned().unwrap_or_default())
+        }
+
+        fn format_panel_integer(&mut self, value: i16) -> Box<[u8]> {
+            self.events.push(HostEvent::Integer(value));
+            value.to_string().into_bytes().into_boxed_slice()
+        }
+
+        fn draw_panel_stat(&mut self, draw: LocationPanelStatDraw) {
+            self.events.push(HostEvent::Stat(draw));
         }
 
         fn release_panel_entity(&mut self) {
@@ -603,6 +976,7 @@ mod tests {
             let selected = LocationPanelLocation {
                 id: SELECTED_LOCATION,
                 kind: selected_kind(&vector.name),
+                allows_sublocations: false,
                 name: selected_name,
             };
             let artwork = [
@@ -629,6 +1003,9 @@ mod tests {
                 },
                 selected_location: Some(SELECTED_LOCATION),
                 deferred_record_link: Some(DEFERRED_LOCATION),
+                choice_mode: LocationPanelChoiceMode::None,
+                candidate_count: 0,
+                hovered_location: None,
             };
             let context = LocationInfoPanelContext {
                 selected: &selected,
@@ -639,21 +1016,28 @@ mod tests {
                     black_hole: b"BLACK HOLE: ",
                     life_support: b"LIFE SUPPORT:",
                 },
+                variant: LocationPanelVariant::CommanderBlood,
                 rects: panel_rects(),
+                comparison_extent: &(),
+            };
+            let mut input = LocationPanelInput {
                 pointer: [123, 77],
                 primary_pressed: vector.mouse & 1 != u8::MIN,
-                comparison_extent: &(),
             };
             let mut host = OracleHost {
                 events: Vec::new(),
-                sources: if vector.name.contains("eligible_life_support") {
-                    source_objects()
-                } else {
-                    Vec::new()
-                },
+                sources: BTreeMap::from([(
+                    SELECTED_LOCATION,
+                    if vector.name.contains("eligible_life_support") {
+                        source_objects()
+                    } else {
+                        Vec::new()
+                    },
+                )]),
             };
 
-            let outcome = update_location_info_panel(context, &mut state, &mut host).unwrap();
+            let outcome =
+                update_location_info_panel(context, &mut state, &mut input, &mut host).unwrap();
 
             assert_event_names(&vector, &host.events);
             assert_text_calls(&vector, &host.events);
@@ -689,26 +1073,30 @@ mod tests {
         }
     }
 
-    fn source_objects() -> Vec<LocationPanelSource> {
+    fn source_objects() -> Vec<LocationPanelSource<u16>> {
         vec![
-            source(ScriptObjectKind::Actor, true, 1, b"ELIGIBLE"),
-            source(ScriptObjectKind::CelestialBody, true, 1, b"WRONGKIND"),
-            source(ScriptObjectKind::Actor, false, 1, b"INACTIVE"),
-            source(ScriptObjectKind::Actor, true, 0, b"UNSEEN"),
+            source(1, ScriptObjectKind::Actor, true, 1, b"ELIGIBLE"),
+            source(2, ScriptObjectKind::CelestialBody, true, 1, b"WRONGKIND"),
+            source(3, ScriptObjectKind::Actor, false, 1, b"INACTIVE"),
+            source(4, ScriptObjectKind::Actor, true, 0, b"UNSEEN"),
         ]
     }
 
     fn source(
+        id: u16,
         kind: ScriptObjectKind,
         active: bool,
         life_support_visits: u16,
         name: &[u8],
-    ) -> LocationPanelSource {
+    ) -> LocationPanelSource<u16> {
         LocationPanelSource {
+            id,
             kind,
             active,
+            in_play: false,
             life_support_visits,
             name: Box::from(name),
+            actor_details: None,
         }
     }
 
@@ -723,6 +1111,8 @@ mod tests {
             HostEvent::Remap(_) => "remap",
             HostEvent::Text { .. } => "text",
             HostEvent::SourceList(_) => "source_list",
+            HostEvent::Integer(_) => "integer",
+            HostEvent::Stat(_) => "stat",
             HostEvent::Release => "transition",
         }
     }
@@ -815,7 +1205,7 @@ mod tests {
             },
             "opening_completion_enters_steady_state" => LocationInfoPanelOutcome::Steady {
                 opening_completed: true,
-                life_support_count: 0,
+                displayed_record_count: 0,
             },
             "closing_decrements_scale_and_waits" => LocationInfoPanelOutcome::Closing {
                 initiated: false,
@@ -832,12 +1222,12 @@ mod tests {
             "steady_planet_draws_only_eligible_life_support_source" => {
                 LocationInfoPanelOutcome::Steady {
                     opening_completed: false,
-                    life_support_count: 1,
+                    displayed_record_count: 1,
                 }
             }
             _ => LocationInfoPanelOutcome::Steady {
                 opening_completed: false,
-                life_support_count: 0,
+                displayed_record_count: 0,
             },
         };
         assert_eq!(outcome, expected_outcome, "{}", vector.name);
@@ -924,7 +1314,419 @@ mod tests {
                 HostEvent::Palette
                 | HostEvent::Geometry
                 | HostEvent::Render(_)
+                | HostEvent::Integer(_)
+                | HostEvent::Stat(_)
                 | HostEvent::Release => {}
+            }
+        }
+    }
+
+    #[derive(Deserialize)]
+    struct SequelPanelVector {
+        name: String,
+        phase_before: u8,
+        phase_after: u8,
+        scale_before: u8,
+        scale_after: u8,
+        primary_before: bool,
+        primary_after: bool,
+        interpolation_complete: bool,
+        choice_mode_after: u8,
+        candidate_count_after: usize,
+        hovered_location_after: u16,
+        panel_active_after: bool,
+        selected_after: u16,
+        deferred_after: u16,
+        calls: Vec<SequelOracleCall>,
+    }
+
+    #[derive(Deserialize)]
+    struct SequelOracleCall {
+        name: String,
+        text: Option<String>,
+        position: Option<[u16; 2]>,
+        color: Option<u16>,
+        value: Option<u16>,
+        extent: Option<u16>,
+    }
+
+    const EXCLUDED_LOCATION: u16 = 0x1900;
+    const LOCATION_A: u16 = 0x2000;
+    const LOCATION_B: u16 = 0x2100;
+    const WRONG_KIND: u16 = 0x2200;
+    const INACTIVE_LOCATION: u16 = 0x2300;
+    const DETAIL_WRONG: u16 = 0x3000;
+    const DETAIL_ACTOR: u16 = 0x3100;
+    const DETAIL_INACTIVE: u16 = 0x3200;
+    const DETAIL_NEGATIVE: u16 = 0x3300;
+
+    #[test]
+    fn sequel_panel_dispatch_matches_every_original_vector() {
+        let vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_location_panel.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str::<SequelPanelVector>(line).unwrap())
+        .collect::<Vec<_>>();
+        assert_eq!(vectors.len(), 20);
+
+        for vector in vectors {
+            let selected_name: &[u8] = if vector.name.contains("missing_art") {
+                b"MISSING"
+            } else {
+                b"TARGET"
+            };
+            let (kind, allows_sublocations) = sequel_selected_kind(&vector.name);
+            let selected = LocationPanelLocation {
+                id: SELECTED_LOCATION,
+                kind,
+                allows_sublocations,
+                name: selected_name,
+            };
+            let artwork = [
+                LocationPanelArtwork {
+                    location_name: b"OTHER",
+                    resource_id: 32,
+                },
+                LocationPanelArtwork {
+                    location_name: b"TARGET",
+                    resource_id: MATCHING_RESOURCE,
+                },
+            ];
+            let details_mode = vector.name.starts_with("selected_location_");
+            let mut state = LocationInfoPanelState {
+                phase: decode_phase(vector.phase_before),
+                active: true,
+                geometry: LocationPanelGeometryState {
+                    scale_step: vector.scale_before,
+                    source_width: INITIAL_SOURCE_WIDTH,
+                    ..LocationPanelGeometryState::default()
+                },
+                transition: LocationPanelTransitionProgress {
+                    current: if vector.interpolation_complete { 8 } else { 3 },
+                    total: 8,
+                },
+                selected_location: Some(SELECTED_LOCATION),
+                deferred_record_link: Some(DEFERRED_LOCATION),
+                choice_mode: if details_mode {
+                    LocationPanelChoiceMode::LocationDetails
+                } else {
+                    LocationPanelChoiceMode::None
+                },
+                candidate_count: 0,
+                hovered_location: details_mode.then_some(LOCATION_B),
+            };
+            let context = LocationInfoPanelContext {
+                selected: &selected,
+                artwork: &artwork,
+                labels: NavigationStatusLabels {
+                    planet: b"PLANETE: ",
+                    ship: b"VAISSEAU: ",
+                    black_hole: b"TROU NOIR: ",
+                    life_support: b"VIE PRESENTE:",
+                },
+                variant: LocationPanelVariant::BigBugBang {
+                    excluded_location: EXCLUDED_LOCATION,
+                    labels: sequel_detail_labels(),
+                },
+                rects: panel_rects(),
+                comparison_extent: &(),
+            };
+            let mut input = LocationPanelInput {
+                pointer: if vector.name.starts_with("candidate_") {
+                    [120, 47]
+                } else {
+                    [300, 190]
+                },
+                primary_pressed: vector.primary_before,
+            };
+            let mut host = OracleHost {
+                events: Vec::new(),
+                sources: sequel_sources(&vector.name),
+            };
+
+            let _outcome =
+                update_location_info_panel(context, &mut state, &mut input, &mut host).unwrap();
+
+            assert_sequel_events(&vector, &host.events);
+            assert_eq!(
+                state.phase,
+                decode_phase(vector.phase_after),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.geometry.scale_step, vector.scale_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(state.active, vector.panel_active_after, "{}", vector.name);
+            assert_eq!(
+                input.primary_pressed, vector.primary_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.choice_mode,
+                decode_choice_mode(vector.choice_mode_after),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.candidate_count, vector.candidate_count_after,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.hovered_location,
+                (vector.hovered_location_after != 0).then_some(vector.hovered_location_after),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.selected_location,
+                (vector.selected_after != 0).then_some(vector.selected_after),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                state.deferred_record_link,
+                (vector.deferred_after != 0).then_some(vector.deferred_after),
+                "{}",
+                vector.name
+            );
+        }
+    }
+
+    fn sequel_selected_kind(name: &str) -> (NavigationStatusLocationKind, bool) {
+        if name.contains("black_hole") {
+            (NavigationStatusLocationKind::BlackHole, false)
+        } else if name.contains("ship_title") {
+            (NavigationStatusLocationKind::Ship, false)
+        } else {
+            (
+                NavigationStatusLocationKind::Planet,
+                name.contains("planet_")
+                    || name.starts_with("candidate_")
+                    || name.starts_with("selected_location_")
+                    || name.starts_with("single_")
+                    || name.starts_with("inactive_presentable_")
+                    || name.starts_with("signed_statistics_"),
+            )
+        }
+    }
+
+    const fn sequel_detail_labels() -> LocationPanelDetailLabels<'static> {
+        LocationPanelDetailLabels {
+            location: b"LIEU:",
+            leader: b"CHEF",
+            population: b"POPULATION:",
+            aggressiveness: b"AGRESSIVITE:",
+            energy: b"ENERGIE:",
+            evolution: b"EVOLUTION:",
+        }
+    }
+
+    fn decode_choice_mode(value: u8) -> LocationPanelChoiceMode {
+        match value {
+            0 => LocationPanelChoiceMode::None,
+            1 => LocationPanelChoiceMode::CandidateList,
+            2 => LocationPanelChoiceMode::LocationDetails,
+            _ => panic!("unexpected original choice mode {value}"),
+        }
+    }
+
+    fn sequel_sources(name: &str) -> BTreeMap<u16, Vec<LocationPanelSource<u16>>> {
+        let details = vec![
+            sequel_source(
+                DETAIL_WRONG,
+                ScriptObjectKind::Actor,
+                true,
+                false,
+                b"WRONGDETAIL",
+                None,
+            ),
+            sequel_source(
+                DETAIL_ACTOR,
+                ScriptObjectKind::Actor,
+                true,
+                false,
+                b"LEADER",
+                Some(LocationPanelActorDetails {
+                    population: 1234,
+                    aggressiveness: 99,
+                    energy: 401,
+                    evolution: 78,
+                }),
+            ),
+        ];
+        let candidates = vec![
+            sequel_source(
+                EXCLUDED_LOCATION,
+                ScriptObjectKind::Location,
+                true,
+                true,
+                b"ARCHE",
+                None,
+            ),
+            sequel_source(
+                WRONG_KIND,
+                ScriptObjectKind::Actor,
+                false,
+                true,
+                b"WRONGKIND",
+                None,
+            ),
+            sequel_source(
+                INACTIVE_LOCATION,
+                ScriptObjectKind::Location,
+                false,
+                false,
+                b"INACTIVE",
+                None,
+            ),
+            sequel_source(
+                LOCATION_A,
+                ScriptObjectKind::Location,
+                false,
+                true,
+                b"FIRST",
+                None,
+            ),
+            sequel_source(
+                LOCATION_B,
+                ScriptObjectKind::Location,
+                false,
+                true,
+                b"SECOND",
+                None,
+            ),
+        ];
+        if name.contains("multiple_locations") || name.starts_with("candidate_") {
+            return BTreeMap::from([(SELECTED_LOCATION, candidates)]);
+        }
+        if name.starts_with("selected_location_") {
+            return BTreeMap::from([(SELECTED_LOCATION, candidates), (LOCATION_B, details)]);
+        }
+        if name.starts_with("single_") {
+            return BTreeMap::from([
+                (
+                    SELECTED_LOCATION,
+                    vec![sequel_source(
+                        LOCATION_A,
+                        ScriptObjectKind::Location,
+                        false,
+                        true,
+                        b"FIRST",
+                        None,
+                    )],
+                ),
+                (LOCATION_A, details),
+            ]);
+        }
+        if name.starts_with("inactive_presentable_") {
+            return BTreeMap::from([(
+                SELECTED_LOCATION,
+                vec![
+                    sequel_source(
+                        DETAIL_INACTIVE,
+                        ScriptObjectKind::Actor,
+                        false,
+                        false,
+                        b"INACTIVELEADER",
+                        Some(LocationPanelActorDetails {
+                            population: 0,
+                            aggressiveness: 0,
+                            energy: 0,
+                            evolution: 0,
+                        }),
+                    ),
+                    details[1].clone(),
+                ],
+            )]);
+        }
+        if name.starts_with("signed_statistics_") {
+            return BTreeMap::from([(
+                SELECTED_LOCATION,
+                vec![sequel_source(
+                    DETAIL_NEGATIVE,
+                    ScriptObjectKind::Actor,
+                    true,
+                    false,
+                    b"NEGATIVE",
+                    Some(LocationPanelActorDetails {
+                        population: -25,
+                        aggressiveness: -25,
+                        energy: -25,
+                        evolution: -25,
+                    }),
+                )],
+            )]);
+        }
+        if name.contains("eligible_actor_details") {
+            return BTreeMap::from([(SELECTED_LOCATION, details)]);
+        }
+        BTreeMap::new()
+    }
+
+    fn sequel_source(
+        id: u16,
+        kind: ScriptObjectKind,
+        active: bool,
+        in_play: bool,
+        name: &[u8],
+        actor_details: Option<LocationPanelActorDetails>,
+    ) -> LocationPanelSource<u16> {
+        LocationPanelSource {
+            id,
+            kind,
+            active,
+            in_play,
+            life_support_visits: 0,
+            name: Box::from(name),
+            actor_details,
+        }
+    }
+
+    fn assert_sequel_events(vector: &SequelPanelVector, events: &[HostEvent]) {
+        let expected = vector
+            .calls
+            .iter()
+            .filter(|call| call.name != "compare")
+            .collect::<Vec<_>>();
+        assert_eq!(events.len(), expected.len(), "{}", vector.name);
+        for (actual, expected) in events.iter().zip(expected) {
+            assert_eq!(event_name(actual), expected.name, "{}", vector.name);
+            match actual {
+                HostEvent::Text {
+                    text,
+                    position,
+                    color,
+                } => {
+                    assert_eq!(
+                        text.as_ref(),
+                        expected.text.as_deref().unwrap().as_bytes(),
+                        "{}",
+                        vector.name
+                    );
+                    assert_eq!(Some(*position), expected.position, "{}", vector.name);
+                    assert_eq!(Some(u16::from(*color)), expected.color, "{}", vector.name);
+                }
+                HostEvent::Integer(value) => {
+                    assert_eq!(Some(*value as u16), expected.value, "{}", vector.name);
+                }
+                HostEvent::Stat(draw) => {
+                    assert_eq!(Some(draw.position), expected.position, "{}", vector.name);
+                    assert_eq!(Some(draw.width), expected.value, "{}", vector.name);
+                    assert_eq!(Some(draw.height), expected.extent, "{}", vector.name);
+                    assert_eq!(
+                        Some(u16::from(draw.color)),
+                        expected.color,
+                        "{}",
+                        vector.name
+                    );
+                }
+                _ => {}
             }
         }
     }

@@ -1891,3 +1891,33 @@ callback argument and effect, wipe-copy hashes, registers, segments, stack disci
 immutability. The checked-in 13-row JSONL has SHA-256
 `4ec496cda2a80c7d93ee32595b91cc67718c3b63a99e90f5aa04e6e66bfe557c`. This behaviorally
 classifies BBB `0x9EDE`, not its captured callees, the panel dispatcher, or whole navigation parity.
+
+## 2026-09-12 - Big Bug Bang location-information panel
+
+BBB `0xA5E0..0xA98B` expands Commander Blood's already ported `0x9083` location-panel
+dispatcher with a sublocation chooser and actor statistics. The new
+`re/tools/big_bug_bang_location_panel_oracle.py` executes the complete unchanged 939-byte BBB body
+and its unchanged 72-byte `0xA98B..0xA9D3` candidate filter. It captures established string,
+resource, entity, palette, renderer, interpolation, remap, source-list, integer, statistic and
+transition routines only at their boundaries. The two bodies are guarded by SHA-256
+`737b757a50f829ff4a82425baddf8a84994cf43cba05703ea6d71efb82a38e8d` and
+`4e1f2d3f2e67c4d39129a1dc37c70dc0853bbd3f309020f7a2f3ed7258dd0439`.
+
+The first 11 cases retain the shared artwork, opening, steady-title, click, closing and release
+coverage. Nine sequel cases prove candidate filtering, list ordering, row hover and selection,
+details-to-list return, single-candidate auto-selection, actor details, inactive flagged-actor
+termination and signed statistic behavior. Candidate locations require kind `0x0080` and in-play
+bit two, exclude Arche and do not require the active bit. BBB formats population as signed, divides
+the raw unsigned aggression and evolution words by 20, and clamps only a negative energy bar to
+zero. It renders steady content before click handling and delays closing geometry until the next
+call.
+
+The Rust dispatcher now selects the game-specific panel behavior explicitly. The production
+runtime retains nested location records, decodes and localizes the six executable-authored detail
+labels, carries the actor flag and four statistic fields, propagates consumed input and draws the
+indexed-color bars. The 20-row fixture regression matches exact callbacks, text, positions, colors,
+values, state and input; a live imported-profile test covers nested world data. The oracle also
+checks the modeled 32 KiB global range, every read-only input image, callback effects, preserved
+segments, stack discipline and executable immutability. Its checked-in JSONL has SHA-256
+`921d260acc420912cc2eafc5d6fdcda8202ba19fbd1618719b98fa1d9749f673`. This behaviorally
+classifies BBB `0xA5E0` and `0xA98B`, not their captured callees or whole navigation parity.

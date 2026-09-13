@@ -3718,8 +3718,54 @@ discipline and executable immutability. The routine body is bound by SHA-256
 `83f540a41fa474430279ed4463e138277c9688b50823a8d06b8b6d73ab1b27ba`;
 the deterministic 13-row JSONL has SHA-256
 `4ec496cda2a80c7d93ee32595b91cc67718c3b63a99e90f5aa04e6e66bfe557c`.
-This behaviorally classifies BBB `0x9EDE`, not its captured callees, the
-location-panel body, or end-to-end navigation parity.
+This behaviorally classifies BBB `0x9EDE`, not its captured callees or
+end-to-end navigation parity.
+
+## Sequel Location-Information Panel
+
+BBB's `0xA5E0..0xA98B` location-information dispatcher is the expanded sequel
+counterpart of Commander Blood `0x9083`. The guarded oracle executes the
+complete unchanged 939-byte dispatcher and its unchanged 72-byte
+`0xA98B..0xA9D3` candidate filter while capturing established string, resource,
+entity, palette, renderer, interpolation, remap, source-list, integer, statistic
+and transition boundaries:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_location_panel_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_location_panel.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_panel_dispatch_matches_every_original_vector
+```
+
+The first 11 cases preserve the shared opening, artwork lookup, steady-title,
+closing and release coverage. BBB draws steady content before handling a click
+and arms a delayed close without running closing geometry in that call. Nine
+additional cases cover multi-location listing, row hover and selection, return
+from details to the list, single-candidate auto-selection, first eligible actor
+details, the inactive flagged-actor stop rule, and signed statistics. Candidate
+locations require kind `0x0080` and in-play bit two and exclude Arche; their
+active bit is irrelevant. Population is printed as a signed word. Aggressiveness
+and evolution bars divide the raw unsigned word by 20, while only a negative
+energy bar is clamped to zero.
+
+The typed dispatcher now selects Commander or BBB behavior explicitly. The
+runtime retains nested location records outside the chart roster, decodes the
+six exact executable labels, queries arbitrary selected locations, propagates
+consumed pointer input, and draws the recovered indexed-color statistic bars.
+The 20-row regression checks callback order, text, geometry, colors, values,
+state and input against the original fixture. A live imported-profile test
+also exercises nested locations and typed actor fields. The oracle checks the
+modeled 32 KiB global range, all read-only record, caller and resource images,
+callback arguments and effects, segment preservation, stack discipline and
+executable immutability. The dispatcher and filter bodies are bound by SHA-256
+`737b757a50f829ff4a82425baddf8a84994cf43cba05703ea6d71efb82a38e8d` and
+`4e1f2d3f2e67c4d39129a1dc37c70dc0853bbd3f309020f7a2f3ed7258dd0439`;
+the deterministic JSONL has SHA-256
+`921d260acc420912cc2eafc5d6fdcda8202ba19fbd1618719b98fa1d9749f673`.
+This behaviorally classifies BBB `0xA5E0` and `0xA98B`, not their captured
+callees or end-to-end navigation parity.
 
 ## Remaining Completion Requirements
 

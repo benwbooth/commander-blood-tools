@@ -17,6 +17,7 @@ const OBJECT_HEADER_WORD_SIZE: usize = std::mem::size_of::<u16>();
 const OBJECT_ACCESS_KIND_MASK: u16 = 0x0118;
 const OBJECT_ACTIVE_FLAG: u16 = 1;
 const OBJECT_IN_PLAY_FLAG: u16 = 2;
+const OBJECT_LOCATION_PANEL_DETAILS_FLAG: u16 = 4;
 const OBJECT_PRESENTABLE_FLAG: u16 = 32;
 const OBJECT_PRESENTATION_BLOCKED_FLAG: u16 = 32_768;
 
@@ -55,6 +56,8 @@ pub enum ScriptObjectFlag {
     Active,
     /// Object participates in navigation and source-list filtering.
     InPlay,
+    /// BBB actor exposes its statistics in the detailed location panel.
+    LocationPanelDetails,
     /// Object can be moved aboard through the C2 presentation path.
     Presentable,
     /// Object is latched into or blocked from a presentation handoff.
@@ -62,10 +65,18 @@ pub enum ScriptObjectFlag {
 }
 
 impl ScriptFieldSelector {
+    /// Sequel actor population.
+    pub const POPULATION: Self = Self(1);
     /// Field used by presentation handoff logic.
     pub const PRESENTATION_HANDOFF: Self = Self(2);
+    /// Sequel actor aggressiveness.
+    pub const AGGRESSIVENESS: Self = Self(3);
+    /// Sequel actor energy.
+    pub const ENERGY: Self = Self(4);
     /// Per-actor encounter counter.
     pub const ENCOUNTER_COUNT: Self = Self(8);
+    /// Sequel actor evolution.
+    pub const EVOLUTION: Self = Self(7);
     /// Matching black-hole position pair.
     pub const BLACK_HOLE_MATCH_POSITION: Self = Self(9);
     /// First authored black-hole position pair used by the travel dispatcher.
@@ -221,6 +232,7 @@ pub fn object_has_flag(
     let mask = match flag {
         ScriptObjectFlag::Active => OBJECT_ACTIVE_FLAG,
         ScriptObjectFlag::InPlay => OBJECT_IN_PLAY_FLAG,
+        ScriptObjectFlag::LocationPanelDetails => OBJECT_LOCATION_PANEL_DETAILS_FLAG,
         ScriptObjectFlag::Presentable => OBJECT_PRESENTABLE_FLAG,
         ScriptObjectFlag::PresentationBlocked => OBJECT_PRESENTATION_BLOCKED_FLAG,
     };
@@ -237,6 +249,7 @@ pub fn set_object_flag(
     let mask = match flag {
         ScriptObjectFlag::Active => OBJECT_ACTIVE_FLAG,
         ScriptObjectFlag::InPlay => OBJECT_IN_PLAY_FLAG,
+        ScriptObjectFlag::LocationPanelDetails => OBJECT_LOCATION_PANEL_DETAILS_FLAG,
         ScriptObjectFlag::Presentable => OBJECT_PRESENTABLE_FLAG,
         ScriptObjectFlag::PresentationBlocked => OBJECT_PRESENTATION_BLOCKED_FLAG,
     };

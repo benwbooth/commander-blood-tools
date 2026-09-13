@@ -262,6 +262,7 @@ pub struct BloodprgNavigationLabels {
     ship: Box<[u8]>,
     black_hole: Box<[u8]>,
     life_support: Box<[u8]>,
+    location_panel: Option<BloodprgLocationPanelLabels>,
 }
 
 impl BloodprgNavigationLabels {
@@ -283,6 +284,54 @@ impl BloodprgNavigationLabels {
     /// Heading above the location's active life-support roster.
     pub const fn life_support(&self) -> &[u8] {
         &self.life_support
+    }
+
+    /// Sequel-only labels used by the detailed location panel.
+    pub const fn location_panel(&self) -> Option<&BloodprgLocationPanelLabels> {
+        self.location_panel.as_ref()
+    }
+}
+
+/// Authored labels used by Big Bug Bang's detailed location panel.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BloodprgLocationPanelLabels {
+    population: Box<[u8]>,
+    aggressiveness: Box<[u8]>,
+    energy: Box<[u8]>,
+    evolution: Box<[u8]>,
+    leader: Box<[u8]>,
+    location: Box<[u8]>,
+}
+
+impl BloodprgLocationPanelLabels {
+    /// Population value label.
+    pub const fn population(&self) -> &[u8] {
+        &self.population
+    }
+
+    /// Aggressiveness bar label.
+    pub const fn aggressiveness(&self) -> &[u8] {
+        &self.aggressiveness
+    }
+
+    /// Energy bar label.
+    pub const fn energy(&self) -> &[u8] {
+        &self.energy
+    }
+
+    /// Evolution bar label.
+    pub const fn evolution(&self) -> &[u8] {
+        &self.evolution
+    }
+
+    /// Leader-name label.
+    pub const fn leader(&self) -> &[u8] {
+        &self.leader
+    }
+
+    /// Selected sublocation title.
+    pub const fn location(&self) -> &[u8] {
+        &self.location
     }
 }
 
@@ -358,6 +407,7 @@ pub fn decode_bloodprg_navigation_resources(
             NAVIGATION_LIFE_SUPPORT_LABEL_DATA_OFFSET,
             NAVIGATION_LABEL_DATA_END_OFFSET,
         ],
+        None,
     )
 }
 
@@ -370,6 +420,7 @@ pub fn decode_blood2pg_navigation_resources(
         0xF7F0,
         0x29E0,
         [0x12D, 0x137, 0x142, 0x14E, 0x15C],
+        Some([0x1C2, 0x1CE, 0x1DB, 0x1E4, 0x1EF, 0x1F4, 0x1FA]),
     )
 }
 
@@ -378,6 +429,7 @@ fn decode_navigation_resources(
     data_file_offset: usize,
     wipe_offset: usize,
     labels: [usize; 5],
+    location_panel_labels: Option<[usize; 7]>,
 ) -> Result<BloodprgNavigationResources, BloodprgNavigationResourcesError> {
     let required = data_file_offset
         + wipe_offset
@@ -404,6 +456,48 @@ fn decode_navigation_resources(
         ship: read_navigation_label(executable, data_file_offset, labels[1], labels[2])?,
         black_hole: read_navigation_label(executable, data_file_offset, labels[2], labels[3])?,
         life_support: read_navigation_label(executable, data_file_offset, labels[3], labels[4])?,
+        location_panel: location_panel_labels
+            .map(|labels| {
+                Ok(BloodprgLocationPanelLabels {
+                    population: read_navigation_label(
+                        executable,
+                        data_file_offset,
+                        labels[0],
+                        labels[1],
+                    )?,
+                    aggressiveness: read_navigation_label(
+                        executable,
+                        data_file_offset,
+                        labels[1],
+                        labels[2],
+                    )?,
+                    energy: read_navigation_label(
+                        executable,
+                        data_file_offset,
+                        labels[2],
+                        labels[3],
+                    )?,
+                    evolution: read_navigation_label(
+                        executable,
+                        data_file_offset,
+                        labels[3],
+                        labels[4],
+                    )?,
+                    leader: read_navigation_label(
+                        executable,
+                        data_file_offset,
+                        labels[4],
+                        labels[5],
+                    )?,
+                    location: read_navigation_label(
+                        executable,
+                        data_file_offset,
+                        labels[5],
+                        labels[6],
+                    )?,
+                })
+            })
+            .transpose()?,
     };
     Ok(BloodprgNavigationResources {
         wipe_endpoints,
@@ -1594,6 +1688,7 @@ mod tests {
         assert_eq!(resources.labels().ship(), b"SHIP: ");
         assert_eq!(resources.labels().black_hole(), b"BLACK HOLE: ");
         assert_eq!(resources.labels().life_support(), b"LIFE SUPPORT:");
+        assert_eq!(resources.labels().location_panel(), None);
     }
 
     #[test]

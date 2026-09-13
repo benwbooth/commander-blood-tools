@@ -47,6 +47,16 @@ fn fixture() -> Vec<u8> {
     {
         bytes[0xF7F0 + offset..0xF7F0 + offset + label.len()].copy_from_slice(&label);
     }
+    for (offset, label) in [
+        (0x1C2, b"POPULATION:".as_slice()),
+        (0x1CE, b"AGRESSIVITE:".as_slice()),
+        (0x1DB, b"ENERGIE:".as_slice()),
+        (0x1E4, b"EVOLUTION:".as_slice()),
+        (0x1EF, b"CHEF".as_slice()),
+        (0x1F4, b"LIEU:".as_slice()),
+    ] {
+        bytes[0xF7F0 + offset..0xF7F0 + offset + label.len()].copy_from_slice(label);
+    }
     for (index, endpoint) in expected.wipe_endpoints.iter().enumerate() {
         for (field, value) in endpoint.iter().enumerate() {
             let start = 0x121D0 + index * 4 + field * 2;
@@ -84,6 +94,13 @@ fn check(bytes: &[u8]) {
     {
         assert_eq!(actual, expected);
     }
+    let detail = labels.location_panel().unwrap();
+    assert_eq!(detail.population(), b"POPULATION:");
+    assert_eq!(detail.aggressiveness(), b"AGRESSIVITE:");
+    assert_eq!(detail.energy(), b"ENERGIE:");
+    assert_eq!(detail.evolution(), b"EVOLUTION:");
+    assert_eq!(detail.leader(), b"CHEF");
+    assert_eq!(detail.location(), b"LIEU:");
     let travel = decode_blood2pg_hyperspace_resources(bytes).unwrap();
     assert_eq!(travel.sequence_names().len(), 8);
     for expected in expected.hyperspace {

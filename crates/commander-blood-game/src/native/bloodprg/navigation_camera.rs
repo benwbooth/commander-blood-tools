@@ -259,6 +259,7 @@ pub trait NavigationCameraHost<ObjectId, ComparisonExtent> {
     fn update_location_panel(
         &mut self,
         panel: &mut LocationInfoPanelState<ObjectId>,
+        input: &mut NavigationChartInputState,
         comparison_extent: &ComparisonExtent,
     ) -> Result<(), Self::Error>;
 
@@ -462,8 +463,12 @@ where
 
     state.ui_active = true;
     if state.panel.selected_location.is_some() {
-        host.update_location_panel(&mut state.panel, context.comparison_extent)
-            .map_err(NavigationCameraError::Host)?;
+        host.update_location_panel(
+            &mut state.panel,
+            &mut state.input,
+            context.comparison_extent,
+        )
+        .map_err(NavigationCameraError::Host)?;
         return Ok(NavigationCameraOutcome::LocationPanel);
     }
 
@@ -891,6 +896,7 @@ mod tests {
         fn update_location_panel(
             &mut self,
             _panel: &mut LocationInfoPanelState<u16>,
+            _input: &mut NavigationChartInputState,
             _comparison_extent: &(),
         ) -> Result<(), Self::Error> {
             self.events.push(Event::Panel);

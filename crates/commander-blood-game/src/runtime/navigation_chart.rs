@@ -9,20 +9,21 @@ use commander_blood_formats::script::{
 use crate::game::GameVariant;
 use crate::native::bloodprg::{
     BridgeSpriteExtent, BridgeSpritePosition, FontPoint, GameLifecycleState, LoadedScriptProfile,
-    LocationInfoPanelContext, LocationInfoPanelHost, LocationInfoPanelState, LocationPanelArtwork,
+    LocationInfoPanelContext, LocationInfoPanelHost, LocationInfoPanelState,
+    LocationPanelActorDetails, LocationPanelArtwork, LocationPanelDetailLabels, LocationPanelInput,
     LocationPanelInterpolation, LocationPanelLocation, LocationPanelRect, LocationPanelRects,
-    LocationPanelSource, LocationPanelSpriteRange, LocationPanelTextDraw,
-    LocationPanelTransitionProgress, Manu3AnimationSelector, NavigationCameraContext,
-    NavigationCameraHost, NavigationCameraOutcome, NavigationCameraState, NavigationChartArche,
-    NavigationChartCopySpan, NavigationChartEntityDraw, NavigationChartEntityState,
-    NavigationChartHand, NavigationChartInputState, NavigationChartMarkerEndpoint,
-    NavigationChartObject, NavigationChartObjectKind, NavigationChartPickObject,
-    NavigationChartPickOutcome, NavigationChartPickState, NavigationStatusLabels,
-    NavigationStatusLocationKind, ResourceId, ScriptFieldSelector, ScriptObjectFlag,
-    build_navigation_wipe_spans, copy_work_surface_span, navigation_chart_objects,
-    navigation_source_objects, object_has_flag, pick_navigation_chart_object,
-    resolve_navigation_position, script_field_offset, update_location_info_panel,
-    update_location_panel_geometry, update_navigation_camera,
+    LocationPanelSource, LocationPanelSpriteRange, LocationPanelStatDraw, LocationPanelTextDraw,
+    LocationPanelTransitionProgress, LocationPanelVariant, Manu3AnimationSelector,
+    NavigationCameraContext, NavigationCameraHost, NavigationCameraOutcome, NavigationCameraState,
+    NavigationChartArche, NavigationChartCopySpan, NavigationChartEntityDraw,
+    NavigationChartEntityState, NavigationChartHand, NavigationChartInputState,
+    NavigationChartMarkerEndpoint, NavigationChartObject, NavigationChartObjectKind,
+    NavigationChartPickObject, NavigationChartPickOutcome, NavigationChartPickState,
+    NavigationStatusLabels, NavigationStatusLocationKind, ResourceId, ScriptFieldSelector,
+    ScriptObjectFlag, build_navigation_wipe_spans, copy_work_surface_span,
+    navigation_chart_objects, navigation_source_objects, object_has_flag,
+    pick_navigation_chart_object, resolve_navigation_position, script_field_offset,
+    update_location_info_panel, update_location_panel_geometry, update_navigation_camera,
 };
 
 use super::{
@@ -225,17 +226,21 @@ fn publish_navigation_ui_activation(lifecycle: &mut GameLifecycleState, active: 
 struct RuntimeNavigationLocation {
     id: ScriptObjectId,
     kind: NavigationStatusLocationKind,
+    allows_sublocations: bool,
     name: Box<[u8]>,
     sources: Vec<RuntimeNavigationSource>,
 }
 
 #[derive(Clone)]
 struct RuntimeNavigationSource {
+    id: ScriptObjectId,
     kind: ScriptObjectKind,
     active: bool,
+    in_play: bool,
     life_support_visits: u16,
     location: Option<ScriptObjectId>,
     name: Box<[u8]>,
+    actor_details: Option<LocationPanelActorDetails>,
 }
 
 struct RuntimeNavigationArtwork {
@@ -249,9 +254,22 @@ struct RuntimeNavigationLabels {
     ship: Box<[u8]>,
     black_hole: Box<[u8]>,
     life_support: Box<[u8]>,
+    location_panel: Option<RuntimeLocationPanelLabels>,
+}
+
+#[derive(Clone)]
+struct RuntimeLocationPanelLabels {
+    location: Box<[u8]>,
+    leader: Box<[u8]>,
+    population: Box<[u8]>,
+    aggressiveness: Box<[u8]>,
+    energy: Box<[u8]>,
+    evolution: Box<[u8]>,
 }
 
 struct RuntimeNavigationWorld {
+    game: GameVariant,
+    arche: ScriptObjectId,
     arche_marker: [u16; 2],
     arche_endpoint_context: u16,
     current_location: ScriptObjectId,
@@ -381,6 +399,7 @@ impl RuntimeNavigationWorld {
             locations.push(RuntimeNavigationLocation {
                 id: object,
                 kind: status_kind(object_kind),
+                allows_sublocations: object_kind == ScriptObjectKind::CelestialBody,
                 name,
                 sources: location_sources(profile, object)?,
             });
@@ -390,7 +409,7 @@ impl RuntimeNavigationWorld {
             .objects()
             .iter()
             .filter(|object| {
-                chart_kind_supported(object.kind)
+                (chart_kind_supported(object.kind) || object.kind == ScriptObjectKind::Location)
                     && !locations.iter().any(|location| location.id == object.id)
             })
             .map(|object| (object.id, object.kind))
@@ -405,6 +424,7 @@ impl RuntimeNavigationWorld {
             locations.push(RuntimeNavigationLocation {
                 id: object,
                 kind: status_kind(kind),
+                allows_sublocations: kind == ScriptObjectKind::CelestialBody,
                 name,
                 sources: location_sources(profile, object)?,
             });
@@ -418,6 +438,16 @@ impl RuntimeNavigationWorld {
             ship: navigation_display_label(game, decoded_labels.ship()),
             black_hole: navigation_display_label(game, decoded_labels.black_hole()),
             life_support: navigation_display_label(game, decoded_labels.life_support()),
+            location_panel: decoded_labels.location_panel().map(|labels| {
+                RuntimeLocationPanelLabels {
+                    location: navigation_display_label(game, labels.location()),
+                    leader: navigation_display_label(game, labels.leader()),
+                    population: navigation_display_label(game, labels.population()),
+                    aggressiveness: navigation_display_label(game, labels.aggressiveness()),
+                    energy: navigation_display_label(game, labels.energy()),
+                    evolution: navigation_display_label(game, labels.evolution()),
+                }
+            }),
         };
         let status_snapshot = RuntimeNavigationStatusSnapshot {
             location_kind: status_kind(current_location_object_kind),
@@ -457,6 +487,8 @@ impl RuntimeNavigationWorld {
             })
             .collect();
         Ok(Self {
+            game,
+            arche,
             arche_marker,
             arche_endpoint_context,
             current_location,
@@ -654,6 +686,7 @@ impl NavigationCameraHost<ScriptObjectId, BridgeSpriteExtent>
     fn update_location_panel(
         &mut self,
         panel: &mut LocationInfoPanelState<ScriptObjectId>,
+        input: &mut NavigationChartInputState,
         comparison_extent: &BridgeSpriteExtent,
     ) -> Result<()> {
         let selected_id = panel
@@ -669,26 +702,57 @@ impl NavigationCameraHost<ScriptObjectId, BridgeSpriteExtent>
                 resource_id: entry.resource,
             })
             .collect::<Vec<_>>();
+        let variant = match self.world.game {
+            GameVariant::CommanderBlood => LocationPanelVariant::CommanderBlood,
+            GameVariant::BigBugBang => {
+                let labels = self
+                    .world
+                    .labels
+                    .location_panel
+                    .as_ref()
+                    .context("Big Bug Bang location-panel labels are absent")?;
+                LocationPanelVariant::BigBugBang {
+                    excluded_location: self.world.arche,
+                    labels: LocationPanelDetailLabels {
+                        location: &labels.location,
+                        leader: &labels.leader,
+                        population: &labels.population,
+                        aggressiveness: &labels.aggressiveness,
+                        energy: &labels.energy,
+                        evolution: &labels.evolution,
+                    },
+                }
+            }
+        };
         let context = LocationInfoPanelContext {
             selected: &LocationPanelLocation {
                 id: selected.id,
                 kind: selected.kind,
+                allows_sublocations: selected.allows_sublocations,
                 name: &selected.name,
             },
             artwork: &artwork,
             labels: navigation_labels(&self.world.labels),
+            variant,
             rects: self.panel_rects,
-            pointer: self.pointer,
-            primary_pressed: self.primary_pressed,
             comparison_extent,
+        };
+        let mut panel_input = LocationPanelInput {
+            pointer: input.pointer,
+            primary_pressed: input.primary_pressed,
         };
         let mut backend = RuntimeLocationPanelBackend {
             services: self.services,
-            sources: &selected.sources,
+            world: self.world,
             callback_error: None,
         };
-        update_location_info_panel(context, panel, &mut backend)?;
-        backend.finish_callbacks()
+        update_location_info_panel(context, panel, &mut panel_input, &mut backend)?;
+        backend.finish_callbacks()?;
+        input.pointer = panel_input.pointer;
+        input.primary_pressed = panel_input.primary_pressed;
+        self.pointer = panel_input.pointer;
+        self.primary_pressed = panel_input.primary_pressed;
+        Ok(())
     }
 
     fn set_chart_entity_state(&mut self, state: NavigationChartEntityState) {
@@ -748,7 +812,7 @@ impl NavigationCameraHost<ScriptObjectId, BridgeSpriteExtent>
 
 struct RuntimeLocationPanelBackend<'state, 'window> {
     services: &'state mut ModernGameServices<'window>,
-    sources: &'state [RuntimeNavigationSource],
+    world: &'state RuntimeNavigationWorld,
     callback_error: Option<anyhow::Error>,
 }
 
@@ -892,18 +956,36 @@ impl LocationInfoPanelHost<ResourceId, ScriptObjectId, BridgeSpriteExtent>
 
     fn navigation_sources(
         &mut self,
-        _location: &ScriptObjectId,
-    ) -> Result<Vec<LocationPanelSource>> {
+        location: &ScriptObjectId,
+    ) -> Result<Vec<LocationPanelSource<ScriptObjectId>>> {
         Ok(self
+            .world
+            .location(*location)?
             .sources
             .iter()
             .map(|source| LocationPanelSource {
+                id: source.id,
                 kind: source.kind,
                 active: source.active,
+                in_play: source.in_play,
                 life_support_visits: source.life_support_visits,
                 name: source.name.clone(),
+                actor_details: source.actor_details,
             })
             .collect())
+    }
+
+    fn format_panel_integer(&mut self, value: i16) -> Box<[u8]> {
+        value.to_string().into_bytes().into_boxed_slice()
+    }
+
+    fn draw_panel_stat(&mut self, draw: LocationPanelStatDraw) {
+        let result = self.services.runtime_mut().draw_location_panel_stat(
+            draw.position.map(i32::from),
+            [draw.width, draw.height],
+            draw.color,
+        );
+        self.record_callback(result);
     }
 
     fn release_panel_entity(&mut self) {
@@ -1003,6 +1085,10 @@ fn navigation_display_label(game: GameVariant, source: &[u8]) -> Box<[u8]> {
         b"VAISSEAU: " => b"SHIP: ",
         b"TROU NOIR: " => b"BLACK HOLE: ",
         b"VIE PRESENTE:" => b"LIFE FORMS:",
+        b"AGRESSIVITE:" => b"AGGRESSIVENESS:",
+        b"ENERGIE:" => b"ENERGY:",
+        b"CHEF" => b"LEADER",
+        b"LIEU:" => b"LOCATION:",
         _ => source,
     };
     english.into()
@@ -1035,9 +1121,34 @@ fn location_sources(
                 .with_context(|| format!("navigation source {source:?} has no name"))?
                 .name()
                 .into();
+            let actor_details = if object.kind == ScriptObjectKind::Actor
+                && object_has_flag(
+                    profile.state(),
+                    source,
+                    ScriptObjectFlag::LocationPanelDetails,
+                ) == Some(true)
+            {
+                Some(LocationPanelActorDetails {
+                    population: read_object_word(profile, source, ScriptFieldSelector::POPULATION)?
+                        as i16,
+                    aggressiveness: read_object_word(
+                        profile,
+                        source,
+                        ScriptFieldSelector::AGGRESSIVENESS,
+                    )? as i16,
+                    energy: read_object_word(profile, source, ScriptFieldSelector::ENERGY)? as i16,
+                    evolution: read_object_word(profile, source, ScriptFieldSelector::EVOLUTION)?
+                        as i16,
+                })
+            } else {
+                None
+            };
             Ok(RuntimeNavigationSource {
+                id: source,
                 kind: object.kind,
                 active: object_has_flag(profile.state(), source, ScriptObjectFlag::Active)
+                    .unwrap_or(false),
+                in_play: object_has_flag(profile.state(), source, ScriptObjectFlag::InPlay)
                     .unwrap_or(false),
                 life_support_visits: read_optional_object_word(
                     profile,
@@ -1051,6 +1162,7 @@ fn location_sources(
                     ScriptFieldSelector::HOLDER_OR_LOCATION,
                 )?,
                 name,
+                actor_details,
             })
         })
         .collect()
@@ -1188,6 +1300,10 @@ mod tests {
             (b"VAISSEAU: ".as_slice(), b"SHIP: ".as_slice()),
             (b"TROU NOIR: ".as_slice(), b"BLACK HOLE: ".as_slice()),
             (b"VIE PRESENTE:".as_slice(), b"LIFE FORMS:".as_slice()),
+            (b"AGRESSIVITE:".as_slice(), b"AGGRESSIVENESS:".as_slice()),
+            (b"ENERGIE:".as_slice(), b"ENERGY:".as_slice()),
+            (b"CHEF".as_slice(), b"LEADER".as_slice()),
+            (b"LIEU:".as_slice(), b"LOCATION:".as_slice()),
         ] {
             assert_eq!(
                 navigation_display_label(GameVariant::BigBugBang, source).as_ref(),
@@ -1251,6 +1367,87 @@ mod tests {
             );
             assert_eq!(source, original);
         }
+        let details = labels.location_panel().unwrap();
+        for (source, original, expected) in [
+            (
+                details.population(),
+                b"POPULATION:".as_slice(),
+                b"POPULATION:".as_slice(),
+            ),
+            (
+                details.aggressiveness(),
+                b"AGRESSIVITE:".as_slice(),
+                b"AGGRESSIVENESS:".as_slice(),
+            ),
+            (
+                details.energy(),
+                b"ENERGIE:".as_slice(),
+                b"ENERGY:".as_slice(),
+            ),
+            (
+                details.evolution(),
+                b"EVOLUTION:".as_slice(),
+                b"EVOLUTION:".as_slice(),
+            ),
+            (details.leader(), b"CHEF".as_slice(), b"LEADER".as_slice()),
+            (
+                details.location(),
+                b"LIEU:".as_slice(),
+                b"LOCATION:".as_slice(),
+            ),
+        ] {
+            assert_eq!(source, original);
+            assert_eq!(
+                navigation_display_label(GameVariant::BigBugBang, source).as_ref(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "requires imported original Big Bug Bang data"]
+    fn sequel_profiles_decode_nested_location_panel_world_data() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let data = OriginalGameData::load(OriginalGameDataPaths::from_root(root).unwrap()).unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut found_sublocation = false;
+        let mut found_details = false;
+
+        for profile in 0..ORIGINAL_SCRIPT_PROFILE_COUNT {
+            runtime
+                .load_profile(ScriptProfileId::new(profile as u8).unwrap())
+                .unwrap();
+            let actors = runtime
+                .current_profile()
+                .unwrap()
+                .state()
+                .objects()
+                .iter()
+                .filter(|object| object.kind == ScriptObjectKind::Actor)
+                .map(|object| object.id)
+                .collect::<Vec<_>>();
+            for actor in actors {
+                assert!(set_object_flag(
+                    runtime.current_profile_mut().unwrap().state_mut(),
+                    actor,
+                    ScriptObjectFlag::LocationPanelDetails,
+                    true,
+                ));
+            }
+            let world = RuntimeNavigationWorld::decode(&runtime, None).unwrap();
+            assert_eq!(world.game, GameVariant::BigBugBang);
+            assert!(world.labels.location_panel.is_some());
+            found_sublocation |= world.locations.len() > world.chart_objects.len();
+            found_details |= world
+                .locations
+                .iter()
+                .flat_map(|location| &location.sources)
+                .any(|source| source.actor_details.is_some());
+        }
+
+        assert!(found_sublocation);
+        assert!(found_details);
     }
 
     #[test]
@@ -1360,7 +1557,7 @@ mod tests {
                 "profile {profile}"
             );
             assert_eq!(world.chart_objects.len(), world.pick_objects.len());
-            assert_eq!(world.chart_objects.len(), world.locations.len());
+            assert!(world.locations.len() >= world.chart_objects.len());
             assert_eq!(world.artwork.len(), 42, "profile {profile}");
             assert!(
                 runtime
