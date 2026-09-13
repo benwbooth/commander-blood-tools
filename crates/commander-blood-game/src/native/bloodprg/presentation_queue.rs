@@ -998,11 +998,23 @@ mod tests {
     }
 
     #[test]
-    fn consume_matches_flat_original_vectors() {
-        let vectors: Vec<ConsumeOracle> = serde_json::from_str(include_str!(
+    fn consume_matches_both_flat_original_fixtures() {
+        let commander: Vec<ConsumeOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a3d0_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_queue_consume.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_consume_vectors(commander);
+        assert_consume_vectors(sequel);
+    }
+
+    fn assert_consume_vectors(vectors: Vec<ConsumeOracle>) {
         assert_eq!(vectors.len(), CONSUME_VECTOR_COUNT);
         let mut exact = usize::MIN;
 

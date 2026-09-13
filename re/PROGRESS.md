@@ -2518,3 +2518,27 @@ wraparound false positives. No production behavior changed. BBB's body SHA-256
 is `3d970edae1f9d1fc45b97ac6be58396baf674585b16771c8a59c5c1b64e7cde0`,
 and the deterministic JSONL SHA-256 is
 `f11eec49220ec5a867ce52c80b7207bcb5000f3accc5e08091b794a2b36209ae`.
+
+## 2026-09-13 - Big Bug Bang presentation queue consume
+
+BBB `0xBBBA..0xBBF5` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA3D0..0xA40B` variable-length queue consumer. Both bodies
+contain 20 instructions in 59 bytes and have identical normalized control
+flow; only queue-field addresses move.
+
+The new `re/tools/big_bug_bang_presentation_queue_consume_oracle.py` executes
+both shipped bodies with all eight recovered Commander cases. They cover all
+six conditional branch edges: exact and exceeded buffer ends, extent-add
+carry, deliberately discarded header-add carry, sequence and byte-count wrap,
+and read-range rollover.
+
+The oracle verifies the far tail segment and boundary word read, exact ordered
+state writes, DS ownership against a GS decoy, complete registers and segments,
+flags, stack discipline, executable immutability, and direct Commander/BBB
+equality. The typed consumer consumes both eight-row fixtures: six
+representable cases match exactly, while checked host state retains
+transactional rejection of the two malformed native underflow cases. No
+production behavior changed. BBB's body SHA-256 is
+`cd850756d06df775771c668ca74ff5435985aae66656d625b540100f8824599c`,
+and the deterministic JSONL SHA-256 is
+`2c3856cff0790e1595cf69ea17a0fad6122c9f377e5dfab41c1d967b411b109a`.
