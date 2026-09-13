@@ -100,10 +100,11 @@ pub struct Manu3HandFrameContext {
 /// Advance hand selector state and produce the next MANU3 frame request.
 ///
 /// This translates `manu3_hand_frame_dispatch` at BLOODPRG file offset
-/// `0x001610`. It retains the signed disabled-selector gate, repeated-selector
-/// clearing, nonzero selector latch, presentation delay arm and countdown, and
-/// original cursor coordinates. The unreachable mouse-button block is omitted,
-/// and wgpu render-target ownership replaces the native VGA page offset.
+/// `0x001610` and its relocated Big Bug Bang counterpart at `0x0017CE`. It
+/// retains the signed disabled-selector gate, repeated-selector clearing,
+/// nonzero selector latch, presentation delay arm and countdown, and original
+/// cursor coordinates. The unreachable mouse-button block is omitted, and wgpu
+/// render-target ownership replaces the native VGA page offset.
 pub fn update_manu3_hand_frame(
     state: &mut Manu3HandFrameState,
     context: Manu3HandFrameContext,
@@ -161,6 +162,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangHandFrameOracle {
+        rows: Vec<HandFrameOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct HandFrameInputs {
         presentation_mode: u8,
         hud_mode: u8,
@@ -196,12 +202,7 @@ mod tests {
         u16::from_le_bytes(bytes[offset..offset + WORD_BYTE_COUNT].try_into().unwrap())
     }
 
-    #[test]
-    fn hand_dispatch_matches_every_original_state_vector() {
-        let vectors: Vec<HandFrameOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_1610_natural.json"
-        ))
-        .unwrap();
+    fn assert_hand_frame_vectors(vectors: &[HandFrameOracle]) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -266,5 +267,23 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn hand_dispatch_matches_every_original_state_vector() {
+        let vectors: Vec<HandFrameOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1610_natural.json"
+        ))
+        .unwrap();
+        assert_hand_frame_vectors(&vectors);
+    }
+
+    #[test]
+    fn sequel_hand_dispatch_matches_every_direct_state_vector() {
+        let fixture: BigBugBangHandFrameOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_manu3_hand_frame.json"
+        ))
+        .unwrap();
+        assert_hand_frame_vectors(&fixture.rows);
     }
 }

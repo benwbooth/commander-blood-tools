@@ -2,7 +2,7 @@
   "format": "big_bug_bang_port_dispositions_v1",
   "scope": "One disposition for every known BBB native entrypoint. Direct execution requires oracle output checked against a fixture consumed by Rust; structural similarity alone remains pending.",
   "inputs": {
-    "re/big_bug_bang_oracle_coverage.json": "4954ce4fe698f13b725f9a7a859ea7b14c93118c36b2bd017c442656660a46a5",
+    "re/big_bug_bang_oracle_coverage.json": "252018e0f8ae0bc657d653d463192da035da8d9d3d244ec062fba599b3b32f80",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "6b7a4128ca4b7ca399dc1eab9feba3f7b2eb4f1ca05aef517557764a9f24c007",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
@@ -11,16 +11,16 @@
   },
   "summary": {
     "known_entrypoint_count": 383,
-    "classified_entrypoint_count": 316,
-    "pending_game_semantics_count": 67,
+    "classified_entrypoint_count": 317,
+    "pending_game_semantics_count": 66,
     "status_counts": {
       "eliminated_authored_no_operation": 7,
       "eliminated_dormant_diagnostic": 17,
       "eliminated_host_adapter": 26,
       "inherited_exact_eliminated": 7,
       "inherited_exact_typed": 6,
-      "pending_game_semantics": 67,
-      "verified_direct_typed": 253
+      "pending_game_semantics": 66,
+      "verified_direct_typed": 254
     }
   },
   "entrypoints": [
@@ -497,15 +497,19 @@
     {
       "entry": "0x17ce",
       "origin": "static_graph",
-      "entered": false,
+      "entered": true,
       "comparison": "structural_candidate",
       "commander_entry": "0x1610",
-      "status": "pending_game_semantics",
+      "status": "verified_direct_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/tools/big_bug_bang_manu3_hand_frame_oracle.py",
+        "re/tools/oracle_vectors/big_bug_bang_manu3_hand_frame.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/manu3_hand.rs",
+        "symbol": "sequel_hand_dispatch_matches_every_direct_state_vector"
+      },
+      "rationale": "Unchanged BBB execution enters this routine in the named oracle, and that oracle's checked fixture rows are consumed by the named Rust test owner."
     },
     {
       "entry": "0x1865",

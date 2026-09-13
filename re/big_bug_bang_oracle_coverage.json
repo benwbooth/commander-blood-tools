@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 165,
-    "oracle_fixture_count": 164,
+    "oracle_count": 166,
+    "oracle_fixture_count": 165,
     "fixture_relation_counts": {
-      "exact": 163,
+      "exact": 164,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 282,
-    "unentered_static_entrypoints": 100,
+    "entered_static_entrypoints": 283,
+    "unentered_static_entrypoints": 99,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 283,
+    "entered_known_entrypoints": 284,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 169,
-        "unentered": 27
+        "entered": 170,
+        "unentered": 26
       },
       "exact_body": {
         "entered": 15,
@@ -781,6 +781,18 @@
       "summary": "verified 20 original BBB location-panel cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_location_panel.jsonl",
       "fixture_sha256": "1b6cdf54a2d8134978dfdaddb6fed0b2bc66aca978ef6b17095f94d7d09bced7",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_manu3_hand_frame_oracle.py",
+      "oracle_sha256": "981da200bc70b57f7760e3241d8171d94e54b8de8f53d45f9c319500cadbafcc",
+      "executed_instruction_count": 44,
+      "entered_entrypoints": [
+        "0x17ce"
+      ],
+      "summary": "verified 11 BBB MANU3 hand-frame cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_manu3_hand_frame.json",
+      "fixture_sha256": "34080fe73670ba10d23f1a3195908dc16bcf0ec7ca6d1f50a0b8c9024e4fd1f4",
       "fixture_relation": "exact"
     },
     {
@@ -2626,8 +2638,10 @@
     {
       "entry": "0x17ce",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_manu3_hand_frame_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x1610"
     },

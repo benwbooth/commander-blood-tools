@@ -5366,6 +5366,32 @@ body SHA-256 is
 and the deterministic fixture SHA-256 is
 `e1bc7292bb56b12b144e98b08fb7b3ba4eb06a99395103aac42517a69d8ffb11`.
 
+## MANU3 Hand-Frame Dispatch Oracle (2026-09-13)
+
+BBB `0x17CE..0x1865` is the relocated sequel counterpart of Commander Blood's
+`0x1610..0x16A7` MANU3 hand-frame dispatcher. Both full 151-byte extents contain
+44 reachable instructions in 132 bytes plus the compiler-emitted 19-byte mouse
+button block skipped by an unconditional jump.
+
+The new `re/tools/big_bug_bang_manu3_hand_frame_oracle.py` directly executes all
+11 fingerprinted Commander cases in the shipped BBB body. They prove the
+presentation, HUD, and signed-selector gates; repeated and changed selectors;
+the unreachable pressed-button path; presentation-delay arm and countdown; and
+the overlay callback request layout. The harness also verifies every relocated
+DS state field, SS request ownership, indirect callback ABI and clobbers,
+Commander-offset and full-segment decoys, exact ordered state, request, and call
+frame writes, complete register and segment residue, defined terminal flags,
+preserved direction state, near return, untouched full segments, and
+patched-executable immutability.
+
+The typed `update_manu3_hand_frame` owner consumes both 11-row fixtures. Typed
+selector, context, and frame-request values replace the relocated globals,
+stack request, and overlay far callback while deliberately omitting the native
+dead block. BBB's full-body SHA-256 is
+`65632bb70f4eabcedfcb0a780820b70997f103456028618fc44a8fc8e0fb7e9f`,
+and the deterministic fixture SHA-256 is
+`34080fe73670ba10d23f1a3195908dc16bcf0ec7ca6d1f50a0b8c9024e4fd1f4`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
