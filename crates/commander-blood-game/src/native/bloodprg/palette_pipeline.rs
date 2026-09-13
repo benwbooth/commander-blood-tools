@@ -170,8 +170,9 @@ pub fn build_banked_tint_table(
 /// Clear the first 192 scene colors while preserving the upper palette bank.
 ///
 /// This translates `palette_scene_entries_clear` at BLOODPRG routine offset
-/// `0x00248B`. Forward typed array filling is the complete modern behavior;
-/// inherited processor direction state has no runtime representation.
+/// `0x00248B` and its relocated BBB counterpart at `0x00280B`. Forward typed
+/// array filling is the complete modern behavior; inherited processor direction
+/// state has no runtime representation.
 pub fn clear_scene_palette_entries(palette: &mut IndexedGamePalette) {
     palette[..SCENE_PALETTE_CLEAR_COLOR_COUNT].fill([u8::MIN; RGB_COMPONENT_COUNT]);
 }
@@ -245,6 +246,11 @@ mod tests {
         upper_palette_entries_preserved: Option<usize>,
         palette_before_sha256: String,
         palette_after_sha256: String,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangClearOracle {
+        rows: Vec<ClearOracle>,
     }
 
     #[test]
@@ -400,12 +406,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn scene_clear_matches_forward_vectors_and_discards_direction_state() {
-        let vectors: Vec<ClearOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_248b_natural.json"
-        ))
-        .unwrap();
+    fn assert_scene_clear_vectors(vectors: Vec<ClearOracle>) {
         assert_eq!(vectors.len(), CLEAR_VECTOR_COUNT);
         let mut ascending_count = usize::MIN;
         let mut descending_count = usize::MIN;
@@ -455,6 +456,24 @@ mod tests {
 
         assert_eq!(ascending_count, ASCENDING_CLEAR_VECTOR_COUNT);
         assert_eq!(descending_count, DESCENDING_CLEAR_VECTOR_COUNT);
+    }
+
+    #[test]
+    fn scene_clear_matches_forward_vectors_and_discards_direction_state() {
+        let vectors: Vec<ClearOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_248b_natural.json"
+        ))
+        .unwrap();
+        assert_scene_clear_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_scene_clear_matches_every_direct_vector() {
+        let oracle: BigBugBangClearOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_palette_clear.json"
+        ))
+        .unwrap();
+        assert_scene_clear_vectors(oracle.rows);
     }
 
     #[test]

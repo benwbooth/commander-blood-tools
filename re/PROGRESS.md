@@ -4178,3 +4178,30 @@ The strict ledger classifies 295 of 383 known entries and leaves 88 pending:
 host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
 SHA-256 is
 `bed1a8ee056291c66bb5afa1c5a5efe41878353de585b6bb624dcaf392229bb0`.
+
+## 2026-09-13 - Big Bug Bang scene-palette clearing
+
+`re/tools/big_bug_bang_palette_clear_oracle.py` executes BBB's complete
+scene-palette clear helper at `0x280B`. Four cases cover patterned, already
+zeroed, and all-ones palettes in the ordinary forward direction plus inherited
+reverse direction state. Their normalized semantic fields match the independent
+Commander fixture despite BBB's relocated palette base at `GS:0x5621`.
+
+The oracle checks the exact 27-byte body hash; all 144 doubleword writes and
+their direction-dependent bounds; the full palette and upper-bank result;
+register, segment, defined-flag, far-return, and exact stack behavior; and full
+synthetic state and executable ownership. Its checked fixture at
+`re/tools/oracle_vectors/big_bug_bang_palette_clear.json` has SHA-256
+`de529cc1acc2c277bd3f38ae621ecc313712b93a2c80eb9320306e9a2e93b9b2`.
+`clear_scene_palette_entries` consumes every forward BBB row and deliberately
+eliminates inherited processor direction state at the typed palette boundary.
+
+The global collector now reproduces 144 exact fixtures and one prefix fixture
+across 146 BBB oracle programs, entering 262 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`b46d5690aa92e350e68a5e65e87b5540b73f72ca033376a018d4e5e32dbb1d31`.
+The strict ledger classifies 296 of 383 known entries and leaves 87 pending:
+233 direct typed, 6 inherited exact typed, 7 inherited exact eliminated, 26
+host adapters, 17 dormant diagnostics, and 7 authored no-operations. Its
+SHA-256 is
+`697661d21f642d94a51ba66c06b46a72a9ef53fd8d734392454ef9f5d878fcba`.

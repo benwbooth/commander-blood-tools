@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 145,
-    "oracle_fixture_count": 144,
+    "oracle_count": 146,
+    "oracle_fixture_count": 145,
     "fixture_relation_counts": {
-      "exact": 143,
+      "exact": 144,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 261,
-    "unentered_static_entrypoints": 121,
+    "entered_static_entrypoints": 262,
+    "unentered_static_entrypoints": 120,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 262,
+    "entered_known_entrypoints": 263,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 148,
-        "unentered": 48
+        "entered": 149,
+        "unentered": 47
       },
       "exact_body": {
         "entered": 15,
@@ -892,6 +892,18 @@
       "summary": "verified 5 BBB palette-block cases covering 6 normalized conditional edges",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_blocks.jsonl",
       "fixture_sha256": "0591ad9607938fc234f0809952eaad5e27d6748248755b51e5edf84d18faaed8",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_palette_clear_oracle.py",
+      "oracle_sha256": "97b7cf0e1afc5438e5e7e66621e290d55ff0587ad830fd777a66ed1bb20b44ed",
+      "executed_instruction_count": 15,
+      "entered_entrypoints": [
+        "0x280b"
+      ],
+      "summary": "verified 4 BBB scene-palette clear cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_palette_clear.json",
+      "fixture_sha256": "de529cc1acc2c277bd3f38ae621ecc313712b93a2c80eb9320306e9a2e93b9b2",
       "fixture_relation": "exact"
     },
     {
@@ -2775,8 +2787,10 @@
     {
       "entry": "0x280b",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_palette_clear_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x248b"
     },
