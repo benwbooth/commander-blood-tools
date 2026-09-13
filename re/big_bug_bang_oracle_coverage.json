@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 157,
-    "oracle_fixture_count": 156,
+    "oracle_count": 158,
+    "oracle_fixture_count": 157,
     "fixture_relation_counts": {
-      "exact": 155,
+      "exact": 156,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 274,
-    "unentered_static_entrypoints": 108,
+    "entered_static_entrypoints": 275,
+    "unentered_static_entrypoints": 107,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 275,
+    "entered_known_entrypoints": 276,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 161,
-        "unentered": 35
+        "entered": 162,
+        "unentered": 34
       },
       "exact_body": {
         "entered": 15,
@@ -98,6 +98,18 @@
       "summary": "captured 996 original C3-C8 action-record cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_action_record.jsonl",
       "fixture_sha256": "9079ade33b1010f275d6585eb87bc5625c5a2eeef037f48b0bdc4b7fe6d2b6ac",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_active_object_list_oracle.py",
+      "oracle_sha256": "6be964cd603ac530c495778999233b9e4e2fa2baa0cecc34f20b7121cd4fd72d",
+      "executed_instruction_count": 32,
+      "entered_entrypoints": [
+        "0x665e"
+      ],
+      "summary": "verified 5 BBB active-object-list cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_active_object_list.json",
+      "fixture_sha256": "3b183a8cb05c26104512e5dd183a35dd0765a511571fd103bab9c617e5e39220",
       "fixture_relation": "exact"
     },
     {
@@ -3895,8 +3907,10 @@
     {
       "entry": "0x665e",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_active_object_list_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x604e"
     },

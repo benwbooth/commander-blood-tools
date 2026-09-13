@@ -171,10 +171,11 @@ pub fn object_before_threshold(
 
 /// Return every decoded profile object carrying the native in-play flag.
 ///
-/// This translates `active_object_list_build` at BLOODPRG file offset
-/// `0x00604E`. The decoded [`ScriptState`] already represents the directory's
-/// contiguous active-object prefix, so the DOS sentinel and offset list become
-/// an owned sequence of stable object identities.
+/// This translates `active_object_list_build` at Commander Blood's BLOODPRG
+/// file offset `0x00604E` and Big Bug Bang's relocated `0x00665E`. The decoded
+/// [`ScriptState`] already represents the directory's contiguous active-object
+/// prefix, so the DOS sentinel and offset list become an owned sequence of
+/// stable object identities.
 pub fn active_objects_in_play(state: &ScriptState) -> Vec<ScriptObjectId> {
     state
         .objects()
@@ -393,6 +394,11 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct BigBugBangActiveObjectOracle {
+        rows: Vec<ActiveObjectOracleVector>,
+    }
+
+    #[derive(Deserialize)]
     struct ActiveObjectOracleEntry {
         object_offset: u16,
         entry_kind: u16,
@@ -556,12 +562,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn active_object_filter_matches_every_original_vector() {
-        let vectors: Vec<ActiveObjectOracleVector> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_604e_natural.json"
-        ))
-        .unwrap();
+    fn assert_active_object_vectors(vectors: Vec<ActiveObjectOracleVector>) {
         assert_eq!(vectors.len(), ACTIVE_OBJECT_ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -598,6 +599,24 @@ mod tests {
                 .collect::<Vec<_>>();
             assert_eq!(actual, vector.active_objects, "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn active_object_filter_matches_every_original_vector() {
+        let vectors: Vec<ActiveObjectOracleVector> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_604e_natural.json"
+        ))
+        .unwrap();
+        assert_active_object_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_active_object_filter_matches_every_direct_vector() {
+        let fixture: BigBugBangActiveObjectOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_active_object_list.json"
+        ))
+        .unwrap();
+        assert_active_object_vectors(fixture.rows);
     }
 
     fn assert_object_access_vectors(vectors: Vec<ObjectAccessOracleVector>) {

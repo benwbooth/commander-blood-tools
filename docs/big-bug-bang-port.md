@@ -5164,6 +5164,31 @@ and retrace polling with renderer-owned frame submission. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `1b9743e26209e256dac744afc5aa8bb73ac9db96a3c11ad50fa5bb8523f936bb`.
 
+## Active-Object List Oracle (2026-09-13)
+
+BBB `0x665E..0x669F` is the relocated sequel counterpart of Commander Blood's
+`0x604E..0x608F` active-object list builder. Both routines contain 32
+instructions in 65 bytes and differ only in the relocated record pointer,
+directory pointer, and GS output-list operands.
+
+The new `re/tools/big_bug_bang_active_object_list_oracle.py` directly executes
+all five fingerprinted Commander cases in the shipped BBB body. They prove
+first-entry and later sentinel stops, low-byte in-play filtering, high-byte
+rejection, ignored record-pointer offset, wrapped directory and object fields,
+ordered output, and unconditional `0xFFFF` termination. The harness also
+verifies GS pointer and output ownership against DS and segment decoys, exact
+changed addresses, defined terminal flags, complete register and segment
+preservation, near return, stack writes, untouched full segments, and
+executable immutability.
+
+The typed `active_objects_in_play` owner consumes both five-row fixtures.
+Decoded directory-prefix membership and stable object identities replace the
+native sentinel and offset list while preserving authored order and the in-play
+gate. BBB's body SHA-256 is
+`33f7a526d9a2a48efaf44f511db0b324124367b71333d6e7deccc1c855517a39`,
+and the deterministic fixture SHA-256 is
+`3b183a8cb05c26104512e5dd183a35dd0765a511571fd103bab9c617e5e39220`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
