@@ -2951,3 +2951,39 @@ and the deterministic JSONL SHA-256 is
 The independently entered BBB HUD and navigation callees at `0xC859` and
 `0xCB0F` remain separate recovery targets; this coordinator oracle deliberately
 does not substitute their behavior for direct evidence.
+
+## 2026-09-13 - Big Bug Bang ship HUD coordinator
+
+BBB `0xC859..0xCA7C` is the changed sequel counterpart of Commander Blood's
+ported `0xB079..0xB2BB` ship HUD coordinator. The BBB body contains 150
+instructions in 547 bytes, versus Commander's 160 instructions in 578 bytes.
+Most initialization, palette staging, bridge steering, dirty presentation,
+audio reload, C1 publication, and close behavior is retained, but this is not
+a structural parity case. BBB omits Commander's initial Arche-list builder,
+uses the already populated first target unless the linked record requires one
+replacement list build, and explicitly writes the sequel VM execution gate
+after scene dispatch. On each completed text frame it also removes Commander's
+interactive target-selector call and changed-target DESCRIPT reload: it reads
+the script-owned current target directly, closes for zero or any signed-negative
+offset, and otherwise publishes that same positive target.
+
+The new `re/tools/big_bug_bang_ship_hud_oracle.py` executes the untouched BBB
+body over 15 cases covering both outcomes of all 13 conditional sites, or 26
+edges. It distinguishes zero from an arbitrary negative target, proves the
+missing selector and lookup calls, covers both initialization target sources,
+checks full-EAX record probing, and verifies the sequel-only VM gate write.
+The oracle validates all relocated far frames plus the `PUSH CS`/near-call
+far-return band frame, ordered helper ABIs, exact DS, GS, incoming-ES, record,
+palette, and framebuffer state, preserved registers, caller stack, unowned
+memory, and executable immutability.
+
+The typed `update_ship_hud` coordinator now selects explicit Commander Blood or
+Big Bug Bang semantics. The BBB path consumes a prebuilt typed target list,
+synchronizes script-owned target changes, bypasses the Commander selector,
+models invalid native offsets without manufacturing record identities, and
+publishes VM resumption through the production lifecycle adapter. The existing
+15-row Commander fixture and the new 15-row BBB fixture both pass. BBB's body
+SHA-256 is
+`66271e559245260d139a29be75c18df658507586209e67cf73f6acbee4180c8b`,
+and the deterministic JSONL SHA-256 is
+`33a5afbb5336c597f80ee0f7347f1a6b749e58e93669fe09ceede6e2053874a0`.

@@ -699,8 +699,9 @@ pub use ship_hud::{
 };
 pub use ship_hud_coordinator::{
     ShipHudCoordinatorError, ShipHudCoordinatorHost, ShipHudCoordinatorOutcome,
-    ShipHudCoordinatorState, ShipHudDescriptionOutcome, ShipHudInitializationContext,
-    ShipHudPaletteTransition, ShipHudTargetListState, update_ship_hud,
+    ShipHudCoordinatorState, ShipHudCoordinatorVariant, ShipHudDescriptionOutcome,
+    ShipHudInitializationContext, ShipHudPaletteTransition, ShipHudTargetListState,
+    update_ship_hud,
 };
 pub use ship_navigation::{
     ShipNavigationAccessCounter, ShipNavigationCandidate, ShipNavigationContext,

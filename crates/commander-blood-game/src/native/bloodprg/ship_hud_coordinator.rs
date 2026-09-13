@@ -19,6 +19,15 @@ const PALETTE_TRANSITION_FIRST: u8 = 0;
 const PALETTE_TRANSITION_LAST: u8 = 192;
 const SHIP_PRESENTATION_CLOSED_STATE: u16 = 17;
 
+/// Original whose ship-HUD coordination semantics are required.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShipHudCoordinatorVariant {
+    /// Commander Blood builds and interactively selects its HUD target list.
+    CommanderBlood,
+    /// Big Bug Bang consumes the script-owned current target directly.
+    BigBugBang,
+}
+
 /// Target-list layout state configured during first-time HUD initialization.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ShipHudTargetListState {
@@ -58,6 +67,10 @@ pub struct ShipHudInitializationContext<RecordId> {
     pub arche_link: RecordId,
     /// Whether the linked record itself is a directly selectable target.
     pub linked_record_is_direct_target: bool,
+    /// Target list already owned by sequel script state before HUD entry.
+    pub prebuilt_presentable_targets: Vec<RecordId>,
+    /// Script-selected target published outside the HUD coordinator this frame.
+    pub active_script_target: Option<RecordId>,
 }
 
 /// Outputs written by the C2 DESCRIPT lookup used by the ship HUD.
@@ -94,6 +107,8 @@ pub struct ShipHudCoordinatorState<RecordId> {
     pub presentable_targets: Vec<RecordId>,
     /// Current selected target record.
     pub current_target: RecordId,
+    /// Whether the native current-target offset denotes a positive record.
+    pub current_target_valid: bool,
     /// Whether scene dispatch remains blocked by the HUD presentation.
     pub scene_dispatch_blocked: bool,
     /// Current scripted presentation line.
@@ -130,6 +145,8 @@ pub struct ShipHudCoordinatorState<RecordId> {
     pub sequence_active: bool,
     /// Whether bridge redraw remains pending.
     pub bridge_redraw_pending: bool,
+    /// Whether the script VM may advance after presentation dispatch.
+    pub vm_execution_enabled: bool,
 }
 
 /// Ordered renderer, resource, input, and audio work used by the HUD loop.
@@ -196,12 +213,14 @@ pub enum ShipHudCoordinatorError {
     MissingInitialTarget,
 }
 
-/// Run native BLOODPRG HUD coordinator `0x00B079` over flat typed state.
+/// Run a native BLOODPRG ship-HUD coordinator over flat typed state.
 ///
 /// Typed record identities and vectors replace the native record heap, name
 /// offsets, and sentinel arrays. The original initialization and frame call
-/// order remains visible through [`ShipHudCoordinatorHost`].
+/// order remains visible through [`ShipHudCoordinatorHost`]. Commander Blood's
+/// body starts at `0x00B079`; Big Bug Bang's changed body starts at `0x00C859`.
 pub fn update_ship_hud<RecordId, Host>(
+    variant: ShipHudCoordinatorVariant,
     state: &mut ShipHudCoordinatorState<RecordId>,
     context: &ShipHudInitializationContext<RecordId>,
     host: &mut Host,
@@ -210,8 +229,15 @@ where
     RecordId: Clone + Eq,
     Host: ShipHudCoordinatorHost<RecordId>,
 {
+    if variant == ShipHudCoordinatorVariant::BigBugBang
+        && state.initialized
+        && let Some(target) = &context.active_script_target
+    {
+        state.current_target = target.clone();
+        state.current_target_valid = true;
+    }
     if !state.initialized {
-        initialize_ship_hud(state, context, host)?;
+        initialize_ship_hud(variant, state, context, host)?;
     }
 
     if state.exit_pending {
@@ -239,9 +265,21 @@ where
         state.palette_transition.increment = u16::MIN;
     }
     state.frame_presented = true;
-    let (selection, depth_opening, depth_step) = host.update_target_selection();
-    state.depth_opening = depth_opening;
-    state.depth_step = depth_step;
+    let selection = match variant {
+        ShipHudCoordinatorVariant::CommanderBlood => {
+            let (selection, depth_opening, depth_step) = host.update_target_selection();
+            state.depth_opening = depth_opening;
+            state.depth_step = depth_step;
+            selection
+        }
+        ShipHudCoordinatorVariant::BigBugBang => {
+            if state.current_target_valid {
+                ShipTargetSelectionOutcome::Selected(state.current_target.clone())
+            } else {
+                ShipTargetSelectionOutcome::CloseRequested
+            }
+        }
+    };
     match selection {
         ShipTargetSelectionOutcome::Transitioning | ShipTargetSelectionOutcome::NoSelection => {
             Ok(ShipHudCoordinatorOutcome::NoSelection)
@@ -270,6 +308,7 @@ where
 }
 
 fn initialize_ship_hud<RecordId, Host>(
+    variant: ShipHudCoordinatorVariant,
     state: &mut ShipHudCoordinatorState<RecordId>,
     context: &ShipHudInitializationContext<RecordId>,
     host: &mut Host,
@@ -300,7 +339,10 @@ where
         include_cancel_entry: true,
         transition_steps: TARGET_LIST_TRANSITION_STEPS,
     };
-    state.presentable_targets = host.build_presentable_targets(&context.arche);
+    state.presentable_targets = match variant {
+        ShipHudCoordinatorVariant::CommanderBlood => host.build_presentable_targets(&context.arche),
+        ShipHudCoordinatorVariant::BigBugBang => context.prebuilt_presentable_targets.clone(),
+    };
     if context.linked_record_is_direct_target {
         state.presentable_targets = host.build_presentable_targets(&context.arche_link);
         state.current_target = context.arche_link.clone();
@@ -311,6 +353,7 @@ where
             .cloned()
             .ok_or(ShipHudCoordinatorError::MissingInitialTarget)?;
     }
+    state.current_target_valid = true;
     let description = host.load_target_description(&state.current_target);
     state.music_source_changed = description.music_source_changed;
     state.resource_vertical_offset = description.scene_top_row;
@@ -320,6 +363,9 @@ where
     state.depth_band_enabled = true;
     state.presentation_gate = u16::MIN;
     host.dispatch_ship_scene_line(state.resource_vertical_offset, state);
+    if variant == ShipHudCoordinatorVariant::BigBugBang {
+        state.vm_execution_enabled = true;
+    }
     host.copy_display_to_back_buffer();
     host.compose_depth_band();
     state.palette_transition = ShipHudPaletteTransition {
@@ -380,6 +426,56 @@ mod tests {
         calls: Vec<CallVector>,
         current_target_after: u16,
         c1_record: [u16; 3],
+    }
+
+    #[derive(Clone, Deserialize)]
+    struct BigBugBangHudVector {
+        name: String,
+        initialized: u8,
+        init_pending: u8,
+        exit_pending: u8,
+        opening: u8,
+        ui_flags: u16,
+        text_active: u8,
+        text_character: u8,
+        current_target_before: u16,
+        current_target_after: u16,
+        music_changed: u8,
+        transition_percent: u16,
+        transition_increment: u16,
+        probe_eax: u32,
+        probe_mask: u16,
+        vm_enabled_before: u8,
+        outcome: String,
+        calls: Vec<CallVector>,
+        c1_record: [u16; 3],
+        state_after: BigBugBangHudState,
+    }
+
+    #[derive(Clone, Deserialize)]
+    struct BigBugBangHudState {
+        initialized: u8,
+        sequence_active: u8,
+        scene_blocked: u8,
+        depth_band: u8,
+        depth_opening: u8,
+        exit_pending: u8,
+        init_pending: u8,
+        ship_flags: u16,
+        subtitle_mode: u8,
+        ui_flags: u16,
+        redraw_pending: u8,
+        current_target: u16,
+        vm_enabled: u8,
+        active_line: u16,
+        resource_vertical: u16,
+        presentation_gate: u16,
+        frame_presented: u16,
+        transition_percent: u16,
+        transition_increment: u16,
+        transition_first: u8,
+        transition_last: u8,
+        text_active: u8,
     }
 
     #[derive(Clone, Deserialize)]
@@ -507,6 +603,8 @@ mod tests {
                 arche: ARCHE_RECORD,
                 arche_link: ARCHE_LINK,
                 linked_record_is_direct_target,
+                prebuilt_presentable_targets: vec![FIRST_PRESENTABLE_TARGET],
+                active_script_target: None,
             };
             let calls = vector.calls.iter().map(|call| call.name.clone()).collect();
             let mut host = OracleHost {
@@ -517,7 +615,13 @@ mod tests {
                 depth_step: u8::MIN,
             };
 
-            let outcome = update_ship_hud(&mut state, &context, &mut host).unwrap();
+            let outcome = update_ship_hud(
+                ShipHudCoordinatorVariant::CommanderBlood,
+                &mut state,
+                &context,
+                &mut host,
+            )
+            .unwrap();
 
             assert!(host.calls.is_empty(), "{}", vector.name);
             assert_eq!(outcome, expected_outcome(&vector), "{}", vector.name);
@@ -528,6 +632,98 @@ mod tests {
             );
             assert_vector_state(&vector, &state, transition_before, outcome);
         }
+    }
+
+    #[test]
+    fn sequel_hud_coordinator_matches_every_direct_original_vector() {
+        let vectors: Vec<BigBugBangHudVector> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_ship_hud.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(vectors.len(), 15);
+
+        for vector in vectors {
+            assert_eq!(vector.probe_eax as u16, ARCHE_LINK, "{}", vector.name);
+            let mut state = initial_sequel_state(&vector);
+            let context = ShipHudInitializationContext {
+                arche: ARCHE_RECORD,
+                arche_link: ARCHE_LINK,
+                linked_record_is_direct_target: vector.probe_mask & 320 == u16::MIN,
+                prebuilt_presentable_targets: vec![FIRST_PRESENTABLE_TARGET],
+                active_script_target: None,
+            };
+            let calls = vector.calls.iter().map(|call| call.name.clone()).collect();
+            let mut host = OracleHost {
+                calls,
+                selection: u16::MIN,
+                music_changed: vector.music_changed != u8::MIN,
+                depth_opening: vector.opening != u8::MIN,
+                depth_step: u8::MIN,
+            };
+
+            let outcome = update_ship_hud(
+                ShipHudCoordinatorVariant::BigBugBang,
+                &mut state,
+                &context,
+                &mut host,
+            )
+            .unwrap();
+
+            assert!(host.calls.is_empty(), "{}", vector.name);
+            assert_eq!(outcome, sequel_outcome(&vector.outcome), "{}", vector.name);
+            assert_eq!(
+                state.current_target, vector.current_target_after,
+                "{}",
+                vector.name
+            );
+            assert_sequel_state(&vector, &state, outcome);
+        }
+    }
+
+    #[test]
+    fn sequel_imports_a_script_owned_target_without_running_the_commander_selector() {
+        const SCRIPT_TARGET: u16 = 0x4567;
+        let vectors: Vec<BigBugBangHudVector> =
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_ship_hud.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        let vector = vectors
+            .into_iter()
+            .find(|vector| {
+                vector.name == "positive_current_target_queues_without_selector_or_lookup"
+            })
+            .unwrap();
+        let mut state = initial_sequel_state(&vector);
+        let calls = vector.calls.iter().map(|call| call.name.clone()).collect();
+        let mut host = OracleHost {
+            calls,
+            selection: u16::MIN,
+            music_changed: false,
+            depth_opening: true,
+            depth_step: u8::MIN,
+        };
+
+        let outcome = update_ship_hud(
+            ShipHudCoordinatorVariant::BigBugBang,
+            &mut state,
+            &ShipHudInitializationContext {
+                arche: ARCHE_RECORD,
+                arche_link: ARCHE_LINK,
+                linked_record_is_direct_target: false,
+                prebuilt_presentable_targets: vec![FIRST_PRESENTABLE_TARGET],
+                active_script_target: Some(SCRIPT_TARGET),
+            },
+            &mut host,
+        )
+        .unwrap();
+
+        assert!(host.calls.is_empty());
+        assert_eq!(outcome, ShipHudCoordinatorOutcome::TargetQueued);
+        assert_eq!(state.current_target, SCRIPT_TARGET);
+        assert!(state.current_target_valid);
+        assert_eq!(state.deferred_navigation_target, Some(SCRIPT_TARGET));
     }
 
     #[test]
@@ -583,11 +779,14 @@ mod tests {
         };
         let mut state = initial_state(&vector);
         let error = update_ship_hud(
+            ShipHudCoordinatorVariant::CommanderBlood,
             &mut state,
             &ShipHudInitializationContext {
                 arche: ARCHE_RECORD,
                 arche_link: ARCHE_LINK,
                 linked_record_is_direct_target: false,
+                prebuilt_presentable_targets: Vec::new(),
+                active_script_target: None,
             },
             &mut EmptyHost,
         )
@@ -613,6 +812,7 @@ mod tests {
             target_list: ShipHudTargetListState::default(),
             presentable_targets: Vec::new(),
             current_target: INITIAL_CURRENT_TARGET,
+            current_target_valid: true,
             scene_dispatch_blocked: true,
             active_line: Some(34_952),
             depth_band_enabled: false,
@@ -637,6 +837,191 @@ mod tests {
             ship_active_flags: 62_451,
             sequence_active: true,
             bridge_redraw_pending: true,
+            vm_execution_enabled: false,
+        }
+    }
+
+    fn initial_sequel_state(vector: &BigBugBangHudVector) -> ShipHudCoordinatorState<u16> {
+        ShipHudCoordinatorState {
+            initialized: vector.initialized != u8::MIN,
+            initialization_pending: vector.init_pending != u8::MIN,
+            subtitle_display_mode: true,
+            hud_palette_staged: false,
+            bridge_seek_target_arc: 39_067,
+            bridge_view_frame: 38_293,
+            ui_state: vector.ui_flags,
+            manu3_animation_requested: false,
+            target_list: ShipHudTargetListState::default(),
+            presentable_targets: Vec::new(),
+            current_target: vector.current_target_before,
+            current_target_valid: vector.current_target_before != u16::MIN
+                && vector.current_target_before < 0x8000,
+            scene_dispatch_blocked: true,
+            active_line: Some(0x5A5A),
+            depth_band_enabled: true,
+            resource_vertical_offset: 0xA7A7,
+            presentation_gate: 0x00B2,
+            palette_transition: ShipHudPaletteTransition {
+                staged: false,
+                percent: vector.transition_percent,
+                increment: vector.transition_increment,
+                first: 0x51,
+                last: 0x52,
+            },
+            exit_pending: vector.exit_pending != u8::MIN,
+            depth_opening: vector.opening != u8::MIN,
+            depth_step: u8::MIN,
+            clip_snapshot_ready: false,
+            text_display_active: vector.text_active != u8::MIN,
+            text_reveal_complete: vector.text_character == u8::MIN,
+            frame_presented: true,
+            music_source_changed: vector.music_changed != u8::MIN,
+            deferred_navigation_target: None,
+            ship_active_flags: 0xF3F3,
+            sequence_active: true,
+            bridge_redraw_pending: true,
+            vm_execution_enabled: vector.vm_enabled_before != u8::MIN,
+        }
+    }
+
+    fn sequel_outcome(outcome: &str) -> ShipHudCoordinatorOutcome {
+        match outcome {
+            "close_deferred" => ShipHudCoordinatorOutcome::CloseDeferred,
+            "closed" => ShipHudCoordinatorOutcome::Closed,
+            "text_inactive" => ShipHudCoordinatorOutcome::TextInactive,
+            "text_revealing" => ShipHudCoordinatorOutcome::TextRevealing,
+            "target_queued" => ShipHudCoordinatorOutcome::TargetQueued,
+            other => panic!("unknown sequel HUD outcome {other}"),
+        }
+    }
+
+    fn assert_sequel_state(
+        vector: &BigBugBangHudVector,
+        state: &ShipHudCoordinatorState<u16>,
+        outcome: ShipHudCoordinatorOutcome,
+    ) {
+        let expected = &vector.state_after;
+        assert_eq!(
+            state.initialized,
+            expected.initialized != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.sequence_active,
+            expected.sequence_active != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.scene_dispatch_blocked,
+            expected.scene_blocked != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.depth_band_enabled,
+            expected.depth_band != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.depth_opening,
+            expected.depth_opening != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.exit_pending,
+            expected.exit_pending != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.initialization_pending,
+            expected.init_pending != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.ship_active_flags, expected.ship_flags,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.subtitle_display_mode,
+            expected.subtitle_mode != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(state.ui_state, expected.ui_flags, "{}", vector.name);
+        assert_eq!(
+            state.bridge_redraw_pending,
+            expected.redraw_pending != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.current_target, expected.current_target,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.vm_execution_enabled,
+            expected.vm_enabled != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.active_line,
+            Some(expected.active_line),
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.resource_vertical_offset, expected.resource_vertical,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.presentation_gate, expected.presentation_gate,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.frame_presented,
+            expected.frame_presented != 0,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.palette_transition.percent, expected.transition_percent,
+            "{}",
+            vector.name
+        );
+        assert_eq!(
+            state.palette_transition.increment, expected.transition_increment,
+            "{}",
+            vector.name
+        );
+        assert_eq!(state.palette_transition.first, expected.transition_first);
+        assert_eq!(state.palette_transition.last, expected.transition_last);
+        assert_eq!(
+            state.text_display_active,
+            expected.text_active != 0,
+            "{}",
+            vector.name
+        );
+        if outcome == ShipHudCoordinatorOutcome::TargetQueued {
+            assert_eq!(
+                state.deferred_navigation_target,
+                Some(vector.current_target_after),
+                "{}",
+                vector.name
+            );
+            assert_eq!(vector.c1_record, [193, vector.current_target_after, 0]);
+        } else {
+            assert_eq!(state.deferred_navigation_target, None, "{}", vector.name);
         }
     }
 

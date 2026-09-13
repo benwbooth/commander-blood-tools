@@ -5,13 +5,14 @@ use std::ops::Range;
 use anyhow::{Context, Result};
 use commander_blood_formats::script::ScriptObjectId;
 
+use crate::game::GameVariant;
 use crate::native::bloodprg::{
     GameSceneLink, IndexedGamePalette, Manu3AnimationSelector, PaletteRemapTable,
     ShipHudCoordinatorHost, ShipHudCoordinatorOutcome, ShipHudCoordinatorState,
-    ShipHudDescriptionOutcome, ShipHudInitializationContext, ShipHudPaletteTransition,
-    ShipHudTargetListState, ShipPresentationState, ShipTargetSelectionOutcome,
-    ShipTargetSelectionState, build_palette_blend_remap_table, decode_active_presentation_line,
-    encode_active_presentation_line, update_ship_hud,
+    ShipHudCoordinatorVariant, ShipHudDescriptionOutcome, ShipHudInitializationContext,
+    ShipHudPaletteTransition, ShipHudTargetListState, ShipPresentationState,
+    ShipTargetSelectionOutcome, ShipTargetSelectionState, build_palette_blend_remap_table,
+    decode_active_presentation_line, encode_active_presentation_line, update_ship_hud,
 };
 
 use super::ModernGameServices;
@@ -64,6 +65,7 @@ impl RuntimeShipHud {
                     .map(|target| target.index())
                     .collect::<Vec<_>>(),
                 "current_target": state.current_target.index(),
+                "current_target_valid": state.current_target_valid,
                 "scene_dispatch_blocked": state.scene_dispatch_blocked,
                 "active_line": state.active_line,
                 "depth_band_enabled": state.depth_band_enabled,
@@ -73,6 +75,7 @@ impl RuntimeShipHud {
                 "text_display_active": state.text_display_active,
                 "text_reveal_complete": state.text_reveal_complete,
                 "ship_active_flags": state.ship_active_flags,
+                "vm_execution_enabled": state.vm_execution_enabled,
             })
         });
         let selector = self.selector.as_ref().map(|state| {
@@ -132,6 +135,10 @@ impl RuntimeShipHud {
         scene_link: GameSceneLink,
         lifecycle: &mut crate::native::bloodprg::GameLifecycleState,
     ) -> Result<ShipHudCoordinatorOutcome> {
+        let variant = match services.runtime().data().game() {
+            GameVariant::CommanderBlood => ShipHudCoordinatorVariant::CommanderBlood,
+            GameVariant::BigBugBang => ShipHudCoordinatorVariant::BigBugBang,
+        };
         let context = services.ship_hud_initialization_context()?;
         let mut state = self
             .coordinator
@@ -155,6 +162,7 @@ impl RuntimeShipHud {
                 services,
                 lifecycle,
                 scene_link,
+                variant,
                 selector: &mut self.selector,
                 objects_at_arche_position: &mut self.objects_at_arche_position,
                 selector_targets: &mut self.selector_targets,
@@ -164,7 +172,7 @@ impl RuntimeShipHud {
                 description_applied: false,
                 deferred_error: None,
             };
-            native_outcome = update_ship_hud(&mut state, &context, &mut backend);
+            native_outcome = update_ship_hud(variant, &mut state, &context, &mut backend);
             description_applied = backend.description_applied;
             deferred_error = backend.deferred_error.take();
         }
@@ -218,6 +226,7 @@ fn initial_coordinator_state(
         target_list: ShipHudTargetListState::default(),
         presentable_targets: Vec::new(),
         current_target: context.arche,
+        current_target_valid: true,
         scene_dispatch_blocked: ship.scene_dispatch_blocked,
         active_line: decode_active_presentation_line(ship.active_line),
         depth_band_enabled: ship.depth_band_enabled,
@@ -242,6 +251,7 @@ fn initial_coordinator_state(
         ship_active_flags: ship.flags,
         sequence_active: lifecycle.presentation.sequence_active,
         bridge_redraw_pending: flag_is_active(ship.bridge_redraw_pending),
+        vm_execution_enabled: lifecycle.vm_execution_enabled,
     }
 }
 
@@ -273,6 +283,7 @@ fn import_live_state(
     state.ship_active_flags = ship.flags;
     state.sequence_active = lifecycle.presentation.sequence_active;
     state.bridge_redraw_pending = flag_is_active(ship.bridge_redraw_pending);
+    state.vm_execution_enabled = lifecycle.vm_execution_enabled;
     state.deferred_navigation_target = None;
 }
 
@@ -311,6 +322,7 @@ fn export_live_state(
     lifecycle.presentation.c2_presentation_gate =
         presentation_gate_is_active(state.presentation_gate);
     lifecycle.presentation.active_line = state.active_line;
+    lifecycle.vm_execution_enabled = state.vm_execution_enabled;
     export_hud_ui_state(state.ui_state, lifecycle);
 }
 
@@ -357,6 +369,7 @@ struct RuntimeShipHudBackend<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
     lifecycle: &'services mut crate::native::bloodprg::GameLifecycleState,
     scene_link: GameSceneLink,
+    variant: ShipHudCoordinatorVariant,
     selector: &'services mut Option<ShipTargetSelectionState<ScriptObjectId>>,
     objects_at_arche_position: &'services mut Vec<ScriptObjectId>,
     selector_targets: &'services mut Vec<ScriptObjectId>,
@@ -446,7 +459,9 @@ impl ShipHudCoordinatorHost<ScriptObjectId> for RuntimeShipHudBackend<'_, '_> {
     }
 
     fn load_target_description(&mut self, target: &ScriptObjectId) -> ShipHudDescriptionOutcome {
-        self.ensure_selector(*target);
+        if self.variant == ShipHudCoordinatorVariant::CommanderBlood {
+            self.ensure_selector(*target);
+        }
         self.description_applied = true;
         let description_result = self.services.apply_ship_target_description(*target);
         let music_source_changed = self.record(description_result, false);

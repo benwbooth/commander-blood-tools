@@ -1538,10 +1538,19 @@ impl<'window> ModernGameServices<'window> {
             .context("loaded BloodScript profile has no Arche object")?;
         let (arche_link, linked_record_is_direct_target) =
             ship_hud_arche_link(profile.state(), arche)?;
+        let prebuilt_presentable_targets = if self.runtime.data().game() == GameVariant::BigBugBang
+        {
+            presentable_navigation_objects(profile.state(), arche, arche)
+                .map_err(|error| anyhow::anyhow!("building preexisting ship targets: {error:?}"))?
+        } else {
+            Vec::new()
+        };
         Ok(ShipHudInitializationContext {
             arche,
             arche_link,
             linked_record_is_direct_target,
+            prebuilt_presentable_targets,
+            active_script_target: self.scripts.action_state().current_ship_target,
         })
     }
 
