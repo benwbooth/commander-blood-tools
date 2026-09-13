@@ -92,9 +92,10 @@ pub enum PresentationChoiceMaskError {
 
 /// Draw the selected choice number with transparent zero bits.
 ///
-/// This translates `selected_mask_overlay` at BLOODPRG file offset `0x007CB4`.
-/// The modern input is a bounded semantic choice and a flat pixel slice; the
-/// original stored framebuffer pointer and signed table indexing are absent.
+/// This translates `selected_mask_overlay` at Commander Blood's BLOODPRG file
+/// offset `0x007CB4` and Big Bug Bang's relocated `0x008D88`. The modern input
+/// is a bounded semantic choice and a flat pixel slice; the original stored
+/// framebuffer pointer and signed table indexing are absent.
 pub fn draw_presentation_choice_number(
     choice: PresentationChoiceNumber,
     framebuffer: &mut [u8],
@@ -148,12 +149,12 @@ mod tests {
         changed_offsets: Vec<usize>,
     }
 
-    #[test]
-    fn mask_rasterization_matches_every_original_pattern_vector() {
-        let vectors: Vec<MaskOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_7cb4_natural.json"
-        ))
-        .unwrap();
+    #[derive(Deserialize)]
+    struct BigBugBangMaskOracle {
+        rows: Vec<MaskOracle>,
+    }
+
+    fn assert_mask_vectors(vectors: Vec<MaskOracle>) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -179,6 +180,24 @@ mod tests {
                 vector.index
             );
         }
+    }
+
+    #[test]
+    fn mask_rasterization_matches_every_original_pattern_vector() {
+        let vectors: Vec<MaskOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_7cb4_natural.json"
+        ))
+        .unwrap();
+        assert_mask_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_mask_rasterization_matches_every_direct_pattern_vector() {
+        let fixture: BigBugBangMaskOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_selected_mask.json"
+        ))
+        .unwrap();
+        assert_mask_vectors(fixture.rows);
     }
 
     #[test]

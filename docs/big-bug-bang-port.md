@@ -5094,6 +5094,29 @@ mutation. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `e69263725b35cbc2f56ea265d70652b388e5ed3b04a479f80cac305cfd63dd89`.
 
+## Selected-Mask Overlay Oracle (2026-09-13)
+
+BBB `0x8D88..0x8DBC` is the relocated sequel counterpart of Commander Blood's
+`0x7CB4..0x7CE8` selected-choice mask overlay. Both routines contain 26
+instructions in 52 bytes and differ only in the relocated mask table, selector,
+and framebuffer-pointer operands. BBB's shipped 192-byte six-mask table is
+byte-identical to Commander Blood's authored table.
+
+The new `re/tools/big_bug_bang_selected_mask_oracle.py` directly executes all
+six Commander-normalized synthetic pattern cases in the shipped BBB body. It
+proves transparent zero bits, opaque `0xFE` writes, row stride and bit order,
+selector indexing, the ignored framebuffer-pointer offset, and the relocated DS
+state rather than a GS decoy. The harness also verifies exact register, segment,
+flag, near-return, stack, changed-address, untouched-memory, and executable
+ownership.
+
+The typed `draw_presentation_choice_number` operation consumes both six-row
+semantic fixtures, while its separate executable-data test guards the authored
+production masks. BBB's body SHA-256 is
+`2b9405cd31538431ff1e93e788074382e098f9b6e923c08d32a0759c76e1e926`,
+and the deterministic fixture SHA-256 is
+`1ff4fe6d8d0c93b02726d0ae976ca733eeede4d72e724f5f6e6ae86a0ec013cf`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

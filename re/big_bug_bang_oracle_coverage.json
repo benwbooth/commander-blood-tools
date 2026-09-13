@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 154,
-    "oracle_fixture_count": 153,
+    "oracle_count": 155,
+    "oracle_fixture_count": 154,
     "fixture_relation_counts": {
-      "exact": 152,
+      "exact": 153,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 271,
-    "unentered_static_entrypoints": 111,
+    "entered_static_entrypoints": 272,
+    "unentered_static_entrypoints": 110,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 272,
+    "entered_known_entrypoints": 273,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 158,
-        "unentered": 38
+        "entered": 159,
+        "unentered": 37
       },
       "exact_body": {
         "entered": 15,
@@ -1729,6 +1729,18 @@
       "summary": "verified 8 original C6 travel-dispatch cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_script_travel.jsonl",
       "fixture_sha256": "17f2ec2e04dd01af007167f9833dbf3b2009503ae66a1eb60da8cebbfd5a6446",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_selected_mask_oracle.py",
+      "oracle_sha256": "efeb21847e45598a14fae8404a407ccef859c90fffe7cbae8f30b912e59f10a8",
+      "executed_instruction_count": 26,
+      "entered_entrypoints": [
+        "0x8d88"
+      ],
+      "summary": "verified 6 BBB selected-mask cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_selected_mask.json",
+      "fixture_sha256": "1ff4fe6d8d0c93b02726d0ae976ca733eeede4d72e724f5f6e6ae86a0ec013cf",
       "fixture_relation": "exact"
     },
     {
@@ -4952,8 +4964,10 @@
     {
       "entry": "0x8d88",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_selected_mask_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x7cb4"
     },
