@@ -1985,3 +1985,23 @@ decoy images, transient stack writes, register preservation, defined flags, retu
 executable immutability. Its deterministic 12-row JSONL has SHA-256
 `addf58dcca25546336623c22a383f2b22ce56ce4f81e750aa174cc9d014716c5`. This behaviorally
 classifies BBB `0xAAD4`, not its caller or whole navigation transition.
+
+## 2026-09-12 - Big Bug Bang navigation center-wipe span builder
+
+BBB `0xAAFE..0xAB8F` is the relocated sequel counterpart of Commander Blood's already ported
+`0x9364..0x93F5` center-wipe span-table builder. Its 85 instructions differ only in the relocated
+DS-owned far output pointer. The new `re/tools/big_bug_bang_navigation_wipe_oracle.py` executes the
+complete unchanged 145-byte body, guarded by SHA-256
+`be5cc5d0ffe3888a258dba7cd268d73d0ff8b28a125994175869e7d37921d5f6`.
+
+All 20 Commander-derived cases agree on path, deltas, span counts, complete stream hashes and
+flags. They cover all nine shipped endpoints, both Bresenham branches, equal deltas, output wrap,
+reverse string direction and the native zero-`LOOP` center edge that emits 65,536 spans. The typed
+Rust function now consumes both fixtures while retaining its bounded policy: valid display
+geometry is exact, right-of-center width underflow is rejected and the center edge becomes empty.
+
+The oracle checks complete DS, output, entry-ES and GS-decoy images, saved-register and caller stack
+ownership outside the routine's four transient scratch bytes, register preservation, defined
+flags, return discipline and executable immutability. Its deterministic 20-row JSONL has SHA-256
+`b2d91ba7133339750c628e0352c19c7c98d712298cc60670227d06cfc8573a80`. This behaviorally
+classifies BBB `0xAAFE`, not its caller or the complete navigation transition.

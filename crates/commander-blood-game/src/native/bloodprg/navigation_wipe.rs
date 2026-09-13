@@ -41,10 +41,10 @@ impl std::error::Error for NavigationWipeEndpointError {}
 /// Build the navigation chart's symmetric center-wipe spans.
 ///
 /// This translates `nav_center_wipe_span_table_build` at BLOODPRG routine
-/// offset `0x009364`. The output is an owned vector rather than a sentinel-
-/// terminated table in a graphics segment. Endpoints that made the DOS code
-/// underflow widths or walk 65,536 wrapped entries are rejected or normalized
-/// to an empty geometric result.
+/// offset `0x009364` and its BLOOD2PG counterpart at `0x00AAFE`. The output is
+/// an owned vector rather than a sentinel-terminated table in a graphics
+/// segment. Endpoints that made the DOS code underflow widths or walk 65,536
+/// wrapped entries are rejected or normalized to an empty geometric result.
 pub fn build_navigation_wipe_spans(
     endpoint: [u16; 2],
 ) -> Result<Box<[NavigationWipeSpan]>, NavigationWipeEndpointError> {
@@ -124,11 +124,24 @@ mod tests {
     }
 
     #[test]
-    fn valid_geometry_matches_original_spans_and_wrapping_geometry_is_rejected() {
-        let vectors: Vec<WipeOracle> = serde_json::from_str(include_str!(
+    fn valid_geometry_matches_both_originals_and_wrapping_geometry_is_rejected() {
+        let commander: Vec<WipeOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9364_natural.json"
         ))
         .unwrap();
+        let sequel: Vec<WipeOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_navigation_wipe.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander.len(), ORACLE_VECTOR_COUNT);
+        assert_eq!(sequel.len(), ORACLE_VECTOR_COUNT);
+        verify_wipe_oracles(commander);
+        verify_wipe_oracles(sequel);
+    }
+
+    fn verify_wipe_oracles(vectors: Vec<WipeOracle>) {
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
 
         for vector in vectors {

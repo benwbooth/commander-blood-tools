@@ -3875,6 +3875,43 @@ the deterministic 12-row JSONL has SHA-256
 This behaviorally classifies BBB `0xAAD4`, not its caller or whole navigation
 transition.
 
+## Sequel Navigation Center Wipe
+
+BBB's `0xAAFE..0xAB8F` center-wipe span-table builder is the relocated sequel
+counterpart of Commander Blood `0x9364..0x93F5`. Its 85 instructions are
+identical except that BBB reads the DS-owned far output pointer from
+`DS:0x55F1` instead of `DS:0x5221`. The guarded oracle executes the complete
+unchanged 145-byte body:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_navigation_wipe_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_navigation_wipe.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  valid_geometry_matches_both_originals_and_wrapping_geometry_is_rejected
+```
+
+All 20 Commander-derived cases produce the same normalized path, deltas,
+span count, complete span-stream hash and flags. They cover all nine shipped
+endpoints, vertical- and horizontal-major Bresenham paths, equal deltas,
+upward and downward motion, output wrapping, inherited reverse string
+direction, and the native center-point edge whose zero `LOOP` count emits
+65,536 spans. The typed Rust port retains the valid display geometry, rejects
+width-underflow endpoints to the right of center, and normalizes that center
+edge to an empty span vector.
+
+The oracle checks complete DS input/pointer, output, entry-ES and GS-decoy
+images, the saved-register frame and caller stack outside four bytes of
+routine-owned transient `PUSHF`/AX scratch, register preservation, defined
+flags, return discipline and executable immutability. The body is bound by
+SHA-256
+`be5cc5d0ffe3888a258dba7cd268d73d0ff8b28a125994175869e7d37921d5f6`;
+the deterministic 20-row JSONL has SHA-256
+`b2d91ba7133339750c628e0352c19c7c98d712298cc60670227d06cfc8573a80`.
+This behaviorally classifies BBB `0xAAFE`, not its caller or the complete
+navigation transition.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
