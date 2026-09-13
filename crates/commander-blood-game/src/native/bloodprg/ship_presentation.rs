@@ -165,7 +165,8 @@ pub enum ShipPresentationOutcome {
     CommonOnly,
 }
 
-/// Run native BLOODPRG routine `0x00AFA0` over typed state.
+/// Run native BLOODPRG routine `0x00AFA0`, relocated to BLOOD2PG `0x00C780`,
+/// over typed state.
 ///
 /// Phase precedence is evaluated from the flag word captured on entry. This is
 /// significant when dialogue completion writes the live HUD state during a
@@ -337,12 +338,24 @@ mod tests {
     }
 
     #[test]
-    fn fsm_matches_every_original_dispatch_vector() {
+    fn fsm_matches_both_original_dispatch_fixtures() {
         let vectors: Vec<PresentationVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_afa0_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), 20);
+        assert_fsm_vectors("Commander Blood 0xAFA0", vectors);
+
+        let vectors = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_presentation.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_fsm_vectors("Big Bug Bang 0xC780", vectors);
+    }
+
+    fn assert_fsm_vectors(source_name: &str, vectors: Vec<PresentationVector>) {
+        assert_eq!(vectors.len(), 20, "{source_name}");
         for vector in vectors {
             let mut state = ShipPresentationState {
                 flags: vector.state_before,
@@ -367,7 +380,7 @@ mod tests {
             let mut host = RecordingHost::default();
             update_ship_presentation(&mut state, &17, &mut host);
 
-            assert_eq!(state, expected, "{}", vector.name);
+            assert_eq!(state, expected, "{source_name}: {}", vector.name);
             assert_eq!(
                 host.calls,
                 vector
@@ -375,7 +388,7 @@ mod tests {
                     .iter()
                     .map(|call| call.name.clone())
                     .collect::<Vec<_>>(),
-                "{}",
+                "{source_name}: {}",
                 vector.name
             );
         }

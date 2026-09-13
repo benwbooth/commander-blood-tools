@@ -2921,3 +2921,33 @@ decoder consumes both fixtures. BBB's complete body SHA-256 is
 `b8faa7f10d48be4f3133b0bdefa751587130d1436243a57935a17b18ad4a949f`,
 and the deterministic JSONL SHA-256 is
 `809348e1dd1e994065e6b14cf0fb70d5170704ac2e8c4c28e6954ef14ca935cf`.
+
+## 2026-09-13 - Big Bug Bang ship presentation FSM
+
+BBB `0xC780..0xC859` relocates Commander Blood's `0xAFA0..0xB079`
+top-level ship presentation phase coordinator. Both bodies contain 68
+instructions in 217 bytes. Fourteen state fields and seven helper targets move,
+while initialization, dialogue, HUD, travel, and navigation phase precedence
+remain structurally identical.
+
+The new `re/tools/big_bug_bang_ship_presentation_oracle.py` executes both
+shipped bodies over all 20 recovered Commander cases and covers both outcomes
+of all 14 conditional sites, or 28 normalized edges. It checks inactive and
+initialization paths, high and combined phase bits, presentation gates,
+dialogue publication and closure, HUD transition gating, travel redraw and
+status-line behavior, and navigation precedence.
+
+All seven relocated calls run through exact near or far callback frames,
+including the near call paired with `PUSH CS` for a far-return band helper and
+the inherited scene-link register. The oracle verifies callback clobber
+propagation, exact normalized writes, DS ownership against a GS decoy, complete
+registers and defined flags, real far return, stack envelope, executable and
+unowned memory, and direct Commander/BBB equality. The typed coordinator now
+consumes both fixtures. BBB's body SHA-256 is
+`8f67ffbdc0d60ed8bdcab4b9dd0ac76c74f5e008af94c3ef1053c66aaecd44ec`,
+and the deterministic JSONL SHA-256 is
+`c4c29e4bd87211bbce6cf5cd3818b3f221f31bf2bb9b5ed755fb48d0a668aeb5`.
+
+The independently entered BBB HUD and navigation callees at `0xC859` and
+`0xCB0F` remain separate recovery targets; this coordinator oracle deliberately
+does not substitute their behavior for direct evidence.
