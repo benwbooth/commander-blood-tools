@@ -1946,3 +1946,22 @@ registers, defined flags, stack discipline and executable immutability. Its dete
 JSONL has SHA-256 `0675e959f796beeb5abc66af72b292ff693ae09d3c063344e63c1343c1153d8d`.
 This behaviorally classifies BBB `0xA9D3`, not its two captured callees or whole navigation
 rendering.
+
+## 2026-09-12 - Big Bug Bang navigation-chart object picker
+
+BBB `0xAA3D..0xAAD4` is the relocated sequel counterpart of Commander Blood's already ported
+`0x92A3..0x933A` chart-object picker. The new
+`re/tools/big_bug_bang_navigation_pick_oracle.py` executes the complete unchanged 151-byte body,
+guarded by SHA-256 `2dbdb27c3cd9e9aa4529fe6c09d7044507f139dc8defa474b7867311905da25b`.
+
+All 13 Commander-derived cases agree after normalizing relocated global and stack-list addresses.
+They cover empty input, inclusive edges, first-hit order, ordinary, ship and black-hole extents,
+near and far black-hole endpoints, both kind bits, wrapped bounds and record fields, scratch state
+and reverse direction-flag preservation. The object record layout and algorithm are unchanged, so
+the existing typed picker now consumes both fixtures without a production behavior change.
+
+The oracle checks complete global, record, stack and decoy game-segment images, scratch writes,
+general and segment registers, defined flags, stack discipline and executable immutability. Its
+deterministic 13-row JSONL has SHA-256
+`ac4645b79681eac64ddf01567d64b2b4f6833170917ecb6e8e0bd21d61e8a28b`. This behaviorally
+classifies BBB `0xAA3D`, not its caller or whole chart interaction.

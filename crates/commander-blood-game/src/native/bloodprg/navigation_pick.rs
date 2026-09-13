@@ -57,10 +57,11 @@ pub enum NavigationChartPickOutcome<RecordId> {
 
 /// Pick the first navigation-chart object containing the logical pointer.
 ///
-/// This translates native BLOODPRG routine `0x0092A3`. Owned object records
-/// replace the record segment and stack-owned offset list. Wrapping origin and
-/// edge arithmetic remains explicit because it affects hit testing near the
-/// unsigned coordinate boundary.
+/// This translates native BLOODPRG routine `0x0092A3` and its BLOOD2PG
+/// counterpart at `0x00AA3D`. Owned object records replace the record segment
+/// and stack-owned offset list. Wrapping origin and edge arithmetic remains
+/// explicit because it affects hit testing near the unsigned coordinate
+/// boundary.
 pub fn pick_navigation_chart_object<RecordId: Clone, EndpointContext: Eq>(
     objects: &[NavigationChartPickObject<RecordId, EndpointContext>],
     arche_endpoint_context: &EndpointContext,
@@ -153,13 +154,24 @@ mod tests {
     }
 
     #[test]
-    fn chart_pick_matches_every_original_vector() {
-        let vectors: Vec<PickVector> = serde_json::from_str(include_str!(
+    fn chart_pick_matches_both_original_fixtures() {
+        let commander: Vec<PickVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_92a3_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), 13);
+        let sequel: Vec<PickVector> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_navigation_pick.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(commander.len(), 13);
+        assert_eq!(sequel.len(), 13);
+        assert_pick_vectors(commander);
+        assert_pick_vectors(sequel);
+    }
 
+    fn assert_pick_vectors(vectors: Vec<PickVector>) {
         for vector in vectors {
             let objects = objects_for_vector(&vector);
             assert_eq!(

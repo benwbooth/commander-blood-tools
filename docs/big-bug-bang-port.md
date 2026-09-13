@@ -3806,6 +3806,40 @@ the deterministic 12-row JSONL has SHA-256
 This behaviorally classifies BBB `0xA9D3`, not its two captured callees or
 end-to-end navigation rendering.
 
+## Sequel Navigation-Chart Object Picker
+
+BBB's `0xAA3D..0xAAD4` chart-object picker is the relocated sequel counterpart
+of Commander Blood `0x92A3..0x933A`. The guarded oracle executes the complete
+unchanged 151-byte BBB body and compares its normalized results with every
+established Commander picker vector:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_navigation_pick_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_navigation_pick.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  chart_pick_matches_both_original_fixtures
+```
+
+All 13 cases agree across games after normalizing relocated global and
+stack-list addresses. They prove an empty list, inclusive lower and upper
+edges, first-hit ordering, ordinary `12x11`, ship `21x10`, and black-hole
+`19x12` extents, near/far black-hole endpoint selection, interaction when both
+kind bits are present, wrapped unsigned bounds, wrapped record fields, and
+direction-flag preservation. The object record layout itself is unchanged.
+
+The existing typed picker is now tested against both fixtures; no production
+algorithm changed. The oracle checks complete global, record, stack and decoy
+game-segment images, scratch writes, general and segment registers, defined
+flags, stack discipline and executable immutability. The body is bound by
+SHA-256
+`2dbdb27c3cd9e9aa4529fe6c09d7044507f139dc8defa474b7867311905da25b`;
+the deterministic 13-row JSONL has SHA-256
+`ac4645b79681eac64ddf01567d64b2b4f6833170917ecb6e8e0bd21d61e8a28b`.
+This behaviorally classifies BBB `0xAA3D`, not its caller or end-to-end chart
+interaction.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
