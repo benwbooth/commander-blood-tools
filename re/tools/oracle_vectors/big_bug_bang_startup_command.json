@@ -1,0 +1,368 @@
+{
+  "format": "big_bug_bang_startup_command_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "routines": [
+    {
+      "operation": "startup_command_line_parse",
+      "entry": "0x08ef",
+      "end": "0x0924",
+      "body_sha256": "b4aa1c36b44947a3c1b0e67f4b360cb46e541cb55c3afd63a4bd077df357fc02"
+    },
+    {
+      "operation": "startup_option_apply",
+      "entry": "0x0924",
+      "end": "0x09a2",
+      "body_sha256": "520aea88629b99c90e10a998f5ac93fa1b16475397e80a3bd1758b7aef90b17b"
+    },
+    {
+      "operation": "startup_audio_number_parse",
+      "entry": "0x2992",
+      "end": "0x29e5",
+      "body_sha256": "79aec148e4473edca687e714d782a1a810be0ea7a2b45d096a29b59bb4277366"
+    }
+  ],
+  "startup_options": [
+    {
+      "prefix": "S16",
+      "flags": 2,
+      "driver_id": 42
+    },
+    {
+      "prefix": "MID",
+      "flags": 0,
+      "driver_id": 1
+    },
+    {
+      "prefix": "SDB",
+      "flags": 2,
+      "driver_id": 42
+    },
+    {
+      "prefix": "SBP",
+      "flags": 2,
+      "driver_id": 42
+    },
+    {
+      "prefix": "WRI",
+      "flags": 1,
+      "driver_id": 0
+    }
+  ],
+  "command_cases": [
+    {
+      "name": "empty",
+      "command": "",
+      "calls": [],
+      "final_token": null,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 3
+    },
+    {
+      "name": "single",
+      "command": "AMR",
+      "calls": [
+        {
+          "remaining": 0,
+          "token": "AMR"
+        }
+      ],
+      "final_token": "AMR",
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 8
+    },
+    {
+      "name": "shipped_arguments",
+      "command": " AMR S162227 EMS WRIC:\\cblood\\",
+      "calls": [
+        {
+          "remaining": 30,
+          "token": ""
+        },
+        {
+          "remaining": 26,
+          "token": "AMR"
+        },
+        {
+          "remaining": 18,
+          "token": "S162227"
+        },
+        {
+          "remaining": 14,
+          "token": "EMS"
+        },
+        {
+          "remaining": 0,
+          "token": "WRIC:\\cblood\\"
+        }
+      ],
+      "final_token": "WRIC:\\cblood\\",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 39
+    },
+    {
+      "name": "repeated_spaces",
+      "command": "A  B",
+      "calls": [
+        {
+          "remaining": 3,
+          "token": "A"
+        },
+        {
+          "remaining": 2,
+          "token": ""
+        },
+        {
+          "remaining": 0,
+          "token": "B"
+        }
+      ],
+      "final_token": "B",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 11
+    },
+    {
+      "name": "trailing_space",
+      "command": "A ",
+      "calls": [
+        {
+          "remaining": 1,
+          "token": "A"
+        }
+      ],
+      "final_token": "A",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 6
+    }
+  ],
+  "option_cases": [
+    {
+      "name": "no_match",
+      "token_before": "ABC",
+      "token_after": "ABC",
+      "matched_prefix": null,
+      "helper_calls": [],
+      "owned_write_directory": "cccccccccccccccccccccccccccccccc",
+      "raw_directory_underflow_write": false,
+      "driver_id": 105,
+      "configuration": 4660,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 14
+    },
+    {
+      "name": "matched_no_action",
+      "token_before": "MID1234",
+      "token_after": "MID1234",
+      "matched_prefix": "MID",
+      "helper_calls": [],
+      "owned_write_directory": "cccccccccccccccccccccccccccccccc",
+      "raw_directory_underflow_write": false,
+      "driver_id": 105,
+      "configuration": 4660,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 8
+    },
+    {
+      "name": "write_directory",
+      "token_before": "WRIC:\\bbb\\",
+      "token_after": "WRIC:\\bbb\\",
+      "matched_prefix": "WRI",
+      "helper_calls": [],
+      "owned_write_directory": "C:\\bbb",
+      "raw_directory_underflow_write": false,
+      "driver_id": 105,
+      "configuration": 4660,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 22
+    },
+    {
+      "name": "empty_write_directory",
+      "token_before": "WRI",
+      "token_after": "WRI",
+      "matched_prefix": "WRI",
+      "helper_calls": [],
+      "owned_write_directory": "cccccccccccccccccccccccccccccccc",
+      "raw_directory_underflow_write": true,
+      "driver_id": 105,
+      "configuration": 4660,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 15
+    },
+    {
+      "name": "sb16_audio",
+      "token_before": "S162227",
+      "token_after": "S16222",
+      "matched_prefix": "S16",
+      "helper_calls": [
+        {
+          "segment": 16384,
+          "offset": 25603,
+          "text": "222"
+        }
+      ],
+      "owned_write_directory": "cccccccccccccccccccccccccccccccc",
+      "raw_directory_underflow_write": false,
+      "driver_id": 42,
+      "configuration": 3559,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": true,
+        "of": false
+      },
+      "write_count": 19
+    },
+    {
+      "name": "sound_driver_b_audio",
+      "token_before": "SDB1234",
+      "token_after": "SDB123",
+      "matched_prefix": "SDB",
+      "helper_calls": [
+        {
+          "segment": 16384,
+          "offset": 25603,
+          "text": "123"
+        }
+      ],
+      "owned_write_directory": "cccccccccccccccccccccccccccccccc",
+      "raw_directory_underflow_write": false,
+      "driver_id": 42,
+      "configuration": 1972,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": true,
+        "of": false
+      },
+      "write_count": 23
+    },
+    {
+      "name": "sound_blaster_pro_audio",
+      "token_before": "SBP0015",
+      "token_after": "SBP001",
+      "matched_prefix": "SBP",
+      "helper_calls": [
+        {
+          "segment": 16384,
+          "offset": 25603,
+          "text": "001"
+        }
+      ],
+      "owned_write_directory": "cccccccccccccccccccccccccccccccc",
+      "raw_directory_underflow_write": false,
+      "driver_id": 42,
+      "configuration": 21,
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 25
+    },
+    {
+      "name": "removed_gravis_option",
+      "token_before": "GRV1234",
+      "token_after": "GRV1234",
+      "matched_prefix": null,
+      "helper_calls": [],
+      "owned_write_directory": "cccccccccccccccccccccccccccccccc",
+      "raw_directory_underflow_write": false,
+      "driver_id": 105,
+      "configuration": 4660,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 14
+    },
+    {
+      "name": "sequel_hex_trailing_character",
+      "token_before": "S16-12x",
+      "token_after": "S16-12",
+      "matched_prefix": "S16",
+      "helper_calls": [
+        {
+          "segment": 16384,
+          "offset": 25603,
+          "text": "-12"
+        }
+      ],
+      "owned_write_directory": "cccccccccccccccccccccccccccccccc",
+      "raw_directory_underflow_write": false,
+      "driver_id": 42,
+      "configuration": 65345,
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "write_count": 19
+    }
+  ]
+}

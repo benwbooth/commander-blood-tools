@@ -24,31 +24,31 @@
     }
   },
   "summary": {
-    "oracle_count": 130,
-    "oracle_fixture_count": 129,
+    "oracle_count": 131,
+    "oracle_fixture_count": 130,
     "fixture_relation_counts": {
-      "exact": 128,
+      "exact": 129,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 238,
-    "unentered_static_entrypoints": 144,
+    "entered_static_entrypoints": 241,
+    "unentered_static_entrypoints": 141,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 239,
+    "entered_known_entrypoints": 242,
     "comparison_counts": {
       "unresolved": {
-        "entered": 75,
-        "unentered": 51
+        "entered": 76,
+        "unentered": 50
       },
       "structural_candidate": {
-        "entered": 130,
-        "unentered": 66
+        "entered": 131,
+        "unentered": 65
       },
       "exact_body": {
-        "entered": 13,
-        "unentered": 14
+        "entered": 14,
+        "unentered": 13
       },
       "ambiguous": {
         "entered": 20,
@@ -1731,6 +1731,20 @@
       "fixture_relation": "exact"
     },
     {
+      "oracle": "re/tools/big_bug_bang_startup_command_oracle.py",
+      "oracle_sha256": "8921e69be0b12e9a10cd19688d6f5f4ca70e029f159c2edf50b32739c29ae7db",
+      "executed_instruction_count": 134,
+      "entered_entrypoints": [
+        "0x08ef",
+        "0x0924",
+        "0x2992"
+      ],
+      "summary": "verified 5 BBB command-tail and 9 startup-option cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_startup_command.json",
+      "fixture_sha256": "ebd5035c5b5bd669b04497374873be12c6918fd9f9619f93ed2624e359a16d5d",
+      "fixture_relation": "exact"
+    },
+    {
       "oracle": "re/tools/big_bug_bang_startup_tables_oracle.py",
       "oracle_sha256": "dafa006015860d518d5f13169e42c5e213740ab0d9ad4ad60ccc66df93ddc6a2",
       "executed_instruction_count": 32,
@@ -1935,16 +1949,20 @@
     {
       "entry": "0x08ef",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_startup_command_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x6f1"
     },
     {
       "entry": "0x0924",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_startup_command_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {
@@ -2620,8 +2638,10 @@
     {
       "entry": "0x2992",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_startup_command_oracle.py"
+      ],
       "comparison": "exact_body",
       "commander_entry": "0x2612"
     },

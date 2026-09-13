@@ -755,7 +755,7 @@ pub use sprite_raster::{
 };
 pub use startup::{
     StartupAudioConfiguration, StartupAudioDriver, StartupConfiguration, apply_startup_option,
-    tokenize_startup_command,
+    apply_startup_option_for_dialect, tokenize_startup_command,
 };
 pub use startup_cleanup::{
     STARTUP_TRANSIENT_PATH_COUNT, StartupTransientFileHost, delete_startup_transient_files,

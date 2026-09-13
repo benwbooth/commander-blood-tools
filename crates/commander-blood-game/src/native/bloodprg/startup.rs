@@ -1,5 +1,7 @@
 //! Command-tail tokenization and startup-option handling recovered from BLOODPRG.
 
+use commander_blood_formats::code::ScriptDialect;
+
 use super::{STARTUP_AUDIO_NUMBER_LENGTH, parse_startup_audio_number};
 
 const OPTION_PREFIX_LENGTH: usize = 3;
@@ -61,6 +63,14 @@ const SHIPPED_STARTUP_OPTIONS: [StartupOption; SHIPPED_STARTUP_OPTION_COUNT] = [
     StartupOption::directory(*b"WRI"),
 ];
 
+const BIG_BUG_BANG_STARTUP_OPTIONS: [StartupOption; 5] = [
+    StartupOption::audio(*b"S16", StartupAudioDriver::SoundBlaster),
+    StartupOption::none(*b"MID"),
+    StartupOption::audio(*b"SDB", StartupAudioDriver::SoundBlaster),
+    StartupOption::audio(*b"SBP", StartupAudioDriver::SoundBlaster),
+    StartupOption::directory(*b"WRI"),
+];
+
 impl StartupOption {
     const fn none(prefix: [u8; OPTION_PREFIX_LENGTH]) -> Self {
         Self {
@@ -117,13 +127,27 @@ pub fn tokenize_startup_command(command: &[u8]) -> Vec<Vec<u8>> {
 /// The result owns paths and typed driver state; the original global buffers and
 /// packed table addresses have no runtime representation.
 pub fn apply_startup_option(token: &[u8], configuration: &mut StartupConfiguration) {
-    apply_startup_option_from(&SHIPPED_STARTUP_OPTIONS, token, configuration);
+    apply_startup_option_for_dialect(token, configuration, ScriptDialect::CommanderBlood);
+}
+
+/// Apply one token using the selected executable's shipped startup option table.
+pub fn apply_startup_option_for_dialect(
+    token: &[u8],
+    configuration: &mut StartupConfiguration,
+    dialect: ScriptDialect,
+) {
+    let options = match dialect {
+        ScriptDialect::CommanderBlood => &SHIPPED_STARTUP_OPTIONS[..],
+        ScriptDialect::BigBugBang => &BIG_BUG_BANG_STARTUP_OPTIONS[..],
+    };
+    apply_startup_option_from(options, token, configuration, dialect);
 }
 
 fn apply_startup_option_from(
     options: &[StartupOption],
     token: &[u8],
     configuration: &mut StartupConfiguration,
+    dialect: ScriptDialect,
 ) {
     let Some(option) = options
         .iter()
@@ -142,13 +166,17 @@ fn apply_startup_option_from(
         for (destination, source) in number.iter_mut().zip(suffix.iter().copied()) {
             *destination = source;
         }
-        let trailing_digit = suffix
+        let mut trailing_digit = suffix
             .get(AUDIO_TRAILING_DIGIT_INDEX)
             .copied()
-            .unwrap_or(u8::MIN);
+            .unwrap_or(u8::MIN)
+            .wrapping_sub(ASCII_ZERO);
+        if dialect == ScriptDialect::BigBugBang && trailing_digit > 9 {
+            trailing_digit = trailing_digit.wrapping_sub(7);
+        }
         let parsed = parse_startup_audio_number(&number) as u16;
-        let packed_value = parsed.wrapping_shl(AUDIO_CONFIGURATION_SHIFT)
-            | u16::from(trailing_digit.wrapping_sub(ASCII_ZERO));
+        let packed_value =
+            parsed.wrapping_shl(AUDIO_CONFIGURATION_SHIFT) | u16::from(trailing_digit);
         configuration.audio = Some(StartupAudioConfiguration {
             driver: option.driver,
             packed_value,
@@ -180,6 +208,38 @@ mod tests {
     struct OptionOracleVector {
         name: String,
         token_before: String,
+        driver_id: u8,
+        configuration: u16,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangStartupOracle {
+        format: String,
+        executable_sha256: String,
+        routines: Vec<BigBugBangRoutine>,
+        startup_options: Vec<BigBugBangOption>,
+        command_cases: Vec<CommandOracleVector>,
+        option_cases: Vec<BigBugBangOptionCase>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangRoutine {
+        entry: String,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangOption {
+        prefix: String,
+        flags: u8,
+        driver_id: u8,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangOptionCase {
+        name: String,
+        token_before: String,
+        owned_write_directory: String,
+        raw_directory_underflow_write: bool,
         driver_id: u8,
         configuration: u16,
     }
@@ -243,7 +303,12 @@ mod tests {
                 }
                 _ => &SHIPPED_STARTUP_OPTIONS,
             };
-            apply_startup_option_from(options, vector.token_before.as_bytes(), &mut actual);
+            apply_startup_option_from(
+                options,
+                vector.token_before.as_bytes(),
+                &mut actual,
+                ScriptDialect::CommanderBlood,
+            );
 
             match vector.name.as_str() {
                 "write_directory" => {
@@ -262,6 +327,93 @@ mod tests {
                 }
                 _ => assert_eq!(actual, initial),
             }
+        }
+    }
+
+    #[test]
+    fn sequel_startup_handlers_match_original_executable_vectors() {
+        const EXECUTABLE_SHA256: &str =
+            "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834";
+        let fixture: BigBugBangStartupOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_startup_command.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.format, "big_bug_bang_startup_command_v1");
+        assert_eq!(fixture.executable_sha256, EXECUTABLE_SHA256);
+        assert_eq!(
+            fixture
+                .routines
+                .iter()
+                .map(|routine| routine.entry.as_str())
+                .collect::<Vec<_>>(),
+            ["0x08ef", "0x0924", "0x2992"]
+        );
+        assert_eq!(
+            fixture
+                .startup_options
+                .iter()
+                .map(|option| (option.prefix.as_str(), option.flags, option.driver_id))
+                .collect::<Vec<_>>(),
+            [
+                ("S16", 2, 42),
+                ("MID", 0, 1),
+                ("SDB", 2, 42),
+                ("SBP", 2, 42),
+                ("WRI", 1, 0),
+            ]
+        );
+
+        for vector in fixture.command_cases {
+            let expected = vector
+                .calls
+                .iter()
+                .map(|call| call.token.as_bytes().to_vec())
+                .collect::<Vec<_>>();
+            assert_eq!(
+                tokenize_startup_command(vector.command.as_bytes()),
+                expected
+            );
+        }
+
+        for vector in fixture.option_cases {
+            let initial = StartupConfiguration {
+                write_directory: Some(vec![b'c'; 32]),
+                audio: Some(StartupAudioConfiguration {
+                    driver: StartupAudioDriver::Gravis,
+                    packed_value: 4_660,
+                }),
+            };
+            let mut actual = initial.clone();
+            apply_startup_option_for_dialect(
+                vector.token_before.as_bytes(),
+                &mut actual,
+                ScriptDialect::BigBugBang,
+            );
+            assert_eq!(
+                actual.write_directory.as_deref(),
+                Some(vector.owned_write_directory.as_bytes()),
+                "{}",
+                vector.name
+            );
+            if vector.configuration == 4_660 {
+                assert_eq!(vector.driver_id, 0x69, "{}", vector.name);
+                assert_eq!(actual.audio, initial.audio, "{}", vector.name);
+            } else {
+                assert_eq!(
+                    actual.audio,
+                    Some(StartupAudioConfiguration {
+                        driver: StartupAudioDriver::SoundBlaster,
+                        packed_value: vector.configuration,
+                    }),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(vector.driver_id, 42, "{}", vector.name);
+            }
+            assert_eq!(
+                vector.raw_directory_underflow_write,
+                vector.name == "empty_write_directory"
+            );
         }
     }
 }

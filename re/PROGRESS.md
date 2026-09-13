@@ -3738,3 +3738,36 @@ pending game semantics: 221 direct typed, 8 inherited exact typed, 7 inherited
 exact eliminated, 14 eliminated host adapters, 17 dormant diagnostics, and 7
 authored no-operations. Its SHA-256 is
 `95ab4b964f222935841847ca83257d0ff7e2986e548394a8c43e1757d4f3cc61`.
+
+## 2026-09-13 - Big Bug Bang startup command handlers
+
+`re/tools/big_bug_bang_startup_command_oracle.py` executes the unchanged BBB
+DOS-tail tokenizer at `0x08EF`, startup-option handler at `0x0924`, and its
+far-called signed-number parser at `0x2992`. Five tokenizer cases retain the
+original leading, repeated, and trailing-space behavior and exact remaining
+byte counts. Nine option cases cover every shipped table action, no match,
+empty-path underflow, signed wrapping, and the sequel-specific option surface.
+
+The executable table has five records: `S16`, `MID`, `SDB`, `SBP`, and `WRI`.
+Unlike Commander Blood, BBB omits `GRV`; its changed handler also maps a fourth
+audio character above `9` by subtracting seven, so `S16-12x` produces packed
+configuration `0xFF41` rather than Commander's `0xFF48`. The typed startup API
+is now dialect-aware and preserves both shipped behaviors.
+
+The oracle verifies exact body hashes, the native data-backed option table,
+PSP-to-command-tail segment arithmetic, token dispatch order, far helper ABI,
+stack frames and returns, registers, arithmetic flags, token truncation, exact
+SS/ES/GS write ownership, and module/source/decoy immutability. Its checked
+fixture SHA-256 is
+`ebd5035c5b5bd669b04497374873be12c6918fd9f9619f93ed2624e359a16d5d`.
+
+The global collector now reproduces 129 exact fixtures and one prefix fixture
+across 131 BBB oracle programs, entering 241 of 382 static entrypoints plus the
+runtime ISR. Its report SHA-256 is
+`fdd1e70b6e547ce7e0f11841ba4ce7aa92af277ba748cb51827ae5cd6cc367f8`.
+Both pending startup handlers are directly owned, and the shared number parser
+is upgraded from inherited identity to direct execution. The strict ledger now
+classifies 276 of 383 known entries and leaves 107 pending: 224 direct typed,
+7 inherited exact typed, 7 inherited exact eliminated, 14 host adapters, 17
+dormant diagnostics, and 7 authored no-operations. Its SHA-256 is
+`7ef632fc73987e94d71f227711b5cd17b143cd8c7d35d55de537250310b5d320`.
