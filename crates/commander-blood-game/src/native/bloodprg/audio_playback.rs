@@ -485,6 +485,7 @@ mod tests {
 
     const ORACLE_VECTOR_COUNT: usize = 15;
     const DRIVER_STOP_ORACLE_VECTOR_COUNT: usize = 6;
+    const ULTRASOUND_VOICE_ORACLE_VECTOR_COUNT: usize = 11;
     const ORIGINAL_STREAMED_CLIP_MARKER: u16 = 32_768;
     const ORIGINAL_STREAMED_CLIP_INDEX_MASK: u16 = 16_383;
     const TEST_CLIP_DATA_BYTE_COUNT: usize = 128;
@@ -514,6 +515,22 @@ mod tests {
     struct MixOperationOracle {
         buffer: usize,
         bytes: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct UltrasoundVoiceOracle {
+        routine: String,
+        name: String,
+        packed: Option<bool>,
+        page_one: Option<bool>,
+        voice: Option<u8>,
+        rate: Option<u16>,
+        start: Option<u32>,
+        end: Option<u32>,
+        payload_bytes: Option<usize>,
+        crossed_bank: Option<bool>,
+        port_reads: Option<usize>,
+        port_writes: usize,
     }
 
     #[derive(Clone, Copy)]
@@ -547,6 +564,80 @@ mod tests {
                 requests.clear();
                 assert_eq!(vector.pending_after, 0, "{}", vector.name);
                 assert_eq!(requests, AudioDriverRequests::default(), "{}", vector.name);
+            }
+        }
+    }
+
+    #[test]
+    fn owned_audio_operations_replace_ultrasound_voice_protocol_vectors() {
+        let vectors: Vec<UltrasoundVoiceOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ultrasound_voice.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), ULTRASOUND_VOICE_ORACLE_VECTOR_COUNT);
+        for (routine, expected) in [
+            ("descriptor", 4),
+            ("clip", 2),
+            ("stop", 2),
+            ("upload", 2),
+            ("delay", 1),
+        ] {
+            assert_eq!(
+                vectors
+                    .iter()
+                    .filter(|vector| vector.routine == routine)
+                    .count(),
+                expected,
+                "{routine} fixture count"
+            );
+        }
+
+        for vector in vectors {
+            match vector.routine.as_str() {
+                "descriptor" => {
+                    let packed = vector.packed.unwrap();
+                    assert_eq!(vector.voice, Some(1), "{}", vector.name);
+                    assert_eq!(vector.rate, Some(if packed { 10 } else { 5 }));
+                    assert!(vector.page_one.is_some(), "{}", vector.name);
+                    assert!(
+                        vector.start.unwrap() < vector.end.unwrap(),
+                        "{}",
+                        vector.name
+                    );
+                    assert_eq!(vector.port_writes, 22, "{}", vector.name);
+                }
+                "clip" => {
+                    assert_eq!(vector.voice, Some(0), "{}", vector.name);
+                    assert!(vector.payload_bytes.unwrap() > 0, "{}", vector.name);
+                    assert!(
+                        vector.start.unwrap() < vector.end.unwrap(),
+                        "{}",
+                        vector.name
+                    );
+                    assert_eq!(vector.port_writes, 28, "{}", vector.name);
+                }
+                "stop" => {
+                    let mut requests = AudioDriverRequests {
+                        stream_start_requested: true,
+                        stream_active: true,
+                    };
+                    requests.clear();
+                    assert_eq!(requests, AudioDriverRequests::default());
+                    assert!(matches!(vector.voice, Some(0 | 1)), "{}", vector.name);
+                    assert_eq!(vector.port_writes, 6, "{}", vector.name);
+                }
+                "upload" => {
+                    assert!(vector.payload_bytes.unwrap() > 0, "{}", vector.name);
+                    assert!(vector.crossed_bank.is_some(), "{}", vector.name);
+                    assert!(vector.port_writes >= 2 * vector.payload_bytes.unwrap());
+                }
+                "delay" => {
+                    assert_eq!(vector.port_reads, Some(7), "{}", vector.name);
+                    assert_eq!(vector.port_writes, 0, "{}", vector.name);
+                }
+                routine => panic!("{}: unknown Ultrasound routine {routine}", vector.name),
             }
         }
     }

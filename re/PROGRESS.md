@@ -3419,3 +3419,37 @@ without a Gravis-specific production branch. The three body SHA-256 values are
 and `f8fd1aaa9b164e873ac17c2f82b055d33aa0338374499c76d12e8033c5d4a309`.
 The deterministic JSONL SHA-256 is
 `d7fc21d2d6dfa82de2aec1051f760fe64920c19ad00a649eced17654f56de036`.
+
+## 2026-09-13 - Big Bug Bang Ultrasound voice programming
+
+Five BBB-only routines implement the low-level Gravis voice protocol. Descriptor
+submission at `0xDB08..0xDBD4` is 101 instructions in 204 bytes; direct clip
+submission at `0xDCE5..0xDDD2` is 115 instructions in 237 bytes; voice stop at
+`0xDDD2..0xDDF8` is 24 instructions in 38 bytes; DRAM upload at
+`0xDDF8..0xDE5B` is 51 instructions in 99 bytes; and the seven-read I/O delay at
+`0xE0DE..0xE0ED` is 13 instructions in 15 bytes.
+
+The new `re/tools/big_bug_bang_ultrasound_voice_oracle.py` executes 11 cases
+across both outcomes of all six conditional sites, or 12 edges. It checks the
+complete Gravis port transcript: voice selection, reset, rate divisor, split
+start and end addresses, packed-rate doubling, first-page header exclusion,
+resident and streamed clip lookup, voice control, stop, byte inversion during
+DRAM upload, 64 KiB bank crossing, and every delay read. It also checks all
+registers, defined flags, stack bounds, mapped memory, executable immutability,
+and write ownership.
+
+The streamed clip branch has one exact 386 ABI hazard: unlike the resident
+branch, it does not clear `EBX` before replacing only `BX` with the clip length,
+so a nonzero incoming high half contributes to the hardware end address. The
+oracle retains that behavior. The typed player avoids the hazard by submitting
+validated owned clip and stream bytes to SDL instead of reconstructing Gravis
+DRAM addresses, and its elimination test consumes all 11 rows.
+
+The five body SHA-256 values are
+`8b23ad5513e00c3ef3a0ff73e45cb78c7a145520bd782aed22865298177a7e5b`,
+`948c61bf4d501be8f20b055c1ddb442ff73b67e052b06c733fdf8a8f9a72501a`,
+`f00e860ac8a0116ec50e34049033ef2f258ef1b818b72cc510c8f2dc54c7ebd5`,
+`1409f11a4a3820cd1af52f290cd725edb4f719f809bee30b6e0e7877a9d18522`,
+and `22b956a9f577da6fbf84f215ae52e51865c8031cbd92196f731e269948d771db`.
+The deterministic JSONL SHA-256 is
+`cadf56f0a16609bdf358958e48e5c0e3e27b8a7592e35d49fb6cfc6f62734c71`.

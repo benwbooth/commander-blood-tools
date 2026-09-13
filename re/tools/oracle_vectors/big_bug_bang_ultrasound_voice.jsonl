@@ -1,0 +1,11 @@
+{"end":285935,"name":"plain_other_page","packed":false,"page_one":false,"port_writes":22,"rate":5,"routine":"descriptor","start":285372,"voice":1}
+{"end":285935,"name":"plain_page_one","packed":false,"page_one":true,"port_writes":22,"rate":5,"routine":"descriptor","start":285378,"voice":1}
+{"end":285935,"name":"packed_other_page","packed":true,"page_one":false,"port_writes":22,"rate":10,"routine":"descriptor","start":285372,"voice":1}
+{"end":285935,"name":"packed_page_one","packed":true,"page_one":true,"port_writes":22,"rate":10,"routine":"descriptor","start":285378,"voice":1}
+{"end":9592,"index":2,"name":"resident_clip","payload_bytes":558,"port_writes":28,"routine":"clip","source":"resident","start":9035,"voice":0}
+{"end":2998356103,"index":-1,"name":"streamed_clip","payload_bytes":795,"port_writes":28,"routine":"clip","source":"streamed","start":345453,"voice":0}
+{"name":"stop_voice_zero","port_writes":6,"routine":"stop","voice":0}
+{"name":"stop_voice_one","port_writes":6,"routine":"stop","voice":1}
+{"address":74565,"crossed_bank":false,"name":"ordinary_upload","payload_bytes":4,"port_writes":12,"routine":"upload"}
+{"address":65534,"crossed_bank":true,"name":"bank_crossing_upload","payload_bytes":3,"port_writes":13,"routine":"upload"}
+{"name":"seven_reads","port_reads":7,"port_writes":0,"routine":"delay"}
