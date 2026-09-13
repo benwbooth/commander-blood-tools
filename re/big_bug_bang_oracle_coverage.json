@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 127,
-    "oracle_fixture_count": 126,
+    "oracle_count": 128,
+    "oracle_fixture_count": 127,
     "fixture_relation_counts": {
-      "exact": 125,
+      "exact": 126,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 228,
-    "unentered_static_entrypoints": 154,
+    "entered_static_entrypoints": 234,
+    "unentered_static_entrypoints": 148,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 229,
+    "entered_known_entrypoints": 235,
     "comparison_counts": {
       "unresolved": {
-        "entered": 74,
-        "unentered": 52
+        "entered": 75,
+        "unentered": 51
       },
       "structural_candidate": {
-        "entered": 122,
-        "unentered": 74
+        "entered": 127,
+        "unentered": 69
       },
       "exact_body": {
         "entered": 12,
@@ -322,6 +322,23 @@
       "summary": "captured 1764 original CA/CB host-clock cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_clock_guard.jsonl",
       "fixture_sha256": "226051250f378f70cb115242332e1be0a3a82462daf255c6d0d53694533eebaf",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_complex_parser_handlers_oracle.py",
+      "oracle_sha256": "a6d9c8cebd3b6dfc9796fedab881226dc130c28ece564e4f84a51eefa79c5a89",
+      "executed_instruction_count": 133,
+      "entered_entrypoints": [
+        "0x8680",
+        "0x86c6",
+        "0x872c",
+        "0x8796",
+        "0x87b8",
+        "0x87eb"
+      ],
+      "summary": "verified 48 cases across 6 BBB complex parser handlers",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_complex_parser_handlers.json",
+      "fixture_sha256": "342a2647fa778cbf44f42a46fbfa85dc5198709fc1980779fb21b128ce074363",
       "fixture_relation": "exact"
     },
     {
@@ -4380,8 +4397,10 @@
     {
       "entry": "0x8680",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_complex_parser_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x763e"
     },
@@ -4403,8 +4422,10 @@
     {
       "entry": "0x86c6",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_complex_parser_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x7684"
     },
@@ -4451,24 +4472,30 @@
     {
       "entry": "0x872c",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_complex_parser_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x76ea"
     },
     {
       "entry": "0x8796",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_complex_parser_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x7754"
     },
     {
       "entry": "0x87b8",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_complex_parser_handlers_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x7776"
     },
@@ -4485,8 +4512,10 @@
     {
       "entry": "0x87eb",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_complex_parser_handlers_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {

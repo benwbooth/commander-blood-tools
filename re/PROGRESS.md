@@ -3656,3 +3656,33 @@ descriptor oracle. The strict disposition ledger therefore classifies 265 of
 inherited exact typed, 7 inherited exact eliminated, 14 eliminated host
 adapters, 17 dormant diagnostics, and 7 authored no-operations. Its SHA-256 is
 `811fbc085dfa6bea35823d0440831d38fd50ef54d7a26acd5a7e2fdfbcb35bb9`.
+
+## 2026-09-13 - Big Bug Bang complex DESCRIPT handlers
+
+The remaining non-background BBB parser handlers now have direct executable
+evidence. `re/tools/big_bug_bang_complex_parser_handlers_oracle.py` executes
+the unchanged sound-bank selector at `0x8680`, talk-clip table writer at
+`0x86C6`, idle-clip selector at `0x872C`, sequence-video append at `0x8796`,
+sequence-subtitle append at `0x87B8`, and music selector at `0x87EB`. The two
+resource-loader callbacks are captured at their original far-call boundaries
+and return without introducing DOS memory APIs into the production model.
+
+The 48 cases cover active and inactive presentation gates, both original idle
+loader branches, valid and malformed background identifiers, printable and
+high-byte stops, source and destination wrap, cursor/count wrap, arbitrary
+subtitle bytes, ASCII normalization, prefix reuse, and music mismatch. Every
+case checks exact body hashes, complete source and executable immutability,
+stack bounds, far-call frames, changed global bytes, and register/segment
+outcomes. The typed DESCRIPT test consumes each row through the owned resource,
+clip, playlist, subtitle, and music APIs. The fixture SHA-256 is
+`342a2647fa778cbf44f42a46fbfa85dc5198709fc1980779fb21b128ce074363`.
+
+The global collector now reproduces 126 exact fixtures and one prefix fixture
+across 128 BBB oracle programs, entering 234 of 382 static entrypoints plus the
+runtime ISR. Its deterministic report SHA-256 is
+`8ee37f2b01af1e9c5f4493c157f0e52edcf0f5022921495322a623d722b7f5b2`.
+The strict disposition ledger classifies 271 of 383 known entries and leaves
+112 pending game semantics; its SHA-256 is
+`a0c7de303ccd116b3142226138b43809c92ca847f47578efc71c50f5769da9ab`.
+The DOS-backed background-cache handler at `0x85A0` remains separate and
+pending rather than being conflated with these resource-selection semantics.

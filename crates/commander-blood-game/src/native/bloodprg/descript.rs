@@ -615,6 +615,62 @@ mod tests {
         },
     }
 
+    #[derive(Deserialize)]
+    struct SequelComplexParserFixture {
+        format: String,
+        routines: Vec<SequelParserRoutine>,
+        cases: Vec<SequelComplexParserCase>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    enum SequelComplexParserCase {
+        SoundBank {
+            name: String,
+            input_hex: String,
+            copied_hex: String,
+            stopping_byte: u8,
+            presentation_state: u16,
+            loader_called: bool,
+        },
+        TalkClip {
+            name: String,
+            input_hex: String,
+            asset_id: u8,
+            copied_hex: String,
+            stopping_byte: u8,
+        },
+        IdleClip {
+            name: String,
+            input_hex: String,
+            asset_id: u8,
+            copied_hex: String,
+            stopping_byte: u8,
+            presentation_state: u16,
+            loader_called: bool,
+        },
+        SequenceVideo {
+            name: String,
+            input_hex: String,
+            copied_hex: String,
+            stopping_byte: u8,
+        },
+        SequenceSubtitle {
+            name: String,
+            leading_word: u16,
+            suffix_hex: String,
+            copied_hex: String,
+        },
+        Music {
+            name: String,
+            input_hex: String,
+            prior_hex: String,
+            transformed_hex: String,
+            stopping_byte: u8,
+            changed_after: u8,
+        },
+    }
+
     #[derive(Clone, Copy)]
     enum VideoAssetField {
         Location,
@@ -877,6 +933,194 @@ mod tests {
                     select_descript_character_sprite(&sprite, &mut assets);
                     assert_eq!(dirty_after, 1, "{name}");
                     assert_eq!(assets.character_sprite(), Some(&sprite), "{name}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn sequel_complex_parser_handlers_match_original_vectors() {
+        let fixture: SequelComplexParserFixture = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_complex_parser_handlers.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.format, "big_bug_bang_complex_parser_handlers_v1");
+        assert_eq!(fixture.routines.len(), 6);
+        assert_eq!(fixture.cases.len(), 48);
+
+        let expected_routines = [
+            ("sound_bank", "0x8680"),
+            ("talk_clip", "0x86c6"),
+            ("idle_clip", "0x872c"),
+            ("sequence_video", "0x8796"),
+            ("sequence_subtitle", "0x87b8"),
+            ("music", "0x87eb"),
+        ];
+        for (routine, expected) in fixture.routines.iter().zip(expected_routines) {
+            assert_eq!(routine.operation, expected.0);
+            assert_eq!(routine.entry, expected.1);
+            assert_eq!(routine.body_sha256.len(), 64);
+        }
+
+        for case in fixture.cases {
+            match case {
+                SequelComplexParserCase::SoundBank {
+                    name,
+                    input_hex,
+                    copied_hex,
+                    stopping_byte,
+                    presentation_state,
+                    loader_called,
+                } => {
+                    let input = bytes_from_hex(&input_hex);
+                    let expected = bytes_from_hex(&copied_hex);
+                    let (bank, tail) = decode_sound_bank_name(&input).unwrap();
+                    assert_eq!(tail, &[stopping_byte], "{name}");
+                    assert_eq!(bank.as_bytes(), expected.as_ref(), "{name}");
+                    let mut assets = DescriptPresentationAssets::default();
+                    let mut loader = RecordingSoundBankLoader::default();
+                    let loaded = load_descript_sound_bank(
+                        &bank,
+                        presentation_state & PRESENTATION_ACTIVE_BIT != 0,
+                        &mut assets,
+                        &mut loader,
+                    )
+                    .unwrap();
+                    assert_eq!(loaded, loader_called, "{name}");
+                    assert_eq!(
+                        loader.loaded_banks.len(),
+                        usize::from(loader_called),
+                        "{name}"
+                    );
+                }
+                SequelComplexParserCase::TalkClip {
+                    name,
+                    input_hex,
+                    asset_id,
+                    copied_hex,
+                    stopping_byte,
+                } => {
+                    let input = bytes_from_hex(&input_hex);
+                    let expected = bytes_from_hex(&copied_hex);
+                    let decoded = decode_talk_clip(&input);
+                    if matches!(
+                        asset_id,
+                        INVALID_TALK_BACKGROUND_ZERO | INVALID_TALK_BACKGROUND_HIGH
+                    ) {
+                        assert_eq!(
+                            decoded,
+                            Err(DescriptTalkClipError::InvalidBackground(asset_id)),
+                            "{name}"
+                        );
+                        continue;
+                    }
+                    let (clip, tail) = decoded.unwrap();
+                    assert_eq!(tail, &[stopping_byte], "{name}");
+                    assert_eq!(clip.video().as_bytes(), expected.as_ref(), "{name}");
+                    let mut assets = DescriptPresentationAssets::default();
+                    append_descript_talk_clip(&clip, &mut assets);
+                    assert_eq!(assets.talk_clips(), &[clip], "{name}");
+                }
+                SequelComplexParserCase::IdleClip {
+                    name,
+                    input_hex,
+                    asset_id,
+                    copied_hex,
+                    stopping_byte,
+                    presentation_state,
+                    loader_called,
+                } => {
+                    let input = bytes_from_hex(&input_hex);
+                    let expected = bytes_from_hex(&copied_hex);
+                    let decoded = decode_idle_clip(&input);
+                    if matches!(
+                        asset_id,
+                        INVALID_TALK_BACKGROUND_ZERO | INVALID_TALK_BACKGROUND_HIGH
+                    ) {
+                        assert_eq!(
+                            decoded,
+                            Err(DescriptIdleClipError::InvalidBackground(asset_id)),
+                            "{name}"
+                        );
+                        continue;
+                    }
+                    let (clip, tail) = decoded.unwrap();
+                    assert_eq!(tail, &[stopping_byte], "{name}");
+                    assert_eq!(clip.video().as_bytes(), expected.as_ref(), "{name}");
+                    let mut assets = DescriptPresentationAssets::default();
+                    let mut source = RecordingIdleClipSource::default();
+                    let loaded = load_descript_idle_clip(
+                        &clip,
+                        presentation_state & PRESENTATION_ACTIVE_BIT != 0,
+                        &mut assets,
+                        &mut source,
+                    )
+                    .unwrap();
+                    assert_eq!(loaded, loader_called, "{name}");
+                    assert_eq!(
+                        source.loaded_names.len(),
+                        usize::from(loader_called),
+                        "{name}"
+                    );
+                }
+                SequelComplexParserCase::SequenceVideo {
+                    name,
+                    input_hex,
+                    copied_hex,
+                    stopping_byte,
+                } => {
+                    let input = bytes_from_hex(&input_hex);
+                    let expected = bytes_from_hex(&copied_hex);
+                    let (video, tail) = decode_video_name(&input).unwrap();
+                    assert_eq!(tail, &[stopping_byte], "{name}");
+                    assert_eq!(video.as_bytes(), expected.as_ref(), "{name}");
+                    let mut assets = DescriptPresentationAssets::default();
+                    append_descript_sequence_video(&video, &mut assets);
+                    assert_eq!(assets.sequence_videos(), &[video], "{name}");
+                }
+                SequelComplexParserCase::SequenceSubtitle {
+                    name,
+                    leading_word,
+                    suffix_hex,
+                    copied_hex,
+                } => {
+                    let mut input = leading_word.to_le_bytes().to_vec();
+                    input.extend_from_slice(&bytes_from_hex(&suffix_hex));
+                    let copied = bytes_from_hex(&copied_hex);
+                    let (subtitle, tail) = decode_sequence_subtitle(&input).unwrap();
+                    assert_eq!(subtitle.first_visible_frame(), leading_word, "{name}");
+                    assert_eq!(
+                        subtitle.text(),
+                        &copied[size_of::<u16>()..copied.len() - 1],
+                        "{name}"
+                    );
+                    assert_eq!(tail, &input[copied.len()..], "{name}");
+                    let mut assets = DescriptPresentationAssets::default();
+                    append_descript_sequence_subtitle(&subtitle, &mut assets);
+                    assert_eq!(assets.sequence_subtitles(), &[subtitle], "{name}");
+                }
+                SequelComplexParserCase::Music {
+                    name,
+                    input_hex,
+                    prior_hex,
+                    transformed_hex,
+                    stopping_byte,
+                    changed_after,
+                } => {
+                    let input = bytes_from_hex(&input_hex);
+                    let expected = bytes_from_hex(&transformed_hex);
+                    let (music, tail) = decode_music_name(&input).unwrap();
+                    assert_eq!(tail, &[stopping_byte], "{name}");
+                    assert_eq!(music.as_bytes(), expected.as_ref(), "{name}");
+                    let prior = DescriptMusicName::new(bytes_from_hex(&prior_hex));
+                    let mut assets = DescriptPresentationAssets::default();
+                    select_descript_music(&prior, &mut assets);
+                    let outcome = select_descript_music(&music, &mut assets);
+                    assert_eq!(
+                        outcome == DescriptMusicSelectionOutcome::Changed,
+                        changed_after != 0,
+                        "{name}"
+                    );
                 }
             }
         }
