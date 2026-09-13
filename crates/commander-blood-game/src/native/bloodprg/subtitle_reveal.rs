@@ -169,10 +169,11 @@ impl std::error::Error for SubtitleRevealError {}
 /// Draw and advance one progressive subtitle frame.
 ///
 /// This translates `subtitle_reveal_pump` at BLOODPRG routine offset
-/// `0x0093F5`. Owned subtitle bytes, an optional zero-based cursor, typed frame
-/// primitives, and renderer requests replace native null/near pointers,
-/// sentinel tables, graphics globals, and segment selection. Character and
-/// completion timing retain the original 16-bit shift behavior.
+/// `0x0093F5` and its BLOOD2PG counterpart at `0x00AB8F`. Owned subtitle bytes,
+/// an optional zero-based cursor, typed frame primitives, and renderer requests
+/// replace native null/near pointers, sentinel tables, graphics globals, and
+/// segment selection. Character and completion timing retain the original
+/// 16-bit shift behavior.
 pub fn update_subtitle_reveal<Renderer: SubtitleRevealRenderer>(
     presentation: &mut TextPresentationState,
     state: &mut SubtitleRevealState,
@@ -303,8 +304,10 @@ mod tests {
 
     use super::*;
 
-    const NATIVE_TEXT_OFFSET: usize = 3_608;
-    const NATIVE_SUBTITLE_OWNER: u16 = 24_164;
+    const COMMANDER_TEXT_OFFSET: usize = 0x0E18;
+    const COMMANDER_SUBTITLE_OWNER: u16 = 0x5E64;
+    const BIG_BUG_BANG_TEXT_OFFSET: usize = 0x1066;
+    const BIG_BUG_BANG_SUBTITLE_OWNER: u16 = 0x6234;
     const TEXT_SPEED_STEP: u16 = 8;
     const FIRST_LINE_ORIGIN: [u16; 2] = [10, 8];
     const SUBTITLE_TEXT: &[u8] = b"AB\rCD\r";
@@ -384,17 +387,43 @@ mod tests {
     }
 
     #[test]
-    fn subtitle_reveal_matches_every_original_vector() {
-        let vectors: Vec<RevealVector> = serde_json::from_str(include_str!(
+    fn subtitle_reveal_matches_both_originals() {
+        let commander: Vec<RevealVector> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_93f5_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), 11);
+        let sequel: Vec<RevealVector> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_subtitle_reveal.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        verify_reveal_oracles(
+            commander,
+            11,
+            COMMANDER_TEXT_OFFSET,
+            COMMANDER_SUBTITLE_OWNER,
+        );
+        verify_reveal_oracles(
+            sequel,
+            12,
+            BIG_BUG_BANG_TEXT_OFFSET,
+            BIG_BUG_BANG_SUBTITLE_OWNER,
+        );
+    }
+
+    fn verify_reveal_oracles(
+        vectors: Vec<RevealVector>,
+        expected_count: usize,
+        native_text_offset: usize,
+        native_subtitle_owner: u16,
+    ) {
+        assert_eq!(vectors.len(), expected_count);
 
         for vector in vectors {
             let native_cursor = vector.cursor;
             let cursor = (native_cursor != usize::MIN)
-                .then(|| native_cursor.checked_sub(NATIVE_TEXT_OFFSET).unwrap());
+                .then(|| native_cursor.checked_sub(native_text_offset).unwrap());
             let mut presentation = TextPresentationState {
                 subtitle_display_active: vector.active & 1 != u8::MIN,
                 hold_ready: vector.hold_ready & 1 != u8::MIN,
@@ -407,7 +436,7 @@ mod tests {
             };
             let mut state = SubtitleRevealState {
                 display_mode: vector.mode & 2 != u8::MIN,
-                hold_owned_by_subtitle: vector.owner == NATIVE_SUBTITLE_OWNER,
+                hold_owned_by_subtitle: vector.owner == native_subtitle_owner,
                 phase: decode_phase(vector.phase),
                 opening_frame_pulse: vector.pulse != u16::MIN,
                 reveal_delay: vector.delay,
@@ -430,8 +459,17 @@ mod tests {
                 &vector,
                 &renderer.calls,
                 presentation.subtitle_reveal_cursor,
+                native_text_offset,
             );
-            assert_state_matches(&vector, native_cursor, &presentation, &state, outcome);
+            assert_state_matches(
+                &vector,
+                native_cursor,
+                native_text_offset,
+                native_subtitle_owner,
+                &presentation,
+                &state,
+                outcome,
+            );
         }
     }
 
@@ -447,6 +485,7 @@ mod tests {
         vector: &RevealVector,
         actual: &[RenderCall],
         final_reveal_cursor: Option<usize>,
+        native_text_offset: usize,
     ) {
         assert_eq!(actual.len(), vector.calls.len(), "{}", vector.name);
         for (actual, expected) in actual.iter().zip(&vector.calls) {
@@ -477,7 +516,7 @@ mod tests {
                     assert_eq!(expected.name, "draw", "{}", vector.name);
                     assert_eq!(
                         *byte_offset,
-                        usize::from(expected.si) - NATIVE_TEXT_OFFSET,
+                        usize::from(expected.si) - native_text_offset,
                         "{}",
                         vector.name
                     );
@@ -501,14 +540,16 @@ mod tests {
     fn assert_state_matches(
         vector: &RevealVector,
         native_cursor: usize,
+        native_text_offset: usize,
+        native_subtitle_owner: u16,
         presentation: &TextPresentationState,
         state: &SubtitleRevealState,
         outcome: SubtitleRevealOutcome,
     ) {
         let entered = vector.mode & 2 != u8::MIN
             || vector.active & 1 != u8::MIN
-            || (vector.hold_ready & 1 != u8::MIN && vector.owner == NATIVE_SUBTITLE_OWNER);
-        let completion_armed = native_cursor == NATIVE_TEXT_OFFSET + SUBTITLE_TEXT.len()
+            || (vector.hold_ready & 1 != u8::MIN && vector.owner == native_subtitle_owner);
+        let completion_armed = native_cursor == native_text_offset + SUBTITLE_TEXT.len()
             && vector.ship_flags & 4 == u16::MIN
             && vector.hold_complete & 1 == u8::MIN
             && vector.hold_ready & 1 == u8::MIN;
@@ -536,7 +577,7 @@ mod tests {
         } else {
             SubtitleRevealOutcome::TextFrame {
                 line_count: 2,
-                reveal_advanced: native_cursor == NATIVE_TEXT_OFFSET && vector.delay == u16::MIN,
+                reveal_advanced: native_cursor == native_text_offset && vector.delay == u16::MIN,
                 completion_armed,
             }
         };
@@ -545,7 +586,7 @@ mod tests {
         if !entered {
             assert_eq!(
                 presentation.subtitle_reveal_cursor,
-                Some(native_cursor - NATIVE_TEXT_OFFSET),
+                Some(native_cursor - native_text_offset),
                 "{}",
                 vector.name
             );
@@ -593,7 +634,7 @@ mod tests {
                 "{}",
                 vector.name
             ),
-            _ if native_cursor == NATIVE_TEXT_OFFSET && vector.delay == u16::MIN => {
+            _ if native_cursor == native_text_offset && vector.delay == u16::MIN => {
                 assert_eq!(
                     presentation.subtitle_reveal_cursor,
                     Some(1),
@@ -607,7 +648,7 @@ mod tests {
                     vector.name
                 );
             }
-            _ if native_cursor == NATIVE_TEXT_OFFSET + SUBTITLE_TEXT.len() => {
+            _ if native_cursor == native_text_offset + SUBTITLE_TEXT.len() => {
                 assert_eq!(
                     presentation.dialogue_hold_complete,
                     completion_armed || vector.hold_complete & 1 != u8::MIN,
@@ -633,7 +674,7 @@ mod tests {
             _ => {
                 assert_eq!(
                     presentation.subtitle_reveal_cursor,
-                    Some(native_cursor - NATIVE_TEXT_OFFSET),
+                    Some(native_cursor - native_text_offset),
                     "{}",
                     vector.name
                 );

@@ -3912,6 +3912,44 @@ the deterministic 20-row JSONL has SHA-256
 This behaviorally classifies BBB `0xAAFE`, not its caller or the complete
 navigation transition.
 
+## Sequel Subtitle Reveal Coordinator
+
+BBB's `0xAB8F..0xACAA` subtitle-reveal coordinator is the relocated sequel
+counterpart of Commander Blood `0x93F5..0x9510`. Both bodies contain 96
+instructions in 283 bytes. BBB relocates the display, text, timer, hold,
+frame-table and renderer-remap globals and calls the corresponding helpers in
+segment `0x02B1`; its control flow and observable state machine are unchanged.
+The guarded oracle executes the complete BBB body without modification:
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_subtitle_reveal_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_subtitle_reveal.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  subtitle_reveal_matches_both_originals
+```
+
+The first 11 BBB cases match the established Commander vectors after
+normalizing the relocated subtitle owner and text offsets. A twelfth BBB case
+covers terminal text while an already-ready hold belongs to the subtitle
+surface. Together they cover all 32 edges of the body's 16 conditional
+branches: the three display gates, cursor initialization, bright, dim and text
+frame selection, both primitive helpers, opening-pulse advancement, reveal
+delay and cursor advancement, all four completion-hold outcomes, and both
+carriage-return line-scan outcomes. The existing typed Rust coordinator now
+consumes both fixtures; no production behavior changed.
+
+The oracle checks every modeled DS mutation, complete incoming-ES and GS-decoy
+images, exact saved-register and far-call stack residue, helper call arguments
+and segment selection, preserved registers, final ES ownership, far-return
+discipline and executable immutability. The body is bound by SHA-256
+`d25bc57ecb735f12480a79569736122a9d8d1fad18c2dfd4cea94d3ba288c495`;
+the deterministic 12-row JSONL has SHA-256
+`45f1c1ffbf68cd226f778c7abe3a32307b433ccd343713d2210f266f64ffb414`.
+This behaviorally classifies BBB `0xAB8F`, not its callers, renderer helpers or
+the complete subtitle presentation path.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

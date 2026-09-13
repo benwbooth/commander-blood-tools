@@ -2005,3 +2005,25 @@ ownership outside the routine's four transient scratch bytes, register preservat
 flags, return discipline and executable immutability. Its deterministic 20-row JSONL has SHA-256
 `b2d91ba7133339750c628e0352c19c7c98d712298cc60670227d06cfc8573a80`. This behaviorally
 classifies BBB `0xAAFE`, not its caller or the complete navigation transition.
+
+## 2026-09-12 - Big Bug Bang subtitle reveal coordinator
+
+BBB `0xAB8F..0xACAA` is the relocated sequel counterpart of Commander Blood's already ported
+`0x93F5..0x9510` subtitle-reveal coordinator. Both bodies contain 96 instructions in 283 bytes;
+BBB relocates the display, text, timer, hold, frame-table and renderer-remap globals and the three
+far helpers without changing the control flow or state-machine semantics. The new
+`re/tools/big_bug_bang_subtitle_reveal_oracle.py` executes the complete unchanged BBB body, guarded
+by SHA-256 `d25bc57ecb735f12480a79569736122a9d8d1fad18c2dfd4cea94d3ba288c495`.
+
+The first 11 cases agree with Commander's established vectors after normalizing the subtitle owner
+and text offsets. A twelfth BBB probe covers terminal text with an already-ready subtitle-owned
+hold. The complete set exercises all 32 conditional edges across the display gates, cursor
+initialization, three frame phases, both primitive helpers, pulse advancement, reveal timing,
+completion and each hold-suppression gate, and the carriage-return line walk. The existing typed
+Rust coordinator now consumes both fixtures; no production behavior changed.
+
+The oracle checks complete modeled DS state, incoming-ES and GS-decoy images, exact saved-register
+and far-call stack residue, helper arguments and segment selection, preserved registers, final ES,
+far-return discipline and executable immutability. Its deterministic 12-row JSONL has SHA-256
+`45f1c1ffbf68cd226f778c7abe3a32307b433ccd343713d2210f266f64ffb414`. This behaviorally
+classifies BBB `0xAB8F`, not its callers, renderer helpers or complete subtitle presentation path.
