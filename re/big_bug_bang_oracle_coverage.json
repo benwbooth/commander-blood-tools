@@ -24,27 +24,27 @@
     }
   },
   "summary": {
-    "oracle_count": 149,
-    "oracle_fixture_count": 148,
+    "oracle_count": 150,
+    "oracle_fixture_count": 149,
     "fixture_relation_counts": {
-      "exact": 147,
+      "exact": 148,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 265,
-    "unentered_static_entrypoints": 117,
+    "entered_static_entrypoints": 267,
+    "unentered_static_entrypoints": 115,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 266,
+    "entered_known_entrypoints": 268,
     "comparison_counts": {
       "unresolved": {
         "entered": 78,
         "unentered": 48
       },
       "structural_candidate": {
-        "entered": 152,
-        "unentered": 44
+        "entered": 154,
+        "unentered": 42
       },
       "exact_body": {
         "entered": 15,
@@ -288,6 +288,20 @@
       "summary": "verified 7 BBB panorama-loader cases covering 4 normalized conditional edges",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_bridge_panorama.jsonl",
       "fixture_sha256": "f74e7bc27b585916d5c35d798f940a15dba50917bc622b3d65e6ebf96089123a",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_bridge_pointer_primitives_oracle.py",
+      "oracle_sha256": "db6babd992863d64537db8a093c55285a4d9feddb6b06f10ce44c35b2d2b6578",
+      "executed_instruction_count": 56,
+      "entered_entrypoints": [
+        "0x93cb",
+        "0x93f7",
+        "0x9425"
+      ],
+      "summary": "verified 12 BBB bridge-latch cases and 6 fixed-region poll cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_bridge_pointer_primitives.json",
+      "fixture_sha256": "0951190491a8cfb1c87e57ba12fc2c2c2eaad9f6c86085105fef0dbcadfafff7",
       "fixture_relation": "exact"
     },
     {
@@ -4958,8 +4972,10 @@
     {
       "entry": "0x93cb",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_pointer_primitives_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x8269"
     },
@@ -4968,6 +4984,7 @@
       "origin": "static_graph",
       "entered": true,
       "oracles": [
+        "re/tools/big_bug_bang_bridge_pointer_primitives_oracle.py",
         "re/tools/big_bug_bang_navigation_tables_oracle.py"
       ],
       "comparison": "structural_candidate",
@@ -4976,8 +4993,10 @@
     {
       "entry": "0x9425",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_bridge_pointer_primitives_oracle.py"
+      ],
       "comparison": "structural_candidate",
       "commander_entry": "0x82c3"
     },

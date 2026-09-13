@@ -4968,6 +4968,38 @@ and all terminal outcomes. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `ad63765e32163bc2ba9054e0f5fa107a32222c4f230808c4b7974d62794550a7`.
 
+## Bridge Pointer Primitives Oracle (2026-09-13)
+
+BBB `0x93CB..0x93F7` is the relocated sequel counterpart of Commander Blood's
+`0x8269..0x8295` primary-pointer hit latch. Both routines contain 18
+instructions in 44 bytes and preserve the existing hit bit unless a pressed
+primary pointer lies within the signed, inclusive, wrapping rectangle. BBB
+relocates the pointer globals from `0x0A2A`, `0x0A2C`, and `0x0A3E` to
+`0x0C22`, `0x0C24`, and `0x0C36`.
+
+BBB `0x9425..0x944A` likewise matches Commander's `0x82C3..0x82E8` 37-byte
+fixed-status-region poll. It retries 32 times, rereads the enabled bit on every
+iteration, calls the already verified `0x93F7` carry-return hit helper only for
+enabled samples, returns the remaining-attempt count on a hit, and otherwise
+returns `0xFFFF`. Its fixed record and rectangle move from `0x65F2` and
+`0x65FA` to `0x69C2` and `0x69CA`.
+
+The new `re/tools/big_bug_bang_bridge_pointer_primitives_oracle.py` directly
+executes the shipped BBB latch over all 12 Commander boundary vectors and the
+poll over all six dynamic vectors with the real sequel hit helper. It separates
+DS pointer state from SS rectangle and latch state, verifies exact register and
+segment preservation, defined latch flags, poll carry, near and far returns,
+stack writes, untouched memory and executable immutability, then compares the
+normalized results with both fingerprinted Commander fixtures.
+
+The typed `latch_primary_pointer_hit` and `poll_status_region` operations now
+consume the direct BBB fixture without changing production behavior. The
+latch and poll body SHA-256 values are
+`0a56b3b411048cc32c8bd3553cd40e85423e7788c34912c9e34b8d2ca283aa77`
+and `14b5b288d6df0cafe6eccb5cdd31d512997ce6f77b397cf63ca5532f4a5071af`;
+the deterministic fixture SHA-256 is
+`0951190491a8cfb1c87e57ba12fc2c2c2eaad9f6c86085105fef0dbcadfafff7`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

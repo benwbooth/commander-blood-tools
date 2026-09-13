@@ -16,9 +16,10 @@ pub struct PrimaryPointerSample {
 
 /// Latch a primary-pointer hit while preserving an existing hit.
 ///
-/// This translates `mouse_hit_test` at BLOODPRG routine offset `0x008269`.
-/// A boolean latch replaces the native hit bit while the shared typed rectangle
-/// retains the original signed, inclusive, wrapping coordinate comparisons.
+/// This translates `mouse_hit_test` at BLOODPRG routine offset `0x008269` and
+/// BBB offset `0x0093CB`. A boolean latch replaces the native hit bit while the
+/// shared typed rectangle retains the original signed, inclusive, wrapping
+/// coordinate comparisons.
 pub fn latch_primary_pointer_hit(
     pointer: PrimaryPointerSample,
     region: PresentationHitRectangle,
@@ -32,8 +33,9 @@ pub fn latch_primary_pointer_hit(
 /// Test whether a pressed primary pointer lies inside a bridge region.
 ///
 /// This translates `region_record_hittest` at BLOODPRG routine offset
-/// `0x008295`. The modern return value is an ordinary boolean; native carry
-/// state, calling convention, and pointer representation are eliminated.
+/// `0x008295` and BBB offset `0x0093F7`. The modern return value is an ordinary
+/// boolean; native carry state, calling convention, and pointer representation
+/// are eliminated.
 pub fn primary_pointer_hits_region(
     pointer: PrimaryPointerSample,
     region: PresentationHitRectangle,
@@ -59,10 +61,11 @@ pub struct StatusRegionPollHit {
 
 /// Poll one fixed bridge status region up to 32 times.
 ///
-/// This translates `ui_region_31_poll` at BLOODPRG routine offset `0x0082C3`.
-/// The original repeatedly rereads entity and mouse state, so the backend is
-/// queried on every attempt. A typed rectangle and bounded loop replace entity
-/// table slot arithmetic and a negative integer sentinel.
+/// This translates `ui_region_31_poll` at BLOODPRG routine offset `0x0082C3`
+/// and BBB offset `0x009425`. The original repeatedly rereads entity and mouse
+/// state, so the backend is queried on every attempt. A typed rectangle and
+/// bounded loop replace entity table slot arithmetic and a negative integer
+/// sentinel.
 pub fn poll_status_region<Backend: StatusRegionPollBackend>(
     region: PresentationHitRectangle,
     backend: &mut Backend,
@@ -101,12 +104,7 @@ mod tests {
         hit: bool,
     }
 
-    #[test]
-    fn latch_matches_every_original_mouse_hit_vector() {
-        let vectors: Vec<HitTestOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_8269_natural.json"
-        ))
-        .unwrap();
+    fn assert_latch_vectors(vectors: Vec<HitTestOracle>) {
         assert_eq!(vectors.len(), HIT_TEST_VECTOR_COUNT);
 
         for vector in vectors {
@@ -120,6 +118,15 @@ mod tests {
             );
             assert_eq!(hit_latched, vector.hit, "{}", vector.name);
         }
+    }
+
+    #[test]
+    fn latch_matches_every_original_mouse_hit_vector() {
+        let vectors: Vec<HitTestOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_8269_natural.json"
+        ))
+        .unwrap();
+        assert_latch_vectors(vectors);
     }
 
     #[test]
@@ -171,6 +178,12 @@ mod tests {
         rect: [i16; 4],
     }
 
+    #[derive(Deserialize)]
+    struct BigBugBangBridgePointerOracle {
+        latch_rows: Vec<HitTestOracle>,
+        poll_rows: Vec<PollOracle>,
+    }
+
     struct OraclePollBackend {
         pointer_position: [i16; 2],
         primary_initially_pressed: bool,
@@ -202,12 +215,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn fixed_region_poll_matches_every_original_vector() {
-        let vectors: Vec<PollOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_82c3_natural.json"
-        ))
-        .unwrap();
+    fn assert_poll_vectors(vectors: Vec<PollOracle>) {
         assert_eq!(vectors.len(), POLL_VECTOR_COUNT);
 
         for vector in vectors {
@@ -245,5 +253,24 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn fixed_region_poll_matches_every_original_vector() {
+        let vectors: Vec<PollOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_82c3_natural.json"
+        ))
+        .unwrap();
+        assert_poll_vectors(vectors);
+    }
+
+    #[test]
+    fn sequel_bridge_pointer_primitives_match_every_direct_vector() {
+        let oracle: BigBugBangBridgePointerOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_bridge_pointer_primitives.json"
+        ))
+        .unwrap();
+        assert_latch_vectors(oracle.latch_rows);
+        assert_poll_vectors(oracle.poll_rows);
     }
 }

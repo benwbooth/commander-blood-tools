@@ -1,0 +1,1349 @@
+{
+  "format": "big_bug_bang_bridge_pointer_primitives_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_semantic_fixture_sha256": {
+    "latch": "c1d0d7ae573e1765e921ea9e43a8e68bf2d9462157597cb1bc5fadc7dc600d56",
+    "poll": "ae4636e7d013f6043843e4b9a5028da7dd7ca65e273553abc52a072f4ebf1629"
+  },
+  "routines": {
+    "latch": {
+      "entry": "0x93cb",
+      "end": "0x93f7",
+      "body_sha256": "0a56b3b411048cc32c8bd3553cd40e85423e7788c34912c9e34b8d2ca283aa77",
+      "mouse_offsets": [
+        3106,
+        3108,
+        3126
+      ]
+    },
+    "poll": {
+      "entry": "0x9425",
+      "end": "0x944a",
+      "body_sha256": "14b5b288d6df0cafe6eccb5cdd31d512997ce6f77b397cf63ca5532f4a5071af",
+      "record_offset": 27074,
+      "rect_offset": 27082,
+      "attempts": 32
+    }
+  },
+  "latch_rows": [
+    {
+      "name": "disabled_inside",
+      "primary": 0,
+      "mouse": [
+        10,
+        20
+      ],
+      "rect": [
+        10,
+        20,
+        30,
+        40
+      ],
+      "initial_hit_flags": 82,
+      "hit": false,
+      "result_hit_flags": 82,
+      "terminal": "primary_test",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "non_primary_button_inside",
+      "primary": 128,
+      "mouse": [
+        20,
+        30
+      ],
+      "rect": [
+        10,
+        20,
+        30,
+        40
+      ],
+      "initial_hit_flags": 82,
+      "hit": false,
+      "result_hit_flags": 82,
+      "terminal": "primary_test",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": true,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "zero_extent_origin",
+      "primary": 1,
+      "mouse": [
+        0,
+        0
+      ],
+      "rect": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "initial_hit_flags": 82,
+      "hit": true,
+      "result_hit_flags": 90,
+      "terminal": "hit_or",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "x_below",
+      "primary": 1,
+      "mouse": [
+        9,
+        20
+      ],
+      "rect": [
+        10,
+        20,
+        30,
+        40
+      ],
+      "initial_hit_flags": 82,
+      "hit": false,
+      "result_hit_flags": 82,
+      "terminal": "x_lower_cmp",
+      "defined_flags": {
+        "cf": true,
+        "pf": true,
+        "af": true,
+        "zf": false,
+        "sf": true,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "x_right_boundary",
+      "primary": 1,
+      "mouse": [
+        40,
+        20
+      ],
+      "rect": [
+        10,
+        20,
+        30,
+        40
+      ],
+      "initial_hit_flags": 82,
+      "hit": true,
+      "result_hit_flags": 90,
+      "terminal": "hit_or",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "x_right_outside",
+      "primary": 1,
+      "mouse": [
+        41,
+        20
+      ],
+      "rect": [
+        10,
+        20,
+        30,
+        40
+      ],
+      "initial_hit_flags": 82,
+      "hit": false,
+      "result_hit_flags": 82,
+      "terminal": "x_upper_cmp",
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "y_bottom_boundary",
+      "primary": 1,
+      "mouse": [
+        10,
+        60
+      ],
+      "rect": [
+        10,
+        20,
+        30,
+        40
+      ],
+      "initial_hit_flags": 82,
+      "hit": true,
+      "result_hit_flags": 90,
+      "terminal": "hit_or",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "y_bottom_outside",
+      "primary": 1,
+      "mouse": [
+        10,
+        61
+      ],
+      "rect": [
+        10,
+        20,
+        30,
+        40
+      ],
+      "initial_hit_flags": 82,
+      "hit": false,
+      "result_hit_flags": 82,
+      "terminal": "y_upper_cmp",
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "negative_rect_boundary",
+      "primary": 1,
+      "mouse": [
+        -90,
+        -20
+      ],
+      "rect": [
+        -120,
+        -40,
+        30,
+        20
+      ],
+      "initial_hit_flags": 82,
+      "hit": true,
+      "result_hit_flags": 90,
+      "terminal": "hit_or",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "wrapped_negative_width_hit",
+      "primary": 1,
+      "mouse": [
+        32767,
+        0
+      ],
+      "rect": [
+        0,
+        0,
+        -1,
+        0
+      ],
+      "initial_hit_flags": 82,
+      "hit": true,
+      "result_hit_flags": 90,
+      "terminal": "hit_or",
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "zf": false,
+        "sf": false,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "wrapped_positive_result_miss",
+      "primary": 1,
+      "mouse": [
+        -32768,
+        0
+      ],
+      "rect": [
+        -32768,
+        0,
+        1,
+        0
+      ],
+      "initial_hit_flags": 82,
+      "hit": false,
+      "result_hit_flags": 82,
+      "terminal": "x_upper_cmp",
+      "defined_flags": {
+        "cf": true,
+        "pf": true,
+        "af": false,
+        "zf": false,
+        "sf": true,
+        "of": true
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    },
+    {
+      "name": "hit_preserves_other_bits",
+      "primary": 165,
+      "mouse": [
+        5,
+        5
+      ],
+      "rect": [
+        -5,
+        -5,
+        10,
+        10
+      ],
+      "initial_hit_flags": 210,
+      "hit": true,
+      "result_hit_flags": 218,
+      "terminal": "hit_or",
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "zf": false,
+        "sf": true,
+        "of": false
+      },
+      "preserved_registers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "esi",
+        "edi",
+        "ebp",
+        "ds",
+        "es",
+        "fs",
+        "gs",
+        "ss"
+      ],
+      "return": "near"
+    }
+  ],
+  "poll_rows": [
+    {
+      "name": "disabled_for_all_attempts",
+      "mouse": [
+        0,
+        0
+      ],
+      "primary": 1,
+      "initial_flags": 42494,
+      "rect": [
+        -20,
+        -10,
+        40,
+        20
+      ],
+      "flags_on_iteration": null,
+      "primary_on_call": null,
+      "result": -1,
+      "iterations": 32,
+      "calls": [],
+      "carry": false,
+      "table_sha256": "7638d45c22ddf2e7ad88c05226de68c73e2aa77c0979d134e71d115b55920e76",
+      "return": "far"
+    },
+    {
+      "name": "immediate_signed_hit",
+      "mouse": [
+        -100,
+        123
+      ],
+      "primary": 1,
+      "initial_flags": 42241,
+      "rect": [
+        -120,
+        100,
+        40,
+        30
+      ],
+      "flags_on_iteration": null,
+      "primary_on_call": null,
+      "result": 31,
+      "iterations": 1,
+      "calls": [
+        {
+          "attempts_remaining": 31,
+          "rect_offset": 27082,
+          "rect": [
+            -120,
+            100,
+            40,
+            30
+          ]
+        }
+      ],
+      "carry": true,
+      "table_sha256": "41c7a070dfd67d9c1d2b6d64421b0fb53872e3f956f20ac0a4b1c6ca1b146329",
+      "return": "far"
+    },
+    {
+      "name": "same_region_misses_32_times",
+      "mouse": [
+        0,
+        0
+      ],
+      "primary": 1,
+      "initial_flags": 1,
+      "rect": [
+        100,
+        100,
+        5,
+        5
+      ],
+      "flags_on_iteration": null,
+      "primary_on_call": null,
+      "result": -1,
+      "iterations": 32,
+      "calls": [
+        {
+          "attempts_remaining": 31,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 30,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 29,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 28,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 27,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 26,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 25,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 24,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 23,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 22,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 21,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 20,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 19,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 18,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 17,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 16,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 15,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 14,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 13,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 12,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 11,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 10,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 9,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 8,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 7,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 6,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 5,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 4,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 3,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 2,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 1,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        },
+        {
+          "attempts_remaining": 0,
+          "rect_offset": 27082,
+          "rect": [
+            100,
+            100,
+            5,
+            5
+          ]
+        }
+      ],
+      "carry": false,
+      "table_sha256": "0ba2b2d6b128a2280a531495cb90a6380af81e274bd27212c1fbb42ca52d9bd2",
+      "return": "far"
+    },
+    {
+      "name": "mouse_enabled_on_third_call",
+      "mouse": [
+        0,
+        0
+      ],
+      "primary": 0,
+      "initial_flags": 32513,
+      "rect": [
+        -10,
+        -10,
+        20,
+        20
+      ],
+      "flags_on_iteration": null,
+      "primary_on_call": 3,
+      "result": 29,
+      "iterations": 3,
+      "calls": [
+        {
+          "attempts_remaining": 31,
+          "rect_offset": 27082,
+          "rect": [
+            -10,
+            -10,
+            20,
+            20
+          ]
+        },
+        {
+          "attempts_remaining": 30,
+          "rect_offset": 27082,
+          "rect": [
+            -10,
+            -10,
+            20,
+            20
+          ]
+        },
+        {
+          "attempts_remaining": 29,
+          "rect_offset": 27082,
+          "rect": [
+            -10,
+            -10,
+            20,
+            20
+          ]
+        }
+      ],
+      "carry": true,
+      "table_sha256": "6eb2411b2bbfa494bb96ffa728cf37d5b671e3787e41ec7b86743898039612db",
+      "return": "far"
+    },
+    {
+      "name": "region_enabled_on_fifth_iteration",
+      "mouse": [
+        0,
+        0
+      ],
+      "primary": 1,
+      "initial_flags": 22014,
+      "rect": [
+        -20,
+        -20,
+        40,
+        40
+      ],
+      "flags_on_iteration": 5,
+      "primary_on_call": null,
+      "result": 27,
+      "iterations": 5,
+      "calls": [
+        {
+          "attempts_remaining": 27,
+          "rect_offset": 27082,
+          "rect": [
+            -20,
+            -20,
+            40,
+            40
+          ]
+        }
+      ],
+      "carry": true,
+      "table_sha256": "0e6fafede0bfb38f33d51ac10779910751b8ddb0336b1e3a0f2c1e6764c28924",
+      "return": "far"
+    },
+    {
+      "name": "mouse_gate_blocks_all_calls",
+      "mouse": [
+        0,
+        0
+      ],
+      "primary": 0,
+      "initial_flags": 1,
+      "rect": [
+        -1,
+        -1,
+        2,
+        2
+      ],
+      "flags_on_iteration": null,
+      "primary_on_call": null,
+      "result": -1,
+      "iterations": 32,
+      "calls": [
+        {
+          "attempts_remaining": 31,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 30,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 29,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 28,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 27,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 26,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 25,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 24,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 23,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 22,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 21,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 20,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 19,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 18,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 17,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 16,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 15,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 14,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 13,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 12,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 11,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 10,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 9,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 8,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 7,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 6,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 5,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 4,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 3,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 2,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 1,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        },
+        {
+          "attempts_remaining": 0,
+          "rect_offset": 27082,
+          "rect": [
+            -1,
+            -1,
+            2,
+            2
+          ]
+        }
+      ],
+      "carry": false,
+      "table_sha256": "19d9be0eacd277b768669a76aaa10220afd7faa9f1d6380fd14650012c07b8e9",
+      "return": "far"
+    }
+  ]
+}
