@@ -3448,6 +3448,37 @@ independently checks the same matrix through
 state inspection surface, but do not claim visual parity with this French
 developer UI.
 
+## Inherited Presentation AD Decoder
+
+The expanded native audit left BBB `0xC0FE` structurally unmatched even though
+its caller at `0xC016` maps to Commander Blood `0xA82C`. Direct execution now
+classifies it as the sequel build of the already ported presentation AD decoder.
+Its 422-byte body is bound by SHA-256
+`3a37675c4b2da2f23fcf453b39a236a9278d700f0932bd8a08aca675976b9d70`;
+the callee at `0xC2A4` is byte-identical to Commander Blood `0xAABC` across all
+105 bytes.
+
+```sh
+nix develop -c python -P re/tools/big_bug_bang_presentation_ad_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_presentation_ad.json
+```
+
+The oracle executes the complete unchanged BBB routine and helper against all
+nine natural AD vectors previously derived from Commander Blood. It checks both
+control layouts, both literal biases, fixed and variable runs, optional prefix
+copying, 16-bit source wrapping with control refill, destination contents,
+source immutability, self-modified helper immediates, registers, flags, stack
+frames, and the original fixed-run overshoot. The BBB-specific report has
+SHA-256 `269a84dfd3d84ebf805f0385766df447351879b899aca800546cad5cb433e9f3`.
+
+The shared Rust `decode_presentation_ad` implementation matches the eight valid
+vectors for both executables. It intentionally rejects the ninth case, where
+the original writes four bytes despite declaring a three-byte destination
+extent. This classifies one more entry from the 126-entry structural audit queue
+as inherited behavior; it does not change the generated comparison count or
+establish parity for unrelated presentation paths.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

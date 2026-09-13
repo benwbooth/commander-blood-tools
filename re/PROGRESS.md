@@ -1700,3 +1700,21 @@ combination, unrelated high bits, ordinary selectors, and both wrap boundaries w
 memory, registers, and stack discipline. The typed Rust translation matches every vector. This
 classifies two more structurally unmatched entries from the 126-entry audit queue; it does not change
 that generated structural-comparison count or claim the rest of the queue is resolved.
+
+## 2026-09-12 - Big Bug Bang presentation AD decoder inheritance
+
+The expanded comparison left BBB `0xC0FE` unresolved because its 422-byte instruction layout does
+not structurally normalize to Commander Blood `0xA914`. Its caller at BBB `0xC016` already maps to
+Commander `0xA82C`, and its only callee at BBB `0xC2A4` is an exact 105-byte match for Commander
+`0xAABC`. The new `re/tools/big_bug_bang_presentation_ad_oracle.py` executes the complete unchanged
+BBB decoder and helper against all nine natural Commander AD grammar vectors.
+
+All nine original BBB runs match exact destination memory, source preservation, helper frame,
+self-modified literal-bias operands, registers, defined flags, stack discipline, control-layout and
+source-wrap behavior. The checked-in report is
+`re/tools/oracle_vectors/big_bug_bang_presentation_ad.json`, SHA-256
+`269a84dfd3d84ebf805f0385766df447351879b899aca800546cad5cb433e9f3`. The shared Rust decoder matches
+all eight bounded outputs for both executables and continues to reject the original four-byte fixed
+run that overshoots a declared three-byte extent. This classifies one more unresolved structural
+entry as inherited behavior, not a newly invented sequel path or evidence of whole-presentation
+parity.

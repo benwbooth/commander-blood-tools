@@ -694,6 +694,19 @@ mod tests {
     }
 
     #[derive(Deserialize)]
+    struct AdOracleReport {
+        executable_sha256: String,
+        entry: usize,
+        routine_end: usize,
+        routine_sha256: String,
+        helper_entry: usize,
+        helper_end: usize,
+        helper_sha256: String,
+        commander_fixture_sha256: String,
+        vectors: Vec<AdOracle>,
+    }
+
+    #[derive(Deserialize)]
     struct RectOracle {
         name: String,
         flags: u8,
@@ -813,12 +826,7 @@ mod tests {
         expected
     }
 
-    #[test]
-    fn ad_decoder_matches_flat_vectors_and_rejects_overshoot() {
-        let vectors: Vec<AdOracle> = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/func_a914_natural.json"
-        ))
-        .unwrap();
+    fn assert_ad_vectors(vectors: Vec<AdOracle>) {
         assert_eq!(vectors.len(), AD_VECTOR_COUNT);
 
         let mut matched = usize::MIN;
@@ -876,6 +884,42 @@ mod tests {
             matched += 1;
         }
         assert_eq!(matched, FLAT_AD_VECTOR_COUNT);
+    }
+
+    #[test]
+    fn ad_decoder_matches_flat_vectors_and_rejects_overshoot() {
+        let vectors: Vec<AdOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_a914_natural.json"
+        ))
+        .unwrap();
+        assert_ad_vectors(vectors);
+    }
+
+    #[test]
+    fn ad_decoder_matches_original_big_bug_bang_vectors() {
+        let report: AdOracleReport = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_ad.json"
+        ))
+        .unwrap();
+        assert_eq!(
+            report.executable_sha256,
+            "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
+        );
+        assert_eq!((report.entry, report.routine_end), (0xC0FE, 0xC2A4));
+        assert_eq!(
+            report.routine_sha256,
+            "3a37675c4b2da2f23fcf453b39a236a9278d700f0932bd8a08aca675976b9d70"
+        );
+        assert_eq!((report.helper_entry, report.helper_end), (0xC2A4, 0xC30D));
+        assert_eq!(
+            report.helper_sha256,
+            "6f9aba91cf84930a552caddcbe3511006f7b3c6cca5ee86f53b57935f6816775"
+        );
+        assert_eq!(
+            report.commander_fixture_sha256,
+            "5549f370e39004b8f042dd173a752efa00a89c73e3565335540166c250cc87aa"
+        );
+        assert_ad_vectors(report.vectors);
     }
 
     #[test]
