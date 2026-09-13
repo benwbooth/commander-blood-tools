@@ -2610,3 +2610,30 @@ fixtures: six flat-domain cases match exactly, while zero-row, wrapping-
 geometry, and reverse-direction behavior retain their checked host handling.
 No production behavior changed. The deterministic JSONL SHA-256 is
 `aa826eb444d95632a7d69ceef296817cd6c66643bca67367792747e2b4b68425`.
+
+## 2026-09-13 - Big Bug Bang presentation entry parser
+
+BBB `0xBD3C..0xBE0C` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA552..0xA622` presentation entry parser. Both main bodies
+contain 73 instructions in 208 bytes. Their normalized control flow and helper
+contracts are identical; BBB relocates the queue boundary, sound, palette,
+active-frame, storage-policy, and decode-state fields plus the flag, decoder,
+and terminal queue-consume helpers.
+
+The new `re/tools/big_bug_bang_presentation_entry_oracle.py` executes both
+shipped bodies with all 14 recovered Commander cases plus one shared back-buffer
+decode probe. The probe closes the only legacy branch gap, so the 15 cases cover
+all 26 conditional branch edges across ordinary, empty, compressed,
+transparent, side-record, linked-resource, boundary, storage-policy, and
+reverse-DF behavior.
+
+The oracle executes the real per-game sound flag helper and checks both decoder
+and queue-consume ABIs. It verifies callback-visible state, exact ordered writes,
+complete segmented-memory ownership, every modeled memory and stack byte,
+complete registers and segments, flags, executable immutability, and direct
+normalized Commander/BBB equality. The typed activator consumes both the
+14-row Commander fixture and the 15-row sequel fixture, including the added
+back-buffer policy case. No production behavior changed. BBB's body SHA-256 is
+`6de81969ae473043c5ffcc7d6c9a68e37a1ceb75c7e92cddbe48b4bacb828aa0`,
+and the deterministic JSONL SHA-256 is
+`9503e3a0b2c85a15082694e03e6908b67dddedad51ce965658c7301422561052`.

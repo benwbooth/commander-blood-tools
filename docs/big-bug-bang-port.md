@@ -4713,6 +4713,35 @@ geometry, and reverse-direction behavior retain their checked host handling.
 No production behavior changed. The deterministic JSONL SHA-256 is
 `aa826eb444d95632a7d69ceef296817cd6c66643bca67367792747e2b4b68425`.
 
+## Presentation Entry Parser Oracle (2026-09-13)
+
+BBB `0xBD3C..0xBE0C` is the relocated sequel counterpart of Commander Blood's
+`0xA552..0xA622` presentation entry parser. Both main bodies contain 73
+instructions in 208 bytes. Their normalized control flow and helper contracts
+are identical; BBB relocates the queue boundary, sound, palette, active-frame,
+storage-policy, and decode-state fields plus the flag, decoder, and queue-consume
+helpers.
+
+`re/tools/big_bug_bang_presentation_entry_oracle.py` executes both shipped
+bodies with all 14 recovered Commander cases plus one shared back-buffer decode
+probe. That probe closes the only legacy branch gap, so the 15 cases traverse
+all 26 conditional edges. They cover ordinary, empty, compressed, transparent,
+sound, repeated-palette, matching-link, stale-link, wrapped-boundary, exceeded-
+boundary, exact-boundary, default-storage, skipped-present, back-buffer, and
+reverse-DF behavior.
+
+The oracle executes the real per-game sound flag helper and checks both decoder
+and terminal queue-consume ABIs. It verifies callback-visible state, exact
+ordered writes, complete DS/ES/FS/GS ownership, every source, linked-resource,
+storage, game, data, and stack byte against an independent model, complete
+registers and segments, flags, executable immutability, and direct normalized
+Commander/BBB equality. The typed activator consumes the 14-row Commander and
+15-row sequel fixtures, including the newly covered back-buffer policy. No
+production behavior changed. BBB's body SHA-256 is
+`6de81969ae473043c5ffcc7d6c9a68e37a1ceb75c7e92cddbe48b4bacb828aa0`,
+and the deterministic JSONL SHA-256 is
+`9503e3a0b2c85a15082694e03e6908b67dddedad51ce965658c7301422561052`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

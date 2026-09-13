@@ -442,11 +442,12 @@ fn activate_presentation_entry_with_decoder(
 
 /// Parse and activate one complete flat presentation queue entry.
 ///
-/// This translates `list_d8c_activate_entry` at BLOODPRG offset `0x00A552`.
-/// The authored `sd`, `pl`, and `mm` grammar, storage selection, stale-link
-/// rejection, and immediate/deferred decode gates are retained. Owned slices
-/// replace active far pointers, and logical forward byte order replaces the
-/// original routine's accidental dependence on the x86 direction flag.
+/// This translates `list_d8c_activate_entry` at BLOODPRG offset `0x00A552`
+/// and its BLOOD2PG counterpart at `0x00BD3C`. The authored `sd`, `pl`, and
+/// `mm` grammar, storage selection, stale-link rejection, and immediate/deferred
+/// decode gates are retained. Owned slices replace active far pointers, and
+/// logical forward byte order replaces the original routine's accidental
+/// dependence on the x86 direction flag.
 pub fn activate_presentation_entry(
     queue_buffer: &[u8],
     request: PresentationEntryActivationRequest,
@@ -468,7 +469,8 @@ mod tests {
 
     use super::*;
 
-    const ACTIVATE_VECTOR_COUNT: usize = 14;
+    const COMMANDER_ACTIVATE_VECTOR_COUNT: usize = 14;
+    const SEQUEL_ACTIVATE_VECTOR_COUNT: usize = 15;
     const ORACLE_BUFFER_CAPACITY: usize = u16::MAX as usize + 1;
     const DEFAULT_ENTRY_EXTENT: usize = 64;
     const SOUND_RECORD_EXTENT: u16 = 8;
@@ -497,6 +499,10 @@ mod tests {
         sound_offset: Option<u16>,
         palette_offsets: Vec<u16>,
         result_kind: String,
+        #[serde(default)]
+        back_buffer_mode: bool,
+        #[serde(default)]
+        skip_present: bool,
     }
 
     fn write_word(buffer: &mut [u8], offset: usize, value: u16) {
@@ -583,12 +589,24 @@ mod tests {
     }
 
     #[test]
-    fn activation_semantics_match_every_original_vector() {
-        let vectors: Vec<ActivateOracle> = serde_json::from_str(include_str!(
+    fn activation_semantics_match_both_original_fixtures() {
+        let commander: Vec<ActivateOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a552_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), ACTIVATE_VECTOR_COUNT);
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_entry.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_activation_vectors(commander, COMMANDER_ACTIVATE_VECTOR_COUNT);
+        assert_activation_vectors(sequel, SEQUEL_ACTIVATE_VECTOR_COUNT);
+    }
+
+    fn assert_activation_vectors(vectors: Vec<ActivateOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count);
 
         for (index, vector) in vectors.into_iter().enumerate() {
             let input_offset = usize::from(vector.input_source[1]);
@@ -615,8 +633,9 @@ mod tests {
                 },
                 PresentationEntryPolicy {
                     sound_enabled: vector.sound_offset.is_some(),
-                    skip_back_buffer_present: vector.name == "compressed_dispatch_gate",
-                    draw_via_back_buffer: false,
+                    skip_back_buffer_present: vector.skip_present
+                        || vector.name == "compressed_dispatch_gate",
+                    draw_via_back_buffer: vector.back_buffer_mode,
                 },
                 |link| {
                     assert_eq!(link, TEST_LINK_ID, "{}", vector.name);
