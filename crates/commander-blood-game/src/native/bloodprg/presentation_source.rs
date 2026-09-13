@@ -264,7 +264,8 @@ mod tests {
 
     use super::*;
 
-    const SOURCE_APPEND_VECTOR_COUNT: usize = 9;
+    const COMMANDER_SOURCE_APPEND_VECTOR_COUNT: usize = 9;
+    const SEQUEL_SOURCE_APPEND_VECTOR_COUNT: usize = 9;
     const COMMANDER_ENTRY_READ_VECTOR_COUNT: usize = 6;
     const SEQUEL_ENTRY_READ_VECTOR_COUNT: usize = 6;
     const INITIAL_ENTRY_VECTOR_COUNT: usize = 6;
@@ -334,12 +335,24 @@ mod tests {
     }
 
     #[test]
-    fn owned_source_append_accounts_for_every_transport_vector() {
-        let vectors: Vec<SourceAppendOracle> = serde_json::from_str(include_str!(
+    fn owned_source_append_accounts_for_both_original_transport_fixtures() {
+        let commander: Vec<SourceAppendOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a664_natural.json"
         ))
         .unwrap();
-        assert_eq!(vectors.len(), SOURCE_APPEND_VECTOR_COUNT);
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_transfer.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_source_append_vectors(commander, COMMANDER_SOURCE_APPEND_VECTOR_COUNT);
+        assert_source_append_vectors(sequel, SEQUEL_SOURCE_APPEND_VECTOR_COUNT);
+    }
+
+    fn assert_source_append_vectors(vectors: Vec<SourceAppendOracle>, expected_count: usize) {
+        assert_eq!(vectors.len(), expected_count);
 
         for vector in vectors {
             let native_transfer = vector.transferred.unwrap_or(usize::MIN);

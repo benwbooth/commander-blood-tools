@@ -4767,6 +4767,34 @@ six-row fixtures without changing production behavior. BBB's body SHA-256 is
 and the deterministic JSONL SHA-256 is
 `dcf1b55d19bec918ce276e14293b17fe95dd0fdc04a5782bab60a851ba4e7696`.
 
+## Presentation Byte Transfer Oracle (2026-09-13)
+
+BBB `0xBE4E..0xBF28` is the relocated sequel counterpart of Commander Blood's
+already ported `0xA664..0xA73E` presentation byte-transfer helper. Both bodies
+contain 88 instructions in 218 bytes. The banked-source flag, EMS and XMS
+handles, page-frame segment, XMS move descriptor and callback, DOS handle,
+32-bit source accounting, and queue head/count fields relocate without changing
+normalized control flow.
+
+The new `re/tools/big_bug_bang_presentation_transfer_oracle.py` executes both
+shipped bodies with all nine recovered Commander cases. They cover all 14
+conditional branch and loop edges across missing and zero-length DOS sources,
+short-read retry, an oversized carry-set DOS result, four-page EMS mapping,
+zero-length EMS transfer, even and rounded odd XMS moves, and the banked-source
+fallback to DOS.
+
+The oracle verifies interrupt and driver call arguments, real far callback
+frames, callback-visible descriptors and segment registers, copied bytes across
+the 64 KiB destination boundary, 32-bit source and 16-bit queue accounting,
+all flags, every register and segment, complete stack state, unowned memory,
+executable immutability, and direct normalized Commander/BBB equality. The
+typed owned-source append consumes both nine-row fixtures while retaining its
+checked flat-buffer handling for native wraparound and oversized-driver cases.
+No production behavior changed. BBB's body SHA-256 is
+`6c1962d62e0b6696003b94fba69725f769f488e042abd71340c7a2d92a9ae469`,
+and the deterministic JSONL SHA-256 is
+`405af3f810acf79c1321859ff627a2b1c534f38f8212736cbbc23301e7f9326a`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

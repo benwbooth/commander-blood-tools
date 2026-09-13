@@ -2662,3 +2662,25 @@ BBB's body SHA-256 is
 `fedab3c41c3b155fe2f0e9a912c37113e3a7b93637c831ae4ccc23470e822df4`,
 and the deterministic JSONL SHA-256 is
 `dcf1b55d19bec918ce276e14293b17fe95dd0fdc04a5782bab60a851ba4e7696`.
+
+## 2026-09-13 - Big Bug Bang presentation byte transfer
+
+BBB `0xBE4E..0xBF28` relocates Commander Blood's already ported
+`0xA664..0xA73E` presentation byte-transfer helper. Both bodies contain 88
+instructions in 218 bytes. The backend fields and helper targets move, but the
+normalized control flow is unchanged.
+
+The new `re/tools/big_bug_bang_presentation_transfer_oracle.py` executes both
+shipped bodies with all nine recovered Commander cases and covers all 14
+conditional branch and loop edges. Coverage includes missing, zero-length,
+short, retried, oversized, EMS, XMS, odd-rounded, and fallback transfers.
+
+The oracle checks exact interrupt and driver calls, real far callback frames,
+descriptor visibility, wrapped destination bytes, source and queue accounting,
+registers, segments, flags, stack state, unowned memory, executable
+immutability, and direct Commander/BBB equality. The typed owned-source append
+consumes both nine-row fixtures without changing production behavior. BBB's
+body SHA-256 is
+`6c1962d62e0b6696003b94fba69725f769f488e042abd71340c7a2d92a9ae469`,
+and the deterministic JSONL SHA-256 is
+`405af3f810acf79c1321859ff627a2b1c534f38f8212736cbbc23301e7f9326a`.
