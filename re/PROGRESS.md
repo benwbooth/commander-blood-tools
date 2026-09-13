@@ -2325,3 +2325,28 @@ The typed applier now consumes both five-row fixtures and retains its transactio
 native metric underflow; no production behavior changed. The deterministic BBB JSONL has SHA-256
 `0591ad9607938fc234f0809952eaad5e27d6748248755b51e5edf84d18faaed8`. This behaviorally
 classifies BBB `0xB8A6` and `0xB8FA`, not their queue wrapper or later consumers.
+
+## 2026-09-13 - Big Bug Bang presentation source wrapper and close
+
+BBB `0xB917..0xB924` and `0xB924..0xB942` are the relocated sequel counterparts of Commander
+Blood's already recovered `0xA134..0xA141` queue-change wrapper and `0xA141..0xA15F`
+presentation-source close. Both pairs preserve instruction counts and control flow while moving
+the queue index, source handle, reserved archive handle, and bounds. The real BBB bounds-reset
+callee at `0xBF28..0xBF41` is likewise a pure relocation of Commander `0xA73E..0xA757`.
+
+The new `re/tools/big_bug_bang_presentation_source_oracle.py` executes both originals. Seven
+close cases cover zero and reserved-handle skips, successful and failed DOS closes, maximum
+handles, clear-before-interrupt ordering, the real bounds reset, and all four close branch edges.
+The same cases execute each wrapper around an isolated queue-service callback and cover equal,
+advanced, wrapped, and arithmetically distinct queue indices with exact comparison flags.
+
+The oracle checks DS ownership against ES/GS decoys, callback frames and visible mutation, exact
+owned writes, unowned memory and executable immutability, normalized complete stacks, every
+register and segment, flags, return discipline, and direct Commander/BBB equality. The typed
+source close now consumes both seven-row fixtures; no production behavior changed. BBB's wrapper
+SHA-256 is `63e0d7d16219a907bc039d4b024b3e264299d0b0b98b3ade137b2f66f2a009fb`, its close
+SHA-256 is `8294310aa8f0beca4310e5145fcab21e32d555f2eaa139608837499b121ddae5`, and the
+deterministic JSONL SHA-256 is
+`9080722ff2e580249283b304984ee87634b287bd3e120385b767c115f3320272`. This behaviorally
+classifies BBB `0xB917`, `0xB924`, and the invoked bounds reset, not the queue-service body or
+later sequence consumers.

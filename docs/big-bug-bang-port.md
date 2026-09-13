@@ -4409,6 +4409,36 @@ and the deterministic JSONL SHA-256 is
 `0591ad9607938fc234f0809952eaad5e27d6748248755b51e5edf84d18faaed8`.
 This classifies the two helpers, not their queue wrapper or later consumers.
 
+## Presentation Source Wrapper and Close Oracle (2026-09-13)
+
+BBB's queue-change wrapper at `0xB917..0xB924` and presentation-source close at
+`0xB924..0xB942` relocate Commander Blood's already recovered
+`0xA134..0xA141` and `0xA141..0xA15F` routines. Both pairs preserve their
+instruction counts and control flow while moving the queue index, source handle,
+reserved handle, and bounds. The close helper's real BBB bounds reset at
+`0xBF28..0xBF41` is also a pure relocation of Commander `0xA73E..0xA757`.
+
+`re/tools/big_bug_bang_presentation_source_oracle.py` executes both close and
+bounds-reset bodies from each shipped executable. Seven cases cover zero and
+reserved-handle skips, successful and failed DOS closes, maximum handles,
+clear-before-interrupt ordering, and every close branch edge. The same cases
+execute each wrapper around an isolated queue-service callback, covering equal,
+advanced, wrapped, and arithmetically distinct queue indices and their exact
+comparison flags.
+
+The oracle verifies DS ownership against segmented decoys, callback-visible
+state and stack frames, exact owned writes, unchanged executable and unowned
+memory, normalized complete stacks, every register and segment, flags, and
+direct Commander/BBB equality. The typed source-lease close now consumes both
+seven-row fixtures; no production behavior changed. BBB's wrapper SHA-256 is
+`63e0d7d16219a907bc039d4b024b3e264299d0b0b98b3ade137b2f66f2a009fb`,
+the close SHA-256 is
+`8294310aa8f0beca4310e5145fcab21e32d555f2eaa139608837499b121ddae5`,
+and the deterministic JSONL SHA-256 is
+`9080722ff2e580249283b304984ee87634b287bd3e120385b767c115f3320272`.
+This classifies both helpers, not the queue-service body or later sequence
+consumers.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

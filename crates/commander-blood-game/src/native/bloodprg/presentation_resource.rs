@@ -796,11 +796,23 @@ mod tests {
     }
 
     #[test]
-    fn source_close_matches_every_original_ownership_case() {
-        let vectors: Vec<SourceCloseOracle> = serde_json::from_str(include_str!(
+    fn source_close_matches_both_original_ownership_fixtures() {
+        let commander: Vec<SourceCloseOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_a141_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_source.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_source_close_vectors(commander);
+        assert_source_close_vectors(sequel);
+    }
+
+    fn assert_source_close_vectors(vectors: Vec<SourceCloseOracle>) {
         assert_eq!(vectors.len(), SOURCE_CLOSE_VECTOR_COUNT);
 
         for vector in vectors {
