@@ -826,11 +826,23 @@ mod tests {
     }
 
     #[test]
-    fn projection_matrix_matches_every_typed_original_vector() {
-        let vectors: Vec<MatrixOracle> = serde_json::from_str(include_str!(
+    fn projection_matrix_matches_both_original_fixtures() {
+        let commander: Vec<MatrixOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_98b9_natural.json"
         ))
         .unwrap();
+        let sequel = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_ship_projection_matrix.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+
+        assert_projection_matrix_vectors(commander);
+        assert_projection_matrix_vectors(sequel);
+    }
+
+    fn assert_projection_matrix_vectors(vectors: Vec<MatrixOracle>) {
         assert_eq!(vectors.len(), MATRIX_ORACLE_COUNT);
 
         let mut matched = usize::MIN;

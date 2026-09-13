@@ -2135,3 +2135,25 @@ direction preservation, direct Commander/BBB equality, and executable immutabili
 deterministic seven-row JSONL has SHA-256
 `f74e7bc27b585916d5c35d798f940a15dba50917bc622b3d65e6ebf96089123a`. This behaviorally
 classifies BBB `0xAFBA`, not its callers, archive decoding, or the complete bridge render path.
+
+## 2026-09-12 - Big Bug Bang ship projection matrix
+
+BBB `0xB058..0xB1AF` is the relocated sequel counterpart of Commander Blood's already ported
+`0x98B9..0x9A10` ship projection-matrix builder. Both straight-line bodies contain 104 instructions
+in 343 bytes. Their only instruction differences are seven relocated immediates selecting the
+three angles, six-term workspace, nine-value matrix, and stack-segment trigonometry table. The new
+`re/tools/big_bug_bang_ship_projection_matrix_oracle.py` executes both original binaries and guards
+BBB's body with SHA-256 `a28c096643598d99675575a4d398ccab58c7109f64d77f95837dd4c9611f21af`.
+
+All 12 Commander cases agree after address normalization. They cover zero and identity terms,
+mixed signs, signed extremes, overflowing products, repeated and boundary angles, and asymmetric
+inputs. The oracle checks all six doubled trigonometric terms and nine Q15 matrix stores, including
+32-bit wrapping, signed shifts, negation, and final flags.
+
+It also checks DS/ES rebinding to GS, the SS-owned source table, exact game/data/ES/FS state,
+normalized complete stack residue, every register and segment, identical write traces, far-return
+discipline, direct Commander/BBB equality, and executable immutability. The typed builder now
+consumes both fixtures and retains its bounded rejection of unchecked angle 180; no production
+behavior changed. The deterministic 12-row JSONL has SHA-256
+`273c0acdc50f3888f0aff3faf7de95bdf9229ae4ef22ace097a3610c83402b9b`. This behaviorally
+classifies BBB `0xB058`, not its callers or the subsequent point-cloud and object projectors.

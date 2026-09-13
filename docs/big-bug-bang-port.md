@@ -4131,6 +4131,41 @@ the deterministic seven-row JSONL has SHA-256
 This behaviorally classifies BBB `0xAFBA`, not its callers, archive decoding, or
 the complete bridge render path.
 
+## Sequel Ship Projection Matrix
+
+BBB `0xB058..0xB1AF` is the relocated sequel counterpart of Commander Blood's
+`0x98B9..0x9A10` ship projection-matrix builder. Both straight-line bodies
+contain 104 instructions in 343 bytes. Their only instruction differences are
+seven relocated immediates selecting the three angles, six-term workspace,
+nine-value matrix, and stack-segment trigonometry table.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_ship_projection_matrix_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  re/tools/oracle_vectors/big_bug_bang_ship_projection_matrix.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  projection_matrix_matches_both_original_fixtures
+```
+
+The dual-executable oracle replays all 12 established Commander cases. The
+originals agree for zero and identity terms, mixed signs, signed extremes,
+overflowing products, repeated and boundary angles, and asymmetric inputs. It
+checks each doubled trigonometric term and all nine callback-free Q15 matrix
+stores, including 32-bit wrapping, signed shifts, negation, and final flags.
+
+The oracle also checks DS/ES rebinding to GS, the SS-owned source table, exact
+game/data/ES/FS state, normalized complete stack residue, every register and
+segment, identical write traces, far-return discipline, and executable
+immutability. The typed builder now consumes both fixtures and continues to
+reject the original's unchecked angle 180 against the shipped 180-sample table;
+no production behavior changed. The BBB body is bound by SHA-256
+`a28c096643598d99675575a4d398ccab58c7109f64d77f95837dd4c9611f21af`;
+the deterministic 12-row JSONL has SHA-256
+`273c0acdc50f3888f0aff3faf7de95bdf9229ae4ef22ace097a3610c83402b9b`.
+This behaviorally classifies BBB `0xB058`, not its callers or the subsequent
+point-cloud and object projection routines.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
