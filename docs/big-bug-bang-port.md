@@ -1339,7 +1339,39 @@ at `0x24C8` has a related profile-return write, translated in the F7 work above.
 The native key table at `0x2281` maps extended key `0xC1` (F7) to dispatch
 entry 14 at `0x2382`; that entry resolves to `0x24C8`. BBB's Escape no-op and
 Space media-cancel bindings now differ from Commander's shared defaults.
-BBB's separate horizontal-arrow selector behavior remains open.
+BBB's separate horizontal-arrow handlers at file `0x2495` and `0x24A3` are
+now translated. They increment or decrement byte GS:`0x6B7D`, with wrapping,
+only while either low bit of the field-inspector mode at GS:`0x6B7C` is set.
+The mode initializes to zero and the closed static graph finds no explicit
+writer, so retail gameplay continues to treat both horizontal arrows as inert.
+This closes the input-table discrepancy without inventing a way to activate the
+dormant diagnostic inspector.
+
+`re/tools/big_bug_bang_diagnostic_field_selector_oracle.py` executes both
+complete handlers in the unchanged executable and verifies their byte ranges,
+register and stack preservation, write bounds, mode mask and wrapping behavior.
+The 56 checked-in cases cover next/previous, all low-mode-bit combinations,
+unrelated high bits, ordinary selectors and both byte boundaries. The Rust
+translation matches every case.
+
+```sh
+nix develop -c python3 -P \
+  re/tools/big_bug_bang_diagnostic_field_selector_oracle.py \
+  output/big-bug-bang/disc/BLOOD2PG.EXE \
+  output/big-bug-bang/diagnostic-field-selector.jsonl
+cmp re/tools/oracle_vectors/big_bug_bang_diagnostic_field_selector.jsonl \
+  output/big-bug-bang/diagnostic-field-selector.jsonl
+nix develop -c cargo test -p commander-blood-game --lib \
+  sequel_horizontal_arrows_match_original_diagnostic_selector_handlers
+```
+
+Verification for this input slice (2026-09-12): fresh oracle generation is
+byte-identical to fixture SHA-256
+`673b565753b002ac0fa292d49a83ad5ed4fa4292ce5ba6c799b4a05ff2ceca49`;
+all five input-dispatch tests pass. The complete game library passes 1,002
+tests with 61 ignored and zero failures, serially, and the game package passes
+all-target checking. Python bytecode compilation, Ruff, Rust formatting and
+`git diff --check` also pass.
 This change does not rewrite old saves already captured in the wrong profile.
 
 D2 also incorrectly validated every game against Commander's five-profile table.

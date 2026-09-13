@@ -1685,3 +1685,18 @@ all original BBB rows in `sequel_field_matrix_matches_all_native_rows_and_shippe
 semantic trace exposes object state without recreating this French developer display. Consequently,
 these 11 structurally unmatched routines are classified diagnostic UI, not evidence of missing
 gameplay behavior. Pixel-identical inspector parity remains outside the current playable-game claim.
+
+## 2026-09-12 - Big Bug Bang horizontal-arrow diagnostic handlers
+
+The two BBB input-table targets at `0x2495` and `0x24A3` are the next/previous controls for the
+field inspector classified above. They test the low two bits of GS:`0x6B7C` and, only when either
+is set, increment or decrement the selector byte at GS:`0x6B7D`. The byte operation wraps; there is
+no range clamp to the 21 displayed fields. With the retail mode initializer and static access audit,
+these handlers do not supply gameplay movement and remain inert in the production runtime.
+
+`re/tools/big_bug_bang_diagnostic_field_selector_oracle.py` executes both complete unchanged
+handlers from the pinned executable. Its 56 vectors cover each direction, every low-mode-bit
+combination, unrelated high bits, ordinary selectors, and both wrap boundaries while checking code,
+memory, registers, and stack discipline. The typed Rust translation matches every vector. This
+classifies two more structurally unmatched entries from the 126-entry audit queue; it does not change
+that generated structural-comparison count or claim the rest of the queue is resolved.

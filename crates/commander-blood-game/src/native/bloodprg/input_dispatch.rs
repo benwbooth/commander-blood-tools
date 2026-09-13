@@ -16,10 +16,19 @@ pub enum InputArrowKey {
     Up,
     /// Move toward the following row.
     Down,
-    /// Authored but deliberately inert horizontal movement.
+    /// Authored horizontal movement; BBB uses it only in its dormant field inspector.
     Left,
-    /// Authored but deliberately inert horizontal movement.
+    /// Authored horizontal movement; BBB uses it only in its dormant field inspector.
     Right,
+}
+
+/// Direction selected by BBB's diagnostic field-inspector arrow handlers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SequelDiagnosticFieldDirection {
+    /// Decrement the selected field with byte wrapping.
+    Previous,
+    /// Increment the selected field with byte wrapping.
+    Next,
 }
 
 /// Function keys represented by the shipped input table.
@@ -169,6 +178,28 @@ pub fn translate_input_key_for_dialect(
     }
 }
 
+/// Apply one horizontal-arrow step to BBB's diagnostic field selector.
+///
+/// This translates the complete BLOOD2PG handlers at file offsets `0x2495`
+/// and `0x24A3`. The selector changes only while either low mode bit is set;
+/// the original byte-sized increment and decrement wrap at both ends. Retail
+/// startup leaves the mode clear, and the closed native graph has no writer,
+/// so normal gameplay continues to treat both arrows as inert.
+pub fn update_sequel_diagnostic_field_selector(
+    mode: u8,
+    selector: &mut u8,
+    direction: SequelDiagnosticFieldDirection,
+) -> bool {
+    if mode & 3 == 0 {
+        return false;
+    }
+    *selector = match direction {
+        SequelDiagnosticFieldDirection::Previous => selector.wrapping_sub(1),
+        SequelDiagnosticFieldDirection::Next => selector.wrapping_add(1),
+    };
+    true
+}
+
 /// Set the otherwise-unbound shutdown request.
 ///
 /// This translates `input_action_request_shutdown` at BLOODPRG routine offset
@@ -262,6 +293,15 @@ mod tests {
         pause_before: u8,
         pause_after: u8,
         latched_key: u8,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SequelDiagnosticFieldOracle {
+        direction: String,
+        mode: u8,
+        selector_before: u8,
+        selector_after: u8,
+        changed: bool,
     }
 
     #[test]
@@ -367,6 +407,33 @@ mod tests {
                 vector.name
             );
             assert_eq!(state.text_byte, Some(vector.latched_key), "{}", vector.name);
+        }
+    }
+
+    #[test]
+    fn sequel_horizontal_arrows_match_original_diagnostic_selector_handlers() {
+        const VECTOR_COUNT: usize = 56;
+        let vectors: Vec<SequelDiagnosticFieldOracle> = include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_diagnostic_field_selector.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+        assert_eq!(vectors.len(), VECTOR_COUNT);
+
+        for vector in vectors {
+            let direction = match vector.direction.as_str() {
+                "previous" => SequelDiagnosticFieldDirection::Previous,
+                "next" => SequelDiagnosticFieldDirection::Next,
+                other => panic!("unknown direction {other}"),
+            };
+            let mut selector = vector.selector_before;
+            assert_eq!(
+                update_sequel_diagnostic_field_selector(vector.mode, &mut selector, direction,),
+                vector.changed,
+                "{vector:?}"
+            );
+            assert_eq!(selector, vector.selector_after, "{vector:?}");
         }
     }
 
