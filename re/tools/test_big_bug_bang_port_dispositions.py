@@ -25,8 +25,8 @@ UNREFERENCED_LIBRARY_AUDIT_PATH = (
 )
 BUILDER_PATH = ROOT / "re/tools/build_big_bug_bang_port_dispositions.py"
 KNOWN_ENTRYPOINT_COUNT = 383
-CLASSIFIED_ENTRYPOINT_COUNT = 327
-PENDING_GAME_SEMANTICS_COUNT = 56
+CLASSIFIED_ENTRYPOINT_COUNT = 328
+PENDING_GAME_SEMANTICS_COUNT = 55
 EXPECTED_STATUS_COUNTS = {
     "eliminated_authored_no_operation": 7,
     "eliminated_dormant_diagnostic": 18,
@@ -35,7 +35,7 @@ EXPECTED_STATUS_COUNTS = {
     "inherited_exact_eliminated": 7,
     "inherited_exact_typed": 6,
     "pending_game_semantics": PENDING_GAME_SEMANTICS_COUNT,
-    "verified_direct_typed": 260,
+    "verified_direct_typed": 261,
 }
 
 spec = importlib.util.spec_from_file_location("bbb_disposition_builder", BUILDER_PATH)

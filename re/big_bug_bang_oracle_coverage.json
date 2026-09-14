@@ -24,23 +24,23 @@
     }
   },
   "summary": {
-    "oracle_count": 171,
-    "oracle_fixture_count": 170,
+    "oracle_count": 172,
+    "oracle_fixture_count": 171,
     "fixture_relation_counts": {
-      "exact": 169,
+      "exact": 170,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 289,
-    "unentered_static_entrypoints": 93,
+    "entered_static_entrypoints": 290,
+    "unentered_static_entrypoints": 92,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 290,
+    "entered_known_entrypoints": 291,
     "comparison_counts": {
       "unresolved": {
-        "entered": 82,
-        "unentered": 44
+        "entered": 83,
+        "unentered": 43
       },
       "structural_candidate": {
         "entered": 172,
@@ -78,6 +78,19 @@
       "summary": "captured 684 original C2 aboard-record cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_aboard_record.jsonl",
       "fixture_sha256": "9457c40be367d56013c134a63910f9d7ffe35c0c5e82ddd8895cf54103f5423e",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_aboard_roster_rebuild_oracle.py",
+      "oracle_sha256": "bdcb66005c287334c1b630b95cbcd61aa5b5eeb0a5e8e1071053e4112ce1ff14",
+      "executed_instruction_count": 47,
+      "entered_entrypoints": [
+        "0x59ff",
+        "0x6633"
+      ],
+      "summary": "verified 12 BBB aboard-roster rebuild cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_aboard_roster_rebuild.json",
+      "fixture_sha256": "26daaae47b8395189d6ad41cc5b497d76080e200d078df94e81a4c22af4fc4a9",
       "fixture_relation": "exact"
     },
     {
@@ -3926,8 +3939,10 @@
     {
       "entry": "0x59ff",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_aboard_roster_rebuild_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {
@@ -4054,6 +4069,7 @@
       "entered": true,
       "oracles": [
         "re/tools/big_bug_bang_aboard_record_oracle.py",
+        "re/tools/big_bug_bang_aboard_roster_rebuild_oracle.py",
         "re/tools/big_bug_bang_action_record_oracle.py",
         "re/tools/big_bug_bang_bas_entry_oracle.py",
         "re/tools/big_bug_bang_conflict_oracle.py",

@@ -5545,6 +5545,33 @@ BBB's full body SHA-256 is
 the deterministic fixture SHA-256 is
 `87c5c34375f7bc3eb654b4fbb6fe7fc588eb745a6b261c5107481c6e5d3ef9d2`.
 
+## Aboard-Roster Rebuild Oracle (2026-09-13)
+
+BBB `0x59FF..0x5A53` is the bounded sequel counterpart of Commander Blood's
+`0x555B` roster rebuild. It relocates the directory, state, roster, and field
+matrix, clears inherited ESI high bits before 32-bit field addressing, and adds
+an exact 16-match limit. Nonmatching records do not consume that capacity.
+
+The direct oracle executes nine shared Commander vectors plus a changed
+high-ESI case, a 17-match overflow case, and a 17-nonmatch scan. It proves
+active-directory termination, match-only output advancement, preexisting
+sentinel termination, lowest-kind-bit field selection, signed field offsets,
+directory wrapping, non-wrapping 32-bit field addresses, ESI normalization,
+and capacity termination. The real relocated field resolver runs on every
+active entry.
+
+The harness verifies exact ordered roster, call-frame, and saved-register
+writes; relocated pointers and field matrix against Commander-offset and
+full-segment decoys; complete registers, segments, defined flags, IF/DF, far
+return, full memory, and patched executable ownership. The typed
+`rebuild_aboard_roster` owner consumes the fixture, replaces scratch sentinels
+with stable object identities, and rejects a seventeenth match transactionally
+instead of retaining BBB's silently truncated roster. BBB's 84-byte body
+SHA-256 is
+`6f0ef3f76105243244fb406b17669d2e995278e82a92647d2eccc502131e2d4c`;
+the deterministic fixture SHA-256 is
+`26daaae47b8395189d6ad41cc5b497d76080e200d078df94e81a4c22af4fc4a9`.
+
 ## Field-Inspector Helper Ownership (2026-09-13)
 
 BBB `0x669F..0x66ED` expands the actor `CONNAIS` bit field into the object

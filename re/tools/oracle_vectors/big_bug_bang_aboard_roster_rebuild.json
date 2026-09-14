@@ -1,0 +1,2992 @@
+{
+  "format": "big_bug_bang_aboard_roster_rebuild_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_fixture_sha256": "a7c9fc0953ce7f894d0da3b9ebefebda330c87b650cd35c140a34c516bdbe235",
+  "routine": {
+    "entry": "0x59ff",
+    "end": "0x5a53",
+    "body_sha256": "6f0ef3f76105243244fb406b17669d2e995278e82a92647d2eccc502131e2d4c",
+    "directory_pointer_offset": 27376,
+    "state_pointer_offset": 27372,
+    "roster_offset": 28902,
+    "field_matrix_offset": 28968,
+    "capacity": 16
+  },
+  "rows": [
+    {
+      "name": "inactive_first_entry",
+      "directory_offset": 512,
+      "record_pointer_offset_ignored": 12544,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 256,
+          "entry_kind": 0,
+          "kind_mask": 1,
+          "field_offset": 3,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 0,
+      "selected_offsets": [],
+      "slots_before": [
+        4369,
+        65535,
+        13107,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        4369,
+        65535,
+        13107,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "directory_kind",
+      "typed_capacity_error": false,
+      "field_calls": [],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        }
+      ],
+      "registers_after": {
+        "eax": 2711687732,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": true,
+        "pf": true,
+        "af": true,
+        "zf": false,
+        "sf": true,
+        "of": false,
+        "if": true,
+        "df": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "active_nonmatch_then_inactive",
+      "directory_offset": 1024,
+      "record_pointer_offset_ignored": 12817,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 288,
+          "entry_kind": 1,
+          "kind_mask": 1,
+          "field_offset": 4,
+          "field_value": 4660
+        },
+        {
+          "object_offset": 576,
+          "entry_kind": 2,
+          "kind_mask": 2,
+          "field_offset": 5,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 1,
+      "selected_offsets": [],
+      "slots_before": [
+        8738,
+        65535,
+        17476,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        8738,
+        65535,
+        17476,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "directory_kind",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 1,
+          "state_offset": 288,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 1
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": true
+      },
+      "return": "far"
+    },
+    {
+      "name": "first_match_replaces_slot_and_stops",
+      "directory_offset": 1536,
+      "record_pointer_offset_ignored": 13090,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 320,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 7,
+          "field_value": -1
+        },
+        {
+          "object_offset": 608,
+          "entry_kind": 1,
+          "kind_mask": 4,
+          "field_offset": 9,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 1,
+      "selected_offsets": [
+        320
+      ],
+      "slots_before": [
+        43690,
+        65535,
+        52428,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        320,
+        65535,
+        52428,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "slot_sentinel",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 320,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28902,
+          "size": 2,
+          "value": 320
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "nonmatch_does_not_advance_slot",
+      "directory_offset": 2048,
+      "record_pointer_offset_ignored": 13363,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 352,
+          "entry_kind": 1,
+          "kind_mask": 4,
+          "field_offset": 6,
+          "field_value": 0
+        },
+        {
+          "object_offset": 640,
+          "entry_kind": 1,
+          "kind_mask": 8,
+          "field_offset": 8,
+          "field_value": -1
+        },
+        {
+          "object_offset": 928,
+          "entry_kind": 1,
+          "kind_mask": 16,
+          "field_offset": 10,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 2,
+      "selected_offsets": [
+        640
+      ],
+      "slots_before": [
+        4951,
+        65535,
+        9320,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        640,
+        65535,
+        9320,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "slot_sentinel",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 4,
+          "state_offset": 352,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 8,
+          "state_offset": 640,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 4
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 8
+        },
+        {
+          "kind": "roster",
+          "offset": 28902,
+          "size": 2,
+          "value": 640
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": true
+      },
+      "return": "far"
+    },
+    {
+      "name": "two_matches_fill_existing_length",
+      "directory_offset": 2560,
+      "record_pointer_offset_ignored": 13636,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 384,
+          "entry_kind": 1,
+          "kind_mask": 32,
+          "field_offset": 11,
+          "field_value": -1
+        },
+        {
+          "object_offset": 672,
+          "entry_kind": 1,
+          "kind_mask": 64,
+          "field_offset": 12,
+          "field_value": -1
+        },
+        {
+          "object_offset": 960,
+          "entry_kind": 1,
+          "kind_mask": 128,
+          "field_offset": 13,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 2,
+      "selected_offsets": [
+        384,
+        672
+      ],
+      "slots_before": [
+        4369,
+        8738,
+        65535,
+        17476,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        384,
+        672,
+        65535,
+        17476,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "slot_sentinel",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 32,
+          "state_offset": 384,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 64,
+          "state_offset": 672,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 32
+        },
+        {
+          "kind": "roster",
+          "offset": 28902,
+          "size": 2,
+          "value": 384
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 64
+        },
+        {
+          "kind": "roster",
+          "offset": 28904,
+          "size": 2,
+          "value": 672
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "signed_negative_field_offset",
+      "directory_offset": 3072,
+      "record_pointer_offset_ignored": 13909,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 768,
+          "entry_kind": 1,
+          "kind_mask": 256,
+          "field_offset": -6,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1024,
+          "entry_kind": 1,
+          "kind_mask": 512,
+          "field_offset": 14,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 1,
+      "selected_offsets": [
+        768
+      ],
+      "slots_before": [
+        21845,
+        65535,
+        30583,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        768,
+        65535,
+        30583,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "slot_sentinel",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 256,
+          "state_offset": 768,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "roster",
+          "offset": 28902,
+          "size": 2,
+          "value": 768
+        }
+      ],
+      "registers_after": {
+        "eax": 4294906420,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": true
+      },
+      "return": "far"
+    },
+    {
+      "name": "lowest_set_kind_bit_selects_field",
+      "directory_offset": 3584,
+      "record_pointer_offset_ignored": 14182,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 800,
+          "entry_kind": 1,
+          "kind_mask": 160,
+          "field_offset": 15,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1088,
+          "entry_kind": 1,
+          "kind_mask": 1024,
+          "field_offset": 16,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 1,
+      "selected_offsets": [
+        800
+      ],
+      "slots_before": [
+        34952,
+        65535,
+        43690,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        800,
+        65535,
+        43690,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "slot_sentinel",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 160,
+          "state_offset": 800,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 160
+        },
+        {
+          "kind": "roster",
+          "offset": 28902,
+          "size": 2,
+          "value": 800
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "directory_offset_wraps",
+      "directory_offset": 65520,
+      "record_pointer_offset_ignored": 14455,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 832,
+          "entry_kind": 1,
+          "kind_mask": 2048,
+          "field_offset": 17,
+          "field_value": 4660
+        },
+        {
+          "object_offset": 1120,
+          "entry_kind": 1,
+          "kind_mask": 4096,
+          "field_offset": 18,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1408,
+          "entry_kind": 1,
+          "kind_mask": 8192,
+          "field_offset": 19,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 2,
+      "selected_offsets": [
+        1120
+      ],
+      "slots_before": [
+        48059,
+        65535,
+        56797,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        1120,
+        65535,
+        56797,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "slot_sentinel",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 2048,
+          "state_offset": 832,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 4096,
+          "state_offset": 1120,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2048
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 4096
+        },
+        {
+          "kind": "roster",
+          "offset": 28902,
+          "size": 2,
+          "value": 1120
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": true
+      },
+      "return": "far"
+    },
+    {
+      "name": "field_address_crosses_64k_without_wrap",
+      "directory_offset": 4608,
+      "record_pointer_offset_ignored": 14728,
+      "inherited_esi_high_word": 0,
+      "entries": [
+        {
+          "object_offset": 65534,
+          "entry_kind": 1,
+          "kind_mask": 16384,
+          "field_offset": 4,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1568,
+          "entry_kind": 1,
+          "kind_mask": 32768,
+          "field_offset": 20,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 1,
+      "selected_offsets": [
+        65534
+      ],
+      "slots_before": [
+        4660,
+        65535,
+        22136,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        65534,
+        65535,
+        22136,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "slot_sentinel",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 16384,
+          "state_offset": 65534,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 16384
+        },
+        {
+          "kind": "roster",
+          "offset": 28902,
+          "size": 2,
+          "value": 65534
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "inherited_esi_high_word_is_cleared",
+      "directory_offset": 5120,
+      "record_pointer_offset_ignored": 15001,
+      "inherited_esi_high_word": 1,
+      "entries": [
+        {
+          "object_offset": 1280,
+          "entry_kind": 1,
+          "kind_mask": 1,
+          "field_offset": 5,
+          "field_value": 0,
+          "high_word_decoy": -1
+        },
+        {
+          "object_offset": 1856,
+          "entry_kind": 2,
+          "kind_mask": 2,
+          "field_offset": 21,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 1,
+      "selected_offsets": [],
+      "slots_before": [
+        39612,
+        65535,
+        57072,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "slots_after": [
+        39612,
+        65535,
+        57072,
+        24579,
+        24580,
+        24581,
+        24582,
+        24583,
+        24584,
+        24585,
+        24586,
+        24587,
+        24588,
+        24589,
+        24590,
+        24591
+      ],
+      "stop_reason": "directory_kind",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 1,
+          "state_offset": 1280,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 1
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": false,
+        "af": false,
+        "zf": false,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": true
+      },
+      "return": "far"
+    },
+    {
+      "name": "sixteen_matches_stop_at_capacity",
+      "directory_offset": 6144,
+      "record_pointer_offset_ignored": 13568,
+      "inherited_esi_high_word": 42405,
+      "entries": [
+        {
+          "object_offset": 512,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 576,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 640,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 704,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 768,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 832,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 896,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 960,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1024,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1088,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1152,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1216,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1280,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1344,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1408,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1472,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        },
+        {
+          "object_offset": 1536,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 16,
+      "selected_offsets": [
+        512,
+        576,
+        640,
+        704,
+        768,
+        832,
+        896,
+        960,
+        1024,
+        1088,
+        1152,
+        1216,
+        1280,
+        1344,
+        1408,
+        1472
+      ],
+      "slots_before": [
+        28672,
+        28673,
+        28674,
+        28675,
+        28676,
+        28677,
+        28678,
+        28679,
+        28680,
+        28681,
+        28682,
+        28683,
+        28684,
+        28685,
+        28686,
+        28687
+      ],
+      "slots_after": [
+        512,
+        576,
+        640,
+        704,
+        768,
+        832,
+        896,
+        960,
+        1024,
+        1088,
+        1152,
+        1216,
+        1280,
+        1344,
+        1408,
+        1472
+      ],
+      "stop_reason": "capacity",
+      "typed_capacity_error": true,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 512,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 576,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 640,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 704,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 768,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 832,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 896,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 960,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 1024,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 1088,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 1152,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 1216,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 1280,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 1344,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 1408,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 1472,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28902,
+          "size": 2,
+          "value": 512
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28904,
+          "size": 2,
+          "value": 576
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28906,
+          "size": 2,
+          "value": 640
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28908,
+          "size": 2,
+          "value": 704
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28910,
+          "size": 2,
+          "value": 768
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28912,
+          "size": 2,
+          "value": 832
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28914,
+          "size": 2,
+          "value": 896
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28916,
+          "size": 2,
+          "value": 960
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28918,
+          "size": 2,
+          "value": 1024
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28920,
+          "size": 2,
+          "value": 1088
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28922,
+          "size": 2,
+          "value": 1152
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28924,
+          "size": 2,
+          "value": 1216
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28926,
+          "size": 2,
+          "value": 1280
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28928,
+          "size": 2,
+          "value": 1344
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28930,
+          "size": 2,
+          "value": 1408
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "roster",
+          "offset": 28932,
+          "size": 2,
+          "value": 1472
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "of": false,
+        "if": true,
+        "df": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "seventeen_nonmatches_do_not_consume_capacity",
+      "directory_offset": 7168,
+      "record_pointer_offset_ignored": 14080,
+      "inherited_esi_high_word": 23130,
+      "entries": [
+        {
+          "object_offset": 2048,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 0
+        },
+        {
+          "object_offset": 2112,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 1
+        },
+        {
+          "object_offset": 2176,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 2
+        },
+        {
+          "object_offset": 2240,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 3
+        },
+        {
+          "object_offset": 2304,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 4
+        },
+        {
+          "object_offset": 2368,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 5
+        },
+        {
+          "object_offset": 2432,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 6
+        },
+        {
+          "object_offset": 2496,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 7
+        },
+        {
+          "object_offset": 2560,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 8
+        },
+        {
+          "object_offset": 2624,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 9
+        },
+        {
+          "object_offset": 2688,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 10
+        },
+        {
+          "object_offset": 2752,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 11
+        },
+        {
+          "object_offset": 2816,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 12
+        },
+        {
+          "object_offset": 2880,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 13
+        },
+        {
+          "object_offset": 2944,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 14
+        },
+        {
+          "object_offset": 3008,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 15
+        },
+        {
+          "object_offset": 3072,
+          "entry_kind": 1,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": 16
+        },
+        {
+          "object_offset": 3328,
+          "entry_kind": 0,
+          "kind_mask": 2,
+          "field_offset": 24,
+          "field_value": -1
+        }
+      ],
+      "scanned_entries": 17,
+      "selected_offsets": [],
+      "slots_before": [
+        28928,
+        28929,
+        28930,
+        28931,
+        28932,
+        28933,
+        28934,
+        28935,
+        28936,
+        28937,
+        28938,
+        28939,
+        28940,
+        28941,
+        28942,
+        28943
+      ],
+      "slots_after": [
+        28928,
+        28929,
+        28930,
+        28931,
+        28932,
+        28933,
+        28934,
+        28935,
+        28936,
+        28937,
+        28938,
+        28939,
+        28940,
+        28941,
+        28942,
+        28943
+      ],
+      "stop_reason": "directory_kind",
+      "typed_capacity_error": false,
+      "field_calls": [
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2048,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2112,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2176,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2240,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2304,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2368,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2432,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2496,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2560,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2624,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2688,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2752,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2816,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2880,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 2944,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 3008,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        },
+        {
+          "selector": 17,
+          "kind_mask": 2,
+          "state_offset": 3072,
+          "ds": 24576,
+          "gs": 16384,
+          "sp": 65262
+        }
+      ],
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 8192
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 26505
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 30874
+        },
+        {
+          "kind": "stack",
+          "offset": 65264,
+          "size": 2,
+          "value": 13398
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "stack",
+          "offset": 65262,
+          "size": 2,
+          "value": 23085
+        },
+        {
+          "kind": "stack",
+          "offset": 65260,
+          "size": 2,
+          "value": 2
+        }
+      ],
+      "registers_after": {
+        "eax": 4660,
+        "ebx": 2998018885,
+        "ecx": 3284350038,
+        "edx": 3570681191,
+        "esi": 22136,
+        "edi": 4143343497,
+        "ebp": 2812770458,
+        "ds": 12288,
+        "es": 8192,
+        "fs": 45056,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": true,
+        "pf": true,
+        "af": true,
+        "zf": false,
+        "sf": true,
+        "of": false,
+        "if": true,
+        "df": true
+      },
+      "return": "far"
+    }
+  ]
+}

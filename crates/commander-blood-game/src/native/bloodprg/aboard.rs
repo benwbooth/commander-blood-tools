@@ -88,10 +88,12 @@ pub fn insert_aboard_object(roster: &mut AboardObjectRoster, owner: ScriptObject
 
 /// Rebuild the aboard roster from typed object-holder relations.
 ///
-/// This translates `vm_record_state_proc` at BLOODPRG file offset `0x00555B`.
-/// The native routine reused zero and `0xFFFF` as competing slot sentinels;
-/// this flat model derives the complete roster from decoded object identities
-/// and commits it only when every aboard object fits.
+/// This translates `vm_record_state_proc` at BLOODPRG file offset `0x00555B`
+/// and its bounded BBB counterpart at BLOOD2PG offset `0x0059FF`. The native
+/// routines reused zero and `0xFFFF` as competing slot sentinels; this flat
+/// model derives the complete roster from decoded object identities and
+/// commits it only when every aboard object fits. BBB silently stops after 16
+/// matches, while the typed boundary rejects excess objects transactionally.
 pub fn rebuild_aboard_roster(
     state: &ScriptState,
     roster: &mut AboardObjectRoster,
@@ -140,6 +142,7 @@ mod tests {
     const REMOVE_VECTOR_COUNT: usize = 6;
     const INSERT_VECTOR_COUNT: usize = 7;
     const REBUILD_VECTOR_COUNT: usize = 10;
+    const BIG_BUG_BANG_REBUILD_VECTOR_COUNT: usize = 12;
     const ORIGINAL_PROFILE_COUNT: usize = 5;
     const DIRECTORY_ENTRY_SIZE: usize = 20;
     const DIRECTORY_NAME_CAPACITY: usize = 16;
@@ -167,6 +170,35 @@ mod tests {
     struct RebuildOracleEntry {
         object_offset: u16,
         field_value: i16,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangRebuildOracle {
+        routine: BigBugBangRebuildRoutine,
+        rows: Vec<BigBugBangRebuildRow>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangRebuildRoutine {
+        entry: String,
+        end: String,
+        body_sha256: String,
+        directory_pointer_offset: usize,
+        state_pointer_offset: usize,
+        roster_offset: usize,
+        field_matrix_offset: usize,
+        capacity: usize,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangRebuildRow {
+        name: String,
+        entries: Vec<RebuildOracleEntry>,
+        scanned_entries: usize,
+        selected_offsets: Vec<u16>,
+        slots_after: Vec<u16>,
+        stop_reason: String,
+        typed_capacity_error: bool,
     }
 
     fn original_asset(name: &str) -> PathBuf {
@@ -348,6 +380,88 @@ mod tests {
                 "{}",
                 vector.name
             );
+        }
+    }
+
+    #[test]
+    fn sequel_rebuild_matches_every_direct_native_roster_vector() {
+        let fixture: BigBugBangRebuildOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_aboard_roster_rebuild.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture.routine.entry, "0x59ff");
+        assert_eq!(fixture.routine.end, "0x5a53");
+        assert_eq!(fixture.routine.body_sha256.len(), 64);
+        assert_eq!(fixture.routine.directory_pointer_offset, 0x6AF0);
+        assert_eq!(fixture.routine.state_pointer_offset, 0x6AEC);
+        assert_eq!(fixture.routine.roster_offset, 0x70E6);
+        assert_eq!(fixture.routine.field_matrix_offset, 0x7128);
+        assert_eq!(fixture.routine.capacity, ABOARD_OBJECT_CAPACITY);
+        assert_eq!(fixture.rows.len(), BIG_BUG_BANG_REBUILD_VECTOR_COUNT);
+
+        for vector in fixture.rows {
+            let native_entries = &vector.entries[..vector.scanned_entries];
+            let expected_offsets = native_entries
+                .iter()
+                .filter(|entry| entry.field_value == NATIVE_ABOARD_SENTINEL)
+                .map(|entry| entry.object_offset)
+                .collect::<Vec<_>>();
+            assert_eq!(vector.selected_offsets, expected_offsets, "{}", vector.name);
+            assert_eq!(
+                &vector.slots_after[..expected_offsets.len()],
+                expected_offsets,
+                "{}",
+                vector.name
+            );
+
+            let typed_entries = if vector.typed_capacity_error {
+                assert_eq!(vector.stop_reason, "capacity");
+                assert_eq!(vector.scanned_entries, ABOARD_OBJECT_CAPACITY);
+                assert!(vector.entries.len() > vector.scanned_entries);
+                vector.entries.as_slice()
+            } else {
+                native_entries
+            };
+            let aboard_flags = typed_entries
+                .iter()
+                .map(|entry| entry.field_value == NATIVE_ABOARD_SENTINEL)
+                .collect::<Vec<_>>();
+            let state = actor_state(&aboard_flags);
+            let expected_objects = state
+                .objects()
+                .iter()
+                .zip(aboard_flags.iter().copied())
+                .filter_map(|(object, is_aboard)| is_aboard.then_some(object.id))
+                .collect::<Vec<_>>();
+            let mut roster = AboardObjectRoster::default();
+
+            if vector.typed_capacity_error {
+                let existing = state.objects()[0].id;
+                assert!(insert_aboard_object(&mut roster, existing));
+                let before = roster.clone();
+                assert_eq!(
+                    rebuild_aboard_roster(&state, &mut roster).unwrap_err(),
+                    AboardRosterError::CapacityExceeded {
+                        required: expected_objects.len(),
+                    },
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(roster, before, "{}", vector.name);
+            } else {
+                assert_eq!(
+                    rebuild_aboard_roster(&state, &mut roster).unwrap(),
+                    expected_objects.len(),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    roster.slots().iter().flatten().copied().collect::<Vec<_>>(),
+                    expected_objects,
+                    "{}",
+                    vector.name
+                );
+            }
         }
     }
 
