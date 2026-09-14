@@ -1677,6 +1677,12 @@ the race bitset, action/message state, icon-name arrays, and the added attack re
 owner at `0x7C0E` selects the directory list (`0x25DE`), one record (`0x7C65`), or the empty-selection
 view (`0x7F21`). This is an object-state inspection surface, not record mutation or simulation.
 
+The `CONNAIS` formatter at `0x7D83` has one private helper at `0x669F..0x66ED`. The helper expands
+the actor's 160-bit known-object field into a terminated list of directory object offsets. Its pinned
+78-byte body calls only the shared field resolver at `0x6633`; the expanded graph finds `0x7D83` as
+its sole caller, and none of the executable's known static dispatch tables names it. The helper is
+therefore part of the same diagnostic surface rather than an independent gameplay list builder.
+
 The checked-in report also records the mode gate at GS:`0x6B7C`: its executable initializer is zero,
 and all eight direct accesses found in the closed static graph are reads. That does not rule out an
 indirect or runtime-supplied write, so it is static evidence of a dormant diagnostic path rather than

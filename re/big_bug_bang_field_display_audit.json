@@ -454,6 +454,22 @@
           "inventory_item": null
         }
       }
+    ],
+    "exclusive_helpers": [
+      {
+        "entry": "0x00669f",
+        "end": "0x0066ed",
+        "body_sha256": "1a94f8e5e5b57e772fe322fe75d9d594bcbdad0faf2cde2bfb013565ad27eca2",
+        "role": "known_object_bit_list",
+        "owner_handler": "0x007d83",
+        "direct_callers": [
+          "0x007d83"
+        ],
+        "direct_callees": [
+          "0x006633"
+        ],
+        "static_dispatch_target": false
+      }
     ]
   }
 }

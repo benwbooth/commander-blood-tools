@@ -25,11 +25,11 @@ UNREFERENCED_LIBRARY_AUDIT_PATH = (
 )
 BUILDER_PATH = ROOT / "re/tools/build_big_bug_bang_port_dispositions.py"
 KNOWN_ENTRYPOINT_COUNT = 383
-CLASSIFIED_ENTRYPOINT_COUNT = 326
-PENDING_GAME_SEMANTICS_COUNT = 57
+CLASSIFIED_ENTRYPOINT_COUNT = 327
+PENDING_GAME_SEMANTICS_COUNT = 56
 EXPECTED_STATUS_COUNTS = {
     "eliminated_authored_no_operation": 7,
-    "eliminated_dormant_diagnostic": 17,
+    "eliminated_dormant_diagnostic": 18,
     "eliminated_host_adapter": 26,
     "eliminated_unreferenced_library": 3,
     "inherited_exact_eliminated": 7,

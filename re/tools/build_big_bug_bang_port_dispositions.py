@@ -179,6 +179,9 @@ def diagnostic_entries(audit: dict[str, Any]) -> set[int]:
     entries.update(
         int(row["handler_file_offset"], 16) for row in audit["display"]["selectors"]
     )
+    entries.update(
+        int(row["entry"], 16) for row in audit["display"]["exclusive_helpers"]
+    )
     return entries
 
 

@@ -51,6 +51,13 @@ DISPLAY_OWNER_ENTRY = 0x7C0E
 DIRECTORY_LIST_ENTRY = 0x25DE
 RECORD_DISPLAY_ENTRY = 0x7C65
 EMPTY_SELECTION_ENTRY = 0x7F21
+FIELD_RESOLVER_ENTRY = 0x6633
+KNOWN_OBJECT_LIST_HANDLER_ENTRY = 0x7D83
+KNOWN_OBJECT_LIST_HELPER_ENTRY = 0x669F
+KNOWN_OBJECT_LIST_HELPER_END = 0x66ED
+KNOWN_OBJECT_LIST_HELPER_SHA256 = (
+    "1a94f8e5e5b57e772fe322fe75d9d594bcbdad0faf2cde2bfb013565ad27eca2"
+)
 MODE_OFFSET = 0x6B7C
 FIELD_MATRIX_OFFSET = 0x7128
 FIELD_LABEL_OFFSET = 0x736C
@@ -203,6 +210,29 @@ def audit(executable: Path) -> dict[str, object]:
     if any("write" in row["access"] for row in mode_accesses):
         raise ValueError("field-display mode gained a direct static write")
 
+    helper_body_sha256 = hashlib.sha256(
+        mz.data[KNOWN_OBJECT_LIST_HELPER_ENTRY:KNOWN_OBJECT_LIST_HELPER_END]
+    ).hexdigest()
+    if helper_body_sha256 != KNOWN_OBJECT_LIST_HELPER_SHA256:
+        raise ValueError("known-object list helper body changed")
+    helper_callees = sorted(builder.callgraph[KNOWN_OBJECT_LIST_HELPER_ENTRY])
+    if helper_callees != [FIELD_RESOLVER_ENTRY]:
+        raise ValueError(f"known-object list helper callees changed: {helper_callees}")
+    helper_callers = sorted(
+        entry
+        for entry, callees in builder.callgraph.items()
+        if KNOWN_OBJECT_LIST_HELPER_ENTRY in callees
+    )
+    if helper_callers != [KNOWN_OBJECT_LIST_HANDLER_ENTRY]:
+        raise ValueError(f"known-object list helper callers changed: {helper_callers}")
+    static_dispatch_targets = {
+        int(str(entry["target_file_offset"]), 16)
+        for definition in ATLAS.TABLES
+        for entry in ATLAS.table_entries(mz, definition)[0]
+    }
+    if KNOWN_OBJECT_LIST_HELPER_ENTRY in static_dispatch_targets:
+        raise ValueError("known-object list helper became a static dispatch target")
+
     initial_mode = mz.data[GLOBAL_DATA_FILE_BASE + MODE_OFFSET]
     if initial_mode != 0:
         raise ValueError(f"field-display mode initial value changed to {initial_mode:#x}")
@@ -272,6 +302,18 @@ def audit(executable: Path) -> dict[str, object]:
             "selector_count": len(selectors),
             "distinct_handler_count": len({row["handler_file_offset"] for row in selectors}),
             "selectors": selectors,
+            "exclusive_helpers": [
+                {
+                    "entry": f"0x{KNOWN_OBJECT_LIST_HELPER_ENTRY:06x}",
+                    "end": f"0x{KNOWN_OBJECT_LIST_HELPER_END:06x}",
+                    "body_sha256": helper_body_sha256,
+                    "role": "known_object_bit_list",
+                    "owner_handler": f"0x{KNOWN_OBJECT_LIST_HANDLER_ENTRY:06x}",
+                    "direct_callers": [f"0x{entry:06x}" for entry in helper_callers],
+                    "direct_callees": [f"0x{entry:06x}" for entry in helper_callees],
+                    "static_dispatch_target": False,
+                }
+            ],
         },
     }
 

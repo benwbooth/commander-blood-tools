@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 import sys
 import unittest
 
 
 TOOL_PATH = Path(__file__).with_name("big_bug_bang_field_display_audit.py")
+REPORT_PATH = TOOL_PATH.parents[1] / "big_bug_bang_field_display_audit.json"
 SPEC = importlib.util.spec_from_file_location(
     "big_bug_bang_field_display_audit", TOOL_PATH
 )
@@ -56,6 +58,24 @@ class BigBugBangFieldDisplayAuditTests(unittest.TestCase):
             int(str(entry["target_file_offset"]), 16) for entry in entries
         }
         self.assertEqual(decoded, set(AUDIT.HANDLER_FORMATS))
+
+    def test_known_object_list_helper_is_exclusively_owned_by_the_inspector(self):
+        report = json.loads(REPORT_PATH.read_text())
+        self.assertEqual(
+            report["display"]["exclusive_helpers"],
+            [
+                {
+                    "entry": "0x00669f",
+                    "end": "0x0066ed",
+                    "body_sha256": AUDIT.KNOWN_OBJECT_LIST_HELPER_SHA256,
+                    "role": "known_object_bit_list",
+                    "owner_handler": "0x007d83",
+                    "direct_callers": ["0x007d83"],
+                    "direct_callees": ["0x006633"],
+                    "static_dispatch_target": False,
+                }
+            ],
+        )
 
 
 if __name__ == "__main__":

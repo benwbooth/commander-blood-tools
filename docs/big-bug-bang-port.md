@@ -5545,6 +5545,18 @@ BBB's full body SHA-256 is
 the deterministic fixture SHA-256 is
 `87c5c34375f7bc3eb654b4fbb6fe7fc588eb745a6b261c5107481c6e5d3ef9d2`.
 
+## Field-Inspector Helper Ownership (2026-09-13)
+
+BBB `0x669F..0x66ED` expands the actor `CONNAIS` bit field into the object
+offset list consumed by the dormant French field inspector. The strengthened
+field-display audit pins this 78-byte body, its sole shared field-resolver
+callee at `0x6633`, its sole direct caller at inspector handler `0x7D83`, and
+its absence from all recovered static dispatch tables. Because the retail
+inspector mode remains zero-initialized with no direct writer, this private
+list formatter is eliminated with its diagnostic owner rather than exposed as
+an unused production API. Its body SHA-256 is
+`1a94f8e5e5b57e772fe322fe75d9d594bcbdad0faf2cde2bfb013565ad27eca2`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
