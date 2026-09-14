@@ -24,23 +24,23 @@
     }
   },
   "summary": {
-    "oracle_count": 169,
-    "oracle_fixture_count": 168,
+    "oracle_count": 170,
+    "oracle_fixture_count": 169,
     "fixture_relation_counts": {
-      "exact": 167,
+      "exact": 168,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 286,
-    "unentered_static_entrypoints": 96,
+    "entered_static_entrypoints": 288,
+    "unentered_static_entrypoints": 94,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 287,
+    "entered_known_entrypoints": 289,
     "comparison_counts": {
       "unresolved": {
-        "entered": 79,
-        "unentered": 47
+        "entered": 81,
+        "unentered": 45
       },
       "structural_candidate": {
         "entered": 172,
@@ -232,6 +232,19 @@
       "summary": "verified 6 dual stream-start cases, 2 BBB ULTRASND delegates, and 12 BBB conditional edges across 6 sites",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_audio_stream_start.jsonl",
       "fixture_sha256": "dcfa11aafd4d257d2d59fd1ffc4ae353359d682b19164459937ea03613c09773",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_back_buffer_wrappers_oracle.py",
+      "oracle_sha256": "91d8b7df1b9582fbf3e9abe28e96dec3754505b466bfdbe4bdc96df6fa5b353d",
+      "executed_instruction_count": 38,
+      "entered_entrypoints": [
+        "0x199b",
+        "0x19d9"
+      ],
+      "summary": "verified 12 BBB back-buffer wrapper cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_back_buffer_wrappers.json",
+      "fixture_sha256": "c3179984d69ef765112c035c5a42ce1e6ec08ca68c13f7a45e8bb5adb1f25184",
       "fixture_relation": "exact"
     },
     {
@@ -2711,15 +2724,19 @@
     {
       "entry": "0x199b",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_back_buffer_wrappers_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {
       "entry": "0x19d9",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_back_buffer_wrappers_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {

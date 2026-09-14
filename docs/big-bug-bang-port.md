@@ -5483,6 +5483,37 @@ absence of a literal generally disproves computed indirect targets. For these
 three isolated formatter bodies, however, there is no recovered shipped path to
 port, so the Rust runtime does not expose dead formatting APIs.
 
+## Back-Buffer Resource Wrapper Oracles (2026-09-13)
+
+BBB `0x199B..0x19D9` and `0x19D9..0x1A17` are the relocated sequel
+counterparts of Commander Blood's `0x17D9` and `0x1817` back-buffer wrappers.
+Each 62-byte body has 19 instructions. The first selects `chart.fd` at BBB data
+offset `0x00E9`; the second selects `orx.fd` at `0x00E2`. Both clear the
+palette-update and transparent-zero fields, load and decode the image into the
+back buffer, temporarily redirect the draw framebuffer to `A000:C000`, present
+the decoded pixels, and restore the caller's framebuffer pointer.
+
+The new `re/tools/big_bug_bang_back_buffer_wrappers_oracle.py` directly executes
+all six fingerprinted Commander cases through both shipped BBB bodies. The 12
+runs prove both authored resource selections, zero and nonzero decoder results,
+zero and wrapping back-buffer offsets, inherited direction state, exact helper
+order and call frames, decoder-result propagation, temporary framebuffer
+publication and restoration, helper register and flag residue, and far return.
+The harness also verifies the relocated DS and GS fields against Commander-offset
+and full-segment decoys, exact ordered state and stack writes, complete register
+and segment residue, untouched back-buffer and unrelated memory, and patched
+executable immutability.
+
+The typed `decode_chart_back_buffer` and `decode_orx_back_buffer` owners consume
+the Commander and BBB fixtures together. Owned flat framebuffers replace the
+temporary Mode-X page and global pointer mutation while preserving the authored
+resource choice, opaque decoding, palette preservation, and decoder result.
+The BBB body SHA-256 values are
+`8e90ef59126c70eaed598a33a2ee744a8af643ad66d7eb71d7683236562d4550`
+and `bb831a3c513b0efbc6dcd8de5e94fba7a4f58865a05529f3757f55584bcc27d3`;
+the deterministic combined fixture SHA-256 is
+`c3179984d69ef765112c035c5a42ce1e6ec08ca68c13f7a45e8bb5adb1f25184`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

@@ -193,8 +193,9 @@ pub fn decode_pbm_image(
 
 /// Decode `CHART.FD` into the flat indexed back buffer.
 ///
-/// This translates `back_buffer_init` at BLOODPRG routine offset `0x0017D9`.
-/// The selected resource, opaque pixel replacement, palette preservation, and
+/// This translates `back_buffer_init` at BLOODPRG routine offset `0x0017D9`
+/// and BBB's relocated `chart.fd` wrapper at BLOOD2PG offset `0x00199B`. The
+/// selected resource, opaque pixel replacement, palette preservation, and
 /// decode result remain. Direct conversion to a temporary Mode-X page is
 /// omitted because wgpu consumes the same logical indexed pixels.
 pub fn decode_chart_back_buffer(
@@ -208,7 +209,8 @@ pub fn decode_chart_back_buffer(
 /// Decode `ORX.FD` into the flat indexed back buffer.
 ///
 /// This translates `backbuffer_clear_flags` at BLOODPRG routine offset
-/// `0x001817`. The selected resource, opaque pixel replacement, palette
+/// `0x001817` and BBB's relocated `orx.fd` wrapper at BLOOD2PG offset
+/// `0x0019D9`. The selected resource, opaque pixel replacement, palette
 /// preservation, and decode result remain. Direct conversion to a temporary
 /// Mode-X page is omitted because wgpu consumes the flat buffer directly.
 pub fn decode_orx_back_buffer(
@@ -282,6 +284,8 @@ mod tests {
     const BLOODPRG_DATA_FILE_OFFSET: usize = 0x0000_D420;
     const ORX_PATH_DATA_OFFSET: usize = 227;
     const CHART_PATH_DATA_OFFSET: usize = 234;
+    const BBB_ORX_PATH_DATA_OFFSET: usize = 0x00E2;
+    const BBB_CHART_PATH_DATA_OFFSET: usize = 0x00E9;
     const BACK_BUFFER_WRAPPER_ORACLE_VECTOR_COUNT: usize = 6;
 
     #[derive(Deserialize)]
@@ -320,6 +324,22 @@ mod tests {
     struct BackBufferOracleCall {
         callee: String,
         ax: Option<u16>,
+        si: Option<u16>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangBackBufferOracle {
+        routines: Vec<BigBugBangBackBufferRoutine>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangBackBufferRoutine {
+        name: String,
+        resource_path: String,
+        resource_selector: usize,
+        commander_entry: String,
+        entry: String,
+        rows: Vec<BackBufferWrapperOracle>,
     }
 
     fn decode_hex(encoded: &str) -> Vec<u8> {
@@ -430,6 +450,12 @@ mod tests {
                     vector.name
                 );
                 assert_eq!(
+                    vector.calls[0].si,
+                    Some(vector.image_path_offset as u16),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
                     vector.calls[1].callee, "chunky_to_planar_framebuffer",
                     "{}",
                     vector.name
@@ -437,6 +463,12 @@ mod tests {
                 assert_eq!(
                     vector.calls[1].ax,
                     Some(vector.pbm_result),
+                    "{}",
+                    vector.name
+                );
+                assert_eq!(
+                    vector.calls[1].si,
+                    Some(vector.back_buffer.offset),
                     "{}",
                     vector.name
                 );
@@ -453,6 +485,64 @@ mod tests {
         assert!(decode_orx_back_buffer(&[], &mut framebuffer, &mut palette).is_err());
         assert_eq!(framebuffer, framebuffer_before);
         assert_eq!(palette, palette_before);
+    }
+
+    #[test]
+    fn sequel_back_buffer_wrappers_match_commander_resource_paths_and_vectors() {
+        let chart_vectors: Vec<BackBufferWrapperOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_17d9_natural.json"
+        ))
+        .unwrap();
+        let orx_vectors: Vec<BackBufferWrapperOracle> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_1817_natural.json"
+        ))
+        .unwrap();
+        let sequel: BigBugBangBackBufferOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_back_buffer_wrappers.json"
+        ))
+        .unwrap();
+        assert_eq!(sequel.routines.len(), 2);
+
+        let expected = [
+            (
+                "chart_back_buffer",
+                CHART_BACK_BUFFER_RESOURCE_PATH,
+                BBB_CHART_PATH_DATA_OFFSET,
+                "0x17d9",
+                "0x199b",
+                &chart_vectors,
+            ),
+            (
+                "orx_back_buffer",
+                ORX_BACK_BUFFER_RESOURCE_PATH,
+                BBB_ORX_PATH_DATA_OFFSET,
+                "0x1817",
+                "0x19d9",
+                &orx_vectors,
+            ),
+        ];
+        for (routine, expected) in sequel.routines.iter().zip(expected) {
+            let (name, path, selector, commander_entry, entry, commander) = expected;
+            assert_eq!(routine.name, name);
+            assert_eq!(routine.resource_path, path);
+            assert_eq!(routine.resource_selector, selector);
+            assert_eq!(routine.commander_entry, commander_entry);
+            assert_eq!(routine.entry, entry);
+            assert_eq!(routine.rows.len(), BACK_BUFFER_WRAPPER_ORACLE_VECTOR_COUNT);
+
+            for (sequel_row, commander_row) in routine.rows.iter().zip(commander) {
+                assert_eq!(sequel_row.name, commander_row.name);
+                assert_eq!(sequel_row.image_path_offset, selector);
+                assert_eq!(sequel_row.back_buffer, commander_row.back_buffer);
+                assert_eq!(sequel_row.pbm_result, commander_row.pbm_result);
+                assert_eq!(sequel_row.calls.len(), 2);
+                assert_eq!(sequel_row.calls[0].callee, "pbm_image_load_and_decode");
+                assert_eq!(sequel_row.calls[0].si, Some(selector as u16));
+                assert_eq!(sequel_row.calls[1].callee, "chunky_to_planar_framebuffer");
+                assert_eq!(sequel_row.calls[1].ax, Some(sequel_row.pbm_result));
+                assert_eq!(sequel_row.calls[1].si, Some(sequel_row.back_buffer.offset));
+            }
+        }
     }
 
     fn c_string_at(bytes: &[u8], start: usize) -> &[u8] {
