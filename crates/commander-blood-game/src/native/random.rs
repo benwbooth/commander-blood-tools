@@ -23,9 +23,10 @@ pub struct BloodPrng {
 impl BloodPrng {
     /// Seed the generator from the raw seconds byte supplied by the host clock.
     ///
-    /// This translates `cmos_rtc_read` at BLOODPRG routine offset `0x002DD3`.
-    /// The original hardware access is replaced by an explicit byte input while
-    /// its exact repeated-byte seed and all other generator state are preserved.
+    /// This translates `cmos_rtc_read` at BLOODPRG routine offset `0x002DD3`
+    /// and its relocated Big Bug Bang counterpart at `0x003154`. The original
+    /// hardware access is replaced by an explicit byte input while its exact
+    /// repeated-byte seed and all other generator state are preserved.
     pub fn seed_from_clock_register(&mut self, seconds: u8) {
         self.seed = u16::from(seconds) | u16::from(seconds) << CLOCK_BYTE_REPEAT_SHIFT;
     }
@@ -91,12 +92,12 @@ mod tests {
         stored_word: u16,
     }
 
-    #[test]
-    fn clock_seed_matches_every_original_binary_vector() {
-        let vectors: Vec<ClockOracleVector> = serde_json::from_str(include_str!(
-            "../../../../re/tools/oracle_vectors/func_2dd3_natural.json"
-        ))
-        .unwrap();
+    #[derive(Deserialize)]
+    struct BigBugBangClockOracle {
+        rows: Vec<ClockOracleVector>,
+    }
+
+    fn assert_clock_seed_vectors(vectors: &[ClockOracleVector]) {
         assert_eq!(vectors.len(), CLOCK_ORACLE_VECTOR_COUNT);
 
         for vector in vectors {
@@ -112,6 +113,24 @@ mod tests {
             assert_eq!(random.mix_high, u8::MAX);
             assert_eq!(random.counter, u8::MAX);
         }
+    }
+
+    #[test]
+    fn clock_seed_matches_every_original_binary_vector() {
+        let vectors: Vec<ClockOracleVector> = serde_json::from_str(include_str!(
+            "../../../../re/tools/oracle_vectors/func_2dd3_natural.json"
+        ))
+        .unwrap();
+        assert_clock_seed_vectors(&vectors);
+    }
+
+    #[test]
+    fn sequel_clock_seed_matches_every_direct_vector() {
+        let fixture: BigBugBangClockOracle = serde_json::from_str(include_str!(
+            "../../../../re/tools/oracle_vectors/big_bug_bang_clock_seed.json"
+        ))
+        .unwrap();
+        assert_clock_seed_vectors(&fixture.rows);
     }
 
     #[test]

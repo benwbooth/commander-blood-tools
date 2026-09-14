@@ -24,23 +24,23 @@
     }
   },
   "summary": {
-    "oracle_count": 168,
-    "oracle_fixture_count": 167,
+    "oracle_count": 169,
+    "oracle_fixture_count": 168,
     "fixture_relation_counts": {
-      "exact": 166,
+      "exact": 167,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 285,
-    "unentered_static_entrypoints": 97,
+    "entered_static_entrypoints": 286,
+    "unentered_static_entrypoints": 96,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 286,
+    "entered_known_entrypoints": 287,
     "comparison_counts": {
       "unresolved": {
-        "entered": 78,
-        "unentered": 48
+        "entered": 79,
+        "unentered": 47
       },
       "structural_candidate": {
         "entered": 172,
@@ -396,6 +396,18 @@
       "summary": "captured 1764 original CA/CB host-clock cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_clock_guard.jsonl",
       "fixture_sha256": "226051250f378f70cb115242332e1be0a3a82462daf255c6d0d53694533eebaf",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_clock_seed_oracle.py",
+      "oracle_sha256": "43285d7d7ea64e06cf7202306bf6d92038bfb1688f16eaeefa4a03fd3f3309da",
+      "executed_instruction_count": 8,
+      "entered_entrypoints": [
+        "0x3154"
+      ],
+      "summary": "verified 8 BBB clock-seed cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_clock_seed.json",
+      "fixture_sha256": "e2de6e95d1ec61566ec1ef0fca15b9ad66d3c22b93bb9ea3b12dfb74fc5c8d81",
       "fixture_relation": "exact"
     },
     {
@@ -3295,8 +3307,10 @@
     {
       "entry": "0x3154",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_clock_seed_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {

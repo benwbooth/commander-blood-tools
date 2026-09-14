@@ -5445,6 +5445,29 @@ preserving all nine representable output hashes. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `7c5cb57f7eba0b75e706cad80f2fc2013416b30dde73e758a2cb4451852140b2`.
 
+## CMOS Clock-Seed Oracle (2026-09-13)
+
+BBB `0x3154..0x3163` is the relocated sequel counterpart of Commander Blood's
+`0x2DD3..0x2DE2` CMOS-seconds sampler. Both 15-byte leaf routines contain eight
+instructions. Commander stores the repeated seconds byte through `CS:0x0AEE`;
+BBB instead owns the seed at `GS:0x0CDA`.
+
+The new `re/tools/big_bug_bang_clock_seed_oracle.py` directly executes all eight
+fingerprinted Commander edge bytes in the shipped BBB body. It proves exact CMOS
+register selection and data-port input, repeated-byte storage, preserved EAX,
+the relocated GS owner against old-offset and full-segment decoys, exact stack
+and global writes, complete register and segment residue, defined terminal
+flags, preserved interrupt and direction state, far return, untouched full
+segments, and patched-executable immutability.
+
+The typed `BloodPrng::seed_from_clock_register` owner consumes both eight-row
+fixtures. An explicit packed-seconds byte from the modern host clock replaces
+direct CMOS I/O while preserving the exact 16-bit seed and all unrelated PRNG
+state. BBB's body SHA-256 is
+`a2bd9b5514d0b1e9dd4733f42bb5efb187274e14835662835a7ff7e6c44ffcad`,
+and the deterministic fixture SHA-256 is
+`e2de6e95d1ec61566ec1ef0fca15b9ad66d3c22b93bb9ea3b12dfb74fc5c8d81`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
