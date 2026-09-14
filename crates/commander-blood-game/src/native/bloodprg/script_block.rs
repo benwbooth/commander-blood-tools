@@ -117,9 +117,10 @@ impl<HandlerError: fmt::Debug> std::error::Error for ScriptBlockError<HandlerErr
 
 /// Execute one nested BAS block through its translated instruction handlers.
 ///
-/// This translates `vm_script_block_scan` at BLOODPRG file offset `0x0056A6`.
-/// Decoded instruction positions replace the original mutable byte cursor, and
-/// malformed bytes are rejected by the BAS decoder before execution begins.
+/// This translates `vm_script_block_scan` at BLOODPRG file offset `0x0056A6`
+/// and its BBB counterpart at BLOOD2PG offset `0x005B65`. Decoded instruction
+/// positions replace the original mutable byte cursor, and malformed bytes are
+/// rejected by the BAS decoder before execution begins.
 pub fn execute_script_block<Handler: ScriptBlockHandler>(
     dialogue: &dyn super::ScriptDialogueSource,
     start: ScriptCodeOffset,
@@ -215,10 +216,27 @@ mod tests {
     const INACTIVE_HIGH_NIBBLE_SKIP: u8 = 16;
     const FULL_BYTE_SKIP_COUNT: u8 = 17;
     const STOP_PRESERVED_SKIP_COUNT: u8 = 7;
+    const BIG_BUG_BANG_VECTOR_COUNT: usize = 13;
 
     #[derive(Deserialize)]
     struct BlockScanOracle {
         name: String,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangBlockScanOracle {
+        routine: BigBugBangBlockScanRoutine,
+        rows: Vec<serde_json::Value>,
+    }
+
+    #[derive(Deserialize)]
+    struct BigBugBangBlockScanRoutine {
+        entry: String,
+        end: String,
+        handler_table_offset: usize,
+        first_opcode: u8,
+        last_opcode: u8,
+        next_handler_is_null: bool,
     }
 
     #[derive(Default)]
@@ -301,6 +319,49 @@ mod tests {
                 }
                 name => panic!("unclassified block-scan oracle {name}"),
             }
+        }
+    }
+
+    #[test]
+    fn sequel_block_scan_matches_every_shared_native_control_flow_vector() {
+        let commander: Vec<serde_json::Value> = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/func_56a6_natural.json"
+        ))
+        .unwrap();
+        let sequel: BigBugBangBlockScanOracle = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_script_block.json"
+        ))
+        .unwrap();
+        assert_eq!(sequel.routine.entry, "0x5b65");
+        assert_eq!(sequel.routine.end, "0x5bae");
+        assert_eq!(sequel.routine.handler_table_offset, 0x7288);
+        assert_eq!(sequel.routine.first_opcode, 0xA0);
+        assert_eq!(sequel.routine.last_opcode, 0xD7);
+        assert!(sequel.routine.next_handler_is_null);
+        assert_eq!(sequel.rows.len(), BIG_BUG_BANG_VECTOR_COUNT);
+
+        for row in &sequel.rows {
+            let name = row["name"].as_str().unwrap();
+            assert!(!matches!(
+                name,
+                "invalid_below_range" | "d3_table_sentinel_is_not_executable"
+            ));
+            let expected = commander
+                .iter()
+                .find(|candidate| candidate["name"] == name)
+                .unwrap();
+            let mut normalized = row.clone();
+            let object = normalized.as_object_mut().unwrap();
+            for direct_only in [
+                "handler_calls",
+                "token_calls",
+                "ordered_write_events",
+                "final_interrupt_flag",
+                "final_direction_flag",
+            ] {
+                object.remove(direct_only);
+            }
+            assert_eq!(&normalized, expected, "{name}");
         }
     }
 

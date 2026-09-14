@@ -24,23 +24,23 @@
     }
   },
   "summary": {
-    "oracle_count": 170,
-    "oracle_fixture_count": 169,
+    "oracle_count": 171,
+    "oracle_fixture_count": 170,
     "fixture_relation_counts": {
-      "exact": 168,
+      "exact": 169,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 288,
-    "unentered_static_entrypoints": 94,
+    "entered_static_entrypoints": 289,
+    "unentered_static_entrypoints": 93,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 289,
+    "entered_known_entrypoints": 290,
     "comparison_counts": {
       "unresolved": {
-        "entered": 81,
-        "unentered": 45
+        "entered": 82,
+        "unentered": 44
       },
       "structural_candidate": {
         "entered": 172,
@@ -1883,6 +1883,19 @@
       "summary": "verified 33 original BBB action-dispatch cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_script_action.jsonl",
       "fixture_sha256": "4427e7e51bf4a5953dc4b42843199ee0e4b7142d48e12a41e939414a386b8f9e",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_script_block_oracle.py",
+      "oracle_sha256": "3a2ad8bb0dbb8dad057b67f603646275b630be051f2cd39772469d97e2c8f3b7",
+      "executed_instruction_count": 57,
+      "entered_entrypoints": [
+        "0x5b65",
+        "0x68c8"
+      ],
+      "summary": "verified 13 BBB nested script-block cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_script_block.json",
+      "fixture_sha256": "87c5c34375f7bc3eb654b4fbb6fe7fc588eb745a6b261c5107481c6e5d3ef9d2",
       "fixture_relation": "exact"
     },
     {
@@ -3927,8 +3940,10 @@
     {
       "entry": "0x5b65",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_script_block_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {
@@ -4152,7 +4167,8 @@
       "origin": "static_graph",
       "entered": true,
       "oracles": [
-        "re/tools/big_bug_bang_honk_departure_oracle.py"
+        "re/tools/big_bug_bang_honk_departure_oracle.py",
+        "re/tools/big_bug_bang_script_block_oracle.py"
       ],
       "comparison": "structural_candidate",
       "commander_entry": "0x62b6"

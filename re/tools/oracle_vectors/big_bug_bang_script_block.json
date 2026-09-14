@@ -1,0 +1,1374 @@
+{
+  "format": "big_bug_bang_script_block_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_fixture_sha256": "984e3edcccb9022089e6c69f87cbf4fbb5752c72df16653b986cbab213152e4c",
+  "routine": {
+    "entry": "0x5b65",
+    "end": "0x5bae",
+    "body_sha256": "517e1eeea2d389d0bda774b4728ef2f26f88a3f19f8c45ed8ce16a8873bce602",
+    "handler_table_offset": 29320,
+    "first_opcode": 160,
+    "last_opcode": 215,
+    "next_handler_is_null": true
+  },
+  "rows": [
+    {
+      "name": "immediate_end",
+      "start_offset": 512,
+      "reverse_direction": false,
+      "script_hex": "ff",
+      "handler_opcodes": [],
+      "handler_cursors": [],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 513,
+      "yield_before": 165,
+      "yield_after": 165,
+      "skip_before": 90,
+      "skip_after": 90,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [],
+      "token_calls": [],
+      "ordered_write_events": [],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "lowest_opcode",
+      "start_offset": 768,
+      "reverse_direction": false,
+      "script_hex": "a0ff",
+      "handler_opcodes": [
+        160
+      ],
+      "handler_cursors": [
+        769
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 770,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 769,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "highest_opcode",
+      "start_offset": 1024,
+      "reverse_direction": false,
+      "script_hex": "d2ff",
+      "handler_opcodes": [
+        210
+      ],
+      "handler_cursors": [
+        1025
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 1026,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 210,
+          "cursor": 1025,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "two_handler_chain",
+      "start_offset": 1280,
+      "reverse_direction": false,
+      "script_hex": "a0d2ff",
+      "handler_opcodes": [
+        160,
+        210
+      ],
+      "handler_cursors": [
+        1281,
+        1282
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 1283,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 1281,
+          "signal": 0
+        },
+        {
+          "opcode": 210,
+          "cursor": 1282,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ],
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "handler_stop_signal",
+      "start_offset": 2048,
+      "reverse_direction": false,
+      "script_hex": "aad3",
+      "handler_opcodes": [
+        170
+      ],
+      "handler_cursors": [
+        2049
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 2049,
+      "yield_before": 109,
+      "yield_after": 1,
+      "skip_before": 0,
+      "skip_after": 7,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 170,
+          "cursor": 2049,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ],
+        [
+          355210,
+          1,
+          1
+        ],
+        [
+          355201,
+          1,
+          7
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "handler_resume_signal_clears_skip",
+      "start_offset": 2304,
+      "reverse_direction": false,
+      "script_hex": "acff",
+      "handler_opcodes": [
+        172
+      ],
+      "handler_cursors": [
+        2305
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 2306,
+      "yield_before": 109,
+      "yield_after": 2,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 172,
+          "cursor": 2305,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ],
+        [
+          355210,
+          1,
+          2
+        ],
+        [
+          355201,
+          1,
+          9
+        ],
+        [
+          355201,
+          1,
+          0
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "skip_two_single_byte_tokens",
+      "start_offset": 2560,
+      "reverse_direction": false,
+      "script_hex": "a0a1a1ff",
+      "handler_opcodes": [
+        160
+      ],
+      "handler_cursors": [
+        2561
+      ],
+      "token_advance_offsets": [
+        2561,
+        2562
+      ],
+      "token_skip_values": [
+        2,
+        1
+      ],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 2564,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 0,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 2561,
+          "signal": 0
+        }
+      ],
+      "token_calls": [
+        {
+          "cursor": 2561,
+          "skip": 2
+        },
+        {
+          "cursor": 2562,
+          "skip": 1
+        }
+      ],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ],
+        [
+          355201,
+          1,
+          2
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          1
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          0
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "skip_variable_length_token",
+      "start_offset": 2816,
+      "reverse_direction": false,
+      "script_hex": "a0a03412ff",
+      "handler_opcodes": [
+        160
+      ],
+      "handler_cursors": [
+        2817
+      ],
+      "token_advance_offsets": [
+        2817
+      ],
+      "token_skip_values": [
+        1
+      ],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 2821,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 1,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 2817,
+          "signal": 0
+        }
+      ],
+      "token_calls": [
+        {
+          "cursor": 2817,
+          "skip": 1
+        }
+      ],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ],
+        [
+          355201,
+          1,
+          1
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          1
+        ],
+        [
+          355201,
+          1,
+          0
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "skip_low_nibble_gate_clear",
+      "start_offset": 3072,
+      "reverse_direction": false,
+      "script_hex": "a0ff",
+      "handler_opcodes": [
+        160
+      ],
+      "handler_cursors": [
+        3073
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 3074,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 16,
+      "skip_after": 16,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 3073,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "skip_full_byte_countdown",
+      "start_offset": 3328,
+      "reverse_direction": false,
+      "script_hex": "a0a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1ff",
+      "handler_opcodes": [
+        160
+      ],
+      "handler_cursors": [
+        3329
+      ],
+      "token_advance_offsets": [
+        3329,
+        3330,
+        3331,
+        3332,
+        3333,
+        3334,
+        3335,
+        3336,
+        3337,
+        3338,
+        3339,
+        3340,
+        3341,
+        3342,
+        3343,
+        3344,
+        3345
+      ],
+      "token_skip_values": [
+        17,
+        16,
+        15,
+        14,
+        13,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 3347,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 17,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 0,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 3329,
+          "signal": 0
+        }
+      ],
+      "token_calls": [
+        {
+          "cursor": 3329,
+          "skip": 17
+        },
+        {
+          "cursor": 3330,
+          "skip": 16
+        },
+        {
+          "cursor": 3331,
+          "skip": 15
+        },
+        {
+          "cursor": 3332,
+          "skip": 14
+        },
+        {
+          "cursor": 3333,
+          "skip": 13
+        },
+        {
+          "cursor": 3334,
+          "skip": 12
+        },
+        {
+          "cursor": 3335,
+          "skip": 11
+        },
+        {
+          "cursor": 3336,
+          "skip": 10
+        },
+        {
+          "cursor": 3337,
+          "skip": 9
+        },
+        {
+          "cursor": 3338,
+          "skip": 8
+        },
+        {
+          "cursor": 3339,
+          "skip": 7
+        },
+        {
+          "cursor": 3340,
+          "skip": 6
+        },
+        {
+          "cursor": 3341,
+          "skip": 5
+        },
+        {
+          "cursor": 3342,
+          "skip": 4
+        },
+        {
+          "cursor": 3343,
+          "skip": 3
+        },
+        {
+          "cursor": 3344,
+          "skip": 2
+        },
+        {
+          "cursor": 3345,
+          "skip": 1
+        }
+      ],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          16
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          15
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          14
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          13
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          12
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          11
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          10
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          9
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          8
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          7
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          6
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          5
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          4
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          3
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          2
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          1
+        ],
+        [
+          653310,
+          2,
+          23441
+        ],
+        [
+          653308,
+          2,
+          48640
+        ],
+        [
+          653306,
+          2,
+          0
+        ],
+        [
+          653304,
+          2,
+          30874
+        ],
+        [
+          355203,
+          1,
+          0
+        ],
+        [
+          355201,
+          1,
+          0
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "handler_threads_cursor",
+      "start_offset": 3584,
+      "reverse_direction": false,
+      "script_hex": "a03132ff",
+      "handler_opcodes": [
+        160
+      ],
+      "handler_cursors": [
+        3585
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 3588,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 3585,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "script_offset_wrap",
+      "start_offset": 65535,
+      "reverse_direction": false,
+      "script_hex": "a0ff",
+      "handler_opcodes": [
+        160
+      ],
+      "handler_cursors": [
+        0
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 1,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 68,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 0,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": false
+    },
+    {
+      "name": "inherited_reverse_direction",
+      "start_offset": 4608,
+      "reverse_direction": true,
+      "script_hex": "a0ff",
+      "handler_opcodes": [
+        160
+      ],
+      "handler_cursors": [
+        4607
+      ],
+      "token_advance_offsets": [],
+      "token_skip_values": [],
+      "error_called": false,
+      "result": 0,
+      "final_cursor": 4606,
+      "yield_before": 109,
+      "yield_after": 0,
+      "skip_before": 0,
+      "skip_after": 0,
+      "query_before": 165,
+      "query_after": 165,
+      "defined_status_flags": 1092,
+      "handler_calls": [
+        {
+          "opcode": 160,
+          "cursor": 4607,
+          "signal": 0
+        }
+      ],
+      "token_calls": [],
+      "ordered_write_events": [
+        [
+          355210,
+          1,
+          0
+        ],
+        [
+          653310,
+          2,
+          23422
+        ]
+      ],
+      "final_interrupt_flag": true,
+      "final_direction_flag": true
+    }
+  ]
+}

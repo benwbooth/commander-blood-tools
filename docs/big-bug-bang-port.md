@@ -5514,6 +5514,37 @@ and `bb831a3c513b0efbc6dcd8de5e94fba7a4f58865a05529f3757f55584bcc27d3`;
 the deterministic combined fixture SHA-256 is
 `c3179984d69ef765112c035c5a42ce1e6ec08ca68c13f7a45e8bb5adb1f25184`.
 
+## Nested Script-Block Dispatcher Oracle (2026-09-13)
+
+BBB `0x5B65..0x5BAE` is the sequel counterpart of Commander Blood's nested
+BloodScript scanner at `0x56A6`. Its 73-byte extent contains 25 reachable
+instructions in 70 bytes plus an unreachable three-byte failure literal. BBB
+relocates the handler table and control bytes, uses `movzx` for the opcode
+index, and removes Commander's inline `A0..D2` range checks. The pinned sequel
+table has non-null handlers through `D7` and a null `D8` sentinel, so malformed
+bytes remain the decoder's responsibility rather than a safe native entry path.
+
+The new `re/tools/big_bug_bang_script_block_oracle.py` directly executes the 13
+fingerprinted Commander cases that share BBB's valid block domain. They prove
+immediate termination, `A0` and `D2` bounds, chained handlers, stop and resume
+signals, skip-state clearing, low-nibble gating, complete byte countdown,
+variable token advance, handler-authored cursor movement, 16-bit cursor wrap,
+and inherited reverse direction. The two Commander trap cases are deliberately
+excluded because BBB no longer contains that trap and `D3` is a real sequel
+opcode.
+
+The harness executes BBB's relocated skip helper and descriptor table, verifies
+the indirect-handler and skip-helper frames, exact ordered global and transient
+stack writes, relocated GS/SS ownership against old-offset and full-segment
+decoys, complete register, segment, flag, cursor, and control-state residue,
+near return, full synthetic memories, and patched executable immutability. The
+typed `execute_script_block` owner consumes the Commander and BBB fixtures and
+uses validated decoded positions instead of unchecked segmented table indexes.
+BBB's full body SHA-256 is
+`517e1eeea2d389d0bda774b4728ef2f26f88a3f19f8c45ed8ce16a8873bce602`;
+the deterministic fixture SHA-256 is
+`87c5c34375f7bc3eb654b4fbb6fe7fc588eb745a6b261c5107481c6e5d3ef9d2`.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
