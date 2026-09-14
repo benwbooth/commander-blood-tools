@@ -17,6 +17,9 @@ ROOT = Path(__file__).resolve().parents[2]
 COVERAGE = ROOT / "re/big_bug_bang_oracle_coverage.json"
 COMPARISON = ROOT / "re/big_bug_bang_expanded_function_comparison.json"
 FIELD_AUDIT = ROOT / "re/big_bug_bang_field_display_audit.json"
+UNREFERENCED_LIBRARY_AUDIT = (
+    ROOT / "re/big_bug_bang_unreferenced_library_audit.json"
+)
 PORTED = ROOT / "re/rust-port/ported.tsv"
 ELIMINATED = ROOT / "re/rust-port/eliminated.tsv"
 EXECUTABLE = ROOT / "output/big-bug-bang/disc/BLOOD2PG.EXE"
@@ -241,6 +244,7 @@ def base_row(coverage_row: dict[str, Any]) -> dict[str, Any]:
 def build_report() -> dict[str, Any]:
     coverage = json.loads(COVERAGE.read_text())
     audit = json.loads(FIELD_AUDIT.read_text())
+    unreferenced_audit = json.loads(UNREFERENCED_LIBRARY_AUDIT.read_text())
     ported = commander_rows(PORTED)
     eliminated = commander_rows(ELIMINATED)
     oracle_rows = {row["oracle"]: row for row in coverage["oracles"]}
@@ -249,6 +253,9 @@ def build_report() -> dict[str, Any]:
     }
     consumers = fixture_consumers(fixtures)
     diagnostics = diagnostic_entries(audit)
+    unreferenced_library = {
+        int(item["entry"], 16) for item in unreferenced_audit["routines"]
+    }
     executable = EXECUTABLE.read_bytes()
 
     rows = []
@@ -294,6 +301,18 @@ def build_report() -> dict[str, Any]:
                     "the pinned static audit finds a zero initializer and no direct "
                     "writer for its mode, so inspector rendering is outside playable "
                     "game semantics."
+                ),
+            )
+        elif entry in unreferenced_library:
+            row.update(
+                status="eliminated_unreferenced_library",
+                evidence=[str(UNREFERENCED_LIBRARY_AUDIT.relative_to(ROOT))],
+                rust_owner=None,
+                rationale=(
+                    "This isolated compiler-library formatter follows a far return, "
+                    "has no direct caller in the expanded graph, and has no encoded "
+                    "offset materialization in the executable. No recovered shipped "
+                    "path references it, so no production API is introduced."
                 ),
             )
         elif entry in AUTHORED_NO_OPERATIONS:
@@ -393,6 +412,9 @@ def build_report() -> dict[str, Any]:
             str(COVERAGE.relative_to(ROOT)): sha256(COVERAGE),
             str(COMPARISON.relative_to(ROOT)): sha256(COMPARISON),
             str(FIELD_AUDIT.relative_to(ROOT)): sha256(FIELD_AUDIT),
+            str(UNREFERENCED_LIBRARY_AUDIT.relative_to(ROOT)): sha256(
+                UNREFERENCED_LIBRARY_AUDIT
+            ),
             str(PORTED.relative_to(ROOT)): sha256(PORTED),
             str(ELIMINATED.relative_to(ROOT)): sha256(ELIMINATED),
             str(EXECUTABLE.relative_to(ROOT)): sha256(EXECUTABLE),

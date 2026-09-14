@@ -5468,6 +5468,21 @@ state. BBB's body SHA-256 is
 and the deterministic fixture SHA-256 is
 `e2de6e95d1ec61566ec1ef0fca15b9ad66d3c22b93bb9ea3b12dfb74fc5c8d81`.
 
+## Unreferenced Library Formatter Audit (2026-09-13)
+
+BBB's adjacent `0x28B2`, `0x28CC`, and `0x28E9` leaves format a byte as binary,
+a word as binary, and a word as hexadecimal. They are compiler-library utility
+bodies rather than game-specific behavior. Each starts immediately after a far
+return, has no incoming or outgoing callgraph edge, and has no 16-bit entry
+offset materialized anywhere in the shipped executable.
+
+`re/tools/big_bug_bang_unreferenced_library_audit.py` pins the three exact body
+hashes and rechecks those graph, predecessor, and address-reference invariants.
+The resulting static exclusion is deliberately narrow: it does not claim that
+absence of a literal generally disproves computed indirect targets. For these
+three isolated formatter bodies, however, there is no recovered shipped path to
+port, so the Rust runtime does not expose dead formatting APIs.
+
 ## Remaining Completion Requirements
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger

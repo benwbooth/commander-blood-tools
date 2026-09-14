@@ -20,14 +20,18 @@ import unittest  # noqa: E402
 ROOT = Path(__file__).resolve().parents[2]
 LEDGER_PATH = ROOT / "re/big_bug_bang_port_dispositions.json"
 COVERAGE_PATH = ROOT / "re/big_bug_bang_oracle_coverage.json"
+UNREFERENCED_LIBRARY_AUDIT_PATH = (
+    ROOT / "re/big_bug_bang_unreferenced_library_audit.json"
+)
 BUILDER_PATH = ROOT / "re/tools/build_big_bug_bang_port_dispositions.py"
 KNOWN_ENTRYPOINT_COUNT = 383
-CLASSIFIED_ENTRYPOINT_COUNT = 320
-PENDING_GAME_SEMANTICS_COUNT = 63
+CLASSIFIED_ENTRYPOINT_COUNT = 323
+PENDING_GAME_SEMANTICS_COUNT = 60
 EXPECTED_STATUS_COUNTS = {
     "eliminated_authored_no_operation": 7,
     "eliminated_dormant_diagnostic": 17,
     "eliminated_host_adapter": 26,
+    "eliminated_unreferenced_library": 3,
     "inherited_exact_eliminated": 7,
     "inherited_exact_typed": 6,
     "pending_game_semantics": PENDING_GAME_SEMANTICS_COUNT,
@@ -59,6 +63,12 @@ class BigBugBangPortDispositionTests(unittest.TestCase):
         self.coverage = json.loads(COVERAGE_PATH.read_text())
         self.coverage_rows = {row["entry"]: row for row in self.coverage["entrypoints"]}
         self.oracle_rows = {row["oracle"]: row for row in self.coverage["oracles"]}
+        self.unreferenced_library = {
+            row["entry"]
+            for row in json.loads(UNREFERENCED_LIBRARY_AUDIT_PATH.read_text())[
+                "routines"
+            ]
+        }
 
     def test_checked_in_ledger_is_current(self) -> None:
         self.assertEqual(self.ledger, builder.build_report())
@@ -133,6 +143,13 @@ class BigBugBangPortDispositionTests(unittest.TestCase):
                 self.assertEqual(
                     row["evidence"][0], "re/big_bug_bang_field_display_audit.json"
                 )
+                self.assertIsNone(row["rust_owner"])
+            elif status == "eliminated_unreferenced_library":
+                self.assertEqual(
+                    row["evidence"],
+                    [str(UNREFERENCED_LIBRARY_AUDIT_PATH.relative_to(ROOT))],
+                )
+                self.assertIn(row["entry"], self.unreferenced_library)
                 self.assertIsNone(row["rust_owner"])
             elif status == "eliminated_authored_no_operation":
                 body = bytes.fromhex(row["body_hex"])

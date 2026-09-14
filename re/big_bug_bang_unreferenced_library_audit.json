@@ -1,0 +1,43 @@
+{
+  "format": "big_bug_bang_unreferenced_library_audit_v1",
+  "scope": "Static exclusion of isolated compiler-library formatter bodies with no recovered direct caller or encoded offset materialization; this does not generalize to computed indirect targets",
+  "inputs": {
+    "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+    "re/big_bug_bang_expanded_func_graph.json": "15bb9d05325c8da221d2b3f2dcf33b33643223ea47bdf4367bf40ae51884a02b"
+  },
+  "routines": [
+    {
+      "entry": "0x28b2",
+      "end": "0x28cc",
+      "name": "format_byte_as_binary",
+      "body_sha256": "f3408376215a164d58dac0837709312286acb30999efe0d120600f35dad605e0",
+      "instruction_bytes": 26,
+      "predecessor_opcode": "0xcb",
+      "direct_callers": [],
+      "direct_callees": [],
+      "encoded_offset_hits": []
+    },
+    {
+      "entry": "0x28cc",
+      "end": "0x28e9",
+      "name": "format_word_as_binary",
+      "body_sha256": "d31b09bb829f6a555d1d683085fd73e797e0666f23d9e2ed2c8ebdb1c5592387",
+      "instruction_bytes": 29,
+      "predecessor_opcode": "0xcb",
+      "direct_callers": [],
+      "direct_callees": [],
+      "encoded_offset_hits": []
+    },
+    {
+      "entry": "0x28e9",
+      "end": "0x2910",
+      "name": "format_word_as_hex",
+      "body_sha256": "83db563e61f3bc926fb65783c5227820d3dc868f19c72edf04f5faca78d9c4b4",
+      "instruction_bytes": 39,
+      "predecessor_opcode": "0xcb",
+      "direct_callers": [],
+      "direct_callees": [],
+      "encoded_offset_hits": []
+    }
+  ]
+}
