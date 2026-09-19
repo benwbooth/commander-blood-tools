@@ -2545,19 +2545,60 @@ impl<'window> ModernGameServices<'window> {
         lifecycle.pause_hud_active = self.input.dispatch_state().paused;
 
         if outcome == InputCancellationOutcome::CancelledPresentation {
-            if cursor.is_some() {
-                self.presentation_player
-                    .apply_cancellation_cursor(cancellation.resources)?;
-            }
-            self.ship_presentation.dialogue_phase_ready = u8::from(cancellation.dialogue_ready);
-            *self.runtime.live_palette_mut() = cancellation.scene_palette;
-            self.presentation_screen
-                .as_mut()
-                .context("presentation screen is already being updated")?
-                .synchronize_scene_palette(cancellation.scene_palette);
-            self.palette_transition.request_visual_color_update();
+            self.publish_presentation_cancellation(&cancellation, cursor.is_some())?;
         }
         Ok(outcome)
+    }
+
+    /// Run BBB's right-click path after pointer edges and before the VM.
+    pub fn handle_sequel_secondary_pointer(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+    ) -> Result<()> {
+        use crate::native::bloodprg::{
+            SequelSecondaryPointerOutcome, handle_sequel_secondary_pointer,
+        };
+        if self.runtime.data().game() != GameVariant::BigBugBang {
+            return Ok(());
+        }
+        let cursor = self.presentation_player.cancellation_cursor();
+        let mut cancellation = input_cancellation_state(
+            lifecycle,
+            &self.ship_presentation,
+            cursor,
+            *self.runtime.live_palette(),
+        );
+        let panel_active = self.presentation_screen_state()?.active();
+        let outcome = handle_sequel_secondary_pointer(
+            lifecycle,
+            self.scripts.text_presentation_mut(),
+            panel_active,
+            &mut cancellation,
+            &mut self.presentation_player,
+        );
+        if outcome == SequelSecondaryPointerOutcome::CancelledScene {
+            self.publish_presentation_cancellation(&cancellation, cursor.is_some())?;
+        }
+        Ok(())
+    }
+
+    fn publish_presentation_cancellation(
+        &mut self,
+        cancellation: &InputCancellationState,
+        has_resource_cursor: bool,
+    ) -> Result<()> {
+        if has_resource_cursor {
+            self.presentation_player
+                .apply_cancellation_cursor(cancellation.resources)?;
+        }
+        self.ship_presentation.dialogue_phase_ready = u8::from(cancellation.dialogue_ready);
+        *self.runtime.live_palette_mut() = cancellation.scene_palette;
+        self.presentation_screen
+            .as_mut()
+            .context("presentation screen is already being updated")?
+            .synchronize_scene_palette(cancellation.scene_palette);
+        self.palette_transition.request_visual_color_update();
+        Ok(())
     }
 
     /// Expose sequel controls only when the loaded state has the sequel dialect.

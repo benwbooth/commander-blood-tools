@@ -1,6 +1,9 @@
 //! Presentation cancellation over owned runtime state.
 
-use super::{IndexedGamePalette, InputDispatchState, latch_input_text_byte};
+use super::{
+    GameLifecycleState, IndexedGamePalette, InputDispatchState, TextPresentationState,
+    latch_input_text_byte,
+};
 
 /// First presentation line that blocks cancellation.
 pub const CANCELLATION_BLOCKED_LINE_FIRST: usize = 8;
@@ -71,19 +74,27 @@ pub fn cancel_input_action<Backend: InputCancellationBackend>(
     text_byte: u8,
 ) -> InputCancellationOutcome {
     dispatch.paused = false;
-    let line_blocks_cancellation = (CANCELLATION_BLOCKED_LINE_FIRST
-        ..=CANCELLATION_BLOCKED_LINE_LAST)
-        .contains(&cancellation.active_line);
-    let can_cancel = cancellation.presentation_active
-        && !cancellation.dialogue_ready
-        && !cancellation.ship_active
-        && !line_blocks_cancellation;
-
-    if !can_cancel {
+    if !can_cancel_presentation(cancellation) {
         latch_input_text_byte(dispatch, text_byte);
         return InputCancellationOutcome::ForwardedToText;
     }
 
+    cancel_presentation(cancellation, backend);
+    InputCancellationOutcome::CancelledPresentation
+}
+
+fn can_cancel_presentation(cancellation: &InputCancellationState) -> bool {
+    cancellation.presentation_active
+        && !cancellation.dialogue_ready
+        && !cancellation.ship_active
+        && !(CANCELLATION_BLOCKED_LINE_FIRST..=CANCELLATION_BLOCKED_LINE_LAST)
+            .contains(&cancellation.active_line)
+}
+
+fn cancel_presentation(
+    cancellation: &mut InputCancellationState,
+    backend: &mut impl InputCancellationBackend,
+) {
     cancellation.dialogue_ready = cancellation.active_line == CANCELLATION_DIALOGUE_READY_LINE;
     cancellation.resources.read_position = cancellation.resources.rewind_position;
     cancellation.resources.remaining = cancellation.resources.rewind_remaining;
@@ -91,7 +102,62 @@ pub fn cancel_input_action<Backend: InputCancellationBackend>(
     cancellation.scene_palette[..CANCELLATION_PALETTE_COLOR_COUNT]
         .fill([u8::MIN; PALETTE_COLOR_COMPONENT_COUNT]);
     cancellation.palette_dirty = true;
-    InputCancellationOutcome::CancelledPresentation
+}
+
+/// Result of BBB's secondary-pointer handler, before the script frame.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SequelSecondaryPointerOutcome {
+    /// A native guard prevented any state changes.
+    Unchanged,
+    /// Subtitle/menu work was dismissed and the VM released.
+    DismissedText,
+    /// The active scene was rewound and its lower palette cleared.
+    CancelledScene,
+}
+
+/// Translate the complete BBB-only entry at `0x1446..0x1502`.
+/// Unlike Escape, this never changes pause, keyboard, or pointer latches.
+pub fn handle_sequel_secondary_pointer(
+    lifecycle: &mut GameLifecycleState,
+    text: &mut TextPresentationState,
+    panel_active: bool,
+    cancellation: &mut InputCancellationState,
+    backend: &mut impl InputCancellationBackend,
+) -> SequelSecondaryPointerOutcome {
+    if !lifecycle.secondary_pointer_pressed || panel_active {
+        return SequelSecondaryPointerOutcome::Unchanged;
+    }
+    let presentation = &mut lifecycle.presentation;
+    if presentation.active {
+        if presentation.text_menu_pending || presentation.word_choice_active {
+            return SequelSecondaryPointerOutcome::Unchanged;
+        }
+        if presentation.menu_deferred || presentation.subtitle_display_active {
+            lifecycle.vm_execution_enabled = true;
+            presentation.menu_deferred = false;
+            presentation.subtitle_display_active = false;
+            presentation.hold_ready = false;
+            presentation.dialogue_hold_complete = false;
+            presentation.c2_presentation_gate = false;
+            presentation.subtitle_voice_trigger = false;
+            presentation.request_flags.clear_pending_requests();
+            text.menu_deferred = false;
+            text.subtitle_display_active = false;
+            text.hold_ready = false;
+            text.dialogue_hold_complete = false;
+            text.subtitle_voice_trigger = false;
+            text.subtitle_reveal_cursor = None;
+            text.request_flags.clear_pending_requests();
+            backend.reset_presentation_queue();
+            return SequelSecondaryPointerOutcome::DismissedText;
+        }
+    }
+    if !can_cancel_presentation(cancellation) {
+        return SequelSecondaryPointerOutcome::Unchanged;
+    }
+    cancel_presentation(cancellation, backend);
+    lifecycle.vm_execution_enabled = true;
+    SequelSecondaryPointerOutcome::CancelledScene
 }
 
 #[cfg(test)]
@@ -171,6 +237,114 @@ mod tests {
     impl InputCancellationBackend for QueueProbe {
         fn reset_presentation_queue(&mut self) {
             self.reset_count += 1;
+        }
+    }
+
+    #[test]
+    fn sequel_secondary_pointer_matches_complete_assembly_state_transitions() {
+        for mask in 0_u16..1024 {
+            for line in [0, 3, 4, 7, 8, 39, 40, 41, 0x8000, 0xffff] {
+                let bit = |index: u32| (mask & (1_u16 << index)) != 0_u16;
+                let mut lifecycle = GameLifecycleState::default();
+                lifecycle.secondary_pointer_pressed = bit(0);
+                lifecycle.pause_hud_active = true;
+                lifecycle.primary_pointer_pressed = true;
+                lifecycle.pointer_press_pending = 7;
+                let p = &mut lifecycle.presentation;
+                p.active = bit(2);
+                p.text_menu_pending = bit(3);
+                p.word_choice_active = bit(4);
+                p.menu_deferred = bit(5);
+                p.subtitle_display_active = bit(6);
+                p.c2_presentation_gate = bit(7);
+                p.hold_ready = true;
+                p.dialogue_hold_complete = true;
+                p.subtitle_voice_trigger = true;
+                p.dialogue_chatter_active = true;
+                p.dialogue_hold_countdown = 37;
+                p.request_flags = super::super::PresentationRequestFlags::decode(0xff);
+                let mut text = TextPresentationState {
+                    menu_deferred: p.menu_deferred,
+                    subtitle_display_active: p.subtitle_display_active,
+                    hold_ready: true,
+                    dialogue_hold_complete: true,
+                    subtitle_voice_trigger: true,
+                    subtitle_reveal_cursor: Some(71),
+                    request_flags: p.request_flags,
+                    dialogue_chatter_active: true,
+                    dialogue_hold_countdown: 37,
+                    subtitle_text: b"retained".to_vec().into_boxed_slice(),
+                    ..Default::default()
+                };
+                let mut cancellation = InputCancellationState {
+                    presentation_active: bit(7),
+                    dialogue_ready: bit(8),
+                    ship_active: bit(9),
+                    active_line: line,
+                    resources: PresentationResourceCursor {
+                        read_position: 500,
+                        remaining: 600,
+                        rewind_position: 100,
+                        rewind_remaining: 200,
+                    },
+                    scene_palette: [[165; 3]; 256],
+                    palette_dirty: false,
+                };
+                let mut expected_lifecycle = lifecycle.clone();
+                let mut expected_text = text.clone();
+                let mut expected_cancel = cancellation.clone();
+                let blocked = !bit(0) || bit(1) || (bit(2) && (bit(3) || bit(4)));
+                let outcome = if blocked {
+                    SequelSecondaryPointerOutcome::Unchanged
+                } else if bit(2) && (bit(5) || bit(6)) {
+                    expected_lifecycle.vm_execution_enabled = true;
+                    let p = &mut expected_lifecycle.presentation;
+                    p.menu_deferred = false;
+                    p.subtitle_display_active = false;
+                    p.hold_ready = false;
+                    p.dialogue_hold_complete = false;
+                    p.c2_presentation_gate = false;
+                    p.subtitle_voice_trigger = false;
+                    p.request_flags = super::super::PresentationRequestFlags::decode(0xfc);
+                    expected_text.menu_deferred = false;
+                    expected_text.subtitle_display_active = false;
+                    expected_text.hold_ready = false;
+                    expected_text.dialogue_hold_complete = false;
+                    expected_text.subtitle_voice_trigger = false;
+                    expected_text.subtitle_reveal_cursor = None;
+                    expected_text.request_flags = p.request_flags;
+                    SequelSecondaryPointerOutcome::DismissedText
+                } else if bit(7) && !bit(8) && !bit(9) && !(8..=40).contains(&line) {
+                    expected_lifecycle.vm_execution_enabled = true;
+                    expected_cancel.dialogue_ready = line == 4;
+                    expected_cancel.resources.read_position = 100;
+                    expected_cancel.resources.remaining = 200;
+                    expected_cancel.scene_palette[..128].fill([0; 3]);
+                    expected_cancel.palette_dirty = true;
+                    SequelSecondaryPointerOutcome::CancelledScene
+                } else {
+                    SequelSecondaryPointerOutcome::Unchanged
+                };
+                let mut backend = QueueProbe::default();
+                assert_eq!(
+                    handle_sequel_secondary_pointer(
+                        &mut lifecycle,
+                        &mut text,
+                        bit(1),
+                        &mut cancellation,
+                        &mut backend,
+                    ),
+                    outcome,
+                    "mask={mask:#x} line={line}"
+                );
+                assert_eq!(lifecycle, expected_lifecycle, "mask={mask:#x} line={line}");
+                assert_eq!(text, expected_text, "mask={mask:#x} line={line}");
+                assert_eq!(cancellation, expected_cancel, "mask={mask:#x} line={line}");
+                assert_eq!(
+                    backend.reset_count,
+                    usize::from(outcome != SequelSecondaryPointerOutcome::Unchanged)
+                );
+            }
         }
     }
 

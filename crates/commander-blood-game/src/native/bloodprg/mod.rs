@@ -267,6 +267,7 @@ pub use confirm_dialog::{
     CONFIRM_DIALOG_BACKGROUND_PALETTE_INDEX, CONFIRM_DIALOG_FOREGROUND_PALETTE_INDEX,
     ConfirmDialogFrame, ConfirmDialogHits, ConfirmDialogLabel, ConfirmDialogOutcome,
     ConfirmDialogRectangle, ConfirmDialogState, update_confirm_dialog,
+    update_confirm_dialog_for_dialect,
 };
 pub use descript::{
     CachedDescriptBackground, DescriptBackgroundCache, DescriptBackgroundCacheOutcome,
@@ -320,7 +321,7 @@ pub use input_cancel::{
     CANCELLATION_BLOCKED_LINE_FIRST, CANCELLATION_BLOCKED_LINE_LAST,
     CANCELLATION_DIALOGUE_READY_LINE, CANCELLATION_PALETTE_COLOR_COUNT, InputCancellationBackend,
     InputCancellationOutcome, InputCancellationState, PresentationResourceCursor,
-    cancel_input_action,
+    SequelSecondaryPointerOutcome, cancel_input_action, handle_sequel_secondary_pointer,
 };
 pub use input_dispatch::{
     HostInputKey, IgnoredInputAction, InputAction, InputArrowKey, InputDispatchState,

@@ -674,12 +674,54 @@ CONTROL_REVIEWS = (
         ),
     ),
 )
-CONTROL_OWNERS = {0x9A11: "update_sequel_option_menu"}
+CONTROL_REVIEWS += (
+    (
+        0x1688,
+        0x171D,
+        0x14CA,
+        "3114ab9591b7f715eafdba5f54a6bdc65169743464a66bb828f2611b08d5eac7",
+        None,
+        (
+            (
+                0x1688,
+                0x1696,
+                "Preserve registers; navigation gate bit2 absent returns untouched.",
+            ),
+            (
+                0x1696,
+                0x16BC,
+                "Navigation state1, UI bit4; fill and outline panel80,80,160,40 with colors226/232.",
+            ),
+            (
+                0x16BC,
+                0x16E3,
+                "French question at93,88; OUI115,105; NON175,105. Runtime English labels are display-only.",
+            ),
+            (
+                0x16E3,
+                0x16F3,
+                "Authored yes region takes priority; decrement complete gate byte on acceptance.",
+            ),
+            (
+                0x16F3,
+                0x1717,
+                "No region clears gate/modal bit, state11 and primary/pending inputs; secondary untouched.",
+            ),
+            (0x1717, 0x171D, "Restore registers and return."),
+        ),
+    ),
+)
+CONTROL_OWNERS = {
+    0x9A11: "update_sequel_option_menu",
+    0x1688: "update_confirm_dialog_for_dialect",
+}
 CONTROL_RUNTIME = (
     "crates/commander-blood-game/src/runtime/bridge_frame.rs",
     "crates/commander-blood-game/src/runtime/camera_navigation.rs",
     "crates/commander-blood-game/src/runtime/bridge_console.rs",
     "crates/commander-blood-game/src/runtime/presentation_screen.rs",
+    "crates/commander-blood-game/src/runtime/confirm_dialog.rs",
+    "crates/commander-blood-game/src/runtime/game_lifecycle.rs",
 )
 
 
@@ -954,6 +996,71 @@ def build_report():
                 ],
             }
         )
+    secondary_body = bbb[0x1446:0x1502]
+    if (
+        sha256(secondary_body)
+        != "38acab9d5e909deaf402fe34ec3bf07d4c92414ac0ae88f95d6010bdd9bd70ec"
+    ):
+        raise ValueError("sequel secondary-pointer body changed")
+    if bbb[0x1155:0x115B].hex() != "e8f710e8eb02":
+        raise ValueError("secondary-pointer call no longer follows pointer edges")
+    if bbb[0xF971:0xF988] != b"ETES_VOUS_SUR?\0OUI\0NON\0":
+        raise ValueError("sequel confirmation labels changed")
+    owner = "crates/commander-blood-game/src/native/bloodprg/input_cancel.rs"
+    inputs[owner] = sha256((ROOT / owner).read_bytes())
+    rows.append(
+        {
+            "entry": "0x1446",
+            "end": "0x1502",
+            "commander_entry": None,
+            "kind": "reviewed_transcription",
+            "body_sha256": sha256(secondary_body),
+            "rust_owner": {"path": owner, "symbol": "handle_sequel_secondary_pointer"},
+            "inherited_fixture": None,
+            "instruction_count": len(decode(secondary_body, 0x1446)),
+            "reviewed_relocations": [],
+            "reviewed_blocks": [
+                [
+                    "0x1446",
+                    "0x145b",
+                    "Preserve EAX/CX; require secondary bit1 and inactive panel.",
+                ],
+                [
+                    "0x145b",
+                    "0x147d",
+                    "Active text owner blocks on menu/word choice; deferred menu or subtitle selects dismissal.",
+                ],
+                [
+                    "0x147d",
+                    "0x14a5",
+                    "Release VM; clear menu/subtitle/holds/C2/voice/reveal cursor and request bits3; reset queue.",
+                ],
+                [
+                    "0x14a5",
+                    "0x14c9",
+                    "Scene branch requires C2, not dialogue-ready or ship bit4; unsigned lines8..40 block.",
+                ],
+                [
+                    "0x14c9",
+                    "0x14e8",
+                    "Ready iff line4; rewind both resource dwords; reset queue.",
+                ],
+                [
+                    "0x14e8",
+                    "0x14fe",
+                    "Clear first128 palette colors, mark dirty, release VM.",
+                ],
+                [
+                    "0x14fe",
+                    "0x1502",
+                    "Restore and return; keyboard, pause and pointer latches untouched.",
+                ],
+            ],
+            "notes": [
+                "BBB-only full-body transcription; 1024 guard combinations times ten unsigned line boundaries check complete lifecycle, text, palette/cursor and queue-call state. Runtime executes after pointer edges and before VM/presentation-mode branch. Not a new native execution claim."
+            ],
+        }
+    )
     bounds_body = bbb[0x5D5D:0x5DD7]
     if (
         sha256(bounds_body)

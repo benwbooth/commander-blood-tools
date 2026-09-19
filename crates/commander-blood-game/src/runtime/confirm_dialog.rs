@@ -7,7 +7,7 @@ use crate::native::bloodprg::{
     BridgeSpriteRect, ConfirmDialogFrame, ConfirmDialogHits, ConfirmDialogOutcome,
     ConfirmDialogState, FontPoint, FontVerticalBand, GameLifecycleState, PresentationHitRectangle,
     PrimaryPointerSample, RasterPoint, RasterSpanPaint, draw_rect_outline, draw_square_caps_text,
-    fill_framebuffer_rect, primary_pointer_hits_region, update_confirm_dialog,
+    fill_framebuffer_rect, primary_pointer_hits_region, update_confirm_dialog_for_dialect,
 };
 
 use super::OriginalGameRuntime;
@@ -74,12 +74,13 @@ impl RuntimeConfirmDialog {
             primary_pressed: lifecycle.primary_pointer_pressed,
             position: pointer_position,
         };
-        let outcome = update_confirm_dialog(
+        let outcome = update_confirm_dialog_for_dialect(
             &mut self.state,
             ConfirmDialogHits {
                 yes: hit(pointer, self.regions.yes),
                 no: hit(pointer, self.regions.no),
             },
+            runtime.data().game().script_dialect(),
         );
 
         let frame = match outcome {
@@ -88,7 +89,15 @@ impl RuntimeConfirmDialog {
             | ConfirmDialogOutcome::Confirmed(frame)
             | ConfirmDialogOutcome::Cancelled(frame) => Some(frame),
         };
-        if let Some(frame) = frame {
+        if let Some(mut frame) = frame {
+            // Display-only English localization preserves the native BBB geometry.
+            for (label, english) in frame
+                .labels
+                .iter_mut()
+                .zip(ConfirmDialogFrame::original().labels)
+            {
+                label.text = english.text;
+            }
             draw_frame(runtime, frame)?;
         }
 

@@ -5839,3 +5839,24 @@ scene and the caption `Ageu rla... Mmeuh`. This verifies the ordinary-input
 opening, PLAY, TV completion, return-pan and first cryobox-contact path. It
 does not verify later dialogue, travel, completion, or the remaining English
 translation.
+
+## Secondary Pointer and Confirmation Source Review (2026-09-19)
+
+The complete BBB-only `0x1446..0x1502` right-click handler was missing from
+the modern frame loop. It now runs immediately after pointer-edge publication,
+before the VM/presentation-mode branch. Its text-dismiss branch releases the VM,
+clears only the authored subtitle/menu/hold/C2/voice/request/reveal fields and
+resets the queue. Its scene branch retains the C2, dialogue-ready, ship-bit and
+unsigned line 8..40 guards, rewinds resources, clears exactly the first 128
+palette colors and releases the VM. Neither branch changes pause, keyboard or
+pointer latches. Full typed-state comparisons cover all 1,024 guard combinations
+at ten unsigned line boundaries; the two prior Escape fixture tests still pass.
+
+The complete confirmation entry `0x1688..0x171D` uses BBB's 80,80,160,40 panel
+and label positions 93,88 / 115,105 / 175,105, not Commander's narrower layout.
+Native plans retain the pinned French strings; the runtime applies display-only
+English labels without moving hit regions or geometry. All 256 gate bytes and
+four yes/no combinations preserve the shared transition semantics. Eight native
+and runtime confirmation tests pass. Static audit and disposition tests pass;
+372/383 known entries are classified, including 40 static typed entries, with
+11 remaining. These are source-level checks, not a full-game runtime claim.

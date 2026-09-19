@@ -1,5 +1,7 @@
 //! Navigation confirmation dialog state and renderer-independent layout.
 
+use commander_blood_formats::code::ScriptDialect;
+
 const CONFIRM_DIALOG_ACTIVE_FLAG: u8 = 1 << 1;
 const CONFIRM_DIALOG_UI_FLAG: u16 = 1 << 2;
 const CONFIRM_DIALOG_OPEN_STATE: u16 = 1;
@@ -50,6 +52,34 @@ pub struct ConfirmDialogFrame {
 }
 
 impl ConfirmDialogFrame {
+    /// BBB's original French labels and expanded panel at entry `0x1688`.
+    pub const fn sequel() -> Self {
+        Self {
+            panel: ConfirmDialogRectangle {
+                x: 80,
+                y: 80,
+                width: 160,
+                height: 40,
+            },
+            background_palette_index: CONFIRM_DIALOG_BACKGROUND_PALETTE_INDEX,
+            foreground_palette_index: CONFIRM_DIALOG_FOREGROUND_PALETTE_INDEX,
+            labels: [
+                ConfirmDialogLabel {
+                    text: b"ETES_VOUS_SUR?",
+                    position: [93, 88],
+                },
+                ConfirmDialogLabel {
+                    text: b"OUI",
+                    position: [115, 105],
+                },
+                ConfirmDialogLabel {
+                    text: b"NON",
+                    position: [175, 105],
+                },
+            ],
+        }
+    }
+
     /// Return the recovered static dialog geometry and text.
     pub const fn original() -> Self {
         Self {
@@ -127,13 +157,25 @@ pub fn update_confirm_dialog(
     state: &mut ConfirmDialogState,
     hits: ConfirmDialogHits,
 ) -> ConfirmDialogOutcome {
+    update_confirm_dialog_for_dialect(state, hits, ScriptDialect::CommanderBlood)
+}
+
+/// Apply the shared state machine with executable-specific drawing constants.
+pub fn update_confirm_dialog_for_dialect(
+    state: &mut ConfirmDialogState,
+    hits: ConfirmDialogHits,
+    dialect: ScriptDialect,
+) -> ConfirmDialogOutcome {
     if state.navigation_choice_gate & CONFIRM_DIALOG_ACTIVE_FLAG == u8::MIN {
         return ConfirmDialogOutcome::Inactive;
     }
 
     state.navigation_state = CONFIRM_DIALOG_OPEN_STATE;
     state.ui_flags |= CONFIRM_DIALOG_UI_FLAG;
-    let frame = ConfirmDialogFrame::original();
+    let frame = match dialect {
+        ScriptDialect::CommanderBlood => ConfirmDialogFrame::original(),
+        ScriptDialect::BigBugBang => ConfirmDialogFrame::sequel(),
+    };
 
     if hits.yes {
         state.navigation_choice_gate = state.navigation_choice_gate.wrapping_sub(1);
@@ -153,6 +195,71 @@ pub fn update_confirm_dialog(
 #[cfg(test)]
 mod tests {
     use serde::Deserialize;
+
+    #[test]
+    fn sequel_dialog_retains_native_geometry_and_shared_state_transitions() {
+        use super::*;
+        for gate in 0..=255 {
+            for hits in [
+                ConfirmDialogHits::default(),
+                ConfirmDialogHits {
+                    yes: true,
+                    no: false,
+                },
+                ConfirmDialogHits {
+                    yes: false,
+                    no: true,
+                },
+                ConfirmDialogHits {
+                    yes: true,
+                    no: true,
+                },
+            ] {
+                let mut original = ConfirmDialogState {
+                    navigation_choice_gate: gate,
+                    navigation_state: 31,
+                    ui_flags: 0xfffb,
+                    primary_pointer_pressed: true,
+                    pointer_press_pending: true,
+                };
+                let mut sequel = original;
+                update_confirm_dialog(&mut original, hits);
+                let outcome =
+                    update_confirm_dialog_for_dialect(&mut sequel, hits, ScriptDialect::BigBugBang);
+                assert_eq!(original, sequel);
+                let frame = match outcome {
+                    ConfirmDialogOutcome::Inactive => {
+                        assert_eq!(gate & 2, 0);
+                        continue;
+                    }
+                    ConfirmDialogOutcome::AwaitingChoice(frame)
+                    | ConfirmDialogOutcome::Confirmed(frame)
+                    | ConfirmDialogOutcome::Cancelled(frame) => frame,
+                };
+                assert_eq!(
+                    frame.panel,
+                    ConfirmDialogRectangle {
+                        x: 80,
+                        y: 80,
+                        width: 160,
+                        height: 40
+                    }
+                );
+                assert_eq!(
+                    frame.labels.map(|label| label.position),
+                    [[93, 88], [115, 105], [175, 105]]
+                );
+                assert_eq!(
+                    frame.labels.map(|label| label.text),
+                    [
+                        b"ETES_VOUS_SUR?".as_slice(),
+                        b"OUI".as_slice(),
+                        b"NON".as_slice()
+                    ]
+                );
+            }
+        }
+    }
 
     use super::*;
 

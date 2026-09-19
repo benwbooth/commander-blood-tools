@@ -5,7 +5,7 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "ff84082b9e1175b25f6a2d860827089f5c2b0c71644b87002ee6584a39e23054",
+    "re/tools/big_bug_bang_static_port_audit.py": "e2911da1ea28a6405f00504c872d539f3ab20bc551be9db453caa4fb8d41ddb4",
     "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
     "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
     "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
@@ -31,7 +31,7 @@
     "re/tools/oracle_vectors/func_6ff3_natural.json": "91896e778459743771bca99d6e0a69385d05e67e34028ee46a310994453b8aee",
     "crates/commander-blood-game/src/native/bloodprg/navigation.rs": "1f33adbde53c512d5c6f5c36864db03d0b9fbc98cd712ce9e408fed4ffe1ff7e",
     "re/tools/oracle_vectors/func_713d_natural.json": "246c497cc61e0ea5b25f707c83e8ada5a4fcedc3899898d3173cff927f3a7aeb",
-    "crates/commander-blood-game/src/runtime/services.rs": "f3f8564c34e8b93fb16a5eff329949a5aa1a93014a536fd98a38bbfea4f425ed",
+    "crates/commander-blood-game/src/runtime/services.rs": "4e6a43ec89f88e5b810a355e7726517627f67c042d38739e012ff867bead9b00",
     "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs": "5f3e726b5afc93d86dd70b2cd46fbfe79ed5055ae5de0c68113fa19cfb990944",
     "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e",
     "crates/commander-blood-game/src/native/bloodprg/sequence_subtitles.rs": "8601e3e8549fa6750a8a2a517c61fc4b2441fa2b6df0446243ee1f4858c4639d",
@@ -62,6 +62,8 @@
     "crates/commander-blood-game/src/runtime/camera_navigation.rs": "c64a97e1abc389ca6a5974985e3db6b2bbe6073b70dc510ce2b7b3d357607591",
     "crates/commander-blood-game/src/runtime/bridge_console.rs": "db0987f0f0f69f2efb57921e7f89b55ca2ab8d9164cc084883c864df18a4568e",
     "crates/commander-blood-game/src/runtime/presentation_screen.rs": "165611197c8b343c329b1477f905751e60e66f8b46e5fbc6a3ebd126637d0d4a",
+    "crates/commander-blood-game/src/runtime/confirm_dialog.rs": "f2ed62e7818af310903560d2563515527f6854d50a81e342f448464af41c1dc1",
+    "crates/commander-blood-game/src/runtime/game_lifecycle.rs": "1b9b5b53a5f16956d934d0d289a03273eb41066d204a5863dc97478e67aa2f46",
     "re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl": "0096e8f5961bb56dbc132f355e0f7b9b149fec15f8497d58f6d2cd9fc6d8bacd",
     "crates/commander-blood-game/src/native/bloodprg/actor_handler_camera.rs": "bf6cf08d784b76277564c26985a9c1eda43ececa8dbfacab104886ada6bc1832",
     "re/tools/oracle_vectors/func_8082_natural.json": "2f51568ac10549b09fb719495a0f755c77feef087e57979967ee41e130813898",
@@ -80,6 +82,9 @@
     "re/tools/oracle_vectors/func_85e2_natural.json": "bceafc1a336bb78a87bf705510a5218079023abf9cfee366a23dc638424e6052",
     "re/tools/oracle_vectors/func_886c_natural.json": "4b44006d0613e2b55285fa5a54d1201e547df87b47cdb7e34de3b5677fdfe390",
     "re/tools/oracle_vectors/big_bug_bang_options.json": "ed57d07da4533558b1a104d9d3943de16597325d69b2d35d1fcc58c55fbac62b",
+    "crates/commander-blood-game/src/native/bloodprg/confirm_dialog.rs": "01d26c0efbc2d89ff465d8da38cdc2ce970b8bd0f6da18ca0da0b3457045af73",
+    "re/tools/oracle_vectors/func_14ca_natural.json": "1a93531381755c6df38d4304c93c06c1d79d3399e33602c7a8a711222ec271c8",
+    "crates/commander-blood-game/src/native/bloodprg/input_cancel.rs": "3dc579420268f765f52a83973303657831281b6d72bc37480f3cc2259709aa94",
     "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b",
     "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "5817021dc5d13d2b46d0492bfd2c07e0976d4a534b70c219e3b5235099ddf4b3"
   },
@@ -3317,6 +3322,115 @@
         "Row3 unsupported music does nothing; otherwise toggle, reset stream latches, replace label and load/start only when enabling.",
         "Rows4/5 request save/load and panel. Row6 requests confirmation2 and clears primary0C36 and pending0C38, never secondary0C37.",
         "Selected action or cancel clears console selection and UI modal bit, then returns."
+      ]
+    },
+    {
+      "entry": "0x1688",
+      "end": "0x171d",
+      "commander_entry": "0x14ca",
+      "kind": "reviewed_transcription",
+      "body_sha256": "3114ab9591b7f715eafdba5f54a6bdc65169743464a66bb828f2611b08d5eac7",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/confirm_dialog.rs",
+        "symbol": "update_confirm_dialog_for_dialect"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_14ca_natural.json",
+      "instruction_count": 47,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x1688",
+          "0x1696",
+          "Preserve registers; navigation gate bit2 absent returns untouched."
+        ],
+        [
+          "0x1696",
+          "0x16bc",
+          "Navigation state1, UI bit4; fill and outline panel80,80,160,40 with colors226/232."
+        ],
+        [
+          "0x16bc",
+          "0x16e3",
+          "French question at93,88; OUI115,105; NON175,105. Runtime English labels are display-only."
+        ],
+        [
+          "0x16e3",
+          "0x16f3",
+          "Authored yes region takes priority; decrement complete gate byte on acceptance."
+        ],
+        [
+          "0x16f3",
+          "0x1717",
+          "No region clears gate/modal bit, state11 and primary/pending inputs; secondary untouched."
+        ],
+        [
+          "0x1717",
+          "0x171d",
+          "Restore registers and return."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Preserve registers; navigation gate bit2 absent returns untouched.",
+        "Navigation state1, UI bit4; fill and outline panel80,80,160,40 with colors226/232.",
+        "French question at93,88; OUI115,105; NON175,105. Runtime English labels are display-only.",
+        "Authored yes region takes priority; decrement complete gate byte on acceptance.",
+        "No region clears gate/modal bit, state11 and primary/pending inputs; secondary untouched.",
+        "Restore registers and return."
+      ]
+    },
+    {
+      "entry": "0x1446",
+      "end": "0x1502",
+      "commander_entry": null,
+      "kind": "reviewed_transcription",
+      "body_sha256": "38acab9d5e909deaf402fe34ec3bf07d4c92414ac0ae88f95d6010bdd9bd70ec",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_cancel.rs",
+        "symbol": "handle_sequel_secondary_pointer"
+      },
+      "inherited_fixture": null,
+      "instruction_count": 53,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x1446",
+          "0x145b",
+          "Preserve EAX/CX; require secondary bit1 and inactive panel."
+        ],
+        [
+          "0x145b",
+          "0x147d",
+          "Active text owner blocks on menu/word choice; deferred menu or subtitle selects dismissal."
+        ],
+        [
+          "0x147d",
+          "0x14a5",
+          "Release VM; clear menu/subtitle/holds/C2/voice/reveal cursor and request bits3; reset queue."
+        ],
+        [
+          "0x14a5",
+          "0x14c9",
+          "Scene branch requires C2, not dialogue-ready or ship bit4; unsigned lines8..40 block."
+        ],
+        [
+          "0x14c9",
+          "0x14e8",
+          "Ready iff line4; rewind both resource dwords; reset queue."
+        ],
+        [
+          "0x14e8",
+          "0x14fe",
+          "Clear first128 palette colors, mark dirty, release VM."
+        ],
+        [
+          "0x14fe",
+          "0x1502",
+          "Restore and return; keyboard, pause and pointer latches untouched."
+        ]
+      ],
+      "notes": [
+        "BBB-only full-body transcription; 1024 guard combinations times ten unsigned line boundaries check complete lifecycle, text, palette/cursor and queue-call state. Runtime executes after pointer edges and before VM/presentation-mode branch. Not a new native execution claim."
       ]
     },
     {
