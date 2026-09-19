@@ -6,7 +6,9 @@ use anyhow::{Context, Result, bail};
 use commander_blood_formats::alien::{AlienAsset, AlienXdbKind};
 use commander_blood_formats::archive::BloodResourceName;
 use commander_blood_formats::bloodprg::BloodprgFontResources;
-use commander_blood_formats::descript::{DescriptBackgroundSlot, DescriptCharacterBackground};
+use commander_blood_formats::descript::{
+    DescriptBackgroundSlot, DescriptCharacterBackground, DescriptMusicName,
+};
 use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{
@@ -247,6 +249,7 @@ pub struct ModernGameServices<'window> {
     presentation: RuntimePresentationHost<'window>,
     presentation_player: RuntimePresentationPlayer,
     audio: Option<RuntimeAudioHost>,
+    loaded_navigation_music: Option<DescriptMusicName>,
     resident_sound_bank: Option<LoadedSoundBank>,
     resident_sound_memory: Box<[u8]>,
     audio_events: AudioEventState,
@@ -417,6 +420,7 @@ impl<'window> ModernGameServices<'window> {
             presentation,
             presentation_player,
             audio: None,
+            loaded_navigation_music: None,
             resident_sound_bank: None,
             resident_sound_memory: vec![u8::MIN; RESIDENT_SOUND_ARENA_BYTE_COUNT]
                 .into_boxed_slice(),
@@ -737,8 +741,9 @@ impl<'window> ModernGameServices<'window> {
             .assets()
             .music()
             .context("no navigation music is selected")?
-            .as_bytes();
-        let resource_name = prefixed_resource_name(MUSIC_RESOURCE_DIRECTORY, music_name)?;
+            .clone();
+        let resource_name =
+            prefixed_resource_name(MUSIC_RESOURCE_DIRECTORY, music_name.as_bytes())?;
         let normalized = self
             .runtime
             .data()
@@ -759,6 +764,7 @@ impl<'window> ModernGameServices<'window> {
             )
             .context("staging normalized navigation music stream")?;
         if let Some(wait_prompt) = wait_prompt {
+            self.loaded_navigation_music = Some(music_name);
             self.draw_audio_stream_wait_prompt(wait_prompt)?;
         }
         Ok(())
@@ -790,7 +796,12 @@ impl<'window> ModernGameServices<'window> {
 
     /// Enable or disable every native VOC stream gate without conflating it with playback state.
     pub fn set_navigation_music_enabled(&mut self, enabled: bool) -> Result<()> {
-        self.audio_mut()?.set_background_channel_active(enabled)
+        let changed = self.navigation_music_enabled()? != enabled;
+        self.audio_mut()?.set_background_channel_active(enabled)?;
+        if changed {
+            self.loaded_navigation_music = None;
+        }
+        Ok(())
     }
 
     fn draw_audio_stream_wait_prompt(&mut self, prompt: &[u8]) -> Result<()> {
@@ -811,6 +822,12 @@ impl<'window> ModernGameServices<'window> {
     pub fn ensure_navigation_music(&mut self) -> Result<()> {
         if !self.navigation_music_enabled()? {
             return self.check_audio();
+        }
+        // DESCRIPT selection can precede this consumer and be reapplied as
+        // "reused" while the audio owner still holds the previous location.
+        let selected = self.scripts.backend().assets().music();
+        if selected != self.loaded_navigation_music.as_ref() {
+            return self.restart_navigation_music();
         }
         if self.navigation_music_position()?.is_some() {
             return self.check_audio();
@@ -876,6 +893,7 @@ impl<'window> ModernGameServices<'window> {
             normalized.sample_rate_code,
         )?;
         if let Some(wait_prompt) = wait_prompt {
+            self.loaded_navigation_music = None;
             self.draw_audio_stream_wait_prompt(wait_prompt)?;
         }
         Ok(())
@@ -906,16 +924,19 @@ impl<'window> ModernGameServices<'window> {
 
     /// Release a streamed voice that was loaded but never started.
     pub fn discard_loaded_voice(&mut self) -> bool {
-        self.audio
-            .as_mut()
-            .is_some_and(RuntimeAudioHost::discard_pending_background_stream)
+        self.discard_loaded_music()
     }
 
     /// Release decoded navigation music that has not yet entered SDL playback.
     pub fn discard_loaded_music(&mut self) -> bool {
-        self.audio
+        let discarded = self
+            .audio
             .as_mut()
-            .is_some_and(RuntimeAudioHost::discard_pending_background_stream)
+            .is_some_and(RuntimeAudioHost::discard_pending_background_stream);
+        if discarded {
+            self.loaded_navigation_music = None;
+        }
+        discarded
     }
 
     /// Advance the recovered music double-buffer lifecycle by at most one page.
@@ -5399,6 +5420,8 @@ impl<'window> ModernGameServices<'window> {
                 })),
             },
             "audio": {
+                "loaded_navigation_music": self.loaded_navigation_music.as_ref()
+                    .map(|name| String::from_utf8_lossy(name.as_bytes())),
                 "driver_pending": u8::from(self.audio.is_none()),
                 "stream_mode": u8::from(self.presentation_stream_active()),
                 "stream_channel": u8::MIN,
@@ -6970,6 +6993,155 @@ mod tests {
             fnv1a64(&state_before.encode())
         );
         assert_eq!(profile.synchronized_state().unwrap(), state_before);
+    }
+
+    #[test]
+    #[ignore = "requires an active desktop and serialized SDL/wgpu ownership"]
+    fn loviland_music_replaces_a_playing_track_after_description_selection() {
+        let _gpu = crate::gpu_test::lock();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let paths = OriginalGameDataPaths::discover(Some(&root)).unwrap();
+        let sdl = sdl3::init().unwrap();
+        let video = sdl.video().unwrap();
+        let audio = sdl.audio().unwrap();
+        let window = video
+            .window("Loviland music regression", 640, 480)
+            .build()
+            .unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable.0).unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        services.prepare_startup_resources().unwrap();
+        services.initialize_audio(&audio).unwrap();
+        services
+            .apply_presentation_description(b"present")
+            .unwrap()
+            .unwrap();
+        services.restart_navigation_music().unwrap();
+        let previous = services
+            .audio_ref()
+            .unwrap()
+            .background_source_samples()
+            .unwrap();
+        assert!(services.navigation_music_position().unwrap().is_some());
+
+        services
+            .apply_presentation_description(b"Loviland")
+            .unwrap()
+            .unwrap();
+        // Navigation can select a description before the HUD opens it again.
+        let repeated = services
+            .apply_presentation_description(b"Loviland")
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            repeated.music_selection(),
+            Some(DescriptMusicSelectionOutcome::Reused)
+        );
+        let expected = services
+            .runtime
+            .data()
+            .normalized_media()
+            .load_voc(&prefixed_resource_name(MUSIC_RESOURCE_DIRECTORY, b"VOL.VOC").unwrap())
+            .unwrap();
+        assert_ne!(previous.as_slice(), expected.samples.as_ref());
+        services.ensure_navigation_music().unwrap();
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_source_samples()
+                .unwrap()
+                .as_slice()
+                == expected.samples.as_ref(),
+            "the actual stream retained the previous track instead of VOL.VOC"
+        );
+        assert!(services.navigation_music_position().unwrap().is_some());
+
+        for _ in 0..100 {
+            if services.navigation_music_position().unwrap().unwrap() > 0 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        let position = services.navigation_music_position().unwrap().unwrap();
+        assert!(position > 0, "dummy SDL playback did not advance");
+        services.ensure_navigation_music().unwrap();
+        assert!(
+            services.navigation_music_position().unwrap().unwrap() >= position,
+            "retaining the selected track restarted it"
+        );
+
+        services.stop_navigation_music().unwrap();
+        services.load_navigation_music().unwrap();
+        assert!(services.audio_ref().unwrap().background_stream_pending());
+        services
+            .apply_presentation_description(b"present")
+            .unwrap()
+            .unwrap();
+        services.ensure_navigation_music().unwrap();
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_source_samples()
+                .unwrap()
+                == previous,
+            "a pending old stream masked the newly selected track"
+        );
+
+        services.set_navigation_music_enabled(false).unwrap();
+        services
+            .apply_presentation_description(b"Loviland")
+            .unwrap()
+            .unwrap();
+        services.ensure_navigation_music().unwrap();
+        assert!(services.navigation_music_position().unwrap().is_none());
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_source_samples()
+                .is_none()
+        );
+        services.set_navigation_music_enabled(true).unwrap();
+        services.ensure_navigation_music().unwrap();
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_source_samples()
+                .unwrap()
+                .as_slice()
+                == expected.samples.as_ref()
+        );
+
+        let voice_resource =
+            prefixed_resource_name(MUSIC_RESOURCE_DIRECTORY, b"CROOLRAP.VOC").unwrap();
+        services
+            .load_streamed_voice_resource(voice_resource.as_bytes())
+            .unwrap();
+        services.start_loaded_streamed_voice().unwrap();
+        assert!(services.loaded_navigation_music.is_none());
+        services.ensure_navigation_music().unwrap();
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_source_samples()
+                .unwrap()
+                .as_slice()
+                == expected.samples.as_ref(),
+            "a shared voice stream masked the selected music"
+        );
+
+        services.stop_navigation_music().unwrap();
+        services.load_navigation_music().unwrap();
+        assert!(services.discard_loaded_music());
+        assert!(services.loaded_navigation_music.is_none());
+        services.ensure_navigation_music().unwrap();
+        assert!(services.navigation_music_position().unwrap().is_some());
     }
 
     #[test]

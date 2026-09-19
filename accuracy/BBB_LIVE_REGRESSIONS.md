@@ -35,9 +35,24 @@ Request the affected save and screenshot, then compare the resource sequence
 and displayed background with the original executable. Keep video-local RGB
 ownership intact while tracing the inherited scene colors.
 
-## Cryobox music retained after travel to Lovia
+## Cryobox music retained on Loviland's surface
 
-Unresolved. `DESCRIPT.descript` assigns `VOL.VOC` to Loviland, while Lovia itself
-has no music field. Confirm whether the report concerns orbit/bridge or the
-surface location; then compare selected DESCRIPT music with actual playback.
-No music behavior has been changed yet.
+The user confirmed the surface view, not orbit, and has no saved checkpoint.
+`DESCRIPT.descript` assigns `VOL.VOC` to Loviland. Navigation can select a new
+description before the HUD consumes it, and repeated selection reports the name
+as reused. `ensure_navigation_music` previously kept any playing stream without
+checking whether it contained the selected track.
+
+The runtime now retains the identity of the music actually loaded into the
+shared stream. Ensuring music reloads a different selection, but does not restart
+the matching playing track. Voice loads, discarded pending streams, and audio
+enable-state changes invalidate that identity. Runtime traces include the loaded
+name separately from the DESCRIPT selection.
+
+The real-asset regression
+`loviland_music_replaces_a_playing_track_after_description_selection` failed
+before the fix because the actual stream payload still contained the preceding
+music. It passes after the fix and checks the payload against normalized
+`VOL.VOC`, along with uninterrupted matching playback, pending replacement,
+audio disable/re-enable, and shared voice-stream replacement. This is a concrete
+SDL/service handoff test, not yet an end-to-end replay of the user's travel route.

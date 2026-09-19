@@ -719,6 +719,16 @@ impl RuntimeAudioHost {
         lock_shared(&self.shared).music_stream.pending()
     }
 
+    #[cfg(test)]
+    pub(super) fn background_source_samples(&self) -> Option<Vec<u8>> {
+        lock_shared(&self.shared)
+            .music_stream
+            .stream
+            .source
+            .as_ref()
+            .map(|source| source.payload()[SND_CLIP_HEADER_BYTE_COUNT..].to_vec())
+    }
+
     /// Return the native driver callback's remaining samples in the active stream page.
     pub fn background_stream_remaining(&self) -> Option<u16> {
         lock_shared(&self.shared).music_stream.playback_remaining()
