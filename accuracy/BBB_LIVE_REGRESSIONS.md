@@ -100,3 +100,30 @@ music. It passes after the fix and checks the payload against normalized
 `VOL.VOC`, along with uninterrupted matching playback, pending replacement,
 audio disable/re-enable, and shared voice-stream replacement. This is a concrete
 SDL/service handoff test, not yet an end-to-end replay of the user's travel route.
+
+## Navigation overview crash with Daddy aboard
+
+The September 19 game process exited while updating the sequel overview shortly
+before the user selected a planet. A new original-asset regression reproduces a
+failure on the first initialized SCRIPT2 frame: Daddy_Gluxx has the valid
+`aboard` holder sentinel (`0xffff`) and is not a map participant. The adapter
+resolved every actor's holder before applying the native roster filters, so it
+incorrectly treated this state as a fatal malformed relation.
+
+The adapter now checks actor participation and the raw state-header bit before
+resolving holders, then checks holder participation before resolving positions
+and opponents. This follows the native roster builders at `0x6FF2`/`0x706E`.
+Eligible actors with invalid relations still fail explicitly. Navigation host
+errors also retain their underlying causes instead of losing them at the generic
+camera-error boundary. The original incident log lacked that underlying cause;
+the asset-backed failure establishes this defect, not every possible crash cause.
+
+Verification: 1,087 library tests pass with 67 optional tests ignored. Both
+overview asset tests pass separately, covering all 17 raw profiles plus 20
+initialized updates and overview rendering per profile. The initialized test
+failed before the fix on Daddy's holder sentinel and also checks that forcing
+that actor to participate still reports an invalid relation. All 32 original
+executable overview cases were regenerated and match the checked-in vectors.
+The clean Nix release builds successfully. The isolated UI replay at
+`output/fidelity/bbb-overview-fix-20260919` did not reach its intended loaded
+navigation state and was stopped; it is not end-to-end planet-selection proof.

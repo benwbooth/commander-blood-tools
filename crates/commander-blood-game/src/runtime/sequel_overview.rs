@@ -19,6 +19,7 @@ use super::{
 };
 
 const ACTOR_FLAGS_OFFSET: usize = 2;
+const ACTOR_REQUIRED_FLAGS: u16 = 1 | 4;
 const ACTOR_GROUP_OFFSET: usize = 20;
 const ACTOR_QUANTITY_OFFSET: usize = 22;
 const ACTOR_HOLDER_OFFSET: usize = 24;
@@ -97,40 +98,57 @@ fn decode_actors(runtime: &OriginalGameRuntime) -> Result<Vec<SequelOverviewActo
         .archetype
         .context("loaded sequel profile has no arche object")?;
     let excluded_holder = profile.directory().find_active_object(TRASHLANDO_NAME);
-    profile
+    let mut actors = Vec::new();
+    for object in profile
         .state()
         .objects()
         .iter()
         .filter(|object| object.kind == ScriptObjectKind::Actor)
-        .map(|object| {
-            let flags = record_word(object.bytes(), ACTOR_FLAGS_OFFSET, object.id)?;
-            let holder = object_reference(profile.state(), object.id, ACTOR_HOLDER_OFFSET)?;
-            let position = resolved_position(profile.state(), object.id, arche)?;
-            let opponent_position = if flags & ACTOR_CONFLICT_FLAG == 0 {
-                None
-            } else {
-                let opponent = object_reference(profile.state(), object.id, ACTOR_OPPONENT_OFFSET)
-                    .with_context(|| {
-                        format!("conflicting overview actor {:?} has no opponent", object.id)
-                    })?;
-                Some(resolved_position(profile.state(), opponent, arche)?)
-            };
-            Ok(SequelOverviewActor {
-                flags,
-                in_play: object.kind.mask() & ScriptObjectKind::Actor.mask() != 0,
-                group_mask: record_word(object.bytes(), ACTOR_GROUP_OFFSET, object.id)?,
-                quantity: record_word(object.bytes(), ACTOR_QUANTITY_OFFSET, object.id)?,
-                balance: record_word(object.bytes(), ACTOR_BALANCE_OFFSET, object.id)?,
-                holder_active: object_has_flag(profile.state(), holder, ScriptObjectFlag::Active)
-                    .unwrap_or(false),
-                holder_in_play: object_has_flag(profile.state(), holder, ScriptObjectFlag::InPlay)
-                    .unwrap_or(false),
-                holder_excluded: Some(holder) == excluded_holder,
-                position,
-                opponent_position,
-            })
-        })
-        .collect()
+    {
+        let flags = record_word(object.bytes(), ACTOR_FLAGS_OFFSET, object.id)?;
+        // Native rosters 0x6FF2/0x706E reject nonparticipants before
+        // dereferencing their holder. Aboard actors may use a sentinel.
+        if flags & ACTOR_REQUIRED_FLAGS != ACTOR_REQUIRED_FLAGS
+            || record_word(object.bytes(), 0, object.id)? & ScriptObjectKind::Actor.mask() == 0
+        {
+            continue;
+        }
+        let holder = object_reference(profile.state(), object.id, ACTOR_HOLDER_OFFSET)?;
+        let holder_in_play = object_has_flag(profile.state(), holder, ScriptObjectFlag::InPlay)
+            .with_context(|| {
+                format!(
+                    "overview actor {:?} holder {holder:?} has no flags",
+                    object.id
+                )
+            })?;
+        if !holder_in_play {
+            continue;
+        }
+        let position = resolved_position(profile.state(), object.id, arche)?;
+        let opponent_position = if flags & ACTOR_CONFLICT_FLAG == 0 {
+            None
+        } else {
+            let opponent = object_reference(profile.state(), object.id, ACTOR_OPPONENT_OFFSET)
+                .with_context(|| {
+                    format!("conflicting overview actor {:?} has no opponent", object.id)
+                })?;
+            Some(resolved_position(profile.state(), opponent, arche)?)
+        };
+        actors.push(SequelOverviewActor {
+            flags,
+            in_play: object.kind.mask() & ScriptObjectKind::Actor.mask() != 0,
+            group_mask: record_word(object.bytes(), ACTOR_GROUP_OFFSET, object.id)?,
+            quantity: record_word(object.bytes(), ACTOR_QUANTITY_OFFSET, object.id)?,
+            balance: record_word(object.bytes(), ACTOR_BALANCE_OFFSET, object.id)?,
+            holder_active: object_has_flag(profile.state(), holder, ScriptObjectFlag::Active)
+                .unwrap_or(false),
+            holder_in_play,
+            holder_excluded: Some(holder) == excluded_holder,
+            position,
+            opponent_position,
+        });
+    }
+    Ok(actors)
 }
 
 fn object_reference(
@@ -287,6 +305,77 @@ mod tests {
     use super::{decode_actors, render_draws};
 
     #[test]
+    #[ignore = "requires original Big Bug Bang assets"]
+    fn initialized_profiles_keep_the_overview_readable() {
+        use crate::native::bloodprg::{GameLifecycleState, ScriptClock};
+        use crate::runtime::RuntimeScriptSystem;
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let data = OriginalGameData::load(OriginalGameDataPaths::from_root(root).unwrap()).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(
+            &data,
+            ScriptClock {
+                hour: 12,
+                day: 1,
+                month: 1,
+            },
+        );
+        let mut runtime = OriginalGameRuntime::new(data);
+        for index in 0..17 {
+            scripts
+                .load_profile(
+                    &mut runtime,
+                    ScriptProfileId::new_for_dialect(index, ScriptDialect::BigBugBang).unwrap(),
+                )
+                .unwrap();
+            let mut lifecycle = GameLifecycleState::default();
+            for frame in 0..20 {
+                scripts
+                    .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
+                    .unwrap_or_else(|e| {
+                        panic!("profile {index} frame {frame} initialization: {e:#}")
+                    });
+                let actors = decode_actors(&runtime)
+                    .unwrap_or_else(|e| panic!("profile {index} frame {frame} overview: {e:#}"));
+                let mut control = SequelOverviewControl {
+                    secondary_pressed: true,
+                    ..Default::default()
+                };
+                let mut overview = SequelOverviewState::default();
+                let draws = update_sequel_overview(&actors, &mut control, &mut overview);
+                render_draws(&mut runtime, &draws.draws).unwrap();
+                if index == 1 && frame == 0 {
+                    let profile = runtime.current_profile_mut().unwrap();
+                    let daddy = profile
+                        .directory()
+                        .find_active_object(b"Daddy_Gluxx")
+                        .unwrap();
+                    let flags = profile.state().object_word(daddy, 1).unwrap();
+                    let before = profile.state().word(flags).unwrap();
+                    assert_eq!(
+                        before & 4,
+                        0,
+                        "Daddy aboard must not participate in the map"
+                    );
+                    assert!(profile.state_mut().set_word(flags, before | 4));
+                    let error = decode_actors(&runtime).unwrap_err();
+                    assert!(
+                        error.to_string().contains("sentinel relation at byte 24"),
+                        "{error:#}"
+                    );
+                    assert!(
+                        runtime
+                            .current_profile_mut()
+                            .unwrap()
+                            .state_mut()
+                            .set_word(flags, before)
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     #[ignore = "requires all original Big Bug Bang profiles and executable fonts"]
     fn every_authentic_profile_builds_and_renders_an_overview() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -305,8 +394,6 @@ mod tests {
                 .unwrap_or_else(|error| panic!("profile {index}: {error:?}"));
             let actors = decode_actors(&runtime)
                 .unwrap_or_else(|error| panic!("profile {index}: {error:?}"));
-            actor_count += actors.len();
-            represented_groups |= actors.iter().fold(0, |mask, actor| mask | actor.group_mask);
             let mut control = SequelOverviewControl {
                 secondary_pressed: true,
                 camera_actor_flags: NavActorSlotFlags::from_executable(0x0f),
@@ -317,17 +404,33 @@ mod tests {
             render_draws(&mut runtime, &frame.draws)
                 .unwrap_or_else(|error| panic!("profile {index}: {error:?}"));
 
-            let eligible = actors
+            // Exercise every authored marker through the runtime adapter,
+            // enabling participation in source records before roster selection.
+            let profile = runtime.current_profile_mut().unwrap();
+            let participating = profile
+                .state()
+                .objects()
                 .iter()
-                .copied()
-                .map(|mut actor| {
-                    actor.flags |= 5;
-                    actor.holder_active = true;
-                    actor.holder_in_play = true;
-                    actor.holder_excluded = false;
-                    actor
+                .filter(|o| o.kind == commander_blood_formats::script::ScriptObjectKind::Actor)
+                .map(|o| {
+                    (
+                        o.id,
+                        super::object_reference(profile.state(), o.id, 24).unwrap(),
+                    )
                 })
                 .collect::<Vec<_>>();
+            for (actor, holder) in participating {
+                for (object, mask) in [(actor, 5), (holder, 3)] {
+                    let field = profile.state().object_word(object, 1).unwrap();
+                    let flags = profile.state().word(field).unwrap();
+                    assert!(profile.state_mut().set_word(field, flags | mask));
+                }
+            }
+            let eligible = decode_actors(&runtime).unwrap();
+            actor_count += eligible.len();
+            represented_groups |= eligible
+                .iter()
+                .fold(0, |mask, actor| mask | actor.group_mask);
             control.secondary_pressed = true;
             state = SequelOverviewState::default();
             let frame = update_sequel_overview(&eligible, &mut control, &mut state);

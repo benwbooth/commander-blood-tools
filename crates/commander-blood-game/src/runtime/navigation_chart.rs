@@ -15,13 +15,13 @@ use crate::native::bloodprg::{
     LocationPanelLocation, LocationPanelRect, LocationPanelRects, LocationPanelSource,
     LocationPanelSpriteRange, LocationPanelStatDraw, LocationPanelTextDraw,
     LocationPanelTransitionProgress, LocationPanelVariant, Manu3AnimationSelector,
-    NavigationCameraContext, NavigationCameraHost, NavigationCameraOutcome, NavigationCameraState,
-    NavigationChartArche, NavigationChartCopySpan, NavigationChartEntityDraw,
-    NavigationChartEntityState, NavigationChartHand, NavigationChartInputState,
-    NavigationChartMarkerEndpoint, NavigationChartObject, NavigationChartObjectKind,
-    NavigationChartPickObject, NavigationChartPickOutcome, NavigationChartPickState,
-    NavigationStatusLabels, NavigationStatusLocationKind, ResourceId, ScriptFieldSelector,
-    ScriptObjectFlag, build_navigation_wipe_spans, copy_work_surface_span,
+    NavigationCameraContext, NavigationCameraError, NavigationCameraHost, NavigationCameraOutcome,
+    NavigationCameraState, NavigationChartArche, NavigationChartCopySpan,
+    NavigationChartEntityDraw, NavigationChartEntityState, NavigationChartHand,
+    NavigationChartInputState, NavigationChartMarkerEndpoint, NavigationChartObject,
+    NavigationChartObjectKind, NavigationChartPickObject, NavigationChartPickOutcome,
+    NavigationChartPickState, NavigationStatusLabels, NavigationStatusLocationKind, ResourceId,
+    ScriptFieldSelector, ScriptObjectFlag, build_navigation_wipe_spans, copy_work_surface_span,
     navigation_chart_objects, navigation_source_objects, object_has_flag,
     pick_navigation_chart_object, resolve_navigation_position, script_field_offset,
     update_location_info_panel, update_location_panel_geometry, update_navigation_camera,
@@ -193,7 +193,7 @@ impl RuntimeNavigationChart {
             callback_error: None,
         };
         let outcome = update_navigation_camera(context, &mut self.state, &mut backend)
-            .map_err(|error| anyhow!(error))?;
+            .map_err(runtime_navigation_error)?;
         backend.finish_callbacks()?;
 
         lifecycle.primary_pointer_pressed = self.state.input.primary_pressed;
@@ -207,6 +207,13 @@ impl RuntimeNavigationChart {
             hand.request(self.state.hand.requested.into());
         }
         Ok(outcome)
+    }
+}
+
+fn runtime_navigation_error(error: NavigationCameraError<anyhow::Error>) -> anyhow::Error {
+    match error {
+        NavigationCameraError::Host(error) => error,
+        other => anyhow!(other),
     }
 }
 
@@ -1303,6 +1310,20 @@ mod tests {
         ORIGINAL_SCRIPT_PROFILE_COUNT, ScriptProfileId, set_object_flag,
     };
     use crate::runtime::{OriginalGameData, OriginalGameDataPaths};
+
+    #[test]
+    fn navigation_host_errors_preserve_the_underlying_cause() {
+        let error = anyhow!("actor 17 has an invalid holder")
+            .context("decoding overview actors")
+            .context("updating recovered sequel simulation overview");
+        let error = runtime_navigation_error(NavigationCameraError::Host(error))
+            .context("updating recovered navigation chart");
+        assert_eq!(
+            error.root_cause().to_string(),
+            "actor 17 has an invalid holder"
+        );
+        assert_eq!(error.chain().count(), 4);
+    }
 
     #[test]
     fn navigation_label_translation_is_sequel_only_and_exact() {
