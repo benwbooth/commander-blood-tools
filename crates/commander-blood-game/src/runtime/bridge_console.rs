@@ -2,14 +2,15 @@
 
 use anyhow::{Context, Result};
 use commander_blood_formats::bloodprg::BloodprgBridgeMenuText;
+use commander_blood_formats::code::ScriptDialect;
 use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
-    BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleChoice, BridgeConsoleContext, BridgeConsoleDispatchOutcome,
-    BridgeConsolePalettePlan, BridgeConsoleState, BridgeDeferredActionKind, BridgeDeferredState,
-    BridgeRecordChoice, BridgeRecordChoiceContext, BridgeRecordChoiceOutcome,
-    BridgeRecordChoiceState, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame,
-    ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect, ChoiceListState,
+    BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleChoice, BridgeConsoleContext,
+    BridgeConsoleDispatchOutcome, BridgeConsolePalettePlan, BridgeConsoleState,
+    BridgeDeferredActionKind, BridgeDeferredState, BridgeRecordChoice, BridgeRecordChoiceContext,
+    BridgeRecordChoiceOutcome, BridgeRecordChoiceState, ChoiceListBackend, ChoiceListConfig,
+    ChoiceListFrame, ChoiceListHandRequest, ChoiceListPointer, ChoiceListRect, ChoiceListState,
     FramebufferTransitionState, GameLifecycleState, ImmediateBridgeChoiceOutcome,
     Manu3AnimationSelector, MusicOptionLabel, OptionMenuChoice, OptionMenuOutcome,
     PresentationChoiceItem, PresentationChoiceOutcome, PresentationChoiceState, RasterPoint,
@@ -183,6 +184,11 @@ impl RuntimeBridgeConsole {
     ) -> Result<()> {
         if self.speed_menu_active() {
             import_text_speed_modal_ui(&mut self.text_speed.state, lifecycle);
+            prepare_speed_menu_vm(
+                services.runtime().data().game().script_dialect() == ScriptDialect::BigBugBang,
+                &self.text_speed.state,
+                lifecycle,
+            );
             self.update_text_speed_menu(services, lifecycle.primary_pointer_pressed)?;
             export_text_speed_modal_ui(&self.text_speed.state, lifecycle);
         }
@@ -993,6 +999,16 @@ fn prepare_option_menu_vm(
     }
 }
 
+fn prepare_speed_menu_vm(
+    sequel: bool,
+    choice: &PresentationChoiceState,
+    lifecycle: &mut GameLifecycleState,
+) {
+    if sequel && choice.activation_flags & 1 != 0 && choice.phase & 1 != 0 {
+        lifecycle.vm_execution_enabled = false;
+    }
+}
+
 fn draw_runtime_choice_rows(
     services: &mut ModernGameServices<'_>,
     labels: &[&[u8]],
@@ -1178,6 +1194,26 @@ mod tests {
         assert!(lifecycle.secondary_pointer_pressed);
         assert_eq!(navigation_choice_gate, 2);
         assert!(lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn only_active_sequel_speed_menu_layout_disables_script_execution() {
+        for sequel in [false, true] {
+            for active in 0..=255 {
+                for phase in 0..=255 {
+                    let mut choice = RuntimeTextSpeedMenu::new(1).state;
+                    choice.activation_flags = active;
+                    choice.phase = phase;
+                    let mut lifecycle = GameLifecycleState::default();
+                    lifecycle.vm_execution_enabled = true;
+                    prepare_speed_menu_vm(sequel, &choice, &mut lifecycle);
+                    assert_eq!(
+                        lifecycle.vm_execution_enabled,
+                        !(sequel && active & 1 != 0 && phase & 1 != 0)
+                    );
+                }
+            }
+        }
     }
 
     #[test]

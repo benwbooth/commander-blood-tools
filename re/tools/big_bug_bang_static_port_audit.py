@@ -715,6 +715,122 @@ CONTROL_OWNERS = {
     0x9A11: "update_sequel_option_menu",
     0x1688: "update_confirm_dialog_for_dialect",
 }
+CONTROL_REVIEWS += (
+    (
+        0x1C95,
+        0x1D12,
+        0x1AD3,
+        "20dee131428ed323b4f09379746ca523e903e67a8d7abca23c4cfef88cbba671",
+        None,
+        (
+            (
+                0x1C95,
+                0x1CAB,
+                "Require activation bit1; own modal bit4; phase bit1 selects layout.",
+            ),
+            (
+                0x1CAB,
+                0x1CCD,
+                "BBB disables VM before layout-only callback; selector0, six steps, increment whole phase byte.",
+            ),
+            (
+                0x1CCD,
+                0x1CE7,
+                "Phase bit2 performs rectangle transition; incomplete returns; complete clears phase.",
+            ),
+            (
+                0x1CE7,
+                0x1CF9,
+                "Interactive widget: negative result waits; double index and check exactFFFF cancel item.",
+            ),
+            (
+                0x1CF9,
+                0x1D07,
+                "Index4 maps to7; all other choices map to index+1; store text delay.",
+            ),
+            (0x1D07, 0x1D12, "Clear modal bit and complete activation byte; return."),
+        ),
+    ),
+    (
+        0x1D18,
+        0x1D91,
+        0x1AD3,
+        "4e842beb65e365a6db9e2fedceab0815a4891c6f4e13b658218f00cb36cf2647",
+        "big_bug_bang_speed_choice.json",
+        (
+            (
+                0x1D18,
+                0x1D2E,
+                "Require simulation-menu activation bit1; modal bit4; phase bit1 selects layout.",
+            ),
+            (
+                0x1D2E,
+                0x1D50,
+                "Disable VM before layout-only widget, selector0, six transition steps, increment phase.",
+            ),
+            (
+                0x1D50,
+                0x1D6A,
+                "Transition phase remaps rectangle; incomplete returns and complete clears phase.",
+            ),
+            (
+                0x1D6A,
+                0x1D7C,
+                "Interactive widget waits for nonnegative selection; exactFFFF item cancels without changing speed.",
+            ),
+            (
+                0x1D7C,
+                0x1D86,
+                "Read authored word from CS table at file1D12+2*index and store simulation speed.",
+            ),
+            (0x1D86, 0x1D91, "Clear modal bit and complete activation byte; return."),
+        ),
+    ),
+    (
+        0x1865,
+        0x194D,
+        0x16A7,
+        "53e37952ddab70b0b3c705ac88166576ece008de4578ff9153efc854ce7b1caf",
+        "big_bug_bang_writable_catalog.json",
+        (
+            (
+                0x1865,
+                0x188C,
+                "Bind globals; publish loading palette; clear surface; BBB label at120,96 color239 limit255. LOADING intentionally translates CHARGEMENT.",
+            ),
+            (
+                0x188C,
+                0x18AC,
+                "Temporarily select display destination for planar conversion; owned modern framebuffer presents the loading frame.",
+            ),
+            (
+                0x18AC,
+                0x18EB,
+                "Create writable directory; remember source drive/current directory. Explicit roots replace DOS mutable path state.",
+            ),
+            (
+                0x18EB,
+                0x190C,
+                "Append exactly one path separator to source/destination prefixes; rooted path APIs replace fixed buffers.",
+            ),
+            (
+                0x190C,
+                0x191F,
+                "Visit authored16-byte names in order, select write root, probe existence; existing destination skips copy.",
+            ),
+            (
+                0x191F,
+                0x1944,
+                "Build source/destination paths and copy missing resource using reviewed copy helper; retain native nonfatal filesystem outcomes.",
+            ),
+            (
+                0x1944,
+                0x194D,
+                "Advance16 bytes until next leadingNUL; BBB has152 visits including duplicates, not Commander125.",
+            ),
+        ),
+    ),
+)
 CONTROL_RUNTIME = (
     "crates/commander-blood-game/src/runtime/bridge_frame.rs",
     "crates/commander-blood-game/src/runtime/camera_navigation.rs",
@@ -722,6 +838,76 @@ CONTROL_RUNTIME = (
     "crates/commander-blood-game/src/runtime/presentation_screen.rs",
     "crates/commander-blood-game/src/runtime/confirm_dialog.rs",
     "crates/commander-blood-game/src/runtime/game_lifecycle.rs",
+)
+HOST_REVIEWS = (
+    (
+        0x0B9A,
+        0x0C94,
+        "c1c183532c62f9376bd8b41bad16f9ce73c48ca1122c7b6043200ad70e63f776",
+        "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs",
+        "OriginalResourceCache::new",
+        (
+            (
+                0x0B9A,
+                0x0BAA,
+                "Save registers; detect XMS driver through DOS multiplex interrupt.",
+            ),
+            (
+                0x0BAA,
+                0x0C05,
+                "Store XMS entry; attempt64,256,256,1440KiB pools; publish only successful handles.",
+            ),
+            (
+                0x0C05,
+                0x0C23,
+                "Detect EMMXXXX0 signature and EMS status; absent driver returns.",
+            ),
+            (
+                0x0C23,
+                0x0C83,
+                "Fallback only for missing XMS pool: allocate4,16,16,90 EMS pages; preserve failed sentinel handles.",
+            ),
+            (
+                0x0C83,
+                0x0C94,
+                "Read EMS page frame and restore registers. All writes are memory-provider handles, not gameplay state.",
+            ),
+        ),
+    ),
+    (
+        0x171D,
+        0x17C6,
+        "682e4c1747a85f7015eb7876ab6481ae875d269f48faccef51ddd032a47e8399",
+        "crates/commander-blood-formats/src/archive.rs",
+        "BloodArchive::decode",
+        (
+            (
+                0x171D,
+                0x1740,
+                "Select source root; open BLOOD.DAT and read65535 directory bytes into transfer buffer; open failure returns.",
+            ),
+            (
+                0x1740,
+                0x176F,
+                "Prefer allocated EMS directory: map four pages and transfer64KiB.",
+            ),
+            (
+                0x176F,
+                0x17A3,
+                "Otherwise use allocated XMS directory via64KiB driver transfer descriptor.",
+            ),
+            (
+                0x17A3,
+                0x17C3,
+                "No extended-memory directory: select writable root, create BLOOD.DIR, copy65535 bytes and retain handle.",
+            ),
+            (
+                0x17C3,
+                0x17C6,
+                "Restore segments and return. Owned archive bytes replace all three backing-store choices.",
+            ),
+        ),
+    ),
 )
 
 
@@ -992,6 +1178,34 @@ def build_report():
                     "baseline, typed handler, and production runtime adapter. Sequel "
                     "guards and changed paths are explicit; this is not an exact-body "
                     "equivalence or a new whole-entry native execution claim.",
+                    *[note for _, _, note in blocks],
+                ],
+            }
+        )
+    for entry, end, digest, path, symbol, blocks in HOST_REVIEWS:
+        body = bbb[entry:end]
+        if sha256(body) != digest:
+            raise ValueError(f"changed reviewed host body at {entry:#x}")
+        inputs[path] = sha256((ROOT / path).read_bytes())
+        if f"fn {symbol.split('::')[-1]}" not in (ROOT / path).read_text():
+            raise ValueError(f"missing host adapter {symbol}")
+        rows.append(
+            {
+                "entry": f"0x{entry:04x}",
+                "end": f"0x{end:04x}",
+                "commander_entry": None,
+                "kind": "reviewed_host_adapter",
+                "body_sha256": digest,
+                "rust_owner": {"path": path, "symbol": symbol},
+                "inherited_fixture": None,
+                "instruction_count": len(decode(body, entry)),
+                "reviewed_relocations": [],
+                "reviewed_blocks": [
+                    [f"0x{start:04x}", f"0x{stop:04x}", note]
+                    for start, stop, note in blocks
+                ],
+                "notes": [
+                    "Full static body review: DOS storage/memory-provider initialization is replaced by owned Rust memory and explicit asset roots. No DOS driver or fallback temporary-directory ABI is ported; this is not native-execution evidence.",
                     *[note for _, _, note in blocks],
                 ],
             }

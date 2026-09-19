@@ -25,7 +25,7 @@ class StaticPortAuditTests(unittest.TestCase):
     def test_checked_report_is_current(self):
         report = audit.build_report()
         self.assertEqual(report, json.loads(audit.OUTPUT.read_text()))
-        self.assertEqual(len(report["routines"]), 40)
+        self.assertEqual(len(report["routines"]), 45)
 
     def test_unreviewed_changes_fail_closed(self):
         old = audit.COMMANDER.read_bytes()[0x4536:0x46B6]
@@ -59,6 +59,19 @@ class StaticPortAuditTests(unittest.TestCase):
             *audit.ACTOR_REVIEWS,
             *audit.CONTROL_REVIEWS,
         ):
+            boundaries = {
+                item.address for item in audit.decode(bbb[entry:end], entry)
+            } | {end}
+            self.assertEqual(blocks[0][0], entry)
+            self.assertEqual(blocks[-1][1], end)
+            for start, stop, _ in blocks:
+                self.assertIn(start, boundaries)
+                self.assertIn(stop, boundaries)
+            self.assertTrue(all(a[1] == b[0] for a, b in zip(blocks, blocks[1:])))
+
+    def test_host_reviews_cover_every_instruction(self):
+        bbb = audit.BBB.read_bytes()
+        for entry, end, _, _, _, blocks in audit.HOST_REVIEWS:
             boundaries = {
                 item.address for item in audit.decode(bbb[entry:end], entry)
             } | {end}

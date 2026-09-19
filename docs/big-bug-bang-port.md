@@ -5860,3 +5860,27 @@ four yes/no combinations preserve the shared transition semantics. Eight native
 and runtime confirmation tests pass. Static audit and disposition tests pass;
 372/383 known entries are classified, including 40 static typed entries, with
 11 remaining. These are source-level checks, not a full-game runtime claim.
+
+## Speed Menus and Startup Storage Review (2026-09-19)
+
+Full reviews of `0x1C95..0x1D12` and `0x1D18..0x1D91` found the missing BBB
+VM-disable write before the first text-speed/simulation-speed layout pass.
+The runtime now applies it for the active low bit and layout low bit only;
+all activation/phase byte combinations are checked for both dialects. The
+six-step transition, special text-speed row, and authored simulation-speed
+table remain shared typed operations with their existing fixture checks.
+
+Startup `0x1865..0x194D` now draws the English loading label at BBB's native
+120,96 origin instead of Commander's 130,96. Its full resource-copy loop was
+reviewed against the existing 152-visit catalog fixture, retaining duplicates,
+existing writable files, and per-file failures. The DOS XMS/EMS bootstrap
+`0x0B9A` and archive-index backing-store initializer `0x171D` are separately
+classified as static host adapters: owned Rust allocations/archive bytes
+replace their memory handles, mapped pages and fallback BLOOD.DIR file.
+This does not claim direct native execution of either initializer.
+
+Focused tests pass for startup preparation (five), bridge console (twenty),
+presentation choice (four), and resource cache (seventeen); optional
+asset-dependent tests remain separate. Static audit and disposition tests
+pass. The ledger has 377/383 classified entries, 43 static typed entries,
+two static host adapters and six remaining entries.

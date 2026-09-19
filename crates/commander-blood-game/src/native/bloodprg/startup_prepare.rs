@@ -34,6 +34,7 @@ impl StartupWritableResourceId {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StartupWritableResourceCatalog {
     names: Box<[BloodResourceName]>,
+    loading_text_position: [u16; 2],
 }
 
 impl StartupWritableResourceCatalog {
@@ -50,7 +51,11 @@ impl StartupWritableResourceCatalog {
     pub fn decode_blood2pg(executable: &[u8]) -> Result<Self, StartupWritableCatalogError> {
         let end = 0xFA90 + 152 * WRITABLE_RESOURCE_NAME_FIELD_SIZE;
         match executable.get(end) {
-            Some(0) => Self::decode_at(executable, 0xFA90, 152),
+            Some(0) => {
+                let mut catalog = Self::decode_at(executable, 0xFA90, 152)?;
+                catalog.loading_text_position = [120, 96];
+                Ok(catalog)
+            }
             Some(_) => Err(StartupWritableCatalogError::MissingTableTerminator { offset: end }),
             None => Err(StartupWritableCatalogError::ExecutableTooShort {
                 required: end + 1,
@@ -91,6 +96,7 @@ impl StartupWritableResourceCatalog {
         }
         Ok(Self {
             names: names.into_boxed_slice(),
+            loading_text_position: STARTUP_LOADING_TEXT_POSITION,
         })
     }
 
@@ -296,7 +302,7 @@ pub fn prepare_startup_writable_resources<Host: StartupPreparationHost>(
     host.clear_loading_frame(STARTUP_LOADING_BACKGROUND_COLOR)?;
     host.draw_loading_text(StartupLoadingText {
         text: STARTUP_LOADING_TEXT,
-        position: STARTUP_LOADING_TEXT_POSITION,
+        position: catalog.loading_text_position,
         color: STARTUP_LOADING_TEXT_COLOR,
         byte_limit: STARTUP_LOADING_TEXT_BYTE_LIMIT,
     })?;
@@ -409,6 +415,15 @@ mod tests {
         };
         let outcome =
             prepare_startup_writable_resources(&catalog, &loading_palette(0), &mut host).unwrap();
+        assert_eq!(
+            host.graphics[2],
+            RecordedGraphicsCall::Text(StartupLoadingText {
+                text: b"LOADING",
+                position: [120, 96],
+                color: 239,
+                byte_limit: 255,
+            })
+        );
         assert_eq!(host.probed.len(), oracle.directory_enter_count);
         assert_eq!(
             host.probed
@@ -884,7 +899,10 @@ mod tests {
         .map(|name| BloodResourceName::new(name).unwrap())
         .collect::<Vec<_>>()
         .into_boxed_slice();
-        let catalog = StartupWritableResourceCatalog { names };
+        let catalog = StartupWritableResourceCatalog {
+            names,
+            loading_text_position: STARTUP_LOADING_TEXT_POSITION,
+        };
         let mut host = FailureOwnershipHost::default();
 
         let outcome = prepare_startup_writable_resources(

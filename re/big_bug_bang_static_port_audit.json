@@ -5,7 +5,7 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "e2911da1ea28a6405f00504c872d539f3ab20bc551be9db453caa4fb8d41ddb4",
+    "re/tools/big_bug_bang_static_port_audit.py": "9cbeff22b00688b7cf7c19badadcf73ad22303db134d01f80e18dd5444e470fb",
     "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
     "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
     "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
@@ -60,7 +60,7 @@
     "crates/commander-blood-game/src/native/bloodprg/sequel_presentation.rs": "8e427e679f618f4d9ae6529a58bf86be137786ab64630882b46dd5326d16538b",
     "crates/commander-blood-game/src/runtime/bridge_frame.rs": "b11026a0a8bebc44f43b8359ae83f6690fd643b767d0c6b74b859ca2b64b02f9",
     "crates/commander-blood-game/src/runtime/camera_navigation.rs": "c64a97e1abc389ca6a5974985e3db6b2bbe6073b70dc510ce2b7b3d357607591",
-    "crates/commander-blood-game/src/runtime/bridge_console.rs": "db0987f0f0f69f2efb57921e7f89b55ca2ab8d9164cc084883c864df18a4568e",
+    "crates/commander-blood-game/src/runtime/bridge_console.rs": "8e0e67c9675c7a069e0cfcf9829341a94b3c6ef37a93db078257014fc3721e66",
     "crates/commander-blood-game/src/runtime/presentation_screen.rs": "165611197c8b343c329b1477f905751e60e66f8b46e5fbc6a3ebd126637d0d4a",
     "crates/commander-blood-game/src/runtime/confirm_dialog.rs": "f2ed62e7818af310903560d2563515527f6854d50a81e342f448464af41c1dc1",
     "crates/commander-blood-game/src/runtime/game_lifecycle.rs": "1b9b5b53a5f16956d934d0d289a03273eb41066d204a5863dc97478e67aa2f46",
@@ -84,6 +84,13 @@
     "re/tools/oracle_vectors/big_bug_bang_options.json": "ed57d07da4533558b1a104d9d3943de16597325d69b2d35d1fcc58c55fbac62b",
     "crates/commander-blood-game/src/native/bloodprg/confirm_dialog.rs": "01d26c0efbc2d89ff465d8da38cdc2ce970b8bd0f6da18ca0da0b3457045af73",
     "re/tools/oracle_vectors/func_14ca_natural.json": "1a93531381755c6df38d4304c93c06c1d79d3399e33602c7a8a711222ec271c8",
+    "crates/commander-blood-game/src/native/bloodprg/presentation_choice.rs": "599d9c65af1badfe2772ac3e4b52b4c7eb96d1df076e37b82b5818c7749dacb6",
+    "re/tools/oracle_vectors/func_1ad3_natural.json": "25c18b8b1bf668e16fba39e7e4997e143187bb7cf0ffbf2350d1b4bc3eb69890",
+    "re/tools/oracle_vectors/big_bug_bang_speed_choice.json": "403e71c1bfe97a866e1c5ec2ad9e012da37b1ee319628f47d14aad98a616aa99",
+    "crates/commander-blood-game/src/native/bloodprg/startup_prepare.rs": "c2c61ed219ba55010516991213e8affad52ef34f043fb53cb77f41d3db4aa855",
+    "re/tools/oracle_vectors/func_16a7_natural.json": "78ea9e946424c735a3832b20abeedd9b1ea9599390ec03ed0afb1e6623fa0250",
+    "re/tools/oracle_vectors/big_bug_bang_writable_catalog.json": "6870a9791e465fe5c008e946cba80865097193f4eac1fe5d146305af397907a9",
+    "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs": "5a2de16add9f4c0447f3eed382da598d311c17a90985e519bd97625ad48fe906",
     "crates/commander-blood-game/src/native/bloodprg/input_cancel.rs": "3dc579420268f765f52a83973303657831281b6d72bc37480f3cc2259709aa94",
     "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b",
     "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "5817021dc5d13d2b46d0492bfd2c07e0976d4a534b70c219e3b5235099ddf4b3"
@@ -3377,6 +3384,275 @@
         "Authored yes region takes priority; decrement complete gate byte on acceptance.",
         "No region clears gate/modal bit, state11 and primary/pending inputs; secondary untouched.",
         "Restore registers and return."
+      ]
+    },
+    {
+      "entry": "0x1c95",
+      "end": "0x1d12",
+      "commander_entry": "0x1ad3",
+      "kind": "reviewed_transcription",
+      "body_sha256": "20dee131428ed323b4f09379746ca523e903e67a8d7abca23c4cfef88cbba671",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/presentation_choice.rs",
+        "symbol": "update_presentation_choice"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_1ad3_natural.json",
+      "instruction_count": 39,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x1c95",
+          "0x1cab",
+          "Require activation bit1; own modal bit4; phase bit1 selects layout."
+        ],
+        [
+          "0x1cab",
+          "0x1ccd",
+          "BBB disables VM before layout-only callback; selector0, six steps, increment whole phase byte."
+        ],
+        [
+          "0x1ccd",
+          "0x1ce7",
+          "Phase bit2 performs rectangle transition; incomplete returns; complete clears phase."
+        ],
+        [
+          "0x1ce7",
+          "0x1cf9",
+          "Interactive widget: negative result waits; double index and check exactFFFF cancel item."
+        ],
+        [
+          "0x1cf9",
+          "0x1d07",
+          "Index4 maps to7; all other choices map to index+1; store text delay."
+        ],
+        [
+          "0x1d07",
+          "0x1d12",
+          "Clear modal bit and complete activation byte; return."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Require activation bit1; own modal bit4; phase bit1 selects layout.",
+        "BBB disables VM before layout-only callback; selector0, six steps, increment whole phase byte.",
+        "Phase bit2 performs rectangle transition; incomplete returns; complete clears phase.",
+        "Interactive widget: negative result waits; double index and check exactFFFF cancel item.",
+        "Index4 maps to7; all other choices map to index+1; store text delay.",
+        "Clear modal bit and complete activation byte; return."
+      ]
+    },
+    {
+      "entry": "0x1d18",
+      "end": "0x1d91",
+      "commander_entry": "0x1ad3",
+      "kind": "reviewed_transcription",
+      "body_sha256": "4e842beb65e365a6db9e2fedceab0815a4891c6f4e13b658218f00cb36cf2647",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/presentation_choice.rs",
+        "symbol": "update_presentation_choice"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_1ad3_natural.json",
+      "instruction_count": 36,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x1d18",
+          "0x1d2e",
+          "Require simulation-menu activation bit1; modal bit4; phase bit1 selects layout."
+        ],
+        [
+          "0x1d2e",
+          "0x1d50",
+          "Disable VM before layout-only widget, selector0, six transition steps, increment phase."
+        ],
+        [
+          "0x1d50",
+          "0x1d6a",
+          "Transition phase remaps rectangle; incomplete returns and complete clears phase."
+        ],
+        [
+          "0x1d6a",
+          "0x1d7c",
+          "Interactive widget waits for nonnegative selection; exactFFFF item cancels without changing speed."
+        ],
+        [
+          "0x1d7c",
+          "0x1d86",
+          "Read authored word from CS table at file1D12+2*index and store simulation speed."
+        ],
+        [
+          "0x1d86",
+          "0x1d91",
+          "Clear modal bit and complete activation byte; return."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Require simulation-menu activation bit1; modal bit4; phase bit1 selects layout.",
+        "Disable VM before layout-only widget, selector0, six transition steps, increment phase.",
+        "Transition phase remaps rectangle; incomplete returns and complete clears phase.",
+        "Interactive widget waits for nonnegative selection; exactFFFF item cancels without changing speed.",
+        "Read authored word from CS table at file1D12+2*index and store simulation speed.",
+        "Clear modal bit and complete activation byte; return."
+      ]
+    },
+    {
+      "entry": "0x1865",
+      "end": "0x194d",
+      "commander_entry": "0x16a7",
+      "kind": "reviewed_transcription",
+      "body_sha256": "53e37952ddab70b0b3c705ac88166576ece008de4578ff9153efc854ce7b1caf",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/startup_prepare.rs",
+        "symbol": "prepare_startup_writable_resources"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_16a7_natural.json",
+      "instruction_count": 97,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x1865",
+          "0x188c",
+          "Bind globals; publish loading palette; clear surface; BBB label at120,96 color239 limit255. LOADING intentionally translates CHARGEMENT."
+        ],
+        [
+          "0x188c",
+          "0x18ac",
+          "Temporarily select display destination for planar conversion; owned modern framebuffer presents the loading frame."
+        ],
+        [
+          "0x18ac",
+          "0x18eb",
+          "Create writable directory; remember source drive/current directory. Explicit roots replace DOS mutable path state."
+        ],
+        [
+          "0x18eb",
+          "0x190c",
+          "Append exactly one path separator to source/destination prefixes; rooted path APIs replace fixed buffers."
+        ],
+        [
+          "0x190c",
+          "0x191f",
+          "Visit authored16-byte names in order, select write root, probe existence; existing destination skips copy."
+        ],
+        [
+          "0x191f",
+          "0x1944",
+          "Build source/destination paths and copy missing resource using reviewed copy helper; retain native nonfatal filesystem outcomes."
+        ],
+        [
+          "0x1944",
+          "0x194d",
+          "Advance16 bytes until next leadingNUL; BBB has152 visits including duplicates, not Commander125."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Bind globals; publish loading palette; clear surface; BBB label at120,96 color239 limit255. LOADING intentionally translates CHARGEMENT.",
+        "Temporarily select display destination for planar conversion; owned modern framebuffer presents the loading frame.",
+        "Create writable directory; remember source drive/current directory. Explicit roots replace DOS mutable path state.",
+        "Append exactly one path separator to source/destination prefixes; rooted path APIs replace fixed buffers.",
+        "Visit authored16-byte names in order, select write root, probe existence; existing destination skips copy.",
+        "Build source/destination paths and copy missing resource using reviewed copy helper; retain native nonfatal filesystem outcomes.",
+        "Advance16 bytes until next leadingNUL; BBB has152 visits including duplicates, not Commander125."
+      ]
+    },
+    {
+      "entry": "0x0b9a",
+      "end": "0x0c94",
+      "commander_entry": null,
+      "kind": "reviewed_host_adapter",
+      "body_sha256": "c1c183532c62f9376bd8b41bad16f9ce73c48ca1122c7b6043200ad70e63f776",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs",
+        "symbol": "OriginalResourceCache::new"
+      },
+      "inherited_fixture": null,
+      "instruction_count": 93,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x0b9a",
+          "0x0baa",
+          "Save registers; detect XMS driver through DOS multiplex interrupt."
+        ],
+        [
+          "0x0baa",
+          "0x0c05",
+          "Store XMS entry; attempt64,256,256,1440KiB pools; publish only successful handles."
+        ],
+        [
+          "0x0c05",
+          "0x0c23",
+          "Detect EMMXXXX0 signature and EMS status; absent driver returns."
+        ],
+        [
+          "0x0c23",
+          "0x0c83",
+          "Fallback only for missing XMS pool: allocate4,16,16,90 EMS pages; preserve failed sentinel handles."
+        ],
+        [
+          "0x0c83",
+          "0x0c94",
+          "Read EMS page frame and restore registers. All writes are memory-provider handles, not gameplay state."
+        ]
+      ],
+      "notes": [
+        "Full static body review: DOS storage/memory-provider initialization is replaced by owned Rust memory and explicit asset roots. No DOS driver or fallback temporary-directory ABI is ported; this is not native-execution evidence.",
+        "Save registers; detect XMS driver through DOS multiplex interrupt.",
+        "Store XMS entry; attempt64,256,256,1440KiB pools; publish only successful handles.",
+        "Detect EMMXXXX0 signature and EMS status; absent driver returns.",
+        "Fallback only for missing XMS pool: allocate4,16,16,90 EMS pages; preserve failed sentinel handles.",
+        "Read EMS page frame and restore registers. All writes are memory-provider handles, not gameplay state."
+      ]
+    },
+    {
+      "entry": "0x171d",
+      "end": "0x17c6",
+      "commander_entry": null,
+      "kind": "reviewed_host_adapter",
+      "body_sha256": "682e4c1747a85f7015eb7876ab6481ae875d269f48faccef51ddd032a47e8399",
+      "rust_owner": {
+        "path": "crates/commander-blood-formats/src/archive.rs",
+        "symbol": "BloodArchive::decode"
+      },
+      "inherited_fixture": null,
+      "instruction_count": 68,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x171d",
+          "0x1740",
+          "Select source root; open BLOOD.DAT and read65535 directory bytes into transfer buffer; open failure returns."
+        ],
+        [
+          "0x1740",
+          "0x176f",
+          "Prefer allocated EMS directory: map four pages and transfer64KiB."
+        ],
+        [
+          "0x176f",
+          "0x17a3",
+          "Otherwise use allocated XMS directory via64KiB driver transfer descriptor."
+        ],
+        [
+          "0x17a3",
+          "0x17c3",
+          "No extended-memory directory: select writable root, create BLOOD.DIR, copy65535 bytes and retain handle."
+        ],
+        [
+          "0x17c3",
+          "0x17c6",
+          "Restore segments and return. Owned archive bytes replace all three backing-store choices."
+        ]
+      ],
+      "notes": [
+        "Full static body review: DOS storage/memory-provider initialization is replaced by owned Rust memory and explicit asset roots. No DOS driver or fallback temporary-directory ABI is ported; this is not native-execution evidence.",
+        "Select source root; open BLOOD.DAT and read65535 directory bytes into transfer buffer; open failure returns.",
+        "Prefer allocated EMS directory: map four pages and transfer64KiB.",
+        "Otherwise use allocated XMS directory via64KiB driver transfer descriptor.",
+        "No extended-memory directory: select writable root, create BLOOD.DIR, copy65535 bytes and retain handle.",
+        "Restore segments and return. Owned archive bytes replace all three backing-store choices."
       ]
     },
     {

@@ -354,7 +354,9 @@ def build_report() -> dict[str, Any]:
         elif entry in static_rows:
             static = static_rows[entry]
             row.update(
-                status="verified_static_typed",
+                status=("eliminated_static_host_adapter"
+                        if static["kind"] == "reviewed_host_adapter"
+                        else "verified_static_typed"),
                 evidence=[str(STATIC_PORT_AUDIT.relative_to(ROOT)),
                           static["inherited_fixture"] or static["rust_owner"]["path"]],
                 rust_owner=static["rust_owner"],
