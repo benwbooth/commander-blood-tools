@@ -550,9 +550,12 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
             self.platform.wait_for_visual_refresh(&mut self.services)?
         {
             if self.manu3_visible {
-                let pointer = self.platform.poll_pointer(&mut self.services).position;
-                self.services
-                    .reproject_manu3_for_pointer(pointer, interpolation_fraction)?;
+                let pointer = self.platform.logical_pointer();
+                self.services.reproject_manu3_for_pointer(
+                    pointer,
+                    interpolation_fraction,
+                    !self.indexed_bridge_ui_active,
+                )?;
             }
             self.services
                 .present_current_bridge_frame(self.indexed_bridge_ui_active, self.manu3_visible)?;

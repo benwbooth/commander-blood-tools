@@ -2839,7 +2839,17 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         pointer: [i16; 2],
         interpolation_fraction: f32,
+        bridge_owns_pointer: bool,
     ) -> Result<bool> {
+        let pointer = visual_hand_pointer(
+            self.input.pointer_sample().position,
+            pointer,
+            bridge_owns_pointer
+                && self
+                    .bridge_frame
+                    .as_ref()
+                    .is_some_and(|frame| frame.steering.view_changed),
+        );
         let Some(model) = self.runtime.manu3_mut() else {
             return Ok(false);
         };
@@ -6138,6 +6148,20 @@ fn input_cancellation_state(
     }
 }
 
+fn visual_hand_pointer(
+    game_pointer: [i16; 2],
+    host_pointer: [i16; 2],
+    bridge_scrolling: bool,
+) -> [i16; 2] {
+    // Steering consumes horizontal motion and recenters the native pointer.
+    // Extra renders reuse that panorama, so raw X would drift then snap back.
+    if bridge_scrolling {
+        [game_pointer[0], host_pointer[1]]
+    } else {
+        host_pointer
+    }
+}
+
 fn bridge_pointer_sample(
     mut pointer: PointerSample,
     cursor_x: i16,
@@ -6470,6 +6494,27 @@ mod tests {
         assert!(!manu3_layer_visible(true, true, true));
         assert!(!manu3_layer_visible(false, false, false));
         assert!(!manu3_layer_visible(false, true, true));
+    }
+
+    #[test]
+    fn visual_hand_does_not_drift_then_snap_back_during_bridge_scrolling() {
+        for (game_pointer, direction) in [([280, 100], 1), ([40, 100], -1)] {
+            for delta in [1, 8, 16, 24] {
+                let host_pointer = [game_pointer[0] + direction * delta, 110];
+                let visual = visual_hand_pointer(game_pointer, host_pointer, true);
+                assert_eq!(visual, [game_pointer[0], 110]);
+            }
+        }
+    }
+
+    #[test]
+    fn visual_hand_tracks_both_axes_when_the_bridge_is_not_scrolling() {
+        for host_pointer in [[8, 12], [160, 100], [319, 199]] {
+            assert_eq!(
+                visual_hand_pointer([280, 100], host_pointer, false),
+                host_pointer
+            );
+        }
     }
 
     #[test]
