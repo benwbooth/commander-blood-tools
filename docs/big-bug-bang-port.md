@@ -5689,6 +5689,24 @@ Script-dispatch tests pass 14 (3 asset-dependent tests ignored); the six growth
 and simulation tests pass. The native ledger is now 344/383 classified,
 including 12 static typed entries, with 39 pending.
 
+## Shared Bridge Body Audit (2026-09-19)
+
+The relocation-limited comparison now also verifies BBB artwork selection
+(`0x8008`), Arche-position filtering (`0x8154`), actor dispatch (`0x8E4F`),
+presentation-line stepping (`0x8EF0`), black-hole and radio actors (`0x8F94`,
+`0x935D`), status composition (`0x944A`), camera approach (`0x9C5E`), name-area
+palette effects (`0x9DBB`), save-name editing (`0x2049`), and line-zero playback
+(`0x2142`). Every complete body matches its existing Commander owner after
+explicitly listed address/callee substitutions. The six actor-table entries
+preserve the same handler order. BBB-specific bodies reached through these
+calls remain separate audit entries, not silently inherited behavior.
+
+The focused tests for these owners pass; one optional original-asset camera
+test remains ignored. The ledger now has 355/383 classified entries, including
+23 static typed entries, with 28 pending. Input-only reuse of growth fixtures
+is explicitly excluded from direct-native output attribution, so the D6 rows
+continue to name their actual full native-result comparison test.
+
 ## Remaining Completion Requirements
 
 As of 2026-09-19, work proceeds source-first: compare remaining BBB native

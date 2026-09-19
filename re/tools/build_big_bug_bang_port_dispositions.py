@@ -129,6 +129,12 @@ FUNCTION_RE = re.compile(
     r"(?m)^\s*(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?fn\s+([A-Za-z0-9_]+)"
 )
 
+# These regressions borrow only initial records, never the native result rows.
+INPUT_ONLY_FIXTURE_CONSUMERS = {
+    ("big_bug_bang_growth.jsonl", "sequel_post_scan_bounds_follow_host_writes_and_skip_disabled_passes"),
+    ("big_bug_bang_growth.jsonl", "sequel_post_scan_bounds_only_participating_actor_fields"),
+}
+
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -160,6 +166,9 @@ def fixture_consumers(fixtures: set[str]) -> dict[str, list[dict[str, str]]]:
                     raise RuntimeError(
                         f"{path.relative_to(ROOT)} references {fixture} outside a function"
                     )
+                if (Path(fixture).name, owners[-1].group(1)) in INPUT_ONLY_FIXTURE_CONSUMERS:
+                    start = offset + 1
+                    continue
                 consumers.setdefault(fixture, []).append(
                     {
                         "path": str(path.relative_to(ROOT)),

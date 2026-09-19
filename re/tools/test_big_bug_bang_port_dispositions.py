@@ -25,8 +25,8 @@ UNREFERENCED_LIBRARY_AUDIT_PATH = (
 )
 BUILDER_PATH = ROOT / "re/tools/build_big_bug_bang_port_dispositions.py"
 KNOWN_ENTRYPOINT_COUNT = 383
-CLASSIFIED_ENTRYPOINT_COUNT = 344
-PENDING_GAME_SEMANTICS_COUNT = 39
+CLASSIFIED_ENTRYPOINT_COUNT = 355
+PENDING_GAME_SEMANTICS_COUNT = 28
 EXPECTED_STATUS_COUNTS = {
     "eliminated_authored_no_operation": 10,
     "eliminated_dormant_diagnostic": 18,
@@ -36,7 +36,7 @@ EXPECTED_STATUS_COUNTS = {
     "inherited_exact_typed": 6,
     "pending_game_semantics": PENDING_GAME_SEMANTICS_COUNT,
     "verified_direct_typed": 262,
-    "verified_static_typed": 12,
+    "verified_static_typed": 23,
 }
 
 spec = importlib.util.spec_from_file_location("bbb_disposition_builder", BUILDER_PATH)
@@ -75,6 +75,12 @@ class BigBugBangPortDispositionTests(unittest.TestCase):
         self.assertEqual(self.ledger, builder.build_report())
         for path, digest in self.ledger["inputs"].items():
             self.assertEqual(digest, sha256(ROOT / path), path)
+
+    def test_input_only_fixture_reuse_is_not_native_output_evidence(self) -> None:
+        for row in self.ledger["entrypoints"]:
+            if row["entry"] in {"0x706e", "0x728b"}:
+                self.assertEqual(row["rust_owner"]["symbol"],
+                                 "sequel_growth_matches_complete_native_handler_and_selection_helper")
 
     def test_ledger_partitions_every_known_entrypoint_once(self) -> None:
         rows = self.ledger["entrypoints"]

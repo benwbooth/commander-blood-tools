@@ -25,7 +25,7 @@ class StaticPortAuditTests(unittest.TestCase):
     def test_checked_report_is_current(self):
         report = audit.build_report()
         self.assertEqual(report, json.loads(audit.OUTPUT.read_text()))
-        self.assertEqual(len(report["routines"]), 12)
+        self.assertEqual(len(report["routines"]), 23)
 
     def test_unreviewed_changes_fail_closed(self):
         old = audit.COMMANDER.read_bytes()[0x4536:0x46B6]

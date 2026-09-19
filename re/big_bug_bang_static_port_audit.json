@@ -5,10 +5,14 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "c16d06bd725f0358e57e3a814f71af4d08fb49e88b005389fdf2b9a35baeaed7",
+    "re/tools/big_bug_bang_static_port_audit.py": "94f3dedc2912e8788fa9c76a2aa3de58c666d249549a1fdc0e07dfb64d5e0d43",
     "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
     "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
     "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
+    "crates/commander-blood-game/src/native/bloodprg/input_selection.rs": "34dd7b11779fbac085977c837d2d81ec4c42b42f1b4c66397a816ce918979c2a",
+    "re/tools/oracle_vectors/func_1dd8_natural.json": "3c808924208f186ec1e4fe73314930cee10433aec41b8a8b90235c2912988f7a",
+    "crates/commander-blood-game/src/native/bloodprg/presentation_run.rs": "3425fc1a8dcfc7e56be4702bd986d735ac9cb033e7ccb9a6bd9f92c5021da3ec",
+    "re/tools/oracle_vectors/func_1ec1_natural.json": "3ed222ec0974aff74c5723abe4411992d26cf24d7502cf96416f493cf968c6f9",
     "crates/commander-blood-game/src/native/bloodprg/raster_primitives.rs": "b02ff56e1723c862aa7bf57758da7e583da8c714f10fe849f6a35bc787117cef",
     "re/tools/oracle_vectors/func_3b85_natural.json": "0ec3e5cb3d734e0c089812b4901152dcb118e43f0604f95bc2446b450774a075",
     "crates/commander-blood-game/src/native/bloodprg/framebuffer_copy.rs": "eb91b715fb62775287e79eb68b269ab29f2633391311c2b9afa04b9f729531fb",
@@ -19,11 +23,29 @@
     "re/tools/oracle_vectors/func_4ba8_natural.json": "8a0b38db2c06fbc37974d29070fc06591f478b7deb9c3214a01bade72a3de33a",
     "re/tools/oracle_vectors/func_4cd6_natural.json": "55498dfe4e52368f4b79c278369088dd6ca73967e9ec31c1c8d85422963b307b",
     "re/tools/oracle_vectors/func_4f62_natural.json": "278ffaff60f36e52cd6284b1fa03a86793806bc95cebf4abdb6d34ea860d6279",
+    "crates/commander-blood-game/src/native/bloodprg/ship_view.rs": "13e7f467b866dc69cdc170909fce5e0af4a769562f71783da55f69af34250634",
+    "re/tools/oracle_vectors/func_6ff3_natural.json": "91896e778459743771bca99d6e0a69385d05e67e34028ee46a310994453b8aee",
+    "crates/commander-blood-game/src/native/bloodprg/navigation.rs": "1f33adbde53c512d5c6f5c36864db03d0b9fbc98cd712ce9e408fed4ffe1ff7e",
+    "re/tools/oracle_vectors/func_713d_natural.json": "246c497cc61e0ea5b25f707c83e8ada5a4fcedc3899898d3173cff927f3a7aeb",
     "crates/commander-blood-game/src/runtime/services.rs": "24f293d7f94d867b3ad5d5917c7419e07a64361f998560ef3cd4c771ff2707a1",
     "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs": "5f3e726b5afc93d86dd70b2cd46fbfe79ed5055ae5de0c68113fa19cfb990944",
     "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e",
     "crates/commander-blood-game/src/native/bloodprg/sequence_subtitles.rs": "8601e3e8549fa6750a8a2a517c61fc4b2441fa2b6df0446243ee1f4858c4639d",
     "re/tools/oracle_vectors/func_7ce8_natural.json": "7de7ccaaa1b790613ee96602463d9e7adc6886ab4f0c2017da47360bb6d649c3",
+    "crates/commander-blood-game/src/native/bloodprg/actor_slots.rs": "02493128d1f0659848e72d552c35b6d58cb249ac76d408ea7115aeeb3378034a",
+    "re/tools/oracle_vectors/func_7d7b_natural.json": "ded06f3b2d854e7fcb02e3b2167465f932ce666bb2b2259f005f847d9bc63b3f",
+    "crates/commander-blood-game/src/native/bloodprg/presentation_line.rs": "aea6cf45dd57877a2fef37c720629e534adfd1b6deb2be81185730bf833db0e5",
+    "re/tools/oracle_vectors/func_7e1c_natural.json": "77f78bcb6d804fe9c1038f42d5d119e283c0059696d4460de4e9ff43edc49334",
+    "crates/commander-blood-game/src/native/bloodprg/actor_handler_black_hole.rs": "9edfa7f3f222a5f01ecd36eaf327eb5a6e3a5ee90d9cf9653c61fb1606234e07",
+    "re/tools/oracle_vectors/func_7ec0_natural.json": "3d9b49db4f0b33ddc9a7d0e6325b6a60e92a212054798056c7e8251672aed141",
+    "crates/commander-blood-game/src/native/bloodprg/actor_handler_radio.rs": "37b718a3ae47cfb9aef86e696e8d9b4f97408fb288560da1b0d94b17e6d689f0",
+    "re/tools/oracle_vectors/func_81fb_natural.json": "a264305c55fe9df01edf16b71b2c61e8196c01cec859bd43ca7b145eefa05d38",
+    "crates/commander-blood-game/src/native/bloodprg/navigation_status.rs": "7ae65c9b96cfef88254f7d7ab39cc32fcdf1ad41d4c381c93cd5d896ec747790",
+    "re/tools/oracle_vectors/func_82e8_natural.json": "8dfd4ca5de26d68de9ba4f8a8122e35544c123acf86157009268d1ee844a0fd3",
+    "crates/commander-blood-game/src/native/bloodprg/camera_approach.rs": "2cb00bef6c4799f8ea9d532eaddba5266482748bea340b2bcbdabe226c4e2bfc",
+    "re/tools/oracle_vectors/func_8a4e_natural.json": "360e50dd91a4b129e7942522a62c117d8628fc7857c2f96b42d9af8dbed2d8a8",
+    "crates/commander-blood-game/src/native/bloodprg/name_area_effect.rs": "86cae117f1d91e4df7d498b4dcbe5022db63d6062d0cce9c513175b1d76f49ea",
+    "re/tools/oracle_vectors/func_8bab_natural.json": "4541121930abea827f3b0937f797b9d37ba5fb8b06da494fd236e26eeec5debf",
     "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b",
     "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "5817021dc5d13d2b46d0492bfd2c07e0976d4a534b70c219e3b5235099ddf4b3"
   },
@@ -47,6 +69,38 @@
     {
       "identity": "cd_playback_request",
       "bytes": "16000000000000000000000000010000000000000000"
+    }
+  ],
+  "actor_handler_order": [
+    {
+      "commander": "0x7f9c",
+      "bbb": "0x9070",
+      "handler": "hyperjump"
+    },
+    {
+      "commander": "0x7ec0",
+      "bbb": "0x8f94",
+      "handler": "black_hole"
+    },
+    {
+      "commander": "0x813a",
+      "bbb": "0x927a",
+      "handler": "ship_palette"
+    },
+    {
+      "commander": "0x817e",
+      "bbb": "0x92d0",
+      "handler": "panel_close"
+    },
+    {
+      "commander": "0x81fb",
+      "bbb": "0x935d",
+      "handler": "radio"
+    },
+    {
+      "commander": "0x8082",
+      "bbb": "0x91ad",
+      "handler": "camera"
     }
   ],
   "routines": [
@@ -145,6 +199,173 @@
       ],
       "notes": [
         "Typed encounter playback retaining physical track 2 packed frame-second-minute decoding ignored high byte 150-frame lead-in subtraction wrapping endpoint difference and availability gate while replacing MSCDEX request storage interrupt delivery and segmented globals with an explicit host playback command",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x2049",
+      "end": "0x20ce",
+      "commander_entry": "0x1dd8",
+      "kind": "bridge",
+      "body_sha256": "6e09e1468e6246d746e402f360db5fc8c7474063871bd43cef286ac25356533b",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/input_selection.rs",
+        "symbol": "update_save_slot_editor"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_1dd8_natural.json",
+      "instruction_count": 63,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x1ddf",
+          "bbb_site": "0x2050",
+          "identity": "save_edit_buffer"
+        },
+        {
+          "commander_site": "0x1de2",
+          "bbb_site": "0x2053",
+          "identity": "keyboard_character"
+        },
+        {
+          "commander_site": "0x1de9",
+          "bbb_site": "0x205a",
+          "identity": "selected_save_row"
+        },
+        {
+          "commander_site": "0x1df8",
+          "bbb_site": "0x2069",
+          "identity": "selected_save_name_pointer"
+        },
+        {
+          "commander_site": "0x1e27",
+          "bbb_site": "0x2098",
+          "identity": "save_edit_length"
+        },
+        {
+          "commander_site": "0x1e34",
+          "bbb_site": "0x20a5",
+          "identity": "choice_rectangle_x"
+        },
+        {
+          "commander_site": "0x1e3e",
+          "bbb_site": "0x20af",
+          "identity": "choice_rectangle_width"
+        },
+        {
+          "commander_site": "0x1e42",
+          "bbb_site": "0x20b3",
+          "identity": "fill_solid_rectangle",
+          "callee": "0x40e9"
+        },
+        {
+          "commander_site": "0x1e4f",
+          "bbb_site": "0x20c0",
+          "identity": "draw_game_font",
+          "callee": "0x3486"
+        }
+      ],
+      "notes": [
+        "Owned save-slot editor retaining lowercase and digit acceptance the authored length-14 insertion stop Backspace blanking without shared-length mutation full 16-byte Enter commit low-byte row selection wrapping logical coordinates and exact palette indices while replacing unchecked near copies and direct VGA callbacks with validated names and a typed draw plan",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x2142",
+      "end": "0x2191",
+      "commander_entry": "0x1ec1",
+      "kind": "bridge",
+      "body_sha256": "07cacd99e11ea9b7f3f3a7e03e125c1853ff17f9777d3f2a9f2a93ba02ca6fc1",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/presentation_run.rs",
+        "symbol": "run_presentation_line_zero"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_1ec1_natural.json",
+      "instruction_count": 24,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x1ec3",
+          "bbb_site": "0x2144",
+          "identity": "clear_display_band",
+          "callee": "0x41f8"
+        },
+        {
+          "commander_site": "0x1eca",
+          "bbb_site": "0x214b",
+          "identity": "clear_back_buffer_band",
+          "callee": "0x423c"
+        },
+        {
+          "commander_site": "0x1ecf",
+          "bbb_site": "0x2150",
+          "identity": "active_presentation_line"
+        },
+        {
+          "commander_site": "0x1ed3",
+          "bbb_site": "0x2154",
+          "identity": "dispatch_input",
+          "callee": "0x23a2"
+        },
+        {
+          "commander_site": "0x1ed6",
+          "bbb_site": "0x2157",
+          "identity": "input_stop_gate"
+        },
+        {
+          "commander_site": "0x1edd",
+          "bbb_site": "0x215e",
+          "identity": "active_presentation_line"
+        },
+        {
+          "commander_site": "0x1ee0",
+          "bbb_site": "0x2161",
+          "identity": "dispatch_presentation_scene",
+          "callee": "0xb4b0"
+        },
+        {
+          "commander_site": "0x1ee5",
+          "bbb_site": "0x2166",
+          "identity": "scene_presentation_queued"
+        },
+        {
+          "commander_site": "0x1eed",
+          "bbb_site": "0x216e",
+          "identity": "drawing_framebuffer"
+        },
+        {
+          "commander_site": "0x1ef1",
+          "bbb_site": "0x2172",
+          "identity": "present_chunky_frame",
+          "callee": "0x434b"
+        },
+        {
+          "commander_site": "0x1ef7",
+          "bbb_site": "0x2178",
+          "identity": "select_display_page",
+          "callee": "0x1971"
+        },
+        {
+          "commander_site": "0x1efa",
+          "bbb_site": "0x217b",
+          "identity": "upload_palette",
+          "callee": "0x194d"
+        },
+        {
+          "commander_site": "0x1eff",
+          "bbb_site": "0x2180",
+          "identity": "input_stop_gate"
+        },
+        {
+          "commander_site": "0x1f04",
+          "bbb_site": "0x2185",
+          "identity": "scene_presentation_queued"
+        },
+        {
+          "commander_site": "0x1f09",
+          "bbb_site": "0x218a",
+          "identity": "active_presentation_line"
+        }
+      ],
+      "notes": [
+        "Semantic presentation runner retaining initial surface clears input-before-scene ordering low-bit stop and continuation gates per-frame submission and unconditional active-line and gate teardown while replacing planar conversion VGA page offsets palette ports and near callbacks with typed SDL and wgpu host operations",
         "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },
@@ -718,6 +939,179 @@
       ]
     },
     {
+      "entry": "0x8008",
+      "end": "0x8103",
+      "commander_entry": "0x6ff3",
+      "kind": "bridge",
+      "body_sha256": "f27eeb50865118fb5bcd7e40a423be914e8eb6bd9cb5c1e1ce4d6c39b3780dbf",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/ship_view.rs",
+        "symbol": "select_ship_view_artwork"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_6ff3_natural.json",
+      "instruction_count": 92,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x7001",
+          "bbb_site": "0x8016",
+          "identity": "transition_entity",
+          "callee": "0x464e"
+        },
+        {
+          "commander_site": "0x7006",
+          "bbb_site": "0x801b",
+          "identity": "world_artwork_rows"
+        },
+        {
+          "commander_site": "0x7019",
+          "bbb_site": "0x802e",
+          "identity": "object_directory_pointer"
+        },
+        {
+          "commander_site": "0x701e",
+          "bbb_site": "0x8033",
+          "identity": "var_segment"
+        },
+        {
+          "commander_site": "0x7023",
+          "bbb_site": "0x8038",
+          "identity": "arche_object"
+        },
+        {
+          "commander_site": "0x7028",
+          "bbb_site": "0x803d",
+          "identity": "navigation_scratch_list"
+        },
+        {
+          "commander_site": "0x703a",
+          "bbb_site": "0x804f",
+          "identity": "object_field_resolve",
+          "callee": "0x6633"
+        },
+        {
+          "commander_site": "0x7046",
+          "bbb_site": "0x805b",
+          "identity": "arche_object"
+        },
+        {
+          "commander_site": "0x7058",
+          "bbb_site": "0x806d",
+          "identity": "object_field_resolve",
+          "callee": "0x6633"
+        },
+        {
+          "commander_site": "0x7072",
+          "bbb_site": "0x8087",
+          "identity": "object_field_resolve",
+          "callee": "0x6633"
+        },
+        {
+          "commander_site": "0x7099",
+          "bbb_site": "0x80ae",
+          "identity": "navigation_scratch_list"
+        },
+        {
+          "commander_site": "0x709c",
+          "bbb_site": "0x80b1",
+          "identity": "var_segment"
+        },
+        {
+          "commander_site": "0x70a4",
+          "bbb_site": "0x80b9",
+          "identity": "world_artwork_rows"
+        },
+        {
+          "commander_site": "0x70b3",
+          "bbb_site": "0x80c8",
+          "identity": "load_resource",
+          "callee": "0x2924"
+        },
+        {
+          "commander_site": "0x70c6",
+          "bbb_site": "0x80db",
+          "identity": "loaded_artwork_pointer"
+        },
+        {
+          "commander_site": "0x70cd",
+          "bbb_site": "0x80e2",
+          "identity": "load_palette_resource",
+          "callee": "0x4444"
+        },
+        {
+          "commander_site": "0x70dd",
+          "bbb_site": "0x80f2",
+          "identity": "set_entity_record",
+          "callee": "0x45cb"
+        }
+      ],
+      "notes": [
+        "Typed ship-view position matching world-artwork activation resource requests and offscreen entity staging over owned object identities",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x8154",
+      "end": "0x81e6",
+      "commander_entry": "0x713d",
+      "kind": "bridge",
+      "body_sha256": "cd3baef9a29f6ca93bce0610abe7354b370600e92bfebc798a26e93f0ba8360e",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/navigation.rs",
+        "symbol": "objects_at_arche_position"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_713d_natural.json",
+      "instruction_count": 62,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x7146",
+          "bbb_site": "0x815d",
+          "identity": "var_pointer"
+        },
+        {
+          "commander_site": "0x714b",
+          "bbb_site": "0x8162",
+          "identity": "object_directory_pointer"
+        },
+        {
+          "commander_site": "0x7150",
+          "bbb_site": "0x8167",
+          "identity": "aboard_position_list"
+        },
+        {
+          "commander_site": "0x7153",
+          "bbb_site": "0x816a",
+          "identity": "arche_object"
+        },
+        {
+          "commander_site": "0x715d",
+          "bbb_site": "0x8174",
+          "identity": "object_field_resolve",
+          "callee": "0x6633"
+        },
+        {
+          "commander_site": "0x717f",
+          "bbb_site": "0x8196",
+          "identity": "arche_object"
+        },
+        {
+          "commander_site": "0x7194",
+          "bbb_site": "0x81ab",
+          "identity": "object_field_resolve",
+          "callee": "0x6633"
+        },
+        {
+          "commander_site": "0x71ae",
+          "bbb_site": "0x81c5",
+          "identity": "object_field_resolve",
+          "callee": "0x6633"
+        }
+      ],
+      "notes": [
+        "Authored-order active navigation-object selection at Arche coordinates with typed location-holder resolution",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
       "entry": "0x8923",
       "end": "0x8987",
       "commander_entry": "0x78d0",
@@ -848,6 +1242,981 @@
       ],
       "notes": [
         "Frame-timed centered sequence subtitles over decoded typed cues renderer-owned video time and authored text slices without packed streams address cursors or terminal markers",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x8e4f",
+      "end": "0x8ef0",
+      "commander_entry": "0x7d7b",
+      "kind": "bridge",
+      "body_sha256": "4eba5ed89e7b54617436aa6e2e0d3d20ea3f49a10cb93c5cc51379a34edc0cdd",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_slots.rs",
+        "symbol": "update_nav_actor_slots"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_7d7b_natural.json",
+      "instruction_count": 64,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x7d83",
+          "bbb_site": "0x8e57",
+          "identity": "presentation_active"
+        },
+        {
+          "commander_site": "0x7d86",
+          "bbb_site": "0x8e5a",
+          "identity": "scene_presentation_queued"
+        },
+        {
+          "commander_site": "0x7d8a",
+          "bbb_site": "0x8e5e",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x7d8e",
+          "bbb_site": "0x8e62",
+          "identity": "save_active"
+        },
+        {
+          "commander_site": "0x7d92",
+          "bbb_site": "0x8e66",
+          "identity": "load_active"
+        },
+        {
+          "commander_site": "0x7d96",
+          "bbb_site": "0x8e6a",
+          "identity": "console_item_selected"
+        },
+        {
+          "commander_site": "0x7d9a",
+          "bbb_site": "0x8e6e",
+          "identity": "target_selection_active"
+        },
+        {
+          "commander_site": "0x7d9e",
+          "bbb_site": "0x8e72",
+          "identity": "transition_pending"
+        },
+        {
+          "commander_site": "0x7da2",
+          "bbb_site": "0x8e76",
+          "identity": "input_stop_gate"
+        },
+        {
+          "commander_site": "0x7dab",
+          "bbb_site": "0x8e7f",
+          "identity": "actor_slot_records"
+        },
+        {
+          "commander_site": "0x7db9",
+          "bbb_site": "0x8e8d",
+          "identity": "primary_pointer_pressed"
+        },
+        {
+          "commander_site": "0x7dbe",
+          "bbb_site": "0x8e92",
+          "identity": "pointer_press_pending"
+        },
+        {
+          "commander_site": "0x7dc8",
+          "bbb_site": "0x8e9c",
+          "identity": "actor_pointer_hit_test",
+          "callee": "0x93cb"
+        },
+        {
+          "commander_site": "0x7dd1",
+          "bbb_site": "0x8ea5",
+          "identity": "bridge_view_frame"
+        },
+        {
+          "commander_site": "0x7dde",
+          "bbb_site": "0x8eb2",
+          "identity": "bridge_seek_target"
+        },
+        {
+          "commander_site": "0x7de1",
+          "bbb_site": "0x8eb5",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x7dee",
+          "bbb_site": "0x8ec2",
+          "identity": "bridge_view_frame"
+        },
+        {
+          "commander_site": "0x7dff",
+          "bbb_site": "0x8ed3",
+          "identity": "transition_entity",
+          "callee": "0x464e"
+        },
+        {
+          "commander_site": "0x7e09",
+          "bbb_site": "0x8edd",
+          "identity": "actor_handler_table"
+        }
+      ],
+      "notes": [
+        "Six-slot bridge actor coordination over typed busy gates mouse latches seek state wrapped arcs and explicit handler callbacks without packed records shared flag bytes or a native code table",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x8ef0",
+      "end": "0x8f88",
+      "commander_entry": "0x7e1c",
+      "kind": "bridge",
+      "body_sha256": "c74c0a912f8bc7ba31fc84921e6ffb2cdef5ffcdb03745e5194e8b8739154360",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/presentation_line.rs",
+        "symbol": "update_presentation_line"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_7e1c_natural.json",
+      "instruction_count": 60,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x7e21",
+          "bbb_site": "0x8ef5",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x7e30",
+          "bbb_site": "0x8f04",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x7e38",
+          "bbb_site": "0x8f0c",
+          "identity": "presentation_resource_pointer"
+        },
+        {
+          "commander_site": "0x7e49",
+          "bbb_site": "0x8f1d",
+          "identity": "load_named_resource",
+          "callee": "0x2e40"
+        },
+        {
+          "commander_site": "0x7e57",
+          "bbb_site": "0x8f2b",
+          "identity": "presentation_reverse"
+        },
+        {
+          "commander_site": "0x7e60",
+          "bbb_site": "0x8f34",
+          "identity": "presentation_reverse"
+        },
+        {
+          "commander_site": "0x7e6d",
+          "bbb_site": "0x8f41",
+          "identity": "presentation_resource_pointer"
+        },
+        {
+          "commander_site": "0x7e7d",
+          "bbb_site": "0x8f51",
+          "identity": "set_entity_record",
+          "callee": "0x45cb"
+        },
+        {
+          "commander_site": "0x7e83",
+          "bbb_site": "0x8f57",
+          "identity": "presentation_reverse"
+        },
+        {
+          "commander_site": "0x7ea3",
+          "bbb_site": "0x8f77",
+          "identity": "presentation_reverse"
+        },
+        {
+          "commander_site": "0x7ea8",
+          "bbb_site": "0x8f7c",
+          "identity": "presentation_mode_bits"
+        }
+      ],
+      "notes": [
+        "Typed resource-backed presentation line loading drawing and forward or reverse frame progression over explicit playback state without filename tables packed records or a shared resource buffer",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x8f94",
+      "end": "0x9070",
+      "commander_entry": "0x7ec0",
+      "kind": "bridge",
+      "body_sha256": "56234c3896c1e4dc4138f064ca568d7d6c384dfc9a87e39cf77bd4d0afd936b6",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_black_hole.rs",
+        "symbol": "update_black_hole_presentation_actor"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_7ec0_natural.json",
+      "instruction_count": 64,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x7ec0",
+          "bbb_site": "0x8f94",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x7ec9",
+          "bbb_site": "0x8f9d",
+          "identity": "black_hole_actor_latch"
+        },
+        {
+          "commander_site": "0x7edd",
+          "bbb_site": "0x8fb1",
+          "identity": "actor_animation_tick"
+        },
+        {
+          "commander_site": "0x7ee3",
+          "bbb_site": "0x8fb7",
+          "identity": "actor_state"
+        },
+        {
+          "commander_site": "0x7ee9",
+          "bbb_site": "0x8fbd",
+          "identity": "update_presentation_line",
+          "callee": "0x8ef0"
+        },
+        {
+          "commander_site": "0x7eee",
+          "bbb_site": "0x8fc2",
+          "identity": "requested_script_action"
+        },
+        {
+          "commander_site": "0x7ef4",
+          "bbb_site": "0x8fc8",
+          "identity": "black_hole_destination"
+        },
+        {
+          "commander_site": "0x7ef7",
+          "bbb_site": "0x8fcb",
+          "identity": "requested_script_object"
+        },
+        {
+          "commander_site": "0x7efa",
+          "bbb_site": "0x8fce",
+          "identity": "ship_scene_dispatch_pending"
+        },
+        {
+          "commander_site": "0x7f05",
+          "bbb_site": "0x8fd9",
+          "identity": "ship_active"
+        },
+        {
+          "commander_site": "0x7f0c",
+          "bbb_site": "0x8fe0",
+          "identity": "black_hole_enabled"
+        },
+        {
+          "commander_site": "0x7f1a",
+          "bbb_site": "0x8fee",
+          "identity": "presentation_reverse"
+        },
+        {
+          "commander_site": "0x7f1f",
+          "bbb_site": "0x8ff3",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x7f28",
+          "bbb_site": "0x8ffc",
+          "identity": "arche_object"
+        },
+        {
+          "commander_site": "0x7f2c",
+          "bbb_site": "0x9000",
+          "identity": "var_segment"
+        },
+        {
+          "commander_site": "0x7f3e",
+          "bbb_site": "0x9012",
+          "identity": "black_hole_destination"
+        },
+        {
+          "commander_site": "0x7f42",
+          "bbb_site": "0x9016",
+          "identity": "presentation_reverse"
+        },
+        {
+          "commander_site": "0x7f46",
+          "bbb_site": "0x901a",
+          "identity": "chart_view_active"
+        },
+        {
+          "commander_site": "0x7f50",
+          "bbb_site": "0x9024",
+          "identity": "black_hole_enabled"
+        },
+        {
+          "commander_site": "0x7f5a",
+          "bbb_site": "0x902e",
+          "identity": "transition_entity",
+          "callee": "0x464e"
+        },
+        {
+          "commander_site": "0x7f67",
+          "bbb_site": "0x903b",
+          "identity": "update_audio_playback",
+          "callee": "0xd05d"
+        },
+        {
+          "commander_site": "0x7f6c",
+          "bbb_site": "0x9040",
+          "identity": "update_presentation_line",
+          "callee": "0x8ef0"
+        },
+        {
+          "commander_site": "0x7f71",
+          "bbb_site": "0x9045",
+          "identity": "black_hole_enabled"
+        },
+        {
+          "commander_site": "0x7f78",
+          "bbb_site": "0x904c",
+          "identity": "ship_active"
+        },
+        {
+          "commander_site": "0x7f82",
+          "bbb_site": "0x9056",
+          "identity": "transition_entity",
+          "callee": "0x464e"
+        },
+        {
+          "commander_site": "0x7f91",
+          "bbb_site": "0x9065",
+          "identity": "presentation_mode_bits"
+        }
+      ],
+      "notes": [
+        "Typed two-pass black-hole presentation actor over decoded object kinds stable record links semantic deferred travel live bridge blockers and named authored resources without raw object offsets action tags packed shared bytes or segmented memory",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x935d",
+      "end": "0x93cb",
+      "commander_entry": "0x81fb",
+      "kind": "bridge",
+      "body_sha256": "4a6123b7421c1d5c55ce798c9fe87e1b4512400403d0462300bcf9751d611032",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_radio.rs",
+        "symbol": "update_radio_actor"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_81fb_natural.json",
+      "instruction_count": 33,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x81fb",
+          "bbb_site": "0x935d",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x8211",
+          "bbb_site": "0x9373",
+          "identity": "requested_script_object"
+        },
+        {
+          "commander_site": "0x8219",
+          "bbb_site": "0x937b",
+          "identity": "requested_radio_object"
+        },
+        {
+          "commander_site": "0x8227",
+          "bbb_site": "0x9389",
+          "identity": "actor_state"
+        },
+        {
+          "commander_site": "0x822d",
+          "bbb_site": "0x938f",
+          "identity": "update_presentation_line",
+          "callee": "0x8ef0"
+        },
+        {
+          "commander_site": "0x8235",
+          "bbb_site": "0x9397",
+          "identity": "update_audio_playback",
+          "callee": "0xd05d"
+        },
+        {
+          "commander_site": "0x823a",
+          "bbb_site": "0x939c",
+          "identity": "requested_radio_object"
+        },
+        {
+          "commander_site": "0x823d",
+          "bbb_site": "0x939f",
+          "identity": "requested_script_object"
+        },
+        {
+          "commander_site": "0x8240",
+          "bbb_site": "0x93a2",
+          "identity": "requested_script_action"
+        },
+        {
+          "commander_site": "0x8246",
+          "bbb_site": "0x93a8",
+          "identity": "requested_radio_object"
+        },
+        {
+          "commander_site": "0x8253",
+          "bbb_site": "0x93b5",
+          "identity": "transition_entity",
+          "callee": "0x464e"
+        },
+        {
+          "commander_site": "0x8258",
+          "bbb_site": "0x93ba",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x8260",
+          "bbb_site": "0x93c2",
+          "identity": "menu_sound_bank_name"
+        },
+        {
+          "commander_site": "0x8263",
+          "bbb_site": "0x93c5",
+          "identity": "load_sound_bank",
+          "callee": "0xd7ec"
+        }
+      ],
+      "notes": [
+        "Typed radio-record presentation actor over optional generic record links semantic deferred actions and reusable line playback without zero sentinel links numeric record tags UI masks or packed line flags",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x944a",
+      "end": "0x958a",
+      "commander_entry": "0x82e8",
+      "kind": "bridge",
+      "body_sha256": "ab38e084ba20e2f9478a12ab056d0044f950deb9a52aeba15b1427ed9faf225f",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/navigation_status.rs",
+        "symbol": "update_navigation_status"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_82e8_natural.json",
+      "instruction_count": 130,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x82ef",
+          "bbb_site": "0x9451",
+          "identity": "transition_pending"
+        },
+        {
+          "commander_site": "0x82f8",
+          "bbb_site": "0x945a",
+          "identity": "chart_view_active"
+        },
+        {
+          "commander_site": "0x8301",
+          "bbb_site": "0x9463",
+          "identity": "presentation_active"
+        },
+        {
+          "commander_site": "0x830a",
+          "bbb_site": "0x946c",
+          "identity": "status_hover_entity"
+        },
+        {
+          "commander_site": "0x8319",
+          "bbb_site": "0x947b",
+          "identity": "pointer_x"
+        },
+        {
+          "commander_site": "0x8322",
+          "bbb_site": "0x9484",
+          "identity": "pointer_x"
+        },
+        {
+          "commander_site": "0x8329",
+          "bbb_site": "0x948b",
+          "identity": "pointer_y"
+        },
+        {
+          "commander_site": "0x8332",
+          "bbb_site": "0x9494",
+          "identity": "pointer_y"
+        },
+        {
+          "commander_site": "0x8338",
+          "bbb_site": "0x949a",
+          "identity": "status_hover_state"
+        },
+        {
+          "commander_site": "0x833f",
+          "bbb_site": "0x94a1",
+          "identity": "status_hover_state"
+        },
+        {
+          "commander_site": "0x8347",
+          "bbb_site": "0x94a9",
+          "identity": "status_hover_state"
+        },
+        {
+          "commander_site": "0x8350",
+          "bbb_site": "0x94b2",
+          "identity": "status_hover_state"
+        },
+        {
+          "commander_site": "0x8359",
+          "bbb_site": "0x94bb",
+          "identity": "status_text_buffer"
+        },
+        {
+          "commander_site": "0x835c",
+          "bbb_site": "0x94be",
+          "identity": "arche_object"
+        },
+        {
+          "commander_site": "0x8360",
+          "bbb_site": "0x94c2",
+          "identity": "var_segment"
+        },
+        {
+          "commander_site": "0x8369",
+          "bbb_site": "0x94cb",
+          "identity": "planet_label"
+        },
+        {
+          "commander_site": "0x837e",
+          "bbb_site": "0x94e0",
+          "identity": "ship_label"
+        },
+        {
+          "commander_site": "0x839f",
+          "bbb_site": "0x9501",
+          "identity": "black_hole_label"
+        },
+        {
+          "commander_site": "0x83b6",
+          "bbb_site": "0x9518",
+          "identity": "navigation_scratch_list"
+        },
+        {
+          "commander_site": "0x83b9",
+          "bbb_site": "0x951b",
+          "identity": "collect_navigation_source",
+          "callee": "0x685d"
+        },
+        {
+          "commander_site": "0x83be",
+          "bbb_site": "0x9520",
+          "identity": "navigation_scratch_list"
+        },
+        {
+          "commander_site": "0x83c7",
+          "bbb_site": "0x9529",
+          "identity": "ark_object"
+        },
+        {
+          "commander_site": "0x8403",
+          "bbb_site": "0x9565",
+          "identity": "life_support_label"
+        },
+        {
+          "commander_site": "0x8414",
+          "bbb_site": "0x9576",
+          "identity": "status_hover_state"
+        },
+        {
+          "commander_site": "0x8419",
+          "bbb_site": "0x957b",
+          "identity": "text_reveal_cursor"
+        }
+      ],
+      "notes": [
+        "Typed navigation status hover and owned logical text composition over decoded location kinds source relationships and semantic display modes without record offsets packed alias bytes or fixed text buffers",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x9c5e",
+      "end": "0x9dbb",
+      "commander_entry": "0x8a4e",
+      "kind": "bridge",
+      "body_sha256": "58e5c73c16239a72a467276fa24d2c396f7399b77e64755e48f09968dbfc2615",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/camera_approach.rs",
+        "symbol": "update_camera_approach"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_8a4e_natural.json",
+      "instruction_count": 112,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x8a50",
+          "bbb_site": "0x9c60",
+          "identity": "camera_approach_phase"
+        },
+        {
+          "commander_site": "0x8a57",
+          "bbb_site": "0x9c67",
+          "identity": "actor_state"
+        },
+        {
+          "commander_site": "0x8a5d",
+          "bbb_site": "0x9c6d",
+          "identity": "chart_view_active"
+        },
+        {
+          "commander_site": "0x8a62",
+          "bbb_site": "0x9c72",
+          "identity": "transition_pending"
+        },
+        {
+          "commander_site": "0x8a67",
+          "bbb_site": "0x9c77",
+          "identity": "initialize_bridge_screen",
+          "callee": "0xad37"
+        },
+        {
+          "commander_site": "0x8a6a",
+          "bbb_site": "0x9c7a",
+          "identity": "camera_approach_phase"
+        },
+        {
+          "commander_site": "0x8a6e",
+          "bbb_site": "0x9c7e",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x8a73",
+          "bbb_site": "0x9c83",
+          "identity": "camera_approach_phase"
+        },
+        {
+          "commander_site": "0x8a7a",
+          "bbb_site": "0x9c8a",
+          "identity": "ship_camera_x"
+        },
+        {
+          "commander_site": "0x8a85",
+          "bbb_site": "0x9c95",
+          "identity": "ship_camera_x"
+        },
+        {
+          "commander_site": "0x8a88",
+          "bbb_site": "0x9c98",
+          "identity": "ship_projection_angle"
+        },
+        {
+          "commander_site": "0x8a91",
+          "bbb_site": "0x9ca1",
+          "identity": "ship_projection_angle"
+        },
+        {
+          "commander_site": "0x8a97",
+          "bbb_site": "0x9ca7",
+          "identity": "ship_projection_angle"
+        },
+        {
+          "commander_site": "0x8aa6",
+          "bbb_site": "0x9cb6",
+          "identity": "ship_projection_angle"
+        },
+        {
+          "commander_site": "0x8aac",
+          "bbb_site": "0x9cbc",
+          "identity": "camera_approach_phase"
+        },
+        {
+          "commander_site": "0x8ab7",
+          "bbb_site": "0x9cc7",
+          "identity": "ship_camera_z"
+        },
+        {
+          "commander_site": "0x8abf",
+          "bbb_site": "0x9ccf",
+          "identity": "ship_camera_acceleration"
+        },
+        {
+          "commander_site": "0x8ac3",
+          "bbb_site": "0x9cd3",
+          "identity": "ship_camera_acceleration"
+        },
+        {
+          "commander_site": "0x8ac8",
+          "bbb_site": "0x9cd8",
+          "identity": "ship_camera_z"
+        },
+        {
+          "commander_site": "0x8ad4",
+          "bbb_site": "0x9ce4",
+          "identity": "mark_entity_range_dirty",
+          "callee": "0x46bd"
+        },
+        {
+          "commander_site": "0x8ad9",
+          "bbb_site": "0x9ce9",
+          "identity": "camera_approach_phase"
+        },
+        {
+          "commander_site": "0x8ae4",
+          "bbb_site": "0x9cf4",
+          "identity": "actor_state"
+        },
+        {
+          "commander_site": "0x8aed",
+          "bbb_site": "0x9cfd",
+          "identity": "transition_entity",
+          "callee": "0x464e"
+        },
+        {
+          "commander_site": "0x8af2",
+          "bbb_site": "0x9d02",
+          "identity": "ship_camera_z"
+        },
+        {
+          "commander_site": "0x8af8",
+          "bbb_site": "0x9d08",
+          "identity": "ship_projection_angle"
+        },
+        {
+          "commander_site": "0x8afe",
+          "bbb_site": "0x9d0e",
+          "identity": "ship_camera_x"
+        },
+        {
+          "commander_site": "0x8b04",
+          "bbb_site": "0x9d14",
+          "identity": "hyperspace_resource_names"
+        },
+        {
+          "commander_site": "0x8b07",
+          "bbb_site": "0x9d17",
+          "identity": "hyperspace_sequence_index"
+        },
+        {
+          "commander_site": "0x8b12",
+          "bbb_site": "0x9d22",
+          "identity": "hyperspace_sequence_index"
+        },
+        {
+          "commander_site": "0x8b16",
+          "bbb_site": "0x9d26",
+          "identity": "hyperspace_name_buffer"
+        },
+        {
+          "commander_site": "0x8b1f",
+          "bbb_site": "0x9d2f",
+          "identity": "active_presentation_line"
+        },
+        {
+          "commander_site": "0x8b25",
+          "bbb_site": "0x9d35",
+          "identity": "camera_approach_phase"
+        },
+        {
+          "commander_site": "0x8b2f",
+          "bbb_site": "0x9d3f",
+          "identity": "dispatch_presentation_scene",
+          "callee": "0xb4b0"
+        },
+        {
+          "commander_site": "0x8b34",
+          "bbb_site": "0x9d44",
+          "identity": "scene_presentation_queued"
+        },
+        {
+          "commander_site": "0x8b3b",
+          "bbb_site": "0x9d4b",
+          "identity": "actor_state"
+        },
+        {
+          "commander_site": "0x8b44",
+          "bbb_site": "0x9d54",
+          "identity": "transition_entity",
+          "callee": "0x464e"
+        },
+        {
+          "commander_site": "0x8b4a",
+          "bbb_site": "0x9d5a",
+          "identity": "snapshot_hud_palette_and_reset_camera",
+          "callee": "0x9ea6"
+        },
+        {
+          "commander_site": "0x8b4d",
+          "bbb_site": "0x9d5d",
+          "identity": "initialize_bridge_screen",
+          "callee": "0xad37"
+        },
+        {
+          "commander_site": "0x8b50",
+          "bbb_site": "0x9d60",
+          "identity": "camera_approach_phase"
+        },
+        {
+          "commander_site": "0x8b54",
+          "bbb_site": "0x9d64",
+          "identity": "ship_camera_z"
+        },
+        {
+          "commander_site": "0x8b5c",
+          "bbb_site": "0x9d6c",
+          "identity": "ship_camera_z"
+        },
+        {
+          "commander_site": "0x8b6a",
+          "bbb_site": "0x9d7a",
+          "identity": "ship_camera_z"
+        },
+        {
+          "commander_site": "0x8b6f",
+          "bbb_site": "0x9d7f",
+          "identity": "ship_camera_acceleration"
+        },
+        {
+          "commander_site": "0x8b75",
+          "bbb_site": "0x9d85",
+          "identity": "ship_camera_z"
+        },
+        {
+          "commander_site": "0x8b7b",
+          "bbb_site": "0x9d8b",
+          "identity": "transition_pending"
+        },
+        {
+          "commander_site": "0x8b80",
+          "bbb_site": "0x9d90",
+          "identity": "camera_approach_phase"
+        },
+        {
+          "commander_site": "0x8b85",
+          "bbb_site": "0x9d95",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x8b8a",
+          "bbb_site": "0x9d9a",
+          "identity": "initialize_bridge_screen",
+          "callee": "0xad37"
+        },
+        {
+          "commander_site": "0x8b8d",
+          "bbb_site": "0x9d9d",
+          "identity": "actor_state"
+        },
+        {
+          "commander_site": "0x8b97",
+          "bbb_site": "0x9da7",
+          "identity": "clear_display_band",
+          "callee": "0x41f8"
+        },
+        {
+          "commander_site": "0x8b9d",
+          "bbb_site": "0x9dad",
+          "identity": "build_ship_projection_matrix",
+          "callee": "0xb058"
+        },
+        {
+          "commander_site": "0x8ba1",
+          "bbb_site": "0x9db1",
+          "identity": "project_ship_point_cloud",
+          "callee": "0xb1af"
+        },
+        {
+          "commander_site": "0x8ba5",
+          "bbb_site": "0x9db5",
+          "identity": "project_ship_object_sprites",
+          "callee": "0xb337"
+        }
+      ],
+      "notes": [
+        "Typed ship-camera approach coordinator retaining masked initialization signed X movement unsigned Z acceleration wrapped angle and easing arithmetic hyperspace sequence cycling scene presentation gates HUD reset and render call order while replacing packed UI words writable C-string storage segment-owned renderer state and numeric presentation modes with semantic flat state owned resource names and explicit host operations",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x9dbb",
+      "end": "0x9ea6",
+      "commander_entry": "0x8bab",
+      "kind": "bridge",
+      "body_sha256": "40986a5535a3a3eca85e3c5ba3def820854dd3b2d224695d1c932ff924cac976",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/name_area_effect.rs",
+        "symbol": "update_name_area_effect"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_8bab_natural.json",
+      "instruction_count": 116,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x8bb3",
+          "bbb_site": "0x9dc3",
+          "identity": "name_effect_active"
+        },
+        {
+          "commander_site": "0x8bbc",
+          "bbb_site": "0x9dcc",
+          "identity": "name_effect_restart"
+        },
+        {
+          "commander_site": "0x8bc3",
+          "bbb_site": "0x9dd3",
+          "identity": "name_effect_sequence_table"
+        },
+        {
+          "commander_site": "0x8bc8",
+          "bbb_site": "0x9dd8",
+          "identity": "name_effect_operation_and_count"
+        },
+        {
+          "commander_site": "0x8bcb",
+          "bbb_site": "0x9ddb",
+          "identity": "name_effect_frame_cursor"
+        },
+        {
+          "commander_site": "0x8bcf",
+          "bbb_site": "0x9ddf",
+          "identity": "name_effect_restart"
+        },
+        {
+          "commander_site": "0x8bd4",
+          "bbb_site": "0x9de4",
+          "identity": "name_effect_frame_cursor"
+        },
+        {
+          "commander_site": "0x8bd8",
+          "bbb_site": "0x9de8",
+          "identity": "name_effect_frames_remaining"
+        },
+        {
+          "commander_site": "0x8be2",
+          "bbb_site": "0x9df2",
+          "identity": "random_word",
+          "callee": "0x3163"
+        },
+        {
+          "commander_site": "0x8bea",
+          "bbb_site": "0x9dfa",
+          "identity": "name_effect_sequence_table"
+        },
+        {
+          "commander_site": "0x8bf2",
+          "bbb_site": "0x9e02",
+          "identity": "name_effect_operation_and_count"
+        },
+        {
+          "commander_site": "0x8bf5",
+          "bbb_site": "0x9e05",
+          "identity": "name_effect_frames_remaining"
+        },
+        {
+          "commander_site": "0x8bf9",
+          "bbb_site": "0x9e09",
+          "identity": "drawing_framebuffer"
+        },
+        {
+          "commander_site": "0x8c17",
+          "bbb_site": "0x9e27",
+          "identity": "name_effect_frame_cursor"
+        },
+        {
+          "commander_site": "0x8c21",
+          "bbb_site": "0x9e31",
+          "identity": "name_effect_operation_and_count"
+        }
+      ],
+      "notes": [
+        "Checked flat-framebuffer name-area palette animation over all ten decoded executable sequences semantic operations and owned cursor state without near stream pointers segment aliases packed dimensions or 64 KiB address wrapping",
         "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },

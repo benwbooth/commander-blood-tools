@@ -7,6 +7,7 @@ import argparse
 import csv
 import hashlib
 import json
+import struct
 from pathlib import Path
 
 from capstone import Cs, CS_ARCH_X86, CS_MODE_16
@@ -77,6 +78,89 @@ NOISE_MEMORY = {
     ("", 0x5239): (0x5609, "clip_top"),
     ("", 0x5221): (0x55F1, "drawing_framebuffer"),
 }
+BRIDGE_FIELDS = {
+    0x6724: (0x6AEC, "var_pointer"),
+    0x6726: (0x6AEE, "var_segment"),
+    0x672C: (0x6AF0, "object_directory_pointer"),
+    0x6752: (0x6B22, "arche_object"),
+    0x0A7C: (0x0C74, "loaded_artwork_pointer"),
+    0x0A80: (0x0C78, "presentation_resource_pointer"),
+    0x2793: (0x2A33, "presentation_mode_bits"),
+    0x27E4: (0x2A85, "presentation_reverse"),
+    0x2A93: (0x2D33, "black_hole_actor_latch"),
+    0x0A32: (0x0C2A, "actor_state"),
+    0x0A34: (0x0C2C, "actor_animation_tick"),
+    0x6768: (0x6B3A, "requested_script_action"),
+    0x676A: (0x6B3C, "requested_script_object"),
+    0x27D5: (0x2A75, "black_hole_destination"),
+    0x2792: (0x2A2D, "ship_scene_dispatch_pending"),
+    0x278C: (0x2A27, "ship_active"),
+    0x278E: (0x2A29, "black_hole_enabled"),
+    0x278A: (0x2A25, "chart_view_active"),
+    0x675A: (0x6B2C, "requested_radio_object"),
+    0x67AC: (0x6B82, "presentation_active"),
+    0x1FB2: (0x2200, "scene_presentation_queued"),
+    0x2565: (0x27B7, "choice_active"),
+    0x2736: (0x29C4, "save_active"),
+    0x2737: (0x29C5, "load_active"),
+    0x2A19: (0x2CB9, "console_item_selected"),
+    0x27E7: (0x2A88, "target_selection_active"),
+    0x27DA: (0x2A7A, "transition_pending"),
+    0x0B13: (0x0D1D, "input_stop_gate"),
+    0x0A3E: (0x0C36, "primary_pointer_pressed"),
+    0x0A40: (0x0C38, "pointer_press_pending"),
+    0x2795: (0x2A35, "bridge_view_frame"),
+    0x279B: (0x2A3B, "bridge_seek_target"),
+    0x0A2A: (0x0C22, "pointer_x"),
+    0x0A2C: (0x0C24, "pointer_y"),
+    0x27E2: (0x2A82, "status_hover_state"),
+    0x6758: (0x6B28, "ark_object"),
+    0x5E58: (0x6228, "text_reveal_cursor"),
+    0x27DF: (0x2A7F, "camera_approach_phase"),
+    0x2F65: (0x3335, "ship_camera_x"),
+    0x2F69: (0x3339, "ship_camera_z"),
+    0x2F6B: (0x333B, "ship_camera_acceleration"),
+    0x2F71: (0x3341, "ship_projection_angle"),
+    0x1F20: (0x216E, "hyperspace_sequence_index"),
+    0x6788: (0x6B5A, "active_presentation_line"),
+    0x5221: (0x55F1, "drawing_framebuffer"),
+    0x27E8: (0x2A89, "name_effect_active"),
+    0x27E9: (0x2A8A, "name_effect_restart"),
+    0x27F1: (0x2A91, "name_effect_sequence_table"),
+    0x27ED: (0x2A8D, "name_effect_frame_cursor"),
+    0x27EF: (0x2A8F, "name_effect_operation_and_count"),
+    0x27F0: (0x2A90, "name_effect_frames_remaining"),
+    0x0B15: (0x0D1F, "keyboard_character"),
+    0x272E: (0x29BC, "selected_save_row"),
+    0x2734: (0x29C2, "selected_save_name_pointer"),
+    0x2732: (0x29C0, "save_edit_length"),
+    0x2AAB: (0x2D4B, "choice_rectangle_x"),
+    0x2AAF: (0x2D4F, "choice_rectangle_width"),
+}
+BRIDGE_MEMORY = {
+    (segment, offset): identity
+    for segment in ("", "gs")
+    for offset, identity in BRIDGE_FIELDS.items()
+}
+BRIDGE_IMMEDIATES = {
+    ("mov", "bp", 0x2BC7): (0x2F97, "world_artwork_rows"),
+    ("mov", "si", 0x2BC7): (0x2F97, "world_artwork_rows"),
+    ("mov", "bp", 0x6886): (0x6C2E, "navigation_scratch_list"),
+    ("mov", "bp", 0x24FB): (0x274D, "aboard_position_list"),
+    ("mov", "si", 0x0D16): (0x0F64, "menu_sound_bank_name"),
+    ("mov", "bp", 0x2A1B): (0x2CBB, "actor_slot_records"),
+    ("mov", "si", 0x65F2): (0x69C2, "status_hover_entity"),
+    ("mov", "di", 0x0E18): (0x1066, "status_text_buffer"),
+    ("mov", "si", 0x012E): (0x012D, "planet_label"),
+    ("mov", "si", 0x013E): (0x0142, "ship_label"),
+    ("mov", "si", 0x014B): (0x014E, "black_hole_label"),
+    ("mov", "si", 0x016C): (0x0170, "life_support_label"),
+    ("mov", "si", 0x1F22): (0x2170, "hyperspace_resource_names"),
+    ("mov", "di", 0x2106): (0x2358, "hyperspace_name_buffer"),
+    ("mov", "si", 0x27F1): (0x2A91, "name_effect_sequence_table"),
+    ("mov", "si", 0x273B): (0x29C9, "save_edit_buffer"),
+}
+INDEXED_MEMORY = {("cs", "bx", "", 0x6D4): (0x758, "actor_handler_table")}
 MEMORY_MAPS = {
     "sprite": SPRITE_MEMORY,
     "hover": HOVER_MEMORY,
@@ -84,6 +168,7 @@ MEMORY_MAPS = {
     "copy": COPY_MEMORY,
     "subtitle": SUBTITLE_MEMORY,
     "noise": NOISE_MEMORY,
+    "bridge": BRIDGE_MEMORY,
 }
 IMMEDIATE_MAPS = {
     "sprite": SPRITE_IMMEDIATES,
@@ -92,6 +177,7 @@ IMMEDIATE_MAPS = {
     "copy": {},
     "noise": {},
     "subtitle": {("mov", "bp", 0x0AF2): (0x0CFC, "subtitle_line_buffer")},
+    "bridge": BRIDGE_IMMEDIATES,
 }
 # Memory-destination immediates are approved at their exact instruction sites.
 SITE_IMMEDIATES = {
@@ -102,10 +188,40 @@ SITE_IMMEDIATES = {
 FAR_CALLS = {
     (0x299, 0x00D6): (0x2B1, 0x00D6, "draw_bios_font_line", 0x33E6),
     (0x1CE, 0x0B02): (0x1E6, 0x0B03, "random_word", 0x3163),
+    (0x1CE, 0x02C4): (0x1E6, 0x02C4, "load_resource", 0x2924),
+    (0x299, 0x1241): (0x2B1, 0x133E, "transition_entity", 0x464E),
+    (0x299, 0x1037): (0x2B1, 0x1134, "load_palette_resource", 0x4444),
+    (0x299, 0x11BE): (0x2B1, 0x12BB, "set_entity_record", 0x45CB),
+    (0x1CE, 0x07DB): (0x1E6, 0x07E0, "load_named_resource", 0x2E40),
+    (0xB1B, 0x011D): (0xC74, 0x011D, "update_audio_playback", 0xD05D),
+    (0xB1B, 0x0855): (0xC74, 0x08AC, "load_sound_bank", 0xD7EC),
+    (0x4DA, 0x0EAB): (0x502, 0x103D, "collect_navigation_source", 0x685D),
+    (0x299, 0x12B0): (0x2B1, 0x13AD, "mark_entity_range_dirty", 0x46BD),
+    (0x971, 0): (0xACB, 0, "dispatch_presentation_scene", 0xB4B0),
+    (0x299, 0x0DEB): (0x2B1, 0x0EE8, "clear_display_band", 0x41F8),
+    (0x299, 0x0E2F): (0x2B1, 0x0F2C, "clear_back_buffer_band", 0x423C),
+    (0x299, 0x0F3E): (0x2B1, 0x103B, "present_chunky_frame", 0x434B),
+    (0x299, 0x0CDC): (0x2B1, 0x0DD9, "fill_solid_rectangle", 0x40E9),
+    (0x299, 0x0176): (0x2B1, 0x0176, "draw_game_font", 0x3486),
+}
+NEAR_CALLS = {
+    0x6023: (0x6633, "object_field_resolve"),
+    0x7E1C: (0x8EF0, "update_presentation_line"),
+    0x8269: (0x93CB, "actor_pointer_hit_test"),
+    0x959D: (0xAD37, "initialize_bridge_screen"),
+    0x98B9: (0xB058, "build_ship_projection_matrix"),
+    0x9A10: (0xB1AF, "project_ship_point_cloud"),
+    0x9B98: (0xB337, "project_ship_object_sprites"),
+    0x8C96: (0x9EA6, "snapshot_hud_palette_and_reset_camera"),
+    0x210E: (0x23A2, "dispatch_input"),
+    0x17AF: (0x1971, "select_display_page"),
+    0x178B: (0x194D, "upload_palette"),
 }
 ROUTINES = (
     (0x1502, 0x1555, 0x1344, "cd"),
     (0x1582, 0x163D, 0x13C4, "cd"),
+    (0x2049, 0x20CE, 0x1DD8, "bridge"),
+    (0x2142, 0x2191, 0x1EC1, "bridge"),
     (0x4002, 0x40E9, 0x3B85, "noise"),
     (0x434B, 0x43E4, 0x3ECE, "copy"),
     (0x49B3, 0x4B33, 0x4536, "sprite"),
@@ -113,8 +229,17 @@ ROUTINES = (
     (0x5025, 0x5153, 0x4BA8, "sprite"),
     (0x5153, 0x53DF, 0x4CD6, "sprite"),
     (0x53DF, 0x5517, 0x4F62, "sprite"),
+    (0x8008, 0x8103, 0x6FF3, "bridge"),
+    (0x8154, 0x81E6, 0x713D, "bridge"),
     (0x8923, 0x8987, 0x78D0, "hover"),
     (0x8DBC, 0x8E4F, 0x7CE8, "subtitle"),
+    (0x8E4F, 0x8EF0, 0x7D7B, "bridge"),
+    (0x8EF0, 0x8F88, 0x7E1C, "bridge"),
+    (0x8F94, 0x9070, 0x7EC0, "bridge"),
+    (0x935D, 0x93CB, 0x81FB, "bridge"),
+    (0x944A, 0x958A, 0x82E8, "bridge"),
+    (0x9C5E, 0x9DBB, 0x8A4E, "bridge"),
+    (0x9DBB, 0x9EA6, 0x8BAB, "bridge"),
 )
 
 
@@ -139,6 +264,25 @@ def compare_body(original: bytes, sequel: bytes, old: int, new: int, kind: str):
     patches = []
     transformed = bytearray(original)
     for ins in instructions:
+        if ins.mnemonic == "call" and ins.operands[0].type == X86_OP_IMM:
+            target = ins.operands[0].imm
+            if old <= target < old + len(original):
+                continue
+            if target not in NEAR_CALLS or ins.bytes[0] != 0xE8 or ins.size != 3:
+                raise ValueError(f"unreviewed near call at {ins.address:#x}")
+            entry, identity = NEAR_CALLS[target]
+            start = ins.address - old
+            relative = (entry - (new + start + ins.size)) & 0xFFFF
+            transformed[start + 1 : start + 3] = relative.to_bytes(2, "little")
+            patches.append(
+                {
+                    "commander_site": f"0x{ins.address:04x}",
+                    "bbb_site": f"0x{new + start:04x}",
+                    "identity": identity,
+                    "callee": f"0x{entry:04x}",
+                }
+            )
+            continue
         if ins.mnemonic == "lcall":
             target = tuple(operand.imm for operand in ins.operands)
             if target not in FAR_CALLS:
@@ -166,6 +310,15 @@ def compare_body(original: bytes, sequel: bytes, old: int, new: int, kind: str):
                 if not mem.base and not mem.index:
                     replacement = memory.get(
                         (ins.reg_name(mem.segment) or "", mem.disp)
+                    )
+                else:
+                    replacement = INDEXED_MEMORY.get(
+                        (
+                            ins.reg_name(mem.segment) or "",
+                            ins.reg_name(mem.base) or "",
+                            ins.reg_name(mem.index) or "",
+                            mem.disp,
+                        )
                     )
                 offset, size = ins.disp_offset, ins.disp_size
             elif operand.type == X86_OP_IMM and len(ins.operands) == 2:
@@ -235,6 +388,18 @@ def build_report():
             raise ValueError(f"changed initializer for {identity}")
         initializers.append({"identity": identity, "bytes": native.hex()})
     rows = []
+    commander_handlers = (0x7F9C, 0x7EC0, 0x813A, 0x817E, 0x81FB, 0x8082)
+    sequel_handlers = (0x9070, 0x8F94, 0x927A, 0x92D0, 0x935D, 0x91AD)
+    if (
+        tuple(0x77E0 + item for item in struct.unpack_from("<6H", commander, 0x7EB4))
+        != commander_handlers
+    ):
+        raise ValueError("Commander actor handler order changed")
+    if (
+        tuple(0x8830 + item for item in struct.unpack_from("<6H", bbb, 0x8F88))
+        != sequel_handlers
+    ):
+        raise ValueError("BBB actor handler order changed")
     for entry, end, old, kind in ROUTINES:
         native = bbb[entry:end]
         original = commander[old : old + len(native) - (7 if kind == "hover" else 0)]
@@ -347,6 +512,22 @@ def build_report():
         "execution claim or a proof of whole-game runtime wiring.",
         "inputs": inputs,
         "identical_initializers": initializers,
+        "actor_handler_order": [
+            {"commander": f"0x{old:04x}", "bbb": f"0x{new:04x}", "handler": handler}
+            for old, new, handler in zip(
+                commander_handlers,
+                sequel_handlers,
+                (
+                    "hyperjump",
+                    "black_hole",
+                    "ship_palette",
+                    "panel_close",
+                    "radio",
+                    "camera",
+                ),
+                strict=True,
+            )
+        ],
         "routines": rows,
     }
 
