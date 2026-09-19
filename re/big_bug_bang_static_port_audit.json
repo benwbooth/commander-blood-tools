@@ -5,7 +5,14 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "ef2d698254ee1b5d3be45fdacc2adceb4bf27b1fd290fa5909ac25140a93a03b",
+    "re/tools/big_bug_bang_static_port_audit.py": "dd2bd5cf7a2ab1a7a7a479056e86c1f85ca32f6fdb88a58a4ed16fead11ef9da",
+    "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
+    "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
+    "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
+    "crates/commander-blood-game/src/native/bloodprg/raster_primitives.rs": "b02ff56e1723c862aa7bf57758da7e583da8c714f10fe849f6a35bc787117cef",
+    "re/tools/oracle_vectors/func_3b85_natural.json": "0ec3e5cb3d734e0c089812b4901152dcb118e43f0604f95bc2446b450774a075",
+    "crates/commander-blood-game/src/native/bloodprg/framebuffer_copy.rs": "eb91b715fb62775287e79eb68b269ab29f2633391311c2b9afa04b9f729531fb",
+    "re/tools/oracle_vectors/func_3ece_natural.json": "bbb079aef7a3f8d6869a4a68239781b59220581d7922c6012aa1a440bacd81ce",
     "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs": "501832c180e3b2f096453f0badae20007942b3808470df20db14affba6f5942a",
     "re/tools/oracle_vectors/func_4536_natural.json": "8bfe134ac82851e20eec3014065491bf7cf1453da1687fd81b06bdb6ca6a483f",
     "re/tools/oracle_vectors/func_46bc_natural.json": "7bc129da36d0e67a5d9a1c317820dcac4a4121b365df329fffc9689dc9077d99",
@@ -14,9 +21,225 @@
     "re/tools/oracle_vectors/func_4f62_natural.json": "278ffaff60f36e52cd6284b1fa03a86793806bc95cebf4abdb6d34ea860d6279",
     "crates/commander-blood-game/src/runtime/services.rs": "24f293d7f94d867b3ad5d5917c7419e07a64361f998560ef3cd4c771ff2707a1",
     "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs": "5f3e726b5afc93d86dd70b2cd46fbfe79ed5055ae5de0c68113fa19cfb990944",
-    "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e"
+    "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e",
+    "crates/commander-blood-game/src/native/bloodprg/sequence_subtitles.rs": "8601e3e8549fa6750a8a2a517c61fc4b2441fa2b6df0446243ee1f4858c4639d",
+    "re/tools/oracle_vectors/func_7ce8_natural.json": "7de7ccaaa1b790613ee96602463d9e7adc6886ab4f0c2017da47360bb6d649c3"
   },
+  "identical_initializers": [
+    {
+      "identity": "cd_ioctl_request",
+      "bytes": "1a00000000000000000000000000000000000700000000000000"
+    },
+    {
+      "identity": "disc_information_transfer",
+      "bytes": "0a000000000000"
+    },
+    {
+      "identity": "channel_mix_transfer",
+      "bytes": "030050015002500350"
+    },
+    {
+      "identity": "track_information_transfer",
+      "bytes": "0b000000000000"
+    },
+    {
+      "identity": "cd_playback_request",
+      "bytes": "16000000000000000000000000010000000000000000"
+    }
+  ],
   "routines": [
+    {
+      "entry": "0x1502",
+      "end": "0x1555",
+      "commander_entry": "0x1344",
+      "kind": "cd",
+      "body_sha256": "dde49051249d523512d24753f4690c82a563e49a147c2648c468b70db597b59e",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs",
+        "symbol": "prepare_cd_audio"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_1344_natural.json",
+      "instruction_count": 30,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x1348",
+          "bbb_site": "0x1506",
+          "identity": "cd_audio_available"
+        },
+        {
+          "commander_site": "0x1354",
+          "bbb_site": "0x1512",
+          "identity": "cd_ioctl_request"
+        },
+        {
+          "commander_site": "0x1359",
+          "bbb_site": "0x1517",
+          "identity": "cd_drive_number"
+        },
+        {
+          "commander_site": "0x1362",
+          "bbb_site": "0x1520",
+          "identity": "disc_information_transfer"
+        },
+        {
+          "commander_site": "0x136f",
+          "bbb_site": "0x152d",
+          "identity": "track_information_transfer"
+        },
+        {
+          "commander_site": "0x1374",
+          "bbb_site": "0x1532",
+          "identity": "requested_physical_track"
+        },
+        {
+          "commander_site": "0x1383",
+          "bbb_site": "0x1541",
+          "identity": "channel_mix_transfer"
+        }
+      ],
+      "notes": [
+        "Flat encounter-track preparation retaining the availability gate physical track 2 selection and authored four-channel 0-through-3 routing at volume 80 while replacing three MSCDEX request blocks transfer pointers drive state and interrupts with supplied typed track and lead-out metadata",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x1582",
+      "end": "0x163d",
+      "commander_entry": "0x13c4",
+      "kind": "cd",
+      "body_sha256": "60834de4bf583a10e83c458556fd2195393a8c725ac32992990f58a2a970e44a",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs",
+        "symbol": "play_cd_audio_track_two"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_13c4_natural.json",
+      "instruction_count": 71,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x13cc",
+          "bbb_site": "0x158a",
+          "identity": "cd_audio_available"
+        },
+        {
+          "commander_site": "0x13dc",
+          "bbb_site": "0x159a",
+          "identity": "cd_playback_request"
+        },
+        {
+          "commander_site": "0x13e6",
+          "bbb_site": "0x15a4",
+          "identity": "packed_track_start"
+        },
+        {
+          "commander_site": "0x1424",
+          "bbb_site": "0x15e2",
+          "identity": "packed_disc_leadout"
+        },
+        {
+          "commander_site": "0x1470",
+          "bbb_site": "0x162e",
+          "identity": "cd_drive_number"
+        }
+      ],
+      "notes": [
+        "Typed encounter playback retaining physical track 2 packed frame-second-minute decoding ignored high byte 150-frame lead-in subtraction wrapping endpoint difference and availability gate while replacing MSCDEX request storage interrupt delivery and segmented globals with an explicit host playback command",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x4002",
+      "end": "0x40e9",
+      "commander_entry": "0x3b85",
+      "kind": "noise",
+      "body_sha256": "5783977d9e51a971f3c65a1b2ca49e778e878b3d054765a2bceb0e3c5b9bf1cb",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/raster_primitives.rs",
+        "symbol": "draw_framebuffer_noise_rect"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_3b85_natural.json",
+      "instruction_count": 108,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x3ba5",
+          "bbb_site": "0x4022",
+          "identity": "clip_left"
+        },
+        {
+          "commander_site": "0x3bb5",
+          "bbb_site": "0x4032",
+          "identity": "clip_left"
+        },
+        {
+          "commander_site": "0x3bbd",
+          "bbb_site": "0x403a",
+          "identity": "clip_right"
+        },
+        {
+          "commander_site": "0x3bcf",
+          "bbb_site": "0x404c",
+          "identity": "clip_top"
+        },
+        {
+          "commander_site": "0x3bdf",
+          "bbb_site": "0x405c",
+          "identity": "clip_top"
+        },
+        {
+          "commander_site": "0x3be7",
+          "bbb_site": "0x4064",
+          "identity": "clip_right"
+        },
+        {
+          "commander_site": "0x3bf3",
+          "bbb_site": "0x4070",
+          "identity": "drawing_framebuffer"
+        },
+        {
+          "commander_site": "0x3c0e",
+          "bbb_site": "0x408b",
+          "identity": "random_word",
+          "callee": "0x3163"
+        }
+      ],
+      "notes": [
+        "Checked patterned-noise rectangle retaining post-clip single PRNG consumption sparse highlight sparse clear full toggle modes 16-bit refresh cross-row bitstream state and the shipped horizontal-right lower bound while replacing far display offsets row carry inherited direction and segmented pointer writes with typed modes an injected bounded random source and flat indexed pixels; 22 representable vectors retain exact native output hashes",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x434b",
+      "end": "0x43e4",
+      "commander_entry": "0x3ece",
+      "kind": "copy",
+      "body_sha256": "43103808c15dd9035e25f6a1c79163f519791ec455e6a6902bf1e768cf1ef31a",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/framebuffer_copy.rs",
+        "symbol": "present_chunky_frame"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_3ece_natural.json",
+      "instruction_count": 81,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x3ed7",
+          "bbb_site": "0x4354",
+          "identity": "back_framebuffer"
+        },
+        {
+          "commander_site": "0x3edf",
+          "bbb_site": "0x435c",
+          "identity": "cropped_scene_gate"
+        },
+        {
+          "commander_site": "0x3ef2",
+          "bbb_site": "0x436f",
+          "identity": "ship_depth_crop"
+        }
+      ],
+      "notes": [
+        "Checked flat frame presentation retaining the low-bit crop gate full 200-row path authored rows 35-through-165 base crop symmetric ship-depth contraction and intentional depth-65 empty result while replacing VGA map masks four plane passes segmented offset wrapping and direction state with one row-range copy; native depth-underflow writes are rejected before mutation",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
     {
       "entry": "0x49b3",
       "end": "0x4b33",
@@ -118,7 +341,7 @@
       ],
       "notes": [
         "Checked raw transparent rasterizer retaining signed all-edge clipping canonical flips source-zero transparency both destination-color remap tables source stride and the vertically advanced cursor X-origin reload while replacing far frame and framebuffer pointers 16-bit display-offset wrapping selected-remap scratch and register-shaped loops with validated flat slices and explicit selection; the two noncanonical flip-byte oracle states are unrepresentable through the typed Boolean dispatcher",
-        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },
     {
@@ -297,7 +520,7 @@
       ],
       "notes": [
         "Checked RLE transparent rasterizer retaining repeat and literal runs split-run clipping encoded-row skipping canonical flips source-zero transparency destination remapping and cursor-relative X-origin reload while replacing far pointers wrapping decoded counters mutable scratch words and global selection state with validated encoded rows flat framebuffer coordinates and explicit outcomes; the one noncanonical flip-byte oracle state is unrepresentable through the typed Boolean dispatcher",
-        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },
     {
@@ -351,7 +574,7 @@
       ],
       "notes": [
         "Checked raw opaque rasterizer retaining signed all-edge clipping canonical flips zero-pixel overwrite source stride and the vertically advanced cursor X-origin reload while replacing far frame and framebuffer pointers 16-bit display-offset wrapping REP copy classes and register-shaped loops with validated flat slices and explicit selection; the two noncanonical flip-byte oracle states are unrepresentable through the typed Boolean dispatcher",
-        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },
     {
@@ -465,7 +688,7 @@
       ],
       "notes": [
         "Checked RLE opaque rasterizer retaining repeat and literal runs split-run clipping encoded-row skipping canonical flips zero-pixel overwrite and cursor-relative X-origin reload while replacing far pointers wrapping decoded counters mutable scratch words and register-shaped loops with validated encoded rows flat framebuffer coordinates and explicit outcomes; the one noncanonical flip-byte oracle state is unrepresentable through the typed Boolean dispatcher",
-        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },
     {
@@ -489,7 +712,7 @@
       ],
       "notes": [
         "Checked scaled transparent rasterizer retaining unsigned 16.16 nearest-neighbor sampling signed all-edge clipping zero-sized early returns source-zero transparency ignored frame origins and ignored flip and remap state while replacing far frame and framebuffer pointers 16-bit destination offset wrapping and register-shaped loops with validated flat slices and an explicit fixed-point outcome; nonpositive wrapped clipped extents return without rasterization",
-        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },
     {
@@ -569,6 +792,61 @@
       "notes": [
         "Typed bridge presentation hover selection over semantic optional regions inclusive logical rectangles and generic actor states instead of shared UI and activity flag bytes",
         "BBB overview guard returns without touching hover or actor state; runtime supplies sequel_overview.active(). Signed inclusive bounds, selection priority, actor 9, and previous-state restore are unchanged."
+      ]
+    },
+    {
+      "entry": "0x8dbc",
+      "end": "0x8e4f",
+      "commander_entry": "0x7ce8",
+      "kind": "subtitle",
+      "body_sha256": "dcc7adc7511eb842af25323baf1d9543dda11188f06f7b8081eef1161847ab37",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sequence_subtitles.rs",
+        "symbol": "present_sequence_subtitle"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_7ce8_natural.json",
+      "instruction_count": 70,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x7cf4",
+          "bbb_site": "0x8dc8",
+          "identity": "sequence_subtitle_cursor"
+        },
+        {
+          "commander_site": "0x7cfd",
+          "bbb_site": "0x8dd1",
+          "identity": "visible_video_frame"
+        },
+        {
+          "commander_site": "0x7d09",
+          "bbb_site": "0x8ddd",
+          "identity": "subtitle_line_buffer"
+        },
+        {
+          "commander_site": "0x7d45",
+          "bbb_site": "0x8e19",
+          "identity": "subtitle_line_buffer"
+        },
+        {
+          "commander_site": "0x7d53",
+          "bbb_site": "0x8e27",
+          "identity": "draw_bios_font_line",
+          "callee": "0x33e6"
+        },
+        {
+          "commander_site": "0x7d68",
+          "bbb_site": "0x8e3c",
+          "identity": "visible_video_frame"
+        },
+        {
+          "commander_site": "0x7d6e",
+          "bbb_site": "0x8e42",
+          "identity": "sequence_subtitle_cursor"
+        }
+      ],
+      "notes": [
+        "Frame-timed centered sequence subtitles over decoded typed cues renderer-owned video time and authored text slices without packed streams address cursors or terminal markers",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     }
   ]

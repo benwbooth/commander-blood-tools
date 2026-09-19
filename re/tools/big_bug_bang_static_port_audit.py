@@ -48,13 +48,71 @@ HOVER_MEMORY = {
 HOVER_IMMEDIATES = {
     ("mov", "bp", 0x2A27): (0x2CC7, "primary_actor_rectangle"),
 }
+CD_MEMORY = {
+    ("gs", 0x0AE6): (0x0CEF, "cd_audio_available"),
+    ("gs", 0x01B9): (0x0205, "cd_drive_number"),
+    ("", 0x01B9): (0x0205, "cd_drive_number"),
+    ("gs", 0x0B6C): (0x0D76, "requested_physical_track"),
+    ("", 0x0B6D): (0x0D77, "packed_track_start"),
+    ("", 0x0B5E): (0x0D68, "packed_disc_leadout"),
+}
+CD_IMMEDIATES = {
+    ("mov", "bx", 0x0B41): (0x0D4B, "cd_ioctl_request"),
+    ("mov", "bx", 0x0B72): (0x0D7C, "cd_playback_request"),
+}
+COPY_MEMORY = {
+    ("gs", 0x5219): (0x55E9, "back_framebuffer"),
+    ("gs", 0x252E): (0x2780, "cropped_scene_gate"),
+    ("gs", 0x2527): (0x2779, "ship_depth_crop"),
+}
+SUBTITLE_MEMORY = {
+    ("", 0x0F18): (0x1166, "sequence_subtitle_cursor"),
+    ("", 0x131C): (0x156A, "visible_video_frame"),
+}
+NOISE_MEMORY = {
+    ("", 0x5235): (0x5605, "clip_left"),
+    ("", 0x5237): (0x5607, "clip_right"),
+    ("", 0x5239): (0x5609, "clip_top"),
+    ("", 0x5221): (0x55F1, "drawing_framebuffer"),
+}
+MEMORY_MAPS = {
+    "sprite": SPRITE_MEMORY,
+    "hover": HOVER_MEMORY,
+    "cd": CD_MEMORY,
+    "copy": COPY_MEMORY,
+    "subtitle": SUBTITLE_MEMORY,
+    "noise": NOISE_MEMORY,
+}
+IMMEDIATE_MAPS = {
+    "sprite": SPRITE_IMMEDIATES,
+    "hover": HOVER_IMMEDIATES,
+    "cd": CD_IMMEDIATES,
+    "copy": {},
+    "noise": {},
+    "subtitle": {("mov", "bp", 0x0AF2): (0x0CFC, "subtitle_line_buffer")},
+}
+# Memory-destination immediates are approved at their exact instruction sites.
+SITE_IMMEDIATES = {
+    0x1362: (0x0B5B, 0x0D65, "disc_information_transfer"),
+    0x136F: (0x0B6B, 0x0D75, "track_information_transfer"),
+    0x1383: (0x0B62, 0x0D6C, "channel_mix_transfer"),
+}
+FAR_CALLS = {
+    (0x299, 0x00D6): (0x2B1, 0x00D6, "draw_bios_font_line", 0x33E6),
+    (0x1CE, 0x0B02): (0x1E6, 0x0B03, "random_word", 0x3163),
+}
 ROUTINES = (
+    (0x1502, 0x1555, 0x1344, "cd"),
+    (0x1582, 0x163D, 0x13C4, "cd"),
+    (0x4002, 0x40E9, 0x3B85, "noise"),
+    (0x434B, 0x43E4, 0x3ECE, "copy"),
     (0x49B3, 0x4B33, 0x4536, "sprite"),
     (0x4B39, 0x5025, 0x46BC, "sprite"),
     (0x5025, 0x5153, 0x4BA8, "sprite"),
     (0x5153, 0x53DF, 0x4CD6, "sprite"),
     (0x53DF, 0x5517, 0x4F62, "sprite"),
     (0x8923, 0x8987, 0x78D0, "hover"),
+    (0x8DBC, 0x8E4F, 0x7CE8, "subtitle"),
 )
 
 
@@ -73,12 +131,32 @@ def decode(body: bytes, address: int):
 
 def compare_body(original: bytes, sequel: bytes, old: int, new: int, kind: str):
     """Require byte identity after only specifically approved address patches."""
-    memory = SPRITE_MEMORY if kind == "sprite" else HOVER_MEMORY
-    immediates = SPRITE_IMMEDIATES if kind == "sprite" else HOVER_IMMEDIATES
+    memory = MEMORY_MAPS[kind]
+    immediates = IMMEDIATE_MAPS[kind]
     instructions = decode(original, old)
     patches = []
     transformed = bytearray(original)
     for ins in instructions:
+        if ins.mnemonic == "lcall":
+            target = tuple(operand.imm for operand in ins.operands)
+            if target not in FAR_CALLS:
+                raise ValueError(f"unreviewed far call at {ins.address:#x}")
+            segment, offset, identity, entry = FAR_CALLS[target]
+            start = ins.address - old
+            if ins.size != 5 or ins.bytes[0] != 0x9A:
+                raise ValueError("unexpected far-call encoding")
+            transformed[start + 1 : start + 5] = offset.to_bytes(
+                2, "little"
+            ) + segment.to_bytes(2, "little")
+            patches.append(
+                {
+                    "commander_site": f"0x{ins.address:04x}",
+                    "bbb_site": f"0x{new + ins.address - old:04x}",
+                    "identity": identity,
+                    "callee": f"0x{entry:04x}",
+                }
+            )
+            continue
         for operand in ins.operands:
             replacement = None
             if operand.type == X86_OP_MEM:
@@ -91,6 +169,11 @@ def compare_body(original: bytes, sequel: bytes, old: int, new: int, kind: str):
             elif operand.type == X86_OP_IMM and len(ins.operands) == 2:
                 destination = ins.reg_name(ins.operands[0].reg)
                 replacement = immediates.get((ins.mnemonic, destination, operand.imm))
+                if ins.address in SITE_IMMEDIATES:
+                    expected, value, identity = SITE_IMMEDIATES[ins.address]
+                    if operand.imm != expected:
+                        raise ValueError("unexpected transfer-pointer immediate")
+                    replacement = (value, identity)
                 offset, size = ins.imm_offset, ins.imm_size
             else:
                 continue
@@ -135,6 +218,20 @@ def build_report():
         str(path.relative_to(ROOT)): sha256(path.read_bytes())
         for path in (BBB, COMMANDER, PORTED, Path(__file__).resolve())
     }
+    initializers = []
+    for old_offset, new_offset, length, identity in (
+        (0x0B41, 0x0D4B, 26, "cd_ioctl_request"),
+        (0x0B5B, 0x0D65, 7, "disc_information_transfer"),
+        (0x0B62, 0x0D6C, 9, "channel_mix_transfer"),
+        (0x0B6B, 0x0D75, 7, "track_information_transfer"),
+        (0x0B72, 0x0D7C, 22, "cd_playback_request"),
+    ):
+        # MZ entry loads DS=GS=0xCE2 / 0xEFF, after 0x600 / 0x800 headers.
+        original = commander[0xD420 + old_offset : 0xD420 + old_offset + length]
+        native = bbb[0xF7F0 + new_offset : 0xF7F0 + new_offset + length]
+        if original != native:
+            raise ValueError(f"changed initializer for {identity}")
+        initializers.append({"identity": identity, "bytes": native.hex()})
     rows = []
     for entry, end, old, kind in ROUTINES:
         native = bbb[entry:end]
@@ -163,8 +260,8 @@ def build_report():
             instructions, patches = compare_body(original, native, old, entry, kind)
             notes.append(
                 "Complete body is byte-identical after only the named state/table "
-                "relocations. Relative branches, constants, register widths, memory "
-                "addressing, clipping, traversal, and return are unchanged."
+                "and callee relocations. Relative branches, non-address constants, "
+                "register widths, memory addressing, traversal, and return are unchanged."
             )
         if f"fn {owner['symbol']}" not in (ROOT / owner["path"]).read_text():
             raise ValueError(f"missing Rust owner {owner}")
@@ -190,6 +287,7 @@ def build_report():
         "scope": "Reviewed native equivalence plus Rust ownership; not a new native "
         "execution claim or a proof of whole-game runtime wiring.",
         "inputs": inputs,
+        "identical_initializers": initializers,
         "routines": rows,
     }
 

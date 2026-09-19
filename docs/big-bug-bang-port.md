@@ -5654,9 +5654,17 @@ inactive, shared selection, signed inclusive bounds, actor state 9, and previous
 actor restoration are unchanged. Focused tests cover blocked inside/outside
 and inactive/active hover states, both rectangles, and inherited Commander cases.
 
-The ledger distinguishes six `verified_static_typed` entries from 262 directly
-executed typed entries. With the three authored returns, 338/383 native entries
-are classified and 45 remain pending. No full scenario campaign was rerun.
+The audit also checks complete CD preparation/playback (`0x1502`, `0x1582`),
+noise-rectangle drawing (`0x4002`), crop-copy presentation (`0x434B`), and
+sequence subtitles (`0x8DBC`). The CD request initializers, physical-track
+selector, and four volume-80 channel routes are identical. Font and random
+calls are mapped individually to their already verified BBB entries, with no
+general call-target normalization. The focused CD, subtitle, framebuffer and
+rasterizer tests pass.
+
+The ledger distinguishes eleven `verified_static_typed` entries from 262
+directly executed typed entries. With the three authored returns, 343/383 native
+entries are classified and 40 remain pending. No full scenario campaign was rerun.
 
 ## Remaining Completion Requirements
 
