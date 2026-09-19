@@ -30,10 +30,20 @@ can play `PPIT07.HNM`; another branch precedes it with `FLITUTR.HNM`. Their pale
 updates differ, so reproducing the specific sequence matters. No palette change
 has been made on the strength of this report alone.
 
-The isolated September 19 replay did not reach this boundary before stopping.
-Request the affected save and screenshot, then compare the resource sequence
-and displayed background with the original executable. Keep video-local RGB
-ownership intact while tracing the inherited scene colors.
+The user has no save. A fresh isolated September 19 modern replay reached the
+first `PPIT07.HNM` interlude and returned to Daddy with the same background
+colors (entries 128 through 191). Their raw RGB SHA-256 before and after was
+`52d3da1bf8e618329c36f4a39958a83bbaedfb5fd32a9388b8a28231e821bdf3`.
+Artifacts are under `output/fidelity/bbb-daddy-palette-fresh-20260919`.
+
+An earlier ordinary-play capture under
+`output/big-bug-bang/english-daddy-tempest-01` shows the pale-blue background
+appearing after `FLITUTR.HNM` and persisting through the next `PPIT07.HNM`.
+The authored dialogue says the screen was damaged at this point. The user has
+been asked whether that screenshot matches the reported appearance. Private
+DOS replays have not yet reached this later boundary, so this is not proof
+that the persistent color change matches the original executable. Keep
+video-local RGB ownership intact while completing that comparison.
 
 ## Cryobox music retained on Loviland's surface
 
