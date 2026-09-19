@@ -5,21 +5,21 @@ use commander_blood_formats::archive::BloodResourceName;
 
 use crate::assets::OriginalResourceStore;
 use crate::native::bloodprg::{
-    FlatPresentationEntryPresenter, IndexedGamePalette, InputCancellationBackend,
-    OpenedPresentationResource, PresentationActiveEntryState, PresentationEntryPolicy,
-    PresentationPaletteState, PresentationPresentPolicy, PresentationQueueClock,
-    PresentationQueueClockGates, PresentationQueueLinkCursor, PresentationQueueRefillOutcome,
-    PresentationQueueServiceContext, PresentationQueueServiceOutcome, PresentationQueueState,
-    PresentationResourceCursor, PresentationResourceDescriptor, PresentationResourceId,
-    PresentationResourceOpenError, PresentationResourceProvider,
-    PresentationResourceSequenceContext, PresentationResourceSequenceOutcome,
-    PresentationResourceStreamState, PresentationSourceLease, PresentationSourceRange,
-    clear_scene_palette_entries, load_presentation_resource_sequence,
+    IndexedGamePalette, InputCancellationBackend, OpenedPresentationResource,
+    PresentationActiveEntryState, PresentationEntryPolicy, PresentationPaletteState,
+    PresentationPresentPolicy, PresentationQueueClock, PresentationQueueClockGates,
+    PresentationQueueLinkCursor, PresentationQueueRefillOutcome, PresentationQueueServiceContext,
+    PresentationQueueServiceOutcome, PresentationQueueState, PresentationResourceCursor,
+    PresentationResourceDescriptor, PresentationResourceId, PresentationResourceOpenError,
+    PresentationResourceProvider, PresentationResourceSequenceContext,
+    PresentationResourceSequenceOutcome, PresentationResourceStreamState, PresentationSourceLease,
+    PresentationSourceRange, clear_scene_palette_entries, load_presentation_resource_sequence,
     presentation_resource_enabled, service_presentation_queue,
 };
 use crate::render::indexed_frame_rgba;
 
 use super::OriginalGameRuntime;
+use super::presentation_rgb::{RgbPresentationEntryPresenter, RgbVideoPage};
 
 const RUNTIME_PRESENTATION_RESOURCE_ID: PresentationResourceId =
     PresentationResourceId::new(u16::MIN);
@@ -127,7 +127,9 @@ pub struct RuntimePresentationStream {
     link_cursor: PresentationQueueLinkCursor,
     decode_staging: Box<[u8]>,
     display_indices: Box<[u8]>,
-    display_rgba: Box<[u8]>,
+    back_indices: Box<[u8]>,
+    rgb_display: RgbVideoPage,
+    rgb_back: RgbVideoPage,
     finished: bool,
     presented_frame_count: u64,
 }
@@ -162,6 +164,37 @@ impl RuntimePresentationStream {
         timer_tick: u16,
         render_snapshot_suppressed: bool,
     ) -> Result<(Self, PresentationResourceSequenceOutcome)> {
+        Self::load_with_rgb_pages(
+            runtime,
+            request,
+            source_colors,
+            None,
+            None,
+            timer_tick,
+            render_snapshot_suppressed,
+        )
+    }
+
+    pub(super) fn load_with_rgb_pages(
+        runtime: &mut OriginalGameRuntime,
+        request: RuntimePresentationRequest,
+        source_colors: IndexedGamePalette,
+        display_rgb: Option<RgbVideoPage>,
+        back_rgb: Option<RgbVideoPage>,
+        timer_tick: u16,
+        render_snapshot_suppressed: bool,
+    ) -> Result<(Self, PresentationResourceSequenceOutcome)> {
+        let (front, back) = runtime.presentation_buffers_mut();
+        let rgb_display = match display_rgb {
+            Some(rgb) => rgb,
+            None => {
+                RgbVideoPage::new(indexed_frame_rgba(front, &source_colors)?.into_boxed_slice())
+            }
+        };
+        let rgb_back = match back_rgb {
+            Some(rgb) => rgb,
+            None => RgbVideoPage::new(indexed_frame_rgba(back, &source_colors)?.into_boxed_slice()),
+        };
         let descriptor = PresentationResourceDescriptor {
             flags: request.descriptor_flags,
             filename: request.resource_name,
@@ -190,16 +223,20 @@ impl RuntimePresentationStream {
             link_cursor: PresentationQueueLinkCursor::default(),
             decode_staging: zeroed_presentation_buffer(),
             display_indices: Box::default(),
-            display_rgba: Box::default(),
+            back_indices: Box::default(),
+            rgb_display,
+            rgb_back,
             finished: false,
             presented_frame_count: u64::MIN,
         };
 
         let (display_buffer, back_buffer) = runtime.presentation_buffers_mut();
-        let mut presenter = FlatPresentationEntryPresenter {
+        let mut presenter = RgbPresentationEntryPresenter {
             display_buffer,
             back_buffer,
             decode_staging: &mut player.decode_staging,
+            display: &mut player.rgb_display,
+            back: &mut player.rgb_back,
         };
         let outcome = load_presentation_resource_sequence(
             &mut player.stream,
@@ -234,6 +271,9 @@ impl RuntimePresentationStream {
                 .wrapping_add(PRESENTED_FRAME_INCREMENT);
         }
         player.resolve_display_rgba(runtime.front_buffer().pixels())?;
+        let (_, back) = runtime.presentation_buffers_mut();
+        player.back_indices = Box::from(&*back);
+        player.rgb_back.resolve_video(back, &player.palette.live)?;
         Ok((player, outcome))
     }
 
@@ -289,10 +329,12 @@ impl RuntimePresentationStream {
             self.import_service_link_target(link_target);
         }
         let (display_buffer, back_buffer) = runtime.presentation_buffers_mut();
-        let mut presenter = FlatPresentationEntryPresenter {
+        let mut presenter = RgbPresentationEntryPresenter {
             display_buffer,
             back_buffer,
             decode_staging: &mut self.decode_staging,
+            display: &mut self.rgb_display,
+            back: &mut self.rgb_back,
         };
         let mut read_audio_position = || audio_position;
         let mut read_timer_tick = || timer_tick;
@@ -332,6 +374,9 @@ impl RuntimePresentationStream {
         } else {
             self.resolve_retained_display_rgba()?;
         }
+        let (_, back) = runtime.presentation_buffers_mut();
+        self.back_indices = Box::from(&*back);
+        self.rgb_back.resolve_video(back, &self.palette.live)?;
         Ok(RuntimePresentationStepOutcome {
             queue,
             stream_finished: self.finished,
@@ -390,7 +435,29 @@ impl RuntimePresentationStream {
 
     /// True-color page produced from the current indexed HNM frame and its local palette.
     pub fn display_rgba(&self) -> &[u8] {
-        &self.display_rgba
+        &self.rgb_display.pixels
+    }
+
+    pub(super) fn rgb_display(&self) -> &RgbVideoPage {
+        &self.rgb_display
+    }
+
+    #[cfg(test)]
+    pub(super) fn back_rgba(&self) -> &[u8] {
+        &self.rgb_back.pixels
+    }
+
+    pub(super) fn rgb_back(&self) -> &RgbVideoPage {
+        &self.rgb_back
+    }
+
+    pub(super) fn back_indices(&self) -> &[u8] {
+        &self.back_indices
+    }
+
+    pub(super) fn darken_background_rgb(&mut self, amount: u8) {
+        self.rgb_back.darken_artwork(amount);
+        self.rgb_display.darken_artwork(amount);
     }
 
     /// Resolve the latest legacy indexed page into the renderer-owned RGBA surface.
@@ -406,10 +473,12 @@ impl RuntimePresentationStream {
     }
 
     pub(super) fn resolve_retained_display_rgba(&mut self) -> Result<()> {
-        self.display_rgba = indexed_frame_rgba(&self.display_indices, &self.palette.live)
-            .context("resolving the current HNM display page to true-color RGBA")?
-            .into_boxed_slice();
-        Ok(())
+        if !self.back_indices.is_empty() {
+            self.rgb_back
+                .resolve_video(&self.back_indices, &self.palette.live)?;
+        }
+        self.rgb_display
+            .resolve_video(&self.display_indices, &self.palette.live)
     }
 
     pub(crate) fn queue_metrics(&self) -> Result<RuntimePresentationQueueMetrics> {
@@ -549,6 +618,138 @@ mod tests {
             RuntimePresentationRequest::new(BloodResourceName::new(TEST_VIDEO_RESOURCE).unwrap());
 
         assert!(!request.entry_policy.sound_enabled);
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang assets"]
+    fn daddy_flitutr_interlude_cannot_recolor_the_loaded_rgb_background() {
+        let root =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/imported-assets");
+        let paths = OriginalGameDataPaths::from_root(root).unwrap();
+        let data = OriginalGameData::load_with_writable_root(paths, std::env::temp_dir()).unwrap();
+        let unclamped = *super::super::RuntimePresentationCatalog::new(data.presentation_catalog())
+            .unclamped_line_ids();
+        let mut colors = *data.default_vga_palette();
+        let encoded = data.load_named_resource(b"FRIGO.FD").unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let preceding =
+            RuntimePresentationRequest::new(BloodResourceName::new(b"SQ\\ppit07.hnm").unwrap());
+        let (preceding, _) = RuntimePresentationStream::load_with_source_colors(
+            &mut runtime,
+            preceding,
+            colors,
+            0,
+            false,
+        )
+        .unwrap();
+        colors = *preceding.display_palette();
+        let (_, back) = runtime.presentation_buffers_mut();
+        crate::native::bloodprg::decode_pbm_image(
+            &encoded,
+            back,
+            &mut colors,
+            crate::native::bloodprg::PbmDecodeOptions {
+                palette_update: crate::native::bloodprg::PbmPaletteUpdate::Preserve,
+                transparency: crate::native::bloodprg::PbmTransparency::Opaque,
+            },
+        )
+        .unwrap();
+        let background = indexed_frame_rgba(back, &colors)
+            .unwrap()
+            .into_boxed_slice();
+        let mut protected: Vec<_> = back
+            .iter()
+            .map(|index| (128..192).contains(index))
+            .collect();
+        let mut display = RgbVideoPage::new(background.clone());
+        display.import_artwork(&background, back, false);
+        let mut loaded_back = display.clone();
+        let mut saw_changed_background_color = false;
+        let mut legacy_recolored_pixels = 0;
+        for (name, line) in [
+            (b"SQ\\cryogel.hnm".as_slice(), 39),
+            (b"PE\\gluxroug.hnm", 8),
+            (b"SQ\\flitutr.hnm", 7),
+            (b"SQ\\ppit07.hnm", 7),
+            (b"PE\\gluxroug.hnm", 8),
+        ] {
+            let mut request =
+                RuntimePresentationRequest::new(BloodResourceName::new(name).unwrap());
+            request.present_policy = PresentationPresentPolicy::for_presentation_line(
+                line,
+                &unclamped,
+                if line == 39 { 0 } else { 35 },
+            )
+            .0;
+            request.entry_policy.draw_via_back_buffer = request.present_policy.draw_via_back_buffer;
+            request.entry_policy.skip_back_buffer_present =
+                request.present_policy.skip_back_buffer_present;
+            let (mut stream, _) = RuntimePresentationStream::load_with_rgb_pages(
+                &mut runtime,
+                request,
+                colors,
+                Some(display),
+                Some(loaded_back),
+                0,
+                false,
+            )
+            .unwrap();
+            for tick in 1..10000 {
+                stream
+                    .service_frame(
+                        &mut runtime,
+                        tick,
+                        tick,
+                        PresentationQueueClockGates::default(),
+                        false,
+                    )
+                    .unwrap();
+                let legacy_rgb =
+                    indexed_frame_rgba(stream.display_indices(), stream.display_palette()).unwrap();
+                for (index, protected) in protected.iter_mut().enumerate() {
+                    *protected &= !stream.rgb_back.coverage()[index];
+                    if *protected {
+                        assert_eq!(
+                            &stream.back_rgba()[index * 4..index * 4 + 4],
+                            &background[index * 4..index * 4 + 4],
+                            "{} tick {tick} background pixel {index}",
+                            String::from_utf8_lossy(name)
+                        );
+                        if !stream.rgb_display.coverage()[index] {
+                            assert_eq!(
+                                &stream.display_rgba()[index * 4..index * 4 + 4],
+                                &background[index * 4..index * 4 + 4],
+                                "{} tick {tick} displayed background pixel {index}",
+                                String::from_utf8_lossy(name)
+                            );
+                            legacy_recolored_pixels += usize::from(
+                                legacy_rgb[index * 4..index * 4 + 4]
+                                    != background[index * 4..index * 4 + 4],
+                            );
+                        }
+                    }
+                }
+                if line == 7 && stream.display_palette()[150] != colors[150] {
+                    saw_changed_background_color = true;
+                }
+                if stream.is_finished() {
+                    break;
+                }
+            }
+            assert!(stream.is_finished());
+            colors = *stream.display_palette();
+            display = stream.rgb_display().inherited();
+            loaded_back = stream.rgb_back().inherited();
+        }
+        assert!(protected.iter().filter(|pixel| **pixel).count() > 1000);
+        assert!(
+            saw_changed_background_color,
+            "test did not exercise the FLITUTR palette change"
+        );
+        assert!(
+            legacy_recolored_pixels > 1000,
+            "the old full-page conversion did not reproduce recoloring"
+        );
     }
 
     #[test]

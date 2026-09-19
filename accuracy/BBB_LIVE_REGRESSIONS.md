@@ -24,11 +24,46 @@ confirmation with the user's moving mouse remains pending.
 
 ## Daddy Glux background colors
 
-Unresolved. The user reports correct initial colors, followed by persistent
-wrong colors after the small-character interlude. The authored `gengl` dialogue
-can play `PPIT07.HNM`; another branch precedes it with `FLITUTR.HNM`. Their palette
-updates differ, so reproducing the specific sequence matters. No palette change
-has been made on the strength of this report alone.
+The user reports correct initial colors, followed by persistent wrong colors
+after the small-character interlude. The authored `gengl` dialogue can play
+`PPIT07.HNM`; another branch precedes it with `FLITUTR.HNM`. The latter changes
+colors used by the retained cryobox background. The old presentation path
+re-resolved the entire indexed page after a clip-local color change, including
+pixels that the clip had not written.
+
+Presentation backgrounds are now resolved to RGB with their own colors when
+loaded. Contact returns restore the cached `FRIGO.FD` RGB artwork: they must not
+decode it again using a just-finished interlude's color context. The decoder tracks
+exact write coverage, including same-index writes and transparent AD rectangles,
+and may update only its own video pixels. Back-page copies, clip switches, and
+retained end frames carry RGB pixels instead of reconstructing inherited artwork
+from the next clip's color state. Contact darkening is an explicit RGB layer
+effect on the recovered transition clock.
+
+The original-asset regression plays `CRYOGEL`, `GLUXROUG`, `FLITUTR`, `PPIT07`,
+and `GLUXROUG` with the cryobox artwork. It checks retained and displayed
+background pixels at every serviced frame, verifies that the interlude really
+changes decoder colors, and demonstrates that the previous full-page conversion
+would recolor those pixels. A second original-asset test exercises the player
+lifecycle, including `GLU00`, `GLU01`, and the contact-image reload after each
+interlude. That reload was missing from the first focused test; adding it
+reproduced the pale-background failure. Focused tests also cover transparent and
+opaque zero, same-index writes, prepared-background handoff, external back-page
+replacement, and nonaccumulating RGB darkening.
+
+Verification: the clean library suite passes 1,086 tests, with 66 optional tests
+ignored. Both original-asset regressions above pass when run separately; the
+static-owner and disposition checks pass 6 and 4 tests. Both game executables
+build, and the Nix release build succeeds.
+
+The isolated release replay at
+`output/fidelity/bbb-rgb-daddy-tempest-20260919-v5` returns from `FLITUTR` and the
+following `PPIT07` without recoloring the background. Screens 020, 027, and 030
+retain an identical 960-by-45 top-background crop, with pixel signature
+`f117cc6d18066f3816c3da0048b2dc0a70c478d03d19d1e3b23187220bc402bb`.
+The earlier v3/v4 diagnostic replays still reproduced the failure and are not
+fix evidence. This is not a claim that every legacy rendering path has been
+migrated to RGB assets.
 
 The user has no save. A fresh isolated September 19 modern replay reached the
 first `PPIT07.HNM` interlude and returned to Daddy with the same background
@@ -39,11 +74,10 @@ Artifacts are under `output/fidelity/bbb-daddy-palette-fresh-20260919`.
 An earlier ordinary-play capture under
 `output/big-bug-bang/english-daddy-tempest-01` shows the pale-blue background
 appearing after `FLITUTR.HNM` and persisting through the next `PPIT07.HNM`.
-The authored dialogue says the screen was damaged at this point. The user has
-been asked whether that screenshot matches the reported appearance. Private
-DOS replays have not yet reached this later boundary, so this is not proof
-that the persistent color change matches the original executable. Keep
-video-local RGB ownership intact while completing that comparison.
+The authored dialogue says the screen was damaged at this point. Private DOS
+replays have not reached that later boundary, so those captures do not prove
+original-executable equivalence. The correction follows the requested RGB
+ownership policy rather than preserving shared-DAC recoloring of loaded artwork.
 
 ## Cryobox music retained on Loviland's surface
 

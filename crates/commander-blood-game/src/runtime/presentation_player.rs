@@ -3,6 +3,7 @@
 use anyhow::{Context, Result};
 use commander_blood_formats::bloodprg::BloodprgPresentationCatalog;
 
+use super::presentation_rgb::RgbVideoPage;
 use crate::native::bloodprg::{
     DescriptPresentationAssets, IndexedGamePalette, InputCancellationBackend,
     PresentationPresentPolicy, PresentationQueueClockGates, PresentationResourceCursor,
@@ -23,13 +24,17 @@ pub struct RuntimePresentationPlayer {
     active_stream: Option<RuntimePresentationStream>,
     retained_display: Option<RetainedPresentationFrame>,
     next_stream_source_colors: Option<IndexedGamePalette>,
+    background_rgba: Option<RgbVideoPage>,
+    contact_background_rgb: Option<RgbVideoPage>,
+    background_indices: Option<Box<[u8]>>,
+    background_prepared: bool,
     display_occludes_manu3: bool,
 }
 
 struct RetainedPresentationFrame {
     indexed_pixels: Box<[u8]>,
     source_colors: IndexedGamePalette,
-    rgba: Box<[u8]>,
+    rgb: RgbVideoPage,
 }
 
 impl RetainedPresentationFrame {
@@ -37,15 +42,13 @@ impl RetainedPresentationFrame {
         Self {
             indexed_pixels: Box::from(stream.display_indices()),
             source_colors: *stream.display_palette(),
-            rgba: Box::from(stream.display_rgba()),
+            rgb: stream.rgb_display().clone(),
         }
     }
 
     fn resolve_rgba(&mut self) -> Result<()> {
-        self.rgba = indexed_frame_rgba(&self.indexed_pixels, &self.source_colors)
-            .context("resolving the retained HNM page to true-color RGBA")?
-            .into_boxed_slice();
-        Ok(())
+        self.rgb
+            .resolve_video(&self.indexed_pixels, &self.source_colors)
     }
 
     fn clear_scene_source_colors(&mut self) -> Result<()> {
@@ -63,6 +66,10 @@ impl RuntimePresentationPlayer {
             active_stream: None,
             retained_display: None,
             next_stream_source_colors: None,
+            background_rgba: None,
+            contact_background_rgb: None,
+            background_indices: None,
+            background_prepared: false,
             display_occludes_manu3: false,
         }
     }
@@ -109,6 +116,15 @@ impl RuntimePresentationPlayer {
             .next_stream_source_colors
             .or_else(|| self.display_palette().copied())
             .unwrap_or(*runtime.live_palette());
+        let display_rgb = self
+            .active_stream
+            .as_ref()
+            .map(|stream| stream.rgb_display().inherited())
+            .or_else(|| {
+                self.retained_display
+                    .as_ref()
+                    .map(|frame| frame.rgb.inherited())
+            });
         self.finish();
         let mut request = self
             .catalog
@@ -130,14 +146,27 @@ impl RuntimePresentationPlayer {
         request.present_policy = policy;
         request.entry_policy.draw_via_back_buffer = policy.draw_via_back_buffer;
         request.entry_policy.skip_back_buffer_present = policy.skip_back_buffer_present;
-        let (stream, outcome) = RuntimePresentationStream::load_with_source_colors(
+        if !self.background_prepared {
+            let (_, back) = runtime.presentation_buffers_mut();
+            // Unmigrated bridge/navigation producers can replace the shared
+            // back page. Their writes must not reuse an unrelated RGB cache.
+            if self.background_indices.as_deref() != Some(&*back) {
+                self.background_rgba = None;
+                self.background_indices = None;
+            }
+        }
+        let back_rgb = self.background_rgba.as_ref().map(RgbVideoPage::inherited);
+        let (stream, outcome) = RuntimePresentationStream::load_with_rgb_pages(
             runtime,
             request,
             source_colors,
+            display_rgb,
+            back_rgb,
             timer_tick,
             render_snapshot_suppressed,
         )?;
         self.next_stream_source_colors = None;
+        self.background_prepared = false;
         self.retained_display = None;
         self.display_occludes_manu3 = occludes_manu3;
         self.active_stream = Some(stream);
@@ -276,7 +305,7 @@ impl RuntimePresentationPlayer {
             .or_else(|| {
                 self.retained_display
                     .as_ref()
-                    .map(|frame| frame.rgba.as_ref())
+                    .map(|frame| frame.rgb.pixels.as_ref())
             })
     }
 
@@ -300,6 +329,95 @@ impl RuntimePresentationPlayer {
         self.next_stream_source_colors = Some(colors);
     }
 
+    /// Import PBM artwork with its own complete color map, preserving zero coverage.
+    pub(super) fn stage_background_rgb(
+        &mut self,
+        encoded: &[u8],
+        fallback: &[u8],
+        transparent_zero: bool,
+    ) -> Result<()> {
+        use crate::native::bloodprg::{
+            PbmDecodeOptions, PbmPaletteUpdate, PbmTransparency, decode_pbm_image,
+        };
+        let mut indices = vec![0; 320 * 200];
+        let mut colors = [[0; 3]; 256];
+        decode_pbm_image(
+            encoded,
+            &mut indices,
+            &mut colors,
+            PbmDecodeOptions {
+                palette_update: PbmPaletteUpdate::AllColors,
+                transparency: PbmTransparency::Opaque,
+            },
+        )?;
+        let imported = indexed_frame_rgba(&indices, &colors)?;
+        let mut background = self
+            .background_rgba
+            .take()
+            .unwrap_or_else(|| RgbVideoPage::new(Box::from(fallback)));
+        background.import_artwork(&imported, &indices, transparent_zero);
+        self.contact_background_rgb = None;
+        self.background_rgba = Some(background);
+        self.background_prepared = true;
+        Ok(())
+    }
+
+    pub(super) fn stage_contact_background_rgb(
+        &mut self,
+        encoded: &[u8],
+        fallback: &[u8],
+        transparent_zero: bool,
+        new_contact: bool,
+    ) -> Result<()> {
+        if new_contact || self.contact_background_rgb.is_none() {
+            self.stage_background_rgb(encoded, fallback, transparent_zero)?;
+            self.contact_background_rgb = self.background_rgba.clone();
+        } else {
+            // The native interlude return reloads FRIGO while preserving the
+            // current DAC. Modern rendering restores the already resolved art.
+            self.background_rgba = self.contact_background_rgb.clone();
+            self.background_prepared = true;
+        }
+        Ok(())
+    }
+
+    pub(super) fn clear_background_rgb(&mut self, rows: std::ops::Range<usize>, rgb: [u8; 4]) {
+        if let Some(background) = self.background_rgba.as_mut() {
+            background.clear_rows(rows.clone(), rgb);
+            self.background_prepared = true;
+        }
+        if let Some(background) = self.contact_background_rgb.as_mut() {
+            background.clear_rows(rows, rgb);
+        }
+    }
+
+    pub(super) fn present_background_rgb(&mut self, indices: &[u8], colors: IndexedGamePalette) {
+        self.finish();
+        if let Some(background) = &self.background_rgba {
+            self.retained_display = Some(RetainedPresentationFrame {
+                indexed_pixels: Box::from(indices),
+                source_colors: self.next_stream_source_colors.unwrap_or(colors),
+                rgb: background.clone(),
+            });
+            self.display_occludes_manu3 = false;
+        }
+    }
+
+    pub(super) fn darken_background_rgb(&mut self, amount: u8) {
+        if let Some(background) = self.contact_background_rgb.as_mut() {
+            background.darken_artwork(amount);
+        }
+        if let Some(background) = self.background_rgba.as_mut() {
+            background.darken_artwork(amount);
+        }
+        if let Some(stream) = self.active_stream.as_mut() {
+            stream.darken_background_rgb(amount);
+        }
+        if let Some(frame) = self.retained_display.as_mut() {
+            frame.rgb.darken_artwork(amount);
+        }
+    }
+
     /// Broadcast the native shared low-color clear to every video color owner.
     pub fn clear_scene_source_colors(&mut self) -> Result<()> {
         if let Some(stream) = self.active_stream.as_mut() {
@@ -311,6 +429,7 @@ impl RuntimePresentationPlayer {
         if let Some(colors) = self.next_stream_source_colors.as_mut() {
             clear_scene_palette_entries(colors);
         }
+        self.darken_background_rgb(u8::MAX);
         Ok(())
     }
 
@@ -373,6 +492,12 @@ impl RuntimePresentationPlayer {
         let Some(stream) = self.active_stream.take() else {
             return false;
         };
+        // A prepared PBM may already own the next back page. Do not replace it
+        // with the preceding stream's older snapshot during a scene switch.
+        if !self.background_prepared {
+            self.background_rgba = Some(stream.rgb_back().inherited());
+            self.background_indices = Some(Box::from(stream.back_indices()));
+        }
         if stream.presented_frame_count() != u64::MIN {
             self.retained_display = Some(RetainedPresentationFrame::from_stream(&stream));
         } else {
@@ -439,6 +564,255 @@ mod tests {
     const INHERITED_COLOR_INDEX: usize = 250;
     const INHERITED_VIDEO_COLOR: [u8; 3] = [5, 7, 11];
     const STAGED_SCENE_COLOR: [u8; 3] = [17, 19, 23];
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang assets"]
+    fn returning_to_daddy_preserves_background_through_player_lifecycle() {
+        use crate::native::bloodprg::{
+            PbmDecodeOptions, PbmPaletteUpdate, PbmTransparency, decode_pbm_image,
+        };
+        let root =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/imported-assets");
+        let paths = OriginalGameDataPaths::from_root(root).unwrap();
+        let data = OriginalGameData::load_with_writable_root(paths, temporary_root()).unwrap();
+        let encoded = data.load_named_resource(b"FRIGO.FD").unwrap();
+        let mut backend = RuntimeScriptBackend::new(
+            &data,
+            ScriptClock {
+                hour: 12,
+                day: 1,
+                month: 1,
+            },
+        );
+        backend
+            .apply_description(b"Daddy_Gluxx", true, &mut TextPresentationState::default())
+            .unwrap()
+            .unwrap();
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        player.apply_descript_assets(backend.assets()).unwrap();
+        let unclamped = *player.catalog.unclamped_line_ids();
+        let mut runtime = OriginalGameRuntime::new(data);
+        player.select_script_sequence_video(b"ppit07.hnm").unwrap();
+        player
+            .load(
+                &mut runtime,
+                PresentationResourceId::new(7),
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                0,
+                false,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        let mut context = *player.display_palette().unwrap();
+        player.finish();
+        let (_, back) = runtime.presentation_buffers_mut();
+        decode_pbm_image(
+            &encoded,
+            back,
+            &mut context,
+            PbmDecodeOptions {
+                palette_update: PbmPaletteUpdate::AllColors,
+                transparency: PbmTransparency::Opaque,
+            },
+        )
+        .unwrap();
+        let imported = indexed_frame_rgba(back, &context).unwrap();
+        player
+            .stage_contact_background_rgb(&encoded, &imported, false, true)
+            .unwrap();
+        player.darken_background_rgb(162);
+        let mut checked_pixels = 0;
+        for (line, sequence) in [
+            (39, None),
+            (8, None),
+            (9, None),
+            (8, None),
+            (10, None),
+            (7, Some(b"ppit07.hnm".as_slice())),
+            (8, None),
+            (7, Some(b"flitutr.hnm".as_slice())),
+            (7, Some(b"ppit07.hnm".as_slice())),
+            (8, None),
+        ] {
+            if let Some(sequence) = sequence {
+                player.select_script_sequence_video(sequence).unwrap();
+            }
+            let policy = PresentationPresentPolicy::for_presentation_line(
+                line,
+                &unclamped,
+                if line == 39 { 0 } else { 35 },
+            )
+            .0;
+            player
+                .load(
+                    &mut runtime,
+                    PresentationResourceId::new(line),
+                    PresentationSceneSource::Owned,
+                    policy,
+                    0,
+                    false,
+                    false,
+                )
+                .unwrap()
+                .unwrap();
+            for tick in 1..10000 {
+                let outcome = player
+                    .service_frame(
+                        &mut runtime,
+                        tick,
+                        tick,
+                        PresentationQueueClockGates::default(),
+                        false,
+                    )
+                    .unwrap();
+                if line == 8 {
+                    let stream = player.active_stream.as_ref().unwrap();
+                    let mut expected =
+                        indexed_frame_rgba(stream.display_indices(), &context).unwrap();
+                    for pixel in expected.chunks_exact_mut(4) {
+                        for component in &mut pixel[..3] {
+                            *component = component.saturating_sub(162);
+                        }
+                    }
+                    for (index, color) in stream.display_indices().iter().enumerate() {
+                        if (128..192).contains(color) {
+                            assert_eq!(
+                                &stream.display_rgba()[index * 4..index * 4 + 4],
+                                &expected[index * 4..index * 4 + 4],
+                                "background pixel {index} tick {tick}"
+                            );
+                            checked_pixels += 1;
+                        }
+                    }
+                }
+                if outcome.stream_finished {
+                    break;
+                }
+            }
+            assert!(player.active_stream.as_ref().unwrap().is_finished());
+            player.finish();
+            if line == 7 {
+                let mut changed_context = *player.display_palette().unwrap();
+                let (_, back) = runtime.presentation_buffers_mut();
+                decode_pbm_image(
+                    &encoded,
+                    back,
+                    &mut changed_context,
+                    PbmDecodeOptions {
+                        palette_update: PbmPaletteUpdate::Preserve,
+                        transparency: PbmTransparency::Opaque,
+                    },
+                )
+                .unwrap();
+                player
+                    .stage_contact_background_rgb(&encoded, &imported, false, false)
+                    .unwrap();
+            }
+        }
+        assert!(
+            checked_pixels > 1000,
+            "did not exercise retained background pixels"
+        );
+    }
+
+    #[test]
+    fn an_external_back_page_replacement_invalidates_the_previous_rgb_cache() {
+        let Some(data) = original_data() else {
+            assert!(std::env::var_os("CBLOOD_REQUIRE_ACCURACY_TESTS").is_none());
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                0,
+                false,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        player.finish();
+        player.display_palette_mut().unwrap()[150] = [1, 23, 45];
+        let expected = indexed_frame_rgba(&[150], player.display_palette().unwrap()).unwrap();
+        let (_, back) = runtime.presentation_buffers_mut();
+        back.fill(150);
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                0,
+                false,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        assert!(
+            player
+                .active_stream
+                .as_ref()
+                .unwrap()
+                .back_rgba()
+                .chunks_exact(4)
+                .all(|pixel| pixel == expected)
+        );
+    }
+
+    #[test]
+    fn preparing_rgb_artwork_does_not_replace_the_display_or_get_lost_at_clip_close() {
+        let Some(data) = original_data() else {
+            assert!(std::env::var_os("CBLOOD_REQUIRE_ACCURACY_TESTS").is_none());
+            return;
+        };
+        let encoded = data.load_named_resource(b"FRIGO.FD").unwrap();
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        player
+            .load(
+                &mut runtime,
+                OPENING_PRESENTATION_LINE,
+                PresentationSceneSource::Owned,
+                PresentationPresentPolicy::default(),
+                0,
+                false,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        let displayed = player.display_rgba().unwrap().to_vec();
+        player
+            .stage_background_rgb(&encoded, &displayed, false)
+            .unwrap();
+        let prepared = player.background_rgba.as_ref().unwrap().pixels.clone();
+        assert!(
+            prepared
+                .chunks_exact(4)
+                .filter(|pixel| pixel[..3] != [0, 0, 0])
+                .count()
+                > 1000
+        );
+        assert!(player.display_rgba().unwrap() == displayed);
+        assert!(player.finish());
+        assert!(player.background_rgba.as_ref().unwrap().pixels == prepared);
+        player.display_palette_mut().unwrap().fill([63, 0, 0]);
+        player.refresh_display_rgba().unwrap();
+        assert!(player.background_rgba.as_ref().unwrap().pixels == prepared);
+        player.present_background_rgb(runtime.front_buffer().pixels(), *runtime.live_palette());
+        assert!(player.display_rgba().unwrap() == prepared.as_ref());
+        player.clear_background_rgb(35..165, [0, 0, 0, 255]);
+        assert!(
+            player.background_rgba.as_ref().unwrap().pixels[35 * 320 * 4..165 * 320 * 4]
+                .chunks_exact(4)
+                .all(|pixel| pixel == [0, 0, 0, 255])
+        );
+    }
 
     #[test]
     fn scruter_talking_clip_close_preserves_the_authored_final_frame() {
@@ -997,9 +1371,11 @@ mod tests {
     }
 
     fn temporary_root() -> PathBuf {
+        static NEXT_ROOT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         std::env::temp_dir().join(format!(
-            "commander-blood-presentation-player-test-{}",
-            std::process::id()
+            "commander-blood-presentation-player-test-{}-{}",
+            std::process::id(),
+            NEXT_ROOT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         ))
     }
 }

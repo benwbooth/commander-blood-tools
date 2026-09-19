@@ -267,7 +267,15 @@ impl RuntimeSceneTransition {
                 increment: u16::from(self.palettes.transition.increment),
                 colors: first..=last,
             })
-            .context("configuring the contact scene palette transition")
+            .context("configuring the contact scene palette transition")?;
+        if presentation_image_loaded {
+            // Forty VGA levels becomes a direct RGB subtraction on imported
+            // artwork. No decoder palette is consulted by this layer effect.
+            services
+                .palette_transition_mut()
+                .configure_background_rgb_darkening(162, 0);
+        }
+        Ok(())
     }
 }
 
@@ -393,6 +401,11 @@ impl SceneTransitionHost for RuntimeSceneTransitionHost<'_, '_, '_, '_> {
                 PbmTransparency::Opaque
             },
         };
+        self.services.stage_contact_background_rgb(
+            &encoded,
+            options.transparent_zero,
+            options.refresh_palette,
+        )?;
         let (_front, back) = self.services.runtime_mut().presentation_buffers_mut();
         decode_pbm_image(&encoded, back, live_palette, decode_options)
             .context("decoding FRIGO.FD into the retained contact background")?;
@@ -403,10 +416,15 @@ impl SceneTransitionHost for RuntimeSceneTransitionHost<'_, '_, '_, '_> {
 
     fn present_scene_image(&mut self) -> Result<()> {
         self.services.runtime_mut().restore_back_buffer();
+        self.services.present_presentation_background_rgb();
         Ok(())
     }
 
     fn clear_scene_image_band(&mut self, band: SceneImageBand) -> Result<()> {
+        self.services.clear_presentation_background_rgb(
+            usize::from(band.first_row)..usize::from(band.last_row),
+            band.color,
+        )?;
         let (_front, back) = self.services.runtime_mut().presentation_buffers_mut();
         fill_back_buffer_band(
             back,

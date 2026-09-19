@@ -104,6 +104,39 @@ Verification for these changes:
   recovered-C contracts. They are not a new matched-frame original-DOS capture
   or proof of whole-game parity.
 
+## Presentation background ownership, 2026-09-19
+
+DESCRIPT PBM backgrounds and the contact transition's `FRIGO.FD` now become
+retained RGB pages at load, using each asset's own imported colors. Contact
+returns restore a retained RGB copy of `FRIGO.FD`, including its layer darkening,
+instead of decoding it again with the preceding interlude's color context.
+Preparation remains separate from display publication and survives closing the
+preceding clip. Explicit row clears update the RGB back page too.
+
+The HNM conversion boundary records which pixels each clip actually writes.
+Transparent zero does not claim a pixel, while an opaque zero or a write equal
+to the previous index does. AD decoding retains its existing compressed history
+and obtains coverage without comparing old and new indices. Palette changes
+inside a clip affect only decoder-owned pixels. Back-page copies and subsequent
+clips inherit RGB pixels, and retained display refreshes cannot recolor artwork.
+The contact darkening effect uses direct RGB subtraction and the existing clock,
+without repeatedly darkening an already darkened result.
+
+This fixes the cross-clip background ownership class, not the whole remaining
+RGB migration. The production HNM decoder still consumes indexed source data
+and retains private indices for video decoding and video-local effects. Bridge
+and navigation owners listed below still have indexed dependencies. Their
+removal remains separate work; the renderer does not need their palettes to
+reconstruct these newly retained RGB background pixels.
+
+The original-BBB `CRYOGEL` / Daddy / `FLITUTR` / `PPIT07` regression checks
+decoder ownership. A separate player-lifecycle test covers the contact-image
+reload after each interlude, which the decoder-only test did not exercise.
+Both pass, as do 1,086 library tests (66 optional tests ignored), the 6+4
+static-owner/disposition checks, and the release build. The isolated v5 PLAY
+replay preserves the visible background through both interludes; capture
+locations and pixel signatures are in `accuracy/BBB_LIVE_REGRESSIONS.md`.
+
 ## Remaining work (not migrated)
 
 | Owner | Indexed dependency still present | Required replacement |

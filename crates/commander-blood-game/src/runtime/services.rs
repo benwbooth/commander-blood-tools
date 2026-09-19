@@ -1920,6 +1920,7 @@ impl<'window> ModernGameServices<'window> {
             .context("navigation DESCRIPT background slot one is not loaded")?
             .encoded_image()
             .to_vec();
+        self.stage_presentation_background_rgb(&encoded, true)?;
         let result = self.runtime.stage_navigation_background(&encoded)?;
         let palette = *self.runtime.live_palette();
         self.presentation_screen
@@ -1947,6 +1948,7 @@ impl<'window> ModernGameServices<'window> {
             .context("presentation screen is already being updated")?
             .invalidate_scene_image();
         self.runtime.clear_navigation_background_band();
+        self.clear_presentation_background_rgb(35..165, 0)?;
         Ok(())
     }
 
@@ -2116,6 +2118,54 @@ impl<'window> ModernGameServices<'window> {
         {
             color.copy_from_slice(source);
         }
+    }
+
+    /// Resolve loaded artwork independently of subsequent HNM color changes.
+    pub(super) fn stage_presentation_background_rgb(
+        &mut self,
+        encoded: &[u8],
+        transparent_zero: bool,
+    ) -> Result<()> {
+        let colors = *self.runtime.live_palette();
+        let (_, back) = self.runtime.presentation_buffers_mut();
+        let fallback = crate::render::indexed_frame_rgba(back, &colors)?;
+        self.presentation_player
+            .stage_background_rgb(encoded, &fallback, transparent_zero)
+    }
+
+    pub(super) fn stage_contact_background_rgb(
+        &mut self,
+        encoded: &[u8],
+        transparent_zero: bool,
+        new_contact: bool,
+    ) -> Result<()> {
+        let colors = *self.runtime.live_palette();
+        let fallback =
+            crate::render::indexed_frame_rgba(self.runtime.back_buffer().pixels(), &colors)?;
+        self.presentation_player.stage_contact_background_rgb(
+            encoded,
+            &fallback,
+            transparent_zero,
+            new_contact,
+        )
+    }
+
+    pub(super) fn clear_presentation_background_rgb(
+        &mut self,
+        rows: std::ops::Range<usize>,
+        color: u8,
+    ) -> Result<()> {
+        let rgb = crate::render::indexed_frame_rgba(&[color], self.runtime.live_palette())?;
+        self.presentation_player
+            .clear_background_rgb(rows, rgb.try_into().expect("one RGB pixel"));
+        Ok(())
+    }
+
+    pub(super) fn present_presentation_background_rgb(&mut self) {
+        self.presentation_player.present_background_rgb(
+            self.runtime.front_buffer().pixels(),
+            *self.runtime.live_palette(),
+        );
     }
 
     /// Merge a limited PBM color update into the mapping inherited by the next HNM.
@@ -2388,6 +2438,11 @@ impl<'window> ModernGameServices<'window> {
         )
         .context("advancing the recovered color transition")?;
         self.presentation_player.refresh_display_rgba()?;
+        if outcome.interpolation.is_some()
+            && let Some(amount) = self.palette_transition.background_rgb_darkening()
+        {
+            self.presentation_player.darken_background_rgb(amount);
+        }
         self.ship_presentation.transition_percent = self.palette_transition.state().percent;
         Ok(outcome)
     }

@@ -24,6 +24,7 @@ mod platform;
 mod presentation;
 mod presentation_catalog;
 mod presentation_player;
+mod presentation_rgb;
 mod presentation_run;
 mod presentation_scene;
 mod presentation_screen;

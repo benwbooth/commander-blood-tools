@@ -158,6 +158,8 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
             // path as the executable and leave both pixels and palette intact.
             return Ok(());
         }
+        self.services
+            .stage_presentation_background_rgb(&encoded, true)?;
         {
             let (_front, back) = self.services.runtime_mut().presentation_buffers_mut();
             decode_pbm_image(
@@ -177,6 +179,8 @@ impl PresentationSceneDispatchHost<DescriptBackgroundSlot>
     }
 
     fn clear_back_buffer_band(&mut self, rows: Range<usize>, color: u8) -> Result<()> {
+        self.services
+            .clear_presentation_background_rgb(rows.clone(), color)?;
         let (_front, back) = self.services.runtime_mut().presentation_buffers_mut();
         fill_back_buffer_band(back, rows.start, rows.end, color)
             .context("clearing the presentation background band")

@@ -60,6 +60,7 @@ pub struct RuntimePaletteTransition {
     target: IndexedGamePalette,
     state: PaletteTransitionState,
     surface: RuntimePaletteTransitionSurface,
+    background_rgb_darken: Option<(u8, u8)>,
 }
 
 impl Default for RuntimePaletteTransition {
@@ -75,6 +76,7 @@ impl Default for RuntimePaletteTransition {
                 dirty_flags: INITIAL_DIRTY_FLAGS,
             },
             surface: RuntimePaletteTransitionSurface::GameFrame,
+            background_rgb_darken: None,
         }
     }
 }
@@ -88,6 +90,19 @@ impl RuntimePaletteTransition {
     /// Surface selected when the current transition was configured.
     pub const fn surface(&self) -> RuntimePaletteTransitionSurface {
         self.surface
+    }
+
+    /// RGB layer effect paired with the contact transition's recovered clock.
+    pub fn configure_background_rgb_darkening(&mut self, source: u8, target: u8) {
+        self.background_rgb_darken = Some((source, target));
+    }
+
+    /// Direct RGB subtraction for the current recovered transition percentage.
+    pub fn background_rgb_darkening(&self) -> Option<u8> {
+        self.background_rgb_darken.map(|(source, target)| {
+            let percent = self.state.percent.min(100);
+            ((u16::from(source) * percent + u16::from(target) * (100 - percent)) / 100) as u8
+        })
     }
 
     /// Synchronize progress written by the recovered ship-depth compositor.
@@ -129,6 +144,7 @@ impl RuntimePaletteTransition {
         self.state.first = *config.colors.start();
         self.state.last = *config.colors.end();
         self.surface = config.surface;
+        self.background_rgb_darken = None;
         Ok(())
     }
 
