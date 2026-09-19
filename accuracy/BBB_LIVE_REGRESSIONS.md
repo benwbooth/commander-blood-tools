@@ -127,3 +127,36 @@ executable overview cases were regenerated and match the checked-in vectors.
 The clean Nix release builds successfully. The isolated UI replay at
 `output/fidelity/bbb-overview-fix-20260919` did not reach its intended loaded
 navigation state and was stopped; it is not end-to-end planet-selection proof.
+
+## Left-click video and dialogue skipping
+
+BBB now treats a fresh left-click during a video or non-choice dialogue as a
+request to skip the current segment. This is an intentional modern-runtime
+extension, not a claim about original DOS input behavior. The recovered native
+right-click and Escape policies are unchanged, as is Commander Blood behavior.
+
+The ordinary lifecycle and the separate opening/credits runner both handle the
+shortcut. Skipping releases the current video source and lets its existing scene
+coordinator perform completion; it does not bypass story callbacks or auto-select
+dialogue responses. Text-only holds release the VM immediately. Consumed pointer
+latches cannot select a newly exposed control, and holding the button cannot skip
+subsequent segments. Word choices, inventory, bridge menus, and confirmation or
+save/load dialogs retain their normal input. Foreground and streamed speech stop;
+the selected background music is retained.
+
+Verification: 1,089 library tests pass with 68 optional tests ignored. The new
+original-asset SDL/service test passes separately for GLUXROUG, FLITUTR, PPIT07,
+opening and credits streams, normal scene completion, text-state synchronization,
+held-click rejection, music retention, and stopped speech. Policy tests cover all
+45 presentation line IDs, choices, paused input, and the Commander Blood boundary.
+All six static-owner audit checks pass. Both debug game binaries and the Nix
+release build succeed. The user's already-running process is not restarted.
+
+The isolated `bbb_click_skip_opening.tsv` replay changes from 149 recorded movie
+frames with the old build (no transition before scenario shutdown) to 20 movie
+frames followed by 230 game frames with the new build. Captures are under
+`output/fidelity/bbb-click-skip-opening-before-20260919` and
+`output/fidelity/bbb-click-skip-opening-20260919`. The additional
+`output/fidelity/bbb-click-skip-story-20260919` replay consumes four in-game clicks
+and advances the current clips through the normal presentation panel. It covers
+startup sequences, not an exhaustive playthrough of every authored conversation.

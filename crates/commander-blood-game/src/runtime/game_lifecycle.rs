@@ -367,7 +367,13 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
     }
 
     fn update_pointer_buttons(&mut self, state: &mut GameLifecycleState) -> Result<()> {
-        self.services.update_lifecycle_pointer_buttons(state);
+        let edges = self.services.update_lifecycle_pointer_buttons(state);
+        if self
+            .services
+            .skip_sequel_presentation_on_click(state, edges.primary_pressed, false)?
+        {
+            return Ok(());
+        }
         self.services.handle_sequel_secondary_pointer(state)?;
         Ok(())
     }

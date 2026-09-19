@@ -156,6 +156,19 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
                 .cancel_lifecycle_presentation(&mut self.input_state)?;
         }
         export_blocking_presentation_stop_gate(state, &self.input_state);
+        if self.services.runtime().data().game() == crate::game::GameVariant::BigBugBang {
+            self.platform.poll_pointer(self.services);
+            let edges = self
+                .services
+                .update_lifecycle_pointer_buttons(self.input_state);
+            if self.services.skip_sequel_presentation_on_click(
+                self.input_state,
+                edges.primary_pressed,
+                true,
+            )? {
+                state.input_stop_gate = PRESENTATION_GATE_ACTIVE;
+            }
+        }
         Ok(())
     }
 

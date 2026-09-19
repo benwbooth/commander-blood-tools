@@ -2626,6 +2626,48 @@ impl<'window> ModernGameServices<'window> {
         Ok(outcome)
     }
 
+    /// BBB's modern left-click shortcut, separate from the recovered DOS policy.
+    pub(super) fn skip_sequel_presentation_on_click(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+        primary_edge: bool,
+        blocking_video: bool,
+    ) -> Result<bool> {
+        let menu_active = self
+            .bridge_console
+            .as_ref()
+            .is_some_and(|console| console.selected_item_active())
+            || self
+                .save_load
+                .as_ref()
+                .is_some_and(|save| save.state().requests.save || save.state().requests.load)
+            || self.confirm_dialog.state().navigation_choice_gate & 1 != 0;
+        if !sequel_click_can_skip(
+            self.runtime.data().game(),
+            lifecycle,
+            primary_edge,
+            blocking_video,
+            self.presentation_stream_active(),
+            menu_active,
+        ) {
+            return Ok(false);
+        }
+        let had_video = self.presentation_stream_active();
+        self.finish_presentation_sequence();
+        dismiss_skipped_dialogue(
+            lifecycle,
+            self.scripts.text_presentation_mut(),
+            !had_video || blocking_video,
+        );
+        if let Some(audio) = self.audio.as_mut() {
+            audio.stop_speech(self.loaded_navigation_music.is_none())?;
+        }
+        self.audio_events.dialogue_armed = false;
+        self.audio_events.voice_reaction_requested = false;
+        self.audio_events.dialogue_delay = 0;
+        Ok(true)
+    }
+
     /// Run BBB's right-click path after pointer edges and before the VM.
     pub fn handle_sequel_secondary_pointer(
         &mut self,
@@ -6204,6 +6246,70 @@ fn selected_bridge_page_mut<'page>(
     }
 }
 
+fn sequel_click_can_skip(
+    game: GameVariant,
+    lifecycle: &GameLifecycleState,
+    primary_edge: bool,
+    blocking_video: bool,
+    video_active: bool,
+    menu_active: bool,
+) -> bool {
+    if game != GameVariant::BigBugBang || !primary_edge || lifecycle.pause_hud_active {
+        return false;
+    }
+    if blocking_video {
+        return true;
+    }
+    let text = &lifecycle.presentation;
+    if menu_active
+        || text.word_choice_active
+        || text.inventory_line_pending
+        || (text.word_buffer_nonempty && !text.subtitle_display_active)
+    {
+        return false;
+    }
+    video_active
+        || text.subtitle_display_active
+        || text.menu_deferred
+        || text.dialogue_hold_complete
+}
+
+fn dismiss_skipped_dialogue(
+    lifecycle: &mut GameLifecycleState,
+    text: &mut TextPresentationState,
+    resume_immediately: bool,
+) {
+    // Scene-owning videos finish through their normal coordinator on this frame.
+    // Only text-only holds (or a blocking runner) can release the VM here.
+    if resume_immediately {
+        lifecycle.vm_execution_enabled = true;
+        lifecycle.presentation.c2_presentation_gate = false;
+    }
+    let presentation = &mut lifecycle.presentation;
+    presentation.subtitle_display_active = false;
+    presentation.menu_deferred = false;
+    presentation.hold_ready = false;
+    presentation.dialogue_hold_complete = false;
+    presentation.dialogue_hold_countdown = 0;
+    presentation.subtitle_voice_trigger = false;
+    presentation.dialogue_chatter_active = false;
+    presentation.owner = None;
+    presentation.request_flags.clear_pending_requests();
+    text.subtitle_display_active = false;
+    text.menu_deferred = false;
+    text.hold_ready = false;
+    text.dialogue_hold_complete = false;
+    text.dialogue_hold_countdown = 0;
+    text.subtitle_voice_trigger = false;
+    text.dialogue_chatter_active = false;
+    text.dialogue_chatter_seed_pending = false;
+    text.subtitle_reveal_cursor = None;
+    text.request_flags.clear_pending_requests();
+    lifecycle.primary_pointer_pressed = false;
+    lifecycle.secondary_pointer_pressed = false;
+    lifecycle.pointer_press_pending = 0;
+}
+
 fn input_cancellation_state(
     lifecycle: &GameLifecycleState,
     ship: &ShipPresentationState,
@@ -6345,6 +6451,277 @@ mod tests {
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const SCRIPT_RADIO_CLIP_COUNTDOWN: u16 = 2;
+
+    #[test]
+    fn sequel_click_skip_requires_a_new_press_and_preserves_choices() {
+        let mut state = GameLifecycleState::default();
+        let can_skip = |state: &GameLifecycleState, edge, video, menu| {
+            sequel_click_can_skip(GameVariant::BigBugBang, state, edge, false, video, menu)
+        };
+        assert!(!can_skip(&state, true, false, false));
+        assert!(can_skip(&state, true, true, false));
+        for line in 0..=44 {
+            state.presentation.active_line = Some(line);
+            assert!(can_skip(&state, true, true, false), "line {line}");
+        }
+        assert!(!can_skip(&state, false, true, false));
+        assert!(!can_skip(&state, true, true, true));
+        assert!(!sequel_click_can_skip(
+            GameVariant::CommanderBlood,
+            &state,
+            true,
+            true,
+            true,
+            false
+        ));
+        assert!(sequel_click_can_skip(
+            GameVariant::BigBugBang,
+            &state,
+            true,
+            true,
+            false,
+            false
+        ));
+        state.presentation.subtitle_display_active = true;
+        assert!(can_skip(&state, true, false, false));
+        state.presentation.word_choice_active = true;
+        assert!(!can_skip(&state, true, true, false));
+        state.presentation.word_choice_active = false;
+        state.presentation.inventory_line_pending = true;
+        assert!(!can_skip(&state, true, true, false));
+        state.presentation.inventory_line_pending = false;
+        state.presentation.subtitle_display_active = false;
+        state.presentation.word_buffer_nonempty = true;
+        assert!(!can_skip(&state, true, true, false));
+        state.presentation.word_buffer_nonempty = false;
+        state.presentation.dialogue_hold_complete = true;
+        assert!(can_skip(&state, true, false, false));
+        state.pause_hud_active = true;
+        assert!(!can_skip(&state, true, true, false));
+    }
+
+    #[test]
+    fn sequel_click_skip_consumes_input_and_releases_only_text_owned_waits() {
+        for resume in [false, true] {
+            let mut state = GameLifecycleState::default();
+            state.presentation.subtitle_display_active = true;
+            state.presentation.dialogue_hold_complete = true;
+            state.presentation.dialogue_hold_countdown = 99;
+            state.presentation.c2_presentation_gate = true;
+            state.presentation.subtitle_voice_trigger = true;
+            state.presentation.dialogue_chatter_active = true;
+            state.primary_pointer_pressed = true;
+            state.pointer_press_pending = 2;
+            let mut text = TextPresentationState::default();
+            text.subtitle_display_active = true;
+            text.dialogue_hold_complete = true;
+            text.dialogue_hold_countdown = 99;
+            text.subtitle_reveal_cursor = Some(3);
+            dismiss_skipped_dialogue(&mut state, &mut text, resume);
+            assert_eq!(state.vm_execution_enabled, resume);
+            assert_eq!(state.presentation.c2_presentation_gate, !resume);
+            assert!(!state.primary_pointer_pressed);
+            assert_eq!(state.pointer_press_pending, 0);
+            assert!(!state.presentation.subtitle_display_active);
+            assert!(!state.presentation.dialogue_hold_complete);
+            assert_eq!(state.presentation.dialogue_hold_countdown, 0);
+            assert!(!text.subtitle_display_active);
+            assert!(!text.dialogue_hold_complete);
+            assert_eq!(text.dialogue_hold_countdown, 0);
+            assert_eq!(text.subtitle_reveal_cursor, None);
+        }
+    }
+
+    #[test]
+    #[ignore = "requires original BBB assets and serialized SDL/wgpu ownership"]
+    fn sequel_click_skip_finishes_real_scenes_without_restarting_music() {
+        use crate::native::bloodprg::{PresentationSceneDispatchState, PresentationSceneSource};
+        use crate::runtime::presentation_scene::RuntimePresentationScene;
+        let _gpu = crate::gpu_test::lock();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let sdl = sdl3::init().unwrap();
+        let video = sdl.video().unwrap();
+        let audio = sdl.audio().unwrap();
+        let window = video
+            .window("BBB click skip regression", 640, 480)
+            .hidden()
+            .build()
+            .unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(
+            OriginalGameDataPaths::from_root(root).unwrap(),
+            &writable.0,
+        )
+        .unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        services.prepare_startup_resources().unwrap();
+        services.initialize_audio(&audio).unwrap();
+        services
+            .load_script_profile(ScriptProfileId::INITIAL)
+            .unwrap();
+        services
+            .load_script_profile(ScriptProfileId::new(1).unwrap())
+            .unwrap();
+        services.apply_presentation_description(b"present").unwrap();
+        services.restart_navigation_music().unwrap();
+        let music = services.loaded_navigation_music.clone();
+        let samples = services
+            .audio_ref()
+            .unwrap()
+            .background_source_samples()
+            .unwrap();
+        for clip in [
+            b"PE\\GLUXROUG.HNM".as_slice(),
+            b"FLITUTR.HNM",
+            b"PPIT07.HNM",
+        ] {
+            services.select_descript_sequence_video(clip).unwrap();
+            let mut scene = RuntimePresentationScene::new(*services.runtime.live_palette());
+            let mut scene_state = PresentationSceneDispatchState::default();
+            scene_state.presentation.active_line = Some(2);
+            scene
+                .dispatch(&mut services, &mut scene_state, 0, None, None, false, false)
+                .unwrap();
+            assert!(services.presentation_stream_active());
+            let mut state = GameLifecycleState::default();
+            state.presentation.c2_presentation_gate = true;
+            state.presentation.active_line = Some(2);
+            services.publish_lifecycle_logical_pointer([100, 100], PointerButtons::NONE);
+            services.update_lifecycle_pointer_buttons(&mut state);
+            services.publish_lifecycle_logical_pointer([100, 100], PointerButtons::from_bits(1));
+            let edge = services.update_lifecycle_pointer_buttons(&mut state);
+            assert!(
+                services
+                    .skip_sequel_presentation_on_click(&mut state, edge.primary_pressed, false)
+                    .unwrap()
+            );
+            assert!(!services.presentation_stream_active());
+            assert!(!state.primary_pointer_pressed);
+            assert!(
+                !state.vm_execution_enabled,
+                "do not run the VM ahead of scene completion"
+            );
+            assert_eq!(
+                scene
+                    .dispatch(&mut services, &mut scene_state, 0, None, None, false, false)
+                    .unwrap(),
+                PresentationSceneDispatchOutcome::PresentationFinished
+            );
+            services.resume_vm_after_scene(&mut state, true);
+            assert!(state.vm_execution_enabled);
+            assert_eq!(scene_state.presentation.active_line, None);
+            let edge = services.update_lifecycle_pointer_buttons(&mut state);
+            state.presentation.subtitle_display_active = true;
+            assert!(
+                !services
+                    .skip_sequel_presentation_on_click(&mut state, edge.primary_pressed, false)
+                    .unwrap(),
+                "holding the mouse must not skip the next dialogue"
+            );
+            assert_eq!(services.loaded_navigation_music, music);
+            assert_eq!(
+                services
+                    .audio_ref()
+                    .unwrap()
+                    .background_source_samples()
+                    .unwrap(),
+                samples
+            );
+            assert!(
+                services
+                    .audio_ref()
+                    .unwrap()
+                    .background_position()
+                    .is_some()
+            );
+        }
+        // Opening and credits use a blocking loop, outside the ordinary VM path.
+        for line in [0, 1] {
+            services
+                .load_presentation_sequence(
+                    PresentationResourceId::new(line),
+                    PresentationSceneSource::Owned,
+                    PresentationPresentPolicy {
+                        unclamped_rows: true,
+                        ..Default::default()
+                    },
+                    0,
+                    false,
+                )
+                .unwrap();
+            assert!(services.presentation_stream_active());
+            assert!(
+                services
+                    .skip_sequel_presentation_on_click(
+                        &mut GameLifecycleState::default(),
+                        true,
+                        true
+                    )
+                    .unwrap()
+            );
+            assert!(!services.presentation_stream_active());
+        }
+        let mut state = GameLifecycleState::default();
+        state.presentation.subtitle_display_active = true;
+        state.presentation.dialogue_hold_countdown = 99;
+        services.text_presentation_mut().subtitle_display_active = true;
+        assert!(
+            services
+                .skip_sequel_presentation_on_click(&mut state, true, false)
+                .unwrap()
+        );
+        services.scripts.prepare_lifecycle_frame(&state);
+        services.scripts.finish_lifecycle_frame(&mut state).unwrap();
+        assert!(state.vm_execution_enabled);
+        assert!(!state.presentation.subtitle_display_active);
+        assert_eq!(state.presentation.dialogue_hold_countdown, 0);
+        services
+            .load_streamed_voice_resource(CREDITS_VOICE_RESOURCE_PATH.as_bytes())
+            .unwrap();
+        services.start_loaded_streamed_voice().unwrap();
+        services
+            .audio_mut()
+            .unwrap()
+            .play_foreground(crate::runtime::RuntimePcmClip::new(11025, vec![140; 110250]).unwrap())
+            .unwrap();
+        assert!(services.loaded_navigation_music.is_none());
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_position()
+                .is_some()
+        );
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .foreground_position()
+                .is_some()
+        );
+        state.presentation.subtitle_display_active = true;
+        assert!(
+            services
+                .skip_sequel_presentation_on_click(&mut state, true, false)
+                .unwrap()
+        );
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_position()
+                .is_none()
+        );
+        assert!(
+            services
+                .audio_ref()
+                .unwrap()
+                .foreground_position()
+                .is_none()
+        );
+        assert!(!services.audio_ref().unwrap().background_stream_pending());
+    }
 
     #[test]
     fn numeric_chatter_matches_original_bbb_audio_hash() {

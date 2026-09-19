@@ -834,6 +834,20 @@ impl RuntimeAudioHost {
         self.check_callback()
     }
 
+    /// Dismiss speech without resetting music or the independent speaker channel.
+    pub(super) fn stop_speech(&mut self, streamed_voice: bool) -> Result<()> {
+        let mut shared = lock_shared(&self.shared);
+        shared.mixer.foreground = None;
+        if streamed_voice {
+            shared.music_stream.stop();
+        }
+        drop(shared);
+        self.stream
+            .clear()
+            .map_err(|error| anyhow!("clearing skipped speech from SDL3: {error}"))?;
+        self.check_callback()
+    }
+
     /// Return the current source-sample position of looping music.
     pub fn background_position(&self) -> Option<u64> {
         let shared = lock_shared(&self.shared);

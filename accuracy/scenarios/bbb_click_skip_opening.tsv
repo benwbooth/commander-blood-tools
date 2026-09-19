@@ -1,0 +1,5 @@
+# BBB modern click-to-skip: leave the opening movie with one left-click.
+# The same scenario on the pre-shortcut build stays in blocking playback.
+wait 10
+click 160 100
+wait 50
