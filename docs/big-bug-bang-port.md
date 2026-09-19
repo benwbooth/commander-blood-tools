@@ -5726,8 +5726,8 @@ claimed byte-identical or newly executed whole-entry native comparisons. The
 palette actor's entire suffix does additionally pass exact relocation comparison.
 
 This review found and fixed two missing production gates: overview mode must
-return before the camera actor mutates state, and Arche's quantity word at +22
-must be nonzero before palette-actor processing. The latter is a zero test, not
+return before the camera actor mutates state, and Arche's navigation-link word
+at +22 must be nonzero before palette-actor processing. The latter is a zero test, not
 a positive/signed check; the focused runtime test checks all 65,536 words in
 each UI mode. The camera's synthesized secondary press, pending-CC hand/input
 bypass, panel ending gate, and alternate hyperjump reset are already translated
@@ -5738,6 +5738,28 @@ sequel-presentation tests, 18 bridge-console tests (one optional asset test
 ignored), five static-audit tests and four disposition tests. The ledger now
 classifies 364/383 entries, including 32 static typed entries, with 19 pending.
 No broad playthrough was started for this slice.
+
+The subsequent complete-body/block review covers archive lookup `0x2A4F`,
+bridge orchestration `0x8830`, destination activation `0x8987`, panel rendering
+`0x8A7D`, console dispatch `0x9778`, and options `0x9A11`. Archive lookup is an
+exact relocation-limited match, including its EMS/XMS acquisition branches;
+owned archive bytes replace those storage adapters. Panel rectangle data is
+byte-identical between executables. Changed control bodies retain explicit,
+contiguous block reviews and runtime ownership, not exact-equivalence claims.
+
+Corrections from this review: unavailable destination activation sets UI bit4
+without requesting a bridge rebuild; initial BBB options layout disables VM
+execution; Quit clears primary and pending press but preserves secondary press;
+ordinary BBB scene-list completion clears the back content band before closing;
+completed scene lists reset the subtitle cursor. The palette gate's +22 field
+is named as Arche's navigation link, not actor population, without changing its
+exact zero-test behavior. The old options fixture calls +0C38 `secondary`; its
+test binding now correctly treats it as pending press.
+
+Focused checks passed: six camera-navigation tests, six panel tests, 19 console
+tests (one optional asset test ignored), three bridge-frame tests, three archive
+tests, five static-audit tests and four disposition tests. The ledger is now
+370/383 classified with 38 static typed entries and 13 pending.
 
 ## Remaining Completion Requirements
 

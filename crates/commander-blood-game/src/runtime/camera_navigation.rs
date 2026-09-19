@@ -97,7 +97,7 @@ impl RuntimeCameraNavigation {
 
         match outcome {
             CameraNavigationOutcome::DestinationUnavailable => {
-                lifecycle.navigation_rebuild_pending |= self.state.redraw_requested();
+                publish_unavailable_destination_ui(lifecycle, self.state.redraw_requested());
             }
             CameraNavigationOutcome::TransitionStarted => {
                 let transition = self
@@ -140,6 +140,10 @@ impl RuntimeCameraNavigation {
 
 fn publish_destination_entry_ui(lifecycle: &mut GameLifecycleState) {
     lifecycle.set_low_ui_state_word(u16::MIN);
+}
+
+fn publish_unavailable_destination_ui(lifecycle: &mut GameLifecycleState, redraw: bool) {
+    lifecycle.set_modal_ui_busy(lifecycle.modal_ui_busy() || redraw);
 }
 
 struct RuntimeDestinationRegionPoll {
@@ -197,6 +201,17 @@ fn expand_palette(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unavailable_destination_sets_modal_bit_without_requesting_screen_rebuild() {
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.set_low_ui_state_word(9);
+        publish_unavailable_destination_ui(&mut lifecycle, true);
+        assert_eq!(lifecycle.low_ui_state_word(), 13);
+        assert!(!lifecycle.navigation_rebuild_pending);
+        publish_unavailable_destination_ui(&mut lifecycle, false);
+        assert_eq!(lifecycle.low_ui_state_word(), 13);
+    }
 
     #[test]
     fn destination_poll_accepts_only_the_native_first_attempt_result() {

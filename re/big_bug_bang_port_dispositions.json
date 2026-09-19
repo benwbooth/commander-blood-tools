@@ -5,7 +5,7 @@
     "re/big_bug_bang_oracle_coverage.json": "b5135e26f26416adcbc639c7b9c4969b7f37c9f3cb7e19577826a866810d4666",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "d54671db0801c96dbb9728fae76a803f1bbd67d88d80b04062ee284c67089502",
-    "re/big_bug_bang_static_port_audit.json": "dc3692a5f9ce03dd8eccc86f571a368354cdc32beb8d5d4fffc093b6427f52d1",
+    "re/big_bug_bang_static_port_audit.json": "80fefb3bc66a70a593c67186870393c1c884a24be27f3d6c556d91dbd87b526c",
     "re/big_bug_bang_unreferenced_library_audit.json": "2509d2ba5893b4b96c1f032a0cacb68e0f9b47c5bb8022e5d64cab740c02b290",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
     "re/rust-port/eliminated.tsv": "aa49ae8d83ad3c047f48df0f51c1909c6116f332eb02e95c67462a94b3c9f478",
@@ -13,8 +13,8 @@
   },
   "summary": {
     "known_entrypoint_count": 383,
-    "classified_entrypoint_count": 364,
-    "pending_game_semantics_count": 19,
+    "classified_entrypoint_count": 370,
+    "pending_game_semantics_count": 13,
     "status_counts": {
       "eliminated_authored_no_operation": 10,
       "eliminated_dormant_diagnostic": 18,
@@ -22,9 +22,9 @@
       "eliminated_unreferenced_library": 3,
       "inherited_exact_eliminated": 7,
       "inherited_exact_typed": 6,
-      "pending_game_semantics": 19,
+      "pending_game_semantics": 13,
       "verified_direct_typed": 262,
-      "verified_static_typed": 32
+      "verified_static_typed": 38
     }
   },
   "entrypoints": [
@@ -1355,12 +1355,16 @@
       "entered": false,
       "comparison": "structural_candidate",
       "commander_entry": "0x26cf",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_26cf_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-formats/src/archive.rs",
+        "symbol": "BloodArchive::member"
+      },
+      "rationale": "Validated authored-order BLOOD.DAT member lookup with exact native byte folding and private payload ranges Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
     },
     {
       "entry": "0x2b43",
@@ -4464,12 +4468,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_77e0_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/bridge_frame.rs",
+        "symbol": "render_bridge_frame"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Inactive UI returns; pending scene dispatches and returns without later bridge work. Rebuild sets current/previous hand1; steering input chooses hand2/3 at unsigned x160 boundary and flips page. Advance pending approach, update mode, then BBB-only CC activation helper before sprite commit, hover and actor pass. Runtime backend supplies helper here. Without queued presentation, pending approach draws sprites20..31; otherwise zero animation countdown copies dirty regions. Chart/camera-state reconciliation, destination navigation, then panel update. Frame-ready gate precedes actor sprites1..19, name effect, status and console. Actor-completion latch remaps rectangle137,139,50,44 using second remap; restore and far return."
     },
     {
       "entry": "0x8923",
@@ -4492,12 +4500,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_792d_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/camera_navigation.rs",
+        "symbol": "update_camera_navigation"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Camera view or nonzero approach returns. Arche linked object's kind mask18 and first successful region31 poll are required. Hand12; BBB enabled-travel bypasses zero destination access count. Otherwise set UI bit4, arm unlocked palette slot and return; runtime must not request screen rebuild here. Zero768 fade-target bytes, copy768 live bytes to source, percent0, step20, palette range0..255. Clear complete UI word, ship flags5, request HUD init; clear dialogue hold, scene block, depth, depth opening and HUD byte; restore and return."
     },
     {
       "entry": "0x8a48",
@@ -4520,12 +4532,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_79e5_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/screen_presentation.rs",
+        "symbol": "update_presentation_screen"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Require active panel. Queued scene takes separate path. Initial phase sets text origin1, choice0 overridden/consumed by pending CC, previous hand15, phase1, entity31 transition and audio1. Six authored expansion rectangles followed by three remap/noise frames. Signed phase>=100 enters close path. Active panel remaps front/back, clears back140-row band. Empty selected record draws noise and choice; primary press takes common input action. Load selected DESCRIPT, optionally reload music, start stream; initialize scene-list cursor/count and visible frame, then pump scenes. Pending CC replaces/consumes choice then accepts input. Otherwise ending suppresses primary cancellation; dispatch queued scene and test continued ownership. Each remaining scene advances16-byte list entry, publishes line2 and loops into queued dispatch. Whole list completion resets subtitle cursor, requests rebuild and phase7. Reverse retains transition; ending requests shutdown; ordinary sequel completion closes at phase106 and clears back content. Queued frame-ready draws subtitle then choice, otherwise waits. Reverse input closes and finalizes only if queued; ordinary input selects hand14, prepares/plays audio1, finalizes, cycles six choices and sets phase7. Clear back content rectangle0,10,320,130 and restore front target. Final phase100 hides resource, clears panel/UI modal, phase0, completion audio, text origin8, rebuild; reverse restores variant12, otherwise reset ship camera. Closing decrements phase and draws matching reverse authored rectangle; restore and return."
     },
     {
       "entry": "0x8d88",
@@ -4626,7 +4642,7 @@
         "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_hyperjump.rs",
         "symbol": "update_hyperjump_presentation_actor"
       },
-      "rationale": "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Require outer mode and zero black-hole slot flags; no writes on either rejection. Preserve original AL flags; present+ready restarts selector 10, transitions entities 0/4, advances line. Frame 1: enabled travel publishes C1 before comparing deferred target to Arche; same target enters bridge reset, otherwise camera countdown=8. Other frames: nonzero countdown skips completion; zero writes line flags=7, C1, transition=1; travel option chooses bridge reset. Reset clears action, transition, camera view, UI word, dialogue hold, ship block/depth/opening and HUD byte; ship flags=5. Runtime BridgeReset adapter publishes these owned fields. Transition entity 4, close location panel, request redraw, return; retains deferred target on bridge reset. Active location panel returns; otherwise resource=20, reverse=1, line flags=0, redraw. Missing deferred record or no reverse/panel skips. Original AL bit4 controls second-pass preparation, resource20 and audio5. Advance line; incomplete returns. Completion without panel clears deferred target and line; with panel selects idle resource18, present flag and redraw."
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Require outer mode and zero black-hole slot flags; no writes on either rejection. Preserve original AL flags; present+ready restarts selector 10, transitions entities 0/4, advances line. Frame 1: enabled travel publishes C1 before comparing deferred target to Arche; same target enters bridge reset, otherwise camera countdown=8. Other frames: nonzero countdown skips completion; zero writes line flags=7, C1, transition=1; travel option chooses bridge reset. Reset clears action, transition, camera view, UI word, dialogue hold, ship block/depth/opening and HUD byte; ship flags=5. Runtime BridgeReset adapter publishes these owned fields. Transition entity 4, close location panel, request redraw, return; retains deferred target on bridge reset. Active location panel returns; otherwise resource=20, reverse=1, line flags=0, redraw. Missing deferred record or no reverse/panel skips. Original AL bit4 controls second-pass preparation, resource20 and audio5. Advance line; incomplete returns. Completion without panel clears deferred target and line; with panel selects idle resource18, present flag and redraw."
     },
     {
       "entry": "0x91ad",
@@ -4642,7 +4658,7 @@
         "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_camera.rs",
         "symbol": "update_camera_presentation_actor"
       },
-      "rationale": "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Overview bit1 blocks before any writes; otherwise require outer mode. Runtime run_camera supplies overview gate. Inactive actor marks line present and checks ready. Black-hole/hyperjump blockers activate camera actor, close location panel and return. Transition entity0; clear selected location. Pending CC skips selector10 and primary-input clear; ordinary path performs both. Advance line preserving completion carry across frame7 camera-page callback, audio3, countdown8 and redraw. Completion clears camera actor and sets line flags7. AL transition bit controls view toggle. Toggle view and clear redraw; entering synthesizes secondary press and redraw; leaving restores ship palette/camera and requests rebuild. Close location panel, line flags1, transition entity4, return."
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Overview mask1 blocks before any writes; otherwise require outer mode. Runtime run_camera supplies overview gate. Inactive actor marks line present and checks ready. Black-hole/hyperjump blockers activate camera actor, close location panel and return. Transition entity0; clear selected location. Pending CC skips selector10 and primary-input clear; ordinary path performs both. Advance line preserving completion carry across frame7 camera-page callback, audio3, countdown8 and redraw. Completion clears camera actor and sets line flags7. AL transition bit controls view toggle. Toggle view and clear redraw; entering synthesizes secondary press and redraw; leaving restores ship palette/camera and requests rebuild. Close location panel, line flags1, transition entity4, return."
     },
     {
       "entry": "0x927a",
@@ -4658,7 +4674,7 @@
         "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_palette.rs",
         "symbol": "update_ship_palette_actor"
       },
-      "rationale": "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Bind Arche; quantity word+22 ==0 returns untouched. Negative and all other nonzero words pass. Runtime reads live typed VAR field. Require UI mask90, mark line present, return if not ready. Selector16 then advance line; incomplete returns, completed plays audio5. Ship flags1, copy576 palette bytes, depth0, line flags7. Complete shared suffix checked separately by exact relocation comparison."
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Bind Arche; navigation-link word+22 ==0 returns untouched. High-bit and all other nonzero words pass. Runtime reads live typed VAR field. Require UI mask90, mark line present, return if not ready. Selector16 then advance line; incomplete returns, completed plays audio5. Ship flags1, copy576 palette bytes, depth0, line flags7. Complete shared suffix checked separately by exact relocation comparison."
     },
     {
       "entry": "0x92d0",
@@ -4674,7 +4690,7 @@
         "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_panel.rs",
         "symbol": "update_panel_close_actor"
       },
-      "rationale": "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Require secondary mode, mark line present, skip playback when not ready. Pending CC bypasses hand and ending gate. Otherwise selector13; ending bit1 returns immediately. Active panel and signed phase<100 sets phase106; queued scene then finalized. Clear primary and pending input, advance line; incomplete skips to final latch; complete transitions entity4. Set line flags1; inactive panel becomes active and requests redraw, already active panel does not add redraw. Active panel plus loaded line latches completion; return."
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Require secondary mode, mark line present, skip playback when not ready. Pending CC bypasses hand and ending gate. Otherwise selector13; ending bit1 returns immediately. Active panel and signed phase<100 sets phase106; queued scene then finalized. Clear primary and pending input, advance line; incomplete skips to final latch; complete transitions entity4. Set line flags1; inactive panel becomes active and requests redraw, already active panel does not add redraw. Active panel plus loaded line latches completion; return."
     },
     {
       "entry": "0x935d",
@@ -4782,12 +4798,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_85e2_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs",
+        "symbol": "update_bridge_console_dispatch"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Queued scene, save/load, text/BBB simulation submenu, confirmation or active presentation rejects. Existing selection bypasses hit testing. Signed bridge frame40..60 required; input sample then reset five console palette rows to16,12,0. Frame-relative signed horizontal bounds; wrapped y difference and native row height select one of five rows. Highlight selected row red63; primary press required for activation. Hand5, selection=row+1, UI bits4/8, seek90, layout1, target y80+row18; initialize list input gates, width100, delay10 and audio4. UI bit8 defers; otherwise call five-entry handler table by selection-1; restore and return."
     },
     {
       "entry": "0x98ad",
@@ -4866,12 +4886,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_886c_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs",
+        "symbol": "update_sequel_option_menu"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. On layout phase disable VM, reset selector, guarded list layout, increment phase and save measured rectangle. Transition must complete before interactive list; negative result keeps menu open. Rows0/1 open simulation/text speed with phase1; row2 toggles travel independent of audio and replaces label. Row3 unsupported music does nothing; otherwise toggle, reset stream latches, replace label and load/start only when enabling. Rows4/5 request save/load and panel. Row6 requests confirmation2 and clears primary0C36 and pending0C38, never secondary0C37. Selected action or cancel clears console selection and UI modal bit, then returns."
     },
     {
       "entry": "0x9b45",

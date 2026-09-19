@@ -717,12 +717,14 @@ fn dispatch_and_pump<Backend: PresentationScreenBackend>(
 
         let Some(line) = state.scene_lines.get(state.next_scene_line).cloned() else {
             state.current_scene_line = None;
+            state.subtitle_playback.restart();
             state.screen_rebuild_pending = true;
             state.phase = PresentationPanelPhase::Transition(PresentationTransitionFrame::One);
             if let Some(control) = state.sequel_control {
                 match control.completion(state.reverse) {
                     SequelPanelCompletion::Close => {
-                        state.phase = PresentationPanelPhase::Closing(PresentationPanelStep::Six)
+                        state.phase = PresentationPanelPhase::Closing(PresentationPanelStep::Six);
+                        backend.fill_region(PresentationRenderTarget::Back, u8::MIN, CONTENT_FRAME);
                     }
                     SequelPanelCompletion::Shutdown => state.shutdown_requested = true,
                     SequelPanelCompletion::Transition => {}
@@ -1024,6 +1026,17 @@ mod tests {
                     PresentationScreenOutcome::SceneLinesCompleted
                 );
                 assert_eq!(state.take_shutdown_requested(), ending && !reverse);
+                let clears = backend
+                    .calls
+                    .iter()
+                    .filter(|call| {
+                        call.name == "framebuffer_rect_fill"
+                            && call.target == Some(PresentationRenderTarget::Back)
+                            && call.color == Some(0)
+                            && call.region == Some(CONTENT_FRAME)
+                    })
+                    .count();
+                assert_eq!(clears, usize::from(!reverse && !ending));
                 assert!(
                     !state.take_shutdown_requested(),
                     "shutdown is a one-shot output"

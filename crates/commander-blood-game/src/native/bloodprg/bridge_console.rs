@@ -742,8 +742,8 @@ pub struct SequelOptionMenuState {
     pub save_panel_active: bool,
     /// Shared primary button latch, cleared when requesting quit.
     pub primary_pointer_pressed: bool,
-    /// Shared secondary button latch, cleared when requesting quit.
-    pub secondary_pointer_pressed: bool,
+    /// Shared pending-press latch (BBB 0x0C38), cleared when requesting quit.
+    pub pointer_press_pending: bool,
 }
 
 /// Update the sequel's seven-command menu using the shared choice widget.
@@ -794,7 +794,7 @@ pub fn update_sequel_option_menu<Backend: BridgeChoiceBackend>(
                 OptionMenuChoice::Save | OptionMenuChoice::Load => options.save_panel_active = true,
                 OptionMenuChoice::Quit => {
                     options.primary_pointer_pressed = false;
-                    options.secondary_pointer_pressed = false;
+                    options.pointer_press_pending = false;
                 }
                 OptionMenuChoice::Music => {}
             }
@@ -1390,7 +1390,8 @@ mod tests {
         panel: bool,
         quit: bool,
         primary: bool,
-        secondary: bool,
+        #[serde(rename = "secondary")]
+        pending: bool,
         menu_open: bool,
         modal: bool,
         stream_starts: usize,
@@ -1439,7 +1440,7 @@ mod tests {
                 text_options_phase: 0x41,
                 travel_enabled: case.travel,
                 primary_pointer_pressed: true,
-                secondary_pointer_pressed: true,
+                pointer_press_pending: true,
                 ..SequelOptionMenuState::default()
             };
             let outcome = update_sequel_option_menu(
@@ -1477,10 +1478,7 @@ mod tests {
             assert_eq!(options.save_panel_active, case.panel, "{case:?}");
             assert_eq!(options.common.quit_requested, case.quit, "{case:?}");
             assert_eq!(options.primary_pointer_pressed, case.primary, "{case:?}");
-            assert_eq!(
-                options.secondary_pointer_pressed, case.secondary,
-                "{case:?}"
-            );
+            assert_eq!(options.pointer_press_pending, case.pending, "{case:?}");
             assert_eq!(console.selected.is_some(), case.menu_open, "{case:?}");
             assert_eq!(console.interface_active, case.modal, "{case:?}");
             assert_eq!(backend.stream_starts, case.stream_starts, "{case:?}");

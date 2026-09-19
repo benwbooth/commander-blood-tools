@@ -1705,8 +1705,8 @@ impl<'window> ModernGameServices<'window> {
         Ok((target, kind))
     }
 
-    /// BBB 0x927B tests Arche's quantity word for zero before palette playback.
-    pub(super) fn sequel_arche_quantity(&self) -> Result<Option<u16>> {
+    /// BBB 0x927B tests Arche's navigation-link word for zero before playback.
+    pub(super) fn sequel_arche_navigation_link_word(&self) -> Result<Option<u16>> {
         if self.runtime.data().game() != GameVariant::BigBugBang {
             return Ok(None);
         }
@@ -1718,12 +1718,12 @@ impl<'window> ModernGameServices<'window> {
             .builtins()
             .archetype
             .context("palette actor requires Arche")?;
-        let quantity = profile
+        let link = profile
             .state()
             .object_word(arche, 22 / 2)
             .and_then(|field| profile.state().word(field))
-            .context("Arche has no quantity word")?;
-        Ok(Some(quantity))
+            .context("Arche has no navigation-link word")?;
+        Ok(Some(link))
     }
 
     /// BBB gates both camera playback and hover while its overview owns input.

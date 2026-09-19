@@ -5,7 +5,7 @@ use commander_blood_formats::bloodprg::BloodprgBridgeMenuText;
 use commander_blood_formats::script::ScriptObjectId;
 
 use crate::native::bloodprg::{
-    BridgeChoiceBackend, BridgeConsoleChoice, BridgeConsoleContext, BridgeConsoleDispatchOutcome,
+    BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleChoice, BridgeConsoleContext, BridgeConsoleDispatchOutcome,
     BridgeConsolePalettePlan, BridgeConsoleState, BridgeDeferredActionKind, BridgeDeferredState,
     BridgeRecordChoice, BridgeRecordChoiceContext, BridgeRecordChoiceOutcome,
     BridgeRecordChoiceState, ChoiceListBackend, ChoiceListConfig, ChoiceListFrame,
@@ -364,11 +364,12 @@ impl RuntimeBridgeConsole {
     ) -> Result<()> {
         let music_enabled = services.navigation_music_enabled()?;
         let sequel = services.sequel_travel_enabled();
+        prepare_option_menu_vm(sequel.is_some(), &self.console, lifecycle);
         if let Some(enabled) = sequel {
             self.options.travel_enabled = enabled;
         }
         self.options.primary_pointer_pressed = lifecycle.primary_pointer_pressed;
-        self.options.secondary_pointer_pressed = lifecycle.secondary_pointer_pressed;
+        self.options.pointer_press_pending = lifecycle.pointer_press_pending != 0;
         self.options.common.music_supported = services.audio_is_initialized();
         self.options.common.music_active = music_enabled;
         self.options.common.music_label = if music_enabled {
@@ -470,8 +471,8 @@ impl RuntimeBridgeConsole {
                     self.options.common.quit_requested = false;
                     if sequel.is_some() {
                         lifecycle.primary_pointer_pressed = self.options.primary_pointer_pressed;
-                        lifecycle.secondary_pointer_pressed =
-                            self.options.secondary_pointer_pressed;
+                        lifecycle.pointer_press_pending =
+                            u8::from(self.options.pointer_press_pending);
                     }
                     activate_quit_confirmation(
                         lifecycle,
@@ -979,6 +980,19 @@ fn activate_quit_confirmation(lifecycle: &mut GameLifecycleState, navigation_cho
     lifecycle.set_modal_ui_busy(true);
 }
 
+fn prepare_option_menu_vm(
+    sequel: bool,
+    console: &BridgeConsoleState,
+    lifecycle: &mut GameLifecycleState,
+) {
+    if sequel
+        && console.selected == Some(BridgeConsoleChoice::Options)
+        && console.panel_phase == BridgeChoicePanelPhase::NeedsLayout
+    {
+        lifecycle.vm_execution_enabled = false;
+    }
+}
+
 fn draw_runtime_choice_rows(
     services: &mut ModernGameServices<'_>,
     labels: &[&[u8]],
@@ -1154,14 +1168,48 @@ mod tests {
         let mut lifecycle = GameLifecycleState::default();
         lifecycle.primary_pointer_pressed = true;
         lifecycle.pointer_press_pending = 1;
+        lifecycle.secondary_pointer_pressed = true;
         let mut navigation_choice_gate = u8::MIN;
 
         activate_quit_confirmation(&mut lifecycle, &mut navigation_choice_gate);
 
         assert!(!lifecycle.primary_pointer_pressed);
         assert_eq!(lifecycle.pointer_press_pending, u8::MIN);
+        assert!(lifecycle.secondary_pointer_pressed);
         assert_eq!(navigation_choice_gate, 2);
         assert!(lifecycle.modal_ui_busy());
+    }
+
+    #[test]
+    fn only_sequel_options_layout_disables_script_execution() {
+        for sequel in [false, true] {
+            for choice in [
+                None,
+                Some(BridgeConsoleChoice::Options),
+                Some(BridgeConsoleChoice::Navigation),
+            ] {
+                for phase in [
+                    BridgeChoicePanelPhase::NeedsLayout,
+                    BridgeChoicePanelPhase::Transitioning,
+                    BridgeChoicePanelPhase::Interactive,
+                ] {
+                    let console = BridgeConsoleState {
+                        selected: choice,
+                        panel_phase: phase,
+                        ..Default::default()
+                    };
+                    let mut lifecycle = GameLifecycleState::default();
+                    lifecycle.vm_execution_enabled = true;
+                    prepare_option_menu_vm(sequel, &console, &mut lifecycle);
+                    assert_eq!(
+                        lifecycle.vm_execution_enabled,
+                        !(sequel
+                            && choice == Some(BridgeConsoleChoice::Options)
+                            && phase == BridgeChoicePanelPhase::NeedsLayout)
+                    );
+                }
+            }
+        }
     }
 
     #[test]

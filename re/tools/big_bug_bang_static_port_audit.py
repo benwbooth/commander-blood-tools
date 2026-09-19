@@ -73,6 +73,20 @@ COPY_MEMORY = {
     ("gs", 0x252E): (0x2780, "cropped_scene_gate"),
     ("gs", 0x2527): (0x2779, "ship_depth_crop"),
 }
+ARCHIVE_MEMORY = {
+    ("gs", 0x0A86): (0x0C7E, "archive_handle"),
+    ("gs", 0x0A64): (0x0C5C, "directory_ems_handle"),
+    ("gs", 0x0A66): (0x0C5E, "directory_ems_window"),
+    ("gs", 0x0ABC): (0x0CB4, "directory_work_buffer"),
+    ("gs", 0x0A62): (0x0C5A, "directory_xms_handle"),
+    ("", 0x0A4A): (0x0C42, "xms_driver_entry"),
+    ("gs", 0x0A88): (0x0C80, "directory_file_handle"),
+    ("gs", 0x0AE2): (0x0CEB, "archive_member_selected"),
+    ("gs", 0x0A8E): (0x0C86, "member_byte_count"),
+    ("gs", 0x0A92): (0x0C8A, "member_bytes_remaining"),
+    ("gs", 0x0A8A): (0x0C82, "member_position_low"),
+    ("gs", 0x0A8C): (0x0C84, "member_position_high"),
+}
 SUBTITLE_MEMORY = {
     ("", 0x0F18): (0x1166, "sequence_subtitle_cursor"),
     ("", 0x131C): (0x156A, "visible_video_frame"),
@@ -180,6 +194,7 @@ BRIDGE_IMMEDIATES = {
 }
 INDEXED_MEMORY = {("cs", "bx", "", 0x6D4): (0x758, "actor_handler_table")}
 MEMORY_MAPS = {
+    "archive": ARCHIVE_MEMORY,
     "sprite": SPRITE_MEMORY,
     "hover": HOVER_MEMORY,
     "cd": CD_MEMORY,
@@ -189,6 +204,7 @@ MEMORY_MAPS = {
     "bridge": BRIDGE_MEMORY,
 }
 IMMEDIATE_MAPS = {
+    "archive": {("mov", "di", 0x0A6C): (0x0C64, "xms_directory_transfer_request")},
     "sprite": SPRITE_IMMEDIATES,
     "hover": HOVER_IMMEDIATES,
     "cd": CD_IMMEDIATES,
@@ -245,6 +261,7 @@ ROUTINES = (
     (0x1582, 0x163D, 0x13C4, "cd"),
     (0x2049, 0x20CE, 0x1DD8, "bridge"),
     (0x2142, 0x2191, 0x1EC1, "bridge"),
+    (0x2A4F, 0x2B43, 0x26CF, "archive"),
     (0x3EF3, 0x3F13, 0x3B45, "bridge"),
     (0x4002, 0x40E9, 0x3B85, "noise"),
     (0x42D8, 0x42ED, 0x3E5B, "copy"),
@@ -336,7 +353,7 @@ ACTOR_REVIEWS = (
             (
                 0x91AD,
                 0x91BF,
-                "Overview bit1 blocks before any writes; otherwise require outer mode. Runtime run_camera supplies overview gate.",
+                "Overview mask1 blocks before any writes; otherwise require outer mode. Runtime run_camera supplies overview gate.",
             ),
             (
                 0x91BF,
@@ -380,7 +397,7 @@ ACTOR_REVIEWS = (
             (
                 0x927A,
                 0x928D,
-                "Bind Arche; quantity word+22 ==0 returns untouched. Negative and all other nonzero words pass. Runtime reads live typed VAR field.",
+                "Bind Arche; navigation-link word+22 ==0 returns untouched. High-bit and all other nonzero words pass. Runtime reads live typed VAR field.",
             ),
             (
                 0x928D,
@@ -440,6 +457,231 @@ ACTOR_REVIEWS = (
     ),
 )
 
+CONTROL_REVIEWS = (
+    (
+        0x8830,
+        0x8923,
+        0x77E0,
+        "27728a2656dbbad55d02981f72efb03f6b5773dfb36b68246ccc0b0fe68072db",
+        "big_bug_bang_panel_activation.jsonl",
+        (
+            (
+                0x8830,
+                0x8852,
+                "Inactive UI returns; pending scene dispatches and returns without later bridge work.",
+            ),
+            (
+                0x8852,
+                0x8886,
+                "Rebuild sets current/previous hand1; steering input chooses hand2/3 at unsigned x160 boundary and flips page.",
+            ),
+            (
+                0x8886,
+                0x88AD,
+                "Advance pending approach, update mode, then BBB-only CC activation helper before sprite commit, hover and actor pass. Runtime backend supplies helper here.",
+            ),
+            (
+                0x88AD,
+                0x88D7,
+                "Without queued presentation, pending approach draws sprites20..31; otherwise zero animation countdown copies dirty regions.",
+            ),
+            (
+                0x88D7,
+                0x8901,
+                "Chart/camera-state reconciliation, destination navigation, then panel update. Frame-ready gate precedes actor sprites1..19, name effect, status and console.",
+            ),
+            (
+                0x8901,
+                0x8923,
+                "Actor-completion latch remaps rectangle137,139,50,44 using second remap; restore and far return.",
+            ),
+        ),
+    ),
+    (
+        0x8987,
+        0x8A48,
+        0x792D,
+        "9d848cac9f22c5876eda70216b0ea55f7e75f0f7a0a7fe07eaed7abeacc07e5e",
+        "big_bug_bang_travel_options.jsonl",
+        (
+            (
+                0x8987,
+                0x89BE,
+                "Camera view or nonzero approach returns. Arche linked object's kind mask18 and first successful region31 poll are required.",
+            ),
+            (
+                0x89BE,
+                0x89E5,
+                "Hand12; BBB enabled-travel bypasses zero destination access count. Otherwise set UI bit4, arm unlocked palette slot and return; runtime must not request screen rebuild here.",
+            ),
+            (
+                0x89E5,
+                0x8A17,
+                "Zero768 fade-target bytes, copy768 live bytes to source, percent0, step20, palette range0..255.",
+            ),
+            (
+                0x8A17,
+                0x8A48,
+                "Clear complete UI word, ship flags5, request HUD init; clear dialogue hold, scene block, depth, depth opening and HUD byte; restore and return.",
+            ),
+        ),
+    ),
+    (
+        0x8A7D,
+        0x8D88,
+        0x79E5,
+        "d94892180420584551d760f530de3073af6ff2fbfed00bcfb10976df7300b420",
+        "big_bug_bang_presentation.jsonl",
+        (
+            (
+                0x8A7D,
+                0x8AD9,
+                "Require active panel. Queued scene takes separate path. Initial phase sets text origin1, choice0 overridden/consumed by pending CC, previous hand15, phase1, entity31 transition and audio1.",
+            ),
+            (
+                0x8AD9,
+                0x8B43,
+                "Six authored expansion rectangles followed by three remap/noise frames. Signed phase>=100 enters close path.",
+            ),
+            (
+                0x8B43,
+                0x8BD3,
+                "Active panel remaps front/back, clears back140-row band. Empty selected record draws noise and choice; primary press takes common input action.",
+            ),
+            (
+                0x8BD3,
+                0x8C14,
+                "Load selected DESCRIPT, optionally reload music, start stream; initialize scene-list cursor/count and visible frame, then pump scenes.",
+            ),
+            (
+                0x8C14,
+                0x8C3F,
+                "Pending CC replaces/consumes choice then accepts input. Otherwise ending suppresses primary cancellation; dispatch queued scene and test continued ownership.",
+            ),
+            (
+                0x8C3F,
+                0x8C64,
+                "Each remaining scene advances16-byte list entry, publishes line2 and loops into queued dispatch.",
+            ),
+            (
+                0x8C64,
+                0x8C8D,
+                "Whole list completion resets subtitle cursor, requests rebuild and phase7. Reverse retains transition; ending requests shutdown; ordinary sequel completion closes at phase106 and clears back content.",
+            ),
+            (
+                0x8C8D,
+                0x8C9D,
+                "Queued frame-ready draws subtitle then choice, otherwise waits.",
+            ),
+            (
+                0x8C9D,
+                0x8CEC,
+                "Reverse input closes and finalizes only if queued; ordinary input selects hand14, prepares/plays audio1, finalizes, cycles six choices and sets phase7.",
+            ),
+            (
+                0x8CEC,
+                0x8D14,
+                "Clear back content rectangle0,10,320,130 and restore front target.",
+            ),
+            (
+                0x8D14,
+                0x8D58,
+                "Final phase100 hides resource, clears panel/UI modal, phase0, completion audio, text origin8, rebuild; reverse restores variant12, otherwise reset ship camera.",
+            ),
+            (
+                0x8D58,
+                0x8D88,
+                "Closing decrements phase and draws matching reverse authored rectangle; restore and return.",
+            ),
+        ),
+    ),
+    (
+        0x9778,
+        0x98A3,
+        0x85E2,
+        "32e3b73083bc927d2cf687eb3bd0a7fa56264e44cbd13d11e1add4e4c9b06b65",
+        None,
+        (
+            (
+                0x9778,
+                0x97AE,
+                "Queued scene, save/load, text/BBB simulation submenu, confirmation or active presentation rejects. Existing selection bypasses hit testing.",
+            ),
+            (
+                0x97AE,
+                0x97DC,
+                "Signed bridge frame40..60 required; input sample then reset five console palette rows to16,12,0.",
+            ),
+            (
+                0x97DC,
+                0x982B,
+                "Frame-relative signed horizontal bounds; wrapped y difference and native row height select one of five rows.",
+            ),
+            (
+                0x982B,
+                0x9845,
+                "Highlight selected row red63; primary press required for activation.",
+            ),
+            (
+                0x9845,
+                0x988B,
+                "Hand5, selection=row+1, UI bits4/8, seek90, layout1, target y80+row18; initialize list input gates, width100, delay10 and audio4.",
+            ),
+            (
+                0x988B,
+                0x98A3,
+                "UI bit8 defers; otherwise call five-entry handler table by selection-1; restore and return.",
+            ),
+        ),
+    ),
+    (
+        0x9A11,
+        0x9B45,
+        0x886C,
+        "6de2438c22cd75c5dae406929d6d843855a8aa68f53fcf5d7bab4584f5a968ae",
+        "big_bug_bang_options.json",
+        (
+            (
+                0x9A11,
+                0x9A46,
+                "On layout phase disable VM, reset selector, guarded list layout, increment phase and save measured rectangle.",
+            ),
+            (
+                0x9A46,
+                0x9A6D,
+                "Transition must complete before interactive list; negative result keeps menu open.",
+            ),
+            (
+                0x9A6D,
+                0x9AB6,
+                "Rows0/1 open simulation/text speed with phase1; row2 toggles travel independent of audio and replaces label.",
+            ),
+            (
+                0x9AB6,
+                0x9B05,
+                "Row3 unsupported music does nothing; otherwise toggle, reset stream latches, replace label and load/start only when enabling.",
+            ),
+            (
+                0x9B05,
+                0x9B38,
+                "Rows4/5 request save/load and panel. Row6 requests confirmation2 and clears primary0C36 and pending0C38, never secondary0C37.",
+            ),
+            (
+                0x9B38,
+                0x9B45,
+                "Selected action or cancel clears console selection and UI modal bit, then returns.",
+            ),
+        ),
+    ),
+)
+CONTROL_OWNERS = {0x9A11: "update_sequel_option_menu"}
+CONTROL_RUNTIME = (
+    "crates/commander-blood-game/src/runtime/bridge_frame.rs",
+    "crates/commander-blood-game/src/runtime/camera_navigation.rs",
+    "crates/commander-blood-game/src/runtime/bridge_console.rs",
+    "crates/commander-blood-game/src/runtime/presentation_screen.rs",
+)
+
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -481,7 +723,7 @@ def compare_body(original: bytes, sequel: bytes, old: int, new: int, kind: str):
                 }
             )
             continue
-        if ins.mnemonic == "lcall":
+        if ins.mnemonic == "lcall" and ins.operands[0].type == X86_OP_IMM:
             target = tuple(operand.imm for operand in ins.operands)
             if target not in FAR_CALLS:
                 raise ValueError(f"unreviewed far call at {ins.address:#x}")
@@ -578,6 +820,7 @@ def build_report():
         (0x0B62, 0x0D6C, 9, "channel_mix_transfer"),
         (0x0B6B, 0x0D75, 7, "track_information_transfer"),
         (0x0B72, 0x0D7C, 22, "cd_playback_request"),
+        (0x2B97, 0x2F67, 48, "presentation_panel_rectangles"),
     ):
         # MZ entry loads DS=GS=0xCE2 / 0xEFF, after 0x600 / 0x800 headers.
         original = commander[0xD420 + old_offset : 0xD420 + old_offset + length]
@@ -628,7 +871,10 @@ def build_report():
                 "and callee relocations. Relative branches, non-address constants, "
                 "register widths, memory addressing, traversal, and return are unchanged."
             )
-        if f"fn {owner['symbol']}" not in (ROOT / owner["path"]).read_text():
+        if (
+            f"fn {owner['symbol'].split('::')[-1]}"
+            not in (ROOT / owner["path"]).read_text()
+        ):
             raise ValueError(f"missing Rust owner {owner}")
         fixture = source["evidence"].split(":", 1)[0]
         inputs[owner["path"]] = sha256((ROOT / owner["path"]).read_bytes())
@@ -647,16 +893,19 @@ def build_report():
                 "notes": notes,
             }
         )
-    for entry, end, old, digest, delta_fixture, blocks in ACTOR_REVIEWS:
+    for entry, end, old, digest, delta_fixture, blocks in (
+        *ACTOR_REVIEWS,
+        *CONTROL_REVIEWS,
+    ):
         body = bbb[entry:end]
         if sha256(body) != digest:
-            raise ValueError(f"changed reviewed actor body at {entry:#x}")
+            raise ValueError(f"changed reviewed body at {entry:#x}")
         if (
             blocks[0][0] != entry
             or blocks[-1][1] != end
             or any(left[1] != right[0] for left, right in zip(blocks, blocks[1:]))
         ):
-            raise ValueError("actor review must cover the complete body")
+            raise ValueError("review must cover the complete body")
         source = ported[old]
         fixture = source["evidence"].split(":", 1)[0]
         paths = [
@@ -666,6 +915,7 @@ def build_report():
             SERVICES,
             SEQUEL_PRESENTATION,
         ]
+        paths.extend(CONTROL_RUNTIME)
         if delta_fixture:
             paths.append(f"re/tools/oracle_vectors/{delta_fixture}")
         for path in paths:
@@ -673,7 +923,7 @@ def build_report():
         patches = []
         if entry == 0x927A:
             if body[:19].hex() != "5106668e06ee6a8b3e226b26837d1600077441":
-                raise ValueError("Arche quantity gate changed")
+                raise ValueError("Arche navigation-link gate changed")
             _, patches = compare_body(
                 commander[0x813B:0x817E], bbb[0x928D:0x92D0], 0x813B, 0x928D, "bridge"
             )
@@ -686,7 +936,7 @@ def build_report():
                 "body_sha256": digest,
                 "rust_owner": {
                     "path": source["rust_path"],
-                    "symbol": source["rust_symbol"],
+                    "symbol": CONTROL_OWNERS.get(entry, source["rust_symbol"]),
                 },
                 "inherited_fixture": fixture,
                 "instruction_count": len(decode(body, entry)),
@@ -696,7 +946,7 @@ def build_report():
                     for start, stop, note in blocks
                 ],
                 "notes": [
-                    "Complete BBB actor compared block-by-block with its Commander "
+                    "Complete BBB entry compared block-by-block with its Commander "
                     "baseline, typed handler, and production runtime adapter. Sequel "
                     "guards and changed paths are explicit; this is not an exact-body "
                     "equivalence or a new whole-entry native execution claim.",

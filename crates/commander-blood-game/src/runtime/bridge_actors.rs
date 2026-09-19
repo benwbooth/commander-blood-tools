@@ -201,11 +201,8 @@ fn travel_actor_ready(slots: &[NavActorSlot; NAV_ACTOR_SLOT_COUNT]) -> bool {
     slots[BLACK_HOLE_ACTOR_SLOT].flags.executable_flags() == ACTIVE_ONLY_SLOT_FLAGS
 }
 
-fn palette_actor_enabled(
-    mode: Option<PresentationBridgeMode>,
-    sequel_quantity: Option<u16>,
-) -> bool {
-    sequel_quantity != Some(0)
+fn palette_actor_enabled(mode: Option<PresentationBridgeMode>, sequel_link: Option<u16>) -> bool {
+    sequel_link != Some(0)
         && matches!(
             mode,
             Some(PresentationBridgeMode::Outer | PresentationBridgeMode::ThirdBand)
@@ -217,7 +214,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn sequel_palette_gate_tests_zero_not_sign_or_positive_quantity() {
+    fn sequel_palette_gate_rejects_only_the_zero_navigation_link() {
         for mode in [
             None,
             Some(PresentationBridgeMode::Outer),
@@ -230,10 +227,10 @@ mod tests {
                 Some(PresentationBridgeMode::Outer | PresentationBridgeMode::ThirdBand)
             );
             assert_eq!(palette_actor_enabled(mode, None), native_ui);
-            for quantity in 0..=u16::MAX {
+            for link in 0..=u16::MAX {
                 assert_eq!(
-                    palette_actor_enabled(mode, Some(quantity)),
-                    native_ui && quantity != 0
+                    palette_actor_enabled(mode, Some(link)),
+                    native_ui && link != 0
                 );
             }
         }
@@ -448,7 +445,10 @@ impl RuntimeBridgeActorBackend<'_, '_> {
     }
 
     fn run_palette(&mut self, line: &mut PresentationLine, seek: &NavActorSeekState) -> Result<()> {
-        if !palette_actor_enabled(self.mode, self.services.sequel_arche_quantity()?) {
+        if !palette_actor_enabled(
+            self.mode,
+            self.services.sequel_arche_navigation_link_word()?,
+        ) {
             return Ok(());
         }
         let mut state = std::mem::take(self.palette);
