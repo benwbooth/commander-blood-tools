@@ -19,6 +19,8 @@ PORTED = ROOT / "re/rust-port/ported.tsv"
 OUTPUT = ROOT / "re/big_bug_bang_static_port_audit.json"
 HOVER = "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs"
 SERVICES = "crates/commander-blood-game/src/runtime/services.rs"
+GROWTH = "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs"
+DISPATCH = "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs"
 
 # These are individual reviewed identities, never a blanket displacement delta.
 # CS flip bytes are written by BBB 0x4944/0x494C; the other CS slots are local
@@ -282,6 +284,63 @@ def build_report():
                 "notes": notes,
             }
         )
+    bounds_body = bbb[0x5D5D:0x5DD7]
+    if (
+        sha256(bounds_body)
+        != "b6caab984be4acc640532da88331d7d66404adc7b33034f3b56d91897fe90329"
+    ):
+        raise ValueError("sequel post-scan bounds body changed")
+    if bbb[0x5B3D:0x5B46].hex() != "e80101e89402e81702":
+        raise ValueError("sequel post-scan call ordering changed")
+    for path in (GROWTH, DISPATCH):
+        inputs[path] = sha256((ROOT / path).read_bytes())
+    rows.append(
+        {
+            "entry": "0x5d5d",
+            "end": "0x5dd7",
+            "commander_entry": None,
+            "kind": "reviewed_transcription",
+            "body_sha256": sha256(bounds_body),
+            "rust_owner": {"path": GROWTH, "symbol": "bound_sequel_simulation_fields"},
+            "inherited_fixture": None,
+            "instruction_count": len(decode(bounds_body, 0x5D5D)),
+            "reviewed_relocations": [],
+            "reviewed_blocks": [
+                ["0x5d5d", "0x5d70", "Bind VAR/directory; DX=1000, CX=0."],
+                [
+                    "0x5d70",
+                    "0x5d80",
+                    "Directory-order selection: actor kind bit 1, participation bit 2 only.",
+                ],
+                [
+                    "0x5d80",
+                    "0x5da2",
+                    "Signed clamps of aggressiveness +50 and relief +56 to [0,1000].",
+                ],
+                ["0x5da2", "0x5db3", "Signed clamp of quantity +22 to [0,1000]."],
+                [
+                    "0x5db3",
+                    "0x5dc8",
+                    "Signed clamp of growth balance +52; both NEG CX operations retain zero.",
+                ],
+                [
+                    "0x5dc8",
+                    "0x5dd7",
+                    "Advance directory by 20 while next kind is object; restore registers and return.",
+                ],
+            ],
+            "notes": [
+                "Reviewed BBB-only transcription, not inherited Commander equivalence. "
+                "The four writes preserve native order and signed 16-bit comparisons; "
+                "nonparticipating actors and nonactors are untouched. All 256 flag bytes "
+                "and signed boundary cases are checked against complete typed state.",
+                "Caller 0x5B3D commits concepts, 0x5B40 scans presentation, 0x5B43 applies "
+                "bounds, then 0x5B46 reloads the simulation clock. Dispatcher runs bounds "
+                "after successful host scan; disabled/error paths bypass it. The focused "
+                "dispatch test verifies post-scan writes are bounded and paused state remains untouched.",
+            ],
+        }
+    )
     return {
         "format": "big_bug_bang_static_port_audit_v1",
         "scope": "Reviewed native equivalence plus Rust ownership; not a new native "

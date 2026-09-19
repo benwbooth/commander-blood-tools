@@ -5,7 +5,7 @@
     "re/big_bug_bang_oracle_coverage.json": "b5135e26f26416adcbc639c7b9c4969b7f37c9f3cb7e19577826a866810d4666",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "d54671db0801c96dbb9728fae76a803f1bbd67d88d80b04062ee284c67089502",
-    "re/big_bug_bang_static_port_audit.json": "ef37dfe48946a6d15ad4606535eb2d6783bea0fea64cff0b91d1463d8cbef61f",
+    "re/big_bug_bang_static_port_audit.json": "6db2bee4ab8011eb5d254aa1984d86b17f93bf48cf288525192a912ff909e01d",
     "re/big_bug_bang_unreferenced_library_audit.json": "2509d2ba5893b4b96c1f032a0cacb68e0f9b47c5bb8022e5d64cab740c02b290",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
     "re/rust-port/eliminated.tsv": "aa49ae8d83ad3c047f48df0f51c1909c6116f332eb02e95c67462a94b3c9f478",
@@ -13,8 +13,8 @@
   },
   "summary": {
     "known_entrypoint_count": 383,
-    "classified_entrypoint_count": 343,
-    "pending_game_semantics_count": 40,
+    "classified_entrypoint_count": 344,
+    "pending_game_semantics_count": 39,
     "status_counts": {
       "eliminated_authored_no_operation": 10,
       "eliminated_dormant_diagnostic": 18,
@@ -22,9 +22,9 @@
       "eliminated_unreferenced_library": 3,
       "inherited_exact_eliminated": 7,
       "inherited_exact_typed": 6,
-      "pending_game_semantics": 40,
+      "pending_game_semantics": 39,
       "verified_direct_typed": 262,
-      "verified_static_typed": 11
+      "verified_static_typed": 12
     }
   },
   "entrypoints": [
@@ -2609,12 +2609,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs",
+        "symbol": "bound_sequel_simulation_fields"
+      },
+      "rationale": "Reviewed BBB-only transcription, not inherited Commander equivalence. The four writes preserve native order and signed 16-bit comparisons; nonparticipating actors and nonactors are untouched. All 256 flag bytes and signed boundary cases are checked against complete typed state. Caller 0x5B3D commits concepts, 0x5B40 scans presentation, 0x5B43 applies bounds, then 0x5B46 reloads the simulation clock. Dispatcher runs bounds after successful host scan; disabled/error paths bypass it. The focused dispatch test verifies post-scan writes are bounded and paused state remains untouched."
     },
     {
       "entry": "0x5dd7",
@@ -3421,8 +3425,8 @@
         "re/tools/oracle_vectors/big_bug_bang_growth.jsonl"
       ],
       "rust_owner": {
-        "path": "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs",
-        "symbol": "sequel_growth_matches_complete_native_handler_and_selection_helper"
+        "path": "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs",
+        "symbol": "sequel_post_scan_bounds_follow_host_writes_and_skip_disabled_passes"
       },
       "rationale": "Unchanged BBB execution enters this routine in the named oracle, and that oracle's checked fixture rows are consumed by the named Rust test owner."
     },
@@ -3469,8 +3473,8 @@
         "re/tools/oracle_vectors/big_bug_bang_growth.jsonl"
       ],
       "rust_owner": {
-        "path": "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs",
-        "symbol": "sequel_growth_matches_complete_native_handler_and_selection_helper"
+        "path": "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs",
+        "symbol": "sequel_post_scan_bounds_follow_host_writes_and_skip_disabled_passes"
       },
       "rationale": "Unchanged BBB execution enters this routine in the named oracle, and that oracle's checked fixture rows are consumed by the named Rust test owner."
     },

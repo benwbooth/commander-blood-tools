@@ -346,7 +346,8 @@ def build_report() -> dict[str, Any]:
             static = static_rows[entry]
             row.update(
                 status="verified_static_typed",
-                evidence=[str(STATIC_PORT_AUDIT.relative_to(ROOT)), static["inherited_fixture"]],
+                evidence=[str(STATIC_PORT_AUDIT.relative_to(ROOT)),
+                          static["inherited_fixture"] or static["rust_owner"]["path"]],
                 rust_owner=static["rust_owner"],
                 rationale=" ".join(static["notes"]),
             )

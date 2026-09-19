@@ -5666,6 +5666,29 @@ The ledger distinguishes eleven `verified_static_typed` entries from 262
 directly executed typed entries. With the three authored returns, 343/383 native
 entries are classified and 40 remain pending. No full scenario campaign was rerun.
 
+## Post-Scan Simulation Bounds (2026-09-19)
+
+BBB `0x5D5D..0x5DD7` had no production counterpart. It visits the contiguous
+directory object prefix, selects actor kind bit `2` with participation flag
+`4`, and bounds signed words at +50 (aggressiveness), +56 (pressure relief),
++22 (quantity), and +52 (growth balance), in that order, to `[0,1000]`.
+It does not test in-play status, group, location, engagement, or countdown.
+Both `NEG CX` instructions retain zero; the balance lower bound is not -1000.
+
+`bound_sequel_simulation_fields` now performs these writes after successful
+presentation scanning in the typed dispatcher. The original caller order is
+concept commit, presentation scan, bounds, then simulation-clock reload at
+`0x5B3D..0x5B56`. Paused passes still perform their pre-frame actor refresh but
+skip this post-scan normalization. Error paths do not reach it either.
+
+The static audit pins the complete 122-byte body and its caller sequence, with
+a block-by-block transcription record distinct from inherited equivalence.
+The focused tests compare complete state across all 256 flag bytes and nine
+signed boundaries, and verify the post-scan write order and disabled-pass gate.
+Script-dispatch tests pass 14 (3 asset-dependent tests ignored); the six growth
+and simulation tests pass. The native ledger is now 344/383 classified,
+including 12 static typed entries, with 39 pending.
+
 ## Remaining Completion Requirements
 
 As of 2026-09-19, work proceeds source-first: compare remaining BBB native

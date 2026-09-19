@@ -5,7 +5,7 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "dd2bd5cf7a2ab1a7a7a479056e86c1f85ca32f6fdb88a58a4ed16fead11ef9da",
+    "re/tools/big_bug_bang_static_port_audit.py": "c16d06bd725f0358e57e3a814f71af4d08fb49e88b005389fdf2b9a35baeaed7",
     "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
     "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
     "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
@@ -23,7 +23,9 @@
     "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs": "5f3e726b5afc93d86dd70b2cd46fbfe79ed5055ae5de0c68113fa19cfb990944",
     "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e",
     "crates/commander-blood-game/src/native/bloodprg/sequence_subtitles.rs": "8601e3e8549fa6750a8a2a517c61fc4b2441fa2b6df0446243ee1f4858c4639d",
-    "re/tools/oracle_vectors/func_7ce8_natural.json": "7de7ccaaa1b790613ee96602463d9e7adc6886ab4f0c2017da47360bb6d649c3"
+    "re/tools/oracle_vectors/func_7ce8_natural.json": "7de7ccaaa1b790613ee96602463d9e7adc6886ab4f0c2017da47360bb6d649c3",
+    "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b",
+    "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "5817021dc5d13d2b46d0492bfd2c07e0976d4a534b70c219e3b5235099ddf4b3"
   },
   "identical_initializers": [
     {
@@ -847,6 +849,56 @@
       "notes": [
         "Frame-timed centered sequence subtitles over decoded typed cues renderer-owned video time and authored text slices without packed streams address cursors or terminal markers",
         "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x5d5d",
+      "end": "0x5dd7",
+      "commander_entry": null,
+      "kind": "reviewed_transcription",
+      "body_sha256": "b6caab984be4acc640532da88331d7d66404adc7b33034f3b56d91897fe90329",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs",
+        "symbol": "bound_sequel_simulation_fields"
+      },
+      "inherited_fixture": null,
+      "instruction_count": 51,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x5d5d",
+          "0x5d70",
+          "Bind VAR/directory; DX=1000, CX=0."
+        ],
+        [
+          "0x5d70",
+          "0x5d80",
+          "Directory-order selection: actor kind bit 1, participation bit 2 only."
+        ],
+        [
+          "0x5d80",
+          "0x5da2",
+          "Signed clamps of aggressiveness +50 and relief +56 to [0,1000]."
+        ],
+        [
+          "0x5da2",
+          "0x5db3",
+          "Signed clamp of quantity +22 to [0,1000]."
+        ],
+        [
+          "0x5db3",
+          "0x5dc8",
+          "Signed clamp of growth balance +52; both NEG CX operations retain zero."
+        ],
+        [
+          "0x5dc8",
+          "0x5dd7",
+          "Advance directory by 20 while next kind is object; restore registers and return."
+        ]
+      ],
+      "notes": [
+        "Reviewed BBB-only transcription, not inherited Commander equivalence. The four writes preserve native order and signed 16-bit comparisons; nonparticipating actors and nonactors are untouched. All 256 flag bytes and signed boundary cases are checked against complete typed state.",
+        "Caller 0x5B3D commits concepts, 0x5B40 scans presentation, 0x5B43 applies bounds, then 0x5B46 reloads the simulation clock. Dispatcher runs bounds after successful host scan; disabled/error paths bypass it. The focused dispatch test verifies post-scan writes are bounded and paused state remains untouched."
       ]
     }
   ]

@@ -41,6 +41,7 @@ use super::script_selector::{ScriptSelectionError, ScriptSelectorState, commit_s
 use super::sequel_growth::{
     SequelConflictState, SequelGrowthError, SequelSettlementContext, SequelSettlementState,
     SequelSimulationContext, apply_sequel_conflict, apply_sequel_growth, apply_sequel_settlement,
+    bound_sequel_simulation_fields,
 };
 use super::sequel_presentation::{SequelPresentationControl, assign_presentation_sequence};
 use super::sequence::{
@@ -855,6 +856,10 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 builtins: self.builtins,
             })
             .map_err(ScriptDispatchError::Host)?;
+        if self.state.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang {
+            bound_sequel_simulation_fields(self.state)
+                .map_err(ScriptDispatchError::SequelGrowth)?;
+        }
         self.records
             .refresh_relationships_from_var(
                 self.instructions,
@@ -941,6 +946,7 @@ mod tests {
         settlement: Option<SequelSettlementContext>,
         subtitle: Option<Box<[u8]>>,
         subtitle_calls: Vec<ScriptCodeOffset>,
+        post_scan_write: Option<(commander_blood_formats::script::ScriptStateWord, u16)>,
     }
 
     #[test]
@@ -1314,9 +1320,12 @@ mod tests {
 
         fn scan_presentation(
             &mut self,
-            _context: ScriptPostScanContext<'_>,
+            context: ScriptPostScanContext<'_>,
         ) -> Result<(), Self::Error> {
             self.scans += 1;
+            if let Some((word, value)) = self.post_scan_write {
+                assert!(context.state.set_word(word, value));
+            }
             Ok(())
         }
     }
@@ -1411,6 +1420,88 @@ mod tests {
 
         assert_eq!(outcome, Err(ScriptDispatchError::InvalidLegacyYieldSignal));
         assert!(!runtime.take_yield_request());
+    }
+
+    #[test]
+    fn sequel_post_scan_bounds_follow_host_writes_and_skip_disabled_passes() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::script::{
+            decode_script_dictionary, decode_script_directory, decode_script_state_for_dialect,
+        };
+        #[derive(serde::Deserialize)]
+        struct Fixture {
+            directory: Vec<u8>,
+            state_before: Vec<u8>,
+        }
+        let fixture: Fixture = serde_json::from_str(
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_growth.jsonl")
+                .lines()
+                .next()
+                .unwrap(),
+        )
+        .unwrap();
+        let directory = decode_script_directory(&fixture.directory).unwrap();
+        let dictionary = decode_script_dictionary(&[]).unwrap();
+        let dialogue = decode_script_bas(&[u8::MAX], &dictionary).unwrap();
+        let code = decode_script_code_for_dialect(&[u8::MAX], ScriptDialect::BigBugBang).unwrap();
+        let builtins = ScriptProfileBuiltins {
+            player: directory.find_active_object(b"blood"),
+            ..Default::default()
+        };
+        for enabled in [false, true] {
+            let mut state = decode_script_state_for_dialect(
+                &fixture.state_before,
+                &directory,
+                ScriptDialect::BigBugBang,
+            )
+            .unwrap();
+            let actor = directory.find_active_object(b"actor0").unwrap();
+            let flags = state.object_word(actor, 1).unwrap();
+            let balance = state.object_word(actor, 26).unwrap();
+            assert!(state.set_word(flags, 4));
+            assert!(state.set_word(balance, u16::MAX));
+            let before = state.clone();
+            let mut records =
+                ScriptProfileRecordState::recover(&[], &state, &dictionary, builtins).unwrap();
+            let mut runtime = ScriptRuntime::new();
+            let mut procedures = super::super::ScriptProcedureStates::default();
+            let mut selector = ScriptSelectorState::default();
+            let mut slots = super::super::ScriptSequenceSlots::default();
+            let mut dispatch = ScriptDispatchState::default();
+            let mut host = TraversalHost {
+                builtins,
+                post_scan_write: Some((balance, 1001)),
+                ..Default::default()
+            };
+            let mut dispatcher = Dispatcher {
+                code: &code,
+                instructions: &[],
+                dialogue: &dialogue,
+                state: &mut state,
+                dictionary: &dictionary,
+                directory: &directory,
+                builtins,
+                procedures: &mut procedures,
+                selector: &mut selector,
+                sequence_slots: &mut slots,
+                records: &mut records,
+                dispatch: &mut dispatch,
+                host: &mut host,
+            };
+            let outcome =
+                execute_decoded_script_frame(&code, &[], enabled, &mut runtime, &mut dispatcher)
+                    .unwrap();
+            assert_eq!(host.scans, usize::from(enabled));
+            assert_eq!(
+                state.word(balance),
+                Some(if enabled { 1000 } else { u16::MAX })
+            );
+            if !enabled {
+                assert_eq!(outcome.end, super::super::ScriptFrameEnd::ExecutionDisabled);
+                assert_eq!(state, before);
+            }
+        }
     }
 
     #[test]

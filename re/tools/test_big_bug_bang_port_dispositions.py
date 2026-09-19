@@ -25,8 +25,8 @@ UNREFERENCED_LIBRARY_AUDIT_PATH = (
 )
 BUILDER_PATH = ROOT / "re/tools/build_big_bug_bang_port_dispositions.py"
 KNOWN_ENTRYPOINT_COUNT = 383
-CLASSIFIED_ENTRYPOINT_COUNT = 343
-PENDING_GAME_SEMANTICS_COUNT = 40
+CLASSIFIED_ENTRYPOINT_COUNT = 344
+PENDING_GAME_SEMANTICS_COUNT = 39
 EXPECTED_STATUS_COUNTS = {
     "eliminated_authored_no_operation": 10,
     "eliminated_dormant_diagnostic": 18,
@@ -36,7 +36,7 @@ EXPECTED_STATUS_COUNTS = {
     "inherited_exact_typed": 6,
     "pending_game_semantics": PENDING_GAME_SEMANTICS_COUNT,
     "verified_direct_typed": 262,
-    "verified_static_typed": 11,
+    "verified_static_typed": 12,
 }
 
 spec = importlib.util.spec_from_file_location("bbb_disposition_builder", BUILDER_PATH)
@@ -131,7 +131,7 @@ class BigBugBangPortDispositionTests(unittest.TestCase):
                 audit = json.loads((ROOT / audit_path).read_text())
                 static = next(item for item in audit["routines"] if item["entry"] == row["entry"])
                 self.assertEqual(static["rust_owner"], row["rust_owner"])
-                self.assertEqual(static["inherited_fixture"], fixture)
+                self.assertEqual(static["inherited_fixture"] or static["rust_owner"]["path"], fixture)
                 self.assertEqual(static["body_sha256"], hashlib.sha256(
                     executable[entry:int(static["end"], 16)]).hexdigest())
                 self.assert_rust_owner_exists(row["rust_owner"])

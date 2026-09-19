@@ -608,6 +608,40 @@ pub fn apply_sequel_growth(
     Ok(ScriptControl::Continue)
 }
 
+/// BBB `0x5D5D..0x5DD7`, called after the presentation scan on enabled passes.
+/// Only actor kind and participation bit 2 are tested, not in-play or group.
+pub fn bound_sequel_simulation_fields(state: &mut ScriptState) -> Result<(), SequelGrowthError> {
+    if state.dialect() != ScriptDialect::BigBugBang {
+        return Err(SequelGrowthError::WrongDialect);
+    }
+    let actors = state
+        .objects()
+        .iter()
+        .filter(|object| object.kind == ScriptObjectKind::Actor)
+        .map(|object| object.id)
+        .collect::<Vec<_>>();
+    for actor in actors {
+        if read(state, actor, FLAGS_FIELD)? & PARTICIPATING_FLAG == 0 {
+            continue;
+        }
+        // Native CX is zero throughout; NEG CX does not make the balance
+        // lower bound negative. Preserve native field/write order.
+        for offset in [
+            AGGRESSIVENESS_FIELD,
+            PRESSURE_RELIEF_FIELD,
+            QUANTITY_FIELD,
+            GROWTH_BALANCE_FIELD,
+        ] {
+            let value = read(state, actor, offset)? as i16;
+            let bounded = value.clamp(0, SCALE);
+            if bounded != value {
+                write(state, actor, offset, bounded as u16)?;
+            }
+        }
+    }
+    Ok(())
+}
+
 fn select_actors(
     state: &ScriptState,
     group_mask: u16,
@@ -721,6 +755,72 @@ mod tests {
     use serde::Deserialize;
 
     use super::*;
+
+    #[test]
+    fn sequel_post_scan_bounds_only_participating_actor_fields() {
+        let vector: GrowthOracle = serde_json::from_str(
+            include_str!("../../../../../re/tools/oracle_vectors/big_bug_bang_growth.jsonl")
+                .lines()
+                .next()
+                .unwrap(),
+        )
+        .unwrap();
+        let directory = decode_script_directory(&vector.directory).unwrap();
+        let initial = decode_script_state_for_dialect(
+            &vector.state_before,
+            &directory,
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        for flags in 0..=u8::MAX {
+            for value in [i16::MIN, -1000, -1, 0, 1, 999, 1000, 1001, i16::MAX] {
+                let mut state = initial.clone();
+                let objects = state
+                    .objects()
+                    .iter()
+                    .map(|object| (object.id, object.kind))
+                    .collect::<Vec<_>>();
+                for &(object, kind) in &objects {
+                    write(&mut state, object, FLAGS_FIELD, u16::from(flags)).unwrap();
+                    if kind == ScriptObjectKind::Actor {
+                        for offset in [
+                            AGGRESSIVENESS_FIELD,
+                            PRESSURE_RELIEF_FIELD,
+                            QUANTITY_FIELD,
+                            GROWTH_BALANCE_FIELD,
+                        ] {
+                            write(&mut state, object, offset, value as u16).unwrap();
+                        }
+                    }
+                }
+                let mut expected = state.clone();
+                for &(object, kind) in &objects {
+                    if kind == ScriptObjectKind::Actor && flags & 4 != 0 {
+                        for offset in [
+                            AGGRESSIVENESS_FIELD,
+                            PRESSURE_RELIEF_FIELD,
+                            QUANTITY_FIELD,
+                            GROWTH_BALANCE_FIELD,
+                        ] {
+                            write(
+                                &mut expected,
+                                object,
+                                offset,
+                                match value {
+                                    i16::MIN..=-1 => 0,
+                                    1001..=i16::MAX => 1000,
+                                    _ => value as u16,
+                                },
+                            )
+                            .unwrap();
+                        }
+                    }
+                }
+                bound_sequel_simulation_fields(&mut state).unwrap();
+                assert_eq!(state, expected, "flags={flags:#x}, value={value}");
+            }
+        }
+    }
 
     #[derive(Deserialize)]
     struct GrowthOracle {
