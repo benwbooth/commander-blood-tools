@@ -168,6 +168,42 @@ pub fn presentable_navigation_objects(
     Ok(filter_presentable_navigation_objects(state, &source, arche))
 }
 
+/// Return BBB's location-only ship targets, excluding both ship identities.
+///
+/// BBB `0x8270..0x82C6` retains the target-first traversal but tests only kind
+/// bit `0x80` at `0x8295`, then excludes Arche and Ark at `0x82A2..0x82AE`.
+/// Composite native kind masks are outside the decoded object-kind domain.
+pub fn sequel_presentable_navigation_objects(
+    state: &ScriptState,
+    target: ScriptObjectId,
+    arche: ScriptObjectId,
+    ark: ScriptObjectId,
+) -> Result<Vec<ScriptObjectId>, ScriptNavigationError> {
+    let mut source = Vec::with_capacity(state.objects().len());
+    source.push(target);
+    source.extend(navigation_source_objects(state, target)?);
+    Ok(filter_sequel_presentable_navigation_objects(
+        state, &source, arche, ark,
+    ))
+}
+
+fn filter_sequel_presentable_navigation_objects(
+    state: &ScriptState,
+    source: &[ScriptObjectId],
+    arche: ScriptObjectId,
+    ark: ScriptObjectId,
+) -> Vec<ScriptObjectId> {
+    filter_presentable_navigation_objects(state, source, arche)
+        .into_iter()
+        .filter(|object| *object != ark)
+        .filter(|object| {
+            state
+                .object(*object)
+                .is_some_and(|record| record.kind == ScriptObjectKind::Location)
+        })
+        .collect()
+}
+
 /// Resolve the live coordinate pair used for one navigation object.
 ///
 /// This translates `ship_3d_position_field_resolve` at BLOODPRG file offset
@@ -1169,6 +1205,128 @@ mod tests {
                 vector.name
             );
         }
+    }
+
+    #[test]
+    fn sequel_presentable_navigation_filter_matches_the_bbb_oracle() {
+        let vectors: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentable_navigation.json"
+        ))
+        .unwrap();
+        let rows = vectors["rows"].as_array().unwrap();
+        assert_eq!(rows.len(), 12);
+        let mut checked = 0;
+        let mut unsupported = 0;
+        for row in rows {
+            let records = row["objects"].as_object().unwrap();
+            let kinds = records
+                .values()
+                .map(|record| {
+                    ScriptObjectKind::decode(u16::try_from(record[0].as_u64().unwrap()).unwrap())
+                })
+                .collect::<Option<Vec<_>>>();
+            if row["typed_supported"] == false {
+                assert!(
+                    kinds.is_none(),
+                    "unsupported fixture unexpectedly became representable"
+                );
+                unsupported += 1;
+                continue;
+            }
+            let mut kinds = kinds.expect("typed fixture contains an unsupported kind");
+            let mut offsets = records
+                .keys()
+                .map(|offset| u16::from_str_radix(offset.trim_start_matches("0x"), 16).unwrap())
+                .collect::<Vec<_>>();
+            let arche = u16::try_from(row["arche"].as_u64().unwrap()).unwrap();
+            let ark = u16::try_from(row["ark"].as_u64().unwrap()).unwrap();
+            // Exclusions can refer to objects absent from the helper's source list.
+            for exclusion in [arche, ark] {
+                if !offsets.contains(&exclusion) {
+                    offsets.push(exclusion);
+                    kinds.push(ScriptObjectKind::Location);
+                }
+            }
+            let mut state = navigation_fixture(&kinds, &vec![None; kinds.len()]);
+            let objects = state
+                .objects()
+                .iter()
+                .map(|object| object.id)
+                .collect::<Vec<_>>();
+            let object_at =
+                |offset: u16| objects[offsets.iter().position(|value| *value == offset).unwrap()];
+            for (offset, record) in records {
+                let offset = u16::from_str_radix(offset.trim_start_matches("0x"), 16).unwrap();
+                let field = state
+                    .object_byte(object_at(offset), OBJECT_FLAGS_BYTE_OFFSET)
+                    .unwrap();
+                assert!(state.set_byte(field, u8::try_from(record[1].as_u64().unwrap()).unwrap()));
+            }
+            let source = std::iter::once(&row["target"][1])
+                .chain(row["source"].as_array().unwrap())
+                .map(|offset| object_at(u16::try_from(offset.as_u64().unwrap()).unwrap()))
+                .collect::<Vec<_>>();
+            let expected = row["output_name_offsets"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|offset| {
+                    object_at(
+                        u16::try_from(offset.as_u64().unwrap())
+                            .unwrap()
+                            .wrapping_sub(NATIVE_OBJECT_NAME_OFFSET),
+                    )
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(
+                filter_sequel_presentable_navigation_objects(
+                    &state,
+                    &source,
+                    object_at(arche),
+                    object_at(ark)
+                ),
+                expected,
+                "fixture {}: records={records:?}, source={source:?}",
+                row["name"]
+            );
+            checked += 1;
+        }
+        assert_eq!((checked, unsupported), (11, 1));
+    }
+
+    #[test]
+    fn sequel_presentable_navigation_objects_preserve_depth_first_order() {
+        let mut state = navigation_fixture(
+            &[
+                ScriptObjectKind::CelestialBody,
+                ScriptObjectKind::Location,
+                ScriptObjectKind::Location,
+                ScriptObjectKind::Location,
+                ScriptObjectKind::Location,
+            ],
+            &[None, Some(0), Some(1), Some(0), Some(0)],
+        );
+        let objects = state
+            .objects()
+            .iter()
+            .map(|object| object.id)
+            .collect::<Vec<_>>();
+        for object in &objects {
+            let field = state
+                .object_byte(*object, OBJECT_FLAGS_BYTE_OFFSET)
+                .unwrap();
+            assert!(state.set_byte(field, 2));
+        }
+        assert_eq!(
+            sequel_presentable_navigation_objects(&state, objects[0], objects[3], objects[4])
+                .unwrap(),
+            vec![objects[1], objects[2]]
+        );
+        assert_eq!(
+            sequel_presentable_navigation_objects(&state, objects[1], objects[3], objects[4])
+                .unwrap(),
+            vec![objects[1], objects[2]]
+        );
     }
 
     #[test]

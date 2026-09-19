@@ -364,6 +364,7 @@ pub use navigation::{
     ScriptNavigationError, navigation_actor_targets, navigation_candidates,
     navigation_chart_objects, navigation_distance, navigation_source_objects, object_links_to,
     objects_at_arche_position, presentable_navigation_objects, resolve_navigation_position,
+    sequel_presentable_navigation_objects,
 };
 pub use navigation_camera::{
     NavigationCameraContext, NavigationCameraError, NavigationCameraHost, NavigationCameraOutcome,

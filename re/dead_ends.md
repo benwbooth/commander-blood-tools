@@ -5,6 +5,21 @@ progress on a single task.
 
 Lifecycle: **Active** → **RESOLVED (date)** → delete after 20+ sessions.
 
+## RESOLVED (2026-09-16) — BBB target-filter fixture transcription
+- **Tried**: hand-copied native `0x8270` cases into a Rust case-name switch.
+- **Failed because**: synthetic kinds/exclusions and expected lists diverged from
+  the fixture, including the explicitly unsupported composite-kind case. Repeated
+  reruns did not address that error; the typed decoder already rejects composites.
+- **Resolution**: consume record kinds/flags, source order, exclusions, and native
+  output pointers directly from JSON. Assert 11 representable comparisons and one
+  unsupported decoder case. All four focused navigation tests pass. Do not change
+  the decoder or weaken output assertions to accommodate a mistranscribed case.
+- **Related coverage pitfall**: this oracle originally wrote one padded synthetic
+  megabyte, which the coverage recorder cannot identify as the executable image.
+  Write the complete original executable first, then the synthetic memory. The
+  recorder now recognizes 38 original instructions and entry `0x8270`; fixture
+  bytes remain identical. The helper at `0x685D` is still stubbed, not covered.
+
 ## Entry format
 
 ## <Subsystem or Function Name>

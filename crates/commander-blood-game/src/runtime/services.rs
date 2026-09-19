@@ -53,8 +53,9 @@ use crate::native::bloodprg::{
     increment_object_access_counters, initialize_bridge_screen, load_sound_bank,
     measure_game_text_width, object_has_flag, objects_at_arche_position, play_cd_audio_track_two,
     prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
-    resolve_navigation_position, reveal_inline_menu_display_step, set_object_flag, stop_cd_audio,
-    update_manu3_hand_frame, update_presentation_bridge_mode, update_presentation_hover,
+    resolve_navigation_position, reveal_inline_menu_display_step,
+    sequel_presentable_navigation_objects, set_object_flag, stop_cd_audio, update_manu3_hand_frame,
+    update_presentation_bridge_mode, update_presentation_hover,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -1540,8 +1541,7 @@ impl<'window> ModernGameServices<'window> {
             ship_hud_arche_link(profile.state(), arche)?;
         let prebuilt_presentable_targets = if self.runtime.data().game() == GameVariant::BigBugBang
         {
-            presentable_navigation_objects(profile.state(), arche, arche)
-                .map_err(|error| anyhow::anyhow!("building preexisting ship targets: {error:?}"))?
+            self.presentable_ship_targets(arche)?
         } else {
             Vec::new()
         };
@@ -1578,8 +1578,19 @@ impl<'window> ModernGameServices<'window> {
             .builtins()
             .archetype
             .context("loaded BloodScript profile has no Arche object")?;
-        presentable_navigation_objects(profile.state(), root, arche)
-            .map_err(|error| anyhow::anyhow!("building presentable ship targets: {error:?}"))
+        let targets = match self.runtime.data().game() {
+            GameVariant::BigBugBang => {
+                let ark = profile
+                    .builtins()
+                    .ark
+                    .context("loaded BBB profile has no Ark object")?;
+                sequel_presentable_navigation_objects(profile.state(), root, arche, ark)
+            }
+            GameVariant::CommanderBlood => {
+                presentable_navigation_objects(profile.state(), root, arche)
+            }
+        };
+        targets.map_err(|error| anyhow::anyhow!("building presentable ship targets: {error:?}"))
     }
 
     /// Apply one selected target's DESCRIPT record and report a changed music source.

@@ -1,0 +1,1645 @@
+{
+  "format": "big_bug_bang_presentable_navigation_oracle_v1",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "commander_fixture_sha256": "a04608c81cd768a6b512f2c570fee6299021590e45ec89eca62735dcf678d434",
+  "routine": {
+    "entry": "0x8270",
+    "end": "0x82c6",
+    "body_sha256": "19bb62979e3e34e07277a22423b2796cf145e1fdf8193988f91f36e263bd8c62",
+    "helper_entry": "0x685d",
+    "source_offset": 27694,
+    "output_offset": 10077,
+    "arche_offset": 27426,
+    "ark_offset": 27432,
+    "kind_bit": 128,
+    "in_play_bit": 2
+  },
+  "rows": [
+    {
+      "name": "target_location_accepted",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0100": [
+          128,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        260
+      ],
+      "terminator_bp": 10079,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389893,
+        "esi": 3924383352,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22136
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9029
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4660
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 260
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058740,
+        "ebx": 3065389893,
+        "ecx": 3351721046,
+        "edx": 3638052199,
+        "esi": 3924383352,
+        "edi": 4210688256,
+        "ebp": 2882348895,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "planet_target_rejected_location_child_accepted",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        512
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0100": [
+          8,
+          2
+        ],
+        "0x0200": [
+          128,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        516
+      ],
+      "terminator_bp": 10079,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389894,
+        "esi": 3924383353,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22137
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9030
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4661
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 516
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058741,
+        "ebx": 3065389894,
+        "ecx": 3351721047,
+        "edx": 3638052200,
+        "esi": 3924383353,
+        "edi": 4210688256,
+        "ebp": 2882348895,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "only_location_kind_is_presentable",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        288,
+        320,
+        352,
+        384
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0100": [
+          8,
+          2
+        ],
+        "0x0120": [
+          16,
+          2
+        ],
+        "0x0140": [
+          128,
+          2
+        ],
+        "0x0160": [
+          256,
+          2
+        ],
+        "0x0180": [
+          2,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        324
+      ],
+      "terminator_bp": 10079,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389895,
+        "esi": 3924383354,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22138
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9031
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4662
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 324
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058742,
+        "ebx": 3065389895,
+        "ecx": 3351721048,
+        "edx": 3638052201,
+        "esi": 3924383354,
+        "edi": 4210688256,
+        "ebp": 2882348895,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "native_location_bit_accepts_composite_kinds",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        288,
+        320
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0100": [
+          152,
+          2
+        ],
+        "0x0120": [
+          384,
+          2
+        ],
+        "0x0140": [
+          129,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        260,
+        292,
+        324
+      ],
+      "terminator_bp": 10083,
+      "direction_flag": false,
+      "typed_supported": false,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389896,
+        "esi": 3924383355,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22139
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9032
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4663
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 260
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 292
+        },
+        {
+          "kind": "output",
+          "offset": 10081,
+          "size": 2,
+          "value": 324
+        },
+        {
+          "kind": "output",
+          "offset": 10083,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058743,
+        "ebx": 3065389896,
+        "ecx": 3351721049,
+        "edx": 3638052202,
+        "esi": 3924383355,
+        "edi": 4210688256,
+        "ebp": 2882348899,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "in_play_bit_two_required",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        288,
+        320,
+        352
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0100": [
+          128,
+          0
+        ],
+        "0x0120": [
+          128,
+          1
+        ],
+        "0x0140": [
+          128,
+          2
+        ],
+        "0x0160": [
+          128,
+          254
+        ]
+      },
+      "output_name_offsets": [
+        324,
+        356
+      ],
+      "terminator_bp": 10081,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389897,
+        "esi": 3924383356,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22140
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9033
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4664
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 324
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 356
+        },
+        {
+          "kind": "output",
+          "offset": 10081,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058744,
+        "ebx": 3065389897,
+        "ecx": 3351721050,
+        "edx": 3638052203,
+        "esi": 3924383356,
+        "edi": 4210688256,
+        "ebp": 2882348897,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "exclude_arche_and_ark_after_record_tests",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        288,
+        320,
+        352
+      ],
+      "arche": 288,
+      "ark": 320,
+      "objects": {
+        "0x0100": [
+          128,
+          2
+        ],
+        "0x0120": [
+          128,
+          2
+        ],
+        "0x0140": [
+          128,
+          2
+        ],
+        "0x0160": [
+          128,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        260,
+        356
+      ],
+      "terminator_bp": 10081,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389898,
+        "esi": 3924383357,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22141
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9034
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4665
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 260
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 356
+        },
+        {
+          "kind": "output",
+          "offset": 10081,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058745,
+        "ebx": 3065389898,
+        "ecx": 3351721051,
+        "edx": 3638052204,
+        "esi": 3924383357,
+        "edi": 4210688256,
+        "ebp": 2882348897,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "zero_offset_is_valid",
+      "target": [
+        28672,
+        0
+      ],
+      "source": [
+        6
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0000": [
+          128,
+          2
+        ],
+        "0x0006": [
+          8,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        4
+      ],
+      "terminator_bp": 10079,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389899,
+        "esi": 3924383358,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          0
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22142
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9035
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4666
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 4
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058746,
+        "ebx": 3065389899,
+        "ecx": 3351721052,
+        "edx": 3638052205,
+        "esi": 3924383358,
+        "edi": 4210688000,
+        "ebp": 2882348895,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "target_and_name_offset_wrap",
+      "target": [
+        28672,
+        65534
+      ],
+      "source": [
+        32768
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0xfffe": [
+          128,
+          2
+        ],
+        "0x8000": [
+          128,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        2,
+        32772
+      ],
+      "terminator_bp": 10081,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389900,
+        "esi": 3924383359,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          65534
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22143
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9036
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4667
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 65534
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 32772
+        },
+        {
+          "kind": "output",
+          "offset": 10081,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058747,
+        "ebx": 3065389900,
+        "ecx": 3351721053,
+        "edx": 3638052206,
+        "esi": 3924383359,
+        "edi": 4210753534,
+        "ebp": 2882348897,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "unsigned_source_fffe_is_not_sentinel",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        32768,
+        65534
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0100": [
+          1,
+          2
+        ],
+        "0x8000": [
+          128,
+          2
+        ],
+        "0xfffe": [
+          128,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        32772,
+        2
+      ],
+      "terminator_bp": 10081,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389901,
+        "esi": 3924383360,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22144
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9037
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4668
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 32772
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 2
+        },
+        {
+          "kind": "output",
+          "offset": 10081,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058748,
+        "ebx": 3065389901,
+        "ecx": 3351721054,
+        "edx": 3638052207,
+        "esi": 3924383360,
+        "edi": 4210688256,
+        "ebp": 2882348897,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "all_rejected",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        288,
+        320,
+        352
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0100": [
+          1,
+          0
+        ],
+        "0x0120": [
+          8,
+          2
+        ],
+        "0x0140": [
+          128,
+          0
+        ],
+        "0x0160": [
+          2,
+          2
+        ]
+      },
+      "output_name_offsets": [],
+      "terminator_bp": 10077,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389902,
+        "esi": 3924383361,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22145
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9038
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4669
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058749,
+        "ebx": 3065389902,
+        "ecx": 3351721055,
+        "edx": 3638052208,
+        "esi": 3924383361,
+        "edi": 4210688256,
+        "ebp": 2882348893,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "inherited_reverse_direction",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        288,
+        320
+      ],
+      "arche": 30583,
+      "ark": 26214,
+      "objects": {
+        "0x0100": [
+          128,
+          2
+        ],
+        "0x0120": [
+          128,
+          2
+        ],
+        "0x0140": [
+          128,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        260,
+        292,
+        324
+      ],
+      "terminator_bp": 10083,
+      "direction_flag": true,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389903,
+        "esi": 3924383362,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22146
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9039
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4670
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 260
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 292
+        },
+        {
+          "kind": "output",
+          "offset": 10081,
+          "size": 2,
+          "value": 324
+        },
+        {
+          "kind": "output",
+          "offset": 10083,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058750,
+        "ebx": 3065389903,
+        "ecx": 3351721056,
+        "edx": 3638052209,
+        "esi": 3924383362,
+        "edi": 4210688256,
+        "ebp": 2882348899,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": true,
+        "of": false
+      },
+      "return": "far"
+    },
+    {
+      "name": "shared_arche_and_ark_exclusion",
+      "target": [
+        28672,
+        256
+      ],
+      "source": [
+        288,
+        320
+      ],
+      "arche": 288,
+      "ark": 288,
+      "objects": {
+        "0x0100": [
+          128,
+          2
+        ],
+        "0x0120": [
+          128,
+          2
+        ],
+        "0x0140": [
+          128,
+          2
+        ]
+      },
+      "output_name_offsets": [
+        260,
+        324
+      ],
+      "terminator_bp": 10081,
+      "direction_flag": false,
+      "typed_supported": true,
+      "helper": {
+        "eax": 2779070464,
+        "ebx": 3065389904,
+        "esi": 3924383363,
+        "ebp": 2882366510,
+        "target": [
+          28672,
+          256
+        ],
+        "ds": 16384,
+        "gs": 16384,
+        "ss": 40960,
+        "return": [
+          33408,
+          0
+        ]
+      },
+      "ordered_write_events": [
+        {
+          "kind": "stack",
+          "offset": 65278,
+          "size": 2,
+          "value": 12288
+        },
+        {
+          "kind": "stack",
+          "offset": 65276,
+          "size": 2,
+          "value": 22147
+        },
+        {
+          "kind": "stack",
+          "offset": 65274,
+          "size": 2,
+          "value": 9040
+        },
+        {
+          "kind": "stack",
+          "offset": 65272,
+          "size": 2,
+          "value": 4671
+        },
+        {
+          "kind": "stack",
+          "offset": 65270,
+          "size": 2,
+          "value": 256
+        },
+        {
+          "kind": "stack",
+          "offset": 65268,
+          "size": 2,
+          "value": 0
+        },
+        {
+          "kind": "stack",
+          "offset": 65266,
+          "size": 2,
+          "value": 33408
+        },
+        {
+          "kind": "output",
+          "offset": 10077,
+          "size": 2,
+          "value": 260
+        },
+        {
+          "kind": "output",
+          "offset": 10079,
+          "size": 2,
+          "value": 324
+        },
+        {
+          "kind": "output",
+          "offset": 10081,
+          "size": 2,
+          "value": 65535
+        }
+      ],
+      "registers_after": {
+        "eax": 2779058751,
+        "ebx": 3065389904,
+        "ecx": 3351721057,
+        "edx": 3638052210,
+        "esi": 3924383363,
+        "edi": 4210688256,
+        "ebp": 2882348897,
+        "ds": 12288,
+        "es": 28672,
+        "fs": 49152,
+        "gs": 16384,
+        "ss": 40960
+      },
+      "defined_flags": {
+        "cf": false,
+        "pf": true,
+        "af": false,
+        "zf": true,
+        "sf": false,
+        "if": true,
+        "df": false,
+        "of": false
+      },
+      "return": "far"
+    }
+  ]
+}

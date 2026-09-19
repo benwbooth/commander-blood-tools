@@ -24,23 +24,23 @@
     }
   },
   "summary": {
-    "oracle_count": 172,
-    "oracle_fixture_count": 171,
+    "oracle_count": 173,
+    "oracle_fixture_count": 172,
     "fixture_relation_counts": {
-      "exact": 170,
+      "exact": 171,
       "prefix": 1
     },
     "static_entrypoint_count": 382,
     "dynamic_entrypoint_count": 1,
     "known_entrypoint_count": 383,
-    "entered_static_entrypoints": 290,
-    "unentered_static_entrypoints": 92,
+    "entered_static_entrypoints": 291,
+    "unentered_static_entrypoints": 91,
     "entered_dynamic_entrypoints": 1,
-    "entered_known_entrypoints": 291,
+    "entered_known_entrypoints": 292,
     "comparison_counts": {
       "unresolved": {
-        "entered": 83,
-        "unentered": 43
+        "entered": 84,
+        "unentered": 42
       },
       "structural_candidate": {
         "entered": 172,
@@ -1182,6 +1182,18 @@
       "summary": "verified 5 BBB pointer-poll cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_pointer_poll.json",
       "fixture_sha256": "5e9e81fcd34990fec02d809f136ee99ca6e3552a9650a1720d798f87f0e218d8",
+      "fixture_relation": "exact"
+    },
+    {
+      "oracle": "re/tools/big_bug_bang_presentable_navigation_oracle.py",
+      "oracle_sha256": "9dd75bb07745cf85667e894247a3d23c8501e164dd616c33a8685ce62e2e584a",
+      "executed_instruction_count": 38,
+      "entered_entrypoints": [
+        "0x8270"
+      ],
+      "summary": "verified 12 BBB presentable-navigation cases",
+      "fixture": "re/tools/oracle_vectors/big_bug_bang_presentable_navigation.json",
+      "fixture_sha256": "6081b8a3a9c6d0325af2d93662c525b87353d78b3f666c5d432abb032fd10a1f",
       "fixture_relation": "exact"
     },
     {
@@ -4904,8 +4916,10 @@
     {
       "entry": "0x8270",
       "origin": "static_graph",
-      "entered": false,
-      "oracles": [],
+      "entered": true,
+      "oracles": [
+        "re/tools/big_bug_bang_presentable_navigation_oracle.py"
+      ],
       "comparison": "unresolved"
     },
     {

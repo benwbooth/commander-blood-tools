@@ -5584,7 +5584,61 @@ list formatter is eliminated with its diagnostic owner rather than exposed as
 an unused production API. Its body SHA-256 is
 `1a94f8e5e5b57e772fe322fe75d9d594bcbdad0faf2cde2bfb013565ad27eca2`.
 
+## Ship-Target Location Filter (2026-09-16)
+
+Recovered Codex's last handoff from the session started 2026-06-14
+(`019ec822-a6db-7b00-afe9-caf7f5affc1f`, last message 2026-09-14).
+It stopped after `ebc3bdd5` at BBB `0x8270..0x82C6`, whose changed
+filter had not yet replaced Commander's production path.
+
+Disassembly confirms that the source helper at `0x685D` runs first, followed
+by target-first scanning. BBB tests only location kind bit `0x80` at `0x8295`,
+requires in-play bit `2` at `0x829B`, and excludes both GS:`0x6B22` (Arche)
+and GS:`0x6B28` (Ark) at `0x82A2..0x82AE`. Accepted records publish name
+pointers at record offset +4; the source list ends only on `0xFFFF`.
+Commander `0x7259` instead accepts three navigation kinds and excludes only
+Arche. The shared runtime now selects the sequel filter for both prebuilt HUD
+initialization and subsequent target-list rebuilding, leaving Commander intact.
+
+The inherited unfinished `big_bug_bang_presentable_navigation_oracle.py` now
+runs successfully and generates 12 guarded native vectors. Its source-list
+helper is stubbed: this proves the filter and call boundary, not the recursive
+helper's implementation. The typed regression directly consumes native record
+kinds, flags, source order, both exclusions and output pointers in 11 cases;
+it explicitly checks that the twelfth case's composite masks are outside the
+one-hot typed decoder domain rather than substituting other kinds. Owned IDs
+replace segment-wrapping name pointers and reverse-direction scratch layouts.
+A separate public-entry regression covers target-first/depth-first traversal.
+
+Verification: all four navigation-filter/traversal tests pass; the game library
+passed 1,068 tests (62 ignored) before the fourth test was added. All 173 BBB
+oracle programs regenerate successfully, covering 291/382 static entrypoints
+and the one known dynamic entrypoint. The disposition ledger now classifies
+329/383 entries, with 54 pending. The oracle must publish its original executable
+image before synthetic memory for the coverage recorder to recognize the mapping;
+this change preserves the generated fixture byte-for-byte. This is bounded native
+and typed evidence, not a complete playthrough or a live BBB navigation claim.
+
+The attempted Commander deep-alien production run with `output/_tmp_iso`
+timed out after 600 seconds while generating 701 video derivatives, before
+any scenario trace existed. Its retained `stderr.log` records conversion through
+HNM 200, not an alien-runtime failure. Artifacts:
+`output/fidelity/production-alien-deep-paths.jsonl-1789596722254045021-55912-0`.
+Use the completed cache at `~/.local/share/commander-blood/assets-v1` for the
+next run; do not count optional tests that early-return without an asset cache
+as live verification.
+
 ## Remaining Completion Requirements
+
+As of 2026-09-19, work proceeds source-first: compare remaining BBB native
+bodies against their Rust owners, port differences, and run focused checks.
+Full scenario campaigns are deferred until the source port is ready for manual
+play. The current game-library check passed 1,069 tests (62 ignored), and all
+173 native oracle programs regenerated successfully. An already-started
+`templand_finish_exits_after_authored_clip` run failed because its scenario never
+reached the Templand interlude; this does not establish ending behavior. Its
+artifacts are retained at
+`output/fidelity/bbb-templand-finish-1789831770802799861-3058878-0`.
 
 - Extend native comparison coverage beyond the now-complete A0-D7 opcode ledger
   into surrounding frame, runtime, presentation and conversation routines. The
