@@ -201,9 +201,43 @@ fn travel_actor_ready(slots: &[NavActorSlot; NAV_ACTOR_SLOT_COUNT]) -> bool {
     slots[BLACK_HOLE_ACTOR_SLOT].flags.executable_flags() == ACTIVE_ONLY_SLOT_FLAGS
 }
 
+fn palette_actor_enabled(
+    mode: Option<PresentationBridgeMode>,
+    sequel_quantity: Option<u16>,
+) -> bool {
+    sequel_quantity != Some(0)
+        && matches!(
+            mode,
+            Some(PresentationBridgeMode::Outer | PresentationBridgeMode::ThirdBand)
+        )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sequel_palette_gate_tests_zero_not_sign_or_positive_quantity() {
+        for mode in [
+            None,
+            Some(PresentationBridgeMode::Outer),
+            Some(PresentationBridgeMode::FirstBand),
+            Some(PresentationBridgeMode::SecondBand),
+            Some(PresentationBridgeMode::ThirdBand),
+        ] {
+            let native_ui = matches!(
+                mode,
+                Some(PresentationBridgeMode::Outer | PresentationBridgeMode::ThirdBand)
+            );
+            assert_eq!(palette_actor_enabled(mode, None), native_ui);
+            for quantity in 0..=u16::MAX {
+                assert_eq!(
+                    palette_actor_enabled(mode, Some(quantity)),
+                    native_ui && quantity != 0
+                );
+            }
+        }
+    }
 
     #[test]
     fn bridge_seek_owns_native_ui_bit_three_for_its_exact_lifetime() {
@@ -307,6 +341,9 @@ impl RuntimeBridgeActorBackend<'_, '_> {
         slots: &[NavActorSlot; NAV_ACTOR_SLOT_COUNT],
     ) -> Result<()> {
         let is_sequel = self.services.sequel_presentation_control().is_some();
+        if self.services.sequel_overview_active() {
+            return Ok(());
+        }
         let mut state = std::mem::take(self.camera);
         let mut playback = std::mem::take(self.playback);
         playback.busy = seek.requested;
@@ -411,21 +448,15 @@ impl RuntimeBridgeActorBackend<'_, '_> {
     }
 
     fn run_palette(&mut self, line: &mut PresentationLine, seek: &NavActorSeekState) -> Result<()> {
+        if !palette_actor_enabled(self.mode, self.services.sequel_arche_quantity()?) {
+            return Ok(());
+        }
         let mut state = std::mem::take(self.palette);
         let mut playback = std::mem::take(self.playback);
         playback.busy = seek.requested;
         let live_palette = self.services.bridge_actor_live_palette();
-        let outcome = update_ship_palette_actor(
-            matches!(
-                self.mode,
-                Some(PresentationBridgeMode::Outer | PresentationBridgeMode::ThirdBand)
-            ),
-            line,
-            &mut playback,
-            &live_palette,
-            &mut state,
-            self,
-        );
+        let outcome =
+            update_ship_palette_actor(true, line, &mut playback, &live_palette, &mut state, self);
         if matches!(outcome, Ok(ShipPaletteActorOutcome::Completed)) {
             self.services
                 .apply_bridge_actor_palette(state.bridge_palette());

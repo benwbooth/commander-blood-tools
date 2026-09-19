@@ -22,6 +22,10 @@ HOVER = "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs"
 SERVICES = "crates/commander-blood-game/src/runtime/services.rs"
 GROWTH = "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs"
 DISPATCH = "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs"
+BRIDGE_ACTORS = "crates/commander-blood-game/src/runtime/bridge_actors.rs"
+SEQUEL_PRESENTATION = (
+    "crates/commander-blood-game/src/native/bloodprg/sequel_presentation.rs"
+)
 
 # These are individual reviewed identities, never a blanket displacement delta.
 # CS flip bytes are written by BBB 0x4944/0x494C; the other CS slots are local
@@ -138,6 +142,11 @@ BRIDGE_FIELDS = {
     0x2732: (0x29C0, "save_edit_length"),
     0x2AAB: (0x2D4B, "choice_rectangle_x"),
     0x2AAF: (0x2D4F, "choice_rectangle_width"),
+    0x0ADB: (0x0CE4, "text_selector"),
+    0x27E6: (0x2A87, "choice_layout_guard"),
+    0x2751: (0x29DF, "contact_presentation_pending"),
+    0x24F3: (0x2745, "ship_flags"),
+    0x2527: (0x2779, "ship_depth_offset"),
 }
 BRIDGE_MEMORY = {
     (segment, offset): identity
@@ -161,6 +170,13 @@ BRIDGE_IMMEDIATES = {
     ("mov", "di", 0x2106): (0x2358, "hyperspace_name_buffer"),
     ("mov", "si", 0x27F1): (0x2A91, "name_effect_sequence_table"),
     ("mov", "si", 0x273B): (0x29C9, "save_edit_buffer"),
+    ("mov", "si", 0x2B13): (0x2DC3, "record_choice_list"),
+    ("mov", "di", 0x2B13): (0x2DC3, "record_choice_list"),
+    ("mov", "si", 0x6D3E): (0x70E6, "contact_slots"),
+    ("mov", "si", 0x2AAB): (0x2D4B, "choice_rectangle"),
+    ("mov", "di", 0x253D): (0x278F, "choice_transition_target"),
+    ("mov", "si", 0x5251): (0x5621, "live_palette"),
+    ("mov", "di", 0x5B58): (0x5F28, "ship_palette_snapshot"),
 }
 INDEXED_MEMORY = {("cs", "bx", "", 0x6D4): (0x758, "actor_handler_table")}
 MEMORY_MAPS = {
@@ -205,6 +221,8 @@ FAR_CALLS = {
     (0x299, 0x0F3E): (0x2B1, 0x103B, "present_chunky_frame", 0x434B),
     (0x299, 0x0CDC): (0x2B1, 0x0DD9, "fill_solid_rectangle", 0x40E9),
     (0x299, 0x0176): (0x2B1, 0x0176, "draw_game_font", 0x3486),
+    (0x4DA, 0x1E2F): (0x502, 0x29C6, "rebuild_target_list", 0x81E6),
+    (0x8B, 0x0FAD): (0x77, 0x115E, "transition_choice_rectangle", 0x20CE),
 }
 NEAR_CALLS = {
     0x32AC: (0x3D49, "draw_horizontal_span"),
@@ -220,6 +238,7 @@ NEAR_CALLS = {
     0x210E: (0x23A2, "dispatch_input"),
     0x17AF: (0x1971, "select_display_page"),
     0x178B: (0x194D, "upload_palette"),
+    0x8428: (0x958A, "update_choice_list"),
 }
 ROUTINES = (
     (0x1502, 0x1555, 0x1344, "cd"),
@@ -244,9 +263,181 @@ ROUTINES = (
     (0x8F94, 0x9070, 0x7EC0, "bridge"),
     (0x935D, 0x93CB, 0x81FB, "bridge"),
     (0x944A, 0x958A, 0x82E8, "bridge"),
+    (0x98D1, 0x9962, 0x872C, "bridge"),
+    (0x9962, 0x99ED, 0x87BD, "bridge"),
     (0x99ED, 0x9A11, 0x8848, "bridge"),
     (0x9C5E, 0x9DBB, 0x8A4E, "bridge"),
     (0x9DBB, 0x9EA6, 0x8BAB, "bridge"),
+)
+
+# These changed bodies are reviewed block-by-block, not claimed byte-equivalent.
+ACTOR_REVIEWS = (
+    (
+        0x9070,
+        0x91AD,
+        0x7F9C,
+        "2d66c40262b9fdb8f996a986ec6784edd663717167538cc59e837770b8750da1",
+        "big_bug_bang_travel_options.jsonl",
+        (
+            (
+                0x9070,
+                0x9082,
+                "Require outer mode and zero black-hole slot flags; no writes on either rejection.",
+            ),
+            (
+                0x9082,
+                0x90AF,
+                "Preserve original AL flags; present+ready restarts selector 10, transitions entities 0/4, advances line.",
+            ),
+            (
+                0x90AF,
+                0x90D2,
+                "Frame 1: enabled travel publishes C1 before comparing deferred target to Arche; same target enters bridge reset, otherwise camera countdown=8.",
+            ),
+            (
+                0x90D2,
+                0x90EF,
+                "Other frames: nonzero countdown skips completion; zero writes line flags=7, C1, transition=1; travel option chooses bridge reset.",
+            ),
+            (
+                0x90EF,
+                0x9125,
+                "Reset clears action, transition, camera view, UI word, dialogue hold, ship block/depth/opening and HUD byte; ship flags=5. Runtime BridgeReset adapter publishes these owned fields.",
+            ),
+            (
+                0x9125,
+                0x9139,
+                "Transition entity 4, close location panel, request redraw, return; retains deferred target on bridge reset.",
+            ),
+            (
+                0x9139,
+                0x9153,
+                "Active location panel returns; otherwise resource=20, reverse=1, line flags=0, redraw.",
+            ),
+            (
+                0x9153,
+                0x917E,
+                "Missing deferred record or no reverse/panel skips. Original AL bit4 controls second-pass preparation, resource20 and audio5.",
+            ),
+            (
+                0x917E,
+                0x91AD,
+                "Advance line; incomplete returns. Completion without panel clears deferred target and line; with panel selects idle resource18, present flag and redraw.",
+            ),
+        ),
+    ),
+    (
+        0x91AD,
+        0x927A,
+        0x8082,
+        "ba8a714ed146cc15deeb0117ea5699bf0f016f0dbc2fde0a94a480a23727bc21",
+        "big_bug_bang_panel_activation.jsonl",
+        (
+            (
+                0x91AD,
+                0x91BF,
+                "Overview bit1 blocks before any writes; otherwise require outer mode. Runtime run_camera supplies overview gate.",
+            ),
+            (
+                0x91BF,
+                0x91E8,
+                "Inactive actor marks line present and checks ready. Black-hole/hyperjump blockers activate camera actor, close location panel and return.",
+            ),
+            (
+                0x91E8,
+                0x9207,
+                "Transition entity0; clear selected location. Pending CC skips selector10 and primary-input clear; ordinary path performs both.",
+            ),
+            (
+                0x9207,
+                0x9230,
+                "Advance line preserving completion carry across frame7 camera-page callback, audio3, countdown8 and redraw.",
+            ),
+            (
+                0x9230,
+                0x9241,
+                "Completion clears camera actor and sets line flags7. AL transition bit controls view toggle.",
+            ),
+            (
+                0x9241,
+                0x9267,
+                "Toggle view and clear redraw; entering synthesizes secondary press and redraw; leaving restores ship palette/camera and requests rebuild.",
+            ),
+            (
+                0x9267,
+                0x927A,
+                "Close location panel, line flags1, transition entity4, return.",
+            ),
+        ),
+    ),
+    (
+        0x927A,
+        0x92D0,
+        0x813A,
+        "82695527e2641df112397594aaae7fab22465525a13cd10f730199b47fe84390",
+        None,
+        (
+            (
+                0x927A,
+                0x928D,
+                "Bind Arche; quantity word+22 ==0 returns untouched. Negative and all other nonzero words pass. Runtime reads live typed VAR field.",
+            ),
+            (
+                0x928D,
+                0x929F,
+                "Require UI mask90, mark line present, return if not ready.",
+            ),
+            (
+                0x929F,
+                0x92B2,
+                "Selector16 then advance line; incomplete returns, completed plays audio5.",
+            ),
+            (
+                0x92B2,
+                0x92D0,
+                "Ship flags1, copy576 palette bytes, depth0, line flags7. Complete shared suffix checked separately by exact relocation comparison.",
+            ),
+        ),
+    ),
+    (
+        0x92D0,
+        0x935D,
+        0x817E,
+        "3e5a6856b0ca5bf79bcf56315302f4843a59e5cad217d495e95adb7c3f61e750",
+        "big_bug_bang_presentation.jsonl",
+        (
+            (
+                0x92D0,
+                0x92E4,
+                "Require secondary mode, mark line present, skip playback when not ready.",
+            ),
+            (
+                0x92E4,
+                0x92F8,
+                "Pending CC bypasses hand and ending gate. Otherwise selector13; ending bit1 returns immediately.",
+            ),
+            (
+                0x92F8,
+                0x9318,
+                "Active panel and signed phase<100 sets phase106; queued scene then finalized.",
+            ),
+            (
+                0x9318,
+                0x932F,
+                "Clear primary and pending input, advance line; incomplete skips to final latch; complete transitions entity4.",
+            ),
+            (
+                0x932F,
+                0x934A,
+                "Set line flags1; inactive panel becomes active and requests redraw, already active panel does not add redraw.",
+            ),
+            (
+                0x934A,
+                0x935D,
+                "Active panel plus loaded line latches completion; return.",
+            ),
+        ),
+    ),
 )
 
 
@@ -454,6 +645,63 @@ def build_report():
                 "instruction_count": len(instructions),
                 "reviewed_relocations": patches,
                 "notes": notes,
+            }
+        )
+    for entry, end, old, digest, delta_fixture, blocks in ACTOR_REVIEWS:
+        body = bbb[entry:end]
+        if sha256(body) != digest:
+            raise ValueError(f"changed reviewed actor body at {entry:#x}")
+        if (
+            blocks[0][0] != entry
+            or blocks[-1][1] != end
+            or any(left[1] != right[0] for left, right in zip(blocks, blocks[1:]))
+        ):
+            raise ValueError("actor review must cover the complete body")
+        source = ported[old]
+        fixture = source["evidence"].split(":", 1)[0]
+        paths = [
+            source["rust_path"],
+            fixture,
+            BRIDGE_ACTORS,
+            SERVICES,
+            SEQUEL_PRESENTATION,
+        ]
+        if delta_fixture:
+            paths.append(f"re/tools/oracle_vectors/{delta_fixture}")
+        for path in paths:
+            inputs[path] = sha256((ROOT / path).read_bytes())
+        patches = []
+        if entry == 0x927A:
+            if body[:19].hex() != "5106668e06ee6a8b3e226b26837d1600077441":
+                raise ValueError("Arche quantity gate changed")
+            _, patches = compare_body(
+                commander[0x813B:0x817E], bbb[0x928D:0x92D0], 0x813B, 0x928D, "bridge"
+            )
+        rows.append(
+            {
+                "entry": f"0x{entry:04x}",
+                "end": f"0x{end:04x}",
+                "commander_entry": f"0x{old:04x}",
+                "kind": "reviewed_transcription",
+                "body_sha256": digest,
+                "rust_owner": {
+                    "path": source["rust_path"],
+                    "symbol": source["rust_symbol"],
+                },
+                "inherited_fixture": fixture,
+                "instruction_count": len(decode(body, entry)),
+                "reviewed_relocations": patches,
+                "reviewed_blocks": [
+                    [f"0x{start:04x}", f"0x{stop:04x}", note]
+                    for start, stop, note in blocks
+                ],
+                "notes": [
+                    "Complete BBB actor compared block-by-block with its Commander "
+                    "baseline, typed handler, and production runtime adapter. Sequel "
+                    "guards and changed paths are explicit; this is not an exact-body "
+                    "equivalence or a new whole-entry native execution claim.",
+                    *[note for _, _, note in blocks],
+                ],
             }
         )
     bounds_body = bbb[0x5D5D:0x5DD7]

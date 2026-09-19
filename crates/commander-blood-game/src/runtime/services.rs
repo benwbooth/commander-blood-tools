@@ -1705,6 +1705,36 @@ impl<'window> ModernGameServices<'window> {
         Ok((target, kind))
     }
 
+    /// BBB 0x927B tests Arche's quantity word for zero before palette playback.
+    pub(super) fn sequel_arche_quantity(&self) -> Result<Option<u16>> {
+        if self.runtime.data().game() != GameVariant::BigBugBang {
+            return Ok(None);
+        }
+        let profile = self
+            .runtime
+            .current_profile()
+            .context("palette actor requires a profile")?;
+        let arche = profile
+            .builtins()
+            .archetype
+            .context("palette actor requires Arche")?;
+        let quantity = profile
+            .state()
+            .object_word(arche, 22 / 2)
+            .and_then(|field| profile.state().word(field))
+            .context("Arche has no quantity word")?;
+        Ok(Some(quantity))
+    }
+
+    /// BBB gates both camera playback and hover while its overview owns input.
+    pub(super) fn sequel_overview_active(&self) -> bool {
+        self.runtime.data().game() == GameVariant::BigBugBang
+            && self
+                .sequel_overview
+                .as_ref()
+                .is_some_and(|overview| overview.active())
+    }
+
     /// Move Arche to one typed world for deterministic production scenarios.
     pub(super) fn teleport_arche_to_navigation_target(
         &mut self,
@@ -3824,11 +3854,7 @@ impl<'window> ModernGameServices<'window> {
         let secondary = self.nav_actor_slots[SECONDARY_PRESENTATION_ACTOR_SLOT]
             .hit_region
             .unwrap_or(DISABLED_PRESENTATION_HIT_RECT);
-        let overview_active = self.runtime.data().game() == GameVariant::BigBugBang
-            && self
-                .sequel_overview
-                .as_ref()
-                .is_some_and(|overview| overview.active());
+        let overview_active = self.sequel_overview_active();
         let outcome = update_sequel_presentation_hover(
             overview_active,
             selection,

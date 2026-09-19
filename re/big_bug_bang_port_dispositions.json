@@ -5,7 +5,7 @@
     "re/big_bug_bang_oracle_coverage.json": "b5135e26f26416adcbc639c7b9c4969b7f37c9f3cb7e19577826a866810d4666",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "d54671db0801c96dbb9728fae76a803f1bbd67d88d80b04062ee284c67089502",
-    "re/big_bug_bang_static_port_audit.json": "bab5d1fca869db8821bc717552b74cfde46db5f99523d74503500c2e9f77243a",
+    "re/big_bug_bang_static_port_audit.json": "dc3692a5f9ce03dd8eccc86f571a368354cdc32beb8d5d4fffc093b6427f52d1",
     "re/big_bug_bang_unreferenced_library_audit.json": "2509d2ba5893b4b96c1f032a0cacb68e0f9b47c5bb8022e5d64cab740c02b290",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
     "re/rust-port/eliminated.tsv": "aa49ae8d83ad3c047f48df0f51c1909c6116f332eb02e95c67462a94b3c9f478",
@@ -13,8 +13,8 @@
   },
   "summary": {
     "known_entrypoint_count": 383,
-    "classified_entrypoint_count": 358,
-    "pending_game_semantics_count": 25,
+    "classified_entrypoint_count": 364,
+    "pending_game_semantics_count": 19,
     "status_counts": {
       "eliminated_authored_no_operation": 10,
       "eliminated_dormant_diagnostic": 18,
@@ -22,9 +22,9 @@
       "eliminated_unreferenced_library": 3,
       "inherited_exact_eliminated": 7,
       "inherited_exact_typed": 6,
-      "pending_game_semantics": 25,
+      "pending_game_semantics": 19,
       "verified_direct_typed": 262,
-      "verified_static_typed": 26
+      "verified_static_typed": 32
     }
   },
   "entrypoints": [
@@ -4617,48 +4617,64 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_7f9c_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_hyperjump.rs",
+        "symbol": "update_hyperjump_presentation_actor"
+      },
+      "rationale": "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Require outer mode and zero black-hole slot flags; no writes on either rejection. Preserve original AL flags; present+ready restarts selector 10, transitions entities 0/4, advances line. Frame 1: enabled travel publishes C1 before comparing deferred target to Arche; same target enters bridge reset, otherwise camera countdown=8. Other frames: nonzero countdown skips completion; zero writes line flags=7, C1, transition=1; travel option chooses bridge reset. Reset clears action, transition, camera view, UI word, dialogue hold, ship block/depth/opening and HUD byte; ship flags=5. Runtime BridgeReset adapter publishes these owned fields. Transition entity 4, close location panel, request redraw, return; retains deferred target on bridge reset. Active location panel returns; otherwise resource=20, reverse=1, line flags=0, redraw. Missing deferred record or no reverse/panel skips. Original AL bit4 controls second-pass preparation, resource20 and audio5. Advance line; incomplete returns. Completion without panel clears deferred target and line; with panel selects idle resource18, present flag and redraw."
     },
     {
       "entry": "0x91ad",
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_8082_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_camera.rs",
+        "symbol": "update_camera_presentation_actor"
+      },
+      "rationale": "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Overview bit1 blocks before any writes; otherwise require outer mode. Runtime run_camera supplies overview gate. Inactive actor marks line present and checks ready. Black-hole/hyperjump blockers activate camera actor, close location panel and return. Transition entity0; clear selected location. Pending CC skips selector10 and primary-input clear; ordinary path performs both. Advance line preserving completion carry across frame7 camera-page callback, audio3, countdown8 and redraw. Completion clears camera actor and sets line flags7. AL transition bit controls view toggle. Toggle view and clear redraw; entering synthesizes secondary press and redraw; leaving restores ship palette/camera and requests rebuild. Close location panel, line flags1, transition entity4, return."
     },
     {
       "entry": "0x927a",
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_813a_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_palette.rs",
+        "symbol": "update_ship_palette_actor"
+      },
+      "rationale": "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Bind Arche; quantity word+22 ==0 returns untouched. Negative and all other nonzero words pass. Runtime reads live typed VAR field. Require UI mask90, mark line present, return if not ready. Selector16 then advance line; incomplete returns, completed plays audio5. Ship flags1, copy576 palette bytes, depth0, line flags7. Complete shared suffix checked separately by exact relocation comparison."
     },
     {
       "entry": "0x92d0",
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_817e_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_panel.rs",
+        "symbol": "update_panel_close_actor"
+      },
+      "rationale": "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Require secondary mode, mark line present, skip playback when not ready. Pending CC bypasses hand and ending gate. Otherwise selector13; ending bit1 returns immediately. Active panel and signed phase<100 sets phase106; queued scene then finalized. Clear primary and pending input, advance line; incomplete skips to final latch; complete transitions entity4. Set line flags1; inactive panel becomes active and requests redraw, already active panel does not add redraw. Active panel plus loaded line latches completion; return."
     },
     {
       "entry": "0x935d",
@@ -4798,12 +4814,16 @@
       "entered": false,
       "comparison": "structural_candidate",
       "commander_entry": "0x872c",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_872c_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs",
+        "symbol": "update_navigation_target_choice"
+      },
+      "rationale": "Owned decoded navigation-target chooser with typed record IDs labels panel lifecycle cancel behavior and sound-bank request without name offsets sentinel arrays or pointer arithmetic Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
     },
     {
       "entry": "0x9962",
@@ -4811,12 +4831,16 @@
       "entered": false,
       "comparison": "structural_candidate",
       "commander_entry": "0x87bd",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_87bd_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs",
+        "symbol": "update_contact_choice"
+      },
+      "rationale": "Owned known-contact chooser over optional typed slots stable record IDs semantic redraw state and checked list selection without zero sentinels name offsets or wrapped memory access Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
     },
     {
       "entry": "0x99ed",

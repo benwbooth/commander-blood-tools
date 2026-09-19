@@ -5,7 +5,7 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "986c74c41b6012e9f7a375cd46b1abb7d939b98afdde8a594c55391676909313",
+    "re/tools/big_bug_bang_static_port_audit.py": "28cb19406852151b84b872a4e3ab012f213dde3ca0030dd294a13b7ead653a45",
     "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
     "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
     "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
@@ -29,7 +29,7 @@
     "re/tools/oracle_vectors/func_6ff3_natural.json": "91896e778459743771bca99d6e0a69385d05e67e34028ee46a310994453b8aee",
     "crates/commander-blood-game/src/native/bloodprg/navigation.rs": "1f33adbde53c512d5c6f5c36864db03d0b9fbc98cd712ce9e408fed4ffe1ff7e",
     "re/tools/oracle_vectors/func_713d_natural.json": "246c497cc61e0ea5b25f707c83e8ada5a4fcedc3899898d3173cff927f3a7aeb",
-    "crates/commander-blood-game/src/runtime/services.rs": "24f293d7f94d867b3ad5d5917c7419e07a64361f998560ef3cd4c771ff2707a1",
+    "crates/commander-blood-game/src/runtime/services.rs": "aeeb66e5bfa2538af9bcfe57994964c91780cc1fae6f5538644760dad71aae93",
     "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs": "5f3e726b5afc93d86dd70b2cd46fbfe79ed5055ae5de0c68113fa19cfb990944",
     "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e",
     "crates/commander-blood-game/src/native/bloodprg/sequence_subtitles.rs": "8601e3e8549fa6750a8a2a517c61fc4b2441fa2b6df0446243ee1f4858c4639d",
@@ -45,11 +45,26 @@
     "crates/commander-blood-game/src/native/bloodprg/navigation_status.rs": "7ae65c9b96cfef88254f7d7ab39cc32fcdf1ad41d4c381c93cd5d896ec747790",
     "re/tools/oracle_vectors/func_82e8_natural.json": "8dfd4ca5de26d68de9ba4f8a8122e35544c123acf86157009268d1ee844a0fd3",
     "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs": "e121fab8f2dfc71a27eb908d84b9f0def0d5d44b0efc8a94dae857f5c3f47109",
+    "re/tools/oracle_vectors/func_872c_natural.json": "891870c418f57dc373a0767f7516a144ae7b571ef78cce918071538c32adf169",
+    "re/tools/oracle_vectors/func_87bd_natural.json": "9bb92cd4c36e1276be2f7c1a36efa8a3f6897a74afb15671a8bf83b9e4e70fef",
     "re/tools/oracle_vectors/func_8848_natural.json": "6679e01fb7719fcc3dee6a1b34d2d4cdcf3b1e52cc2379fdd53e5af7c9d9d5f5",
     "crates/commander-blood-game/src/native/bloodprg/camera_approach.rs": "2cb00bef6c4799f8ea9d532eaddba5266482748bea340b2bcbdabe226c4e2bfc",
     "re/tools/oracle_vectors/func_8a4e_natural.json": "360e50dd91a4b129e7942522a62c117d8628fc7857c2f96b42d9af8dbed2d8a8",
     "crates/commander-blood-game/src/native/bloodprg/name_area_effect.rs": "86cae117f1d91e4df7d498b4dcbe5022db63d6062d0cce9c513175b1d76f49ea",
     "re/tools/oracle_vectors/func_8bab_natural.json": "4541121930abea827f3b0937f797b9d37ba5fb8b06da494fd236e26eeec5debf",
+    "crates/commander-blood-game/src/native/bloodprg/actor_handler_hyperjump.rs": "4e0a52624fadc94aa3834eb23ab17742b12ea2305da9cb9bad70ce4329ef0c1d",
+    "re/tools/oracle_vectors/func_7f9c_natural.json": "81e89d4535e8f175214214650079774d002cbe00b2d94e6c4e74031f8029f0f8",
+    "crates/commander-blood-game/src/runtime/bridge_actors.rs": "0a895286cfa3c079a80eed702387d964b569ce1d35170d85ff5bafb78890e2f2",
+    "crates/commander-blood-game/src/native/bloodprg/sequel_presentation.rs": "8e427e679f618f4d9ae6529a58bf86be137786ab64630882b46dd5326d16538b",
+    "re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl": "0096e8f5961bb56dbc132f355e0f7b9b149fec15f8497d58f6d2cd9fc6d8bacd",
+    "crates/commander-blood-game/src/native/bloodprg/actor_handler_camera.rs": "bf6cf08d784b76277564c26985a9c1eda43ececa8dbfacab104886ada6bc1832",
+    "re/tools/oracle_vectors/func_8082_natural.json": "2f51568ac10549b09fb719495a0f755c77feef087e57979967ee41e130813898",
+    "re/tools/oracle_vectors/big_bug_bang_panel_activation.jsonl": "a30ba1c16df575adcec7d3b9fcc6992f56fb124a79bd86f67c73f7972de27cb6",
+    "crates/commander-blood-game/src/native/bloodprg/actor_handler_palette.rs": "a568189d5d5effd9d2fdbe8bf0c4620ede3a8d204eba48635dbb62f9ca191745",
+    "re/tools/oracle_vectors/func_813a_natural.json": "4f7236531c79a804fb8320e1fd375e2aa0a438c8d515b729ab3a1bc03d90b92e",
+    "crates/commander-blood-game/src/native/bloodprg/actor_handler_panel.rs": "496b994c51b6e35841df12b3f3798f543ea154928ea74112ccc35b2c76fd42fa",
+    "re/tools/oracle_vectors/func_817e_natural.json": "fde596e6dad9cfe8ac89c328823a7198e00fbacc356f1913cc7192f5c02a33f7",
+    "re/tools/oracle_vectors/big_bug_bang_presentation.jsonl": "fb886d1a3b8c8d24adf3b92a8db75272d60c80e1922b4344963224a516573c48",
     "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b",
     "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "5817021dc5d13d2b46d0492bfd2c07e0976d4a534b70c219e3b5235099ddf4b3"
   },
@@ -1901,6 +1916,267 @@
       ]
     },
     {
+      "entry": "0x98d1",
+      "end": "0x9962",
+      "commander_entry": "0x872c",
+      "kind": "bridge",
+      "body_sha256": "327451225dbebf18d14c207af6162fa2c353b553326fa51a92b2efadecda1203",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs",
+        "symbol": "update_navigation_target_choice"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_872c_natural.json",
+      "instruction_count": 48,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x872d",
+          "bbb_site": "0x98d2",
+          "identity": "var_segment"
+        },
+        {
+          "commander_site": "0x8732",
+          "bbb_site": "0x98d7",
+          "identity": "record_choice_list"
+        },
+        {
+          "commander_site": "0x8735",
+          "bbb_site": "0x98da",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x873c",
+          "bbb_site": "0x98e1",
+          "identity": "rebuild_target_list",
+          "callee": "0x81e6"
+        },
+        {
+          "commander_site": "0x8741",
+          "bbb_site": "0x98e6",
+          "identity": "text_selector"
+        },
+        {
+          "commander_site": "0x8758",
+          "bbb_site": "0x98fd",
+          "identity": "choice_layout_guard"
+        },
+        {
+          "commander_site": "0x875e",
+          "bbb_site": "0x9903",
+          "identity": "update_choice_list",
+          "callee": "0x958a"
+        },
+        {
+          "commander_site": "0x8761",
+          "bbb_site": "0x9906",
+          "identity": "choice_layout_guard"
+        },
+        {
+          "commander_site": "0x8766",
+          "bbb_site": "0x990b",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x876a",
+          "bbb_site": "0x990f",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x8772",
+          "bbb_site": "0x9917",
+          "identity": "choice_rectangle"
+        },
+        {
+          "commander_site": "0x8775",
+          "bbb_site": "0x991a",
+          "identity": "choice_transition_target"
+        },
+        {
+          "commander_site": "0x8778",
+          "bbb_site": "0x991d",
+          "identity": "transition_choice_rectangle",
+          "callee": "0x20ce"
+        },
+        {
+          "commander_site": "0x8780",
+          "bbb_site": "0x9925",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x8786",
+          "bbb_site": "0x992b",
+          "identity": "update_choice_list",
+          "callee": "0x958a"
+        },
+        {
+          "commander_site": "0x879c",
+          "bbb_site": "0x9941",
+          "identity": "requested_script_object"
+        },
+        {
+          "commander_site": "0x879f",
+          "bbb_site": "0x9944",
+          "identity": "requested_script_action"
+        },
+        {
+          "commander_site": "0x87a8",
+          "bbb_site": "0x994d",
+          "identity": "menu_sound_bank_name"
+        },
+        {
+          "commander_site": "0x87ab",
+          "bbb_site": "0x9950",
+          "identity": "load_sound_bank",
+          "callee": "0xd7ec"
+        },
+        {
+          "commander_site": "0x87b0",
+          "bbb_site": "0x9955",
+          "identity": "console_item_selected"
+        },
+        {
+          "commander_site": "0x87b6",
+          "bbb_site": "0x995b",
+          "identity": "presentation_mode_bits"
+        }
+      ],
+      "notes": [
+        "Owned decoded navigation-target chooser with typed record IDs labels panel lifecycle cancel behavior and sound-bank request without name offsets sentinel arrays or pointer arithmetic",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x9962",
+      "end": "0x99ed",
+      "commander_entry": "0x87bd",
+      "kind": "bridge",
+      "body_sha256": "30bce681257b60e90dfe6ab2aa2d5c17ebb0fba66a4c82a9be918a6eeb3b55f9",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs",
+        "symbol": "update_contact_choice"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_87bd_natural.json",
+      "instruction_count": 47,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x87be",
+          "bbb_site": "0x9963",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x87c5",
+          "bbb_site": "0x996a",
+          "identity": "contact_slots"
+        },
+        {
+          "commander_site": "0x87c8",
+          "bbb_site": "0x996d",
+          "identity": "record_choice_list"
+        },
+        {
+          "commander_site": "0x87dc",
+          "bbb_site": "0x9981",
+          "identity": "var_segment"
+        },
+        {
+          "commander_site": "0x87e1",
+          "bbb_site": "0x9986",
+          "identity": "record_choice_list"
+        },
+        {
+          "commander_site": "0x87e4",
+          "bbb_site": "0x9989",
+          "identity": "text_selector"
+        },
+        {
+          "commander_site": "0x87e9",
+          "bbb_site": "0x998e",
+          "identity": "choice_layout_guard"
+        },
+        {
+          "commander_site": "0x87ef",
+          "bbb_site": "0x9994",
+          "identity": "update_choice_list",
+          "callee": "0x958a"
+        },
+        {
+          "commander_site": "0x87f2",
+          "bbb_site": "0x9997",
+          "identity": "choice_layout_guard"
+        },
+        {
+          "commander_site": "0x87f7",
+          "bbb_site": "0x999c",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x87fb",
+          "bbb_site": "0x99a0",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x8802",
+          "bbb_site": "0x99a7",
+          "identity": "choice_rectangle"
+        },
+        {
+          "commander_site": "0x8805",
+          "bbb_site": "0x99aa",
+          "identity": "choice_transition_target"
+        },
+        {
+          "commander_site": "0x8808",
+          "bbb_site": "0x99ad",
+          "identity": "transition_choice_rectangle",
+          "callee": "0x20ce"
+        },
+        {
+          "commander_site": "0x880f",
+          "bbb_site": "0x99b4",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x8814",
+          "bbb_site": "0x99b9",
+          "identity": "var_segment"
+        },
+        {
+          "commander_site": "0x8819",
+          "bbb_site": "0x99be",
+          "identity": "record_choice_list"
+        },
+        {
+          "commander_site": "0x881d",
+          "bbb_site": "0x99c2",
+          "identity": "update_choice_list",
+          "callee": "0x958a"
+        },
+        {
+          "commander_site": "0x8833",
+          "bbb_site": "0x99d8",
+          "identity": "requested_script_object"
+        },
+        {
+          "commander_site": "0x8836",
+          "bbb_site": "0x99db",
+          "identity": "contact_presentation_pending"
+        },
+        {
+          "commander_site": "0x883b",
+          "bbb_site": "0x99e0",
+          "identity": "console_item_selected"
+        },
+        {
+          "commander_site": "0x8841",
+          "bbb_site": "0x99e6",
+          "identity": "presentation_mode_bits"
+        }
+      ],
+      "notes": [
+        "Owned known-contact chooser over optional typed slots stable record IDs semantic redraw state and checked list selection without zero sentinels name offsets or wrapped memory access",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
       "entry": "0x99ed",
       "end": "0x9a11",
       "commander_entry": "0x8848",
@@ -2344,6 +2620,281 @@
       "notes": [
         "Checked flat-framebuffer name-area palette animation over all ten decoded executable sequences semantic operations and owned cursor state without near stream pointers segment aliases packed dimensions or 64 KiB address wrapping",
         "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x9070",
+      "end": "0x91ad",
+      "commander_entry": "0x7f9c",
+      "kind": "reviewed_transcription",
+      "body_sha256": "2d66c40262b9fdb8f996a986ec6784edd663717167538cc59e837770b8750da1",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_hyperjump.rs",
+        "symbol": "update_hyperjump_presentation_actor"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_7f9c_natural.json",
+      "instruction_count": 80,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x9070",
+          "0x9082",
+          "Require outer mode and zero black-hole slot flags; no writes on either rejection."
+        ],
+        [
+          "0x9082",
+          "0x90af",
+          "Preserve original AL flags; present+ready restarts selector 10, transitions entities 0/4, advances line."
+        ],
+        [
+          "0x90af",
+          "0x90d2",
+          "Frame 1: enabled travel publishes C1 before comparing deferred target to Arche; same target enters bridge reset, otherwise camera countdown=8."
+        ],
+        [
+          "0x90d2",
+          "0x90ef",
+          "Other frames: nonzero countdown skips completion; zero writes line flags=7, C1, transition=1; travel option chooses bridge reset."
+        ],
+        [
+          "0x90ef",
+          "0x9125",
+          "Reset clears action, transition, camera view, UI word, dialogue hold, ship block/depth/opening and HUD byte; ship flags=5. Runtime BridgeReset adapter publishes these owned fields."
+        ],
+        [
+          "0x9125",
+          "0x9139",
+          "Transition entity 4, close location panel, request redraw, return; retains deferred target on bridge reset."
+        ],
+        [
+          "0x9139",
+          "0x9153",
+          "Active location panel returns; otherwise resource=20, reverse=1, line flags=0, redraw."
+        ],
+        [
+          "0x9153",
+          "0x917e",
+          "Missing deferred record or no reverse/panel skips. Original AL bit4 controls second-pass preparation, resource20 and audio5."
+        ],
+        [
+          "0x917e",
+          "0x91ad",
+          "Advance line; incomplete returns. Completion without panel clears deferred target and line; with panel selects idle resource18, present flag and redraw."
+        ]
+      ],
+      "notes": [
+        "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Require outer mode and zero black-hole slot flags; no writes on either rejection.",
+        "Preserve original AL flags; present+ready restarts selector 10, transitions entities 0/4, advances line.",
+        "Frame 1: enabled travel publishes C1 before comparing deferred target to Arche; same target enters bridge reset, otherwise camera countdown=8.",
+        "Other frames: nonzero countdown skips completion; zero writes line flags=7, C1, transition=1; travel option chooses bridge reset.",
+        "Reset clears action, transition, camera view, UI word, dialogue hold, ship block/depth/opening and HUD byte; ship flags=5. Runtime BridgeReset adapter publishes these owned fields.",
+        "Transition entity 4, close location panel, request redraw, return; retains deferred target on bridge reset.",
+        "Active location panel returns; otherwise resource=20, reverse=1, line flags=0, redraw.",
+        "Missing deferred record or no reverse/panel skips. Original AL bit4 controls second-pass preparation, resource20 and audio5.",
+        "Advance line; incomplete returns. Completion without panel clears deferred target and line; with panel selects idle resource18, present flag and redraw."
+      ]
+    },
+    {
+      "entry": "0x91ad",
+      "end": "0x927a",
+      "commander_entry": "0x8082",
+      "kind": "reviewed_transcription",
+      "body_sha256": "ba8a714ed146cc15deeb0117ea5699bf0f016f0dbc2fde0a94a480a23727bc21",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_camera.rs",
+        "symbol": "update_camera_presentation_actor"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_8082_natural.json",
+      "instruction_count": 60,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x91ad",
+          "0x91bf",
+          "Overview bit1 blocks before any writes; otherwise require outer mode. Runtime run_camera supplies overview gate."
+        ],
+        [
+          "0x91bf",
+          "0x91e8",
+          "Inactive actor marks line present and checks ready. Black-hole/hyperjump blockers activate camera actor, close location panel and return."
+        ],
+        [
+          "0x91e8",
+          "0x9207",
+          "Transition entity0; clear selected location. Pending CC skips selector10 and primary-input clear; ordinary path performs both."
+        ],
+        [
+          "0x9207",
+          "0x9230",
+          "Advance line preserving completion carry across frame7 camera-page callback, audio3, countdown8 and redraw."
+        ],
+        [
+          "0x9230",
+          "0x9241",
+          "Completion clears camera actor and sets line flags7. AL transition bit controls view toggle."
+        ],
+        [
+          "0x9241",
+          "0x9267",
+          "Toggle view and clear redraw; entering synthesizes secondary press and redraw; leaving restores ship palette/camera and requests rebuild."
+        ],
+        [
+          "0x9267",
+          "0x927a",
+          "Close location panel, line flags1, transition entity4, return."
+        ]
+      ],
+      "notes": [
+        "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Overview bit1 blocks before any writes; otherwise require outer mode. Runtime run_camera supplies overview gate.",
+        "Inactive actor marks line present and checks ready. Black-hole/hyperjump blockers activate camera actor, close location panel and return.",
+        "Transition entity0; clear selected location. Pending CC skips selector10 and primary-input clear; ordinary path performs both.",
+        "Advance line preserving completion carry across frame7 camera-page callback, audio3, countdown8 and redraw.",
+        "Completion clears camera actor and sets line flags7. AL transition bit controls view toggle.",
+        "Toggle view and clear redraw; entering synthesizes secondary press and redraw; leaving restores ship palette/camera and requests rebuild.",
+        "Close location panel, line flags1, transition entity4, return."
+      ]
+    },
+    {
+      "entry": "0x927a",
+      "end": "0x92d0",
+      "commander_entry": "0x813a",
+      "kind": "reviewed_transcription",
+      "body_sha256": "82695527e2641df112397594aaae7fab22465525a13cd10f730199b47fe84390",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_palette.rs",
+        "symbol": "update_ship_palette_actor"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_813a_natural.json",
+      "instruction_count": 27,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x813b",
+          "bbb_site": "0x928d",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x814d",
+          "bbb_site": "0x929f",
+          "identity": "actor_state"
+        },
+        {
+          "commander_site": "0x8153",
+          "bbb_site": "0x92a5",
+          "identity": "update_presentation_line",
+          "callee": "0x8ef0"
+        },
+        {
+          "commander_site": "0x815b",
+          "bbb_site": "0x92ad",
+          "identity": "update_audio_playback",
+          "callee": "0xd05d"
+        },
+        {
+          "commander_site": "0x8160",
+          "bbb_site": "0x92b2",
+          "identity": "ship_flags"
+        },
+        {
+          "commander_site": "0x8166",
+          "bbb_site": "0x92b8",
+          "identity": "live_palette"
+        },
+        {
+          "commander_site": "0x8169",
+          "bbb_site": "0x92bb",
+          "identity": "ship_palette_snapshot"
+        },
+        {
+          "commander_site": "0x8172",
+          "bbb_site": "0x92c4",
+          "identity": "ship_depth_offset"
+        }
+      ],
+      "reviewed_blocks": [
+        [
+          "0x927a",
+          "0x928d",
+          "Bind Arche; quantity word+22 ==0 returns untouched. Negative and all other nonzero words pass. Runtime reads live typed VAR field."
+        ],
+        [
+          "0x928d",
+          "0x929f",
+          "Require UI mask90, mark line present, return if not ready."
+        ],
+        [
+          "0x929f",
+          "0x92b2",
+          "Selector16 then advance line; incomplete returns, completed plays audio5."
+        ],
+        [
+          "0x92b2",
+          "0x92d0",
+          "Ship flags1, copy576 palette bytes, depth0, line flags7. Complete shared suffix checked separately by exact relocation comparison."
+        ]
+      ],
+      "notes": [
+        "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Bind Arche; quantity word+22 ==0 returns untouched. Negative and all other nonzero words pass. Runtime reads live typed VAR field.",
+        "Require UI mask90, mark line present, return if not ready.",
+        "Selector16 then advance line; incomplete returns, completed plays audio5.",
+        "Ship flags1, copy576 palette bytes, depth0, line flags7. Complete shared suffix checked separately by exact relocation comparison."
+      ]
+    },
+    {
+      "entry": "0x92d0",
+      "end": "0x935d",
+      "commander_entry": "0x817e",
+      "kind": "reviewed_transcription",
+      "body_sha256": "3e5a6856b0ca5bf79bcf56315302f4843a59e5cad217d495e95adb7c3f61e750",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/actor_handler_panel.rs",
+        "symbol": "update_panel_close_actor"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_817e_natural.json",
+      "instruction_count": 38,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x92d0",
+          "0x92e4",
+          "Require secondary mode, mark line present, skip playback when not ready."
+        ],
+        [
+          "0x92e4",
+          "0x92f8",
+          "Pending CC bypasses hand and ending gate. Otherwise selector13; ending bit1 returns immediately."
+        ],
+        [
+          "0x92f8",
+          "0x9318",
+          "Active panel and signed phase<100 sets phase106; queued scene then finalized."
+        ],
+        [
+          "0x9318",
+          "0x932f",
+          "Clear primary and pending input, advance line; incomplete skips to final latch; complete transitions entity4."
+        ],
+        [
+          "0x932f",
+          "0x934a",
+          "Set line flags1; inactive panel becomes active and requests redraw, already active panel does not add redraw."
+        ],
+        [
+          "0x934a",
+          "0x935d",
+          "Active panel plus loaded line latches completion; return."
+        ]
+      ],
+      "notes": [
+        "Complete BBB actor compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Require secondary mode, mark line present, skip playback when not ready.",
+        "Pending CC bypasses hand and ending gate. Otherwise selector13; ending bit1 returns immediately.",
+        "Active panel and signed phase<100 sets phase106; queued scene then finalized.",
+        "Clear primary and pending input, advance line; incomplete skips to final latch; complete transitions entity4.",
+        "Set line flags1; inactive panel becomes active and requests redraw, already active panel does not add redraw.",
+        "Active panel plus loaded line latches completion; return."
       ]
     },
     {

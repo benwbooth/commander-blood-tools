@@ -5715,6 +5715,30 @@ tests pass nine cases; bridge-console tests pass 18 with one optional asset test
 ignored. The ledger is 358/383 classified with 26 static typed entries and
 25 pending. This remains a source-port audit, not a completed playthrough claim.
 
+## Sequel Actor and Choice Audit (2026-09-19)
+
+Target and contact choice entries `0x98D1` and `0x9962` are complete-body
+matches after individually reviewed relocations. The four changed actors at
+`0x9070`, `0x91AD`, `0x927A`, and `0x92D0` now have contiguous instruction-boundary
+reviews against their Commander baselines, typed handlers, and runtime adapters.
+These changed bodies are explicitly recorded as reviewed transcriptions, not
+claimed byte-identical or newly executed whole-entry native comparisons. The
+palette actor's entire suffix does additionally pass exact relocation comparison.
+
+This review found and fixed two missing production gates: overview mode must
+return before the camera actor mutates state, and Arche's quantity word at +22
+must be nonzero before palette-actor processing. The latter is a zero test, not
+a positive/signed check; the focused runtime test checks all 65,536 words in
+each UI mode. The camera's synthesized secondary press, pending-CC hand/input
+bypass, panel ending gate, and alternate hyperjump reset are already translated
+and are tied to their runtime owners in the audit.
+
+Focused checks passed: six runtime-actor tests, nine typed actor tests, two
+sequel-presentation tests, 18 bridge-console tests (one optional asset test
+ignored), five static-audit tests and four disposition tests. The ledger now
+classifies 364/383 entries, including 32 static typed entries, with 19 pending.
+No broad playthrough was started for this slice.
+
 ## Remaining Completion Requirements
 
 As of 2026-09-19, work proceeds source-first: compare remaining BBB native
