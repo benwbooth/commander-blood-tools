@@ -5628,6 +5628,36 @@ Use the completed cache at `~/.local/share/commander-blood/assets-v1` for the
 next run; do not count optional tests that early-return without an asset cache
 as live verification.
 
+## Static Sprite and Hover Comparison (2026-09-19)
+
+`re/tools/big_bug_bang_static_port_audit.py` checks complete native bodies
+against the already ported Commander routines, allowing only explicitly named
+operand relocations. It does not normalize arbitrary constants, call targets,
+branch destinations, registers, or addressing modes. Unlisted byte differences
+fail the check. The generated report pins executables, Rust owners, inherited
+fixtures, and the comparison implementation. This is reviewed static evidence,
+not additional native execution coverage or a whole-game equivalence proof.
+
+BBB `0x49B3`, `0x4B39`, `0x5025`, `0x5153`, and `0x53DF` match the complete
+raw/RLE transparent, raw/RLE opaque, and scaled-transparent Commander bodies
+after those relocations. The address identities are the two flip bytes, local
+stride/run scratch, drawing framebuffer, selected remap pointer, and two remap
+tables. The shared Rust rasterizers therefore retain their existing clipping,
+flip, transparent-zero, remap, and nearest-neighbor semantics. The three sprite
+table targets `0x5517..0x5519` are each exactly `RET` and require no new API.
+
+BBB hover `0x8923..0x8987` adds an overview-bit guard absent from Commander
+`0x78D0`. The remainder is byte-identical after named state relocations. The
+production hover update now supplies the sequel overview state to this guard;
+while active, it preserves both the hover latch and current actor state. When
+inactive, shared selection, signed inclusive bounds, actor state 9, and previous
+actor restoration are unchanged. Focused tests cover blocked inside/outside
+and inactive/active hover states, both rectangles, and inherited Commander cases.
+
+The ledger distinguishes six `verified_static_typed` entries from 262 directly
+executed typed entries. With the three authored returns, 338/383 native entries
+are classified and 45 remain pending. No full scenario campaign was rerun.
+
 ## Remaining Completion Requirements
 
 As of 2026-09-19, work proceeds source-first: compare remaining BBB native

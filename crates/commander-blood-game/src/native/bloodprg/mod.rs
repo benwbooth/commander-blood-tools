@@ -439,6 +439,7 @@ pub use presentation_entry::{
 pub use presentation_hover::{
     PresentationHitAreas, PresentationHitRectangle, PresentationHitSelection,
     PresentationHoverOutcome, PresentationHoverState, update_presentation_hover,
+    update_sequel_presentation_hover,
 };
 pub use presentation_line::{
     NO_PRESENTATION_LINE, PresentationLine, PresentationLineBackend, PresentationLineFlags,

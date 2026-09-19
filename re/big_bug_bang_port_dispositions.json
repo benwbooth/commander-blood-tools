@@ -1,10 +1,11 @@
 {
   "format": "big_bug_bang_port_dispositions_v1",
-  "scope": "One disposition for every known BBB native entrypoint. Direct execution requires oracle output checked against a fixture consumed by Rust; structural similarity alone remains pending.",
+  "scope": "One disposition for every known BBB native entrypoint. Direct execution requires oracle output checked against a fixture consumed by Rust. Reviewed static equivalence is separately identified; fuzzy structural similarity alone remains pending.",
   "inputs": {
     "re/big_bug_bang_oracle_coverage.json": "b5135e26f26416adcbc639c7b9c4969b7f37c9f3cb7e19577826a866810d4666",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "d54671db0801c96dbb9728fae76a803f1bbd67d88d80b04062ee284c67089502",
+    "re/big_bug_bang_static_port_audit.json": "a4219640814ddf060b6a74953e83abfe4fdad16e19f416aac51d8571fcc87890",
     "re/big_bug_bang_unreferenced_library_audit.json": "2509d2ba5893b4b96c1f032a0cacb68e0f9b47c5bb8022e5d64cab740c02b290",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
     "re/rust-port/eliminated.tsv": "aa49ae8d83ad3c047f48df0f51c1909c6116f332eb02e95c67462a94b3c9f478",
@@ -12,17 +13,18 @@
   },
   "summary": {
     "known_entrypoint_count": 383,
-    "classified_entrypoint_count": 329,
-    "pending_game_semantics_count": 54,
+    "classified_entrypoint_count": 338,
+    "pending_game_semantics_count": 45,
     "status_counts": {
-      "eliminated_authored_no_operation": 7,
+      "eliminated_authored_no_operation": 10,
       "eliminated_dormant_diagnostic": 18,
       "eliminated_host_adapter": 26,
       "eliminated_unreferenced_library": 3,
       "inherited_exact_eliminated": 7,
       "inherited_exact_typed": 6,
-      "pending_game_semantics": 54,
-      "verified_direct_typed": 262
+      "pending_game_semantics": 45,
+      "verified_direct_typed": 262,
+      "verified_static_typed": 6
     }
   },
   "entrypoints": [
@@ -881,7 +883,7 @@
       ],
       "body_hex": "c3",
       "rust_owner": null,
-      "rationale": "The original input-table target is an authored return-only or register-preserving no-op and requires no production operation."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x24b2",
@@ -905,7 +907,7 @@
       ],
       "body_hex": "c3",
       "rust_owner": null,
-      "rationale": "The original input-table target is an authored return-only or register-preserving no-op and requires no production operation."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x24b3",
@@ -929,7 +931,7 @@
       ],
       "body_hex": "c3",
       "rust_owner": null,
-      "rationale": "The original input-table target is an authored return-only or register-preserving no-op and requires no production operation."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x24b4",
@@ -953,7 +955,7 @@
       ],
       "body_hex": "c3",
       "rust_owner": null,
-      "rationale": "The original input-table target is an authored return-only or register-preserving no-op and requires no production operation."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x24b5",
@@ -977,7 +979,7 @@
       ],
       "body_hex": "c3",
       "rust_owner": null,
-      "rationale": "The original input-table target is an authored return-only or register-preserving no-op and requires no production operation."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x24b6",
@@ -994,7 +996,7 @@
       ],
       "body_hex": "1e5606575f075e1fc3",
       "rust_owner": null,
-      "rationale": "The original input-table target is an authored return-only or register-preserving no-op and requires no production operation."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x24bf",
@@ -1011,7 +1013,7 @@
       ],
       "body_hex": "1e5606575f075e1fc3",
       "rust_owner": null,
-      "rationale": "The original input-table target is an authored return-only or register-preserving no-op and requires no production operation."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x24c8",
@@ -2228,12 +2230,16 @@
       "entered": false,
       "comparison": "structural_candidate",
       "commander_entry": "0x4536",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_4536_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_raw_transparent_sprite"
+      },
+      "rationale": "Checked raw transparent rasterizer retaining signed all-edge clipping canonical flips source-zero transparency both destination-color remap tables source stride and the vertically advanced cursor X-origin reload while replacing far frame and framebuffer pointers 16-bit display-offset wrapping selected-remap scratch and register-shaped loops with validated flat slices and explicit selection; the two noncanonical flip-byte oracle states are unrepresentable through the typed Boolean dispatcher Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
     },
     {
       "entry": "0x4b39",
@@ -2241,12 +2247,16 @@
       "entered": false,
       "comparison": "structural_candidate",
       "commander_entry": "0x46bc",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_46bc_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_rle_transparent_sprite"
+      },
+      "rationale": "Checked RLE transparent rasterizer retaining repeat and literal runs split-run clipping encoded-row skipping canonical flips source-zero transparency destination remapping and cursor-relative X-origin reload while replacing far pointers wrapping decoded counters mutable scratch words and global selection state with validated encoded rows flat framebuffer coordinates and explicit outcomes; the one noncanonical flip-byte oracle state is unrepresentable through the typed Boolean dispatcher Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
     },
     {
       "entry": "0x5025",
@@ -2254,12 +2264,16 @@
       "entered": false,
       "comparison": "structural_candidate",
       "commander_entry": "0x4ba8",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_4ba8_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_raw_opaque_sprite"
+      },
+      "rationale": "Checked raw opaque rasterizer retaining signed all-edge clipping canonical flips zero-pixel overwrite source stride and the vertically advanced cursor X-origin reload while replacing far frame and framebuffer pointers 16-bit display-offset wrapping REP copy classes and register-shaped loops with validated flat slices and explicit selection; the two noncanonical flip-byte oracle states are unrepresentable through the typed Boolean dispatcher Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
     },
     {
       "entry": "0x5153",
@@ -2267,12 +2281,16 @@
       "entered": false,
       "comparison": "structural_candidate",
       "commander_entry": "0x4cd6",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_4cd6_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_rle_opaque_sprite"
+      },
+      "rationale": "Checked RLE opaque rasterizer retaining repeat and literal runs split-run clipping encoded-row skipping canonical flips zero-pixel overwrite and cursor-relative X-origin reload while replacing far pointers wrapping decoded counters mutable scratch words and register-shaped loops with validated encoded rows flat framebuffer coordinates and explicit outcomes; the one noncanonical flip-byte oracle state is unrepresentable through the typed Boolean dispatcher Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
     },
     {
       "entry": "0x53df",
@@ -2280,12 +2298,16 @@
       "entered": false,
       "comparison": "structural_candidate",
       "commander_entry": "0x4f62",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_4f62_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is structural candidate with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_scaled_transparent_sprite"
+      },
+      "rationale": "Checked scaled transparent rasterizer retaining unsigned 16.16 nearest-neighbor sampling signed all-edge clipping zero-sized early returns source-zero transparency ignored frame origins and ignored flip and remap state while replacing far frame and framebuffer pointers 16-bit destination offset wrapping and register-shaped loops with validated flat slices and an explicit fixed-point outcome; nonpositive wrapped clipped extents return without rasterization Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
     },
     {
       "entry": "0x5517",
@@ -2303,12 +2325,13 @@
         "0x509b",
         "0x509c"
       ],
-      "status": "pending_game_semantics",
+      "status": "eliminated_authored_no_operation",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "output/big-bug-bang/disc/BLOOD2PG.EXE"
       ],
+      "body_hex": "c3",
       "rust_owner": null,
-      "rationale": "The current evidence is ambiguous with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x5518",
@@ -2326,12 +2349,13 @@
         "0x509b",
         "0x509c"
       ],
-      "status": "pending_game_semantics",
+      "status": "eliminated_authored_no_operation",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "output/big-bug-bang/disc/BLOOD2PG.EXE"
       ],
+      "body_hex": "c3",
       "rust_owner": null,
-      "rationale": "The current evidence is ambiguous with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x5519",
@@ -2349,12 +2373,13 @@
         "0x509b",
         "0x509c"
       ],
-      "status": "pending_game_semantics",
+      "status": "eliminated_authored_no_operation",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "output/big-bug-bang/disc/BLOOD2PG.EXE"
       ],
+      "body_hex": "c3",
       "rust_owner": null,
-      "rationale": "The current evidence is ambiguous with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rationale": "The original dispatch-table target is an authored return-only or register-preserving no-op and requires no production operation."
     },
     {
       "entry": "0x551a",
@@ -4407,12 +4432,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_78d0_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs",
+        "symbol": "update_sequel_presentation_hover"
+      },
+      "rationale": "Typed bridge presentation hover selection over semantic optional regions inclusive logical rectangles and generic actor states instead of shared UI and activity flag bytes BBB overview guard returns without touching hover or actor state; runtime supplies sequel_overview.active(). Signed inclusive bounds, selection priority, actor 9, and previous-state restore are unchanged."
     },
     {
       "entry": "0x8987",

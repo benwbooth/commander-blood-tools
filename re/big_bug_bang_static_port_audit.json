@@ -1,0 +1,575 @@
+{
+  "format": "big_bug_bang_static_port_audit_v1",
+  "scope": "Reviewed native equivalence plus Rust ownership; not a new native execution claim or a proof of whole-game runtime wiring.",
+  "inputs": {
+    "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+    "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
+    "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
+    "re/tools/big_bug_bang_static_port_audit.py": "ef2d698254ee1b5d3be45fdacc2adceb4bf27b1fd290fa5909ac25140a93a03b",
+    "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs": "501832c180e3b2f096453f0badae20007942b3808470df20db14affba6f5942a",
+    "re/tools/oracle_vectors/func_4536_natural.json": "8bfe134ac82851e20eec3014065491bf7cf1453da1687fd81b06bdb6ca6a483f",
+    "re/tools/oracle_vectors/func_46bc_natural.json": "7bc129da36d0e67a5d9a1c317820dcac4a4121b365df329fffc9689dc9077d99",
+    "re/tools/oracle_vectors/func_4ba8_natural.json": "8a0b38db2c06fbc37974d29070fc06591f478b7deb9c3214a01bade72a3de33a",
+    "re/tools/oracle_vectors/func_4cd6_natural.json": "55498dfe4e52368f4b79c278369088dd6ca73967e9ec31c1c8d85422963b307b",
+    "re/tools/oracle_vectors/func_4f62_natural.json": "278ffaff60f36e52cd6284b1fa03a86793806bc95cebf4abdb6d34ea860d6279",
+    "crates/commander-blood-game/src/runtime/services.rs": "24f293d7f94d867b3ad5d5917c7419e07a64361f998560ef3cd4c771ff2707a1",
+    "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs": "5f3e726b5afc93d86dd70b2cd46fbfe79ed5055ae5de0c68113fa19cfb990944",
+    "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e"
+  },
+  "routines": [
+    {
+      "entry": "0x49b3",
+      "end": "0x4b33",
+      "commander_entry": "0x4536",
+      "kind": "sprite",
+      "body_sha256": "d3b86945081096ec84dbec1521356d6eb9a8e5dba0ea814079150b8282cbcaba",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_raw_transparent_sprite"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_4536_natural.json",
+      "instruction_count": 166,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x4561",
+          "bbb_site": "0x49de",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x457b",
+          "bbb_site": "0x49f8",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x459c",
+          "bbb_site": "0x4a19",
+          "identity": "horizontal_flip"
+        },
+        {
+          "commander_site": "0x45b3",
+          "bbb_site": "0x4a30",
+          "identity": "horizontal_flip"
+        },
+        {
+          "commander_site": "0x45c8",
+          "bbb_site": "0x4a45",
+          "identity": "first_remap_table"
+        },
+        {
+          "commander_site": "0x45cf",
+          "bbb_site": "0x4a4c",
+          "identity": "second_remap_table"
+        },
+        {
+          "commander_site": "0x45d2",
+          "bbb_site": "0x4a4f",
+          "identity": "selected_remap_table"
+        },
+        {
+          "commander_site": "0x45d8",
+          "bbb_site": "0x4a55",
+          "identity": "drawing_framebuffer"
+        },
+        {
+          "commander_site": "0x45dd",
+          "bbb_site": "0x4a5a",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x4600",
+          "bbb_site": "0x4a7d",
+          "identity": "raw_source_row_stride"
+        },
+        {
+          "commander_site": "0x4605",
+          "bbb_site": "0x4a82",
+          "identity": "horizontal_flip"
+        },
+        {
+          "commander_site": "0x4617",
+          "bbb_site": "0x4a94",
+          "identity": "selected_remap_table"
+        },
+        {
+          "commander_site": "0x4636",
+          "bbb_site": "0x4ab3",
+          "identity": "raw_source_row_stride"
+        },
+        {
+          "commander_site": "0x4641",
+          "bbb_site": "0x4abe",
+          "identity": "raw_source_row_stride"
+        },
+        {
+          "commander_site": "0x4666",
+          "bbb_site": "0x4ae3",
+          "identity": "selected_remap_table"
+        },
+        {
+          "commander_site": "0x4685",
+          "bbb_site": "0x4b02",
+          "identity": "raw_source_row_stride"
+        },
+        {
+          "commander_site": "0x4690",
+          "bbb_site": "0x4b0d",
+          "identity": "raw_source_row_stride"
+        }
+      ],
+      "notes": [
+        "Checked raw transparent rasterizer retaining signed all-edge clipping canonical flips source-zero transparency both destination-color remap tables source stride and the vertically advanced cursor X-origin reload while replacing far frame and framebuffer pointers 16-bit display-offset wrapping selected-remap scratch and register-shaped loops with validated flat slices and explicit selection; the two noncanonical flip-byte oracle states are unrepresentable through the typed Boolean dispatcher",
+        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x4b39",
+      "end": "0x5025",
+      "commander_entry": "0x46bc",
+      "kind": "sprite",
+      "body_sha256": "c02a8d20962343950ac4c646fb40a797c20b7dd399ad29de9245cf07e1d9fc97",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_rle_transparent_sprite"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_46bc_natural.json",
+      "instruction_count": 603,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x46d4",
+          "bbb_site": "0x4b51",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x46e0",
+          "bbb_site": "0x4b5d",
+          "identity": "rle_source_row_width"
+        },
+        {
+          "commander_site": "0x46f8",
+          "bbb_site": "0x4b75",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x4705",
+          "bbb_site": "0x4b82",
+          "identity": "rle_source_row_width"
+        },
+        {
+          "commander_site": "0x4731",
+          "bbb_site": "0x4bae",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x473e",
+          "bbb_site": "0x4bbb",
+          "identity": "rle_source_row_width"
+        },
+        {
+          "commander_site": "0x4771",
+          "bbb_site": "0x4bee",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4782",
+          "bbb_site": "0x4bff",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4791",
+          "bbb_site": "0x4c0e",
+          "identity": "first_remap_table"
+        },
+        {
+          "commander_site": "0x4798",
+          "bbb_site": "0x4c15",
+          "identity": "second_remap_table"
+        },
+        {
+          "commander_site": "0x479b",
+          "bbb_site": "0x4c18",
+          "identity": "selected_remap_table"
+        },
+        {
+          "commander_site": "0x47a1",
+          "bbb_site": "0x4c1e",
+          "identity": "drawing_framebuffer"
+        },
+        {
+          "commander_site": "0x47a6",
+          "bbb_site": "0x4c23",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x47c5",
+          "bbb_site": "0x4c42",
+          "identity": "horizontal_flip"
+        },
+        {
+          "commander_site": "0x47d6",
+          "bbb_site": "0x4c53",
+          "identity": "selected_remap_table"
+        },
+        {
+          "commander_site": "0x47e9",
+          "bbb_site": "0x4c66",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4854",
+          "bbb_site": "0x4cd1",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4890",
+          "bbb_site": "0x4d0d",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x48b0",
+          "bbb_site": "0x4d2d",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x48e2",
+          "bbb_site": "0x4d5f",
+          "identity": "selected_remap_table"
+        },
+        {
+          "commander_site": "0x48e9",
+          "bbb_site": "0x4d66",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4956",
+          "bbb_site": "0x4dd3",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4994",
+          "bbb_site": "0x4e11",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x49b2",
+          "bbb_site": "0x4e2f",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x49e5",
+          "bbb_site": "0x4e62",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4a48",
+          "bbb_site": "0x4ec5",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4a79",
+          "bbb_site": "0x4ef6",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4a91",
+          "bbb_site": "0x4f0e",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4ac5",
+          "bbb_site": "0x4f42",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4b2a",
+          "bbb_site": "0x4fa7",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4b5d",
+          "bbb_site": "0x4fda",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4b75",
+          "bbb_site": "0x4ff2",
+          "identity": "rle_left_clip"
+        }
+      ],
+      "notes": [
+        "Checked RLE transparent rasterizer retaining repeat and literal runs split-run clipping encoded-row skipping canonical flips source-zero transparency destination remapping and cursor-relative X-origin reload while replacing far pointers wrapping decoded counters mutable scratch words and global selection state with validated encoded rows flat framebuffer coordinates and explicit outcomes; the one noncanonical flip-byte oracle state is unrepresentable through the typed Boolean dispatcher",
+        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x5025",
+      "end": "0x5153",
+      "commander_entry": "0x4ba8",
+      "kind": "sprite",
+      "body_sha256": "ea0df87fa1a4b3901ce0f9f3284c0b3eef119470ab28a9c5895189f937d954b6",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_raw_opaque_sprite"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_4ba8_natural.json",
+      "instruction_count": 135,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x4bd4",
+          "bbb_site": "0x5051",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x4bee",
+          "bbb_site": "0x506b",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x4c0f",
+          "bbb_site": "0x508c",
+          "identity": "horizontal_flip"
+        },
+        {
+          "commander_site": "0x4c26",
+          "bbb_site": "0x50a3",
+          "identity": "horizontal_flip"
+        },
+        {
+          "commander_site": "0x4c30",
+          "bbb_site": "0x50ad",
+          "identity": "drawing_framebuffer"
+        },
+        {
+          "commander_site": "0x4c35",
+          "bbb_site": "0x50b2",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x4c5c",
+          "bbb_site": "0x50d9",
+          "identity": "horizontal_flip"
+        }
+      ],
+      "notes": [
+        "Checked raw opaque rasterizer retaining signed all-edge clipping canonical flips zero-pixel overwrite source stride and the vertically advanced cursor X-origin reload while replacing far frame and framebuffer pointers 16-bit display-offset wrapping REP copy classes and register-shaped loops with validated flat slices and explicit selection; the two noncanonical flip-byte oracle states are unrepresentable through the typed Boolean dispatcher",
+        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x5153",
+      "end": "0x53df",
+      "commander_entry": "0x4cd6",
+      "kind": "sprite",
+      "body_sha256": "8d23a9efe4813631569e7551e90defcc1874441f6670ecce9443f1e862c10d22",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_rle_opaque_sprite"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_4cd6_natural.json",
+      "instruction_count": 307,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x4cee",
+          "bbb_site": "0x516b",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4cfa",
+          "bbb_site": "0x5177",
+          "identity": "rle_source_row_width"
+        },
+        {
+          "commander_site": "0x4d12",
+          "bbb_site": "0x518f",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x4d1f",
+          "bbb_site": "0x519c",
+          "identity": "rle_source_row_width"
+        },
+        {
+          "commander_site": "0x4d4b",
+          "bbb_site": "0x51c8",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x4d58",
+          "bbb_site": "0x51d5",
+          "identity": "rle_source_row_width"
+        },
+        {
+          "commander_site": "0x4d8b",
+          "bbb_site": "0x5208",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4d9c",
+          "bbb_site": "0x5219",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4da0",
+          "bbb_site": "0x521d",
+          "identity": "drawing_framebuffer"
+        },
+        {
+          "commander_site": "0x4da5",
+          "bbb_site": "0x5222",
+          "identity": "vertical_flip"
+        },
+        {
+          "commander_site": "0x4dc4",
+          "bbb_site": "0x5241",
+          "identity": "horizontal_flip"
+        },
+        {
+          "commander_site": "0x4dda",
+          "bbb_site": "0x5257",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4e35",
+          "bbb_site": "0x52b2",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4e55",
+          "bbb_site": "0x52d2",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4e64",
+          "bbb_site": "0x52e1",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4e96",
+          "bbb_site": "0x5313",
+          "identity": "rle_right_clip"
+        },
+        {
+          "commander_site": "0x4ef3",
+          "bbb_site": "0x5370",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4f1c",
+          "bbb_site": "0x5399",
+          "identity": "rle_left_clip"
+        },
+        {
+          "commander_site": "0x4f30",
+          "bbb_site": "0x53ad",
+          "identity": "rle_left_clip"
+        }
+      ],
+      "notes": [
+        "Checked RLE opaque rasterizer retaining repeat and literal runs split-run clipping encoded-row skipping canonical flips zero-pixel overwrite and cursor-relative X-origin reload while replacing far pointers wrapping decoded counters mutable scratch words and register-shaped loops with validated encoded rows flat framebuffer coordinates and explicit outcomes; the one noncanonical flip-byte oracle state is unrepresentable through the typed Boolean dispatcher",
+        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x53df",
+      "end": "0x5517",
+      "commander_entry": "0x4f62",
+      "kind": "sprite",
+      "body_sha256": "00e8ef5d4e3d609bbddb3d20acbd2c8d9fc49688adc9fc003f5ea36a3be164d8",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs",
+        "symbol": "blit_scaled_transparent_sprite"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_4f62_natural.json",
+      "instruction_count": 128,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x502c",
+          "bbb_site": "0x54a9",
+          "identity": "drawing_framebuffer"
+        }
+      ],
+      "notes": [
+        "Checked scaled transparent rasterizer retaining unsigned 16.16 nearest-neighbor sampling signed all-edge clipping zero-sized early returns source-zero transparency ignored frame origins and ignored flip and remap state while replacing far frame and framebuffer pointers 16-bit destination offset wrapping and register-shaped loops with validated flat slices and an explicit fixed-point outcome; nonpositive wrapped clipped extents return without rasterization",
+        "Complete body is byte-identical after only the named state/table relocations. Relative branches, constants, register widths, memory addressing, clipping, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x8923",
+      "end": "0x8987",
+      "commander_entry": "0x78d0",
+      "kind": "hover",
+      "body_sha256": "8879409825a36ec37f089d32b9cf5cb959e5d007b5f9cd101378d79d6f83e879",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs",
+        "symbol": "update_sequel_presentation_hover"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_78d0_natural.json",
+      "instruction_count": 30,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x78d1",
+          "bbb_site": "0x892b",
+          "identity": "primary_actor_rectangle"
+        },
+        {
+          "commander_site": "0x78d4",
+          "bbb_site": "0x892e",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x78db",
+          "bbb_site": "0x8935",
+          "identity": "presentation_mode_bits"
+        },
+        {
+          "commander_site": "0x78e5",
+          "bbb_site": "0x893f",
+          "identity": "pointer_x"
+        },
+        {
+          "commander_site": "0x78f5",
+          "bbb_site": "0x894f",
+          "identity": "pointer_y"
+        },
+        {
+          "commander_site": "0x7905",
+          "bbb_site": "0x895f",
+          "identity": "hover_latch"
+        },
+        {
+          "commander_site": "0x790c",
+          "bbb_site": "0x8966",
+          "identity": "hover_latch"
+        },
+        {
+          "commander_site": "0x7911",
+          "bbb_site": "0x896b",
+          "identity": "actor_state"
+        },
+        {
+          "commander_site": "0x7919",
+          "bbb_site": "0x8973",
+          "identity": "hover_latch"
+        },
+        {
+          "commander_site": "0x7920",
+          "bbb_site": "0x897a",
+          "identity": "hover_latch"
+        },
+        {
+          "commander_site": "0x7925",
+          "bbb_site": "0x897f",
+          "identity": "previous_actor_state"
+        },
+        {
+          "commander_site": "0x7928",
+          "bbb_site": "0x8982",
+          "identity": "actor_state"
+        }
+      ],
+      "notes": [
+        "Typed bridge presentation hover selection over semantic optional regions inclusive logical rectangles and generic actor states instead of shared UI and activity flag bytes",
+        "BBB overview guard returns without touching hover or actor state; runtime supplies sequel_overview.active(). Signed inclusive bounds, selection priority, actor 9, and previous-state restore are unchanged."
+      ]
+    }
+  ]
+}

@@ -25,10 +25,10 @@ UNREFERENCED_LIBRARY_AUDIT_PATH = (
 )
 BUILDER_PATH = ROOT / "re/tools/build_big_bug_bang_port_dispositions.py"
 KNOWN_ENTRYPOINT_COUNT = 383
-CLASSIFIED_ENTRYPOINT_COUNT = 329
-PENDING_GAME_SEMANTICS_COUNT = 54
+CLASSIFIED_ENTRYPOINT_COUNT = 338
+PENDING_GAME_SEMANTICS_COUNT = 45
 EXPECTED_STATUS_COUNTS = {
-    "eliminated_authored_no_operation": 7,
+    "eliminated_authored_no_operation": 10,
     "eliminated_dormant_diagnostic": 18,
     "eliminated_host_adapter": 26,
     "eliminated_unreferenced_library": 3,
@@ -36,6 +36,7 @@ EXPECTED_STATUS_COUNTS = {
     "inherited_exact_typed": 6,
     "pending_game_semantics": PENDING_GAME_SEMANTICS_COUNT,
     "verified_direct_typed": 262,
+    "verified_static_typed": 6,
 }
 
 spec = importlib.util.spec_from_file_location("bbb_disposition_builder", BUILDER_PATH)
@@ -125,6 +126,15 @@ class BigBugBangPortDispositionTests(unittest.TestCase):
                 self.assertIn(oracle_path, self.coverage_rows[row["entry"]]["oracles"])
                 self.assertEqual(self.oracle_rows[oracle_path]["fixture"], fixture)
                 self.assert_rust_owner_consumes(row["rust_owner"], fixture)
+            elif status == "verified_static_typed":
+                audit_path, fixture = row["evidence"]
+                audit = json.loads((ROOT / audit_path).read_text())
+                static = next(item for item in audit["routines"] if item["entry"] == row["entry"])
+                self.assertEqual(static["rust_owner"], row["rust_owner"])
+                self.assertEqual(static["inherited_fixture"], fixture)
+                self.assertEqual(static["body_sha256"], hashlib.sha256(
+                    executable[entry:int(static["end"], 16)]).hexdigest())
+                self.assert_rust_owner_exists(row["rust_owner"])
             elif status in {"inherited_exact_typed", "inherited_exact_eliminated"}:
                 self.assertEqual(row["comparison"], "exact_body")
                 commander_entry = int(row["commander_entry"], 16)

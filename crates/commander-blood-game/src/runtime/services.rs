@@ -55,7 +55,7 @@ use crate::native::bloodprg::{
     prepare_cd_audio, presentable_navigation_objects, process_audio_events, render_bridge_page,
     resolve_navigation_position, reveal_inline_menu_display_step,
     sequel_presentable_navigation_objects, set_object_flag, stop_cd_audio, update_manu3_hand_frame,
-    update_presentation_bridge_mode, update_presentation_hover,
+    update_presentation_bridge_mode, update_sequel_presentation_hover,
 };
 use crate::native::manu3::animation::CursorPosition;
 use crate::native::random::BloodPrng;
@@ -3824,7 +3824,13 @@ impl<'window> ModernGameServices<'window> {
         let secondary = self.nav_actor_slots[SECONDARY_PRESENTATION_ACTOR_SLOT]
             .hit_region
             .unwrap_or(DISABLED_PRESENTATION_HIT_RECT);
-        let outcome = update_presentation_hover(
+        let overview_active = self.runtime.data().game() == GameVariant::BigBugBang
+            && self
+                .sequel_overview
+                .as_ref()
+                .is_some_and(|overview| overview.active());
+        let outcome = update_sequel_presentation_hover(
+            overview_active,
             selection,
             PresentationHitAreas::new(primary, secondary),
             self.input.pointer_sample().position,

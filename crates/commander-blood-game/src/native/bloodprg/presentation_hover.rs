@@ -149,6 +149,21 @@ pub fn update_presentation_hover<ActorState: Clone>(
     }
 }
 
+/// BBB `0x8923..0x8987` adds an overview guard before the shared hover body.
+pub fn update_sequel_presentation_hover<ActorState: Clone>(
+    overview_active: bool,
+    selection: Option<PresentationHitSelection>,
+    hit_areas: PresentationHitAreas,
+    point: [i16; 2],
+    hovering_actor_state: ActorState,
+    state: &mut PresentationHoverState<ActorState>,
+) -> PresentationHoverOutcome {
+    if overview_active {
+        return PresentationHoverOutcome::Disabled;
+    }
+    update_presentation_hover(selection, hit_areas, point, hovering_actor_state, state)
+}
+
 const fn coordinate_inside(point: i16, origin: i16, extent: i16) -> bool {
     point >= origin && point.wrapping_sub(extent) <= origin
 }
@@ -162,6 +177,50 @@ mod tests {
     const ORACLE_VECTOR_COUNT: usize = 20;
     const HOVERING_ACTOR_STATE: u16 = 9;
     const DEFAULT_PREVIOUS_ACTOR_STATE: u16 = 23;
+
+    #[test]
+    fn sequel_overview_guard_preserves_hover_and_actor_state() {
+        let rectangle = PresentationHitRectangle::new([10, 20], [30, 40]);
+        let areas = PresentationHitAreas::new(rectangle, rectangle);
+        for active in [false, true] {
+            for point in [[10, 20], [40, 60], [9, 20], [41, 60]] {
+                for selection in [
+                    None,
+                    Some(PresentationHitSelection::Primary),
+                    Some(PresentationHitSelection::Secondary),
+                ] {
+                    let initial = PresentationHoverState::new(active, 17, 23);
+                    let mut blocked = initial.clone();
+                    assert_eq!(
+                        update_sequel_presentation_hover(
+                            true,
+                            selection,
+                            areas,
+                            point,
+                            9,
+                            &mut blocked
+                        ),
+                        PresentationHoverOutcome::Disabled
+                    );
+                    assert_eq!(blocked, initial);
+                    let mut sequel = initial.clone();
+                    let mut commander = initial;
+                    assert_eq!(
+                        update_sequel_presentation_hover(
+                            false,
+                            selection,
+                            areas,
+                            point,
+                            9,
+                            &mut sequel
+                        ),
+                        update_presentation_hover(selection, areas, point, 9, &mut commander)
+                    );
+                    assert_eq!(sequel, commander);
+                }
+            }
+        }
+    }
 
     #[derive(Deserialize)]
     struct HoverOracle {

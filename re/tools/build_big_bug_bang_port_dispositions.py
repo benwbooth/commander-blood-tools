@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 COVERAGE = ROOT / "re/big_bug_bang_oracle_coverage.json"
 COMPARISON = ROOT / "re/big_bug_bang_expanded_function_comparison.json"
 FIELD_AUDIT = ROOT / "re/big_bug_bang_field_display_audit.json"
+STATIC_PORT_AUDIT = ROOT / "re/big_bug_bang_static_port_audit.json"
 UNREFERENCED_LIBRARY_AUDIT = (
     ROOT / "re/big_bug_bang_unreferenced_library_audit.json"
 )
@@ -32,6 +33,9 @@ AUTHORED_NO_OPERATIONS = {
     0x24B5: "c3",
     0x24B6: "1e5606575f075e1fc3",
     0x24BF: "1e5606575f075e1fc3",
+    0x5517: "c3",
+    0x5518: "c3",
+    0x5519: "c3",
 }
 
 AUDIO_STREAM = "crates/commander-blood-game/src/native/bloodprg/audio_stream.rs"
@@ -247,6 +251,11 @@ def base_row(coverage_row: dict[str, Any]) -> dict[str, Any]:
 def build_report() -> dict[str, Any]:
     coverage = json.loads(COVERAGE.read_text())
     audit = json.loads(FIELD_AUDIT.read_text())
+    static_audit = json.loads(STATIC_PORT_AUDIT.read_text())
+    for path, digest in static_audit["inputs"].items():
+        if sha256(ROOT / path) != digest:
+            raise RuntimeError(f"stale static port audit input: {path}")
+    static_rows = {int(item["entry"], 16): item for item in static_audit["routines"]}
     unreferenced_audit = json.loads(UNREFERENCED_LIBRARY_AUDIT.read_text())
     ported = commander_rows(PORTED)
     eliminated = commander_rows(ELIMINATED)
@@ -329,9 +338,17 @@ def build_report() -> dict[str, Any]:
                 body_hex=body_hex,
                 rust_owner=None,
                 rationale=(
-                    "The original input-table target is an authored return-only or "
+                    "The original dispatch-table target is an authored return-only or "
                     "register-preserving no-op and requires no production operation."
                 ),
+            )
+        elif entry in static_rows:
+            static = static_rows[entry]
+            row.update(
+                status="verified_static_typed",
+                evidence=[str(STATIC_PORT_AUDIT.relative_to(ROOT)), static["inherited_fixture"]],
+                rust_owner=static["rust_owner"],
+                rationale=" ".join(static["notes"]),
             )
         elif (
             coverage_row["comparison"] == "exact_body"
@@ -408,13 +425,15 @@ def build_report() -> dict[str, Any]:
         "format": "big_bug_bang_port_dispositions_v1",
         "scope": (
             "One disposition for every known BBB native entrypoint. Direct execution "
-            "requires oracle output checked against a fixture consumed by Rust; "
-            "structural similarity alone remains pending."
+            "requires oracle output checked against a fixture consumed by Rust. "
+            "Reviewed static equivalence is separately identified; fuzzy structural "
+            "similarity alone remains pending."
         ),
         "inputs": {
             str(COVERAGE.relative_to(ROOT)): sha256(COVERAGE),
             str(COMPARISON.relative_to(ROOT)): sha256(COMPARISON),
             str(FIELD_AUDIT.relative_to(ROOT)): sha256(FIELD_AUDIT),
+            str(STATIC_PORT_AUDIT.relative_to(ROOT)): sha256(STATIC_PORT_AUDIT),
             str(UNREFERENCED_LIBRARY_AUDIT.relative_to(ROOT)): sha256(
                 UNREFERENCED_LIBRARY_AUDIT
             ),
