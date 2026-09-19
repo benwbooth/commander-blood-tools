@@ -1,6 +1,7 @@
 //! Concrete save/load menu, editor, codec, and writable-root adapter.
 
 use anyhow::{Context, Result};
+use commander_blood_formats::code::ScriptDialect;
 use commander_blood_formats::lbm::PALETTE_ENTRY_COUNT;
 
 use crate::native::bloodprg::{
@@ -11,13 +12,28 @@ use crate::native::bloodprg::{
     SaveProfileBackend, SaveSlotEditorLayout, SaveSlotEditorOutcome, SaveSlotName, TransitionRect,
     advance_framebuffer_rect_transition, build_banked_tint_table, draw_square_caps_text,
     fill_framebuffer_rect, move_input_selection_next, move_input_selection_previous,
-    remap_framebuffer_rect, update_save_load_menu, update_save_slot_editor,
+    remap_framebuffer_rect, update_save_load_menu_for_dialect, update_save_slot_editor,
 };
 
 use super::choice_list::RuntimeChoiceListStyle;
 use super::{LOGICAL_FRAMEBUFFER_HEIGHT, LOGICAL_FRAMEBUFFER_WIDTH, ModernGameServices};
 
 const SAVE_SLOT_DIRECTORY_NAME: &[u8] = b"BLOOD.SAV";
+
+fn prepare_save_load_vm(
+    dialect: ScriptDialect,
+    state: &SaveLoadMenuState,
+    lifecycle: &mut GameLifecycleState,
+) {
+    if dialect == ScriptDialect::BigBugBang
+        && !state.requests.quick_save
+        && (state.requests.save || state.requests.load)
+        && state.phase == SaveLoadMenuPhase::LayoutPending
+    {
+        lifecycle.vm_execution_enabled = false;
+    }
+}
+
 const SAVE_LIST_CANCEL_LABEL: &[u8] = b"CANCEL";
 const SAVE_EDITOR_ENTER_KEY: u8 = b'\r';
 const MODAL_UI_FLAG: u8 = 1 << 2;
@@ -110,6 +126,8 @@ impl RuntimeSaveLoad {
         lifecycle: &mut GameLifecycleState,
     ) -> Result<SaveLoadMenuOutcome> {
         import_shared_modal_ui(&mut self.state, lifecycle);
+        let dialect = services.runtime().data().game().script_dialect();
+        prepare_save_load_vm(dialect, &self.state, lifecycle);
         let editor_key = self.apply_pending_input(services)?;
         let mut directory = services
             .runtime()
@@ -134,8 +152,14 @@ impl RuntimeSaveLoad {
                 editor_key,
                 created_filename: None,
             };
-            update_save_load_menu(&mut self.state, &mut directory, &mut backend, &mut profiles)
-                .map_err(anyhow::Error::new)?
+            update_save_load_menu_for_dialect(
+                &mut self.state,
+                &mut directory,
+                &mut backend,
+                &mut profiles,
+                dialect,
+            )
+            .map_err(anyhow::Error::new)?
         };
         if publish_choice_list_width {
             services.set_choice_list_preserve_individual_widths(self.state.preserve_layout_widths);
@@ -300,6 +324,12 @@ impl SaveLoadHost for RuntimeSaveLoadBackend<'_, '_> {
             && let Some(label) = labels.get_mut(active_slot)
         {
             *label = edit_name.bytes();
+        }
+        if self.services.runtime().data().game().script_dialect() == ScriptDialect::BigBugBang {
+            let quick_label = &mut labels[crate::native::bloodprg::ORIGINAL_QUICK_SAVE_SLOT_INDEX];
+            if quick_label.starts_with(b"DERNIERE") {
+                quick_label[..5].copy_from_slice(b"LAST\0");
+            }
         }
         let label_slices = labels
             .iter()
@@ -511,6 +541,35 @@ mod tests {
     use crate::runtime::RuntimePaletteTransition;
 
     use super::*;
+
+    #[test]
+    fn sequel_save_load_layout_pauses_vm_but_quick_save_does_not() {
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            for bits in 0..8 {
+                for phase in [
+                    SaveLoadMenuPhase::Ready,
+                    SaveLoadMenuPhase::LayoutPending,
+                    SaveLoadMenuPhase::Transitioning,
+                ] {
+                    let mut state = SaveLoadMenuState::default();
+                    state.requests.save = bits & 1 != 0;
+                    state.requests.load = bits & 2 != 0;
+                    state.requests.quick_save = bits & 4 != 0;
+                    state.phase = phase;
+                    let mut lifecycle = GameLifecycleState::default();
+                    lifecycle.vm_execution_enabled = true;
+                    prepare_save_load_vm(dialect, &state, &mut lifecycle);
+                    assert_eq!(
+                        lifecycle.vm_execution_enabled,
+                        !(dialect == ScriptDialect::BigBugBang
+                            && bits & 3 != 0
+                            && bits & 4 == 0
+                            && phase == SaveLoadMenuPhase::LayoutPending)
+                    );
+                }
+            }
+        }
+    }
 
     #[test]
     fn cancel_input_does_not_close_the_save_or_load_menu() {

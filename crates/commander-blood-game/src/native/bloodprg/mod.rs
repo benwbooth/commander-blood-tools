@@ -595,6 +595,7 @@ pub use save_load_menu::{
     OriginalSaveProfileBackend, SaveLoadHost, SaveLoadListPass, SaveLoadMenuError,
     SaveLoadMenuOutcome, SaveLoadMenuPhase, SaveLoadMenuState, SaveLoadRequests, SaveLoadSelection,
     SaveProfileBackend, SavedProfileLifecycle, update_save_load_menu,
+    update_save_load_menu_for_dialect,
 };
 pub use scene_transition::{
     SceneImageBand, SceneImageLoadOptions, ScenePaletteTransition, SceneTransitionError,

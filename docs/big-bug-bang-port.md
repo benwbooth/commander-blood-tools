@@ -8,7 +8,8 @@ runtime memory flat and owned, reuse SDL3/wgpu and imported RGB assets, and
 ship no external executable dependency. Test/oracle tools are separate from
 runtime dependencies.
 
-The objective is active and **not complete**. Verified production routes include
+The requested source-first porting pass is complete as of 2026-09-19; full-game
+runtime acceptance is **not complete**. Verified production routes include
 the opening, PLAY into SCRIPT2, initial Daddy dialogue in SCRIPT3, save/load in
 a fresh process, travel to Tempest, and recontacting Daddy on Templand. The
 renewed Templand conversation now passes its video interlude, displays both
@@ -42,23 +43,40 @@ state before the implementation below.
 
 ### Source-First Completion Gate
 
-The current priority is complete native-source and VM-logic coverage before
-the user resumes manual testing. Route replays below are regression evidence,
-not a substitute for this gate. The CB ledger's 521 recovered routines do not
-constitute a BBB routine inventory or prove inherited handlers unchanged.
+The BBB ledger now accounts for all **383 known native entrypoints, zero pending
+game-semantics entries**. It distinguishes 262 direct fixture-backed typed
+owners, 48 complete static body reviews, six byte-identical inherited typed
+owners, and 67 explicit exclusions/replacements (host adapters, dormant
+diagnostics, authored no-ops, unreferenced library routines and inherited host
+operations). See `../re/big_bug_bang_port_dispositions.json` and
+`../re/big_bug_bang_static_port_audit.json`. Static reviews pin the executable,
+complete body, reviewed blocks or exact relocation edits, Rust owner and
+production adapters; they are not new native-execution claims.
 
-Outstanding coverage work includes BBB-specific native routine ownership and
-comparison outside the VM dispatch. Every defined A0-D7 dispatch entry now has
-a guarded original-BBB executable comparison against its typed Rust owner,
-including the A6 publication state detailed below. That bounded opcode ledger
-does not prove pre/post-frame orchestration, every malformed-input behavior, or
-the wider simulation and presentation runtime. The changed AMER/CROOLIS overlay
-images have the bounded native frame comparison described below. Modern typed
-VM source, English text coverage, and the unreachable-BAS result do not close
-those wider native obligations. The explicit BBB unified source path reproduces
-all 68 active COD/DEB/DIC/VAR resources and the 44,676-byte DESCRIPT database,
-as detailed below; the default CB walker and retired interpreter have not been
-switched to BBB.
+The final review covers startup, the complete main loop, profile selection,
+script-frame dispatch, post-scan bounds, save/load, speed menus, credits and
+bridge/actor control. Every defined A0-D7 dispatch entry retains its guarded
+original-BBB comparison. Changed AMER/CROOLIS overlays retain the bounded native
+frame comparisons below. The explicit BBB unified source path reproduces all
+68 active COD/DEB/DIC/VAR resources and the 44,676-byte DESCRIPT database; the
+default CB walker and retired interpreter have not been switched to BBB.
+
+This closes the requested source-first implementation gate and hands the game
+back for manual play. It does not establish a continuous completed route,
+exhaustive malformed-input parity, or a new audiovisual/timing comparison.
+Route replays below remain bounded regression evidence. Optional CD-DA track
+two is not present in the supplied extracted assets, so the native unavailable
+path remains selected; no physical-drive emulation or fabricated audio is used.
+
+The current workspace executable can be rebuilt and played with:
+
+```sh
+nix develop -c cargo run -p commander-blood-game --bin commander-blood -- \
+  --data output/big-bug-bang/imported-assets
+```
+
+The manifest selects BBB; ordinary saves use the game's separate user-data
+root, not the retained regression-save directories.
 
 ### Changed AMER and CROOLIS Overlays
 
@@ -5884,3 +5902,31 @@ presentation choice (four), and resource cache (seventeen); optional
 asset-dependent tests remain separate. Static audit and disposition tests
 pass. The ledger has 377/383 classified entries, 43 static typed entries,
 two static host adapters and six remaining entries.
+
+## Final Source-First Ownership Review (2026-09-19)
+
+The remaining bootstrap, main loop, save/load, credits, profile-select and
+script-frame entries now have complete, instruction-aligned block reviews
+against the executable and their native/runtime Rust owners. The initial
+process bootstrap is explicitly a static host adapter, not an emulated DOS
+entrypoint. The final ledger is 383/383 classified with zero pending entries:
+262 direct typed, 48 static typed, six exact inherited typed and 67 explicit
+non-gameplay/host dispositions.
+
+The save/load review found and fixed the missing BBB layout VM suspension,
+shared load-over-save priority, and BBB's exact eight-byte quick-save name
+prefix (the remaining name bytes are preserved). The menu displays an English
+translation without changing serialized slot bytes. The generic save-profile
+backend now also restores BBB's persistent blocks before initialization,
+matching the production adapter's existing order; Commander keeps its original
+initialize-before-restore order. An authentic-resource focused test checks the
+complete saved image at the initialization callback.
+
+Focused save/load, lifecycle, profile, script-frame, presentation-run,
+simulation-clock and post-scan tests pass. All four optional BBB profile tests
+and the production simulation-clock binding test were explicitly run with the
+available original resources and pass, as does the new save restore-order test.
+The static audit and disposition suites pass. The current workspace's
+`commander-blood` binary builds successfully and its CLI starts without the
+development shell. No additional route campaign or full playthrough was run
+for this source-first completion pass.

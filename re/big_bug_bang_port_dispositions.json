@@ -5,7 +5,7 @@
     "re/big_bug_bang_oracle_coverage.json": "b5135e26f26416adcbc639c7b9c4969b7f37c9f3cb7e19577826a866810d4666",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "d54671db0801c96dbb9728fae76a803f1bbd67d88d80b04062ee284c67089502",
-    "re/big_bug_bang_static_port_audit.json": "41690699a117e1985cec15f99d52abc057cdd8b408670b6de459ad37955e395f",
+    "re/big_bug_bang_static_port_audit.json": "ef9f724afd627b812b9b1e155de8079d69fdd0e0db63ada83516bd6f94a4972d",
     "re/big_bug_bang_unreferenced_library_audit.json": "2509d2ba5893b4b96c1f032a0cacb68e0f9b47c5bb8022e5d64cab740c02b290",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
     "re/rust-port/eliminated.tsv": "aa49ae8d83ad3c047f48df0f51c1909c6116f332eb02e95c67462a94b3c9f478",
@@ -13,19 +13,18 @@
   },
   "summary": {
     "known_entrypoint_count": 383,
-    "classified_entrypoint_count": 377,
-    "pending_game_semantics_count": 6,
+    "classified_entrypoint_count": 383,
+    "pending_game_semantics_count": 0,
     "status_counts": {
       "eliminated_authored_no_operation": 10,
       "eliminated_dormant_diagnostic": 18,
       "eliminated_host_adapter": 26,
-      "eliminated_static_host_adapter": 2,
+      "eliminated_static_host_adapter": 3,
       "eliminated_unreferenced_library": 3,
       "inherited_exact_eliminated": 7,
       "inherited_exact_typed": 6,
-      "pending_game_semantics": 6,
       "verified_direct_typed": 262,
-      "verified_static_typed": 43
+      "verified_static_typed": 48
     }
   },
   "entrypoints": [
@@ -34,12 +33,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "eliminated_static_host_adapter",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "crates/commander-blood-game/src/app.rs"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/app.rs",
+        "symbol": "run"
+      },
+      "rationale": "Full static body review: DOS storage/memory-provider initialization is replaced by owned Rust memory and explicit asset roots. No DOS driver or fallback temporary-directory ABI is ported; this is not native-execution evidence. Establish DOS data/stack and require mouse driver; SDL application setup replaces real-mode mouse presence/error path. Establish global/resource segments, acquire conventional heap, locate environment; owned Rust allocation and process environment replace PSP state. Parse DOS peripheral/write-root switches; seed clock, choose roots, install error/timer hooks and set VGA. Modern options preserve explicit writable root, not hardware switches. Calibrate retrace, initialize sound and pointer bounds/position, create memory pools. SDL/wgpu/audio and owned cache supply host services. Program speaker divider then call complete game lifecycle. Speaker pulse semantics live in typed timer/audio owners. Release pools, stop timer, restore video and free heap before DOS process exit; owned modern host teardown replaces vectors and segment handles."
     },
     {
       "entry": "0x08ef",
@@ -383,12 +386,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_0eb0_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/game_lifecycle.rs",
+        "symbol": "run_game_lifecycle"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Allocate six runtime arenas and their view offsets; owned framebuffers/resources replace segmented aliases. Prepare writable files, archive index, CD audio, MANU3 and logical320x200 viewport; open panorama and load save directory. Select/configure audio driver once; SDL setup replaces DOS driver resources and vectors. Load cartography, set startup presentation/UI/redraw, randomize scene, run line0, load default bank/backbuffer and initial pointer. Saturating simulation-clock decrement even while paused, arm eight-tick budget, reset hover/remap choice, dispatch input. Poll pointer only when unpaused and UI mask8 clear; consume pending bits preserving authored two-phase pointer latches; otherwise restore locked position. Exit gate, pause HUD and paused restart; pointer edges then BBB right-click handler; nonstartup VM negative result exits. Pending profile waits on five BBB blockers only. Load, enable/execute VM and rebuild records; initial profile alone refreshes access/HUD and redraw state. No C2 marks frame available. Presentation owner chooses hold, word choice, subtitle or deferred menu from exact latches. Completed hold arms word choice; BBB resumes VM while countdown nonzero iff C2 clear; timeout/rightclick resolves holds and text request. No presentation/hold/ship clears text ownership; active scene/sequence without secondary request enters line selection. Request/countdown selects menu selector+9 or idle8; otherwise producer-consumer difference restarts retained owner/menu buffer, preserving queued C2. Pending completion audio stops old stream, loads authored completion voice with volume120 and starts it. Ordered bridge, confirmation, audio, ship/scene, save/load, text-speed and simulation-speed updates. Clear chatter/voice when no primary text request or secondary pending. Ordinary chooser before framebuffer submission; inventory chooser after. Inline menu, subtitles, MANU3 and palette maintenance; pace then present; repeat. Finish queues, stop audio, run credits, stop/shutdown audio; release optional transient voice. Release optional music/archive-index files, delete startup transient files, restore source root and close archive. Explicit-root cleanup replaces DOS handles."
     },
     {
       "entry": "0x1446",
@@ -692,12 +699,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_1b4b_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/save_load_menu.rs",
+        "symbol": "update_save_load_menu_for_dialect"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Quick save wins: copy exactly8 DERNIERE bytes into slot9 preserving suffix, clear quick request, bypass UI. No save/load requests returns; otherwise claim modal bit4 and test opening phase. BBB disables VM before layout, clears layout-width flag, starts six-step transition, selects slot0 and copies16 edit bytes. Opening transition returns until complete, then clears phase. Load wins over simultaneous save. Save counts name until NUL/space and edits before selection; row9 waits, FFFF closes, other rows copy16 bytes. Create/truncate active slot file under writable root; failure closes menu. Write profile u16,512 timer bytes,96 sequence bytes, exact VAR allocation and procedure image; close file. Write320-byte BLOOD.SAV directory and enter shared cleanup. Load waits on negative selection, closes on sentinel/open failure, reads profile and selects resources. Clear pending profile; restore timer/sequence blocks and rebind all five resource owners before VAR read. Restore VAR and procedure image before any script initialization. Production and generic save adapters follow BBB order. Enable VM, rebuild records, execute restored COD, rebuild HUD, request redraw/palette upload and close file. Clear modal bit and both save/load requests, restore registers and return."
     },
     {
       "entry": "0x1fe5",
@@ -788,12 +799,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_1f10_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/presentation_run.rs",
+        "symbol": "run_presentation_line_one_stream"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Clear input-stop/crop/vertical-offset and select credits line1. Load/start credits voice; clear palette, row surface and back buffer. BBB arms eight PIT ticks before input; stop bit returns without scene dispatch. Dispatch line1; cleared C2 returns without refill/present. Refill voice and process audio, convert logical indexed frame for presentation. Wait eight-tick minimum then page/palette present and loop. Existing SDL presentation pacing68ms exceeds recovered39.95ms floor; no new cadence measurement claimed."
     },
     {
       "entry": "0x220b",
@@ -2552,12 +2567,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_53a0_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/script_profile.rs",
+        "symbol": "ScriptProfileManager::select"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Different profile releases four resources, or all five when selecting initial profile; same profile keeps cached bytes. Publish profile and use10-byte row; initial loads all5 in BBB role order, later profiles retain live VAR and load4. Only initial profile fills first256 timer bytes withFF; reserved timer half and sequence-name block survive. Clear contact list, action/query/guard/resume/concept/selector fields and subtitle/menu/choice ownership; typed manager and dispatch/service resets split these globals. Resolve retained VAR and new DEB; scan leading kind1 object entries. Bind exact blood/orxx/Honk/menu/arche names; blood fields+8/+16 retain player-state ownership. Bind Arche to Ark role, Scruter_Jo, Trashlando exclusion. Runtime simulation bindings resolve Trashlando by exact directory name. Advance20-byte entries, then scan remaining nonzero kinds for kind5 vbio state label. Return success and restore registers; typed resource failures propagate instead of exposing invalid DOS addresses."
     },
     {
       "entry": "0x59ff",
@@ -2580,12 +2599,16 @@
       "origin": "static_graph",
       "entered": false,
       "comparison": "unresolved",
-      "status": "pending_game_semantics",
+      "status": "verified_static_typed",
       "evidence": [
-        "re/big_bug_bang_oracle_coverage.json"
+        "re/big_bug_bang_static_port_audit.json",
+        "re/tools/oracle_vectors/func_55a4_natural.json"
       ],
-      "rust_owner": null,
-      "rationale": "The current evidence is unresolved with no qualifying direct BBB fixture-to-Rust ownership proof; semantic disposition remains open."
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/script_frame.rs",
+        "symbol": "execute_decoded_script_frame"
+      },
+      "rationale": "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim. Save registers, sample clock, resolve five resources to current owned bindings; optional BAS uses reviewed native resolver behavior. BBB actor preparation runs BEFORE VM-enable test; disabled pass returns with no COD or post-scan. Clear frame presentation gate; resume bit2 selects saved cursor, otherwise start COD. End byteFF finishes; A0-based table dispatch clears yield signal and consumes returned next cursor. Nonzero low guard count skips authored instructions; otherwise selector phase1 rewinds to its loop target. Yield disables VM and locks presentation. Signal2 clears guard count; signal3 increments selector phase and saves cursor; other nonzero signal exits with error. Resumed pass stops at unsigned cursor>=target; ordinary pass continues. Commit concept, scan presentation, apply BBB four-field bounds, then reload zero simulation countdown from selected speed. Disabled/error paths skip. Return success or negative failure and restore registers."
     },
     {
       "entry": "0x5b65",

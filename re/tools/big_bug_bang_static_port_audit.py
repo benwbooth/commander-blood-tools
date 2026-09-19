@@ -838,8 +838,375 @@ CONTROL_RUNTIME = (
     "crates/commander-blood-game/src/runtime/presentation_screen.rs",
     "crates/commander-blood-game/src/runtime/confirm_dialog.rs",
     "crates/commander-blood-game/src/runtime/game_lifecycle.rs",
+    "crates/commander-blood-game/src/runtime/save_load.rs",
+    "crates/commander-blood-game/src/runtime/script_backend.rs",
+    "crates/commander-blood-game/src/runtime/presentation_run.rs",
+    "crates/commander-blood-game/src/native/bloodprg/game_lifecycle_tests.rs",
+    "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs",
 )
+CONTROL_REVIEWS += (
+    (
+        0x1D91,
+        0x1FE5,
+        0x1B4B,
+        "45d05efa64fc672037ea493178d0ba8559b8c5d25d30555d07979c822df651b3",
+        None,
+        (
+            (
+                0x1D91,
+                0x1DB6,
+                "Quick save wins: copy exactly8 DERNIERE bytes into slot9 preserving suffix, clear quick request, bypass UI.",
+            ),
+            (
+                0x1DB6,
+                0x1DD0,
+                "No save/load requests returns; otherwise claim modal bit4 and test opening phase.",
+            ),
+            (
+                0x1DD0,
+                0x1E10,
+                "BBB disables VM before layout, clears layout-width flag, starts six-step transition, selects slot0 and copies16 edit bytes.",
+            ),
+            (
+                0x1E10,
+                0x1E2C,
+                "Opening transition returns until complete, then clears phase.",
+            ),
+            (
+                0x1E2C,
+                0x1E8A,
+                "Load wins over simultaneous save. Save counts name until NUL/space and edits before selection; row9 waits, FFFF closes, other rows copy16 bytes.",
+            ),
+            (
+                0x1E8A,
+                0x1EA7,
+                "Create/truncate active slot file under writable root; failure closes menu.",
+            ),
+            (
+                0x1EA7,
+                0x1EEB,
+                "Write profile u16,512 timer bytes,96 sequence bytes, exact VAR allocation and procedure image; close file.",
+            ),
+            (
+                0x1EEB,
+                0x1F08,
+                "Write320-byte BLOOD.SAV directory and enter shared cleanup.",
+            ),
+            (
+                0x1F08,
+                0x1F47,
+                "Load waits on negative selection, closes on sentinel/open failure, reads profile and selects resources.",
+            ),
+            (
+                0x1F47,
+                0x1F85,
+                "Clear pending profile; restore timer/sequence blocks and rebind all five resource owners before VAR read.",
+            ),
+            (
+                0x1F85,
+                0x1FAA,
+                "Restore VAR and procedure image before any script initialization. Production and generic save adapters follow BBB order.",
+            ),
+            (
+                0x1FAA,
+                0x1FCC,
+                "Enable VM, rebuild records, execute restored COD, rebuild HUD, request redraw/palette upload and close file.",
+            ),
+            (
+                0x1FCC,
+                0x1FE5,
+                "Clear modal bit and both save/load requests, restore registers and return.",
+            ),
+        ),
+    ),
+    (
+        0x2191,
+        0x220B,
+        0x1F10,
+        "ad400b8abfa6817bfd349016908245af6826ed927c348b97cf021df9bff83d48",
+        None,
+        (
+            (
+                0x2191,
+                0x21A8,
+                "Clear input-stop/crop/vertical-offset and select credits line1.",
+            ),
+            (
+                0x21A8,
+                0x21C6,
+                "Load/start credits voice; clear palette, row surface and back buffer.",
+            ),
+            (
+                0x21C6,
+                0x21D7,
+                "BBB arms eight PIT ticks before input; stop bit returns without scene dispatch.",
+            ),
+            (
+                0x21D7,
+                0x21E6,
+                "Dispatch line1; cleared C2 returns without refill/present.",
+            ),
+            (
+                0x21E6,
+                0x21FB,
+                "Refill voice and process audio, convert logical indexed frame for presentation.",
+            ),
+            (
+                0x21FB,
+                0x220B,
+                "Wait eight-tick minimum then page/palette present and loop. Existing SDL presentation pacing68ms exceeds recovered39.95ms floor; no new cadence measurement claimed.",
+            ),
+        ),
+    ),
+    (
+        0x5820,
+        0x59FF,
+        0x53A0,
+        "12e9c8cae6d0b0c92ef753b1811262e98a6095d44591b48ab24c257a870f082c",
+        "big_bug_bang_profile_binding.jsonl",
+        (
+            (
+                0x5820,
+                0x5845,
+                "Different profile releases four resources, or all five when selecting initial profile; same profile keeps cached bytes.",
+            ),
+            (
+                0x5845,
+                0x587C,
+                "Publish profile and use10-byte row; initial loads all5 in BBB role order, later profiles retain live VAR and load4.",
+            ),
+            (
+                0x587C,
+                0x588F,
+                "Only initial profile fills first256 timer bytes withFF; reserved timer half and sequence-name block survive.",
+            ),
+            (
+                0x588F,
+                0x5906,
+                "Clear contact list, action/query/guard/resume/concept/selector fields and subtitle/menu/choice ownership; typed manager and dispatch/service resets split these globals.",
+            ),
+            (
+                0x5906,
+                0x5923,
+                "Resolve retained VAR and new DEB; scan leading kind1 object entries.",
+            ),
+            (
+                0x5923,
+                0x5995,
+                "Bind exact blood/orxx/Honk/menu/arche names; blood fields+8/+16 retain player-state ownership.",
+            ),
+            (
+                0x5995,
+                0x59C8,
+                "Bind Arche to Ark role, Scruter_Jo, Trashlando exclusion. Runtime simulation bindings resolve Trashlando by exact directory name.",
+            ),
+            (
+                0x59C8,
+                0x59F0,
+                "Advance20-byte entries, then scan remaining nonzero kinds for kind5 vbio state label.",
+            ),
+            (
+                0x59F0,
+                0x59FF,
+                "Return success and restore registers; typed resource failures propagate instead of exposing invalid DOS addresses.",
+            ),
+        ),
+    ),
+    (
+        0x5A53,
+        0x5B65,
+        0x55A4,
+        "acc6923e7fbc7b50bc75bcebbb1b1560675f9e6494bb7288862995ca57220727",
+        "big_bug_bang_profile_binding.jsonl",
+        (
+            (
+                0x5A53,
+                0x5A99,
+                "Save registers, sample clock, resolve five resources to current owned bindings; optional BAS uses reviewed native resolver behavior.",
+            ),
+            (
+                0x5A99,
+                0x5AA6,
+                "BBB actor preparation runs BEFORE VM-enable test; disabled pass returns with no COD or post-scan.",
+            ),
+            (
+                0x5AA6,
+                0x5AC1,
+                "Clear frame presentation gate; resume bit2 selects saved cursor, otherwise start COD.",
+            ),
+            (
+                0x5AC1,
+                0x5ADF,
+                "End byteFF finishes; A0-based table dispatch clears yield signal and consumes returned next cursor.",
+            ),
+            (
+                0x5ADF,
+                0x5B08,
+                "Nonzero low guard count skips authored instructions; otherwise selector phase1 rewinds to its loop target.",
+            ),
+            (
+                0x5B08,
+                0x5B2E,
+                "Yield disables VM and locks presentation. Signal2 clears guard count; signal3 increments selector phase and saves cursor; other nonzero signal exits with error.",
+            ),
+            (
+                0x5B2E,
+                0x5B3D,
+                "Resumed pass stops at unsigned cursor>=target; ordinary pass continues.",
+            ),
+            (
+                0x5B3D,
+                0x5B56,
+                "Commit concept, scan presentation, apply BBB four-field bounds, then reload zero simulation countdown from selected speed. Disabled/error paths skip.",
+            ),
+            (
+                0x5B56,
+                0x5B65,
+                "Return success or negative failure and restore registers.",
+            ),
+        ),
+    ),
+    (
+        0x0F70,
+        0x1446,
+        0x0EB0,
+        "12f40d1b6caee9bcc5861340ea6c6db95c89345eabb039504d648815f920b806",
+        "big_bug_bang_profile_post_load.jsonl",
+        (
+            (
+                0x0F70,
+                0x0FF8,
+                "Allocate six runtime arenas and their view offsets; owned framebuffers/resources replace segmented aliases.",
+            ),
+            (
+                0x0FF8,
+                0x104B,
+                "Prepare writable files, archive index, CD audio, MANU3 and logical320x200 viewport; open panorama and load save directory.",
+            ),
+            (
+                0x104B,
+                0x1085,
+                "Select/configure audio driver once; SDL setup replaces DOS driver resources and vectors.",
+            ),
+            (
+                0x1085,
+                0x10CA,
+                "Load cartography, set startup presentation/UI/redraw, randomize scene, run line0, load default bank/backbuffer and initial pointer.",
+            ),
+            (
+                0x10CA,
+                0x10EB,
+                "Saturating simulation-clock decrement even while paused, arm eight-tick budget, reset hover/remap choice, dispatch input.",
+            ),
+            (
+                0x10EB,
+                0x1140,
+                "Poll pointer only when unpaused and UI mask8 clear; consume pending bits preserving authored two-phase pointer latches; otherwise restore locked position.",
+            ),
+            (
+                0x1140,
+                0x116D,
+                "Exit gate, pause HUD and paused restart; pointer edges then BBB right-click handler; nonstartup VM negative result exits.",
+            ),
+            (
+                0x116D,
+                0x11C6,
+                "Pending profile waits on five BBB blockers only. Load, enable/execute VM and rebuild records; initial profile alone refreshes access/HUD and redraw state.",
+            ),
+            (
+                0x11C6,
+                0x1229,
+                "No C2 marks frame available. Presentation owner chooses hold, word choice, subtitle or deferred menu from exact latches.",
+            ),
+            (
+                0x1229,
+                0x1280,
+                "Completed hold arms word choice; BBB resumes VM while countdown nonzero iff C2 clear; timeout/rightclick resolves holds and text request.",
+            ),
+            (
+                0x1280,
+                0x12B0,
+                "No presentation/hold/ship clears text ownership; active scene/sequence without secondary request enters line selection.",
+            ),
+            (
+                0x12B0,
+                0x1321,
+                "Request/countdown selects menu selector+9 or idle8; otherwise producer-consumer difference restarts retained owner/menu buffer, preserving queued C2.",
+            ),
+            (
+                0x1321,
+                0x1344,
+                "Pending completion audio stops old stream, loads authored completion voice with volume120 and starts it.",
+            ),
+            (
+                0x1344,
+                0x136C,
+                "Ordered bridge, confirmation, audio, ship/scene, save/load, text-speed and simulation-speed updates.",
+            ),
+            (
+                0x136C,
+                0x13B0,
+                "Clear chatter/voice when no primary text request or secondary pending. Ordinary chooser before framebuffer submission; inventory chooser after.",
+            ),
+            (
+                0x13B0,
+                0x13D8,
+                "Inline menu, subtitles, MANU3 and palette maintenance; pace then present; repeat.",
+            ),
+            (
+                0x13D8,
+                0x140B,
+                "Finish queues, stop audio, run credits, stop/shutdown audio; release optional transient voice.",
+            ),
+            (
+                0x140B,
+                0x1446,
+                "Release optional music/archive-index files, delete startup transient files, restore source root and close archive. Explicit-root cleanup replaces DOS handles.",
+            ),
+        ),
+    ),
+)
+CONTROL_OWNERS[0x1D91] = "update_save_load_menu_for_dialect"
 HOST_REVIEWS = (
+    (
+        0x0800,
+        0x08EF,
+        "40a917a39fb78ea8a5fcee51335e82409b6cda13101e26d857679546d95786e3",
+        "crates/commander-blood-game/src/app.rs",
+        "run",
+        (
+            (
+                0x0800,
+                0x081E,
+                "Establish DOS data/stack and require mouse driver; SDL application setup replaces real-mode mouse presence/error path.",
+            ),
+            (
+                0x081E,
+                0x087F,
+                "Establish global/resource segments, acquire conventional heap, locate environment; owned Rust allocation and process environment replace PSP state.",
+            ),
+            (
+                0x087F,
+                0x0897,
+                "Parse DOS peripheral/write-root switches; seed clock, choose roots, install error/timer hooks and set VGA. Modern options preserve explicit writable root, not hardware switches.",
+            ),
+            (
+                0x0897,
+                0x08C2,
+                "Calibrate retrace, initialize sound and pointer bounds/position, create memory pools. SDL/wgpu/audio and owned cache supply host services.",
+            ),
+            (
+                0x08C2,
+                0x08D3,
+                "Program speaker divider then call complete game lifecycle. Speaker pulse semantics live in typed timer/audio owners.",
+            ),
+            (
+                0x08D3,
+                0x08EF,
+                "Release pools, stop timer, restore video and free heap before DOS process exit; owned modern host teardown replaces vectors and segment handles.",
+            ),
+        ),
+    ),
     (
         0x0B9A,
         0x0C94,

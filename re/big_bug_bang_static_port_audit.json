@@ -5,7 +5,7 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "9cbeff22b00688b7cf7c19badadcf73ad22303db134d01f80e18dd5444e470fb",
+    "re/tools/big_bug_bang_static_port_audit.py": "b5900ed1b1c03505b73a965eac8ac4eb2da3afb732eac9a38a3eccf246c82e53",
     "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
     "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
     "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
@@ -64,6 +64,11 @@
     "crates/commander-blood-game/src/runtime/presentation_screen.rs": "165611197c8b343c329b1477f905751e60e66f8b46e5fbc6a3ebd126637d0d4a",
     "crates/commander-blood-game/src/runtime/confirm_dialog.rs": "f2ed62e7818af310903560d2563515527f6854d50a81e342f448464af41c1dc1",
     "crates/commander-blood-game/src/runtime/game_lifecycle.rs": "1b9b5b53a5f16956d934d0d289a03273eb41066d204a5863dc97478e67aa2f46",
+    "crates/commander-blood-game/src/runtime/save_load.rs": "9aed90052c7030510dcf3045166e1b3671bd35b5c516b671deb855a5df2d538c",
+    "crates/commander-blood-game/src/runtime/script_backend.rs": "8d2a041144a6b3e112fb425faf7c9646f32561f5aeaf5e0b85c4bbc286ed2126",
+    "crates/commander-blood-game/src/runtime/presentation_run.rs": "200430362f3cdc82696972e3c152fc5f8fedd88611f136be64b071a386727911",
+    "crates/commander-blood-game/src/native/bloodprg/game_lifecycle_tests.rs": "207a9fbfab8808e39d542f34f5e9eca8fb817ea35b35ea42402b5979325310ee",
+    "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "5817021dc5d13d2b46d0492bfd2c07e0976d4a534b70c219e3b5235099ddf4b3",
     "re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl": "0096e8f5961bb56dbc132f355e0f7b9b149fec15f8497d58f6d2cd9fc6d8bacd",
     "crates/commander-blood-game/src/native/bloodprg/actor_handler_camera.rs": "bf6cf08d784b76277564c26985a9c1eda43ececa8dbfacab104886ada6bc1832",
     "re/tools/oracle_vectors/func_8082_natural.json": "2f51568ac10549b09fb719495a0f755c77feef087e57979967ee41e130813898",
@@ -90,10 +95,21 @@
     "crates/commander-blood-game/src/native/bloodprg/startup_prepare.rs": "c2c61ed219ba55010516991213e8affad52ef34f043fb53cb77f41d3db4aa855",
     "re/tools/oracle_vectors/func_16a7_natural.json": "78ea9e946424c735a3832b20abeedd9b1ea9599390ec03ed0afb1e6623fa0250",
     "re/tools/oracle_vectors/big_bug_bang_writable_catalog.json": "6870a9791e465fe5c008e946cba80865097193f4eac1fe5d146305af397907a9",
+    "crates/commander-blood-game/src/native/bloodprg/save_load_menu.rs": "923c8b3cfd11c0c04936398494cb3e0d336503ad8b0fc4e78b5d22030b623b31",
+    "re/tools/oracle_vectors/func_1b4b_natural.json": "f03f24c72b10de4a8f769a4f5d3e5a5d5e828594c81b1678993038a04d5eeb34",
+    "re/tools/oracle_vectors/func_1f10_natural.json": "baf3ebbad2344f4635b868953c3029bc339b5f4fd6c1d71abfc8528e842fbe13",
+    "crates/commander-blood-game/src/native/bloodprg/script_profile.rs": "1a1cf937e72c6aafb47695c42520b3e66a6dd0229482c8a678ed8e38a9d0dfaa",
+    "re/tools/oracle_vectors/func_53a0_natural.json": "8f3948d315bf848b1d403afa3b7e9d9a02a81db5997b3fd701dc4284fc1a32b3",
+    "re/tools/oracle_vectors/big_bug_bang_profile_binding.jsonl": "a3f88f97e7b8e5280e6188081cd2a7be262add1f23dcc748b8fcc7ab0fb4bf57",
+    "crates/commander-blood-game/src/native/bloodprg/script_frame.rs": "9046799ed8c483a30bafead26471dfc80d4bd3a1e80397fba690b83db5a35f21",
+    "re/tools/oracle_vectors/func_55a4_natural.json": "3a77d90ce61f5c57baded07b912e5db19ae2d8d28e0a2f2eea811e4641aeec06",
+    "crates/commander-blood-game/src/native/bloodprg/game_lifecycle.rs": "6ee193d39db23ed481426894af94306b97b9078040e55963ebf876ca5bcb52b7",
+    "re/tools/oracle_vectors/func_0eb0_natural.json": "540e4ea13dae0a0f51402d1886dd2c4137f441a7fcbdcdbdae258e28406c4d1a",
+    "re/tools/oracle_vectors/big_bug_bang_profile_post_load.jsonl": "8f7d8a27ecae719aa9128fe98904d387fdd2083c0d7ac5c4ae4da4894dce2f6f",
+    "crates/commander-blood-game/src/app.rs": "02704f562d0e76d4d26dcb911d1b507fd0461d32404df167a4863b48e8764251",
     "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs": "5a2de16add9f4c0447f3eed382da598d311c17a90985e519bd97625ad48fe906",
     "crates/commander-blood-game/src/native/bloodprg/input_cancel.rs": "3dc579420268f765f52a83973303657831281b6d72bc37480f3cc2259709aa94",
-    "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b",
-    "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "5817021dc5d13d2b46d0492bfd2c07e0976d4a534b70c219e3b5235099ddf4b3"
+    "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b"
   },
   "identical_initializers": [
     {
@@ -3555,6 +3571,486 @@
         "Visit authored16-byte names in order, select write root, probe existence; existing destination skips copy.",
         "Build source/destination paths and copy missing resource using reviewed copy helper; retain native nonfatal filesystem outcomes.",
         "Advance16 bytes until next leadingNUL; BBB has152 visits including duplicates, not Commander125."
+      ]
+    },
+    {
+      "entry": "0x1d91",
+      "end": "0x1fe5",
+      "commander_entry": "0x1b4b",
+      "kind": "reviewed_transcription",
+      "body_sha256": "45d05efa64fc672037ea493178d0ba8559b8c5d25d30555d07979c822df651b3",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/save_load_menu.rs",
+        "symbol": "update_save_load_menu_for_dialect"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_1b4b_natural.json",
+      "instruction_count": 203,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x1d91",
+          "0x1db6",
+          "Quick save wins: copy exactly8 DERNIERE bytes into slot9 preserving suffix, clear quick request, bypass UI."
+        ],
+        [
+          "0x1db6",
+          "0x1dd0",
+          "No save/load requests returns; otherwise claim modal bit4 and test opening phase."
+        ],
+        [
+          "0x1dd0",
+          "0x1e10",
+          "BBB disables VM before layout, clears layout-width flag, starts six-step transition, selects slot0 and copies16 edit bytes."
+        ],
+        [
+          "0x1e10",
+          "0x1e2c",
+          "Opening transition returns until complete, then clears phase."
+        ],
+        [
+          "0x1e2c",
+          "0x1e8a",
+          "Load wins over simultaneous save. Save counts name until NUL/space and edits before selection; row9 waits, FFFF closes, other rows copy16 bytes."
+        ],
+        [
+          "0x1e8a",
+          "0x1ea7",
+          "Create/truncate active slot file under writable root; failure closes menu."
+        ],
+        [
+          "0x1ea7",
+          "0x1eeb",
+          "Write profile u16,512 timer bytes,96 sequence bytes, exact VAR allocation and procedure image; close file."
+        ],
+        [
+          "0x1eeb",
+          "0x1f08",
+          "Write320-byte BLOOD.SAV directory and enter shared cleanup."
+        ],
+        [
+          "0x1f08",
+          "0x1f47",
+          "Load waits on negative selection, closes on sentinel/open failure, reads profile and selects resources."
+        ],
+        [
+          "0x1f47",
+          "0x1f85",
+          "Clear pending profile; restore timer/sequence blocks and rebind all five resource owners before VAR read."
+        ],
+        [
+          "0x1f85",
+          "0x1faa",
+          "Restore VAR and procedure image before any script initialization. Production and generic save adapters follow BBB order."
+        ],
+        [
+          "0x1faa",
+          "0x1fcc",
+          "Enable VM, rebuild records, execute restored COD, rebuild HUD, request redraw/palette upload and close file."
+        ],
+        [
+          "0x1fcc",
+          "0x1fe5",
+          "Clear modal bit and both save/load requests, restore registers and return."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Quick save wins: copy exactly8 DERNIERE bytes into slot9 preserving suffix, clear quick request, bypass UI.",
+        "No save/load requests returns; otherwise claim modal bit4 and test opening phase.",
+        "BBB disables VM before layout, clears layout-width flag, starts six-step transition, selects slot0 and copies16 edit bytes.",
+        "Opening transition returns until complete, then clears phase.",
+        "Load wins over simultaneous save. Save counts name until NUL/space and edits before selection; row9 waits, FFFF closes, other rows copy16 bytes.",
+        "Create/truncate active slot file under writable root; failure closes menu.",
+        "Write profile u16,512 timer bytes,96 sequence bytes, exact VAR allocation and procedure image; close file.",
+        "Write320-byte BLOOD.SAV directory and enter shared cleanup.",
+        "Load waits on negative selection, closes on sentinel/open failure, reads profile and selects resources.",
+        "Clear pending profile; restore timer/sequence blocks and rebind all five resource owners before VAR read.",
+        "Restore VAR and procedure image before any script initialization. Production and generic save adapters follow BBB order.",
+        "Enable VM, rebuild records, execute restored COD, rebuild HUD, request redraw/palette upload and close file.",
+        "Clear modal bit and both save/load requests, restore registers and return."
+      ]
+    },
+    {
+      "entry": "0x2191",
+      "end": "0x220b",
+      "commander_entry": "0x1f10",
+      "kind": "reviewed_transcription",
+      "body_sha256": "ad400b8abfa6817bfd349016908245af6826ed927c348b97cf021df9bff83d48",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/presentation_run.rs",
+        "symbol": "run_presentation_line_one_stream"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_1f10_natural.json",
+      "instruction_count": 36,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x2191",
+          "0x21a8",
+          "Clear input-stop/crop/vertical-offset and select credits line1."
+        ],
+        [
+          "0x21a8",
+          "0x21c6",
+          "Load/start credits voice; clear palette, row surface and back buffer."
+        ],
+        [
+          "0x21c6",
+          "0x21d7",
+          "BBB arms eight PIT ticks before input; stop bit returns without scene dispatch."
+        ],
+        [
+          "0x21d7",
+          "0x21e6",
+          "Dispatch line1; cleared C2 returns without refill/present."
+        ],
+        [
+          "0x21e6",
+          "0x21fb",
+          "Refill voice and process audio, convert logical indexed frame for presentation."
+        ],
+        [
+          "0x21fb",
+          "0x220b",
+          "Wait eight-tick minimum then page/palette present and loop. Existing SDL presentation pacing68ms exceeds recovered39.95ms floor; no new cadence measurement claimed."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Clear input-stop/crop/vertical-offset and select credits line1.",
+        "Load/start credits voice; clear palette, row surface and back buffer.",
+        "BBB arms eight PIT ticks before input; stop bit returns without scene dispatch.",
+        "Dispatch line1; cleared C2 returns without refill/present.",
+        "Refill voice and process audio, convert logical indexed frame for presentation.",
+        "Wait eight-tick minimum then page/palette present and loop. Existing SDL presentation pacing68ms exceeds recovered39.95ms floor; no new cadence measurement claimed."
+      ]
+    },
+    {
+      "entry": "0x5820",
+      "end": "0x59ff",
+      "commander_entry": "0x53a0",
+      "kind": "reviewed_transcription",
+      "body_sha256": "12e9c8cae6d0b0c92ef753b1811262e98a6095d44591b48ab24c257a870f082c",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/script_profile.rs",
+        "symbol": "ScriptProfileManager::select"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_53a0_natural.json",
+      "instruction_count": 174,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x5820",
+          "0x5845",
+          "Different profile releases four resources, or all five when selecting initial profile; same profile keeps cached bytes."
+        ],
+        [
+          "0x5845",
+          "0x587c",
+          "Publish profile and use10-byte row; initial loads all5 in BBB role order, later profiles retain live VAR and load4."
+        ],
+        [
+          "0x587c",
+          "0x588f",
+          "Only initial profile fills first256 timer bytes withFF; reserved timer half and sequence-name block survive."
+        ],
+        [
+          "0x588f",
+          "0x5906",
+          "Clear contact list, action/query/guard/resume/concept/selector fields and subtitle/menu/choice ownership; typed manager and dispatch/service resets split these globals."
+        ],
+        [
+          "0x5906",
+          "0x5923",
+          "Resolve retained VAR and new DEB; scan leading kind1 object entries."
+        ],
+        [
+          "0x5923",
+          "0x5995",
+          "Bind exact blood/orxx/Honk/menu/arche names; blood fields+8/+16 retain player-state ownership."
+        ],
+        [
+          "0x5995",
+          "0x59c8",
+          "Bind Arche to Ark role, Scruter_Jo, Trashlando exclusion. Runtime simulation bindings resolve Trashlando by exact directory name."
+        ],
+        [
+          "0x59c8",
+          "0x59f0",
+          "Advance20-byte entries, then scan remaining nonzero kinds for kind5 vbio state label."
+        ],
+        [
+          "0x59f0",
+          "0x59ff",
+          "Return success and restore registers; typed resource failures propagate instead of exposing invalid DOS addresses."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Different profile releases four resources, or all five when selecting initial profile; same profile keeps cached bytes.",
+        "Publish profile and use10-byte row; initial loads all5 in BBB role order, later profiles retain live VAR and load4.",
+        "Only initial profile fills first256 timer bytes withFF; reserved timer half and sequence-name block survive.",
+        "Clear contact list, action/query/guard/resume/concept/selector fields and subtitle/menu/choice ownership; typed manager and dispatch/service resets split these globals.",
+        "Resolve retained VAR and new DEB; scan leading kind1 object entries.",
+        "Bind exact blood/orxx/Honk/menu/arche names; blood fields+8/+16 retain player-state ownership.",
+        "Bind Arche to Ark role, Scruter_Jo, Trashlando exclusion. Runtime simulation bindings resolve Trashlando by exact directory name.",
+        "Advance20-byte entries, then scan remaining nonzero kinds for kind5 vbio state label.",
+        "Return success and restore registers; typed resource failures propagate instead of exposing invalid DOS addresses."
+      ]
+    },
+    {
+      "entry": "0x5a53",
+      "end": "0x5b65",
+      "commander_entry": "0x55a4",
+      "kind": "reviewed_transcription",
+      "body_sha256": "acc6923e7fbc7b50bc75bcebbb1b1560675f9e6494bb7288862995ca57220727",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/script_frame.rs",
+        "symbol": "execute_decoded_script_frame"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_55a4_natural.json",
+      "instruction_count": 92,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x5a53",
+          "0x5a99",
+          "Save registers, sample clock, resolve five resources to current owned bindings; optional BAS uses reviewed native resolver behavior."
+        ],
+        [
+          "0x5a99",
+          "0x5aa6",
+          "BBB actor preparation runs BEFORE VM-enable test; disabled pass returns with no COD or post-scan."
+        ],
+        [
+          "0x5aa6",
+          "0x5ac1",
+          "Clear frame presentation gate; resume bit2 selects saved cursor, otherwise start COD."
+        ],
+        [
+          "0x5ac1",
+          "0x5adf",
+          "End byteFF finishes; A0-based table dispatch clears yield signal and consumes returned next cursor."
+        ],
+        [
+          "0x5adf",
+          "0x5b08",
+          "Nonzero low guard count skips authored instructions; otherwise selector phase1 rewinds to its loop target."
+        ],
+        [
+          "0x5b08",
+          "0x5b2e",
+          "Yield disables VM and locks presentation. Signal2 clears guard count; signal3 increments selector phase and saves cursor; other nonzero signal exits with error."
+        ],
+        [
+          "0x5b2e",
+          "0x5b3d",
+          "Resumed pass stops at unsigned cursor>=target; ordinary pass continues."
+        ],
+        [
+          "0x5b3d",
+          "0x5b56",
+          "Commit concept, scan presentation, apply BBB four-field bounds, then reload zero simulation countdown from selected speed. Disabled/error paths skip."
+        ],
+        [
+          "0x5b56",
+          "0x5b65",
+          "Return success or negative failure and restore registers."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Save registers, sample clock, resolve five resources to current owned bindings; optional BAS uses reviewed native resolver behavior.",
+        "BBB actor preparation runs BEFORE VM-enable test; disabled pass returns with no COD or post-scan.",
+        "Clear frame presentation gate; resume bit2 selects saved cursor, otherwise start COD.",
+        "End byteFF finishes; A0-based table dispatch clears yield signal and consumes returned next cursor.",
+        "Nonzero low guard count skips authored instructions; otherwise selector phase1 rewinds to its loop target.",
+        "Yield disables VM and locks presentation. Signal2 clears guard count; signal3 increments selector phase and saves cursor; other nonzero signal exits with error.",
+        "Resumed pass stops at unsigned cursor>=target; ordinary pass continues.",
+        "Commit concept, scan presentation, apply BBB four-field bounds, then reload zero simulation countdown from selected speed. Disabled/error paths skip.",
+        "Return success or negative failure and restore registers."
+      ]
+    },
+    {
+      "entry": "0x0f70",
+      "end": "0x1446",
+      "commander_entry": "0x0eb0",
+      "kind": "reviewed_transcription",
+      "body_sha256": "12f40d1b6caee9bcc5861340ea6c6db95c89345eabb039504d648815f920b806",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/game_lifecycle.rs",
+        "symbol": "run_game_lifecycle"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_0eb0_natural.json",
+      "instruction_count": 354,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x0f70",
+          "0x0ff8",
+          "Allocate six runtime arenas and their view offsets; owned framebuffers/resources replace segmented aliases."
+        ],
+        [
+          "0x0ff8",
+          "0x104b",
+          "Prepare writable files, archive index, CD audio, MANU3 and logical320x200 viewport; open panorama and load save directory."
+        ],
+        [
+          "0x104b",
+          "0x1085",
+          "Select/configure audio driver once; SDL setup replaces DOS driver resources and vectors."
+        ],
+        [
+          "0x1085",
+          "0x10ca",
+          "Load cartography, set startup presentation/UI/redraw, randomize scene, run line0, load default bank/backbuffer and initial pointer."
+        ],
+        [
+          "0x10ca",
+          "0x10eb",
+          "Saturating simulation-clock decrement even while paused, arm eight-tick budget, reset hover/remap choice, dispatch input."
+        ],
+        [
+          "0x10eb",
+          "0x1140",
+          "Poll pointer only when unpaused and UI mask8 clear; consume pending bits preserving authored two-phase pointer latches; otherwise restore locked position."
+        ],
+        [
+          "0x1140",
+          "0x116d",
+          "Exit gate, pause HUD and paused restart; pointer edges then BBB right-click handler; nonstartup VM negative result exits."
+        ],
+        [
+          "0x116d",
+          "0x11c6",
+          "Pending profile waits on five BBB blockers only. Load, enable/execute VM and rebuild records; initial profile alone refreshes access/HUD and redraw state."
+        ],
+        [
+          "0x11c6",
+          "0x1229",
+          "No C2 marks frame available. Presentation owner chooses hold, word choice, subtitle or deferred menu from exact latches."
+        ],
+        [
+          "0x1229",
+          "0x1280",
+          "Completed hold arms word choice; BBB resumes VM while countdown nonzero iff C2 clear; timeout/rightclick resolves holds and text request."
+        ],
+        [
+          "0x1280",
+          "0x12b0",
+          "No presentation/hold/ship clears text ownership; active scene/sequence without secondary request enters line selection."
+        ],
+        [
+          "0x12b0",
+          "0x1321",
+          "Request/countdown selects menu selector+9 or idle8; otherwise producer-consumer difference restarts retained owner/menu buffer, preserving queued C2."
+        ],
+        [
+          "0x1321",
+          "0x1344",
+          "Pending completion audio stops old stream, loads authored completion voice with volume120 and starts it."
+        ],
+        [
+          "0x1344",
+          "0x136c",
+          "Ordered bridge, confirmation, audio, ship/scene, save/load, text-speed and simulation-speed updates."
+        ],
+        [
+          "0x136c",
+          "0x13b0",
+          "Clear chatter/voice when no primary text request or secondary pending. Ordinary chooser before framebuffer submission; inventory chooser after."
+        ],
+        [
+          "0x13b0",
+          "0x13d8",
+          "Inline menu, subtitles, MANU3 and palette maintenance; pace then present; repeat."
+        ],
+        [
+          "0x13d8",
+          "0x140b",
+          "Finish queues, stop audio, run credits, stop/shutdown audio; release optional transient voice."
+        ],
+        [
+          "0x140b",
+          "0x1446",
+          "Release optional music/archive-index files, delete startup transient files, restore source root and close archive. Explicit-root cleanup replaces DOS handles."
+        ]
+      ],
+      "notes": [
+        "Complete BBB entry compared block-by-block with its Commander baseline, typed handler, and production runtime adapter. Sequel guards and changed paths are explicit; this is not an exact-body equivalence or a new whole-entry native execution claim.",
+        "Allocate six runtime arenas and their view offsets; owned framebuffers/resources replace segmented aliases.",
+        "Prepare writable files, archive index, CD audio, MANU3 and logical320x200 viewport; open panorama and load save directory.",
+        "Select/configure audio driver once; SDL setup replaces DOS driver resources and vectors.",
+        "Load cartography, set startup presentation/UI/redraw, randomize scene, run line0, load default bank/backbuffer and initial pointer.",
+        "Saturating simulation-clock decrement even while paused, arm eight-tick budget, reset hover/remap choice, dispatch input.",
+        "Poll pointer only when unpaused and UI mask8 clear; consume pending bits preserving authored two-phase pointer latches; otherwise restore locked position.",
+        "Exit gate, pause HUD and paused restart; pointer edges then BBB right-click handler; nonstartup VM negative result exits.",
+        "Pending profile waits on five BBB blockers only. Load, enable/execute VM and rebuild records; initial profile alone refreshes access/HUD and redraw state.",
+        "No C2 marks frame available. Presentation owner chooses hold, word choice, subtitle or deferred menu from exact latches.",
+        "Completed hold arms word choice; BBB resumes VM while countdown nonzero iff C2 clear; timeout/rightclick resolves holds and text request.",
+        "No presentation/hold/ship clears text ownership; active scene/sequence without secondary request enters line selection.",
+        "Request/countdown selects menu selector+9 or idle8; otherwise producer-consumer difference restarts retained owner/menu buffer, preserving queued C2.",
+        "Pending completion audio stops old stream, loads authored completion voice with volume120 and starts it.",
+        "Ordered bridge, confirmation, audio, ship/scene, save/load, text-speed and simulation-speed updates.",
+        "Clear chatter/voice when no primary text request or secondary pending. Ordinary chooser before framebuffer submission; inventory chooser after.",
+        "Inline menu, subtitles, MANU3 and palette maintenance; pace then present; repeat.",
+        "Finish queues, stop audio, run credits, stop/shutdown audio; release optional transient voice.",
+        "Release optional music/archive-index files, delete startup transient files, restore source root and close archive. Explicit-root cleanup replaces DOS handles."
+      ]
+    },
+    {
+      "entry": "0x0800",
+      "end": "0x08ef",
+      "commander_entry": null,
+      "kind": "reviewed_host_adapter",
+      "body_sha256": "40a917a39fb78ea8a5fcee51335e82409b6cda13101e26d857679546d95786e3",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/app.rs",
+        "symbol": "run"
+      },
+      "inherited_fixture": null,
+      "instruction_count": 94,
+      "reviewed_relocations": [],
+      "reviewed_blocks": [
+        [
+          "0x0800",
+          "0x081e",
+          "Establish DOS data/stack and require mouse driver; SDL application setup replaces real-mode mouse presence/error path."
+        ],
+        [
+          "0x081e",
+          "0x087f",
+          "Establish global/resource segments, acquire conventional heap, locate environment; owned Rust allocation and process environment replace PSP state."
+        ],
+        [
+          "0x087f",
+          "0x0897",
+          "Parse DOS peripheral/write-root switches; seed clock, choose roots, install error/timer hooks and set VGA. Modern options preserve explicit writable root, not hardware switches."
+        ],
+        [
+          "0x0897",
+          "0x08c2",
+          "Calibrate retrace, initialize sound and pointer bounds/position, create memory pools. SDL/wgpu/audio and owned cache supply host services."
+        ],
+        [
+          "0x08c2",
+          "0x08d3",
+          "Program speaker divider then call complete game lifecycle. Speaker pulse semantics live in typed timer/audio owners."
+        ],
+        [
+          "0x08d3",
+          "0x08ef",
+          "Release pools, stop timer, restore video and free heap before DOS process exit; owned modern host teardown replaces vectors and segment handles."
+        ]
+      ],
+      "notes": [
+        "Full static body review: DOS storage/memory-provider initialization is replaced by owned Rust memory and explicit asset roots. No DOS driver or fallback temporary-directory ABI is ported; this is not native-execution evidence.",
+        "Establish DOS data/stack and require mouse driver; SDL application setup replaces real-mode mouse presence/error path.",
+        "Establish global/resource segments, acquire conventional heap, locate environment; owned Rust allocation and process environment replace PSP state.",
+        "Parse DOS peripheral/write-root switches; seed clock, choose roots, install error/timer hooks and set VGA. Modern options preserve explicit writable root, not hardware switches.",
+        "Calibrate retrace, initialize sound and pointer bounds/position, create memory pools. SDL/wgpu/audio and owned cache supply host services.",
+        "Program speaker divider then call complete game lifecycle. Speaker pulse semantics live in typed timer/audio owners.",
+        "Release pools, stop timer, restore video and free heap before DOS process exit; owned modern host teardown replaces vectors and segment handles."
       ]
     },
     {

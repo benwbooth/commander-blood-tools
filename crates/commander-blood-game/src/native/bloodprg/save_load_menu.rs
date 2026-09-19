@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fmt;
 
 use anyhow::{Context, Result as AnyResult};
+use commander_blood_formats::code::ScriptDialect;
 
 use super::{
     FramebufferTransitionState, LoadedScriptProfile, ORIGINAL_QUICK_SAVE_SLOT_INDEX,
@@ -223,7 +224,7 @@ pub trait SaveProfileBackend {
 
 /// Runtime work that surrounds persistent-block restoration.
 pub trait SavedProfileLifecycle {
-    /// Run the newly selected profile once before persistent blocks are applied.
+    /// Run the selected profile, before restore for Commander and after restore for BBB.
     fn initialize_loaded_profile(&mut self, profile: &mut LoadedScriptProfile) -> AnyResult<()>;
 
     /// Rebuild derived record, HUD, palette, and camera state after restoration.
@@ -274,7 +275,7 @@ impl<Lifecycle: SavedProfileLifecycle> SaveProfileBackend
         let profile_id = OriginalSaveGame::decode_profile_for_dialect(data, dialect)?;
         self.manager
             .select(profile_id, self.cache, self.store, self.resources)?;
-        {
+        if dialect == ScriptDialect::CommanderBlood {
             let profile = self
                 .manager
                 .current_mut()
@@ -292,6 +293,9 @@ impl<Lifecycle: SavedProfileLifecycle> SaveProfileBackend
             .current_mut()
             .context("initialized BloodScript profile disappeared before restore")?;
         save.restore_into(profile)?;
+        if dialect == ScriptDialect::BigBugBang {
+            self.lifecycle.initialize_loaded_profile(profile)?;
+        }
         self.lifecycle.rebuild_loaded_state(profile)
     }
 }
@@ -355,10 +359,31 @@ pub fn update_save_load_menu<Host: SaveLoadHost, Profiles: SaveProfileBackend>(
     host: &mut Host,
     profiles: &mut Profiles,
 ) -> Result<SaveLoadMenuOutcome, SaveLoadMenuError> {
+    update_save_load_menu_for_dialect(
+        state,
+        directory,
+        host,
+        profiles,
+        ScriptDialect::CommanderBlood,
+    )
+}
+
+/// Apply game-specific quick-save bytes while preserving the common file protocol.
+pub fn update_save_load_menu_for_dialect<Host: SaveLoadHost, Profiles: SaveProfileBackend>(
+    state: &mut SaveLoadMenuState,
+    directory: &mut OriginalSaveSlotDirectory,
+    host: &mut Host,
+    profiles: &mut Profiles,
+    dialect: ScriptDialect,
+) -> Result<SaveLoadMenuOutcome, SaveLoadMenuError> {
     if state.requests.quick_save {
         let quick_slot = &mut directory.slots_mut()[ORIGINAL_QUICK_SAVE_SLOT_INDEX];
         let mut display_name = quick_slot.display_name().bytes();
-        display_name[..QUICK_SAVE_NAME_PREFIX.len()].copy_from_slice(&QUICK_SAVE_NAME_PREFIX);
+        let prefix = match dialect {
+            ScriptDialect::CommanderBlood => &QUICK_SAVE_NAME_PREFIX,
+            ScriptDialect::BigBugBang => b"DERNIERE",
+        };
+        display_name[..prefix.len()].copy_from_slice(prefix);
         quick_slot.set_display_name(SaveSlotName::from_bytes(display_name));
         state.active_slot = Some(ORIGINAL_QUICK_SAVE_SLOT_INDEX);
         state.requests.quick_save = false;
@@ -415,7 +440,7 @@ pub fn update_save_load_menu<Host: SaveLoadHost, Profiles: SaveProfileBackend>(
             source,
         })?;
 
-    if state.requests.save {
+    if !state.requests.load {
         state.name_length = save_name_length(state.edit_name);
         let committed = host
             .edit_save_slot_name(state.selected_slot, &mut state.edit_name, state.name_length)
@@ -714,6 +739,88 @@ mod tests {
             .unwrap()
     }
 
+    #[test]
+    fn simultaneous_save_load_requests_follow_native_load_priority() {
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            let calls = Rc::new(RefCell::new(Vec::new()));
+            let mut host = MockHost {
+                calls: calls.clone(),
+                selections: vec![SaveLoadSelection::Slot(0)],
+                commit: true,
+                create_success: true,
+                open_success: true,
+            };
+            let mut profiles = MockProfiles {
+                calls: calls.clone(),
+            };
+            let mut state = SaveLoadMenuState::default();
+            state.requests.save = true;
+            state.requests.load = true;
+            let result = update_save_load_menu_for_dialect(
+                &mut state,
+                &mut slot_directory(),
+                &mut host,
+                &mut profiles,
+                dialect,
+            )
+            .unwrap();
+            assert_eq!(result, SaveLoadMenuOutcome::Loaded { slot: 0 });
+            assert_eq!(
+                *calls.borrow(),
+                vec![
+                    SemanticCall::Layout(SaveLoadListPass::Poll),
+                    SemanticCall::Read("game1.sav".into()),
+                    SemanticCall::Restore
+                ]
+            );
+        }
+    }
+
+    #[test]
+    fn sequel_quick_save_copies_exact_eight_byte_prefix_and_preserves_suffix() {
+        let calls = Rc::new(RefCell::new(Vec::new()));
+        let mut host = MockHost {
+            calls: calls.clone(),
+            selections: vec![],
+            commit: false,
+            create_success: true,
+            open_success: false,
+        };
+        let mut profiles = MockProfiles {
+            calls: calls.clone(),
+        };
+        let mut directory = slot_directory();
+        let mut expected = directory.slots()[9].display_name().bytes();
+        expected[8..].fill(0x55);
+        directory.slots_mut()[9].set_display_name(SaveSlotName::from_bytes(expected));
+        expected[..8].copy_from_slice(b"DERNIERE");
+        let mut state = SaveLoadMenuState::default();
+        state.requests = SaveLoadRequests {
+            save: true,
+            load: true,
+            quick_save: true,
+        };
+        let result = update_save_load_menu_for_dialect(
+            &mut state,
+            &mut directory,
+            &mut host,
+            &mut profiles,
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        assert_eq!(result, SaveLoadMenuOutcome::Saved { slot: 9 });
+        assert_eq!(directory.slots()[9].display_name().bytes(), expected);
+        assert_eq!(
+            *calls.borrow(),
+            vec![
+                SemanticCall::Create("game10.sav".into()),
+                SemanticCall::Capture,
+                SemanticCall::WriteSave,
+                SemanticCall::WriteDirectory
+            ]
+        );
+    }
+
     fn call_name(call: &Value) -> &str {
         call.get("call").and_then(Value::as_str).unwrap()
     }
@@ -950,6 +1057,68 @@ mod tests {
             self.events.push("rebuild");
             Ok(())
         }
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang executable and imported resources"]
+    fn sequel_profile_backend_initializes_only_after_restoring_saved_blocks() {
+        struct RestoreOrderProbe {
+            saved: Vec<u8>,
+            events: Vec<&'static str>,
+        }
+        impl SavedProfileLifecycle for RestoreOrderProbe {
+            fn initialize_loaded_profile(
+                &mut self,
+                profile: &mut LoadedScriptProfile,
+            ) -> AnyResult<()> {
+                assert_eq!(OriginalSaveGame::capture(profile)?.encode(), self.saved);
+                self.events.push("restored_before_initialize");
+                Ok(())
+            }
+            fn rebuild_loaded_state(
+                &mut self,
+                _profile: &mut LoadedScriptProfile,
+            ) -> AnyResult<()> {
+                self.events.push("rebuild");
+                Ok(())
+            }
+        }
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang");
+        let executable = std::fs::read(root.join("disc/BLOOD2PG.EXE")).unwrap();
+        let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_blood2pg(&executable).unwrap();
+        let store =
+            OriginalResourceStore::new(root.join("imported-assets/resources"), None, [], true);
+        let mut manager = ScriptProfileManager::new(catalog);
+        let mut cache = OriginalResourceCache::new();
+        manager
+            .select(
+                super::super::ScriptProfileId::INITIAL,
+                &mut cache,
+                &store,
+                &resources,
+            )
+            .unwrap();
+        let runtime = manager.current_mut().unwrap().runtime_mut();
+        let mut timers = runtime.encode_timer_save_block();
+        timers[..8].copy_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
+        runtime.restore_timer_save_block(&timers);
+        let saved = OriginalSaveGame::capture(manager.current().unwrap())
+            .unwrap()
+            .encode();
+        let mut probe = RestoreOrderProbe {
+            saved: saved.clone(),
+            events: Vec::new(),
+        };
+        let mut backend = OriginalSaveProfileBackend::new(
+            &mut manager,
+            &mut cache,
+            &store,
+            &resources,
+            &mut probe,
+        );
+        backend.restore_save_game(&saved).unwrap();
+        assert_eq!(probe.events, ["restored_before_initialize", "rebuild"]);
     }
 
     #[test]
