@@ -1173,7 +1173,7 @@ HOST_REVIEWS = (
         0x08EF,
         "40a917a39fb78ea8a5fcee51335e82409b6cda13101e26d857679546d95786e3",
         "crates/commander-blood-game/src/app.rs",
-        "run",
+        "run_for_game",
         (
             (
                 0x0800,

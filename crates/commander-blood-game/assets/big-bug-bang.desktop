@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Big Bug Bang
+Comment=Science-fiction adventure
+Exec=big-bug-bang
+Icon=commander-blood
+Terminal=false
+Categories=Game;AdventureGame;
+StartupWMClass=big-bug-bang

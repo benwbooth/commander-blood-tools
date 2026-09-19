@@ -21,13 +21,33 @@ one-time importer; subsequent game processes load ordinary files through
 ```sh
 nix develop --command cargo run -p commander-blood-game --bin commander-blood -- \
   --data /path/to/original/commander-blood
+
+nix develop --command cargo run -p commander-blood-game --bin big-bug-bang -- \
+  --data /path/to/original/big-bug-bang
 ```
+
+The games have separate `commander-blood` and `big-bug-bang` executables and
+desktop launchers backed by the shared engine. Each rejects the other game's
+data. After import, either command can run without `--data` using its own cache.
+Use `CBLOOD_DATA` for Commander Blood or `BBB_DATA` for Big Bug Bang to override
+data discovery. Both support `--data SOURCE --import-assets DESTINATION` for
+importing and verifying assets without opening a window.
 
 The default immutable asset cache is
 `$XDG_DATA_HOME/commander-blood/assets-v1`, falling back to
 `~/.local/share/commander-blood/assets-v1`. Set `CBLOOD_ASSET_CACHE` to select
 another location. Saves remain separate and use `CBLOOD_WRITE_DATA` or the
 parent Commander Blood user-data directory.
+
+Big Bug Bang uses `$XDG_DATA_HOME/big-bug-bang/assets-v1` (or
+`~/.local/share/big-bug-bang/assets-v1`) and its own sibling save directory.
+When `CBLOOD_ASSET_CACHE` or `CBLOOD_WRITE_DATA` is set, Big Bug Bang uses a
+`big-bug-bang` subdirectory below that override; an explicit `--write-data`
+directory is used as given. The Nix `commander-blood` package installs both
+executables and desktop launchers.
+
+For packaged launches, use `nix run .#commander-blood` or
+`nix run .#big-bug-bang`, appending `-- --data PATH` when needed.
 
 Startup also checks the editable `re/descript/DESCRIPT.descript` and
 `re/vm/profiles/script*.blood` sources against their compiled resources. When a

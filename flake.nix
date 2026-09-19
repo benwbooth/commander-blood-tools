@@ -157,6 +157,8 @@
               "commander-blood-game"
               "--bin"
               "commander-blood"
+              "--bin"
+              "big-bug-bang"
             ];
             nativeBuildInputs = with pkgs; [
               makeWrapper
@@ -183,6 +185,8 @@
                 "$out/share/icons/hicolor/256x256/apps/commander-blood.png"
               install -Dm444 crates/commander-blood-game/assets/commander-blood.desktop \
                 "$out/share/applications/commander-blood.desktop"
+              install -Dm444 crates/commander-blood-game/assets/big-bug-bang.desktop \
+                "$out/share/applications/big-bug-bang.desktop"
               install -Dm444 re/descript/DESCRIPT.descript \
                 "$out/share/commander-blood/re/descript/DESCRIPT.descript"
               install -Dm444 re/descript/big-bug-bang/DESCRIPT.descript \
@@ -195,7 +199,8 @@
                 "$out/share/commander-blood/re/vm/big-bug-bang-profiles/"
             '';
             postFixup = ''
-              wrapProgram "$out/bin/commander-blood" \
+              for game in commander-blood big-bug-bang; do
+              wrapProgram "$out/bin/$game" \
                 --prefix LD_LIBRARY_PATH : \
                   "/run/opengl-driver/lib:${
                     pkgs.lib.makeLibraryPath (
@@ -216,15 +221,24 @@
                       ]
                     )
                   }"
+              done
             '';
             meta = {
-              description = "Modern SDL3 and wgpu port of Commander Blood";
+              description = "Modern SDL3 and wgpu ports of Commander Blood and Big Bug Bang";
               mainProgram = "commander-blood";
               platforms = pkgs.lib.platforms.linux;
             };
           };
           dosbox-staging-cbtest = mkDosboxStagingCbtest pkgs;
         }
+      );
+
+      apps = forAllSystems (
+        system:
+        nixpkgs.lib.genAttrs [ "commander-blood" "big-bug-bang" ] (game: {
+          type = "app";
+          program = "${inputs.self.packages.${system}.commander-blood}/bin/${game}";
+        })
       );
 
       formatter = forAllSystems (

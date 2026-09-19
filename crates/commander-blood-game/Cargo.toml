@@ -2,10 +2,15 @@
 name = "commander-blood-game"
 version = "0.1.0"
 edition = "2024"
+default-run = "commander-blood"
 
 [[bin]]
 name = "commander-blood"
 path = "src/main.rs"
+
+[[bin]]
+name = "big-bug-bang"
+path = "src/bin/big-bug-bang.rs"
 
 [dependencies]
 anyhow = "1"

@@ -74,6 +74,14 @@ impl GameVariant {
         }
     }
 
+    /// Explicit data-root override used by this game's launcher.
+    pub const fn data_environment_variable(self) -> &'static str {
+        match self {
+            Self::CommanderBlood => "CBLOOD_DATA",
+            Self::BigBugBang => "BBB_DATA",
+        }
+    }
+
     /// Original executable containing this game's native resource tables.
     pub const fn executable_filename(self) -> &'static str {
         match self {

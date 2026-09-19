@@ -19,6 +19,7 @@ use sdl3::mouse::MouseButton;
 use crate::assets::{
     OriginalFrame, find_bloodprg_executable, find_bridge_panorama, find_title_image,
 };
+use crate::game::GameVariant;
 use crate::native::alien::{AlienInputAction, AlienMouseSample, AlienScene};
 use crate::native::bloodprg::{
     BRIDGE_SPRITE_ENTITY_COUNT, BridgeScene, BridgeSceneInput, BridgeSpriteEntity,
@@ -51,7 +52,6 @@ const DECIMAL_RADIX: u8 = 10;
 const PACKED_BCD_DIGIT_SHIFT: u32 = 4;
 const NO_MOUSE_MOTION: f32 = 0.0;
 const MAXIMUM_BASE_SCENE_COUNT: usize = 1;
-const WINDOW_TITLE: &str = "Commander Blood - F10 releases mouse; click to recapture";
 
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
@@ -222,27 +222,35 @@ impl Options {
     }
 }
 
-fn print_usage() {
+fn print_usage(game: GameVariant) {
+    let command = game.storage_name();
+    let environment = game.data_environment_variable();
     println!(
-        "Usage: commander-blood [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg BLOODPRG.EXE] [--frames COUNT] [--live-trace TRACE.JSONL] [--scenario ACTIONS.TSV --trace TRACE.JSONL [--oracle-packed-second BYTE]]\n\
+        "Usage: {command} [--data DIRECTORY] [--write-data DIRECTORY] [--asset IMAGE.LBM] [--manu3 MANU3.XDB | --alien ALIEN.XDB | --bridge] [--panorama TB.BIG] [--bloodprg EXECUTABLE] [--frames COUNT] [--live-trace TRACE.JSONL] [--scenario ACTIONS.TSV --trace TRACE.JSONL [--oracle-packed-second BYTE]]\n\
          \n\
-         Import only (both games): commander-blood --data SOURCE --import-assets DESTINATION\n\
+         Import only: {command} --data SOURCE --import-assets DESTINATION\n\
          This verifies loose assets without opening a window or transcoding media.\n\
-         --data selects the game from its executable or imported manifest.\n\
+         --data must contain {} assets (original installation or imported manifest).\n\
          \n\
-         CBLOOD_DATA may point to the original game-data directory.\n\
+         {environment} may point to the game-data directory.\n\
          CBLOOD_ASSET_CACHE may select the versioned imported loose-asset directory.\n\
          CBLOOD_WRITE_DATA may point to the writable save-data directory.\n\
-         CBLOOD_SCRIPT_SOURCE may select an editable game-script re source directory."
+         CBLOOD_SCRIPT_SOURCE may select an editable game-script re source directory.",
+        game.title()
     );
 }
 
 /// Start the SDL event loop and wgpu renderer for the modern game port.
 pub fn run() -> Result<()> {
+    run_for_game(GameVariant::CommanderBlood)
+}
+
+/// Start the shared host for a game-specific executable.
+pub fn run_for_game(game: GameVariant) -> Result<()> {
     let options = match Options::parse()? {
         ParseOutcome::Run(options) => options,
         ParseOutcome::Help => {
-            print_usage();
+            print_usage(game);
             return Ok(());
         }
     };
@@ -251,6 +259,7 @@ pub fn run() -> Result<()> {
             .data
             .as_deref()
             .context("asset import requires a source")?;
+        OriginalGameDataPaths::validate_game_root(game, source)?;
         let outcome = crate::asset_import::import_original_assets(source, destination)?;
         let manifest = crate::asset_import::ImportedAssetManifest::load(destination)?;
         manifest
@@ -264,10 +273,10 @@ pub fn run() -> Result<()> {
         return Ok(());
     }
     if !options.uses_diagnostic_overrides() {
-        return run_production_game(&options);
+        return run_production_game(game, &options);
     }
     let original_data = if options.data.is_some() || !options.uses_diagnostic_overrides() {
-        let paths = OriginalGameDataPaths::discover(options.data.as_deref())?;
+        let paths = OriginalGameDataPaths::discover_for_game(game, options.data.as_deref())?;
         Some(match options.write_data.as_deref() {
             Some(writable_root) => OriginalGameData::load_with_writable_root(paths, writable_root)?,
             None => OriginalGameData::load(paths)?,
@@ -387,11 +396,12 @@ pub fn run() -> Result<()> {
         None
     };
 
-    sdl3::hint::set("SDL_APP_ID", crate::window_icon::APPLICATION_ID);
+    sdl3::hint::set("SDL_APP_ID", game.storage_name());
+    let window_title = format!("{} - F10 releases mouse; click to recapture", game.title());
     let sdl = sdl3::init().map_err(anyhow::Error::msg)?;
     let video = sdl.video().map_err(anyhow::Error::msg)?;
     let mut window = video
-        .window(WINDOW_TITLE, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+        .window(&window_title, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
         .position_centered()
         .resizable()
         .high_pixel_density()
@@ -522,9 +532,9 @@ pub fn run() -> Result<()> {
     Ok(())
 }
 
-fn run_production_game(options: &Options) -> Result<()> {
-    sdl3::hint::set("SDL_APP_ID", crate::window_icon::APPLICATION_ID);
-    let paths = OriginalGameDataPaths::discover(options.data.as_deref())?;
+fn run_production_game(game: GameVariant, options: &Options) -> Result<()> {
+    sdl3::hint::set("SDL_APP_ID", game.storage_name());
+    let paths = OriginalGameDataPaths::discover_for_game(game, options.data.as_deref())?;
     let data = match options.write_data.as_deref() {
         Some(writable_root) => OriginalGameData::load_with_writable_root(paths, writable_root)?,
         None => OriginalGameData::load(paths)?,

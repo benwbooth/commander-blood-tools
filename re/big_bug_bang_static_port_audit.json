@@ -5,7 +5,7 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "b5900ed1b1c03505b73a965eac8ac4eb2da3afb732eac9a38a3eccf246c82e53",
+    "re/tools/big_bug_bang_static_port_audit.py": "26fd7f0795ef41c4f4deaffa85118fa08223d3d97c3def031d01ed06fcce90fe",
     "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
     "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
     "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
@@ -106,7 +106,7 @@
     "crates/commander-blood-game/src/native/bloodprg/game_lifecycle.rs": "6ee193d39db23ed481426894af94306b97b9078040e55963ebf876ca5bcb52b7",
     "re/tools/oracle_vectors/func_0eb0_natural.json": "540e4ea13dae0a0f51402d1886dd2c4137f441a7fcbdcdbdae258e28406c4d1a",
     "re/tools/oracle_vectors/big_bug_bang_profile_post_load.jsonl": "8f7d8a27ecae719aa9128fe98904d387fdd2083c0d7ac5c4ae4da4894dce2f6f",
-    "crates/commander-blood-game/src/app.rs": "02704f562d0e76d4d26dcb911d1b507fd0461d32404df167a4863b48e8764251",
+    "crates/commander-blood-game/src/app.rs": "9201be51562e58e5e14f13cbcdd888cef4b5b7f98ca19ee8ed80da12e473ae38",
     "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs": "5a2de16add9f4c0447f3eed382da598d311c17a90985e519bd97625ad48fe906",
     "crates/commander-blood-game/src/native/bloodprg/input_cancel.rs": "3dc579420268f765f52a83973303657831281b6d72bc37480f3cc2259709aa94",
     "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b"
@@ -4006,7 +4006,7 @@
       "body_sha256": "40a917a39fb78ea8a5fcee51335e82409b6cda13101e26d857679546d95786e3",
       "rust_owner": {
         "path": "crates/commander-blood-game/src/app.rs",
-        "symbol": "run"
+        "symbol": "run_for_game"
       },
       "inherited_fixture": null,
       "instruction_count": 94,

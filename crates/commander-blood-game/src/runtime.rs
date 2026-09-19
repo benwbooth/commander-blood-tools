@@ -265,6 +265,59 @@ impl OriginalGameDataPaths {
         )
     }
 
+    /// Discover only the game selected by the executable, without cross-game fallback.
+    pub fn discover_for_game(game: GameVariant, explicit_root: Option<&Path>) -> Result<Self> {
+        let environment = game.data_environment_variable();
+        let configured_root = explicit_root
+            .map(PathBuf::from)
+            .or_else(|| std::env::var_os(environment).map(PathBuf::from));
+        if let Some(root) = configured_root {
+            Self::validate_game_root(game, &root)?;
+            return Self::from_root(root);
+        }
+
+        let imported_root = discover_asset_cache_root_for_game(game, None)?;
+        if imported_root.join(ASSET_MANIFEST_FILENAME).is_file() {
+            Self::validate_game_root(game, &imported_root)?;
+            return Self::from_imported_root(imported_root);
+        }
+        let known_roots: &[&str] = match game {
+            GameVariant::CommanderBlood => &KNOWN_DATA_ROOTS,
+            GameVariant::BigBugBang => &[
+                "output/big-bug-bang/imported-assets",
+                "output/big-bug-bang/disc",
+            ],
+        };
+        for root in known_roots.iter().map(Path::new) {
+            if Self::validate_game_root(game, root).is_ok() {
+                return Self::from_root(root);
+            }
+        }
+        bail!(
+            "complete {} data set not found; pass --data PATH or set {environment}",
+            game.title()
+        )
+    }
+
+    pub(crate) fn validate_game_root(game: GameVariant, root: &Path) -> Result<()> {
+        let actual = if root.join(ASSET_MANIFEST_FILENAME).is_file() {
+            ImportedAssetManifest::load(root)?.game
+        } else {
+            detect_source_game(root)?
+        };
+        if actual != game {
+            bail!(
+                "{} launches {}; {} contains {} data; use {} instead",
+                game.storage_name(),
+                game.title(),
+                root.display(),
+                actual.title(),
+                actual.storage_name()
+            );
+        }
+        Ok(())
+    }
+
     /// Read-only root containing the original game files.
     pub fn root(&self) -> &Path {
         &self.root

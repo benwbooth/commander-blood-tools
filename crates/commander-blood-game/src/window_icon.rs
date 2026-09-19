@@ -3,7 +3,6 @@
 use anyhow::{Context, Result};
 use sdl3::{pixels::PixelFormat, surface::Surface, video::Window};
 
-pub(crate) const APPLICATION_ID: &str = "commander-blood";
 const ICON_SIZE: u32 = 256;
 const RGBA_COMPONENTS: u32 = 4;
 const ICON_PIXELS: &[u8; (ICON_SIZE * ICON_SIZE * RGBA_COMPONENTS) as usize] =

@@ -2112,7 +2112,7 @@ fn replay_bbb_from_save(name: &str, scenario: &str, save: &std::path::Path) -> P
     }
     let scenario = workspace.join(scenario);
     let frames = artifacts.0.join("frames.jsonl");
-    let mut command = Command::new(env!("CARGO_BIN_EXE_commander-blood"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_big-bug-bang"));
     command
         .args(["--data"])
         .arg(&assets)
