@@ -7,11 +7,12 @@ use commander_blood_formats::script::{
 };
 
 use crate::native::bloodprg::{
-    BridgeSpriteRect, FontPoint, FontVerticalBand, GameLifecycleState, NavigationChartInputState,
-    RasterPoint, RasterSpanPaint, ScriptObjectFlag, SequelOverviewActor, SequelOverviewControl,
-    SequelOverviewDraw, SequelOverviewOutcome, SequelOverviewState, draw_horizontal_span,
-    draw_line_segment, draw_planar_square_caps_text_clipped, draw_rect_outline, draw_vertical_span,
-    fill_framebuffer_rect, object_has_flag, resolve_navigation_position, update_sequel_overview,
+    BridgeSpriteRect, FontPoint, FontVerticalBand, GameLifecycleState, NavActorSlotFlags,
+    NavigationChartInputState, RasterPoint, RasterSpanPaint, ScriptObjectFlag, SequelOverviewActor,
+    SequelOverviewControl, SequelOverviewDraw, SequelOverviewOutcome, SequelOverviewState,
+    draw_horizontal_span, draw_line_segment, draw_planar_square_caps_text_clipped,
+    draw_rect_outline, draw_vertical_span, fill_framebuffer_rect, object_has_flag,
+    resolve_navigation_position, update_sequel_overview,
 };
 
 use super::{
@@ -73,6 +74,14 @@ impl RuntimeSequelOverview {
             camera_actor_flags: services.overview_camera_actor_flags(),
         };
         let frame = update_sequel_overview(&actors, &mut control, &mut self.state);
+        if frame.outcome == SequelOverviewOutcome::ClosedEmpty {
+            // Keep the base chart usable before the simulation has participants.
+            // The native empty-overlay close arms another camera animation.
+            control.camera_actor_flags = NavActorSlotFlags {
+                active: true,
+                ..Default::default()
+            };
+        }
 
         input.primary_pressed = control.primary_pressed;
         input.press_pending = control.press_pending != 0;

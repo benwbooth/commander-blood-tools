@@ -160,3 +160,28 @@ frames followed by 230 game frames with the new build. Captures are under
 `output/fidelity/bbb-click-skip-story-20260919` replay consumes four in-game clicks
 and advances the current clips through the normal presentation panel. It covers
 startup sequences, not an exhaustive playthrough of every authored conversation.
+
+## Navigation ball immediately closes the star chart
+
+Opening the camera also requests BBB's simulation overlay. In early SCRIPT2 the
+overlay has no participating groups. Its native `ClosedEmpty` result arms the
+camera actor with flags `9`, starting another animation and closing the chart
+without further input. The real-asset regression reproduced activation at frame
+16 followed by an unrequested close at frame 33.
+
+The modern runtime now dismisses an empty overlay without arming that second
+animation. The base chart remains available for location selection, and the
+camera actor remains clickable. This is an explicit usability fallback in the
+runtime adapter; the native overview controller and its original-executable
+vectors remain unchanged. Nonempty overlays keep their existing behavior.
+
+The original-asset SDL/service regression
+`sequel_navigation_ball_keeps_empty_star_chart_open` initializes authentic
+SCRIPT2 and an idle bridge, then drives real ball hit-testing, actor animation,
+pointer edges, and chart updates. It checks 100 frames after each of three
+clicks (open, close, reopen), then selects a celestial destination and opens its
+location panel. It passes with the fallback; the single-click portion fails
+without it. This is an isolated runtime test, not a complete story playthrough.
+All 1,089 regular library tests pass, with 69 optional tests ignored; the new
+asset regression was run explicitly. The six static-audit and four disposition
+checks also pass after refreshing the source hashes.

@@ -6724,6 +6724,174 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires original BBB assets and serialized SDL/wgpu ownership"]
+    fn sequel_navigation_ball_keeps_empty_star_chart_open() {
+        let _gpu = crate::gpu_test::lock();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let sdl = sdl3::init().unwrap();
+        let video = sdl.video().unwrap();
+        let audio = sdl.audio().unwrap();
+        let window = video
+            .window("BBB navigation ball regression", 640, 480)
+            .hidden()
+            .build()
+            .unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(
+            OriginalGameDataPaths::from_root(root).unwrap(),
+            &writable.0,
+        )
+        .unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        services.prepare_startup_resources().unwrap();
+        services.initialize_audio(&audio).unwrap();
+        services.load_manu3_overlay().unwrap();
+        services.initialize_logical_viewport().unwrap();
+        services.open_bridge_panorama().unwrap();
+        services.load_initial_cartography_resource().unwrap();
+        services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
+        services.load_default_sound_bank().unwrap();
+        services.initialize_back_buffer().unwrap();
+        services
+            .load_script_profile(ScriptProfileId::INITIAL)
+            .unwrap();
+        services
+            .load_script_profile(ScriptProfileId::new(1).unwrap())
+            .unwrap();
+        let mut lifecycle = GameLifecycleState::default();
+        services
+            .scripts
+            .execute_lifecycle_frame(&mut services.runtime, &mut lifecycle, true)
+            .unwrap();
+        // Exercise the idle bridge after authored profile initialization.
+        lifecycle = GameLifecycleState::default();
+        lifecycle.set_presentation_interface_active(true);
+        services.request_bridge_seek(0).unwrap();
+        for _ in 0..200 {
+            services
+                .render_bridge_frame(BridgeSceneInput {
+                    interaction: BridgeSteeringInteraction::MenuEngaged,
+                    ..Default::default()
+                })
+                .unwrap();
+            if !services.bridge_seek_requested().unwrap() {
+                break;
+            }
+        }
+        assert_eq!(services.bridge_view_frame().unwrap(), 0);
+        services.scripts.consume_sequel_presentation_choice();
+        services
+            .initialize_bridge_screen(&mut lifecycle, false, false)
+            .unwrap();
+        services
+            .render_bridge_frame(BridgeSceneInput::default())
+            .unwrap();
+        services
+            .update_runtime_bridge_actors(&mut lifecycle)
+            .unwrap();
+        let region = services.nav_actor_slots[0]
+            .hit_region
+            .expect("navigation orb must be visible");
+        let pointer = [
+            region.origin()[0] + region.extent()[0] / 2,
+            region.origin()[1] + region.extent()[1] / 2,
+        ]
+        .map(|v| v as i16);
+        for expected_open in [true, false, true] {
+            let mut settled = false;
+            for frame in 0..100 {
+                services
+                    .render_bridge_frame(BridgeSceneInput {
+                        interaction: BridgeSteeringInteraction::MenuEngaged,
+                        ..Default::default()
+                    })
+                    .unwrap();
+                services.publish_lifecycle_logical_pointer(
+                    pointer,
+                    if frame == 0 {
+                        PointerButtons::from_bits(1)
+                    } else {
+                        PointerButtons::NONE
+                    },
+                );
+                let edges = services.update_lifecycle_pointer_buttons(&mut lifecycle);
+                assert!(
+                    !services
+                        .skip_sequel_presentation_on_click(
+                            &mut lifecycle,
+                            edges.primary_pressed,
+                            false
+                        )
+                        .unwrap()
+                );
+                services
+                    .handle_sequel_secondary_pointer(&mut lifecycle)
+                    .unwrap();
+                services
+                    .update_runtime_bridge_actors(&mut lifecycle)
+                    .unwrap();
+                services
+                    .update_runtime_navigation_chart(&mut lifecycle, 0)
+                    .unwrap();
+                if services.bridge_camera_view_active() == expected_open {
+                    settled = true;
+                }
+                assert!(
+                    !settled || services.bridge_camera_view_active() == expected_open,
+                    "map changed state without another click at frame {frame} (expected open={expected_open})"
+                );
+                lifecycle.primary_pointer_pressed = false;
+                lifecycle.pointer_press_pending = 0;
+            }
+            assert!(
+                settled,
+                "click never changed the star chart (expected open={expected_open})"
+            );
+        }
+        assert!(!services.sequel_overview_active());
+        assert!(
+            services
+                .navigation_chart
+                .as_ref()
+                .unwrap()
+                .chart_object_count()
+                > 0
+        );
+        let marker = {
+            let profile = services.runtime().current_profile().unwrap();
+            let target = crate::native::bloodprg::navigation_chart_objects(profile.state())
+                .into_iter()
+                .find(|object| {
+                    profile
+                        .state()
+                        .object(*object)
+                        .is_some_and(|record| record.kind == ScriptObjectKind::CelestialBody)
+                })
+                .expect("the chart must contain a celestial destination");
+            let field = crate::native::bloodprg::resolve_navigation_position(
+                profile.state(),
+                target,
+                profile.builtins().archetype.unwrap(),
+                0,
+            )
+            .unwrap();
+            profile.state().word_pair(field).unwrap()
+        };
+        services.publish_lifecycle_logical_pointer(
+            marker.map(|v| v as i16),
+            PointerButtons::from_bits(1),
+        );
+        services.update_lifecycle_pointer_buttons(&mut lifecycle);
+        assert_eq!(
+            services
+                .update_runtime_navigation_chart(&mut lifecycle, 0)
+                .unwrap(),
+            crate::native::bloodprg::NavigationCameraOutcome::LocationPanelOpened,
+        );
+    }
+
+    #[test]
     fn numeric_chatter_matches_original_bbb_audio_hash() {
         use commander_blood_formats::instruction::ScriptTextStateNumber;
         #[derive(serde::Deserialize)]
