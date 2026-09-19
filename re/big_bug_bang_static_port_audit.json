@@ -5,7 +5,7 @@
     "output/big-bug-bang/disc/BLOOD2PG.EXE": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
     "re/bin/BLOODPRG.EXE": "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
-    "re/tools/big_bug_bang_static_port_audit.py": "94f3dedc2912e8788fa9c76a2aa3de58c666d249549a1fdc0e07dfb64d5e0d43",
+    "re/tools/big_bug_bang_static_port_audit.py": "986c74c41b6012e9f7a375cd46b1abb7d939b98afdde8a594c55391676909313",
     "crates/commander-blood-game/src/native/bloodprg/cd_audio.rs": "650092f7da2a12e6ae0fbfeef68661cec44415a8bfd0225c7212d56864aed47e",
     "re/tools/oracle_vectors/func_1344_natural.json": "62fee510258e60fdff46b36c127195a5179446528264bde925b2a09590957c23",
     "re/tools/oracle_vectors/func_13c4_natural.json": "ccf9cdf93aeb69e9ce1eb545b541d4480adba32d5ad46d474fd64c5663535a88",
@@ -14,8 +14,10 @@
     "crates/commander-blood-game/src/native/bloodprg/presentation_run.rs": "3425fc1a8dcfc7e56be4702bd986d735ac9cb033e7ccb9a6bd9f92c5021da3ec",
     "re/tools/oracle_vectors/func_1ec1_natural.json": "3ed222ec0974aff74c5723abe4411992d26cf24d7502cf96416f493cf968c6f9",
     "crates/commander-blood-game/src/native/bloodprg/raster_primitives.rs": "b02ff56e1723c862aa7bf57758da7e583da8c714f10fe849f6a35bc787117cef",
+    "re/tools/oracle_vectors/func_3b45_natural.json": "a06602e5c8e23f9cdcf66ddc2af4004674969d5fbfbdd0c17cfd3d68c7e3c50f",
     "re/tools/oracle_vectors/func_3b85_natural.json": "0ec3e5cb3d734e0c089812b4901152dcb118e43f0604f95bc2446b450774a075",
     "crates/commander-blood-game/src/native/bloodprg/framebuffer_copy.rs": "eb91b715fb62775287e79eb68b269ab29f2633391311c2b9afa04b9f729531fb",
+    "re/tools/oracle_vectors/func_3e5b_natural.json": "4cd4fb66c2bfae5f3795bddef70fa4648069e38b65298d3a8e014c101aba7cb0",
     "re/tools/oracle_vectors/func_3ece_natural.json": "bbb079aef7a3f8d6869a4a68239781b59220581d7922c6012aa1a440bacd81ce",
     "crates/commander-blood-game/src/native/bloodprg/sprite_blitter.rs": "501832c180e3b2f096453f0badae20007942b3808470df20db14affba6f5942a",
     "re/tools/oracle_vectors/func_4536_natural.json": "8bfe134ac82851e20eec3014065491bf7cf1453da1687fd81b06bdb6ca6a483f",
@@ -42,6 +44,8 @@
     "re/tools/oracle_vectors/func_81fb_natural.json": "a264305c55fe9df01edf16b71b2c61e8196c01cec859bd43ca7b145eefa05d38",
     "crates/commander-blood-game/src/native/bloodprg/navigation_status.rs": "7ae65c9b96cfef88254f7d7ab39cc32fcdf1ad41d4c381c93cd5d896ec747790",
     "re/tools/oracle_vectors/func_82e8_natural.json": "8dfd4ca5de26d68de9ba4f8a8122e35544c123acf86157009268d1ee844a0fd3",
+    "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs": "e121fab8f2dfc71a27eb908d84b9f0def0d5d44b0efc8a94dae857f5c3f47109",
+    "re/tools/oracle_vectors/func_8848_natural.json": "6679e01fb7719fcc3dee6a1b34d2d4cdcf3b1e52cc2379fdd53e5af7c9d9d5f5",
     "crates/commander-blood-game/src/native/bloodprg/camera_approach.rs": "2cb00bef6c4799f8ea9d532eaddba5266482748bea340b2bcbdabe226c4e2bfc",
     "re/tools/oracle_vectors/func_8a4e_natural.json": "360e50dd91a4b129e7942522a62c117d8628fc7857c2f96b42d9af8dbed2d8a8",
     "crates/commander-blood-game/src/native/bloodprg/name_area_effect.rs": "86cae117f1d91e4df7d498b4dcbe5022db63d6062d0cce9c513175b1d76f49ea",
@@ -370,6 +374,49 @@
       ]
     },
     {
+      "entry": "0x3ef3",
+      "end": "0x3f13",
+      "commander_entry": "0x3b45",
+      "kind": "bridge",
+      "body_sha256": "ca4c169ff365963d20c0f18b8bab0eb9b6a1d201c342b7aad7ef32560b625a0a",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/raster_primitives.rs",
+        "symbol": "draw_rect_outline"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_3b45_natural.json",
+      "instruction_count": 19,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x3b47",
+          "bbb_site": "0x3ef5",
+          "identity": "draw_horizontal_span",
+          "callee": "0x3d49"
+        },
+        {
+          "commander_site": "0x3b4d",
+          "bbb_site": "0x3efb",
+          "identity": "draw_vertical_span",
+          "callee": "0x3e41"
+        },
+        {
+          "commander_site": "0x3b54",
+          "bbb_site": "0x3f02",
+          "identity": "draw_vertical_span",
+          "callee": "0x3e41"
+        },
+        {
+          "commander_site": "0x3b60",
+          "bbb_site": "0x3f0e",
+          "identity": "draw_horizontal_span",
+          "callee": "0x3d49"
+        }
+      ],
+      "notes": [
+        "Typed rectangle outline retaining the exact top left right bottom span order edge coordinate arithmetic zero-extent calls and low-byte indexed color while replacing register-carried arguments far calls and segmented framebuffer state with four checked flat span outcomes",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
       "entry": "0x4002",
       "end": "0x40e9",
       "commander_entry": "0x3b85",
@@ -426,6 +473,30 @@
       ],
       "notes": [
         "Checked patterned-noise rectangle retaining post-clip single PRNG consumption sparse highlight sparse clear full toggle modes 16-bit refresh cross-row bitstream state and the shipped horizontal-right lower bound while replacing far display offsets row carry inherited direction and segmented pointer writes with typed modes an injected bounded random source and flat indexed pixels; 22 representable vectors retain exact native output hashes",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x42d8",
+      "end": "0x42ed",
+      "commander_entry": "0x3e5b",
+      "kind": "copy",
+      "body_sha256": "86814ea6c857bc19bc604b574f11ac3d9f0da18f93c455e1a6b65469fe865aa9",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/framebuffer_copy.rs",
+        "symbol": "copy_full_frame_to_back_buffer"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_3e5b_natural.json",
+      "instruction_count": 13,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x3e60",
+          "bbb_site": "0x42dd",
+          "identity": "secondary_drawing_framebuffer"
+        }
+      ],
+      "notes": [
+        "Checked complete-frame copy retaining the exact 64000 indexed pixels while replacing far source and back-buffer pointers independent 16-bit offset wrapping REP MOVSD direction state and register preservation with validated flat slices",
         "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },
@@ -1826,6 +1897,61 @@
       ],
       "notes": [
         "Typed navigation status hover and owned logical text composition over decoded location kinds source relationships and semantic display modes without record offsets packed alias bytes or fixed text buffers",
+        "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
+      ]
+    },
+    {
+      "entry": "0x99ed",
+      "end": "0x9a11",
+      "commander_entry": "0x8848",
+      "kind": "bridge",
+      "body_sha256": "d065352b29dc75339af28345aed5f44420fd4a1ad16a8b16e4a9e1b7d17f18ed",
+      "rust_owner": {
+        "path": "crates/commander-blood-game/src/native/bloodprg/bridge_console.rs",
+        "symbol": "activate_radio_choice"
+      },
+      "inherited_fixture": "re/tools/oracle_vectors/func_8848_natural.json",
+      "instruction_count": 10,
+      "reviewed_relocations": [
+        {
+          "commander_site": "0x8848",
+          "bbb_site": "0x99ed",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x884f",
+          "bbb_site": "0x99f4",
+          "identity": "radio_object"
+        },
+        {
+          "commander_site": "0x8852",
+          "bbb_site": "0x99f7",
+          "identity": "requested_script_object"
+        },
+        {
+          "commander_site": "0x8855",
+          "bbb_site": "0x99fa",
+          "identity": "requested_script_action"
+        },
+        {
+          "commander_site": "0x885b",
+          "bbb_site": "0x9a00",
+          "identity": "choice_active"
+        },
+        {
+          "commander_site": "0x8860",
+          "bbb_site": "0x9a05",
+          "identity": "menu_sound_bank_name"
+        },
+        {
+          "commander_site": "0x8866",
+          "bbb_site": "0x9a0b",
+          "identity": "load_sound_bank",
+          "callee": "0xd7ec"
+        }
+      ],
+      "notes": [
+        "Typed radio presentation-record activation and semantic sound-bank reload without numeric record tags DOS path pointers or packed phase bytes",
         "Complete body is byte-identical after only the named state/table and callee relocations. Relative branches, non-address constants, register widths, memory addressing, traversal, and return are unchanged."
       ]
     },

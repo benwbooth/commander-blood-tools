@@ -5707,6 +5707,14 @@ test remains ignored. The ledger now has 355/383 classified entries, including
 is explicitly excluded from direct-native output attribution, so the D6 rows
 continue to name their actual full native-result comparison test.
 
+The same strict comparison additionally resolves rectangle outlines (`0x3EF3`),
+full secondary-framebuffer copies (`0x42D8`), and radio activation (`0x99ED`).
+Their previous ambiguous matches are now tied to specific Commander owners by
+the reviewed callee and destination-state identities. Focused raster-primitive
+tests pass nine cases; bridge-console tests pass 18 with one optional asset test
+ignored. The ledger is 358/383 classified with 26 static typed entries and
+25 pending. This remains a source-port audit, not a completed playthrough claim.
+
 ## Remaining Completion Requirements
 
 As of 2026-09-19, work proceeds source-first: compare remaining BBB native

@@ -64,6 +64,7 @@ CD_IMMEDIATES = {
     ("mov", "bx", 0x0B72): (0x0D7C, "cd_playback_request"),
 }
 COPY_MEMORY = {
+    ("gs", 0x5229): (0x55F9, "secondary_drawing_framebuffer"),
     ("gs", 0x5219): (0x55E9, "back_framebuffer"),
     ("gs", 0x252E): (0x2780, "cropped_scene_gate"),
     ("gs", 0x2527): (0x2779, "ship_depth_crop"),
@@ -98,6 +99,7 @@ BRIDGE_FIELDS = {
     0x278E: (0x2A29, "black_hole_enabled"),
     0x278A: (0x2A25, "chart_view_active"),
     0x675A: (0x6B2C, "requested_radio_object"),
+    0x6756: (0x6B26, "radio_object"),
     0x67AC: (0x6B82, "presentation_active"),
     0x1FB2: (0x2200, "scene_presentation_queued"),
     0x2565: (0x27B7, "choice_active"),
@@ -205,6 +207,8 @@ FAR_CALLS = {
     (0x299, 0x0176): (0x2B1, 0x0176, "draw_game_font", 0x3486),
 }
 NEAR_CALLS = {
+    0x32AC: (0x3D49, "draw_horizontal_span"),
+    0x3321: (0x3E41, "draw_vertical_span"),
     0x6023: (0x6633, "object_field_resolve"),
     0x7E1C: (0x8EF0, "update_presentation_line"),
     0x8269: (0x93CB, "actor_pointer_hit_test"),
@@ -222,7 +226,9 @@ ROUTINES = (
     (0x1582, 0x163D, 0x13C4, "cd"),
     (0x2049, 0x20CE, 0x1DD8, "bridge"),
     (0x2142, 0x2191, 0x1EC1, "bridge"),
+    (0x3EF3, 0x3F13, 0x3B45, "bridge"),
     (0x4002, 0x40E9, 0x3B85, "noise"),
+    (0x42D8, 0x42ED, 0x3E5B, "copy"),
     (0x434B, 0x43E4, 0x3ECE, "copy"),
     (0x49B3, 0x4B33, 0x4536, "sprite"),
     (0x4B39, 0x5025, 0x46BC, "sprite"),
@@ -238,6 +244,7 @@ ROUTINES = (
     (0x8F94, 0x9070, 0x7EC0, "bridge"),
     (0x935D, 0x93CB, 0x81FB, "bridge"),
     (0x944A, 0x958A, 0x82E8, "bridge"),
+    (0x99ED, 0x9A11, 0x8848, "bridge"),
     (0x9C5E, 0x9DBB, 0x8A4E, "bridge"),
     (0x9DBB, 0x9EA6, 0x8BAB, "bridge"),
 )
