@@ -111,6 +111,14 @@ def plan_inventory(graph, template, menu_offset, labels):
         plan["title"] = template["target"].replace("_", " ") + ": give " + labels[items[item]]
         plan["travel_setup"]["stage_aboard_inventory"] = [item]
         plan["choices"] = [dict(source="inventory", text_site=menu_offset, inventory_item=item)]
+        # AF writes an inventory holder at byte 20 back to the aboard sentinel.
+        # Its native chooser reopens with the returned/new item still available.
+        if any(entry["instruction"].get("RecordWildcard", {}).get("opcode") == 0xAF
+               and entry["instruction"]["RecordWildcard"].get("record_offset") in
+                   {offset + 20 for offset in items}
+               and entry["instruction"]["RecordWildcard"].get("value") == 0xFFFF
+               and not entry["instruction"]["RecordWildcard"].get("inverted") for entry in body):
+            plan["choices"].append(dict(source="inventory_cancel", text_site=menu_offset))
         required = {menu_offset, *(site["offset"] for site in reactions)}
         for key in ("required_cod_sites", "required_frame_boundary_cod_sites"):
             plan[key] = sorted(set(plan[key]) | required)

@@ -327,6 +327,42 @@ class DialogueTraceTests(unittest.TestCase):
                 self.verify()
             item[key] = original
 
+    def test_inventory_cancel_requires_visible_row_native_closing_and_no_transfer(self):
+        self.plan.update(target="Outrageor", game="big_bug_bang")
+        choice = dict(source="inventory_cancel", text_site=100)
+        self.plan["choices"] = [choice]
+        self.runner["choices"] = [dict(choice, requested_at_ns=46_000_000)]
+        self.states[0]["time_ns"] = 0
+        state = self.states[0]["state"]
+        state["presentation"].update(inventory_choice=dict(text_site=100, recipient="Outrageor",
+            offered_items=[7640]), retained_word_choice=dict(phase="Selecting",
+            rows=[dict(kind="Cancel", matching_text_pixels=132)]))
+        state["persistent"] = dict(object_locations=[dict(name="atomique", source_offset=7640,
+            kind="InventoryItem", relation="sentinel", holder_raw=65535)])
+        for time, phase in [(46_000_000, "Closing"), (92_000_000, "Closed")]:
+            row = copy.deepcopy(self.states[0])
+            row["time_ns"] = time
+            row["state"]["presentation"]["retained_word_choice"]["phase"] = phase
+            self.states.append(row)
+        evidence = self.verify()["inventory_cancellations"]
+        self.assertEqual(evidence, [dict(text_site=100, offered_at_ns=0, closing_at_ns=46_000_000,
+                                        closed_at_ns=92_000_000, retained_items=[7640])])
+        cancel_row = state["presentation"]["retained_word_choice"]["rows"][0]
+        for key, bad in [("kind", "Item(0)"), ("matching_text_pixels", 0)]:
+            previous = cancel_row[key]
+            cancel_row[key] = bad
+            with self.assertRaisesRegex(ValueError, "cancel was not offered"):
+                self.verify()
+            cancel_row[key] = previous
+        final = self.states[-1]["state"]
+        final["persistent"]["object_locations"][0]["holder_raw"] = 296
+        with self.assertRaisesRegex(ValueError, "retain the offered items"):
+            self.verify()
+        final["persistent"]["object_locations"][0]["holder_raw"] = 65535
+        self.states[1]["state"]["presentation"]["retained_word_choice"]["phase"] = "Closed"
+        with self.assertRaisesRegex(ValueError, "missing native inventory cancellation"):
+            self.verify()
+
     def test_evolution_preparation_requires_source_binding_and_actual_actor_state(self):
         self.plan.update(target="Cyberquizz", entry="travel", travel_setup=dict(actor_evolution_guard=3687))
         preparation = dict(setup=self.plan["travel_setup"])

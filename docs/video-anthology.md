@@ -801,6 +801,63 @@ RGBA, PCM, endpoint, and runner behavior (apart from the different required-site
 plan). It is not counted as additional dialogue coverage. Regenerating Inter
 Paul's original template-based plan set is byte-for-byte unchanged.
 
+### BBB Eviscerator and Outrageor Gifts
+
+SCRIPT5 has 23 flat item reactions for each actor, derived from source-bound
+inventory menus 5431 (Eviscerator) and 7846 (Outrageor). Their checked-in nuclear
+fixtures and generated plans explicitly stage the actor at Cyberland and the
+item aboard; these are prepared branches, not acquisition or encounter routes.
+The plan sets are `plans-bbb-eviscerator-inventory-v1` and
+`plans-bbb-outrageor-inventory-v2` under `output/anthology`.
+
+All 46 captures passed in `dialogue-bbb-mutant-inventory-v1/eviscerator` and
+`dialogue-bbb-mutant-inventory-v2/outrageor`. Both assemblies passed full
+decoded RGBA, PCM, timestamp, and chapter checks:
+
+| Movie under `output/anthology` | Chapters | Seconds | Native Frames |
+| --- | ---: | ---: | ---: |
+| `bbb-eviscerator-inventory-dialogue-native.mkv` | 23 | 726.174 | 10,944 |
+| `bbb-outrageor-inventory-dialogue-native.mkv` | 23 | 704.994 | 10,606 |
+
+Together they add 1,431.168 seconds and 21,550 native frames. Eviscerator
+publishes 28 distinct COD sites, 27 fully revealed in the native UI buffer;
+Outrageor publishes 32, 31 fully revealed. Terminal sites 5471 and 7886 have
+no draw. These counts include control text, not only spoken sentences.
+
+Outrageor's nuclear reaction writes the item's holder back to aboard at COD
+6712. The native inventory menu reopens. A new `inventory_cancel` choice binds
+the same source menu but names neither an item nor a dictionary word. It
+requests the chooser's existing final row and retains native hand animation,
+Closing/Closed states, and script completion. The exporter cannot use it when
+the native chooser has no cancel row. The trace verifier checks visible cancel
+glyphs, matching menu/recipient, native closure, and aboard ownership of every
+offered item through closure; the coverage ledger recomputes that evidence.
+The flat planner adds cancellation when a reaction writes a known inventory
+holder back to the aboard sentinel, still subject to native capture verification.
+
+In the nuclear pilot, the item is offered at 23.512 seconds, transferred at
+23.966, and returned before the reopened menu at 27.980. Cancellation enters
+Closing at 28.048 and Closed at 28.366, retaining the nuclear item aboard.
+The original executable's 11 inventory-chooser cases and four call-order cases
+still match the checked-in vectors. This is not a complete original-executable
+conversation comparison.
+
+The Eviscerator batch uses the archived `dialogue-bbb-nuclear-v1` exporter.
+Outrageor uses `dialogue-bbb-inventory-cancel-v1/bin/offline-presentation`.
+Three captures under `dialogue-bbb-inventory-cancel-regression` preserve the
+previous RGBA, PCM, endpoint, timing, and complete runner records for CB Bob's
+black-hole topic, Cyberquizz's technology gift, and Eviscerator's nuclear gift.
+Encoded samples show Eviscerator's guitar response, Outrageor's nuclear response,
+and the returned-item CANCEL row. Not every encoded frame was visually audited.
+
+The separate SCRIPT6 probes in `dialogue-bbb-mutant-inventory-pilot-v1` failed:
+Emasculator's actor-only story procedure reaches a name/no question before the
+gift menu; Rotator's first-visit story ends before gift selection. Each has 20
+flat candidates and three deferred nested reactions, but none is counted as
+verified gift coverage. Their extra story-entry requirements remain unresolved;
+the probes do not justify bypassing those procedures or calling the reactions
+unreachable.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -826,7 +883,9 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-bbb-paul-inventory-v1/mega-paul \
   --batch output/anthology/dialogue-bbb-paul-inventory-v1/sebasto-paul \
   --batch output/anthology/dialogue-bbb-paul-inventory-v1/inter-paul \
-  --out output/anthology/dialogue-coverage-bbb-paul-inventory.json
+  --batch output/anthology/dialogue-bbb-mutant-inventory-v1/eviscerator \
+  --batch output/anthology/dialogue-bbb-mutant-inventory-v2/outrageor \
+  --out output/anthology/dialogue-coverage-bbb-mutant-inventory.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -835,10 +894,10 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 211 verified chapters, CB has 261 sites fully revealed in the native
+Across the 257 verified chapters, CB has 261 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,268 uncovered. BBB has 332 fully revealed, 31 published without
-a UI draw, and 6,558 uncovered. Native UI-buffer evidence alone does not prove
+branches, and 5,268 uncovered. BBB has 390 fully revealed, 33 published without
+a UI draw, and 6,498 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
 anthology is complete; remaining profile branches, most CB BAS, state-dependent

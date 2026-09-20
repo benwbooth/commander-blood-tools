@@ -3867,6 +3867,13 @@ impl<'window> ModernGameServices<'window> {
             .request_choice(choice)
     }
 
+    pub(super) fn request_inventory_cancel(&mut self) -> Result<()> {
+        self.presentation_word_choice
+            .as_mut()
+            .context("dialogue choice owner is already being updated")?
+            .request_inventory_cancel()
+    }
+
     /// Publish a completed word choice to BloodScript and refresh lifecycle gates.
     pub fn complete_word_choice(
         &mut self,

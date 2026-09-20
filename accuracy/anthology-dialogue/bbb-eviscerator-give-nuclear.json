@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Eviscerator: give nuclear",
+  "initial_profile": 4,
+  "cod_sha256": "a8ce270582494af8fe1e18eb54b3770488cac5f30e3c9b9623ed77c0861941de",
+  "dic_sha256": "fedc541c17afc78853b160508ef3b54622ad3d1c9f3397f67d1c8433c51062d3",
+  "target": "Eviscerator",
+  "entry": "travel",
+  "travel_setup": {
+    "planet": "Cyberock",
+    "destination": "Cyberland",
+    "procedure_offset": 4414,
+    "stage_actor_at_destination": true,
+    "stage_aboard_inventory": [
+      7640
+    ]
+  },
+  "choices": [
+    {
+      "source": "inventory",
+      "text_site": 5431,
+      "inventory_item": 7640
+    }
+  ],
+  "required_cod_sites": [
+    4434,
+    5431
+  ],
+  "required_frame_boundary_cod_sites": [
+    4434,
+    5431
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

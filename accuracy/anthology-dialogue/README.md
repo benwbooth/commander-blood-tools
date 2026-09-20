@@ -16,8 +16,8 @@ Tequila cryobox outburst/ghost branches; later-profile concert reactions, Bug
 Deluxe's future/farewell conversations, and Cyberquizz's first/second visits and
 Christmas greeting; Cyberquizz/Bioquizz travel greetings; and inventory gifts
 to both quizzers; and prepared gift visits for Mega Paul, Sebasto Paul, and
-Inter Paul. There are 49 checked-in plans, including the currently failing
-Bug Deluxe travel probe. These
+Inter Paul; and Eviscerator/Outrageor nuclear gifts. There are 51 checked-in
+plans, including the currently failing Bug Deluxe travel probe. These
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
 environments. The static BAS and inventory planners also produce candidate plan
 sets from the hashed catalog without running the game.
@@ -226,6 +226,28 @@ three terminal sites without a UI draw. Their assembled movies and the visit
 movie passed full decoded RGBA, PCM, timestamp, and chapter checks. The separate
 graph-derived Mega Paul guitar regression preserves the original template's
 pixels, PCM, endpoint, and runner behavior, and is excluded from new coverage.
+
+SCRIPT5's Eviscerator and Outrageor gift plans explicitly stage the actor at
+Cyberland. Their generated flat plan sets each contain 23 item branches.
+All 46 captures and both assembled movies passed decoded RGBA, PCM, timestamp,
+and chapter checks, totaling 1,431.168 seconds and 21,550 native frames.
+They publish 60 distinct COD sites: 58 fully reveal in the native UI buffer;
+terminal sites 5471 and 7886 have no draw.
+Outrageor returns the nuclear item aboard, reopening the inventory menu.
+`source: inventory_cancel` selects that menu's native final row without naming
+an item or dictionary word. It must match the source menu and a live cancel
+row, then uses the existing hand animation, chooser closure, and script
+completion. It does not force presentation closure or remove the returned item.
+The verifier requires visible cancel-row glyph evidence, native Closing/Closed
+states, and unchanged aboard ownership through closure. The planner adds this
+choice only when the flat reaction writes a known inventory holder back to
+the aboard sentinel; capture must still prove the menu actually reopens.
+
+The generated SCRIPT6 Emasculator/Rotator probes are not checked-in fixtures
+or verified coverage. Their actor-only story procedures run before gifts:
+Emasculator reaches an unplanned name/no question, while Rotator ends the visit
+before item selection. The retained failed probes document those entry gaps;
+they are not evidence that their planned item reactions are unreachable.
 
 Bronko's SCRIPT2 energy fixture uses Moskito's `usine` destination and procedure
 23683. The seven generated topic captures publish 21 BAS sites and three COD

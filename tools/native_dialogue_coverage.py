@@ -134,6 +134,8 @@ def build(catalog, batches, output):
                     evidence["expected_unpublished_cod_sites"], "chapter absent-site evidence differs")
             require(chapter.get("inventory_transfers", []) == evidence.get("inventory_transfers", []),
                     "chapter inventory transfer evidence differs")
+            require(chapter.get("inventory_cancellations", []) == evidence.get("inventory_cancellations", []),
+                    "chapter inventory cancellation evidence differs")
             capture = len(captures)
             add_chapter(plan, chapter, profiles, sites, capture)
             captures.append(dict(title=record["name"], path=str(path),

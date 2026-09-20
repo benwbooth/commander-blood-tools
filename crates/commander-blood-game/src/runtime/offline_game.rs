@@ -124,6 +124,7 @@ pub(super) enum OfflineDialogueChoiceSource {
     Bas,
     BasMenu,
     Inventory,
+    InventoryCancel,
 }
 
 impl OfflineDialogueChoiceSource {
@@ -304,20 +305,30 @@ pub(super) fn validate_dialogue_chapter(
         );
     }
     for choice in &chapter.choices {
-        if matches!(choice.source, OfflineDialogueChoiceSource::Inventory) {
+        if matches!(
+            choice.source,
+            OfflineDialogueChoiceSource::Inventory | OfflineDialogueChoiceSource::InventoryCancel
+        ) {
             ensure!(
                 chapter.game == crate::game::GameVariant::BigBugBang
                     && choice.word_offset.is_none(),
                 "inventory selection requires BBB and cannot name a dictionary word"
             );
-            let item = choice
-                .inventory_item
-                .as_ref()
-                .context("inventory choice needs an item")?;
-            super::contact_scenario::validate_aboard_inventory(
-                profile,
-                std::slice::from_ref(item),
-            )?;
+            if matches!(choice.source, OfflineDialogueChoiceSource::Inventory) {
+                let item = choice
+                    .inventory_item
+                    .as_ref()
+                    .context("inventory choice needs an item")?;
+                super::contact_scenario::validate_aboard_inventory(
+                    profile,
+                    std::slice::from_ref(item),
+                )?;
+            } else {
+                ensure!(
+                    choice.inventory_item.is_none(),
+                    "inventory cancellation cannot name an item"
+                );
+            }
             let Some(DecodedScriptInstruction::Text(text)) =
                 profile.instruction_at(ScriptCodeOffset::new(choice.text_site))
             else {
@@ -385,7 +396,10 @@ pub(super) fn validate_dialogue_chapter(
                 );
                 continue;
             }
-            OfflineDialogueChoiceSource::Inventory => unreachable!("inventory handled above"),
+            OfflineDialogueChoiceSource::Inventory
+            | OfflineDialogueChoiceSource::InventoryCancel => {
+                unreachable!("inventory handled above")
+            }
         };
         ensure!(
             text.words
@@ -803,7 +817,8 @@ pub(super) fn capture_dialogue_chapter(
                             .selector_state()
                             .current_branch()
                             .map(|branch| branch.body),
-                        OfflineDialogueChoiceSource::Inventory => profile
+                        OfflineDialogueChoiceSource::Inventory
+                        | OfflineDialogueChoiceSource::InventoryCancel => profile
                             .selector_state()
                             .inventory()
                             .saved_line()
@@ -816,23 +831,30 @@ pub(super) fn capture_dialogue_chapter(
                         expected.text_site,
                         source_site
                     );
-                    let identity =
-                        if matches!(expected.source, OfflineDialogueChoiceSource::Inventory) {
-                            let item = super::contact_scenario::validate_aboard_inventory(
-                                profile,
-                                std::slice::from_ref(expected.inventory_item.as_ref().unwrap()),
-                            )?[0]
-                                .object()
-                                .context("validated inventory item disappeared")?;
-                            crate::native::bloodprg::PresentationChoiceId::Inventory(item)
-                        } else {
-                            let word = profile
-                                .dictionary()
-                                .resolve_source_offset(expected.word_offset.unwrap())
-                                .context("validated choice word disappeared")?;
-                            crate::native::bloodprg::PresentationChoiceId::Dictionary(word)
-                        };
-                    host.services_mut().request_dialogue_choice(identity)?;
+                    if matches!(
+                        expected.source,
+                        OfflineDialogueChoiceSource::InventoryCancel
+                    ) {
+                        host.services_mut().request_inventory_cancel()?;
+                    } else {
+                        let identity =
+                            if matches!(expected.source, OfflineDialogueChoiceSource::Inventory) {
+                                let item = super::contact_scenario::validate_aboard_inventory(
+                                    profile,
+                                    std::slice::from_ref(expected.inventory_item.as_ref().unwrap()),
+                                )?[0]
+                                    .object()
+                                    .context("validated inventory item disappeared")?;
+                                crate::native::bloodprg::PresentationChoiceId::Inventory(item)
+                            } else {
+                                let word = profile
+                                    .dictionary()
+                                    .resolve_source_offset(expected.word_offset.unwrap())
+                                    .context("validated choice word disappeared")?;
+                                crate::native::bloodprg::PresentationChoiceId::Dictionary(word)
+                            };
+                        host.services_mut().request_dialogue_choice(identity)?;
+                    }
                     let mut selected = serde_json::to_value(expected)?;
                     selected["requested_at_ns"] = serde_json::json!(
                         host.platform().elapsed_ns - host.platform().capture_origin_ns

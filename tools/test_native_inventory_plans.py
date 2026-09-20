@@ -48,6 +48,18 @@ class InventoryPlanTests(unittest.TestCase):
         self.assertEqual(plans[0][1]["title"], "Cyberquizz: give treaty")
         self.assertEqual(plans[0][1]["choices"][0]["inventory_item"], 7352)
 
+    def test_returned_inventory_requires_a_later_native_cancel(self):
+        operation = dict(opcode=0xAF, record_offset=7352 + 20, value=65535, inverted=False)
+        self.graph["cod"]["instructions"].insert(-1, instruction(120, "RecordWildcard", **operation))
+        plans, _ = self.plan()
+        self.assertEqual(plans[0][1]["choices"][1], dict(source="inventory_cancel", text_site=400))
+        record = self.graph["cod"]["instructions"][-2]["instruction"]["RecordWildcard"]
+        for key, value in [("record_offset", 1000), ("value", 1776), ("inverted", True), ("opcode", 0xAD)]:
+            previous = record[key]
+            record[key] = value
+            self.assertEqual(len(self.plan()[0][0][1]["choices"]), 1)
+            record[key] = previous
+
     def test_compound_and_nested_guards_are_deferred(self):
         original = copy.deepcopy(self.graph)
         for row in [instruction(104, "SharedState"), instruction(120, "GuardPush", target=140)]:

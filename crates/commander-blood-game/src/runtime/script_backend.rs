@@ -1661,6 +1661,19 @@ mod tests {
                             validate_dialogue_chapter(&invalid, profile).is_err(),
                             "Cyberquizz cannot use Bioquizz's inventory line"
                         );
+                    } else if matches!(
+                        choice.source,
+                        super::super::offline_game::OfflineDialogueChoiceSource::InventoryCancel
+                    ) {
+                        invalid = plan.clone();
+                        invalid.choices[index].word_offset = Some(0);
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                        invalid = plan.clone();
+                        invalid.choices[index].inventory_item = Some(7640);
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                        invalid = plan.clone();
+                        invalid.choices[index].text_site = plan.required_cod_sites[0];
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
                     } else {
                         invalid = plan.clone();
                         invalid.choices[index].word_offset = None;

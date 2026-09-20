@@ -21,13 +21,19 @@ const COLLAPSED_CHOICE_LIST_WIDTH: u16 = u16::MIN;
 const COLLAPSED_CHOICE_LIST_HEIGHT: u16 = u16::MIN;
 const CHOICE_LIST_SELECTION_SOUND_CLIP: u8 = u8::MIN;
 
+#[derive(Clone, Copy)]
+enum RequestedChoice {
+    Item(PresentationChoiceId),
+    InventoryCancel,
+}
+
 /// Persistent dialogue-choice state and its recovered rectangle interpolator.
 #[derive(Default)]
 pub struct RuntimePresentationWordChoice {
     state: PresentationWordChoiceState,
     transition: FramebufferTransitionState,
     last_frame: Option<crate::native::bloodprg::ChoiceListFrame>,
-    requested_choice: Option<PresentationChoiceId>,
+    requested_choice: Option<RequestedChoice>,
 }
 
 impl RuntimePresentationWordChoice {
@@ -49,6 +55,14 @@ impl RuntimePresentationWordChoice {
     }
 
     pub(super) fn request_choice(&mut self, choice: PresentationChoiceId) -> Result<()> {
+        self.request_selection(RequestedChoice::Item(choice))
+    }
+
+    pub(super) fn request_inventory_cancel(&mut self) -> Result<()> {
+        self.request_selection(RequestedChoice::InventoryCancel)
+    }
+
+    fn request_selection(&mut self, requested: RequestedChoice) -> Result<()> {
         ensure!(
             self.state.active && self.state.phase == PresentationWordChoicePhase::Selecting,
             "dialogue choice panel is not accepting a selection"
@@ -57,14 +71,20 @@ impl RuntimePresentationWordChoice {
             self.requested_choice.is_none(),
             "a semantic choice is already pending"
         );
-        ensure!(
-            self.state
-                .choices
-                .iter()
-                .any(|item| item.identity == choice),
-            "requested concept is not in the native choice list"
-        );
-        self.requested_choice = Some(choice);
+        match requested {
+            RequestedChoice::Item(choice) => ensure!(
+                self.state
+                    .choices
+                    .iter()
+                    .any(|item| item.identity == choice),
+                "requested concept is not in the native choice list"
+            ),
+            RequestedChoice::InventoryCancel => ensure!(
+                self.state.inventory_cancel_label.is_some() && !self.state.choices.is_empty(),
+                "native choice list has no inventory cancel row"
+            ),
+        }
+        self.requested_choice = Some(requested);
         Ok(())
     }
 
@@ -96,12 +116,20 @@ impl RuntimePresentationWordChoice {
         let current_hand_animation = services.manu3_hand_state().current_animation;
         let selected_row = self
             .requested_choice
-            .map(|requested| {
-                self.state
+            .map(|requested| match requested {
+                RequestedChoice::Item(choice) => self
+                    .state
                     .choices
                     .iter()
-                    .position(|choice| choice.identity == requested)
-                    .context("requested dialogue choice disappeared")
+                    .position(|item| item.identity == choice)
+                    .context("requested dialogue choice disappeared"),
+                RequestedChoice::InventoryCancel => {
+                    ensure!(
+                        self.state.inventory_cancel_label.is_some(),
+                        "inventory cancel row disappeared"
+                    );
+                    Ok(self.state.choices.len())
+                }
             })
             .transpose()?;
         let mut backend = RuntimeWordChoiceBackend {
@@ -412,6 +440,39 @@ mod tests {
         );
         choice.reset();
         assert!(choice.requested_choice.is_none());
+    }
+
+    #[test]
+    fn semantic_cancel_requires_a_live_cancel_row_and_preserves_pending_input() {
+        let dictionary = decode_script_dictionary(b"ITEM\0").unwrap();
+        let word = dictionary.resolve_source_offset(0).unwrap();
+        let mut choice = RuntimePresentationWordChoice::default();
+        assert!(choice.request_inventory_cancel().is_err());
+        choice.state.active = true;
+        choice.state.phase = PresentationWordChoicePhase::Selecting;
+        choice.state.choices = vec![PresentationWordChoice::new(word, b"ITEM".as_slice())];
+        assert!(choice.request_inventory_cancel().is_err());
+        choice.state.inventory_cancel_label = Some(b"CANCEL".as_slice().into());
+        choice.request_inventory_cancel().unwrap();
+        assert!(matches!(
+            choice.requested_choice,
+            Some(RequestedChoice::InventoryCancel)
+        ));
+        assert!(choice.request_inventory_cancel().is_err());
+        assert!(
+            choice
+                .request_choice(PresentationChoiceId::Dictionary(word))
+                .is_err()
+        );
+        choice.reset();
+        assert!(choice.requested_choice.is_none());
+        choice.state.active = true;
+        choice.state.phase = PresentationWordChoicePhase::Selecting;
+        choice.state.inventory_cancel_label = Some(b"CANCEL".as_slice().into());
+        assert!(
+            choice.request_inventory_cancel().is_err(),
+            "empty inventory never opens its chooser"
+        );
     }
 
     #[test]

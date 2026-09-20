@@ -52,6 +52,10 @@ def validate_trace(plan, runner, states, rows):
     inventory_evidence = [dict(item=choice["inventory_item"], text_site=choice["text_site"],
                                offered_at_ns=None, transferred_at_ns=None)
                           for choice in inventory_requests]
+    cancel_requests = [dict(choice, offer_frame_ns=frame_starts[choice["requested_at_ns"]])
+                       for choice in runner["choices"] if choice.get("source") == "inventory_cancel"]
+    cancel_evidence = [dict(text_site=choice["text_site"], offered_at_ns=None, closing_at_ns=None,
+                            closed_at_ns=None, retained_items=[]) for choice in cancel_requests]
     if plan["end"]["kind"] == "profile_loaded":
         require(runner["final_profile"] == plan["end"]["profile"], "wrong final profile")
     if plan["initial_profile"] != 0:
@@ -160,6 +164,30 @@ def validate_trace(plan, runner, states, rows):
                 if (len(items) == 1 and items[0]["kind"] == "InventoryItem"
                         and items[0]["relation"] == "object" and items[0]["target_name"] == plan["target"]):
                     transfer["transferred_at_ns"] = time
+        for request, cancellation in zip(cancel_requests, cancel_evidence):
+            chooser = state["presentation"].get("retained_word_choice", {})
+            if time == request["offer_frame_ns"]:
+                offered = state["presentation"].get("inventory_choice")
+                require(offered and offered["text_site"] == request["text_site"]
+                        and offered["recipient"] == plan["target"] and offered["offered_items"]
+                        and chooser.get("phase") == "Selecting"
+                        and any(row["kind"] == "Cancel" and row.get("matching_text_pixels", 0) > 0
+                                for row in chooser.get("rows", [])),
+                        "inventory cancel was not offered by the native chooser")
+                cancellation["offered_at_ns"] = time
+                cancellation["retained_items"] = offered["offered_items"]
+            if time >= request["requested_at_ns"] and cancellation["closed_at_ns"] is None:
+                if chooser.get("phase") == "Closing" and cancellation["closing_at_ns"] is None:
+                    cancellation["closing_at_ns"] = time
+                if chooser.get("phase") == "Closed" and cancellation["closing_at_ns"] is not None:
+                    cancellation["closed_at_ns"] = time
+                if cancellation["offered_at_ns"] is not None:
+                    for offset in cancellation["retained_items"]:
+                        items = [item for item in state.get("persistent", {}).get("object_locations", [])
+                                 if item.get("source_offset") == offset]
+                        require(len(items) == 1 and items[0]["kind"] == "InventoryItem"
+                                and items[0]["relation"] == "sentinel" and items[0]["holder_raw"] == 65535,
+                                "inventory cancel did not retain the offered items aboard")
         site = state["published_cod_text_site"]
         bas_site = state.get("published_bas_text_site")
         require(site is None or bas_site is None, "ambiguous COD/BAS publication source")
@@ -199,6 +227,8 @@ def validate_trace(plan, runner, states, rows):
             "no native state for staged inventory")
     require(all(item["offered_at_ns"] is not None and item["transferred_at_ns"] is not None
                 for item in inventory_evidence), "missing native inventory offer or transfer")
+    require(all(item["offered_at_ns"] is not None and item["closed_at_ns"] is not None
+                for item in cancel_evidence), "missing native inventory cancellation")
     require(set(plan["required_frame_boundary_cod_sites"]) <= boundary,
             "missing required frame-boundary text site")
     require(set(plan.get("required_frame_boundary_bas_sites", [])) <= boundary_bas,
@@ -230,7 +260,8 @@ def validate_trace(plan, runner, states, rows):
                 published_without_full_ui_reveal=sorted(site for site in published
                     if not evidence.get(site, {}).get("fully_revealed_ui_frames")),
                 raster_evidence_scope="native UI buffer before frame presentation; not by itself proof of encoded glyph visibility",
-                **(dict(inventory_transfers=inventory_evidence) if inventory_evidence else {}))
+                **(dict(inventory_transfers=inventory_evidence) if inventory_evidence else {}),
+                **(dict(inventory_cancellations=cancel_evidence) if cancel_evidence else {}))
 
 
 def verify_chapter(path, plan, manifest, exporter_hash):
