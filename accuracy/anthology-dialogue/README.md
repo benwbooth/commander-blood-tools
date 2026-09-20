@@ -9,8 +9,9 @@ glyph-buffer evidence and lines with no full reveal.
 Current scope: CB SCRIPT1 Izwalito's game/explanations choices and Bob's mission
 yes/no choices; BBB SCRIPT1 HONK's PLAY/INSTRUCTIONS choices and Bob's recorded
 mission; BBB SCRIPT2 HONK's Daddy-in-the-cryobox conversation; CB SCRIPT2 Bob's
-black-hole BAS topic. These nine checked-in plans do not cover the other actors,
-dialogue branches, objects, travel, or environments. The static BAS planner also
+black-hole BAS topic and Bronko's energy topic through prepared travel. These ten
+checked-in plans do not cover all actors, dialogue branches, objects, travel, or
+environments. The static BAS planner also
 produces topic plan sets from the hashed catalog without running the game.
 
 ## Native Omissions
@@ -85,6 +86,25 @@ checks nested Kanary menu paths. Generated plans remain candidates: a Bronko
 SCRIPT2 contact probe ended before its planned BAS choices, so it is retained as
 a failed attempt and contributes no verified coverage. That actor's BAS menu is
 not established as reachable through that contact procedure.
+
+`entry: "travel"` instead requires `travel_setup` with an authored planet,
+destination, and COD procedure offset. Setup validates that procedure's outer D0
+travel guard and actor action record, prepares its supported entry predicates,
+and disables competing travel procedures. Equality predicates on the encounter
+counter account for the native C4 increment before the COD guard. Unsupported
+predicates are rejected. The report retains all changed save bytes and hashes.
+The normal post-HUD travel lifecycle performs arrival, automatic actor selection,
+conversation, departure, and return to the bridge. This is prepared chapter state,
+not a recorded gameplay route to the planet or proof of general reachability.
+
+Bronko's SCRIPT2 energy fixture uses Moskito's `usine` destination and procedure
+23683. The seven generated topic captures publish 21 BAS sites and three COD
+sites with full native UI-buffer reveals. Nine of the actor list's 30 BAS sites
+remain unrecorded. For a native menu that reopens after goodbye, `max_exit_retries`
+allows a bounded repetition of only the last authored BAS `bye_bye` choice (at
+most eight). Every repetition must still match the current source menu and
+offered word; the exporter never forces presentation closure. The buy and war
+chapters each needed one repetition, retained in their choice traces.
 
 `expected_unpublished_cod_sites` asserts absence on a selected branch, not global
 unreachability. The CB Bob chapters preserve the observed `AARCHE10`, `AARCHE30`,

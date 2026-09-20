@@ -1550,6 +1550,27 @@ mod tests {
                     invalid.contact_procedure = Some(usize::MAX);
                     assert!(validate_dialogue_chapter(&invalid, profile).is_err());
                 }
+                if plan.travel_setup.is_some() {
+                    invalid = plan.clone();
+                    invalid.travel_setup = None;
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.travel_setup.as_mut().unwrap().procedure_offset = usize::MAX;
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.target = "Bob_Morlock".to_owned();
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.travel_setup.as_mut().unwrap().destination =
+                        "not_a_location".to_owned();
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.max_exit_retries = 9;
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.choices.pop();
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                }
                 invalid = plan.clone();
                 invalid.required_cod_sites.push(usize::MAX);
                 assert!(validate_dialogue_chapter(&invalid, profile).is_err());
@@ -1565,6 +1586,39 @@ mod tests {
                     invalid = plan.clone();
                     invalid.choices[0].text_site = plan.required_cod_sites[0];
                     assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                }
+                if let Some(setup) = &plan.travel_setup {
+                    let profile = runtime.current_profile_mut().unwrap();
+                    super::super::contact_scenario::prepare_travel_for_chapter(
+                        profile,
+                        setup.procedure_offset,
+                        &plan.target,
+                    )
+                    .unwrap();
+                    validate_dialogue_chapter(&plan, profile).unwrap();
+                    if plan.game == crate::game::GameVariant::CommanderBlood
+                        && plan.initial_profile == 1
+                        && plan.target == "Bronko"
+                    {
+                        super::super::contact_scenario::prepare_travel_for_chapter(
+                            profile, 22371, "Bronko",
+                        )
+                        .unwrap();
+                        let bronko = profile.directory().find_active_object(b"Bronko").unwrap();
+                        let kind = profile.state().object(bronko).unwrap().kind;
+                        let offset = crate::native::bloodprg::script_field_offset(
+                            kind,
+                            ScriptFieldSelector::ENCOUNTER_COUNT,
+                        )
+                        .unwrap();
+                        let counter = profile.state().object_word(bronko, offset / 2).unwrap();
+                        assert_eq!(
+                            profile.state().word(counter),
+                            Some(0),
+                            "C4 must increment the prepared counter to the authored first visit"
+                        );
+                        validate_dialogue_chapter(&plan, profile).unwrap();
+                    }
                 }
             }
             assert!(tested > 0);

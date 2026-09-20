@@ -47,7 +47,11 @@ pub(super) struct OfflineDialogueChapter {
     pub entry: OfflineDialogueEntry,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub contact_procedure: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub travel_setup: Option<OfflineTravelSetup>,
     pub choices: Vec<OfflineDialogueChoice>,
+    #[serde(default, skip_serializing_if = "no_exit_retries")]
+    pub max_exit_retries: u8,
     pub required_cod_sites: Vec<usize>,
     pub required_frame_boundary_cod_sites: Vec<usize>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -59,12 +63,25 @@ pub(super) struct OfflineDialogueChapter {
     pub end: OfflineDialogueEnd,
 }
 
+fn no_exit_retries(value: &u8) -> bool {
+    *value == 0
+}
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub(super) enum OfflineDialogueEntry {
     #[default]
     Radio,
     Contact,
+    Travel,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct OfflineTravelSetup {
+    pub planet: String,
+    pub destination: String,
+    pub procedure_offset: usize,
 }
 
 impl OfflineDialogueEntry {
@@ -123,10 +140,30 @@ pub(super) fn validate_dialogue_chapter(
     );
     if let Some(procedure) = chapter.contact_procedure {
         ensure!(
-            !chapter.entry.is_radio(),
+            matches!(chapter.entry, OfflineDialogueEntry::Contact),
             "contact preparation requires contact entry"
         );
         super::contact_scenario::validate_contact_chapter(profile, procedure, &chapter.target)?;
+    }
+    ensure!(
+        matches!(chapter.entry, OfflineDialogueEntry::Travel) == chapter.travel_setup.is_some(),
+        "travel entry requires travel setup, and other entries must not contain it"
+    );
+    if let Some(setup) = &chapter.travel_setup {
+        super::contact_scenario::validate_travel_chapter(
+            profile,
+            setup.procedure_offset,
+            &chapter.target,
+        )?;
+        for name in [&setup.planet, &setup.destination] {
+            ensure!(
+                profile
+                    .directory()
+                    .find_active_object(name.as_bytes())
+                    .is_some(),
+                "travel setup references an unknown destination"
+            );
+        }
     }
     let uses_bas = !chapter.required_bas_sites.is_empty()
         || chapter.choices.iter().any(|choice| !choice.source.is_cod());
@@ -240,6 +277,29 @@ pub(super) fn validate_dialogue_chapter(
                 .any(|value| *value == ScriptTextWord::Dictionary(word)),
             "requested word is not an authored choice at {:#x}",
             choice.text_site
+        );
+    }
+    ensure!(
+        chapter.max_exit_retries <= 8,
+        "too many authored exit retries"
+    );
+    if chapter.max_exit_retries > 0 {
+        let exit = chapter
+            .choices
+            .last()
+            .context("exit retries need a final choice")?;
+        let word = profile
+            .dictionary()
+            .resolve_source_offset(exit.word_offset)
+            .unwrap();
+        ensure!(
+            matches!(exit.source, OfflineDialogueChoiceSource::BasMenu)
+                && profile
+                    .dictionary()
+                    .word(word)
+                    .unwrap()
+                    .eq_ignore_ascii_case(b"bye_bye"),
+            "only the authored BAS bye_bye menu choice may be retried"
         );
     }
     Ok(())
@@ -398,6 +458,44 @@ pub(super) fn capture_dialogue_chapter(
         } else {
             None
         };
+        let travel_preparation = if let Some(setup) = &chapter.travel_setup {
+            let before = crate::native::bloodprg::OriginalSaveGame::capture(
+                host.services().runtime().current_profile().unwrap(),
+            )?
+            .encode();
+            host.services_mut()
+                .teleport_arche_to_navigation_target(setup.planet.as_bytes())?;
+            let profile = host
+                .services_mut()
+                .runtime_mut()
+                .current_profile_mut()
+                .unwrap();
+            // The teleport writes VAR directly; refresh typed relations before guard preparation.
+            profile.replace_state(profile.state().clone())?;
+            super::contact_scenario::prepare_travel_for_chapter(
+                profile,
+                setup.procedure_offset,
+                &chapter.target,
+            )?;
+            let after = crate::native::bloodprg::OriginalSaveGame::capture(profile)?.encode();
+            ensure!(
+                before.len() == after.len(),
+                "travel setup changed the save layout"
+            );
+            let changes = before.iter().zip(&after).enumerate()
+                .filter(|(_, (old, new))| old != new)
+                .map(|(offset, (old, new))| serde_json::json!({"offset": offset, "before": old, "after": new}))
+                .collect::<Vec<_>>();
+            Some(serde_json::json!({
+                "setup": setup,
+                "before_save_sha256": format!("{:x}", Sha256::digest(&before)),
+                "after_save_sha256": format!("{:x}", Sha256::digest(&after)),
+                "save_byte_changes": changes,
+                "scope": "authored outer travel guard and planet position; post-HUD chapter entry, not a gameplay route",
+            }))
+        } else {
+            None
+        };
         if host.services().pending_ship_presentation_owner() == Some(target) {
             host.services_mut().clear_pending_ship_presentation_owner();
         }
@@ -410,6 +508,20 @@ pub(super) fn capture_dialogue_chapter(
             OfflineDialogueEntry::Contact => {
                 host.services_mut().request_scene_transition(target)?;
                 "typed CONTACTS scene transition"
+            }
+            OfflineDialogueEntry::Travel => {
+                let setup = chapter.travel_setup.as_ref().unwrap();
+                let destination = host
+                    .services()
+                    .runtime()
+                    .current_profile()
+                    .unwrap()
+                    .directory()
+                    .find_active_object(setup.destination.as_bytes())
+                    .unwrap();
+                host.services_mut()
+                    .begin_chapter_travel(destination, &mut lifecycle)?;
+                "native post-HUD travel presentation and automatic actor selection"
             }
         };
         host.services_mut()
@@ -465,6 +577,12 @@ pub(super) fn capture_dialogue_chapter(
                     let expected = chapter
                         .choices
                         .get(choices.len())
+                        .or_else(|| {
+                            (choices.len()
+                                < chapter.choices.len() + usize::from(chapter.max_exit_retries))
+                            .then(|| chapter.choices.last())
+                            .flatten()
+                        })
                         .context("unplanned native dialogue choice")?;
                     let source_site = match expected.source {
                         OfflineDialogueChoiceSource::Cod => host.services().published_text_site(),
@@ -495,19 +613,24 @@ pub(super) fn capture_dialogue_chapter(
                     choices.push(selected);
                 }
             }
-            let contact_closed = chapter.entry.is_radio()
+            let contact_closed = !matches!(chapter.entry, OfflineDialogueEntry::Contact)
                 || (host.services().runtime_scene_transition()?.state().phase
                     == crate::native::bloodprg::SceneTransitionPhase::Inactive
                     && !lifecycle.navigation_rebuild_pending);
+            let travel_closed = !matches!(chapter.entry, OfflineDialogueEntry::Travel)
+                || (host.services().ship_presentation_state().flags == 0
+                    && !lifecycle.presentation.sequence_active
+                    && !lifecycle.navigation_rebuild_pending);
             let completed = saw_target
                 && contact_closed
+                && travel_closed
                 && match chapter.end {
                     OfflineDialogueEnd::PresentationFinished => !lifecycle.presentation.active,
                     OfflineDialogueEnd::ProfileLoaded { profile } => current_profile == profile,
                 };
             if completed {
                 ensure!(
-                    choices.len() == chapter.choices.len(),
+                    choices.len() >= chapter.choices.len(),
                     "dialogue ended before all planned choices"
                 );
                 ensure!(
@@ -558,6 +681,8 @@ pub(super) fn capture_dialogue_chapter(
                         "profile_selected_at_ns": profile_selection,
                         "contact_transition_closed": contact_closed,
                         "contact_preparation": contact_preparation,
+                        "travel_preparation": travel_preparation,
+                        "travel_transition_closed": travel_closed,
                         "removed_sequence_slots": removed_sequences.as_slice(),
                         "published_cod_sites": observed_sites, "frame_boundary_cod_sites": frame_sites,
                         "published_bas_sites": observed_bas_sites, "frame_boundary_bas_sites": frame_bas_sites,

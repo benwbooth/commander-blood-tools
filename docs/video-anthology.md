@@ -256,6 +256,10 @@ v1/v2 logo and credits captures used lossless FFV1; the timestamped RGB encoder
 was verified against the same decoded pixel stream. The final
 GPU flip has zero duration at the capture endpoint; `endpoint.rgba` retains it
 without inventing a hold. No audio resampling, padding, or trimming is performed.
+Muxing assigns packet durations from the native timestamps and final wait;
+WebM SimpleBlocks otherwise let FFmpeg infer a frame duration that can extend a
+46 ms final wait to 68 ms. Both chapter export and assembly preserve the exact
+endpoint, with decoded regression checks for variable and single-frame timelines.
 
 Every imported source hash is checked before and after export. Full decoding of
 the saved master must reproduce every captured pixel and audio sample exactly;
@@ -466,6 +470,44 @@ including a nested cottage-topic reply; this is not inspection of every line.
 Fourteen of this actor list's 53 BAS sites remain unrecorded. A separate Bronko
 contact probe ended before its planned choices and is not counted as coverage.
 
+### Prepared Travel Topics
+
+```sh
+uv run tools/native_bas_plans.py \
+  --catalog output/anthology/static-dialogue-en-v2 \
+  --profile 2 --procedure 23683 \
+  --travel-planet Moskito --travel-destination usine \
+  --out output/anthology/bas-plans/cb-bronko-travel-script2-v2
+nix develop -c uv run tools/native_dialogue_anthology.py render \
+  --assets "$HOME/.local/share/commander-blood/assets-v1" \
+  --plan-set output/anthology/bas-plans/cb-bronko-travel-script2-v2/planning.json \
+  --exporter output/anthology/dialogue-travel-bronko-v4/bin/offline-presentation \
+  --out output/anthology/dialogue-travel-bronko-v4/cb
+nix develop -c uv run tools/native_dialogue_anthology.py assemble \
+  --batch output/anthology/dialogue-travel-bronko-v4/cb \
+  --out output/anthology/cb-bronko-bas-topics-native.mkv
+```
+
+The travel planner reads the hashed COD graph's outer travel guard rather than
+the contact manifest. Runtime setup validates the actor and supported predicates,
+records changed save bytes and hashes, then starts the native post-HUD travel
+lifecycle. Arrival, automatic actor selection, conversation, and the completed
+return to the bridge remain in each chapter. This is explicitly prepared state,
+not a continuous route or proof that prior gameplay reached those conditions.
+
+The Bronko batch verified **seven chapters, 183.094 seconds, and 2,788 native
+frames**. It targeted 17 BAS sites and published 21, plus three COD sites; all
+24 have full native UI-buffer reveal evidence. Nine of Bronko's 30 BAS sites
+remain unrecorded. Buy and war each repeat the authored goodbye once after a
+native menu reopening; the explicit bounded policy does not force closure or
+change timing. Earlier failed contact/travel attempts are not counted.
+
+The assembled video passed full decoded RGBA, PCM, timestamp, and chapter checks.
+The checked-in energy fixture independently reproduced the generated chapter's
+487 frames, pixels, PCM, and endpoint. A sampled frame from the assembled video
+was inspected for original factory artwork, font, text, and hand; this is not
+visual inspection of every line. No BBB travel chapter is claimed by this batch.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -476,7 +518,8 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-contacts-v2/cb \
   --batch output/anthology/dialogue-contacts-v3/bbb \
   --batch output/anthology/dialogue-bas-bob-v1/cb \
-  --out output/anthology/dialogue-coverage-bas-bob.json
+  --batch output/anthology/dialogue-travel-bronko-v4/cb \
+  --out output/anthology/dialogue-coverage-travel-bronko.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -485,9 +528,9 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 17 verified chapters, CB has 84 sites fully revealed in the native
+Across the 24 verified chapters, CB has 108 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,445 uncovered. BBB has 49 fully revealed, four published without
+branches, and 5,421 uncovered. BBB has 49 fully revealed, four published without
 a UI draw, and 6,868 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game

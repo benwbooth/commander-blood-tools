@@ -34,8 +34,16 @@ def validate_trace(plan, runner, states, rows):
     require(set(plan.get("required_bas_sites", [])) <= published_bas, "missing required BAS publication")
     unpublished = set(plan.get("expected_unpublished_cod_sites", []))
     require(not published & unpublished, "published a site declared absent on this branch")
-    require([{key: value for key, value in item.items() if key != "requested_at_ns"}
-             for item in runner["choices"]] == plan["choices"], "different semantic choices")
+    selected = [{key: value for key, value in item.items() if key != "requested_at_ns"}
+                for item in runner["choices"]]
+    count = len(plan["choices"])
+    retries = plan.get("max_exit_retries", 0)
+    require(not retries or (count and plan["choices"][-1].get("source") == "bas_menu"),
+            "exit retries require a final BAS menu choice")
+    require(0 <= retries <= 8 and count <= len(selected) <= count + retries
+            and selected[:count] == plan["choices"]
+            and all(choice == plan["choices"][-1] for choice in selected[count:]),
+            "different semantic choices or exceeded authored exit retry limit")
     require(all(choice["requested_at_ns"] in ends for choice in runner["choices"]),
             "choice outside native frame boundaries")
     if plan["end"]["kind"] == "profile_loaded":
@@ -50,6 +58,10 @@ def validate_trace(plan, runner, states, rows):
                 "missing prepared-contact provenance")
         require(preparation["manifest_sha256"] == digest(ROOT / "re/vm/contact-manifest/contact-manifest.json"),
                 "contact preparation manifest changed")
+    if plan.get("entry") == "travel":
+        preparation = runner.get("travel_preparation")
+        require(isinstance(preparation, dict) and preparation.get("setup") == plan["travel_setup"],
+                "missing prepared-travel provenance")
     boundary = set()
     evidence = {}
     boundary_bas = set()
@@ -118,6 +130,11 @@ def validate_trace(plan, runner, states, rows):
                 last["contact_transition"]["phase"] == "Inactive" and
                 not last["presentation"]["navigation_rebuild_pending"],
                 "contact transition did not finish")
+    if plan.get("entry") == "travel":
+        require(runner["travel_transition_closed"] and last["presentation"]["ship_flags"] == 0
+                and not last["presentation"]["text_state"]["sequence_active"]
+                and not last["presentation"]["navigation_rebuild_pending"],
+                "travel transition did not finish")
     return dict(published_cod_sites=sorted(published), state_trace_cod_sites=sorted(boundary),
                 published_bas_sites=sorted(published_bas), state_trace_bas_sites=sorted(boundary_bas),
                 bas_ui_raster_evidence={str(key): value for key, value in sorted(evidence_bas.items())},

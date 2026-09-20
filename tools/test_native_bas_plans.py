@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from native_bas_plans import plan_topics
+from native_bas_plans import plan_topics, travel_procedure
 
 
 def word(offset, text):
@@ -74,6 +74,34 @@ class BasPlanTests(unittest.TestCase):
         self.graph["bas"]["control_flow"]["lists"].append(copy.deepcopy(self.graph["bas"]["control_flow"]["lists"][0]))
         with self.assertRaisesRegex(ValueError, "one BAS selector list"):
             plan_topics(self.graph, self.contact)
+
+    def test_travel_setup_replaces_onboard_contact_preparation(self):
+        setup = dict(planet="world", destination="place", procedure_offset=90)
+        plans, _ = plan_topics(self.graph, self.contact, setup)
+        plan = plans[0][2]
+        self.assertEqual(plan["entry"], "travel")
+        self.assertEqual(plan["travel_setup"], setup)
+        self.assertNotIn("contact_procedure", plan)
+        setup["procedure_offset"] = 91
+        with self.assertRaisesRegex(ValueError, "different procedure"):
+            plan_topics(self.graph, self.contact, setup)
+
+    def test_travel_procedure_must_have_an_authored_closed_travel_guard(self):
+        self.graph["cod"]["instructions"] = [
+            dict(offset=90, procedure="entry", instruction=dict(ConditionalBlock={})),
+            dict(offset=94, procedure="entry", instruction=dict(FlagBranch=dict(opcode=0xD0))),
+            dict(offset=95, procedure="entry", instruction=dict(GuardPop={})),
+        ]
+        self.graph["cod"]["text_sites"][0].update(procedure="entry", record_name="Bob")
+        self.assertEqual(travel_procedure(self.graph, 90), self.contact)
+        self.graph["cod"]["instructions"][1]["instruction"]["FlagBranch"]["opcode"] = 0xD1
+        with self.assertRaisesRegex(ValueError, "no authored travel guard"):
+            travel_procedure(self.graph, 90)
+        self.graph["cod"]["instructions"].pop()
+        with self.assertRaisesRegex(ValueError, "no closed entry guard"):
+            travel_procedure(self.graph, 90)
+        with self.assertRaisesRegex(ValueError, "not an authored procedure entry"):
+            travel_procedure(self.graph, 91)
 
 
 if __name__ == "__main__":

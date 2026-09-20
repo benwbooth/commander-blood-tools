@@ -105,6 +105,20 @@ class DialogueTraceTests(unittest.TestCase):
         self.runner["choices"][0]["source"] = "bas_menu"
         self.verify()
 
+    def test_only_the_planned_final_choice_can_be_retried_within_the_bound(self):
+        self.plan["max_exit_retries"] = 1
+        self.plan["choices"][-1]["source"] = "bas_menu"
+        self.runner["choices"][-1]["source"] = "bas_menu"
+        self.runner["choices"].append(copy.deepcopy(self.runner["choices"][-1]))
+        self.verify()
+        self.runner["choices"][-1]["word_offset"] = 5
+        with self.assertRaisesRegex(ValueError, "different semantic choices"):
+            self.verify()
+        self.runner["choices"][-1]["word_offset"] = 4
+        self.runner["choices"].append(copy.deepcopy(self.runner["choices"][-1]))
+        with self.assertRaisesRegex(ValueError, "retry limit"):
+            self.verify()
+
     def test_other_profile_site_does_not_satisfy_requirement(self):
         self.runner["publications"][1]["publication"]["profile"] = 1
         with self.assertRaisesRegex(ValueError, "publication accounting"):
@@ -177,6 +191,25 @@ class DialogueTraceTests(unittest.TestCase):
         self.states[-1]["state"]["video"]["active_resource"] = "sq/second.hnm"
         self.assertEqual([row["resource"] for row in self.verify()["observed_sequence_resources"]],
                          ["SQ/FIRST.HNM", "SQ/SECOND.HNM"])
+
+    def test_travel_requires_setup_provenance_and_native_return_to_bridge(self):
+        self.plan["entry"] = "travel"
+        self.plan["travel_setup"] = dict(planet="Moskito", destination="usine", procedure_offset=90)
+        with self.assertRaisesRegex(ValueError, "prepared-travel provenance"):
+            self.verify()
+        self.runner["travel_preparation"] = dict(setup=self.plan["travel_setup"])
+        self.runner["travel_transition_closed"] = True
+        presentation = self.states[0]["state"]["presentation"]
+        presentation["ship_flags"] = 17
+        presentation["navigation_rebuild_pending"] = False
+        presentation["text_state"]["sequence_active"] = False
+        with self.assertRaisesRegex(ValueError, "travel transition did not finish"):
+            self.verify()
+        presentation["ship_flags"] = 0
+        self.verify()
+        presentation["text_state"]["sequence_active"] = True
+        with self.assertRaisesRegex(ValueError, "travel transition did not finish"):
+            self.verify()
 
 
 if __name__ == "__main__":

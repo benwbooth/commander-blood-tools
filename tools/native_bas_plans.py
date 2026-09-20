@@ -18,7 +18,28 @@ def choice(menu, word):
     return dict(source="bas_menu", text_site=menu["menu_offset"], word_offset=word)
 
 
-def plan_topics(graph, contact):
+def travel_procedure(graph, offset):
+    instructions = graph["cod"]["instructions"]
+    entry = next((row for row in instructions if row["offset"] == offset), None)
+    require(entry is not None and "ConditionalBlock" in entry["instruction"],
+            "travel procedure is not an authored procedure entry")
+    rows = [row for row in instructions if row["procedure"] == entry["procedure"]]
+    guard = []
+    for row in rows[1:]:
+        if "GuardPop" in row["instruction"]:
+            break
+        guard.append(row["instruction"])
+    else:
+        raise ValueError("travel procedure has no closed entry guard")
+    require(any(row.get("FlagBranch", {}).get("opcode") == 0xD0 for row in guard),
+            "procedure has no authored travel guard")
+    sites = [site for site in graph["cod"]["text_sites"] if site["procedure"] == entry["procedure"]]
+    require(sites and sites[0]["record_name"], "travel procedure has no named first text owner")
+    return dict(script=graph["profile"].upper(), procedure_offset=offset,
+                contact_object=sites[0]["record_name"], texts=[dict(opcode_offset=sites[0]["offset"])])
+
+
+def plan_topics(graph, contact, travel_setup=None):
     require(graph["game"] == "cb" and graph["profile"].upper() == contact["script"],
             "contact and static graph belong to different profiles")
     require(graph["resources"].get("bas_sha256"), "static catalog has no BAS source hash")
@@ -78,6 +99,13 @@ def plan_topics(graph, contact):
                         required_bas_sites=[site["offset"] for site in matched],
                         required_frame_boundary_bas_sites=[site["offset"] for site in matched],
                         end=dict(kind="presentation_finished"))
+            if travel_setup is not None:
+                require(travel_setup["procedure_offset"] == contact["procedure_offset"],
+                        "travel setup names a different procedure")
+                plan["entry"] = "travel"
+                plan["travel_setup"] = travel_setup
+                plan["max_exit_retries"] = 1
+                del plan["contact_procedure"]
             plans.append((current, word["offset"], plan))
     targeted = {site for _, _, plan in plans for site in plan["required_bas_sites"]}
     return plans, dict(scope="finite menu paths and simple topic responses; not all dialogue variants or verified captures",
@@ -94,28 +122,42 @@ def main():
     parser.add_argument("--profile", type=int, required=True, choices=range(1, 6))
     parser.add_argument("--procedure", type=int, required=True, help="original COD procedure offset")
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--travel-planet", help="authored planet used for prepared travel entry")
+    parser.add_argument("--travel-destination", help="authored local navigation destination")
     args = parser.parse_args()
-    manifest_path = ROOT / "re/vm/contact-manifest/contact-manifest.json"
-    manifest = read_json(manifest_path)
+    require(bool(args.travel_planet) == bool(args.travel_destination),
+            "travel entry requires both planet and destination")
     tag = f"SCRIPT{args.profile}"
-    contacts = [row for row in manifest["procedures"] if row["script"] == tag and row["procedure_offset"] == args.procedure]
-    require(len(contacts) == 1, "no unique contact procedure")
     index = read_json(args.catalog / "catalog.json")
     profile = next(row for row in index["profiles"] if row["game"] == "cb" and row["profile"].upper() == tag)
     relative = profile["directory"] + "/graph.json"
     graph_path = args.catalog / relative
     require(digest(graph_path) == index["artifacts"][relative], "static graph changed")
-    plans, report = plan_topics(read_json(graph_path), contacts[0])
+    graph = read_json(graph_path)
+    travel_setup = None
+    manifest_hash = None
+    if args.travel_planet:
+        contact = travel_procedure(graph, args.procedure)
+        travel_setup = dict(planet=args.travel_planet, destination=args.travel_destination,
+                            procedure_offset=args.procedure)
+    else:
+        manifest_path = ROOT / "re/vm/contact-manifest/contact-manifest.json"
+        manifest = read_json(manifest_path)
+        contacts = [row for row in manifest["procedures"] if row["script"] == tag and row["procedure_offset"] == args.procedure]
+        require(len(contacts) == 1, "no unique contact procedure")
+        contact = contacts[0]
+        manifest_hash = digest(manifest_path)
+    plans, report = plan_topics(graph, contact, travel_setup)
     require(plans, "no simple BAS topic plans for this contact")
     args.out.mkdir(parents=True, exist_ok=False)
-    actor = re.sub(r"[^a-z0-9]+", "-", contacts[0]["contact_object"].lower()).strip("-")
+    actor = re.sub(r"[^a-z0-9]+", "-", contact["contact_object"].lower()).strip("-")
     paths = []
     for menu, word, plan in plans:
         filename = f"cb-script{args.profile}-{actor}-{menu:04x}-{word:04x}.plan.json"
         save_json(args.out / filename, plan)
         paths.append(filename)
     save_json(args.out / "planning.json", dict(schema=1, graph_sha256=digest(graph_path),
-              contact_manifest_sha256=digest(manifest_path), plans=paths, **report))
+              contact_manifest_sha256=manifest_hash, travel_setup=travel_setup, plans=paths, **report))
     print(f"Planned {len(plans)} chapters targeting {len(report['targeted_bas_sites'])} BAS sites; "
           f"{len(report['not_targeted_bas_sites'])} actor-list sites remain unplanned.")
 

@@ -48,7 +48,8 @@ def verify_media(path, rows, duration_ns, width=640, height=480):
     for video in (True, False):
         args = ["ffmpeg", "-nostdin", "-v", "error", "-i", path]
         if video:
-            args += ["-map", "0:v:0", "-fps_mode", "passthrough", "-pix_fmt", "rgba", "-f", "rawvideo"]
+            args += ["-map", "0:v:0", "-fps_mode", "passthrough", "-pix_fmt", "rgba",
+                     "-enc_time_base:v", "1:1000", "-f", "rawvideo"]
         else:
             args += ["-map", "0:a:0", "-c:a", "pcm_f32le", "-f", "f32le"]
         args += ["pipe:1"]
@@ -245,10 +246,13 @@ def assemble(args):
         rows, duration, samples = concatenate_timelines(timelines)
         (temp / "concat.txt").write_text("\n".join(listing) + "\n")
         (temp / "chapters.ffmeta").write_text(metadata_text(chapters))
+        packet_durations = (f"setts=duration='if(eq(N,{len(rows) - 1}),"
+                            f"{rows[-1]['duration_ns']}/(1000000000*TB),NEXT_PTS-PTS)'")
         command(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "concat", "-safe", "0", "-i", temp / "concat.txt",
                  "-f", "f32le", "-ar", "48000", "-ac", "1", "-i", temp / "audio.f32le",
                  "-f", "ffmetadata", "-i", temp / "chapters.ffmeta", "-map", "0:v:0", "-map", "1:a:0",
-                 "-map_metadata", "2", "-map_chapters", "2", "-c:v", "copy", "-c:a", "pcm_f32le", temp / "master.mkv"])
+                 "-map_metadata", "2", "-map_chapters", "2", "-c:v", "copy", "-bsf:v", packet_durations,
+                 "-c:a", "pcm_f32le", temp / "master.mkv"])
         hashes, encoded_chapters = verify_media(temp / "master.mkv", rows, duration)
         require(len(encoded_chapters) == len(chapters), "encoded chapter count differs")
         for actual, expected in zip(encoded_chapters, chapters):

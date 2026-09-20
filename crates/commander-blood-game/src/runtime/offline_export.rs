@@ -163,7 +163,7 @@ fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -
     fs::write(stage.join("endpoint.rgba"), &endpoint)?;
     let video_hash = format!("{:x}", sink.video_hash.clone().finalize());
     let audio_hash = format!("{:x}", sink.audio_hash.clone().finalize());
-    mux_master(&stage)?;
+    mux_master(&stage, &sink.intervals)?;
     let video = decoded_hash(&stage.join("master.mkv"), true)?;
     let audio = decoded_hash(&stage.join("master.mkv"), false)?;
     ensure!(
@@ -345,7 +345,17 @@ fn file_hash(path: &Path) -> Result<String> {
     Ok(hash_reader(File::open(path)?)?.0)
 }
 
-fn mux_master(stage: &Path) -> Result<()> {
+fn mux_master(stage: &Path, intervals: &[(u64, u64)]) -> Result<()> {
+    let (_, last_duration) = intervals
+        .last()
+        .context("cannot mux an empty native timeline")?;
+    // WebM SimpleBlocks retain PTS, not frame durations. Do not let the demuxer's
+    // guessed frame rate extend a short final wait during stream copy.
+    let packet_durations = format!(
+        "setts=duration='if(eq(N,{}),{}/(1000000000*TB),NEXT_PTS-PTS)'",
+        intervals.len() - 1,
+        last_duration,
+    );
     let status = Command::new("ffmpeg")
         .args(["-nostdin", "-v", "error", "-n", "-i"])
         .arg(stage.join("video.mkv"))
@@ -361,6 +371,7 @@ fn mux_master(stage: &Path) -> Result<()> {
             "-c:a",
             "pcm_f32le",
         ])
+        .args(["-bsf:v", &packet_durations])
         .arg(stage.join("master.mkv"))
         .status()?;
     ensure!(status.success(), "ffmpeg mux failed: {status}");
@@ -378,6 +389,8 @@ fn decoded_hash(path: &Path, video: bool) -> Result<(String, u64)> {
             "passthrough",
             "-pix_fmt",
             "rgba",
+            "-enc_time_base:v",
+            "1:1000",
             "-f",
             "rawvideo",
         ]);
@@ -474,6 +487,14 @@ mod tests {
     #[test]
     #[ignore = "requires FFmpeg and FFprobe on PATH"]
     fn offline_export_preserves_variable_intervals_pixels_and_audio() {
+        verify_export_for_intervals(&[68_000_000, 46_000_000, 68_000_000]);
+        let mut short_tail = vec![68_000_000; 48];
+        short_tail.extend([46_000_000, 68_000_000, 46_000_000]);
+        verify_export_for_intervals(&short_tail);
+        verify_export_for_intervals(&[46_000_000]);
+    }
+
+    fn verify_export_for_intervals(durations: &[u64]) {
         let root = std::env::temp_dir().join(format!(
             "offline-vfr-{}-{}",
             std::process::id(),
@@ -488,10 +509,7 @@ mod tests {
         for (index, pixel) in rgba.chunks_exact_mut(4).enumerate() {
             pixel.copy_from_slice(&[index as u8, (index / WIDTH as usize) as u8, 211, 255]);
         }
-        for (index, duration_ns) in [68_000_000_u64, 46_000_000, 68_000_000]
-            .into_iter()
-            .enumerate()
-        {
+        for (index, &duration_ns) in durations.iter().enumerate() {
             rgba[0] = index as u8;
             let audio = vec![
                 if index == 1 { -0.25 } else { 0.5 };
@@ -506,7 +524,7 @@ mod tests {
             .unwrap();
         }
         sink.finish().unwrap();
-        mux_master(&root).unwrap();
+        mux_master(&root, &sink.intervals).unwrap();
         assert_eq!(
             decoded_hash(&root.join("master.mkv"), true).unwrap(),
             (
