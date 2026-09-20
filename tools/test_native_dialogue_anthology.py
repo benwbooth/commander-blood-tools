@@ -225,6 +225,27 @@ class DialogueTraceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "authored COD guard"):
             self.verify()
 
+    def test_contact_encounter_preparation_requires_matching_source_and_increment(self):
+        self.plan.update(game="big_bug_bang", cod_sha256="source-cod", contact_procedure=90,
+                         contact_encounter_guard=123)
+        preparation = dict(procedure_offset=90, cod_sha256="source-cod",
+                           guard_source="typed_cod_outer_guard")
+        self.runner["contact_preparation"] = preparation
+        with self.assertRaisesRegex(ValueError, "source-bound encounter"):
+            self.verify()
+        preparation["encounter_guard"] = dict(offset=123, at_presentation=2, before_entry=1)
+        self.verify()
+        for key, value in [("offset", 124), ("at_presentation", 0), ("at_presentation", 65536),
+                           ("before_entry", 2)]:
+            original = preparation["encounter_guard"][key]
+            preparation["encounter_guard"][key] = value
+            with self.assertRaisesRegex(ValueError, "source-bound encounter"):
+                self.verify()
+            preparation["encounter_guard"][key] = original
+        del self.plan["contact_encounter_guard"]
+        with self.assertRaisesRegex(ValueError, "unexpected encounter"):
+            self.verify()
+
     def test_sequence_occurrences_keep_order(self):
         self.states[0]["state"]["video"] = dict(active_resource="SQ\\FIRST.HNM")
         self.states.append(copy.deepcopy(self.states[0]))

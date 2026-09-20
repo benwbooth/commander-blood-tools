@@ -65,7 +65,7 @@
     "crates/commander-blood-game/src/runtime/confirm_dialog.rs": "f2ed62e7818af310903560d2563515527f6854d50a81e342f448464af41c1dc1",
     "crates/commander-blood-game/src/runtime/game_lifecycle.rs": "9ece8bf52a6208ecaac7e46c3bb4c7d84932e1e4dab3890144d293931edc233b",
     "crates/commander-blood-game/src/runtime/save_load.rs": "9aed90052c7030510dcf3045166e1b3671bd35b5c516b671deb855a5df2d538c",
-    "crates/commander-blood-game/src/runtime/script_backend.rs": "a5e209e06be8e3e3fafa5a778821399e5234ab415aac2e48ccc11f1f82a86113",
+    "crates/commander-blood-game/src/runtime/script_backend.rs": "73e2f1485152a96dc89f084394e67f94a5b4ad5c69207fc14e30677aeaa3a40f",
     "crates/commander-blood-game/src/runtime/presentation_run.rs": "5f5fd0efbc325c9bd80bb56e301cf3196091158b500431f45b386ebe83bb0fc2",
     "crates/commander-blood-game/src/native/bloodprg/game_lifecycle_tests.rs": "207a9fbfab8808e39d542f34f5e9eca8fb817ea35b35ea42402b5979325310ee",
     "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "abe1cb6afb356607a707f44e4d28b459ac2ded5d78d8c41eafa76c254800dfeb",

@@ -12,7 +12,9 @@ mission; BBB SCRIPT2 HONK's Daddy-in-the-cryobox conversation; CB SCRIPT2 Bob's
 black-hole BAS topic, Bronko's energy topic, Daddy Gluxx's treatment, and both
 answers to Izwalito's ideal/secret question through prepared travel; BBB SCRIPT2
 Bob's brief return, SCRIPT3-5 concert aftermath for eight actors, and both
-Tequila cryobox outburst/ghost branches. These twenty-four
+Tequila cryobox outburst/ghost branches; later-profile concert reactions, Bug
+Deluxe's future/farewell conversations, and Cyberquizz's first/second visits and
+Christmas greeting. These thirty-five
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
 environments. The static BAS planner also
 produces topic plan sets from the hashed catalog without running the game.
@@ -34,6 +36,7 @@ Do not add artificial holds or subtitle cards to fill these gaps:
 | BBB Bob | 3252 | Terminal publication without a glyph-buffer draw. |
 | BBB SCRIPT2 HONK | 7461 | Terminal publication without a glyph-buffer draw. |
 | BBB prepared contacts, SCRIPT2-5 | 7183; 3005, 15361, 21365; 1783, 8054, 15997, 16230, 16482; 1895, 5619 | One terminal publication per chapter without a glyph-buffer draw; offsets are profile-local. |
+| BBB later contacts, SCRIPT6/9/13/14/17 | 11669; 2638, 3109; 1837, 9984; 1811, 6886, 10995; 2098, 2504, 4841 | One terminal publication per chapter without a glyph-buffer draw; includes both Cyberquizz visits. |
 
 The 2355 disposition is distinct from a publication that was not drawn. The
 original `BLOOD2PG.EXE` A6/outer-loop oracle now includes five skip-next cases:
@@ -79,9 +82,10 @@ An optional `contact_procedure` prepares the exact CB procedure using the existi
 binary-derived contact manifest. For BBB, it instead validates the typed COD
 procedure's outer D1 contact guard and actor action record. Both validate the
 profile and actor, set supported authored entry predicates, and disable competing
-contact procedures. Unsupported BBB predicates are rejected, and body guards
-are not treated as entry conditions. The report retains the CB manifest hash or
-BBB COD hash, original-save hashes before/after, and every changed save byte.
+contact procedures. Unsupported BBB predicates are rejected, and outer-guard
+preparation does not promote body guards to entry conditions. The report retains
+the CB manifest hash or BBB COD hash, original-save hashes before/after, and
+every changed save byte.
 This is explicit prepared-state chapter setup, not proof of contact-menu
 eligibility or a gameplay route. It does not modify script text, timing, or media.
 
@@ -89,7 +93,20 @@ The eleven BBB prepared-contact chapters publish all 75 required COD sites;
 64 fully reveal in the native UI buffer and eleven terminate without a draw.
 The native CRYOGEL/CRYORAD transitions and automatically selected embedded
 sequences remain in the captures. English uses the existing display overlay;
-the authored French script, waits, and media selection are unchanged.
+the authored French script, waits, and media selection are unchanged. Ten later
+SCRIPT6/9/13/14/17 chapters add 74 publications: 64 full UI-buffer reveals and
+ten terminal sites without a draw.
+
+An optional `contact_encounter_guard` selects an authored visit-count predicate
+inside the chosen contact procedure. It must be a single, positive, immediate
+equality guard on the selected actor's encounter counter. A body assignment,
+another actor's field, another procedure, or a compound guard is rejected. Setup
+stores one less than the source count; native C4 entry performs the increment.
+The report retains the guard offset, expected count, pre-entry value, and save
+byte changes. This is prepared visit state, not a replay of earlier encounters.
+Cyberquizz's two visit plans require their own branch's sites and assert absence
+of the other branch's sites. The second visit publishes 14 required sites, with
+13 full UI-buffer reveals and one terminal publication without a draw.
 
 Bob's checked-in black-hole plan repeats the topic selection for each of five
 successive native BAS replies, then selects the authored `bye_bye` row. The

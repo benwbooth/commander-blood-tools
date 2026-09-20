@@ -580,6 +580,36 @@ Two CB regression captures preserve prior pixels, PCM, and endpoints: Bob's
 black-hole contact and Bronko's energy travel topic. These checks do not establish
 original-executable parity or full-game coverage.
 
+Ten later-profile chapters produce
+`output/anthology/bbb-later-contacts-dialogue-native.mkv`: **274.948 seconds and
+4,099 native frames**. They cover Rotator, Otto Von Smile, Otto Von Gluk, Trump,
+Tramp, and Super Tromp after the concert; Bug Deluxe's future and farewell
+conversations; and Cyberquizz's first visit and Christmas greeting. Their batch
+is `dialogue-bbb-later-contacts-v1/bbb`, using the same archived prepared-contact
+exporter as the preceding eleven chapters. All 74 required publications occur;
+64 fully reveal in the native UI buffer, and ten terminal sites have no draw.
+The movie passed full decoded RGBA, PCM, timestamp, and chapter verification.
+Sampled encoded Bug Deluxe and Cyberquizz frames were inspected for native
+artwork, fonts, and English text; not every line was visually inspected.
+
+Cyberquizz's second visit is
+`output/anthology/bbb-cyberquizz-second-visit-native.mkv`: **63.876 seconds and
+951 native frames**, from `dialogue-bbb-encounters-v1/bbb`, whose new exporter is
+archived in its sibling `bin` directory. `contact_encounter_guard: 2114` binds the
+authored equality test on Cyberquizz's encounter counter within procedure 1748.
+Setup stores one; native C4 entry increments it to two. Both visit plans assert
+that the other branch's lines are absent. This is explicit prepared visit state,
+not a replay of the first encounter. Unsupported or out-of-procedure guards and
+arbitrary body assignments are rejected.
+
+All 14 second-visit publications occur, 13 fully reveal in the UI buffer, and
+terminal site 2504 has no draw. The native `PPIT07` sequence and contact closing
+transition remain intact. Assembly passed full decoded media, timing, and
+chapter checks; a sampled encoded second-visit frame was visually inspected.
+The new exporter reproduces Cyberquizz's first visit, CB Bob's black-hole
+contact, and CB Bronko's energy travel topic with identical pixels, PCM,
+endpoints, and complete runner reports in `dialogue-bbb-encounter-regression`.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -595,7 +625,9 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-travel-gluxx-v2/cb \
   --batch output/anthology/dialogue-travel-izwalito-v4/cb \
   --batch output/anthology/dialogue-bbb-prepared-contacts-v1/bbb \
-  --out output/anthology/dialogue-coverage-bbb-cryobox.json
+  --batch output/anthology/dialogue-bbb-later-contacts-v1/bbb \
+  --batch output/anthology/dialogue-bbb-encounters-v1/bbb \
+  --out output/anthology/dialogue-coverage-bbb-later-contacts.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -604,10 +636,10 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 79 verified chapters, CB has 261 sites fully revealed in the native
+Across the 90 verified chapters, CB has 261 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,268 uncovered. BBB has 113 fully revealed, fifteen published without
-a UI draw, and 6,793 uncovered. Native UI-buffer evidence alone does not prove
+branches, and 5,268 uncovered. BBB has 190 fully revealed, 26 published without
+a UI draw, and 6,705 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
 anthology is complete; remaining profile branches, most CB BAS, state-dependent

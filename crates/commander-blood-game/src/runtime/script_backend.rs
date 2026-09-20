@@ -1550,6 +1550,31 @@ mod tests {
                     invalid.contact_procedure = Some(usize::MAX);
                     assert!(validate_dialogue_chapter(&invalid, profile).is_err());
                 }
+                if let Some(offset) = plan.contact_encounter_guard {
+                    let (counter, value) = super::super::contact_scenario::contact_encounter_guard(
+                        profile,
+                        plan.contact_procedure.unwrap(),
+                        &plan.target,
+                        offset,
+                    )
+                    .unwrap();
+                    assert!(profile.state().word(counter).is_some());
+                    assert_eq!(value, 2, "fixture selects the authored second visit");
+                    invalid = plan.clone();
+                    invalid.contact_procedure = None;
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    for bad_offset in [usize::MAX, 1753, 1777, 2741] {
+                        invalid = plan.clone();
+                        invalid.contact_encounter_guard = Some(bad_offset);
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    }
+                    invalid = plan.clone();
+                    invalid.contact_procedure = Some(4808);
+                    assert!(
+                        validate_dialogue_chapter(&invalid, profile).is_err(),
+                        "another contact procedure cannot borrow this encounter guard"
+                    );
+                }
                 if plan.travel_setup.is_some() {
                     invalid = plan.clone();
                     invalid.travel_setup = None;

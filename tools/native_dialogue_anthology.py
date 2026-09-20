@@ -63,6 +63,16 @@ def validate_trace(plan, runner, states, rows):
         else:
             require(preparation["manifest_sha256"] == digest(ROOT / "re/vm/contact-manifest/contact-manifest.json"),
                     "contact preparation manifest changed")
+        encounter = preparation.get("encounter_guard")
+        if plan.get("contact_encounter_guard") is not None:
+            require(isinstance(encounter, dict)
+                    and encounter.get("offset") == plan["contact_encounter_guard"]
+                    and isinstance(encounter.get("at_presentation"), int)
+                    and 0 < encounter["at_presentation"] <= 65535
+                    and encounter.get("before_entry") == encounter["at_presentation"] - 1,
+                    "missing source-bound encounter preparation")
+        else:
+            require(encounter is None, "unexpected encounter preparation")
     if plan.get("entry") == "travel":
         preparation = runner.get("travel_preparation")
         require(isinstance(preparation, dict) and preparation.get("setup") == plan["travel_setup"],

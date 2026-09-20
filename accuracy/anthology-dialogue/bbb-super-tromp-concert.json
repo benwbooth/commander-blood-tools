@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Super Tromp: concert aftermath",
+  "initial_profile": 13,
+  "cod_sha256": "ad0aeaf0e62a0ec25109e7b953c7db8eea12f51b121b6fdfe5c968cbc31e8a4f",
+  "dic_sha256": "475e13bfcd4dd1ce51357e8f9aee1cce034439bc026e18b00bd6af2d500648a6",
+  "target": "Super_Tromp",
+  "entry": "contact",
+  "contact_procedure": 10822,
+  "choices": [],
+  "required_cod_sites": [
+    10845,
+    10859,
+    10881,
+    10899,
+    10915,
+    10939,
+    10959,
+    10975,
+    10995
+  ],
+  "required_frame_boundary_cod_sites": [
+    10845
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Cyberquizz: first visit",
+  "initial_profile": 16,
+  "cod_sha256": "88e5fb5b88c93ef372b0c6ab62b0907530fdc0e6663cd5dca7d22e4b7a778366",
+  "dic_sha256": "987bfb2d11c809e0ca8b980e32f8c1779b0febb35a2d5cddc016e0ecbb558f9a",
+  "target": "Cyberquizz",
+  "entry": "contact",
+  "contact_procedure": 1748,
+  "choices": [],
+  "required_cod_sites": [
+    1777,
+    1793,
+    1819,
+    1855,
+    1883,
+    1917,
+    1943,
+    1957,
+    1997,
+    2027,
+    2056,
+    2074,
+    2098
+  ],
+  "required_frame_boundary_cod_sites": [
+    1777
+  ],
+  "expected_unpublished_cod_sites": [
+    2122,
+    2152,
+    2172,
+    2200,
+    2238,
+    2288,
+    2312,
+    2344,
+    2383,
+    2399,
+    2419,
+    2444,
+    2470,
+    2504
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

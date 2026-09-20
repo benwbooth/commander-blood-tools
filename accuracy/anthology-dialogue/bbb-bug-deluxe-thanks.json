@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Bug Deluxe: thanks and farewell",
+  "initial_profile": 8,
+  "cod_sha256": "bf3c0ca2dff36ba48a1704d7f52b4162f498cc821b4855806811fdfa16530f88",
+  "dic_sha256": "0555b0b33b1f3266a9fc62ea48defc9caf6e4a8d2bbec6cf4d9cd92e45a20f5d",
+  "target": "Bug_Deluxe",
+  "entry": "contact",
+  "contact_procedure": 2816,
+  "choices": [],
+  "required_cod_sites": [
+    2846,
+    2864,
+    2882,
+    2908,
+    2940,
+    2956,
+    2982,
+    3004,
+    3035,
+    3057,
+    3075,
+    3099,
+    3109
+  ],
+  "required_frame_boundary_cod_sites": [
+    2846
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

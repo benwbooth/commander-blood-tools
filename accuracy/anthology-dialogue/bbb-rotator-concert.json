@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Rotator: concert aftermath",
+  "initial_profile": 5,
+  "cod_sha256": "b9f5cdfc42fa5b7cc63489c46a0c52c02fae6d4519880fae75eed1fc1fc626c6",
+  "dic_sha256": "6dadc62c05a6587550c2077c449e9ebcaa3dd7bfc52ebdb13b3a0a002238ee40",
+  "target": "Rotator",
+  "entry": "contact",
+  "contact_procedure": 11568,
+  "choices": [],
+  "required_cod_sites": [
+    11591,
+    11611,
+    11629,
+    11647,
+    11669
+  ],
+  "required_frame_boundary_cod_sites": [
+    11591
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

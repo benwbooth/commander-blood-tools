@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Otto Von Smile: concert aftermath",
+  "initial_profile": 12,
+  "cod_sha256": "db0dc6de4db2f018640b890ce59c035743948f15f37252ea22c45571762c38c6",
+  "dic_sha256": "3aeea9147215e25977fe07d04caecffedb6c887cf4af76eb8edbcefb34f5e76a",
+  "target": "Otto_Von_Smile",
+  "entry": "contact",
+  "contact_procedure": 1748,
+  "choices": [],
+  "required_cod_sites": [
+    1771,
+    1787,
+    1809,
+    1837
+  ],
+  "required_frame_boundary_cod_sites": [
+    1771
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

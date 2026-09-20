@@ -48,6 +48,8 @@ pub(super) struct OfflineDialogueChapter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub contact_procedure: Option<usize>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub contact_encounter_guard: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub travel_setup: Option<OfflineTravelSetup>,
     pub choices: Vec<OfflineDialogueChoice>,
     #[serde(default, skip_serializing_if = "no_exit_retries")]
@@ -144,6 +146,17 @@ pub(super) fn validate_dialogue_chapter(
             "contact preparation requires contact entry"
         );
         super::contact_scenario::validate_contact_chapter(profile, procedure, &chapter.target)?;
+    }
+    if let Some(offset) = chapter.contact_encounter_guard {
+        let procedure = chapter
+            .contact_procedure
+            .context("contact encounter guard requires prepared contact entry")?;
+        super::contact_scenario::contact_encounter_guard(
+            profile,
+            procedure,
+            &chapter.target,
+            offset,
+        )?;
     }
     ensure!(
         matches!(chapter.entry, OfflineDialogueEntry::Travel) == chapter.travel_setup.is_some(),
@@ -438,6 +451,33 @@ pub(super) fn capture_dialogue_chapter(
                 procedure,
                 &chapter.target,
             )?;
+            let encounter_preparation = if let Some(offset) = chapter.contact_encounter_guard {
+                let profile = host
+                    .services_mut()
+                    .runtime_mut()
+                    .current_profile_mut()
+                    .unwrap();
+                let (counter, value) = super::contact_scenario::contact_encounter_guard(
+                    profile,
+                    procedure,
+                    &chapter.target,
+                    offset,
+                )?;
+                let mut state = profile.synchronized_state()?;
+                // Native C4 entry increments this counter before evaluating the body guard.
+                ensure!(
+                    state.set_word(counter, value - 1),
+                    "contact encounter counter is unbound"
+                );
+                profile.replace_state(state)?;
+                Some(serde_json::json!({
+                    "offset": offset,
+                    "at_presentation": value,
+                    "before_entry": value - 1,
+                }))
+            } else {
+                None
+            };
             let after = crate::native::bloodprg::OriginalSaveGame::capture(
                 host.services().runtime().current_profile().unwrap(),
             )?
@@ -457,6 +497,9 @@ pub(super) fn capture_dialogue_chapter(
                 "save_byte_changes": changes,
                 "scope": "selected contact procedure and authored entry predicates; prepared chapter state, not a gameplay route",
             });
+            if let Some(encounter) = encounter_preparation {
+                preparation["encounter_guard"] = encounter;
+            }
             if chapter.game == crate::game::GameVariant::CommanderBlood {
                 preparation["manifest_sha256"] = serde_json::json!(format!(
                     "{:x}",

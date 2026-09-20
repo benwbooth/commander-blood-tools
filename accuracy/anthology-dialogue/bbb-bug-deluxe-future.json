@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Bug Deluxe: the future",
+  "initial_profile": 8,
+  "cod_sha256": "bf3c0ca2dff36ba48a1704d7f52b4162f498cc821b4855806811fdfa16530f88",
+  "dic_sha256": "0555b0b33b1f3266a9fc62ea48defc9caf6e4a8d2bbec6cf4d9cd92e45a20f5d",
+  "target": "Bug_Deluxe",
+  "entry": "contact",
+  "contact_procedure": 2156,
+  "choices": [],
+  "required_cod_sites": [
+    2186,
+    2224,
+    2251,
+    2281,
+    2301,
+    2325,
+    2349,
+    2371,
+    2391,
+    2430,
+    2454,
+    2476,
+    2509,
+    2539,
+    2565,
+    2602,
+    2638
+  ],
+  "required_frame_boundary_cod_sites": [
+    2186
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

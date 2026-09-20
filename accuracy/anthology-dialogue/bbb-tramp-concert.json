@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Tramp: concert aftermath",
+  "initial_profile": 13,
+  "cod_sha256": "ad0aeaf0e62a0ec25109e7b953c7db8eea12f51b121b6fdfe5c968cbc31e8a4f",
+  "dic_sha256": "475e13bfcd4dd1ce51357e8f9aee1cce034439bc026e18b00bd6af2d500648a6",
+  "target": "Tramp",
+  "entry": "contact",
+  "contact_procedure": 6815,
+  "choices": [],
+  "required_cod_sites": [
+    6838,
+    6854,
+    6868,
+    6886
+  ],
+  "required_frame_boundary_cod_sites": [
+    6838
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

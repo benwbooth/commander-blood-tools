@@ -6,7 +6,7 @@ use commander_blood_formats::instruction::{
     DecodedScriptInstruction, ScriptEnvironmentInstruction, ScriptInstruction, ScriptRecordValue,
     ScriptStateOperand, ScriptStateOperator,
 };
-use commander_blood_formats::script::{ScriptObjectId, ScriptProcedureId};
+use commander_blood_formats::script::{ScriptObjectId, ScriptProcedureId, ScriptStateWord};
 use serde::Deserialize;
 
 use crate::native::bloodprg::{LoadedScriptProfile, ScriptObjectFlag, set_object_flag};
@@ -209,6 +209,78 @@ pub(super) fn prepare_contact_for_chapter(
         target,
         ScriptEnvironmentInstruction::RequireContactActivity,
     )
+}
+
+/// Select a visit through an authored, single-predicate encounter guard.
+pub(super) fn contact_encounter_guard(
+    profile: &LoadedScriptProfile,
+    procedure_offset: usize,
+    target: &str,
+    guard_offset: usize,
+) -> Result<(ScriptStateWord, u16)> {
+    validate_contact_chapter(profile, procedure_offset, target)?;
+    let Some(DecodedScriptInstruction::ProcedureGate(gate)) =
+        profile.instruction_at(ScriptCodeOffset::new(procedure_offset))
+    else {
+        bail!("contact encounter setup has no procedure gate");
+    };
+    let tokens = profile.code().tokens();
+    let index = tokens
+        .iter()
+        .position(|token| token.source_offset().index() == guard_offset)
+        .context("contact encounter setup has no source instruction")?;
+    ensure!(
+        index > 0
+            && index + 1 < tokens.len()
+            && tokens[index - 1].source_offset().index() > procedure_offset
+            && tokens[index + 1].source_offset() < gate.failure_target,
+        "contact encounter guard is outside the selected procedure"
+    );
+    ensure!(
+        matches!(
+            profile.instruction_at(tokens[index - 1].source_offset()),
+            Some(DecodedScriptInstruction::Control(
+                ScriptInstruction::GuardBegin { .. }
+            ))
+        ) && matches!(
+            profile.instruction_at(tokens[index + 1].source_offset()),
+            Some(DecodedScriptInstruction::Control(
+                ScriptInstruction::GuardEnd
+            ))
+        ),
+        "contact encounter setup requires a single authored guard predicate"
+    );
+    let Some(DecodedScriptInstruction::SharedState(operation)) =
+        profile.instruction_at(ScriptCodeOffset::new(guard_offset))
+    else {
+        bail!("contact encounter guard is not a state predicate");
+    };
+    let ScriptStateOperand::Immediate(value) = operation.operand else {
+        bail!("contact encounter guard must use an immediate count");
+    };
+    ensure!(
+        operation.operator == ScriptStateOperator::EqualOrAssign && value > 0,
+        "contact encounter guard must equal a positive visit count"
+    );
+    let actor = profile
+        .directory()
+        .find_active_object(target.as_bytes())
+        .unwrap();
+    let kind = profile.state().object(actor).unwrap().kind;
+    let offset = crate::native::bloodprg::script_field_offset(
+        kind,
+        crate::native::bloodprg::ScriptFieldSelector::ENCOUNTER_COUNT,
+    )
+    .context("contact actor has no encounter counter")?;
+    let counter = profile
+        .state()
+        .object_word(actor, offset / 2)
+        .context("contact actor encounter counter is unbound")?;
+    ensure!(
+        operation.target == counter,
+        "contact encounter predicate does not address the chapter actor's counter"
+    );
+    Ok((counter, value))
 }
 
 fn prepare_authored_actor_chapter(
