@@ -40,14 +40,22 @@ pub(super) struct OfflineDialogueChapter {
     pub initial_profile: u8,
     pub cod_sha256: String,
     pub dic_sha256: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bas_sha256: Option<String>,
     pub target: String,
     #[serde(default, skip_serializing_if = "OfflineDialogueEntry::is_radio")]
     pub entry: OfflineDialogueEntry,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub contact_procedure: Option<usize>,
     pub choices: Vec<OfflineDialogueChoice>,
     pub required_cod_sites: Vec<usize>,
     pub required_frame_boundary_cod_sites: Vec<usize>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub expected_unpublished_cod_sites: Vec<usize>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub required_bas_sites: Vec<usize>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub required_frame_boundary_bas_sites: Vec<usize>,
     pub end: OfflineDialogueEnd,
 }
 
@@ -68,8 +76,25 @@ impl OfflineDialogueEntry {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct OfflineDialogueChoice {
+    #[serde(default, skip_serializing_if = "OfflineDialogueChoiceSource::is_cod")]
+    pub source: OfflineDialogueChoiceSource,
     pub text_site: usize,
     pub word_offset: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(super) enum OfflineDialogueChoiceSource {
+    #[default]
+    Cod,
+    Bas,
+    BasMenu,
+}
+
+impl OfflineDialogueChoiceSource {
+    fn is_cod(&self) -> bool {
+        matches!(self, Self::Cod)
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -96,18 +121,54 @@ pub(super) fn validate_dialogue_chapter(
         format!("{:x}", Sha256::digest(profile.dictionary().encode())) == chapter.dic_sha256,
         "dialogue chapter DIC hash does not match the loaded profile"
     );
+    if let Some(procedure) = chapter.contact_procedure {
+        ensure!(
+            !chapter.entry.is_radio(),
+            "contact preparation requires contact entry"
+        );
+        super::contact_scenario::validate_contact_chapter(profile, procedure, &chapter.target)?;
+    }
+    let uses_bas = !chapter.required_bas_sites.is_empty()
+        || chapter.choices.iter().any(|choice| !choice.source.is_cod());
     ensure!(
-        !chapter.required_cod_sites.is_empty(),
+        !uses_bas || chapter.bas_sha256.is_some(),
+        "BAS chapter requires a source hash"
+    );
+    if let Some(hash) = &chapter.bas_sha256 {
+        ensure!(
+            format!("{:x}", Sha256::digest(profile.dialogue().encoded_bytes())) == *hash,
+            "dialogue chapter BAS hash does not match the loaded profile"
+        );
+    }
+    ensure!(
+        !chapter.required_cod_sites.is_empty() || !chapter.required_bas_sites.is_empty(),
         "dialogue chapter has no required text sites"
     );
     ensure!(
-        !chapter.required_frame_boundary_cod_sites.is_empty()
+        (!chapter.required_frame_boundary_cod_sites.is_empty()
+            || !chapter.required_frame_boundary_bas_sites.is_empty())
             && chapter
                 .required_frame_boundary_cod_sites
                 .iter()
                 .all(|site| chapter.required_cod_sites.contains(site)),
         "frame-boundary dialogue sites must be a nonempty subset of the required publications"
     );
+    ensure!(
+        chapter
+            .required_frame_boundary_bas_sites
+            .iter()
+            .all(|site| chapter.required_bas_sites.contains(site)),
+        "frame-boundary BAS sites must be required publications"
+    );
+    for &offset in &chapter.required_bas_sites {
+        ensure!(
+            matches!(
+                bas_instruction(profile, offset)?,
+                commander_blood_formats::bas::ScriptBasInstruction::Text(_)
+            ),
+            "required BAS site {offset:#x} is not a text instruction"
+        );
+    }
     for &offset in &chapter.required_cod_sites {
         ensure!(
             matches!(
@@ -131,18 +192,46 @@ pub(super) fn validate_dialogue_chapter(
         );
     }
     for choice in &chapter.choices {
-        let Some(DecodedScriptInstruction::Text(text)) =
-            profile.instruction_at(ScriptCodeOffset::new(choice.text_site))
-        else {
-            bail!(
-                "choice site {:#x} is not a text instruction",
-                choice.text_site
-            );
-        };
         let word = profile
             .dictionary()
             .resolve_source_offset(choice.word_offset)
             .context("choice word offset is not a dictionary boundary")?;
+        let text = match choice.source {
+            OfflineDialogueChoiceSource::Cod => {
+                let Some(DecodedScriptInstruction::Text(text)) =
+                    profile.instruction_at(ScriptCodeOffset::new(choice.text_site))
+                else {
+                    bail!(
+                        "choice site {:#x} is not a COD text instruction",
+                        choice.text_site
+                    );
+                };
+                text
+            }
+            OfflineDialogueChoiceSource::Bas => {
+                let commander_blood_formats::bas::ScriptBasInstruction::Text(text) =
+                    bas_instruction(profile, choice.text_site)?
+                else {
+                    bail!(
+                        "choice site {:#x} is not a BAS text instruction",
+                        choice.text_site
+                    );
+                };
+                text
+            }
+            OfflineDialogueChoiceSource::BasMenu => {
+                let commander_blood_formats::bas::ScriptBasInstruction::Menu(words) =
+                    bas_instruction(profile, choice.text_site)?
+                else {
+                    bail!("choice site is not a BAS menu header");
+                };
+                ensure!(
+                    words.contains(&word),
+                    "choice word is not in the authored BAS menu"
+                );
+                continue;
+            }
+        };
         ensure!(
             text.words
                 .split(|word| *word == ScriptTextWord::SectionSeparator)
@@ -154,6 +243,20 @@ pub(super) fn validate_dialogue_chapter(
         );
     }
     Ok(())
+}
+
+fn bas_instruction(
+    profile: &LoadedScriptProfile,
+    offset: usize,
+) -> Result<&commander_blood_formats::bas::ScriptBasInstruction> {
+    profile
+        .dialogue()
+        .decoded()?
+        .tokens()
+        .iter()
+        .find(|token| token.source_offset().index() == offset)
+        .map(|token| token.instruction())
+        .with_context(|| format!("no BAS instruction at {offset:#x}"))
 }
 
 pub(super) fn capture_dialogue_chapter(
@@ -268,6 +371,33 @@ pub(super) fn capture_dialogue_chapter(
             .directory()
             .find_active_object(chapter.target.as_bytes())
             .context("dialogue target is not a named native object")?;
+        let contact_preparation = if let Some(procedure) = chapter.contact_procedure {
+            let before = crate::native::bloodprg::OriginalSaveGame::capture(profile)?.encode();
+            host.services_mut()
+                .prepare_contact_for_scenario(procedure)?;
+            let after = crate::native::bloodprg::OriginalSaveGame::capture(
+                host.services().runtime().current_profile().unwrap(),
+            )?
+            .encode();
+            ensure!(
+                before.len() == after.len(),
+                "contact setup changed the save layout"
+            );
+            let changes = before.iter().zip(&after).enumerate()
+                .filter(|(_, (old, new))| old != new)
+                .map(|(offset, (old, new))| serde_json::json!({"offset": offset, "before": old, "after": new}))
+                .collect::<Vec<_>>();
+            Some(serde_json::json!({
+                "procedure_offset": procedure,
+                "manifest_sha256": format!("{:x}", Sha256::digest(include_bytes!("../../../../re/vm/contact-manifest/contact-manifest.json"))),
+                "before_save_sha256": format!("{:x}", Sha256::digest(&before)),
+                "after_save_sha256": format!("{:x}", Sha256::digest(&after)),
+                "save_byte_changes": changes,
+                "scope": "selected contact procedure and authored entry predicates; prepared chapter state, not a gameplay route",
+            }))
+        } else {
+            None
+        };
         if host.services().pending_ship_presentation_owner() == Some(target) {
             host.services_mut().clear_pending_ship_presentation_owner();
         }
@@ -289,6 +419,8 @@ pub(super) fn capture_dialogue_chapter(
         let mut saw_target = false;
         let mut observed_sites = std::collections::BTreeSet::new();
         let mut frame_sites = std::collections::BTreeSet::new();
+        let mut observed_bas_sites = std::collections::BTreeSet::new();
+        let mut frame_bas_sites = std::collections::BTreeSet::new();
         let mut publications = Vec::new();
         let mut choices = Vec::new();
         for main_frame in 1..=max_frames {
@@ -302,7 +434,11 @@ pub(super) fn capture_dialogue_chapter(
                 .take_text_publications()
             {
                 if event.profile == chapter.initial_profile {
-                    observed_sites.insert(event.offset);
+                    if event.bas {
+                        observed_bas_sites.insert(event.offset);
+                    } else {
+                        observed_sites.insert(event.offset);
+                    }
                 }
                 publications.push(serde_json::json!({
                     "publication": event, "frame_end_ns": host.platform().elapsed_ns - host.platform().capture_origin_ns,
@@ -320,6 +456,9 @@ pub(super) fn capture_dialogue_chapter(
                 if let Some(site) = host.services().published_text_site() {
                     frame_sites.insert(site.index());
                 }
+                if let Some(site) = host.services().published_bas_text_site() {
+                    frame_bas_sites.insert(site.index());
+                }
                 if host.services().presentation_word_choice_phase()?
                     == PresentationWordChoicePhase::Selecting
                 {
@@ -327,20 +466,33 @@ pub(super) fn capture_dialogue_chapter(
                         .choices
                         .get(choices.len())
                         .context("unplanned native dialogue choice")?;
+                    let source_site = match expected.source {
+                        OfflineDialogueChoiceSource::Cod => host.services().published_text_site(),
+                        OfflineDialogueChoiceSource::Bas => {
+                            host.services().published_bas_text_site()
+                        }
+                        OfflineDialogueChoiceSource::BasMenu => profile
+                            .selector_state()
+                            .current_branch()
+                            .map(|branch| branch.body),
+                    };
                     ensure!(
-                        host.services().published_text_site()
-                            == Some(ScriptCodeOffset::new(expected.text_site)),
-                        "native dialogue reached a different choice site"
+                        source_site == Some(ScriptCodeOffset::new(expected.text_site)),
+                        "native dialogue reached a different choice site: expected {:?} {:#x}, observed {:?}",
+                        expected.source,
+                        expected.text_site,
+                        source_site
                     );
                     let word = profile
                         .dictionary()
                         .resolve_source_offset(expected.word_offset)
                         .context("validated choice word disappeared")?;
                     host.services_mut().request_dialogue_word_choice(word)?;
-                    choices.push(serde_json::json!({
-                        "text_site": expected.text_site, "word_offset": expected.word_offset,
-                        "requested_at_ns": host.platform().elapsed_ns - host.platform().capture_origin_ns,
-                    }));
+                    let mut selected = serde_json::to_value(expected)?;
+                    selected["requested_at_ns"] = serde_json::json!(
+                        host.platform().elapsed_ns - host.platform().capture_origin_ns
+                    );
+                    choices.push(selected);
                 }
             }
             let contact_closed = chapter.entry.is_radio()
@@ -364,6 +516,20 @@ pub(super) fn capture_dialogue_chapter(
                         .iter()
                         .all(|site| observed_sites.contains(site)),
                     "dialogue ended without publishing every required text site: observed {observed_sites:?}"
+                );
+                ensure!(
+                    chapter
+                        .required_bas_sites
+                        .iter()
+                        .all(|site| observed_bas_sites.contains(site)),
+                    "dialogue ended without publishing every required BAS site: observed {observed_bas_sites:?}"
+                );
+                ensure!(
+                    chapter
+                        .required_frame_boundary_bas_sites
+                        .iter()
+                        .all(|site| frame_bas_sites.contains(site)),
+                    "dialogue ended without every required frame-boundary BAS site"
                 );
                 ensure!(
                     chapter
@@ -391,8 +557,10 @@ pub(super) fn capture_dialogue_chapter(
                         "setup_scope": "native startup panel close; startup sequence slots cleared; optional native profile handoff; no pointer input; not a gameplay route",
                         "profile_selected_at_ns": profile_selection,
                         "contact_transition_closed": contact_closed,
+                        "contact_preparation": contact_preparation,
                         "removed_sequence_slots": removed_sequences.as_slice(),
                         "published_cod_sites": observed_sites, "frame_boundary_cod_sites": frame_sites,
+                        "published_bas_sites": observed_bas_sites, "frame_boundary_bas_sites": frame_bas_sites,
                         "publications": publications, "choices": choices,
                         "final_profile": current_profile,
                     }),

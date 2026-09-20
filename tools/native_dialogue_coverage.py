@@ -39,24 +39,29 @@ def add_chapter(plan, chapter, profiles, sites, capture):
     require(key in profiles, "chapter profile missing from static catalog")
     require(all(profiles[key][field] == plan[field] for field in ("cod_sha256", "dic_sha256")),
             "chapter source hashes differ from static catalog")
-    published = set(chapter["published_cod_sites"])
-    absent = set(chapter.get("expected_unpublished_cod_sites", []))
-    require(not published & absent, "chapter site is both published and absent")
-    for offset in published | absent:
-        identity = (*key, "cod", offset)
-        require(identity in sites, "chapter references an unknown static COD site")
-        site = sites[identity]
-        if offset in absent:
-            site["absent_branches"].append(capture)
-            continue
-        site["publications"].append(capture)
-        raster = chapter["ui_raster_evidence"].get(str(offset), {})
-        if raster.get("ui_raster_frames", 0):
-            site["ui_partial"].append(capture)
-        if raster.get("fully_revealed_ui_frames", 0):
-            require(raster.get("ui_raster_frames", 0) >= raster["fully_revealed_ui_frames"],
-                    "full UI reveal exceeds raster frame count")
-            site["ui_full"].append(capture)
+    if chapter.get("published_bas_sites"):
+        require(plan.get("bas_sha256") is not None and
+                profiles[key].get("bas_sha256") == plan["bas_sha256"],
+                "chapter BAS hash differs from static catalog")
+    for kind in ("cod", "bas"):
+        published = set(chapter.get(f"published_{kind}_sites", []))
+        absent = set(chapter.get(f"expected_unpublished_{kind}_sites", []))
+        require(not published & absent, "chapter site is both published and absent")
+        for offset in published | absent:
+            identity = (*key, kind, offset)
+            require(identity in sites, f"chapter references an unknown static {kind.upper()} site")
+            site = sites[identity]
+            if offset in absent:
+                site["absent_branches"].append(capture)
+                continue
+            site["publications"].append(capture)
+            raster = chapter["bas_ui_raster_evidence" if kind == "bas" else "ui_raster_evidence"].get(str(offset), {})
+            if raster.get("ui_raster_frames", 0):
+                site["ui_partial"].append(capture)
+            if raster.get("fully_revealed_ui_frames", 0):
+                require(raster.get("ui_raster_frames", 0) >= raster["fully_revealed_ui_frames"],
+                        "full UI reveal exceeds raster frame count")
+                site["ui_full"].append(capture)
 
 
 def summarize(sites):
@@ -121,6 +126,10 @@ def build(catalog, batches, output):
             for field in ("published_cod_sites", "state_trace_cod_sites", "ui_raster_evidence",
                           "published_without_ui_raster", "published_without_full_ui_reveal"):
                 require(chapter[field] == evidence[field], "chapter trace evidence differs: " + field)
+            for field in ("published_bas_sites", "state_trace_bas_sites", "published_bas_without_ui_raster",
+                          "published_bas_without_full_ui_reveal", "bas_ui_raster_evidence"):
+                require(chapter.get(field, {} if field == "bas_ui_raster_evidence" else []) == evidence[field],
+                        "chapter trace evidence differs: " + field)
             require(chapter.get("expected_unpublished_cod_sites", []) ==
                     evidence["expected_unpublished_cod_sites"], "chapter absent-site evidence differs")
             capture = len(captures)

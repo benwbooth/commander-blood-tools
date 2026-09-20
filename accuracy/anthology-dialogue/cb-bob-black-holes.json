@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "game": "commander_blood",
+  "title": "Bob Morlock: black holes",
+  "initial_profile": 1,
+  "cod_sha256": "19f686e185eaaa2ce139bb5132a2e6f1d380eb8239492688e2f47030644a9e5e",
+  "dic_sha256": "88c4eea1b947cedac521edca2f0fabd2448ac4a99e8c0a87a4a6acf8a129c6c5",
+  "bas_sha256": "7db1fe0c0d2ca46b61c208c2b7b6373ff6e3aa7fa905b443b3e4fb251a68c274",
+  "target": "Bob_Morlock",
+  "entry": "contact",
+  "contact_procedure": 7244,
+  "choices": [
+    {"source": "bas_menu", "text_site": 17524, "word_offset": 22926},
+    {"source": "bas_menu", "text_site": 17524, "word_offset": 22926},
+    {"source": "bas_menu", "text_site": 17524, "word_offset": 22926},
+    {"source": "bas_menu", "text_site": 17524, "word_offset": 22926},
+    {"source": "bas_menu", "text_site": 17524, "word_offset": 22926},
+    {"source": "bas_menu", "text_site": 17524, "word_offset": 2894}
+  ],
+  "required_cod_sites": [7262, 7294, 7330],
+  "required_frame_boundary_cod_sites": [7262, 7294, 7330],
+  "required_bas_sites": [17598, 17632, 17668, 17701, 17752],
+  "required_frame_boundary_bas_sites": [17598, 17632, 17668, 17701, 17752],
+  "end": {"kind": "presentation_finished"}
+}

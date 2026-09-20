@@ -3836,6 +3836,12 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.published_text_site()
     }
 
+    pub(super) fn published_bas_text_site(
+        &self,
+    ) -> Option<commander_blood_formats::code::ScriptCodeOffset> {
+        self.scripts.published_bas_text_site()
+    }
+
     pub(super) fn request_dialogue_word_choice(&mut self, word: ScriptWordId) -> Result<()> {
         self.presentation_word_choice
             .as_mut()
@@ -5798,6 +5804,13 @@ impl<'window> ModernGameServices<'window> {
         snapshot["rgb_ui"] = rgb_ui;
         snapshot["published_cod_text_site"] =
             serde_json::json!(self.scripts.published_text_site().map(|site| site.index()));
+        snapshot["published_bas_text_site"] = serde_json::json!(
+            self.scripts
+                .published_bas_text_site()
+                .map(|site| site.index())
+        );
+        snapshot["dialogue_selector_root"] =
+            serde_json::json!(self.scripts.selector_root().map(|site| site.index()));
         snapshot["cod_text_publications"] =
             serde_json::json!(self.scripts.backend().text_publications());
         snapshot["contact_transition"] = self

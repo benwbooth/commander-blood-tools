@@ -373,6 +373,14 @@ impl RuntimeScriptSystem {
         self.dispatch.published_text_site
     }
 
+    pub(super) const fn published_bas_text_site(&self) -> Option<ScriptCodeOffset> {
+        self.dispatch.published_bas_text_site
+    }
+
+    pub(super) fn selector_root(&self) -> Option<ScriptCodeOffset> {
+        crate::native::bloodprg::ScriptDispatchHost::selector_root(&self.service)
+    }
+
     pub(super) fn choice_display_labels(
         &self,
         words: &[commander_blood_formats::script::ScriptWordId],
@@ -824,6 +832,8 @@ pub(super) struct RuntimeTextPublication {
     pub profile: u8,
     pub offset: usize,
     pub subtitle: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub bas: bool,
 }
 
 /// Concrete flat backend state shared by the script service and game lifecycle.
@@ -1131,6 +1141,18 @@ impl ScriptExecutionBackend for RuntimeScriptBackend {
                 profile: profile.value(),
                 offset: instruction.index(),
                 subtitle,
+                bas: false,
+            });
+        }
+    }
+
+    fn bas_text_published(&mut self, instruction: ScriptCodeOffset, subtitle: bool) {
+        if let (Some(events), Some(profile)) = (&mut self.text_publications, self.bound_profile) {
+            events.push(RuntimeTextPublication {
+                profile: profile.value(),
+                offset: instruction.index(),
+                subtitle,
+                bas: true,
             });
         }
     }
@@ -1509,6 +1531,25 @@ mod tests {
                 invalid = plan.clone();
                 invalid.dic_sha256 = "00".repeat(32);
                 assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                if plan.bas_sha256.is_some() {
+                    invalid = plan.clone();
+                    invalid.bas_sha256 = Some("00".repeat(32));
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.bas_sha256 = None;
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.required_bas_sites.push(usize::MAX);
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                }
+                if plan.contact_procedure.is_some() {
+                    invalid = plan.clone();
+                    invalid.target = "not_the_contact_actor".to_owned();
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.contact_procedure = Some(usize::MAX);
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                }
                 invalid = plan.clone();
                 invalid.required_cod_sites.push(usize::MAX);
                 assert!(validate_dialogue_chapter(&invalid, profile).is_err());
@@ -1535,6 +1576,9 @@ mod tests {
             scripts
                 .backend_mut()
                 .text_published(ScriptCodeOffset::new(123), true);
+            scripts
+                .backend_mut()
+                .bas_text_published(ScriptCodeOffset::new(123), false);
             let id = ScriptProfileId::new_for_dialect(1, runtime.data().game().script_dialect())
                 .unwrap();
             scripts.load_profile(&mut runtime, id).unwrap();
@@ -1545,9 +1589,13 @@ mod tests {
             assert_eq!(
                 events
                     .iter()
-                    .map(|event| (event.profile, event.offset, event.subtitle))
+                    .map(|event| (event.profile, event.offset, event.subtitle, event.bas))
                     .collect::<Vec<_>>(),
-                [(0, 123, true), (1, 456, false)]
+                [
+                    (0, 123, true, false),
+                    (0, 123, false, true),
+                    (1, 456, false, false)
+                ]
             );
             assert!(scripts.backend_mut().take_text_publications().is_empty());
         }

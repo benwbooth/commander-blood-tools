@@ -100,6 +100,9 @@ pub trait ScriptBasDispatchHost {
     /// Typed platform or descriptor failure.
     type Error;
 
+    /// Optional read-only observer for accepted BAS text publications.
+    fn text_published(&mut self, _instruction: ScriptCodeOffset, _subtitle: bool) {}
+
     /// Return current UI gates for an A8 sequence request.
     fn sequence_context(&self) -> SequenceRequestContext;
 
@@ -283,6 +286,18 @@ impl<Host: ScriptBasDispatchHost> ScriptBlockHandler for BasInstructionDispatche
                     None,
                 )
                 .map_err(ScriptBasDispatchError::Text)?;
+                if matches!(
+                    execution.outcome,
+                    super::TextHandlerOutcome::SubtitlePublished
+                        | super::TextHandlerOutcome::MenuPublished
+                ) {
+                    self.dispatch.published_text_site = None;
+                    self.dispatch.published_bas_text_site = Some(token.source_offset());
+                    self.host.text_published(
+                        token.source_offset(),
+                        execution.outcome == super::TextHandlerOutcome::SubtitlePublished,
+                    );
+                }
                 #[cfg(test)]
                 if execution.flow != ScriptFrameFlow::Continue {
                     self.bas.last_published_text = Some(token.source_offset());
@@ -513,10 +528,17 @@ mod tests {
         target: usize,
     }
 
-    struct TestHost;
+    #[derive(Default)]
+    struct TestHost {
+        publications: Vec<(ScriptCodeOffset, bool)>,
+    }
 
     impl ScriptBasDispatchHost for TestHost {
         type Error = Infallible;
+
+        fn text_published(&mut self, instruction: ScriptCodeOffset, subtitle: bool) {
+            self.publications.push((instruction, subtitle));
+        }
 
         fn sequence_context(&self) -> SequenceRequestContext {
             SequenceRequestContext {
@@ -615,7 +637,7 @@ mod tests {
                         dispatch: &mut dispatch,
                         bas: &mut ScriptBasDispatchState::default(),
                     },
-                    &mut TestHost,
+                    &mut TestHost::default(),
                 )
                 .unwrap_or_else(|error| {
                     panic!(
@@ -744,7 +766,7 @@ mod tests {
                                 dispatch: &mut dispatch,
                                 bas: &mut bas,
                             },
-                            &mut TestHost,
+                            &mut TestHost::default(),
                         )
                     }
                     .unwrap_or_else(|error| {
@@ -836,7 +858,7 @@ mod tests {
                                 dispatch: &mut dispatch,
                                 bas: &mut bas,
                             },
-                            &mut TestHost,
+                            &mut TestHost::default(),
                         )
                     }
                     .unwrap_or_else(|error| {
@@ -979,6 +1001,7 @@ mod tests {
 
                     for pass in usize::MIN..MAXIMUM_DIALOGUE_TARGET_PASSES {
                         dispatch.random = random_states[pass % random_states.len()];
+                        let mut host = TestHost::default();
                         let outcome = {
                             let parts = profile.execution_parts();
                             execute_script_dialogue_control(
@@ -997,7 +1020,7 @@ mod tests {
                                     dispatch: &mut dispatch,
                                     bas: &mut bas,
                                 },
-                                &mut TestHost,
+                                &mut host,
                             )
                         }
                         .unwrap_or_else(|error| {
@@ -1014,8 +1037,15 @@ mod tests {
                         );
 
                         let Some(published) = bas.take_last_published_text() else {
+                            assert!(host.publications.is_empty());
                             continue;
                         };
+                        assert_eq!(
+                            host.publications.last().map(|event| event.0),
+                            Some(published)
+                        );
+                        assert_eq!(dispatch.published_bas_text_site, Some(published));
+                        assert_eq!(dispatch.published_text_site, None);
                         observed.push(published.index());
                         if published.index() == event.offset {
                             reached = true;

@@ -169,6 +169,7 @@ pub fn analyze_images(images: &vm_profile::ProfileImages) -> Result<Value> {
         json!({"schema": 1, "profile": images.name, "game": if sequel { "bbb" } else { "cb" },
             "analysis": "static authored graph; conditions are not solved and runtime reachability is not asserted",
             "resources": {"cod_sha256": format!("{:x}", Sha256::digest(&images.cod)),
+                "bas_sha256": images.bas.as_ref().map(|bytes| format!("{:x}", Sha256::digest(bytes))),
                 "dic_sha256": format!("{:x}", Sha256::digest(&images.dic))},
             "symbols": symbols,
             "cod": {"control_flow": graph, "instructions": instructions, "text_sites": text_sites,

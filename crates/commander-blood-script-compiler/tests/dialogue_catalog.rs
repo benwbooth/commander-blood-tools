@@ -1,5 +1,6 @@
 use commander_blood_script_compiler::analyze_dialogue;
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 fn profile(game: &str, index: usize) -> (String, Value) {
     let directory = match game {
@@ -19,6 +20,16 @@ fn every_authored_text_statement_has_a_site_in_all_22_profiles() {
     for (game_index, (game, count)) in [("cb", 5), ("bbb", 17)].into_iter().enumerate() {
         for index in 1..=count {
             let (source, graph) = profile(game, index);
+            let images = commander_blood_script_compiler::compile_profile(&source).unwrap();
+            assert_eq!(
+                graph["resources"]["bas_sha256"],
+                serde_json::json!(
+                    images
+                        .bas
+                        .as_ref()
+                        .map(|bytes| format!("{:x}", Sha256::digest(bytes)))
+                )
+            );
             let expected = source
                 .lines()
                 .map(str::trim_start)

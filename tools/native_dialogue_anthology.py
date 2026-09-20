@@ -23,12 +23,18 @@ def validate_trace(plan, runner, states, rows):
     require([event["frame_end_ns"] for event in publications] ==
             sorted(event["frame_end_ns"] for event in publications), "unordered publications")
     published = {event["publication"]["offset"] for event in publications
-                 if event["publication"]["profile"] == plan["initial_profile"]}
+                 if event["publication"]["profile"] == plan["initial_profile"]
+                 and not event["publication"].get("bas", False)}
+    published_bas = {event["publication"]["offset"] for event in publications
+                     if event["publication"]["profile"] == plan["initial_profile"]
+                     and event["publication"].get("bas", False)}
     require(published == set(runner["published_cod_sites"]), "publication accounting differs")
+    require(published_bas == set(runner.get("published_bas_sites", [])), "BAS publication accounting differs")
     require(set(plan["required_cod_sites"]) <= published, "missing required publication")
+    require(set(plan.get("required_bas_sites", [])) <= published_bas, "missing required BAS publication")
     unpublished = set(plan.get("expected_unpublished_cod_sites", []))
     require(not published & unpublished, "published a site declared absent on this branch")
-    require([{key: item[key] for key in ("text_site", "word_offset")}
+    require([{key: value for key, value in item.items() if key != "requested_at_ns"}
              for item in runner["choices"]] == plan["choices"], "different semantic choices")
     require(all(choice["requested_at_ns"] in ends for choice in runner["choices"]),
             "choice outside native frame boundaries")
@@ -38,8 +44,16 @@ def validate_trace(plan, runner, states, rows):
         require(runner["profile_selected_at_ns"] is not None and
                 0 < runner["profile_selected_at_ns"] <= runner["bootstrap_duration_ns"],
                 "missing native profile selection provenance")
+    if plan.get("contact_procedure") is not None:
+        preparation = runner.get("contact_preparation")
+        require(preparation is not None and preparation["procedure_offset"] == plan["contact_procedure"],
+                "missing prepared-contact provenance")
+        require(preparation["manifest_sha256"] == digest(ROOT / "re/vm/contact-manifest/contact-manifest.json"),
+                "contact preparation manifest changed")
     boundary = set()
     evidence = {}
+    boundary_bas = set()
+    evidence_bas = {}
     last_time = -1
     last = None
     sequences = []
@@ -62,10 +76,15 @@ def validate_trace(plan, runner, states, rows):
         if state["vm"]["resource_profile"] != plan["initial_profile"]:
             continue
         site = state["published_cod_text_site"]
+        bas_site = state.get("published_bas_text_site")
+        require(site is None or bas_site is None, "ambiguous COD/BAS publication source")
+        is_bas = bas_site is not None
+        if is_bas:
+            site = bas_site
         if site is None:
             continue
-        boundary.add(site)
-        entry = evidence.setdefault(site, dict(ui_raster_frames=0, fully_revealed_ui_frames=0,
+        (boundary_bas if is_bas else boundary).add(site)
+        entry = (evidence_bas if is_bas else evidence).setdefault(site, dict(ui_raster_frames=0, fully_revealed_ui_frames=0,
                                                max_matching_glyph_pixels=0, first_full_ui_ns=None))
         presentation = state["presentation"]
         subtitle = bool(presentation["text_display_active"])
@@ -73,7 +92,7 @@ def validate_trace(plan, runner, states, rows):
         if not raster or not raster["expected_pixel_count"]:
             continue
         require(raster["matching_pixel_count"] == raster["expected_pixel_count"],
-                f"native UI glyph raster mismatch at COD {site:#x}")
+                f"native UI glyph raster mismatch at {'BAS' if is_bas else 'COD'} {site:#x}")
         entry["ui_raster_frames"] += 1
         entry["max_matching_glyph_pixels"] = max(entry["max_matching_glyph_pixels"],
                                                    raster["matching_pixel_count"])
@@ -90,6 +109,8 @@ def validate_trace(plan, runner, states, rows):
     require(last is not None, "empty native state trace")
     require(set(plan["required_frame_boundary_cod_sites"]) <= boundary,
             "missing required frame-boundary text site")
+    require(set(plan.get("required_frame_boundary_bas_sites", [])) <= boundary_bas,
+            "missing required frame-boundary BAS text site")
     if plan["end"]["kind"] == "presentation_finished":
         require(not last["presentation"]["active"], "presentation did not finish")
     if plan.get("entry", "radio") == "contact":
@@ -98,6 +119,12 @@ def validate_trace(plan, runner, states, rows):
                 not last["presentation"]["navigation_rebuild_pending"],
                 "contact transition did not finish")
     return dict(published_cod_sites=sorted(published), state_trace_cod_sites=sorted(boundary),
+                published_bas_sites=sorted(published_bas), state_trace_bas_sites=sorted(boundary_bas),
+                bas_ui_raster_evidence={str(key): value for key, value in sorted(evidence_bas.items())},
+                published_bas_without_ui_raster=sorted(site for site in published_bas
+                    if not evidence_bas.get(site, {}).get("ui_raster_frames")),
+                published_bas_without_full_ui_reveal=sorted(site for site in published_bas
+                    if not evidence_bas.get(site, {}).get("fully_revealed_ui_frames")),
                 expected_unpublished_cod_sites=sorted(unpublished),
                 observed_sequence_resources=sequences,
                 ui_raster_evidence={str(key): value for key, value in sorted(evidence.items())},
@@ -133,14 +160,25 @@ def verify_chapter(path, plan, manifest, exporter_hash):
                 native_state_sha256=digest(path / "native-state.jsonl"), **hashes, **evidence)
 
 
-def render(args):
-    assets = args.assets.resolve()
-    manifest, manifest_hash = inventory(assets)
-    plans = [(path.resolve(), read_json(path)) for path in args.plan]
+def chapter_plans(plan_paths, plan_set=None):
+    paths = list(plan_paths or [])
+    if plan_set is not None:
+        planned = read_json(plan_set)
+        require(planned["schema"] == 1 and isinstance(planned["plans"], list)
+                and all(isinstance(name, str) for name in planned["plans"]), "invalid chapter plan set")
+        paths.extend(plan_set.parent / name for name in planned["plans"])
+    plans = [(path.resolve(), read_json(path)) for path in paths]
     require(plans, "no dialogue plans")
     names = [path.stem for path, _ in plans]
     require(len(set(names)) == len(names), "duplicate plan names")
     require(len({plan["title"] for _, plan in plans}) == len(plans), "duplicate chapter titles")
+    return plans
+
+
+def render(args):
+    plans = chapter_plans(args.plan, args.plan_set)
+    assets = args.assets.resolve()
+    manifest, manifest_hash = inventory(assets)
     args.out = args.out.resolve()
     args.out.mkdir(parents=True, exist_ok=True)
     provenance = dict(schema=1, game=manifest.get("game", "commander_blood"),
@@ -180,7 +218,8 @@ def main():
     capture = modes.add_parser("render")
     capture.add_argument("--assets", type=Path, required=True)
     capture.add_argument("--out", type=Path, required=True)
-    capture.add_argument("--plan", type=Path, action="append", required=True)
+    capture.add_argument("--plan", type=Path, action="append")
+    capture.add_argument("--plan-set", type=Path, help="planning.json from the static BAS planner")
     capture.add_argument("--exporter", type=Path, default=ROOT / "target/release/offline-presentation")
     capture.add_argument("--max-frames", type=int, default=100_000)
     capture.set_defaults(run=render)

@@ -1,15 +1,17 @@
 # Native Dialogue Chapters
 
-These plans select branches of the COD dialogue trees. They bind the
-original COD/DIC bytes and address choices by the A6 source offset and DIC word
-offset, not screen coordinates. `required_frame_boundary_cod_sites` checks
+These plans select branches of the COD/BAS dialogue trees. They bind the
+original COD/DIC bytes (and BAS bytes when used) and address choices by source
+offset and DIC word offset, not screen coordinates. `required_frame_boundary_cod_sites` checks
 retained script state, not visible pixels. The batch report separately records
 glyph-buffer evidence and lines with no full reveal.
 
 Current scope: CB SCRIPT1 Izwalito's game/explanations choices and Bob's mission
 yes/no choices; BBB SCRIPT1 HONK's PLAY/INSTRUCTIONS choices and Bob's recorded
-mission; BBB SCRIPT2 HONK's Daddy-in-the-cryobox conversation. These eight plans
-do not cover the other actors, dialogue branches, objects, travel, or environments.
+mission; BBB SCRIPT2 HONK's Daddy-in-the-cryobox conversation; CB SCRIPT2 Bob's
+black-hole BAS topic. These nine checked-in plans do not cover the other actors,
+dialogue branches, objects, travel, or environments. The static BAS planner also
+produces topic plan sets from the hashed catalog without running the game.
 
 ## Native Omissions
 
@@ -58,8 +60,31 @@ binding the target and starting capture. The report retains the selection time.
 This is chapter setup, not evidence that prior gameplay reached this state or
 that the target was eligible in the contact menu. SCRIPT2 HONK has been rendered;
 later profiles may require additional authored prerequisites. Plan requirements
-and choices currently refer only to the selected profile's COD sites, not BAS
-or a chain of different profile-local conversations.
+and choices refer only to the selected profile's COD/BAS sites, not a chain of
+different profile-local conversations.
+
+`source` on a choice defaults to `cod`. `bas` identifies an A6 text instruction;
+`bas_menu` identifies the Menu body offset, not its selector-node root. Both BAS
+forms require `bas_sha256`. BAS publication and frame-boundary requirements use
+`required_bas_sites` and `required_frame_boundary_bas_sites`; they cannot satisfy
+COD requirements at the same numeric offset. Every semantic selection still
+passes through the native choice widget and must be offered at that boundary.
+
+An optional `contact_procedure` prepares the exact CB procedure using the existing
+binary-derived contact manifest. It validates the profile and actor, sets authored
+entry predicates, and disables competing contact procedures. The report retains
+the manifest hash, original-save hashes before/after, and every changed save byte.
+This is explicit prepared-state chapter setup, not proof of contact-menu
+eligibility or a gameplay route. It does not modify script text, timing, or media.
+
+Bob's checked-in black-hole plan repeats the topic selection for each of five
+successive native BAS replies, then selects the authored `bye_bye` row. The
+initial BAS prompt and BAS goodbye are preempted by the COD conversation; the
+plan does not require or invent them. The generated nine-topic batch additionally
+checks nested Kanary menu paths. Generated plans remain candidates: a Bronko
+SCRIPT2 contact probe ended before its planned BAS choices, so it is retained as
+a failed attempt and contributes no verified coverage. That actor's BAS menu is
+not established as reachable through that contact procedure.
 
 `expected_unpublished_cod_sites` asserts absence on a selected branch, not global
 unreachability. The CB Bob chapters preserve the observed `AARCHE10`, `AARCHE30`,

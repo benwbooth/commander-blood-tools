@@ -69,6 +69,8 @@ pub struct ScriptDispatchState {
     pub text_presentation: TextPresentationState,
     /// Source of the last accepted A6 presentation, for display-only localization.
     pub published_text_site: Option<ScriptCodeOffset>,
+    /// BAS source of the last accepted A6; mutually exclusive with the COD source.
+    pub published_bas_text_site: Option<ScriptCodeOffset>,
     /// Topic and sequence request state.
     pub sequence_presentation: SequencePresentationState,
     /// Reference invalidated by B8/B9/BD pair writes.
@@ -484,6 +486,7 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                         | super::TextHandlerOutcome::MenuPublished
                 ) {
                     self.dispatch.published_text_site = Some(token.source_offset());
+                    self.dispatch.published_bas_text_site = None;
                 }
                 if execution.outcome == super::TextHandlerOutcome::SubtitlePublished
                     && let Some(display) = self

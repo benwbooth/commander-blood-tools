@@ -43,6 +43,17 @@ class CoverageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source hashes"):
             self.apply()
 
+    def test_bas_has_independent_source_binding_and_site_accounting(self):
+        self.chapter["published_bas_sites"] = [100]
+        self.chapter["bas_ui_raster_evidence"] = {"100": dict(ui_raster_frames=3, fully_revealed_ui_frames=1)}
+        with self.assertRaisesRegex(ValueError, "BAS hash"):
+            self.apply()
+        self.plan["bas_sha256"] = "bas"
+        self.profiles[("cb", "SCRIPT1")]["bas_sha256"] = "bas"
+        self.apply()
+        self.assertEqual(summarize(self.sites)["cb"]["ui_fully_revealed"], 2)
+        self.assertEqual(self.sites[("cb", "SCRIPT1", "bas", 100)]["publications"], [0])
+
     def test_unknown_site_is_rejected(self):
         self.chapter["published_cod_sites"] = [300]
         with self.assertRaisesRegex(ValueError, "unknown static COD site"):

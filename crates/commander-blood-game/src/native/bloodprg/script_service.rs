@@ -33,6 +33,9 @@ pub trait ScriptExecutionBackend {
     /// Optional read-only observer for accepted native COD text instructions.
     fn text_published(&mut self, _instruction: ScriptCodeOffset, _subtitle: bool) {}
 
+    /// Optional read-only observer for accepted native BAS text instructions.
+    fn bas_text_published(&mut self, _instruction: ScriptCodeOffset, _subtitle: bool) {}
+
     /// Resolve optional localized subtitle bytes without replacing semantic words.
     fn subtitle_display_override(
         &mut self,
@@ -576,6 +579,10 @@ struct BasExternalHost<'a, Backend> {
 
 impl<Backend: ScriptExecutionBackend> ScriptBasDispatchHost for BasExternalHost<'_, Backend> {
     type Error = Backend::Error;
+
+    fn text_published(&mut self, instruction: ScriptCodeOffset, subtitle: bool) {
+        self.backend.bas_text_published(instruction, subtitle);
+    }
 
     fn sequence_context(&self) -> SequenceRequestContext {
         self.backend.sequence_context()

@@ -1,6 +1,6 @@
 //! Typed contact-procedure preparation for deterministic production scenarios.
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, bail, ensure};
 use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::instruction::{
     DecodedScriptInstruction, ScriptInstruction, ScriptRecordValue, ScriptStateOperand,
@@ -45,6 +45,47 @@ struct ContactPresentation {
     related_record_offset: usize,
 }
 
+pub(super) fn validate_contact_chapter(
+    profile: &LoadedScriptProfile,
+    procedure_offset: usize,
+    target: &str,
+) -> Result<()> {
+    ensure!(
+        profile.code().dialect() == commander_blood_formats::code::ScriptDialect::CommanderBlood,
+        "the contact preparation manifest covers Commander Blood only"
+    );
+    let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON)?;
+    let scenario = find_scenario(&manifest, profile.id(), procedure_offset)?;
+    ensure!(
+        profile.directory().find_active_object(target.as_bytes())
+            == Some(object_at_source_offset(
+                profile,
+                scenario.contact_object_offset
+            )?),
+        "chapter target differs from the contact procedure's authored actor"
+    );
+    Ok(())
+}
+
+fn find_scenario(
+    manifest: &ContactManifest,
+    profile_id: crate::native::bloodprg::ScriptProfileId,
+    procedure_offset: usize,
+) -> Result<&ContactScenario> {
+    let script = format!(
+        "{SCRIPT_NAME_PREFIX}{}",
+        profile_id.value() + FIRST_SCRIPT_NUMBER
+    );
+    let mut matches = manifest.procedures.iter().filter(|scenario| {
+        scenario.script == script && scenario.procedure_offset == procedure_offset
+    });
+    let scenario = matches
+        .next()
+        .with_context(|| format!("no contact manifest row for {script}@{procedure_offset:04x}"))?;
+    ensure!(matches.next().is_none(), "ambiguous contact manifest row");
+    Ok(scenario)
+}
+
 /// Prepare one binary-derived D1 procedure immediately before its real UI click.
 pub(super) fn prepare_contact_for_scenario(
     runtime: &mut OriginalGameRuntime,
@@ -52,27 +93,15 @@ pub(super) fn prepare_contact_for_scenario(
 ) -> Result<()> {
     let manifest: ContactManifest = serde_json::from_str(CONTACT_MANIFEST_JSON)
         .context("decoding the binary-derived contact manifest")?;
+    ensure!(
+        runtime.data().game() == crate::game::GameVariant::CommanderBlood,
+        "the contact preparation manifest covers Commander Blood only"
+    );
     let profile_id = runtime
         .current_profile()
         .context("contact preparation requires a loaded BloodScript profile")?
         .id();
-    let script = format!(
-        "{SCRIPT_NAME_PREFIX}{}",
-        profile_id.value() + FIRST_SCRIPT_NUMBER
-    );
-    let matches = manifest
-        .procedures
-        .iter()
-        .filter(|scenario| {
-            scenario.script == script && scenario.procedure_offset == procedure_offset
-        })
-        .collect::<Vec<_>>();
-    let [scenario] = matches.as_slice() else {
-        bail!(
-            "contact procedure {script}@{procedure_offset:04x} resolved to {} manifest rows",
-            matches.len()
-        );
-    };
+    let scenario = find_scenario(&manifest, profile_id, procedure_offset)?;
     let profile = runtime
         .current_profile_mut()
         .context("loaded BloodScript profile disappeared during contact preparation")?;

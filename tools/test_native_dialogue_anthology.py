@@ -1,7 +1,38 @@
 import copy
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
-from native_dialogue_anthology import validate_trace
+from native_dialogue_anthology import chapter_plans, validate_trace
+
+
+class ChapterPlanTests(unittest.TestCase):
+    def test_plan_set_preserves_order_and_is_relative_to_its_own_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            for name in ("one", "two", "three"):
+                (base / f"{name}.json").write_text(json.dumps(dict(title=name)))
+            manifest = base / "planning.json"
+            manifest.write_text(json.dumps(dict(schema=1, plans=["three.json", "two.json"])))
+            plans = chapter_plans([base / "one.json"], manifest)
+            self.assertEqual([plan["title"] for _, plan in plans], ["one", "three", "two"])
+            self.assertTrue(all(path.is_absolute() for path, _ in plans))
+            with self.assertRaisesRegex(ValueError, "duplicate plan names"):
+                chapter_plans([base / "two.json"], manifest)
+            (base / "two.json").write_text(json.dumps(dict(title="three")))
+            with self.assertRaisesRegex(ValueError, "duplicate chapter titles"):
+                chapter_plans([], manifest)
+
+    def test_empty_or_malformed_plan_set_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "no dialogue plans"):
+            chapter_plans(None)
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "planning.json"
+            for value in (dict(schema=1, plans=[42]), dict(schema=2, plans=[])):
+                manifest.write_text(json.dumps(value))
+                with self.assertRaisesRegex(ValueError, "invalid chapter plan set"):
+                    chapter_plans([], manifest)
 
 
 class DialogueTraceTests(unittest.TestCase):
@@ -40,6 +71,39 @@ class DialogueTraceTests(unittest.TestCase):
     def test_partial_reveal_is_not_full_coverage(self):
         self.states[0]["state"]["presentation"]["text_state"]["subtitle_reveal_cursor"] = 1
         self.assertEqual(self.verify()["published_without_full_ui_reveal"], [100, 200])
+
+    def test_bas_publications_and_rasters_do_not_alias_cod(self):
+        self.runner["publications"].append(dict(frame_end_ns=138_000_000,
+                                               publication=dict(profile=0, offset=100, subtitle=True, bas=True)))
+        self.runner["published_bas_sites"] = [100]
+        self.plan["required_bas_sites"] = [100]
+        self.plan["required_frame_boundary_bas_sites"] = [100]
+        state = copy.deepcopy(self.states[0])
+        state["time_ns"] = 92_000_000
+        state["state"]["published_cod_text_site"] = None
+        state["state"]["published_bas_text_site"] = 100
+        self.states.append(state)
+        result = self.verify()
+        self.assertEqual(result["published_bas_sites"], [100])
+        self.assertEqual(result["bas_ui_raster_evidence"]["100"]["first_full_ui_ns"], 92_000_000)
+        self.assertEqual(result["ui_raster_evidence"]["100"]["first_full_ui_ns"], 46_000_000)
+
+    def test_ambiguous_cod_bas_source_is_rejected(self):
+        self.states[0]["state"]["published_bas_text_site"] = 100
+        with self.assertRaisesRegex(ValueError, "ambiguous COD/BAS"):
+            self.verify()
+
+    def test_bas_cannot_satisfy_cod_publication_requirement(self):
+        self.runner["publications"][0]["publication"]["bas"] = True
+        with self.assertRaisesRegex(ValueError, "publication accounting"):
+            self.verify()
+
+    def test_choice_source_is_part_of_the_contract(self):
+        self.plan["choices"][0]["source"] = "bas_menu"
+        with self.assertRaisesRegex(ValueError, "different semantic choices"):
+            self.verify()
+        self.runner["choices"][0]["source"] = "bas_menu"
+        self.verify()
 
     def test_other_profile_site_does_not_satisfy_requirement(self):
         self.runner["publications"][1]["publication"]["profile"] = 1

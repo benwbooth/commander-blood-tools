@@ -26,7 +26,7 @@ authoritative source for IDs and conditions; it is not rewritten or retranslated
 `localization/big-bug-bang/en`). `--bbb-language source` explicitly disables the
 English overlay for source-language analysis.
 
-The analyzer hashes the actual compiled COD and DIC images. The exporter requires
+The analyzer hashes the actual compiled COD, DIC, and optional BAS images. The exporter requires
 both hashes, the profile tag, and the exact set of text-site IDs to match the
 English catalog. It also checks section and choice counts, ordered live-number
 operands, and inventory generators. Mismatches fail the export, rather than
@@ -360,7 +360,7 @@ and alternate dialogue branches remain to be rendered and verified.
 
 ### Native Dialogue Branches
 
-`dialogue:PLAN.json` runs a source-bound COD branch through the same device-free
+`dialogue:PLAN.json` runs a source-bound COD/BAS branch through the same device-free
 main lifecycle. It selects DIC words semantically, without pointer input. Plans
 are under `accuracy/anthology-dialogue/`; that directory's README documents the
 native skipped/preempted lines, radio/contact entry, and profile-setup limits.
@@ -426,31 +426,72 @@ BBB SCRIPT2 reproduction in `dialogue-final-build/bbb` matched those same fields
 Frame inspection confirmed original contact artwork and fonts and BBB English
 text in sampled encoded frames; this is not visual inspection of every line.
 
+### Static BAS Topic Plans
+
+```sh
+uv run tools/native_bas_plans.py \
+  --catalog output/anthology/static-dialogue-en-v2 \
+  --profile 2 --procedure 7244 \
+  --out output/anthology/bas-plans/cb-bob-script2
+nix develop -c uv run tools/native_dialogue_anthology.py render \
+  --assets "$HOME/.local/share/commander-blood/assets-v1" \
+  --plan-set output/anthology/bas-plans/cb-bob-script2/planning.json \
+  --exporter output/anthology/dialogue-bas-bob-v1/bin/offline-presentation \
+  --out output/anthology/dialogue-bas-bob-v1/cb
+nix develop -c uv run tools/native_dialogue_anthology.py assemble \
+  --batch output/anthology/dialogue-bas-bob-v1/cb \
+  --out output/anthology/cb-bob-bas-topics-native.mkv
+```
+
+The planner follows the static graph's first-match menu links and emits finite
+paths to simple positive-history topic replies. It selects a topic once for each
+successive reply and closes through an authored `bye_bye` row. Random, record,
+resume, and additional-history gates, unvisited nodes, and untargeted sites remain
+explicit in `planning.json`; no UI traversal is used to discover them. Graph and
+contact-manifest hashes bind the planning report. Generated plans are candidates,
+not proof that a given COD contact procedure reaches that BAS menu.
+
+The plans use explicit prepared contact state, validated against the CB contact
+manifest. Capture retains all changed save bytes and before/after hashes; this
+is not a continuous gameplay route. Required BAS publications are independently
+source-bound and cannot alias COD offsets. The normal native text, menu, hand,
+animation, audio, and closing-transition lifecycle remains active.
+
+The verified Bob SCRIPT2 batch has **nine chapters, 408.562 seconds, and 6,105
+native frames**. It targeted 38 BAS sites and published 39, including an extra
+nested-menu-path line. All 39 have full native UI-buffer reveal evidence. Its
+assembled movie passed full decoded RGBA, PCM, timestamp, and chapter checks.
+Selected encoded frames were inspected for the original artwork and fonts,
+including a nested cottage-topic reply; this is not inspection of every line.
+Fourteen of this actor list's 53 BAS sites remain unrecorded. A separate Bronko
+contact probe ended before its planned choices and is not counted as coverage.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
 uv run tools/native_dialogue_coverage.py \
-  --catalog output/anthology/static-dialogue-en \
+  --catalog output/anthology/static-dialogue-en-v2 \
   --batch output/anthology/dialogue-native-v4/cb \
   --batch output/anthology/dialogue-native-v4/bbb \
   --batch output/anthology/dialogue-contacts-v2/cb \
   --batch output/anthology/dialogue-contacts-v3/bbb \
-  --out output/anthology/dialogue-coverage.json
+  --batch output/anthology/dialogue-bas-bob-v1/cb \
+  --out output/anthology/dialogue-coverage-bas-bob.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
-from the retained trace, and joins by game/profile/COD offset. BAS offsets remain
-distinct and uncovered. Repeated captures do not inflate the site census. A
+from the retained trace, and joins by game/profile/source-kind/offset. BAS
+evidence requires the matching BAS hash. Repeated captures do not inflate the site census. A
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the eight verified chapters, CB has 40 sites fully revealed in the native
-UI buffer, five published without a UI draw, one absent from the selected
-branches, and 5,490 uncovered. BBB has 49 fully revealed, four published without
+Across the 17 verified chapters, CB has 84 sites fully revealed in the native
+UI buffer, six published without a UI draw, one absent from the selected
+branches, and 5,445 uncovered. BBB has 49 fully revealed, four published without
 a UI draw, and 6,868 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
-anthology is complete; remaining profile branches, CB BAS, state-dependent
+anthology is complete; remaining profile branches, most CB BAS, state-dependent
 conversations, objects, travel, and environments still need coverage.
 
 The sequence and initial dialogue batch binaries are archived in `native-sequences-v2/bin`. To re-verify
@@ -464,6 +505,7 @@ PCM, endpoint, and runner report exactly.
 
 ```sh
 uv run python -m unittest discover -s tools -p test_dialogue_catalog.py
+uv run python -m unittest discover -s tools -p 'test_native_*.py'
 nix develop -c cargo test --release -p commander-blood-script-compiler \
   --test dialogue_catalog
 nix develop -c uv run --with av==18.1.0 python -m unittest discover \
