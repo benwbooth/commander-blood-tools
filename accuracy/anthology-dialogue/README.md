@@ -14,7 +14,8 @@ answers to Izwalito's ideal/secret question through prepared travel; BBB SCRIPT2
 Bob's brief return, SCRIPT3-5 concert aftermath for eight actors, and both
 Tequila cryobox outburst/ghost branches; later-profile concert reactions, Bug
 Deluxe's future/farewell conversations, and Cyberquizz's first/second visits and
-Christmas greeting. These thirty-five
+Christmas greeting; and Cyberquizz/Bioquizz travel greetings. There are 38
+checked-in plans, including the currently failing Bug Deluxe travel probe. These
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
 environments. The static BAS planner also
 produces topic plan sets from the hashed catalog without running the game.
@@ -37,6 +38,7 @@ Do not add artificial holds or subtitle cards to fill these gaps:
 | BBB SCRIPT2 HONK | 7461 | Terminal publication without a glyph-buffer draw. |
 | BBB prepared contacts, SCRIPT2-5 | 7183; 3005, 15361, 21365; 1783, 8054, 15997, 16230, 16482; 1895, 5619 | One terminal publication per chapter without a glyph-buffer draw; offsets are profile-local. |
 | BBB later contacts, SCRIPT6/9/13/14/17 | 11669; 2638, 3109; 1837, 9984; 1811, 6886, 10995; 2098, 2504, 4841 | One terminal publication per chapter without a glyph-buffer draw; includes both Cyberquizz visits. |
+| BBB SCRIPT17 travel greetings | 4795, 6046 | Terminal publications without a glyph-buffer draw. |
 
 The 2355 disposition is distinct from a publication that was not drawn. The
 original `BLOOD2PG.EXE` A6/outer-loop oracle now includes five skip-next cases:
@@ -126,6 +128,24 @@ predicates are rejected. The report retains all changed save bytes and hashes.
 The normal post-HUD travel lifecycle performs arrival, automatic actor selection,
 conversation, departure, and return to the bridge. This is prepared chapter state,
 not a recorded gameplay route to the planet or proof of general reachability.
+
+Optional `supporting_procedures` re-enables explicitly named outer D0 procedures
+for the same actor. Duplicate offsets, other actors, contact procedures, and
+additional unprepared entry predicates are rejected. BBB-only
+`stage_actor_at_destination` sets the actor's typed location and native
+navigation visibility flag after validating that the destination belongs to the
+selected planet. It does not bypass native arrival or automatic actor selection.
+The report retains these changes and the trace verifier checks actor placement.
+This is deliberate chapter staging, not a claim about the actor's canonical
+location or a normal gameplay route.
+
+Cyberquizz and Bioquizz each publish six sites: five fully reveal in the native
+UI buffer, and the terminal site has no draw. They retain the native empty
+inventory response, not an invented inventory choice. Encoded dialogue samples
+show the native actor artwork and English font rendering. Bug Deluxe's travel
+plan is source-bound but currently fails resolving numeric chatter dictionary
+offset 3944, beyond SCRIPT9.DIC's 2,612 bytes. It contributes no coverage. Do not
+replace that unresolved original-memory dependency with zero padding or silence.
 
 Bronko's SCRIPT2 energy fixture uses Moskito's `usine` destination and procedure
 23683. The seven generated topic captures publish 21 BAS sites and three COD

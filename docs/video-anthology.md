@@ -610,6 +610,31 @@ The new exporter reproduces Cyberquizz's first visit, CB Bob's black-hole
 contact, and CB Bronko's energy travel topic with identical pixels, PCM,
 endpoints, and complete runner reports in `dialogue-bbb-encounter-regression`.
 
+Cyberquizz and Bioquizz travel greetings produce
+`output/anthology/bbb-quizz-travel-dialogue-native.mkv`: **66.400 seconds and
+992 native frames**, from `dialogue-bbb-travel-quizz-v1/bbb`. The exporter is
+archived in `dialogue-bbb-travel-probe-v2/bin`. Each chapter explicitly stages
+the selected actor at Cyberock's Cyberland destination, including the native
+navigation visibility flag. Cyberquizz also enables its source-bound companion
+travel procedure. Native arrival, actor selection, dialogue, empty inventory
+response, departure, and bridge return remain active. This is prepared chapter
+state, not evidence of a normal gameplay route or canonical actor placement.
+
+The two chapters publish twelve sites: ten fully reveal in the native UI buffer,
+and terminal sites 4795 and 6046 have no draw. Assembly passed full decoded RGBA,
+PCM, timestamp, and chapter checks. Encoded dialogue samples for both actors
+were visually inspected; this is not an inspection of every line. The new
+exporter reproduces CB Bob's black-hole contact, CB Bronko's energy travel
+topic, and BBB Cyberquizz's first visit with identical pixels, PCM, endpoints,
+and runner reports in `dialogue-bbb-travel-regression`.
+
+The checked-in Bug Deluxe travel plan remains a failed probe in
+`dialogue-bbb-travel-probe-v2/bbb`, not verified coverage. Numeric chatter tries
+to hash dictionary offset 3944 while SCRIPT9.DIC contains only 2,612 bytes.
+Original-executable boundary probes demonstrate that the hash depends on bytes
+beyond that resource; the live native allocation contents are not recovered.
+No zero-padding, substituted number text, or silent-audio workaround was added.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -627,7 +652,8 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-bbb-prepared-contacts-v1/bbb \
   --batch output/anthology/dialogue-bbb-later-contacts-v1/bbb \
   --batch output/anthology/dialogue-bbb-encounters-v1/bbb \
-  --out output/anthology/dialogue-coverage-bbb-later-contacts.json
+  --batch output/anthology/dialogue-bbb-travel-quizz-v1/bbb \
+  --out output/anthology/dialogue-coverage-bbb-travel.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -636,10 +662,10 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 90 verified chapters, CB has 261 sites fully revealed in the native
+Across the 92 verified chapters, CB has 261 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,268 uncovered. BBB has 190 fully revealed, 26 published without
-a UI draw, and 6,705 uncovered. Native UI-buffer evidence alone does not prove
+branches, and 5,268 uncovered. BBB has 200 fully revealed, 28 published without
+a UI draw, and 6,693 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
 anthology is complete; remaining profile branches, most CB BAS, state-dependent

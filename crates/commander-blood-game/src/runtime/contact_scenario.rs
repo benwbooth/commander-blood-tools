@@ -193,6 +193,116 @@ pub(super) fn prepare_travel_for_chapter(
     )
 }
 
+pub(super) fn travel_supporting_procedures(
+    profile: &LoadedScriptProfile,
+    procedure_offset: usize,
+    target: &str,
+    supporting: &[usize],
+) -> Result<Vec<ScriptProcedureId>> {
+    let mut seen = std::collections::BTreeSet::from([procedure_offset]);
+    supporting
+        .iter()
+        .map(|&offset| {
+            ensure!(seen.insert(offset), "duplicate travel procedure");
+            let scenario = authored_actor_scenario(
+                profile,
+                offset,
+                target,
+                ScriptEnvironmentInstruction::RequireTravelActivity,
+            )?;
+            ensure!(
+                scenario.entry_tokens.is_empty(),
+                "supporting travel procedures must not add unprepared entry predicates"
+            );
+            match profile
+                .instruction_at(ScriptCodeOffset::new(offset))
+                .unwrap()
+            {
+                DecodedScriptInstruction::ProcedureGate(gate) => Ok(gate.procedure),
+                _ => unreachable!("authored_actor_scenario validated the gate"),
+            }
+        })
+        .collect()
+}
+
+pub(super) fn travel_actor_destination(
+    profile: &LoadedScriptProfile,
+    target: &str,
+    planet: &str,
+    destination: &str,
+) -> Result<(ScriptStateWord, ScriptObjectId)> {
+    use commander_blood_formats::script::{ScriptObjectKind, ScriptStateObjectReference};
+    let object = |name: &str| -> Result<ScriptObjectId> {
+        profile
+            .directory()
+            .find_active_object(name.as_bytes())
+            .with_context(|| format!("unknown chapter object {name}"))
+    };
+    let actor = object(target)?;
+    let planet = object(planet)?;
+    let destination = object(destination)?;
+    ensure!(
+        profile.state().object(actor).unwrap().kind == ScriptObjectKind::Actor,
+        "staged travel target must be an actor"
+    );
+    ensure!(
+        profile.state().object(planet).unwrap().kind == ScriptObjectKind::CelestialBody,
+        "staged travel planet must be a planet"
+    );
+    ensure!(
+        profile.state().object(destination).unwrap().kind == ScriptObjectKind::Location,
+        "staged travel destination must be a location"
+    );
+    let relation = |id| -> Result<ScriptStateWord> {
+        let kind = profile.state().object(id).unwrap().kind;
+        let offset = crate::native::bloodprg::script_field_offset(
+            kind,
+            crate::native::bloodprg::ScriptFieldSelector::HOLDER_OR_LOCATION,
+        )
+        .context("chapter object has no location field")?;
+        profile
+            .state()
+            .object_word(id, offset / 2)
+            .context("chapter location field is unbound")
+    };
+    ensure!(
+        profile.state().object_reference(relation(destination)?)
+            == Some(ScriptStateObjectReference::Object(planet)),
+        "staged travel destination does not belong to the selected planet"
+    );
+    Ok((relation(actor)?, destination))
+}
+
+pub(super) fn stage_travel_actor(
+    profile: &mut LoadedScriptProfile,
+    target: &str,
+    planet: &str,
+    destination: &str,
+) -> Result<()> {
+    let (location, destination) = travel_actor_destination(profile, target, planet, destination)?;
+    profile
+        .execution_parts()
+        .record_state
+        .record_fields
+        .set_value(location, ScriptRecordValue::Object(destination));
+    let actor = profile
+        .directory()
+        .find_active_object(target.as_bytes())
+        .unwrap();
+    ensure!(
+        set_object_flag(
+            profile.state_mut(),
+            actor,
+            ScriptObjectFlag::LocationPanelDetails,
+            true
+        ),
+        "cannot make the staged actor visible to native BBB navigation"
+    );
+    let state = profile.synchronized_state()?;
+    profile.replace_state(state)?;
+    Ok(())
+}
+
 pub(super) fn prepare_contact_for_chapter(
     runtime: &mut OriginalGameRuntime,
     procedure_offset: usize,

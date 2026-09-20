@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Bug Deluxe: travel greeting",
+  "initial_profile": 8,
+  "cod_sha256": "bf3c0ca2dff36ba48a1704d7f52b4162f498cc821b4855806811fdfa16530f88",
+  "dic_sha256": "0555b0b33b1f3266a9fc62ea48defc9caf6e4a8d2bbec6cf4d9cd92e45a20f5d",
+  "target": "Bug_Deluxe",
+  "entry": "travel",
+  "travel_setup": {
+    "planet": "Kortex",
+    "destination": "Kortland",
+    "procedure_offset": 4327,
+    "supporting_procedures": [4384],
+    "stage_actor_at_destination": true
+  },
+  "choices": [],
+  "required_cod_sites": [4338, 4362, 5337, 5383, 5397],
+  "required_frame_boundary_cod_sites": [4338, 4362],
+  "end": {"kind": "presentation_finished"}
+}

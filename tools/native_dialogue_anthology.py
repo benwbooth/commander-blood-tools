@@ -85,6 +85,7 @@ def validate_trace(plan, runner, states, rows):
     last = None
     sequences = []
     previous_resource = None
+    staged_actor_checked = False
     for row in states:
         time = row["time_ns"]
         require(last_time < time < rows[-1]["start_ns"] + rows[-1]["duration_ns"],
@@ -102,6 +103,14 @@ def validate_trace(plan, runner, states, rows):
                 "dialogue capture contains pointer input")
         if state["vm"]["resource_profile"] != plan["initial_profile"]:
             continue
+        if plan.get("travel_setup", {}).get("stage_actor_at_destination") and not staged_actor_checked:
+            actors = [row for row in state.get("persistent", {}).get("object_locations", [])
+                      if row["name"] == plan["target"]]
+            require(len(actors) == 1 and actors[0]["kind"] == "Actor"
+                    and actors[0]["target_name"] == plan["travel_setup"]["destination"]
+                    and actors[0].get("sequel_simulation_flags", 0) & 4,
+                    "native trace does not show the staged travel actor at its destination")
+            staged_actor_checked = True
         site = state["published_cod_text_site"]
         bas_site = state.get("published_bas_text_site")
         require(site is None or bas_site is None, "ambiguous COD/BAS publication source")
@@ -134,6 +143,8 @@ def validate_trace(plan, runner, states, rows):
             if entry["first_full_ui_ns"] is None:
                 entry["first_full_ui_ns"] = time
     require(last is not None, "empty native state trace")
+    require(not plan.get("travel_setup", {}).get("stage_actor_at_destination") or staged_actor_checked,
+            "no native state for staged travel actor")
     require(set(plan["required_frame_boundary_cod_sites"]) <= boundary,
             "missing required frame-boundary text site")
     require(set(plan.get("required_frame_boundary_bas_sites", [])) <= boundary_bas,

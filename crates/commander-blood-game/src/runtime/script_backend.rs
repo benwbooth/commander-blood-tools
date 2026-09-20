@@ -1592,9 +1592,43 @@ mod tests {
                     invalid = plan.clone();
                     invalid.max_exit_retries = 9;
                     assert!(validate_dialogue_chapter(&invalid, profile).is_err());
-                    invalid = plan.clone();
-                    invalid.choices.pop();
-                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    if plan.max_exit_retries > 0 {
+                        invalid = plan.clone();
+                        invalid.choices.pop();
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    }
+                    for offset in [
+                        usize::MAX,
+                        plan.travel_setup.as_ref().unwrap().procedure_offset,
+                    ] {
+                        invalid = plan.clone();
+                        invalid
+                            .travel_setup
+                            .as_mut()
+                            .unwrap()
+                            .supporting_procedures
+                            .push(offset);
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    }
+                    if plan
+                        .travel_setup
+                        .as_ref()
+                        .unwrap()
+                        .stage_actor_at_destination
+                    {
+                        invalid = plan.clone();
+                        invalid.travel_setup.as_mut().unwrap().planet = "Tempest".to_owned();
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                        invalid = plan.clone();
+                        invalid.travel_setup.as_mut().unwrap().destination = "Kortex".to_owned();
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                        invalid = plan.clone();
+                        invalid.travel_setup.as_mut().unwrap().supporting_procedures = vec![2156];
+                        assert!(
+                            validate_dialogue_chapter(&invalid, profile).is_err(),
+                            "contact cannot serve as a travel companion procedure"
+                        );
+                    }
                 }
                 invalid = plan.clone();
                 invalid.required_cod_sites.push(usize::MAX);
@@ -1620,6 +1654,57 @@ mod tests {
                         &plan.target,
                     )
                     .unwrap();
+                    for procedure in super::super::contact_scenario::travel_supporting_procedures(
+                        profile,
+                        setup.procedure_offset,
+                        &plan.target,
+                        &setup.supporting_procedures,
+                    )
+                    .unwrap()
+                    {
+                        profile
+                            .procedures_mut()
+                            .set_enabled(procedure, true)
+                            .unwrap();
+                        assert!(profile.procedures().is_enabled(procedure).unwrap());
+                    }
+                    if setup.stage_actor_at_destination {
+                        super::super::contact_scenario::stage_travel_actor(
+                            profile,
+                            &plan.target,
+                            &setup.planet,
+                            &setup.destination,
+                        )
+                        .unwrap();
+                        let (location, destination) =
+                            super::super::contact_scenario::travel_actor_destination(
+                                profile,
+                                &plan.target,
+                                &setup.planet,
+                                &setup.destination,
+                            )
+                            .unwrap();
+                        assert_eq!(
+                            profile.state().object_reference(location),
+                            Some(
+                                commander_blood_formats::script::ScriptStateObjectReference::Object(
+                                    destination
+                                )
+                            )
+                        );
+                        let actor = profile
+                            .directory()
+                            .find_active_object(plan.target.as_bytes())
+                            .unwrap();
+                        assert_eq!(
+                            crate::native::bloodprg::object_has_flag(
+                                profile.state(),
+                                actor,
+                                crate::native::bloodprg::ScriptObjectFlag::LocationPanelDetails
+                            ),
+                            Some(true)
+                        );
+                    }
                     validate_dialogue_chapter(&plan, profile).unwrap();
                     if plan.game == crate::game::GameVariant::CommanderBlood
                         && plan.initial_profile == 1

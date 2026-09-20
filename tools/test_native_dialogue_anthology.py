@@ -273,6 +273,28 @@ class DialogueTraceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "travel transition did not finish"):
             self.verify()
 
+    def test_staged_travel_actor_must_be_visible_at_the_requested_destination(self):
+        self.plan.update(target="Bug_Deluxe", entry="travel", travel_setup=dict(
+            planet="Kortex", destination="Kortland", procedure_offset=90,
+            stage_actor_at_destination=True))
+        self.runner["travel_preparation"] = dict(setup=self.plan["travel_setup"])
+        self.runner["travel_transition_closed"] = True
+        state = self.states[0]["state"]
+        state["presentation"].update(ship_flags=0, navigation_rebuild_pending=False)
+        state["presentation"]["text_state"]["sequence_active"] = False
+        with self.assertRaisesRegex(ValueError, "staged travel actor"):
+            self.verify()
+        actor = dict(name="Bug_Deluxe", kind="Actor", target_name="Kortland", sequel_simulation_flags=5)
+        state["persistent"] = dict(object_locations=[actor])
+        self.verify()
+        for key, value in [("target_name", "Trashlando"), ("sequel_simulation_flags", 1),
+                           ("kind", "Location"), ("name", "Cyberquizz")]:
+            previous = actor[key]
+            actor[key] = value
+            with self.assertRaisesRegex(ValueError, "staged travel actor"):
+                self.verify()
+            actor[key] = previous
+
 
 if __name__ == "__main__":
     unittest.main()

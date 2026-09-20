@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Bioquizz: travel greeting",
+  "initial_profile": 16,
+  "cod_sha256": "88e5fb5b88c93ef372b0c6ab62b0907530fdc0e6663cd5dca7d22e4b7a778366",
+  "dic_sha256": "987bfb2d11c809e0ca8b980e32f8c1779b0febb35a2d5cddc016e0ecbb558f9a",
+  "target": "Bioquizz",
+  "entry": "travel",
+  "travel_setup": {
+    "planet": "Cyberock",
+    "destination": "Cyberland",
+    "procedure_offset": 4900,
+    "stage_actor_at_destination": true
+  },
+  "choices": [],
+  "required_cod_sites": [4864, 4880, 5961, 6032, 6046],
+  "required_frame_boundary_cod_sites": [4864, 4880],
+  "end": {"kind": "presentation_finished"}
+}

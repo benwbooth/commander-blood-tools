@@ -84,6 +84,14 @@ pub(super) struct OfflineTravelSetup {
     pub planet: String,
     pub destination: String,
     pub procedure_offset: usize,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub supporting_procedures: Vec<usize>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub stage_actor_at_destination: bool,
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 impl OfflineDialogueEntry {
@@ -168,6 +176,24 @@ pub(super) fn validate_dialogue_chapter(
             setup.procedure_offset,
             &chapter.target,
         )?;
+        super::contact_scenario::travel_supporting_procedures(
+            profile,
+            setup.procedure_offset,
+            &chapter.target,
+            &setup.supporting_procedures,
+        )?;
+        if setup.stage_actor_at_destination {
+            ensure!(
+                chapter.game == crate::game::GameVariant::BigBugBang,
+                "explicit travel actor placement currently covers BBB only"
+            );
+            super::contact_scenario::travel_actor_destination(
+                profile,
+                &chapter.target,
+                &setup.planet,
+                &setup.destination,
+            )?;
+        }
         for name in [&setup.planet, &setup.destination] {
             ensure!(
                 profile
@@ -534,6 +560,22 @@ pub(super) fn capture_dialogue_chapter(
                 setup.procedure_offset,
                 &chapter.target,
             )?;
+            for procedure in super::contact_scenario::travel_supporting_procedures(
+                profile,
+                setup.procedure_offset,
+                &chapter.target,
+                &setup.supporting_procedures,
+            )? {
+                profile.procedures_mut().set_enabled(procedure, true)?;
+            }
+            if setup.stage_actor_at_destination {
+                super::contact_scenario::stage_travel_actor(
+                    profile,
+                    &chapter.target,
+                    &setup.planet,
+                    &setup.destination,
+                )?;
+            }
             let after = crate::native::bloodprg::OriginalSaveGame::capture(profile)?.encode();
             ensure!(
                 before.len() == after.len(),
