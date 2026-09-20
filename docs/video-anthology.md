@@ -210,7 +210,7 @@ same audio callback mixer as live playback:
   Pulling samples from a live SDL host is rejected to prevent two consumers
   from advancing the same playback state.
 
-This is a shared output backend, not yet a full export driver. It does not
+This is a shared output backend, not a full-game export driver. It does not
 choose dialogue branches, fabricate missing scene state, or change the native
 schedule. The offline driver must still connect the static graph to those
 services and advance the recovered clocks and stream refills at the correct
@@ -222,6 +222,48 @@ through the final GPU passes, output resizing and row padding, audio sample
 equivalence with the SDL callback across stream refills and sound effects,
 and device-free service initialization with real assets from both games.
 These establish the tested output-backend behavior, not DOS whole-game parity.
+
+### Offline Opening and Credits Export
+
+```sh
+nix develop -c cargo run --release -p commander-blood-game \
+  --bin offline-presentation -- \
+  "$HOME/.local/share/commander-blood/assets-v1" opening \
+  output/anthology/cb-opening
+```
+
+Use `credits` for presentation line one and the BBB imported asset directory
+for the sequel. An optional final argument sets the frame cap (default 100,000).
+The command requires FFmpeg/FFprobe and a headless wgpu adapter, but no SDL
+device, window, mouse clicks, or wall-clock playback waits. Line zero is the
+opening logo reel, not the subsequent scripted cinematic.
+
+Both live and offline paths call the same native blocking presentation runner.
+The offline driver advances the production PIT accumulator over each 68 ms
+presentation wait and consumes exactly the corresponding 48 kHz mixer samples.
+Sound advances during the wait before the next completed GPU frame is exposed,
+preserving the live runner's ordering. It does not use normalized WebM's 25 fps.
+
+Each output contains `master.mkv` (FFV1 RGBA-equivalent video and unmodified
+float PCM), the separate `video.mkv` and `audio.f32le`, per-interval hashes and
+sample offsets in `timeline.jsonl`, verified video timestamps, the source asset
+manifest, private runtime files, and a provenance/accounting report. The final
+GPU flip has zero duration at the capture endpoint; `endpoint.rgba` retains it
+without inventing a hold. No audio resampling, padding, or trimming is performed.
+
+Every imported source hash is checked before and after export. Full decoding of
+the saved master must reproduce every captured pixel and audio sample exactly;
+every encoded video timestamp and duration must match the native wait schedule.
+Publication requires natural scene completion. A cap, codec failure, or mismatch
+leaves only staging files. Existing output directories are never reused.
+
+Verified captures on 2026-09-20: CB logos 262 frames / 17.816 s; CB credits
+879 frames / 59.772 s; BBB logos 292 frames / 19.856 s; BBB credits 1,440 frames /
+97.920 s. Both logo reels are silent; both credits exports contain native mixer
+audio. These are standalone captures from fresh service state with the Initial
+scene link, not a reconstruction of a preceding playthrough. Full dialogue,
+cinematic, travel, and branch coverage remain outstanding. Matching this native
+Rust path and lossless encoding do not alone establish DOS timing/sound parity.
 
 ## Tests
 

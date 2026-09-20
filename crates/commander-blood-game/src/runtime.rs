@@ -19,6 +19,8 @@ mod live_trace;
 mod localization;
 mod navigation_chart;
 mod navigation_status;
+mod offline;
+pub mod offline_export;
 mod palette_transition;
 mod platform;
 mod presentation;
@@ -56,6 +58,10 @@ pub use bios_font::VGA_BIOS_FONT_8X8;
 pub use confirm_dialog::RuntimeConfirmDialog;
 pub use game_lifecycle::RuntimeGameLifecycleHost;
 pub use input::{RuntimeInputHost, map_host_pointer_to_logical};
+pub use offline::{
+    OfflinePresentationInterval, OfflinePresentationReport, OfflinePresentationSink,
+    capture_offline_presentation,
+};
 pub use palette_transition::{
     RuntimePaletteTransition, RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome,
     RuntimePaletteTransitionSurface,

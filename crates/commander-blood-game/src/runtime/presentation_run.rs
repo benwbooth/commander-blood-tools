@@ -35,9 +35,63 @@ pub fn run_runtime_presentation<'window>(
     timer: &mut GameTimerState,
     startup_timer_runtime: &mut ScriptRuntime,
 ) -> Result<RuntimePresentationRunOutcome> {
+    run_runtime_presentation_with_driver(
+        line,
+        link_target,
+        services,
+        &mut LivePresentationDriver(platform),
+        input_state,
+        timer,
+        startup_timer_runtime,
+    )
+}
+
+pub(super) trait RuntimePresentationDriver<'window> {
+    fn take_game_timer_ticks(&mut self) -> u64;
+    fn dispatch_events(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        state: &mut GameLifecycleState,
+    ) -> Result<Option<InputAction>>;
+    fn poll_pointer(&mut self, services: &mut ModernGameServices<'window>);
+    fn present_frame(&mut self, services: &mut ModernGameServices<'window>) -> Result<()>;
+}
+
+struct LivePresentationDriver<'platform, 'window>(&'platform mut RuntimePlatformHost<'window>);
+
+impl<'window> RuntimePresentationDriver<'window> for LivePresentationDriver<'_, 'window> {
+    fn take_game_timer_ticks(&mut self) -> u64 {
+        self.0.take_game_timer_ticks()
+    }
+    fn dispatch_events(
+        &mut self,
+        services: &mut ModernGameServices<'window>,
+        state: &mut GameLifecycleState,
+    ) -> Result<Option<InputAction>> {
+        self.0.dispatch_events(services, state)
+    }
+    fn poll_pointer(&mut self, services: &mut ModernGameServices<'window>) {
+        self.0.poll_pointer(services);
+    }
+    fn present_frame(&mut self, services: &mut ModernGameServices<'window>) -> Result<()> {
+        services.submit_indexed_frame()?;
+        self.0.pace_presentation_frame()?;
+        services.present_artwork()
+    }
+}
+
+pub(super) fn run_runtime_presentation_with_driver<'window>(
+    line: PresentationResourceId,
+    link_target: u16,
+    services: &mut ModernGameServices<'window>,
+    driver: &mut dyn RuntimePresentationDriver<'window>,
+    input_state: &mut GameLifecycleState,
+    timer: &mut GameTimerState,
+    startup_timer_runtime: &mut ScriptRuntime,
+) -> Result<RuntimePresentationRunOutcome> {
     let mut host = RuntimePresentationRunHost {
         services,
-        platform,
+        driver,
         input_state,
         timer,
         startup_timer_runtime,
@@ -70,7 +124,7 @@ pub fn run_runtime_presentation<'window>(
 
 struct RuntimePresentationRunHost<'services, 'window> {
     services: &'services mut ModernGameServices<'window>,
-    platform: &'services mut RuntimePlatformHost<'window>,
+    driver: &'services mut dyn RuntimePresentationDriver<'window>,
     input_state: &'services mut GameLifecycleState,
     timer: &'services mut GameTimerState,
     startup_timer_runtime: &'services mut ScriptRuntime,
@@ -79,7 +133,7 @@ struct RuntimePresentationRunHost<'services, 'window> {
 
 impl RuntimePresentationRunHost<'_, '_> {
     fn advance_timer(&mut self) -> Result<()> {
-        let elapsed_ticks = self.platform.take_game_timer_ticks();
+        let elapsed_ticks = self.driver.take_game_timer_ticks();
         arm_requested_speaker_pulse(&mut self.input_state, self.timer);
         self.services.export_game_timer_state(self.timer)?;
         let mut speaker_gate = None;
@@ -149,7 +203,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
         self.advance_timer()?;
         import_blocking_presentation_input(state, &mut self.input_state);
         let action = self
-            .platform
+            .driver
             .dispatch_events(self.services, &mut self.input_state)?;
         if action == Some(InputAction::Cancel) {
             self.services
@@ -157,7 +211,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
         }
         export_blocking_presentation_stop_gate(state, &self.input_state);
         if self.services.runtime().data().game() == crate::game::GameVariant::BigBugBang {
-            self.platform.poll_pointer(self.services);
+            self.driver.poll_pointer(self.services);
             let edges = self
                 .services
                 .update_lifecycle_pointer_buttons(self.input_state);
@@ -215,9 +269,7 @@ impl PresentationRunHost for RuntimePresentationRunHost<'_, '_> {
     }
 
     fn present_frame(&mut self) -> Result<()> {
-        self.services.submit_indexed_frame()?;
-        self.platform.pace_presentation_frame()?;
-        self.services.present_artwork()
+        self.driver.present_frame(self.services)
     }
 
     fn load_credits_voice(&mut self, path: &str) -> Result<()> {

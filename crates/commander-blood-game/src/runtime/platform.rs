@@ -763,13 +763,13 @@ struct GameFrameClock {
 }
 
 #[derive(Default)]
-struct GamePitClock {
+pub(super) struct GamePitClock {
     sampled_at: Option<Instant>,
     scaled_remainder: u128,
 }
 
 impl GamePitClock {
-    fn start(&mut self, now: Instant) {
+    pub(super) fn start(&mut self, now: Instant) {
         self.sampled_at = Some(now);
         self.scaled_remainder = u128::MIN;
     }
@@ -779,7 +779,7 @@ impl GamePitClock {
         self.scaled_remainder = u128::MIN;
     }
 
-    fn take_elapsed_ticks(&mut self, now: Instant) -> u64 {
+    pub(super) fn take_elapsed_ticks(&mut self, now: Instant) -> u64 {
         let Some(sampled_at) = self.sampled_at.replace(now) else {
             return u64::MIN;
         };

@@ -66,7 +66,7 @@
     "crates/commander-blood-game/src/runtime/game_lifecycle.rs": "a5f0c5d83c20d25b8a343b7caee6a554bd6a63acda8fc2d10431f1b5beb59963",
     "crates/commander-blood-game/src/runtime/save_load.rs": "9aed90052c7030510dcf3045166e1b3671bd35b5c516b671deb855a5df2d538c",
     "crates/commander-blood-game/src/runtime/script_backend.rs": "8d2a041144a6b3e112fb425faf7c9646f32561f5aeaf5e0b85c4bbc286ed2126",
-    "crates/commander-blood-game/src/runtime/presentation_run.rs": "735f160e181d2034905e805a624e4f29a95900e43e1ba6211fc20c97f9128d53",
+    "crates/commander-blood-game/src/runtime/presentation_run.rs": "b1f67e5f58c162e660872468d959a94ba3281d6fb44b668a17632c639f50c325",
     "crates/commander-blood-game/src/native/bloodprg/game_lifecycle_tests.rs": "207a9fbfab8808e39d542f34f5e9eca8fb817ea35b35ea42402b5979325310ee",
     "crates/commander-blood-game/src/native/bloodprg/script_dispatch.rs": "5817021dc5d13d2b46d0492bfd2c07e0976d4a534b70c219e3b5235099ddf4b3",
     "re/tools/oracle_vectors/big_bug_bang_travel_options.jsonl": "0096e8f5961bb56dbc132f355e0f7b9b149fec15f8497d58f6d2cd9fc6d8bacd",
