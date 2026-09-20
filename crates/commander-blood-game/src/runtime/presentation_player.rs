@@ -22,6 +22,7 @@ pub struct RuntimePresentationPlayer {
     catalog: RuntimePresentationCatalog,
     shared_idle_video: Option<Box<[u8]>>,
     active_stream: Option<RuntimePresentationStream>,
+    retained_sequence_index: u16,
     retained_display: Option<RetainedPresentationFrame>,
     next_stream_source_colors: Option<IndexedGamePalette>,
     background_rgba: Option<RgbVideoPage>,
@@ -64,6 +65,7 @@ impl RuntimePresentationPlayer {
             catalog: RuntimePresentationCatalog::new(initial),
             shared_idle_video: None,
             active_stream: None,
+            retained_sequence_index: 0,
             retained_display: None,
             next_stream_source_colors: None,
             background_rgba: None,
@@ -162,6 +164,7 @@ impl RuntimePresentationPlayer {
             source_colors,
             display_rgb,
             back_rgb,
+            self.retained_sequence_index,
             timer_tick,
             render_snapshot_suppressed,
         )?;
@@ -492,6 +495,7 @@ impl RuntimePresentationPlayer {
         let Some(stream) = self.active_stream.take() else {
             return false;
         };
+        self.retained_sequence_index = stream.sequence_index();
         // A prepared PBM may already own the next back page. Do not replace it
         // with the preceding stream's older snapshot during a scene switch.
         if !self.background_prepared {
@@ -504,6 +508,15 @@ impl RuntimePresentationPlayer {
             self.display_occludes_manu3 = false;
         }
         true
+    }
+
+    /// The original panel resets this shared counter once per DESCRIPT list,
+    /// while resource switches retain it across individual HNM files.
+    pub(super) fn reset_sequence_clock(&mut self) {
+        self.retained_sequence_index = 0;
+        if let Some(stream) = self.active_stream.as_mut() {
+            stream.reset_sequence_index();
+        }
     }
 
     /// Snapshot the active stream cursor used by the native Escape handler.
@@ -564,6 +577,50 @@ mod tests {
     const INHERITED_COLOR_INDEX: usize = 250;
     const INHERITED_VIDEO_COLOR: [u8; 3] = [5, 7, 11];
     const STAGED_SCENE_COLOR: [u8; 3] = [17, 19, 23];
+
+    #[test]
+    fn authored_sequence_clock_survives_clip_switches_and_resets_only_explicitly() {
+        let Some(data) = original_data() else {
+            return;
+        };
+        let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+        let mut runtime = OriginalGameRuntime::new(data);
+        let load = |player: &mut RuntimePresentationPlayer, runtime: &mut OriginalGameRuntime| {
+            player
+                .load(
+                    runtime,
+                    OPENING_PRESENTATION_LINE,
+                    PresentationSceneSource::Owned,
+                    PresentationPresentPolicy::default(),
+                    0,
+                    false,
+                    false,
+                )
+                .unwrap()
+                .unwrap();
+            let metrics = player.queue_metrics().unwrap().unwrap();
+            assert_eq!(
+                metrics.read_wrap_index, 1,
+                "per-file queue cursor still restarts"
+            );
+            metrics.sequence_index
+        };
+        assert_eq!(load(&mut player, &mut runtime), 1);
+        assert_eq!(load(&mut player, &mut runtime), 2);
+        assert!(player.finish());
+        assert!(!player.finish());
+        assert_eq!(load(&mut player, &mut runtime), 3);
+        player.reset_sequence_clock();
+        assert_eq!(player.queue_metrics().unwrap().unwrap().sequence_index, 0);
+        assert_eq!(player.queue_metrics().unwrap().unwrap().read_wrap_index, 1);
+        assert_eq!(load(&mut player, &mut runtime), 1);
+        player.finish();
+        player.retained_sequence_index = u16::MAX;
+        assert_eq!(load(&mut player, &mut runtime), 0, "native word counter wraps");
+        player.finish();
+        player.reset_sequence_clock();
+        assert_eq!(load(&mut player, &mut runtime), 1);
+    }
 
     #[test]
     #[ignore = "requires the original Big Bug Bang assets"]

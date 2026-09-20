@@ -148,6 +148,10 @@ impl<'window, 'audio, Platform: RuntimePlatformDriver<'window>>
         &self.services
     }
 
+    pub(super) fn services_mut(&mut self) -> &mut ModernGameServices<'window> {
+        &mut self.services
+    }
+
     pub(super) fn platform(&self) -> &Platform {
         &self.platform
     }

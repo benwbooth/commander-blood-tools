@@ -286,6 +286,85 @@ Those cue frames belong to the game's sequence clock, not the encoded frame
 number. The full library and original control-flow vectors test the shared
 stepped lifecycle; exports still require their own decoded-media checks.
 
+For a standalone authored chapter, use `sequence:RECORD`, for example
+`sequence:maledict` (CB) or `sequence:48finbob` (BBB). The exporter validates the
+name against the imported DESCRIPT database and rejects missing or non-sequence
+records. After the initial profile is loaded, and before the panel actor opens,
+it replaces only the first sequence-name slot. The unmodified native panel then
+plays that record's complete ordered clip list, captions, and music through the
+same lifecycle and PIT/mixer schedule. The short native bridge/panel prelude is
+retained. This is explicit chapter selection, not a gameplay route or proof that
+the record is reachable in that profile. The report records this distinction and
+the exact selection time. No saved progress, script branch, or mouse click is used.
+
+The databases contain 11 CB and 54 BBB sequence records, including `present`.
+These are the authored multi-clip records, not all standalone HNM files or
+dialogue-triggered sequences. Exporting them does not complete the dialogue,
+travel, object, environment, and alternate-branch parts of the anthologies.
+
+### Sequence Batches
+
+```sh
+nix develop -c uv run tools/native_sequence_anthology.py render \
+  --assets "$HOME/.local/share/commander-blood/assets-v1" \
+  --out output/anthology/native-sequences/cb
+nix develop -c uv run tools/native_sequence_anthology.py render \
+  --assets output/big-bug-bang/imported-assets \
+  --out output/anthology/native-sequences/bbb
+nix develop -c uv run tools/native_sequence_anthology.py assemble \
+  --batch output/anthology/native-sequences/cb \
+  --out output/anthology/cb-sequences.mkv
+```
+
+The batch reads the actual database with `video-catalog`, renders every sequence
+record, and writes `selection.json` and `coverage.json`. Resume requires identical
+source/exporter/catalog provenance and re-verifies complete chapter outputs;
+changed inputs require a new output directory. Failures remain explicit and do
+not prevent attempts at the remaining records. Native-state verification checks
+the ordered clip occurrences, including repeated filenames, and actual caption
+cue draws. Missing authored files are recorded without substituting other media.
+In particular, CB's `year` references absent `SQ/PUVEN1.HNM`; this is distinct from
+the existing `SQ/PUBVEN1.HNM` and follows the native unavailable-source path.
+
+Assembly keeps every variable-rate video frame and concatenates the untouched
+float PCM, with exact chapter boundaries. It stream-copies RGB VP9, then decodes
+the entire assembled video/audio against each source interval's hashes and checks
+every frame timestamp and chapter boundary before publishing. No frame-rate
+conversion or audio resampling is used. The sibling manifest retains source and
+output hashes, missing-resource dispositions, and caption coverage.
+
+The shared authored subtitle clock must survive HNM switches. Original CB
+`screen_mode_update` resets DS:0x131C at 0x7B65 only when starting a new record;
+the loader and consumer increment it at 0xA18B and 0xA3F0. BBB performs the same
+operations on DS:0x156A at 0x8C0C, 0xB96E, and 0xBBDA. The production player now
+retains that counter across per-file queue ownership. Earlier multi-clip exports
+reset it incorrectly and are superseded: lossless encoding alone did not detect
+the resulting delayed or omitted captions. Per-file queue cursors still restart.
+
+### Verified Sequence Outputs
+
+The `output/anthology/native-sequences-v2` batches completed all 11 CB and 54 BBB
+records, with no processing failures. Their assembled outputs are:
+
+| Game | Output under `output/anthology` | Chapters | Duration | Native frames |
+| --- | --- | ---: | ---: | ---: |
+| CB | `cb-authored-sequences-v2.mkv` | 11 | 608.352 s | 9,057 |
+| BBB | `bbb-authored-sequences-v2.mkv` | 54 | 3,056.152 s | 45,485 |
+
+The coverage reports explicitly retain CB's missing `year` resource and its two
+unshown captions. One further CB cue and 15 BBB cues (including blank cues) are
+timed beyond their captured sequence counters; no extra hold frames are invented
+to show them. BBB has no missing authored sequence resources. These are sequence
+anthologies, not the requested complete-game videos; the other content categories
+and alternate dialogue branches remain to be rendered and verified.
+
+The actual batch binaries are archived in `native-sequences-v2/bin`. To re-verify
+or resume these batches after rebuilding, pass their `offline-presentation` and
+`video-catalog` paths through `--exporter` and `--catalog-binary`. Each chapter and
+assembled movie retains its own hashes and native timing evidence. Final-build
+reproduction of BBB's repeated-clip `39argent` record matched the batch's pixels,
+PCM, endpoint, and runner report exactly.
+
 ## Tests
 
 ```sh

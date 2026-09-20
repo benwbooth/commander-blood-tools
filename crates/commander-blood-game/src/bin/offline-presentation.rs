@@ -3,14 +3,14 @@
 use anyhow::{Result, bail};
 use commander_blood_game::native::bloodprg::PresentationResourceId;
 use commander_blood_game::runtime::offline_export::{
-    export_presentation, export_startup_cinematic,
+    export_presentation, export_sequence, export_startup_cinematic,
 };
 
 fn main() -> Result<()> {
     let args: Vec<_> = std::env::args_os().skip(1).collect();
     if !(3..=4).contains(&args.len()) {
         bail!(
-            "usage: offline-presentation IMPORTED_ASSETS opening|credits|cinematic OUTPUT_DIR [MAX_FRAMES]"
+            "usage: offline-presentation IMPORTED_ASSETS opening|credits|cinematic|sequence:RECORD OUTPUT_DIR [MAX_FRAMES]"
         );
     }
     let max_frames = args
@@ -28,6 +28,12 @@ fn main() -> Result<()> {
         Some("cinematic") => {
             export_startup_cinematic(args[0].as_ref(), args[2].as_ref(), max_frames)
         }
-        _ => bail!("expected opening, credits, or cinematic"),
+        Some(target) if target.starts_with("sequence:") => export_sequence(
+            args[0].as_ref(),
+            &target["sequence:".len()..],
+            args[2].as_ref(),
+            max_frames,
+        ),
+        _ => bail!("expected opening, credits, cinematic, or sequence:RECORD"),
     }
 }

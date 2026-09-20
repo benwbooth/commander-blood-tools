@@ -523,6 +523,9 @@ pub trait PresentationScreenBackend {
     fn reload_descript_music(&mut self) -> Result<(), Self::Error>;
     /// Start or resume the current presentation music stream.
     fn start_music_stream(&mut self);
+
+    /// Reset the authored frame count once before pumping a new DESCRIPT list.
+    fn reset_sequence_clock(&mut self);
     /// Dispatch one scene line and return its resulting queue state.
     fn dispatch_scene(
         &mut self,
@@ -653,6 +656,7 @@ pub fn update_presentation_screen<Backend: PresentationScreenBackend>(
             state.current_scene_line = None;
             state.subtitle_playback.restart();
             state.resource_placement = PresentationResourcePlacement::ContentPanel;
+            backend.reset_sequence_clock();
             dispatch_and_pump(state, PresentationSceneContext::ContentPanel, backend)
         }
         PresentationPanelPhase::Closing(step) => {
@@ -813,6 +817,7 @@ mod tests {
         music: PresentationMusicChange,
         scene_lines: Vec<Box<[u8]>>,
         dispatch_results: VecDeque<PresentationSceneStatus>,
+        sequence_clock_resets: usize,
     }
 
     impl OracleBackend {
@@ -905,6 +910,9 @@ mod tests {
         }
         fn start_music_stream(&mut self) {
             self.record("snd_stream_start");
+        }
+        fn reset_sequence_clock(&mut self) {
+            self.sequence_clock_resets += 1;
         }
         fn dispatch_scene(
             &mut self,
@@ -1114,6 +1122,12 @@ mod tests {
                 vector.name
             );
             assert_calls(&backend.calls, &vector.calls, &vector.name);
+            assert_eq!(
+                backend.sequence_clock_resets,
+                usize::from(vector.name.starts_with("lookup_")),
+                "{} resets only on a new DESCRIPT list",
+                vector.name
+            );
         }
     }
 
@@ -1281,6 +1295,7 @@ mod tests {
             music,
             scene_lines,
             dispatch_results,
+            sequence_clock_resets: 0,
         }
     }
 

@@ -135,6 +135,10 @@ impl RuntimePresentationScreen {
         self.caption.overlay.pixels()
     }
 
+    pub(super) const fn caption_cue_index(&self) -> Option<usize> {
+        self.caption.drawn_cue_index
+    }
+
     /// Resolve caption ownership at composition time, even when the bridge
     /// coordinator bypassed `screen_mode_update` on this game frame.
     pub(super) fn caption_overlay(&self) -> Option<&RgbaUiOverlay> {
@@ -517,7 +521,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
 
     fn load_descript(&mut self, record: &Self::RecordName) -> Result<PresentationDescriptPlan> {
         self.check_deferred_error()?;
-        self.caption.overlay.clear();
+        self.caption.clear();
         self.channel.clear();
         let application = self
             .services
@@ -555,6 +559,10 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
         self.record_error(result);
     }
 
+    fn reset_sequence_clock(&mut self) {
+        self.services.reset_sequence_clock();
+    }
+
     fn dispatch_scene(
         &mut self,
         context: &PresentationSceneContext<'_, Self::SceneLink>,
@@ -566,7 +574,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
                 return Ok(PresentationSceneStatus::default());
             };
             self.services.select_descript_sequence_video(line)?;
-            self.caption.overlay.clear();
+            self.caption.clear();
             self.scene_state.present_policy.vertical_offset = match context {
                 PresentationSceneContext::Queued(_) => {
                     self.scene_state.present_policy.vertical_offset
@@ -636,7 +644,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
     }
 
     fn cancel_scene_presentation(&mut self) {
-        self.caption.overlay.clear();
+        self.caption.clear();
         self.channel.clear();
         if release_scene_presentation(self.scene_state) {
             self.services.finish_presentation_sequence();
@@ -684,6 +692,7 @@ fn presentation_context_link_target(context: &PresentationSceneContext<'_, GameS
 /// and game frames where the video decoder has nothing new to present.
 struct RetainedSequenceCaption {
     overlay: RgbaUiOverlay,
+    drawn_cue_index: Option<usize>,
 }
 
 impl RetainedSequenceCaption {
@@ -693,7 +702,13 @@ impl RetainedSequenceCaption {
                 super::LOGICAL_FRAMEBUFFER_WIDTH,
                 super::LOGICAL_FRAMEBUFFER_HEIGHT,
             ),
+            drawn_cue_index: None,
         }
+    }
+
+    fn clear(&mut self) {
+        self.overlay.clear();
+        self.drawn_cue_index = None;
     }
 
     fn update(
@@ -712,14 +727,16 @@ impl RetainedSequenceCaption {
         let outcome = present_sequence_subtitle(subtitles, playback, &mut renderer)
             .context("drawing a DESCRIPT sequence subtitle")?;
         if outcome == SequenceSubtitleOutcome::Finished {
-            self.overlay.clear();
+            self.clear();
+        } else if let SequenceSubtitleOutcome::Drawn { cue_index, .. } = outcome {
+            self.drawn_cue_index = Some(cue_index);
         }
         Ok(())
     }
 
     fn finish_frame(&mut self, outcome: PresentationScreenOutcome) {
         if outcome != PresentationScreenOutcome::WaitingForScene {
-            self.overlay.clear();
+            self.clear();
         }
     }
 }

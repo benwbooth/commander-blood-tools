@@ -3634,6 +3634,10 @@ impl<'window> ModernGameServices<'window> {
             .select_descript_sequence_video(basename)
     }
 
+    pub(super) fn reset_sequence_clock(&mut self) {
+        self.presentation_player.reset_sequence_clock();
+    }
+
     /// Select the current hyperspace clip for presentation line six.
     pub fn select_hyperspace_video(&mut self, basename: &[u8]) -> Result<()> {
         self.presentation_player.select_hyperspace_video(basename)
@@ -5784,6 +5788,8 @@ impl<'window> ModernGameServices<'window> {
             .map(|screen| {
                 serde_json::json!({
                     "rgba_hash": fnv1a64(screen.caption_rgba()),
+                    "cue_index": screen.caption_cue_index(),
+                    "remaining_scene_lines": screen.state().remaining_scene_lines(),
                     "opaque_pixels": screen.caption_rgba().chunks_exact(4)
                         .filter(|pixel| pixel[3] == 255).count(),
                 })

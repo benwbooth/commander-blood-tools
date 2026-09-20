@@ -3,6 +3,9 @@
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result, bail, ensure};
+use commander_blood_formats::descript::DescriptRecordKind;
+use commander_blood_formats::descript_database::DescriptDatabase;
+use commander_blood_formats::instruction::{ScriptSequenceSlot, ScriptSequenceSlotName};
 use serde::Serialize;
 use serde_json::Value;
 
@@ -14,7 +17,8 @@ use super::{
     RuntimeGameLifecycleHost, RuntimePlatformDriver,
 };
 use crate::native::bloodprg::{
-    GameLifecycleState, GameSession, InputAction, PointerButtons, PointerSample, ScriptClock,
+    GameLifecycleState, GameSession, InputAction, PointerButtons, PointerSample,
+    SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT, ScriptClock, ScriptSequenceSlots,
     initialize_game_runtime, run_game_runtime_frame, shutdown_game,
 };
 
@@ -35,6 +39,8 @@ pub(super) struct OfflineStartupReport {
     pub authored_videos: Vec<String>,
     pub authored_music: Option<String>,
     pub caption_cues: Vec<Value>,
+    pub selection_method: &'static str,
+    pub selected_record_at_ns: Option<u64>,
 }
 
 fn script_clock() -> Result<ScriptClock> {
@@ -47,10 +53,16 @@ fn script_clock() -> Result<ScriptClock> {
 
 pub(super) fn capture_startup_cinematic(
     services: ModernGameServices<'_>,
+    record: Option<&str>,
     max_frames: u64,
     sink: &mut dyn OfflineGameSink,
 ) -> Result<(OfflineStartupReport, Vec<u8>)> {
     ensure!(max_frames > 0, "offline frame cap must be nonzero");
+    let selected_record = record
+        .map(|name| {
+            validate_sequence_record(services.runtime().data().descript_database(), name.as_bytes())
+        })
+        .transpose()?;
     let mut host = RuntimeGameLifecycleHost::with_platform(
         services,
         OfflineGamePlatform::new(max_frames, sink),
@@ -68,11 +80,34 @@ pub(super) fn capture_startup_cinematic(
         );
         let initial_completions = host.services().completed_presentation_sequence_lists()?;
         host.platform_mut().begin_capture();
+        let mut selected_record_at_ns = None;
         for main_frame in 1..=max_frames {
             ensure!(
                 run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
                 "native lifecycle exited before completing its cinematic sequence list"
             );
+            if let Some(name) = &selected_record
+                && selected_record_at_ns.is_none()
+                && host.services().runtime().current_profile().is_some()
+            {
+                // The first frame loads the profile; the panel actor has not opened yet.
+                // Set only its record slot, leaving native actor, palette, and audio startup intact.
+                let panel = host.services().presentation_screen_state()?;
+                ensure!(
+                    !panel.active() && !panel.scene_status().queued,
+                    "sequence panel started before the export record could be selected"
+                );
+                select_first_sequence(
+                    host.services_mut()
+                        .runtime_mut()
+                        .current_profile_mut()
+                        .context("initial script profile disappeared")?
+                        .sequence_slots_mut(),
+                    name,
+                )?;
+                selected_record_at_ns =
+                    Some(host.platform().elapsed_ns - host.platform().capture_origin_ns);
+            }
             let completed =
                 host.services().completed_presentation_sequence_lists()? - initial_completions;
             if completed != 0 {
@@ -109,7 +144,15 @@ pub(super) fn capture_startup_cinematic(
                         "authored_frame": source.first_visible_frame(), "source_bytes": source.text(),
                         "display_text": String::from_utf8_lossy(display.text()),
                     })).collect(),
+                    selection_method: if selected_record.is_some() { "explicit DESCRIPT record in startup slot one; not a gameplay route" } else { "unmodified native startup" },
+                    selected_record_at_ns,
                 };
+                if let Some(name) = &selected_record {
+                    ensure!(
+                        selected_record_at_ns.is_some() && record.as_ref() == name.as_bytes(),
+                        "native sequence did not complete the requested record"
+                    );
+                }
                 ensure!(report.presented_frames > 0, "cinematic emitted no frames");
                 return Ok((report, host.services().read_offline_rgba()?));
             }
@@ -126,6 +169,34 @@ pub(super) fn capture_startup_cinematic(
             Err(error.context(format!("cleanup also failed: {cleanup:#}")))
         }
     }
+}
+
+fn validate_sequence_record(
+    database: &DescriptDatabase,
+    name: &[u8],
+) -> Result<ScriptSequenceSlotName> {
+    let record = database
+        .lookup(name)
+        .context("unknown DESCRIPT record")?;
+    ensure!(
+        record.kind() == DescriptRecordKind::Sequence,
+        "DESCRIPT record is not a sequence"
+    );
+    ScriptSequenceSlotName::new(record.name()).context("sequence name does not fit its native slot")
+}
+
+fn select_first_sequence(
+    slots: &mut ScriptSequenceSlots,
+    name: &ScriptSequenceSlotName,
+) -> Result<()> {
+    ensure!(!name.as_bytes().is_empty(), "empty sequence name");
+    let mut saved = slots.encode_save_block();
+    let first = &mut saved[..SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT / ScriptSequenceSlot::COUNT];
+    first.fill(0);
+    first[..name.as_bytes().len()].copy_from_slice(name.as_bytes());
+    slots
+        .restore_save_block(&saved)
+        .context("selecting the export sequence")
 }
 
 struct OfflineGamePlatform<'sink> {
@@ -300,5 +371,58 @@ impl<'window> RuntimePlatformDriver<'window> for OfflineGamePlatform<'_> {
         };
         self.wait(services, duration)?;
         Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn chapter_selection_changes_only_first_slot() {
+        let mut slots = ScriptSequenceSlots::default();
+        let mut saved = slots.encode_save_block();
+        saved[16..22].copy_from_slice(b"other\0");
+        slots.restore_save_block(&saved).unwrap();
+        for name in ["present", "48finbob", "22pubscandoig"] {
+            let name = ScriptSequenceSlotName::new(name.as_bytes()).unwrap();
+            select_first_sequence(&mut slots, &name).unwrap();
+            assert_eq!(slots.ordered_names()[0], Some(name.as_bytes()));
+            assert_eq!(&slots.encode_save_block()[16..], &saved[16..]);
+        }
+        let before = slots.clone();
+        assert!(
+            select_first_sequence(&mut slots, &ScriptSequenceSlotName::new(&b""[..]).unwrap())
+                .is_err()
+        );
+        assert_eq!(slots, before);
+    }
+
+    #[test]
+    #[ignore = "requires both imported game asset stores"]
+    fn every_authored_sequence_can_be_selected_but_non_sequences_are_rejected() {
+        let cb = std::path::PathBuf::from(std::env::var_os("CBLOOD_ASSET_CACHE").unwrap());
+        let bbb = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        for (root, expected_count) in [(cb, 11), (bbb, 54)] {
+            let bytes = std::fs::read(root.join("resources/DESCRIPT.DES")).unwrap();
+            let database = DescriptDatabase::parse(&bytes).unwrap();
+            let mut count = 0;
+            for record in database.records() {
+                let name = record.name();
+                let selected = validate_sequence_record(&database, name);
+                if record.kind() == DescriptRecordKind::Sequence {
+                    let mut slots = ScriptSequenceSlots::default();
+                    select_first_sequence(&mut slots, &selected.unwrap()).unwrap();
+                    assert_eq!(slots.ordered_names()[0], Some(record.name()));
+                    count += 1;
+                } else {
+                    assert!(selected.is_err(), "{}", String::from_utf8_lossy(name));
+                }
+            }
+            assert_eq!(count, expected_count);
+            assert!(validate_sequence_record(&database, b"not-a-record").is_err());
+            assert!(validate_sequence_record(&database, b"").is_err());
+        }
     }
 }

@@ -170,6 +170,7 @@ impl RuntimePresentationStream {
             source_colors,
             None,
             None,
+            0,
             timer_tick,
             render_snapshot_suppressed,
         )
@@ -181,6 +182,7 @@ impl RuntimePresentationStream {
         source_colors: IndexedGamePalette,
         display_rgb: Option<RgbVideoPage>,
         back_rgb: Option<RgbVideoPage>,
+        sequence_index: u16,
         timer_tick: u16,
         render_snapshot_suppressed: bool,
     ) -> Result<(Self, PresentationResourceSequenceOutcome)> {
@@ -213,7 +215,10 @@ impl RuntimePresentationStream {
             descriptors: [descriptor],
             provider,
             stream: PresentationResourceStreamState::default(),
-            queue: PresentationQueueState::default(),
+            queue: PresentationQueueState {
+                sequence_index,
+                ..PresentationQueueState::default()
+            },
             queue_buffer: zeroed_presentation_buffer(),
             palette: palette.clone(),
             active_entry: PresentationActiveEntryState::default(),
@@ -490,6 +495,14 @@ impl RuntimePresentationStream {
         })
     }
 
+    pub(super) const fn sequence_index(&self) -> u16 {
+        self.queue.sequence_index
+    }
+
+    pub(super) fn reset_sequence_index(&mut self) {
+        self.queue.sequence_index = 0;
+    }
+
     /// Snapshot the native resource cursor and its authored cancellation rewind point.
     pub(crate) fn cancellation_cursor(&self) -> Option<PresentationResourceCursor> {
         let source = self.stream.source.as_ref()?;
@@ -690,6 +703,7 @@ mod tests {
                 colors,
                 Some(display),
                 Some(loaded_back),
+                0,
                 0,
                 false,
             )

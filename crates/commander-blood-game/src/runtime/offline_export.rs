@@ -27,6 +27,7 @@ const SAMPLE_RATE: u64 = 48_000;
 enum ExportTarget {
     Presentation(PresentationResourceId),
     StartupCinematic,
+    Sequence(String),
 }
 
 /// Export one complete native opening or credits sequence to a new directory.
@@ -48,6 +49,17 @@ pub fn export_presentation(
 /// The logo reel is executed during bootstrap, but is not included in this capture.
 pub fn export_startup_cinematic(assets: &Path, output: &Path, max_frames: u64) -> Result<()> {
     export(assets, ExportTarget::StartupCinematic, output, max_frames)
+}
+
+/// Render an authored DESCRIPT sequence using the native startup panel player.
+/// Selecting a chapter does not establish a gameplay route to that record.
+pub fn export_sequence(assets: &Path, record: &str, output: &Path, max_frames: u64) -> Result<()> {
+    export(
+        assets,
+        ExportTarget::Sequence(record.to_owned()),
+        output,
+        max_frames,
+    )
 }
 
 fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -> Result<()> {
@@ -107,12 +119,21 @@ fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -
                 Some(line.get()),
             )
         }
-        ExportTarget::StartupCinematic => {
-            let (report, endpoint) = capture_startup_cinematic(services, max_frames, &mut sink)?;
+        ExportTarget::StartupCinematic | ExportTarget::Sequence(_) => {
+            let record = match &target {
+                ExportTarget::Sequence(name) => Some(name.as_str()),
+                _ => None,
+            };
+            let (report, endpoint) =
+                capture_startup_cinematic(services, record, max_frames, &mut sink)?;
             (
                 serde_json::to_value(report)?,
                 endpoint,
-                "startup_cinematic",
+                if record.is_some() {
+                    "descript_sequence"
+                } else {
+                    "startup_cinematic"
+                },
                 None,
             )
         }
@@ -175,7 +196,7 @@ fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -
             "endpoint_policy": "Half-open capture; final flip retained separately without invented hold",
             "evidence_scope": "Native Rust presentation path, not whole-game DOS parity",
             "initial_scene_link": "Initial", "script_clock": { "hour": 12, "day": 2, "month": 1 },
-            "packed_clock_seed": if target_name == "startup_cinematic" { Some(39) } else { None }
+            "packed_clock_seed": if line.is_none() { Some(39) } else { None }
         }))?,
     )?;
     ensure!(!output.exists(), "output appeared during export");
