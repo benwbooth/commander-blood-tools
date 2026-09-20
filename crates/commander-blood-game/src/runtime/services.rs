@@ -3857,13 +3857,14 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.published_bas_text_site()
     }
 
-    pub(super) fn request_dialogue_word_choice(&mut self, word: ScriptWordId) -> Result<()> {
+    pub(super) fn request_dialogue_choice(
+        &mut self,
+        choice: crate::native::bloodprg::PresentationChoiceId,
+    ) -> Result<()> {
         self.presentation_word_choice
             .as_mut()
             .context("dialogue choice owner is already being updated")?
-            .request_choice(crate::native::bloodprg::PresentationChoiceId::Dictionary(
-                word,
-            ))
+            .request_choice(choice)
     }
 
     /// Publish a completed word choice to BloodScript and refresh lifecycle gates.
@@ -4871,6 +4872,7 @@ impl<'window> ModernGameServices<'window> {
                         };
                         Some(serde_json::json!({
                             "record": object.id.index(),
+                            "source_offset": object.source_offset(),
                             "name": name(object.id),
                             "kind": format!("{:?}", object.kind),
                             "holder_raw": raw,
@@ -4883,6 +4885,8 @@ impl<'window> ModernGameServices<'window> {
                             "sequel_encounter_count": actor_word(27),
                             "sequel_evolution": actor_word(28),
                             "sequel_simulation_flags": actor_word(1),
+                            "inventory_flags": (object.kind == commander_blood_formats::script::ScriptObjectKind::InventoryItem)
+                                .then(|| state.object_word(object.id, 1).and_then(|field| state.word(field))).flatten(),
                         }))
                     })
                     .collect::<Vec<_>>()
@@ -4993,6 +4997,17 @@ impl<'window> ModernGameServices<'window> {
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
+        let inventory_choice = profile.and_then(|profile| {
+            let inventory = profile.selector_state().inventory();
+            let line = inventory.saved_line()?;
+            let name = |id| profile.directory().object(id)
+                .map(|entry| String::from_utf8_lossy(entry.name()).into_owned());
+            Some(serde_json::json!({
+                "text_site": line.instruction.index(),
+                "recipient": name(line.recipient),
+                "offered_items": inventory.choices().iter().filter_map(|id| profile.state().object(*id).map(|object| object.source_offset())).collect::<Vec<_>>(),
+            }))
+        });
         let retained_word_choice = self.presentation_word_choice.as_ref().map(|choice| {
             let state = choice.state();
             let rows = choice
@@ -5554,6 +5569,9 @@ impl<'window> ModernGameServices<'window> {
             },
             "waiting_for_input": waiting_for_input,
         });
+        if let Some(inventory_choice) = inventory_choice {
+            presentation_trace["inventory_choice"] = inventory_choice;
+        }
         presentation_trace["sequel_control"] = self
             .sequel_presentation_control()
             .map(|control| serde_json::json!({

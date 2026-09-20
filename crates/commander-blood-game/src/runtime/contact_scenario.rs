@@ -303,6 +303,58 @@ pub(super) fn stage_travel_actor(
     Ok(())
 }
 
+pub(super) fn validate_aboard_inventory(
+    profile: &LoadedScriptProfile,
+    offsets: &[u16],
+) -> Result<Vec<ScriptStateWord>> {
+    let mut seen = std::collections::BTreeSet::new();
+    offsets
+        .iter()
+        .map(|offset| {
+            ensure!(seen.insert(offset), "duplicate staged inventory item");
+            let object = profile
+                .state()
+                .objects()
+                .iter()
+                .find(|object| object.source_offset() == usize::from(*offset))
+                .with_context(|| format!("unknown chapter inventory item {offset:#x}"))?
+                .id;
+            ensure!(
+                profile.state().object(object).unwrap().kind
+                    == commander_blood_formats::script::ScriptObjectKind::InventoryItem,
+                "chapter inventory object is not an inventory item"
+            );
+            let offset = crate::native::bloodprg::script_field_offset(
+                commander_blood_formats::script::ScriptObjectKind::InventoryItem,
+                crate::native::bloodprg::ScriptFieldSelector::HOLDER_OR_LOCATION,
+            )
+            .unwrap();
+            profile
+                .state()
+                .object_word(object, offset / 2)
+                .context("chapter inventory holder is unbound")
+        })
+        .collect()
+}
+
+pub(super) fn stage_aboard_inventory(
+    profile: &mut LoadedScriptProfile,
+    offsets: &[u16],
+) -> Result<()> {
+    let fields = validate_aboard_inventory(profile, offsets)?;
+    for holder in fields {
+        profile
+            .execution_parts()
+            .record_state
+            .record_fields
+            .set_value(holder, ScriptRecordValue::Aboard);
+    }
+    let state = profile.synchronized_state()?;
+    // Recover the native aboard roster from its serialized sentinel relationships.
+    profile.replace_state(state)?;
+    Ok(())
+}
+
 pub(super) fn prepare_contact_for_chapter(
     runtime: &mut OriginalGameRuntime,
     procedure_offset: usize,

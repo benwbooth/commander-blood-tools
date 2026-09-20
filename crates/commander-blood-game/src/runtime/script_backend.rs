@@ -1522,6 +1522,7 @@ mod tests {
                 )
                 .unwrap();
                 scripts.load_profile(&mut runtime, id).unwrap();
+                let unprepared_profile = runtime.current_profile().unwrap().clone();
                 let profile = runtime.current_profile().unwrap();
                 validate_dialogue_chapter(&plan, profile).unwrap();
                 tested += 1;
@@ -1640,13 +1641,51 @@ mod tests {
                 assert!(validate_dialogue_chapter(&invalid, profile).is_err());
                 if !plan.choices.is_empty() {
                     invalid = plan.clone();
-                    invalid.choices[0].word_offset = u16::MAX;
+                    invalid.choices[0].word_offset = Some(u16::MAX);
                     assert!(validate_dialogue_chapter(&invalid, profile).is_err());
                     invalid = plan.clone();
                     invalid.choices[0].text_site = plan.required_cod_sites[0];
                     assert!(validate_dialogue_chapter(&invalid, profile).is_err());
                 }
+                for (index, choice) in plan.choices.iter().enumerate() {
+                    if choice.inventory_item.is_some() {
+                        for offset in [None, Some(1776), Some(u16::MAX)] {
+                            invalid = plan.clone();
+                            invalid.choices[index].inventory_item = offset;
+                            assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                        }
+                        invalid = plan.clone();
+                        invalid.choices[index].text_site =
+                            if choice.text_site == 5981 { 4730 } else { 5981 };
+                        assert!(
+                            validate_dialogue_chapter(&invalid, profile).is_err(),
+                            "Cyberquizz cannot use Bioquizz's inventory line"
+                        );
+                    } else {
+                        invalid = plan.clone();
+                        invalid.choices[index].word_offset = None;
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                        invalid = plan.clone();
+                        invalid.choices[index].inventory_item = Some(7352);
+                        assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    }
+                }
                 if let Some(setup) = &plan.travel_setup {
+                    if !setup.stage_aboard_inventory.is_empty() {
+                        for offsets in [
+                            vec![1776],
+                            vec![u16::MAX],
+                            vec![setup.stage_aboard_inventory[0]; 2],
+                        ] {
+                            invalid = plan.clone();
+                            invalid
+                                .travel_setup
+                                .as_mut()
+                                .unwrap()
+                                .stage_aboard_inventory = offsets;
+                            assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                        }
+                    }
                     let profile = runtime.current_profile_mut().unwrap();
                     super::super::contact_scenario::prepare_travel_for_chapter(
                         profile,
@@ -1705,6 +1744,31 @@ mod tests {
                             Some(true)
                         );
                     }
+                    if !setup.stage_aboard_inventory.is_empty() {
+                        super::super::contact_scenario::stage_aboard_inventory(
+                            profile,
+                            &setup.stage_aboard_inventory,
+                        )
+                        .unwrap();
+                        for offset in &setup.stage_aboard_inventory {
+                            let holder = super::super::contact_scenario::validate_aboard_inventory(
+                                profile,
+                                std::slice::from_ref(offset),
+                            )
+                            .unwrap()[0];
+                            let item = holder.object().unwrap();
+                            assert_eq!(profile.state().object_reference(holder),
+                                Some(commander_blood_formats::script::ScriptStateObjectReference::Sentinel));
+                            assert!(
+                                profile
+                                    .record_state()
+                                    .record_runtime
+                                    .aboard_objects()
+                                    .slots()
+                                    .contains(&Some(item))
+                            );
+                        }
+                    }
                     validate_dialogue_chapter(&plan, profile).unwrap();
                     if plan.game == crate::game::GameVariant::CommanderBlood
                         && plan.initial_profile == 1
@@ -1751,6 +1815,9 @@ mod tests {
                         "a contact guard must not validate as travel"
                     );
                 }
+                // Each real chapter starts fresh; contact setup must not accumulate
+                // aboard actors in BBB's persistent VAR across independent fixtures.
+                *runtime.current_profile_mut().unwrap() = unprepared_profile;
             }
             assert!(tested > 0);
             scripts

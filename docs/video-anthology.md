@@ -635,6 +635,67 @@ Original-executable boundary probes demonstrate that the hash depends on bytes
 beyond that resource; the live native allocation contents are not recovered.
 No zero-padding, substituted number text, or silent-audio workaround was added.
 
+### BBB Inventory Branches
+
+Object-backed inventory choices use their original VAR record offsets, not
+dictionary words or translated labels. Optional starting inventory is explicitly
+staged aboard and included in the setup's save-byte diff. The existing native
+chooser, hand animation, transfer, descriptor continuation, and response scripts
+remain responsible for the resulting scene. The verifier checks the actual
+offered menu/item/recipient and the later ownership change. This does not prove
+a normal gameplay acquisition route.
+
+The static inventory planner binds the catalog graph, travel template, and
+existing English inventory-label catalog. It requires each selected item's A6
+and flat flag-guarded reaction in the native trace. It does not set item-transfer
+flags or force reaction lines. Plans remain candidates until captures pass:
+
+```sh
+uv run tools/native_inventory_plans.py \
+  --catalog output/anthology/static-dialogue-en-v2 \
+  --template accuracy/anthology-dialogue/bbb-cyberquizz-travel-greeting.json \
+  --inventory-menu 4730 \
+  --out output/anthology/plans-bbb-cyberquizz-inventory-v1
+uv run tools/native_inventory_plans.py \
+  --catalog output/anthology/static-dialogue-en-v2 \
+  --template accuracy/anthology-dialogue/bbb-bioquizz-travel-greeting.json \
+  --inventory-menu 5981 \
+  --out output/anthology/plans-bbb-bioquizz-inventory-v1
+```
+
+Each report plans 22 item branches. Nuclear reactions require additional
+evolution predicates and remain deferred; laws and scruter have no simple
+matching item-flag guard. Those are explicit gaps, not unreachable dialogue.
+The checked-in technology and treaty plans exercise response requirements and
+exact native identity independently of display-name encoding.
+
+All 44 generated chapters completed with a verified native offer and ownership
+transfer in each. The batches are `dialogue-bbb-inventory-v2/cyberquizz` and
+`dialogue-bbb-inventory-v2/bioquizz`, with their exporter archived in the sibling
+`bin` directory. Each assembled movie contains 22 chapters, **826.356 seconds
+and 12,338 native frames**:
+
+- `output/anthology/bbb-cyberquizz-inventory-dialogue-native.mkv`
+- `output/anthology/bbb-bioquizz-inventory-dialogue-native.mkv`
+
+Both passed full decoded RGBA, PCM, timestamp, and chapter checks. Each batch
+publishes 29 unique COD sites: 28 fully reveal in the native UI buffer, and its
+existing terminal site has no draw. Together they add 46 previously unrecorded
+fully revealed sites, including the two inventory prompts and 44 reactions.
+Encoded samples show the English treaty menu, native hand and actor artwork,
+and guitar response. Not every encoded line was visually inspected. The earlier
+string-identity prototype batch is excluded from the ledger; the final runner
+uses VAR offsets, and its technology chapter preserves the prototype's pixels,
+PCM, and endpoint.
+
+Inventory chooser, transfer, and descriptor boundaries were rerun against the
+original executable: 191 cases match the checked-in oracle vectors. These
+boundary checks do not establish whole-conversation DOS parity. Four captures
+in `dialogue-bbb-inventory-regression` preserve prior pixels, PCM, and endpoints:
+CB Bob's black-hole topic, CB Bronko's energy topic, BBB HONK's instructions,
+and Bioquizz's travel greeting. Runner reports also match except for the older
+HONK report's legacy metadata; its native choices, publications, and timing match.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -653,7 +714,9 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-bbb-later-contacts-v1/bbb \
   --batch output/anthology/dialogue-bbb-encounters-v1/bbb \
   --batch output/anthology/dialogue-bbb-travel-quizz-v1/bbb \
-  --out output/anthology/dialogue-coverage-bbb-travel.json
+  --batch output/anthology/dialogue-bbb-inventory-v2/cyberquizz \
+  --batch output/anthology/dialogue-bbb-inventory-v2/bioquizz \
+  --out output/anthology/dialogue-coverage-bbb-inventory.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -662,10 +725,10 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 92 verified chapters, CB has 261 sites fully revealed in the native
+Across the 136 verified chapters, CB has 261 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,268 uncovered. BBB has 200 fully revealed, 28 published without
-a UI draw, and 6,693 uncovered. Native UI-buffer evidence alone does not prove
+branches, and 5,268 uncovered. BBB has 246 fully revealed, 28 published without
+a UI draw, and 6,647 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
 anthology is complete; remaining profile branches, most CB BAS, state-dependent

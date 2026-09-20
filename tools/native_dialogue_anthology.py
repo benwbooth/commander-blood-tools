@@ -46,6 +46,12 @@ def validate_trace(plan, runner, states, rows):
             "different semantic choices or exceeded authored exit retry limit")
     require(all(choice["requested_at_ns"] in ends for choice in runner["choices"]),
             "choice outside native frame boundaries")
+    frame_starts = {row["start_ns"] + row["duration_ns"]: row["start_ns"] for row in rows}
+    inventory_requests = [dict(choice, offer_frame_ns=frame_starts[choice["requested_at_ns"]])
+                          for choice in runner["choices"] if choice.get("source") == "inventory"]
+    inventory_evidence = [dict(item=choice["inventory_item"], text_site=choice["text_site"],
+                               offered_at_ns=None, transferred_at_ns=None)
+                          for choice in inventory_requests]
     if plan["end"]["kind"] == "profile_loaded":
         require(runner["final_profile"] == plan["end"]["profile"], "wrong final profile")
     if plan["initial_profile"] != 0:
@@ -86,6 +92,7 @@ def validate_trace(plan, runner, states, rows):
     sequences = []
     previous_resource = None
     staged_actor_checked = False
+    staged_inventory_checked = False
     for row in states:
         time = row["time_ns"]
         require(last_time < time < rows[-1]["start_ns"] + rows[-1]["duration_ns"],
@@ -111,6 +118,30 @@ def validate_trace(plan, runner, states, rows):
                     and actors[0].get("sequel_simulation_flags", 0) & 4,
                     "native trace does not show the staged travel actor at its destination")
             staged_actor_checked = True
+        staged_inventory = plan.get("travel_setup", {}).get("stage_aboard_inventory", [])
+        if staged_inventory and not staged_inventory_checked:
+            for offset in staged_inventory:
+                items = [item for item in state.get("persistent", {}).get("object_locations", [])
+                         if item.get("source_offset") == offset]
+                require(len(items) == 1 and items[0]["kind"] == "InventoryItem"
+                        and items[0]["relation"] == "sentinel" and items[0]["holder_raw"] == 65535,
+                        "native trace does not show staged inventory aboard")
+            staged_inventory_checked = True
+        for request, transfer in zip(inventory_requests, inventory_evidence):
+            if time == request["offer_frame_ns"]:
+                offered = state["presentation"].get("inventory_choice")
+                require(offered and offered["text_site"] == request["text_site"]
+                        and offered["recipient"] == plan["target"]
+                        and request["inventory_item"] in offered["offered_items"]
+                        and state["presentation"]["retained_word_choice"]["phase"] == "Selecting",
+                        "inventory selection was not offered by the native chooser")
+                transfer["offered_at_ns"] = time
+            if time >= request["requested_at_ns"] and transfer["transferred_at_ns"] is None:
+                items = [item for item in state.get("persistent", {}).get("object_locations", [])
+                         if item.get("source_offset") == request["inventory_item"]]
+                if (len(items) == 1 and items[0]["kind"] == "InventoryItem"
+                        and items[0]["relation"] == "object" and items[0]["target_name"] == plan["target"]):
+                    transfer["transferred_at_ns"] = time
         site = state["published_cod_text_site"]
         bas_site = state.get("published_bas_text_site")
         require(site is None or bas_site is None, "ambiguous COD/BAS publication source")
@@ -145,6 +176,10 @@ def validate_trace(plan, runner, states, rows):
     require(last is not None, "empty native state trace")
     require(not plan.get("travel_setup", {}).get("stage_actor_at_destination") or staged_actor_checked,
             "no native state for staged travel actor")
+    require(not plan.get("travel_setup", {}).get("stage_aboard_inventory") or staged_inventory_checked,
+            "no native state for staged inventory")
+    require(all(item["offered_at_ns"] is not None and item["transferred_at_ns"] is not None
+                for item in inventory_evidence), "missing native inventory offer or transfer")
     require(set(plan["required_frame_boundary_cod_sites"]) <= boundary,
             "missing required frame-boundary text site")
     require(set(plan.get("required_frame_boundary_bas_sites", [])) <= boundary_bas,
@@ -175,7 +210,8 @@ def validate_trace(plan, runner, states, rows):
                     if not evidence.get(site, {}).get("ui_raster_frames")),
                 published_without_full_ui_reveal=sorted(site for site in published
                     if not evidence.get(site, {}).get("fully_revealed_ui_frames")),
-                raster_evidence_scope="native UI buffer before frame presentation; not by itself proof of encoded glyph visibility")
+                raster_evidence_scope="native UI buffer before frame presentation; not by itself proof of encoded glyph visibility",
+                **(dict(inventory_transfers=inventory_evidence) if inventory_evidence else {}))
 
 
 def verify_chapter(path, plan, manifest, exporter_hash):

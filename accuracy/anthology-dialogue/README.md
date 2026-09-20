@@ -2,7 +2,7 @@
 
 These plans select branches of the COD/BAS dialogue trees. They bind the
 original COD/DIC bytes (and BAS bytes when used) and address choices by source
-offset and DIC word offset, not screen coordinates. `required_frame_boundary_cod_sites` checks
+offset and DIC word or VAR item-record offset, not screen coordinates. `required_frame_boundary_cod_sites` checks
 retained script state, not visible pixels. The batch report separately records
 glyph-buffer evidence and lines with no full reveal.
 
@@ -14,11 +14,12 @@ answers to Izwalito's ideal/secret question through prepared travel; BBB SCRIPT2
 Bob's brief return, SCRIPT3-5 concert aftermath for eight actors, and both
 Tequila cryobox outburst/ghost branches; later-profile concert reactions, Bug
 Deluxe's future/farewell conversations, and Cyberquizz's first/second visits and
-Christmas greeting; and Cyberquizz/Bioquizz travel greetings. There are 38
-checked-in plans, including the currently failing Bug Deluxe travel probe. These
+Christmas greeting; Cyberquizz/Bioquizz travel greetings; and inventory gifts
+to both quizzers. There are 40 checked-in plans, including the currently failing
+Bug Deluxe travel probe. These
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
-environments. The static BAS planner also
-produces topic plan sets from the hashed catalog without running the game.
+environments. The static BAS and inventory planners also produce candidate plan
+sets from the hashed catalog without running the game.
 
 ## Native Omissions
 
@@ -146,6 +147,41 @@ show the native actor artwork and English font rendering. Bug Deluxe's travel
 plan is source-bound but currently fails resolving numeric chatter dictionary
 offset 3944, beyond SCRIPT9.DIC's 2,612 bytes. It contributes no coverage. Do not
 replace that unresolved original-memory dependency with zero padding or silence.
+
+### Object-Backed Inventory Choices
+
+BBB `source: "inventory"` choices use `inventory_item`, the original VAR object
+record byte offset, instead of `word_offset`. For example, technology is 7352
+and the treaty is 7736. Names and English display labels are not selection
+identities, so DOS-encoded names do not need lossy string lookup. Validation
+requires a real inventory record and an authored inventory A6 for the selected
+recipient. Other actors' menus and mixed dictionary/object identities fail.
+
+`travel_setup.stage_aboard_inventory` explicitly stages these record offsets
+aboard. The normal typed roster is rebuilt from the saved holder sentinel; it
+is not a forged menu list. Setup retains every save-byte change. The runner
+selects only an object offered by the native chooser, then waits for its normal
+selection animation, transfer, descriptor handling, reaction, and closure.
+The trace verifier requires the exact offered item/menu/recipient at the
+selection frame and a subsequent ownership transfer. Starting inventory is
+prepared chapter state, not a recorded acquisition route.
+
+`tools/native_inventory_plans.py` derives single-item candidates from the hashed
+catalog and a choiceless travel template. Each plan requires the inventory A6
+and its item-flag reaction at frame boundaries. Nested or enclosing conditions,
+dynamic text, extra choice gates, and reactions without a matching flag clear
+remain deferred. For SCRIPT17 it plans 22 branches per quizzer. Nuclear gifts
+have additional evolution guards; laws and scruter have no simple matching
+reaction guard. These gaps are retained in each planning report, not counted
+as covered. The technology fixture requires its spoken reaction; the treaty
+fixture also checks native record identity despite its DOS-encoded name.
+
+All 44 generated quizzer gift chapters passed native capture and transfer
+verification. Each actor's 22-chapter movie is 826.356 seconds and 12,338 native
+frames. Each batch publishes 29 distinct COD sites, with 28 fully revealed in
+the native UI buffer and one terminal site without a draw. Sampled encoded
+menus and reactions were visually inspected; this is not a visual audit of
+every line or a full-game completion claim.
 
 Bronko's SCRIPT2 energy fixture uses Moskito's `usine` destination and procedure
 23683. The seven generated topic captures publish 21 BAS sites and three COD

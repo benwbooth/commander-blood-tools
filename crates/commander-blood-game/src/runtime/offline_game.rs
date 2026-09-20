@@ -88,6 +88,8 @@ pub(super) struct OfflineTravelSetup {
     pub supporting_procedures: Vec<usize>,
     #[serde(default, skip_serializing_if = "is_false")]
     pub stage_actor_at_destination: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stage_aboard_inventory: Vec<u16>,
 }
 
 fn is_false(value: &bool) -> bool {
@@ -106,7 +108,10 @@ pub(super) struct OfflineDialogueChoice {
     #[serde(default, skip_serializing_if = "OfflineDialogueChoiceSource::is_cod")]
     pub source: OfflineDialogueChoiceSource,
     pub text_site: usize,
-    pub word_offset: u16,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub word_offset: Option<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inventory_item: Option<u16>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
@@ -116,6 +121,7 @@ pub(super) enum OfflineDialogueChoiceSource {
     Cod,
     Bas,
     BasMenu,
+    Inventory,
 }
 
 impl OfflineDialogueChoiceSource {
@@ -194,6 +200,16 @@ pub(super) fn validate_dialogue_chapter(
                 &setup.destination,
             )?;
         }
+        if !setup.stage_aboard_inventory.is_empty() {
+            ensure!(
+                chapter.game == crate::game::GameVariant::BigBugBang,
+                "explicit inventory staging currently covers BBB only"
+            );
+            super::contact_scenario::validate_aboard_inventory(
+                profile,
+                &setup.stage_aboard_inventory,
+            )?;
+        }
         for name in [&setup.planet, &setup.destination] {
             ensure!(
                 profile
@@ -205,7 +221,12 @@ pub(super) fn validate_dialogue_chapter(
         }
     }
     let uses_bas = !chapter.required_bas_sites.is_empty()
-        || chapter.choices.iter().any(|choice| !choice.source.is_cod());
+        || chapter.choices.iter().any(|choice| {
+            matches!(
+                choice.source,
+                OfflineDialogueChoiceSource::Bas | OfflineDialogueChoiceSource::BasMenu
+            )
+        });
     ensure!(
         !uses_bas || chapter.bas_sha256.is_some(),
         "BAS chapter requires a source hash"
@@ -268,9 +289,51 @@ pub(super) fn validate_dialogue_chapter(
         );
     }
     for choice in &chapter.choices {
+        if matches!(choice.source, OfflineDialogueChoiceSource::Inventory) {
+            ensure!(
+                chapter.game == crate::game::GameVariant::BigBugBang
+                    && choice.word_offset.is_none(),
+                "inventory selection requires BBB and cannot name a dictionary word"
+            );
+            let item = choice
+                .inventory_item
+                .as_ref()
+                .context("inventory choice needs an item")?;
+            super::contact_scenario::validate_aboard_inventory(
+                profile,
+                std::slice::from_ref(item),
+            )?;
+            let Some(DecodedScriptInstruction::Text(text)) =
+                profile.instruction_at(ScriptCodeOffset::new(choice.text_site))
+            else {
+                bail!("inventory choice site is not a COD text instruction");
+            };
+            ensure!(
+                text.words.contains(&ScriptTextWord::InventoryChoices),
+                "choice site does not offer native inventory objects"
+            );
+            let recipient = profile
+                .directory()
+                .find_active_object(chapter.target.as_bytes())
+                .context("inventory recipient is not a chapter actor")?;
+            ensure!(
+                profile.state().object(recipient).unwrap().source_offset()
+                    == usize::from(text.line_record.byte_offset()),
+                "inventory choice belongs to another recipient"
+            );
+            continue;
+        }
+        ensure!(
+            choice.inventory_item.is_none(),
+            "dictionary choice cannot name an inventory item"
+        );
         let word = profile
             .dictionary()
-            .resolve_source_offset(choice.word_offset)
+            .resolve_source_offset(
+                choice
+                    .word_offset
+                    .context("dictionary choice needs a word offset")?,
+            )
             .context("choice word offset is not a dictionary boundary")?;
         let text = match choice.source {
             OfflineDialogueChoiceSource::Cod => {
@@ -307,6 +370,7 @@ pub(super) fn validate_dialogue_chapter(
                 );
                 continue;
             }
+            OfflineDialogueChoiceSource::Inventory => unreachable!("inventory handled above"),
         };
         ensure!(
             text.words
@@ -329,8 +393,11 @@ pub(super) fn validate_dialogue_chapter(
             .context("exit retries need a final choice")?;
         let word = profile
             .dictionary()
-            .resolve_source_offset(exit.word_offset)
-            .unwrap();
+            .resolve_source_offset(
+                exit.word_offset
+                    .context("exit retry needs a dictionary word")?,
+            )
+            .context("exit retry word disappeared")?;
         ensure!(
             matches!(exit.source, OfflineDialogueChoiceSource::BasMenu)
                 && profile
@@ -576,6 +643,12 @@ pub(super) fn capture_dialogue_chapter(
                     &setup.destination,
                 )?;
             }
+            if !setup.stage_aboard_inventory.is_empty() {
+                super::contact_scenario::stage_aboard_inventory(
+                    profile,
+                    &setup.stage_aboard_inventory,
+                )?;
+            }
             let after = crate::native::bloodprg::OriginalSaveGame::capture(profile)?.encode();
             ensure!(
                 before.len() == after.len(),
@@ -692,6 +765,11 @@ pub(super) fn capture_dialogue_chapter(
                             .selector_state()
                             .current_branch()
                             .map(|branch| branch.body),
+                        OfflineDialogueChoiceSource::Inventory => profile
+                            .selector_state()
+                            .inventory()
+                            .saved_line()
+                            .map(|line| line.instruction),
                     };
                     ensure!(
                         source_site == Some(ScriptCodeOffset::new(expected.text_site)),
@@ -700,11 +778,23 @@ pub(super) fn capture_dialogue_chapter(
                         expected.text_site,
                         source_site
                     );
-                    let word = profile
-                        .dictionary()
-                        .resolve_source_offset(expected.word_offset)
-                        .context("validated choice word disappeared")?;
-                    host.services_mut().request_dialogue_word_choice(word)?;
+                    let identity =
+                        if matches!(expected.source, OfflineDialogueChoiceSource::Inventory) {
+                            let item = super::contact_scenario::validate_aboard_inventory(
+                                profile,
+                                std::slice::from_ref(expected.inventory_item.as_ref().unwrap()),
+                            )?[0]
+                                .object()
+                                .context("validated inventory item disappeared")?;
+                            crate::native::bloodprg::PresentationChoiceId::Inventory(item)
+                        } else {
+                            let word = profile
+                                .dictionary()
+                                .resolve_source_offset(expected.word_offset.unwrap())
+                                .context("validated choice word disappeared")?;
+                            crate::native::bloodprg::PresentationChoiceId::Dictionary(word)
+                        };
+                    host.services_mut().request_dialogue_choice(identity)?;
                     let mut selected = serde_json::to_value(expected)?;
                     selected["requested_at_ns"] = serde_json::json!(
                         host.platform().elapsed_ns - host.platform().capture_origin_ns

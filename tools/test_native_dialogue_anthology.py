@@ -273,6 +273,60 @@ class DialogueTraceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "travel transition did not finish"):
             self.verify()
 
+    def test_inventory_choices_require_native_offer_and_transfer_evidence(self):
+        self.plan.update(target="Cyberquizz", game="big_bug_bang")
+        choice = dict(source="inventory", text_site=100, inventory_item=7352)
+        self.plan["choices"] = [choice]
+        self.runner["choices"] = [dict(choice, requested_at_ns=46_000_000)]
+        self.states[0]["time_ns"] = 0
+        state = self.states[0]["state"]
+        state["presentation"].update(inventory_choice=dict(text_site=100, recipient="Cyberquizz",
+            offered_items=[7352]), retained_word_choice=dict(phase="Selecting"))
+        state["persistent"] = dict(object_locations=[dict(name="technologie", source_offset=7352, kind="InventoryItem",
+            relation="sentinel", holder_raw=65535, target_name=None)])
+        transferred = copy.deepcopy(self.states[0])
+        transferred["time_ns"] = 46_000_000
+        transferred["state"]["persistent"]["object_locations"][0].update(
+            relation="object", target_name="Cyberquizz", holder_raw=1776)
+        self.states.append(transferred)
+        evidence = self.verify()["inventory_transfers"]
+        self.assertEqual(evidence, [dict(item=7352, text_site=100,
+                                        offered_at_ns=0, transferred_at_ns=46_000_000)])
+        offer = state["presentation"]["inventory_choice"]
+        for key, bad in [("text_site", 200), ("recipient", "Bioquizz"), ("offered_items", [])]:
+            original = offer[key]
+            offer[key] = bad
+            with self.assertRaisesRegex(ValueError, "not offered"):
+                self.verify()
+            offer[key] = original
+        item = transferred["state"]["persistent"]["object_locations"][0]
+        item["target_name"] = "Sushi_Deluxe"
+        with self.assertRaisesRegex(ValueError, "missing native inventory"):
+            self.verify()
+        item["target_name"] = "Cyberquizz"
+        self.states[0]["time_ns"] = 1
+        with self.assertRaisesRegex(ValueError, "missing native inventory"):
+            self.verify()
+
+    def test_staged_inventory_requires_an_aboard_relationship(self):
+        self.plan.update(entry="travel", travel_setup=dict(stage_aboard_inventory=[7352]))
+        self.runner["travel_preparation"] = dict(setup=self.plan["travel_setup"])
+        self.runner["travel_transition_closed"] = True
+        state = self.states[0]["state"]
+        state["presentation"].update(ship_flags=0, navigation_rebuild_pending=False)
+        state["presentation"]["text_state"]["sequence_active"] = False
+        with self.assertRaisesRegex(ValueError, "staged inventory aboard"):
+            self.verify()
+        item = dict(name="technologie", source_offset=7352, kind="InventoryItem", relation="sentinel", holder_raw=65535)
+        state["persistent"] = dict(object_locations=[item])
+        self.verify()
+        for key, bad in [("kind", "Actor"), ("holder_raw", 42), ("relation", "object")]:
+            original = item[key]
+            item[key] = bad
+            with self.assertRaisesRegex(ValueError, "staged inventory aboard"):
+                self.verify()
+            item[key] = original
+
     def test_staged_travel_actor_must_be_visible_at_the_requested_destination(self):
         self.plan.update(target="Bug_Deluxe", entry="travel", travel_setup=dict(
             planet="Kortex", destination="Kortland", procedure_offset=90,
