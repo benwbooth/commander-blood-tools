@@ -35,10 +35,16 @@ pub(super) struct RuntimeDisplayFrame<'frame> {
 const RGBA_COMPONENT_COUNT: usize = 4;
 const OPAQUE_ALPHA: u8 = u8::MAX;
 
-/// SDL/wgpu presentation state for the original logical framebuffer and bridge.
+#[derive(Clone, Copy)]
+enum PresentationTarget<'window> {
+    Window(&'window Window),
+    Offscreen((u32, u32)),
+}
+
+/// Shared wgpu presentation state for live and offline game composition.
 pub struct RuntimePresentationHost<'window> {
     recording: Option<std::sync::Arc<crate::recording::Recording>>,
-    window: &'window Window,
+    target: PresentationTarget<'window>,
     renderer: Option<Renderer<'window>>,
     presented_frame_count: u64,
     last_manu3_triangle_count: usize,
@@ -47,25 +53,28 @@ pub struct RuntimePresentationHost<'window> {
 impl<'window> RuntimePresentationHost<'window> {
     /// Create the artwork-only renderer used by the loading screen.
     pub fn new_startup(window: &'window Window, runtime: &OriginalGameRuntime) -> Result<Self> {
-        let initial_frame =
-            runtime_original_frame(runtime.front_buffer().pixels(), runtime.live_palette())?;
-        let renderer = Renderer::new(window, &initial_frame, None, None, None, None)
-            .context("initializing startup wgpu presentation")?;
-        Ok(Self {
-            recording: None,
-            window,
-            renderer: Some(renderer),
-            presented_frame_count: u64::MIN,
-            last_manu3_triangle_count: usize::MIN,
-        })
+        Self::new_target(PresentationTarget::Window(window), runtime, false)
     }
 
     /// Create the main-game renderer with bridge and optional MANU3 resources.
     pub fn new_main_game(window: &'window Window, runtime: &OriginalGameRuntime) -> Result<Self> {
-        let renderer = main_game_renderer(window, runtime)?;
+        Self::new_target(PresentationTarget::Window(window), runtime, true)
+    }
+
+    /// Create the normal startup renderer without a window or display server.
+    pub fn new_offscreen(size: (u32, u32), runtime: &OriginalGameRuntime) -> Result<Self> {
+        Self::new_target(PresentationTarget::Offscreen(size), runtime, false)
+    }
+
+    fn new_target(
+        target: PresentationTarget<'window>,
+        runtime: &OriginalGameRuntime,
+        main: bool,
+    ) -> Result<Self> {
+        let renderer = game_renderer(target, runtime, main)?;
         Ok(Self {
             recording: None,
-            window,
+            target,
             renderer: Some(renderer),
             presented_frame_count: u64::MIN,
             last_manu3_triangle_count: usize::MIN,
@@ -75,7 +84,7 @@ impl<'window> RuntimePresentationHost<'window> {
     /// Replace the startup renderer after MANU3 and bridge data are available.
     pub fn configure_main_game(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
         self.renderer = None;
-        self.renderer = Some(main_game_renderer(self.window, runtime)?);
+        self.renderer = Some(game_renderer(self.target, runtime, true)?);
         if let Some(recording) = &self.recording {
             self.renderer
                 .as_mut()
@@ -96,9 +105,20 @@ impl<'window> RuntimePresentationHost<'window> {
 
     /// Reconfigure the wgpu surface after an SDL pixel-size change.
     pub fn resize(&mut self, width: u32, height: u32) {
+        if width == 0 || height == 0 {
+            return;
+        }
+        if let PresentationTarget::Offscreen(size) = &mut self.target {
+            *size = (width, height);
+        }
         if let Some(renderer) = &mut self.renderer {
             renderer.resize(width, height);
         }
+    }
+
+    /// Read the final production-composited frame of an offline host.
+    pub fn read_offscreen_rgba(&self) -> Result<Vec<u8>> {
+        self.renderer_ref()?.read_offscreen_rgba()
     }
 
     /// Resolve and upload the runtime's complete indexed frame as true-color RGBA.
@@ -233,7 +253,7 @@ impl<'window> RuntimePresentationHost<'window> {
             .is_some_and(Renderer::remove_alien_scene)
     }
 
-    /// Number of frames submitted to the window surface.
+    /// Number of frames submitted to the presentation target.
     pub const fn presented_frame_count(&self) -> u64 {
         self.presented_frame_count
     }
@@ -260,21 +280,24 @@ fn select_manu3_triangles(triangles: &[RenderTriangle], visible: bool) -> &[Rend
     if visible { triangles } else { &[] }
 }
 
-fn main_game_renderer<'window>(
-    window: &'window Window,
+fn game_renderer<'window>(
+    target: PresentationTarget<'window>,
     runtime: &OriginalGameRuntime,
+    main: bool,
 ) -> Result<Renderer<'window>> {
     let initial_frame =
         runtime_original_frame(runtime.front_buffer().pixels(), runtime.live_palette())?;
-    Renderer::new(
-        window,
-        &initial_frame,
-        runtime.manu3(),
-        Some(runtime.data().default_vga_palette()),
-        None,
-        Some(runtime.data().default_vga_palette()),
-    )
-    .context("initializing main-game wgpu presentation")
+    let model = if main { runtime.manu3() } else { None };
+    let palette = main.then(|| runtime.data().default_vga_palette());
+    match target {
+        PresentationTarget::Window(window) => {
+            Renderer::new(window, &initial_frame, model, palette, None, palette)
+        }
+        PresentationTarget::Offscreen(size) => {
+            Renderer::new_offscreen(size, &initial_frame, model, palette, None, palette)
+        }
+    }
+    .context("initializing game wgpu presentation")
 }
 
 fn runtime_original_frame(

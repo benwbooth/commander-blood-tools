@@ -188,11 +188,40 @@ render alternate branches with explicit chapters. It must keep loops, deferred
 profile changes, inventory, story phase, and prior-visit predicates explicit;
 the graph alone does not choose one valid state for every line.
 
-Direct asset-composited videos and actual gameplay recordings must remain
-separately labeled. The existing recorder still records explicit runtime routes;
-the static scanner does not yet automatically turn every graph branch into a
-video. Both catalogs leave unrecorded content unrecorded rather than equating
-script/file presence with video coverage.
+The requested full videos must use the game's presentation behavior, including
+scene palettes, original subtitle fonts and reveal/hold timing, animation,
+music, voices, and effects. A separate approximate compositor or silent preview
+is not an acceptable substitute. The static scanner does not yet automatically
+turn every graph branch into a video. Both catalogs leave unrecorded content
+unrecorded rather than equating script/file presence with video coverage.
+
+### Offline Presentation Backend
+
+`ModernGameServices::new_offline` now constructs the production services without
+an SDL window or audio device. It uses the same GPU composition passes and the
+same audio callback mixer as live playback:
+
+- `read_offline_rgba` reads the fully composited frame after presentation. It
+  rejects an unpresented or newly resized target instead of returning a blank
+  frame. Main-viewport reconfiguration retains the offline target and its size.
+- `render_offline_audio` consumes an explicit number of mono `f32` samples at
+  `RuntimeAudioHost::output_sample_rate_hz()` (48,000 Hz). Native stream page
+  refills, sound selection, and timers remain the caller's responsibility.
+  Pulling samples from a live SDL host is rejected to prevent two consumers
+  from advancing the same playback state.
+
+This is a shared output backend, not yet a full export driver. It does not
+choose dialogue branches, fabricate missing scene state, or change the native
+schedule. The offline driver must still connect the static graph to those
+services and advance the recovered clocks and stream refills at the correct
+boundaries. The nominal 25 fps in normalized WebM files is not an authoritative
+playback clock. No new complete anthology is claimed by these backend tests.
+
+Tests check exact original-font pixels and palette colors for both executables
+through the final GPU passes, output resizing and row padding, audio sample
+equivalence with the SDL callback across stream refills and sound effects,
+and device-free service initialization with real assets from both games.
+These establish the tested output-backend behavior, not DOS whole-game parity.
 
 ## Tests
 
@@ -203,6 +232,8 @@ nix develop -c cargo test --release -p commander-blood-script-compiler \
 nix develop -c uv run --with av==18.1.0 python -m unittest discover \
   -s tools -p test_video_anthology.py
 nix develop -c cargo test -p commander-blood-game --lib
+nix develop -c env CBLOOD_REQUIRE_ACCURACY_TESTS=1 \
+  cargo test --release -p commander-blood-game --lib offline
 nix develop -c cargo test -p commander-blood-game --lib \
   recording::tests::lossless_writer_preserves_frames_audio_and_shared_start_offset \
   -- --ignored --exact

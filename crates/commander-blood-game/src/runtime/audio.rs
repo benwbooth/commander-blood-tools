@@ -1,4 +1,4 @@
-//! SDL3 playback for validated original unsigned 8-bit PCM resources.
+//! Live and offline playback for validated original unsigned 8-bit PCM resources.
 
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -553,8 +553,8 @@ impl RuntimeAudioCallback {
         }
     }
 
-    /// Render the exact host-rate `f32` slice passed to SDL by the callback.
-    fn render_for_sdl(&mut self, requested: usize) -> &[f32] {
+    /// Render the host-rate samples shared by SDL playback and offline export.
+    fn render_samples(&mut self, requested: usize) -> &[f32] {
         self.unsigned_samples
             .resize(requested, UNSIGNED_PCM_SILENCE);
         self.foreground_samples
@@ -598,7 +598,7 @@ impl AudioCallback<f32> for RuntimeAudioCallback {
     fn callback(&mut self, stream: &mut AudioStream, requested: i32) {
         let recording = self.recording.clone();
         let requested = usize::try_from(requested).unwrap_or(usize::MIN);
-        let submission = self.render_for_sdl(requested);
+        let submission = self.render_samples(requested);
         if let Some(recording) = recording {
             recording.audio(submission, RUNTIME_AUDIO_OUTPUT_RATE_HZ);
         }
@@ -608,13 +608,60 @@ impl AudioCallback<f32> for RuntimeAudioCallback {
     }
 }
 
-/// Live SDL3 audio stream backed by the deterministic PCM mixer.
+enum RuntimeAudioOutput {
+    Live(AudioStreamWithCallback<RuntimeAudioCallback>),
+    Offline(RuntimeAudioCallback),
+}
+
+impl RuntimeAudioOutput {
+    fn clear(&self) -> Result<()> {
+        if let Self::Live(stream) = self {
+            stream.clear().map_err(|error| anyhow!("{error}"))?;
+        }
+        // Offline samples are consumed synchronously; there is no output queue.
+        Ok(())
+    }
+}
+
+/// Shared game audio host with live SDL playback or synchronous offline output.
 pub struct RuntimeAudioHost {
     shared: Arc<Mutex<SharedAudioState>>,
-    stream: AudioStreamWithCallback<RuntimeAudioCallback>,
+    stream: RuntimeAudioOutput,
 }
 
 impl RuntimeAudioHost {
+    /// Create an output host without an audio device or asynchronous clock.
+    ///
+    /// The caller must service native stream refills and render samples at the
+    /// same lifecycle boundaries as live playback. This changes only the sink,
+    /// not sound selection, stream gates, resampling, or mixing.
+    pub fn offline() -> Self {
+        let shared = Arc::new(Mutex::new(SharedAudioState::default()));
+        let callback = RuntimeAudioCallback::new(Arc::clone(&shared));
+        Self {
+            shared,
+            stream: RuntimeAudioOutput::Offline(callback),
+        }
+    }
+
+    /// Sample rate of both live and offline mono floating-point output.
+    pub const fn output_sample_rate_hz() -> u32 {
+        RUNTIME_AUDIO_OUTPUT_RATE_HZ
+    }
+
+    /// Consume exactly the requested number of samples through the SDL mixer.
+    ///
+    /// Live hosts reject this operation: a second consumer would advance their
+    /// playback positions and change what the audio callback subsequently hears.
+    pub fn render_offline(&mut self, output: &mut [f32]) -> Result<()> {
+        self.check_callback()?;
+        let RuntimeAudioOutput::Offline(callback) = &mut self.stream else {
+            anyhow::bail!("cannot synchronously consume a live audio host");
+        };
+        output.copy_from_slice(callback.render_samples(output.len()));
+        Ok(())
+    }
+
     /// Open and resume the default SDL3 playback stream.
     pub fn open(audio: &AudioSubsystem) -> Result<Self> {
         Self::open_recorded(audio, None)
@@ -638,7 +685,10 @@ impl RuntimeAudioHost {
         stream
             .resume()
             .map_err(|error| anyhow!("resuming SDL3 playback stream: {error}"))?;
-        Ok(Self { shared, stream })
+        Ok(Self {
+            shared,
+            stream: RuntimeAudioOutput::Live(stream),
+        })
     }
 
     /// Start or replace looping background music.
@@ -962,6 +1012,112 @@ mod tests {
         0.421875, -0.375, -0.375, -0.375, -0.375, -0.0625, -0.0625, -0.0625, -0.0625, -0.0625,
         0.4375, 0.4375, 0.4375, 0.4375, -0.328125, -0.328125,
     ];
+
+    #[test]
+    fn offline_output_matches_callback_samples_across_refills_and_effects() {
+        let mut offline = RuntimeAudioHost::offline();
+        let mut reference = RuntimeAudioHost::offline();
+        let mut callback = RuntimeAudioCallback::new(Arc::clone(&reference.shared));
+        let payload = generated_stream_payload(AUDIO_STREAM_PAGE_BYTE_COUNT * 3);
+        let encoded = encoded_voc_stream(&payload);
+        for host in [&mut offline, &mut reference] {
+            host.load_background_stream(&encoded, TEST_STREAM_RATE_HZ)
+                .unwrap();
+            host.start_background_stream().unwrap();
+            host.apply_speaker_gate(SpeakerGateAction::Enable).unwrap();
+        }
+        let effects = bank_with_one_clip(&[7, 33, 180, 250, 55]);
+        // The native mixer may consume bytes past the clip into the resident arena.
+        let mut resident_memory = vec![0; 65_536];
+        resident_memory[..effects.payload().len()].copy_from_slice(effects.payload());
+        let dialogue = empty_bank();
+        let mut nonzero = 0;
+        for tick in 0..125 {
+            for host in [&mut offline, &mut reference] {
+                host.refill_background_stream().unwrap();
+                if tick == 4 {
+                    host.play_sound_request(
+                        AudioClipRequest::VoiceReaction { bank_index: 0 },
+                        AudioPlaybackBanks {
+                            resident_effects: &effects,
+                            resident_effects_memory: &resident_memory,
+                            streamed_dialogue: &dialogue,
+                        },
+                    )
+                    .unwrap();
+                }
+                if tick == 7 {
+                    host.play_foreground(RuntimePcmClip::new(11_111, [255, 3, 144]).unwrap())
+                        .unwrap();
+                }
+                if tick == 50 {
+                    host.apply_speaker_gate(SpeakerGateAction::Disable).unwrap();
+                }
+            }
+            let mut output = vec![f32::NAN; RUNTIME_AUDIO_OUTPUT_RATE_HZ as usize / 25];
+            offline.render_offline(&mut output).unwrap();
+            assert_eq!(output, callback.render_samples(output.len()), "tick {tick}");
+            assert_eq!(
+                offline.background_position(),
+                reference.background_position()
+            );
+            assert_eq!(
+                offline.background_stream_remaining(),
+                reference.background_stream_remaining()
+            );
+            nonzero += output.iter().filter(|sample| **sample != 0.0).count();
+        }
+        assert!(nonzero > RUNTIME_AUDIO_OUTPUT_RATE_HZ as usize);
+    }
+
+    #[test]
+    fn offline_output_is_independent_of_consumer_chunk_size() {
+        let mut whole = RuntimeAudioHost::offline();
+        let mut chunked = RuntimeAudioHost::offline();
+        for host in [&mut whole, &mut chunked] {
+            host.play_background(RuntimePcmClip::new(11_111, [0, 64, 128, 255, 200]).unwrap())
+                .unwrap();
+            host.play_foreground(RuntimePcmClip::new(22_222, [255, 7, 64, 33]).unwrap())
+                .unwrap();
+        }
+        let mut expected = [0.0; 401];
+        whole.render_offline(&mut expected).unwrap();
+        let mut actual = [0.0; 401];
+        chunked.render_offline(&mut []).unwrap();
+        for output in actual.chunks_mut(17) {
+            chunked.render_offline(output).unwrap();
+        }
+        assert_eq!(actual, expected);
+        assert_eq!(whole.background_position(), chunked.background_position());
+        assert_eq!(RuntimeAudioHost::output_sample_rate_hz(), 48_000);
+    }
+
+    #[test]
+    fn offline_stop_and_replacement_preserve_channel_semantics() {
+        let mut host = RuntimeAudioHost::offline();
+        let mut output = [f32::NAN; 3];
+        host.play_background(RuntimePcmClip::new(48_000, [0]).unwrap())
+            .unwrap();
+        host.play_foreground(RuntimePcmClip::new(48_000, [255, 192]).unwrap())
+            .unwrap();
+        host.stop_background().unwrap();
+        host.render_offline(&mut output).unwrap();
+        assert_eq!(output, [127.0 / 128.0, 0.5, 0.0]);
+        host.apply_speaker_gate(SpeakerGateAction::Enable).unwrap();
+        host.play_foreground(RuntimePcmClip::new(48_000, [255]).unwrap())
+            .unwrap();
+        host.stop_digital().unwrap();
+        host.render_offline(&mut output).unwrap();
+        assert_eq!(output, [-1.0; 3]);
+        host.stop_all().unwrap();
+        host.render_offline(&mut output).unwrap();
+        assert_eq!(output, [0.0; 3]);
+        host.play_exclusive(RuntimePcmClip::new(48_000, [0, 255]).unwrap())
+            .unwrap();
+        host.stop_speech(false).unwrap();
+        host.render_offline(&mut output).unwrap();
+        assert_eq!(output, [0.0; 3]);
+    }
 
     #[test]
     fn foreground_is_averaged_over_music_in_the_unsigned_domain() {
@@ -1346,9 +1502,30 @@ mod tests {
         ));
 
         let mut callback = RuntimeAudioCallback::new(shared);
-        let submission = callback.render_for_sdl(PHONE_COMPLETION_SDL_PREFIX.len());
+        let submission = callback.render_samples(PHONE_COMPLETION_SDL_PREFIX.len());
         assert_eq!(submission, PHONE_COMPLETION_SDL_PREFIX);
         assert!(submission.iter().any(|sample| *sample != 0.0));
+
+        let mut offline = RuntimeAudioHost::offline();
+        offline
+            .load_background_stream(&encoded_stream, TEST_STREAM_RATE_HZ)
+            .unwrap();
+        offline.start_background_stream().unwrap();
+        offline
+            .play_sound_request(
+                AudioClipRequest::VoiceReaction {
+                    bank_index: PHONE_COMPLETION_CLIP_INDEX,
+                },
+                AudioPlaybackBanks {
+                    resident_effects: &resident_effects,
+                    resident_effects_memory: resident_effects.payload(),
+                    streamed_dialogue: &streamed_dialogue,
+                },
+            )
+            .unwrap();
+        let mut exported = [f32::NAN; PHONE_COMPLETION_SDL_PREFIX.len()];
+        offline.render_offline(&mut exported).unwrap();
+        assert_eq!(exported, PHONE_COMPLETION_SDL_PREFIX);
     }
 
     fn encoded_voc_stream(payload: &[u8]) -> Vec<u8> {

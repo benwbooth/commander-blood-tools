@@ -99,7 +99,9 @@ struct UiCompositeRenderer {
 pub struct Renderer<'window> {
     recording: Option<std::sync::Arc<crate::recording::Recording>>,
     surface_copy_supported: bool,
-    surface: wgpu::Surface<'window>,
+    surface: Option<wgpu::Surface<'window>>,
+    offscreen: Option<wgpu::Texture>,
+    offscreen_frame_ready: bool,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
@@ -126,6 +128,50 @@ impl<'window> Renderer<'window> {
         alien_asset: Option<&AlienAsset>,
         bridge_palette: Option<&IndexedGamePalette>,
     ) -> Result<Self> {
+        Self::new_target(
+            Some(window),
+            window.size_in_pixels(),
+            image,
+            manu3_model,
+            manu3_palette,
+            alien_asset,
+            bridge_palette,
+        )
+    }
+
+    /// Use the production composition passes without a window or swapchain.
+    pub fn new_offscreen(
+        size: (u32, u32),
+        image: &OriginalFrame,
+        manu3_model: Option<&Manu3Model>,
+        manu3_palette: Option<&IndexedGamePalette>,
+        alien_asset: Option<&AlienAsset>,
+        bridge_palette: Option<&IndexedGamePalette>,
+    ) -> Result<Self> {
+        anyhow::ensure!(
+            size.0 != 0 && size.1 != 0,
+            "offscreen dimensions must be nonzero"
+        );
+        Self::new_target(
+            None,
+            size,
+            image,
+            manu3_model,
+            manu3_palette,
+            alien_asset,
+            bridge_palette,
+        )
+    }
+
+    fn new_target(
+        window: Option<&'window Window>,
+        size: (u32, u32),
+        image: &OriginalFrame,
+        manu3_model: Option<&Manu3Model>,
+        manu3_palette: Option<&IndexedGamePalette>,
+        alien_asset: Option<&AlienAsset>,
+        bridge_palette: Option<&IndexedGamePalette>,
+    ) -> Result<Self> {
         let base_scene_renderer_count =
             usize::from(alien_asset.is_some()) + usize::from(bridge_palette.is_some());
         if base_scene_renderer_count > MAXIMUM_BASE_SCENE_RENDERER_COUNT {
@@ -133,13 +179,15 @@ impl<'window> Renderer<'window> {
         }
         let instance =
             wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
-        let surface = create_surface::create(&instance, window)
+        let surface = window
+            .map(|window| create_surface::create(&instance, window))
+            .transpose()
             .map_err(anyhow::Error::msg)
             .context("creating wgpu surface for SDL window")?;
         let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,
             force_fallback_adapter: false,
-            compatible_surface: Some(&surface),
+            compatible_surface: surface.as_ref(),
         }))
         .context("finding a wgpu graphics adapter")?;
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
@@ -152,9 +200,14 @@ impl<'window> Renderer<'window> {
         }))
         .context("creating wgpu device")?;
 
-        let capabilities = surface.get_capabilities(&adapter);
-        let format = select_surface_format(&capabilities.formats)?;
-        let (width, height) = window.size_in_pixels();
+        let capabilities = surface
+            .as_ref()
+            .map(|surface| surface.get_capabilities(&adapter));
+        let format = match &capabilities {
+            Some(capabilities) => select_surface_format(&capabilities.formats)?,
+            None => wgpu::TextureFormat::Rgba8UnormSrgb,
+        };
+        let (width, height) = size;
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
@@ -165,7 +218,17 @@ impl<'window> Renderer<'window> {
             desired_maximum_frame_latency: DESIRED_FRAME_LATENCY,
             view_formats: Vec::new(),
         };
-        surface.configure(&device, &config);
+        anyhow::ensure!(
+            config.width <= device.limits().max_texture_dimension_2d
+                && config.height <= device.limits().max_texture_dimension_2d,
+            "presentation dimensions exceed the GPU texture limit"
+        );
+        if let Some(surface) = &surface {
+            surface.configure(&device, &config);
+        }
+        let offscreen = surface
+            .is_none()
+            .then(|| offscreen_target(&device, &config));
 
         let image_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("original Commander Blood frame"),
@@ -293,8 +356,12 @@ impl<'window> Renderer<'window> {
 
         Ok(Self {
             recording: None,
-            surface_copy_supported: capabilities.usages.contains(wgpu::TextureUsages::COPY_SRC),
+            surface_copy_supported: capabilities.as_ref().is_none_or(|capabilities| {
+                capabilities.usages.contains(wgpu::TextureUsages::COPY_SRC)
+            }),
             surface,
+            offscreen,
+            offscreen_frame_ready: false,
             device,
             queue,
             config,
@@ -328,7 +395,9 @@ impl<'window> Renderer<'window> {
             "recording requires an 8-bit sRGB surface"
         );
         self.config.usage |= wgpu::TextureUsages::COPY_SRC;
-        self.surface.configure(&self.device, &self.config);
+        if let Some(surface) = &self.surface {
+            surface.configure(&self.device, &self.config);
+        }
         self.recording = Some(recording);
         Ok(())
     }
@@ -340,12 +409,94 @@ impl<'window> Renderer<'window> {
         }
         self.config.width = width;
         self.config.height = height;
-        self.surface.configure(&self.device, &self.config);
+        if let Some(surface) = &self.surface {
+            surface.configure(&self.device, &self.config);
+        } else {
+            self.offscreen = Some(offscreen_target(&self.device, &self.config));
+            self.offscreen_frame_ready = false;
+        }
         self.ui_composite
             .resize(&self.device, self.config.width, self.config.height);
         if let Some(manu3) = &mut self.manu3 {
             manu3.resize(&self.device, width, height);
         }
+    }
+
+    /// Read the last complete offscreen frame, including every production layer.
+    pub fn read_offscreen_rgba(&self) -> Result<Vec<u8>> {
+        let texture = self
+            .offscreen
+            .as_ref()
+            .context("RGBA readback requires an offscreen renderer")?;
+        anyhow::ensure!(
+            self.offscreen_frame_ready,
+            "offscreen target has not presented a frame"
+        );
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("offline final-frame readback"),
+            });
+        let (buffer, padded_row) = self.encode_readback(&mut encoder, texture);
+        self.queue.submit([encoder.finish()]);
+        self.map_readback(&buffer, padded_row)
+    }
+
+    fn encode_readback(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        texture: &wgpu::Texture,
+    ) -> (wgpu::Buffer, u32) {
+        let padded_row = (self.config.width * 4).div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
+            * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("anthology final-frame readback"),
+            size: u64::from(padded_row) * u64::from(self.config.height),
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        encoder.copy_texture_to_buffer(
+            texture.as_image_copy(),
+            wgpu::TexelCopyBufferInfo {
+                buffer: &buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(padded_row),
+                    rows_per_image: Some(self.config.height),
+                },
+            },
+            wgpu::Extent3d {
+                width: self.config.width,
+                height: self.config.height,
+                depth_or_array_layers: 1,
+            },
+        );
+        (buffer, padded_row)
+    }
+
+    fn map_readback(&self, buffer: &wgpu::Buffer, padded_row: u32) -> Result<Vec<u8>> {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        buffer
+            .slice(..)
+            .map_async(wgpu::MapMode::Read, move |result| {
+                let _ = sender.send(result);
+            });
+        self.device.poll(wgpu::PollType::wait_indefinitely())?;
+        receiver.recv()??;
+        let mapped = buffer.slice(..).get_mapped_range();
+        let row_bytes = self.config.width as usize * 4;
+        let mut rgba = Vec::with_capacity(row_bytes * self.config.height as usize);
+        for row in mapped.chunks_exact(padded_row as usize) {
+            rgba.extend_from_slice(&row[..row_bytes]);
+        }
+        drop(mapped);
+        buffer.unmap();
+        if self.config.format == wgpu::TextureFormat::Bgra8UnormSrgb {
+            for pixel in rgba.chunks_exact_mut(4) {
+                pixel.swap(0, 2);
+            }
+        }
+        Ok(rgba)
     }
 
     /// Install or replace the decoded alien scene used by synchronous overlays.
@@ -491,23 +642,32 @@ impl<'window> Renderer<'window> {
             None if manu3_triangles.is_empty() => u32::MIN,
             None => anyhow::bail!("MANU3 triangles supplied without overlay GPU resources"),
         };
-        let frame = match self.surface.get_current_texture() {
-            wgpu::CurrentSurfaceTexture::Success(frame)
-            | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
-            wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
-                return Ok(());
-            }
-            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
-                self.surface.configure(&self.device, &self.config);
-                return Ok(());
-            }
-            wgpu::CurrentSurfaceTexture::Validation => {
-                anyhow::bail!("wgpu rejected the current surface configuration")
-            }
+        let frame = if let Some(surface) = &self.surface {
+            Some(match surface.get_current_texture() {
+                wgpu::CurrentSurfaceTexture::Success(frame)
+                | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
+                wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
+                    return Ok(());
+                }
+                wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
+                    surface.configure(&self.device, &self.config);
+                    return Ok(());
+                }
+                wgpu::CurrentSurfaceTexture::Validation => {
+                    anyhow::bail!("wgpu rejected the current surface configuration")
+                }
+            })
+        } else {
+            None
         };
-        let view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
+        let texture = match &frame {
+            Some(frame) => &frame.texture,
+            None => self
+                .offscreen
+                .as_ref()
+                .context("renderer has no output target")?,
+        };
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -598,61 +758,19 @@ impl<'window> Renderer<'window> {
             .map(|r| r.frame_due())
             .transpose()?
             .flatten();
-        let row_bytes = self.config.width * 4;
-        let padded_row = row_bytes.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
-            * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-        let readback = capture_time.map(|_| {
-            let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("anthology final-frame readback"),
-                size: u64::from(padded_row) * u64::from(self.config.height),
-                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-                mapped_at_creation: false,
-            });
-            encoder.copy_texture_to_buffer(
-                frame.texture.as_image_copy(),
-                wgpu::TexelCopyBufferInfo {
-                    buffer: &buffer,
-                    layout: wgpu::TexelCopyBufferLayout {
-                        offset: 0,
-                        bytes_per_row: Some(padded_row),
-                        rows_per_image: Some(self.config.height),
-                    },
-                },
-                wgpu::Extent3d {
-                    width: self.config.width,
-                    height: self.config.height,
-                    depth_or_array_layers: 1,
-                },
-            );
-            buffer
-        });
+        let readback = capture_time.map(|_| self.encode_readback(&mut encoder, texture));
         self.queue.submit([encoder.finish()]);
-        if let (Some(time), Some(buffer), Some(recording)) =
+        if let (Some(time), Some((buffer, padded_row)), Some(recording)) =
             (capture_time, readback, self.recording.as_ref())
         {
-            let (sender, receiver) = std::sync::mpsc::channel();
-            buffer
-                .slice(..)
-                .map_async(wgpu::MapMode::Read, move |result| {
-                    let _ = sender.send(result);
-                });
-            self.device.poll(wgpu::PollType::wait_indefinitely())?;
-            receiver.recv()??;
-            let mapped = buffer.slice(..).get_mapped_range();
-            let mut rgba = Vec::with_capacity(row_bytes as usize * self.config.height as usize);
-            for row in mapped.chunks_exact(padded_row as usize) {
-                rgba.extend_from_slice(&row[..row_bytes as usize]);
-            }
-            drop(mapped);
-            buffer.unmap();
-            if self.config.format == wgpu::TextureFormat::Bgra8UnormSrgb {
-                for pixel in rgba.chunks_exact_mut(4) {
-                    pixel.swap(0, 2);
-                }
-            }
+            let rgba = self.map_readback(&buffer, padded_row)?;
             recording.video(time, self.config.width, self.config.height, rgba)?;
         }
-        frame.present();
+        if let Some(frame) = frame {
+            frame.present();
+        } else {
+            self.offscreen_frame_ready = true;
+        }
         Ok(())
     }
 
@@ -676,6 +794,23 @@ impl<'window> Renderer<'window> {
             artwork_pass,
         );
     }
+}
+
+fn offscreen_target(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("offline game presentation target"),
+        size: wgpu::Extent3d {
+            width: config.width,
+            height: config.height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: config.format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    })
 }
 
 fn select_surface_format(formats: &[wgpu::TextureFormat]) -> Result<wgpu::TextureFormat> {
@@ -1414,6 +1549,95 @@ mod tests {
             .map(Path::new)
             .find(|path| path.is_file())
             .map(Path::to_owned)
+    }
+
+    #[test]
+    fn offline_final_frames_preserve_both_original_fonts_and_palette_colors() {
+        let _gpu = crate::gpu_test::lock();
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        for (game, relative) in [
+            (
+                crate::game::GameVariant::CommanderBlood,
+                "re/bin/BLOODPRG.EXE",
+            ),
+            (
+                crate::game::GameVariant::BigBugBang,
+                "output/big-bug-bang/imported-assets/companions/BLOOD2PG.EXE",
+            ),
+        ] {
+            let path = root.join(relative);
+            if !path.is_file() {
+                assert!(
+                    std::env::var_os("CBLOOD_REQUIRE_ACCURACY_TESTS").is_none(),
+                    "missing {}",
+                    path.display()
+                );
+                continue;
+            }
+            let executable = std::fs::read(path).unwrap();
+            let fonts = game.decode_fonts(&executable).unwrap();
+            let palette = game.decode_default_vga_palette(&executable).unwrap();
+            let mut text = vec![0; 320 * 200];
+            crate::native::bloodprg::draw_subtitle_reveal_line(
+                &mut text,
+                &fonts,
+                b"Hello Commander.\r",
+                crate::native::bloodprg::FontPoint { x: 10, y: 8 },
+                14,
+            )
+            .unwrap();
+            assert!(text.iter().filter(|pixel| **pixel != 0).count() > 100);
+            let overlay = indexed_frame_rgba(&text, &palette).unwrap();
+            let base = [24, 48, 80, 255];
+            let image = OriginalFrame {
+                width: 320,
+                height: 200,
+                rgba: base.repeat(320 * 200),
+                indexed_pixels: vec![0; 320 * 200],
+                palette_rgba: indexed_palette_rgba(&palette).unwrap(),
+            };
+            let mut renderer =
+                Renderer::new_offscreen((320, 240), &image, None, None, None, None).unwrap();
+            assert!(renderer.read_offscreen_rgba().is_err());
+            // Integral viewport origins avoid nearest-sampler boundary ties in
+            // this independent CPU oracle; 642 still exercises padded GPU rows.
+            for (width, height) in [(320, 240), (642, 480), (256, 384)] {
+                renderer.resize(width, height);
+                assert!(renderer.read_offscreen_rgba().is_err());
+                renderer.upload_ui_overlay(&overlay).unwrap();
+                renderer.render(&[], None, None).unwrap();
+                let output = renderer.read_offscreen_rgba().unwrap();
+                assert_eq!(output.len(), width as usize * height as usize * 4);
+                let viewport = aspect_fit_viewport(width, height, 4, 3);
+                for y in 0..height {
+                    for x in 0..width {
+                        let local_x = (x as f32 + 0.5 - viewport.0) / viewport.2;
+                        let local_y = (y as f32 + 0.5 - viewport.1) / viewport.3;
+                        if !(0.0..1.0).contains(&local_x) || !(0.0..1.0).contains(&local_y) {
+                            continue;
+                        }
+                        let sx = (local_x * 320.0) as usize;
+                        let sy = (local_y * 200.0) as usize;
+                        let pixel = &overlay[(sy * 320 + sx) * 4..][..4];
+                        let expected = if pixel[3] == 0 {
+                            base.as_slice()
+                        } else {
+                            pixel
+                        };
+                        assert_eq!(
+                            pixel_at(&output, width, x, y).as_slice(),
+                            expected,
+                            "{game:?} {width}x{height} at {x},{y}"
+                        );
+                    }
+                }
+                renderer.clear_ui_overlay();
+                renderer.render(&[], None, None).unwrap();
+                let cleared = renderer.read_offscreen_rgba().unwrap();
+                assert_eq!(pixel_at(&cleared, width, width / 2, height / 2), base);
+                assert_ne!(output, cleared);
+            }
+        }
     }
 
     #[test]

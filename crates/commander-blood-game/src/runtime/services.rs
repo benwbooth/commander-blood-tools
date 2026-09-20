@@ -406,6 +406,32 @@ impl<'window> ModernGameServices<'window> {
         data: OriginalGameData,
         script_clock: ScriptClock,
     ) -> Result<Self> {
+        Self::new_with_presentation(data, script_clock, |runtime| {
+            RuntimePresentationHost::new_startup(window, runtime)
+        })
+    }
+
+    /// Create the same native services with a synchronous audio/video sink.
+    ///
+    /// This does not run scripts or invent scene state. The caller still drives
+    /// the recovered lifecycle and supplies its clock and branch decisions.
+    pub fn new_offline(
+        size: (u32, u32),
+        data: OriginalGameData,
+        script_clock: ScriptClock,
+    ) -> Result<Self> {
+        let mut services = Self::new_with_presentation(data, script_clock, |runtime| {
+            RuntimePresentationHost::new_offscreen(size, runtime)
+        })?;
+        services.audio = Some(RuntimeAudioHost::offline());
+        Ok(services)
+    }
+
+    fn new_with_presentation(
+        data: OriginalGameData,
+        script_clock: ScriptClock,
+        presentation_host: impl FnOnce(&OriginalGameRuntime) -> Result<RuntimePresentationHost<'window>>,
+    ) -> Result<Self> {
         let confirm_dialog = RuntimeConfirmDialog::new(*data.confirm_dialog_regions());
         let initial_text_speed_step = data.bridge_menu_text().initial_text_speed_step();
         let sequel_travel_enabled = data
@@ -422,7 +448,7 @@ impl<'window> ModernGameServices<'window> {
         let runtime = OriginalGameRuntime::new(data);
         let bridge_palette = startup_palette;
         let presentation_screen = RuntimePresentationScreen::new(startup_palette)?;
-        let presentation = RuntimePresentationHost::new_startup(window, &runtime)?;
+        let presentation = presentation_host(&runtime)?;
         Ok(Self {
             runtime,
             input: RuntimeInputHost::new(INITIAL_LOGICAL_POINTER),
@@ -493,6 +519,16 @@ impl<'window> ModernGameServices<'window> {
             cd_audio: CdAudioState::default(),
             main_viewport_configured: false,
         })
+    }
+
+    /// Read a fully composed offline frame after a presentation boundary.
+    pub fn read_offline_rgba(&self) -> Result<Vec<u8>> {
+        self.presentation.read_offscreen_rgba()
+    }
+
+    /// Consume offline audio at the caller's deterministic sample boundary.
+    pub fn render_offline_audio(&mut self, output: &mut [f32]) -> Result<()> {
+        self.audio_mut()?.render_offline(output)
     }
 
     /// Draw and present `LOADING`, then populate missing writable resources.
@@ -6569,6 +6605,83 @@ mod tests {
     };
     const HYPERSPACE_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(6);
     const SCRIPT_RADIO_CLIP_COUNTDOWN: u16 = 2;
+
+    #[test]
+    fn offline_services_present_original_assets_and_sound_without_sdl() {
+        let _gpu = crate::gpu_test::lock();
+        let cb_root = std::env::var_os("CBLOOD_ASSET_CACHE")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                std::path::PathBuf::from(std::env::var_os("HOME").unwrap())
+                    .join(".local/share/commander-blood/assets-v1")
+            });
+        let bbb_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        for root in [cb_root, bbb_root] {
+            if !root.join("manifest.json").is_file() {
+                assert!(
+                    std::env::var_os("CBLOOD_REQUIRE_ACCURACY_TESTS").is_none(),
+                    "missing original assets: {}",
+                    root.display()
+                );
+                continue;
+            }
+            let writable = TemporaryRoot::create();
+            let data = OriginalGameData::load_with_writable_root(
+                OriginalGameDataPaths::from_root(root).unwrap(),
+                &writable.0,
+            )
+            .unwrap();
+            let mut services =
+                ModernGameServices::new_offline((641, 480), data, TEST_SCRIPT_CLOCK).unwrap();
+            assert!(services.read_offline_rgba().is_err());
+            services.prepare_startup_resources().unwrap();
+            services.load_manu3_overlay().unwrap();
+            services.initialize_logical_viewport().unwrap();
+            assert!(services.read_offline_rgba().is_err());
+            services.initialize_back_buffer().unwrap();
+            services
+                .load_script_profile(ScriptProfileId::INITIAL)
+                .unwrap();
+            services
+                .apply_presentation_description(b"bar1")
+                .unwrap()
+                .unwrap();
+            services
+                .apply_presentation_description(b"Bob_Morlock")
+                .unwrap()
+                .unwrap();
+            let mut scene = super::super::presentation_scene::RuntimePresentationScene::new(
+                *services.runtime.live_palette(),
+            );
+            let mut scene_state =
+                crate::native::bloodprg::PresentationSceneDispatchState::default();
+            scene_state.presentation.active_line = Some(10);
+            scene
+                .dispatch(&mut services, &mut scene_state, 0, None, None, false, false)
+                .unwrap();
+            services.submit_indexed_frame().unwrap();
+            services.present_artwork().unwrap();
+            let pixels = services.read_offline_rgba().unwrap();
+            assert_eq!(pixels.len(), 641 * 480 * 4);
+            assert!(pixels.chunks_exact(4).any(|pixel| pixel[..3] != [0, 0, 0]));
+            services.load_default_sound_bank().unwrap();
+            services.play_loaded_sound_bank_clip(2).unwrap();
+            let mut audio = vec![0.0; RuntimeAudioHost::output_sample_rate_hz() as usize];
+            services.render_offline_audio(&mut audio).unwrap();
+            assert!(audio.iter().any(|sample| *sample != 0.0));
+            assert!(
+                audio
+                    .iter()
+                    .all(|sample| sample.is_finite() && (-1.0..=1.0).contains(sample))
+            );
+            services.resize(320, 240);
+            services.initialize_logical_viewport().unwrap();
+            services.submit_indexed_frame().unwrap();
+            services.present_artwork().unwrap();
+            assert_eq!(services.read_offline_rgba().unwrap().len(), 320 * 240 * 4);
+        }
+    }
 
     #[test]
     fn sequel_click_skip_requires_a_new_press_and_preserves_choices() {
