@@ -31,7 +31,7 @@
     "re/tools/oracle_vectors/func_6ff3_natural.json": "91896e778459743771bca99d6e0a69385d05e67e34028ee46a310994453b8aee",
     "crates/commander-blood-game/src/native/bloodprg/navigation.rs": "1f33adbde53c512d5c6f5c36864db03d0b9fbc98cd712ce9e408fed4ffe1ff7e",
     "re/tools/oracle_vectors/func_713d_natural.json": "246c497cc61e0ea5b25f707c83e8ada5a4fcedc3899898d3173cff927f3a7aeb",
-    "crates/commander-blood-game/src/runtime/services.rs": "8857c28eed38f035a9d4a7bca8c6ad4fa19845311f4d06d9b65d882600a1c2a4",
+    "crates/commander-blood-game/src/runtime/services.rs": "071e66242cf8b53846e10ea3bc51e089d5ddea2196a72a77313a211ec71de0a7",
     "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs": "5f3e726b5afc93d86dd70b2cd46fbfe79ed5055ae5de0c68113fa19cfb990944",
     "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e",
     "crates/commander-blood-game/src/native/bloodprg/sequence_subtitles.rs": "8601e3e8549fa6750a8a2a517c61fc4b2441fa2b6df0446243ee1f4858c4639d",

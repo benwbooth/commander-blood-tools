@@ -2633,6 +2633,11 @@ impl<'window> ModernGameServices<'window> {
         primary_edge: bool,
         blocking_video: bool,
     ) -> Result<bool> {
+        // The TV panel owns clicks for startup dismissal and channel selection.
+        // Consuming them here would finish one clip and leave the panel open.
+        if !blocking_video && self.presentation_screen_state()?.active() {
+            return Ok(false);
+        }
         let menu_active = self
             .bridge_console
             .as_ref()
@@ -6721,6 +6726,119 @@ mod tests {
                 .is_none()
         );
         assert!(!services.audio_ref().unwrap().background_stream_pending());
+    }
+
+    #[test]
+    #[ignore = "requires original BBB assets and serialized SDL/wgpu ownership"]
+    fn sequel_intro_panel_click_minimizes_instead_of_skipping_one_clip() {
+        let _gpu = crate::gpu_test::lock();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let sdl = sdl3::init().unwrap();
+        let video = sdl.video().unwrap();
+        let audio = sdl.audio().unwrap();
+        let window = video
+            .window("BBB intro dismissal regression", 640, 480)
+            .hidden()
+            .build()
+            .unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(
+            OriginalGameDataPaths::from_root(root).unwrap(),
+            &writable.0,
+        )
+        .unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        services.prepare_startup_resources().unwrap();
+        services.initialize_audio(&audio).unwrap();
+        services.load_manu3_overlay().unwrap();
+        services.initialize_logical_viewport().unwrap();
+        services.open_bridge_panorama().unwrap();
+        services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
+        services.load_default_sound_bank().unwrap();
+        services.initialize_back_buffer().unwrap();
+        services
+            .load_script_profile(ScriptProfileId::INITIAL)
+            .unwrap();
+        let mut lifecycle = GameLifecycleState::default();
+        services
+            .scripts
+            .execute_lifecycle_frame(&mut services.runtime, &mut lifecycle, true)
+            .unwrap();
+        services.set_presentation_screen_active(true).unwrap();
+        services
+            .presentation_screen
+            .as_mut()
+            .unwrap()
+            .state_mut()
+            .arm_startup_reverse();
+        for _ in 0..30 {
+            services
+                .update_presentation_screen(&GameSceneLink::Initial, false)
+                .unwrap();
+            if services
+                .presentation_screen_state()
+                .unwrap()
+                .scene_status()
+                .queued
+            {
+                break;
+            }
+        }
+        assert!(
+            services.presentation_stream_active(),
+            "authored intro must be playing"
+        );
+        assert!(
+            services
+                .presentation_screen_state()
+                .unwrap()
+                .scene_status()
+                .queued
+        );
+        services.publish_lifecycle_logical_pointer([160, 100], PointerButtons::NONE);
+        services.update_lifecycle_pointer_buttons(&mut lifecycle);
+        services.publish_lifecycle_logical_pointer([160, 100], PointerButtons::from_bits(1));
+        let edges = services.update_lifecycle_pointer_buttons(&mut lifecycle);
+        assert!(
+            !services
+                .skip_sequel_presentation_on_click(&mut lifecycle, edges.primary_pressed, false)
+                .unwrap(),
+            "generic clip skip must not consume the TV panel's minimize click"
+        );
+        assert!(lifecycle.primary_pointer_pressed);
+        assert!(services.presentation_stream_active());
+        assert_eq!(
+            services
+                .update_presentation_screen(
+                    &GameSceneLink::Initial,
+                    lifecycle.primary_pointer_pressed
+                )
+                .unwrap(),
+            PresentationScreenOutcome::InputAccepted
+        );
+        assert!(!services.presentation_stream_active());
+        assert!(matches!(
+            services.presentation_screen_state().unwrap().phase(),
+            crate::native::bloodprg::PresentationPanelPhase::Closing(_)
+        ));
+        services.publish_lifecycle_logical_pointer([160, 100], PointerButtons::NONE);
+        services.update_lifecycle_pointer_buttons(&mut lifecycle);
+        for _ in 0..20 {
+            services
+                .update_presentation_screen(&GameSceneLink::Initial, false)
+                .unwrap();
+            services
+                .consume_presentation_screen_outputs(&mut lifecycle)
+                .unwrap();
+            assert!(
+                !services.presentation_stream_active(),
+                "dismissal must not load the next intro clip"
+            );
+        }
+        assert!(!services.presentation_screen_state().unwrap().active());
+        assert!(!services.presentation_screen_state().unwrap().reverse());
+        assert!(!lifecycle.presentation_mode);
     }
 
     #[test]

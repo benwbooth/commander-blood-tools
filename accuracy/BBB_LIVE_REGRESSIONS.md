@@ -185,3 +185,35 @@ without it. This is an isolated runtime test, not a complete story playthrough.
 All 1,089 regular library tests pass, with 69 optional tests ignored; the new
 asset regression was run explicitly. The six static-audit and four disposition
 checks also pass after refreshing the source hashes.
+
+## Clip skipping swallowed startup intro dismissal
+
+The generic click shortcut ran before the presentation panel and cleared the
+primary latch. For the startup robot intro, that made each click finish one HNM
+clip while preventing the panel's existing reverse-close path from receiving
+input. The earlier skip tests checked individual scene completion, not dismissal
+of the entire intro. The earlier startup click replay is evidence of this
+regression, not proof of correct intro controls.
+
+The shortcut now yields clicks whenever the ordinary TV panel owns input. The
+panel handles startup dismissal and normal channel selection itself; standalone
+opening/credits playback and dialogue outside the panel retain click-to-skip.
+No recovered native input or panel state machine was changed.
+
+`sequel_intro_panel_click_minimizes_instead_of_skipping_one_clip` opens the
+authentic startup scene list, sends one click through the shortcut and panel,
+and checks cancellation, all closing phases, and that no subsequent clip loads.
+It fails at the swallowed-click assertion without the new ownership guard and
+passes with it. All six sequel service tests, including real-media skips and
+navigation close/reopen, pass explicitly. The regular library suite passes
+1,089 tests with 70 optional tests ignored. Both debug and release binaries build;
+six static-audit and four disposition checks pass.
+
+The isolated `bbb_intro_panel_dismiss.tsv` replay skips the standalone opening
+after 20 recorded movie frames, then clicks the startup video at game frame 160.
+Before the fix it starts another clip and retains the panel through frame 300.
+With the fix it enters closing phase 106, finalizes at frame 167, and remains
+closed with no video resource through frame 300. The replay reaches the robot
+video (`ppit09.hnm`, followed by `ppit06.hnm`) before dismissal and exits normally.
+Traces and screenshots are in `output/fidelity/bbb-intro-dismiss-before-20260919`
+and `output/fidelity/bbb-intro-dismiss-fixed-20260919`.

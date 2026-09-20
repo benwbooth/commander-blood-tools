@@ -1,0 +1,7 @@
+# Skip the full-screen opening, then dismiss the bridge's startup TV panel.
+# The second click must minimize the whole panel, not advance one scene.
+wait 10
+click 160 100
+wait 30
+click 160 100
+wait 30
