@@ -2966,7 +2966,14 @@ impl<'window> ModernGameServices<'window> {
             .presentation_word_choice
             .as_ref()
             .is_some_and(|choice| choice.state().active && choice.state().interface_active);
-        if (ship_target_menu_owns_pointer(&self.ship_presentation) || dialogue_choice_owns_pointer)
+        let navigation_list_owns_pointer = !self.presentation_stream_active()
+            && self
+                .ship_navigation
+                .as_ref()
+                .is_some_and(|navigation| navigation.trigger_list_owns_pointer());
+        if (ship_target_menu_owns_pointer(&self.ship_presentation)
+            || dialogue_choice_owns_pointer
+            || navigation_list_owns_pointer)
             && !self.runtime.camera_approach().transition_pending
         {
             return false;
@@ -7968,6 +7975,134 @@ mod tests {
         assert!(services.loaded_navigation_music.is_none());
         services.ensure_navigation_music().unwrap();
         assert!(services.navigation_music_position().unwrap().is_some());
+    }
+
+    #[test]
+    #[ignore = "requires original BBB assets and serialized SDL/wgpu ownership"]
+    fn sequel_skipped_tempest_landing_returns_the_hand_and_exit_interaction() {
+        let _gpu = crate::gpu_test::lock();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let sdl = sdl3::init().unwrap();
+        let video = sdl.video().unwrap();
+        let audio = sdl.audio().unwrap();
+        let window = video
+            .window("BBB landing skip regression", 640, 480)
+            .hidden()
+            .build()
+            .unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(
+            OriginalGameDataPaths::from_root(root).unwrap(),
+            &writable.0,
+        )
+        .unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        services.prepare_startup_resources().unwrap();
+        services.initialize_audio(&audio).unwrap();
+        services.load_manu3_overlay().unwrap();
+        services.initialize_logical_viewport().unwrap();
+        services.open_bridge_panorama().unwrap();
+        services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
+        services.load_default_sound_bank().unwrap();
+        services.initialize_back_buffer().unwrap();
+        services
+            .load_script_profile(ScriptProfileId::INITIAL)
+            .unwrap();
+        services
+            .load_script_profile(ScriptProfileId::new(1).unwrap())
+            .unwrap();
+        let target = services
+            .runtime
+            .current_profile()
+            .unwrap()
+            .directory()
+            .find_active_object(b"Templand")
+            .unwrap();
+        services.scripts.action_state_mut().current_ship_target = Some(target);
+        services.apply_ship_target_description(target).unwrap();
+        services.activate_ship_target_list_style();
+        services.ship_presentation.flags = SHIP_NAVIGATION_ACTIVE_FLAGS;
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.active_line = Some(SHIP_NAVIGATION_STATUS_LINE);
+        let mut platform =
+            super::super::RuntimePlatformHost::new(&window, sdl.mouse(), sdl.event_pump().unwrap());
+        services
+            .update_runtime_ship_presentation(GameSceneLink::Initial, &mut lifecycle, &mut platform)
+            .unwrap();
+        assert!(services.presentation_stream_active());
+        assert!(
+            !services.update_lifecycle_manu3(&lifecycle).unwrap(),
+            "landing video still owns the display before it is skipped"
+        );
+        assert!(
+            services
+                .skip_sequel_presentation_on_click(&mut lifecycle, true, false)
+                .unwrap()
+        );
+        for _ in 0..30 {
+            services
+                .update_runtime_ship_presentation(
+                    GameSceneLink::Initial,
+                    &mut lifecycle,
+                    &mut platform,
+                )
+                .unwrap();
+            services.update_lifecycle_manu3(&lifecycle).unwrap();
+        }
+        let navigation = services.runtime_ship_navigation().unwrap();
+        let frame = navigation
+            .last_frame()
+            .expect("empty planet must offer an exit");
+        let row = frame
+            .rows
+            .first()
+            .expect("exit row")
+            .position
+            .map(|value| value as i16);
+        assert!(!services.presentation_stream_active());
+        assert!(
+            services.update_lifecycle_manu3(&lifecycle).unwrap(),
+            "empty planet must return the hand after a skipped landing"
+        );
+        services.publish_lifecycle_logical_pointer(row, PointerButtons::NONE);
+        services.update_lifecycle_pointer_buttons(&mut lifecycle);
+        services.publish_lifecycle_logical_pointer(row, PointerButtons::from_bits(1));
+        let edges = services.update_lifecycle_pointer_buttons(&mut lifecycle);
+        assert!(
+            !services
+                .skip_sequel_presentation_on_click(&mut lifecycle, edges.primary_pressed, false)
+                .unwrap()
+        );
+        services
+            .update_runtime_ship_presentation(GameSceneLink::Initial, &mut lifecycle, &mut platform)
+            .unwrap();
+        assert!(
+            services
+                .runtime_ship_navigation()
+                .unwrap()
+                .state()
+                .unwrap()
+                .exit_pending
+        );
+        for _ in 0..100 {
+            services.publish_lifecycle_logical_pointer(row, PointerButtons::NONE);
+            services.update_lifecycle_pointer_buttons(&mut lifecycle);
+            services
+                .update_runtime_ship_presentation(
+                    GameSceneLink::Initial,
+                    &mut lifecycle,
+                    &mut platform,
+                )
+                .unwrap();
+            if services.ship_presentation.flags == 0 {
+                break;
+            }
+        }
+        assert_eq!(
+            services.ship_presentation.flags, 0,
+            "exit must return to the bridge"
+        );
     }
 
     #[test]

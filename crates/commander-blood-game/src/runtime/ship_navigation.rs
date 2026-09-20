@@ -82,6 +82,16 @@ impl RuntimeShipNavigation {
         self.last_frame.as_ref()
     }
 
+    /// The empty-location exit list owns input once navigation has staged it.
+    pub(super) fn trigger_list_owns_pointer(&self) -> bool {
+        self.state.as_ref().is_some_and(|state| {
+            state.sequence_active
+                && !state.exit_pending
+                && !state.presentation_active
+                && state.transition_total_steps == u16::from(NAVIGATION_TRIGGER_TRANSITION_STEPS)
+        })
+    }
+
     /// Advance one complete navigation frame against decoded scripts and flat buffers.
     pub fn update<'window>(
         &mut self,

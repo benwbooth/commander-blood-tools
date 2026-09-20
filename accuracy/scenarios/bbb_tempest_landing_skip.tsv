@@ -1,0 +1,32 @@
+# Ordinary PLAY without sending Daddy to Templand, then skip its arrival clip.
+wait 10
+click 160 100
+wait 30
+click 160 100
+wait 30
+park 316 45
+wait 10
+click 230 88
+wait 100
+click 185 94
+wait 100
+park 4 45
+wait 20
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 150 150
+wait 40
+click 16 110
+wait 60
+click 250 125
+wait 10
+click 160 100
+wait 200
+move 80 104
+wait 100
+click 50 100
+wait 100

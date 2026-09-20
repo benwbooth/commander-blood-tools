@@ -275,3 +275,39 @@ all seven sequel service tests passed explicitly in private SDL/wgpu, the
 Tempest video test passed explicitly, and all six static-audit plus four
 disposition checks passed. Debug and release builds succeeded. These are
 targeted runtime/RGB ownership fixes, not a completed whole-game RGB migration.
+
+## Hand ownership after skipping an empty Tempest landing
+
+The landing skip correctly closed the video and opened the empty-location exit
+list, but the retained RGB page still hid MANU3. The display-ownership gate
+recognized ship-target and dialogue menus, not the navigation exit list. An
+active ship presentation therefore continued to count as video-owned even with
+no video source left. The faulty gate was based on ship ownership, not whether
+the video had been skipped.
+
+The active navigation exit list now returns pointer ownership when no video is
+open or draining. A pending camera approach still suppresses the hand. The
+native skip, scene-completion, navigation, and click-selection logic is unchanged.
+
+The original-asset service test
+`sequel_skipped_tempest_landing_returns_the_hand_and_exit_interaction` failed
+before the fix at its missing-hand assertion. It now verifies that the arrival
+clip hides the hand, skipping restores it over the empty-location list, a fresh
+exit click is not consumed as a video skip, and navigation closes to the bridge.
+
+The full input replay `accuracy/scenarios/bbb_tempest_landing_skip.tsv` starts
+PLAY without sending Daddy to Templand. In the old build, frame 2295 has the
+Tempest clip active, the click stops it by frame 2301, and the hand remains
+suppressed through frame 3652 with the exit label visible. Captures and traces
+are in `output/fidelity/bbb-empty-tempest-skip-before-20260919`.
+
+The fixed full replay exits normally at frame 4108. Its frame 2301 already
+allows the hand and submits 107 MANU3 triangles. The hand remains visible over
+the empty planet, and the exit click changes ship mode to inactive by frame
+3658. Screenshots 023 and 029 show the hand over the planet and the subsequent
+bridge view. Evidence is in
+`output/fidelity/bbb-empty-tempest-skip-fixed-20260919`.
+
+Verification: all 1,089 regular library tests pass (73 optional tests ignored),
+all eight sequel service regressions pass explicitly, and all six static-audit
+plus four disposition checks pass. Debug and release game binaries build.
