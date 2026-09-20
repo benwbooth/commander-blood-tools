@@ -58,6 +58,11 @@ pub struct ScriptProfileRequestSlot {
 }
 
 impl ScriptProfileRequestSlot {
+    /// Queue an already validated profile for the ordinary main-loop handoff.
+    pub fn schedule_profile(&mut self, profile: ScriptProfileId) {
+        self.pending = PendingScriptProfileRequest::Profile(profile);
+    }
+
     /// BBB C9 returns completed actor conversations to the main SCRIPT2 profile.
     pub fn schedule_sequel_actor_return(&mut self, current: ScriptProfileId) {
         if current.value() > 1 {

@@ -266,6 +266,10 @@ impl RuntimeScriptSystem {
             .set_presentation_interface_active(lifecycle.presentation_interface_active());
     }
 
+    pub(super) fn request_profile(&mut self, profile: ScriptProfileId) {
+        self.dispatch.profile_request.schedule_profile(profile);
+    }
+
     /// Publish BloodScript writes to the recovered main-loop globals after a VM pass.
     pub fn finish_lifecycle_frame(&mut self, lifecycle: &mut GameLifecycleState) -> Result<()> {
         let presentation = self.service.presentation_state();
@@ -1470,32 +1474,35 @@ mod tests {
     fn dialogue_plan_bindings_and_publications_survive_profile_changes() {
         use super::super::offline_game::{OfflineDialogueChapter, validate_dialogue_chapter};
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        for (paths, plans) in [
-            (
-                original_data_paths().expect("CB assets required"),
-                ["cb-izwalito-game", "cb-izwalito-explanations"],
-            ),
-            (
-                OriginalGameDataPaths::from_root(root.join("output/big-bug-bang/imported-assets"))
-                    .unwrap(),
-                ["bbb-honk-play", "bbb-honk-instructions"],
-            ),
+        for paths in [
+            original_data_paths().expect("CB assets required"),
+            OriginalGameDataPaths::from_root(root.join("output/big-bug-bang/imported-assets"))
+                .unwrap(),
         ] {
             let writable = TemporaryRoot::create();
             let data = OriginalGameData::load_with_writable_root(paths, &writable.0).unwrap();
             let mut runtime = OriginalGameRuntime::new(data);
             let mut scripts = RuntimeScriptSystem::new(runtime.data(), TEST_CLOCK);
-            scripts
-                .load_profile(&mut runtime, ScriptProfileId::INITIAL)
-                .unwrap();
-            let profile = runtime.current_profile().unwrap();
-            for name in plans {
-                let plan: OfflineDialogueChapter = serde_json::from_slice(
-                    &std::fs::read(root.join(format!("accuracy/anthology-dialogue/{name}.json")))
-                        .unwrap(),
+            let mut tested = 0;
+            for entry in std::fs::read_dir(root.join("accuracy/anthology-dialogue")).unwrap() {
+                let path = entry.unwrap().path();
+                if path.extension().is_none_or(|extension| extension != "json") {
+                    continue;
+                }
+                let plan: OfflineDialogueChapter =
+                    serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+                if plan.game != runtime.data().game() {
+                    continue;
+                }
+                let id = ScriptProfileId::new_for_dialect(
+                    plan.initial_profile,
+                    plan.game.script_dialect(),
                 )
                 .unwrap();
+                scripts.load_profile(&mut runtime, id).unwrap();
+                let profile = runtime.current_profile().unwrap();
                 validate_dialogue_chapter(&plan, profile).unwrap();
+                tested += 1;
                 let mut invalid = plan.clone();
                 invalid.cod_sha256 = "00".repeat(32);
                 assert!(validate_dialogue_chapter(&invalid, profile).is_err());
@@ -1506,18 +1513,30 @@ mod tests {
                 invalid.required_cod_sites.push(usize::MAX);
                 assert!(validate_dialogue_chapter(&invalid, profile).is_err());
                 invalid = plan.clone();
-                invalid.choices[0].word_offset = u16::MAX;
+                invalid
+                    .expected_unpublished_cod_sites
+                    .push(plan.required_cod_sites[0]);
                 assert!(validate_dialogue_chapter(&invalid, profile).is_err());
-                invalid = plan.clone();
-                invalid.choices[0].text_site = plan.required_cod_sites[0];
-                assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                if !plan.choices.is_empty() {
+                    invalid = plan.clone();
+                    invalid.choices[0].word_offset = u16::MAX;
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                    invalid = plan.clone();
+                    invalid.choices[0].text_site = plan.required_cod_sites[0];
+                    assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                }
             }
+            assert!(tested > 0);
+            scripts
+                .load_profile(&mut runtime, ScriptProfileId::INITIAL)
+                .unwrap();
             assert!(scripts.backend().text_publications().is_none());
             scripts.backend_mut().observe_text_publications();
             scripts
                 .backend_mut()
                 .text_published(ScriptCodeOffset::new(123), true);
-            let id = ScriptProfileId::new_for_dialect(1, profile.code().dialect()).unwrap();
+            let id = ScriptProfileId::new_for_dialect(1, runtime.data().game().script_dialect())
+                .unwrap();
             scripts.load_profile(&mut runtime, id).unwrap();
             scripts
                 .backend_mut()
@@ -2015,6 +2034,30 @@ mod tests {
         lifecycle.vm_execution_enabled = true;
         scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
         assert!(lifecycle.vm_execution_enabled);
+    }
+
+    #[test]
+    #[ignore = "requires original game data"]
+    fn typed_profile_request_survives_lifecycle_state_exchange() {
+        let paths = original_data_paths().expect("original game data is required");
+        let writable_root = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(paths, &writable_root.0).unwrap();
+        let mut scripts = RuntimeScriptSystem::new(&data, TEST_CLOCK);
+        let mut lifecycle = GameLifecycleState::default();
+        let profile = ScriptProfileId::new_for_dialect(
+            16,
+            commander_blood_formats::code::ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        scripts.request_profile(profile);
+        for _ in 0..2 {
+            scripts.prepare_lifecycle_frame(&lifecycle);
+            scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
+            assert_eq!(lifecycle.pending_profile, Some(profile));
+        }
+        scripts.dispatch.profile_request.clear_after_load();
+        scripts.finish_lifecycle_frame(&mut lifecycle).unwrap();
+        assert_eq!(lifecycle.pending_profile, None);
     }
 
     #[test]

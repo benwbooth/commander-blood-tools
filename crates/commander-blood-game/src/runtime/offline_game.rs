@@ -41,10 +41,28 @@ pub(super) struct OfflineDialogueChapter {
     pub cod_sha256: String,
     pub dic_sha256: String,
     pub target: String,
+    #[serde(default, skip_serializing_if = "OfflineDialogueEntry::is_radio")]
+    pub entry: OfflineDialogueEntry,
     pub choices: Vec<OfflineDialogueChoice>,
     pub required_cod_sites: Vec<usize>,
     pub required_frame_boundary_cod_sites: Vec<usize>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub expected_unpublished_cod_sites: Vec<usize>,
     pub end: OfflineDialogueEnd,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(super) enum OfflineDialogueEntry {
+    #[default]
+    Radio,
+    Contact,
+}
+
+impl OfflineDialogueEntry {
+    fn is_radio(&self) -> bool {
+        matches!(self, Self::Radio)
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -99,6 +117,19 @@ pub(super) fn validate_dialogue_chapter(
             "required COD site {offset:#x} is not a text instruction"
         );
     }
+    for &offset in &chapter.expected_unpublished_cod_sites {
+        ensure!(
+            !chapter.required_cod_sites.contains(&offset),
+            "dialogue site cannot be both required and unpublished"
+        );
+        ensure!(
+            matches!(
+                profile.instruction_at(ScriptCodeOffset::new(offset)),
+                Some(DecodedScriptInstruction::Text(_))
+            ),
+            "unpublished COD site {offset:#x} is not a text instruction"
+        );
+    }
     for choice in &chapter.choices {
         let Some(DecodedScriptInstruction::Text(text)) =
             profile.instruction_at(ScriptCodeOffset::new(choice.text_site))
@@ -135,10 +166,11 @@ pub(super) fn capture_dialogue_chapter(
         services.runtime().data().game() == chapter.game,
         "dialogue chapter names another game"
     );
-    ensure!(
-        chapter.initial_profile == 0,
-        "dialogue chapter currently requires the native initial profile"
-    );
+    let requested_profile = crate::native::bloodprg::ScriptProfileId::new_for_dialect(
+        chapter.initial_profile,
+        chapter.game.script_dialect(),
+    )
+    .context("invalid dialogue profile for this game")?;
     let mut host = RuntimeGameLifecycleHost::with_platform(
         services,
         OfflineGamePlatform::new(max_frames, sink),
@@ -163,11 +195,6 @@ pub(super) fn capture_dialogue_chapter(
             .runtime()
             .current_profile()
             .context("initial profile was not loaded")?;
-        validate_dialogue_chapter(chapter, profile)?;
-        let target = profile
-            .directory()
-            .find_active_object(chapter.target.as_bytes())
-            .context("dialogue target is not a named native object")?;
         let removed_sequences = profile.sequence_slots().encode_save_block();
         ensure!(
             !host.services().presentation_screen_state()?.active(),
@@ -204,11 +231,57 @@ pub(super) fn capture_dialogue_chapter(
             startup_closed,
             "native startup panel did not close before dialogue selection"
         );
+        let mut profile_selection = None;
+        if chapter.initial_profile != 0 {
+            host.services_mut()
+                .request_script_profile(requested_profile);
+            for _ in 0..max_frames {
+                ensure!(
+                    run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                    "native lifecycle exited during chapter profile selection"
+                );
+                if host
+                    .services()
+                    .runtime()
+                    .current_profile()
+                    .map(LoadedScriptProfile::id)
+                    == Some(requested_profile)
+                    && lifecycle.pending_profile.is_none()
+                    && !lifecycle.navigation_rebuild_pending
+                {
+                    profile_selection = Some(host.platform().elapsed_ns);
+                    break;
+                }
+            }
+            ensure!(
+                profile_selection.is_some(),
+                "chapter profile selection did not finish"
+            );
+        }
+        let profile = host
+            .services()
+            .runtime()
+            .current_profile()
+            .context("chapter profile disappeared")?;
+        validate_dialogue_chapter(chapter, profile)?;
+        let target = profile
+            .directory()
+            .find_active_object(chapter.target.as_bytes())
+            .context("dialogue target is not a named native object")?;
         if host.services().pending_ship_presentation_owner() == Some(target) {
             host.services_mut().clear_pending_ship_presentation_owner();
         }
-        host.services_mut().load_radio_sound_bank()?;
-        host.services_mut().defer_ship_actor_presentation(target);
+        let selection_method = match chapter.entry {
+            OfflineDialogueEntry::Radio => {
+                host.services_mut().load_radio_sound_bank()?;
+                host.services_mut().defer_ship_actor_presentation(target);
+                "typed C4 radio entry with original radio sound bank"
+            }
+            OfflineDialogueEntry::Contact => {
+                host.services_mut().request_scene_transition(target)?;
+                "typed CONTACTS scene transition"
+            }
+        };
         host.services_mut()
             .script_backend_mut()
             .observe_text_publications();
@@ -270,7 +343,12 @@ pub(super) fn capture_dialogue_chapter(
                     }));
                 }
             }
+            let contact_closed = chapter.entry.is_radio()
+                || (host.services().runtime_scene_transition()?.state().phase
+                    == crate::native::bloodprg::SceneTransitionPhase::Inactive
+                    && !lifecycle.navigation_rebuild_pending);
             let completed = saw_target
+                && contact_closed
                 && match chapter.end {
                     OfflineDialogueEnd::PresentationFinished => !lifecycle.presentation.active,
                     OfflineDialogueEnd::ProfileLoaded { profile } => current_profile == profile,
@@ -289,6 +367,13 @@ pub(super) fn capture_dialogue_chapter(
                 );
                 ensure!(
                     chapter
+                        .expected_unpublished_cod_sites
+                        .iter()
+                        .all(|site| !observed_sites.contains(site)),
+                    "dialogue published a site declared absent on this branch"
+                );
+                ensure!(
+                    chapter
                         .required_frame_boundary_cod_sites
                         .iter()
                         .all(|site| frame_sites.contains(site)),
@@ -302,7 +387,10 @@ pub(super) fn capture_dialogue_chapter(
                         "audio_samples": driver.sample_cursor - driver.capture_origin_sample,
                         "main_loop_frames": main_frame, "bootstrap_duration_ns": driver.capture_origin_ns,
                         "total_timer_ticks": driver.timer_ticks, "chapter": chapter,
-                        "selection_method": "typed C4 radio entry with original radio sound bank after native startup panel close; startup sequence slots cleared; no pointer input; not a gameplay route",
+                        "selection_method": selection_method,
+                        "setup_scope": "native startup panel close; startup sequence slots cleared; optional native profile handoff; no pointer input; not a gameplay route",
+                        "profile_selected_at_ns": profile_selection,
+                        "contact_transition_closed": contact_closed,
                         "removed_sequence_slots": removed_sequences.as_slice(),
                         "published_cod_sites": observed_sites, "frame_boundary_cod_sites": frame_sites,
                         "publications": publications, "choices": choices,

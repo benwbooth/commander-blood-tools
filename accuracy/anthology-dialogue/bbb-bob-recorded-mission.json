@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Bob Morlock: recorded mission",
+  "initial_profile": 0,
+  "cod_sha256": "d5ab643cc6f77a665220b27e3476c64fba72bd6ac33056213bbc93f52782f7de",
+  "dic_sha256": "48c94615f6b70264517c40f2d5a8c7b4657cbfc0845065fd58ab82ac6961d9b5",
+  "target": "Bob_Morlock",
+  "entry": "contact",
+  "choices": [],
+  "required_cod_sites": [2413, 2423, 2445, 2477, 2506, 2532, 2554, 2594, 2618, 2649, 2685, 2731, 2757, 2799, 2819, 2847, 2880, 2920, 2947, 2983, 2995, 3029, 3062, 3090, 3116, 3156, 3174, 3218, 3238, 3252],
+  "required_frame_boundary_cod_sites": [2413, 2423, 2445, 2477, 2506, 2532, 2554, 2594, 2618, 2649, 2685, 2731, 2757, 2799, 2819, 2847, 2880, 2920, 2947, 2983, 2995, 3029, 3062, 3090, 3116, 3156, 3174, 3218, 3238],
+  "end": {"kind": "presentation_finished"}
+}

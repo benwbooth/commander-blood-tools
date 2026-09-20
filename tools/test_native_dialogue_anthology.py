@@ -88,6 +88,32 @@ class DialogueTraceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "did not finish"):
             self.verify()
 
+    def test_explicitly_unpublished_site_must_stay_unpublished(self):
+        self.plan["expected_unpublished_cod_sites"] = [300]
+        self.assertEqual(self.verify()["expected_unpublished_cod_sites"], [300])
+        self.plan["expected_unpublished_cod_sites"] = [100]
+        with self.assertRaisesRegex(ValueError, "declared absent"):
+            self.verify()
+
+    def test_contact_requires_native_cleanup(self):
+        self.plan["entry"] = "contact"
+        self.runner["contact_transition_closed"] = True
+        state = self.states[0]["state"]
+        state["contact_transition"] = dict(phase="Finish")
+        state["presentation"]["navigation_rebuild_pending"] = False
+        with self.assertRaisesRegex(ValueError, "contact transition did not finish"):
+            self.verify()
+        state["contact_transition"]["phase"] = "Inactive"
+        self.verify()
+
+    def test_sequence_occurrences_keep_order(self):
+        self.states[0]["state"]["video"] = dict(active_resource="SQ\\FIRST.HNM")
+        self.states.append(copy.deepcopy(self.states[0]))
+        self.states[-1]["time_ns"] = 92_000_000
+        self.states[-1]["state"]["video"]["active_resource"] = "sq/second.hnm"
+        self.assertEqual([row["resource"] for row in self.verify()["observed_sequence_resources"]],
+                         ["SQ/FIRST.HNM", "SQ/SECOND.HNM"])
+
 
 if __name__ == "__main__":
     unittest.main()

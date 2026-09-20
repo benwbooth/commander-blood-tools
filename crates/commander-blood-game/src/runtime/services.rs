@@ -1308,6 +1308,10 @@ impl<'window> ModernGameServices<'window> {
         Ok(outcome)
     }
 
+    pub(super) fn request_script_profile(&mut self, profile: ScriptProfileId) {
+        self.scripts.request_profile(profile);
+    }
+
     /// A live BBB COD handoff keeps the contact whose records still belong to VAR.
     pub(super) fn load_script_profile_for_live_handoff(
         &mut self,
@@ -5796,6 +5800,16 @@ impl<'window> ModernGameServices<'window> {
             serde_json::json!(self.scripts.published_text_site().map(|site| site.index()));
         snapshot["cod_text_publications"] =
             serde_json::json!(self.scripts.backend().text_publications());
+        snapshot["contact_transition"] = self
+            .scene_transition
+            .as_ref()
+            .map(|transition| {
+                let state = transition.state();
+                serde_json::json!({"phase": format!("{:?}", state.phase),
+                              "ui_enabled": state.ui_enabled,
+                              "redraw_pending": state.redraw_pending})
+            })
+            .unwrap_or(serde_json::Value::Null);
         snapshot["channel_mask"] = self
             .presentation_screen
             .as_ref()

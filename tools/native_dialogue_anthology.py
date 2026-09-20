@@ -11,7 +11,7 @@ from pathlib import Path
 import subprocess
 
 from native_sequence_anthology import assemble, read_json, require, timeline, verify_media
-from video_anthology import ROOT, command, digest, inventory, save_json
+from video_anthology import ROOT, command, digest, inventory, resource_name, save_json
 
 
 def validate_trace(plan, runner, states, rows):
@@ -26,16 +26,24 @@ def validate_trace(plan, runner, states, rows):
                  if event["publication"]["profile"] == plan["initial_profile"]}
     require(published == set(runner["published_cod_sites"]), "publication accounting differs")
     require(set(plan["required_cod_sites"]) <= published, "missing required publication")
+    unpublished = set(plan.get("expected_unpublished_cod_sites", []))
+    require(not published & unpublished, "published a site declared absent on this branch")
     require([{key: item[key] for key in ("text_site", "word_offset")}
              for item in runner["choices"]] == plan["choices"], "different semantic choices")
     require(all(choice["requested_at_ns"] in ends for choice in runner["choices"]),
             "choice outside native frame boundaries")
     if plan["end"]["kind"] == "profile_loaded":
         require(runner["final_profile"] == plan["end"]["profile"], "wrong final profile")
+    if plan["initial_profile"] != 0:
+        require(runner["profile_selected_at_ns"] is not None and
+                0 < runner["profile_selected_at_ns"] <= runner["bootstrap_duration_ns"],
+                "missing native profile selection provenance")
     boundary = set()
     evidence = {}
     last_time = -1
     last = None
+    sequences = []
+    previous_resource = None
     for row in states:
         time = row["time_ns"]
         require(last_time < time < rows[-1]["start_ns"] + rows[-1]["duration_ns"],
@@ -43,6 +51,11 @@ def validate_trace(plan, runner, states, rows):
         last_time = time
         state = row["state"]
         last = state
+        active = state.get("video", {}).get("active_resource")
+        active = resource_name(active) if active else None
+        if active != previous_resource and active and active.startswith("SQ/"):
+            sequences.append(dict(resource=active, state_time_ns=time))
+        previous_resource = active
         require(all(state["input"][field] == 0 for field in
                     ("buttons", "previous_buttons", "press_pending", "primary_pressed")),
                 "dialogue capture contains pointer input")
@@ -79,7 +92,14 @@ def validate_trace(plan, runner, states, rows):
             "missing required frame-boundary text site")
     if plan["end"]["kind"] == "presentation_finished":
         require(not last["presentation"]["active"], "presentation did not finish")
+    if plan.get("entry", "radio") == "contact":
+        require(runner["contact_transition_closed"] and
+                last["contact_transition"]["phase"] == "Inactive" and
+                not last["presentation"]["navigation_rebuild_pending"],
+                "contact transition did not finish")
     return dict(published_cod_sites=sorted(published), state_trace_cod_sites=sorted(boundary),
+                expected_unpublished_cod_sites=sorted(unpublished),
+                observed_sequence_resources=sequences,
                 ui_raster_evidence={str(key): value for key, value in sorted(evidence.items())},
                 published_without_ui_raster=sorted(site for site in published
                     if not evidence.get(site, {}).get("ui_raster_frames")),

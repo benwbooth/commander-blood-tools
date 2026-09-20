@@ -363,7 +363,7 @@ and alternate dialogue branches remain to be rendered and verified.
 `dialogue:PLAN.json` runs a source-bound COD branch through the same device-free
 main lifecycle. It selects DIC words semantically, without pointer input. Plans
 are under `accuracy/anthology-dialogue/`; that directory's README documents the
-native skipped/preempted lines and the limited initial-profile radio entry.
+native skipped/preempted lines, radio/contact entry, and profile-setup limits.
 
 ```sh
 nix develop -c uv run tools/native_dialogue_anthology.py render \
@@ -393,7 +393,67 @@ are `output/anthology/cb-intro-dialogue-native.mkv` and
 `output/anthology/bbb-intro-dialogue-native.mkv`. They are introductory dialogue
 branches only, not the completed full-game anthologies.
 
-The actual batch binaries are archived in `native-sequences-v2/bin`. To re-verify
+Four additional chapters render Bob's mission with both CB answers, BBB Bob's
+recorded message, and BBB SCRIPT2 HONK's cryobox conversation. Contact chapters
+include the native opening/closing transitions and embedded movie sequences.
+No missing or skipped sequence is inserted by the exporter. These assembled
+movies have passed full decoded-frame, PCM, timestamp, and chapter verification:
+
+| Game | Output under `output/anthology` | Chapters | Duration | Native frames |
+| --- | --- | ---: | ---: | ---: |
+| CB | `cb-bob-mission-dialogue-native.mkv` | 2 | 320.566 s | 4,776 |
+| BBB | `bbb-mission-dialogue-native.mkv` | 2 | 128.068 s | 1,983 |
+
+```sh
+nix develop -c uv run tools/native_dialogue_anthology.py render \
+  --assets "$HOME/.local/share/commander-blood/assets-v1" \
+  --plan accuracy/anthology-dialogue/cb-bob-mission-yes.json \
+  --plan accuracy/anthology-dialogue/cb-bob-mission-no.json \
+  --out output/anthology/dialogue-contacts/cb
+nix develop -c uv run tools/native_dialogue_anthology.py render \
+  --assets output/big-bug-bang/imported-assets \
+  --plan accuracy/anthology-dialogue/bbb-bob-recorded-mission.json \
+  --plan accuracy/anthology-dialogue/bbb-honk-daddy-cryobox.json \
+  --out output/anthology/dialogue-contacts/bbb
+```
+
+The CB assembled movie retains its `dialogue-contacts-v2/cb` inputs, and the BBB
+movie uses `dialogue-contacts-v3/bbb`. The v3 exporter is archived at
+`output/anthology/dialogue-contacts-v3/bin/offline-presentation` for reproduction.
+Both CB chapters reproduced with that exporter in `dialogue-contacts-v3/cb`,
+matching their v2 pixels, PCM, endpoints, and runner reports. The final-build
+BBB SCRIPT2 reproduction in `dialogue-final-build/bbb` matched those same fields.
+Frame inspection confirmed original contact artwork and fonts and BBB English
+text in sampled encoded frames; this is not visual inspection of every line.
+
+### Whole-Catalog Dialogue Ledger
+
+```sh
+uv run tools/native_dialogue_coverage.py \
+  --catalog output/anthology/static-dialogue-en \
+  --batch output/anthology/dialogue-native-v4/cb \
+  --batch output/anthology/dialogue-native-v4/bbb \
+  --batch output/anthology/dialogue-contacts-v2/cb \
+  --batch output/anthology/dialogue-contacts-v3/bbb \
+  --out output/anthology/dialogue-coverage.json
+```
+
+The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
+from the retained trace, and joins by game/profile/COD offset. BAS offsets remain
+distinct and uncovered. Repeated captures do not inflate the site census. A
+site absent in one branch can still be published in another; absence is never
+classified as global unreachability.
+
+Across the eight verified chapters, CB has 40 sites fully revealed in the native
+UI buffer, five published without a UI draw, one absent from the selected
+branches, and 5,490 uncovered. BBB has 49 fully revealed, four published without
+a UI draw, and 6,868 uncovered. Native UI-buffer evidence alone does not prove
+encoded glyph visibility. These counts include empty/control text sites and do
+not imply that every uncovered site is a unique spoken line. Neither full-game
+anthology is complete; remaining profile branches, CB BAS, state-dependent
+conversations, objects, travel, and environments still need coverage.
+
+The sequence and initial dialogue batch binaries are archived in `native-sequences-v2/bin`. To re-verify
 or resume these batches after rebuilding, pass their `offline-presentation` and
 `video-catalog` paths through `--exporter` and `--catalog-binary`. Each chapter and
 assembled movie retains its own hashes and native timing evidence. Final-build
