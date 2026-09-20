@@ -664,7 +664,7 @@ uv run tools/native_inventory_plans.py \
 ```
 
 Each report plans 22 item branches. Nuclear reactions require additional
-evolution predicates and remain deferred; laws and scruter have no simple
+evolution predicates and remain deferred by this flat planner; laws and scruter have no simple
 matching item-flag guard. Those are explicit gaps, not unreachable dialogue.
 The checked-in technology and treaty plans exercise response requirements and
 exact native identity independently of display-name encoding.
@@ -696,6 +696,43 @@ CB Bob's black-hole topic, CB Bronko's energy topic, BBB HONK's instructions,
 and Bioquizz's travel greeting. Runner reports also match except for the older
 HONK report's legacy metadata; its native choices, publications, and timing match.
 
+### BBB Nuclear Gifts
+
+Six checked-in nuclear-gift plans add source-bound initial evolution guards to
+the existing native inventory path. Cyberquizz guards 3669/3687/3752 and
+Bioquizz guards 4920/4938/5003 derive starting values 0/101/501 using the
+production signed comparison handler. The preparation records its guard,
+before/after value, and save-byte diff; trace verification checks the actual
+actor evolution before accepting the gift interaction. No item-transfer flag
+or response line is forced.
+
+The batch `output/anthology/dialogue-bbb-nuclear-v2/bbb` contains six verified
+chapters, assembled as
+`output/anthology/bbb-nuclear-gift-dialogue-native.mkv`: **224.232 seconds and
+3,348 native frames**. The archived exporter is
+`dialogue-bbb-nuclear-v1/bin/offline-presentation`. The initial v1 capture batch
+failed only at encoding because it was launched without the Nix environment's
+`ffmpeg`; it is excluded from coverage. Run captures inside `nix develop -c`.
+
+Every chapter verifies the native item offer and ownership transfer. Middle
+and high captures require their own response and exclude the other; low
+captures exclude both spoken responses. The four new response sites fully
+reveal in the UI buffer. Actor traces show the middle branch's population
+1-to-0 and aggressiveness 0-to-50 changes, and the high branch's evolution
+501-to-521 and energy 0-to-100 changes. Low captures are not evidence that no
+global state changed. The authored 100 and 500 boundary gaps and signed-word
+comparisons are covered by binding tests, not additional movie chapters.
+
+The assembled movie passed full decoded RGBA, PCM, timestamp, and chapter
+checks. Encoded samples of Cyberquizz's middle and Bioquizz's high response
+show fully revealed English text; not every encoded frame was visually
+inspected. The original executable's 1,728 shared-state arithmetic cases still
+match the checked-in vectors. Three regression captures in
+`dialogue-bbb-nuclear-regression` exactly preserve the prior runner, pixels,
+audio, and endpoint for CB Bob's black-hole topic, Cyberquizz's technology
+gift, and Bioquizz's travel greeting. These checks do not prove complete DOS
+conversation parity or a normal gameplay acquisition/evolution route.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -716,7 +753,8 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-bbb-travel-quizz-v1/bbb \
   --batch output/anthology/dialogue-bbb-inventory-v2/cyberquizz \
   --batch output/anthology/dialogue-bbb-inventory-v2/bioquizz \
-  --out output/anthology/dialogue-coverage-bbb-inventory.json
+  --batch output/anthology/dialogue-bbb-nuclear-v2/bbb \
+  --out output/anthology/dialogue-coverage-bbb-nuclear.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -725,10 +763,10 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 136 verified chapters, CB has 261 sites fully revealed in the native
+Across the 142 verified chapters, CB has 261 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,268 uncovered. BBB has 246 fully revealed, 28 published without
-a UI draw, and 6,647 uncovered. Native UI-buffer evidence alone does not prove
+branches, and 5,268 uncovered. BBB has 250 fully revealed, 28 published without
+a UI draw, and 6,643 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
 anthology is complete; remaining profile branches, most CB BAS, state-dependent

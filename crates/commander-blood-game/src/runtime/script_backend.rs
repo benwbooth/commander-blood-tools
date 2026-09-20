@@ -1671,6 +1671,68 @@ mod tests {
                     }
                 }
                 if let Some(setup) = &plan.travel_setup {
+                    if let Some(guard) = setup.actor_evolution_guard {
+                        let prepare = |profile: &LoadedScriptProfile, offset| {
+                            super::super::contact_scenario::travel_actor_evolution_guard(
+                                profile,
+                                setup.procedure_offset,
+                                &plan.target,
+                                &setup.supporting_procedures,
+                                offset,
+                            )
+                        };
+                        let (field, value) = prepare(profile, guard).unwrap();
+                        let expected = match guard {
+                            3669 | 4920 => 0,
+                            3687 | 4938 => 101,
+                            3752 | 5003 => 501,
+                            _ => panic!("unrecognized fixture evolution guard"),
+                        };
+                        assert_eq!(value, expected);
+                        for candidate in [0, 99, 100, 101, 499, 500, 501, 32767, 32768, 65535] {
+                            let mut prepared = profile.clone();
+                            let mut state = prepared.state().clone();
+                            assert!(state.set_word(field, candidate));
+                            prepared.replace_state(state).unwrap();
+                            let passes = match expected {
+                                0 => (candidate as i16) < 100,
+                                101 => candidate > 100 && candidate < 500,
+                                501 => (candidate as i16) > 500,
+                                _ => unreachable!(),
+                            };
+                            assert_eq!(
+                                prepare(&prepared, guard).unwrap().1,
+                                if passes { candidate } else { expected }
+                            );
+                        }
+                        for bad in [
+                            usize::MAX,
+                            3660,
+                            3672,
+                            3680,
+                            3725,
+                            4911,
+                            4923,
+                            4931,
+                            if plan.target == "Cyberquizz" {
+                                4938
+                            } else {
+                                3687
+                            },
+                        ] {
+                            assert!(prepare(profile, bad).is_err(), "accepted guard {bad}");
+                        }
+                        if !setup.supporting_procedures.is_empty() {
+                            invalid = plan.clone();
+                            invalid
+                                .travel_setup
+                                .as_mut()
+                                .unwrap()
+                                .supporting_procedures
+                                .clear();
+                            assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                        }
+                    }
                     if !setup.stage_aboard_inventory.is_empty() {
                         for offsets in [
                             vec![1776],

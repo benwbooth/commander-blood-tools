@@ -90,6 +90,8 @@ pub(super) struct OfflineTravelSetup {
     pub stage_actor_at_destination: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stage_aboard_inventory: Vec<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actor_evolution_guard: Option<usize>,
 }
 
 fn is_false(value: &bool) -> bool {
@@ -188,6 +190,19 @@ pub(super) fn validate_dialogue_chapter(
             &chapter.target,
             &setup.supporting_procedures,
         )?;
+        if let Some(offset) = setup.actor_evolution_guard {
+            ensure!(
+                chapter.game == crate::game::GameVariant::BigBugBang,
+                "evolution preparation currently covers BBB only"
+            );
+            super::contact_scenario::travel_actor_evolution_guard(
+                profile,
+                setup.procedure_offset,
+                &chapter.target,
+                &setup.supporting_procedures,
+                offset,
+            )?;
+        }
         if setup.stage_actor_at_destination {
             ensure!(
                 chapter.game == crate::game::GameVariant::BigBugBang,
@@ -649,6 +664,25 @@ pub(super) fn capture_dialogue_chapter(
                     &setup.stage_aboard_inventory,
                 )?;
             }
+            let evolution = if let Some(offset) = setup.actor_evolution_guard {
+                let (field, value) = super::contact_scenario::travel_actor_evolution_guard(
+                    profile,
+                    setup.procedure_offset,
+                    &chapter.target,
+                    &setup.supporting_procedures,
+                    offset,
+                )?;
+                let before = profile.state().word(field).unwrap();
+                let mut state = profile.synchronized_state()?;
+                ensure!(
+                    state.set_word(field, value),
+                    "actor evolution field disappeared"
+                );
+                profile.replace_state(state)?;
+                Some(serde_json::json!({"offset": offset, "before": before, "value": value}))
+            } else {
+                None
+            };
             let after = crate::native::bloodprg::OriginalSaveGame::capture(profile)?.encode();
             ensure!(
                 before.len() == after.len(),
@@ -658,13 +692,17 @@ pub(super) fn capture_dialogue_chapter(
                 .filter(|(_, (old, new))| old != new)
                 .map(|(offset, (old, new))| serde_json::json!({"offset": offset, "before": old, "after": new}))
                 .collect::<Vec<_>>();
-            Some(serde_json::json!({
+            let mut preparation = serde_json::json!({
                 "setup": setup,
                 "before_save_sha256": format!("{:x}", Sha256::digest(&before)),
                 "after_save_sha256": format!("{:x}", Sha256::digest(&after)),
                 "save_byte_changes": changes,
                 "scope": "authored outer travel guard and planet position; post-HUD chapter entry, not a gameplay route",
-            }))
+            });
+            if let Some(evolution) = evolution {
+                preparation["actor_evolution_guard"] = evolution;
+            }
+            Some(preparation)
         } else {
             None
         };

@@ -15,7 +15,7 @@ Bob's brief return, SCRIPT3-5 concert aftermath for eight actors, and both
 Tequila cryobox outburst/ghost branches; later-profile concert reactions, Bug
 Deluxe's future/farewell conversations, and Cyberquizz's first/second visits and
 Christmas greeting; Cyberquizz/Bioquizz travel greetings; and inventory gifts
-to both quizzers. There are 40 checked-in plans, including the currently failing
+to both quizzers. There are 46 checked-in plans, including the currently failing
 Bug Deluxe travel probe. These
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
 environments. The static BAS and inventory planners also produce candidate plan
@@ -182,6 +182,25 @@ frames. Each batch publishes 29 distinct COD sites, with 28 fully revealed in
 the native UI buffer and one terminal site without a draw. Sampled encoded
 menus and reactions were visually inspected; this is not a visual audit of
 every line or a full-game completion claim.
+
+Six nuclear-gift fixtures cover low, middle, and high evolution for both
+quizzers. `travel_setup.actor_evolution_guard` identifies an authored guard
+start in an enabled travel procedure. Preparation accepts only a complete
+guard of immediate comparisons against this actor's evolution field. It uses
+the production signed query evaluator to preserve a satisfying initial value
+or derive the first satisfying 16-bit value. It cannot borrow a body assignment,
+another actor's field, or a disabled procedure. The selected guard, before/after
+value, and save-byte changes are reported; the verifier checks the initial
+actor value in the native trace. Item acquisition remains explicitly staged.
+
+The fixtures derive values 0, 101, and 501. All six passed offer/transfer and
+lossless-media verification. The four middle/high response sites fully reveal;
+each plan also asserts the alternate response's absence. The low plans assert
+both responses absent, not that the script did nothing or that those sites
+are globally unreachable. Values exactly 100 and 500 satisfy neither spoken
+response guard; binding tests cover those boundaries and signed negative words.
+These are prepared branch captures, not complete gameplay routes or full
+original-executable conversation comparisons.
 
 Bronko's SCRIPT2 energy fixture uses Moskito's `usine` destination and procedure
 23683. The seven generated topic captures publish 21 BAS sites and three COD

@@ -5,7 +5,7 @@
     "re/big_bug_bang_oracle_coverage.json": "f35fe61c2043ba946100e5a5b07aa464acca78fb80b21c697184117fc37f4357",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "d54671db0801c96dbb9728fae76a803f1bbd67d88d80b04062ee284c67089502",
-    "re/big_bug_bang_static_port_audit.json": "fa159ac454cd8dde6b21b9f8437c7444ba3cf4e1326ffe4cd35a76baa8f00f84",
+    "re/big_bug_bang_static_port_audit.json": "6361267d193bb667e8fe60ad65efe378056a7b707f70133a7d0cf0b8ed1dcc96",
     "re/big_bug_bang_unreferenced_library_audit.json": "2509d2ba5893b4b96c1f032a0cacb68e0f9b47c5bb8022e5d64cab740c02b290",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
     "re/rust-port/eliminated.tsv": "aa49ae8d83ad3c047f48df0f51c1909c6116f332eb02e95c67462a94b3c9f478",

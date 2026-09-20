@@ -79,10 +79,20 @@ def validate_trace(plan, runner, states, rows):
                     "missing source-bound encounter preparation")
         else:
             require(encounter is None, "unexpected encounter preparation")
+    evolution = None
     if plan.get("entry") == "travel":
         preparation = runner.get("travel_preparation")
         require(isinstance(preparation, dict) and preparation.get("setup") == plan["travel_setup"],
                 "missing prepared-travel provenance")
+        evolution = preparation.get("actor_evolution_guard")
+        guard = plan["travel_setup"].get("actor_evolution_guard")
+        if guard is not None:
+            require(isinstance(evolution, dict) and evolution.get("offset") == guard
+                    and type(evolution.get("value")) is int and 0 <= evolution["value"] <= 65535
+                    and type(evolution.get("before")) is int and 0 <= evolution["before"] <= 65535,
+                    "missing source-bound evolution preparation")
+        else:
+            require(evolution is None, "unexpected evolution preparation")
     boundary = set()
     evidence = {}
     boundary_bas = set()
@@ -93,6 +103,7 @@ def validate_trace(plan, runner, states, rows):
     previous_resource = None
     staged_actor_checked = False
     staged_inventory_checked = False
+    evolution_checked = False
     for row in states:
         time = row["time_ns"]
         require(last_time < time < rows[-1]["start_ns"] + rows[-1]["duration_ns"],
@@ -110,6 +121,13 @@ def validate_trace(plan, runner, states, rows):
                 "dialogue capture contains pointer input")
         if state["vm"]["resource_profile"] != plan["initial_profile"]:
             continue
+        if evolution is not None and not evolution_checked:
+            actors = [actor for actor in state.get("persistent", {}).get("object_locations", [])
+                      if actor["name"] == plan["target"]]
+            require(len(actors) == 1 and actors[0]["kind"] == "Actor"
+                    and actors[0].get("sequel_evolution") == evolution["value"],
+                    "native trace does not show the prepared actor evolution")
+            evolution_checked = True
         if plan.get("travel_setup", {}).get("stage_actor_at_destination") and not staged_actor_checked:
             actors = [row for row in state.get("persistent", {}).get("object_locations", [])
                       if row["name"] == plan["target"]]
@@ -174,6 +192,7 @@ def validate_trace(plan, runner, states, rows):
             if entry["first_full_ui_ns"] is None:
                 entry["first_full_ui_ns"] = time
     require(last is not None, "empty native state trace")
+    require(evolution is None or evolution_checked, "no native state for prepared actor evolution")
     require(not plan.get("travel_setup", {}).get("stage_actor_at_destination") or staged_actor_checked,
             "no native state for staged travel actor")
     require(not plan.get("travel_setup", {}).get("stage_aboard_inventory") or staged_inventory_checked,

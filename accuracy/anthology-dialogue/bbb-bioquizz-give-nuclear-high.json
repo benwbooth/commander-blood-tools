@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "initial_profile": 16,
+  "cod_sha256": "88e5fb5b88c93ef372b0c6ab62b0907530fdc0e6663cd5dca7d22e4b7a778366",
+  "dic_sha256": "987bfb2d11c809e0ca8b980e32f8c1779b0febb35a2d5cddc016e0ecbb558f9a",
+  "title": "Bioquizz: give nuclear energy (high evolution)",
+  "target": "Bioquizz",
+  "entry": "travel",
+  "travel_setup": {
+    "planet": "Cyberock",
+    "destination": "Cyberland",
+    "procedure_offset": 4900,
+    "stage_actor_at_destination": true,
+    "stage_aboard_inventory": [
+      7640
+    ],
+    "actor_evolution_guard": 5003
+  },
+  "choices": [
+    {
+      "source": "inventory",
+      "text_site": 5981,
+      "inventory_item": 7640
+    }
+  ],
+  "required_cod_sites": [
+    4864,
+    4880,
+    5014,
+    5961,
+    5981,
+    6032,
+    6046
+  ],
+  "required_frame_boundary_cod_sites": [
+    4864,
+    4880,
+    5014,
+    5981
+  ],
+  "expected_unpublished_cod_sites": [
+    4956
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

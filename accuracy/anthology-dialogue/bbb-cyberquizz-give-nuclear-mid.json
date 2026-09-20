@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "initial_profile": 16,
+  "cod_sha256": "88e5fb5b88c93ef372b0c6ab62b0907530fdc0e6663cd5dca7d22e4b7a778366",
+  "dic_sha256": "987bfb2d11c809e0ca8b980e32f8c1779b0febb35a2d5cddc016e0ecbb558f9a",
+  "title": "Cyberquizz: give nuclear energy (mid evolution)",
+  "target": "Cyberquizz",
+  "entry": "travel",
+  "travel_setup": {
+    "planet": "Cyberock",
+    "destination": "Cyberland",
+    "procedure_offset": 3602,
+    "supporting_procedures": [
+      3649
+    ],
+    "stage_actor_at_destination": true,
+    "stage_aboard_inventory": [
+      7640
+    ],
+    "actor_evolution_guard": 3687
+  },
+  "choices": [
+    {
+      "source": "inventory",
+      "text_site": 4730,
+      "inventory_item": 7640
+    }
+  ],
+  "required_cod_sites": [
+    3613,
+    3629,
+    3705,
+    4710,
+    4730,
+    4781,
+    4795
+  ],
+  "required_frame_boundary_cod_sites": [
+    3613,
+    3629,
+    3705,
+    4730
+  ],
+  "expected_unpublished_cod_sites": [
+    3763
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

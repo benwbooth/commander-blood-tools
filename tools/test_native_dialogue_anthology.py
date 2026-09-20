@@ -327,6 +327,39 @@ class DialogueTraceTests(unittest.TestCase):
                 self.verify()
             item[key] = original
 
+    def test_evolution_preparation_requires_source_binding_and_actual_actor_state(self):
+        self.plan.update(target="Cyberquizz", entry="travel", travel_setup=dict(actor_evolution_guard=3687))
+        preparation = dict(setup=self.plan["travel_setup"])
+        self.runner["travel_preparation"] = preparation
+        self.runner["travel_transition_closed"] = True
+        state = self.states[0]["state"]
+        state["presentation"].update(ship_flags=0, navigation_rebuild_pending=False)
+        state["presentation"]["text_state"]["sequence_active"] = False
+        with self.assertRaisesRegex(ValueError, "source-bound evolution"):
+            self.verify()
+        evolution = dict(offset=3687, before=0, value=101)
+        preparation["actor_evolution_guard"] = evolution
+        with self.assertRaisesRegex(ValueError, "prepared actor evolution"):
+            self.verify()
+        actor = dict(name="Cyberquizz", kind="Actor", sequel_evolution=101)
+        state["persistent"] = dict(object_locations=[actor])
+        self.verify()
+        for key, value in [("offset", 3690), ("value", -1), ("value", True), ("before", 65536)]:
+            previous = evolution[key]
+            evolution[key] = value
+            with self.assertRaisesRegex(ValueError, "source-bound evolution"):
+                self.verify()
+            evolution[key] = previous
+        for key, value in [("name", "Bioquizz"), ("kind", "Location"), ("sequel_evolution", 501)]:
+            previous = actor[key]
+            actor[key] = value
+            with self.assertRaisesRegex(ValueError, "prepared actor evolution"):
+                self.verify()
+            actor[key] = previous
+        del self.plan["travel_setup"]["actor_evolution_guard"]
+        with self.assertRaisesRegex(ValueError, "unexpected evolution"):
+            self.verify()
+
     def test_staged_travel_actor_must_be_visible_at_the_requested_destination(self):
         self.plan.update(target="Bug_Deluxe", entry="travel", travel_setup=dict(
             planet="Kortex", destination="Kortland", procedure_offset=90,

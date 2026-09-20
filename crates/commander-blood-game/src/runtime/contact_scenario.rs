@@ -355,6 +355,118 @@ pub(super) fn stage_aboard_inventory(
     Ok(())
 }
 
+/// Derive a starting value from a complete authored evolution guard, never a body assignment.
+pub(super) fn travel_actor_evolution_guard(
+    profile: &LoadedScriptProfile,
+    procedure_offset: usize,
+    target: &str,
+    supporting: &[usize],
+    guard_offset: usize,
+) -> Result<(ScriptStateWord, u16)> {
+    use crate::native::bloodprg::{ScriptControl, ScriptRuntime, apply_shared_state_operation};
+
+    validate_travel_chapter(profile, procedure_offset, target)?;
+    travel_supporting_procedures(profile, procedure_offset, target, supporting)?;
+    let gate = std::iter::once(procedure_offset)
+        .chain(supporting.iter().copied())
+        .find_map(
+            |offset| match profile.instruction_at(ScriptCodeOffset::new(offset)) {
+                Some(DecodedScriptInstruction::ProcedureGate(gate))
+                    if offset < guard_offset && guard_offset < gate.failure_target.index() =>
+                {
+                    Some(gate)
+                }
+                _ => None,
+            },
+        )
+        .context("evolution guard is outside the enabled travel procedures")?;
+    let Some(DecodedScriptInstruction::Control(ScriptInstruction::GuardBegin { failure_target })) =
+        profile.instruction_at(ScriptCodeOffset::new(guard_offset))
+    else {
+        bail!("evolution setup must reference an authored guard start");
+    };
+    ensure!(
+        failure_target.index() > guard_offset && *failure_target <= gate.failure_target,
+        "evolution guard escapes its procedure"
+    );
+    let actor = profile
+        .directory()
+        .find_active_object(target.as_bytes())
+        .unwrap();
+    let kind = profile.state().object(actor).unwrap().kind;
+    ensure!(
+        kind == commander_blood_formats::script::ScriptObjectKind::Actor,
+        "evolution setup requires an actor"
+    );
+    let field_offset = crate::native::bloodprg::script_field_offset(
+        kind,
+        crate::native::bloodprg::ScriptFieldSelector::EVOLUTION,
+    )
+    .context("travel actor has no evolution field")?;
+    let field = profile
+        .state()
+        .object_word(actor, field_offset / 2)
+        .context("actor evolution field is unbound")?;
+    let mut predicates = Vec::new();
+    let mut closed = false;
+    for token in profile.code().tokens().iter().filter(|token| {
+        guard_offset < token.source_offset().index() && token.source_offset() < *failure_target
+    }) {
+        match profile.instruction_at(token.source_offset()) {
+            Some(DecodedScriptInstruction::Control(ScriptInstruction::GuardEnd)) => {
+                closed = true;
+                break;
+            }
+            Some(DecodedScriptInstruction::SharedState(operation)) => {
+                ensure!(
+                    operation.target == field
+                        && matches!(operation.operand, ScriptStateOperand::Immediate(_))
+                        && matches!(
+                            operation.operator,
+                            ScriptStateOperator::NotEqual
+                                | ScriptStateOperator::LessThan
+                                | ScriptStateOperator::GreaterThan
+                                | ScriptStateOperator::LessThanOrEqual
+                                | ScriptStateOperator::GreaterThanOrEqual
+                                | ScriptStateOperator::EqualOrAssign
+                        ),
+                    "evolution guard must compare only this actor's evolution with immediate values"
+                );
+                predicates.push(*operation);
+            }
+            _ => bail!("evolution guard contains an unsupported predicate"),
+        }
+    }
+    ensure!(
+        closed && !predicates.is_empty(),
+        "evolution guard is empty or incomplete"
+    );
+    let mut state = profile.state().clone();
+    let current = state.word(field).context("actor evolution is missing")?;
+    // Use the production signed query semantics, preserving a valid initial value.
+    for candidate in std::iter::once(current).chain(u16::MIN..=u16::MAX) {
+        ensure!(
+            state.set_word(field, candidate),
+            "actor evolution field disappeared"
+        );
+        let mut runtime = ScriptRuntime::default();
+        runtime.begin_guard(*failure_target);
+        let mut passes = true;
+        for predicate in &predicates {
+            if apply_shared_state_operation(*predicate, &mut state, &mut runtime)?
+                != ScriptControl::Continue
+            {
+                passes = false;
+                break;
+            }
+        }
+        if passes {
+            return Ok((field, candidate));
+        }
+    }
+    bail!("evolution guard has no satisfying 16-bit value")
+}
+
 pub(super) fn prepare_contact_for_chapter(
     runtime: &mut OriginalGameRuntime,
     procedure_offset: usize,
