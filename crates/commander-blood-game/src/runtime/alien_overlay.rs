@@ -12,7 +12,7 @@ use crate::native::bloodprg::{
     run_alien_overlay_cycle,
 };
 
-use super::{ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformHost};
+use super::{ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformDriver};
 
 const ALIEN_DRIVER_WIDTH: u32 = 640;
 const ALIEN_DRIVER_HEIGHT: u32 = 1_024;
@@ -291,7 +291,7 @@ impl RuntimeAlienOverlayCycle {
         &mut self,
         services: &mut ModernGameServices<'window>,
         lifecycle: &mut GameLifecycleState,
-        platform: &mut RuntimePlatformHost<'window>,
+        platform: &mut dyn RuntimePlatformDriver<'window>,
     ) -> Result<AlienOverlayCycleOutcome> {
         let (overlay_armed, trigger_pending) = services.alien_overlay_flags()?;
         self.state.trigger_flags = u8::from(trigger_pending) * ALIEN_OVERLAY_TRIGGER;
@@ -365,7 +365,7 @@ fn record_scrut_overlay_completion(counts: &mut RuntimeAlienOverlayCompletionCou
 
 struct RuntimeAlienOverlayCycleBackend<'services, 'window, 'platform, 'clock> {
     services: &'services mut ModernGameServices<'window>,
-    platform: &'platform mut RuntimePlatformHost<'window>,
+    platform: &'platform mut dyn RuntimePlatformDriver<'window>,
     loaded_asset: Option<(AlienXdbKind, AlienAsset)>,
     frame_clock: &'clock mut u32,
     invocation_outcome: &'clock mut Option<RuntimeAlienOverlayOutcome>,
@@ -508,7 +508,7 @@ const fn alien_overlay_index(overlay: AlienXdbKind) -> usize {
 
 struct LiveAlienOverlayFrameHost<'services, 'window, 'platform> {
     services: &'services mut ModernGameServices<'window>,
-    platform: &'platform mut RuntimePlatformHost<'window>,
+    platform: &'platform mut dyn RuntimePlatformDriver<'window>,
 }
 
 impl RuntimeAlienOverlayFrameHost for LiveAlienOverlayFrameHost<'_, '_, '_> {
@@ -536,7 +536,7 @@ impl RuntimeAlienOverlayFrameHost for LiveAlienOverlayFrameHost<'_, '_, '_> {
     }
 
     fn pace_frame(&mut self) -> Result<()> {
-        self.platform.pace_frame()
+        self.platform.pace_frame(self.services)
     }
 
     fn finish_overlay(&mut self) -> Result<()> {

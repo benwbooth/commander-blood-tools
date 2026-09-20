@@ -52,6 +52,7 @@ pub struct RuntimePresentationScreen {
     console_tint: PaletteRemapTable,
     scene_frame_presented_output: Option<bool>,
     scene_completion_output: bool,
+    completed_sequence_lists: u64,
     caption: RetainedSequenceCaption,
     channel: RgbaUiOverlay,
 }
@@ -83,6 +84,7 @@ impl RuntimePresentationScreen {
             console_tint,
             scene_frame_presented_output: None,
             scene_completion_output: false,
+            completed_sequence_lists: 0,
             caption: RetainedSequenceCaption::new(),
             channel: RgbaUiOverlay::new(
                 super::LOGICAL_FRAMEBUFFER_WIDTH,
@@ -94,6 +96,10 @@ impl RuntimePresentationScreen {
     /// Borrow the semantic panel state synchronized with the game lifecycle.
     pub const fn state(&self) -> &PresentationScreenState {
         &self.state
+    }
+
+    pub(super) const fn completed_sequence_lists(&self) -> u64 {
+        self.completed_sequence_lists
     }
 
     /// Mutably borrow the semantic panel state for lifecycle input synchronization.
@@ -304,6 +310,9 @@ impl RuntimePresentationScreen {
             (Err(error), _) => Err(error),
             (Ok(_), Some(error)) => Err(error),
             (Ok(outcome), None) => {
+                if outcome == PresentationScreenOutcome::SceneLinesCompleted {
+                    self.completed_sequence_lists += 1;
+                }
                 backend.caption.finish_frame(outcome);
                 Ok(outcome)
             }

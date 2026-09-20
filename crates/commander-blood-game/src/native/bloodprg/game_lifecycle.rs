@@ -576,7 +576,7 @@ pub trait GameLifecycleHost {
 }
 
 #[derive(Clone, Copy, Debug)]
-struct GameSession {
+pub(crate) struct GameSession {
     scene_link: GameSceneLink,
     panorama_opened: bool,
     rendered_frames: u64,
@@ -627,6 +627,21 @@ fn run_game_runtime<Host: GameLifecycleHost>(
     host: &mut Host,
     session: &mut GameSession,
 ) -> Result<GameLifecycleExit, Host::Error> {
+    if let Some(exit) = initialize_game_runtime(state, host, session)? {
+        return Ok(exit);
+    }
+    loop {
+        if let Some(exit) = run_game_runtime_frame(state, host, session)? {
+            return Ok(exit);
+        }
+    }
+}
+
+pub(crate) fn initialize_game_runtime<Host: GameLifecycleHost>(
+    state: &mut GameLifecycleState,
+    host: &mut Host,
+    session: &mut GameSession,
+) -> Result<Option<GameLifecycleExit>, Host::Error> {
     host.initialize_runtime_storage()?;
     host.prepare_startup_resources()?;
     host.initialize_archive_index()?;
@@ -634,7 +649,7 @@ fn run_game_runtime<Host: GameLifecycleHost>(
     host.load_manu3_overlay()?;
     host.initialize_logical_viewport()?;
     if !host.open_bridge_panorama()? {
-        return Ok(GameLifecycleExit::BridgePanoramaUnavailable);
+        return Ok(Some(GameLifecycleExit::BridgePanoramaUnavailable));
     }
     session.panorama_opened = true;
 
@@ -651,61 +666,65 @@ fn run_game_runtime<Host: GameLifecycleHost>(
     host.run_initial_presentation(session.scene_link, state)?;
     host.load_default_sound_bank()?;
     host.initialize_back_buffer()?;
+    Ok(None)
+}
 
-    loop {
-        host.dispatch_input(state)?;
-        if !state.pause_hud_active && !state.pointer_position_locked && !state.navigation_ui_busy()
-        {
-            host.poll_pointer(state)?;
-            consume_pointer_press_state(state);
-        }
-
-        if state.exit_requested {
-            return Ok(GameLifecycleExit::InputRequested);
-        }
-        host.refresh_pause_hud(state)?;
-        if state.pause_hud_active {
-            continue;
-        }
-
-        host.update_pointer_buttons(state)?;
-        if !state.presentation_mode && host.run_vm(state)? == GameVmRunStatus::ExitRequested {
-            return Ok(GameLifecycleExit::VmRequestedExit);
-        }
-
-        if let Some(profile) = state.pending_profile
-            && !state.profile_change_blocked_for_dialect(host.script_dialect())
-        {
-            if host.load_profile(profile, state)? == GameProfileLoadStatus::Failed {
-                return Ok(GameLifecycleExit::ProfileLoadFailed);
-            }
-            state.reset_profile_presentation_for_dialect(host.script_dialect());
-            state.pending_profile = None;
-            state.vm_execution_enabled = true;
-            let _ = host.run_vm(state)?;
-            host.rebuild_record_state(state)?;
-            if host.script_dialect() != ScriptDialect::BigBugBang
-                || profile == ScriptProfileId::INITIAL
-            {
-                host.refresh_object_access(state)?;
-                host.reset_ship_hud(state)?;
-                state.navigation_rebuild_pending = true;
-                state.navigation_transition_pending = false;
-            }
-        }
-
-        if !state.presentation.c2_presentation_gate {
-            state.frame_presented = true;
-        }
-        update_game_presentation_ownership_for_dialect(
-            state,
-            &mut session.scene_link,
-            host.script_dialect(),
-        );
-        play_completion_audio_if_pending(state, host)?;
-        run_frame_tail(state, session.scene_link, host)?;
-        session.rendered_frames = session.rendered_frames.wrapping_add(1);
+pub(crate) fn run_game_runtime_frame<Host: GameLifecycleHost>(
+    state: &mut GameLifecycleState,
+    host: &mut Host,
+    session: &mut GameSession,
+) -> Result<Option<GameLifecycleExit>, Host::Error> {
+    host.dispatch_input(state)?;
+    if !state.pause_hud_active && !state.pointer_position_locked && !state.navigation_ui_busy() {
+        host.poll_pointer(state)?;
+        consume_pointer_press_state(state);
     }
+
+    if state.exit_requested {
+        return Ok(Some(GameLifecycleExit::InputRequested));
+    }
+    host.refresh_pause_hud(state)?;
+    if state.pause_hud_active {
+        return Ok(None);
+    }
+
+    host.update_pointer_buttons(state)?;
+    if !state.presentation_mode && host.run_vm(state)? == GameVmRunStatus::ExitRequested {
+        return Ok(Some(GameLifecycleExit::VmRequestedExit));
+    }
+
+    if let Some(profile) = state.pending_profile
+        && !state.profile_change_blocked_for_dialect(host.script_dialect())
+    {
+        if host.load_profile(profile, state)? == GameProfileLoadStatus::Failed {
+            return Ok(Some(GameLifecycleExit::ProfileLoadFailed));
+        }
+        state.reset_profile_presentation_for_dialect(host.script_dialect());
+        state.pending_profile = None;
+        state.vm_execution_enabled = true;
+        let _ = host.run_vm(state)?;
+        host.rebuild_record_state(state)?;
+        if host.script_dialect() != ScriptDialect::BigBugBang || profile == ScriptProfileId::INITIAL
+        {
+            host.refresh_object_access(state)?;
+            host.reset_ship_hud(state)?;
+            state.navigation_rebuild_pending = true;
+            state.navigation_transition_pending = false;
+        }
+    }
+
+    if !state.presentation.c2_presentation_gate {
+        state.frame_presented = true;
+    }
+    update_game_presentation_ownership_for_dialect(
+        state,
+        &mut session.scene_link,
+        host.script_dialect(),
+    );
+    play_completion_audio_if_pending(state, host)?;
+    run_frame_tail(state, session.scene_link, host)?;
+    session.rendered_frames = session.rendered_frames.wrapping_add(1);
+    Ok(None)
 }
 
 fn consume_pointer_press_state(state: &mut GameLifecycleState) {
@@ -904,7 +923,7 @@ fn finish_presentation_audio_latches(state: &mut GameLifecycleState) {
     }
 }
 
-fn shutdown_game<Host: GameLifecycleHost>(
+pub(crate) fn shutdown_game<Host: GameLifecycleHost>(
     state: &mut GameLifecycleState,
     host: &mut Host,
     session: GameSession,

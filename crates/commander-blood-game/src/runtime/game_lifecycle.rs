@@ -13,7 +13,8 @@ use crate::native::bloodprg::{
 
 use super::bridge_frame::run_runtime_bridge_frame;
 use super::{
-    ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformHost, run_runtime_presentation,
+    ModernGameServices, RuntimeAssetLoadStatus, RuntimePlatformDriver, RuntimePlatformHost,
+    run_runtime_presentation,
 };
 
 const OPENING_PRESENTATION_LINE: PresentationResourceId = PresentationResourceId::new(0);
@@ -73,10 +74,10 @@ enum RuntimeAudioStartupStage {
 }
 
 /// Complete modern host consumed by [`crate::native::bloodprg::run_game_lifecycle`].
-pub struct RuntimeGameLifecycleHost<'window, 'audio> {
+pub struct RuntimeGameLifecycleHost<'window, 'audio, Platform = RuntimePlatformHost<'window>> {
     services: ModernGameServices<'window>,
-    platform: RuntimePlatformHost<'window>,
-    audio: &'audio AudioSubsystem,
+    platform: Platform,
+    audio: Option<&'audio AudioSubsystem>,
     packed_clock_seed: u8,
     script_clock_source: fn() -> Result<ScriptClock>,
     frame_limit: Option<u64>,
@@ -97,6 +98,28 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
         services: ModernGameServices<'window>,
         platform: RuntimePlatformHost<'window>,
         audio: &'audio AudioSubsystem,
+        packed_clock_seed: u8,
+        script_clock_source: fn() -> Result<ScriptClock>,
+        frame_limit: Option<u64>,
+    ) -> Self {
+        Self::with_platform(
+            services,
+            platform,
+            Some(audio),
+            packed_clock_seed,
+            script_clock_source,
+            frame_limit,
+        )
+    }
+}
+
+impl<'window, 'audio, Platform: RuntimePlatformDriver<'window>>
+    RuntimeGameLifecycleHost<'window, 'audio, Platform>
+{
+    pub(super) fn with_platform(
+        services: ModernGameServices<'window>,
+        platform: Platform,
+        audio: Option<&'audio AudioSubsystem>,
         packed_clock_seed: u8,
         script_clock_source: fn() -> Result<ScriptClock>,
         frame_limit: Option<u64>,
@@ -123,6 +146,14 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
     /// Borrow the runtime after lifecycle completion for diagnostics.
     pub const fn services(&self) -> &ModernGameServices<'window> {
         &self.services
+    }
+
+    pub(super) fn platform(&self) -> &Platform {
+        &self.platform
+    }
+
+    pub(super) fn platform_mut(&mut self) -> &mut Platform {
+        &mut self.platform
     }
 
     fn apply_alien_overlay_mouse_idle_reset(&mut self) {
@@ -198,7 +229,9 @@ impl<'window, 'audio> RuntimeGameLifecycleHost<'window, 'audio> {
     }
 }
 
-impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
+impl<'window, Platform: RuntimePlatformDriver<'window>> GameLifecycleHost
+    for RuntimeGameLifecycleHost<'window, '_, Platform>
+{
     type Error = anyhow::Error;
 
     fn script_dialect(&self) -> commander_blood_formats::code::ScriptDialect {
@@ -270,9 +303,13 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         if self.audio_startup_stage != RuntimeAudioStartupStage::Pending {
             bail!("startup audio driver selection is out of order");
         }
-        let driver = self.audio.current_audio_driver();
-        if driver.is_empty() {
-            bail!("SDL selected an empty audio driver name");
+        if let Some(audio) = self.audio {
+            if audio.current_audio_driver().is_empty() {
+                bail!("SDL selected an empty audio driver name");
+            }
+        } else {
+            // Reject an absent or live output without consuming any sound.
+            self.services.render_offline_audio(&mut [])?;
         }
         self.audio_startup_stage = RuntimeAudioStartupStage::DriverSelected;
         Ok(())
@@ -282,7 +319,11 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
         if self.audio_startup_stage != RuntimeAudioStartupStage::DriverSelected {
             bail!("SDL audio configuration preceded driver selection");
         }
-        self.services.initialize_audio(self.audio)?;
+        if let Some(audio) = self.audio {
+            self.services.initialize_audio(audio)?;
+        } else {
+            self.services.render_offline_audio(&mut [])?;
+        }
         self.audio_startup_stage = RuntimeAudioStartupStage::Configured;
         Ok(())
     }
@@ -700,7 +741,9 @@ mod tests {
             bridge_steering_interaction(&state, false, false),
             BridgeSteeringInteraction::MenuEngaged
         );
-        assert!(RuntimeGameLifecycleHost::indexed_bridge_ui_active(&state));
+        assert!(
+            RuntimeGameLifecycleHost::<RuntimePlatformHost<'_>>::indexed_bridge_ui_active(&state)
+        );
 
         state.set_modal_ui_busy(false);
         assert_eq!(
@@ -732,7 +775,9 @@ mod tests {
     #[test]
     fn idle_bridge_does_not_claim_an_indexed_overlay() {
         let state = GameLifecycleState::default();
-        assert!(!RuntimeGameLifecycleHost::indexed_bridge_ui_active(&state));
+        assert!(
+            !RuntimeGameLifecycleHost::<RuntimePlatformHost<'_>>::indexed_bridge_ui_active(&state)
+        );
     }
 
     #[test]

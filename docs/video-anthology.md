@@ -223,7 +223,7 @@ equivalence with the SDL callback across stream refills and sound effects,
 and device-free service initialization with real assets from both games.
 These establish the tested output-backend behavior, not DOS whole-game parity.
 
-### Offline Opening and Credits Export
+### Offline Native Sequence Export
 
 ```sh
 nix develop -c cargo run --release -p commander-blood-game \
@@ -232,22 +232,28 @@ nix develop -c cargo run --release -p commander-blood-game \
   output/anthology/cb-opening
 ```
 
-Use `credits` for presentation line one and the BBB imported asset directory
-for the sequel. An optional final argument sets the frame cap (default 100,000).
+Use `credits` for presentation line one, `cinematic` for the complete startup
+DESCRIPT sequence list, and the BBB imported asset directory for the sequel.
+An optional final argument sets the frame cap (default 100,000).
 The command requires FFmpeg/FFprobe and a headless wgpu adapter, but no SDL
 device, window, mouse clicks, or wall-clock playback waits. Line zero is the
 opening logo reel, not the subsequent scripted cinematic.
 
-Both live and offline paths call the same native blocking presentation runner.
-The offline driver advances the production PIT accumulator over each 68 ms
-presentation wait and consumes exactly the corresponding 48 kHz mixer samples.
+Both live and offline paths call the same native blocking presentation runner
+and main lifecycle. The offline driver advances the production PIT accumulator
+over each 46 ms game or 68 ms presentation wait and consumes exactly the
+corresponding 48 kHz mixer samples.
 Sound advances during the wait before the next completed GPU frame is exposed,
-preserving the live runner's ordering. It does not use normalized WebM's 25 fps.
+preserving the live runner's ordering. Capture includes native frame boundaries,
+not the desktop host's extra render-only interpolated refreshes. It does not use
+normalized WebM's 25 fps.
 
-Each output contains `master.mkv` (FFV1 RGBA-equivalent video and unmodified
+Each new output contains `master.mkv` (lossless full-range RGB VP9 and unmodified
 float PCM), the separate `video.mkv` and `audio.f32le`, per-interval hashes and
 sample offsets in `timeline.jsonl`, verified video timestamps, the source asset
-manifest, private runtime files, and a provenance/accounting report. The final
+manifest, private runtime files, and a provenance/accounting report. The earlier
+v1/v2 logo and credits captures used lossless FFV1; the timestamped RGB encoder
+was verified against the same decoded pixel stream. The final
 GPU flip has zero duration at the capture endpoint; `endpoint.rgba` retains it
 without inventing a hold. No audio resampling, padding, or trimming is performed.
 
@@ -262,8 +268,23 @@ Verified captures on 2026-09-20: CB logos 262 frames / 17.816 s; CB credits
 97.920 s. Both logo reels are silent; both credits exports contain native mixer
 audio. These are standalone captures from fresh service state with the Initial
 scene link, not a reconstruction of a preceding playthrough. Full dialogue,
-cinematic, travel, and branch coverage remain outstanding. Matching this native
+other cinematic, travel, and branch coverage remain outstanding. Matching this native
 Rust path and lossless encoding do not alone establish DOS timing/sound parity.
+
+The `cinematic` target initializes the actual game lifecycle, executes the logo
+reel during bootstrap, then captures from the first main-loop frame through the
+first naturally completed DESCRIPT sequence list. It neither clicks through
+scenes nor substitutes another playlist. Shutdown releases resources without
+appending unrelated credits. CB's `present` sequence contains `cliptoot.hnm` and
+`BLINTR.VOC`; BBB's contains thirteen clips and `CROOLRAP.VOC`. The checked
+captures are 2,545 frames / 172.378 s (CB) and 1,784 frames / 120.630 s (BBB).
+Both contain original-font captions; BBB uses the bound English display catalog.
+`native-state.jsonl` retains each main-loop state at its pre-wait boundary.
+The report also retains the selected sequence record, authored media order,
+source caption bytes, displayed captions, cue frames, and fixed clock/seed.
+Those cue frames belong to the game's sequence clock, not the encoded frame
+number. The full library and original control-flow vectors test the shared
+stepped lifecycle; exports still require their own decoded-media checks.
 
 ## Tests
 
@@ -276,6 +297,9 @@ nix develop -c uv run --with av==18.1.0 python -m unittest discover \
 nix develop -c cargo test -p commander-blood-game --lib
 nix develop -c env CBLOOD_REQUIRE_ACCURACY_TESTS=1 \
   cargo test --release -p commander-blood-game --lib offline
+nix develop -c cargo test --release -p commander-blood-game --lib \
+  runtime::offline_export::tests::offline_export_preserves_variable_intervals_pixels_and_audio \
+  -- --ignored --exact
 nix develop -c cargo test -p commander-blood-game --lib \
   recording::tests::lossless_writer_preserves_frames_audio_and_shared_start_offset \
   -- --ignored --exact

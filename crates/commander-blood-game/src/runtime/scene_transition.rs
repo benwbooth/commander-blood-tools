@@ -15,7 +15,7 @@ use crate::native::bloodprg::{
 use super::game_lifecycle::bridge_steering_interaction;
 use super::{
     ModernGameServices, RuntimePaletteTransitionConfig, RuntimePaletteTransitionSurface,
-    RuntimePlatformHost,
+    RuntimePlatformDriver,
 };
 
 pub(super) const SCENE_TRANSITION_IMAGE_RESOURCE: &[u8] = b"FRIGO.FD";
@@ -127,7 +127,7 @@ impl RuntimeSceneTransition {
         services: &mut ModernGameServices<'window>,
         lifecycle: &mut GameLifecycleState,
         scene_link: GameSceneLink,
-        platform: &mut RuntimePlatformHost<'window>,
+        platform: &mut dyn RuntimePlatformDriver<'window>,
     ) -> Result<SceneTransitionOutcome> {
         if self.state.phase == SceneTransitionPhase::Inactive {
             lifecycle.profile_change_blockers.render_update_active = false;
@@ -317,7 +317,7 @@ fn publish_scene_transition_ui(
 struct RuntimeSceneTransitionHost<'services, 'window, 'lifecycle, 'platform> {
     services: &'services mut ModernGameServices<'window>,
     lifecycle: &'lifecycle mut GameLifecycleState,
-    platform: &'platform mut RuntimePlatformHost<'window>,
+    platform: &'platform mut dyn RuntimePlatformDriver<'window>,
     current_record: RuntimeSceneRecord,
     deferred_record: RuntimeSceneRecord,
     dispatch_palette_percent: u16,

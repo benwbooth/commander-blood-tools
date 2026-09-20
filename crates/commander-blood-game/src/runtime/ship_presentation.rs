@@ -9,7 +9,7 @@ use crate::native::bloodprg::{
 };
 
 use super::shared_ui::{export_low_ui_state, import_low_ui_state};
-use super::{ModernGameServices, RuntimePlatformHost};
+use super::{ModernGameServices, RuntimePlatformDriver};
 
 const SHIP_PRESENTATION_ACTIVE_FLAG: u16 = 1;
 
@@ -18,7 +18,7 @@ pub(super) fn update_runtime_ship_presentation<'window>(
     services: &mut ModernGameServices<'window>,
     scene_link: GameSceneLink,
     lifecycle: &mut GameLifecycleState,
-    platform: &mut RuntimePlatformHost<'window>,
+    platform: &mut dyn RuntimePlatformDriver<'window>,
 ) -> Result<ShipPresentationOutcome> {
     let mut state = std::mem::take(services.ship_presentation_state_mut());
     import_lifecycle_presentation_state(&mut state, lifecycle);
@@ -67,7 +67,7 @@ fn export_lifecycle_presentation_state(
 struct RuntimeShipPresentationBackend<'services, 'window, 'lifecycle, 'platform> {
     services: &'services mut ModernGameServices<'window>,
     lifecycle: &'lifecycle mut GameLifecycleState,
-    platform: &'platform mut RuntimePlatformHost<'window>,
+    platform: &'platform mut dyn RuntimePlatformDriver<'window>,
     scene_link: GameSceneLink,
     deferred_error: Option<anyhow::Error>,
 }

@@ -3,7 +3,7 @@
 use std::fs::{self, File};
 use std::io::{BufWriter, Read, Write};
 use std::path::Path;
-use std::process::{Child, ChildStdin, Command, Stdio};
+use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result, ensure};
@@ -11,9 +11,11 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use super::game_lifecycle::native_scene_link_target;
+use super::offline_game::{OfflineGameSink, capture_startup_cinematic};
+use super::offline_video::OfflineVideoWriter;
 use super::{
     ModernGameServices, OfflinePresentationInterval, OfflinePresentationSink, OriginalGameData,
-    OriginalGameDataPaths, PRESENTATION_FRAME_DURATION, capture_offline_presentation,
+    OriginalGameDataPaths, capture_offline_presentation,
 };
 use crate::asset_import::ImportedAssetManifest;
 use crate::native::bloodprg::{GameSceneLink, PresentationResourceId, ScriptClock};
@@ -21,6 +23,11 @@ use crate::native::bloodprg::{GameSceneLink, PresentationResourceId, ScriptClock
 const WIDTH: u32 = 640;
 const HEIGHT: u32 = 480;
 const SAMPLE_RATE: u64 = 48_000;
+
+enum ExportTarget {
+    Presentation(PresentationResourceId),
+    StartupCinematic,
+}
 
 /// Export one complete native opening or credits sequence to a new directory.
 /// Requires `ffmpeg` and `ffprobe` on PATH. Failed exports retain staging files.
@@ -34,6 +41,17 @@ pub fn export_presentation(
         matches!(line.get(), 0 | 1),
         "expected opening or credits line"
     );
+    export(assets, ExportTarget::Presentation(line), output, max_frames)
+}
+
+/// Export the first complete authored cinematic list through the main lifecycle.
+/// The logo reel is executed during bootstrap, but is not included in this capture.
+pub fn export_startup_cinematic(assets: &Path, output: &Path, max_frames: u64) -> Result<()> {
+    export(assets, ExportTarget::StartupCinematic, output, max_frames)
+}
+
+fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -> Result<()> {
+    ensure!(max_frames > 0, "offline frame cap must be nonzero");
     ensure!(
         !output.exists(),
         "output already exists: {}",
@@ -52,12 +70,7 @@ pub fn export_presentation(
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos()
     ));
     fs::create_dir(&stage)?;
-    eprintln!(
-        "Staging {} line {} at {}",
-        manifest.game.title(),
-        line.get(),
-        stage.display()
-    );
+    eprintln!("Staging {} at {}", manifest.game.title(), stage.display());
     let data = OriginalGameData::load_with_writable_root(
         OriginalGameDataPaths::from_root(assets)?,
         stage.join("userdata"),
@@ -71,49 +84,50 @@ pub fn export_presentation(
             month: 1,
         },
     )?;
-    services.prepare_startup_resources()?;
-    services.load_manu3_overlay()?;
-    services.initialize_logical_viewport()?;
-    services.load_initial_cartography_resource()?;
-    services.submit_indexed_frame()?;
-    services.present_artwork()?;
     let mut sink = FileSink::new(&stage)?;
-    let report = capture_offline_presentation(
-        &mut services,
-        line,
-        native_scene_link_target(GameSceneLink::Initial),
-        max_frames,
-        &mut sink,
-    )?;
+    let (report, endpoint, target_name, line) = match target {
+        ExportTarget::Presentation(line) => {
+            services.prepare_startup_resources()?;
+            services.load_manu3_overlay()?;
+            services.initialize_logical_viewport()?;
+            services.load_initial_cartography_resource()?;
+            services.submit_indexed_frame()?;
+            services.present_artwork()?;
+            let report = capture_offline_presentation(
+                &mut services,
+                line,
+                native_scene_link_target(GameSceneLink::Initial),
+                max_frames,
+                &mut sink,
+            )?;
+            (
+                serde_json::to_value(report)?,
+                services.read_offline_rgba()?,
+                "blocking_presentation",
+                Some(line.get()),
+            )
+        }
+        ExportTarget::StartupCinematic => {
+            let (report, endpoint) = capture_startup_cinematic(services, max_frames, &mut sink)?;
+            (
+                serde_json::to_value(report)?,
+                endpoint,
+                "startup_cinematic",
+                None,
+            )
+        }
+    };
     sink.finish()?;
     ensure!(
-        report.presented_frames == sink.frames
-            && report.audio_samples == sink.samples
-            && report.duration_ns == sink.elapsed_ns,
+        report["presented_frames"].as_u64() == Some(sink.frames)
+            && report["audio_samples"].as_u64() == Some(sink.samples)
+            && report["duration_ns"].as_u64() == Some(sink.elapsed_ns),
         "runner/sink accounting mismatch"
     );
-    let endpoint = services.read_offline_rgba()?;
     fs::write(stage.join("endpoint.rgba"), &endpoint)?;
     let video_hash = format!("{:x}", sink.video_hash.clone().finalize());
     let audio_hash = format!("{:x}", sink.audio_hash.clone().finalize());
-    let status = Command::new("ffmpeg")
-        .args(["-nostdin", "-v", "error", "-n", "-i"])
-        .arg(stage.join("video.mkv"))
-        .args(["-f", "f32le", "-ar", "48000", "-ac", "1", "-i"])
-        .arg(stage.join("audio.f32le"))
-        .args([
-            "-map",
-            "0:v:0",
-            "-map",
-            "1:a:0",
-            "-c:v",
-            "copy",
-            "-c:a",
-            "pcm_f32le",
-        ])
-        .arg(stage.join("master.mkv"))
-        .status()?;
-    ensure!(status.success(), "ffmpeg mux failed: {status}");
+    mux_master(&stage)?;
     let video = decoded_hash(&stage.join("master.mkv"), true)?;
     let audio = decoded_hash(&stage.join("master.mkv"), false)?;
     ensure!(
@@ -128,7 +142,7 @@ pub fn export_presentation(
         audio == (audio_hash.clone(), sink.samples * 4),
         "lossless audio decode verification failed"
     );
-    let timing = verify_timestamps(&stage.join("master.mkv"), sink.frames)?;
+    let timing = verify_timestamps(&stage.join("master.mkv"), &sink.intervals)?;
     fs::write(
         stage.join("timestamps.json"),
         serde_json::to_vec_pretty(&timing)?,
@@ -146,20 +160,22 @@ pub fn export_presentation(
     fs::write(
         stage.join("report.json"),
         serde_json::to_vec_pretty(&json!({
-            "schema": 1, "game": manifest.game, "presentation_line": line.get(),
+            "schema": 2, "game": manifest.game, "presentation_line": line, "target": target_name,
             "complete_native_presentation": true, "complete_game": false,
             "runner": report, "width": WIDTH, "height": HEIGHT,
-            "frame_duration_ns": PRESENTATION_FRAME_DURATION.as_nanos(),
+            "video_codec": "lossless VP9 profile 1, full-range RGB",
+            "frame_intervals": "Native game/presentation waits; see timeline.jsonl",
             "sample_rate": SAMPLE_RATE, "audio_nonzero_samples": sink.nonzero_samples,
             "rgba_sha256": video_hash, "audio_f32le_sha256": audio_hash,
             "endpoint_rgba_sha256": format!("{:x}", Sha256::digest(&endpoint)),
             "exporter_sha256": executable_hash,
             "decoded_master_verified": true,
             "video_timestamps_verified": true,
-            "timing": "Production 68ms presentation waits and shared PIT accumulator",
+            "timing": "Production 46ms/68ms waits and shared PIT accumulator, without render-only interpolation",
             "endpoint_policy": "Half-open capture; final flip retained separately without invented hold",
             "evidence_scope": "Native Rust presentation path, not whole-game DOS parity",
-            "scene_link": "Initial", "script_clock": { "hour": 12, "day": 2, "month": 1 }
+            "initial_scene_link": "Initial", "script_clock": { "hour": 12, "day": 2, "month": 1 },
+            "packed_clock_seed": if target_name == "startup_cinematic" { Some(39) } else { None }
         }))?,
     )?;
     ensure!(!output.exists(), "output appeared during export");
@@ -169,10 +185,11 @@ pub fn export_presentation(
 }
 
 struct FileSink {
-    encoder: Child,
-    input: Option<ChildStdin>,
+    video: OfflineVideoWriter,
     audio: BufWriter<File>,
     timeline: BufWriter<File>,
+    states: BufWriter<File>,
+    intervals: Vec<(u64, u64)>,
     frames: u64,
     samples: u64,
     nonzero_samples: u64,
@@ -185,37 +202,13 @@ impl FileSink {
     fn new(stage: &Path) -> Result<Self> {
         let audio = BufWriter::new(File::create(stage.join("audio.f32le"))?);
         let timeline = BufWriter::new(File::create(stage.join("timeline.jsonl"))?);
-        let mut encoder = Command::new("ffmpeg")
-            .args([
-                "-nostdin",
-                "-v",
-                "error",
-                "-n",
-                "-f",
-                "rawvideo",
-                "-pixel_format",
-                "rgba",
-                "-video_size",
-                "640x480",
-                "-framerate",
-            ])
-            .arg(format!(
-                "1000000000/{}",
-                PRESENTATION_FRAME_DURATION.as_nanos()
-            ))
-            .args([
-                "-i", "pipe:0", "-an", "-c:v", "ffv1", "-level", "3", "-pix_fmt", "bgra",
-            ])
-            .arg(stage.join("video.mkv"))
-            .stdin(Stdio::piped())
-            .spawn()
-            .context("starting ffmpeg lossless encoder")?;
-        let input = encoder.stdin.take();
+        let video = OfflineVideoWriter::new(&stage.join("video.mkv"), WIDTH, HEIGHT)?;
         Ok(Self {
-            encoder,
-            input,
+            video,
             audio,
             timeline,
+            states: BufWriter::new(File::create(stage.join("native-state.jsonl"))?),
+            intervals: Vec::new(),
             frames: 0,
             samples: 0,
             nonzero_samples: 0,
@@ -226,22 +219,11 @@ impl FileSink {
     }
 
     fn finish(&mut self) -> Result<()> {
-        self.input.take();
-        let status = self.encoder.wait()?;
-        ensure!(status.success(), "ffmpeg encoder failed: {status}");
+        self.video.finish()?;
         self.audio.flush()?;
         self.timeline.flush()?;
+        self.states.flush()?;
         Ok(())
-    }
-}
-
-impl Drop for FileSink {
-    fn drop(&mut self) {
-        self.input.take();
-        if !matches!(self.encoder.try_wait(), Ok(Some(_))) {
-            let _ = self.encoder.kill();
-            let _ = self.encoder.wait();
-        }
     }
 }
 
@@ -250,10 +232,6 @@ impl OfflinePresentationSink for FileSink {
         ensure!(
             interval.start_ns == self.elapsed_ns,
             "noncontiguous frame timeline"
-        );
-        ensure!(
-            u128::from(interval.duration_ns) == PRESENTATION_FRAME_DURATION.as_nanos(),
-            "unexpected frame duration"
         );
         ensure!(
             interval.rgba.len() == (WIDTH * HEIGHT * 4) as usize,
@@ -268,10 +246,8 @@ impl OfflinePresentationSink for FileSink {
             self.samples + interval.audio.len() as u64 == sample_end,
             "audio timeline mismatch"
         );
-        self.input
-            .as_mut()
-            .context("encoder already closed")?
-            .write_all(interval.rgba)?;
+        self.video
+            .write(interval.start_ns, interval.duration_ns, interval.rgba)?;
         self.video_hash.update(interval.rgba);
         let mut pcm = Vec::with_capacity(interval.audio.len() * 4);
         for &sample in interval.audio {
@@ -291,12 +267,25 @@ impl OfflinePresentationSink for FileSink {
             }),
         )?;
         self.timeline.write_all(b"\n")?;
+        self.intervals
+            .push((interval.start_ns, interval.duration_ns));
         self.frames += 1;
         self.samples = sample_end;
         self.elapsed_ns = end;
         if self.frames % 500 == 0 {
             eprintln!("Captured {} frames ({:.3}s)", self.frames, end as f64 / 1e9);
         }
+        Ok(())
+    }
+}
+
+impl OfflineGameSink for FileSink {
+    fn write_native_state(&mut self, time_ns: u64, state: &serde_json::Value) -> Result<()> {
+        serde_json::to_writer(
+            &mut self.states,
+            &json!({"time_ns": time_ns, "state": state}),
+        )?;
+        self.states.write_all(b"\n")?;
         Ok(())
     }
 }
@@ -318,6 +307,28 @@ fn hash_reader(mut reader: impl Read) -> Result<(String, u64)> {
 
 fn file_hash(path: &Path) -> Result<String> {
     Ok(hash_reader(File::open(path)?)?.0)
+}
+
+fn mux_master(stage: &Path) -> Result<()> {
+    let status = Command::new("ffmpeg")
+        .args(["-nostdin", "-v", "error", "-n", "-i"])
+        .arg(stage.join("video.mkv"))
+        .args(["-f", "f32le", "-ar", "48000", "-ac", "1", "-i"])
+        .arg(stage.join("audio.f32le"))
+        .args([
+            "-map",
+            "0:v:0",
+            "-map",
+            "1:a:0",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "pcm_f32le",
+        ])
+        .arg(stage.join("master.mkv"))
+        .status()?;
+    ensure!(status.success(), "ffmpeg mux failed: {status}");
+    Ok(())
 }
 
 fn decoded_hash(path: &Path, video: bool) -> Result<(String, u64)> {
@@ -350,7 +361,7 @@ fn decoded_hash(path: &Path, video: bool) -> Result<(String, u64)> {
     result
 }
 
-fn verify_timestamps(path: &Path, frames: u64) -> Result<serde_json::Value> {
+fn verify_timestamps(path: &Path, intervals: &[(u64, u64)]) -> Result<serde_json::Value> {
     let output = Command::new("ffprobe")
         .args([
             "-v",
@@ -359,8 +370,9 @@ fn verify_timestamps(path: &Path, frames: u64) -> Result<serde_json::Value> {
             "v:0",
             "-show_frames",
             "-show_streams",
+            "-show_format",
             "-show_entries",
-            "frame=best_effort_timestamp,duration:stream=time_base",
+            "frame=best_effort_timestamp:stream=time_base:format=duration",
             "-of",
             "json",
         ])
@@ -373,11 +385,11 @@ fn verify_timestamps(path: &Path, frames: u64) -> Result<serde_json::Value> {
         String::from_utf8_lossy(&output.stderr)
     );
     let timing: serde_json::Value = serde_json::from_slice(&output.stdout)?;
-    validate_timestamps(&timing, frames)?;
+    validate_timestamps(&timing, intervals)?;
     Ok(timing)
 }
 
-fn validate_timestamps(timing: &serde_json::Value, count: u64) -> Result<()> {
+fn validate_timestamps(timing: &serde_json::Value, intervals: &[(u64, u64)]) -> Result<()> {
     ensure!(
         timing["streams"][0]["time_base"] == "1/1000",
         "unexpected Matroska time base"
@@ -386,24 +398,36 @@ fn validate_timestamps(timing: &serde_json::Value, count: u64) -> Result<()> {
         .as_array()
         .context("ffprobe omitted frames")?;
     ensure!(
-        frames.len() as u64 == count,
+        frames.len() == intervals.len(),
         "encoded timestamp count mismatch"
     );
-    let duration_ms = u64::try_from(PRESENTATION_FRAME_DURATION.as_millis())?;
-    ensure!(
-        PRESENTATION_FRAME_DURATION.as_nanos() == u128::from(duration_ms) * 1_000_000,
-        "frame interval cannot be represented exactly in Matroska milliseconds"
-    );
-    for (index, frame) in frames.iter().enumerate() {
+    let mut end_ns = 0;
+    for (index, (frame, &(start_ns, duration_ns))) in frames.iter().zip(intervals).enumerate() {
         ensure!(
-            frame["best_effort_timestamp"].as_u64() == Some(index as u64 * duration_ms),
+            start_ns == end_ns && duration_ns > 0,
+            "invalid reference interval"
+        );
+        ensure!(
+            start_ns % 1_000_000 == 0 && duration_ns % 1_000_000 == 0,
+            "reference interval is not representable in Matroska milliseconds"
+        );
+        ensure!(
+            frame["best_effort_timestamp"].as_u64() == Some(start_ns / 1_000_000),
             "frame {index} timestamp mismatch"
         );
-        ensure!(
-            frame["duration"].as_u64() == Some(duration_ms),
-            "frame {index} duration mismatch"
-        );
+        end_ns = start_ns
+            .checked_add(duration_ns)
+            .context("reference timeline overflow")?;
     }
+    let duration: f64 = timing["format"]["duration"]
+        .as_str()
+        .context("ffprobe omitted duration")?
+        .parse()?;
+    ensure!(
+        duration.is_finite() && (duration * 1e9 - end_ns as f64).abs() < 1000.0,
+        "encoded duration {duration} does not match native endpoint {}",
+        end_ns as f64 / 1e9
+    );
     Ok(())
 }
 
@@ -412,18 +436,73 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore = "requires FFmpeg and FFprobe on PATH"]
+    fn offline_export_preserves_variable_intervals_pixels_and_audio() {
+        let root = std::env::temp_dir().join(format!(
+            "offline-vfr-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&root).unwrap();
+        let mut sink = FileSink::new(&root).unwrap();
+        let mut rgba = vec![0; (WIDTH * HEIGHT * 4) as usize];
+        for (index, pixel) in rgba.chunks_exact_mut(4).enumerate() {
+            pixel.copy_from_slice(&[index as u8, (index / WIDTH as usize) as u8, 211, 255]);
+        }
+        for (index, duration_ns) in [68_000_000_u64, 46_000_000, 68_000_000]
+            .into_iter()
+            .enumerate()
+        {
+            rgba[0] = index as u8;
+            let audio = vec![
+                if index == 1 { -0.25 } else { 0.5 };
+                (duration_ns * SAMPLE_RATE / 1_000_000_000) as usize
+            ];
+            sink.write_interval(OfflinePresentationInterval {
+                start_ns: sink.elapsed_ns,
+                duration_ns,
+                rgba: &rgba,
+                audio: &audio,
+            })
+            .unwrap();
+        }
+        sink.finish().unwrap();
+        mux_master(&root).unwrap();
+        assert_eq!(
+            decoded_hash(&root.join("master.mkv"), true).unwrap(),
+            (
+                format!("{:x}", sink.video_hash.clone().finalize()),
+                sink.frames * u64::from(WIDTH * HEIGHT * 4)
+            )
+        );
+        assert_eq!(
+            decoded_hash(&root.join("master.mkv"), false).unwrap(),
+            (
+                format!("{:x}", sink.audio_hash.clone().finalize()),
+                sink.samples * 4
+            )
+        );
+        verify_timestamps(&root.join("master.mkv"), &sink.intervals).unwrap();
+        drop(sink);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn offline_export_rejects_missing_shifted_or_retimed_frames() {
         let correct = json!({"streams": [{"time_base": "1/1000"}], "frames": [
-            {"best_effort_timestamp": 0, "duration": 68},
-            {"best_effort_timestamp": 68, "duration": 68}
-        ]});
-        validate_timestamps(&correct, 2).unwrap();
-        assert!(validate_timestamps(&correct, 3).is_err());
+            {"best_effort_timestamp": 0}, {"best_effort_timestamp": 68}
+        ], "format": {"duration": "0.114000"}});
+        let intervals = [(0, 68_000_000), (68_000_000, 46_000_000)];
+        validate_timestamps(&correct, &intervals).unwrap();
+        assert!(validate_timestamps(&correct, &intervals[..1]).is_err());
         let mut shifted = correct.clone();
         shifted["frames"][1]["best_effort_timestamp"] = json!(69);
-        assert!(validate_timestamps(&shifted, 2).is_err());
+        assert!(validate_timestamps(&shifted, &intervals).is_err());
         let mut retimed = correct;
-        retimed["frames"][0]["duration"] = json!(40);
-        assert!(validate_timestamps(&retimed, 2).is_err());
+        retimed["format"]["duration"] = json!("0.115000");
+        assert!(validate_timestamps(&retimed, &intervals).is_err());
     }
 }

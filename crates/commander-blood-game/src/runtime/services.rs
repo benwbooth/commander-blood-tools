@@ -83,7 +83,7 @@ use super::{
     OriginalGameData, OriginalGameRuntime, RuntimeAlienOverlayCycle, RuntimeAssetLoadStatus,
     RuntimeAudioHost, RuntimeConfirmDialog, RuntimeInputHost, RuntimePaletteTransition,
     RuntimePaletteTransitionConfig, RuntimePaletteTransitionOutcome,
-    RuntimePaletteTransitionSurface, RuntimePlatformHost, RuntimePresentationCatalog,
+    RuntimePaletteTransitionSurface, RuntimePlatformDriver, RuntimePresentationCatalog,
     RuntimePresentationHost, RuntimePresentationPlayer, RuntimePresentationQueueMetrics,
     RuntimePresentationScreen, RuntimePresentationStepOutcome, RuntimePresentationWordChoice,
     RuntimeSaveLoad, RuntimeSceneTransition, RuntimeScriptBackend, RuntimeScriptCommand,
@@ -1507,7 +1507,7 @@ impl<'window> ModernGameServices<'window> {
     pub fn update_runtime_ship_navigation(
         &mut self,
         state: &mut GameLifecycleState,
-        platform: &mut RuntimePlatformHost<'window>,
+        platform: &mut dyn RuntimePlatformDriver<'window>,
     ) -> Result<crate::native::bloodprg::ShipNavigationOutcome> {
         let mut navigation = self
             .ship_navigation
@@ -1558,7 +1558,7 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         scene_link: GameSceneLink,
         state: &mut GameLifecycleState,
-        platform: &mut RuntimePlatformHost<'window>,
+        platform: &mut dyn RuntimePlatformDriver<'window>,
     ) -> Result<crate::native::bloodprg::SceneTransitionOutcome> {
         let mut transition = self
             .scene_transition
@@ -1580,7 +1580,7 @@ impl<'window> ModernGameServices<'window> {
     pub fn run_runtime_alien_overlay_cycle(
         &mut self,
         state: &mut GameLifecycleState,
-        platform: &mut RuntimePlatformHost<'window>,
+        platform: &mut dyn RuntimePlatformDriver<'window>,
     ) -> Result<crate::native::bloodprg::AlienOverlayCycleOutcome> {
         let mut overlay = self
             .alien_overlay
@@ -1614,7 +1614,7 @@ impl<'window> ModernGameServices<'window> {
         &mut self,
         scene_link: GameSceneLink,
         state: &mut GameLifecycleState,
-        platform: &mut RuntimePlatformHost<'window>,
+        platform: &mut dyn RuntimePlatformDriver<'window>,
     ) -> Result<ShipPresentationOutcome> {
         run_runtime_ship_presentation(self, scene_link, state, platform)
     }
@@ -2930,6 +2930,15 @@ impl<'window> ModernGameServices<'window> {
                 .set_previous_actor_state(BridgeActorPresentationState::PresentationPanel);
         }
         outcome
+    }
+
+    /// Number of authored scene lists that reached their natural terminal edge.
+    pub(super) fn completed_presentation_sequence_lists(&self) -> Result<u64> {
+        Ok(self
+            .presentation_screen
+            .as_ref()
+            .context("presentation screen is already being updated")?
+            .completed_sequence_lists())
     }
 
     /// Transfer one-shot panel outputs into the owning lifecycle state.

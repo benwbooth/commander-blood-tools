@@ -10,7 +10,7 @@ use crate::native::bloodprg::{
 };
 
 use super::game_lifecycle::arm_requested_speaker_pulse;
-use super::{ModernGameServices, RuntimePlatformHost};
+use super::{ModernGameServices, RuntimePlatformDriver};
 
 const OPENING_PRESENTATION_LINE: u16 = 0;
 const CREDITS_PRESENTATION_LINE: u16 = 1;
@@ -30,7 +30,7 @@ pub fn run_runtime_presentation<'window>(
     line: PresentationResourceId,
     link_target: u16,
     services: &mut ModernGameServices<'window>,
-    platform: &mut RuntimePlatformHost<'window>,
+    platform: &mut dyn RuntimePlatformDriver<'window>,
     input_state: &mut GameLifecycleState,
     timer: &mut GameTimerState,
     startup_timer_runtime: &mut ScriptRuntime,
@@ -57,7 +57,9 @@ pub(super) trait RuntimePresentationDriver<'window> {
     fn present_frame(&mut self, services: &mut ModernGameServices<'window>) -> Result<()>;
 }
 
-struct LivePresentationDriver<'platform, 'window>(&'platform mut RuntimePlatformHost<'window>);
+struct LivePresentationDriver<'platform, 'window>(
+    &'platform mut dyn RuntimePlatformDriver<'window>,
+);
 
 impl<'window> RuntimePresentationDriver<'window> for LivePresentationDriver<'_, 'window> {
     fn take_game_timer_ticks(&mut self) -> u64 {
@@ -75,7 +77,7 @@ impl<'window> RuntimePresentationDriver<'window> for LivePresentationDriver<'_, 
     }
     fn present_frame(&mut self, services: &mut ModernGameServices<'window>) -> Result<()> {
         services.submit_indexed_frame()?;
-        self.0.pace_presentation_frame()?;
+        self.0.pace_presentation_frame(services)?;
         services.present_artwork()
     }
 }

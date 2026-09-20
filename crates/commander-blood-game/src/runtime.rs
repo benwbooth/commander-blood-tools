@@ -21,8 +21,11 @@ mod navigation_chart;
 mod navigation_status;
 mod offline;
 pub mod offline_export;
+mod offline_game;
+mod offline_video;
 mod palette_transition;
 mod platform;
+mod platform_driver;
 mod presentation;
 mod presentation_catalog;
 mod presentation_player;
@@ -69,6 +72,7 @@ pub use palette_transition::{
 pub use platform::{
     GAME_FRAME_DURATION, PRESENTATION_FRAME_DURATION, RECOVERED_FRAME_BUDGET, RuntimePlatformHost,
 };
+pub use platform_driver::RuntimePlatformDriver;
 pub use presentation::RuntimePresentationHost;
 pub use presentation_catalog::{RuntimePresentationBackground, RuntimePresentationCatalog};
 pub use presentation_player::RuntimePresentationPlayer;

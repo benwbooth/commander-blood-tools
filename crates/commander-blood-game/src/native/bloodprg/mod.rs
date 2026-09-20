@@ -314,6 +314,9 @@ pub use game_lifecycle::{
     presentation_line_for_text_selector, run_game_lifecycle, update_game_presentation_ownership,
     update_game_presentation_ownership_for_dialect,
 };
+pub(crate) use game_lifecycle::{
+    GameSession, initialize_game_runtime, run_game_runtime_frame, shutdown_game,
+};
 pub use hud_refresh::{
     PAUSE_HUD_PALETTE_INDEX, PauseHudRectangle, PauseHudRefresh, build_pause_hud_refresh,
 };

@@ -22,7 +22,7 @@ use crate::native::bloodprg::{
 
 use super::choice_list::{RuntimeChoiceListStyle, draw_choice_list_rows};
 use super::shared_ui::{export_low_ui_state, import_low_ui_state};
-use super::{ModernGameServices, OriginalGameRuntime, RuntimePlatformHost};
+use super::{ModernGameServices, OriginalGameRuntime, RuntimePlatformDriver};
 
 const ACTIVE_FLAG: u8 = 1;
 const SHIP_ACTIVE_FLAG: u16 = 1;
@@ -97,7 +97,7 @@ impl RuntimeShipNavigation {
         &mut self,
         services: &mut ModernGameServices<'window>,
         lifecycle: &mut GameLifecycleState,
-        platform: &mut RuntimePlatformHost<'window>,
+        platform: &mut dyn RuntimePlatformDriver<'window>,
     ) -> Result<ShipNavigationOutcome> {
         let variant = match services.runtime().data().game() {
             crate::game::GameVariant::CommanderBlood => ShipNavigationVariant::CommanderBlood,
@@ -521,7 +521,7 @@ const fn replace_active_flag(flags: u8, active: bool) -> u8 {
 struct RuntimeShipNavigationBackend<'services, 'window, 'lifecycle, 'platform> {
     services: &'services mut ModernGameServices<'window>,
     lifecycle: &'lifecycle mut GameLifecycleState,
-    platform: &'platform mut RuntimePlatformHost<'window>,
+    platform: &'platform mut dyn RuntimePlatformDriver<'window>,
     choice_list: &'services mut ChoiceListState,
     transition: &'services mut FramebufferTransitionState,
     current_rect: &'services mut ChoiceListRect,

@@ -758,23 +758,16 @@ fn build_mask_planar_frame(
     Ok(())
 }
 
-fn encode_lossless_vp9(
-    destination: &Path,
-    frame_count: usize,
-    mut frame: impl FnMut(usize, &mut Vec<u8>) -> Result<()>,
-) -> Result<String> {
-    let width = u32::try_from(LOGICAL_FRAMEBUFFER_WIDTH).context("video width exceeds u32")?;
-    let height = u32::try_from(LOGICAL_FRAMEBUFFER_HEIGHT).context("video height exceeds u32")?;
+pub(crate) fn lossless_rgb_encoder(
+    width: u32,
+    height: u32,
+    timebase: Timebase,
+) -> Result<Encoder<u8>> {
     let mut config = EncoderConfig::<u8>::new(
         EncoderCodecId::VP9,
         width,
         height,
-        Timebase {
-            num: NonZero::new(NOMINAL_FRAME_RATE_DENOMINATOR)
-                .context("video timebase numerator is zero")?,
-            den: NonZero::new(NOMINAL_FRAME_RATE_NUMERATOR)
-                .context("video timebase denominator is zero")?,
-        },
+        timebase,
         RateControl::Lossless,
     )
     .context("creating lossless VP9 configuration")?;
@@ -799,7 +792,14 @@ fn encode_lossless_vp9(
     encoder
         .codec_control_set(EncoderControlSet::Vp9ColorRange(Vp9ColorRange::Full))
         .context("setting VP9 full color range")?;
+    Ok(encoder)
+}
 
+pub(crate) fn lossless_rgb_segment(
+    destination: &Path,
+    width: u32,
+    height: u32,
+) -> Result<(webm::mux::Segment<std::fs::File>, webm::mux::VideoTrack)> {
     let file = std::fs::File::create(destination)
         .with_context(|| format!("creating WebM derivative {}", destination.display()))?;
     let writer = Writer::new(file);
@@ -826,7 +826,27 @@ fn encode_lossless_vp9(
         .context("setting WebM color primaries")?
         .set_matrix_coefficients(video_track, MatrixCoefficients::Identity)
         .context("setting WebM RGB matrix")?;
-    let mut segment = builder.build();
+    Ok((builder.build(), video_track))
+}
+
+fn encode_lossless_vp9(
+    destination: &Path,
+    frame_count: usize,
+    mut frame: impl FnMut(usize, &mut Vec<u8>) -> Result<()>,
+) -> Result<String> {
+    let width = u32::try_from(LOGICAL_FRAMEBUFFER_WIDTH).context("video width exceeds u32")?;
+    let height = u32::try_from(LOGICAL_FRAMEBUFFER_HEIGHT).context("video height exceeds u32")?;
+    let mut encoder = lossless_rgb_encoder(
+        width,
+        height,
+        Timebase {
+            num: NonZero::new(NOMINAL_FRAME_RATE_DENOMINATOR)
+                .context("video timebase numerator is zero")?,
+            den: NonZero::new(NOMINAL_FRAME_RATE_NUMERATOR)
+                .context("video timebase denominator is zero")?,
+        },
+    )?;
+    let (mut segment, video_track) = lossless_rgb_segment(destination, width, height)?;
 
     let mut encoded_frame = Vec::with_capacity(PLANAR_FRAME_BYTE_COUNT);
     let mut hasher = Sha256::new();

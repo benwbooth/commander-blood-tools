@@ -774,7 +774,7 @@ impl GamePitClock {
         self.scaled_remainder = u128::MIN;
     }
 
-    fn stop(&mut self) {
+    pub(super) fn stop(&mut self) {
         self.sampled_at = None;
         self.scaled_remainder = u128::MIN;
     }
