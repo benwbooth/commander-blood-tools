@@ -192,6 +192,28 @@ def chapter_plans(plan_paths, plan_set=None):
     return plans
 
 
+def reusable_chapters(batch_paths, provenance):
+    candidates = []
+    for batch in batch_paths or []:
+        selection = read_json(batch / "selection.json")
+        coverage = read_json(batch / "coverage.json")
+        require(coverage["provenance"] == selection, "reuse batch selection changed")
+        require(all(selection[key] == provenance[key] for key in
+                    ("game", "asset_manifest_sha256", "exporter_sha256")),
+                "reuse batch source or exporter differs")
+        completed = {entry["record"]: entry for entry in coverage["completed"]}
+        require(len(completed) == len(coverage["completed"]), "ambiguous reuse chapter")
+        records = selection["records"]
+        require(len({record["name"] for record in records}) == len(records)
+                and completed.keys() <= {record["name"] for record in records},
+                "reuse chapter is not in its selection")
+        for record in records:
+            if record["name"] in completed:
+                require(record["name"] == record["plan"]["title"], "reuse chapter title differs")
+                candidates.append((record["plan"], completed[record["name"]]))
+    return candidates
+
+
 def render(args):
     plans = chapter_plans(args.plan, args.plan_set)
     assets = args.assets.resolve()
@@ -202,6 +224,7 @@ def render(args):
                       asset_manifest_sha256=manifest_hash, exporter_sha256=digest(args.exporter),
                       records=[dict(name=plan["title"], plan=plan, plan_sha256=digest(path))
                                for path, plan in plans])
+    reusable = reusable_chapters(args.reuse_batch, provenance)
     selection = args.out / "selection.json"
     if selection.exists():
         require(read_json(selection) == provenance, "batch inputs changed; use a new output directory")
@@ -213,11 +236,21 @@ def render(args):
         path = args.out / plan_path.stem
         print(f"[{index + 1}/{len(plans)}] {plan['title']}", flush=True)
         try:
+            verified = None
             if not path.exists():
-                with (args.out / (plan_path.stem + ".log")).open("w") as log:
-                    command([args.exporter.resolve(), assets, "dialogue:" + str(plan_path), path,
-                             args.max_frames], stdout=log, stderr=subprocess.STDOUT)
-            completed.append(verify_chapter(path, plan, manifest, provenance["exporter_sha256"]))
+                reused = next((entry for candidate, entry in reusable if candidate == plan), None)
+                if reused is not None:
+                    verified = verify_chapter(Path(reused["path"]), plan, manifest, provenance["exporter_sha256"])
+                    require(verified == reused, "reused chapter evidence changed")
+                    path.symlink_to(Path(reused["path"]).resolve(), target_is_directory=True)
+                    verified = {**verified, "path": str(path)}
+                else:
+                    with (args.out / (plan_path.stem + ".log")).open("w") as log:
+                        command([args.exporter.resolve(), assets, "dialogue:" + str(plan_path), path,
+                                 args.max_frames], stdout=log, stderr=subprocess.STDOUT)
+            if verified is None:
+                verified = verify_chapter(path, plan, manifest, provenance["exporter_sha256"])
+            completed.append(verified)
             print(f"  verified {completed[-1]['duration_ns'] / 1e9:.3f}s", flush=True)
         except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
             failures.append(dict(record=plan["title"], error=str(error)))
@@ -237,6 +270,8 @@ def main():
     capture.add_argument("--out", type=Path, required=True)
     capture.add_argument("--plan", type=Path, action="append")
     capture.add_argument("--plan-set", type=Path, help="planning.json from the static BAS planner")
+    capture.add_argument("--reuse-batch", type=Path, action="append",
+                         help="reuse identical completed chapters, with full source/trace/media verification")
     capture.add_argument("--exporter", type=Path, default=ROOT / "target/release/offline-presentation")
     capture.add_argument("--max-frames", type=int, default=100_000)
     capture.set_defaults(run=render)

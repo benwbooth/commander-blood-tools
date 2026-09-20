@@ -9,7 +9,8 @@ glyph-buffer evidence and lines with no full reveal.
 Current scope: CB SCRIPT1 Izwalito's game/explanations choices and Bob's mission
 yes/no choices; BBB SCRIPT1 HONK's PLAY/INSTRUCTIONS choices and Bob's recorded
 mission; BBB SCRIPT2 HONK's Daddy-in-the-cryobox conversation; CB SCRIPT2 Bob's
-black-hole BAS topic and Bronko's energy topic through prepared travel. These ten
+black-hole BAS topic, Bronko's energy topic, Daddy Gluxx's treatment, and both
+answers to Izwalito's ideal/secret question through prepared travel. These thirteen
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
 environments. The static BAS planner also
 produces topic plan sets from the hashed catalog without running the game.
@@ -105,6 +106,21 @@ allows a bounded repetition of only the last authored BAS `bye_bye` choice (at
 most eight). Every repetition must still match the current source menu and
 offered word; the exporter never forces presentation closure. The buy and war
 chapters each needed one repetition, retained in their choice traces.
+
+Generated topic titles include the menu path when different submenus reuse a
+word, as in Yoko's race-specific `news` and `brain` topics. `--entry-menu` selects
+the authored BAS menu body from which to plan, not a runtime menu override.
+Izwalito's `cor4bis` procedure explicitly sets `topic = "talk"`, selecting menu
+5915 rather than the list's first `talk1` menu. The native renderer still checks
+the actual menu at every selection.
+
+The checked-in Gluxx treatment plan includes three treatment selections: the
+first advances the unconditional youth line before the two treatment replies.
+One selection per statically matched reply is not a general scheduling rule.
+Izwalito's ideal plans retain the BAS goodbye before the COD secret question,
+then answer it and close the resumed BAS menu. Merely waiting on that menu does
+not advance the question. The accepted answer does not establish coverage of
+the `know` submenu; it remains unrecorded in these plans.
 
 `expected_unpublished_cod_sites` asserts absence on a selected branch, not global
 unreachability. The CB Bob chapters preserve the observed `AARCHE10`, `AARCHE30`,

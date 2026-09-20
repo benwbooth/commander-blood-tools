@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from native_dialogue_anthology import chapter_plans, validate_trace
+from native_dialogue_anthology import chapter_plans, reusable_chapters, validate_trace
 
 
 class ChapterPlanTests(unittest.TestCase):
@@ -33,6 +33,36 @@ class ChapterPlanTests(unittest.TestCase):
                 manifest.write_text(json.dumps(value))
                 with self.assertRaisesRegex(ValueError, "invalid chapter plan set"):
                     chapter_plans([], manifest)
+
+    def test_reuse_requires_matching_sources_and_retains_only_completed_chapters(self):
+        with tempfile.TemporaryDirectory() as directory:
+            batch = Path(directory)
+            provenance = dict(game="commander_blood", asset_manifest_sha256="assets", exporter_sha256="binary",
+                              records=[dict(name=name, plan=dict(title=name)) for name in ("ok", "failed")])
+            entry = dict(record="ok", path=str(batch / "ok"))
+            coverage = dict(provenance=provenance, complete=False, failures=[dict(record="failed")], completed=[entry])
+            (batch / "selection.json").write_text(json.dumps(provenance))
+            (batch / "coverage.json").write_text(json.dumps(coverage))
+            self.assertEqual(reusable_chapters([batch], provenance), [(dict(title="ok"), entry)])
+            changed = {**provenance, "exporter_sha256": "other"}
+            with self.assertRaisesRegex(ValueError, "source or exporter differs"):
+                reusable_chapters([batch], changed)
+            coverage["provenance"] = changed
+            (batch / "coverage.json").write_text(json.dumps(coverage))
+            with self.assertRaisesRegex(ValueError, "selection changed"):
+                reusable_chapters([batch], provenance)
+
+    def test_reuse_rejects_unselected_or_duplicate_completed_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            batch = Path(directory)
+            provenance = dict(game="commander_blood", asset_manifest_sha256="assets", exporter_sha256="binary",
+                              records=[dict(name="ok", plan=dict(title="ok"))])
+            (batch / "selection.json").write_text(json.dumps(provenance))
+            for entries, error in (([dict(record="unknown")], "not in its selection"),
+                                   ([dict(record="ok"), dict(record="ok")], "ambiguous reuse")):
+                (batch / "coverage.json").write_text(json.dumps(dict(provenance=provenance, completed=entries)))
+                with self.assertRaisesRegex(ValueError, error):
+                    reusable_chapters([batch], provenance)
 
 
 class DialogueTraceTests(unittest.TestCase):

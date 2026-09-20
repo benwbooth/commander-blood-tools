@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "game": "commander_blood",
+  "title": "Daddy Gluxx: treatment",
+  "initial_profile": 1,
+  "bas_sha256": "7db1fe0c0d2ca46b61c208c2b7b6373ff6e3aa7fa905b443b3e4fb251a68c274",
+  "cod_sha256": "19f686e185eaaa2ce139bb5132a2e6f1d380eb8239492688e2f47030644a9e5e",
+  "dic_sha256": "88c4eea1b947cedac521edca2f0fabd2448ac4a99e8c0a87a4a6acf8a129c6c5",
+  "target": "Daddy_Gluxx",
+  "entry": "travel",
+  "travel_setup": {"planet": "Ekatomb", "destination": "Ekatomb", "procedure_offset": 34287},
+  "choices": [
+    {"source": "bas_menu", "text_site": 19615, "word_offset": 23856},
+    {"source": "bas_menu", "text_site": 19683, "word_offset": 23879},
+    {"source": "bas_menu", "text_site": 19683, "word_offset": 23879},
+    {"source": "bas_menu", "text_site": 19683, "word_offset": 23879},
+    {"source": "bas_menu", "text_site": 19683, "word_offset": 2894}
+  ],
+  "max_exit_retries": 1,
+  "required_cod_sites": [34310],
+  "required_frame_boundary_cod_sites": [34310],
+  "required_bas_sites": [19692, 19748, 19774, 19824],
+  "required_frame_boundary_bas_sites": [19692, 19748, 19774, 19824],
+  "end": {"kind": "presentation_finished"}
+}

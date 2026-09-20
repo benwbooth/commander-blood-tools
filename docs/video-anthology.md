@@ -391,6 +391,15 @@ RGBA/PCM/PTS equality. It records lines without full native UI reveal rather tha
 extending them or substituting subtitle cards. The assembly uses the sequence
 assembler's lossless video copy and exact PCM concatenation.
 
+`render --reuse-batch PATH` can reuse completed chapters from an earlier batch,
+including a batch with other failed chapters. Plans, asset-manifest hashes, and
+exporter hashes must match. Each selected chapter is fully decoded and its
+source, trace, and media evidence compared with the saved coverage entry before
+the new batch links it. Failed or altered entries cannot become successful by
+being reused. The original batch and its failures are unchanged. Keep the source
+capture directories: reused chapters are links, not independent copies. Resume
+still verifies the linked captures. Different binaries require new captures.
+
 The verified local `dialogue-native-v4` batch contains two CB chapters totaling
 44.988 seconds and two BBB chapters totaling 75.026 seconds. Its chaptered movies
 are `output/anthology/cb-intro-dialogue-native.mkv` and
@@ -508,6 +517,41 @@ The checked-in energy fixture independently reproduced the generated chapter's
 was inspected for original factory artwork, font, text, and hand; this is not
 visual inspection of every line. No BBB travel chapter is claimed by this batch.
 
+Three further actor batches use the same archived Bronko v4 exporter:
+
+| Actor | Output under `output/anthology` | Chapters | Duration | Native frames |
+| --- | --- | ---: | ---: | ---: |
+| Yoko | `cb-yoko-bas-topics-native.mkv` | 28 | 1,336.188 s | 20,733 |
+| Daddy Gluxx | `cb-gluxx-bas-topics-native.mkv` | 5 | 408.960 s | 6,095 |
+| Izwalito | `cb-izwalito-bas-topics-native.mkv` | 11 | 409.542 s | 6,430 |
+
+Their capture batches are `dialogue-travel-yoko-v2/cb`,
+`dialogue-travel-gluxx-v2/cb`, and `dialogue-travel-izwalito-v4/cb`. Yoko uses
+SCRIPT2 procedure 32225 on Rondo at `pavillon`; Gluxx uses 34287 on Ekatomb;
+Izwalito uses 21258 on Corpo with `--entry-menu 5915`. The latter is the BAS menu
+selected by the COD `topic = "talk"` assignment, not a forced runtime setting.
+Repeated topic names are distinguished by their actual menu paths.
+
+The generated Gluxx treatment plan is replaced by the checked-in three-selection
+plan to account for an unconditional intervening line. Izwalito's generic ideal
+plan is replaced by both checked-in secret-answer branches. Each retains the
+BAS goodbye that triggers the COD question and the later resumed-menu goodbye.
+The accepted answer does not open the `know` submenu in this captured route;
+those sites are still uncovered. No timing or script modification was needed.
+The corrected Gluxx and Izwalito batches reuse their other verified chapters;
+all earlier failed batches and diagnostic attempts remain separate.
+
+Yoko publishes 70 BAS and six COD sites, Gluxx 15 BAS and 17 COD, and Izwalito
+36 BAS and nine COD, all with full native UI-buffer reveals. Their respective
+actor lists still have 34, six, and eleven BAS sites unrecorded. These 44 chapters
+are additional prepared-state branches, not exhaustive actor dialogue or a
+continuous playthrough. Sampled encoded frames were inspected; complete decoded
+RGBA, PCM, timing, and chapter verification applies to each assembled movie.
+The final-build reproduction of Izwalito's acceptance branch in
+`dialogue-travel-actors-final-build/cb` matches the original capture's pixels,
+PCM, endpoint, and complete runner report. Its binary is archived in the sibling
+`bin` directory.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -519,7 +563,10 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-contacts-v3/bbb \
   --batch output/anthology/dialogue-bas-bob-v1/cb \
   --batch output/anthology/dialogue-travel-bronko-v4/cb \
-  --out output/anthology/dialogue-coverage-travel-bronko.json
+  --batch output/anthology/dialogue-travel-yoko-v2/cb \
+  --batch output/anthology/dialogue-travel-gluxx-v2/cb \
+  --batch output/anthology/dialogue-travel-izwalito-v4/cb \
+  --out output/anthology/dialogue-coverage-travel-actors.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -528,9 +575,9 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 24 verified chapters, CB has 108 sites fully revealed in the native
+Across the 68 verified chapters, CB has 261 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,421 uncovered. BBB has 49 fully revealed, four published without
+branches, and 5,268 uncovered. BBB has 49 fully revealed, four published without
 a UI draw, and 6,868 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game

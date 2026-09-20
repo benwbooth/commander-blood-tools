@@ -48,11 +48,41 @@ class BasPlanTests(unittest.TestCase):
                          [(14, 3), (24, 5), (24, 1)])
         self.assertEqual(report["unvisited_menu_nodes"], [30])
 
+    def test_authored_entry_menu_changes_planning_without_forcing_runtime_state(self):
+        plans, report = plan_topics(self.graph, self.contact, entry_menu=24)
+        nested = next(plan for _, _, plan in plans if plan["required_bas_sites"] == [120])
+        self.assertEqual([row["word_offset"] for row in nested["choices"]], [5, 1])
+        self.assertEqual(report["entry_bas_menu"], 24)
+        self.assertNotIn("entry_menu", nested)
+        with self.assertRaisesRegex(ValueError, "not an authored menu"):
+            plan_topics(self.graph, self.contact, entry_menu=999)
+        with self.assertRaisesRegex(ValueError, "not an authored menu"):
+            plan_topics(self.graph, self.contact, entry_menu=20)
+
     def test_random_sites_stay_unplanned_and_explicit(self):
         _, report = plan_topics(self.graph, self.contact)
         self.assertEqual(report["targeted_bas_sites"], [100, 110, 120])
         self.assertEqual(report["not_targeted_bas_sites"], [130])
         self.assertEqual(report["deferred"][0]["sites"], [130])
+
+    def test_duplicate_topic_titles_retain_the_distinct_menu_paths(self):
+        self.graph["bas"]["control_flow"]["nodes"][1]["menu_choices"][1]["text"] = "topic"
+        plans, _ = plan_topics(self.graph, self.contact)
+        self.assertEqual([plan["title"] for _, _, plan in plans],
+                         ["Bob: topic", "Bob: nested > topic"])
+        self.assertEqual(plans[1][2]["required_bas_sites"], [120])
+        self.assertEqual([choice["word_offset"] for choice in plans[1][2]["choices"]], [3, 5, 1])
+
+    def test_identical_display_labels_still_keep_source_identity(self):
+        node = self.graph["bas"]["control_flow"]["nodes"][0]
+        node["menu_choices"].append(word(7, "topic"))
+        self.graph["bas"]["choice_edges"].append(dict(from_node=10, choice=word(7, "topic"), to_node=None))
+        self.graph["bas"]["text_sites"].append(site(140, 10, 7))
+        plans, _ = plan_topics(self.graph, self.contact)
+        titles = [plan["title"] for _, _, plan in plans]
+        self.assertEqual(len(titles), len(set(titles)))
+        self.assertIn("Bob: topic [BAS 000a, word 0002]", titles)
+        self.assertIn("Bob: topic [BAS 000a, word 0007]", titles)
 
     def test_no_unique_exit_does_not_invent_a_close_command(self):
         self.graph["bas"]["control_flow"]["nodes"][1]["menu_choices"].pop(0)

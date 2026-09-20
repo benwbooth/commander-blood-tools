@@ -6,7 +6,7 @@ unoffered topics, and menu cycles remain explicit gaps rather than invented path
 """
 
 import argparse
-from collections import deque
+from collections import Counter, deque
 from pathlib import Path
 import re
 
@@ -39,7 +39,7 @@ def travel_procedure(graph, offset):
                 contact_object=sites[0]["record_name"], texts=[dict(opcode_offset=sites[0]["offset"])])
 
 
-def plan_topics(graph, contact, travel_setup=None):
+def plan_topics(graph, contact, travel_setup=None, entry_menu=None):
     require(graph["game"] == "cb" and graph["profile"].upper() == contact["script"],
             "contact and static graph belong to different profiles")
     require(graph["resources"].get("bas_sha256"), "static catalog has no BAS source hash")
@@ -50,6 +50,10 @@ def plan_topics(graph, contact, travel_setup=None):
     owner = owners[0]
     nodes = {node["offset"]: node for node in flow["nodes"] if node["offset"] in owner["node_offsets"]}
     root = owner["entrypoint"]["root_node"]
+    if entry_menu is not None:
+        entries = [node["offset"] for node in nodes.values() if node["menu_offset"] == entry_menu]
+        require(len(entries) == 1, "entry menu is not an authored menu in this actor list")
+        root = entries[0]
     require(root in nodes and nodes[root]["menu_offset"] is not None, "contact has no root menu")
     sites = [site for site in graph["bas"]["text_sites"] if site["selector_node"] in nodes]
     cod_sites = {site["offset"] for site in graph["cod"]["text_sites"]}
@@ -107,8 +111,21 @@ def plan_topics(graph, contact, travel_setup=None):
                 plan["max_exit_retries"] = 1
                 del plan["contact_procedure"]
             plans.append((current, word["offset"], plan))
+    titles = Counter(plan["title"] for _, _, plan in plans)
+    words = {(node["menu_offset"], word["offset"]): word["text"].replace("_", " ")
+             for node in nodes.values() for word in node["menu_choices"]}
+    for current, word, plan in plans:
+        if titles[plan["title"]] > 1:
+            labels = [words[(step["text_site"], step["word_offset"])] for step in paths[current]]
+            labels.append(words[(nodes[current]["menu_offset"], word)])
+            plan["title"] = contact["contact_object"].replace("_", " ") + ": " + " > ".join(labels)
+    titles = Counter(plan["title"] for _, _, plan in plans)
+    for current, word, plan in plans:
+        if titles[plan["title"]] > 1:
+            plan["title"] += f" [BAS {current:04x}, word {word:04x}]"
     targeted = {site for _, _, plan in plans for site in plan["required_bas_sites"]}
     return plans, dict(scope="finite menu paths and simple topic responses; not all dialogue variants or verified captures",
+                       entry_bas_menu=nodes[root]["menu_offset"],
                        bas_sites_in_actor_list=[site["offset"] for site in sites],
                        targeted_bas_sites=sorted(targeted),
                        not_targeted_bas_sites=sorted(site["offset"] for site in sites if site["offset"] not in targeted),
@@ -124,6 +141,8 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--travel-planet", help="authored planet used for prepared travel entry")
     parser.add_argument("--travel-destination", help="authored local navigation destination")
+    parser.add_argument("--entry-menu", type=lambda value: int(value, 0),
+                        help="authored BAS menu body selected by the COD entry; planning only, not a runtime override")
     args = parser.parse_args()
     require(bool(args.travel_planet) == bool(args.travel_destination),
             "travel entry requires both planet and destination")
@@ -147,7 +166,7 @@ def main():
         require(len(contacts) == 1, "no unique contact procedure")
         contact = contacts[0]
         manifest_hash = digest(manifest_path)
-    plans, report = plan_topics(graph, contact, travel_setup)
+    plans, report = plan_topics(graph, contact, travel_setup, args.entry_menu)
     require(plans, "no simple BAS topic plans for this contact")
     args.out.mkdir(parents=True, exist_ok=False)
     actor = re.sub(r"[^a-z0-9]+", "-", contact["contact_object"].lower()).strip("-")
