@@ -10,6 +10,8 @@
 
 #[path = "../../../src/bas_cfg.rs"]
 mod bas_cfg;
+#[path = "../../../src/dialogue_catalog.rs"]
+mod dialogue_catalog;
 #[path = "../../../src/bloodscript.rs"]
 mod bloodscript;
 #[path = "../../../src/descript.rs"]
@@ -60,3 +62,5 @@ pub use bloodscript::decompile_unbound_bas;
 pub use script::parse_deb as parse_source_directory;
 /// Decode exact CP437 dictionary words for source recovery and recompilation.
 pub use script::parse_dictionary as parse_source_dictionary;
+/// Export static dialogue and control-flow graphs without executing the VM.
+pub use dialogue_catalog::analyze as analyze_dialogue;

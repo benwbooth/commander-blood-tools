@@ -3,7 +3,58 @@
 `tools/video_anthology.py` provides a first, scenario-driven export pipeline for
 Commander Blood and Big Bug Bang. It records the Rust port's actual final GPU
 output and SDL mixer submissions. It does **not** run the DOS executable or prove
-DOS rendering/timing parity, and it does **not** yet explore every dialogue tree.
+DOS rendering/timing parity. Dialogue discovery uses a separate static script
+scan; no game process or simulated clicks are needed for that scan.
+
+## Static Dialogue Trees
+
+```sh
+nix develop -c cargo build --release -p commander-blood-script-compiler \
+  --example dialogue_catalog
+uv run tools/dialogue_catalog.py --out output/anthology/static-dialogue
+```
+
+This compiles the readable BloodScript files with the existing compiler, then
+uses the typed COD/BAS decoders and control-flow analyzers. It does not execute
+the VM, launch either game, use a display, or change saves. Default inputs are
+all five CB profiles in `re/vm/profiles` and all 17 BBB profiles in
+`re/vm/big-bug-bang-profiles`. The default CB sources are English and BBB sources
+are French; this step does not translate or substitute the runtime localization.
+`--cb-source`, `--bbb-source`, and `--analyzer` allow explicit alternate inputs.
+
+The output contains an `index.md`, a hashed `catalog.json`, and per-profile:
+
+- `source.blood`: the exact analyzed source, including named conditions.
+- `graph.json`: every COD instruction, block, conditional edge, text site,
+  deferred profile request, BAS selector list, and local menu-to-selector link.
+- `dialogue.md`: readable lines grouped by COD procedure or BAS object/selector.
+- `cod.dot` and, for CB, `bas.dot`: Graphviz graphs. Frame-resume edges are dashed
+  and remain distinct from immediate control transfers.
+
+Text sites retain dictionary operands, choice labels, presentation selectors,
+chatter flags, conditional skips, progress/history predicates, and resume targets.
+State-number and inventory operands remain symbolic. Identical strings at
+different instruction offsets are distinct sites. Text-record ownership is
+preserved without assuming it always identifies the audible speaker.
+
+BAS choice links follow the first matching selector in the same object's linked
+list. Shadowed duplicate selectors remain visible, and a missing local match is
+explicit, not labeled unreachable. Inline TEXT choice operands are retained
+separately from BAS menu-header links. COD branches retain both conditional
+outcomes; conditions are not solved into feasible complete playthroughs. Cycles
+stay as graph edges rather than becoming infinite DFS paths. The existing CFG's
+`reachable` field is static control-flow reachability, not save-state feasibility.
+
+The current census is **5,536 CB text sites** (3,687 COD + 1,849 BAS) and
+**6,921 BBB text sites**, with 321 CB BAS selectors and 1,396 BAS menu rows.
+Tests compare those sites against every authored `say`/`text_tokens` statement.
+These counts include UI and repeated/conditional text, not just unique spoken
+sentences. Static discovery is not video coverage or proof of runtime fidelity.
+The separate BBB `SCRIPT2.BAS` artifact is not owned by the 17 active profiles
+and is not included in this profile census.
+
+The exporter publishes the directory only after every profile succeeds, retains
+source/analyzer/exporter hashes, and refuses to overwrite existing output.
 
 ## Build and Catalog
 
@@ -112,20 +163,25 @@ The assembler does not deduplicate shared intros or trim routes automatically.
 
 ## Remaining Coverage Work
 
-Automatic traversal needs whole-runtime checkpoints or deterministic replay of
-each choice path, including VM state, world state, timers, RNG, and presentation
-ownership. DFS alone cannot distinguish dialogue variants caused by inventory,
-story phase, or prior visits. Coverage must count authored lines and meaningful
-variants, detect loops, and label injected/unreachable states explicitly.
+Use the static graph as the authored inventory for anthology planning. No click
+traversal is needed to discover dialogue. The next export step is to select
+finite graph segments, resolve their media and symbolic state variants, and
+render alternate branches with explicit chapters. It must keep loops, deferred
+profile changes, inventory, story phase, and prior-visit predicates explicit;
+the graph alone does not choose one valid state for every line.
 
-Next steps are an authored dialogue/planet route census, robust semantic choice
-actions, state restoration, more category-specific routes, and optional edited
-anthologies that omit repeated preludes. The current catalog deliberately leaves
-coverage `not_recorded` rather than equating file presence with dialogue coverage.
+Direct asset-composited videos and actual gameplay recordings must remain
+separately labeled. The existing recorder still records explicit runtime routes;
+the static scanner does not yet automatically turn every graph branch into a
+video. Both catalogs leave unrecorded content unrecorded rather than equating
+script/file presence with video coverage.
 
 ## Tests
 
 ```sh
+uv run python -m unittest discover -s tools -p test_dialogue_catalog.py
+nix develop -c cargo test --release -p commander-blood-script-compiler \
+  --test dialogue_catalog
 nix develop -c uv run --with av==18.1.0 python -m unittest discover \
   -s tools -p test_video_anthology.py
 nix develop -c cargo test -p commander-blood-game --lib
