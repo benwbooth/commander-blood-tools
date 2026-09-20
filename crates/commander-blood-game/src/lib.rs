@@ -16,6 +16,7 @@ mod bridge_render;
 pub mod game;
 mod media_import;
 pub mod native;
+mod recording;
 pub mod render;
 pub mod runtime;
 mod script_rebuild;

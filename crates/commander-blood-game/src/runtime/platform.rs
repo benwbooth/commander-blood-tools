@@ -92,6 +92,7 @@ pub struct RuntimePlatformHost<'window> {
     window_focused: bool,
     alien_pointer: Option<[f32; 2]>,
     scenario: Option<RuntimeScenarioDriver>,
+    record_in_real_time: bool,
     live_trace: Option<LiveTraceWriter>,
     presentation_boundary_pending: bool,
 }
@@ -124,9 +125,15 @@ impl<'window> RuntimePlatformHost<'window> {
             window_focused: true,
             alien_pointer: None,
             scenario: None,
+            record_in_real_time: false,
             live_trace: None,
             presentation_boundary_pending: false,
         }
+    }
+
+    /// Keep native frame delays when recording an otherwise fast scripted route.
+    pub(crate) fn enable_recording_pacing(&mut self) {
+        self.record_in_real_time = true;
     }
 
     /// Bind SDL for a deterministic, uncaptured original-oracle scenario.
@@ -601,7 +608,7 @@ impl<'window> RuntimePlatformHost<'window> {
         &mut self,
         services: &mut ModernGameServices<'window>,
     ) -> Result<Option<f32>> {
-        if self.scenario.is_some() {
+        if self.scenario.is_some() && !self.record_in_real_time {
             self.frame_clock.finish_frame();
             return Ok(None);
         }
@@ -650,7 +657,7 @@ impl<'window> RuntimePlatformHost<'window> {
     }
 
     fn pace_frame_for(&mut self, duration: Duration) -> Result<()> {
-        if self.scenario.is_some() {
+        if self.scenario.is_some() && !self.record_in_real_time {
             self.frame_clock.finish_frame();
             return Ok(());
         }

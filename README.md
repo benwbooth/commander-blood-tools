@@ -77,6 +77,10 @@ raw-frame SHA-256 equality before installing the cache atomically. HNM remains
 the gameplay source until the normalized indexed/mask reader passes the same
 runtime parity gates. See [docs/normalized-media.md](docs/normalized-media.md).
 
+For recording composed gameplay with mixed audio, transcripts, resumable jobs,
+and anthology chapters, see [docs/video-anthology.md](docs/video-anthology.md).
+This is distinct from exporting standalone HNM assets.
+
 ## Commands
 
 Run through the flake so `ffmpeg`, `7z`, `curl`, and Rust are all on `PATH`:

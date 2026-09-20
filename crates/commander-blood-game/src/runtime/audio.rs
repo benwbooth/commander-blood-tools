@@ -535,6 +535,7 @@ impl Default for SharedAudioState {
 }
 
 struct RuntimeAudioCallback {
+    recording: Option<Arc<crate::recording::Recording>>,
     shared: Arc<Mutex<SharedAudioState>>,
     unsigned_samples: Vec<u8>,
     foreground_samples: Vec<u8>,
@@ -544,6 +545,7 @@ struct RuntimeAudioCallback {
 impl RuntimeAudioCallback {
     fn new(shared: Arc<Mutex<SharedAudioState>>) -> Self {
         Self {
+            recording: None,
             shared,
             unsigned_samples: Vec::new(),
             foreground_samples: Vec::new(),
@@ -594,8 +596,12 @@ impl RuntimeAudioCallback {
 
 impl AudioCallback<f32> for RuntimeAudioCallback {
     fn callback(&mut self, stream: &mut AudioStream, requested: i32) {
+        let recording = self.recording.clone();
         let requested = usize::try_from(requested).unwrap_or(usize::MIN);
         let submission = self.render_for_sdl(requested);
+        if let Some(recording) = recording {
+            recording.audio(submission, RUNTIME_AUDIO_OUTPUT_RATE_HZ);
+        }
         if let Err(error) = stream.put_data_f32(submission) {
             lock_shared(&self.shared).callback_error = Some(error.to_string());
         }
@@ -611,8 +617,16 @@ pub struct RuntimeAudioHost {
 impl RuntimeAudioHost {
     /// Open and resume the default SDL3 playback stream.
     pub fn open(audio: &AudioSubsystem) -> Result<Self> {
+        Self::open_recorded(audio, None)
+    }
+
+    pub(crate) fn open_recorded(
+        audio: &AudioSubsystem,
+        recording: Option<Arc<crate::recording::Recording>>,
+    ) -> Result<Self> {
         let shared = Arc::new(Mutex::new(SharedAudioState::default()));
-        let callback = RuntimeAudioCallback::new(Arc::clone(&shared));
+        let mut callback = RuntimeAudioCallback::new(Arc::clone(&shared));
+        callback.recording = recording;
         let spec = AudioSpec {
             freq: Some(RUNTIME_AUDIO_OUTPUT_RATE_HZ as i32),
             channels: Some(RUNTIME_AUDIO_CHANNEL_COUNT),

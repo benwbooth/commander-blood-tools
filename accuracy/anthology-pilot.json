@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "jobs": [
+    {
+      "id": "cb-bob-first-contact",
+      "game": "cb",
+      "category": "conversation",
+      "title": "Bob Morlock: first contact (with startup route)",
+      "scenario": "scenarios/production_bob_first_contact.tsv",
+      "expected_resources": ["PE/AABOB.HNM", "SQ/CRYORAD.HNM"],
+      "expected_subtitles": ["multiplexers"],
+      "timeout_seconds": 900
+    },
+    {
+      "id": "bbb-honk-first-call",
+      "game": "bbb",
+      "category": "conversation",
+      "title": "HONK: first call and PLAY (with startup route)",
+      "scenario": "scenarios/anthology_bbb_honk.tsv",
+      "expected_subtitles": ["faithful onboard computer", "Old", "waiting for you there"],
+      "expected_final_profile": 1,
+      "timeout_seconds": 900
+    }
+  ]
+}

@@ -294,12 +294,14 @@ impl<Host: ScriptBasDispatchHost> ScriptBlockHandler for BasInstructionDispatche
             }
             ScriptBasInstruction::Yield => {
                 runtime.request_yield();
-                debug_assert!(runtime.take_yield_request());
+                let requested = runtime.take_yield_request();
+                debug_assert!(requested);
                 return Ok(ScriptBlockStep::stop_at(token.end_offset()));
             }
             ScriptBasInstruction::SelectorYield => {
                 runtime.request_selector_yield();
-                debug_assert!(runtime.take_yield_request());
+                let requested = runtime.take_yield_request();
+                debug_assert!(requested);
                 return Ok(ScriptBlockStep::stop_at(token.end_offset()));
             }
             ScriptBasInstruction::SelectorNode { .. } => {
@@ -645,6 +647,10 @@ mod tests {
                         assert!(dispatch.text_presentation.menu_words.is_empty());
                     }
                 }
+                assert!(
+                    !profile.runtime().yield_requested(),
+                    "BAS dispatch must consume its legacy yield flag, including release builds"
+                );
                 profile.synchronized_state().unwrap();
                 executed_lists += 1;
             }

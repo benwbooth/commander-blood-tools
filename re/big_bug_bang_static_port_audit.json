@@ -31,7 +31,7 @@
     "re/tools/oracle_vectors/func_6ff3_natural.json": "91896e778459743771bca99d6e0a69385d05e67e34028ee46a310994453b8aee",
     "crates/commander-blood-game/src/native/bloodprg/navigation.rs": "1f33adbde53c512d5c6f5c36864db03d0b9fbc98cd712ce9e408fed4ffe1ff7e",
     "re/tools/oracle_vectors/func_713d_natural.json": "246c497cc61e0ea5b25f707c83e8ada5a4fcedc3899898d3173cff927f3a7aeb",
-    "crates/commander-blood-game/src/runtime/services.rs": "4bdee338e1a09b71fd153351ee83200088c9df2074ba488dbe8fd3129b4c8c8a",
+    "crates/commander-blood-game/src/runtime/services.rs": "d1c8c1feadfc1878e27bfc774100c8d28012bbe1095dfc605ebf9232d8a12df7",
     "crates/commander-blood-game/src/native/bloodprg/presentation_hover.rs": "5f3e726b5afc93d86dd70b2cd46fbfe79ed5055ae5de0c68113fa19cfb990944",
     "re/tools/oracle_vectors/func_78d0_natural.json": "e8103f3598979d73e6bd2b3d542abf68fa9f7f7f51c5866eaac04da370eb789e",
     "crates/commander-blood-game/src/native/bloodprg/sequence_subtitles.rs": "8601e3e8549fa6750a8a2a517c61fc4b2441fa2b6df0446243ee1f4858c4639d",
@@ -106,7 +106,7 @@
     "crates/commander-blood-game/src/native/bloodprg/game_lifecycle.rs": "6ee193d39db23ed481426894af94306b97b9078040e55963ebf876ca5bcb52b7",
     "re/tools/oracle_vectors/func_0eb0_natural.json": "540e4ea13dae0a0f51402d1886dd2c4137f441a7fcbdcdbdae258e28406c4d1a",
     "re/tools/oracle_vectors/big_bug_bang_profile_post_load.jsonl": "8f7d8a27ecae719aa9128fe98904d387fdd2083c0d7ac5c4ae4da4894dce2f6f",
-    "crates/commander-blood-game/src/app.rs": "9201be51562e58e5e14f13cbcdd888cef4b5b7f98ca19ee8ed80da12e473ae38",
+    "crates/commander-blood-game/src/app.rs": "6126cba5f20b47b99506f77c67dec31142e5f8f157350425b4c05984b690404a",
     "crates/commander-blood-game/src/native/bloodprg/resource_cache.rs": "5a2de16add9f4c0447f3eed382da598d311c17a90985e519bd97625ad48fe906",
     "crates/commander-blood-game/src/native/bloodprg/input_cancel.rs": "3dc579420268f765f52a83973303657831281b6d72bc37480f3cc2259709aa94",
     "crates/commander-blood-game/src/native/bloodprg/sequel_growth.rs": "91e19343d0076688da1f2a0b6600f5d402fa2217044ebaf83bc7cd12d2cee32b"

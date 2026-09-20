@@ -55,6 +55,7 @@ const MAXIMUM_BASE_SCENE_COUNT: usize = 1;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Options {
+    record: Option<PathBuf>,
     data: Option<PathBuf>,
     import_assets: Option<PathBuf>,
     write_data: Option<PathBuf>,
@@ -98,6 +99,13 @@ impl Options {
         let mut arguments = arguments.into_iter();
         while let Some(argument) = arguments.next() {
             match argument.as_str() {
+                "--record" => {
+                    options.record = Some(PathBuf::from(
+                        arguments
+                            .next()
+                            .context("--record requires a new directory")?,
+                    ));
+                }
                 "--data" => {
                     options.data = Some(PathBuf::from(
                         arguments.next().context("--data requires a directory")?,
@@ -184,6 +192,11 @@ impl Options {
             (None, Some(_)) => bail!("--trace requires --scenario"),
             _ => {}
         }
+        if options.record.is_some()
+            && (options.uses_diagnostic_overrides() || options.import_assets.is_some())
+        {
+            bail!("--record is supported only by the production game runtime");
+        }
         if options.oracle_packed_second.is_some() && options.scenario.is_none() {
             bail!("--oracle-packed-second requires --scenario");
         }
@@ -230,6 +243,7 @@ fn print_usage(game: GameVariant) {
          \n\
          Import only: {command} --data SOURCE --import-assets DESTINATION\n\
          This verifies loose assets without opening a window or transcoding media.\n\
+         --record NEW_DIRECTORY captures lossless final frames and mixed audio (requires ffmpeg).\n\
          --data must contain {} assets (original installation or imported manifest).\n\
          \n\
          {environment} may point to the game-data directory.\n\
@@ -563,13 +577,24 @@ fn run_production_game(game: GameVariant, options: &Options) -> Result<()> {
     let events = sdl.event_pump().map_err(anyhow::Error::msg)?;
     video.text_input().start(&window);
 
-    let services = ModernGameServices::new(&window, data, clock.script)?;
+    let mut services = ModernGameServices::new(&window, data, clock.script)?;
+    let recording = options
+        .record
+        .as_deref()
+        .map(crate::recording::RecordingSession::create)
+        .transpose()?;
+    if let Some(recording) = &recording {
+        services.record_to(recording.handle.clone())?;
+    }
     let mut platform = match (&options.scenario, &options.trace) {
         (Some(scenario), Some(trace)) => {
             RuntimePlatformHost::new_scripted(&window, sdl.mouse(), events, scenario, trace)?
         }
         _ => RuntimePlatformHost::new(&window, sdl.mouse(), events),
     };
+    if recording.is_some() {
+        platform.enable_recording_pacing();
+    }
     if let Some(path) = options.live_trace.as_deref() {
         platform.enable_live_trace(path)?;
     }
@@ -582,7 +607,12 @@ fn run_production_game(game: GameVariant, options: &Options) -> Result<()> {
         options.frame_limit,
     );
     let mut state = GameLifecycleState::default();
-    match run_game_lifecycle(&mut state, &mut host) {
+    let outcome = run_game_lifecycle(&mut state, &mut host);
+    drop(host);
+    if let Some(recording) = recording {
+        recording.finish()?;
+    }
+    match outcome {
         Ok(_) => {}
         Err(GameLifecycleError::Runtime(error)) => {
             return Err(error.context("game runtime failed"));
@@ -890,4 +920,22 @@ mod tests {
             assert!(error.to_string().contains(expected));
         }
     }
+}
+#[test]
+fn recording_options_require_a_destination_and_production_mode() {
+    assert!(Options::parse_arguments(["--record"].into_iter().map(str::to_owned)).is_err());
+    assert!(
+        Options::parse_arguments(
+            ["--record", "capture", "--bridge"]
+                .into_iter()
+                .map(str::to_owned)
+        )
+        .is_err()
+    );
+    let ParseOutcome::Run(options) =
+        Options::parse_arguments(["--record", "capture"].into_iter().map(str::to_owned)).unwrap()
+    else {
+        panic!("expected capture options")
+    };
+    assert_eq!(options.record, Some(PathBuf::from("capture")));
 }

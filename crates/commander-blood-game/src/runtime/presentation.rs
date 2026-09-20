@@ -37,6 +37,7 @@ const OPAQUE_ALPHA: u8 = u8::MAX;
 
 /// SDL/wgpu presentation state for the original logical framebuffer and bridge.
 pub struct RuntimePresentationHost<'window> {
+    recording: Option<std::sync::Arc<crate::recording::Recording>>,
     window: &'window Window,
     renderer: Option<Renderer<'window>>,
     presented_frame_count: u64,
@@ -51,6 +52,7 @@ impl<'window> RuntimePresentationHost<'window> {
         let renderer = Renderer::new(window, &initial_frame, None, None, None, None)
             .context("initializing startup wgpu presentation")?;
         Ok(Self {
+            recording: None,
             window,
             renderer: Some(renderer),
             presented_frame_count: u64::MIN,
@@ -62,6 +64,7 @@ impl<'window> RuntimePresentationHost<'window> {
     pub fn new_main_game(window: &'window Window, runtime: &OriginalGameRuntime) -> Result<Self> {
         let renderer = main_game_renderer(window, runtime)?;
         Ok(Self {
+            recording: None,
             window,
             renderer: Some(renderer),
             presented_frame_count: u64::MIN,
@@ -73,6 +76,21 @@ impl<'window> RuntimePresentationHost<'window> {
     pub fn configure_main_game(&mut self, runtime: &OriginalGameRuntime) -> Result<()> {
         self.renderer = None;
         self.renderer = Some(main_game_renderer(self.window, runtime)?);
+        if let Some(recording) = &self.recording {
+            self.renderer
+                .as_mut()
+                .unwrap()
+                .record_to(recording.clone())?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn record_to(
+        &mut self,
+        recording: std::sync::Arc<crate::recording::Recording>,
+    ) -> Result<()> {
+        self.renderer_mut()?.record_to(recording.clone())?;
+        self.recording = Some(recording);
         Ok(())
     }
 

@@ -1,0 +1,13 @@
+# HONK's first call: choose PLAY, hear the request, return to the bridge.
+# Retained native idle time is intentional; no post-recording dialogue padding.
+wait 10
+click 160 100
+wait 30
+click 160 100
+wait 30
+park 316 45
+wait 10
+click 230 88
+wait 100
+click 185 94
+wait 100

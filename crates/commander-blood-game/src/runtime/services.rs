@@ -251,6 +251,7 @@ enum StreamedAudioRole {
 /// are added here only when their complete services can be wired without a
 /// placeholder path.
 pub struct ModernGameServices<'window> {
+    recording: Option<std::sync::Arc<crate::recording::Recording>>,
     runtime: OriginalGameRuntime,
     input: RuntimeInputHost,
     presentation: RuntimePresentationHost<'window>,
@@ -428,6 +429,7 @@ impl<'window> ModernGameServices<'window> {
             presentation,
             presentation_player,
             audio: None,
+            recording: None,
             loaded_navigation_music: None,
             streamed_audio_role: None,
             resident_sound_bank: None,
@@ -653,8 +655,85 @@ impl<'window> ModernGameServices<'window> {
         if self.audio.is_some() {
             bail!("runtime audio is already initialized");
         }
-        self.audio = Some(RuntimeAudioHost::open(audio)?);
+        self.audio = Some(RuntimeAudioHost::open_recorded(
+            audio,
+            self.recording.clone(),
+        )?);
         Ok(())
+    }
+
+    pub(crate) fn record_to(
+        &mut self,
+        recording: std::sync::Arc<crate::recording::Recording>,
+    ) -> Result<()> {
+        anyhow::ensure!(
+            self.audio.is_none(),
+            "recording must begin before audio initialization"
+        );
+        self.presentation.record_to(recording.clone())?;
+        self.recording = Some(recording);
+        Ok(())
+    }
+
+    fn record_scene_state(&self) -> Result<()> {
+        let Some(recording) = &self.recording else {
+            return Ok(());
+        };
+        let text = self.scripts.text_presentation();
+        let profile = self.runtime.current_profile();
+        let display_words = self.scripts.inline_menu_display_words();
+        let inline_visible = visible_inline_menu_word_count(
+            self.inline_menu_draw_snapshot.as_ref(),
+            text,
+            usize::MAX,
+            display_words,
+        ) > 0;
+        let inline_words = if !inline_visible {
+            Vec::new()
+        } else if let Some(words) = display_words {
+            words
+                .iter()
+                .map(|word| {
+                    word.resolve(profile.map(|profile| profile.state()))
+                        .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+                        .map_err(anyhow::Error::new)
+                })
+                .collect::<Result<Vec<_>>>()?
+        } else if let Some(profile) = profile {
+            text.menu_words
+                .iter()
+                .take_while(|word| !matches!(word, ScriptTextWord::SectionSeparator))
+                .map(|word| match word {
+                    ScriptTextWord::Dictionary(word) => profile
+                        .dictionary()
+                        .word(*word)
+                        .map(|bytes| String::from_utf8_lossy(bytes).into_owned())
+                        .context("recording dialogue word is absent from dictionary"),
+                    ScriptTextWord::StateNumber(number) => {
+                        InlineMenuDisplayWord::StateNumber(*number)
+                            .resolve(Some(profile.state()))
+                            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+                            .map_err(anyhow::Error::new)
+                    }
+                    _ => bail!("recording encountered unexpanded dialogue words"),
+                })
+                .collect::<Result<Vec<_>>>()?
+        } else {
+            Vec::new()
+        };
+        let choices = self.presentation_word_choice.as_ref()
+            .filter(|choice| choice.state().active && choice.state().interface_active)
+            .map(|choice| choice.state().choices.iter().map(|item| {
+                serde_json::json!({"id":format!("{:?}", item.identity), "label":String::from_utf8_lossy(&item.label)})
+            }).collect::<Vec<_>>()).unwrap_or_default();
+        recording.scene(serde_json::json!({
+            "profile":self.runtime.current_profile().map(|profile| profile.id().value()),
+            "resource":self.presentation_player.active_resource_name().map(|name| String::from_utf8_lossy(name.as_bytes())),
+            "subtitle":if text.subtitle_display_active { String::from_utf8_lossy(&text.subtitle_text).into_owned() } else { String::new() },
+            "inline_dialogue":if inline_visible { inline_words.join(" ") } else { String::new() },
+            "choices":choices,
+            "music":self.loaded_navigation_music.as_ref().map(|name| String::from_utf8_lossy(name.as_bytes())),
+        }))
     }
 
     /// Prepare optional physical-track metadata when a modern source is available.
@@ -3929,6 +4008,7 @@ impl<'window> ModernGameServices<'window> {
 
     /// Present current indexed artwork without retaining the interactive MANU3 layer.
     pub fn present_artwork(&mut self) -> Result<()> {
+        self.record_scene_state()?;
         self.ensure_main_viewport()?;
         self.presentation.present_artwork(&[])
     }
@@ -4579,6 +4659,7 @@ impl<'window> ModernGameServices<'window> {
         indexed_ui_active: bool,
         manu3_visible: bool,
     ) -> Result<()> {
+        self.record_scene_state()?;
         self.ensure_main_viewport()?;
         self.compose_presentation_ui();
         let presentation_frame_owned = self.presentation_player.owns_display_frame();

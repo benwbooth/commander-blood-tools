@@ -97,6 +97,8 @@ struct UiCompositeRenderer {
 
 /// GPU state for aspect-correct presentation of decoded 2D and 3D content.
 pub struct Renderer<'window> {
+    recording: Option<std::sync::Arc<crate::recording::Recording>>,
+    surface_copy_supported: bool,
     surface: wgpu::Surface<'window>,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -290,6 +292,8 @@ impl<'window> Renderer<'window> {
             .transpose()?;
 
         Ok(Self {
+            recording: None,
+            surface_copy_supported: capabilities.usages.contains(wgpu::TextureUsages::COPY_SRC),
             surface,
             device,
             queue,
@@ -306,6 +310,27 @@ impl<'window> Renderer<'window> {
             alien,
             bridge,
         })
+    }
+
+    pub(crate) fn record_to(
+        &mut self,
+        recording: std::sync::Arc<crate::recording::Recording>,
+    ) -> Result<()> {
+        anyhow::ensure!(
+            self.surface_copy_supported,
+            "GPU surface does not support recording readback"
+        );
+        anyhow::ensure!(
+            matches!(
+                self.config.format,
+                wgpu::TextureFormat::Rgba8UnormSrgb | wgpu::TextureFormat::Bgra8UnormSrgb
+            ),
+            "recording requires an 8-bit sRGB surface"
+        );
+        self.config.usage |= wgpu::TextureUsages::COPY_SRC;
+        self.surface.configure(&self.device, &self.config);
+        self.recording = Some(recording);
+        Ok(())
     }
 
     /// Reconfigure the presentation surface after a nonzero SDL pixel-size event.
@@ -567,7 +592,66 @@ impl<'window> Renderer<'window> {
             pass.set_vertex_buffer(u32::MIN, manu3.vertex_buffer.slice(..));
             pass.draw(u32::MIN..manu3_vertex_count, u32::MIN..SINGLE_TEXTURE_LAYER);
         }
+        let capture_time = self
+            .recording
+            .as_ref()
+            .map(|r| r.frame_due())
+            .transpose()?
+            .flatten();
+        let row_bytes = self.config.width * 4;
+        let padded_row = row_bytes.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
+            * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let readback = capture_time.map(|_| {
+            let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("anthology final-frame readback"),
+                size: u64::from(padded_row) * u64::from(self.config.height),
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                mapped_at_creation: false,
+            });
+            encoder.copy_texture_to_buffer(
+                frame.texture.as_image_copy(),
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &buffer,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(padded_row),
+                        rows_per_image: Some(self.config.height),
+                    },
+                },
+                wgpu::Extent3d {
+                    width: self.config.width,
+                    height: self.config.height,
+                    depth_or_array_layers: 1,
+                },
+            );
+            buffer
+        });
         self.queue.submit([encoder.finish()]);
+        if let (Some(time), Some(buffer), Some(recording)) =
+            (capture_time, readback, self.recording.as_ref())
+        {
+            let (sender, receiver) = std::sync::mpsc::channel();
+            buffer
+                .slice(..)
+                .map_async(wgpu::MapMode::Read, move |result| {
+                    let _ = sender.send(result);
+                });
+            self.device.poll(wgpu::PollType::wait_indefinitely())?;
+            receiver.recv()??;
+            let mapped = buffer.slice(..).get_mapped_range();
+            let mut rgba = Vec::with_capacity(row_bytes as usize * self.config.height as usize);
+            for row in mapped.chunks_exact(padded_row as usize) {
+                rgba.extend_from_slice(&row[..row_bytes as usize]);
+            }
+            drop(mapped);
+            buffer.unmap();
+            if self.config.format == wgpu::TextureFormat::Bgra8UnormSrgb {
+                for pixel in rgba.chunks_exact_mut(4) {
+                    pixel.swap(0, 2);
+                }
+            }
+            recording.video(time, self.config.width, self.config.height, rgba)?;
+        }
         frame.present();
         Ok(())
     }
