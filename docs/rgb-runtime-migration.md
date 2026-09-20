@@ -137,6 +137,20 @@ static-owner/disposition checks, and the release build. The isolated v5 PLAY
 replay preserves the visible background through both interludes; capture
 locations and pixel signatures are in `accuracy/BBB_LIVE_REGRESSIONS.md`.
 
+## Tempest navigation publication, 2026-09-19
+
+The navigation frame host now publishes the imported PBM RGB page when it
+restores the native back buffer. Importing it in `stage_ship_navigation_background`
+alone was insufficient: the later frame-present path still selected the indexed
+fallback. A real-asset service regression fails without this publication and
+checks every nontransparent Tempest background pixel against its own CMAP under
+three adversarial global palettes. A separate original-asset test verifies the
+Tempest HNM frames under different starting colors.
+
+BBB population-panel glyphs and stat bars now import all five authored styles,
+including population, aggressiveness and evolution. No live scene palette is
+consulted to draw them. The remaining owners below are still not fully migrated.
+
 ## Remaining work (not migrated)
 
 | Owner | Indexed dependency still present | Required replacement |

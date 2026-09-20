@@ -678,6 +678,7 @@ impl ShipNavigationHost<ScriptObjectId> for RuntimeShipNavigationBackend<'_, '_,
 
     fn present_navigation_frame(&mut self) {
         self.services.runtime_mut().restore_back_buffer();
+        self.services.present_presentation_background_rgb();
     }
 
     fn advance_navigation_list_transition(&mut self) -> bool {

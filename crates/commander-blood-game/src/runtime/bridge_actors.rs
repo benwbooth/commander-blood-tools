@@ -562,6 +562,11 @@ impl RuntimeBridgeActorBackend<'_, '_> {
             && let Some(record) = state.deferred_record
         {
             self.services.defer_ship_navigation_target(record);
+            if self.sequel_hyperjump_control.is_some() {
+                // C1 must update Arche before the following HUD reset. A
+                // completed phone/sequence can leave the VM paused here.
+                self.lifecycle.vm_execution_enabled = true;
+            }
             // The shared type/link/value cell now belongs to the VM's deferred
             // C1 queue. Do not retain a second native-link copy in flat state.
             state.deferred_record = None;

@@ -567,6 +567,107 @@ mod tests {
 
     #[test]
     #[ignore = "requires the original Big Bug Bang assets"]
+    fn tempest_landing_colors_do_not_depend_on_the_preceding_scene() {
+        let root =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/imported-assets");
+        let mut reference = Vec::new();
+        for (pass, previous_colors) in [[[63, 0, 0]; 256], [[0, 0, 63]; 256]]
+            .into_iter()
+            .enumerate()
+        {
+            let data = OriginalGameData::load_with_writable_root(
+                OriginalGameDataPaths::from_root(&root).unwrap(),
+                temporary_root(),
+            )
+            .unwrap();
+            let mut backend = RuntimeScriptBackend::new(
+                &data,
+                ScriptClock {
+                    hour: 12,
+                    day: 1,
+                    month: 1,
+                },
+            );
+            backend
+                .apply_description(b"Templand", true, &mut TextPresentationState::default())
+                .unwrap()
+                .unwrap();
+            let slot =
+                commander_blood_formats::descript::DescriptBackgroundSlot::decode(1).unwrap();
+            let encoded = backend
+                .backgrounds()
+                .get(slot)
+                .unwrap()
+                .encoded_image()
+                .to_vec();
+            let mut player = RuntimePresentationPlayer::new(data.presentation_catalog());
+            player.apply_descript_assets(backend.assets()).unwrap();
+            let mut runtime = OriginalGameRuntime::new(data);
+            *runtime.live_palette_mut() = previous_colors;
+            let mut scene_colors = previous_colors;
+            crate::native::bloodprg::decode_pbm_image(
+                &encoded,
+                runtime.presentation_buffers_mut().1,
+                &mut scene_colors,
+                crate::native::bloodprg::PbmDecodeOptions {
+                    palette_update: crate::native::bloodprg::PbmPaletteUpdate::SceneColors,
+                    transparency: crate::native::bloodprg::PbmTransparency::TransparentZero,
+                },
+            )
+            .unwrap();
+            player
+                .stage_background_rgb(&encoded, &vec![0; 320 * 200 * 4], true)
+                .unwrap();
+            player.stage_next_stream_source_colors(scene_colors);
+            let policy = PresentationPresentPolicy::for_presentation_line(
+                3,
+                player.catalog.unclamped_line_ids(),
+                35,
+            )
+            .0;
+            player
+                .load(
+                    &mut runtime,
+                    PresentationResourceId::new(3),
+                    PresentationSceneSource::Owned,
+                    policy,
+                    0,
+                    false,
+                    true,
+                )
+                .unwrap()
+                .unwrap();
+            for tick in 1..2000 {
+                let outcome = player
+                    .service_frame(
+                        &mut runtime,
+                        tick,
+                        tick,
+                        PresentationQueueClockGates::default(),
+                        false,
+                    )
+                    .unwrap();
+                let pixels = &player.active_stream.as_ref().unwrap().rgb_display().pixels
+                    [35 * 320 * 4..165 * 320 * 4];
+                if pass == 0 {
+                    reference.push(pixels.to_vec());
+                } else {
+                    assert!(
+                        pixels == reference[usize::from(tick) - 1],
+                        "Tempest RGB differs at tick {tick}"
+                    );
+                }
+                if outcome.stream_finished {
+                    assert!(tick > 1);
+                    break;
+                }
+                assert!(tick < 1999, "Tempest clip did not finish");
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang assets"]
     fn returning_to_daddy_preserves_background_through_player_lifecycle() {
         use crate::native::bloodprg::{
             PbmDecodeOptions, PbmPaletteUpdate, PbmTransparency, decode_pbm_image,

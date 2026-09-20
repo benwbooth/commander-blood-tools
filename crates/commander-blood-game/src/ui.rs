@@ -27,7 +27,7 @@ const CHANNEL_COLOR_INDEX: usize = 254;
 const CHANNEL_CANVAS: [usize; 2] = [320, 200];
 const INLINE_DIALOGUE_COLOR: usize = 239;
 const INLINE_DIALOGUE_CLIP_HEIGHT: i32 = 10;
-const PANEL_TEXT_COLORS: [usize; 2] = [238, 254];
+const PANEL_TEXT_COLORS: [usize; 5] = [238, 254, 98, 252, 96];
 const MAIN_FONT_SPACE_ADVANCE: i32 = 6;
 
 /// Precolored progressive-dialogue glyphs and channel masks, imported once.
@@ -40,7 +40,8 @@ pub(crate) struct DialogueUiAssets {
     inline_character_map: Box<[u8]>,
     inline_advances: Box<[u8]>,
     inline_color: [u8; 4],
-    panel_fonts: [SequenceCaptionFont; 2],
+    panel_fonts: Box<[SequenceCaptionFont]>,
+    panel_colors: [[u8; 4]; PANEL_TEXT_COLORS.len()],
 }
 
 impl DialogueUiAssets {
@@ -112,10 +113,11 @@ impl DialogueUiAssets {
             target.copy_from_slice(rows);
         }
         let inline_font = SequenceCaptionFont::import(&inline_rows, source[INLINE_DIALOGUE_COLOR])?;
-        let panel_fonts = [
-            SequenceCaptionFont::import(&inline_rows, source[PANEL_TEXT_COLORS[0]])?,
-            SequenceCaptionFont::import(&inline_rows, source[PANEL_TEXT_COLORS[1]])?,
-        ];
+        let panel_fonts = PANEL_TEXT_COLORS
+            .iter()
+            .map(|&color| SequenceCaptionFont::import(&inline_rows, source[color]))
+            .collect::<Result<Vec<_>>>()?
+            .into_boxed_slice();
         let rgb =
             source[INLINE_DIALOGUE_COLOR].map(|component| (component << 2) | (component >> 4));
         Ok(Self {
@@ -128,12 +130,22 @@ impl DialogueUiAssets {
             inline_advances: fonts.main_advances.clone(),
             inline_color: [rgb[0], rgb[1], rgb[2], OPAQUE],
             panel_fonts,
+            panel_colors: PANEL_TEXT_COLORS.map(|index| {
+                let rgb = source[index].map(|component| (component << 2) | (component >> 4));
+                [rgb[0], rgb[1], rgb[2], OPAQUE]
+            }),
         })
     }
 
     pub(crate) fn color(&self, authored: u8) -> Result<[u8; 4]> {
         if usize::from(authored) == INLINE_DIALOGUE_COLOR {
             return Ok(self.inline_color);
+        }
+        if let Some(slot) = PANEL_TEXT_COLORS
+            .iter()
+            .position(|&index| index == usize::from(authored))
+        {
+            return Ok(self.panel_colors[slot]);
         }
         SUBTITLE_COLOR_INDICES
             .iter()
@@ -559,7 +571,13 @@ mod tests {
         )
         .unwrap();
         let assets = DialogueUiAssets::import(&fonts, &colors).unwrap();
-        for color in PANEL_TEXT_COLORS {
+        // Authored title, source, population, aggressiveness and evolution styles.
+        for color in [238, 254, 98, 252, 96] {
+            let rgb = colors[color].map(|value| (value << 2) | (value >> 4));
+            assert_eq!(
+                assets.color(color as u8).unwrap(),
+                [rgb[0], rgb[1], rgb[2], 255]
+            );
             for y in [-8, 0, 25, 192, 200] {
                 let mut overlay = RgbaUiOverlay::new(320, 200);
                 let mut reference = vec![0; 320 * 200];

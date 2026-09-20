@@ -237,6 +237,13 @@ const fn random_draw_delta(before: u8, after: u8) -> u64 {
     after.wrapping_sub(before) as u64
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum StreamedAudioRole {
+    NavigationMusic,
+    BridgeAmbience,
+    Voice,
+}
+
 /// Owned flat services that concrete `GameLifecycleHost` methods delegate to.
 ///
 /// This type deliberately exposes only operations backed by translated logic
@@ -250,6 +257,7 @@ pub struct ModernGameServices<'window> {
     presentation_player: RuntimePresentationPlayer,
     audio: Option<RuntimeAudioHost>,
     loaded_navigation_music: Option<DescriptMusicName>,
+    streamed_audio_role: Option<StreamedAudioRole>,
     resident_sound_bank: Option<LoadedSoundBank>,
     resident_sound_memory: Box<[u8]>,
     audio_events: AudioEventState,
@@ -421,6 +429,7 @@ impl<'window> ModernGameServices<'window> {
             presentation_player,
             audio: None,
             loaded_navigation_music: None,
+            streamed_audio_role: None,
             resident_sound_bank: None,
             resident_sound_memory: vec![u8::MIN; RESIDENT_SOUND_ARENA_BYTE_COUNT]
                 .into_boxed_slice(),
@@ -765,6 +774,7 @@ impl<'window> ModernGameServices<'window> {
             .context("staging normalized navigation music stream")?;
         if let Some(wait_prompt) = wait_prompt {
             self.loaded_navigation_music = Some(music_name);
+            self.streamed_audio_role = Some(StreamedAudioRole::NavigationMusic);
             self.draw_audio_stream_wait_prompt(wait_prompt)?;
         }
         Ok(())
@@ -800,6 +810,7 @@ impl<'window> ModernGameServices<'window> {
         self.audio_mut()?.set_background_channel_active(enabled)?;
         if changed {
             self.loaded_navigation_music = None;
+            self.streamed_audio_role = None;
         }
         Ok(())
     }
@@ -871,6 +882,15 @@ impl<'window> ModernGameServices<'window> {
 
     /// Decode one authored Creative Voice resource into the shared native stream owner.
     pub fn load_streamed_voice_resource(&mut self, path: &[u8]) -> Result<()> {
+        self.load_streamed_audio_resource(path, StreamedAudioRole::Voice)
+    }
+
+    /// The bridge's looping TABLO2 source is ambience, not dismissible speech.
+    pub(super) fn load_bridge_ambience_resource(&mut self, path: &[u8]) -> Result<()> {
+        self.load_streamed_audio_resource(path, StreamedAudioRole::BridgeAmbience)
+    }
+
+    fn load_streamed_audio_resource(&mut self, path: &[u8], role: StreamedAudioRole) -> Result<()> {
         if !self.navigation_music_enabled()? {
             return self.check_audio();
         }
@@ -894,6 +914,7 @@ impl<'window> ModernGameServices<'window> {
         )?;
         if let Some(wait_prompt) = wait_prompt {
             self.loaded_navigation_music = None;
+            self.streamed_audio_role = Some(role);
             self.draw_audio_stream_wait_prompt(wait_prompt)?;
         }
         Ok(())
@@ -935,6 +956,7 @@ impl<'window> ModernGameServices<'window> {
             .is_some_and(RuntimeAudioHost::discard_pending_background_stream);
         if discarded {
             self.loaded_navigation_music = None;
+            self.streamed_audio_role = None;
         }
         discarded
     }
@@ -2665,7 +2687,7 @@ impl<'window> ModernGameServices<'window> {
             !had_video || blocking_video,
         );
         if let Some(audio) = self.audio.as_mut() {
-            audio.stop_speech(self.loaded_navigation_music.is_none())?;
+            audio.stop_speech(self.streamed_audio_role == Some(StreamedAudioRole::Voice))?;
         }
         self.audio_events.dialogue_armed = false;
         self.audio_events.voice_reaction_requested = false;
@@ -5522,6 +5544,9 @@ impl<'window> ModernGameServices<'window> {
                 })),
             },
             "audio": {
+                "streamed_audio_role": self.streamed_audio_role.map(|role| format!("{role:?}")),
+                "background_position": self.audio.as_ref().and_then(|audio| audio.background_position()),
+                "background_pending": self.audio.as_ref().map(|audio| audio.background_stream_pending()),
                 "loaded_navigation_music": self.loaded_navigation_music.as_ref()
                     .map(|name| String::from_utf8_lossy(name.as_bytes())),
                 "driver_pending": u8::from(self.audio.is_none()),
@@ -6682,6 +6707,32 @@ mod tests {
         assert!(!state.presentation.subtitle_display_active);
         assert_eq!(state.presentation.dialogue_hold_countdown, 0);
         services
+            .load_bridge_ambience_resource(b"mu\\tablo2.voc")
+            .unwrap();
+        services.start_loaded_streamed_voice().unwrap();
+        assert!(services.loaded_navigation_music.is_none());
+        let ambience = services
+            .audio_ref()
+            .unwrap()
+            .background_source_samples()
+            .unwrap();
+        let position = services.navigation_music_position().unwrap().unwrap();
+        state.presentation.subtitle_display_active = true;
+        assert!(
+            services
+                .skip_sequel_presentation_on_click(&mut state, true, false)
+                .unwrap()
+        );
+        assert!(services.navigation_music_position().unwrap().unwrap() >= position);
+        assert_eq!(
+            services
+                .audio_ref()
+                .unwrap()
+                .background_source_samples()
+                .unwrap(),
+            ambience
+        );
+        services
             .load_streamed_voice_resource(CREDITS_VOICE_RESOURCE_PATH.as_bytes())
             .unwrap();
         services.start_loaded_streamed_voice().unwrap();
@@ -7006,6 +7057,63 @@ mod tests {
                 .update_runtime_navigation_chart(&mut lifecycle, 0)
                 .unwrap(),
             crate::native::bloodprg::NavigationCameraOutcome::LocationPanelOpened,
+        );
+        let destination = services
+            .navigation_chart
+            .as_ref()
+            .unwrap()
+            .deferred_record_link()
+            .unwrap();
+        services.set_sequel_travel_enabled(true).unwrap();
+        lifecycle.vm_execution_enabled = false;
+        for _ in 0..30 {
+            services.publish_lifecycle_logical_pointer([160, 100], PointerButtons::NONE);
+            services.update_lifecycle_pointer_buttons(&mut lifecycle);
+            services.game_timer_tick = services.game_timer_tick.wrapping_add(8);
+            services
+                .update_runtime_bridge_actors(&mut lifecycle)
+                .unwrap();
+            services
+                .update_runtime_navigation_chart(&mut lifecycle, 0)
+                .unwrap();
+        }
+        let region = services.nav_actor_slots[5].hit_region.unwrap();
+        let pointer = [
+            region.origin()[0] + region.extent()[0] / 2,
+            region.origin()[1] + region.extent()[1] / 2,
+        ]
+        .map(|value| value as i16);
+        for frame in 0..100 {
+            services.publish_lifecycle_logical_pointer(
+                pointer,
+                if frame == 0 {
+                    PointerButtons::from_bits(1)
+                } else {
+                    PointerButtons::NONE
+                },
+            );
+            services.update_lifecycle_pointer_buttons(&mut lifecycle);
+            services.game_timer_tick = services.game_timer_tick.wrapping_add(8);
+            services
+                .update_runtime_bridge_actors(&mut lifecycle)
+                .unwrap();
+            services
+                .update_runtime_navigation_chart(&mut lifecycle, 0)
+                .unwrap();
+            if lifecycle.vm_execution_enabled {
+                break;
+            }
+        }
+        assert!(
+            lifecycle.vm_execution_enabled,
+            "a queued BBB navigation command must resume its VM consumer"
+        );
+        services
+            .execute_and_apply_lifecycle_script_frame(&mut lifecycle)
+            .unwrap();
+        assert_eq!(
+            services.current_ship_navigation_target().unwrap(),
+            destination
         );
     }
 
@@ -7860,6 +7968,102 @@ mod tests {
         assert!(services.loaded_navigation_music.is_none());
         services.ensure_navigation_music().unwrap();
         assert!(services.navigation_music_position().unwrap().is_some());
+    }
+
+    #[test]
+    #[ignore = "requires original BBB assets and serialized SDL/wgpu ownership"]
+    fn sequel_tempest_navigation_presents_imported_rgb_after_palette_changes() {
+        let _gpu = crate::gpu_test::lock();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let sdl = sdl3::init().unwrap();
+        let video = sdl.video().unwrap();
+        let audio = sdl.audio().unwrap();
+        let window = video
+            .window("Tempest RGB navigation regression", 640, 480)
+            .hidden()
+            .build()
+            .unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(
+            OriginalGameDataPaths::from_root(root).unwrap(),
+            &writable.0,
+        )
+        .unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        services.prepare_startup_resources().unwrap();
+        services.initialize_audio(&audio).unwrap();
+        services.load_manu3_overlay().unwrap();
+        services.initialize_logical_viewport().unwrap();
+        services.open_bridge_panorama().unwrap();
+        services.initialize_bridge_scene(TEST_CLOCK_SEED).unwrap();
+        services.load_default_sound_bank().unwrap();
+        services.initialize_back_buffer().unwrap();
+        services
+            .load_script_profile(ScriptProfileId::INITIAL)
+            .unwrap();
+        services
+            .load_script_profile(ScriptProfileId::new(1).unwrap())
+            .unwrap();
+        let target = services
+            .runtime
+            .current_profile()
+            .unwrap()
+            .directory()
+            .find_active_object(b"Templand")
+            .unwrap();
+        services.scripts.action_state_mut().current_ship_target = Some(target);
+        services.apply_ship_target_description(target).unwrap();
+        services.clear_ship_navigation_band().unwrap();
+        services.stage_ship_navigation_background().unwrap();
+        let slot = DescriptBackgroundSlot::decode(NAVIGATION_BACKGROUND_SLOT).unwrap();
+        let encoded = services
+            .scripts
+            .backend()
+            .backgrounds()
+            .get(slot)
+            .unwrap()
+            .encoded_image();
+        let mut indices = vec![0; 320 * 200];
+        let mut colors = [[0; 3]; 256];
+        crate::native::bloodprg::decode_pbm_image(
+            encoded,
+            &mut indices,
+            &mut colors,
+            crate::native::bloodprg::PbmDecodeOptions {
+                palette_update: crate::native::bloodprg::PbmPaletteUpdate::AllColors,
+                transparency: crate::native::bloodprg::PbmTransparency::Opaque,
+            },
+        )
+        .unwrap();
+        let expected = crate::render::indexed_frame_rgba(&indices, &colors).unwrap();
+        assert!(indices.iter().filter(|&&index| index != 0).count() > 1000);
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.presentation.sequence_active = true;
+        let mut platform =
+            super::super::RuntimePlatformHost::new(&window, sdl.mouse(), sdl.event_pump().unwrap());
+        for unrelated in [[63, 0, 0], [0, 63, 0], [0, 0, 63]] {
+            services.runtime.live_palette_mut().fill(unrelated);
+            assert_eq!(
+                services
+                    .update_runtime_ship_navigation(&mut lifecycle, &mut platform)
+                    .unwrap(),
+                crate::native::bloodprg::ShipNavigationOutcome::FramePresented
+            );
+            let actual = services
+                .presentation_player
+                .display_rgba()
+                .expect("navigation must publish its prepared RGB page");
+            for (offset, &index) in indices.iter().enumerate() {
+                if index != 0 {
+                    assert_eq!(
+                        &actual[offset * 4..offset * 4 + 4],
+                        &expected[offset * 4..offset * 4 + 4],
+                        "Tempest pixel {offset} changed with unrelated global colors"
+                    );
+                }
+            }
+        }
     }
 
     #[test]

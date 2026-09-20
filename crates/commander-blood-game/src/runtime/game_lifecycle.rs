@@ -22,7 +22,7 @@ const INITIAL_SCENE_LINK_TARGET: u16 = 16;
 const SUBTITLE_SCENE_LINK_TARGET: u16 = 24_164;
 const DEFERRED_MENU_SCENE_LINK_TARGET: u16 = 26_544;
 const PRESENTATION_MENU_BUFFER_LINK_TARGET: u16 = u16::MIN;
-const COMPLETION_VOICE_RESOURCE: &[u8] = b"mu\\tablo2.voc";
+const BRIDGE_AMBIENCE_RESOURCE: &[u8] = b"mu\\tablo2.voc";
 
 pub(super) const fn native_scene_link_target(link: GameSceneLink) -> u16 {
     match link {
@@ -421,7 +421,7 @@ impl GameLifecycleHost for RuntimeGameLifecycleHost<'_, '_> {
 
     fn load_completion_audio(&mut self) -> Result<()> {
         self.services
-            .load_streamed_voice_resource(COMPLETION_VOICE_RESOURCE)
+            .load_bridge_ambience_resource(BRIDGE_AMBIENCE_RESOURCE)
     }
 
     fn start_completion_audio(&mut self) -> Result<()> {

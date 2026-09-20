@@ -217,3 +217,61 @@ closed with no video resource through frame 300. The replay reaches the robot
 video (`ppit09.hnm`, followed by `ppit06.hnm`) before dismissal and exits normally.
 Traces and screenshots are in `output/fidelity/bbb-intro-dismiss-before-20260919`
 and `output/fidelity/bbb-intro-dismiss-fixed-20260919`.
+
+## Bridge ambience and Tempest navigation RGB handoff
+
+The bridge loop `mu\\tablo2.voc` shares the native VOC stream with music and
+standalone voice. It has no DESCRIPT music identity. The modern click shortcut
+incorrectly treated absence of that identity as proof that the stream was speech,
+so dismissing dialogue could stop the bridge background. Stream purpose is now
+explicit: navigation music, bridge ambience, or voice. Only voice is stopped by
+dialogue dismissal. The real-asset click regression covers TABLO2 continuity as
+well as music preservation and standalone-voice cancellation. Trace audio now
+includes stream purpose, actual playback position, and pending-start state.
+
+The reported normal phone-ending music loss was not reproduced in the ordinary
+Daddy replay: TABLO2 playback continued after the conversation. The click bug is
+confirmed separately, not proof of every possible phone-ending failure.
+
+Tempest's standalone HNM conversion is independent of preceding colors, but the
+navigation frame owner restored only its indexed back buffer. Its already
+imported RGB PBM page was never published. Navigation now presents that RGB page
+at the same boundary as the native back-buffer restore. The authentic-asset
+`sequel_tempest_navigation_presents_imported_rgb_after_palette_changes` test
+failed before this handoff, then passed with every nontransparent PBM pixel
+matching the imported colors across unrelated red, green, and blue game palettes.
+The separate `tempest_landing_colors_do_not_depend_on_the_preceding_scene` test
+compares every video frame in the landing band under two starting color states.
+
+The full replay also exposed missing RGB population-panel styles. BBB uses 98,
+252, and 96 in addition to the original title/source styles 238 and 254. Both
+the glyph importer and stat-bar color lookup now support the complete set.
+Previously the populated Tempest panel raised `unknown location-panel text style`
+and then, after the glyph-only repair, `unknown dialogue UI color`. The font
+regression checks the independently enumerated authored styles, glyph coverage,
+widths, and the same RGB colors used by the bars.
+
+The next full replay reached the travel button but failed with
+`MissingInitialTarget`. At frame 9101 a C1 destination command was queued while
+the VM remained paused; at the subsequent HUD reset Arche still referred to its
+startup placeholder. The BBB hyperjump adapter now resumes the VM when it queues
+that command. The existing real-input chart regression was extended through
+destination selection and travel with an explicitly paused VM. It fails without
+the resumption, and passes after checking the updated navigation target. Native
+hyperjump planning and Commander Blood behavior are unchanged.
+
+The final private-display replay of
+`accuracy/scenarios/bbb_phone_then_tempest_landing.tsv` exits successfully at
+frame 10909. It plays `PL\\tempet10.hnm` at frames 9104-9250, then
+`PE\\gluxpla.hnm` and the destination contact scene. Screenshots 069-070 show
+the landing and its destination handoff. The trace retains active bridge
+ambience after the phone conversation and switches to navigation music during
+landing. Evidence is in `output/fidelity/bbb-phone-landing-20260919-v4`.
+This replay verifies that route's runtime handoffs, not original-executable
+pixel parity or every possible phone-ending audio path.
+
+Verification: 1,089 regular library tests passed (72 optional tests ignored),
+all seven sequel service tests passed explicitly in private SDL/wgpu, the
+Tempest video test passed explicitly, and all six static-audit plus four
+disposition checks passed. Debug and release builds succeeded. These are
+targeted runtime/RGB ownership fixes, not a completed whole-game RGB migration.
