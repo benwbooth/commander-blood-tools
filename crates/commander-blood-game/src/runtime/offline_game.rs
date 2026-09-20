@@ -3,11 +3,15 @@
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result, bail, ensure};
+use commander_blood_formats::code::ScriptCodeOffset;
 use commander_blood_formats::descript::DescriptRecordKind;
 use commander_blood_formats::descript_database::DescriptDatabase;
-use commander_blood_formats::instruction::{ScriptSequenceSlot, ScriptSequenceSlotName};
-use serde::Serialize;
+use commander_blood_formats::instruction::{
+    DecodedScriptInstruction, ScriptSequenceSlot, ScriptSequenceSlotName, ScriptTextWord,
+};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 use super::input::INITIAL_LOGICAL_POINTER;
 use super::platform::GamePitClock;
@@ -17,13 +21,308 @@ use super::{
     RuntimeGameLifecycleHost, RuntimePlatformDriver,
 };
 use crate::native::bloodprg::{
-    GameLifecycleState, GameSession, InputAction, PointerButtons, PointerSample,
-    SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT, ScriptClock, ScriptSequenceSlots,
-    initialize_game_runtime, run_game_runtime_frame, shutdown_game,
+    GameLifecycleState, GameSession, InputAction, LoadedScriptProfile, PointerButtons,
+    PointerSample, PresentationWordChoicePhase, SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT, ScriptClock,
+    ScriptSequenceSlots, initialize_game_runtime, run_game_runtime_frame, shutdown_game,
 };
 
 pub(super) trait OfflineGameSink: OfflinePresentationSink {
     fn write_native_state(&mut self, time_ns: u64, state: &Value) -> Result<()>;
+}
+
+/// Exact source bindings and semantic choices for one native dialogue chapter.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct OfflineDialogueChapter {
+    pub schema: u8,
+    pub game: crate::game::GameVariant,
+    pub title: String,
+    pub initial_profile: u8,
+    pub cod_sha256: String,
+    pub dic_sha256: String,
+    pub target: String,
+    pub choices: Vec<OfflineDialogueChoice>,
+    pub required_cod_sites: Vec<usize>,
+    pub required_frame_boundary_cod_sites: Vec<usize>,
+    pub end: OfflineDialogueEnd,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct OfflineDialogueChoice {
+    pub text_site: usize,
+    pub word_offset: u16,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub(super) enum OfflineDialogueEnd {
+    PresentationFinished,
+    ProfileLoaded { profile: u8 },
+}
+
+pub(super) fn validate_dialogue_chapter(
+    chapter: &OfflineDialogueChapter,
+    profile: &LoadedScriptProfile,
+) -> Result<()> {
+    ensure!(chapter.schema == 1, "unsupported dialogue chapter schema");
+    ensure!(
+        chapter.initial_profile == profile.id().value(),
+        "wrong initial dialogue profile"
+    );
+    ensure!(
+        format!("{:x}", Sha256::digest(profile.code().encode())) == chapter.cod_sha256,
+        "dialogue chapter COD hash does not match the loaded profile"
+    );
+    ensure!(
+        format!("{:x}", Sha256::digest(profile.dictionary().encode())) == chapter.dic_sha256,
+        "dialogue chapter DIC hash does not match the loaded profile"
+    );
+    ensure!(
+        !chapter.required_cod_sites.is_empty(),
+        "dialogue chapter has no required text sites"
+    );
+    ensure!(
+        !chapter.required_frame_boundary_cod_sites.is_empty()
+            && chapter
+                .required_frame_boundary_cod_sites
+                .iter()
+                .all(|site| chapter.required_cod_sites.contains(site)),
+        "frame-boundary dialogue sites must be a nonempty subset of the required publications"
+    );
+    for &offset in &chapter.required_cod_sites {
+        ensure!(
+            matches!(
+                profile.instruction_at(ScriptCodeOffset::new(offset)),
+                Some(DecodedScriptInstruction::Text(_))
+            ),
+            "required COD site {offset:#x} is not a text instruction"
+        );
+    }
+    for choice in &chapter.choices {
+        let Some(DecodedScriptInstruction::Text(text)) =
+            profile.instruction_at(ScriptCodeOffset::new(choice.text_site))
+        else {
+            bail!(
+                "choice site {:#x} is not a text instruction",
+                choice.text_site
+            );
+        };
+        let word = profile
+            .dictionary()
+            .resolve_source_offset(choice.word_offset)
+            .context("choice word offset is not a dictionary boundary")?;
+        ensure!(
+            text.words
+                .split(|word| *word == ScriptTextWord::SectionSeparator)
+                .skip(1)
+                .flatten()
+                .any(|value| *value == ScriptTextWord::Dictionary(word)),
+            "requested word is not an authored choice at {:#x}",
+            choice.text_site
+        );
+    }
+    Ok(())
+}
+
+pub(super) fn capture_dialogue_chapter(
+    services: ModernGameServices<'_>,
+    chapter: &OfflineDialogueChapter,
+    max_frames: u64,
+    sink: &mut dyn OfflineGameSink,
+) -> Result<(Value, Vec<u8>)> {
+    ensure!(
+        services.runtime().data().game() == chapter.game,
+        "dialogue chapter names another game"
+    );
+    ensure!(
+        chapter.initial_profile == 0,
+        "dialogue chapter currently requires the native initial profile"
+    );
+    let mut host = RuntimeGameLifecycleHost::with_platform(
+        services,
+        OfflineGamePlatform::new(max_frames, sink),
+        None,
+        39,
+        script_clock,
+        None,
+    );
+    let mut lifecycle = GameLifecycleState::default();
+    let mut session = GameSession::default();
+    let capture = (|| {
+        ensure!(
+            initialize_game_runtime(&mut lifecycle, &mut host, &mut session)?.is_none(),
+            "native initialization exited before dialogue"
+        );
+        ensure!(
+            run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+            "native first frame exited before dialogue selection"
+        );
+        let profile = host
+            .services()
+            .runtime()
+            .current_profile()
+            .context("initial profile was not loaded")?;
+        validate_dialogue_chapter(chapter, profile)?;
+        let target = profile
+            .directory()
+            .find_active_object(chapter.target.as_bytes())
+            .context("dialogue target is not a named native object")?;
+        let removed_sequences = profile.sequence_slots().encode_save_block();
+        ensure!(
+            !host.services().presentation_screen_state()?.active(),
+            "startup panel opened before chapter selection"
+        );
+        host.services_mut()
+            .runtime_mut()
+            .current_profile_mut()
+            .unwrap()
+            .sequence_slots_mut()
+            .restore_save_block(&[0; SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT])?;
+        let mut closing_startup = false;
+        let mut startup_closed = false;
+        for _ in 0..max_frames {
+            ensure!(
+                run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                "native lifecycle exited while closing the startup panel"
+            );
+            if host.services().presentation_screen_state()?.active() && !closing_startup {
+                closing_startup = host
+                    .services_mut()
+                    .begin_presentation_panel_close_if_open()?;
+            }
+            if closing_startup
+                && !host.services().presentation_screen_state()?.active()
+                && !lifecycle.presentation_mode
+                && !lifecycle.navigation_rebuild_pending
+            {
+                startup_closed = true;
+                break;
+            }
+        }
+        ensure!(
+            startup_closed,
+            "native startup panel did not close before dialogue selection"
+        );
+        if host.services().pending_ship_presentation_owner() == Some(target) {
+            host.services_mut().clear_pending_ship_presentation_owner();
+        }
+        host.services_mut().load_radio_sound_bank()?;
+        host.services_mut().defer_ship_actor_presentation(target);
+        host.services_mut()
+            .script_backend_mut()
+            .observe_text_publications();
+        host.platform_mut().begin_capture();
+        let mut saw_target = false;
+        let mut observed_sites = std::collections::BTreeSet::new();
+        let mut frame_sites = std::collections::BTreeSet::new();
+        let mut publications = Vec::new();
+        let mut choices = Vec::new();
+        for main_frame in 1..=max_frames {
+            ensure!(
+                run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                "native lifecycle exited before dialogue completion"
+            );
+            for event in host
+                .services_mut()
+                .script_backend_mut()
+                .take_text_publications()
+            {
+                if event.profile == chapter.initial_profile {
+                    observed_sites.insert(event.offset);
+                }
+                publications.push(serde_json::json!({
+                    "publication": event, "frame_end_ns": host.platform().elapsed_ns - host.platform().capture_origin_ns,
+                }));
+            }
+            let profile = host
+                .services()
+                .runtime()
+                .current_profile()
+                .context("dialogue profile disappeared")?;
+            let current_profile = profile.id().value();
+            if current_profile == chapter.initial_profile {
+                saw_target |= profile.active_actor_presentation_related() == Some(target)
+                    && lifecycle.presentation.active;
+                if let Some(site) = host.services().published_text_site() {
+                    frame_sites.insert(site.index());
+                }
+                if host.services().presentation_word_choice_phase()?
+                    == PresentationWordChoicePhase::Selecting
+                {
+                    let expected = chapter
+                        .choices
+                        .get(choices.len())
+                        .context("unplanned native dialogue choice")?;
+                    ensure!(
+                        host.services().published_text_site()
+                            == Some(ScriptCodeOffset::new(expected.text_site)),
+                        "native dialogue reached a different choice site"
+                    );
+                    let word = profile
+                        .dictionary()
+                        .resolve_source_offset(expected.word_offset)
+                        .context("validated choice word disappeared")?;
+                    host.services_mut().request_dialogue_word_choice(word)?;
+                    choices.push(serde_json::json!({
+                        "text_site": expected.text_site, "word_offset": expected.word_offset,
+                        "requested_at_ns": host.platform().elapsed_ns - host.platform().capture_origin_ns,
+                    }));
+                }
+            }
+            let completed = saw_target
+                && match chapter.end {
+                    OfflineDialogueEnd::PresentationFinished => !lifecycle.presentation.active,
+                    OfflineDialogueEnd::ProfileLoaded { profile } => current_profile == profile,
+                };
+            if completed {
+                ensure!(
+                    choices.len() == chapter.choices.len(),
+                    "dialogue ended before all planned choices"
+                );
+                ensure!(
+                    chapter
+                        .required_cod_sites
+                        .iter()
+                        .all(|site| observed_sites.contains(site)),
+                    "dialogue ended without publishing every required text site: observed {observed_sites:?}"
+                );
+                ensure!(
+                    chapter
+                        .required_frame_boundary_cod_sites
+                        .iter()
+                        .all(|site| frame_sites.contains(site)),
+                    "dialogue ended without every required frame-boundary text site: observed {frame_sites:?}"
+                );
+                let driver = host.platform();
+                return Ok((
+                    serde_json::json!({
+                        "presented_frames": driver.captured_waits,
+                        "duration_ns": driver.elapsed_ns - driver.capture_origin_ns,
+                        "audio_samples": driver.sample_cursor - driver.capture_origin_sample,
+                        "main_loop_frames": main_frame, "bootstrap_duration_ns": driver.capture_origin_ns,
+                        "total_timer_ticks": driver.timer_ticks, "chapter": chapter,
+                        "selection_method": "typed C4 radio entry with original radio sound bank after native startup panel close; startup sequence slots cleared; no pointer input; not a gameplay route",
+                        "removed_sequence_slots": removed_sequences.as_slice(),
+                        "published_cod_sites": observed_sites, "frame_boundary_cod_sites": frame_sites,
+                        "publications": publications, "choices": choices,
+                        "final_profile": current_profile,
+                    }),
+                    host.services().read_offline_rgba()?,
+                ));
+            }
+        }
+        bail!("native dialogue exceeded its main-loop cap before completion")
+    })();
+    host.platform_mut().capturing = false;
+    let cleanup = shutdown_game(&mut lifecycle, &mut host, session, false);
+    match (capture, cleanup) {
+        (Ok(capture), Ok(())) => Ok(capture),
+        (Err(error), Ok(())) | (Ok(_), Err(error)) => Err(error),
+        (Err(error), Err(cleanup)) => {
+            Err(error.context(format!("cleanup also failed: {cleanup:#}")))
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -60,7 +359,10 @@ pub(super) fn capture_startup_cinematic(
     ensure!(max_frames > 0, "offline frame cap must be nonzero");
     let selected_record = record
         .map(|name| {
-            validate_sequence_record(services.runtime().data().descript_database(), name.as_bytes())
+            validate_sequence_record(
+                services.runtime().data().descript_database(),
+                name.as_bytes(),
+            )
         })
         .transpose()?;
     let mut host = RuntimeGameLifecycleHost::with_platform(
@@ -175,9 +477,7 @@ fn validate_sequence_record(
     database: &DescriptDatabase,
     name: &[u8],
 ) -> Result<ScriptSequenceSlotName> {
-    let record = database
-        .lookup(name)
-        .context("unknown DESCRIPT record")?;
+    let record = database.lookup(name).context("unknown DESCRIPT record")?;
     ensure!(
         record.kind() == DescriptRecordKind::Sequence,
         "DESCRIPT record is not a sequence"

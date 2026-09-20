@@ -365,6 +365,10 @@ impl RuntimeScriptSystem {
         &self.dispatch.text_presentation
     }
 
+    pub(super) const fn published_text_site(&self) -> Option<ScriptCodeOffset> {
+        self.dispatch.published_text_site
+    }
+
     pub(super) fn choice_display_labels(
         &self,
         words: &[commander_blood_formats::script::ScriptWordId],
@@ -810,6 +814,14 @@ pub fn initialize_and_restore_original_save_game(
     Ok(())
 }
 
+/// Accepted A6 publication, before any subsequent profile handoff can replace it.
+#[derive(Clone, Debug, serde::Serialize)]
+pub(super) struct RuntimeTextPublication {
+    pub profile: u8,
+    pub offset: usize,
+    pub subtitle: bool,
+}
+
 /// Concrete flat backend state shared by the script service and game lifecycle.
 pub struct RuntimeScriptBackend {
     english_subtitles: Option<super::localization::SequelEnglishSubtitles>,
@@ -832,6 +844,8 @@ pub struct RuntimeScriptBackend {
     active_description_object: Option<ScriptObjectId>,
     last_descript_application: Option<DescriptRecordApplication>,
     commands: Vec<RuntimeScriptCommand>,
+    bound_profile: Option<ScriptProfileId>,
+    text_publications: Option<Vec<RuntimeTextPublication>>,
 }
 
 #[derive(Default)]
@@ -887,13 +901,31 @@ impl RuntimeScriptBackend {
             active_description_object: None,
             last_descript_application: None,
             commands: Vec::new(),
+            bound_profile: None,
+            text_publications: None,
         }
     }
 
     /// Bind stable profile object identities to their exact DEB names.
     pub fn bind_profile(&mut self, profile: &LoadedScriptProfile) {
+        self.bound_profile = Some(profile.id());
         self.english_subtitles = None;
         self.bind_directory(profile.directory());
+    }
+
+    pub(super) fn observe_text_publications(&mut self) {
+        self.text_publications = Some(Vec::new());
+    }
+
+    pub(super) fn text_publications(&self) -> Option<&[RuntimeTextPublication]> {
+        self.text_publications.as_deref()
+    }
+
+    pub(super) fn take_text_publications(&mut self) -> Vec<RuntimeTextPublication> {
+        self.text_publications
+            .as_mut()
+            .map(std::mem::take)
+            .unwrap_or_default()
     }
 
     fn bind_directory(&mut self, directory: &ScriptDirectory) {
@@ -1088,6 +1120,16 @@ impl RuntimeScriptBackend {
 
 impl ScriptExecutionBackend for RuntimeScriptBackend {
     type Error = anyhow::Error;
+
+    fn text_published(&mut self, instruction: ScriptCodeOffset, subtitle: bool) {
+        if let (Some(events), Some(profile)) = (&mut self.text_publications, self.bound_profile) {
+            events.push(RuntimeTextPublication {
+                profile: profile.value(),
+                offset: instruction.index(),
+                subtitle,
+            });
+        }
+    }
 
     fn subtitle_display_override(
         &mut self,
@@ -1420,6 +1462,75 @@ mod tests {
     impl Drop for TemporaryRoot {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    #[ignore = "requires the user's imported game resources"]
+    fn dialogue_plan_bindings_and_publications_survive_profile_changes() {
+        use super::super::offline_game::{OfflineDialogueChapter, validate_dialogue_chapter};
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        for (paths, plans) in [
+            (
+                original_data_paths().expect("CB assets required"),
+                ["cb-izwalito-game", "cb-izwalito-explanations"],
+            ),
+            (
+                OriginalGameDataPaths::from_root(root.join("output/big-bug-bang/imported-assets"))
+                    .unwrap(),
+                ["bbb-honk-play", "bbb-honk-instructions"],
+            ),
+        ] {
+            let writable = TemporaryRoot::create();
+            let data = OriginalGameData::load_with_writable_root(paths, &writable.0).unwrap();
+            let mut runtime = OriginalGameRuntime::new(data);
+            let mut scripts = RuntimeScriptSystem::new(runtime.data(), TEST_CLOCK);
+            scripts
+                .load_profile(&mut runtime, ScriptProfileId::INITIAL)
+                .unwrap();
+            let profile = runtime.current_profile().unwrap();
+            for name in plans {
+                let plan: OfflineDialogueChapter = serde_json::from_slice(
+                    &std::fs::read(root.join(format!("accuracy/anthology-dialogue/{name}.json")))
+                        .unwrap(),
+                )
+                .unwrap();
+                validate_dialogue_chapter(&plan, profile).unwrap();
+                let mut invalid = plan.clone();
+                invalid.cod_sha256 = "00".repeat(32);
+                assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                invalid = plan.clone();
+                invalid.dic_sha256 = "00".repeat(32);
+                assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                invalid = plan.clone();
+                invalid.required_cod_sites.push(usize::MAX);
+                assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                invalid = plan.clone();
+                invalid.choices[0].word_offset = u16::MAX;
+                assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+                invalid = plan.clone();
+                invalid.choices[0].text_site = plan.required_cod_sites[0];
+                assert!(validate_dialogue_chapter(&invalid, profile).is_err());
+            }
+            assert!(scripts.backend().text_publications().is_none());
+            scripts.backend_mut().observe_text_publications();
+            scripts
+                .backend_mut()
+                .text_published(ScriptCodeOffset::new(123), true);
+            let id = ScriptProfileId::new_for_dialect(1, profile.code().dialect()).unwrap();
+            scripts.load_profile(&mut runtime, id).unwrap();
+            scripts
+                .backend_mut()
+                .text_published(ScriptCodeOffset::new(456), false);
+            let events = scripts.backend_mut().take_text_publications();
+            assert_eq!(
+                events
+                    .iter()
+                    .map(|event| (event.profile, event.offset, event.subtitle))
+                    .collect::<Vec<_>>(),
+                [(0, 123, true), (1, 456, false)]
+            );
+            assert!(scripts.backend_mut().take_text_publications().is_empty());
         }
     }
 

@@ -358,6 +358,41 @@ to show them. BBB has no missing authored sequence resources. These are sequence
 anthologies, not the requested complete-game videos; the other content categories
 and alternate dialogue branches remain to be rendered and verified.
 
+### Native Dialogue Branches
+
+`dialogue:PLAN.json` runs a source-bound COD branch through the same device-free
+main lifecycle. It selects DIC words semantically, without pointer input. Plans
+are under `accuracy/anthology-dialogue/`; that directory's README documents the
+native skipped/preempted lines and the limited initial-profile radio entry.
+
+```sh
+nix develop -c uv run tools/native_dialogue_anthology.py render \
+  --assets "$HOME/.local/share/commander-blood/assets-v1" \
+  --plan accuracy/anthology-dialogue/cb-izwalito-game.json \
+  --plan accuracy/anthology-dialogue/cb-izwalito-explanations.json \
+  --out output/anthology/dialogue/cb
+nix develop -c uv run tools/native_dialogue_anthology.py render \
+  --assets output/big-bug-bang/imported-assets \
+  --plan accuracy/anthology-dialogue/bbb-honk-play.json \
+  --plan accuracy/anthology-dialogue/bbb-honk-instructions.json \
+  --out output/anthology/dialogue/bbb
+nix develop -c uv run tools/native_dialogue_anthology.py assemble \
+  --batch output/anthology/dialogue/cb \
+  --out output/anthology/cb-intro-dialogue-native.mkv
+```
+
+The batch verifies source/exporter provenance on resume, native publications and
+choices, absence of pointer buttons, glyph-buffer audits, and complete decoded
+RGBA/PCM/PTS equality. It records lines without full native UI reveal rather than
+extending them or substituting subtitle cards. The assembly uses the sequence
+assembler's lossless video copy and exact PCM concatenation.
+
+The verified local `dialogue-native-v4` batch contains two CB chapters totaling
+44.988 seconds and two BBB chapters totaling 75.026 seconds. Its chaptered movies
+are `output/anthology/cb-intro-dialogue-native.mkv` and
+`output/anthology/bbb-intro-dialogue-native.mkv`. They are introductory dialogue
+branches only, not the completed full-game anthologies.
+
 The actual batch binaries are archived in `native-sequences-v2/bin`. To re-verify
 or resume these batches after rebuilding, pass their `offline-presentation` and
 `video-catalog` paths through `--exporter` and `--catalog-binary`. Each chapter and

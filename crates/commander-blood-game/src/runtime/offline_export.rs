@@ -11,7 +11,9 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 
 use super::game_lifecycle::native_scene_link_target;
-use super::offline_game::{OfflineGameSink, capture_startup_cinematic};
+use super::offline_game::{
+    OfflineDialogueChapter, OfflineGameSink, capture_dialogue_chapter, capture_startup_cinematic,
+};
 use super::offline_video::OfflineVideoWriter;
 use super::{
     ModernGameServices, OfflinePresentationInterval, OfflinePresentationSink, OriginalGameData,
@@ -28,6 +30,7 @@ enum ExportTarget {
     Presentation(PresentationResourceId),
     StartupCinematic,
     Sequence(String),
+    Dialogue(OfflineDialogueChapter),
 }
 
 /// Export one complete native opening or credits sequence to a new directory.
@@ -60,6 +63,13 @@ pub fn export_sequence(assets: &Path, record: &str, output: &Path, max_frames: u
         output,
         max_frames,
     )
+}
+
+/// Render an explicitly source-bound native dialogue chapter without pointer input.
+pub fn export_dialogue(assets: &Path, plan: &Path, output: &Path, max_frames: u64) -> Result<()> {
+    let chapter =
+        serde_json::from_slice(&fs::read(plan)?).context("reading the dialogue chapter plan")?;
+    export(assets, ExportTarget::Dialogue(chapter), output, max_frames)
 }
 
 fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -> Result<()> {
@@ -98,6 +108,11 @@ fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -
     )?;
     let mut sink = FileSink::new(&stage)?;
     let (report, endpoint, target_name, line) = match target {
+        ExportTarget::Dialogue(chapter) => {
+            let (report, endpoint) =
+                capture_dialogue_chapter(services, &chapter, max_frames, &mut sink)?;
+            (report, endpoint, "dialogue_chapter", None)
+        }
         ExportTarget::Presentation(line) => {
             services.prepare_startup_resources()?;
             services.load_manu3_overlay()?;

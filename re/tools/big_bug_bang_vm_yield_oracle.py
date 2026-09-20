@@ -22,14 +22,15 @@ SOURCE = 0x40000
 STATE = 0x50000
 DICTIONARY = 0x60000
 STACK = 0xFF00
-RANGES = [(0x5AA6, 0x5B3D), (0x6B28, 0x6E67), (0x68A5, 0x68B5), (0x6993, 0x69AC)]
+RANGES = [(0x5AA6, 0x5B3D), (0x6B28, 0x6E67), (0x68A5, 0x68B5),
+          (0x68C8, 0x694B), (0x6993, 0x69AC)]
 
 
 def word(data, offset):
     return struct.unpack_from("<H", data, offset)[0]
 
 
-def run(executable, mode, gate, locked, twice):
+def run(executable, mode, gate, locked, twice, skip=False):
     cpu = Uc(UC_ARCH_X86, UC_MODE_16)
     cpu.mem_map(0, 0x100000)
     module = executable[HEADER:]
@@ -50,6 +51,8 @@ def run(executable, mode, gate, locked, twice):
     struct.pack_into("<H", var, line + action_offset, 195 if gate == "wrong_record" else 196)
     dic = bytes(32) + b"TEXTE\0"
     control = 0x8030 if mode == "inventory" else 0x8000
+    if skip:
+        control |= 8
     if gate == "inactive":
         control &= 0x7FFF
     payload = struct.pack("<3H", 32, 0xFFFF, 0xFFFE) if mode == "inventory" else struct.pack("<H", 32)
@@ -59,6 +62,10 @@ def run(executable, mode, gate, locked, twice):
     instruction += payload + bytes(2)
     assert len(instruction) == (16 if mode == "inventory" else 10)
     cod = instruction * (2 if twice else 1) + b"\xFF"
+    if skip and twice:
+        cod = bytearray(cod)
+        cod[len(instruction) + 4] &= ~8
+        cod = bytes(cod)
     before = bytearray(0x10000)
     native_data = executable[0xF7F0:]
     before[:len(native_data)] = native_data
@@ -121,7 +128,7 @@ def run(executable, mode, gate, locked, twice):
     after = bytes(cpu.mem_read(GLOBALS, len(before)))
     for i, (a, b) in enumerate(zip(before, after)):
         assert a == b or any(offset <= i < offset + size for offset, size in global_ranges) or STACK - 64 <= i < STACK
-    return dict(name=f"{mode}_{gate}_lock{locked}_twice{int(twice)}", mode=mode, gate=gate,
+    return dict(name=f"{mode}_{gate}_lock{locked}_twice{int(twice)}" + ("_skip1" if skip else ""), mode=mode, gate=gate,
                 locked_before=locked, cod=cod.hex(), var=var.hex(), deb=deb.hex(), dic=dic.hex(),
                 cod_after=bytes(cpu.mem_read(SOURCE, len(cod))).hex(),
                 var_after=bytes(cpu.mem_read(STATE, len(var))).hex(),
@@ -153,6 +160,11 @@ def main():
                          if mode == "inventory" else ["none", "inactive", "shown", "wrong_record", "menu", "subtitle"])
             for locked in [0, 1] for twice in [False, True]]
     assert {signal for row in rows for signal in row["yield_signals"]} == {0, 2, 3}
+    for gate in ["none", "inactive", "shown", "menu", "subtitle"]:
+        row = run(executable, "menu", gate, 0, True, skip=True)
+        row["skipped"] = 2 - len(row["entries"])
+        assert row["entries"] == ([0, 10] if gate == "none" else [0])
+        rows.append(row)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows))
     print(f"captured {len(rows)} original A6 and outer-loop yield cases")

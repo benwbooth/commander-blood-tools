@@ -60,6 +60,12 @@ pub trait ChoiceListBackend {
     /// Read the pointer after background preparation has completed.
     fn pointer(&mut self) -> ChoiceListPointer;
 
+    /// Optional semantic selection for device-free playback of an authored branch.
+    /// Ordinary native interaction leaves this unset and uses the pointer sample.
+    fn selected_row_request(&mut self) -> Option<usize> {
+        None
+    }
+
     /// Return the live selector aliased with `nav_target_presentation_state`.
     fn current_hand_animation(&self) -> u16 {
         u16::MIN
@@ -232,18 +238,20 @@ pub fn update_choice_list_for_dialect<Backend: ChoiceListBackend>(
     backend.prepare_background(rect);
     let pointer = backend.pointer();
     let row_count = labels.len() + usize::from(config.cancel_label.is_some());
-    state.hovered_row = hovered_row(rect, pointer.position).filter(|row| *row < row_count);
+    let requested = backend
+        .selected_row_request()
+        .filter(|row| *row < row_count);
+    let primary_pressed = requested.is_some() || pointer.primary_pressed;
+    state.hovered_row =
+        requested.or_else(|| hovered_row(rect, pointer.position).filter(|row| *row < row_count));
     state.presentation = match state.hovered_row {
         None => ChoiceListPresentation::Idle,
-        Some(_) if pointer.primary_pressed => ChoiceListPresentation::Active,
+        Some(_) if primary_pressed => ChoiceListPresentation::Active,
         Some(_) => ChoiceListPresentation::Hover,
     };
     publish_hand_animation(state.presentation, backend);
 
-    let selected_row = pointer
-        .primary_pressed
-        .then_some(state.hovered_row)
-        .flatten();
+    let selected_row = primary_pressed.then_some(state.hovered_row).flatten();
     let selected_item = selected_row.filter(|row| *row < labels.len());
     let cancelled = config.cancel_label.is_some() && selected_row == Some(labels.len());
     let content_width = width.wrapping_sub(CHOICE_LIST_WIDTH_PADDING);
@@ -263,7 +271,7 @@ pub fn update_choice_list_for_dialect<Backend: ChoiceListBackend>(
                 row_x.wrapping_add(content_width.wrapping_sub(measured_width) >> 1),
                 row_y,
             ],
-            color: row_color(index, state.hovered_row, pointer.primary_pressed),
+            color: row_color(index, state.hovered_row, primary_pressed),
         });
         row_y = row_y.wrapping_add(CHOICE_LIST_ROW_PITCH);
     }
@@ -275,7 +283,7 @@ pub fn update_choice_list_for_dialect<Backend: ChoiceListBackend>(
                 row_x.wrapping_add(content_width.wrapping_sub(measured_widths[index]) >> 1),
                 row_y,
             ],
-            color: row_color(index, state.hovered_row, pointer.primary_pressed),
+            color: row_color(index, state.hovered_row, primary_pressed),
         });
     }
 
@@ -371,9 +379,13 @@ mod tests {
         current_hand_animation: u16,
         requested_hand_animation: u16,
         hand_requests: Vec<ChoiceListHandRequest>,
+        selected_row: Option<usize>,
     }
 
     impl ChoiceListBackend for OracleBackend {
+        fn selected_row_request(&mut self) -> Option<usize> {
+            self.selected_row.take()
+        }
         fn measure_label(&mut self, _label: &[u8]) -> u16 {
             let width = self.widths[self.measured];
             self.measured += 1;
@@ -401,6 +413,68 @@ mod tests {
             }
             self.requested_hand_animation = request.animation.value();
             self.hand_requests.push(request);
+        }
+    }
+
+    #[test]
+    fn semantic_selection_preserves_native_selected_frame_and_hand_requests() {
+        let labels = [b"FIRST".as_slice(), b"SECOND".as_slice()];
+        let config = ChoiceListConfig {
+            center_x: 225,
+            preserve_individual_widths: false,
+            cancel_label: Some(b"CANCEL"),
+            layout_only: false,
+        };
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            let layout = update_choice_list_for_dialect(
+                &labels,
+                config,
+                &mut ChoiceListState::default(),
+                &mut backend_for("semantic", 2, 0),
+                dialect,
+            );
+            for (index, row) in layout.rows.iter().enumerate() {
+                let mut pointer = backend_for("semantic", 2, 0);
+                pointer.pointer = ChoiceListPointer {
+                    position: [row.position[0] as i16 + 1, row.position[1] as i16 + 1],
+                    primary_pressed: true,
+                };
+                let mut semantic = backend_for("semantic", 2, 0);
+                semantic.selected_row = Some(index);
+                let mut pointer_state = ChoiceListState::default();
+                let mut semantic_state = ChoiceListState::default();
+                let expected = update_choice_list_for_dialect(
+                    &labels,
+                    config,
+                    &mut pointer_state,
+                    &mut pointer,
+                    dialect,
+                );
+                let actual = update_choice_list_for_dialect(
+                    &labels,
+                    config,
+                    &mut semantic_state,
+                    &mut semantic,
+                    dialect,
+                );
+                assert_eq!(actual, expected);
+                assert_eq!(semantic_state, pointer_state);
+                assert_eq!(semantic.hand_requests, pointer.hand_requests);
+                assert_eq!(semantic.pointer, ChoiceListPointer::default());
+                assert!(semantic.selected_row.is_none());
+            }
+            let mut invalid = backend_for("semantic", 2, 0);
+            invalid.selected_row = Some(3);
+            assert_eq!(
+                update_choice_list_for_dialect(
+                    &labels,
+                    config,
+                    &mut ChoiceListState::default(),
+                    &mut invalid,
+                    dialect
+                ),
+                layout
+            );
         }
     }
 
@@ -603,6 +677,7 @@ mod tests {
             current_hand_animation,
             requested_hand_animation: SEEDED_REQUEST_SELECTOR,
             hand_requests: Vec::new(),
+            selected_row: None,
         }
     }
 

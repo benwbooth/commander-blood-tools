@@ -3826,6 +3826,21 @@ impl<'window> ModernGameServices<'window> {
         self.scripts.text_presentation_mut()
     }
 
+    pub(super) fn published_text_site(
+        &self,
+    ) -> Option<commander_blood_formats::code::ScriptCodeOffset> {
+        self.scripts.published_text_site()
+    }
+
+    pub(super) fn request_dialogue_word_choice(&mut self, word: ScriptWordId) -> Result<()> {
+        self.presentation_word_choice
+            .as_mut()
+            .context("dialogue choice owner is already being updated")?
+            .request_choice(crate::native::bloodprg::PresentationChoiceId::Dictionary(
+                word,
+            ))
+    }
+
     /// Publish a completed word choice to BloodScript and refresh lifecycle gates.
     pub fn complete_word_choice(
         &mut self,
@@ -5342,6 +5357,7 @@ impl<'window> ModernGameServices<'window> {
             "scene_gate_active": lifecycle.presentation.scene_gate_active,
             "sequence_active": lifecycle.presentation.sequence_active,
             "menu_word_count": text.menu_word_count,
+            "subtitle_reveal_cursor": text.subtitle_reveal_cursor,
             "dialogue_chatter_active": text.dialogue_chatter_active,
             "dialogue_chatter_seed_pending": text.dialogue_chatter_seed_pending,
             "subtitle_voice_trigger": text.subtitle_voice_trigger,
@@ -5776,6 +5792,10 @@ impl<'window> ModernGameServices<'window> {
             },
         });
         snapshot["rgb_ui"] = rgb_ui;
+        snapshot["published_cod_text_site"] =
+            serde_json::json!(self.scripts.published_text_site().map(|site| site.index()));
+        snapshot["cod_text_publications"] =
+            serde_json::json!(self.scripts.backend().text_publications());
         snapshot["channel_mask"] = self
             .presentation_screen
             .as_ref()

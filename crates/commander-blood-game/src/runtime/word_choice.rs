@@ -1,6 +1,6 @@
 //! Concrete flat-memory host for dialogue concept word choices.
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 use commander_blood_formats::script::{ScriptDictionary, ScriptWordId};
 
 use crate::native::bloodprg::{
@@ -27,6 +27,7 @@ pub struct RuntimePresentationWordChoice {
     state: PresentationWordChoiceState,
     transition: FramebufferTransitionState,
     last_frame: Option<crate::native::bloodprg::ChoiceListFrame>,
+    requested_choice: Option<PresentationChoiceId>,
 }
 
 impl RuntimePresentationWordChoice {
@@ -44,6 +45,27 @@ impl RuntimePresentationWordChoice {
         self.state = PresentationWordChoiceState::default();
         self.transition = FramebufferTransitionState::default();
         self.last_frame = None;
+        self.requested_choice = None;
+    }
+
+    pub(super) fn request_choice(&mut self, choice: PresentationChoiceId) -> Result<()> {
+        ensure!(
+            self.state.active && self.state.phase == PresentationWordChoicePhase::Selecting,
+            "dialogue choice panel is not accepting a selection"
+        );
+        ensure!(
+            self.requested_choice.is_none(),
+            "a semantic choice is already pending"
+        );
+        ensure!(
+            self.state
+                .choices
+                .iter()
+                .any(|item| item.identity == choice),
+            "requested concept is not in the native choice list"
+        );
+        self.requested_choice = Some(choice);
+        Ok(())
     }
 
     /// F7 only writes the shared phase byte; the normal teardown owns other flags.
@@ -72,6 +94,16 @@ impl RuntimePresentationWordChoice {
         let fonts = services.runtime().data().font_resources().clone();
         let pointer = services.input().pointer_sample().position;
         let current_hand_animation = services.manu3_hand_state().current_animation;
+        let selected_row = self
+            .requested_choice
+            .map(|requested| {
+                self.state
+                    .choices
+                    .iter()
+                    .position(|choice| choice.identity == requested)
+                    .context("requested dialogue choice disappeared")
+            })
+            .transpose()?;
         let mut backend = RuntimeWordChoiceBackend {
             list: RuntimeChoiceListBackend::new(
                 services.runtime_mut(),
@@ -83,6 +115,7 @@ impl RuntimePresentationWordChoice {
                 current_hand_animation,
             ),
             transition: &mut self.transition,
+            selected_row,
         };
         let outcome = update_presentation_word_choice(
             PresentationWordChoiceContext {
@@ -101,6 +134,9 @@ impl RuntimePresentationWordChoice {
         );
         backend.list.finish()?;
         let hand_requests = backend.list.take_hand_requests();
+        if selected_row.is_some() && backend.selected_row.is_none() {
+            self.requested_choice = None;
+        }
         drop(backend);
         services.apply_choice_list_hand_requests(hand_requests);
         if phase_before_update == PresentationWordChoicePhase::Closed
@@ -279,9 +315,13 @@ fn decode_pending_presentation_choices(
 struct RuntimeWordChoiceBackend<'runtime, 'transition> {
     list: RuntimeChoiceListBackend<'runtime>,
     transition: &'transition mut FramebufferTransitionState,
+    selected_row: Option<usize>,
 }
 
 impl ChoiceListBackend for RuntimeWordChoiceBackend<'_, '_> {
+    fn selected_row_request(&mut self) -> Option<usize> {
+        self.selected_row.take()
+    }
     fn measure_label(&mut self, label: &[u8]) -> u16 {
         self.list.measure_label(label)
     }
@@ -341,6 +381,38 @@ mod tests {
     use commander_blood_formats::script::decode_script_dictionary;
 
     use super::*;
+
+    #[test]
+    fn semantic_choice_requires_the_open_authored_list_and_cannot_overwrite_pending_input() {
+        let dictionary = decode_script_dictionary(b"FIRST\0SECOND\0").unwrap();
+        let first = dictionary.resolve_source_offset(0).unwrap();
+        let second = dictionary.resolve_source_offset(6).unwrap();
+        let mut choice = RuntimePresentationWordChoice::default();
+        choice.state.choices = vec![PresentationWordChoice::new(first, b"FIRST".as_slice())];
+        assert!(
+            choice
+                .request_choice(PresentationChoiceId::Dictionary(first))
+                .is_err()
+        );
+        choice.state.active = true;
+        choice.state.phase = PresentationWordChoicePhase::Selecting;
+        assert!(
+            choice
+                .request_choice(PresentationChoiceId::Dictionary(second))
+                .is_err()
+        );
+        assert!(choice.requested_choice.is_none());
+        choice
+            .request_choice(PresentationChoiceId::Dictionary(first))
+            .unwrap();
+        assert!(
+            choice
+                .request_choice(PresentationChoiceId::Dictionary(first))
+                .is_err()
+        );
+        choice.reset();
+        assert!(choice.requested_choice.is_none());
+    }
 
     #[test]
     fn sequel_f7_resets_only_the_chooser_phase() {

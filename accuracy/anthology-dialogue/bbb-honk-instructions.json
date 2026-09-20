@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "HONK: INSTRUCTIONS",
+  "initial_profile": 0,
+  "cod_sha256": "d5ab643cc6f77a665220b27e3476c64fba72bd6ac33056213bbc93f52782f7de",
+  "dic_sha256": "48c94615f6b70264517c40f2d5a8c7b4657cbfc0845065fd58ab82ac6961d9b5",
+  "target": "Honk",
+  "choices": [{"text_site": 1831, "word_offset": 172}],
+  "required_cod_sites": [1773, 1799, 1831, 1890, 1933, 1971, 2001, 2031, 2081, 2105, 2145, 2177, 2199, 2233, 2255, 2285, 2317, 2371],
+  "required_frame_boundary_cod_sites": [1773, 1799, 1831, 1890, 1933, 1971, 2001, 2031, 2081, 2105, 2145, 2177, 2199, 2233, 2255, 2285, 2317, 2371],
+  "end": {"kind": "presentation_finished"}
+}

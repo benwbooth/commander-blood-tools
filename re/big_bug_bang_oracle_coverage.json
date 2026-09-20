@@ -2425,19 +2425,20 @@
     },
     {
       "oracle": "re/tools/big_bug_bang_vm_yield_oracle.py",
-      "oracle_sha256": "408c5ccbcbfc3bbffb5c86d2d822f1aae1007454a14dd54aabeffb6d660806b5",
-      "executed_instruction_count": 268,
+      "oracle_sha256": "d1858aab35aceb447c6645e39499bcab6877115e56ae210242f67f3468cc964c",
+      "executed_instruction_count": 308,
       "entered_entrypoints": [
         "0x68a5",
+        "0x68c8",
         "0x6993",
         "0x6b28",
         "0x6c45",
         "0x6c89",
         "0x6e54"
       ],
-      "summary": "captured 76 original A6 and outer-loop yield cases",
+      "summary": "captured 81 original A6 and outer-loop yield cases",
       "fixture": "re/tools/oracle_vectors/big_bug_bang_vm_yield.jsonl",
-      "fixture_sha256": "e12baba2cda24e06de0936e65b6771d518014c29ea27747c9d78ff3c48d12fe2",
+      "fixture_sha256": "182bd663bde08c382f34390c1531919196950048db2cdc037b293f5fef93df35",
       "fixture_relation": "exact"
     },
     {
@@ -4196,7 +4197,8 @@
       "entered": true,
       "oracles": [
         "re/tools/big_bug_bang_honk_departure_oracle.py",
-        "re/tools/big_bug_bang_script_block_oracle.py"
+        "re/tools/big_bug_bang_script_block_oracle.py",
+        "re/tools/big_bug_bang_vm_yield_oracle.py"
       ],
       "comparison": "structural_candidate",
       "commander_entry": "0x62b6"

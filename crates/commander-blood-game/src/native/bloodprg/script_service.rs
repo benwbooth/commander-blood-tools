@@ -30,6 +30,9 @@ pub trait ScriptExecutionBackend {
     /// Backend failure propagated without erasing its concrete type.
     type Error;
 
+    /// Optional read-only observer for accepted native COD text instructions.
+    fn text_published(&mut self, _instruction: ScriptCodeOffset, _subtitle: bool) {}
+
     /// Resolve optional localized subtitle bytes without replacing semantic words.
     fn subtitle_display_override(
         &mut self,
@@ -261,6 +264,10 @@ impl<Backend: Default> Default for ScriptExecutionService<Backend> {
 
 impl<Backend: ScriptExecutionBackend> ScriptDispatchHost for ScriptExecutionService<Backend> {
     type Error = ScriptExecutionServiceError<Backend::Error>;
+
+    fn text_published(&mut self, instruction: ScriptCodeOffset, subtitle: bool) {
+        self.backend.text_published(instruction, subtitle);
+    }
 
     fn subtitle_display_override(
         &mut self,

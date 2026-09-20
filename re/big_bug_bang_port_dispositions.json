@@ -2,10 +2,10 @@
   "format": "big_bug_bang_port_dispositions_v1",
   "scope": "One disposition for every known BBB native entrypoint. Direct execution requires oracle output checked against a fixture consumed by Rust. Reviewed static equivalence is separately identified; fuzzy structural similarity alone remains pending.",
   "inputs": {
-    "re/big_bug_bang_oracle_coverage.json": "b5135e26f26416adcbc639c7b9c4969b7f37c9f3cb7e19577826a866810d4666",
+    "re/big_bug_bang_oracle_coverage.json": "f35fe61c2043ba946100e5a5b07aa464acca78fb80b21c697184117fc37f4357",
     "re/big_bug_bang_expanded_function_comparison.json": "ae0be3064b5a4b06e02ea242e9c7de0fffa22043aa6f7c9b9db6cae7dc205b8e",
     "re/big_bug_bang_field_display_audit.json": "d54671db0801c96dbb9728fae76a803f1bbd67d88d80b04062ee284c67089502",
-    "re/big_bug_bang_static_port_audit.json": "f5b44ef4a0e6698098ae36400320ff13081cea3b591a05ded7b35fdaddc035a7",
+    "re/big_bug_bang_static_port_audit.json": "708a9003f2263b60d803122d5cef88e49e18af75b58152d2bea6efe7d99463e1",
     "re/big_bug_bang_unreferenced_library_audit.json": "2509d2ba5893b4b96c1f032a0cacb68e0f9b47c5bb8022e5d64cab740c02b290",
     "re/rust-port/ported.tsv": "6f91a6ec29ef6fb256d9a58ca41f097914f8341ad54f6103e2e8efe222195a03",
     "re/rust-port/eliminated.tsv": "aa49ae8d83ad3c047f48df0f51c1909c6116f332eb02e95c67462a94b3c9f478",

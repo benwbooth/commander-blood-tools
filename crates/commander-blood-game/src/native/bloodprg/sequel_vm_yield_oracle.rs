@@ -27,6 +27,8 @@ struct Vector {
     c2_gate: u8,
     yield_signals: Vec<u8>,
     entries: Vec<usize>,
+    #[serde(default)]
+    skipped: usize,
     end_marker: bool,
     cursor: usize,
     resume: u8,
@@ -280,7 +282,7 @@ fn sequel_a6_outer_loop_matches_original_vm_pause_and_handoff_lock() {
             .lines()
             .map(|line| serde_json::from_str(line).unwrap())
             .collect();
-    assert_eq!(vectors.len(), 76);
+    assert_eq!(vectors.len(), 81);
     for vector in vectors {
         let code_bytes = hex(&vector.cod);
         let directory = decode_script_directory(&hex(&vector.deb)).unwrap();
@@ -361,7 +363,11 @@ fn sequel_a6_outer_loop_matches_original_vm_pause_and_handoff_lock() {
             "{}",
             vector.name
         );
-        assert_eq!(outcome.skipped_instructions, 0);
+        assert_eq!(
+            outcome.skipped_instructions, vector.skipped,
+            "{}",
+            vector.name
+        );
         assert_eq!(
             outcome.presentation_yields,
             vector

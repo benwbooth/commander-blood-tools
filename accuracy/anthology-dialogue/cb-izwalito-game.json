@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "game": "commander_blood",
+  "title": "Izwalito: game",
+  "initial_profile": 0,
+  "cod_sha256": "8307d7dd6b6bef63d80083f948a0fd84e588a2fba8cc578cfc3d64b7a74e7431",
+  "dic_sha256": "fc6ebd904c8952a843792a87bbb8e2a7ec5310d2d5b8be06cef060d7c79dbf12",
+  "target": "Izwalito",
+  "choices": [{"text_site": 1169, "word_offset": 777}],
+  "required_cod_sites": [1134, 1169, 1206],
+  "required_frame_boundary_cod_sites": [1134, 1169, 1206],
+  "end": {"kind": "profile_loaded", "profile": 1}
+}

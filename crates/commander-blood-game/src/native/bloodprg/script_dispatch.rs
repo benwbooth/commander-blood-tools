@@ -208,6 +208,9 @@ pub trait ScriptDispatchHost {
     /// Host callback failure.
     type Error;
 
+    /// Optional observation after native A6 publication, including same-frame profile changes.
+    fn text_published(&mut self, _instruction: ScriptCodeOffset, _subtitle: bool) {}
+
     /// Optional display-only replacement after a COD subtitle has been accepted.
     /// Native/reference hosts retain the authored text by returning `None`.
     fn subtitle_display_override(
@@ -489,6 +492,16 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                         .map_err(ScriptDispatchError::Host)?
                 {
                     self.dispatch.text_presentation.subtitle_text = display;
+                }
+                if matches!(
+                    execution.outcome,
+                    super::TextHandlerOutcome::SubtitlePublished
+                        | super::TextHandlerOutcome::MenuPublished
+                ) {
+                    self.host.text_published(
+                        token.source_offset(),
+                        execution.outcome == super::TextHandlerOutcome::SubtitlePublished,
+                    );
                 }
                 if self.code.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang
                     && execution.flow != ScriptFrameFlow::Continue
