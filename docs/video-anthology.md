@@ -11,16 +11,27 @@ scan; no game process or simulated clicks are needed for that scan.
 ```sh
 nix develop -c cargo build --release -p commander-blood-script-compiler \
   --example dialogue_catalog
-uv run tools/dialogue_catalog.py --out output/anthology/static-dialogue
+uv run tools/dialogue_catalog.py --out output/anthology/static-dialogue-en
 ```
 
 This compiles the readable BloodScript files with the existing compiler, then
 uses the typed COD/BAS decoders and control-flow analyzers. It does not execute
 the VM, launch either game, use a display, or change saves. Default inputs are
 all five CB profiles in `re/vm/profiles` and all 17 BBB profiles in
-`re/vm/big-bug-bang-profiles`. The default CB sources are English and BBB sources
-are French; this step does not translate or substitute the runtime localization.
+`re/vm/big-bug-bang-profiles`. BBB uses the existing English display catalogs by
+default, just as the runtime does. The recovered French script remains the
+authoritative source for IDs and conditions; it is not rewritten or retranslated.
 `--cb-source`, `--bbb-source`, and `--analyzer` allow explicit alternate inputs.
+`--bbb-english` selects the catalog directory (default
+`localization/big-bug-bang/en`). `--bbb-language source` explicitly disables the
+English overlay for source-language analysis.
+
+The analyzer hashes the actual compiled COD and DIC images. The exporter requires
+both hashes, the profile tag, and the exact set of text-site IDs to match the
+English catalog. It also checks section and choice counts, ordered live-number
+operands, and inventory generators. Mismatches fail the export, rather than
+silently assigning English text to different code. All 6,921 BBB text sites have
+English display entries; this is catalog coverage, not a new editorial review.
 
 The output contains an `index.md`, a hashed `catalog.json`, and per-profile:
 
@@ -28,8 +39,15 @@ The output contains an `index.md`, a hashed `catalog.json`, and per-profile:
 - `graph.json`: every COD instruction, block, conditional edge, text site,
   deferred profile request, BAS selector list, and local menu-to-selector link.
 - `dialogue.md`: readable lines grouped by COD procedure or BAS object/selector.
+- `translation.json`: the exact bound English catalog for each BBB profile.
 - `cod.dot` and, for CB, `bas.dot`: Graphviz graphs. Frame-resume edges are dashed
   and remain distinct from immediate control transfers.
+
+Markdown and COD text/choice labels use English display fields. `graph.json`
+retains the original `text`, `spoken_operands`, `choice_operands`, instructions,
+and edges unchanged, with an additional per-site `display` object. Original
+guard descriptions are not rewritten using translated choice labels. Translation
+hashes and the selected language are included in export provenance.
 
 Text sites retain dictionary operands, choice labels, presentation selectors,
 chatter flags, conditional skips, progress/history predicates, and resume targets.
@@ -54,7 +72,7 @@ The separate BBB `SCRIPT2.BAS` artifact is not owned by the 17 active profiles
 and is not included in this profile census.
 
 The exporter publishes the directory only after every profile succeeds, retains
-source/analyzer/exporter hashes, and refuses to overwrite existing output.
+source/analyzer/exporter/translation hashes, and refuses to overwrite existing output.
 
 ## Build and Catalog
 

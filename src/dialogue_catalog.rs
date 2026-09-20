@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use anyhow::{Result, anyhow};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 use crate::{bas_cfg, script, vm, vm_cfg, vm_profile, vm_source};
 
@@ -50,6 +51,9 @@ fn text_site(
         return Err(anyhow!("expected a text token"));
     };
     let decoded = operands(word_offsets, dictionary, sequel)?;
+    let sections = decoded
+        .split(|word| word["kind"] == "separator")
+        .collect::<Vec<_>>();
     let separator = decoded.iter().position(|word| word["kind"] == "separator");
     let spoken = &decoded[..separator.unwrap_or(decoded.len())];
     let menu = separator
@@ -68,7 +72,7 @@ fn text_site(
     Ok(json!({
         "offset": offset, "record_offset": line_index,
         "record_name": symbols.iter().find(|symbol| symbol.kind == 1 && symbol.offset == *line_index).map(|symbol| &symbol.name),
-        "text": text, "spoken_operands": spoken, "choice_operands": menu,
+        "text": text, "spoken_operands": spoken, "choice_operands": menu, "sections": sections,
         "dynamic": decoded.iter().any(|word| matches!(word["kind"].as_str(), Some("state_number" | "inventory_choices"))),
         "presentation_selector": voice_selector, "active_line": vm::text_selector_active_line_id(*voice_selector),
         "chatter": flags_b4 & 0x20 != 0, "flags_b4": flags_b4, "flags_b5": flags_b5,
@@ -164,6 +168,8 @@ pub fn analyze_images(images: &vm_profile::ProfileImages) -> Result<Value> {
     Ok(
         json!({"schema": 1, "profile": images.name, "game": if sequel { "bbb" } else { "cb" },
             "analysis": "static authored graph; conditions are not solved and runtime reachability is not asserted",
+            "resources": {"cod_sha256": format!("{:x}", Sha256::digest(&images.cod)),
+                "dic_sha256": format!("{:x}", Sha256::digest(&images.dic))},
             "symbols": symbols,
             "cod": {"control_flow": graph, "instructions": instructions, "text_sites": text_sites,
                 "profile_requests": profile_requests},

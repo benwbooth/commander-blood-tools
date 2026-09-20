@@ -20,6 +20,71 @@ from video_anthology import digest, save_json
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def apply_english(graph, translation):
+    """Bind display text only; original operands, instructions and edges stay intact."""
+    if (graph["game"] != "bbb" or translation.get("format") != "bbb-cod-display-translation-v1"
+            or translation.get("language") != "en" or translation.get("profile") != graph["profile"]):
+        raise ValueError("wrong English catalog format, language, game, or profile")
+    for key in ("cod_sha256", "dic_sha256"):
+        if not graph.get("resources", {}).get(key) or translation.get(key) != graph["resources"][key]:
+            raise ValueError(f"English catalog {key} does not match compiled source")
+    sites = graph["cod"]["text_sites"]
+    expected = {f"bbb.{graph['profile'].lower()}.cod.{site['offset']:08x}" for site in sites}
+    messages = translation.get("messages")
+    if not isinstance(messages, dict) or set(messages) != expected:
+        raise ValueError("English catalog must cover exactly the authored text sites")
+    displays = []
+    for site in sites:
+        key = f"bbb.{graph['profile'].lower()}.cod.{site['offset']:08x}"
+        sections = messages[key]
+        if (not isinstance(sections, list) or not sections
+                or any(not isinstance(section, str) or not section.isascii()
+                       or any(ord(char) < 32 or ord(char) == 127 for char in section) for section in sections)):
+            raise ValueError(f"{key}: English sections must be printable ASCII strings")
+        source_sections = site["sections"]
+        if len(sections) != len(source_sections):
+            raise ValueError(f"{key}: English section count mismatch")
+        expected_numbers = [word["offset"] for word in source_sections[0] if word["kind"] == "state_number"]
+        actual_numbers = []
+        for word in sections[0].split():
+            marker = re.fullmatch(r"<state:([0-9]+)>", word)
+            if marker:
+                actual_numbers.append(int(marker[1]))
+            elif "<" in word or ">" in word:
+                raise ValueError(f"{key}: malformed English dynamic marker")
+        if actual_numbers != expected_numbers:
+            raise ValueError(f"{key}: English prose changes ordered state-number operands")
+        if bool(sections[0].strip()) != bool(source_sections[0]):
+            raise ValueError(f"{key}: English prose changes empty/nonempty text")
+        choices = []
+        for index, (source, translated) in enumerate(zip(source_sections[1:], sections[1:])):
+            if index:
+                choices.append(dict(kind="separator"))
+            if source == [dict(kind="inventory_choices")]:
+                if len(sections) != 2 or translated != "<inventory_choices>":
+                    raise ValueError(f"{key}: English inventory section must preserve its sole generator")
+                choices.append(dict(kind="inventory_choices"))
+            else:
+                labels = translated.split()
+                if len(labels) != len(source) or any(word["kind"] != "dictionary" for word in source):
+                    raise ValueError(f"{key}: English choice count or kind mismatch")
+                choices.extend(dict(word, text=label) for word, label in zip(source, labels))
+        displays.append(dict(language="en", catalog_id=key, text=sections[0],
+                             choice_operands=choices, sections=sections))
+    for site, display in zip(sites, displays):
+        site["display"] = display
+    graph["localization"] = dict(language="en", format=translation["format"],
+                                 translated_text_sites=len(displays), binding="exact compiled COD/DIC SHA-256")
+
+
+def display_text(site):
+    return site.get("display", site)["text"]
+
+
+def display_choices(site):
+    return site.get("display", site)["choice_operands"]
+
+
 def summarize(graph):
     cod = graph["cod"]
     bas = graph["bas"]
@@ -27,6 +92,7 @@ def summarize(graph):
     return dict(profiles=1, text_sites=len(sites), cod_text_sites=len(cod["text_sites"]),
                 bas_text_sites=len(bas["text_sites"]) if bas else 0,
                 inline_choice_sites=sum(bool(site["choice_operands"]) for site in sites),
+                english_overlay_sites=sum(site.get("display", {}).get("language") == "en" for site in sites),
                 dynamic_text_sites=sum(site["dynamic"] for site in sites),
                 procedures=cod["control_flow"]["procedure_count"],
                 unresolved_guard_branches=len(cod["control_flow"]["unresolved_guard_branches"]),
@@ -53,16 +119,19 @@ def profile_markdown(graph):
              f"{summary['bas_selectors']} BAS selectors.", "",
              "## COD Dialogue", "",
              "Procedure order is source order, not a proposed playthrough. Block/edge conditions are in graph.json and cod.dot.", ""]
+    if graph.get("localization"):
+        lines += ["English display text from [the bound catalog](translation.json). "
+                  "Original text, dictionary IDs, and conditions remain in graph.json and source.blood.", ""]
     previous = None
     for site in graph["cod"]["text_sites"]:
         if site["procedure"] != previous:
             previous = site["procedure"]
             lines += [f"### {previous}", ""]
         lines += [f"#### COD {site['offset']:04X} / {site['record_name'] or 'unnamed record'}", "",
-                  fence(site["text"]), ""]
+                  fence(display_text(site)), ""]
         if site["choice_operands"]:
             lines += ["Choice operands: " + ", ".join(json.dumps(operand_label(word), ensure_ascii=False)
-                                                      for word in site["choice_operands"]), ""]
+                                                      for word in display_choices(site)), ""]
         controls = {key: site[key] for key in ("resume_offset", "skip_next_if_not_shown", "control_word")
                     if site[key] is not None}
         if site["recent_choice_count"]:
@@ -104,9 +173,9 @@ def cod_dot(graph):
         for item in instructions[block["start"]]:
             site = texts.get(item["offset"])
             if site:
-                label.append(f"{item['offset']:04X}: " + site["text"].replace("\n", " "))
+                label.append(f"{item['offset']:04X}: " + display_text(site).replace("\n", " "))
                 if site["choice_operands"]:
-                    label.append("CHOICES: " + " | ".join(map(operand_label, site["choice_operands"])))
+                    label.append("CHOICES: " + " | ".join(map(operand_label, display_choices(site))))
             else:
                 label.append(f"{item['offset']:04X}: {item['description']}")
         lines.append(f"  b{block['start']} [label={json.dumps(chr(10).join(label), ensure_ascii=False)}];")
@@ -136,9 +205,12 @@ def export(args):
     roots = {"cb": args.cb_source, "bbb": args.bbb_source}
     sources = [(game, root / f"script{index}.blood") for game, root in roots.items()
                for index in range(1, {"cb": 5, "bbb": 17}[game] + 1)]
+    catalogs = {f"script{index}": args.bbb_english / f"script{index}.json" for index in range(1, 18)} if args.bbb_language == "en" else {}
     provenance = dict(analyzer_sha256=digest(args.analyzer), exporter_sha256=digest(__file__),
                       helper_sha256=digest(ROOT / "tools/video_anthology.py"),
-                      sources={f"{game}/{path.name}": digest(path) for game, path in sources})
+                      sources={f"{game}/{path.name}": digest(path) for game, path in sources},
+                      bbb_language=args.bbb_language,
+                      english_catalogs={name: digest(path) for name, path in catalogs.items()})
     fingerprint = hashlib.sha256(json.dumps(provenance, sort_keys=True).encode()).hexdigest()
     if args.out.exists():
         raise ValueError(f"output already exists; use a new directory: {args.out}")
@@ -158,6 +230,14 @@ def export(args):
             relative = Path(game) / source.stem
             directory = output / relative
             directory.mkdir(parents=True)
+            if game == "bbb" and catalogs:
+                catalog_bytes = catalogs[source.stem].read_bytes()
+                sha = hashlib.sha256(catalog_bytes).hexdigest()
+                if sha != provenance["english_catalogs"][source.stem]:
+                    raise ValueError(f"English catalog changed during analysis: {source.stem}")
+                apply_english(graph, json.loads(catalog_bytes))
+                graph["localization"]["catalog_sha256"] = sha
+                (directory / "translation.json").write_bytes(catalog_bytes)
             save_json(directory / "graph.json", graph)
             (directory / "source.blood").write_bytes(source.read_bytes())
             if digest(directory / "source.blood") != provenance["sources"][f"{game}/{source.name}"]:
@@ -171,10 +251,12 @@ def export(args):
             profiles.append(dict(game=game, profile=graph["profile"], directory=str(relative), counts=counts))
             print(f"{game} {graph['profile']}: {counts['text_sites']} text sites", flush=True)
         summary = dict(schema=1, fingerprint=fingerprint, provenance=provenance, totals=totals, profiles=profiles,
-                       scope="Static authored graphs, not feasible-playthrough or video coverage. Source language retained.")
+                       scope="Static authored graphs, not feasible-playthrough or video coverage. Original source and identities retained.")
+        language_note = ("BBB dialogue and choice labels use the hash-bound English display catalogs. "
+                         "Conditions and source operands retain their original identities. " if catalogs else
+                         "BBB uses the original source language (--bbb-language source). ")
         lines = ["# Static Dialogue Catalog", "", summary["scope"], "",
-                 "Source language is retained. The default CB sources are English; default BBB sources are French. "
-                 "State-dependent numbers and inventory choices remain symbolic.", "",
+                 language_note + "State-dependent numbers and inventory choices remain symbolic.", "",
                  "| Game | Profiles | Text Sites | Inline Choice Sites | BAS Selectors | BAS Menu Rows |",
                  "| --- | ---: | ---: | ---: | ---: | ---: |"]
         for game, counts in totals.items():
@@ -198,6 +280,8 @@ def main():
     parser.add_argument("--analyzer", type=Path, default=ROOT / "target/release/examples/dialogue_catalog")
     parser.add_argument("--cb-source", type=Path, default=ROOT / "re/vm/profiles")
     parser.add_argument("--bbb-source", type=Path, default=ROOT / "re/vm/big-bug-bang-profiles")
+    parser.add_argument("--bbb-language", choices=("en", "source"), default="en")
+    parser.add_argument("--bbb-english", type=Path, default=ROOT / "localization/big-bug-bang/en")
     parser.add_argument("--timeout", type=int, default=120, help="per-profile static analysis timeout")
     parser.add_argument("--out", type=Path, required=True)
     export(parser.parse_args())

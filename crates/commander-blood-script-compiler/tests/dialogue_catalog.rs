@@ -27,6 +27,29 @@ fn every_authored_text_statement_has_a_site_in_all_22_profiles() {
             let cod = graph["cod"]["text_sites"].as_array().unwrap();
             let bas = graph["bas"]["text_sites"].as_array().map_or(0, Vec::len);
             assert_eq!(cod.len() + bas, expected, "{game} SCRIPT{index}");
+            if game == "bbb" {
+                let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
+                    "../../localization/big-bug-bang/en/script{index}.json"
+                ));
+                let translation: Value =
+                    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+                for key in ["cod_sha256", "dic_sha256"] {
+                    assert_eq!(
+                        graph["resources"][key], translation[key],
+                        "SCRIPT{index} {key}"
+                    );
+                }
+                for site in cod {
+                    let key = format!(
+                        "bbb.script{index}.cod.{:08x}",
+                        site["offset"].as_u64().unwrap()
+                    );
+                    assert_eq!(
+                        site["sections"].as_array().unwrap().len(),
+                        translation["messages"][key].as_array().unwrap().len()
+                    );
+                }
+            }
             totals[game_index] += expected;
             assert!(
                 graph["cod"]["control_flow"]["unresolved_guard_branches"]
