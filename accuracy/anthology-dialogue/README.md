@@ -15,7 +15,8 @@ Bob's brief return, SCRIPT3-5 concert aftermath for eight actors, and both
 Tequila cryobox outburst/ghost branches; later-profile concert reactions, Bug
 Deluxe's future/farewell conversations, and Cyberquizz's first/second visits and
 Christmas greeting; Cyberquizz/Bioquizz travel greetings; and inventory gifts
-to both quizzers. There are 46 checked-in plans, including the currently failing
+to both quizzers; and prepared gift visits for Mega Paul, Sebasto Paul, and
+Inter Paul. There are 49 checked-in plans, including the currently failing
 Bug Deluxe travel probe. These
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
 environments. The static BAS and inventory planners also produce candidate plan
@@ -201,6 +202,30 @@ are globally unreachable. Values exactly 100 and 500 satisfy neither spoken
 response guard; binding tests cover those boundaries and signed negative words.
 These are prepared branch captures, not complete gameplay routes or full
 original-executable conversation comparisons.
+
+The three SCRIPT16 gift-visit fixtures enable the selected actor's gift
+procedure and explicitly place the actor at Cyberland. They do not reconstruct
+the route from Trashlando or enable Mega Paul's separate story procedures.
+Sebasto and Inter Paul's ordinary entry lines still run through their native
+procedures. The visits are unstocked templates for the 22 flat item branches
+generated for each actor; their additional evolution/story branches remain gaps.
+
+For other menus, `native_inventory_plans.py --profile SCRIPTn --inventory-menu
+OFFSET --planet PLANET --destination LOCATION` can derive a candidate template
+directly from the hashed graph. It requires exactly the outer D0 travel and
+positive actor guard, bound to the menu owner and player. Additional entry
+conditions are rejected, not solved by guessing. The native exporter still
+validates the destination's type/planet and the actor/procedure bindings before
+any capture. Derived templates do not require unrelated introductory lines;
+each resulting plan requires its item menu and authored flat reaction. All
+actually published lines remain in the captured trace and coverage ledger.
+
+All 66 generated Paul gift chapters and the three unstocked visit templates
+passed native capture. The gift batches have 82 fully revealed COD sites and
+three terminal sites without a UI draw. Their assembled movies and the visit
+movie passed full decoded RGBA, PCM, timestamp, and chapter checks. The separate
+graph-derived Mega Paul guitar regression preserves the original template's
+pixels, PCM, endpoint, and runner behavior, and is excluded from new coverage.
 
 Bronko's SCRIPT2 energy fixture uses Moskito's `usine` destination and procedure
 23683. The seven generated topic captures publish 21 BAS sites and three COD

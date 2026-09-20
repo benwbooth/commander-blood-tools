@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "initial_profile": 15,
+  "cod_sha256": "32b4e4b42e14d0f96563beddde34700a58908dedf1fe615eee12d6446dbee55a",
+  "dic_sha256": "101503ffbd21f837711950e85fd6a8cb1d9512cb87fdee9646f71ecae71cbaae",
+  "title": "Inter Paul: prepared gift visit",
+  "target": "Inter_Paul",
+  "entry": "travel",
+  "travel_setup": {
+    "planet": "Cyberock",
+    "destination": "Cyberland",
+    "procedure_offset": 7240,
+    "stage_actor_at_destination": true
+  },
+  "choices": [],
+  "required_cod_sites": [
+    6998,
+    7018,
+    8308,
+    8354,
+    8368
+  ],
+  "required_frame_boundary_cod_sites": [
+    6998,
+    7018
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

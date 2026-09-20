@@ -14,6 +14,44 @@ from native_sequence_anthology import read_json, require
 from video_anthology import ROOT, digest, save_json
 
 
+def travel_template(graph, menu_offset, planet, destination):
+    """Prepare only the simple outer gift guard; native capture validates all bindings."""
+    profile = re.fullmatch(r"SCRIPT([1-9]|1[0-7])", graph["profile"].upper())
+    require(graph["game"] == "bbb" and profile, "not a BBB profile")
+    menu = next((site for site in graph["cod"]["text_sites"] if site["offset"] == menu_offset), None)
+    require(menu and menu["record_name"]
+            and menu["choice_operands"] == [dict(kind="inventory_choices")],
+            "not a named actor inventory menu")
+    symbols = {row["name"]: row["offset"] for row in graph["symbols"] if row["kind"] == 1}
+    require(planet in symbols and destination in symbols, "unknown prepared travel destination")
+    require(symbols.get(menu["record_name"]) == menu["record_offset"] and "blood" in symbols,
+            "inventory actor or player is not bound to the symbol table")
+    rows = [row for row in graph["cod"]["instructions"] if row["procedure"] == menu["procedure"]]
+    require(rows and "ConditionalBlock" in rows[0]["instruction"], "inventory procedure has no entry")
+    guard = []
+    for row in rows[1:]:
+        if "GuardPop" in row["instruction"]:
+            break
+        guard.append(row["instruction"])
+    else:
+        raise ValueError("inventory procedure has no closed entry guard")
+    activities = [row["FlagBranch"] for row in guard if "FlagBranch" in row]
+    actors = [row["Actor"] for row in guard if "Actor" in row]
+    require(len(guard) == 2 and len(activities) == len(actors) == 1
+            and activities[0]["opcode"] == 0xD0 and not actors[0]["inverted"]
+            # ACTION is byte 58 of the native actor record (vm.rs FIELD_OFFSETS).
+            and actors[0]["record_offset"] == menu["record_offset"] + 58
+            and actors[0]["related_record_offset"] == symbols["blood"],
+            "inventory entry needs additional preparation or selects another actor")
+    return dict(schema=1, game="big_bug_bang", title=menu["record_name"] + ": prepared gift visit",
+        initial_profile=int(profile[1]) - 1, cod_sha256=graph["resources"]["cod_sha256"],
+        dic_sha256=graph["resources"]["dic_sha256"], target=menu["record_name"], entry="travel",
+        travel_setup=dict(planet=planet, destination=destination,
+                          procedure_offset=rows[0]["offset"], stage_actor_at_destination=True),
+        choices=[], required_cod_sites=[], required_frame_boundary_cod_sites=[],
+        end=dict(kind="presentation_finished"))
+
+
 def plan_inventory(graph, template, menu_offset, labels):
     require(graph["game"] == "bbb" and template["game"] == "big_bug_bang"
             and graph["profile"].lower() == f"script{template['initial_profile'] + 1}",
@@ -86,21 +124,34 @@ def plan_inventory(graph, template, menu_offset, labels):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", type=Path, required=True)
-    parser.add_argument("--template", type=Path, required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--template", type=Path)
+    source.add_argument("--profile", help="BBB SCRIPTn; derive a simple gift-entry template from the graph")
+    parser.add_argument("--planet", help="explicit prepared planet; only with --profile")
+    parser.add_argument("--destination", help="explicit prepared location; only with --profile")
     parser.add_argument("--inventory-menu", type=int, required=True)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    template = read_json(args.template)
+    if args.template:
+        require(args.planet is None and args.destination is None,
+                "travel destination is owned by the supplied template")
+        template = read_json(args.template)
+        tag = f"script{template['initial_profile'] + 1}"
+    else:
+        require(args.planet and args.destination, "graph-derived entry requires --planet and --destination")
+        tag = args.profile.lower()
     index = read_json(args.catalog / "catalog.json")
-    tag = f"script{template['initial_profile'] + 1}"
     profiles = [row for row in index["profiles"] if row["game"] == "bbb" and row["profile"].lower() == tag]
     require(len(profiles) == 1, "no unique BBB profile in catalog")
     relative = profiles[0]["directory"] + "/graph.json"
     graph_path = args.catalog / relative
     require(digest(graph_path) == index["artifacts"][relative], "static graph changed")
+    graph = read_json(graph_path)
+    if not args.template:
+        template = travel_template(graph, args.inventory_menu, args.planet, args.destination)
     labels_path = ROOT / "localization/big-bug-bang/en/inventory.json"
     labels = {bytes(row["source"]).decode("cp437"): row["english"] for row in read_json(labels_path)["entries"]}
-    plans, report = plan_inventory(read_json(graph_path), template, args.inventory_menu, labels)
+    plans, report = plan_inventory(graph, template, args.inventory_menu, labels)
     require(plans, "no simple item reactions for this template")
     args.out.mkdir(parents=True, exist_ok=False)
     actor = re.sub(r"[^a-z0-9]+", "-", template["target"].lower()).strip("-")
@@ -109,8 +160,10 @@ def main():
         filename = f"bbb-{tag}-{actor}-give-{item:04x}.plan.json"
         save_json(args.out / filename, plan)
         paths.append(filename)
+    template_source = (dict(template_sha256=digest(args.template)) if args.template else
+        dict(template_source="simple_authored_travel_gift_guard", derived_template=template))
     save_json(args.out / "planning.json", dict(schema=1, graph_sha256=digest(graph_path),
-        template_sha256=digest(args.template), inventory_labels_sha256=digest(labels_path), plans=paths, **report))
+        **template_source, inventory_labels_sha256=digest(labels_path), plans=paths, **report))
     print(f"Planned {len(plans)} inventory chapters; {len(report['deferred'])} guarded branches deferred.")
 
 

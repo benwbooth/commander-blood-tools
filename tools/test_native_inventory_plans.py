@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from native_inventory_plans import plan_inventory
+from native_inventory_plans import plan_inventory, travel_template
 
 
 def instruction(offset, kind, **fields):
@@ -99,6 +99,74 @@ class InventoryPlanTests(unittest.TestCase):
         self.template["travel_setup"]["stage_aboard_inventory"] = [7352]
         with self.assertRaisesRegex(ValueError, "unstocked travel template"):
             self.plan()
+
+
+class InventoryTemplateTests(unittest.TestCase):
+    def setUp(self):
+        self.graph = dict(game="bbb", profile="SCRIPT16",
+            resources=dict(cod_sha256="cod", dic_sha256="dic"),
+            symbols=[dict(kind=1, name=name, offset=offset) for name, offset in
+                     [("Mega_Paul", 1258), ("blood", 40), ("Cyberock", 5098), ("Cyberland", 5128)]],
+            cod=dict(instructions=[instruction(4452, "ConditionalBlock", target=5593),
+                instruction(4456, "FlagBranch", opcode=0xD0),
+                instruction(4457, "Actor", record_offset=1316, related_record_offset=40, inverted=False),
+                instruction(4462, "GuardPop")],
+                text_sites=[dict(offset=5540, procedure="gifts", record_name="Mega_Paul",
+                                 record_offset=1258, choice_operands=[dict(kind="inventory_choices")])]))
+
+    def template(self):
+        return travel_template(self.graph, 5540, "Cyberock", "Cyberland")
+
+    def test_derives_only_prepared_entry_from_authored_guard(self):
+        original = copy.deepcopy(self.graph)
+        template = self.template()
+        self.assertEqual(template["initial_profile"], 15)
+        self.assertEqual(template["target"], "Mega_Paul")
+        self.assertEqual(template["cod_sha256"], "cod")
+        self.assertEqual(template["travel_setup"], dict(planet="Cyberock", destination="Cyberland",
+            procedure_offset=4452, stage_actor_at_destination=True))
+        self.assertEqual(template["choices"], [])
+        self.assertEqual(template["required_cod_sites"], [])
+        self.assertEqual(self.graph, original)
+
+    def test_additional_outer_condition_is_not_guessed(self):
+        self.graph["cod"]["instructions"].insert(3, instruction(4461, "SharedState"))
+        with self.assertRaisesRegex(ValueError, "additional preparation"):
+            self.template()
+
+    def test_wrong_actor_activity_and_player_are_rejected(self):
+        rows = self.graph["cod"]["instructions"]
+        activity = rows[1]["instruction"]["FlagBranch"]
+        actor = rows[2]["instruction"]["Actor"]
+        for target, key, value in [(activity, "opcode", 0xD1), (actor, "inverted", True),
+                                   (actor, "record_offset", 1390), (actor, "related_record_offset", 74)]:
+            previous = target[key]
+            target[key] = value
+            with self.assertRaisesRegex(ValueError, "additional preparation"):
+                self.template()
+            target[key] = previous
+
+    def test_unclosed_guard_is_rejected(self):
+        self.graph["cod"]["instructions"].pop()
+        with self.assertRaisesRegex(ValueError, "closed entry guard"):
+            self.template()
+
+    def test_unbound_menu_and_unknown_destination_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "named actor inventory"):
+            travel_template(self.graph, 5541, "Cyberock", "Cyberland")
+        with self.assertRaisesRegex(ValueError, "unknown prepared travel"):
+            travel_template(self.graph, 5540, "Cyberock", "Nowhere")
+        self.graph["cod"]["text_sites"][0]["record_offset"] = 1332
+        with self.assertRaisesRegex(ValueError, "symbol table"):
+            self.template()
+
+    def test_other_game_and_profile_are_rejected(self):
+        for key, value in [("game", "cb"), ("profile", "SCRIPT0"), ("profile", "SCRIPT18")]:
+            previous = self.graph[key]
+            self.graph[key] = value
+            with self.assertRaisesRegex(ValueError, "BBB profile"):
+                self.template()
+            self.graph[key] = previous
 
 
 if __name__ == "__main__":

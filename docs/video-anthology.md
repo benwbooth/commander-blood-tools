@@ -733,6 +733,74 @@ audio, and endpoint for CB Bob's black-hole topic, Cyberquizz's technology
 gift, and Bioquizz's travel greeting. These checks do not prove complete DOS
 conversation parity or a normal gameplay acquisition/evolution route.
 
+### BBB Paul Gifts
+
+Three source-bound SCRIPT16 templates cover prepared gift visits to Mega Paul,
+Sebasto Paul, and Inter Paul. They explicitly stage each actor at Cyberland,
+enable the selected gift procedure, and leave native arrival, presentation,
+inventory selection, transfer, and closure intact. This is not a reconstructed
+route from their initial Trashlando placement. Mega Paul's separate story
+procedures are not enabled by his gift template.
+
+The flat planner produces 22 item candidates per actor. The templates are
+`accuracy/anthology-dialogue/bbb-{mega,sebasto,inter}-paul-gift-visit.json`, with
+inventory menus 5540, 6935, and 8328 respectively. The generated plan sets are
+`output/anthology/plans-bbb-{mega,sebasto,inter}-paul-inventory-v1/planning.json`.
+Nuclear responses and other evolution/story branches remain outside these
+flat plan sets.
+
+All 66 generated chapters passed native offer/transfer and lossless-media
+verification in `output/anthology/dialogue-bbb-paul-inventory-v1`. The exporter
+is the unchanged archived `dialogue-bbb-nuclear-v1/bin/offline-presentation`.
+The three assembled outputs are:
+
+| Movie under `output/anthology` | Chapters | Seconds | Native Frames |
+| --- | ---: | ---: | ---: |
+| `bbb-mega-paul-inventory-dialogue-native.mkv` | 22 | 707.632 | 10,660 |
+| `bbb-sebasto-paul-inventory-dialogue-native.mkv` | 22 | 810.952 | 12,193 |
+| `bbb-inter-paul-inventory-dialogue-native.mkv` | 22 | 810.952 | 12,193 |
+
+All three assemblies passed full decoded RGBA, PCM, timestamp, and chapter
+verification. The 69 captures including visits total 2,423.170 seconds and
+36,455 native frames.
+
+Together the batches publish 85 distinct COD sites: 82 fully reveal in the
+native UI buffer and three terminal sites (5580, 6975, 8368) have no draw.
+Encoded Mega/Inter guitar-response samples show the native artwork and fully
+revealed English text. This is not a visual audit of every encoded line. The
+three unstocked visit captures also passed, assembled as
+`bbb-paul-gift-visits-native.mkv` (93.634 seconds, 1,409 frames) from
+`dialogue-bbb-paul-gift-visits-v1/bbb`. They add chapters, not distinct response
+coverage beyond the stocked branches.
+
+The planner can also derive a gift-entry template directly from the hashed
+catalog, without a hand-written visit fixture:
+
+```sh
+uv run tools/native_inventory_plans.py \
+  --catalog output/anthology/static-dialogue-en-v2 \
+  --profile SCRIPT16 --inventory-menu 5540 \
+  --planet Cyberock --destination Cyberland \
+  --out output/anthology/plans-bbb-mega-paul-derived-inventory-v1
+```
+
+This mode accepts only an outer guard containing exactly D0 travel plus a
+positive actor selection bound to the menu owner and player. Its report retains
+the derived template and graph hash. Extra entry predicates are rejected; actor
+kind, procedure, destination type, and planet relationship are independently
+checked by the native exporter. The generated plans require the menu and flat
+reaction, not unrelated introductory lines. Every actual publication is still
+retained in the trace and ledger.
+
+A static scan finds 963 flat candidates across 46 inventory menus. This is not
+runtime coverage: one Daddy Gluxx menu has no flat candidates, complex reactions
+remain deferred, and some actors still hit the unresolved numeric-chatter
+dictionary-tail issue. The graph-derived Mega Paul guitar capture in
+`dialogue-bbb-derived-entry-regression/bbb` matches the hand-written template's
+RGBA, PCM, endpoint, and runner behavior (apart from the different required-site
+plan). It is not counted as additional dialogue coverage. Regenerating Inter
+Paul's original template-based plan set is byte-for-byte unchanged.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -754,7 +822,11 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-bbb-inventory-v2/cyberquizz \
   --batch output/anthology/dialogue-bbb-inventory-v2/bioquizz \
   --batch output/anthology/dialogue-bbb-nuclear-v2/bbb \
-  --out output/anthology/dialogue-coverage-bbb-nuclear.json
+  --batch output/anthology/dialogue-bbb-paul-gift-visits-v1/bbb \
+  --batch output/anthology/dialogue-bbb-paul-inventory-v1/mega-paul \
+  --batch output/anthology/dialogue-bbb-paul-inventory-v1/sebasto-paul \
+  --batch output/anthology/dialogue-bbb-paul-inventory-v1/inter-paul \
+  --out output/anthology/dialogue-coverage-bbb-paul-inventory.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -763,10 +835,10 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 142 verified chapters, CB has 261 sites fully revealed in the native
+Across the 211 verified chapters, CB has 261 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,268 uncovered. BBB has 250 fully revealed, 28 published without
-a UI draw, and 6,643 uncovered. Native UI-buffer evidence alone does not prove
+branches, and 5,268 uncovered. BBB has 332 fully revealed, 31 published without
+a UI draw, and 6,558 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
 anthology is complete; remaining profile branches, most CB BAS, state-dependent
