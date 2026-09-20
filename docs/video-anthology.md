@@ -552,6 +552,34 @@ The final-build reproduction of Izwalito's acceptance branch in
 PCM, endpoint, and complete runner report. Its binary is archived in the sibling
 `bin` directory.
 
+### BBB Prepared Contacts
+
+The eleven checked-in SCRIPT2-5 prepared-contact plans produce
+`output/anthology/bbb-cryobox-dialogue-native.mkv`: **266.934 seconds and 3,986
+native frames**. They cover Bob's brief return, concert aftermath for Daddy,
+Papy, Mamy, Marakas, Izwalito, Tequila, Eviscerator, and Outrageor, and Tequila's
+outburst and ghost branches. The capture batch is
+`output/anthology/dialogue-bbb-prepared-contacts-v1/bbb`; its exporter is archived
+in the sibling `bin` directory.
+
+BBB preparation reads the typed COD outer D1 guard and validates the selected
+actor's action record. Only supported entry predicates are prepared; body
+conditions are not promoted to entry state. Other outer contact procedures are
+disabled. The report binds the COD hash and retains every changed save byte and
+before/after hashes. CB continues to use its existing contact manifest. This is
+explicit chapter setup, not proof of a gameplay route or contact-menu eligibility.
+
+All 75 required COD publications occurred: 64 fully reveal in the native UI
+buffer, and eleven terminal sites have no UI draw. Native CRYOGEL/CRYORAD
+transitions, embedded movie sequences, English display text, fonts, timing, and
+audio remain active. No artificial hold or missing-clip insertion was added.
+The assembled movie passed full decoded RGBA, PCM, timestamp, and chapter checks.
+Sampled encoded Bob and Tequila frames show the original artwork and subtitle
+fonts with English text; this is not visual inspection of every line.
+Two CB regression captures preserve prior pixels, PCM, and endpoints: Bob's
+black-hole contact and Bronko's energy travel topic. These checks do not establish
+original-executable parity or full-game coverage.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
@@ -566,7 +594,8 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-travel-yoko-v2/cb \
   --batch output/anthology/dialogue-travel-gluxx-v2/cb \
   --batch output/anthology/dialogue-travel-izwalito-v4/cb \
-  --out output/anthology/dialogue-coverage-travel-actors.json
+  --batch output/anthology/dialogue-bbb-prepared-contacts-v1/bbb \
+  --out output/anthology/dialogue-coverage-bbb-cryobox.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -575,10 +604,10 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 68 verified chapters, CB has 261 sites fully revealed in the native
+Across the 79 verified chapters, CB has 261 sites fully revealed in the native
 UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,268 uncovered. BBB has 49 fully revealed, four published without
-a UI draw, and 6,868 uncovered. Native UI-buffer evidence alone does not prove
+branches, and 5,268 uncovered. BBB has 113 fully revealed, fifteen published without
+a UI draw, and 6,793 uncovered. Native UI-buffer evidence alone does not prove
 encoded glyph visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
 anthology is complete; remaining profile branches, most CB BAS, state-dependent

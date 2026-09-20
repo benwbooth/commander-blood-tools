@@ -214,6 +214,17 @@ class DialogueTraceTests(unittest.TestCase):
         state["contact_transition"]["phase"] = "Inactive"
         self.verify()
 
+    def test_bbb_contact_preparation_is_bound_to_its_cod_not_the_cb_manifest(self):
+        self.plan.update(game="big_bug_bang", cod_sha256="source-cod", contact_procedure=90)
+        self.runner["contact_preparation"] = dict(procedure_offset=90, manifest_sha256="cb-only")
+        with self.assertRaisesRegex(ValueError, "authored COD guard"):
+            self.verify()
+        self.runner["contact_preparation"].update(cod_sha256="source-cod", guard_source="typed_cod_outer_guard")
+        self.verify()
+        self.runner["contact_preparation"]["cod_sha256"] = "other-cod"
+        with self.assertRaisesRegex(ValueError, "authored COD guard"):
+            self.verify()
+
     def test_sequence_occurrences_keep_order(self):
         self.states[0]["state"]["video"] = dict(active_resource="SQ\\FIRST.HNM")
         self.states.append(copy.deepcopy(self.states[0]))

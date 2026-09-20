@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Daddy Gluxx: concert aftermath",
+  "initial_profile": 2,
+  "cod_sha256": "6d137440a7ace2650ff6c5c00c745176e7469c42cdb2008f68b729842a8ebfed",
+  "dic_sha256": "d458a17c6ba3d39f978edaf4c9985af28b08f33640bac4588ae0b3361b91c721",
+  "target": "Daddy_Gluxx",
+  "entry": "contact",
+  "contact_procedure": 2908,
+  "choices": [],
+  "required_cod_sites": [
+    2931,
+    2949,
+    2961,
+    2975,
+    3005
+  ],
+  "required_frame_boundary_cod_sites": [
+    2931
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

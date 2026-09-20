@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Tequila: concert aftermath",
+  "initial_profile": 3,
+  "cod_sha256": "5d206b6f1bf06268cd4728293100d7d27aa680216d61aba51f24d430cd4b8ec6",
+  "dic_sha256": "aba77ee053e9fe1a4a3b06953c6e9c3959eaf457d8a3d6d68249af5db2668d46",
+  "target": "Tequila",
+  "entry": "contact",
+  "contact_procedure": 15954,
+  "choices": [],
+  "required_cod_sites": [
+    15977,
+    15997
+  ],
+  "required_frame_boundary_cod_sites": [
+    15977
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

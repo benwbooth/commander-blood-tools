@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Eviscerator: concert aftermath",
+  "initial_profile": 4,
+  "cod_sha256": "a8ce270582494af8fe1e18eb54b3770488cac5f30e3c9b9623ed77c0861941de",
+  "dic_sha256": "fedc541c17afc78853b160508ef3b54622ad3d1c9f3397f67d1c8433c51062d3",
+  "target": "Eviscerator",
+  "entry": "contact",
+  "contact_procedure": 1748,
+  "choices": [],
+  "required_cod_sites": [
+    1771,
+    1783,
+    1797,
+    1821,
+    1837,
+    1851,
+    1873,
+    1895
+  ],
+  "required_frame_boundary_cod_sites": [
+    1771
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

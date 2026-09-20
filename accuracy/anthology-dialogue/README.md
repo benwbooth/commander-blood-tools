@@ -10,7 +10,9 @@ Current scope: CB SCRIPT1 Izwalito's game/explanations choices and Bob's mission
 yes/no choices; BBB SCRIPT1 HONK's PLAY/INSTRUCTIONS choices and Bob's recorded
 mission; BBB SCRIPT2 HONK's Daddy-in-the-cryobox conversation; CB SCRIPT2 Bob's
 black-hole BAS topic, Bronko's energy topic, Daddy Gluxx's treatment, and both
-answers to Izwalito's ideal/secret question through prepared travel. These thirteen
+answers to Izwalito's ideal/secret question through prepared travel; BBB SCRIPT2
+Bob's brief return, SCRIPT3-5 concert aftermath for eight actors, and both
+Tequila cryobox outburst/ghost branches. These twenty-four
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
 environments. The static BAS planner also
 produces topic plan sets from the hashed catalog without running the game.
@@ -31,6 +33,7 @@ Do not add artificial holds or subtitle cards to fill these gaps:
 | CB Bob both choices | 2323, 2346, 3047 | Published without a glyph-buffer draw: two empty sequence-control sites and terminal `stop`. |
 | BBB Bob | 3252 | Terminal publication without a glyph-buffer draw. |
 | BBB SCRIPT2 HONK | 7461 | Terminal publication without a glyph-buffer draw. |
+| BBB prepared contacts, SCRIPT2-5 | 7183; 3005, 15361, 21365; 1783, 8054, 15997, 16230, 16482; 1895, 5619 | One terminal publication per chapter without a glyph-buffer draw; offsets are profile-local. |
 
 The 2355 disposition is distinct from a publication that was not drawn. The
 original `BLOOD2PG.EXE` A6/outer-loop oracle now includes five skip-next cases:
@@ -73,11 +76,20 @@ COD requirements at the same numeric offset. Every semantic selection still
 passes through the native choice widget and must be offered at that boundary.
 
 An optional `contact_procedure` prepares the exact CB procedure using the existing
-binary-derived contact manifest. It validates the profile and actor, sets authored
-entry predicates, and disables competing contact procedures. The report retains
-the manifest hash, original-save hashes before/after, and every changed save byte.
+binary-derived contact manifest. For BBB, it instead validates the typed COD
+procedure's outer D1 contact guard and actor action record. Both validate the
+profile and actor, set supported authored entry predicates, and disable competing
+contact procedures. Unsupported BBB predicates are rejected, and body guards
+are not treated as entry conditions. The report retains the CB manifest hash or
+BBB COD hash, original-save hashes before/after, and every changed save byte.
 This is explicit prepared-state chapter setup, not proof of contact-menu
 eligibility or a gameplay route. It does not modify script text, timing, or media.
+
+The eleven BBB prepared-contact chapters publish all 75 required COD sites;
+64 fully reveal in the native UI buffer and eleven terminate without a draw.
+The native CRYOGEL/CRYORAD transitions and automatically selected embedded
+sequences remain in the captures. English uses the existing display overlay;
+the authored French script, waits, and media selection are unchanged.
 
 Bob's checked-in black-hole plan repeats the topic selection for each of five
 successive native BAS replies, then selects the authored `bye_bye` row. The

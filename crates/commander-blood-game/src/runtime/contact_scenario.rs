@@ -50,6 +50,15 @@ pub(super) fn validate_contact_chapter(
     procedure_offset: usize,
     target: &str,
 ) -> Result<()> {
+    if profile.code().dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang {
+        return authored_actor_scenario(
+            profile,
+            procedure_offset,
+            target,
+            ScriptEnvironmentInstruction::RequireContactActivity,
+        )
+        .map(|_| ());
+    }
     ensure!(
         profile.code().dialect() == commander_blood_formats::code::ScriptDialect::CommanderBlood,
         "the contact preparation manifest covers Commander Blood only"
@@ -67,35 +76,36 @@ pub(super) fn validate_contact_chapter(
     Ok(())
 }
 
-/// Recover only the outer, authored travel guard. Body conditions are not setup.
-fn travel_scenario(
+/// Recover only the outer, authored actor guard. Body conditions are not setup.
+fn authored_actor_scenario(
     profile: &LoadedScriptProfile,
     procedure_offset: usize,
     target: &str,
+    activity: ScriptEnvironmentInstruction,
 ) -> Result<ContactScenario> {
     let actor = profile
         .directory()
         .find_active_object(target.as_bytes())
-        .context("travel actor is not an authored object")?;
+        .context("chapter actor is not an authored object")?;
     let actor_record = profile
         .state()
         .object(actor)
-        .context("travel actor has no state")?;
+        .context("chapter actor has no state")?;
     let action_offset = crate::native::bloodprg::script_field_offset(
         actor_record.kind,
         crate::native::bloodprg::ScriptFieldSelector::ACTION,
     )
-    .context("travel actor has no action field")?;
+    .context("chapter actor has no action field")?;
     let action = profile
         .state()
         .object_word_triple(actor, action_offset / 2)
-        .context("travel actor has no action slot")?;
+        .context("chapter actor has no action slot")?;
     let Some(DecodedScriptInstruction::ProcedureGate(gate)) =
         profile.instruction_at(ScriptCodeOffset::new(procedure_offset))
     else {
-        bail!("travel procedure is not an authored procedure gate");
+        bail!("chapter procedure is not an authored procedure gate");
     };
-    let mut travel = false;
+    let mut activity_guard = false;
     let mut presentation = false;
     let mut closed = false;
     let mut entry_tokens = Vec::new();
@@ -109,11 +119,9 @@ fn travel_scenario(
                 closed = true;
                 break;
             }
-            DecodedScriptInstruction::Environment(
-                ScriptEnvironmentInstruction::RequireTravelActivity,
-            ) => {
-                ensure!(!travel, "duplicate travel guard");
-                travel = true;
+            DecodedScriptInstruction::Environment(guard) if *guard == activity => {
+                ensure!(!activity_guard, "duplicate chapter activity guard");
+                activity_guard = true;
             }
             DecodedScriptInstruction::ActorRecord(operation) => {
                 ensure!(
@@ -121,7 +129,7 @@ fn travel_scenario(
                         && !operation.inverted
                         && operation.target == action
                         && Some(operation.related) == profile.builtins().player,
-                    "travel procedure does not select the chapter actor"
+                    "procedure does not select the chapter actor"
                 );
                 presentation = true;
             }
@@ -133,21 +141,21 @@ fn travel_scenario(
             DecodedScriptInstruction::SharedState(operation) => {
                 ensure!(
                     operation.operator == ScriptStateOperator::EqualOrAssign,
-                    "travel setup currently requires equality state predicates"
+                    "chapter setup currently requires equality state predicates"
                 );
                 entry_tokens.push(ContactEntryToken { offset });
             }
-            other => bail!("unsupported travel entry predicate at {offset:#x}: {other:?}"),
+            other => bail!("unsupported chapter entry predicate at {offset:#x}: {other:?}"),
         }
     }
     ensure!(
-        closed && travel && presentation,
-        "procedure is not a complete travel actor guard"
+        closed && activity_guard && presentation,
+        "procedure is not a complete {activity:?} actor guard"
     );
     let name = profile
         .directory()
         .procedure(gate.procedure)
-        .context("travel procedure has no name")?;
+        .context("chapter procedure has no name")?;
     Ok(ContactScenario {
         script: format!("SCRIPT{}", profile.id().value() + 1),
         procedure: String::from_utf8_lossy(name.name()).into_owned(),
@@ -163,7 +171,13 @@ pub(super) fn validate_travel_chapter(
     procedure_offset: usize,
     target: &str,
 ) -> Result<()> {
-    travel_scenario(profile, procedure_offset, target).map(|_| ())
+    authored_actor_scenario(
+        profile,
+        procedure_offset,
+        target,
+        ScriptEnvironmentInstruction::RequireTravelActivity,
+    )
+    .map(|_| ())
 }
 
 pub(super) fn prepare_travel_for_chapter(
@@ -171,31 +185,61 @@ pub(super) fn prepare_travel_for_chapter(
     procedure_offset: usize,
     target: &str,
 ) -> Result<()> {
-    let scenario = travel_scenario(profile, procedure_offset, target)?;
+    prepare_authored_actor_chapter(
+        profile,
+        procedure_offset,
+        target,
+        ScriptEnvironmentInstruction::RequireTravelActivity,
+    )
+}
+
+pub(super) fn prepare_contact_for_chapter(
+    runtime: &mut OriginalGameRuntime,
+    procedure_offset: usize,
+    target: &str,
+) -> Result<()> {
+    if runtime.data().game() == crate::game::GameVariant::CommanderBlood {
+        return prepare_contact_for_scenario(runtime, procedure_offset);
+    }
+    prepare_authored_actor_chapter(
+        runtime
+            .current_profile_mut()
+            .context("contact chapter has no profile")?,
+        procedure_offset,
+        target,
+        ScriptEnvironmentInstruction::RequireContactActivity,
+    )
+}
+
+fn prepare_authored_actor_chapter(
+    profile: &mut LoadedScriptProfile,
+    procedure_offset: usize,
+    target: &str,
+    activity: ScriptEnvironmentInstruction,
+) -> Result<()> {
+    let scenario = authored_actor_scenario(profile, procedure_offset, target, activity)?;
     let selected = match profile
         .instruction_at(ScriptCodeOffset::new(procedure_offset))
         .unwrap()
     {
         DecodedScriptInstruction::ProcedureGate(gate) => gate.procedure,
-        _ => unreachable!("travel_scenario validated the gate"),
+        _ => unreachable!("authored_actor_scenario validated the gate"),
     };
-    let mut travel_procedures = Vec::new();
+    let mut actor_procedures = Vec::new();
     let mut gate = None;
     for instruction in profile.instructions() {
         match instruction {
             DecodedScriptInstruction::ProcedureGate(value) => gate = Some(value.procedure),
             DecodedScriptInstruction::Control(ScriptInstruction::GuardEnd) => gate = None,
-            DecodedScriptInstruction::Environment(
-                ScriptEnvironmentInstruction::RequireTravelActivity,
-            ) => {
+            DecodedScriptInstruction::Environment(guard) if *guard == activity => {
                 if let Some(procedure) = gate {
-                    travel_procedures.push(procedure);
+                    actor_procedures.push(procedure);
                 }
             }
             _ => {}
         }
     }
-    for procedure in travel_procedures {
+    for procedure in actor_procedures {
         profile
             .procedures_mut()
             .set_enabled(procedure, procedure == selected)?;
@@ -206,10 +250,12 @@ pub(super) fn prepare_travel_for_chapter(
     apply_entry_state_predicates(&scenario, profile, &mut synchronized)?;
     let actor = object_at_source_offset(profile, scenario.contact_object_offset)?;
     let kind = synchronized.object(actor).unwrap().kind;
-    if let Some(offset) = crate::native::bloodprg::script_field_offset(
-        kind,
-        crate::native::bloodprg::ScriptFieldSelector::ENCOUNTER_COUNT,
-    ) {
+    if activity == ScriptEnvironmentInstruction::RequireTravelActivity
+        && let Some(offset) = crate::native::bloodprg::script_field_offset(
+            kind,
+            crate::native::bloodprg::ScriptFieldSelector::ENCOUNTER_COUNT,
+        )
+    {
         let counter = synchronized
             .object_word(actor, offset / 2)
             .context("travel actor has no encounter counter")?;
@@ -225,7 +271,7 @@ pub(super) fn prepare_travel_for_chapter(
     profile.replace_state(synchronized)?;
     ensure!(
         profile.procedures().is_enabled(selected)?,
-        "travel setup disabled its selected procedure"
+        "chapter setup disabled its selected procedure"
     );
     Ok(())
 }

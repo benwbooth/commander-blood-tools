@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Bob Morlock: brief return",
+  "initial_profile": 1,
+  "cod_sha256": "d62e8c8f7f13febbdd9cdf205ca3a2484fe1a161763589977799b9c8711350a1",
+  "dic_sha256": "1666ae7bb0dead682f9c3fd64b5ea6b71999475beb77c85ad75e79a0ee71a5b0",
+  "target": "Bob_Morlock",
+  "entry": "contact",
+  "contact_procedure": 6643,
+  "choices": [],
+  "required_cod_sites": [
+    6673,
+    6685,
+    6729,
+    6741,
+    6767,
+    6803,
+    6829,
+    6853,
+    6885,
+    6917,
+    6939,
+    6983,
+    7018,
+    7053,
+    7079,
+    7093,
+    7117,
+    7149,
+    7165,
+    7183
+  ],
+  "required_frame_boundary_cod_sites": [
+    6673
+  ],
+  "end": {
+    "kind": "presentation_finished"
+  }
+}

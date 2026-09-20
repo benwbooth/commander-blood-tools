@@ -1620,6 +1620,27 @@ mod tests {
                         validate_dialogue_chapter(&plan, profile).unwrap();
                     }
                 }
+                if plan.game == crate::game::GameVariant::BigBugBang
+                    && let Some(procedure) = plan.contact_procedure
+                {
+                    super::super::contact_scenario::prepare_contact_for_chapter(
+                        &mut runtime,
+                        procedure,
+                        &plan.target,
+                    )
+                    .unwrap();
+                    let profile = runtime.current_profile().unwrap();
+                    validate_dialogue_chapter(&plan, profile).unwrap();
+                    assert!(
+                        super::super::contact_scenario::validate_travel_chapter(
+                            profile,
+                            procedure,
+                            &plan.target,
+                        )
+                        .is_err(),
+                        "a contact guard must not validate as travel"
+                    );
+                }
             }
             assert!(tested > 0);
             scripts

@@ -433,8 +433,11 @@ pub(super) fn capture_dialogue_chapter(
             .context("dialogue target is not a named native object")?;
         let contact_preparation = if let Some(procedure) = chapter.contact_procedure {
             let before = crate::native::bloodprg::OriginalSaveGame::capture(profile)?.encode();
-            host.services_mut()
-                .prepare_contact_for_scenario(procedure)?;
+            super::contact_scenario::prepare_contact_for_chapter(
+                host.services_mut().runtime_mut(),
+                procedure,
+                &chapter.target,
+            )?;
             let after = crate::native::bloodprg::OriginalSaveGame::capture(
                 host.services().runtime().current_profile().unwrap(),
             )?
@@ -447,14 +450,25 @@ pub(super) fn capture_dialogue_chapter(
                 .filter(|(_, (old, new))| old != new)
                 .map(|(offset, (old, new))| serde_json::json!({"offset": offset, "before": old, "after": new}))
                 .collect::<Vec<_>>();
-            Some(serde_json::json!({
+            let mut preparation = serde_json::json!({
                 "procedure_offset": procedure,
-                "manifest_sha256": format!("{:x}", Sha256::digest(include_bytes!("../../../../re/vm/contact-manifest/contact-manifest.json"))),
                 "before_save_sha256": format!("{:x}", Sha256::digest(&before)),
                 "after_save_sha256": format!("{:x}", Sha256::digest(&after)),
                 "save_byte_changes": changes,
                 "scope": "selected contact procedure and authored entry predicates; prepared chapter state, not a gameplay route",
-            }))
+            });
+            if chapter.game == crate::game::GameVariant::CommanderBlood {
+                preparation["manifest_sha256"] = serde_json::json!(format!(
+                    "{:x}",
+                    Sha256::digest(include_bytes!(
+                        "../../../../re/vm/contact-manifest/contact-manifest.json"
+                    ))
+                ));
+            } else {
+                preparation["cod_sha256"] = serde_json::json!(chapter.cod_sha256);
+                preparation["guard_source"] = serde_json::json!("typed_cod_outer_guard");
+            }
+            Some(preparation)
         } else {
             None
         };

@@ -56,8 +56,13 @@ def validate_trace(plan, runner, states, rows):
         preparation = runner.get("contact_preparation")
         require(preparation is not None and preparation["procedure_offset"] == plan["contact_procedure"],
                 "missing prepared-contact provenance")
-        require(preparation["manifest_sha256"] == digest(ROOT / "re/vm/contact-manifest/contact-manifest.json"),
-                "contact preparation manifest changed")
+        if plan["game"] == "big_bug_bang":
+            require(preparation.get("cod_sha256") == plan["cod_sha256"]
+                    and preparation.get("guard_source") == "typed_cod_outer_guard",
+                    "BBB contact preparation is not bound to the authored COD guard")
+        else:
+            require(preparation["manifest_sha256"] == digest(ROOT / "re/vm/contact-manifest/contact-manifest.json"),
+                    "contact preparation manifest changed")
     if plan.get("entry") == "travel":
         preparation = runner.get("travel_preparation")
         require(isinstance(preparation, dict) and preparation.get("setup") == plan["travel_setup"],
