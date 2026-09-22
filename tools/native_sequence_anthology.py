@@ -212,12 +212,31 @@ def concatenate_timelines(chapters):
     return result, offset_ns, offset_samples
 
 
+def assembly_entries(batches):
+    require(batches, "no native batches")
+    entries = []
+    game = None
+    seen = set()
+    for batch in batches:
+        coverage = read_json(batch / "coverage.json")
+        require(coverage["complete"] and not coverage["failures"], "native batch is incomplete")
+        require([entry["record"] for entry in coverage["completed"]] ==
+                [record["name"] for record in coverage["provenance"]["records"]],
+                "batch chapter order differs")
+        current_game = coverage["provenance"]["game"]
+        require(game is None or game == current_game, "native batches belong to different games")
+        game = current_game
+        for entry in coverage["completed"]:
+            path = Path(entry["path"]).resolve()
+            require(path not in seen, "duplicate native chapter in assembly")
+            seen.add(path)
+            entries.append(entry)
+    return game, entries
+
+
 def assemble(args):
-    coverage = read_json(args.batch / "coverage.json")
-    require(coverage["complete"] and not coverage["failures"], "sequence batch is incomplete")
-    entries = coverage["completed"]
-    require([entry["record"] for entry in entries] ==
-            [record["name"] for record in coverage["provenance"]["records"]], "batch chapter order differs")
+    batches = args.batch if isinstance(args.batch, list) else [args.batch]
+    game, entries = assembly_entries(batches)
     require(not args.out.exists(), f"output already exists: {args.out}")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="native-assembly-", dir=args.out.parent) as temp:
@@ -260,9 +279,13 @@ def assemble(args):
                 require(Fraction(actual[boundary + "_time"]) * 1_000_000_000 == expected[boundary + "_ns"],
                         "encoded chapter boundary differs")
             require(actual["tags"]["title"] == expected["title"], "encoded chapter title differs")
-        manifest = dict(schema=1, game=coverage["provenance"]["game"], scope=coverage["scope"],
+        manifest = dict(schema=1, game=game,
+                        scope="verified native sequence and dialogue chapters; not complete-game coverage"
+                        if len(batches) > 1 else read_json(batches[0] / "coverage.json")["scope"],
                         sources=entries, chapters=chapters, frames=len(rows), duration_ns=duration,
-                        audio_samples=samples, master_sha256=digest(temp / "master.mkv"), **hashes)
+                        audio_samples=samples, master_sha256=digest(temp / "master.mkv"), **hashes,
+                        **(dict(source_batches=[str(batch.resolve()) for batch in batches])
+                           if len(batches) > 1 else {}))
         require(not args.out.exists(), "assembly output appeared during verification")
         (temp / "master.mkv").rename(args.out)
         save_json(args.out.with_suffix(".manifest.json"), manifest)
@@ -280,7 +303,7 @@ def main():
     capture.add_argument("--max-frames", type=int, default=100_000)
     capture.set_defaults(run=render)
     join = modes.add_parser("assemble")
-    join.add_argument("--batch", type=Path, required=True)
+    join.add_argument("--batch", type=Path, action="append", required=True)
     join.add_argument("--out", type=Path, required=True)
     join.set_defaults(run=assemble)
     args = parser.parse_args()

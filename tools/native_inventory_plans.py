@@ -52,17 +52,24 @@ def travel_template(graph, menu_offset, planet, destination):
         end=dict(kind="presentation_finished"))
 
 
-def plan_inventory(graph, template, menu_offset, labels):
+def plan_inventory(graph, template, menu_offset, labels, excluded_items=()):
     require(graph["game"] == "bbb" and template["game"] == "big_bug_bang"
             and graph["profile"].lower() == f"script{template['initial_profile'] + 1}",
             "inventory template and graph belong to different profiles")
     require(all(template[key] == graph["resources"][key] for key in ("cod_sha256", "dic_sha256")),
             "inventory template source hash differs")
-    require(template.get("entry") == "travel" and not template["choices"]
+    require(template.get("entry") == "travel"
             and not template.get("max_exit_retries")
             and not template["travel_setup"].get("stage_aboard_inventory"),
-            "inventory planning requires an unstocked travel template without choices")
+            "inventory planning requires an unstocked travel template without exit retries")
     sites = graph["cod"]["text_sites"]
+    for choice in template["choices"]:
+        site = next((site for site in sites if site["offset"] == choice["text_site"]), None)
+        require(choice.get("source", "cod") == "cod" and "inventory_item" not in choice
+                and site and site["record_name"] == template["target"]
+                and any(word["kind"] == "dictionary" and word["offset"] == choice.get("word_offset")
+                        for word in site["choice_operands"]),
+                "inventory prerequisite must name this actor's authored COD choice")
     menu = next((site for site in sites if site["offset"] == menu_offset), None)
     require(menu and menu["choice_operands"] == [dict(kind="inventory_choices")]
             and menu["record_name"] == template["target"], "not this actor's inventory menu")
@@ -110,7 +117,7 @@ def plan_inventory(graph, template, menu_offset, labels):
         plan = copy.deepcopy(template)
         plan["title"] = template["target"].replace("_", " ") + ": give " + labels[items[item]]
         plan["travel_setup"]["stage_aboard_inventory"] = [item]
-        plan["choices"] = [dict(source="inventory", text_site=menu_offset, inventory_item=item)]
+        plan["choices"].append(dict(source="inventory", text_site=menu_offset, inventory_item=item))
         # AF writes an inventory holder at byte 20 back to the aboard sentinel.
         # Its native chooser reopens with the returned/new item still available.
         if any(entry["instruction"].get("RecordWildcard", {}).get("opcode") == 0xAF
@@ -124,9 +131,13 @@ def plan_inventory(graph, template, menu_offset, labels):
             plan[key] = sorted(set(plan[key]) | required)
         plans.append((item, plan))
     require(len({item for item, _ in plans}) == len(plans), "ambiguous multiple item reactions")
+    excluded = set(excluded_items)
+    require(excluded <= {item for item, _ in plans}, "excluded item is not a flat candidate")
+    plans = [(item, plan) for item, plan in plans if item not in excluded]
     return plans, dict(scope="static flat item-reaction candidates; not all branches or verified captures",
         inventory_menu=menu_offset, reaction_procedure=rows[0]["offset"],
-        deferred=deferred, items_without_simple_flag_guard=sorted(set(items) - considered))
+        deferred=deferred, items_without_simple_flag_guard=sorted(set(items) - considered),
+        **(dict(excluded_items=sorted(excluded)) if excluded else {}))
 
 
 def main():
@@ -138,6 +149,8 @@ def main():
     parser.add_argument("--planet", help="explicit prepared planet; only with --profile")
     parser.add_argument("--destination", help="explicit prepared location; only with --profile")
     parser.add_argument("--inventory-menu", type=int, required=True)
+    parser.add_argument("--exclude-item", type=int, action="append", default=[],
+                        help="exclude a flat candidate by VAR offset, retaining the exclusion in the report")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if args.template:
@@ -159,7 +172,7 @@ def main():
         template = travel_template(graph, args.inventory_menu, args.planet, args.destination)
     labels_path = ROOT / "localization/big-bug-bang/en/inventory.json"
     labels = {bytes(row["source"]).decode("cp437"): row["english"] for row in read_json(labels_path)["entries"]}
-    plans, report = plan_inventory(graph, template, args.inventory_menu, labels)
+    plans, report = plan_inventory(graph, template, args.inventory_menu, labels, args.exclude_item)
     require(plans, "no simple item reactions for this template")
     args.out.mkdir(parents=True, exist_ok=False)
     actor = re.sub(r"[^a-z0-9]+", "-", template["target"].lower()).strip("-")

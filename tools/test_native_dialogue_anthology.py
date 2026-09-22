@@ -363,6 +363,43 @@ class DialogueTraceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing native inventory cancellation"):
             self.verify()
 
+    def test_travel_encounter_requires_prepared_counter_and_native_actor_increment(self):
+        self.plan.update(target="Rotator", game="big_bug_bang", entry="travel",
+                         travel_setup=dict(actor_encounter_guard=12305))
+        encounter = dict(offset=12305, before=0, before_entry=1, at_presentation=2)
+        self.runner["travel_preparation"] = dict(setup=self.plan["travel_setup"], actor_encounter_guard=encounter)
+        self.runner["travel_transition_closed"] = True
+        first = self.states[0]["state"]
+        first["presentation"].update(ship_flags=0, navigation_rebuild_pending=False)
+        first["presentation"]["text_state"]["sequence_active"] = False
+        first["persistent"] = dict(object_locations=[dict(name="Rotator", kind="Actor", sequel_encounter_count=1)])
+        entered = copy.deepcopy(self.states[0])
+        entered["time_ns"] = 92_000_000
+        entered["state"]["persistent"]["object_locations"][0]["sequel_encounter_count"] = 2
+        entered["state"]["presentation"]["active_actor_presentation"] = dict(name="Rotator")
+        self.states.append(entered)
+        self.assertEqual(self.verify()["travel_encounter"], dict(offset=12305, before_entry=1,
+            at_presentation=2, prepared_at_ns=46_000_000, entered_at_ns=92_000_000))
+        for key, bad in [("offset", 42), ("before_entry", 2), ("at_presentation", 0), ("before", -1)]:
+            previous = encounter[key]
+            encounter[key] = bad
+            with self.assertRaisesRegex(ValueError, "source-bound travel encounter"):
+                self.verify()
+            encounter[key] = previous
+        initial_actor = first["persistent"]["object_locations"][0]
+        initial_actor["sequel_encounter_count"] = 0
+        with self.assertRaisesRegex(ValueError, "prepared travel encounter count"):
+            self.verify()
+        initial_actor["sequel_encounter_count"] = 1
+        entered_actor = entered["state"]["persistent"]["object_locations"][0]
+        entered_actor["sequel_encounter_count"] = 1
+        with self.assertRaisesRegex(ValueError, "did not increment"):
+            self.verify()
+        entered_actor["sequel_encounter_count"] = 2
+        entered["state"]["presentation"]["active_actor_presentation"] = dict(name="Emasculator")
+        with self.assertRaisesRegex(ValueError, "missing native entry"):
+            self.verify()
+
     def test_evolution_preparation_requires_source_binding_and_actual_actor_state(self):
         self.plan.update(target="Cyberquizz", entry="travel", travel_setup=dict(actor_evolution_guard=3687))
         preparation = dict(setup=self.plan["travel_setup"])

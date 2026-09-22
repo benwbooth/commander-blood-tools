@@ -92,6 +92,8 @@ pub(super) struct OfflineTravelSetup {
     pub stage_aboard_inventory: Vec<u16>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub actor_evolution_guard: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actor_encounter_guard: Option<usize>,
 }
 
 fn is_false(value: &bool) -> bool {
@@ -201,6 +203,18 @@ pub(super) fn validate_dialogue_chapter(
                 setup.procedure_offset,
                 &chapter.target,
                 &setup.supporting_procedures,
+                offset,
+            )?;
+        }
+        if let Some(offset) = setup.actor_encounter_guard {
+            ensure!(
+                chapter.game == crate::game::GameVariant::BigBugBang,
+                "travel encounter preparation currently covers BBB only"
+            );
+            super::contact_scenario::travel_actor_encounter_guard(
+                profile,
+                setup.procedure_offset,
+                &chapter.target,
                 offset,
             )?;
         }
@@ -678,6 +692,28 @@ pub(super) fn capture_dialogue_chapter(
                     &setup.stage_aboard_inventory,
                 )?;
             }
+            let encounter = if let Some(offset) = setup.actor_encounter_guard {
+                let (field, value) = super::contact_scenario::travel_actor_encounter_guard(
+                    profile,
+                    setup.procedure_offset,
+                    &chapter.target,
+                    offset,
+                )?;
+                let before = profile.state().word(field).unwrap();
+                let mut state = profile.synchronized_state()?;
+                // Native C4 entry increments the counter before the story guard runs.
+                ensure!(
+                    state.set_word(field, value - 1),
+                    "travel encounter counter disappeared"
+                );
+                profile.replace_state(state)?;
+                Some(serde_json::json!({
+                    "offset": offset, "before": before,
+                    "before_entry": value - 1, "at_presentation": value,
+                }))
+            } else {
+                None
+            };
             let evolution = if let Some(offset) = setup.actor_evolution_guard {
                 let (field, value) = super::contact_scenario::travel_actor_evolution_guard(
                     profile,
@@ -715,6 +751,9 @@ pub(super) fn capture_dialogue_chapter(
             });
             if let Some(evolution) = evolution {
                 preparation["actor_evolution_guard"] = evolution;
+            }
+            if let Some(encounter) = encounter {
+                preparation["actor_encounter_guard"] = encounter;
             }
             Some(preparation)
         } else {

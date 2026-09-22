@@ -850,13 +850,86 @@ black-hole topic, Cyberquizz's technology gift, and Eviscerator's nuclear gift.
 Encoded samples show Eviscerator's guitar response, Outrageor's nuclear response,
 and the returned-item CANCEL row. Not every encoded frame was visually audited.
 
-The separate SCRIPT6 probes in `dialogue-bbb-mutant-inventory-pilot-v1` failed:
+The initial SCRIPT6 probes in `dialogue-bbb-mutant-inventory-pilot-v1` failed:
 Emasculator's actor-only story procedure reaches a name/no question before the
 gift menu; Rotator's first-visit story ends before gift selection. Each has 20
-flat candidates and three deferred nested reactions, but none is counted as
-verified gift coverage. Their extra story-entry requirements remain unresolved;
-the probes do not justify bypassing those procedures or calling the reactions
-unreachable.
+flat candidates and three deferred nested reactions. Those failed probes are
+not counted as coverage; the following captures retain the story procedures
+and prepare source-bound later encounters.
+
+### BBB Emasculator and Rotator Visits
+
+Thirty SCRIPT6 fixtures record both actors' first visits, selected later story
+branches, and six nested gift reactions. All explicitly stage the actor at
+Cyberland. First visits retain the native initial counter. Later visits use the
+new BBB-only
+`travel_setup.actor_encounter_guard`: a source offset inside an enabled
+actor-only story procedure, whose outer guard must have no extra predicates.
+Only a single positive equality against this actor's encounter field is
+accepted. The exporter writes one less than the authored operand, then native
+C4 entry increments it. The report retains the original/prepared values and
+save hashes; the trace verifier checks preparation and the first presentation
+of the selected actor. The ledger independently recomputes this evidence.
+This is prepared visit state, not a replay of earlier encounters.
+
+The first-visit batch is `dialogue-bbb-script6-first-visits-v2/bbb`; its three
+chapters total 402.006 seconds and 6,050 native frames. It publishes 79 distinct
+COD sites, 77 fully revealed in the UI buffer and two terminal sites without
+a draw. The later-visit batch `dialogue-bbb-script6-later-visits-v1/bbb` adds
+three chapters totaling 186.708 seconds and 2,802 frames: Emasculator's second
+visit with the affirmative answer, Rotator's second visit, and his fourth
+visit declining the offer. It publishes 46 sites, 43 fully revealed and three
+without a draw. Rotator's second-visit site 12345 is not published; preceding
+A6 12329 carries skip-next=1 when not shown. Its fixture records this native
+omission instead of adding text or a hold.
+
+The inventory planner now retains validated, same-actor COD dictionary
+prerequisites before appending the item choice. Emasculator's template keeps
+the second-visit affirmative answer, and Rotator's keeps the fourth-visit
+decline. Native story, chooser, transfer, returned-item cancellation, and
+closure still execute. Both actors have 20 static flat candidates. The planner
+defers technology, culture, and writing, but separate source-bound fixtures
+capture one native path through each of those six reactions. Emasculator's
+captured technology path publishes COD 9578. COD 9495 requires the separate
+`globals.A100 > 4` branch and remains unrecorded. Laws and scruter have no
+matching simple item-flag guard.
+
+Emasculator's painting candidate (VAR 7256) fails to publish required COD
+9218/9244 in both second-visit and third-visit probes. The native trace shows
+the item flag cleared before either publication. The source's final chatter
+has skip-next=2 before three state mutations, including that clear, but the
+cause and original-game behavior have not been established. The failed batch
+and separate `dialogue-bbb-script6-painting-probe-v1/bbb` remain evidence of an
+unresolved gap, not global unreachability. The final Emasculator plan set uses
+`--exclude-item 7256`, preserving the exclusion in its planning report and
+leaving the reaction uncovered.
+
+The final batches and their assembled outputs are:
+
+| Movie under `output/anthology` | Batch suffix | Chapters | Seconds | Native frames |
+| --- | --- | ---: | ---: | ---: |
+| `bbb-script6-first-visits-native.mkv` | `dialogue-bbb-script6-first-visits-v2/bbb` | 3 | 402.006 | 6,050 |
+| `bbb-script6-later-visits-native.mkv` | `dialogue-bbb-script6-later-visits-v1/bbb` | 3 | 186.708 | 2,802 |
+| `bbb-script6-story-dialogue-native.mkv` | `dialogue-bbb-script6-story-branches-v3/bbb` | 18 | 1,619.826 | 24,238 |
+| `bbb-emasculator-inventory-dialogue-native.mkv` | `dialogue-bbb-script6-inventory-v2/emasculator` | 19 | 1,657.214 | 24,870 |
+| `bbb-rotator-inventory-dialogue-native.mkv` | `dialogue-bbb-script6-inventory-v1/rotator` | 20 | 1,288.924 | 19,453 |
+| `bbb-script6-nested-gifts-native.mkv` | `dialogue-bbb-script6-nested-gifts-v1/bbb` | 6 | 472.732 | 7,115 |
+
+Each assembled movie passed full decoded RGBA, PCM, timestamp, and chapter
+verification. First-visit, later-visit, Rotator painting, and Emasculator
+fifth-visit encoded samples were visually inspected; this is not an audit of
+every encoded line. Rotator's fourth-visit acceptance publishes COD 13395
+without a frame-boundary UI draw. Its fixture requires the publication and
+records that limitation.
+
+First visits use the archived `dialogue-bbb-inventory-cancel-v1` exporter.
+Later visits and gifts use `dialogue-bbb-travel-encounters-v1/bin/offline-presentation`.
+Three captures under `dialogue-bbb-travel-encounters-regression` exactly retain
+the previous pixels, PCM, endpoint, and runner records for CB Bob's black-hole
+topic, Cyberquizz's second visit, and Outrageor's nuclear gift. All 33 original
+BBB action-dispatch oracle cases still match the checked-in vectors. These
+checks do not establish complete DOS conversation parity. Unrecorded answer
+combinations, alternate nested reaction states, and global story states remain open.
 
 ### Whole-Catalog Dialogue Ledger
 
@@ -885,7 +958,13 @@ uv run tools/native_dialogue_coverage.py \
   --batch output/anthology/dialogue-bbb-paul-inventory-v1/inter-paul \
   --batch output/anthology/dialogue-bbb-mutant-inventory-v1/eviscerator \
   --batch output/anthology/dialogue-bbb-mutant-inventory-v2/outrageor \
-  --out output/anthology/dialogue-coverage-bbb-mutant-inventory.json
+  --batch output/anthology/dialogue-bbb-script6-first-visits-v2/bbb \
+  --batch output/anthology/dialogue-bbb-script6-later-visits-v1/bbb \
+  --batch output/anthology/dialogue-bbb-script6-story-branches-v3/bbb \
+  --batch output/anthology/dialogue-bbb-script6-inventory-v2/emasculator \
+  --batch output/anthology/dialogue-bbb-script6-inventory-v1/rotator \
+  --batch output/anthology/dialogue-bbb-script6-nested-gifts-v1/bbb \
+  --out output/anthology/dialogue-coverage-bbb-script6-full.json
 ```
 
 The ledger binds graph, chapter, trace, and media hashes, recomputes UI evidence
@@ -894,14 +973,38 @@ evidence requires the matching BAS hash. Repeated captures do not inflate the si
 site absent in one branch can still be published in another; absence is never
 classified as global unreachability.
 
-Across the 257 verified chapters, CB has 261 sites fully revealed in the native
-UI buffer, six published without a UI draw, one absent from the selected
-branches, and 5,268 uncovered. BBB has 390 fully revealed, 33 published without
-a UI draw, and 6,498 uncovered. Native UI-buffer evidence alone does not prove
-encoded glyph visibility. These counts include empty/control text sites and do
+Across the 326 verified dialogue chapters, CB has 261 sites fully revealed in
+the native UI buffer, six published without a UI draw, one absent from the
+selected branches, and 5,268 uncovered. BBB has 787 fully revealed, 41
+published without a UI draw, two absent from the selected branches, and 6,091
+uncovered. Native UI-buffer evidence alone does not prove encoded glyph
+visibility. These counts include empty/control text sites and do
 not imply that every uncovered site is a unique spoken line. Neither full-game
 anthology is complete; remaining profile branches, most CB BAS, state-dependent
 conversations, objects, travel, and environments still need coverage.
+
+### Combined Verified Movies
+
+`native_sequence_anthology.py assemble` accepts repeated `--batch` arguments
+in chapter order. It rejects incomplete or mixed-game batches and duplicate
+captures. The two combined outputs join the 65 verified sequence chapters with
+the 326 verified dialogue chapters. Each manifest lists its ordered
+`source_batches`, source chapter hashes, chapter boundaries, and whole-file
+RGBA/PCM hashes.
+
+| Movie under `output/anthology` | Chapters | Seconds | Native frames |
+| --- | ---: | ---: | ---: |
+| `cb-verified-anthology-v1.mkv` | 75 | 3,720.252 | 56,962 |
+| `bbb-verified-anthology-v1.mkv` | 316 | 15,290.096 | 229,684 |
+
+Both combined movies passed full decoded pixel, float PCM, timestamp, and
+chapter verification. They preserve the native chapter captures in order;
+they are chaptered anthologies, not continuous playthroughs. The dialogue
+ledger above still records thousands of uncovered sites. CB's authored `year`
+sequence names `SQ/PUVEN1.HNM`, which is absent from the imported assets; the
+native capture does not fabricate it. BBB's Bug Deluxe numeric-chatter travel
+branch and Emasculator's painting reaction likewise remain unresolved. These
+limitations prevent either movie from being called an exhaustive game video.
 
 The sequence and initial dialogue batch binaries are archived in `native-sequences-v2/bin`. To re-verify
 or resume these batches after rebuilding, pass their `offline-presentation` and

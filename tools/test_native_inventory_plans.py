@@ -103,14 +103,47 @@ class InventoryPlanTests(unittest.TestCase):
         self.template["travel_setup"]["supporting_procedures"] = [90]
         self.assertTrue(self.plan()[0])
 
-    def test_existing_choices_and_inventory_are_not_overwritten(self):
+    def test_authored_cod_prerequisites_are_preserved_before_inventory(self):
         self.template["choices"] = [dict(text_site=123, word_offset=4)]
-        with self.assertRaisesRegex(ValueError, "unstocked travel template"):
+        with self.assertRaisesRegex(ValueError, "authored COD choice"):
             self.plan()
+        site = dict(offset=123, procedure="story", record_name="Cyberquizz",
+                    choice_operands=[dict(kind="dictionary", offset=4)])
+        self.graph["cod"]["text_sites"].append(site)
+        before = copy.deepcopy(self.template)
+        plans, _ = self.plan()
+        self.assertEqual(plans[0][1]["choices"], [dict(text_site=123, word_offset=4),
+            dict(source="inventory", text_site=400, inventory_item=7352)])
+        self.assertEqual(self.template, before)
+        site["record_name"] = "Bioquizz"
+        with self.assertRaisesRegex(ValueError, "authored COD choice"):
+            self.plan()
+        site["record_name"] = "Cyberquizz"
+        for choice in [dict(text_site=123, word_offset=5), dict(source="bas", text_site=123, word_offset=4),
+                       dict(source="inventory_cancel", text_site=400),
+                       dict(source="inventory", text_site=400, inventory_item=7352)]:
+            self.template["choices"] = [choice]
+            with self.assertRaisesRegex(ValueError, "authored COD choice"):
+                self.plan()
+
+    def test_existing_inventory_and_exit_retries_are_not_overwritten(self):
         self.template["choices"] = []
         self.template["travel_setup"]["stage_aboard_inventory"] = [7352]
         with self.assertRaisesRegex(ValueError, "unstocked travel template"):
             self.plan()
+        self.template["travel_setup"]["stage_aboard_inventory"] = []
+        self.template["max_exit_retries"] = 1
+        with self.assertRaisesRegex(ValueError, "unstocked travel template"):
+            self.plan()
+
+    def test_exclusions_are_explicit_and_require_a_flat_candidate(self):
+        plans, report = plan_inventory(self.graph, self.template, 400, self.labels, [7352])
+        self.assertEqual(plans, [])
+        self.assertEqual(report["excluded_items"], [7352])
+        self.assertEqual(report["items_without_simple_flag_guard"], [7640])
+        for excluded in [7640, 1]:
+            with self.assertRaisesRegex(ValueError, "not a flat candidate"):
+                plan_inventory(self.graph, self.template, 400, self.labels, [excluded])
 
 
 class InventoryTemplateTests(unittest.TestCase):

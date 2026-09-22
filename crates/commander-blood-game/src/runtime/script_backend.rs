@@ -1429,7 +1429,7 @@ mod tests {
 
     use commander_blood_formats::code::decode_script_code;
     use commander_blood_formats::instruction::{
-        ScriptTextWord, ScriptTimerSlot, decode_script_profile_request,
+        DecodedScriptInstruction, ScriptTextWord, ScriptTimerSlot, decode_script_profile_request,
     };
 
     use crate::native::bloodprg::{
@@ -1684,6 +1684,64 @@ mod tests {
                     }
                 }
                 if let Some(setup) = &plan.travel_setup {
+                    if let Some(guard) = setup.actor_encounter_guard {
+                        let prepare = |profile: &LoadedScriptProfile, offset| {
+                            super::super::contact_scenario::travel_actor_encounter_guard(
+                                profile,
+                                setup.procedure_offset,
+                                &plan.target,
+                                offset,
+                            )
+                        };
+                        let (field, value) = prepare(profile, guard).unwrap();
+                        assert!(profile.state().word(field).is_some());
+                        let expected = match guard {
+                            5237 | 12305 => 2,
+                            5884 | 12537 => 3,
+                            6762 | 13304 => 4,
+                            7520 | 13561 => 5,
+                            7765 => 6,
+                            8868 => 7,
+                            _ => panic!("unrecognized fixture encounter guard"),
+                        };
+                        assert_eq!(value, expected);
+                        for bad in [
+                            usize::MAX,
+                            guard - 3,
+                            guard + 7,
+                            4922,
+                            5,
+                            if plan.target == "Emasculator" {
+                                12305
+                            } else {
+                                5237
+                            },
+                        ] {
+                            assert!(
+                                prepare(profile, bad).is_err(),
+                                "accepted encounter guard {bad}"
+                            );
+                        }
+                        let mut disabled = profile.clone();
+                        let story_offset = if plan.target == "Emasculator" {
+                            3740
+                        } else {
+                            11689
+                        };
+                        let Some(DecodedScriptInstruction::ProcedureGate(gate)) =
+                            profile.instruction_at(ScriptCodeOffset::new(story_offset))
+                        else {
+                            panic!("missing story")
+                        };
+                        disabled
+                            .procedures_mut()
+                            .set_enabled(gate.procedure, false)
+                            .unwrap();
+                        assert!(
+                            prepare(&disabled, guard).is_err(),
+                            "disabled story cannot supply an encounter guard"
+                        );
+                    }
                     if let Some(guard) = setup.actor_evolution_guard {
                         let prepare = |profile: &LoadedScriptProfile, offset| {
                             super::super::contact_scenario::travel_actor_evolution_guard(

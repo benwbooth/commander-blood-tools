@@ -55,7 +55,7 @@ pub(super) fn validate_contact_chapter(
             profile,
             procedure_offset,
             target,
-            ScriptEnvironmentInstruction::RequireContactActivity,
+            Some(ScriptEnvironmentInstruction::RequireContactActivity),
         )
         .map(|_| ());
     }
@@ -81,7 +81,7 @@ fn authored_actor_scenario(
     profile: &LoadedScriptProfile,
     procedure_offset: usize,
     target: &str,
-    activity: ScriptEnvironmentInstruction,
+    activity: Option<ScriptEnvironmentInstruction>,
 ) -> Result<ContactScenario> {
     let actor = profile
         .directory()
@@ -105,7 +105,7 @@ fn authored_actor_scenario(
     else {
         bail!("chapter procedure is not an authored procedure gate");
     };
-    let mut activity_guard = false;
+    let mut activity_guard = activity.is_none();
     let mut presentation = false;
     let mut closed = false;
     let mut entry_tokens = Vec::new();
@@ -119,7 +119,7 @@ fn authored_actor_scenario(
                 closed = true;
                 break;
             }
-            DecodedScriptInstruction::Environment(guard) if *guard == activity => {
+            DecodedScriptInstruction::Environment(guard) if Some(*guard) == activity => {
                 ensure!(!activity_guard, "duplicate chapter activity guard");
                 activity_guard = true;
             }
@@ -175,7 +175,7 @@ pub(super) fn validate_travel_chapter(
         profile,
         procedure_offset,
         target,
-        ScriptEnvironmentInstruction::RequireTravelActivity,
+        Some(ScriptEnvironmentInstruction::RequireTravelActivity),
     )
     .map(|_| ())
 }
@@ -208,7 +208,7 @@ pub(super) fn travel_supporting_procedures(
                 profile,
                 offset,
                 target,
-                ScriptEnvironmentInstruction::RequireTravelActivity,
+                Some(ScriptEnvironmentInstruction::RequireTravelActivity),
             )?;
             ensure!(
                 scenario.entry_tokens.is_empty(),
@@ -493,22 +493,63 @@ pub(super) fn contact_encounter_guard(
     guard_offset: usize,
 ) -> Result<(ScriptStateWord, u16)> {
     validate_contact_chapter(profile, procedure_offset, target)?;
+    actor_encounter_guard(profile, procedure_offset, target, guard_offset)
+}
+
+/// Select an authored visit in an enabled actor-only story procedure during travel.
+pub(super) fn travel_actor_encounter_guard(
+    profile: &LoadedScriptProfile,
+    procedure_offset: usize,
+    target: &str,
+    guard_offset: usize,
+) -> Result<(ScriptStateWord, u16)> {
+    validate_travel_chapter(profile, procedure_offset, target)?;
+    let (story_offset, procedure) = profile
+        .code()
+        .tokens()
+        .iter()
+        .find_map(
+            |token| match profile.instruction_at(token.source_offset()) {
+                Some(DecodedScriptInstruction::ProcedureGate(gate))
+                    if token.source_offset().index() < guard_offset
+                        && guard_offset < gate.failure_target.index() =>
+                {
+                    Some((token.source_offset().index(), gate.procedure))
+                }
+                _ => None,
+            },
+        )
+        .context("travel encounter guard has no owning story procedure")?;
+    let story = authored_actor_scenario(profile, story_offset, target, None)?;
+    ensure!(
+        story.entry_tokens.is_empty() && profile.procedures().is_enabled(procedure)?,
+        "travel encounter guard requires an enabled actor-only story procedure"
+    );
+    actor_encounter_guard(profile, story_offset, target, guard_offset)
+}
+
+fn actor_encounter_guard(
+    profile: &LoadedScriptProfile,
+    procedure_offset: usize,
+    target: &str,
+    guard_offset: usize,
+) -> Result<(ScriptStateWord, u16)> {
     let Some(DecodedScriptInstruction::ProcedureGate(gate)) =
         profile.instruction_at(ScriptCodeOffset::new(procedure_offset))
     else {
-        bail!("contact encounter setup has no procedure gate");
+        bail!("actor encounter setup has no procedure gate");
     };
     let tokens = profile.code().tokens();
     let index = tokens
         .iter()
         .position(|token| token.source_offset().index() == guard_offset)
-        .context("contact encounter setup has no source instruction")?;
+        .context("actor encounter setup has no source instruction")?;
     ensure!(
         index > 0
             && index + 1 < tokens.len()
             && tokens[index - 1].source_offset().index() > procedure_offset
             && tokens[index + 1].source_offset() < gate.failure_target,
-        "contact encounter guard is outside the selected procedure"
+        "actor encounter guard is outside the selected procedure"
     );
     ensure!(
         matches!(
@@ -522,19 +563,19 @@ pub(super) fn contact_encounter_guard(
                 ScriptInstruction::GuardEnd
             ))
         ),
-        "contact encounter setup requires a single authored guard predicate"
+        "actor encounter setup requires a single authored guard predicate"
     );
     let Some(DecodedScriptInstruction::SharedState(operation)) =
         profile.instruction_at(ScriptCodeOffset::new(guard_offset))
     else {
-        bail!("contact encounter guard is not a state predicate");
+        bail!("actor encounter guard is not a state predicate");
     };
     let ScriptStateOperand::Immediate(value) = operation.operand else {
-        bail!("contact encounter guard must use an immediate count");
+        bail!("actor encounter guard must use an immediate count");
     };
     ensure!(
         operation.operator == ScriptStateOperator::EqualOrAssign && value > 0,
-        "contact encounter guard must equal a positive visit count"
+        "actor encounter guard must equal a positive visit count"
     );
     let actor = profile
         .directory()
@@ -545,14 +586,14 @@ pub(super) fn contact_encounter_guard(
         kind,
         crate::native::bloodprg::ScriptFieldSelector::ENCOUNTER_COUNT,
     )
-    .context("contact actor has no encounter counter")?;
+    .context("chapter actor has no encounter counter")?;
     let counter = profile
         .state()
         .object_word(actor, offset / 2)
-        .context("contact actor encounter counter is unbound")?;
+        .context("chapter actor encounter counter is unbound")?;
     ensure!(
         operation.target == counter,
-        "contact encounter predicate does not address the chapter actor's counter"
+        "actor encounter predicate does not address the chapter actor's counter"
     );
     Ok((counter, value))
 }
@@ -563,7 +604,7 @@ fn prepare_authored_actor_chapter(
     target: &str,
     activity: ScriptEnvironmentInstruction,
 ) -> Result<()> {
-    let scenario = authored_actor_scenario(profile, procedure_offset, target, activity)?;
+    let scenario = authored_actor_scenario(profile, procedure_offset, target, Some(activity))?;
     let selected = match profile
         .instruction_at(ScriptCodeOffset::new(procedure_offset))
         .unwrap()

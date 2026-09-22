@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "initial_profile": 5,
+  "cod_sha256": "b9f5cdfc42fa5b7cc63489c46a0c52c02fae6d4519880fae75eed1fc1fc626c6",
+  "dic_sha256": "6dadc62c05a6587550c2077c449e9ebcaa3dd7bfc52ebdb13b3a0a002238ee40",
+  "entry": "travel",
+  "end": {"kind": "presentation_finished"},
+  "title": "Emasculator: give writing",
+  "target": "Emasculator",
+  "travel_setup": {
+    "planet": "Cyberock", "destination": "Cyberland", "procedure_offset": 8973,
+    "stage_actor_at_destination": true, "actor_encounter_guard": 5237,
+    "stage_aboard_inventory": [7688]
+  },
+  "choices": [
+    {"text_site": 5530, "word_offset": 1476},
+    {"source": "inventory", "text_site": 11515, "inventory_item": 7688}
+  ],
+  "required_cod_sites": [4431, 5245, 5530, 5567, 11071, 11515],
+  "required_frame_boundary_cod_sites": [4431, 5245, 5530, 5567, 11071, 11515],
+  "expected_unpublished_cod_sites": [4025, 5627]
+}

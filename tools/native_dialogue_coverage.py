@@ -136,6 +136,8 @@ def build(catalog, batches, output):
                     "chapter inventory transfer evidence differs")
             require(chapter.get("inventory_cancellations", []) == evidence.get("inventory_cancellations", []),
                     "chapter inventory cancellation evidence differs")
+            require(chapter.get("travel_encounter") == evidence.get("travel_encounter"),
+                    "chapter travel encounter evidence differs")
             capture = len(captures)
             add_chapter(plan, chapter, profiles, sites, capture)
             captures.append(dict(title=record["name"], path=str(path),

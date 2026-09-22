@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "initial_profile": 5,
+  "cod_sha256": "b9f5cdfc42fa5b7cc63489c46a0c52c02fae6d4519880fae75eed1fc1fc626c6",
+  "dic_sha256": "6dadc62c05a6587550c2077c449e9ebcaa3dd7bfc52ebdb13b3a0a002238ee40",
+  "entry": "travel",
+  "end": {
+    "kind": "presentation_finished"
+  },
+  "title": "Rotator: fifth visit, hear the joke",
+  "target": "Rotator",
+  "travel_setup": {
+    "planet": "Cyberock",
+    "destination": "Cyberland",
+    "procedure_offset": 14244,
+    "stage_actor_at_destination": true,
+    "actor_encounter_guard": 13561
+  },
+  "choices": [
+    {
+      "text_site": 13805,
+      "word_offset": 7214
+    }
+  ],
+  "required_cod_sites": [
+    11855,
+    11908,
+    13569,
+    13805,
+    13862
+  ],
+  "required_frame_boundary_cod_sites": [
+    11855,
+    11908,
+    13569,
+    13805,
+    13862
+  ],
+  "expected_unpublished_cod_sites": [
+    11880,
+    12044
+  ]
+}

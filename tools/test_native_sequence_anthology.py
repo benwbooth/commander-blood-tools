@@ -1,10 +1,42 @@
 import copy
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
-from native_sequence_anthology import concatenate_timelines, validate_playlist, validate_timing
+from native_sequence_anthology import assembly_entries, concatenate_timelines, validate_playlist, validate_timing
 
 
 class NativeSequenceTests(unittest.TestCase):
+    def test_assembly_collects_complete_same_game_batches_without_duplicate_captures(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            batches = [root / "one", root / "two"]
+            for index, batch in enumerate(batches):
+                batch.mkdir()
+                coverage = dict(complete=True, failures=[], provenance=dict(game="commander_blood",
+                                records=[dict(name=f"chapter {index}")]),
+                                completed=[dict(record=f"chapter {index}", path=str(root / f"capture-{index}"))])
+                (batch / "coverage.json").write_text(json.dumps(coverage))
+            game, entries = assembly_entries(batches)
+            self.assertEqual(game, "commander_blood")
+            self.assertEqual([entry["record"] for entry in entries], ["chapter 0", "chapter 1"])
+            changed = json.loads((batches[1] / "coverage.json").read_text())
+            changed["provenance"]["game"] = "big_bug_bang"
+            (batches[1] / "coverage.json").write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, "different games"):
+                assembly_entries(batches)
+            changed["provenance"]["game"] = "commander_blood"
+            changed["completed"][0]["path"] = str(root / "capture-0")
+            (batches[1] / "coverage.json").write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, "duplicate native chapter"):
+                assembly_entries(batches)
+            changed["completed"][0]["path"] = str(root / "capture-1")
+            changed["complete"] = False
+            (batches[1] / "coverage.json").write_text(json.dumps(changed))
+            with self.assertRaisesRegex(ValueError, "incomplete"):
+                assembly_entries(batches)
+
     def test_native_timestamps_accept_mixed_intervals(self):
         rows = [{"start_ns": 0}, {"start_ns": 46_000_000}, {"start_ns": 114_000_000}]
         probe = {"streams": [{"time_base": "1/1000"}],

@@ -16,8 +16,10 @@ Tequila cryobox outburst/ghost branches; later-profile concert reactions, Bug
 Deluxe's future/farewell conversations, and Cyberquizz's first/second visits and
 Christmas greeting; Cyberquizz/Bioquizz travel greetings; and inventory gifts
 to both quizzers; and prepared gift visits for Mega Paul, Sebasto Paul, and
-Inter Paul; and Eviscerator/Outrageor nuclear gifts. There are 51 checked-in
-plans, including the currently failing Bug Deluxe travel probe. These
+Inter Paul; Eviscerator/Outrageor nuclear gifts; and Emasculator/Rotator first
+and later visits, selected story choices, and technology/culture/writing gifts.
+There are 81 checked-in plans, including the currently failing Bug Deluxe travel
+probe. These
 checked-in plans do not cover all actors, dialogue branches, objects, travel, or
 environments. The static BAS and inventory planners also produce candidate plan
 sets from the hashed catalog without running the game.
@@ -41,6 +43,8 @@ Do not add artificial holds or subtitle cards to fill these gaps:
 | BBB prepared contacts, SCRIPT2-5 | 7183; 3005, 15361, 21365; 1783, 8054, 15997, 16230, 16482; 1895, 5619 | One terminal publication per chapter without a glyph-buffer draw; offsets are profile-local. |
 | BBB later contacts, SCRIPT6/9/13/14/17 | 11669; 2638, 3109; 1837, 9984; 1811, 6886, 10995; 2098, 2504, 4841 | One terminal publication per chapter without a glyph-buffer draw; includes both Cyberquizz visits. |
 | BBB SCRIPT17 travel greetings | 4795, 6046 | Terminal publications without a glyph-buffer draw. |
+| BBB SCRIPT6 Rotator second visit | 12345 | Not published on the captured branch; the preceding A6 at 12329 has skip-next=1 when not shown. |
+| BBB SCRIPT6 Rotator fourth-visit acceptance | 13395 | Published after the selected answer, without a frame-boundary UI draw. |
 
 The 2355 disposition is distinct from a publication that was not drawn. The
 original `BLOOD2PG.EXE` A6/outer-loop oracle now includes five skip-next cases:
@@ -141,6 +145,15 @@ The report retains these changes and the trace verifier checks actor placement.
 This is deliberate chapter staging, not a claim about the actor's canonical
 location or a normal gameplay route.
 
+BBB-only `travel_setup.actor_encounter_guard` selects a single positive
+visit-count equality in an enabled actor-only story procedure for the travel
+actor. Its outer guard must have no additional entry predicates. The source
+operand, not a literal count in the plan, determines the prepared counter.
+Setup stores one less; native C4 entry increments it. The report retains the
+source guard and save changes. Verification checks both the initial trace
+counter and the counter at this actor's first native presentation. This does
+not replay prior visits or change the story procedure's body.
+
 Cyberquizz and Bioquizz each publish six sites: five fully reveal in the native
 UI buffer, and the terminal site has no draw. They retain the native empty
 inventory response, not an invented inventory choice. Encoded dialogue samples
@@ -168,7 +181,10 @@ selection frame and a subsequent ownership transfer. Starting inventory is
 prepared chapter state, not a recorded acquisition route.
 
 `tools/native_inventory_plans.py` derives single-item candidates from the hashed
-catalog and a choiceless travel template. Each plan requires the inventory A6
+catalog and an unstocked travel template. Authored COD dictionary choices for
+the same actor are retained before the appended inventory choice; BAS choices,
+inventory choices, and mismatched source sites are rejected as prerequisites.
+Each plan requires the inventory A6
 and its item-flag reaction at frame boundaries. Nested or enclosing conditions,
 dynamic text, extra choice gates, and reactions without a matching flag clear
 remain deferred. For SCRIPT17 it plans 22 branches per quizzer. Nuclear gifts
@@ -243,11 +259,29 @@ states, and unchanged aboard ownership through closure. The planner adds this
 choice only when the flat reaction writes a known inventory holder back to
 the aboard sentinel; capture must still prove the menu actually reopens.
 
-The generated SCRIPT6 Emasculator/Rotator probes are not checked-in fixtures
-or verified coverage. Their actor-only story procedures run before gifts:
-Emasculator reaches an unplanned name/no question, while Rotator ends the visit
-before item selection. The retained failed probes document those entry gaps;
-they are not evidence that their planned item reactions are unreachable.
+SCRIPT6 Emasculator/Rotator actor-only story procedures run before gifts. The
+initial failed gift probes remain excluded from coverage. Later source-bound
+templates retain Emasculator's second-visit affirmative choice and Rotator's
+fourth-visit decline before offering an item. First-visit fixtures instead
+record the ordinary initial counter without preparation. Additional fixtures
+cover selected second-through-seventh Emasculator visits and second-through-fifth
+Rotator visits, not every possible combination of answers or global story state.
+The six source-bound technology/culture/writing fixtures use the same visit
+prerequisites and select their original inventory record offsets. Their
+reactions are deferred by the flat planner because of additional state and
+multi-line effects; the separate verified captures retain those effects.
+Emasculator's captured technology branch publishes COD 9578. Its other branch
+requires `globals.A100 > 4` and remains unrecorded.
+
+Emasculator's painting candidate (VAR 7256) failed to publish its required
+reaction at COD 9218/9244 in both second-visit and third-visit probes. The
+source item flag is cleared during the native run. Its cause and original-game
+behavior remain unresolved; neither probe establishes global unreachability.
+`--exclude-item 7256` retains this explicit exclusion in the generated planning
+report and does not count the reaction as covered. The flat planner still
+defers technology, culture, and writing, while the separate fixtures capture
+one native path through each reaction. Laws and scruter have no matching simple
+flag guard.
 
 Bronko's SCRIPT2 energy fixture uses Moskito's `usine` destination and procedure
 23683. The seven generated topic captures publish 21 BAS sites and three COD

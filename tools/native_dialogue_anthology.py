@@ -83,7 +83,7 @@ def validate_trace(plan, runner, states, rows):
                     "missing source-bound encounter preparation")
         else:
             require(encounter is None, "unexpected encounter preparation")
-    evolution = None
+    evolution = encounter = None
     if plan.get("entry") == "travel":
         preparation = runner.get("travel_preparation")
         require(isinstance(preparation, dict) and preparation.get("setup") == plan["travel_setup"],
@@ -97,6 +97,19 @@ def validate_trace(plan, runner, states, rows):
                     "missing source-bound evolution preparation")
         else:
             require(evolution is None, "unexpected evolution preparation")
+        encounter = preparation.get("actor_encounter_guard")
+        guard = plan["travel_setup"].get("actor_encounter_guard")
+        if guard is not None:
+            require(isinstance(encounter, dict) and encounter.get("offset") == guard
+                    and type(encounter.get("at_presentation")) is int
+                    and 0 < encounter["at_presentation"] <= 65535
+                    and encounter.get("before_entry") == encounter["at_presentation"] - 1
+                    and type(encounter.get("before")) is int and 0 <= encounter["before"] <= 65535,
+                    "missing source-bound travel encounter preparation")
+        else:
+            require(encounter is None, "unexpected travel encounter preparation")
+    encounter_evidence = dict(offset=encounter["offset"], before_entry=encounter["before_entry"],
+        at_presentation=encounter["at_presentation"], prepared_at_ns=None, entered_at_ns=None) if encounter else None
     boundary = set()
     evidence = {}
     boundary_bas = set()
@@ -125,6 +138,21 @@ def validate_trace(plan, runner, states, rows):
                 "dialogue capture contains pointer input")
         if state["vm"]["resource_profile"] != plan["initial_profile"]:
             continue
+        if encounter is not None:
+            actors = [actor for actor in state.get("persistent", {}).get("object_locations", [])
+                      if actor["name"] == plan["target"]]
+            require(len(actors) == 1 and actors[0]["kind"] == "Actor",
+                    "native trace has no encounter actor")
+            counter = actors[0].get("sequel_encounter_count")
+            if encounter_evidence["prepared_at_ns"] is None:
+                require(counter == encounter["before_entry"],
+                        "native trace does not show the prepared travel encounter count")
+                encounter_evidence["prepared_at_ns"] = time
+            active = state["presentation"].get("active_actor_presentation")
+            if active and active.get("name") == plan["target"] and encounter_evidence["entered_at_ns"] is None:
+                require(counter == encounter["at_presentation"],
+                        "native actor entry did not increment the prepared encounter count")
+                encounter_evidence["entered_at_ns"] = time
         if evolution is not None and not evolution_checked:
             actors = [actor for actor in state.get("persistent", {}).get("object_locations", [])
                       if actor["name"] == plan["target"]]
@@ -229,6 +257,8 @@ def validate_trace(plan, runner, states, rows):
                 for item in inventory_evidence), "missing native inventory offer or transfer")
     require(all(item["offered_at_ns"] is not None and item["closed_at_ns"] is not None
                 for item in cancel_evidence), "missing native inventory cancellation")
+    require(encounter_evidence is None or encounter_evidence["entered_at_ns"] is not None,
+            "missing native entry for the prepared travel encounter")
     require(set(plan["required_frame_boundary_cod_sites"]) <= boundary,
             "missing required frame-boundary text site")
     require(set(plan.get("required_frame_boundary_bas_sites", [])) <= boundary_bas,
@@ -261,7 +291,8 @@ def validate_trace(plan, runner, states, rows):
                     if not evidence.get(site, {}).get("fully_revealed_ui_frames")),
                 raster_evidence_scope="native UI buffer before frame presentation; not by itself proof of encoded glyph visibility",
                 **(dict(inventory_transfers=inventory_evidence) if inventory_evidence else {}),
-                **(dict(inventory_cancellations=cancel_evidence) if cancel_evidence else {}))
+                **(dict(inventory_cancellations=cancel_evidence) if cancel_evidence else {}),
+                **(dict(travel_encounter=encounter_evidence) if encounter_evidence else {}))
 
 
 def verify_chapter(path, plan, manifest, exporter_hash):
@@ -388,7 +419,7 @@ def main():
     capture.add_argument("--max-frames", type=int, default=100_000)
     capture.set_defaults(run=render)
     join = modes.add_parser("assemble")
-    join.add_argument("--batch", type=Path, required=True)
+    join.add_argument("--batch", type=Path, action="append", required=True)
     join.add_argument("--out", type=Path, required=True)
     join.set_defaults(run=assemble)
     args = parser.parse_args()
