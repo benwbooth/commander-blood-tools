@@ -195,6 +195,39 @@ is not an acceptable substitute. The static scanner does not yet automatically
 turn every graph branch into a video. Both catalogs leave unrecorded content
 unrecorded rather than equating script/file presence with video coverage.
 
+### Source-Ordered CB Contact Sweep
+
+`tools/native_cb_contact_plans.py` walks the hashed CB COD/BAS catalog and all
+65 contact procedures in profile/offset order:
+
+```sh
+uv run tools/native_cb_contact_plans.py \
+  --catalog output/anthology/static-dialogue-en-v2 \
+  --out output/anthology/cb-all-contact-candidates-v2
+```
+
+The resulting `planning.json` records COD text/choice offsets for every contact,
+351 simple BAS-topic candidates, and 29 procedures without a unique BAS list.
+These are **not** 351 playable or verified chapters. COD story dialogue can close
+a presentation before its actor's BAS menu opens; state and branch prerequisites
+must be derived and tested before selecting a candidate for native capture.
+SCRIPT3 Bronko's direct-contact `intelligence` candidate and SCRIPT4 Fifi's
+`planet` candidate both failed the native check with "dialogue ended before all
+planned choices." A SCRIPT4 Super Tromp probe navigated to Vista's `tombeau`
+and selected Sinox, not Super Tromp. The source's `st1` procedure checks planet
+Vista, so a second probe used the planet itself as the travel destination.
+That native route verified all three simple Super Tromp BAS topics (painting,
+culture, yolk) as 104.046 seconds of new capture in
+`cb-super-tromp-vista-dialogue-native.mkv`. The three-chapter source batch is
+`dialogue-cb-super-tromp-orbit-all-v1`. CB's combined v2 movie appends that
+SCRIPT4 batch after the earlier SCRIPT1/2 dialogue captures; the earlier
+standalone sequence block is not a reconstructed continuous gameplay route.
+`cb-verified-anthology-v2.mkv` passed full decoded RGBA, PCM, timestamp, and
+chapter verification: **78 chapters, 3,824.298 seconds, and 58,572 frames**.
+The recomputed ledger `dialogue-coverage-cb-super-tromp-v1.json` has 275 CB
+sites fully revealed in the native UI buffer (up from 261), with 5,254 still
+uncovered. BBB remains at 787 fully revealed and 6,091 uncovered.
+
 ### Offline Presentation Backend
 
 `ModernGameServices::new_offline` now constructs the production services without
