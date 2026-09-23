@@ -283,10 +283,23 @@ active navigation stream.
 Freshly captured and fully verified samples are `cb-travel-audio-corrected-v3.mkv`
 (Bratakas on `ITE2.VOC`, Sinox on `UMTHA2.VOC`; two chapters, 109.248 seconds)
 and `bbb-travel-audio-corrected-v3.mkv` (Rotator on `TROMA.VOC`; one chapter,
-74.794 seconds). The old full assemblies still need their travel chapters
-re-captured and reassembled. A BBB Bug Deluxe probe with the current exporter
-stopped at numeric chatter dictionary position 3944; it is not a corrected
-chapter or evidence that every BBB branch can already be regenerated.
+74.794 seconds). The corrected CB selected-branch master is
+`cb-audio-corrected-anthology-v1.mkv`: all 60 travel chapters were recaptured,
+their original plans matched exactly, and the 84-chapter, 4,117.184-second
+assembly passed full decoded RGBA, PCM, timestamp, and chapter verification.
+Its travel chapters select six DESCRIPT music resources rather than the bridge
+`TABLO2.VOC`. The old CB v2 movie remains an audio-defective historical output.
+The corrected BBB selected-branch master is
+`bbb-audio-corrected-anthology-v1.mkv`: all 236 travel chapters were recaptured
+with `TROMA.VOC` selected for Cyberock/Cyberland, their original plans matched
+exactly, and the 317-chapter, 15,323.570-second assembly passed the same full
+media and chapter checks. The old BBB v1 movie remains an audio-defective
+historical output. Both corrected assemblies retain the original selected
+source order, not a continuous gameplay branch order or exhaustive BAS/COD
+coverage. The outputs and their manifests are under `output/anthology`.
+A BBB Bug Deluxe probe with the current exporter stopped at numeric chatter
+dictionary position 3944; it is not a corrected chapter or evidence that every
+BBB branch can already be regenerated.
 
 With Bratakas, Super Tromp, Sinox, and Betakam included, the recomputed
 `dialogue-coverage-source-ordered-v1.json` ledger has **309 CB** and **794 BBB**
@@ -295,6 +308,12 @@ BBB** uncovered sites; publication without a raster remains separate. Script7
 Alphakam and Gammakam first-contact probes stayed on their numeric presentation
 line through 2,500 native frames and failed the bounded endpoint check. They are
 not included in the ledger or any assembled movie.
+
+The corrected movies reuse the same selected branch sets, so these dialogue
+coverage counts are unchanged. CB's 60 travel plans cover seven
+planet/destination pairs. All 236 travel plans in the selected BBB master target
+Cyberock/Cyberland; its greater running time is not evidence of broader world
+or branch coverage.
 
 ### Offline Presentation Backend
 
