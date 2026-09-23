@@ -88,6 +88,7 @@ def validate_trace(plan, runner, states, rows):
         preparation = runner.get("travel_preparation")
         require(isinstance(preparation, dict) and preparation.get("setup") == plan["travel_setup"],
                 "missing prepared-travel provenance")
+        require("travel_music" in runner, "missing travel music provenance")
         evolution = preparation.get("actor_evolution_guard")
         guard = plan["travel_setup"].get("actor_evolution_guard")
         if guard is not None:
@@ -121,6 +122,7 @@ def validate_trace(plan, runner, states, rows):
     staged_actor_checked = False
     staged_inventory_checked = False
     evolution_checked = False
+    travel_music_checked = False
     for row in states:
         time = row["time_ns"]
         require(last_time < time < rows[-1]["start_ns"] + rows[-1]["duration_ns"],
@@ -138,6 +140,13 @@ def validate_trace(plan, runner, states, rows):
                 "dialogue capture contains pointer input")
         if state["vm"]["resource_profile"] != plan["initial_profile"]:
             continue
+        if plan.get("entry") == "travel" and not travel_music_checked:
+            if music := runner["travel_music"]:
+                audio = state["audio"]
+                require(audio["streamed_audio_role"] == "NavigationMusic"
+                        and audio["loaded_navigation_music"] == music,
+                        "travel chapter retained bridge ambience instead of selected music")
+            travel_music_checked = True
         if encounter is not None:
             actors = [actor for actor in state.get("persistent", {}).get("object_locations", [])
                       if actor["name"] == plan["target"]]
@@ -248,6 +257,8 @@ def validate_trace(plan, runner, states, rows):
             if entry["first_full_ui_ns"] is None:
                 entry["first_full_ui_ns"] = time
     require(last is not None, "empty native state trace")
+    require(plan.get("entry") != "travel" or travel_music_checked,
+            "travel chapter has no selected-profile audio state")
     require(evolution is None or evolution_checked, "no native state for prepared actor evolution")
     require(not plan.get("travel_setup", {}).get("stage_actor_at_destination") or staged_actor_checked,
             "no native state for staged travel actor")

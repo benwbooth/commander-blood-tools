@@ -774,18 +774,31 @@ pub(super) fn capture_dialogue_chapter(
             }
             OfflineDialogueEntry::Travel => {
                 let setup = chapter.travel_setup.as_ref().unwrap();
-                let destination = host
+                let directory = host
                     .services()
                     .runtime()
                     .current_profile()
                     .unwrap()
-                    .directory()
+                    .directory();
+                let planet = directory
+                    .find_active_object(setup.planet.as_bytes())
+                    .context("travel planet is not a named native object")?;
+                let destination = directory
                     .find_active_object(setup.destination.as_bytes())
                     .unwrap();
                 host.services_mut()
-                    .begin_chapter_travel(destination, &mut lifecycle)?;
+                    .begin_chapter_travel(planet, destination, &mut lifecycle)?;
                 "native post-HUD travel presentation and automatic actor selection"
             }
+        };
+        let travel_music = if matches!(chapter.entry, OfflineDialogueEntry::Travel) {
+            host.services()
+                .script_backend()
+                .assets()
+                .music()
+                .map(|name| String::from_utf8_lossy(name.as_bytes()).into_owned())
+        } else {
+            None
         };
         host.services_mut()
             .script_backend_mut()
@@ -970,6 +983,7 @@ pub(super) fn capture_dialogue_chapter(
                         "contact_transition_closed": contact_closed,
                         "contact_preparation": contact_preparation,
                         "travel_preparation": travel_preparation,
+                        "travel_music": travel_music,
                         "travel_transition_closed": travel_closed,
                         "removed_sequence_slots": removed_sequences.as_slice(),
                         "published_cod_sites": observed_sites, "frame_boundary_cod_sites": frame_sites,

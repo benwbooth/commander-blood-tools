@@ -2009,12 +2009,18 @@ impl<'window> ModernGameServices<'window> {
     /// Start a prepared chapter at the native post-HUD travel boundary.
     pub(super) fn begin_chapter_travel(
         &mut self,
+        planet: ScriptObjectId,
         destination: ScriptObjectId,
         lifecycle: &mut GameLifecycleState,
     ) -> Result<()> {
         self.load_radio_sound_bank()?;
+        if self.apply_ship_target_description(planet)? {
+            self.restart_navigation_music()?;
+        }
         self.scripts.action_state_mut().current_ship_target = Some(destination);
-        self.apply_ship_target_description(destination)?;
+        if planet != destination && self.apply_ship_target_description(destination)? {
+            self.restart_navigation_music()?;
+        }
         self.activate_ship_target_list_style();
         self.ship_presentation.flags = SHIP_NAVIGATION_ACTIVE_FLAGS;
         lifecycle.presentation.active_line = Some(SHIP_NAVIGATION_STATUS_LINE);

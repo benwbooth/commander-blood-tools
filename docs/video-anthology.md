@@ -268,6 +268,26 @@ The source-ordered BBB assembly `bbb-source-ordered-anthology-v1.mkv` passed
 full media verification with 317 chapters and a 15,323.570-second duration;
 the Betakam chapter occurs once in its manifest.
 
+### Travel Audio Correction
+
+The source-ordered CB v2 and BBB v1 assemblies above have an **audio defect**:
+their offline travel entries skipped the ship-HUD music selection and retained
+the startup bridge `TABLO2.VOC` stream. Their decoded PCM hashes prove only that
+the captured mix survived encoding, not that the selected soundtrack was right.
+Do not treat those full assemblies as audio-correct. Travel capture now applies
+the planet and destination DESCRIPT selections before entry, restarts changed
+music as the ship HUD does, and reports the selected `travel_music`. Dialogue
+trace verification rejects a travel chapter whose selected music is not the
+active navigation stream.
+
+Freshly captured and fully verified samples are `cb-travel-audio-corrected-v3.mkv`
+(Bratakas on `ITE2.VOC`, Sinox on `UMTHA2.VOC`; two chapters, 109.248 seconds)
+and `bbb-travel-audio-corrected-v3.mkv` (Rotator on `TROMA.VOC`; one chapter,
+74.794 seconds). The old full assemblies still need their travel chapters
+re-captured and reassembled. A BBB Bug Deluxe probe with the current exporter
+stopped at numeric chatter dictionary position 3944; it is not a corrected
+chapter or evidence that every BBB branch can already be regenerated.
+
 With Bratakas, Super Tromp, Sinox, and Betakam included, the recomputed
 `dialogue-coverage-source-ordered-v1.json` ledger has **309 CB** and **794 BBB**
 sites fully revealed in native UI buffers. It retains **5,220 CB** and **6,083

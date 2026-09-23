@@ -74,6 +74,7 @@ class DialogueTraceTests(unittest.TestCase):
         self.rows = [dict(start_ns=index * 46_000_000, duration_ns=46_000_000)
                      for index in range(3)]
         self.runner = dict(chapter=self.plan, published_cod_sites=[100, 200],
+                           travel_music=None,
                            choices=[dict(text_site=100, word_offset=4, requested_at_ns=46_000_000)],
                            publications=[dict(frame_end_ns=46_000_000,
                                publication=dict(profile=0, offset=100, subtitle=True)),
@@ -261,6 +262,10 @@ class DialogueTraceTests(unittest.TestCase):
             self.verify()
         self.runner["travel_preparation"] = dict(setup=self.plan["travel_setup"])
         self.runner["travel_transition_closed"] = True
+        del self.runner["travel_music"]
+        with self.assertRaisesRegex(ValueError, "travel music provenance"):
+            self.verify()
+        self.runner["travel_music"] = None
         presentation = self.states[0]["state"]["presentation"]
         presentation["ship_flags"] = 17
         presentation["navigation_rebuild_pending"] = False
@@ -268,6 +273,15 @@ class DialogueTraceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "travel transition did not finish"):
             self.verify()
         presentation["ship_flags"] = 0
+        self.verify()
+        self.states[0]["state"]["descript"] = dict(music="ITE2.VOC")
+        self.runner["travel_music"] = "ITE2.VOC"
+        self.states[0]["state"]["audio"] = dict(streamed_audio_role="BridgeAmbience",
+                                                loaded_navigation_music=None)
+        with self.assertRaisesRegex(ValueError, "retained bridge ambience"):
+            self.verify()
+        self.states[0]["state"]["audio"] = dict(streamed_audio_role="NavigationMusic",
+                                                loaded_navigation_music="ITE2.VOC")
         self.verify()
         presentation["text_state"]["sequence_active"] = True
         with self.assertRaisesRegex(ValueError, "travel transition did not finish"):
