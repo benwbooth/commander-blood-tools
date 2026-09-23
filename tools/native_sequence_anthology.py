@@ -234,9 +234,41 @@ def assembly_entries(batches):
     return game, entries
 
 
+def dialogue_source_order(entries):
+    sequences, dialogue = [], []
+    seen_dialogue = False
+    for index, entry in enumerate(entries):
+        if "report_sha256" not in entry:
+            require(not seen_dialogue, "sequence batch follows dialogue batch")
+            sequences.append(entry)
+            continue
+        seen_dialogue = True
+        path = Path(entry["path"])
+        report_path = path / "report.json"
+        require(digest(report_path) == entry["report_sha256"], "dialogue report changed")
+        report = read_json(report_path)
+        require(report["target"] == "dialogue_chapter", "source-ordered entry is not dialogue")
+        plan = report["runner"]["chapter"]
+        require(plan["title"] == entry["record"], "dialogue title differs from source plan")
+        anchor = plan.get("contact_procedure")
+        if anchor is None:
+            anchor = (plan.get("travel_setup") or {}).get("procedure_offset")
+        if anchor is None:
+            sites = plan.get("required_cod_sites") or entry.get("published_cod_sites") or []
+            require(sites, "dialogue has no source anchor")
+            anchor = min(sites)
+        require(isinstance(anchor, int) and anchor >= 0, "dialogue has no source anchor")
+        dialogue.append(((plan["initial_profile"], anchor, index), entry))
+    require(dialogue, "no dialogue chapters to source-order")
+    return sequences + [entry for _, entry in sorted(dialogue)]
+
+
 def assemble(args):
     batches = args.batch if isinstance(args.batch, list) else [args.batch]
     game, entries = assembly_entries(batches)
+    source_order = getattr(args, "dialogue_source_order", False)
+    if source_order:
+        entries = dialogue_source_order(entries)
     require(not args.out.exists(), f"output already exists: {args.out}")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="native-assembly-", dir=args.out.parent) as temp:
@@ -284,6 +316,8 @@ def assemble(args):
                         if len(batches) > 1 else read_json(batches[0] / "coverage.json")["scope"],
                         sources=entries, chapters=chapters, frames=len(rows), duration_ns=duration,
                         audio_samples=samples, master_sha256=digest(temp / "master.mkv"), **hashes,
+                        **(dict(ordering="sequence_block_then_dialogue_source_offset")
+                           if source_order else {}),
                         **(dict(source_batches=[str(batch.resolve()) for batch in batches])
                            if len(batches) > 1 else {}))
         require(not args.out.exists(), "assembly output appeared during verification")
@@ -305,6 +339,8 @@ def main():
     join = modes.add_parser("assemble")
     join.add_argument("--batch", type=Path, action="append", required=True)
     join.add_argument("--out", type=Path, required=True)
+    join.add_argument("--dialogue-source-order", action="store_true",
+                      help="stable-sort verified dialogue by profile and source procedure offset")
     join.set_defaults(run=assemble)
     args = parser.parse_args()
     args.run(args)

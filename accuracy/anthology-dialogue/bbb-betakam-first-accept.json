@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "game": "big_bug_bang",
+  "title": "Betakam: mummy offer accepted",
+  "initial_profile": 6,
+  "cod_sha256": "3a61325f91048a3ee336c8e4217b7c435c49737ec07cb38901c1be63d757186f",
+  "dic_sha256": "e15343747a13d228f9b729bd2fbd12e17ec25dad08689ea1290c8e616336c851",
+  "target": "Betakam",
+  "entry": "contact",
+  "choices": [
+    {"text_site": 2114, "word_offset": 341}
+  ],
+  "required_cod_sites": [1978, 2114, 2148, 2182],
+  "required_frame_boundary_cod_sites": [1978, 2114, 2148],
+  "end": {"kind": "presentation_finished"}
+}

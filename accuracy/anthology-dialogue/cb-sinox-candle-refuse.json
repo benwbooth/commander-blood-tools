@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "game": "commander_blood",
+  "title": "Sinox: refuse a candle",
+  "initial_profile": 3,
+  "bas_sha256": "a521b9a7add5bc0f30a6099dce0f5327a9cb29696f16a382a9ce69ee0a22386a",
+  "cod_sha256": "686e894d133686851ea6eb09d5c8c7dafd9a636bbe34a6f4f8de9867aec1ef59",
+  "dic_sha256": "76627bc34f7af9dd8c82ac37bfa590094f8cd008636c3e889e7a770385290c1f",
+  "target": "Sinox",
+  "entry": "travel",
+  "travel_setup": {
+    "planet": "Vista",
+    "destination": "tombeau",
+    "procedure_offset": 11894
+  },
+  "choices": [
+    {"text_site": 12056, "word_offset": 1653}
+  ],
+  "required_cod_sites": [11910, 12056, 12119, 12368],
+  "required_frame_boundary_cod_sites": [12056, 12119],
+  "expected_unpublished_cod_sites": [12087],
+  "end": {"kind": "presentation_finished"}
+}

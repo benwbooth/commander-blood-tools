@@ -4,10 +4,33 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from native_sequence_anthology import assembly_entries, concatenate_timelines, validate_playlist, validate_timing
+from native_sequence_anthology import (assembly_entries, concatenate_timelines,
+                                       dialogue_source_order, validate_playlist, validate_timing)
+from video_anthology import digest
 
 
 class NativeSequenceTests(unittest.TestCase):
+    def test_dialogue_source_order_keeps_sequence_prefix_and_stable_branches(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entries = [dict(record="opening", path=str(root / "opening"))]
+            for name, profile, anchor in [("late", 1, 500), ("first", 0, 120),
+                                          ("middle", 1, 100), ("late answer", 1, 500)]:
+                path = root / name
+                path.mkdir()
+                plan = dict(title=name, initial_profile=profile,
+                            travel_setup=dict(procedure_offset=anchor))
+                (path / "report.json").write_text(json.dumps(dict(
+                    target="dialogue_chapter", runner=dict(chapter=plan))))
+                entries.append(dict(record=name, path=str(path),
+                                    report_sha256=digest(path / "report.json")))
+            ordered = dialogue_source_order(entries)
+            self.assertEqual([entry["record"] for entry in ordered],
+                             ["opening", "first", "middle", "late", "late answer"])
+            (root / "middle" / "report.json").write_text("{}")
+            with self.assertRaisesRegex(ValueError, "report changed"):
+                dialogue_source_order(entries)
+
     def test_assembly_collects_complete_same_game_batches_without_duplicate_captures(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -228,6 +228,54 @@ The recomputed ledger `dialogue-coverage-cb-super-tromp-v1.json` has 275 CB
 sites fully revealed in the native UI buffer (up from 261), with 5,254 still
 uncovered. BBB remains at 787 fully revealed and 6,091 uncovered.
 
+SCRIPT4 `bra1` begins on planet Vistar with Bratakas already there. Four
+source-derived BAS topics (Vistar, planet, race, croolis) passed native capture
+and complete chapter verification in `dialogue-cb-bratakas-vistar-v1`. Their
+standalone movie `cb-bratakas-vistar-dialogue-native.mkv` has four chapters and
+runs 174.946 seconds. The batch leaves three actor-list BAS sites unplanned;
+one is the generic `talk` response and two use `leisure`, which is not offered
+in this menu. The combined `cb-verified-anthology-v3.mkv` places Bratakas's
+earlier SCRIPT4 procedure before Super Tromp's and passed full media checks:
+82 chapters, 3,999.244 seconds.
+
+`native_sequence_anthology.py assemble --dialogue-source-order` keeps the
+authored sequence block first, then stable-sorts verified dialogue by profile
+and source procedure offset where supplied, falling back to the earliest
+required COD site. It checks each chapter's source-plan report hash before
+sorting and records the ordering in the output manifest. This is script source
+order within the captured branch set, not an inferred continuous playthrough;
+the sequence records and mutually exclusive dialogue alternatives have no
+single universal gameplay order.
+
+Two SCRIPT4 `sin1` travel plans at Vista's `tombeau` now capture Sinox's candle
+choice both ways. The accept and refuse plans bind COD 12056's authored words
+and require their own response while excluding the other. They passed native
+trace and media verification in `dialogue-cb-sinox-candle-v1`; the new batch
+belongs after Super Tromp's SCRIPT4 `st1` procedure in source order. Their
+standalone `cb-sinox-candle-native.mkv` passed full media verification with
+two chapters and a 117.940-second duration.
+The source-ordered CB assembly `cb-source-ordered-anthology-v2.mkv` passed
+full media verification with 84 chapters and a 4,117.184-second duration.
+
+BBB SCRIPT7's Betakam first-contact accept path passed as a 33.474-second
+chapter in `dialogue-bbb-betakam-first-v3` and
+`bbb-betakam-first-native.mkv`. COD 2182 is VM-published but not present at a
+frame boundary before closure, so the plan requires publication but not a UI
+draw. SCRIPT15 Scruter Mac's first-contact probe stopped at numeric chatter
+dictionary position 2908. That site and chapter remain unverified; neither a
+fabricated numeric voice nor a silent replacement is included.
+The source-ordered BBB assembly `bbb-source-ordered-anthology-v1.mkv` passed
+full media verification with 317 chapters and a 15,323.570-second duration;
+the Betakam chapter occurs once in its manifest.
+
+With Bratakas, Super Tromp, Sinox, and Betakam included, the recomputed
+`dialogue-coverage-source-ordered-v1.json` ledger has **309 CB** and **794 BBB**
+sites fully revealed in native UI buffers. It retains **5,220 CB** and **6,083
+BBB** uncovered sites; publication without a raster remains separate. Script7
+Alphakam and Gammakam first-contact probes stayed on their numeric presentation
+line through 2,500 native frames and failed the bounded endpoint check. They are
+not included in the ledger or any assembled movie.
+
 ### Offline Presentation Backend
 
 `ModernGameServices::new_offline` now constructs the production services without
