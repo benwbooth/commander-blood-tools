@@ -234,6 +234,44 @@ def assembly_entries(batches):
     return game, entries
 
 
+def replace_travel_entries(base, replacements):
+    original = base["sources"]
+    require([entry["record"] for entry in original] ==
+            [chapter["title"] for chapter in base["chapters"]],
+            "base anthology chapter order differs from its sources")
+    require(len({entry["record"] for entry in original}) == len(original),
+            "base anthology has duplicate chapter titles")
+    old_travel = {}
+    for entry in original:
+        if "report_sha256" not in entry:
+            continue
+        report_path = Path(entry["path"]) / "report.json"
+        require(digest(report_path) == entry["report_sha256"], "base dialogue report changed")
+        report = read_json(report_path)
+        plan = report["runner"]["chapter"]
+        require(plan["title"] == entry["record"], "base dialogue title differs from its plan")
+        if plan.get("entry") == "travel":
+            old_travel[entry["record"]] = plan
+    require(old_travel, "base anthology has no travel chapters")
+    game, newer = assembly_entries(replacements)
+    require(game == base["game"], "replacement chapters belong to another game")
+    replacements_by_title = {}
+    for entry in newer:
+        title = entry["record"]
+        require(title in old_travel and title not in replacements_by_title,
+                "replacement is not a unique base travel chapter")
+        report_path = Path(entry["path"]) / "report.json"
+        require(digest(report_path) == entry["report_sha256"], "replacement dialogue report changed")
+        report = read_json(report_path)
+        require(report["runner"]["chapter"] == old_travel[title],
+                "replacement travel plan changed")
+        require("travel_music" in report["runner"], "replacement has no travel music provenance")
+        replacements_by_title[title] = entry
+    missing = old_travel.keys() - replacements_by_title.keys()
+    require(not missing, f"missing {len(missing)} travel replacements: {sorted(missing)[:5]}")
+    return game, [replacements_by_title.get(entry["record"], entry) for entry in original]
+
+
 def dialogue_source_order(entries):
     sequences, dialogue = [], []
     seen_dialogue = False
@@ -264,9 +302,19 @@ def dialogue_source_order(entries):
 
 
 def assemble(args):
-    batches = args.batch if isinstance(args.batch, list) else [args.batch]
-    game, entries = assembly_entries(batches)
+    base_path = getattr(args, "base_manifest", None)
+    replacement_batches = getattr(args, "replacement_batch", None) or []
+    batches = args.batch or []
+    if base_path is not None:
+        require(not batches and replacement_batches,
+                "base assembly requires replacement batches and no ordinary batches")
+        base = read_json(base_path)
+        game, entries = replace_travel_entries(base, replacement_batches)
+    else:
+        require(batches and not replacement_batches, "ordinary assembly requires batches")
+        game, entries = assembly_entries(batches)
     source_order = getattr(args, "dialogue_source_order", False)
+    require(not (base_path and source_order), "base assembly already has an authored chapter order")
     if source_order:
         entries = dialogue_source_order(entries)
     require(not args.out.exists(), f"output already exists: {args.out}")
@@ -311,13 +359,18 @@ def assemble(args):
                 require(Fraction(actual[boundary + "_time"]) * 1_000_000_000 == expected[boundary + "_ns"],
                         "encoded chapter boundary differs")
             require(actual["tags"]["title"] == expected["title"], "encoded chapter title differs")
-        manifest = dict(schema=1, game=game,
-                        scope="verified native sequence and dialogue chapters; not complete-game coverage"
-                        if len(batches) > 1 else read_json(batches[0] / "coverage.json")["scope"],
+        scope = (base["scope"] + "; every travel chapter recaptured with selected music"
+                 if base_path else "verified native sequence and dialogue chapters; not complete-game coverage"
+                 if len(batches) > 1 else read_json(batches[0] / "coverage.json")["scope"])
+        manifest = dict(schema=1, game=game, scope=scope,
                         sources=entries, chapters=chapters, frames=len(rows), duration_ns=duration,
                         audio_samples=samples, master_sha256=digest(temp / "master.mkv"), **hashes,
-                        **(dict(ordering="sequence_block_then_dialogue_source_offset")
+                        **(dict(ordering=base.get("ordering")) if base_path else
+                           dict(ordering="sequence_block_then_dialogue_source_offset")
                            if source_order else {}),
+                        **(dict(supersedes_manifest=str(base_path.resolve()),
+                                replacement_batches=[str(path.resolve()) for path in replacement_batches])
+                           if base_path else {}),
                         **(dict(source_batches=[str(batch.resolve()) for batch in batches])
                            if len(batches) > 1 else {}))
         require(not args.out.exists(), "assembly output appeared during verification")
@@ -337,7 +390,9 @@ def main():
     capture.add_argument("--max-frames", type=int, default=100_000)
     capture.set_defaults(run=render)
     join = modes.add_parser("assemble")
-    join.add_argument("--batch", type=Path, action="append", required=True)
+    join.add_argument("--batch", type=Path, action="append")
+    join.add_argument("--base-manifest", type=Path)
+    join.add_argument("--replacement-batch", type=Path, action="append")
     join.add_argument("--out", type=Path, required=True)
     join.add_argument("--dialogue-source-order", action="store_true",
                       help="stable-sort verified dialogue by profile and source procedure offset")

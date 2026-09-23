@@ -5,11 +5,56 @@ import tempfile
 import unittest
 
 from native_sequence_anthology import (assembly_entries, concatenate_timelines,
-                                       dialogue_source_order, validate_playlist, validate_timing)
+                                       dialogue_source_order, replace_travel_entries,
+                                       validate_playlist, validate_timing)
 from video_anthology import digest
 
 
 class NativeSequenceTests(unittest.TestCase):
+    def test_travel_replacement_requires_every_original_plan_and_keeps_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entries = [dict(record="opening", path=str(root / "opening"))]
+            plan = dict(title="travel", entry="travel", initial_profile=3)
+            for title, chapter in (("travel", plan), ("contact", dict(title="contact", entry="contact"))):
+                path = root / title
+                path.mkdir()
+                (path / "report.json").write_text(json.dumps(dict(runner=dict(chapter=chapter))))
+                entries.append(dict(record=title, path=str(path),
+                                    report_sha256=digest(path / "report.json")))
+            base = dict(game="commander_blood", sources=entries,
+                        chapters=[dict(title=entry["record"]) for entry in entries])
+            new = root / "new"
+            new.mkdir()
+            report = dict(runner=dict(chapter=plan, travel_music="ITE2.VOC"))
+            (new / "report.json").write_text(json.dumps(report))
+            replacement = dict(record="travel", path=str(new),
+                               report_sha256=digest(new / "report.json"))
+            batch = root / "batch"
+            batch.mkdir()
+            coverage = dict(complete=True, failures=[], provenance=dict(
+                game="commander_blood", records=[dict(name="travel")]), completed=[replacement])
+            (batch / "coverage.json").write_text(json.dumps(coverage))
+            game, result = replace_travel_entries(base, [batch])
+            self.assertEqual(game, "commander_blood")
+            self.assertEqual([entry["record"] for entry in result], ["opening", "travel", "contact"])
+            self.assertEqual(result[1]["path"], str(new))
+            self.assertEqual(result[2]["path"], str(root / "contact"))
+            coverage["completed"] = []
+            coverage["provenance"]["records"] = []
+            (batch / "coverage.json").write_text(json.dumps(coverage))
+            with self.assertRaisesRegex(ValueError, "missing 1 travel replacement"):
+                replace_travel_entries(base, [batch])
+            coverage["completed"] = [replacement]
+            coverage["provenance"]["records"] = [dict(name="travel")]
+            (batch / "coverage.json").write_text(json.dumps(coverage))
+            report["runner"]["chapter"]["initial_profile"] = 4
+            (new / "report.json").write_text(json.dumps(report))
+            replacement["report_sha256"] = digest(new / "report.json")
+            (batch / "coverage.json").write_text(json.dumps(coverage))
+            with self.assertRaisesRegex(ValueError, "travel plan changed"):
+                replace_travel_entries(base, [batch])
+
     def test_dialogue_source_order_keeps_sequence_prefix_and_stable_branches(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
