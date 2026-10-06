@@ -362,6 +362,11 @@ arrival, and revisits Migrator for the rehearsal dialogue
 (`cb-migrator-tina-v2`). Both actors end at Trashlando. A subsequent normal
 cryobox contact with Morning (`cb-morning-keyrings-v1`) receives the transmitter
 and receiver aboard and saves with `B1 = 1` and `panne = 3`.
+Amigo's Eden visit follows the customer/password and chemistry topics through
+four `splatch` selections, then `teleport` and `bye_bye`
+(`cb-amigo-splatch-v3`). It saves with Splatch aboard and Amigo at Trashlando.
+The earlier attempts either stopped at the last Splatch reply or omitted the
+explicit goodbye; neither is a continuation parent.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
