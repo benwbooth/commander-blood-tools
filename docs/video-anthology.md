@@ -302,6 +302,11 @@ The run has 34 decoded resources and 33 fully revealed text sites.
 the displayed `galabar` answer. The refusal, laser threat, and `explo3.hnm`
 sequence play before the normal bridge save. Its 11 decoded resources and
 nine fully revealed sites are a separate alternative, not a prison-entry witness.
+`cb-party-prison-v1` selects the correct password and follows Eviscerator's
+war, treasure, and secret topics in chapter five. His Splatch request and
+Honk's "not a never ending story" response are observed. The saved state has
+`D1=1`, Eviscerator still in prison, and Splatch still held by Amigo. Its
+19 decoded resources and 25 fully revealed sites do not establish an escape.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -422,6 +427,12 @@ Waveland, Betakam at Bonusland, and Bob and the three Zens at Trashlando.
 The run observes 22 decoded resources and 26 fully revealed sites. V1 missed
 Honk's object-search interruption; v2 completed its inputs but contacted Tequila
 instead of Bob and reached only `B81=1`. Neither establishes this quest result.
+`bbb-blue-wave-gifts-v1` meets Blue Wave on Ondoya, answers the opening riddle,
+and gives the earned crown, picture, decoder, weapons, and nuclear energy.
+The saved checkpoint verifies all five transfers, `B79=5`, Blue Wave's first
+encounter and 1,000 energy, with the ring still aboard. The run observes
+29 decoded resources and 51 fully revealed sites; awakening Blue Wave still
+requires the mummy and ring sequence.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
