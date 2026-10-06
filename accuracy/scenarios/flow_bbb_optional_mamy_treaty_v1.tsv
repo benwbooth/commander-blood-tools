@@ -1,0 +1,20 @@
+# First Mamy visit with the normally acquired Izwalito treaty aboard.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+choose treaty
+wait 200
+# Three items remain after treaty delivery: normal inventory Cancel row.
+click 200 112
+wait 200

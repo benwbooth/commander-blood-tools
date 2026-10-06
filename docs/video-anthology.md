@@ -989,6 +989,27 @@ sites add that one sentence; slot zero at frame 5217 has SHA-256
 `04becfd47eac3ffb42c58f445a2ff6df2d4c90874099b5f4e6c99f82a2ef5940`.
 The original two strike witnesses and their reports remain unchanged.
 
+`bbb-optional-mamy-optics-rejection-v1` uses an earned optics item before
+Otto's mutation bit is set. It observes SCRIPT3 COD 25275, 25313, and 25347,
+then returns the optics aboard and raises Mamy's aggression 250 to 400,
+without the study branch's evolution or research changes. Its 6,336 frames,
+249 events, and nine matched sites close with the gift flag cleared. Slot
+zero at frame 6200 has SHA-256
+`17d85964045029d488014a58c58bc8c606da42c56275439f008dd0a075f23dd2`.
+`bbb-optional-mamy-treaty-v1` delivers the normally acquired Izwalito treaty,
+observing COD 25883. The immediate source effects raise evolution 60 to 90
+and population 131 to 331, clear `B21`, and set aggression to zero. The treaty
+stays with Mamy, its gift flag cleared. Its 5,442 frames, 279 events, and
+eight matched sites end at slot zero, frame 5306, SHA-256
+`c5eff3d62314c8c25baef5d6193e03e9473ff43fa84d8c87d0c5880e84f6a68f`.
+`bbb-optional-mamy-eligible-audit-v1/parent-review.json` independently checks
+16 distinct lineage manifests, current leaf sources/inputs, complete text,
+selection guards, item transfers, immediate effects, and closed endpoints.
+The same review records the wartime attempt as a valid normal route but
+not the requested wartime response: simulation clears Mamy's war bit at
+frame 2499, with population ten, immediately before contact at frame 2500.
+COD 23415 remains unobserved, not declared unreachable.
+
 `output/game-flows/audit-v12` accepts 334 witnesses and excludes 137 failed,
 running, or legacy attempts. It includes the Oil greetings, both decoder
 decisions, the fifth Mamy slice, and the wrong-Venusia route. Successful
@@ -1064,6 +1085,17 @@ Both completeness flags remain false. This snapshot includes all five Blue
 Wave bionium visits, the credit/ship/hint alternative, both CB recovery
 leaves, and the nuclear-low and strike Mamy leaves. It predates the no-credit
 perfume leaf and the ongoing retained-ring and early-ring continuations.
+
+`output/game-flows/audit-v15` accepts 368 witnesses and excludes 144 failed,
+running, or legacy attempts. CB has 1,569 successful-route and 1,301 other
+normal-route sites; BBB has 3,013 and 435. Unobserved/dynamic sites remain
+1,528 CB and 2,454 BBB, separately from duplicate-wording/control sites.
+The snapshot includes both Hom leaves, the repaired strike sentence,
+no-credit perfume, retained ring, both completed early-ring versions, and
+the optics rejection. It counts only the actually observed ordinary lines
+from the wartime-preempted visit. It predates treaty completion and the
+retained-inventory show/call continuation. Both completeness flags remain
+false, and no movies have been rendered from these flows.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
