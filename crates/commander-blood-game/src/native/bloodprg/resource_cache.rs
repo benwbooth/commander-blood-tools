@@ -681,10 +681,27 @@ mod tests {
 
     #[test]
     fn retained_pool_matches_original_kortland_profile_transition() {
-        let oracle: serde_json::Value = serde_json::from_str(include_str!(
+        assert_retained_pool_fixture(include_str!(
             "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool.json"
-        ))
-        .unwrap();
+        ));
+    }
+
+    #[test]
+    fn retained_pool_matches_original_bug_profile_transition() {
+        assert_retained_pool_fixture(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool_bug.json"
+        ));
+    }
+
+    #[test]
+    fn retained_pool_matches_original_toolbox_profile_transition() {
+        assert_retained_pool_fixture(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool_toolbox.json"
+        ));
+    }
+
+    fn assert_retained_pool_fixture(source: &str) {
+        let oracle: serde_json::Value = serde_json::from_str(source).unwrap();
         let number = |value: &serde_json::Value| value.as_u64().unwrap() as usize;
         let mut pool = RetainedResourcePool::default();
         // Keep only the observed immutable probe known. All other captured

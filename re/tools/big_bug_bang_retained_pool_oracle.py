@@ -132,15 +132,18 @@ def replay(capture, before_name, after_name, resources, offset, extent, numeric_
     assert predicted == observed, "original allocation replay differs from captured pool tail"
     suffix = observed[offset - allocation_size:].split(b"\0", 1)[0] + b"\0"
     assert len(suffix) <= 32, "probe should be a short, terminated numeric suffix"
-    # Identify the immutable original companion that supplied these exact bytes.
+    # A short suffix such as "er" need not uniquely identify its original word.
+    # Match the surrounding retained bytes before attributing its provenance.
+    context = observed[offset - allocation_size:offset - allocation_size + 32]
+    assert len(context) == 32
     provenance = []
     for role in ("bas", "dic"):
         name = f"SCRIPT{before['profile'] + 1}.{role.upper()}"
         data = (resources / name).read_bytes()
         start = 8 if role == "dic" else 0
-        while (found := data.find(suffix, start)) >= 0:
+        while (found := data.find(context, start)) >= 0:
             address = before["bindings"][role]["linear"] + found
-            if initial[address:address + len(suffix)] == suffix:
+            if initial[address:address + len(context)] == context:
                 provenance.append(dict(resource=before["bindings"][role]["handle"],
                                        filename=name, offset=found, sha256=digest(data)))
             start = found + 1

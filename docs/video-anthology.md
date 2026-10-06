@@ -354,6 +354,43 @@ source-matched SCRIPT15 sites. The game-library suite passes 1,119 tests
 tests also pass. This clears the witnessed Mac greeting failure; the remaining
 numeric actors and full optional-conversation scope still require validation.
 
+Captures 48 and 49 extend the original normal-UI diagnostic to Bug Deluxe on
+Cyborg and Toolbox on Moskito, loading the earned `bbb-concert-invitations-v1`
+checkpoint. Both reach the numeric greeting and return to the bridge without
+injected game state. The same relocated original allocator/profile-loader
+replay matches every tested tail byte in each captured transition:
+
+| Capture | Before / After / Numeric Sample | Operand | Matched Tail Bytes | Retained SCRIPT2.DIC Offset | Suffix | Empty / `20` Seed |
+| --- | --- | ---: | ---: | ---: | --- | --- |
+| 48, SCRIPT9 | 0145 / 0155 / 0158 | 3944 | 4,376 | 584 | `er` | 157 / 163 |
+| 49, SCRIPT8 | 0135 / 0144 / 0147 | 984 | 6,136 | 1192 | `direct` | 190 / 196 |
+
+Sample filenames are `state-NNNN.bin`; both use extent 7000. The generated
+fixtures are `big_bug_bang_retained_pool_bug.json` and
+`big_bug_bang_retained_pool_toolbox.json`. Provenance now requires a matching
+32-byte context, since short dictionary suffixes need not be unique. Replaying
+capture 46 with that stricter check produces its existing fixture byte-for-byte.
+The seed pairs remain controlled executions of the original hasher, not proof
+of the exact live call boundary. All three captured profile transitions are
+covered by pool/hash regression tests and the original-resource loader test.
+The expanded game-library suite passes 1,123 tests, with 79 ignored.
+
+`bbb-bug-deluxe-arrival-v2` has 4,830 frames, 2,396 events, nine decoded resources,
+and five source-matched SCRIPT9 sites. Its frame-2432 numeric hash has empty
+scratch, `er`, and seed 157. Its 97-manifest lineage passes; slot zero at frame
+4694 has SHA-256
+`990faa7e2eee437efec0a6a7d2bbf39832c5b25889e2448107529a1d8e6a9682`.
+V1 failed before producing a trace because it lacked the graphics development
+environment and is excluded.
+`bbb-numeric-arrivals-v1` reaches Sushi Deluxe and Toolbox, with five matched
+sites each, 10,768 frames, 6,729 events, and twelve decoded resources. Toolbox's
+frame-8343 hash has empty scratch, `direct`, and seed 190. Sushi's native hash
+uses `rant` and seed 171; this run does not independently establish its DOS call
+timing. Slot zero at frame 10632 has SHA-256
+`dfeba5ee12804854a1e3c01f7e52741a50d930e52d26baf9297e2d4f35c2ac25`.
+The intervening Lovia approach does not open Fuji's encounter, so this witness
+claims only the two observed greetings, despite its three intended stops.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control
@@ -676,6 +713,30 @@ branch transfers it to Mamy and raises her evolution from 60 to 110. Both
 leave the inventory menu normally and save, at boundaries 5563 and 5312.
 These are native normal-input alternatives, not DOS parity, complete Mamy
 coverage, or successful-ending continuations for every saved branch.
+
+The next four Mamy gifts, `bbb-optional-mamy-{credit,ship,food,picture}-gift-v1`,
+all use items already aboard in their earned predecessors and finish with
+normal saves. They contribute nine new SCRIPT3 `donn4_5C7D` sites: eight new
+dialogue wordings and one control-text site, beyond `audit-v9` plus the previous
+Mamy slice. Independent review in `bbb-optional-mamy-gifts-audit-v1/parent-review.json`
+validates all 66 distinct lineage manifests, current source/input hashes,
+offered menu rows, transfers, and source text, with zero rejected presentations.
+Credit reduces the balance from nine to eight; the later return of the credit
+inventory object is not a refund. Mamy returns the ship and raises her evolution
+from 60 to 90. Food gives the observed +500 energy change. The picture raises
+evolution from 60 to 260 and aggression from 250 to 450, quarters the current
+population, and increments `B96`. Other gifts and state-dependent responses
+remain open.
+
+`output/game-flows/audit-v10` accepts 319 witnesses and excludes 133 incomplete
+or legacy attempts. The successful-route lineages remain 72 CB and 99 BBB
+segments. CB has 1,569 successful-route sites and 1,255 other normal-route sites;
+BBB has 3,013 and 269 respectively. There are still 1,572 CB and 2,613 BBB
+unobserved-wording/dynamic sites, plus unobserved duplicate-wording and control
+sites. These are site counts, not unique conversations or video durations.
+`render_ready` and `all_normal_branches_complete` remain false. The intermediate
+Kortland v4/v5 text witnesses included in this census still do not prove numeric
+audio correctness, as explained above.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

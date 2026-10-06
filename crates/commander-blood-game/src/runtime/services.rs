@@ -7580,11 +7580,28 @@ mod tests {
 
     #[test]
     fn numeric_chatter_hashes_retained_tail_and_current_scratch() {
-        use commander_blood_formats::instruction::ScriptTextStateNumber;
-        let oracle: serde_json::Value = serde_json::from_str(include_str!(
+        assert_numeric_chatter_fixture(include_str!(
             "../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool.json"
-        ))
-        .unwrap();
+        ));
+    }
+
+    #[test]
+    fn numeric_chatter_hashes_original_bug_retained_dictionary_tail() {
+        assert_numeric_chatter_fixture(include_str!(
+            "../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool_bug.json"
+        ));
+    }
+
+    #[test]
+    fn numeric_chatter_hashes_original_toolbox_retained_dictionary_tail() {
+        assert_numeric_chatter_fixture(include_str!(
+            "../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool_toolbox.json"
+        ));
+    }
+
+    fn assert_numeric_chatter_fixture(source: &str) {
+        use commander_blood_formats::instruction::ScriptTextStateNumber;
+        let oracle: serde_json::Value = serde_json::from_str(source).unwrap();
         let bytes = |value: &serde_json::Value| -> Box<[u8]> {
             value
                 .as_array()

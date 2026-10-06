@@ -1561,6 +1561,27 @@ mod tests {
     #[test]
     #[ignore = "requires original BBB executable and imported resources"]
     fn sequel_profile_loader_retains_original_numeric_dictionary_tail() {
+        assert_sequel_retained_dictionary_tail(
+            14,
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool.json"
+            ),
+        );
+        assert_sequel_retained_dictionary_tail(
+            8,
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool_bug.json"
+            ),
+        );
+        assert_sequel_retained_dictionary_tail(
+            7,
+            include_str!(
+                "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool_toolbox.json"
+            ),
+        );
+    }
+
+    fn assert_sequel_retained_dictionary_tail(profile: u8, fixture: &str) {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang");
         let executable = std::fs::read(root.join("disc/BLOOD2PG.EXE")).unwrap();
         let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
@@ -1569,7 +1590,7 @@ mod tests {
             OriginalResourceStore::new(root.join("imported-assets/resources"), None, [], true);
         let mut manager = ScriptProfileManager::new(catalog);
         let mut cache = OriginalResourceCache::new();
-        for number in [0, 1, 14] {
+        for number in [0, 1, profile] {
             let id = ScriptProfileId::new_for_dialect(number, ScriptDialect::BigBugBang).unwrap();
             manager.select(id, &mut cache, &store, &resources).unwrap();
             if number == 1 {
@@ -1581,10 +1602,7 @@ mod tests {
                 assert!(cache.retained_suffix(ResourceId::new(44), 0).is_none());
             }
         }
-        let oracle: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool.json"
-        ))
-        .unwrap();
+        let oracle: serde_json::Value = serde_json::from_str(fixture).unwrap();
         let expected: Vec<u8> = oracle["probe"]["bytes"]
             .as_array()
             .unwrap()

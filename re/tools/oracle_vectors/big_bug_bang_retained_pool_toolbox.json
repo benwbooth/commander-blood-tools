@@ -1,0 +1,160 @@
+{
+  "scope": "original allocator replay of captured normal profile transition, not a playthrough",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "capture_sha256": "e81c451a9472b8f057ae1680ea8f240e774f262124ba955da11320cbcadbae6b",
+  "recorder_sha256": "96058b0eb6e2c1c8f5231ef8c281a203d662ae12bad9c0721935dc68f049bd42",
+  "before": {
+    "sample": "state-0135.bin",
+    "sha256": "4df51f281b3d6240d3d321d7e33dd0ec6c262c1ba8fd9442cfbf7e285697f980",
+    "profile": 1
+  },
+  "after": {
+    "sample": "state-0144.bin",
+    "sha256": "32bd6fd02eda0f5b492fcd98341c6dcb09cca9c15bb49c8d25f2b190a2c94b64",
+    "profile": 7
+  },
+  "released": [
+    {
+      "role": "deb",
+      "resource": 38,
+      "allocation_size": 11168
+    },
+    {
+      "role": "cod",
+      "resource": 39,
+      "allocation_size": 40800
+    },
+    {
+      "role": "bas",
+      "resource": 40,
+      "allocation_size": 19936
+    },
+    {
+      "role": "dic",
+      "resource": 41,
+      "allocation_size": 15376
+    }
+  ],
+  "loaded": [
+    {
+      "role": "deb",
+      "resource": 106,
+      "filename": "SCRIPT8.DEB",
+      "file_size": 9080,
+      "allocation_size": 9088,
+      "sha256": "41d429420e104b531c747d99c0cd7a4c19b1385910d4cc371df98548f65a0d33"
+    },
+    {
+      "role": "cod",
+      "resource": 107,
+      "filename": "SCRIPT8.COD",
+      "file_size": 11043,
+      "allocation_size": 11056,
+      "sha256": "dfc5be2023276f092e8164afd5f68a2caf8acdde9e14fe77ff8fb06b155eb419"
+    },
+    {
+      "role": "dic",
+      "resource": 109,
+      "filename": "SCRIPT8.DIC",
+      "file_size": 856,
+      "allocation_size": 864,
+      "sha256": "a489c826d1ec1b29f464f4ea0fdccad86827d5e90ee621b028989b6d625f68b5"
+    }
+  ],
+  "observed_profile_loader_releases": [
+    38,
+    39,
+    40,
+    41
+  ],
+  "tail": {
+    "start": 864,
+    "end": 7000,
+    "sha256": "160f07c5e2bf3f834cb77d990e56be9ec7beb232592fbe57e3f6c7813d164e3b",
+    "matches": true
+  },
+  "probe": {
+    "offset": 984,
+    "bytes": [
+      100,
+      105,
+      114,
+      101,
+      99,
+      116,
+      0
+    ],
+    "provenance": {
+      "resource": 41,
+      "filename": "SCRIPT2.DIC",
+      "offset": 1192,
+      "sha256": "1666ae7bb0dead682f9c3fd64b5ea6b71999475beb77c85ad75e79a0ee71a5b0"
+    }
+  },
+  "numeric": {
+    "sample": "state-0147.bin",
+    "sha256": "11cadc4095ac66c47c064839af3d71b9f9df94630b3ee1459afc8304732296e0",
+    "encoded_words": [
+      61,
+      66,
+      1,
+      984,
+      71,
+      78,
+      83,
+      0
+    ],
+    "dictionary_words": [
+      [
+        78,
+        111,
+        117,
+        115
+      ],
+      [
+        130,
+        116,
+        114,
+        101
+      ],
+      [
+        114,
+        111,
+        98,
+        111,
+        116,
+        115
+      ],
+      [
+        100,
+        97,
+        110,
+        115
+      ],
+      [
+        116,
+        114,
+        105,
+        98,
+        117,
+        46,
+        46,
+        46
+      ]
+    ],
+    "cases": [
+      {
+        "scratch": [],
+        "seed": 190
+      },
+      {
+        "scratch": [
+          50,
+          48
+        ],
+        "seed": 196
+      }
+    ],
+    "scope": "controlled hash inputs; not observed call timing"
+  }
+}
