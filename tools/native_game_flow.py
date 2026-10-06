@@ -75,6 +75,9 @@ def scene_state(s):
     return dict(profile=vm["resource_profile"], cod_site=s["published_cod_text_site"],
                 bas_site=s["published_bas_text_site"], text=text,
                 actor=p["active_actor_presentation"], choices=p["rendered_word_choices"],
+                choice_rows=[{key: row[key] for key in ("kind", "item_index", "position")}
+                             for row in p["retained_word_choice"].get("rows", [])],
+                pending_call=p.get("pending_presentation_owner"),
                 waiting_for_input=p["waiting_for_input"],
                 lifecycle=dict(vm_enabled=vm["execution_enabled"], active=p["active"],
                                screen_active=p["screen_active"],

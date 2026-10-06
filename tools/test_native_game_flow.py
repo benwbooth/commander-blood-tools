@@ -7,7 +7,7 @@ import struct
 import unittest
 
 from native_game_flow import (FlowRecorder, normal_actions, route_source, saved_checkpoints,
-                             verified_predecessor, verify_route_completion)
+                             scene_state, verified_predecessor, verify_route_completion)
 from video_anthology import digest
 
 
@@ -36,6 +36,19 @@ def frame(number=0):
 
 
 class FlowTests(unittest.TestCase):
+    def test_scene_retains_menu_geometry_and_pending_call_without_raster_churn(self):
+        semantic = frame()["semantic"]
+        presentation = semantic["presentation"]
+        presentation["retained_word_choice"]["rows"] = [dict(
+            kind="Cancel", item_index=None, position=[180, 117], matching_text_pixels=42)]
+        presentation["pending_presentation_owner"] = {"name": "Scruter_K", "record": 26}
+        state = scene_state(semantic)
+        self.assertEqual(state["choice_rows"], [dict(
+            kind="Cancel", item_index=None, position=[180, 117])])
+        self.assertEqual(state["pending_call"], {"name": "Scruter_K", "record": 26})
+        presentation["retained_word_choice"]["rows"][0]["matching_text_pixels"] = 7
+        self.assertEqual(scene_state(semantic), state)
+
     def ending_state(self):
         return dict(profile=1, active_video=None, video_open=False, ending=dict(
             ending_active=True, last_assignment=dict(code_offset=40724, query_mode=False)))

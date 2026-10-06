@@ -1,0 +1,11 @@
+# Clear the incoming call before starting the timed cryobox repair conversation.
+park 316 45
+wait 20
+click 125 118
+wait 400
+click 230 124
+wait 40
+click 100 77
+wait 500
+choose sleep
+wait 300

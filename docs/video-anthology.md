@@ -187,7 +187,14 @@ complete the repair and have no new checkpoint. The original executable loads
 that exact earned save through its normal UI and reproduces the sleep menu
 (`cb-morning-sleep-original-v7` and `v8`). Its timer 6 remains at 10 while
 `GS:675A` retains the pending Scruter K record `0x06C2`; this is not evidence
-that the native countdown is wrong. A phone-first continuation is being tested.
+that the native countdown is wrong. The phone-first continuation answers the
+call, lets the timer expire, and selects `sleep` to resume the conversation.
+The original run (`cb-morning-sleep-original-v10`) observes the pending pointer
+clear, timer 6 reach zero and then become disabled, and the bridge return.
+The native run (`cb-morning-sleep-after-call-v2`) reveals the garbage-recovery
+dialogue, closes the conversation, and saves normally. No timer or quest-state
+patch was needed. The recorder now retains the pending call and actual drawn
+choice-row positions, including Cancel, to distinguish these states explicitly.
 
 That original comparison first exposed a DOS harness defect: INT 21h/AH=0Eh
 returned a drive count without changing the current drive. The harness now
