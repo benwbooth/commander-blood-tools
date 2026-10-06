@@ -190,6 +190,13 @@ with active actor attribution, rather than counting stale navigation captions.
 One subsequent Daddy contact and the four-item inventory's Cancel row complete
 another repayment (`bbb-daddy-post-ship-v2`). The saved endpoint retains the
 ship and ten credits, with `A17 = 6`; no extra loan dialogue is required.
+The first Mamy visit buys perfume at Loviland (`bbb-mamy-perfume-v1`), decodes
+its item clip, and saves with both perfume and ship aboard. On Super Zen's
+third visit, the route answers both word-game questions, gives those two items,
+and leaves through Cancel (`bbb-zen-perfume-ship-v2`). Both holders are now
+Super Zen, his evolution is 250, and Kero Zen actually settles on Malusland.
+The new colony has population 14 and active flags 5 at the saved endpoint;
+this is an observed simulation result, not a manually enabled descendant.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
