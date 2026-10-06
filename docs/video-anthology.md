@@ -270,6 +270,12 @@ correct answers terminate the exam; they are not implied by this failed attempt.
 6-10, then accepts the diploma. Its normal save confirms the diploma aboard,
 `Bof=5`, and `quest=10`; 18 decoded resources and 53 fully revealed sites are
 observed. This is a distinct answer path from the same earned Rondo checkpoint.
+`cb-exam-answers-11-16-v1` and `cb-exam-answers-17-21-v1` instead recontact
+Cyberquizz from the normally saved failed exam. They earn and teleport the
+diploma at `quest=16` and `quest=21`, respectively, with `Bof=5`. Q11's Vista
+response is observed without awarding a point, matching the authored script.
+Their 63 and 78 fully revealed sites are separate route witnesses, not an
+enumeration of every possible answer combination.
 `cb-party-crew-v2` separately visits Bronko, Anna Haf, Beauregard, and the
 receiver from the Big Band arrival checkpoint. Bronko's wedding exchange and
 the three short responses are observed, with all four still aboard at the
@@ -381,6 +387,12 @@ The saved checkpoint confirms the crown aboard, `A79=4`, `A74=5`, four credits,
 and Outrageor at Trashlando. Super Zen is still at Cyberland with eight visits.
 The 21 decoded resources and 37 fully revealed sites are observed; the ring and
 Super Zen's subsequent explanation are not yet implied by this checkpoint.
+`bbb-zen-crown-ring-v1` reaches Super Zen at Cyberland, answers his ninth-visit
+yes-or-no game, gives him the crown, and accepts his ring offer. The explanation,
+illustrating sequences, returned crown, and farewell all play. Its normal save
+confirms ring and crown aboard, `A74=6`, `A72=1`, `A23=1`, and four credits;
+`B81=0` still awaits Honk's announcement and Bob's return. The run observes
+29 decoded resources and 86 fully revealed sites.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

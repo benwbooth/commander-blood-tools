@@ -1,0 +1,10 @@
+# Normal local recontact from the saved 32-question failed exam.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
