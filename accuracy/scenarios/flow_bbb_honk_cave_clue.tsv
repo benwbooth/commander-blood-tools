@@ -1,0 +1,15 @@
+# The first Honk call retires the original one-time inventory-search procedure.
+park 4 45
+wait 25
+click 230 88
+wait 100
+park 4 45
+wait 25
+click 230 88
+# Ask Honk about the puzzle after the completed second telepathic vision.
+choose yeah_yeah
+wait 600
+park 4 45
+wait 25
+click 230 88
+wait 800

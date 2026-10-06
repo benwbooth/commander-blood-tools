@@ -136,6 +136,17 @@ the separate Vista assignment. His transfer to the tomb is observed. The local
 contact clicks at the end of that prefix do not reopen the destination view;
 they are not evidence of the subsequent tomb conversation.
 
+`bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
+Honk calls: the first retires the one-time `objet` procedure, the second accepts
+the puzzle, and the third explains the required objects. The saved result has
+`A60=7`, `A53=4`, and `A80=0`. This required no runtime change. The bounded
+original-executable probe `re/tools/big_bug_bang_honk_cave_probe.py` reproduces
+the interruption from the earned save: the first text publishes at COD `0x240b`,
+then C9 at `0x3383` clears the conversation and disables `objet`. It executes
+the original interpreter and authored Honk block, not a whole DOS playthrough;
+its input hashes and register-boundary observations are retained under
+`output/game-flows/oracles/bbb-honk-cave-pass-v8.json`.
+
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
 and `bobg.hnm`), the normal Corpo jump, and Izwalito's first two conversations.
