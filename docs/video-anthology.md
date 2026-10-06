@@ -265,6 +265,12 @@ conversation and war have not yet occurred.
 102,368 presented input frames and a completed return; the subsequent dialogue
 and ordinary saved checkpoint confirm `vbio=12`. This is an earned resupply,
 not the offline planner's result substituted for native gameplay.
+`bbb-tequila-spy-v2` visits Tequila on Goanland, offers the collected bionium,
+and chooses `don't_give` at the ten-dose prompt. The authored split-dose
+continuation plays, Tequila comes aboard, and the saved checkpoint confirms
+`A87=7`, two bionium, seven credits, and the retained perfume. The earlier v1
+failed before producing a trace because it was launched outside the graphics
+development environment; it is not a route witness.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
