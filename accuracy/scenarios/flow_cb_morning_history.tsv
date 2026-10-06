@@ -1,0 +1,40 @@
+# Talk at the Ark after the earned memory recovery, before asking for Mastachok.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 99
+choose war
+choose fight
+choose fight
+choose fight
+choose history
+choose war
+choose history
+choose war
+choose history
+choose war
+choose history
+choose Croolis
+choose terror
+choose terror
+choose terror
+choose emasculator
+choose emasculator
+choose history
+choose Croolis
+choose history
+choose Croolis
+choose history
+choose Croolis
+choose eviscerator
+choose eviscerator
+choose eviscerator
+choose history
+choose treasure
+choose history
+choose treasure
+choose history
+choose battles
+choose bye_bye
+wait 200

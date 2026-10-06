@@ -9,10 +9,12 @@ scan; no game process or simulated clicks are needed for that scan.
 ## Normal-Playthrough Flow Work
 
 The requested final scope is a successful playthrough of each game plus distinct
-alternatives reached through legitimate choices. Shared material should appear
-once. This is not the Cartesian product of actors, destinations, inventory,
-visit counts, and evolution values. The existing selected-branch anthology
-masters are **not** complete normal-playthrough videos.
+alternatives reached through legitimate choices, including every optional
+conversation topic reachable through normal play. Shared material should appear
+once; optional dialogue must not be silently dropped to meet a duration target.
+The final runtime remains to be measured. This is not the Cartesian product of
+actors, destinations, inventory, visit counts, and evolution values. The existing
+selected-branch anthology masters are **not** complete normal-playthrough videos.
 
 The order of work is flow discovery and validation first, rendering second.
 `tools/native_game_flow.py` runs the production native executable with only
@@ -398,6 +400,25 @@ empty/control text. These counts do not establish feasible branches, unique
 clips, or durations. All 61 flow/catalog/coverage tests pass, including the
 new report checks. Rendering remains disabled pending the remaining coverage
 and scene-level edit decisions.
+
+Additional normal-input witnesses after `audit-v6`:
+
+| Witness | Matching sites | Save-zero boundary | Save SHA-256 |
+| --- | ---: | ---: | --- |
+| `cb-bug-catalogue-v1` | 62 | 11,819 | `98781c40538192aa96a3b5ff41e5cb9c64684087bde37f8fea0c4ba2a0b5cf2f` |
+| `cb-morning-history-v1` | 33 | 6,954 | `248138118213057a422ab00ef2b47451a28ed7746e4b4940e702449bea5f8600` |
+| `cb-meal-menus-v1` | 46 | 6,061 | `05c4814e9fd11df5c46165a0a63759d15dc527ca420b3af3e0ee37af8d88c5f1` |
+| `cb-bronko-menu-v1` | 10 | 3,157 | `3521dbcb231e22bc536ebdc9a65be082a217fee5d255fcdeeef5c3576f01c045` |
+
+Each passes the source-text, artifact-hash, and recursive save-lineage audit
+without rejected attributions. The shop's 55 BAS sites include the offered
+product descriptions, unaffordable games, and multimedia advice. No purchase
+is made: `ach=0`, and the earned credit remains aboard. Morning's 21 BAS sites
+cover the war, Croolis, and treasure history; all eight COD lines of his
+argument with Honk are also witnessed. The five ordinary console-menu contacts
+show 44 daily-menu sites before Bronko joins; the separate recruited-Bronko
+branch shows his eight improved-menu sites. These are source-site totals,
+including repeated startup sites in each witness, not additive scene counts.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

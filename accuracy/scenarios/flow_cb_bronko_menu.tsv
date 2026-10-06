@@ -1,0 +1,5 @@
+# Read the improved menu after Bronko's earned recruitment.
+park 4 45
+wait 25
+click 230 142
+wait 160

@@ -1,0 +1,13 @@
+# Read each of Honk's five daily menus before Bronko joins the crew.
+park 4 45
+wait 25
+click 230 142
+wait 160
+click 230 142
+wait 160
+click 230 142
+wait 160
+click 230 142
+wait 160
+click 230 142
+wait 160
