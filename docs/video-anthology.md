@@ -552,6 +552,10 @@ Eviscerator on Waveland, and Outrageor on Island. It observes 15 resources and
 the bridge faced the wrong direction: `C11` remains zero, so this is a mutation
 checkpoint, not a completed distress-call route. The reusable gift fragment
 now ends before those ineffective clicks.
+`bbb-mutation-calls-v1` faces the handset and answers both queued calls.
+Mega Paul's report followed by Eviscerator's distress message advances
+`C11` from zero through one to two. The ordinary save follows 16 fully
+revealed sites and three decoded resources; no ambush choice occurs yet.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
