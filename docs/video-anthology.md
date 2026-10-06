@@ -332,6 +332,10 @@ as evidence, not another distinct scene.
 watches the curse channel through its complete `maledict.hnm` sequence. It
 returns and saves with `maledict=1`; the repeated broadcast is a single distinct
 scene for assembly. No curse or channel state was assigned externally.
+`cb-fifi-scrambler-v1` selects `use` on the first chapter-four Ron visit and
+then leaves through the displayed farewell. The authored `brouil.hnm` request
+decodes and closes normally. The run saves with 11 decoded resources and 21
+fully revealed sites; it is the distinct alternative to the main route's refusal.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
