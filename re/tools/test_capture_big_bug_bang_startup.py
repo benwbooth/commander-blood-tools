@@ -202,6 +202,76 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.private_move({"DISPLAY": ":123"}, 789, [-480, 0])
             self.assertEqual(len(run.call_args_list), 1)
 
+    def test_private_move_packets_preserve_signed_total_and_private_display(self):
+        env = {"DISPLAY": ":123"}
+        with mock.patch.object(capture, "private_window", return_value="456"), \
+                mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture.subprocess, "run") as run, \
+                mock.patch.object(capture.time, "sleep") as sleep:
+            event = capture.private_move(env, 789, [-7, 5], steps=3)
+        self.assertEqual(event["relative_motion_packets"], [[-3, 1], [-2, 2], [-2, 2]])
+        self.assertEqual([call.args[0][-2:] for call in run.call_args_list],
+                         [["-3", "1"], ["-2", "2"], ["-2", "2"]])
+        self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
+        self.assertEqual(sleep.call_args_list, [mock.call(0.02)] * 3 + [mock.call(0.15)])
+
+    def test_private_move_rejects_invalid_steps_before_input(self):
+        with mock.patch.object(capture, "private_window") as window:
+            for steps in (0, 129, 1.5, True):
+                with self.assertRaisesRegex(ValueError, "motion steps"):
+                    capture.private_move({"DISPLAY": ":123"}, 789, [-7, 5], steps=steps)
+            window.assert_not_called()
+
+    def test_private_steering_uses_observed_frame_and_centers_before_success(self):
+        states = [{"status": "profile_bound", "profile": 0, "bridge": {"frame": frame, "mouse_arc": arc}}
+                  for frame, arc in ((90, 180), (50, 70), (45, 60), (45, 90))]
+        observe = mock.Mock(side_effect=states)
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move", return_value={"guest_memory_written": False}) as move:
+            result = capture.private_steer({"DISPLAY": ":123"}, 789, 45, observe)
+        self.assertTrue(result["target_verified"])
+        self.assertFalse(result["guest_memory_written"])
+        self.assertEqual(len(result["iterations"]), 4)
+        self.assertEqual([call.args[2] for call in move.call_args_list], [[-240, 0], [-40, 0], [120, 0]])
+        self.assertEqual([call.kwargs["steps"] for call in move.call_args_list], [30, 5, 15])
+
+    def test_private_steering_is_bounded_without_claiming_a_stalled_target(self):
+        observe = mock.Mock(return_value={"status": "profile_bound", "profile": 0,
+                                         "bridge": {"frame": 90, "mouse_arc": 180}})
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move", return_value={}) as move:
+            result = capture.private_steer({"DISPLAY": ":123"}, 789, 45, observe, limit=1)
+        self.assertFalse(result["target_verified"])
+        self.assertEqual(observe.call_count, 2)
+        move.assert_called_once()
+
+    def test_private_steering_rejects_invalid_requests_before_input(self):
+        with mock.patch.object(capture, "private_mouse_locked") as locked:
+            for target, limit in ((-1, 48), (180, 48), (True, 48), (45, 0), (45, 49)):
+                with self.assertRaises(ValueError):
+                    capture.private_steer({"DISPLAY": ":123"}, 789, target, mock.Mock(), limit)
+            locked.assert_not_called()
+        with mock.patch.object(capture, "private_mouse_locked", return_value=False), \
+                mock.patch.object(capture, "private_move") as move:
+            with self.assertRaisesRegex(RuntimeError, "confirmed mouse capture"):
+                capture.private_steer({"DISPLAY": ":123"}, 789, 45, mock.Mock())
+            move.assert_not_called()
+
+    def test_private_steering_requires_valid_feedback_and_stable_profile(self):
+        for state in ({}, {"status": "profile_bound", "bridge": {"frame": 180, "mouse_arc": 0}}):
+            with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                    mock.patch.object(capture, "private_move") as move:
+                with self.assertRaisesRegex(RuntimeError, "bound original bridge"):
+                    capture.private_steer({"DISPLAY": ":123"}, 789, 45, lambda: state)
+                move.assert_not_called()
+        observe = mock.Mock(side_effect=[{"status": "profile_bound", "profile": profile,
+                                          "bridge": {"frame": 90, "mouse_arc": 180}} for profile in (0, 1)])
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move", return_value={}) as move:
+            with self.assertRaisesRegex(RuntimeError, "profile change"):
+                capture.private_steer({"DISPLAY": ":123"}, 789, 45, observe)
+            move.assert_called_once()
+
     def test_private_recapture_releases_moves_and_recaptures_without_clicking(self):
         env = {"DISPLAY": ":123"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
@@ -466,6 +536,50 @@ class StartupCaptureTests(unittest.TestCase):
         self.assertEqual(stopped.exception.code, 0)
         self.assertEqual(run.call_args.args[0].click_after, [35.0, 70.0])
         self.assertEqual(run.call_args.args[0].click_position, [400, 445])
+
+    def test_cli_preserves_bounded_motion_steps(self):
+        argv = ["capture", "disc", "output", "--relative-mouse", "--click-after", "30",
+                "--move-after", "35", "-600", "0", "--motion-steps", "100"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].motion_steps, 100)
+
+    def test_cli_rejects_invalid_or_unused_motion_steps(self):
+        for arguments in (["--motion-steps", "0"], ["--motion-steps", "129"], ["--motion-steps", "2"]):
+            with self.subTest(arguments=arguments), \
+                    mock.patch.object(sys, "argv", ["capture", "disc", "output", *arguments]), \
+                    mock.patch.object(capture, "capture") as run, mock.patch.object(sys, "stderr", io.StringIO()):
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
+
+    def test_cli_preserves_steering_schedule(self):
+        argv = ["capture", "disc", "output", "--relative-mouse", "--click-after", "30",
+                "--steer-after", "35", "45"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].steer_after, [(35.0, 45)])
+
+    def test_cli_rejects_invalid_steering_schedule(self):
+        cases = [["--steer-after", "35", "45"],
+                 ["--relative-mouse", "--click-after", "40", "--steer-after", "35", "45"],
+                 ["--relative-mouse", "--click-after", "30", "--steer-after", "35", "180"],
+                 ["--relative-mouse", "--click-after", "30", "--steer-after", "60", "45"],
+                 ["--relative-mouse", "--click-after", "30", "--steer-after", "35", "45", "--steer-after", "34", "45"],
+                 ["--relative-mouse", "--click-after", "30", "--steer-after", "35", "45", "--move-after", "35", "10", "0"]]
+        for arguments in cases:
+            with self.subTest(arguments=arguments), \
+                    mock.patch.object(sys, "argv", ["capture", "disc", "output", *arguments]), \
+                    mock.patch.object(capture, "capture") as run, mock.patch.object(sys, "stderr", io.StringIO()):
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
 
     def test_cli_preserves_captured_relative_motion(self):
         argv = ["capture", "disc", "output", "--seconds", "65", "--click-after", "45",

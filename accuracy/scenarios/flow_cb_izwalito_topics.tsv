@@ -1,0 +1,55 @@
+# First Corpo contact, without taking the secret/Rondo branch.
+park 4 0
+wait 25
+click 216 72
+wait 120
+click 80 88
+choose commander_blood
+choose Izwal
+choose society
+choose society
+choose society
+choose society
+choose happiness
+choose happiness
+choose happiness
+choose happiness
+choose happiness
+choose talk
+choose food
+choose murffalos
+choose murffalos
+choose murffalos
+choose murffalos
+choose grass
+choose grass
+choose talk
+choose food
+choose talk
+choose reproduction
+choose love
+choose love
+choose female
+choose murffalos
+choose murffalos
+choose murffalos
+choose talk
+choose planet
+choose ecology
+choose ecology
+choose ecology
+choose stars
+choose stars
+choose stars
+choose stars
+choose stars
+choose talk
+choose planet
+choose talk
+choose planet
+choose talk
+choose planet
+choose talk
+choose planet
+choose bye_bye
+wait 200

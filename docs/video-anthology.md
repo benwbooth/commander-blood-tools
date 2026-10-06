@@ -267,6 +267,18 @@ system libraries are changed. All 55 capture-tool tests pass, including
 rejection of missing/ambiguous Xlib, failed display connections, and incorrect
 keycode round trips.
 
+Capture 36 confirms another release/recapture but lands at frame 163 rather
+than the console. Capture 37 splits an ordinary -600 horizontal motion into
+100 small packets and moves the original camera from frame 90 to 70. Capture
+38 instead uses the bounded `--steer-after 36 45` controller: read the bridge,
+send small relative packets, and verify both camera and centered cursor. It
+reaches frame 45 with cursor arc 89 after 21 observations, and the screenshot
+shows the radio console. Intermediate feedback stores compact state, not a
+new RAM dump for every iteration. No state is written to the guest; unbound
+feedback, changed profiles, or an exhausted iteration limit cannot report
+success. All 65 capture-tool tests pass. This is still startup input evidence,
+not a later original-game route or a resolution of numeric chatter.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control
@@ -450,6 +462,17 @@ unobserved/dynamic sites. BBB's counts remain unchanged. Every accepted
 save lineage is rechecked; these totals do not establish full scene coverage
 or running time. No new movie or PCM is recorded, and rendering remains
 disabled pending the remaining coverage and scene-level edit decisions.
+
+`cb-izwalito-topics-v3` replays the verified new-game prefix, then explores the
+offered society, happiness, food, reproduction, ecology, and stars topics on
+the first Corpo visit. Its 117 fully displayed sites match source text with
+no rejected attributions, including 34 Izwalito BAS sites. Slot zero is saved
+at boundary 17,462, SHA-256
+`734938c47c7820a88dc0f37db5d5f9e1a81a90f1512810fa725cd097fb9b0cd6`.
+The first attempt used the wrong later Corpo checkpoint; the second asked for
+an unavailable main-menu `talk` row. Both remain failed attempts. The successful
+route selects only offered rows and does not take the secret/Rondo branch.
+This addition is after `audit-v7` and is not included in that report's totals.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

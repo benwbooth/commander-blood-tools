@@ -308,18 +308,65 @@ def private_key(env, pid, key, observe_press=None):
             "guest_memory_written": False}
 
 
-def private_move(env, pid, motion, observe=None):
+def private_move(env, pid, motion, observe=None, steps=1):
     if len(motion) != 2 or any(type(value) is not int or not -32768 <= value <= 32767 for value in motion):
         raise ValueError("relative motion must contain two signed 16-bit integer deltas")
+    if type(steps) is not int or not 1 <= steps <= 128:
+        raise ValueError("motion steps must be an integer from 1 to 128")
     window = private_window(env, pid)
     if not private_mouse_locked(pid):
         raise RuntimeError("private relative movement requires confirmed mouse capture")
-    subprocess.run(["xdotool", "mousemove_relative", "--", *map(str, motion)],
-                   env=env, check=True, timeout=5)
+    packets = [[value * (i + 1) // steps - value * i // steps for value in motion]
+               for i in range(steps)]
+    for packet in packets:
+        subprocess.run(["xdotool", "mousemove_relative", "--", *map(str, packet)],
+                       env=env, check=True, timeout=5)
+        if steps > 1:
+            time.sleep(0.02)
     time.sleep(0.15)
     return {"kind": "private_x11_relative_move", "relative_motion_requested": motion,
+            "relative_motion_packets": packets, "packet_delay_seconds": 0.02 if steps > 1 else 0,
             "window": window, "display": env["DISPLAY"], "mouse_capture_verified": True,
             "after_move": observe() if observe is not None else None, "guest_memory_written": False}
+
+
+def private_steer(env, pid, target, observe, limit=48):
+    """Steer via ordinary mouse packets; guest state is only feedback."""
+    if type(target) is not int or not 0 <= target < 180:
+        raise ValueError("steering target must be a bridge frame from 0 to 179")
+    if type(limit) is not int or not 1 <= limit <= 48:
+        raise ValueError("steering limit must be from 1 to 48")
+    if not private_mouse_locked(pid):
+        raise RuntimeError("private steering requires confirmed mouse capture")
+    result = {"kind": "private_x11_bridge_steering", "target_frame": target,
+              "display": env["DISPLAY"], "iterations": [], "target_verified": False,
+              "guest_memory_written": False}
+    profile = None
+    for index in range(limit + 1):
+        state = observe()
+        bridge = state.get("bridge") or {}
+        frame, arc = bridge.get("frame"), bridge.get("mouse_arc")
+        if (state.get("status") != "profile_bound" or type(frame) is not int or not 0 <= frame < 180
+                or type(arc) is not int or not 0 <= arc < 360):
+            raise RuntimeError("private steering requires a bound original bridge observation")
+        if profile is None:
+            profile = state["profile"]
+        if state["profile"] != profile:
+            raise RuntimeError("private steering stopped at an unexpected profile change")
+        row = {key: state.get(key) for key in ("elapsed_seconds", "profile", "bridge", "mouse_poll", "host_mouse")}
+        result["iterations"].append(row)
+        distance = (target - frame + 90) % 180 - 90
+        centered = abs(distance) <= 1
+        desired_arc = frame * 2 if centered else (target * 2 + (30 if distance > 0 else -30)) % 360
+        correction = (desired_arc - arc + 180) % 360 - 180
+        if centered and abs(correction) <= 2:
+            result["target_verified"] = True
+            break
+        if index == limit:
+            break
+        dx = max(-240, min(240, correction * 4))
+        row["motion"] = private_move(env, pid, [dx, 0], steps=max(1, (abs(dx) + 7) // 8))
+    return result
 
 
 def private_recapture(env, pid, position, observe=None):
@@ -471,6 +518,7 @@ def capture(args):
                 [(at, "click", i + 1, None) for i, at in enumerate(args.click_after)] +
                 [(at, "key", i + 1, key) for i, (at, key) in enumerate(args.key_after)] +
                 [(at, "move", i + 1, motion) for i, (at, motion) in enumerate(args.move_after)] +
+                [(at, "steer", i + 1, target) for i, (at, target) in enumerate(args.steer_after)] +
                 [(at, "recapture", i + 1, position)
                  for i, (at, position) in enumerate(args.recapture_after)])
 
@@ -536,7 +584,12 @@ def capture(args):
                     elif kind == "key":
                         event.update(private_key(env, game.pid, value, observe), status="sent")
                     elif kind == "move":
-                        event.update(private_move(env, game.pid, value, observe), status="sent")
+                        event.update(private_move(env, game.pid, value, observe, args.motion_steps), status="sent")
+                    elif kind == "steer":
+                        event.update(private_steer(env, game.pid, value, lambda: observe_guest()[0]), status="sent")
+                        event["after_steer"] = observe()
+                        if not event["target_verified"]:
+                            raise RuntimeError("private steering did not reach and center its target")
                     else:
                         event.update(private_recapture(env, game.pid, value, observe), status="sent")
                     inputs_sent += 1
@@ -572,6 +625,10 @@ def main():
                         help=f"private keypress; repeat in increasing order; keys: {', '.join(PRIVATE_KEYS)}")
     parser.add_argument("--move-after", nargs=3, action="append", default=[], metavar=("SECONDS", "DX", "DY"),
                         help="relative mouse movement after a captured click; times must increase")
+    parser.add_argument("--motion-steps", type=int, default=1,
+                        help="split each move-after into 1..128 relative packets, separated by 20 ms")
+    parser.add_argument("--steer-after", nargs=2, action="append", default=[], metavar=("SECONDS", "FRAME"),
+                        help="bounded ordinary-input steering to an observed bridge frame, with read-only feedback")
     parser.add_argument("--recapture-after", nargs=3, action="append", default=[], metavar=("SECONDS", "X", "Y"),
                         help="release capture, place the private root pointer, and recapture through Ctrl-F10")
     parser.add_argument("--click-button", type=int, choices=(1, 3), default=1,
@@ -584,11 +641,14 @@ def main():
                         help="enable autolock and verify a private capture click before the first input")
     parser.add_argument("--game-args", default="AMR S162227 EMS WRIC:\\cblood\\")
     args = parser.parse_args()
+    if not 1 <= args.motion_steps <= 128 or (args.motion_steps != 1 and not args.move_after):
+        parser.error("motion-steps requires 1..128 and a move-after when not 1")
     if args.sdl_mouse_warp and (args.sdl_library is None or not args.relative_mouse):
         parser.error("sdl-mouse-warp requires sdl-library and relative-mouse")
     try:
         args.key_after = [(positive_seconds(at), key) for at, key in args.key_after]
         args.move_after = [(positive_seconds(at), [int(dx), int(dy)]) for at, dx, dy in args.move_after]
+        args.steer_after = [(positive_seconds(at), int(target)) for at, target in args.steer_after]
         args.recapture_after = [(positive_seconds(at), [int(x), int(y)])
                                 for at, x, y in args.recapture_after]
     except (ValueError, argparse.ArgumentTypeError) as error:
@@ -601,6 +661,17 @@ def main():
         parser.error("key-after times must be strictly increasing")
     if set(args.click_after) & {at for at, _ in args.key_after}:
         parser.error("click and key events must have distinct scheduled times")
+    if args.steer_after:
+        if (not args.relative_mouse or not args.click_after
+                or args.click_after[0] >= args.steer_after[0][0]):
+            parser.error("steer-after requires relative-mouse and an earlier captured click")
+        if any(at >= args.seconds or not 0 <= target < 180 for at, target in args.steer_after):
+            parser.error("steer-after requires a time before capture end and a bridge frame from 0 to 179")
+        if any(left[0] >= right[0] for left, right in zip(args.steer_after, args.steer_after[1:])):
+            parser.error("steer-after times must be strictly increasing")
+        other_times = set(args.click_after) | {at for at, _ in args.key_after + args.move_after + args.recapture_after}
+        if {at for at, _ in args.steer_after} & other_times:
+            parser.error("steering events must have distinct scheduled times")
     if args.move_after:
         if not args.relative_mouse or not args.click_after or args.click_after[0] >= args.move_after[0][0]:
             parser.error("move-after requires relative-mouse and an earlier captured click")
