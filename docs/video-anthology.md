@@ -1485,6 +1485,22 @@ A combined same-planet repeat attempt failed during navigation and remains
 excluded; its unsaved progress is not a predecessor. The successful visits
 establish the gift threshold only, not the later retained-inventory story.
 
+`bbb-blue-wave-retained-ring-v2` continues the fifth save through Betakam's
+credit/mummy offer and Blue Wave's mummy/ring sequence. Blue Wave and energy
+are aboard, mummy and ring are hers, and the crown, picture, decoder, weapons,
+nuclear, ship, bionium, and credit remain aboard. `A26=1`, `B79=5`, credits
+rise to five, and bionium remains two. The run records 17,303 frames, 1,274
+events, 30 resources, and 54 matched sites, with no new wording. Its normal
+slot-zero save at frame 17167 has SHA-256
+`e3a385d9fcb13dc3762f50ca73ce563525b325848fc99177e2e9b1cbd9a9578f`.
+`bbb-blue-wave-retained-audit-v1/ring.json` checks 77 lineage manifests,
+current source/input hashes, text, inventory, and the closed endpoint.
+The failed v1 composition toggled travel on at frame 1736 and back off at
+7492, so its second arrival never contacted Blue Wave. The new continuation
+explicitly retains enabled travel after Betakam. This is an input-script
+correction, not a runtime change or an assertion that the later robot gifts
+are already reachable.
+
 `bbb-blue-wave-credit-ship-hint-v1` is a separate alternative from the third
 visit. It offers credit, ship, and the ring before obtaining the mummy, then
 chooses `help` in the displayed `help`/`pride` menu. Blue Wave takes all four

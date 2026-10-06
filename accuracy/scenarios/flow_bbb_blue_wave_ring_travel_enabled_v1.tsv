@@ -1,0 +1,15 @@
+# Continue directly from Betakam with travel already enabled.
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 37 50
+wait 40
+click 250 125
+wait 300
+click 80 104
+choose mummy
+choose ring
+choose yes
+wait 1200
