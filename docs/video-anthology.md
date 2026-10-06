@@ -286,6 +286,11 @@ selector, then passed for both dialects, including query and non-publication
 controls. All 1,113 enabled game-library tests pass, with 78 explicit ignores.
 The successful prison continuation records the rebuilt executable and repair
 reason, and loads the same unmodified earned predecessor save.
+The following Eden visit enters Purple Haze through Amigo, answers Tina's
+first question with `no`, and returns to the bridge automatically
+(`cb-tina-first-v2`). Its checkpoint has `E1 = 1` and a pending Kran Dobu call
+after timer 10 expires. The earlier phone click preceded that call, so this
+fragment does not claim to have answered it or begun the race.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
