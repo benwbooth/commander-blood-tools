@@ -689,6 +689,17 @@ guitar. Its ordinary save has two credits, with both painting and guitar still
 aboard and `B86=0`. All six `23tableau` clips play in authored order at boundaries
 3148--3375 and reach their source counter boundaries. The route observes 17
 resources and 12 fully revealed sites.
+`bbb-rotator-joke-v1` revisits the earned fourth-visit checkpoint and accepts
+the fifth visit's `anyway` choice. The three joke clips (`match02`, `matchfin`,
+and `ppit07`) precede the normal seven-clip explosion ending at `0x9EF3`.
+All non-startup sequence counters reach the source boundaries; the process
+exits cleanly at boundary 3909. It observes 23 resources and 22 fully revealed
+sites. This is a distinct failure branch, not part of the successful route.
+`bbb-concert-bob-clue-v1` calls Internet with the concert route's zero-credit
+balance and selects `don't_cheat`. Bob's money hint preempts the later boss
+menu and ends the call; the ordinary save records 16 fully revealed sites.
+Attempts that waited for `no_strike` or `strike` on this same balance never
+reached those choices and are rejected, not treated as boss-choice witnesses.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

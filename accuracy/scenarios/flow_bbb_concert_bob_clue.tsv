@@ -1,0 +1,8 @@
+# With no credits, the ordinary Internet call ends in Bob's money hint.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 500
