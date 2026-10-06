@@ -1,0 +1,12 @@
+# Revisit the chapter-five prisoner without the requested Splatch.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+choose code
+wait 900

@@ -307,6 +307,10 @@ war, treasure, and secret topics in chapter five. His Splatch request and
 Honk's "not a never ending story" response are observed. The saved state has
 `D1=1`, Eviscerator still in prison, and Splatch still held by Amigo. Its
 19 decoded resources and 25 fully revealed sites do not establish an escape.
+`cb-party-prison-return-v2` re-enters through the correct password and presents
+the missing-Splatch complaints. The saved state retains `D1=1`, Eviscerator in
+prison, and Splatch with Amigo. It observes 15 decoded resources and 15 fully
+revealed sites. V1 left the chart open and never reached the guard; it is excluded.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
