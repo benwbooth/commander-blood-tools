@@ -197,6 +197,11 @@ and leaves through Cancel (`bbb-zen-perfume-ship-v2`). Both holders are now
 Super Zen, his evolution is 250, and Kero Zen actually settles on Malusland.
 The new colony has population 14 and active flags 5 at the saved endpoint;
 this is an observed simulation result, not a manually enabled descendant.
+Kero's first Malusland contact then takes `copied` and the extended `yes`
+explanation, presents the authored film/advertising montage, and returns to the
+bridge with a new save (`bbb-kero-first-v1`). A second Papy visit buys medicine
+and plays the concert-research scenes (`bbb-papy-medicine-again-v1`); medicine
+and the earlier optics are both aboard at its witnessed endpoint.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
