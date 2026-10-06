@@ -202,6 +202,13 @@ explanation, presents the authored film/advertising montage, and returns to the
 bridge with a new save (`bbb-kero-first-v1`). A second Papy visit buys medicine
 and plays the concert-research scenes (`bbb-papy-medicine-again-v1`); medicine
 and the earlier optics are both aboard at its witnessed endpoint.
+Giving those optics and medicine to Kero on his second visit completes the
+cloning requirement and population support (`bbb-kero-cloning-v1`). The save
+has `A54 = 1`, both gifts held by Kero, and Ben Zen newly settled on Tumland
+with active flags 5 and population 14. The next route visits Ben's illness
+scene, then buys another dose from Papy on his third visit
+(`bbb-ben-request-medicine-v1`). It saves with medicine aboard, seven credits,
+`A54 = 2`, and `A38 = 0`; the treatment itself is not yet counted as complete.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret

@@ -1,0 +1,21 @@
+# Give optics for cloning, then medicine to grow the new colony's population.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 220 92
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose optics
+choose medicine
+wait 400
+click 200 118
+wait 400
