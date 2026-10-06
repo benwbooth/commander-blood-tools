@@ -312,6 +312,11 @@ The second Emasculator visit (`bbb-emasculator-nuclear-v1`) answers `no` to
 his joke and accepts the purchase. The save has the nuclear item aboard,
 six credits remaining, and Emasculator's encounter count at two. Migrator's
 ship is still with him at this checkpoint.
+Migrator's next visit (`bbb-migrator-nuclear-ship-v1`) chooses `no_thanks`,
+gives the purchased nuclear item, and gives the guitar. The ship transfers
+aboard and the save has `A45 = 2`, `B50 = 1`, `B52 = 1`, and `B96 = 1`.
+Migrator has population 352 and evolution 340. Mig Burner remains at Loneland;
+the settlement flag is not counted as proof of a new colony.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
@@ -465,6 +470,10 @@ Beauregard's normal cryobox contact plays the curse sequence and sets
 to protect Yoko, revisits Rondo, and hears his telescope discovery. Morning
 remains at the observatory and Jerry has not arrived yet; the pending Cyberion
 call must be answered before proceeding with the investigation.
+Answering Cyberion and Morning, visiting Hom with both fingerprint clicks,
+then returning to Rondo (`cb-hom-jerry-v1`) completes Jerry's investigation
+scene. The save has `G1 = 1`, `jerry = 1`, Jerry at the Shark, and Yoko and
+Morning at Trashlando. Cyberock's examination and Hom's reward still follow.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
