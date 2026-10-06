@@ -602,6 +602,16 @@ with `B86=2`. The seven requested clips, including `lpm4sc1`, `venthig`, and
 `ettamorf`, close normally with counters reaching the decoded source's last
 frame boundary. The route observes 19 resources and 63 fully revealed sites.
 
+The separate fresh-start witnesses `bbb-opening-complete-v1` and
+`cb-opening-complete-v2` send no skip input. BBB's first `present` pass contains
+all 13 authored clips in order at native boundaries 322--4375, with every
+counter reaching the source's last decoded-frame boundary. CB's `CLIPTOOT`
+pass reaches counter 1257 and closes at boundary 10232 after the complete
+`MIND` logo. CB v1 stopped at counter 690 and is not a complete opening witness.
+These passive runs continue into attract-mode repetition; retain only the first
+complete opening pass, not the later loops or reload startup excerpts. The
+boundaries identify recorded evidence and are not video timestamps.
+
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
 and `bobg.hnm`), the normal Corpo jump, and Izwalito's first two conversations.
