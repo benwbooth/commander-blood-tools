@@ -1,0 +1,32 @@
+# Learn Izwalito's secret through his ordinary dialogue after the food delivery.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose Izwal
+choose ideal
+choose ideal
+choose ideal
+choose ideal
+choose ideal
+choose bye_bye
+choose yes
+choose bye_bye
+wait 500
+# The sixth visit also reveals Rondo through Izwalito's authored fallback.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose bye_bye
+wait 500
+# The following visit offers the trip to Hita and Hom.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose YES
+wait 1200

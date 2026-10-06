@@ -67,6 +67,14 @@ evidence must still match; the save is loaded only through the normal game menu.
 Historical runtime changes are validated against their recorded hashes rather
 than silently treating the entire lineage as one build.
 
+BBB endings can terminate the executable during the final passive wait.
+`--expect-bbb-ending 0x9f14`, for example, requires the native SCRIPT2 ending
+assignment at that exact code offset, a drained video source, a clean process
+exit, and all preceding actions completed. No pending choice or navigation
+action may be skipped. Such a run is an `observed_ending`, not a successful
+story-completion claim or a resumable route checkpoint. Without this explicit
+expectation, incomplete action lists remain errors.
+
 The flow keeps subtitle and inline-menu text separate. A fully revealed text
 site requires the native glyph-raster audit to match, not just a published VM
 offset. Loaded DESCRIPT bindings and videos with observed decoded frames are
@@ -89,8 +97,19 @@ both transfers and the earned checkpoint are observed. BBB's fresh-game route re
 Honk's six-item handover, and the writing gift that raises Daddy's evolution to
 260. Its verified saved continuations earn the Internet optics/credit rewards,
 create and settle Super Zen on Crazyland, and create Marakas on Spiraland.
-These are route endpoints, not whole-game completion. Marakas's food purchase
-is not yet established: the initial attempted route actually visited Papy.
+The corrected Spiralus route buys Marakas's food, observes both item clips,
+and saves with food aboard. His second visit includes the authored illustrative
+transfers, then the earned optics gift raises evolution to 90 and enables
+Izwalito's settlement on Vulcland. The next two Izwalito visits reach the
+help/phone-number dialogue and return normally to the bridge.
+Two earned-save alternatives, declining the help and denying the later call,
+reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
+CB's continued Izwalito route obtains Rondo's coordinates through the secret
+conversation, visits Hom via Hita, and reveals Kortex. A normal Pterra visit
+with the accepted code then recruits Scruter Jo aboard.
+CB's separate earned-save alternatives include Izwalito's secret refusal and
+Scruter Jo's rejected code, with `explo3.hnm` played and Jo still on Pterra.
+These are route endpoints, not whole-game completion.
 The detailed witnesses live under `output/game-flows`.
 
 ### Source Progression Gates

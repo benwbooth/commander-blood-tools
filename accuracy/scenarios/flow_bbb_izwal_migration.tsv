@@ -1,0 +1,16 @@
+# Revisit Marakas, hear his second-visit scenes, and give the earned optics.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 250 125
+wait 200
+click 80 104
+choose accept
+choose optics
+wait 300
+# Cancel the remaining five-item GIVE list and let the migration run.
+click 200 127
+wait 500

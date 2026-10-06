@@ -321,6 +321,11 @@ def flow_markdown(directory, status):
         update = status["predecessor"].get("runtime_update")
         if update:
             lines[3:3] = ["Runtime changed since the predecessor: " + json.dumps(update["reason"]), ""]
+    if status.get("observed_ending"):
+        ending = status["observed_ending"]
+        lines[3:3] = [
+            f"Observed the expected SCRIPT2 ending opcode at 0x{ending['code_offset']:04X} "
+            "and a clean native process exit. This does not classify the ending as a story success.", ""]
     previous = None
     with (directory / "events.jsonl").open() as source:
         for line in source:
@@ -356,7 +361,32 @@ def flow_markdown(directory, status):
     return "\n".join(lines)
 
 
-def consume_process(command, env, directory, recorder, actions, timeout):
+def verify_route_completion(actions, completed, returncode, final_state, ending_offset=None):
+    if returncode != 0:
+        raise RuntimeError(f"native route exited {returncode}; see game.log")
+    if ending_offset is None:
+        if completed != actions:
+            raise ValueError(f"route completed {len(completed)}/{len(actions)} expected actions")
+        return None
+    # A natural ending may interrupt only the final passive wait, never a choice.
+    interrupted_wait = (bool(actions) and actions[-1].split()[0] in {"wait", "frames"}
+                        and completed == actions[:-1])
+    if completed != actions and not interrupted_wait:
+        raise ValueError("ending interrupted actions other than the final passive wait")
+    ending = (final_state or {}).get("ending") or {}
+    assignment = ending.get("last_assignment") or {}
+    if ((final_state or {}).get("profile") != 1 or not ending.get("ending_active")
+            or assignment.get("code_offset") != ending_offset
+            or assignment.get("query_mode") is not False):
+        raise ValueError("native exit did not reach the expected SCRIPT2 ending opcode")
+    if (final_state.get("video_open") is not False or "active_video" not in final_state
+            or final_state["active_video"] is not None):
+        raise ValueError("native exit left ending video open")
+    return dict(profile=2, code_offset=ending_offset, native_exit_code=returncode,
+                completed_actions=len(completed), interrupted_final_wait=interrupted_wait)
+
+
+def consume_process(command, env, directory, recorder, actions, timeout, ending_offset=None):
     """Drain both native trace streams concurrently; never persist per-frame JSON."""
     selector = selectors.DefaultSelector()
     streams = {}
@@ -401,14 +431,12 @@ def consume_process(command, env, directory, recorder, actions, timeout):
                     break
                 if time.monotonic() >= deadline:
                     raise TimeoutError("native route exceeded its time limit")
-            if process.returncode:
-                raise RuntimeError(f"native route exited {process.returncode}; see game.log")
         if any(stream["buffer"] for stream in streams.values()):
             raise ValueError("truncated native trace record")
-        if completed != actions:
-            raise ValueError(f"route completed {len(completed)}/{len(actions)} expected actions")
         if not recorder.frames:
             raise ValueError("route produced no native trace")
+        return verify_route_completion(actions, completed, process.returncode,
+                                       recorder.previous, ending_offset)
     finally:
         if process is not None and process.poll() is None:
             os.killpg(process.pid, signal.SIGTERM)
@@ -427,6 +455,9 @@ def consume_process(command, env, directory, recorder, actions, timeout):
 def record_route(args):
     if args.runtime_update is not None and (not args.resume_from or not args.runtime_update.strip()):
         raise ValueError("--runtime-update requires a predecessor and a nonempty reason")
+    if args.expect_bbb_ending is not None and (args.game != "bbb"
+                                             or not 0 <= args.expect_bbb_ending <= 0xFFFF):
+        raise ValueError("--expect-bbb-ending requires BBB and a 16-bit SCRIPT2 code offset")
     source, scenario_sources = route_source([args.scenario, *args.then])
     actions = normal_actions(source)
     binary = (args.bin_dir / GAMES[args.game]).resolve()
@@ -462,6 +493,8 @@ def record_route(args):
                   predecessor=predecessor, state_injection=False,
                   full_game_complete=False, all_normal_branches_complete=False,
                   time_basis="native frame boundaries; elapsed_ns is wall time, not video PTS")
+    if args.expect_bbb_ending is not None:
+        status["expected_ending"] = dict(profile=2, code_offset=args.expect_bbb_ending)
     save_json(directory / "flow.json", status)
     recorder = None
     try:
@@ -473,10 +506,14 @@ def record_route(args):
                        "--trace", str(directory / "actions.fifo"), "--live-trace",
                        str(directory / "live.fifo"), "--oracle-packed-second", str(args.packed_second)]
             recorder = FlowRecorder(output, checkpoint, writable)
-            consume_process(command, env, directory, recorder, actions, args.timeout)
+            ending = consume_process(command, env, directory, recorder, actions, args.timeout,
+                                     args.expect_bbb_ending)
             if checkpoint and not recorder.loaded_checkpoint:
                 raise ValueError("route never completed its expected normal checkpoint load")
-            status.update(status="observed_route", observations=recorder.summary())
+            status.update(status="observed_ending" if ending else "observed_route",
+                          observations=recorder.summary())
+            if ending:
+                status["observed_ending"] = ending
             status["checkpoints"] = saved_checkpoints(writable, recorder.saved_slots)
         for path, expected in provenance["sources"].items():
             if digest(ROOT / path) != expected:
@@ -513,6 +550,8 @@ def main():
     parser.add_argument("--resume-from", type=Path, help="flow.json with a witnessed normal save")
     parser.add_argument("--runtime-update", metavar="REASON",
                         help="explicitly record a binary update while retaining exact save/script/asset checks")
+    parser.add_argument("--expect-bbb-ending", type=lambda value: int(value, 0), metavar="OFFSET",
+                        help="require clean exit through this SCRIPT2 ending opcode; allow the last wait to stop early")
     parser.add_argument("--slot", type=int, choices=range(10), default=0,
                         help="witnessed predecessor save slot; default 0")
     parser.add_argument("--assets", required=True, type=Path)

@@ -7,7 +7,7 @@ import struct
 import unittest
 
 from native_game_flow import (FlowRecorder, normal_actions, route_source, saved_checkpoints,
-                             verified_predecessor)
+                             verified_predecessor, verify_route_completion)
 from video_anthology import digest
 
 
@@ -36,6 +36,43 @@ def frame(number=0):
 
 
 class FlowTests(unittest.TestCase):
+    def ending_state(self):
+        return dict(profile=1, active_video=None, video_open=False, ending=dict(
+            ending_active=True, last_assignment=dict(code_offset=40724, query_mode=False)))
+
+    def test_natural_ending_can_interrupt_only_an_expected_final_wait(self):
+        actions = ["choose abandon", "wait 1800"]
+        state = self.ending_state()
+        result = verify_route_completion(actions, actions[:-1], 0, state, 40724)
+        self.assertTrue(result["interrupted_final_wait"])
+        self.assertEqual(result["code_offset"], 40724)
+        result = verify_route_completion(actions, actions, 0, state, 40724)
+        self.assertFalse(result["interrupted_final_wait"])
+        with self.assertRaisesRegex(ValueError, "completed"):
+            verify_route_completion(actions, actions[:-1], 0, state)
+        for remaining in (["choose yes"], ["wait 10", "choose yes"], ["park 4 45"]):
+            with self.subTest(remaining=remaining), self.assertRaisesRegex(ValueError, "passive wait"):
+                verify_route_completion(actions[:1] + remaining, actions[:1], 0, state, 40724)
+
+    def test_expected_ending_rejects_wrong_opcode_query_crash_and_open_video(self):
+        actions = ["choose abandon", "wait 1800"]
+        for mutation in (lambda s: s.update(profile=2),
+                         lambda s: s["ending"].update(ending_active=False),
+                         lambda s: s["ending"]["last_assignment"].update(code_offset=40723),
+                         lambda s: s["ending"]["last_assignment"].update(query_mode=True),
+                         lambda s: s.update(video_open=True),
+                         lambda s: s.pop("video_open"),
+                         lambda s: s.pop("active_video"),
+                         lambda s: s.update(active_video="SQ\\bobb.hnm")):
+            state = self.ending_state()
+            mutation(state)
+            with self.subTest(state=state), self.assertRaises(ValueError):
+                verify_route_completion(actions, actions[:-1], 0, state, 40724)
+        with self.assertRaisesRegex(RuntimeError, "exited 1"):
+            verify_route_completion(actions, actions[:-1], 1, self.ending_state(), 40724)
+        with self.assertRaisesRegex(ValueError, "expected SCRIPT2"):
+            verify_route_completion(actions, actions[:-1], 0, None, 40724)
+
     def checkpoint_fixture(self, root):
         root.mkdir()
         writable = root / "writable"
@@ -84,10 +121,12 @@ class FlowTests(unittest.TestCase):
             (manifest.parent / "writable/GAME1.SAV").write_bytes(b"changed")
             with self.assertRaisesRegex(ValueError, "checkpoint or directory changed"):
                 verified_predecessor(manifest, 0, "cb", provenance)
-            status["status"] = "failed"
-            manifest.write_text(json.dumps(status))
-            with self.assertRaisesRegex(ValueError, "not a completed normal-input"):
-                verified_predecessor(manifest, 0, "cb", provenance)
+            for invalid_status in ("failed", "observed_ending"):
+                status["status"] = invalid_status
+                manifest.write_text(json.dumps(status))
+                with self.subTest(status=invalid_status), self.assertRaisesRegex(
+                        ValueError, "not a completed normal-input"):
+                    verified_predecessor(manifest, 0, "cb", provenance)
 
     def test_runtime_update_is_explicit_and_keeps_script_and_asset_checks(self):
         with tempfile.TemporaryDirectory() as directory:

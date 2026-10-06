@@ -1,0 +1,22 @@
+# Visit the migrated Izwalito, then agree to help during the second visit.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 35 110
+wait 60
+click 250 125
+wait 200
+click 80 104
+wait 600
+click 225 80
+wait 200
+click 80 104
+choose help
+wait 900

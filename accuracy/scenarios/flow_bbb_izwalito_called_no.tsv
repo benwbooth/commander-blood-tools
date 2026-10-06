@@ -1,0 +1,12 @@
+# Third-visit alternate: admit the call was not made and observe Bob's ending.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+choose no
+wait 1800
