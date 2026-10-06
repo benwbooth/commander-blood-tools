@@ -441,6 +441,12 @@ requires the mummy and ring sequence.
 The saved endpoint has the mummy aboard, five credits, and the ring still
 available. Its 11 decoded resources and seven fully revealed sites are a
 verified continuation from the five-gift checkpoint.
+`bbb-blue-wave-ring-v1` gives Blue Wave the mummy, then the ring, and accepts
+her request to come aboard. The complete transformation dialogue and sequence
+intercuts play. The normal save has `A26=1`, `B79=5`, Blue Wave and her energy
+aboard, the picture returned, and both mummy and ring held by Blue Wave.
+Its 24 decoded resources and 47 fully revealed sites precede the aboard show
+and strike storyline; `A61`, `A64`, and `A96` are still zero.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
