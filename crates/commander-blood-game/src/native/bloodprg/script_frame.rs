@@ -650,7 +650,12 @@ mod tests {
     fn skipped_guard_tokens_change_query_mode_without_changing_guard_targets() {
         use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
         for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
-            for (guard, expected_query) in [(vec![0xA0, 0x04, 0x00], true), (vec![0xA1], false)] {
+            for (guard, expected_query) in [
+                (vec![0xA0, 0x04, 0x00], true),
+                (vec![0xA1], false),
+                (vec![0xA9, 0, 0x78, 0x56], true),
+                (vec![0xA9, 1, 0x78, 0x56], true),
+            ] {
                 let mut bytes = vec![TEST_OPCODE];
                 bytes.extend(guard);
                 bytes.push(END_OPCODE);

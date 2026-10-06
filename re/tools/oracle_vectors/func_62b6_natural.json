@@ -317,5 +317,77 @@
       "of": false,
       "af": true
     }
+  },
+  {
+    "name": "a9_sentinel_enabled0_mode0",
+    "opcode": 169,
+    "start_offset": 8192,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 8196,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "a9_sentinel_enabled0_mode1",
+    "opcode": 169,
+    "start_offset": 8192,
+    "query_mode_before": 1,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 8196,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "a9_sentinel_enabled1_mode0",
+    "opcode": 169,
+    "start_offset": 8192,
+    "query_mode_before": 0,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 8196,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
+  },
+  {
+    "name": "a9_sentinel_enabled1_mode1",
+    "opcode": 169,
+    "start_offset": 8192,
+    "query_mode_before": 1,
+    "block_scan_flags": 0,
+    "special_call": null,
+    "query_mode_after": 1,
+    "final_offset": 8196,
+    "defined_flags": {
+      "cf": false,
+      "pf": false,
+      "zf": false,
+      "sf": false,
+      "of": false,
+      "af": false
+    }
   }
 ]

@@ -586,7 +586,7 @@ mod tests {
     const EXPECTED_TOKEN_COUNTS: [usize; PROFILE_COUNT] = [214, 3_271, 3_281, 1_714, 1_869];
     const ORIGINAL_DESCRIPTOR_FILE_OFFSET: usize = 0x14338;
     const PAYLOAD_SCAN_ORACLE_VECTOR_COUNT: usize = 9;
-    const TOKEN_ADVANCE_ORACLE_VECTOR_COUNT: usize = 17;
+    const TOKEN_ADVANCE_ORACLE_VECTOR_COUNT: usize = 21;
 
     #[derive(Deserialize)]
     struct PayloadScanOracleVector {
@@ -892,6 +892,8 @@ mod tests {
             "mode_one_selects_second_length" => &[0xA5, 0x11, 0x22, 0x33],
             "a0_sentinel_sets_mode" => &[0xA0, 0x11, 0x22],
             "a1_sentinel_clears_mode" => &[0xA1],
+            "a9_sentinel_enabled0_mode0" | "a9_sentinel_enabled0_mode1" => &[0xA9, 0, 0x78, 0x56],
+            "a9_sentinel_enabled1_mode0" | "a9_sentinel_enabled1_mode1" => &[0xA9, 1, 0x78, 0x56],
             "fd_sentinel_without_prefix" => &[0xAE, 0x22, 0x33, 0x44, 0x55],
             "fd_sentinel_consumes_a1_prefix" => &[0xAE, 0xA1, 0x22, 0x33, 0x44, 0x55],
             "fb_sentinel_without_prefix" => &[0xA3, 0x22, 0x33],

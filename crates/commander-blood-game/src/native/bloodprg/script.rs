@@ -278,10 +278,10 @@ impl ScriptRuntime {
         self.pending_skip_count = Some(count);
     }
 
-    /// Preserve A0/A1 descriptor mode changes while skipping, without executing
+    /// Preserve A0/A1/A9 descriptor mode changes while skipping, without executing
     /// their guard-stack handlers (CB 0x62B6, BBB 0x68C8).
     pub(crate) fn apply_skipped_token(&mut self, token: &ScriptToken) {
-        if matches!(token.opcode().byte(), 0xA0 | 0xA1) {
+        if matches!(token.opcode().byte(), 0xA0 | 0xA1 | 0xA9) {
             self.query_mode = token.mode_after() == ScriptDecodingMode::Query;
         }
     }

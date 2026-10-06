@@ -103,6 +103,15 @@ evidence must still match; the save is loaded only through the normal game menu.
 Historical runtime changes are validated against their recorded hashes rather
 than silently treating the entire lineage as one build.
 
+The chapter-five Cyberquizz attempt exposed a skipped-token defect: an A9
+procedure header's descriptor still enters query mode even when its handler
+is skipped. Without that mode change, the following exam-score comparison
+became an assignment and the opening line repeated. Four new original
+`BLOODPRG.EXE` `0x62B6` vectors verify both header flags and both incoming modes.
+The port's added A9 skip test failed before the repair; afterward the game
+library passed 1,115 tests (78 ignored), the format library passed 118 tests
+(10 ignored), and all 21 token-advance oracle vectors matched.
+
 BBB endings can terminate the executable during the final passive wait.
 `--expect-bbb-ending 0x9f14`, for example, requires the native SCRIPT2 ending
 assignment at that exact code offset, a drained video source, a clean process

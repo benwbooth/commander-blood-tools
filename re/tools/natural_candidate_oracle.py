@@ -40026,6 +40026,17 @@ def vm_token_advance_vectors() -> list[dict[str, object]]:
             "mode_after": 0,
         },
     ]
+    for enabled in (0, 1):
+        for mode in (0, 1):
+            cases.append({
+                "name": f"a9_sentinel_enabled{enabled}_mode{mode}",
+                "start": 0x2000,
+                "script": [0xA9, enabled, 0x78, 0x56],
+                "mode": mode,
+                "scan_flags": 0,
+                "final": 0x2004,
+                "mode_after": 1,
+            })
 
     script_segment = 0x3000
     game_segment = 0x5000
