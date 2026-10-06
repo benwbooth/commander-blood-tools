@@ -18,6 +18,7 @@ from pathlib import Path
 import select
 import struct
 import subprocess
+import sys
 import time
 
 EXECUTABLE_SHA256 = "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834"
@@ -39,6 +40,71 @@ ROLES = ("var", "deb", "cod", "bas", "dic")
 PTRACE_ATTACH = 16
 PTRACE_DETACH = 17
 PRIVATE_KEYS = ("F7", "Return", "Escape", "space")
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def native_checkpoint_files(manifest, slot, asset_manifest, disc):
+    """Validate an earned native save for an explicitly cross-runtime diagnostic."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import native_flow_coverage as audit
+    finally:
+        sys.path.pop(0)
+    digest = audit.digest
+    manifest = manifest.resolve()
+    asset_manifest = asset_manifest.resolve()
+    assets = json.loads(asset_manifest.read_text())
+    if assets.get("game") != "big_bug_bang" or assets.get("schema_version") != 1:
+        raise ValueError("checkpoint assets are not a sequel import manifest")
+    archive = disc / "BLOOD.DAT"
+    if (archive.stat().st_size != assets["source_archive_byte_count"]
+            or digest(archive) != assets["source_archive_sha256"]):
+        raise ValueError("original disc archive differs from checkpoint assets")
+    loose = {row["resource_name"]: row["sha256"] for row in assets["resources"]
+             if row["origin"] == "loose_file"}
+    loose.update({row["filename"]: row["sha256"] for row in assets["companions"]})
+    for name, expected in loose.items():
+        if Path(name).name != name or "\\" in name or digest(disc / name) != expected:
+            raise ValueError(f"original disc loose file differs: {name}")
+    sources = {("bbb", index): digest(ROOT / f"re/vm/big-bug-bang-profiles/script{index}.blood")
+               for index in range(1, 18)}
+    rows, current = {}, manifest
+    while True:
+        if current in rows or len(rows) >= 100:
+            raise ValueError("checkpoint lineage is cyclic or too deep")
+        row = audit.read_witness(current, sources)
+        if row["manifest"]["game"] != "bbb" or row["manifest"]["status"] != "observed_route":
+            raise ValueError("checkpoint must be a nonending sequel route")
+        rows[current] = row
+        parent = row["manifest"].get("predecessor")
+        if parent is None:
+            break
+        current = Path(parent["manifest"]).resolve()
+    audit.check_lineages(rows)
+    row = rows[manifest]
+    if row["manifest"]["provenance"]["asset_manifest_sha256"] != digest(asset_manifest):
+        raise ValueError("native checkpoint asset manifest differs")
+    checkpoint = next((c for c in row["manifest"]["checkpoints"] if c["slot"] == slot), None)
+    if checkpoint is None:
+        raise ValueError("native checkpoint has no witnessed save in requested slot")
+    files = {}
+    for name, expected in (("BLOOD.SAV", checkpoint["directory_sha256"]),
+                           (checkpoint["filename"], checkpoint["sha256"])):
+        source = audit.safe_child(manifest.parent / "writable", name)
+        data = source.read_bytes()
+        if hashlib.sha256(data).hexdigest() != expected:
+            raise ValueError("native checkpoint bytes changed after audit")
+        files[name] = data
+    reference = dict(kind="earned_native_save_for_original_diagnostic", manifest=str(manifest),
+                     manifest_sha256=row["sha256"], checkpoint=checkpoint,
+                     asset_manifest=str(asset_manifest), asset_manifest_sha256=digest(asset_manifest),
+                     disc_archive_sha256=assets["source_archive_sha256"],
+                     disc_loose_files=loose,
+                     lineage=[dict(manifest=str(p), sha256=r["sha256"]) for p, r in rows.items()],
+                     original_load_verified=False, original_playthrough_witness=False,
+                     validation_tools={name: digest(ROOT / "tools" / name) for name in
+                                       ("native_flow_coverage.py", "native_game_flow.py", "video_anthology.py")})
+    return files, reference
 
 
 def read_exact(stream, address, size):
@@ -119,8 +185,6 @@ def inspect_guest(guest, executable):
         raise ValueError("expected exactly one MiB of DOS memory")
     anchor = executable[GLOBAL_FILE:GLOBAL_FILE + 44]
     names_raw = executable[CATALOG_NAMES_FILE:CATALOG_NAMES_FILE + RESOURCE_COUNT * NAME_SIZE]
-    names = [names_raw[i:i + NAME_SIZE].split(b"\0", 1)[0].decode("ascii")
-             for i in range(0, len(names_raw), NAME_SIZE)]
     candidates = []
     start = 0
     while (position := guest.find(anchor, start)) >= 0:
@@ -133,15 +197,30 @@ def inspect_guest(guest, executable):
             continue
         if guest[vm:vm + 16] != executable[VM_FILE:VM_FILE + 16]:
             continue
-        # The DOS loader uppercases catalog names in place as it opens files.
-        if guest[name_address:name_address + len(names_raw)].upper() != names_raw.upper():
+        # DESCRIPT rewrites slot 7 for actor sprites. Other catalog fields are
+        # stable except for the loader's in-place ASCII uppercasing.
+        live_names = guest[name_address:name_address + len(names_raw)]
+        if any(live_names[i:i + NAME_SIZE].upper() != names_raw[i:i + NAME_SIZE].upper()
+               for i in range(0, len(names_raw), NAME_SIZE) if i != 7 * NAME_SIZE):
             continue
-        candidates.append((position, catalog))
+        try:
+            names = []
+            for i in range(0, len(live_names), NAME_SIZE):
+                field = live_names[i:i + NAME_SIZE]
+                if b"\0" not in field:
+                    raise ValueError("unterminated catalog name")
+                name = field.split(b"\0", 1)[0].decode("ascii")
+                if not name or any(ord(c) < 32 or ord(c) > 126 for c in name):
+                    raise ValueError("invalid catalog name")
+                names.append(name)
+        except ValueError:
+            continue
+        candidates.append((position, catalog, names))
     if not candidates:
         return {"status": "module_not_found"}
     if len(candidates) != 1:
         return {"status": "ambiguous_modules", "candidates": candidates}
-    global_base, catalog = candidates[0]
+    global_base, catalog, names = candidates[0]
     profile = struct.unpack_from("<H", guest, global_base + PROFILE_INDEX)[0]
     handles = struct.unpack_from("<5H", guest, global_base + PROFILE_HANDLES)
     resources = []
@@ -409,7 +488,8 @@ def private_bridge_point(env, pid, target, observe, limit=32):
             break
         if index == limit:
             break
-        motion = [max(-48, min(48, error[0] * 2)), max(-48, min(48, error[1] * 3))]
+        # Unit gain avoids oscillation under the menu's faster mouse scaling.
+        motion = [max(-48, min(48, value)) for value in error]
         row["motion"] = private_move(env, pid, motion, steps=max(1, (max(map(abs, motion)) + 7) // 8))
     return result
 
@@ -507,6 +587,10 @@ def capture(args):
     executable = (disc / "BLOOD2PG.EXE").read_bytes()
     if hashlib.sha256(executable).hexdigest() != EXECUTABLE_SHA256:
         raise ValueError("unrecognized BLOOD2PG.EXE; fixed offsets are not applicable")
+    checkpoint_files, checkpoint_reference = {}, None
+    if args.native_checkpoint is not None:
+        checkpoint_files, checkpoint_reference = native_checkpoint_files(
+            args.native_checkpoint, args.native_slot, args.native_asset_manifest, disc)
     sdl_override = None
     if args.sdl_library is not None:
         library = args.sdl_library.resolve(strict=True)
@@ -523,6 +607,8 @@ def capture(args):
     (output / "recorder.py").write_bytes(recorder_source)
     drive = output / "cdrive"
     (drive / "cblood").mkdir(parents=True)
+    for name, data in checkpoint_files.items():
+        (drive / "cblood" / name).write_bytes(data)
     xvfb = game = None
     report = {"scope": "read-only periodic original-game allocation observations; inputs recorded separately",
               "recorder_sha256": hashlib.sha256(recorder_source).hexdigest(),
@@ -530,6 +616,7 @@ def capture(args):
               "launch_arguments": args.game_args, "launch_arguments_provenance": "explicit capture setting, not recovered installer output",
               "sdl_override": sdl_override,
               "sdl_mouse_warp_requested": args.sdl_mouse_warp,
+              "native_checkpoint": checkpoint_reference,
               "samples": [], "input_events": []}
     try:
         with (output / "xvfb.log").open("wb") as xlog, (output / "dosbox.log").open("wb") as log:
@@ -695,7 +782,16 @@ def main():
     parser.add_argument("--relative-mouse", action="store_true",
                         help="enable autolock and verify a private capture click before the first input")
     parser.add_argument("--game-args", default="AMR S162227 EMS WRIC:\\cblood\\")
+    parser.add_argument("--native-checkpoint", type=Path,
+                        help="earned native flow.json; stage its verified save for ordinary original UI loading")
+    parser.add_argument("--native-slot", type=int, choices=range(10), default=0)
+    parser.add_argument("--native-asset-manifest", type=Path,
+                        help="import manifest matching the native lineage and original disc bytes")
     args = parser.parse_args()
+    if bool(args.native_checkpoint) != bool(args.native_asset_manifest):
+        parser.error("native-checkpoint and native-asset-manifest must be supplied together")
+    if args.native_slot != 0 and args.native_checkpoint is None:
+        parser.error("native-slot requires native-checkpoint")
     if not 1 <= args.motion_steps <= 128 or (args.motion_steps != 1 and not args.move_after):
         parser.error("motion-steps requires 1..128 and a move-after when not 1")
     if args.sdl_mouse_warp and (args.sdl_library is None or not args.relative_mouse):

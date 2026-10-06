@@ -291,6 +291,19 @@ identity, invalid observations, and exhausted bounds. All 71 capture-tool
 tests pass. Captures now preserve the exact hashed recorder source at startup;
 capture 39 also retains its hash-matching recorder snapshot.
 
+Captures 41-44 introduce an explicitly cross-runtime save diagnostic. The
+recorder checks every predecessor, all 17 script sources, the imported archive
+and loose-file hashes, and the witnessed save/directory bytes before staging
+only those save files in its private writable drive. Capture 44 selects Options,
+Load, and the displayed saved slot through ordinary mouse input. The original
+binds profile one, matching the save's zero-based header, after the last click.
+This is not an original-playthrough witness or complete save-state parity proof.
+The metadata deliberately does not infer load verification from staged bytes.
+DESCRIPT's mutable sprite-name catalog slot is now parsed from live memory;
+fixed slots still anchor module identification. Unit pointer gain also prevents
+the menu oscillation seen in capture 43. All 81 capture-tool tests pass. The
+numeric-chatter allocation question remains unresolved.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control
@@ -526,6 +539,13 @@ through their offered menus. All 34 displayed sites match source, including
 8,143 has SHA-256
 `6bf1684f270cbc5b1630d9ef8e24e725fcea8343f8081d4ef6386ad1143b4684`.
 This witness is not yet included in `audit-v8` totals.
+
+`cb-honk-recap-chapter2-v1` branches from the earned Mastachok-perfume save and
+asks Honk's available recap and explanation topics. All 37 fully displayed
+sites match source, including 27 `miss2` recap sites and five `what5` sites.
+Its 23-manifest lineage passes, and slot zero at boundary 6,735 has SHA-256
+`ecf7259dede7433bf90afcc0f4dbc44a85c384048580bf4ffedcb871ab54c22c`.
+This addition also follows `audit-v8`; it does not close all Honk branches.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

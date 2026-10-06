@@ -1,0 +1,7 @@
+# Ask Honk to recount only the events earned by the loaded checkpoint.
+park 4 45
+wait 25
+click 230 88
+choose remember
+choose bye_bye
+wait 200

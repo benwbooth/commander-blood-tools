@@ -4,6 +4,7 @@
 import argparse
 import importlib.util
 import io
+import json
 from pathlib import Path
 import struct
 import sys
@@ -15,6 +16,9 @@ SPEC = importlib.util.spec_from_file_location(
     "capture_big_bug_bang_startup", Path(__file__).with_name("capture_big_bug_bang_startup.py"))
 capture = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(capture)
+sys.path.insert(0, str(capture.ROOT / "tools"))
+import native_flow_coverage as flow_audit
+sys.path.pop(0)
 
 
 def fixture(profile=0):
@@ -49,6 +53,104 @@ def fixture(profile=0):
 
 
 class StartupCaptureTests(unittest.TestCase):
+    def native_checkpoint_fixture(self, root):
+        disc, writable = root / "disc", root / "writable"
+        disc.mkdir()
+        writable.mkdir()
+        (disc / "BLOOD.DAT").write_bytes(b"archive")
+        (disc / "SCRIPT1.VAR").write_bytes(b"var")
+        (writable / "BLOOD.SAV").write_bytes(b"directory")
+        (writable / "GAME1.SAV").write_bytes(b"earned save")
+        assets = dict(game="big_bug_bang", schema_version=1, source_archive_byte_count=7,
+                      source_archive_sha256=flow_audit.digest(disc / "BLOOD.DAT"),
+                      resources=[dict(resource_name="SCRIPT1.VAR", origin="loose_file",
+                                      sha256=flow_audit.digest(disc / "SCRIPT1.VAR"))], companions=[])
+        asset_manifest = root / "assets.json"
+        asset_manifest.write_text(json.dumps(assets))
+        manifest = root / "flow.json"
+        checkpoint = dict(slot=0, filename="GAME1.SAV", saved_at_frame=123,
+                          directory_sha256=flow_audit.digest(writable / "BLOOD.SAV"),
+                          sha256=flow_audit.digest(writable / "GAME1.SAV"))
+        row = dict(path=manifest, sha256="audited-manifest-hash", manifest=dict(
+            game="bbb", status="observed_route", checkpoints=[checkpoint],
+            provenance=dict(asset_manifest_sha256=flow_audit.digest(asset_manifest))))
+        return manifest, asset_manifest, disc, row
+
+    def test_native_checkpoint_stages_only_audited_bytes_without_claiming_original_load(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest, assets, disc, row = self.native_checkpoint_fixture(Path(directory))
+            with mock.patch.object(flow_audit, "read_witness", return_value=row) as read, \
+                    mock.patch.object(flow_audit, "check_lineages", wraps=flow_audit.check_lineages) as check:
+                files, reference = capture.native_checkpoint_files(manifest, 0, assets, disc)
+            self.assertEqual(files, {"BLOOD.SAV": b"directory", "GAME1.SAV": b"earned save"})
+            self.assertEqual(len(read.call_args.args[1]), 17)
+            check.assert_called_once_with({manifest: row})
+            self.assertEqual(reference["checkpoint"]["saved_at_frame"], 123)
+            self.assertEqual(len(reference["validation_tools"]), 3)
+            self.assertFalse(reference["original_load_verified"])
+            self.assertFalse(reference["original_playthrough_witness"])
+
+    def test_native_checkpoint_rejects_disc_mismatch_before_auditing(self):
+        for name in ("BLOOD.DAT", "SCRIPT1.VAR"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                manifest, assets, disc, row = self.native_checkpoint_fixture(Path(directory))
+                (disc / name).write_bytes(b"changed")
+                with mock.patch.object(flow_audit, "read_witness", return_value=row) as read:
+                    with self.assertRaisesRegex(ValueError, "disc"):
+                        capture.native_checkpoint_files(manifest, 0, assets, disc)
+                    read.assert_not_called()
+
+    def test_native_checkpoint_rejects_failed_audit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest, assets, disc, row = self.native_checkpoint_fixture(Path(directory))
+            with mock.patch.object(flow_audit, "read_witness", side_effect=ValueError("bad evidence")):
+                with self.assertRaisesRegex(ValueError, "bad evidence"):
+                    capture.native_checkpoint_files(manifest, 0, assets, disc)
+
+    def test_native_checkpoint_rejects_wrong_game_ending_assets_and_unwitnessed_slot(self):
+        for mode in ("game", "ending", "assets", "slot"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                manifest, assets, disc, row = self.native_checkpoint_fixture(Path(directory))
+                state = row["manifest"]
+                if mode == "game":
+                    state["game"] = "cb"
+                elif mode == "ending":
+                    state["status"] = "observed_ending"
+                elif mode == "assets":
+                    state["provenance"]["asset_manifest_sha256"] = "different"
+                else:
+                    state["checkpoints"] = []
+                with mock.patch.object(flow_audit, "read_witness", return_value=row):
+                    with self.assertRaises(ValueError):
+                        capture.native_checkpoint_files(manifest, 0, assets, disc)
+
+    def test_native_checkpoint_rejects_cycle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest, assets, disc, row = self.native_checkpoint_fixture(Path(directory))
+            row["manifest"]["predecessor"] = dict(manifest=str(manifest))
+            with mock.patch.object(flow_audit, "read_witness", return_value=row):
+                with self.assertRaisesRegex(ValueError, "cyclic"):
+                    capture.native_checkpoint_files(manifest, 0, assets, disc)
+
+    def test_native_checkpoint_rechecks_bytes_after_audit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest, assets, disc, row = self.native_checkpoint_fixture(Path(directory))
+            (manifest.parent / "writable" / "GAME1.SAV").write_bytes(b"changed")
+            with mock.patch.object(flow_audit, "read_witness", return_value=row):
+                with self.assertRaisesRegex(ValueError, "changed after audit"):
+                    capture.native_checkpoint_files(manifest, 0, assets, disc)
+
+    def test_cli_requires_paired_native_checkpoint_flags(self):
+        for flags in (["--native-checkpoint", "flow.json"],
+                      ["--native-asset-manifest", "assets.json"], ["--native-slot", "2"]):
+            with self.subTest(flags=flags), mock.patch.object(sys, "argv", ["capture", "disc", "out", *flags]), \
+                    mock.patch.object(sys, "stderr", new_callable=io.StringIO), \
+                    mock.patch.object(capture, "capture") as run:
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
+
     def test_private_key_resolution_checks_base_level_on_explicit_display(self):
         xlib = mock.Mock()
         xlib.XOpenDisplay.return_value = 123
@@ -129,11 +231,30 @@ class StartupCaptureTests(unittest.TestCase):
         self.assertFalse(state["bindings_consistent"])
         self.assertNotIn("time_storage", state)
 
-    def test_requires_both_vm_and_full_catalog_anchors(self):
+    def test_requires_both_vm_and_fixed_catalog_anchors(self):
         for offset in (capture.VM_FILE, capture.CATALOG_NAMES_FILE + 100):
             executable, guest, _globals, _catalog = fixture()
             guest[65536 + offset - capture.MZ_HEADER_SIZE] ^= 255
             self.assertEqual(capture.inspect_guest(guest, executable)["status"], "module_not_found")
+
+    def test_descript_sprite_slot_may_change_and_reports_live_resource_name(self):
+        executable, guest, _globals, catalog = fixture()
+        name = 65536 + capture.CATALOG_NAMES_FILE - capture.MZ_HEADER_SIZE + 7 * capture.NAME_SIZE
+        guest[name:name + capture.NAME_SIZE] = b"gluant1.spr\0".ljust(capture.NAME_SIZE, b"\0")
+        struct.pack_into("<HHI", guest, catalog + 7 * capture.HANDLE_SIZE, 40000, 3, 64)
+        state = capture.inspect_guest(guest, executable)
+        self.assertEqual(state["status"], "profile_bound")
+        sprite = next(r for r in state["resident_resources"] if r["id"] == 7)
+        self.assertEqual(sprite["name"], "gluant1.spr")
+
+    def test_dynamic_catalog_slot_still_requires_a_bounded_printable_name(self):
+        for field in (b"a" * 16, b"\xff\0".ljust(16, b"\0"), b"\0" * 16,
+                      b"a\nb\0".ljust(16, b"\0")):
+            with self.subTest(field=field):
+                executable, guest, _globals, _catalog = fixture()
+                name = 65536 + capture.CATALOG_NAMES_FILE - capture.MZ_HEADER_SIZE + 7 * capture.NAME_SIZE
+                guest[name:name + capture.NAME_SIZE] = field
+                self.assertEqual(capture.inspect_guest(guest, executable)["status"], "module_not_found")
 
     def test_loader_may_uppercase_catalog_in_place(self):
         executable, guest, _globals, _catalog = fixture()
@@ -283,7 +404,27 @@ class StartupCaptureTests(unittest.TestCase):
         self.assertTrue(result["target_verified"])
         self.assertFalse(result["guest_memory_written"])
         self.assertEqual(result["iterations"][-1]["logical_pointer"], [124, 119])
-        self.assertEqual([call.args[2] for call in move.call_args_list], [[-48, -48], [-14, -30]])
+        self.assertEqual([call.args[2] for call in move.call_args_list], [[-31, -32], [-7, -10]])
+
+    def test_private_bridge_pointer_converges_with_menu_motion_scaling(self):
+        position = [104.0, 110.0]
+
+        def observe():
+            return {"status": "profile_bound", "profile": 0,
+                    "bridge": {"frame": 45, "mouse_arc": int(position[0]) // 4 + 50,
+                               "frame_angle_bias": 200},
+                    "mouse_poll": {"x": int(position[0]), "y": int(position[1])}}
+
+        def move(_env, _pid, motion, steps):
+            for i, value in enumerate(motion):
+                position[i] += value * 2 / 3
+            return {}
+
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move", side_effect=move):
+            result = capture.private_bridge_point({"DISPLAY": ":123"}, 789, [100, 115], observe)
+        self.assertTrue(result["target_verified"])
+        self.assertEqual(len(result["iterations"]), 2)
 
     def test_private_bridge_pointer_decodes_wrapped_negative_bias(self):
         observe = mock.Mock(return_value={"status": "profile_bound", "profile": 0,
@@ -712,7 +853,7 @@ class StartupCaptureTests(unittest.TestCase):
             root = Path(temporary)
             (root / "BLOOD2PG.EXE").write_bytes(b"fixture")
             library = root / "SDL.so"
-            args = argparse.Namespace(disc=root, sdl_library=library)
+            args = argparse.Namespace(disc=root, sdl_library=library, native_checkpoint=None)
             with mock.patch.object(capture, "EXECUTABLE_SHA256", capture.hashlib.sha256(b"fixture").hexdigest()), \
                     mock.patch.object(capture.subprocess, "Popen") as launch:
                 with self.assertRaises(FileNotFoundError):
