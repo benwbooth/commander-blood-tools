@@ -1,0 +1,12 @@
+# Continue the authored Internet negotiation without enabling Honk's shortcut.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose never
+choose even_then
+choose no_never
+choose yes
+choose don't_cheat
+wait 1500

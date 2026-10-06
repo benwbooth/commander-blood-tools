@@ -26,13 +26,35 @@ const COLLECTION_TARGET: u16 = 10;
 const USAGE: &str = "alien-first-frame-trace MODULE XDB [RGBA-OUTPUT] [STAGE] \
                      [TIMING-SCALE] [FRAME-COUNT] [INPUT-CAMPAIGN] [TRACE-MODEL]";
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum InputCampaign {
     Centered,
     Corners,
     Forward,
     ForwardCorners,
-    Navigate,
+    Navigate(u16),
+}
+
+fn input_campaign(value: &str) -> Result<InputCampaign> {
+    match value.to_ascii_lowercase().as_str() {
+        "centered" => Ok(InputCampaign::Centered),
+        "corners" => Ok(InputCampaign::Corners),
+        "forward" => Ok(InputCampaign::Forward),
+        "forward-corners" => Ok(InputCampaign::ForwardCorners),
+        "navigate" => Ok(InputCampaign::Navigate(COLLECTION_TARGET)),
+        campaign if campaign.starts_with("navigate:") => {
+            let target = campaign["navigate:".len()..]
+                .parse::<u16>()
+                .context("collection target must fit a positive unsigned 16-bit word")?;
+            if target == 0 {
+                bail!("collection target must be positive");
+            }
+            Ok(InputCampaign::Navigate(target))
+        }
+        campaign => bail!(
+            "unknown input campaign {campaign:?}; expected centered, corners, forward, forward-corners, navigate, or navigate:TARGET"
+        ),
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -138,6 +160,7 @@ struct FrameTrace {
     input_actions: Option<Vec<String>>,
     frame_count: usize,
     input_campaign: &'static str,
+    collection_target: Option<u16>,
     camera_matrix: [[i32; 3]; 3],
     camera_position: [i32; 3],
     camera_view: [i16; 3],
@@ -227,10 +250,14 @@ fn main() -> Result<()> {
         buttons: 0,
     };
     let mut observed_frames = 0;
+    let collection_target = match input_campaign {
+        InputCampaign::Navigate(target) => Some(target),
+        _ => None,
+    };
     for frame_number in 1..=frame_count {
-        let navigating = matches!(input_campaign, InputCampaign::Navigate);
+        let navigating = collection_target.is_some();
         let key = if frame_number == frame_count
-            || (runtime.timing_scale() >= COLLECTION_TARGET && navigating)
+            || collection_target.is_some_and(|target| runtime.timing_scale() >= target)
         {
             if navigating {
                 FlightInput::Key(ESCAPE_KEY_EVENT).apply(&mut mouse, &mut input_actions);
@@ -260,7 +287,7 @@ fn main() -> Result<()> {
         observed_frames = frame_number;
         selected_frame = step.frame;
         if frame_number < frame_count && !runtime.is_running() {
-            if matches!(input_campaign, InputCampaign::Navigate) {
+            if navigating {
                 break;
             }
             bail!("alien overlay stopped before requested frame {frame_count}");
@@ -286,6 +313,7 @@ fn main() -> Result<()> {
         timing_scale,
         frame_count: observed_frames,
         input_campaign: input_campaign_name(input_campaign),
+        collection_target,
         returned_timing_scale: runtime.timing_scale(),
         wave_selection: format!("{:?}", scene.callback_state.wave_selection),
         wave_target_positions: wave_models
@@ -296,7 +324,7 @@ fn main() -> Result<()> {
             .iter()
             .map(|&index| scene.models[index].nodes[0].local_position)
             .collect(),
-        input_actions: matches!(input_campaign, InputCampaign::Navigate).then_some(input_actions),
+        input_actions: collection_target.is_some().then_some(input_actions),
         camera_matrix: scene.camera.matrix,
         camera_position: scene.camera.position,
         camera_view: scene.camera.view,
@@ -407,16 +435,7 @@ fn arguments() -> Result<(
     }
     let input_campaign = match arguments.next() {
         None => InputCampaign::Centered,
-        Some(campaign) => match campaign.to_string_lossy().to_ascii_lowercase().as_str() {
-            "centered" => InputCampaign::Centered,
-            "corners" => InputCampaign::Corners,
-            "forward" => InputCampaign::Forward,
-            "forward-corners" => InputCampaign::ForwardCorners,
-            "navigate" => InputCampaign::Navigate,
-            campaign => bail!(
-                "unknown input campaign {campaign:?}; expected centered, corners, forward, forward-corners, or navigate"
-            ),
-        },
+        Some(campaign) => input_campaign(&campaign.to_string_lossy())?,
     };
     let trace_model = arguments
         .next()
@@ -458,7 +477,7 @@ const fn input_campaign_name(campaign: InputCampaign) -> &'static str {
         InputCampaign::Corners => "corners",
         InputCampaign::Forward => "forward",
         InputCampaign::ForwardCorners => "forward-corners",
-        InputCampaign::Navigate => "navigate",
+        InputCampaign::Navigate(_) => "navigate",
     }
 }
 
@@ -541,6 +560,32 @@ fn sha256(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn navigation_target_is_explicit_and_keeps_the_ten_dose_default() {
+        assert_eq!(
+            input_campaign("navigate").unwrap(),
+            InputCampaign::Navigate(10)
+        );
+        assert_eq!(
+            input_campaign("navigate:20").unwrap(),
+            InputCampaign::Navigate(20)
+        );
+        assert_eq!(
+            input_campaign("NAVIGATE:1").unwrap(),
+            InputCampaign::Navigate(1)
+        );
+        assert_eq!(input_campaign("forward").unwrap(), InputCampaign::Forward);
+        for invalid in [
+            "navigate:0",
+            "navigate:-1",
+            "navigate:65536",
+            "navigate:",
+            "navigate:x",
+        ] {
+            assert!(input_campaign(invalid).is_err(), "accepted {invalid}");
+        }
+    }
 
     #[test]
     fn flight_plan_starts_neutral_and_uses_opposite_delivery_thrust() {

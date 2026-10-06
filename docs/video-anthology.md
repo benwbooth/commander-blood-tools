@@ -71,7 +71,10 @@ back into a Manta, emitting only logical `move` and `key` actions. It never
 changes inventory, score, quest flags, or native flight behavior. The first
 neutral frame corresponds to `await-alien`; the emitted actions begin on the
 next frame and end with Escape when ten bionium are reached or the frame limit
-expires. Planning is not a normal-flow witness or original-executable parity
+expires. `navigate:TARGET` selects another positive total collection target;
+the trace records that target and the actual returned total separately. It does
+not grant any doses or change the game runtime. Planning is not a normal-flow
+witness or original-executable parity
 proof: replay the emitted actions through ordinary Jo entry and inspect the
 resulting dialogue, global `vbio`, inventory, and saved checkpoint.
 
@@ -235,6 +238,11 @@ malfunction, and returns with medicine, writing, and technology. All three
 ordinary gifts and the repair dialogue complete. The saved checkpoint has
 `B87=2`, all three items with Super Tromp, his returned ship aboard, and eight
 credits remaining.
+`bbb-bernie-negotiation-v2` completes Bernie's Internet negotiation, pays the
+requested credit, and chooses `don't_cheat` at the password prompt. Trump's
+spy warning then completes. The saved checkpoint has `C7=5`, `B82=0`,
+`A86=2`, and seven credits. The earlier v1 stopped at the password prompt and
+has no new saved checkpoint; it is not used as a predecessor.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
