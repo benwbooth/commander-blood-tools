@@ -1,0 +1,27 @@
+# Reach the race destination, answer the SOS, and visit the stranded ship.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 50 110
+wait 40
+click 250 125
+wait 600
+park 4 45
+wait 20
+click 125 118
+wait 500
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 10 10
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 500

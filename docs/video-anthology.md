@@ -213,6 +213,10 @@ The following Ben visit gives the medicine, selects `shocked`, and accepts the
 guitar purchase (`bbb-ben-treatment-guitar-v1`). The witnessed save has medicine
 held by Ben, guitar aboard, six credits, `A38 = 1`, and `A54 = 4`; both treatment
 and purchase finish through the actual gift-menu Cancel row.
+Revisiting Gluk after giving the ship to Super Zen presents his addiction
+dialogue and queues the bridge call (`bbb-gluk-followup-v1`). Answering that
+call completes it and saves with `A27 = 4`, `A28 = 0`, and `A29 = 0`.
+The subsequent bionium request and Migrator introduction are still pending.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -300,6 +304,9 @@ revealed chart marker (`cb-kran-race-v1`). Kran presents the guitar wager,
 reveals Troma, starts the race with `krando20.hnm`, and closes normally. Its
 witnessed checkpoint retains the guitar with Kran; winning or repairing the
 ship has not yet been claimed.
+The route then travels to Troma, answers Kran's SOS, and returns to his newly
+revealed position (`cb-kran-distress-v1`). His breakdown dialogue finishes and
+the save has `panne = 1`, Morning on Ark, and the guitar still with Kran.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
