@@ -89,6 +89,34 @@ class FlowTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "not a completed normal-input"):
                 verified_predecessor(manifest, 0, "cb", provenance)
 
+    def test_runtime_update_is_explicit_and_keeps_script_and_asset_checks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest, provenance, _ = self.checkpoint_fixture(Path(directory) / "parent")
+            upgraded = {**provenance, "binary_sha256": "new-binary"}
+            with self.assertRaisesRegex(ValueError, "binary_sha256"):
+                verified_predecessor(manifest, 0, "cb", upgraded)
+            _, reference = verified_predecessor(manifest, 0, "cb", upgraded,
+                                                runtime_update="tested descriptor-loader fix")
+            self.assertEqual(reference["runtime_update"], dict(
+                reason="tested descriptor-loader fix", previous_binary_sha256="binary",
+                current_binary_sha256="new-binary"))
+            for key in ("asset_manifest_sha256", "sources"):
+                with self.subTest(key=key), self.assertRaisesRegex(ValueError, key):
+                    verified_predecessor(manifest, 0, "cb", {**upgraded, key: "changed"},
+                                         runtime_update="tested descriptor-loader fix")
+            bad_update = {**reference["runtime_update"], "previous_binary_sha256": "wrong"}
+            with self.assertRaisesRegex(ValueError, "runtime update hashes changed"):
+                verified_predecessor(manifest, 0, "cb", upgraded, runtime_update=bad_update)
+            child, _, status = self.checkpoint_fixture(Path(directory) / "child")
+            status.update(provenance=upgraded, predecessor=reference,
+                          observations=dict(loaded_checkpoint=True))
+            child.write_text(json.dumps(status))
+            verified_predecessor(child, 0, "cb", upgraded)
+            status["predecessor"]["runtime_update"] = bad_update
+            child.write_text(json.dumps(status))
+            with self.assertRaisesRegex(ValueError, "runtime update hashes changed"):
+                verified_predecessor(child, 0, "cb", upgraded)
+
     def test_only_one_expected_normal_load_is_accepted_and_saved_slots_are_recorded(self):
         with tempfile.TemporaryDirectory() as directory:
             writable = Path(directory)

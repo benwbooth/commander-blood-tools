@@ -1,0 +1,24 @@
+# Travel to the earned Moskito destination, return after Bronko's first refusal,
+# and exchange the earned credit for murffalo meat.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 38 135
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 900
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+choose teleport
+wait 600

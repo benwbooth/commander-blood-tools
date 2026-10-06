@@ -789,6 +789,24 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                 )
                 .map_err(ScriptDispatchError::Record)?;
                 if outcome.presentation_requested {
+                    // BLOODPRG 0x6A8A applies DESCRIPT, not just its existence test.
+                    let name = self
+                        .directory
+                        .object(transfer.item)
+                        .expect("decoded transfer item has a directory entry")
+                        .name();
+                    if self
+                        .host
+                        .lookup_inventory_description(
+                            transfer.item,
+                            name,
+                            &mut self.dispatch.text_presentation,
+                        )
+                        .map_err(ScriptDispatchError::Host)?
+                        != Some(true)
+                    {
+                        return Err(ScriptDispatchError::MissingInventoryDescriptorHost);
+                    }
                     let line = self
                         .dispatch
                         .transfer_presentation
@@ -967,6 +985,9 @@ mod tests {
         subtitle_calls: Vec<ScriptCodeOffset>,
         post_scan_write: Option<(commander_blood_formats::script::ScriptStateWord, u16)>,
         state_at_scan: Vec<u8>,
+        transfer_context: ScriptTransferContext,
+        inventory_descriptions: Vec<Vec<u8>>,
+        inventory_descriptor_result: Option<bool>,
     }
 
     #[test]
@@ -1331,7 +1352,18 @@ mod tests {
             &mut self,
             _item: commander_blood_formats::script::ScriptObjectId,
         ) -> Result<ScriptTransferContext, Self::Error> {
-            Ok(ScriptTransferContext::default())
+            Ok(self.transfer_context)
+        }
+
+        fn lookup_inventory_description(
+            &mut self,
+            _object: commander_blood_formats::script::ScriptObjectId,
+            name: &[u8],
+            text: &mut TextPresentationState,
+        ) -> Result<Option<bool>, Self::Error> {
+            self.inventory_descriptions.push(name.to_vec());
+            text.subtitle_text = Box::from(b"item caption".as_slice());
+            Ok(self.inventory_descriptor_result)
         }
 
         fn selector_root(&self) -> Option<ScriptCodeOffset> {
@@ -1348,6 +1380,161 @@ mod tests {
                 assert!(context.state.set_word(word, value));
             }
             Ok(())
+        }
+    }
+
+    #[test]
+    fn transfer_dispatch_applies_the_requested_item_descriptor_only_after_gates() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_complete_script_instruction;
+        use commander_blood_formats::script::{
+            decode_script_dictionary, decode_script_directory, decode_script_state_for_dialect,
+        };
+
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            let dialect_line = if dialect == ScriptDialect::BigBugBang {
+                "dialect big_bug_bang"
+            } else {
+                ""
+            };
+            let dialogue_section = if dialect == ScriptDialect::BigBugBang {
+                ""
+            } else {
+                "conversations {\n    halt\n}"
+            };
+            let source = format!(
+                r#"bloodscript 8
+{dialect_line}
+profile SCRIPT1
+concepts "talk"
+state {{
+    universe "baby1" {{
+    }}
+    player "blood" {{
+        active
+    }}
+    character "Izwalito" {{
+        active
+    }}
+    item "cred" {{
+        active
+        holder = "Izwalito"
+    }}
+    navigation_controller "orxx" {{
+        active
+    }}
+}}
+logic {{
+    proc gift enabled {{
+    }} then {{
+        transfer cred from Izwalito to aboard
+        halt
+    }}
+}}
+{dialogue_section}
+"#
+            );
+            let images = commander_blood_script_compiler::compile_profile(&source).unwrap();
+            let directory = decode_script_directory(&images.deb).unwrap();
+            let dictionary = decode_script_dictionary(&images.dic).unwrap();
+            let dialogue = decode_script_bas(&[0xff], &dictionary).unwrap();
+            let code = decode_script_code_for_dialect(&images.cod, dialect).unwrap();
+            for (query, ui, secondary, found, bound) in [
+                (false, false, false, true, true),
+                (true, false, false, true, true),
+                (false, true, false, true, true),
+                (false, false, true, true, true),
+                (false, false, false, false, true),
+                (false, false, false, true, false),
+            ] {
+                let mut state =
+                    decode_script_state_for_dialect(&images.var, &directory, dialect).unwrap();
+                let instructions = code
+                    .tokens()
+                    .iter()
+                    .map(|token| {
+                        decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                            .unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                let index = instructions
+                    .iter()
+                    .position(|instruction| {
+                        matches!(instruction, DecodedScriptInstruction::Transfer(_))
+                    })
+                    .unwrap();
+                let token = &code.tokens()[index];
+                let builtins = ScriptProfileBuiltins {
+                    player: directory.find_active_object(b"blood"),
+                    ..Default::default()
+                };
+                let mut records =
+                    ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+                        .unwrap();
+                let mut procedures = super::super::ScriptProcedureStates::default();
+                let mut selector = ScriptSelectorState::default();
+                let mut slots = super::super::ScriptSequenceSlots::default();
+                let mut dispatch = ScriptDispatchState::default();
+                if secondary {
+                    dispatch.text_presentation.request_flags.request_secondary();
+                }
+                let mut runtime = ScriptRuntime::default();
+                if query {
+                    runtime.begin_root_guard(token.end_offset());
+                }
+                let mut host = TraversalHost {
+                    transfer_context: ScriptTransferContext {
+                        ship_interface_active: ui,
+                        descriptor_available: found,
+                    },
+                    inventory_descriptor_result: bound.then_some(true),
+                    ..Default::default()
+                };
+                let result = Dispatcher {
+                    code: &code,
+                    instructions: &instructions,
+                    dialogue: &dialogue,
+                    state: &mut state,
+                    dictionary: &dictionary,
+                    directory: &directory,
+                    builtins,
+                    procedures: &mut procedures,
+                    selector: &mut selector,
+                    sequence_slots: &mut slots,
+                    records: &mut records,
+                    dispatch: &mut dispatch,
+                    host: &mut host,
+                }
+                .execute_instruction(token, &instructions[index], &mut runtime);
+                let requested = !query && !ui && !secondary && found;
+                assert_eq!(
+                    host.inventory_descriptions,
+                    if requested {
+                        vec![b"cred".to_vec()]
+                    } else {
+                        vec![]
+                    }
+                );
+                if requested && !bound {
+                    assert!(matches!(
+                        result,
+                        Err(ScriptDispatchError::MissingInventoryDescriptorHost)
+                    ));
+                } else {
+                    result.unwrap();
+                }
+                if requested && bound {
+                    assert_eq!(
+                        dispatch.text_presentation.subtitle_text.as_ref(),
+                        b"item caption"
+                    );
+                    assert_eq!(
+                        dispatch.transfer_presentation.active_line,
+                        Some(super::super::ScriptTransferPresentationLine::InventoryMoved)
+                    );
+                }
+            }
         }
     }
 
@@ -2071,7 +2258,12 @@ mod tests {
                 "{}",
                 vector.name
             );
-            assert_eq!(host.state_at_scan, hex(&vector.var_after), "{}", vector.name);
+            assert_eq!(
+                host.state_at_scan,
+                hex(&vector.var_after),
+                "{}",
+                vector.name
+            );
         }
     }
 

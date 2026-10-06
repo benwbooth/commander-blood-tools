@@ -21,9 +21,10 @@ use super::{
     ScriptProfileRecordState, ScriptProfileRecordStateError, ScriptRecordError,
     ScriptRecordStateError, ScriptRuntime, ScriptSelectorBlockContext, ScriptSelectorControlHost,
     ScriptSelectorState, ScriptStateOperationError, ScriptTransferContext, SequenceRequestContext,
-    TextInstructionExecutionError, TextInstructionState, apply_record_clear_operation,
-    apply_shared_bit_operation, apply_shared_state_operation, apply_transfer, execute_script_block,
-    execute_selector_control_with_host, execute_text_instruction, load_sequence_request,
+    TextInstructionExecutionError, TextInstructionState, TextPresentationState,
+    apply_record_clear_operation, apply_shared_bit_operation, apply_shared_state_operation,
+    apply_transfer, execute_script_block, execute_selector_control_with_host,
+    execute_text_instruction, load_sequence_request,
 };
 
 /// Mutable state belonging to executable BAS instructions rather than profile VAR bytes.
@@ -111,6 +112,16 @@ pub trait ScriptBasDispatchHost {
         &mut self,
         item: ScriptObjectId,
     ) -> Result<ScriptTransferContext, Self::Error>;
+
+    /// Apply the item descriptor before requesting the CD transfer animation.
+    fn lookup_inventory_description(
+        &mut self,
+        _object: ScriptObjectId,
+        _name: &[u8],
+        _text: &mut TextPresentationState,
+    ) -> Result<Option<bool>, Self::Error> {
+        Ok(None)
+    }
 }
 
 /// Invalid BAS instruction state or dynamic host failure.
@@ -122,6 +133,8 @@ pub enum ScriptBasDispatchError<HostError> {
     State(ScriptStateOperationError),
     /// A CD transfer failed.
     Record(ScriptRecordError),
+    /// A requested item animation has no descriptor application backend.
+    MissingInventoryDescriptorHost,
     /// A C9 action-record clear failed.
     ActionRecord(ScriptRecordStateError),
     /// Typed record stores could not be synchronized with VAR.
@@ -390,6 +403,23 @@ impl<Host: ScriptBasDispatchHost> ScriptBlockHandler for BasInstructionDispatche
                 )
                 .map_err(ScriptBasDispatchError::Record)?;
                 if outcome.presentation_requested {
+                    let name = self
+                        .directory
+                        .object(transfer.item)
+                        .expect("decoded transfer item has a directory entry")
+                        .name();
+                    if self
+                        .host
+                        .lookup_inventory_description(
+                            transfer.item,
+                            name,
+                            &mut self.dispatch.text_presentation,
+                        )
+                        .map_err(ScriptBasDispatchError::Host)?
+                        != Some(true)
+                    {
+                        return Err(ScriptBasDispatchError::MissingInventoryDescriptorHost);
+                    }
                     let line = self
                         .dispatch
                         .transfer_presentation
@@ -531,6 +561,8 @@ mod tests {
     #[derive(Default)]
     struct TestHost {
         publications: Vec<(ScriptCodeOffset, bool)>,
+        transfer_context: ScriptTransferContext,
+        inventory_descriptions: Vec<Vec<u8>>,
     }
 
     impl ScriptBasDispatchHost for TestHost {
@@ -551,7 +583,156 @@ mod tests {
             &mut self,
             _item: ScriptObjectId,
         ) -> Result<ScriptTransferContext, Self::Error> {
-            Ok(ScriptTransferContext::default())
+            Ok(self.transfer_context)
+        }
+
+        fn lookup_inventory_description(
+            &mut self,
+            _object: ScriptObjectId,
+            name: &[u8],
+            text: &mut TextPresentationState,
+        ) -> Result<Option<bool>, Self::Error> {
+            self.inventory_descriptions.push(name.to_vec());
+            text.subtitle_text = Box::from(b"item caption".as_slice());
+            Ok(Some(true))
+        }
+    }
+
+    #[test]
+    fn bas_transfer_applies_the_requested_item_descriptor_only_after_gates() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::decode_script_code;
+        use commander_blood_formats::instruction::decode_complete_script_instruction;
+        use commander_blood_formats::script::{
+            decode_script_dictionary, decode_script_directory, decode_script_state,
+        };
+
+        let images = commander_blood_script_compiler::compile_profile(
+            r#"bloodscript 8
+profile SCRIPT1
+concepts "talk"
+state {
+    universe "baby1" {
+    }
+    player "blood" {
+        active
+    }
+    character "Izwalito" {
+        active
+        topic = "talk"
+    }
+    item "cred" {
+        active
+        holder = "Izwalito"
+    }
+    navigation_controller "orxx" {
+        active
+    }
+}
+logic {
+    proc gift enabled {
+    } then {
+        transfer cred from Izwalito to aboard
+        halt
+    }
+}
+conversations {
+    yield
+    selector Izwalito_choices {
+        case "talk" {
+            menu "talk"
+            transfer cred from Izwalito to aboard
+            halt
+        }
+    }
+}
+"#,
+        )
+        .unwrap();
+        let directory = decode_script_directory(&images.deb).unwrap();
+        let dictionary = decode_script_dictionary(&images.dic).unwrap();
+        let dialogue = decode_script_bas(images.bas.as_ref().unwrap(), &dictionary).unwrap();
+        let token = dialogue
+            .tokens()
+            .iter()
+            .find(|token| matches!(token.instruction(), ScriptBasInstruction::RecordTriple(_)))
+            .unwrap();
+        let code = decode_script_code(&images.cod).unwrap();
+        for (query, ui, secondary, found) in [
+            (false, false, false, true),
+            (true, false, false, true),
+            (false, true, false, true),
+            (false, false, true, true),
+            (false, false, false, false),
+        ] {
+            let mut state = decode_script_state(&images.var, &directory).unwrap();
+            let instructions = code
+                .tokens()
+                .iter()
+                .map(|token| {
+                    decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                        .unwrap()
+                })
+                .collect::<Vec<_>>();
+            let builtins = ScriptProfileBuiltins {
+                player: directory.find_active_object(b"blood"),
+                ..Default::default()
+            };
+            let mut records =
+                ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+                    .unwrap();
+            let mut selector = ScriptSelectorState::default();
+            let mut dispatch = ScriptDispatchState::default();
+            if secondary {
+                dispatch.text_presentation.request_flags.request_secondary();
+            }
+            let mut bas = ScriptBasDispatchState::default();
+            let mut topic = None;
+            let mut runtime = ScriptRuntime::default();
+            if query {
+                runtime.begin_root_guard(token.end_offset());
+            }
+            let mut host = TestHost {
+                transfer_context: ScriptTransferContext {
+                    ship_interface_active: ui,
+                    descriptor_available: found,
+                },
+                ..Default::default()
+            };
+            BasInstructionDispatcher {
+                instructions: &instructions,
+                dictionary: &dictionary,
+                directory: &directory,
+                builtins,
+                state: &mut state,
+                selector: &mut selector,
+                records: &mut records,
+                dispatch: &mut dispatch,
+                bas: &mut bas,
+                offered_topic: &mut topic,
+                host: &mut host,
+            }
+            .execute_instruction(token, &mut runtime)
+            .unwrap();
+            let requested = !query && !ui && !secondary && found;
+            assert_eq!(
+                host.inventory_descriptions,
+                if requested {
+                    vec![b"cred".to_vec()]
+                } else {
+                    vec![]
+                }
+            );
+            if requested {
+                assert_eq!(
+                    dispatch.text_presentation.subtitle_text.as_ref(),
+                    b"item caption"
+                );
+                assert_eq!(
+                    dispatch.transfer_presentation.active_line,
+                    Some(super::super::ScriptTransferPresentationLine::InventoryMoved)
+                );
+            }
         }
     }
 

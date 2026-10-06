@@ -594,6 +594,16 @@ impl<Backend: ScriptExecutionBackend> ScriptBasDispatchHost for BasExternalHost<
     ) -> Result<ScriptTransferContext, Self::Error> {
         self.backend.transfer_context(item)
     }
+
+    fn lookup_inventory_description(
+        &mut self,
+        object: ScriptObjectId,
+        name: &[u8],
+        text: &mut TextPresentationState,
+    ) -> Result<Option<bool>, Self::Error> {
+        let description = self.backend.apply_action_description(object, name, text)?;
+        Ok(Some(description.available))
+    }
 }
 
 struct ActionExternalHost<'a, Backend> {

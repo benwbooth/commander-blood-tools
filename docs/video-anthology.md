@@ -46,6 +46,9 @@ Use repeated `--then fragment.tsv` arguments to append input fragments in order.
 The combined scenario is replayed in one process with carried state; each
 fragment's content hash is retained. The final observation includes the actual
 object locations/inventory and bridge/VM readiness flags for endpoint checks.
+Action records also retain menu/navigation state and bridge hit regions. An
+input script reaching its last action does not establish its named quest result;
+check the actor, destination, item holders, and presented scenes explicitly.
 
 `--resume-from path/to/flow.json --slot 0` permits one normal UI load from a
 recorded predecessor. The preceding run must have witnessed a successful save
@@ -56,6 +59,13 @@ are copied into the new private writable directory; the scenario still has to
 select the correct slot through the normal load menu. Failed predecessors,
 arbitrary imported checkpoints, changed saves, different binaries, missing
 save events, and an additional unvalidated load are rejected.
+
+A verified runtime repair can use `--runtime-update "reason for the repair"`
+to permit an executable change explicitly. The continuation records both binary
+hashes and the reason. All save bytes, source profiles, assets, and predecessor
+evidence must still match; the save is loaded only through the normal game menu.
+Historical runtime changes are validated against their recorded hashes rather
+than silently treating the entire lineage as one build.
 
 The flow keeps subtitle and inline-menu text separate. A fully revealed text
 site requires the native glyph-raster audit to match, not just a published VM
@@ -71,10 +81,17 @@ established before producing the new final videos.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
-and `bobg.hnm`), and the normal Corpo jump. BBB's fresh-game route reaches
-Daddy's Templand settlement, Honk's six-item handover, and the writing gift that
-raises Daddy's evolution to 260. These are route endpoints, not whole-game
-completion. The detailed witnesses live under `output/game-flows`.
+and `bobg.hnm`), the normal Corpo jump, and Izwalito's first two conversations.
+The second earns the credit, plays `OB\\pion.hnm`, reveals Moskito, and returns
+to the bridge. The subsequent normal route buys Bronko's murffalo meat on
+Moskito and delivers it to Izwalito for the decoder and replacement credit;
+both transfers and the earned checkpoint are observed. BBB's fresh-game route reaches Daddy's Templand settlement,
+Honk's six-item handover, and the writing gift that raises Daddy's evolution to
+260. Its verified saved continuations earn the Internet optics/credit rewards,
+create and settle Super Zen on Crazyland, and create Marakas on Spiraland.
+These are route endpoints, not whole-game completion. Marakas's food purchase
+is not yet established: the initial attempted route actually visited Papy.
+The detailed witnesses live under `output/game-flows`.
 
 ### Source Progression Gates
 
@@ -112,6 +129,16 @@ BBB's additional VM-disable write. `re/tools/commander_vm_yield_oracle.py`
 executes the unmodified original A6 and outer loop for 24 accepted/rejected
 subtitle/menu cases; the corresponding Rust regression checks the same
 pre-presentation-scan boundary. This repair does not establish whole-game parity.
+
+The normal Izwalito credit transfer exposed two more omitted host operations.
+Original CD at `BLOODPRG 0x6A8A` loads the item's DESCRIPT before requesting line
+43; native COD and BAS now apply that descriptor after the original transfer
+gates. Original scene completion at `0x9F0B` clears secondary request bit 2;
+the ship-scene adapter now exchanges that shared flag with the lifecycle, as
+the contact-transition adapter already did. The CD gate regressions, existing
+original-executable vectors, and normal replay are complementary evidence.
+`cb-izwalito-credit-fixed-v2` observes the clip, resumed character dialogue,
+Moskito chart marker, and an earned save after the conversation closes.
 
 The authoritative guards and side effects remain in `re/vm/profiles` and
 `re/vm/big-bug-bang-profiles`. Neither a profile spine nor the static dialogue

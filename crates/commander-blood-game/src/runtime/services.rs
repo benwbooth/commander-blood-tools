@@ -3230,6 +3230,7 @@ impl<'window> ModernGameServices<'window> {
         let outcome = screen.dispatch_ship_scene(
             self,
             &mut ship,
+            lifecycle,
             scene_link,
             active_record_related,
             scruter_jo_record,
@@ -5518,6 +5519,18 @@ impl<'window> ModernGameServices<'window> {
             "music": descript_assets.music().map(|name| String::from_utf8_lossy(name.as_bytes()).into_owned()),
             "backgrounds": descript_backgrounds,
         });
+        let nav_actor_blockers = serde_json::json!({
+            "presentation_active": lifecycle.presentation.active,
+            "scene_queued": lifecycle.presentation.c2_presentation_gate,
+            "choice_active": lifecycle.profile_change_blockers.navigation_choice_active,
+            "save_active": lifecycle.profile_change_blockers.save_active,
+            "load_active": lifecycle.profile_change_blockers.load_active,
+            "console_selected": self.bridge_console_item_selected(),
+            "target_selected": lifecycle.navigation_target_selected,
+            "transition_pending": lifecycle.navigation_transition_pending,
+            "choice_sound_active": self.confirm_dialog_state().navigation_choice_gate != 0,
+            "sequel_overview_active": self.sequel_overview_active(),
+        });
         let mut presentation_trace = serde_json::json!({
             "ui_flags": lifecycle.low_ui_state_word(),
             "actor_transition": u8::from(lifecycle.profile_change_blockers.navigation_actor_transition_active),
@@ -5586,6 +5599,7 @@ impl<'window> ModernGameServices<'window> {
             },
             "waiting_for_input": waiting_for_input,
         });
+        presentation_trace["nav_actor_blockers"] = nav_actor_blockers;
         if let Some(inventory_choice) = inventory_choice {
             presentation_trace["inventory_choice"] = inventory_choice;
         }

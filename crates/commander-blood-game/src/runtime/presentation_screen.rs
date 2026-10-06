@@ -197,11 +197,12 @@ impl RuntimePresentationScreen {
         &mut self,
         services: &mut ModernGameServices<'window>,
         ship: &mut ShipPresentationState,
+        lifecycle: &mut crate::native::bloodprg::GameLifecycleState,
         scene_link: GameSceneLink,
         active_record_related: Option<ScriptObjectId>,
         scruter_jo_record: Option<ScriptObjectId>,
     ) -> Result<PresentationSceneDispatchOutcome> {
-        import_ship_scene_state(ship, &mut self.scene_state);
+        import_ship_scene_state(ship, lifecycle, &mut self.scene_state);
         let outcome = self.scene.dispatch(
             services,
             &mut self.scene_state,
@@ -211,7 +212,7 @@ impl RuntimePresentationScreen {
             false,
             self.state.active(),
         );
-        export_ship_scene_state(&self.scene_state, ship);
+        export_ship_scene_state(&self.scene_state, ship, lifecycle);
         outcome
     }
 
@@ -326,8 +327,12 @@ impl RuntimePresentationScreen {
 
 fn import_ship_scene_state(
     ship: &ShipPresentationState,
+    lifecycle: &crate::native::bloodprg::GameLifecycleState,
     scene: &mut PresentationSceneDispatchState<DescriptBackgroundSlot>,
 ) {
+    scene.presentation.request_flags = lifecycle.presentation.request_flags.bits();
+    scene.sequence_active = lifecycle.presentation.sequence_active;
+    scene.scene_gate = lifecycle.presentation.scene_gate_active;
     scene.presentation.active_line = decode_active_presentation_line(ship.active_line);
     scene.presentation.gate_flags = (scene.presentation.gate_flags & !PRESENTATION_ACTIVE_GATE)
         | u8::from(ship.presentation_gate & u16::from(PRESENTATION_ACTIVE_GATE) != u16::MIN);
@@ -342,7 +347,10 @@ fn import_ship_scene_state(
 fn export_ship_scene_state(
     scene: &PresentationSceneDispatchState<DescriptBackgroundSlot>,
     ship: &mut ShipPresentationState,
+    lifecycle: &mut crate::native::bloodprg::GameLifecycleState,
 ) {
+    lifecycle.presentation.request_flags =
+        crate::native::bloodprg::PresentationRequestFlags::decode(scene.presentation.request_flags);
     ship.active_line = encode_active_presentation_line(scene.presentation.active_line);
     ship.presentation_gate = (ship.presentation_gate & !u16::from(PRESENTATION_ACTIVE_GATE))
         | u16::from(scene.presentation.gate_flags & PRESENTATION_ACTIVE_GATE);
@@ -993,9 +1001,17 @@ mod tests {
         };
         let mut scene = PresentationSceneDispatchState::<DescriptBackgroundSlot>::default();
         scene.presentation.gate_flags = INITIAL_SCENE_GATE_FLAGS;
+        let mut lifecycle = crate::native::bloodprg::GameLifecycleState::default();
+        lifecycle.presentation.request_flags =
+            crate::native::bloodprg::PresentationRequestFlags::decode(0xA3);
+        lifecycle.presentation.sequence_active = true;
+        lifecycle.presentation.scene_gate_active = true;
 
-        import_ship_scene_state(&ship, &mut scene);
+        import_ship_scene_state(&ship, &lifecycle, &mut scene);
 
+        assert_eq!(scene.presentation.request_flags, 0xA3);
+        assert!(scene.sequence_active);
+        assert!(scene.scene_gate);
         assert_eq!(scene.presentation.active_line, Some(INITIAL_LINE));
         assert_eq!(
             scene.presentation.gate_flags,
@@ -1019,8 +1035,10 @@ mod tests {
         scene.depth_opening = false;
         scene.depth_step = EXPORTED_DEPTH_STEP;
         scene.presentation.bridge_redraw_pending = u8::MIN;
-        export_ship_scene_state(&scene, &mut ship);
+        scene.presentation.request_flags &= !PRESENTATION_REQUEST_GATE;
+        export_ship_scene_state(&scene, &mut ship, &mut lifecycle);
 
+        assert_eq!(lifecycle.presentation.request_flags.bits(), 0xA1);
         assert_eq!(
             ship.active_line,
             crate::native::bloodprg::NO_PRESENTATION_LINE

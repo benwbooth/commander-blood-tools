@@ -88,6 +88,13 @@ def scene_state(s):
                 sequence_caption=s.get("sequence_caption"),
                 save_load=s.get("save_load"),
                 navigation=s["navigation"].get("target"),
+                navigation_detail=s["navigation"],
+                ui={key: p.get(key) for key in
+                    ("ui_flags", "ship_ui_state", "mode", "request_flags", "defer",
+                     "text_display_active", "screen_phase")},
+                bridge_console=s.get("bridge_console"),
+                travel_enabled=vm.get("sequel_travel_enabled"),
+                nav_actor_blockers=p.get("nav_actor_blockers"),
                 navigation_music=s["audio"]["loaded_navigation_music"],
                 ending=p.get("sequel_control"),
                 alien_overlay={key: overlay.get(key) for key in
@@ -226,7 +233,11 @@ def saved_checkpoints(writable, saved_slots):
     return checkpoints
 
 
-def verified_predecessor(manifest, slot, game, provenance, visited=None):
+def verified_predecessor(manifest, slot, game, provenance, visited=None, runtime_update=None):
+    if runtime_update is not None:
+        reason = runtime_update.get("reason") if isinstance(runtime_update, dict) else runtime_update
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError("runtime update needs a nonempty reason")
     manifest = manifest.resolve()
     visited = set() if visited is None else visited
     if manifest in visited or len(visited) >= 100:
@@ -240,6 +251,8 @@ def verified_predecessor(manifest, slot, game, provenance, visited=None):
         raise ValueError("predecessor is not a completed normal-input route witness")
     for key in ("binary_sha256", "asset_manifest_sha256", "sources"):
         if status["provenance"][key] != provenance[key]:
+            if key == "binary_sha256" and runtime_update:
+                continue
             raise ValueError(f"predecessor uses different {key}")
     root = manifest.parent
     required = {"events.jsonl", "actions.jsonl", "scenario.tsv", "game.log", "flow.md"}
@@ -259,7 +272,9 @@ def verified_predecessor(manifest, slot, game, provenance, visited=None):
             raise ValueError("predecessor did not witness its own checkpoint load")
         if digest(parent["manifest"]) != parent["manifest_sha256"]:
             raise ValueError("earlier lineage manifest changed")
-        verified_predecessor(Path(parent["manifest"]), parent["slot"], game, provenance, visited)
+        # Validate each historical continuation against the runtime it actually used.
+        verified_predecessor(Path(parent["manifest"]), parent["slot"], game,
+                             status["provenance"], visited, parent.get("runtime_update"))
     checkpoint = next((item for item in status.get("checkpoints", []) if item["slot"] == slot), None)
     if checkpoint is None:
         raise ValueError("predecessor has no witnessed save in the requested slot")
@@ -277,7 +292,17 @@ def verified_predecessor(manifest, slot, game, provenance, visited=None):
         raise ValueError("checkpoint has no matching native save event")
     if digest(manifest) != manifest_hash:
         raise ValueError("predecessor manifest changed during validation")
-    return checkpoint, dict(manifest=str(manifest), manifest_sha256=manifest_hash, slot=slot)
+    reference = dict(manifest=str(manifest), manifest_sha256=manifest_hash, slot=slot)
+    if status["provenance"]["binary_sha256"] != provenance["binary_sha256"]:
+        reference["runtime_update"] = dict(
+            reason=runtime_update["reason"] if isinstance(runtime_update, dict) else runtime_update,
+            previous_binary_sha256=status["provenance"]["binary_sha256"],
+            current_binary_sha256=provenance["binary_sha256"])
+        if isinstance(runtime_update, dict) and reference["runtime_update"] != runtime_update:
+            raise ValueError("historical runtime update hashes changed")
+    elif isinstance(runtime_update, dict):
+        raise ValueError("historical runtime update hashes changed")
+    return checkpoint, reference
 
 
 def flow_markdown(directory, status):
@@ -293,6 +318,9 @@ def flow_markdown(directory, status):
              "## Presented Flow", ""]
     if status.get("predecessor"):
         lines[3:3] = ["Continues a hash-verified, normally saved predecessor through the game's load menu.", ""]
+        update = status["predecessor"].get("runtime_update")
+        if update:
+            lines[3:3] = ["Runtime changed since the predecessor: " + json.dumps(update["reason"]), ""]
     previous = None
     with (directory / "events.jsonl").open() as source:
         for line in source:
@@ -359,6 +387,10 @@ def consume_process(command, env, directory, recorder, actions, timeout):
                         else:
                             semantic = item.pop("semantic")
                             item["state_array_hash"] = semantic["persistent"]["state_array_hash"]
+                            item["scene"] = scene_state(semantic)
+                            item["bridge"] = {key: semantic["presentation"].get(key) for key in
+                                              ("bridge_frame", "bridge_presentation_mode",
+                                               "bridge_actor_slots")}
                             output.write(json.dumps(item, separators=(",", ":")) + "\n")
                             output.flush()
                             if item["phase"] == "after":
@@ -393,6 +425,8 @@ def consume_process(command, env, directory, recorder, actions, timeout):
 
 
 def record_route(args):
+    if args.runtime_update is not None and (not args.resume_from or not args.runtime_update.strip()):
+        raise ValueError("--runtime-update requires a predecessor and a nonempty reason")
     source, scenario_sources = route_source([args.scenario, *args.then])
     actions = normal_actions(source)
     binary = (args.bin_dir / GAMES[args.game]).resolve()
@@ -411,7 +445,7 @@ def record_route(args):
     checkpoint, predecessor = (None, None)
     if args.resume_from:
         checkpoint, predecessor = verified_predecessor(
-            args.resume_from, args.slot, args.game, provenance)
+            args.resume_from, args.slot, args.game, provenance, runtime_update=args.runtime_update)
     directory.mkdir(parents=True, exist_ok=False)
     writable = directory / "writable"
     writable.mkdir()
@@ -477,6 +511,8 @@ def main():
     parser.add_argument("--then", action="append", type=Path, default=[],
                         help="append normal-input fragment; state is carried without loading a save")
     parser.add_argument("--resume-from", type=Path, help="flow.json with a witnessed normal save")
+    parser.add_argument("--runtime-update", metavar="REASON",
+                        help="explicitly record a binary update while retaining exact save/script/asset checks")
     parser.add_argument("--slot", type=int, choices=range(10), default=0,
                         help="witnessed predecessor save slot; default 0")
     parser.add_argument("--assets", required=True, type=Path)
