@@ -339,6 +339,10 @@ The next three Izwalito contacts choose `yes`, then `lie`, and finish the
 investigation dialogue (`bbb-izwalito-missing-marakas-v1`). Answering Super
 Zen's resulting call advances `A60` to four while `A53` remains two. The normal
 save retains six credits and seven bionium; technology has not yet been bought.
+The next local contact (`bbb-izwalito-technology-v1`) completes Izwalito's
+technology sale. The witnessed save has the technology aboard, `A60 = 5`,
+five credits, and seven bionium. No gift-menu exit or extra choice is required
+on this particular quest conversation.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.

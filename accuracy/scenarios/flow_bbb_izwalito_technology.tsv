@@ -1,0 +1,7 @@
+# After Super Zen's investigation call, buy Izwalito's hidden technology.
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+wait 1200
