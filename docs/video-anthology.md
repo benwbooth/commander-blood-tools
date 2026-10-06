@@ -574,6 +574,10 @@ invalid in shutdown cadence; its nonzero exit is not accepted ending evidence.
 his mission, and hears both the report and Chigraxx's response. The ordinary
 save confirms `C11=9`, `A94=1`, and no ending flag (`A13=0`). It observes 18
 decoded resources and 29 fully revealed sites, enabling the return to Mega Paul.
+`bbb-paul-scruters-v1` returns there normally and completes the Scruter creation
+scene. The save confirms `B88=1`, `B15=1`, Mac and K on Kortland, and Jo removed
+from the Ark. Mac is at evolution 100 with no encounters, and his call is queued.
+The run observes 18 decoded resources and 13 fully revealed sites.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
