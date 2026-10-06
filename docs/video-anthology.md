@@ -496,6 +496,9 @@ existence, and answers the disguised caller. The ordinary save confirms
 Cyberquizz aboard with no prior encounters, `A90=1`, and `A55=1`. The run
 observes three decoded resources and 48 fully revealed sites. His aboard
 conversations have not occurred at this checkpoint.
+`bbb-cyberquizz-first-v1` opens his first aboard contact from that save. The
+normal gift transfer completes, with Cyberquizz at one encounter and `cadeaux`
+aboard. It observes eight decoded resources and 12 fully revealed sites.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
