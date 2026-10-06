@@ -495,8 +495,28 @@ SHA-256 `e6405b6b128ee559cfb1b505b0e296335878a489c26bc62fc9c5cc9919706a89`.
 This is also after `audit-v7`. Carrying perfume already selects the guard's
 gift response; merely avoiding its inventory inspection does not retain the
 code-topic path. The no-perfume route instead opens the direct code menu,
-without the dance-password prelude. Those observed entry differences are
-kept distinct from the still-running guard-topic replay.
+without the dance-password prelude.
+
+`cb-scruter-mac-topics-v3` continues that checkpoint through all offered robot,
+SCRUT, prison, Mastachok, presents, and nested topics. All 60 fully displayed
+sites match the source, including 48 guard BAS sites and ten guard COD sites.
+The 18-manifest lineage passes; slot zero at boundary 11,023 has SHA-256
+`61ef635f4f6d760a92e391891fff7fb04e3e145f9242d0d14721af6345f9e2e8`.
+`cb-scruter-mac-repeat-visits-v1` then gives the correct code at the next two
+visits, explores the happy and sulking topics, and observes the fourth-visit
+expulsion and `explo3.hnm`. It reveals 20 matching sites, ends with `C1=4`,
+and saves at boundary 9,340, SHA-256
+`fbe7e69439bf4ce07ca7b77bbbbc5a4a1b90aea82f1ed6fef5ed00cf7759b63d`.
+The BAS farewell overridden by COD remains unobserved; that is not a global
+unreachability finding. Both earlier guard attempts remain excluded.
+
+`output/game-flows/audit-v8` includes these four additions after `audit-v7`:
+Izwalito's topics, the no-perfume recovery, and both guard witnesses. It validates
+289 witnesses and excludes 115 failed, unfinished, or legacy attempts. CB now
+has 1,569 successful-route sites, 1,070 other normal-route sites, 1,009 unobserved
+sites with witnessed wording, 125 empty/control sites, and 1,763 other unresolved
+sites. BBB's counts remain unchanged. Source attribution and every save lineage
+are rechecked, but both flows remain incomplete and `render_ready` stays false.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

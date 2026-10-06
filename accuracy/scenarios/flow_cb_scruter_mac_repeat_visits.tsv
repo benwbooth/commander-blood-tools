@@ -1,0 +1,30 @@
+# Continue the earned guard contact sequence before giving perfume.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose code
+choose beach
+choose party
+choose party
+choose ballroom
+choose bye_bye
+wait 200
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose code
+choose grmmph
+choose grmmph
+choose grmmph
+choose bye_bye
+wait 200
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 250

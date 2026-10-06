@@ -1,0 +1,76 @@
+# Approach before buying perfume, then give the offered code.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 149 20
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose code
+choose Scruter_Mac
+choose robot
+choose robot
+choose robot
+choose talk
+choose SCRUT
+choose order
+choose order
+choose order
+choose order
+choose chief
+choose chief
+choose chief
+choose war
+choose war
+choose happy
+choose beach
+choose party
+choose party
+choose ballroom
+choose talk
+choose SCRUT
+choose talk
+choose prison
+choose eviscerator
+choose eviscerator
+choose eviscerator
+choose Croolis
+choose Croolis
+choose Croolis
+choose Croolis
+choose talk
+choose prison
+choose talk
+choose prison
+choose talk
+choose Mastachok
+choose planet
+choose planet
+choose planet
+choose life
+choose life
+choose talk
+choose Mastachok
+choose talk
+choose Mastachok
+choose talk
+choose presents
+choose friendship
+choose friendship
+choose friendship
+choose like
+choose food
+choose beauty
+choose perfumes
+choose talk
+choose presents
+choose talk
+choose presents
+choose bye_bye
+wait 200
