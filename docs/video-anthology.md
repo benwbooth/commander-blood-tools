@@ -1070,6 +1070,26 @@ not the requested wartime response: simulation clears Mamy's war bit at
 frame 2499, with population ten, immediately before contact at frame 2500.
 COD 23415 remains unobserved, not declared unreachable.
 
+Two Mamy loan alternatives raise her evolution through ordinary GIVE choices
+before leaving that menu. `bbb-optional-mamy-loan-no-credit-v1` starts with
+zero credits, gives medicine before the decoder, and observes the no-credit
+reply. Its 9,948 frames, 508 events, and 12 matched sites add COD 26082/26115.
+`bbb-optional-mamy-loan-refuse-v1` starts from the treaty save, gives the
+decoder, and declines the displayed `lend`/`refuse` offer. Its 11,304 frames,
+630 events, and 14 sites add COD 26082/26150/26275. Their union adds four
+sites and three distinct wordings. Both preserve their zero/one credit
+balance and close with `A6=A10=A17=0`, `B22=1`, decoder with Mamy, and cleared
+gift flags. Writing stays with Marakas in the first leaf and aboard in the
+second. `bbb-optional-mamy-loan-audit-v1/parent-review.json` independently
+checks 15 lineage manifests, current sources/inputs, full text pixels,
+actual menus, immediate medicine/decoder effects, and both saved endpoints.
+
+The separate lending attempt makes one credit deduction and sets the loan
+flags, but never presents the required thank-you at COD 26221. Its closed
+save is not accepted as a predecessor or substituted for that missing line.
+`lend-diagnostic.json` retains the exact omission and input/state boundaries;
+no original-runtime equivalence or runtime cause is claimed for it.
+
 Two Metagluk alternatives use the earned optics-rejection save, before Super
 Zen exists. `bbb-optional-metagluk-other-command-v1` buys the displayed
 `bionium` command, adding SCRIPT2 COD 16224/16238/16254/16266. Its 5,018
