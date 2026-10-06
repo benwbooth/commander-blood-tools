@@ -65,6 +65,24 @@ record; all other fields belong to the current input. Unchanged deferred
 minigame observations therefore do not duplicate a full bridge snapshot for
 every flight input.
 
+`alien-first-frame-trace ... navigate` is an offline input planner for Jo's
+collection minigame. It reads scene geometry to steer toward a Bioxx and then
+back into a Manta, emitting only logical `move` and `key` actions. It never
+changes inventory, score, quest flags, or native flight behavior. The first
+neutral frame corresponds to `await-alien`; the emitted actions begin on the
+next frame and end with Escape when ten bionium are reached or the frame limit
+expires. Planning is not a normal-flow witness or original-executable parity
+proof: replay the emitted actions through ordinary Jo entry and inspect the
+resulting dialogue, global `vbio`, inventory, and saved checkpoint.
+
+```sh
+target/release/alien-first-frame-trace amer \
+  output/big-bug-bang/imported-assets/resources/AMER.XDB \
+  /dev/null full 0 100000 navigate > output/game-flows/oracles/jo-input-plan.json
+jq -r '.input_actions[]' output/game-flows/oracles/jo-input-plan.json \
+  > output/game-flows/oracles/jo-input-plan.tsv
+```
+
 `--resume-from path/to/flow.json --slot 0` permits one normal UI load from a
 recorded predecessor. The preceding run must have witnessed a successful save
 in that slot. Its evidence, save-directory record, save bytes, source profiles,
