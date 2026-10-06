@@ -1,0 +1,20 @@
+# Retrieve Bronko after he installs the transmitter.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+wait 500
+# Bronko is fourth of eight aboard entries; he brings back more Splatch.
+park 4 45
+wait 20
+click 230 124
+wait 40
+click 100 88
+wait 500
+# Receiver is second of the resulting nine entries.
+click 230 124
+wait 40
+click 100 60
+wait 500

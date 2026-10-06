@@ -433,6 +433,10 @@ the transmitter with Bronko and `trak1 = 1`; `fish` and `vari` remain zero.
 The restored destination sprite is active after loading. This still needs a
 continuous final-build replay and original-runtime comparison before treating
 the earlier inactive-sprite behavior as normal gameplay.
+Returning to Erazor, teleporting Bronko aboard, then contacting Bronko and the
+receiver in the cryobox (`cb-bronko-return-v1`) completes the recovery. Its
+save has `fish = 1`, `vari = 1`, Bronko aboard, and a new supply of Splatch
+aboard. The receiver conversation is observed, not inferred from the timer.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
