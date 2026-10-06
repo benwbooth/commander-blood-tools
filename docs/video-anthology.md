@@ -283,6 +283,11 @@ callbacks. Jo's success dialogue actually appears; the native save has
 resources normally. All 60,562 planned flight actions remain in the compact
 31 MiB action trace, with their original completion clocks. This is an earned
 native checkpoint, not an assigned score or injected inventory item.
+Gluk's next visit gives him those ten bionium, answers `no` to restarting the
+argument, and chooses `take_offer` (`bbb-gluk-bionium-delivery-v1`). The game
+plays both `flitutr.hnm` and `explbleu.hnm`, consumes the ten bionium, and saves
+with `A29 = 2`, `A31 = 1`, and `B11 = 1`. Migrator and Mig Burner are now
+actually located at Loneland; their later quests remain to be played.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
@@ -405,6 +410,11 @@ Revisiting the guard then visiting Eden's bar (`cb-eviscerator-aftermath-v1`)
 shows the escape aftermath and actually decodes `explo3.hnm`. The final save
 has `D1 = 4`, Eviscerator and Scruter Mac at Trashlando, and Scruter K at Magnus.
 The Scruter body is not yet aboard at this checkpoint.
+The Magnus continuation enters the planet twice, first teleporting Anna Haf
+and then recovering Scruter Mac's body (`cb-scruter-recovery-v2`). Both finish
+normally and the save retains Anna and the body aboard. The second local menu
+row is Ark, not a second character: the failed v1 selected that row and is not
+used as a predecessor.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
