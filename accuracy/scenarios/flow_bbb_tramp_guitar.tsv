@@ -1,0 +1,28 @@
+# Obtain the next guitar through Internet's earned reward.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1000
+# Travel to Tramp and let his second-visit sequence finish before the gift menu.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 191 44
+wait 40
+click 250 125
+frames 600
+choose guitar
+frames 700
+click 200 133
+frames 200

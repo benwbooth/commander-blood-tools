@@ -596,6 +596,11 @@ its save inputs during dialogue and has no checkpoint. Neither is a predecessor.
 gives Trump the earned guitar. The ordinary save confirms the guitar with Trump
 and `B86=1`, with 12 decoded resources and 20 fully revealed sites. The arrival
 opens his encounter automatically; no extra actor click is sent during dialogue.
+`bbb-tramp-guitar-v1` collects the next guitar from Internet and visits Loneland.
+It presents Tramp's second-visit clip chain, then gives him the guitar and saves
+with `B86=2`. The seven requested clips, including `lpm4sc1`, `venthig`, and
+`ettamorf`, close normally with counters reaching the decoded source's last
+frame boundary. The route observes 19 resources and 63 fully revealed sites.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
