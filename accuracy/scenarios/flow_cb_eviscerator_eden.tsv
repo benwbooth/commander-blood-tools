@@ -1,0 +1,23 @@
+# Enter the prison and advance beyond both treasure and secret reply lists.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 149 20
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose code
+choose war
+choose treasure
+choose treasure
+choose treasure
+choose secret
+choose secret
+choose secret
+wait 600

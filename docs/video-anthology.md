@@ -263,8 +263,24 @@ The following cryobox contact completes Bronko's airport lead and first
 aboard conversation. Travelling to Ekatomb then presents the Gluxx children's
 kidnapping report and returns to the bridge (`cb-bronko-gluxx-news-v1`), with
 another normal save. This is the start of SCRIPT3's investigations, not its end.
+The next Mastachok contact enters the prison through the guard's normal `code`
+dialogue, follows the Eviscerator's war/treasure/secret topics, and earns the
+SPLATCH request and Eden directions (`cb-eviscerator-eden-v4`). The conversation
+closes and saves with `D1 = 1`, `secret = 0`, and `secret1 = 0`.
 
-This continuation exposed a separate native text defect: dictionary offset 1
+That conversation exposed a native dispatcher integration defect: BC topic
+assignments updated the actor field but left the live selector on the preceding
+topic. The direct-record handler already recorded the publication; the
+dispatcher now applies it to the selector while preserving the parent control.
+The unmodified original code's 17 direct-record and 14 selector-control vectors
+were rerun successfully. They establish BC's write to `GS:6782` and its
+precedence over the actor field. The new regression first reproduced the stale
+selector, then passed for both dialects, including query and non-publication
+controls. All 1,113 enabled game-library tests pass, with 78 explicit ignores.
+The successful prison continuation records the rebuilt executable and repair
+reason, and loads the same unmodified earned predecessor save.
+
+An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
 it as BBB's live-number marker. The assembler now distinguishes the dialects.
 `re/tools/commander_subtitle_oracle.py` executes the unmodified CB assembler

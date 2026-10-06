@@ -605,13 +605,22 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
             }
             DecodedScriptInstruction::DirectRecord(operation) => {
                 commit_to_var = !runtime.query_mode();
-                apply_direct_record_operation(
+                let control = apply_direct_record_operation(
                     *operation,
                     &mut self.records.record_fields,
                     &mut self.records.record_runtime,
                     runtime,
                 )
-                .map_err(ScriptDispatchError::Record)?
+                .map_err(ScriptDispatchError::Record)?;
+                if commit_to_var
+                    && operation.publishes_value
+                    && let Some(topic) = self.records.record_runtime.published_topic()
+                {
+                    // BC also writes the live selector control (original GS:6782).
+                    self.selector
+                        .set_control_selections(Some(topic), self.selector.parent_control());
+                }
+                control
             }
             DecodedScriptInstruction::BitFlag(operation) => {
                 refresh_from_var = !runtime.query_mode();
@@ -2414,6 +2423,140 @@ logic {{
             assert_ne!(outcome.end, ScriptFrameEnd::ExecutionDisabled);
             assert_eq!(host.scans, 1);
             profile.synchronized_state().unwrap();
+        }
+    }
+    #[test]
+    fn topic_publication_updates_live_selector_but_queries_and_plain_writes_do_not() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_complete_script_instruction;
+        use commander_blood_formats::script::{
+            decode_script_dictionary, decode_script_directory, decode_script_state_for_dialect,
+        };
+
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            let dialect_line = if dialect == ScriptDialect::BigBugBang {
+                "dialect big_bug_bang"
+            } else {
+                ""
+            };
+            let dialogue_section = if dialect == ScriptDialect::BigBugBang {
+                ""
+            } else {
+                "conversations {\n    halt\n}"
+            };
+            let source = format!(
+                r#"bloodscript 8
+{dialect_line}
+profile SCRIPT1
+concepts "war" "secrets" "talk"
+state {{
+    universe "baby1" {{
+    }}
+    player "blood" {{
+        active
+    }}
+    character "Eviscerator" {{
+        active
+    }}
+    navigation_controller "orxx" {{
+        active
+    }}
+}}
+logic {{
+    proc change_topic enabled {{
+    }} then {{
+        Eviscerator.topic = "secrets"
+        halt
+    }}
+}}
+{dialogue_section}
+"#
+            );
+            let images = commander_blood_script_compiler::compile_profile(&source).unwrap();
+            let directory = decode_script_directory(&images.deb).unwrap();
+            let dictionary = decode_script_dictionary(&images.dic).unwrap();
+            let dialogue = decode_script_bas(&[0xff], &dictionary).unwrap();
+            let code = decode_script_code_for_dialect(&images.cod, dialect).unwrap();
+            let word = |name: &[u8]| {
+                dictionary
+                    .words()
+                    .find(|(_, bytes)| *bytes == name)
+                    .unwrap()
+                    .0
+            };
+            let old = word(b"war");
+            let new = word(b"secrets");
+            let parent = word(b"talk");
+            for (query, publication) in [(false, true), (true, true), (false, false)] {
+                let mut state =
+                    decode_script_state_for_dialect(&images.var, &directory, dialect).unwrap();
+                let mut instructions = code
+                    .tokens()
+                    .iter()
+                    .map(|token| {
+                        decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                            .unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                let index = instructions
+                    .iter()
+                    .position(|instruction| {
+                        matches!(instruction, DecodedScriptInstruction::DirectRecord(_))
+                    })
+                    .unwrap();
+                let DecodedScriptInstruction::DirectRecord(operation) = &mut instructions[index]
+                else {
+                    unreachable!()
+                };
+                operation.publishes_value = publication;
+                let target = operation.target;
+                state.set_word(target, dictionary.source_offset(old).unwrap());
+                let builtins = ScriptProfileBuiltins {
+                    player: directory.find_active_object(b"blood"),
+                    ..Default::default()
+                };
+                let mut records =
+                    ScriptProfileRecordState::recover(&instructions, &state, &dictionary, builtins)
+                        .unwrap();
+                let mut procedures = super::super::ScriptProcedureStates::default();
+                let mut selector = ScriptSelectorState::default();
+                selector.set_control_selections(Some(old), Some(parent));
+                let mut slots = super::super::ScriptSequenceSlots::default();
+                let mut dispatch = ScriptDispatchState::default();
+                let mut host = TraversalHost::default();
+                let mut runtime = ScriptRuntime::default();
+                if query {
+                    runtime.begin_root_guard(code.tokens()[index].end_offset());
+                }
+                let mut dispatcher = Dispatcher {
+                    code: &code,
+                    instructions: &instructions,
+                    dialogue: &dialogue,
+                    state: &mut state,
+                    dictionary: &dictionary,
+                    directory: &directory,
+                    builtins,
+                    procedures: &mut procedures,
+                    selector: &mut selector,
+                    sequence_slots: &mut slots,
+                    records: &mut records,
+                    dispatch: &mut dispatch,
+                    host: &mut host,
+                };
+                dispatcher
+                    .execute_instruction(&code.tokens()[index], &instructions[index], &mut runtime)
+                    .unwrap();
+                assert_eq!(
+                    selector.current_control(),
+                    Some(if !query && publication { new } else { old })
+                );
+                assert_eq!(selector.parent_control(), Some(parent));
+                assert_eq!(
+                    state.word(target),
+                    dictionary.source_offset(if query { old } else { new })
+                );
+            }
         }
     }
 }
