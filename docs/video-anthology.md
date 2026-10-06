@@ -565,6 +565,15 @@ then grants parole on the next contact. The `crazys20`, `p_cles`, and `match04`
 requests all close normally. Its ordinary save has `C11=5`, Eviscerator on
 Island, and Outrageor on Waveland, with 15 decoded resources and 16 fully
 revealed sites. These are sequential ordinary contacts, not injected alternatives.
+`bbb-eviscerator-obey-v2` instead surrenders at the same ambush. The live route
+empties credits and bionium, sets `C11=3` and `A13=2`, and reaches the complete
+`28bob` failure ending at `0x9f14` with clean native exit. It observes 17
+resources and 13 fully revealed sites. V1 used an exact-frame wait that is
+invalid in shutdown cadence; its nonzero exit is not accepted ending evidence.
+`bbb-eviscerator-commando-v1` visits the paroled Eviscerator on Island, accepts
+his mission, and hears both the report and Chigraxx's response. The ordinary
+save confirms `C11=9`, `A94=1`, and no ending flag (`A13=0`). It observes 18
+decoded resources and 29 fully revealed sites, enabling the return to Mega Paul.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

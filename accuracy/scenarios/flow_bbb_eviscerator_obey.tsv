@@ -1,0 +1,19 @@
+# Alternate ambush outcome from the same earned distress-call checkpoint.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 37 50
+wait 40
+click 250 125
+wait 300
+click 80 104
+choose obey
+wait 1000
