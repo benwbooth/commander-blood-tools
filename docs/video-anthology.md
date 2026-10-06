@@ -53,6 +53,11 @@ New traces also retain named script-global word changes, with source offsets
 and raw/signed values. The recorder stores only changes and the final snapshot;
 older traces without these fields do not claim global-state evidence. This is
 read-only observation of the synchronized native VAR state.
+New recordings also retain ordered `SQ\\` sequence runs and the maximum decoder
+counter observed before each source closes. These counters survive event
+compaction but are not total frame counts or durations: a source can decode its
+last frame and clear its counter in the same native tick. Replaced/restarted
+sources are distinguished from closed sources; no per-frame media is retained.
 Inputs completed inside a synchronous minigame are queued until a bridge
 snapshot is available. Each retains its actual completion clock and explicitly
 marks a deferred semantic observation; those snapshots are not minigame-frame
@@ -240,6 +245,20 @@ the wedding-ring request, and wakes Ondoyant through the ordinary cryobox.
 Her handover is observed, and the normal save confirms the ring aboard, Yoko
 at Bigbang, Tina at bar2, and `bok=1`. Its 27 decoded resources and 40 fully
 revealed sites precede the wedding concert; they do not establish its ending.
+`cb-wedding-concert-v2` then follows Yoko, Fifi, Tina, and Migrator through the
+remaining wedding conversation and teleports the earned ring to Migrator.
+The observed `finalmen` chain has all 22 sequence requests in authored order:
+18 music clips, three Bob/Honk intercuts, and `FIN.HNM`. FIN starts at native
+boundary 8259; its maximum observed decoder counter is 263, and boundary 8522
+has no active or draining video. The native process exits with code zero.
+`--expect-cb-ending` checks the SCRIPT5 ending site, Migrator/concert ownership,
+ring and Ark locations, ordered decoded-and-closed sequences, and clean exit.
+Only the final passive wait may be interrupted. Wrong choices, missing/reordered
+clips, an open source, or a crash fail validation. All 24 recorder tests pass.
+The earlier v1 reached the same natural exit but lacked this CB-specific
+completion check and remains a failed recording, not a rewritten witness.
+This completes the observed main CB story route, not every distinct alternative
+and not original-executable rendering/timing parity. Rendering is still deferred.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

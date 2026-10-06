@@ -1,0 +1,14 @@
+# Revisit Yoko with Ondoyant's earned ring; follow the authored bar sequence.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+# Yoko, Fifi, and Tina lead to Migrator's ring request.
+choose teleport
+# Allow the full concert sequence and FIN.HNM to play without input.
+wait 2500

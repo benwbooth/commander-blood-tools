@@ -6,7 +6,7 @@ import tempfile
 import struct
 import unittest
 
-from native_game_flow import (ActionRecorder, FlowRecorder, normal_actions, route_source, saved_checkpoints,
+from native_game_flow import (ActionRecorder, CB_CONCERT_SEQUENCES, FlowRecorder, normal_actions, route_source, saved_checkpoints,
                              scene_state, revealed_text_sites, verified_predecessor,
                              verify_route_completion)
 from video_anthology import digest
@@ -184,6 +184,81 @@ class FlowTests(unittest.TestCase):
         manifest = root / "flow.json"
         manifest.write_text(json.dumps(status))
         return manifest, provenance, status
+
+    def concert_fixture(self):
+        state = dict(profile=4, cod_site=5989, actor=dict(record=17),
+                     navigation=dict(record=97), active_video=None, video_open=False)
+        runs = [dict(profile=4, cod_site=site, resource="SQ\\" + name,
+                     observed_decoded_frames=30, ended_at_frame=index + 1,
+                     end_reason="source_closed")
+                for index, (site, name) in enumerate(CB_CONCERT_SEQUENCES)]
+        objects = [dict(record=125, target_record=17), dict(record=98, target_record=94)]
+        return dict(final_state=state, expect_cb_ending=True, sequence_runs=runs, final_objects=objects)
+
+    def test_cb_concert_requires_earned_ordered_decoded_closed_sequences(self):
+        actions = ["choose teleport", "wait 2500"]
+        result = verify_route_completion(actions, actions[:-1], 0, **self.concert_fixture())
+        self.assertEqual(result["kind"], "cb_concert")
+        self.assertEqual(result["sequence_runs"], 22)
+        self.assertTrue(result["interrupted_final_wait"])
+        for mutation in (lambda f: f["final_state"].update(profile=3),
+                         lambda f: f["final_state"].update(cod_site=5988),
+                         lambda f: f["final_state"].update(actor=dict(record=3)),
+                         lambda f: f["final_state"].update(navigation=dict(record=94)),
+                         lambda f: f["final_objects"][0].update(target_record=None),
+                         lambda f: f["final_objects"][1].update(target_record=53),
+                         lambda f: f["sequence_runs"].pop(5),
+                         lambda f: f["sequence_runs"].reverse(),
+                         lambda f: f["sequence_runs"][-1].update(observed_decoded_frames=0),
+                         lambda f: f["sequence_runs"][-1].update(end_reason="replaced"),
+                         lambda f: f["sequence_runs"][-1].update(ended_at_frame=None),
+                         lambda f: f["sequence_runs"][-1].update(resource="SQ\\bobb.hnm"),
+                         lambda f: f["final_state"].update(video_open=True),
+                         lambda f: f["final_state"].update(active_video="SQ\\fin.hnm")):
+            fixture = self.concert_fixture()
+            mutation(fixture)
+            with self.subTest(fixture=fixture), self.assertRaises(ValueError):
+                verify_route_completion(actions, actions[:-1], 0, **fixture)
+        with self.assertRaisesRegex(ValueError, "passive wait"):
+            verify_route_completion(actions, [], 0, **self.concert_fixture())
+        with self.assertRaisesRegex(RuntimeError, "exited 1"):
+            verify_route_completion(actions, actions[:-1], 1, **self.concert_fixture())
+        with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+            verify_route_completion(actions, actions[:-1], 0, ending_offset=1,
+                                    **self.concert_fixture())
+
+    def test_sequence_decoder_counts_survive_compaction_and_close_without_retained_media(self):
+        recorder = FlowRecorder(io.StringIO())
+        item = frame()
+        item["semantic"]["video"]["active_resource"] = "SQ\\fin.hnm"
+        for number in range(4):
+            item["frame"] = number
+            item["semantic"]["video"]["decoded_frame_count"] = number
+            recorder.record(copy.deepcopy(item))
+        self.assertEqual(recorder.events, 1)
+        item["frame"] = 4
+        item["semantic"]["video"].update(active_resource=None, decoded_frame_count=0,
+                                          source_open_or_draining=False)
+        recorder.record(item)
+        self.assertEqual(recorder.sequence_runs, [dict(
+            resource="SQ\\fin.hnm", profile=0, cod_site=42, started_at_frame=0,
+            observed_decoded_frames=3, ended_at_frame=4, end_reason="source_closed")])
+        self.assertIsNone(recorder.sequence_run)
+
+    def test_sequence_restarts_and_replacements_are_not_reported_as_closed(self):
+        recorder = FlowRecorder(io.StringIO())
+        item = frame()
+        item["semantic"]["video"].update(active_resource="SQ\\bobb.hnm", decoded_frame_count=20)
+        recorder.record(copy.deepcopy(item))
+        item["frame"] = 1
+        item["semantic"]["video"]["decoded_frame_count"] = 1
+        recorder.record(copy.deepcopy(item))
+        item["frame"] = 2
+        item["semantic"]["video"]["active_resource"] = "PE\\aamig.hnm"
+        recorder.record(item)
+        self.assertEqual([run["end_reason"] for run in recorder.sequence_runs], ["replaced", "replaced"])
+        self.assertEqual([run["observed_decoded_frames"] for run in recorder.sequence_runs], [20, 1])
+        self.assertIsNone(recorder.sequence_run)
 
     def test_checkpoint_requires_unchanged_predecessor_and_native_save_event(self):
         with tempfile.TemporaryDirectory() as directory:
