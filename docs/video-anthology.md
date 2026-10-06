@@ -1069,6 +1069,31 @@ lineage manifests, current leaf input/source hashes, text, menus, transfers,
 and saved endpoints. Historical combined input files remain hash-checked;
 this does not assert that every old external scenario fragment is unchanged.
 
+Four SCRIPT4 Bob leaves select the displayed `black_hole`, `Big_Bang`,
+`mission`, and `corpo` topics from `cb-bob-kanary-delayed-probe-v4`, then
+leave through `bye_bye` before the conversation timer expires. Their
+6,485/5,753/6,485/5,021 frames contain 465/347/465/229 compact events and
+11/9/11/7 matched sites. Together they add 14 previously unobserved sites,
+12 with new wording. `cb-optional-bob-audit-v1/parent-review.json` independently
+checks 54 lineage manifests, current leaf source/input hashes, full text,
+visible menus, and closed slot-zero saves. The reported globals and compact
+object fields are unchanged; those fields do not include Bob's aggression
+or BAS shown flags, so this is not a claim that the complete state is unchanged.
+These leaves do not establish the separate Kanary topic's availability.
+
+The six `bbb-optional-status-*-v1` leaves use naturally earned balances of
+zero, four, five, six, seven, and eight credits. One common input fragment
+opens the status contact and declines the actual offer. The zero-credit
+leaf repeats that normal contact four times, revealing the authored late
+broke and zero-bionium warnings; no balance or visit counter is synthesized.
+`bbb-optional-status-audit-v1/all-six.json` checks 112 lineage manifests,
+current leaf source/input hashes, full text including the displayed credit
+amounts, unchanged inventory ownership/flags and balances, and closed saves.
+The six leaves add 19 distinct sites relative to audit-v15, including an
+empty/control site; this is not a count of 19 new spoken lines. The five
+single contacts take 3,026-3,044 frames each; the zero-credit leaf takes
+6,958 frames. Other status thresholds and alternatives remain open.
+
 `output/game-flows/audit-v13` accepts 349 witnesses and excludes 141 failed,
 running, or legacy attempts. The successful lineages remain 72 CB and 99 BBB
 segments. CB has 1,569 successful-route and 1,296 other normal-route sites;
@@ -1559,6 +1584,28 @@ The failed v1 composition toggled travel on at frame 1736 and back off at
 explicitly retains enabled travel after Betakam. This is an input-script
 correction, not a runtime change or an assertion that the later robot gifts
 are already reachable.
+
+`bbb-blue-wave-retained-strike-calls-v1` continues that saved inventory
+through Blue Wave's show and the strike calls. It records 34,747 frames,
+1,298 events, 34 resources, and 142 matched sites with no newly observed
+wording. The nine held items, including crown, picture, decoder, and weapons,
+remain aboard, with five credits and two bionium. Its closed slot-zero save
+at frame 34611 has SHA-256
+`a1ec60f67c55a1a19940d114fead4c1ed0f76ab59e204511c6283fb68a26d8e9`.
+`bbb-blue-wave-retained-audit-v1/strike-calls.json` independently checks
+78 lineage manifests, current leaf source/input hashes, full text, the
+sequence closures, inventory, and endpoint.
+
+`bbb-retained-cyberquizz-invitation-v1` then completes the general-strike
+calls and Cyberquizz invitation while preserving those items. Its
+29,890 frames and 763 events contain 77 matched sites, again without new
+wording. Cyberquizz and food are aboard, with `A61=7`, `A65=2`, `A68=1`,
+five credits, and two bionium. The ordinary save at frame 29754 has SHA-256
+`e51539a5997e01953ed4b626d23929ef6d73944eed74fc2270b8a6c87d374387`.
+`bbb-retained-story-audit-v1/invitation.json` checks 79 lineage manifests
+and the current leaf sources, inputs, text, inventory, and closed endpoint.
+These are prerequisites for later inventory reactions, not proof that all
+later gifts or an ending continuation have been recorded.
 
 `bbb-blue-wave-early-ring-with-mummy-v3` takes the separate one-bionium route
 through Betakam, offers the ring before the mummy, and then gives the mummy.

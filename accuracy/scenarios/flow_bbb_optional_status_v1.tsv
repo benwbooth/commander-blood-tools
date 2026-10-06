@@ -1,0 +1,6 @@
+# Open the ordinary ship status report and decline further commands.
+park 4 45
+wait 25
+click 230 136
+choose no
+wait 200

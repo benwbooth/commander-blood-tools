@@ -1,0 +1,15 @@
+# SCRIPT4 Bob root: three Big Bang lines, then ordinary closure.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 45
+wait 120
+choose Big_Bang
+wait 80
+choose Big_Bang
+wait 80
+choose Big_Bang
+wait 80
+choose bye_bye
+wait 300
