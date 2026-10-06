@@ -511,6 +511,13 @@ evidence of the threshold-20 reply. All forty fully shown sites match source
 wording, and all five saved-lineage manifests validate. The run records 11,455
 frames, 1,005 events, and fifteen decoded resources. Save zero at boundary 11319
 has SHA-256 `998923338229238b71d0bcf972231343d79d3c11291f7b681498de3c1ae57a40`.
+`cb-bob-early-twenty-v1` recontacts that save and fully presents the threshold-20
+reply at BAS 19537 with `bobj.hnm` before selecting another topic. It also
+repeats the Ark/flattery branch but does not witness the probabilistic
+embarrassment reply. All ten fully shown sites pass the source-wording audit,
+and the six-manifest saved lineage validates. It records 5,731 frames, 351
+events, and twelve decoded resources. Save zero at boundary 5595 has SHA-256
+`522b22c03402f88d6931b34d3f14542602fda6457f87145d2f82ad088f714629`.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

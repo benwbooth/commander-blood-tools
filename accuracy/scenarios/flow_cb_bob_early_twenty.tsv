@@ -1,0 +1,15 @@
+# Recontact the earned aggressiveness-20 save before selecting another topic.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+wait 200
+choose talk
+choose Good_ol_Bob
+choose Good_ol_Bob
+choose Good_ol_Bob
+choose Good_ol_Bob
+wait 100
+choose bye_bye
+wait 250
