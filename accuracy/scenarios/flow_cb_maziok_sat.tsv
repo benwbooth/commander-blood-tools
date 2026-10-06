@@ -1,0 +1,35 @@
+# The Ondoyant is fifth of ten entries after loading the recruitment save.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 89
+wait 800
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 77 49
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose ga
+choose vista
+choose vista
+choose ekato
+# The exhausted Vista topic advances Maziok's scripted Ekato explanation.
+choose vista
+choose vista
+choose vista
+choose vista
+choose vista
+choose vista
+choose tourism
+choose tourism
+choose bye_bye
+wait 800

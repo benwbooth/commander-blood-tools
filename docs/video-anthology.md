@@ -165,6 +165,9 @@ recontacts him locally. Fifi's Ondoya clue is fully presented, and the saved
 endpoint places him on Malus.
 `cb-ondoyant-recruit-v1` follows that clue to Ondoya and accepts the request
 for passage. Its saved endpoint confirms the Ondoyant aboard.
+`cb-maziok-sat-v1` wakes the Ondoyant for the aboard conversation, then returns
+to Maziok after the curse removal. It presents the Ekato explanation and Sat
+coordinates. The saved endpoint has `ek=1` and Maziok at Trashlando.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -200,6 +203,10 @@ returns it; the saved endpoint has `B96=3`, four credits, and three visits.
 `bbb-optics-guitar-again-v1` purchases replacement optics from Otto Von Smile
 on Foxx and another guitar from the treated Ben Zen on Tumul. Both objects are
 aboard in the saved endpoint, with two credits remaining.
+`bbb-gluk-second-ship-v1` returns to the established Cyberock negotiation with
+those two credits. Both affirmative dialogue choices and the low-credit
+exchange complete normally. The saved checkpoint has the ship aboard, `A4=0`,
+and `A34=2`; no credit or inventory state was supplied externally.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
