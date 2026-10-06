@@ -529,6 +529,11 @@ through ordinary Jo entry. The live Amer minigame presents 55,802 frames and
 returns `vbio=6`, confirmed by the normal save. No inventory was granted by
 the planner. Its predecessor is the verified Cyberquizz route, not the failed
 zero-start-plan attempt.
+`bbb-mega-paul-first-v1` visits Ponyland, answers the displayed questions with
+`or`, `other`, and `Super_Zen`, and pays the requested three bionium. His
+clairvoyance explanation completes with `A100=6` and `vbio=3`. The saved
+checkpoint keeps Mega Paul on Ponyland at evolution 100; it observes 25
+decoded resources and 50 fully revealed sites.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
