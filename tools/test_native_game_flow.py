@@ -6,7 +6,8 @@ import tempfile
 import struct
 import unittest
 
-from native_game_flow import (ActionRecorder, CB_CONCERT_SEQUENCES, FlowRecorder, normal_actions, route_source, saved_checkpoints,
+from native_game_flow import (ActionRecorder, BBB_SUCCESS_ENDING_OFFSET, BBB_SUCCESS_SEQUENCES,
+                             CB_CONCERT_SEQUENCES, FlowRecorder, normal_actions, route_source, saved_checkpoints,
                              scene_state, revealed_text_sites, verified_predecessor,
                              verify_route_completion)
 from video_anthology import digest
@@ -184,6 +185,35 @@ class FlowTests(unittest.TestCase):
         manifest = root / "flow.json"
         manifest.write_text(json.dumps(status))
         return manifest, provenance, status
+
+    def test_bbb_success_requires_all_fifteen_ending_clips(self):
+        actions = ["click 100 111", "wait 4000"]
+        state = self.ending_state()
+        state["ending"]["last_assignment"]["code_offset"] = BBB_SUCCESS_ENDING_OFFSET
+        runs = [dict(profile=1, resource="SQ\\" + name, observed_decoded_frames=30,
+                     ended_at_frame=index + 1,
+                     end_reason="source_closed" if index == 14 else "replaced")
+                for index, name in enumerate(BBB_SUCCESS_SEQUENCES)]
+        result = verify_route_completion(actions, actions[:-1], 0, state,
+                                         BBB_SUCCESS_ENDING_OFFSET, sequence_runs=runs)
+        self.assertEqual(result["kind"], "bbb_success")
+        self.assertEqual(result["sequence_runs"], 15)
+        self.assertTrue(result["interrupted_final_wait"])
+        self.assertEqual(verify_route_completion(
+            actions, actions[:-1], 0, state, BBB_SUCCESS_ENDING_OFFSET,
+            sequence_runs=[dict(resource="SQ\\cryorad.hnm")] + runs), result)
+        for mutation in (lambda r: r.clear(), lambda r: r.pop(5), lambda r: r.reverse(),
+                         lambda r: r[0].update(profile=0),
+                         lambda r: r[0].update(observed_decoded_frames=0),
+                         lambda r: r[-1].update(resource="SQ\\fin.hnm"),
+                         lambda r: r[-1].update(end_reason="replaced"),
+                         lambda r: r[3].update(end_reason="source_closed"),
+                         lambda r: r[3].update(ended_at_frame=None)):
+            changed = copy.deepcopy(runs)
+            mutation(changed)
+            with self.subTest(runs=changed), self.assertRaisesRegex(ValueError, "successful ending"):
+                verify_route_completion(actions, actions[:-1], 0, state,
+                                        BBB_SUCCESS_ENDING_OFFSET, sequence_runs=changed)
 
     def concert_fixture(self):
         state = dict(profile=4, cod_site=5989, actor=dict(record=17),

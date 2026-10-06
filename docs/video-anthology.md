@@ -672,6 +672,23 @@ consecutive `PION` entries, then saves normally. It observes 11 resources and
 five fully revealed sites. V1 was rejected before gameplay because its
 predecessor used an older binary; v2 explicitly records the already-verified
 runtime repairs while preserving the exact earned save and source hashes.
+`bbb-concert-ending-v2` loads the eight-reaction checkpoint and contacts Tequila.
+Her reaction raises `A13` from 24 to 27 and selects SCRIPT2's successful ending
+at `0x9F2E`. All 15 `48finbob` entries, `BOBB` followed by `FIN1` through
+`FIN14`, play in order at native boundaries 1903--4387. Every counter reaches
+the source's last decoded-frame boundary, and the native process exits cleanly
+at boundary 4388, interrupting only the final passive wait. The recorder now
+classifies this as `bbb_success` only after checking that ordered decoded and
+closed clip chain in addition to the ending assignment. All 25 focused flow
+tests pass, including rejected missing, reordered, undecoded, and unclosed
+ending clips. V1 independently reached the same ending before this stronger
+check was added. This establishes a successful earned BBB route, not complete
+alternative coverage or DOS parity.
+`bbb-trump-painting-v1` takes the painting sale instead of giving the concert
+guitar. Its ordinary save has two credits, with both painting and guitar still
+aboard and `B86=0`. All six `23tableau` clips play in authored order at boundaries
+3148--3375 and reach their source counter boundaries. The route observes 17
+resources and 12 fully revealed sites.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

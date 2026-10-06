@@ -1,0 +1,8 @@
+# Tequila is the ninth distinct reaction on this earned branch.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 111
+# Passive logical waits preserve the original ending and credits cadence.
+wait 4000

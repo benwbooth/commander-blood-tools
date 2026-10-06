@@ -1,0 +1,18 @@
+# Buy Trump's painting instead of declining it on the concert-guitar visit.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 179 81
+wait 40
+click 250 125
+frames 600
+choose accept
+wait 700

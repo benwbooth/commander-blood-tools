@@ -39,6 +39,9 @@ CB_CONCERT_SEQUENCES = [
     (5989, "fin.hnm"),
 ]
 
+BBB_SUCCESS_ENDING_OFFSET = 0x9F2E
+BBB_SUCCESS_SEQUENCES = ["bobb.hnm"] + [f"fin{number}.hnm" for number in range(1, 15)]
+
 
 def normal_actions(source):
     actions = []
@@ -379,6 +382,11 @@ def flow_markdown(directory, status):
             lines[3:3] = ["Observed all 22 SCRIPT5 concert sequence requests in order, including "
                           "18 music clips, three dialogue intercuts, and FIN.HNM, followed by "
                           "closed video and a clean native process exit.", ""]
+        elif ending.get("kind") == "bbb_success":
+            lines[3:3] = ["Observed the earned SCRIPT2 successful-ending assignment and all 15 "
+                          "48finbob clips in order: BOBB.HNM followed by FIN1.HNM through FIN14.HNM. "
+                          "Playback closed before the clean native process exit. This does not "
+                          "establish complete alternative coverage or DOS parity.", ""]
         else:
             lines[3:3] = [
                 f"Observed the expected SCRIPT2 ending sequence assignment at 0x{ending['code_offset']:04X} "
@@ -457,6 +465,17 @@ def verify_route_completion(actions, completed, returncode, final_state, ending_
                 or assignment.get("code_offset") != ending_offset
                 or assignment.get("query_mode") is not False):
             raise ValueError("native exit did not reach the expected SCRIPT2 ending sequence assignment")
+        if ending_offset == BBB_SUCCESS_ENDING_OFFSET:
+            runs = (sequence_runs or [])[-len(BBB_SUCCESS_SEQUENCES):]
+            expected = ["sq\\" + name for name in BBB_SUCCESS_SEQUENCES]
+            if ([run["resource"].lower() for run in runs] != expected
+                    or any(run.get("profile") != 1
+                           or run.get("observed_decoded_frames", 0) <= 0
+                           or run.get("ended_at_frame") is None
+                           or run.get("end_reason") != (
+                               "source_closed" if index == len(runs) - 1 else "replaced")
+                           for index, run in enumerate(runs))):
+                raise ValueError("successful ending playback is missing, reordered, undecoded, or unclosed")
     if (final_state.get("video_open") is not False or "active_video" not in final_state
             or final_state["active_video"] is not None):
         raise ValueError("native exit left ending video open")
@@ -464,8 +483,11 @@ def verify_route_completion(actions, completed, returncode, final_state, ending_
         return dict(kind="cb_concert", profile=5, code_offset=5989, sequence_runs=len(runs),
                     native_exit_code=returncode, completed_actions=len(completed),
                     interrupted_final_wait=interrupted_wait)
-    return dict(profile=2, code_offset=ending_offset, native_exit_code=returncode,
-                completed_actions=len(completed), interrupted_final_wait=interrupted_wait)
+    result = dict(profile=2, code_offset=ending_offset, native_exit_code=returncode,
+                  completed_actions=len(completed), interrupted_final_wait=interrupted_wait)
+    if ending_offset == BBB_SUCCESS_ENDING_OFFSET:
+        result.update(kind="bbb_success", sequence_runs=len(runs))
+    return result
 
 
 class ActionRecorder:
