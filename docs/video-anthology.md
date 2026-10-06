@@ -586,6 +586,12 @@ SCRIPT15.DIC is only 973 bytes. The existing audio oracle proves the original
 encoded-offset hashing only within supplied dictionary memory, not the contents
 beyond that allocation. No decimal-text, silent-audio, or zero-padding fallback
 has been substituted, and that local visit remains uncovered.
+`bbb-elvis-quiz-v3` makes the investment and answers the Elvis quiz through
+ordinary Internet choices. It waits for the subsequent Scruter messages and
+broadcast before saving. The witnessed checkpoint has `A63=8`, `B94=1`, three
+credits, and the guitar aboard, with 13 decoded resources and 86 fully revealed
+sites. V1 stalled on an unnecessary second call; v2 reached the reward but sent
+its save inputs during dialogue and has no checkpoint. Neither is a predecessor.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

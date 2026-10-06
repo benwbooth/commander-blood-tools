@@ -1,0 +1,15 @@
+# Call Internet after Mig Burner's concert proposal.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+choose invest
+choose other
+choose e
+choose l
+choose v
+choose elvis
+# Let the reward and subsequent Internet messages finish before opening Save.
+wait 1200
