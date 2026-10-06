@@ -170,6 +170,9 @@ the gift menu. The normal continuation therefore answers the recipe and
 weapons questions, leaves through Cancel, refuses the first loan, and accepts
 the second (`bbb-daddy-loans-v1`). The conversation closes and saves with
 `A4 = 0`, `A17 = 3`, and `A43 = 1`. It has not acquired replacement weapons.
+The fifth visit answers `good`, plays the exercise clip, and leaves the gift
+menu to receive the scripted repayment (`bbb-daddy-repayment-v1`). Its new
+checkpoint has ten credits (`A4 = 10`) and `A17 = 6`.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -223,6 +226,10 @@ which a normal recontact offers `teleport` (`cb-mastachok-perfume-v2`). That
 conversation transfers the perfume to Scruter Mac and closes with `C1 = 6`.
 The witnessed save retains that result, and the bridge queues Scruter K's
 customs call. This route changes no inventory or quest state outside game input.
+Answering that call completes the customs dialogue and the normal SCRIPT3
+transition (`cb-scrut-customs-v1`). The new checkpoint is genuinely in SCRIPT3;
+Bronko and Scruter Jo are aboard, Morning is on the Ark, and the next quest
+stage has not been substituted by a prepared chapter state.
 
 This continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

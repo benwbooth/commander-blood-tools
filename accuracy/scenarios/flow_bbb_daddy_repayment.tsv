@@ -1,0 +1,14 @@
+# Revisit Daddy after the second loan and leave the gift menu for repayment.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+choose good
+wait 400
+click 200 110
+wait 500

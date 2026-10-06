@@ -1,0 +1,5 @@
+# Answer the customs call earned by completing SCRIPT2's quest prerequisites.
+park 4 45
+wait 20
+click 125 118
+wait 600
