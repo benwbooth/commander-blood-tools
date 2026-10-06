@@ -327,6 +327,12 @@ checkpoint confirm `A73=2`, `A74=1`, `B24=0`, and seven credits. Super Zen has
 then moved to Voluptland. The failed v1 overview crash and incomplete v2
 missing-choice attempt are not checkpoints. V3 explicitly records the
 original-backed aboard-actor map repair.
+`bbb-crown-supplies-v2` buys replacement optics from Otto Von Smile at Troma
+and a guitar from Ben Zen at Magnus, including Ben's fourth-visit dialogue.
+The normal save confirms optics, guitar, perfume, and food aboard, five
+credits, and `A74=1`. The failed v1 used Ben's pre-load Tumul location; the
+live loaded state instead places him at Magnus. Super Zen is now at Cyberland,
+so later navigation must again use the current simulation state.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
