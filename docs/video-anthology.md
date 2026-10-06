@@ -230,6 +230,11 @@ with Tramp, and Super Tromp's active colony at Corpoland.
 loan repayment, obtains writing through Mamy's second-visit answer, buys her
 perfume, and buys medicine during Papy's fourth visit. The saved checkpoint
 has all three items aboard, the retained technology, and eight credits.
+`bbb-super-tromp-repair-v1` reaches Super Tromp at Corpoland, hears his initial
+malfunction, and returns with medicine, writing, and technology. All three
+ordinary gifts and the repair dialogue complete. The saved checkpoint has
+`B87=2`, all three items with Super Tromp, his returned ship aboard, and eight
+credits remaining.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
