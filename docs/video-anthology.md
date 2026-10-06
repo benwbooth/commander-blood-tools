@@ -131,6 +131,11 @@ to Trashlando, `yo=1`, and the saved checkpoint. The final fifth `yolk` selectio
 advances the exhausted topic back into the scripted tomb transition; choosing
 `bye_bye` instead leaves the encounter without that transition.
 
+`cb-anna-tomb-v1` then wakes Anna Haf for his repaired-robot introduction and
+the separate Vista assignment. His transfer to the tomb is observed. The local
+contact clicks at the end of that prefix do not reopen the destination view;
+they are not evidence of the subsequent tomb conversation.
+
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
 and `bobg.hnm`), the normal Corpo jump, and Izwalito's first two conversations.

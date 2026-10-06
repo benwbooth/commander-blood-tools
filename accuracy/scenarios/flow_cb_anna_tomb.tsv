@@ -1,0 +1,21 @@
+# Wake Anna twice: introduction, then the Vista assignment.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 75
+wait 800
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 75
+choose teleport
+wait 600
+# Revisit Vista to meet the robot at the tomb.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 800
