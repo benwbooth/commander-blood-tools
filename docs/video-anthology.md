@@ -101,12 +101,24 @@ The corrected Spiralus route buys Marakas's food, observes both item clips,
 and saves with food aboard. His second visit includes the authored illustrative
 transfers, then the earned optics gift raises evolution to 90 and enables
 Izwalito's settlement on Vulcland. The next two Izwalito visits reach the
-help/phone-number dialogue and return normally to the bridge.
+help/phone-number dialogue, then the third visit completes the phone exchange
+and returns normally to the bridge. The treaty purchase is still gated by
+population at the moment of that conversation; it is not granted by the phone
+choice alone.
+The following Internet calls pass the authored busy-network and fourth-call
+selector before re-earning the optics. A normal Tempest visit buys Papy's
+medicine and gives him those optics; `venthig.hnm` plays and the returned
+world state contains Otto Von Smile's new Foxx colony.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
 conversation, visits Hom via Hita, and reveals Kortex. A normal Pterra visit
-with the accepted code then recruits Scruter Jo aboard.
+with the accepted code then recruits Scruter Jo aboard. Bronko's next three
+visits recruit him aboard as well and place Emasculator at the factory. The
+separate refusal leaves Bronko there and presents four distinct dialogue sites.
+The Rondo route follows Yoko's Slimer discussion to the Ekatomb coordinates
+and Maxxon's first telescope conversation. Daddy Gluxx's subsequent treatment
+discussion reveals Erazor.
 CB's separate earned-save alternatives include Izwalito's secret refusal and
 Scruter Jo's rejected code, with `explo3.hnm` played and Jo still on Pterra.
 These are route endpoints, not whole-game completion.

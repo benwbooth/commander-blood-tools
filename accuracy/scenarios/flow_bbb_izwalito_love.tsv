@@ -1,0 +1,15 @@
+# Third visit: answer Izwalito and complete the phone conversation.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+choose yes
+wait 1000
+# Six inventory items remain available in the GIVE list.
+click 200 133
+wait 400

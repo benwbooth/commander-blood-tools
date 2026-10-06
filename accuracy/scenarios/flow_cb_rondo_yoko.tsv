@@ -1,0 +1,25 @@
+# Ask Yoko about the Slimers, then follow her invitation to Maxxon's observatory.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 281 40
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose talk
+choose race
+choose Slimers
+choose information
+choose information
+choose information
+choose information
+choose information
+choose information
+choose bye_bye
+wait 1200
