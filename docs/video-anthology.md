@@ -496,6 +496,12 @@ The save has `G1 = 2`, the scrambler aboard, and the Ark's location at Oddland.
 However, the observed profiles remain SCRIPT1/2/3: arrival has not triggered
 SCRIPT4, and the camera reports an unsupported black-hole target. This is a
 partial route checkpoint, not a verified chapter crossing.
+The subsequent ordinary crossing (`cb-oddland-crossing-v2`) opens the bridge
+camera, then selects the left black-hole entry control. It loads SCRIPT4 and
+saves the authored new-chapter state: Fifi on Ron, Maziok on Magnu, Hom in the
+cache, and the curse active. The first attempt omitted camera activation and
+its inactive entry control did nothing. No runtime or quest-state change was
+needed to cross.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

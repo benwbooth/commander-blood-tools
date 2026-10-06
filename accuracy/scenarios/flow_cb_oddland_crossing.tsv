@@ -1,0 +1,7 @@
+# Use the left bridge travel control after the Ark arrives at Oddland.
+park 4 0
+wait 40
+click 160 150
+wait 80
+click 60 130
+wait 800
