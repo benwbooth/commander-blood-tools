@@ -472,6 +472,16 @@ source-wording audit and all eight predecessor manifests/checkpoints validate.
 It records 4,761 frames, 261 events, and eleven decoded resources; save zero is
 at boundary 4625 with SHA-256
 `90b0b04610cdcffa683d57de1daff4b48ac7558c2f75053db912bf8795384957`.
+`cb-bob-early-food-v2` continues through the fifth and sixth contacts. The
+ordinary Kanary summary raises aggressiveness from 24 to 25; the sixth contact
+fully presents all five food-exchange lines and the distinct threshold-25 BAS
+reply at 19569 with `borb_ctr.hnm`. No state value or encounter counter was
+assigned externally. All thirteen fully shown sites match their authored text,
+and the nine-manifest saved lineage validates. It records 7,766 frames, 511
+events, and twelve decoded resources. Save zero at boundary 7630 has SHA-256
+`10b4fe7b2b11491607e1ba2371885aaaad14ea7fbec0dcf89f42dfd84bdc4820`;
+Bob's saved encounter count is six and aggressiveness is 25. V1 used a missing
+asset-directory path and failed before launching the game; it is not evidence.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

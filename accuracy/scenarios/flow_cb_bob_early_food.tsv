@@ -1,0 +1,19 @@
+# Continue after Bob's fourth chapter-two contact, using only normal choices.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose talk
+choose Kanary
+wait 100
+choose bye_bye
+wait 250
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+wait 400
+choose bye_bye
+wait 250
