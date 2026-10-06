@@ -37,6 +37,35 @@ def frame(number=0):
 
 
 class FlowTests(unittest.TestCase):
+    def test_global_deltas_are_lossless_without_unchanged_frame_churn(self):
+        output = io.StringIO()
+        recorder = FlowRecorder(output)
+        record = frame()
+        record["semantic"]["persistent"]["script_globals"] = {
+            "A27": dict(source_offset=7968, raw=4, signed=4),
+            "negative": dict(source_offset=10, raw=65535, signed=-1),
+        }
+        recorder.record(record)
+        record["frame"] = 1
+        recorder.record(copy.deepcopy(record))
+        self.assertEqual(recorder.events, 1)
+        record["frame"] = 2
+        record["semantic"]["persistent"]["script_globals"]["A27"]["raw"] = 5
+        record["semantic"]["persistent"]["script_globals"]["A27"]["signed"] = 5
+        del record["semantic"]["persistent"]["script_globals"]["negative"]
+        recorder.record(record)
+        events = [json.loads(line) for line in output.getvalue().splitlines()]
+        self.assertEqual(events[0]["global_changes"]["negative"]["signed"], -1)
+        self.assertEqual(events[1]["global_changes"], {"A27": dict(source_offset=7968, raw=5, signed=5)})
+        self.assertEqual(events[1]["removed_globals"], ["negative"])
+        self.assertIsNone(events[1]["state"])
+        self.assertEqual(recorder.summary()["final_globals"], record["semantic"]["persistent"]["script_globals"])
+
+    def test_old_trace_does_not_claim_global_evidence(self):
+        recorder = FlowRecorder(io.StringIO())
+        recorder.record(frame())
+        self.assertIsNone(recorder.summary()["final_globals"])
+
     def test_scene_retains_menu_geometry_and_pending_call_without_raster_churn(self):
         semantic = frame()["semantic"]
         presentation = semantic["presentation"]

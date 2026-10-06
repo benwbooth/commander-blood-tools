@@ -12,7 +12,8 @@ use commander_blood_formats::descript::{
 use commander_blood_formats::instruction::ScriptTextWord;
 use commander_blood_formats::lbm::{PALETTE_ENTRY_COUNT, RGB_COMPONENT_COUNT};
 use commander_blood_formats::script::{
-    ScriptDictionary, ScriptObjectId, ScriptObjectKind, ScriptStateObjectReference, ScriptWordId,
+    ScriptDictionary, ScriptObjectId, ScriptObjectKind, ScriptStateObjectReference,
+    ScriptSymbolKind, ScriptWordId,
 };
 use sdl3::AudioSubsystem;
 use sdl3::video::Window;
@@ -4846,6 +4847,28 @@ impl<'window> ModernGameServices<'window> {
         let state_array_hash = synchronized_state
             .as_ref()
             .map(|state| fnv1a64(&state.encode()));
+        let script_globals = profile
+            .zip(synchronized_state.as_ref())
+            .map(|(profile, state)| {
+                profile
+                    .directory()
+                    .entries()
+                    .iter()
+                    .filter(|entry| entry.kind == ScriptSymbolKind::StateLabel)
+                    .filter_map(|entry| {
+                        let field = state.resolve_word_source_offset(entry.value)?;
+                        let raw = state.word(field)?;
+                        Some((
+                            String::from_utf8_lossy(entry.name()).into_owned(),
+                            serde_json::json!({
+                                "source_offset": entry.value,
+                                "raw": raw,
+                                "signed": raw as i16,
+                            }),
+                        ))
+                    })
+                    .collect::<serde_json::Map<_, _>>()
+            });
         let object_locations = profile
             .zip(synchronized_state.as_ref())
             .map(|(profile, state)| {
@@ -5802,6 +5825,7 @@ impl<'window> ModernGameServices<'window> {
             })),
             "persistent": {
                 "object_locations": object_locations,
+                "script_globals": script_globals,
                 "state_array_hash": state_array_hash,
                 "character_slots_hash": character_slots_hash,
                 "record_block": null,
@@ -8145,6 +8169,24 @@ mod tests {
             trace["persistent"]["state_array_hash"],
             fnv1a64(&state_before.encode())
         );
+        let globals = trace["persistent"]["script_globals"].as_object().unwrap();
+        let mut expected_globals = 0;
+        for entry in profile.directory().entries() {
+            if entry.kind != ScriptSymbolKind::StateLabel {
+                continue;
+            }
+            let Some(field) = state_before.resolve_word_source_offset(entry.value) else {
+                continue;
+            };
+            let raw = state_before.word(field).unwrap();
+            let name = String::from_utf8_lossy(entry.name());
+            assert_eq!(globals[name.as_ref()]["source_offset"], entry.value);
+            assert_eq!(globals[name.as_ref()]["raw"], raw);
+            assert_eq!(globals[name.as_ref()]["signed"], raw as i16);
+            expected_globals += 1;
+        }
+        assert_eq!(globals.len(), expected_globals);
+        assert!(globals.contains_key("A27"));
         assert_eq!(profile.synchronized_state().unwrap(), state_before);
     }
 

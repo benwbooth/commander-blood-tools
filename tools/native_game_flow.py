@@ -118,6 +118,8 @@ class FlowRecorder:
         self.output = output
         self.previous = None
         self.objects = {}
+        self.globals = {}
+        self.globals_available = False
         self.frames = 0
         self.events = 0
         self.decoded = 0
@@ -185,14 +187,20 @@ class FlowRecorder:
         object_changes = {key: value for key, value in current_objects.items()
                           if self.objects.get(key) != value}
         removed_objects = sorted(set(self.objects) - set(current_objects))
+        self.globals_available = s["persistent"].get("script_globals") is not None
+        current_globals = s["persistent"].get("script_globals") or {}
+        global_changes = {key: value for key, value in current_globals.items()
+                          if self.globals.get(key) != value}
+        removed_globals = sorted(set(self.globals) - set(current_globals))
         changed = state != self.previous
-        if changed or restart or object_changes or removed_objects:
+        if changed or restart or object_changes or removed_objects or global_changes or removed_globals:
             event = dict(event=self.events, frame=record["frame"], boundary=record["boundary"],
                          observed_elapsed_ns=record["elapsed_ns"],
                          state=state if changed else None, video_restart=restart,
                          text_raster=text_state(s)[1],
                          decoded_frame_count=decoded,
                          object_changes=object_changes, removed_objects=removed_objects,
+                         global_changes=global_changes, removed_globals=removed_globals,
                          state_array_hash=s["persistent"]["state_array_hash"],
                          character_slots_hash=s["persistent"]["character_slots_hash"])
             self.output.write(json.dumps(event, separators=(",", ":")) + "\n")
@@ -200,6 +208,7 @@ class FlowRecorder:
             self.events += 1
         self.frames += 1
         self.previous, self.objects = state, current_objects
+        self.globals = current_globals
         self.decoded, self.last_video = decoded, video
 
     def summary(self):
@@ -213,7 +222,8 @@ class FlowRecorder:
                     text_site_attribution="fully rasterized text with an active actor presentation",
                     completed_saves=self.completed_saves,
                     loaded_checkpoint=self.loaded_checkpoint,
-                    final_state=self.previous, final_objects=list(self.objects.values()))
+                    final_state=self.previous, final_objects=list(self.objects.values()),
+                    final_globals=self.globals if self.globals_available else None)
 
 
 def saved_checkpoints(writable, saved_slots):

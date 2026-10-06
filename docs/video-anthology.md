@@ -49,6 +49,10 @@ object locations/inventory and bridge/VM readiness flags for endpoint checks.
 Action records also retain menu/navigation state and bridge hit regions. An
 input script reaching its last action does not establish its named quest result;
 check the actor, destination, item holders, and presented scenes explicitly.
+New traces also retain named script-global word changes, with source offsets
+and raw/signed values. The recorder stores only changes and the final snapshot;
+older traces without these fields do not claim global-state evidence. This is
+read-only observation of the synchronized native VAR state.
 
 `--resume-from path/to/flow.json --slot 0` permits one normal UI load from a
 recorded predecessor. The preceding run must have witnessed a successful save
@@ -216,7 +220,18 @@ and purchase finish through the actual gift-menu Cancel row.
 Revisiting Gluk after giving the ship to Super Zen presents his addiction
 dialogue and queues the bridge call (`bbb-gluk-followup-v1`). Answering that
 call completes it and saves with `A27 = 4`, `A28 = 0`, and `A29 = 0`.
-The subsequent bionium request and Migrator introduction are still pending.
+The next observed visit unexpectedly reopens the ship-price menu instead of
+the source's post-call dialogue. The first `yes` attempt therefore fails with
+no checkpoint. Selecting the rendered `no_way` option and then `leave_him`
+reaches the ten-bionium request (`bbb-gluk-bionium-request-v2`), closes normally,
+and saves with `A27 = 2`, `A28 = 2`, `A29 = 1`, and zero bionium. The menu
+return remains an unresolved original-behavior check; it is not hidden by a
+quest-state edit or counted as the missing post-call scene.
+The instrumented repeat (`bbb-gluk-bionium-request-v3`) confirms that the normal
+load restores `A27 = 4`, then the first Gluk-contact frame changes it to `1`.
+The same visible refusal route still saves with `A29 = 1`. The executable
+change is explicit in the lineage; it adds read-only global tracing and includes
+the previously verified BC selector repair.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -311,6 +326,12 @@ Selecting Ark from the local menu and teleporting Morning completes the repair;
 recontacting Kran then teleports the guitar aboard (`cb-kran-repair-v1`). The
 saved endpoint has `panne = 3`, Morning aboard, and guitar aboard. Morning's
 separate transmitter/receiver handover has not yet been played.
+Returning to Eden and selecting `teleport` gives Tina that guitar
+(`cb-tina-guitar-v1`). The conversation closes with the guitar held by Tina,
+who remains at the bar; her later recruitment is a separate step.
+The subsequent Moskito airport visit introduces `commander_blood` to Migrator
+and hears his singer request (`cb-migrator-first-v1`). He returns to rehearsing
+and the conversation closes with a witnessed save.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
