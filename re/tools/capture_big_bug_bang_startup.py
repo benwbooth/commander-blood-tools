@@ -2,7 +2,7 @@
 """Read original sequel startup state in an isolated DOSBox-X child.
 
 Offline evidence only: no guest writes or desktop mouse control. Optional
-recorded button presses target only the freshly allocated private X display.
+recorded button/key presses target only the freshly allocated private X display.
 The capture describes sampled allocations; it cannot prove which instructions
 read them between samples. Unknown executable or emulator layouts fail closed.
 """
@@ -38,6 +38,7 @@ GUEST_BYTES = 1048576
 ROLES = ("var", "deb", "cod", "bas", "dic")
 PTRACE_ATTACH = 16
 PTRACE_DETACH = 17
+PRIVATE_KEYS = ("F7", "Return", "Escape", "space")
 
 
 def read_exact(stream, address, size):
@@ -222,6 +223,31 @@ def private_mouse_locked(pid):
     return bool(value)
 
 
+def private_window(env, pid):
+    windows = subprocess.check_output(
+        ["xdotool", "search", "--onlyvisible", "--pid", str(pid)], env=env, text=True, timeout=5).split()
+    if len(windows) != 1:
+        raise RuntimeError(f"expected one private DOSBox window, got {windows}")
+    subprocess.run(["xdotool", "windowfocus", "--sync", windows[0]], env=env, check=True, timeout=5)
+    return windows[0]
+
+
+def private_key(env, pid, key, observe_press=None):
+    if key not in PRIVATE_KEYS:
+        raise ValueError(f"unsupported private key: {key}")
+    window = private_window(env, pid)
+    subprocess.run(["xdotool", "keydown", key], env=env, check=True, timeout=5)
+    observation = None
+    try:
+        time.sleep(0.15)
+        if observe_press is not None:
+            observation = observe_press()
+    finally:
+        subprocess.run(["xdotool", "keyup", key], env=env, check=True, timeout=5)
+    return {"kind": "private_x11_key", "key": key, "window": window,
+            "display": env["DISPLAY"], "during_press": observation, "guest_memory_written": False}
+
+
 def private_click(env, pid, position=None, capture_mouse=False, button=1, observe_press=None,
                   relative_motion=None):
     """Click on the private display, optionally acquiring mouse capture first."""
@@ -236,11 +262,7 @@ def private_click(env, pid, position=None, capture_mouse=False, button=1, observ
     if position is not None and (len(position) != 2 or
                                  not 0 <= position[0] < 800 or not 0 <= position[1] < 600):
         raise ValueError("click position must be inside the private 800x600 display")
-    windows = subprocess.check_output(
-        ["xdotool", "search", "--onlyvisible", "--pid", str(pid)], env=env, text=True, timeout=5).split()
-    if len(windows) != 1:
-        raise RuntimeError(f"expected one private DOSBox window, got {windows}")
-    subprocess.run(["xdotool", "windowfocus", "--sync", windows[0]], env=env, check=True, timeout=5)
+    window = private_window(env, pid)
     capture_click_sent = False
     if capture_mouse:
         if not private_mouse_locked(pid):
@@ -267,7 +289,7 @@ def private_click(env, pid, position=None, capture_mouse=False, button=1, observ
     finally:
         subprocess.run(["xdotool", "mouseup", str(button)], env=env, check=True, timeout=5)
     return {"kind": "private_x11_primary_click" if button == 1 else "private_x11_secondary_click",
-            "button": button, "window": windows[0], "display": env["DISPLAY"],
+            "button": button, "window": window, "display": env["DISPLAY"],
             "during_press": observation,
             "relative_motion_requested": relative_motion,
             "pointer_moved": False if position is None and relative_motion is None else None,
@@ -318,7 +340,10 @@ def capture(args):
             began = time.monotonic()
             symbols = None
             last_snapshot = None
-            clicks_sent = 0
+            inputs_sent = 0
+            scheduled = sorted(
+                [(at, "click", i + 1, None) for i, at in enumerate(args.click_after)] +
+                [(at, "key", i + 1, key) for i, (at, key) in enumerate(args.key_after)])
 
             def observe_guest():
                 nonlocal symbols
@@ -335,10 +360,10 @@ def capture(args):
                 snapshot.update(elapsed_seconds=round(time.monotonic() - began, 3), cpu=cpu)
                 return snapshot, guest
 
-            def observe_press():
+            def observe_press(kind, number):
                 snapshot, guest = observe_guest()
                 if guest is not None:
-                    name = f"click-held-{clicks_sent + 1}.bin"
+                    name = f"{kind}-held-{number}.bin"
                     (output / name).write_bytes(guest)
                     snapshot["guest_dump"] = name
                 return snapshot
@@ -357,19 +382,23 @@ def capture(args):
                         snapshot["guest_dump"] = name
                     print(json.dumps({key: snapshot.get(key) for key in ("elapsed_seconds", "status", "profile", "mouse_poll", "time_storage")}), flush=True)
                     last_snapshot = signature
-                if clicks_sent < len(args.click_after) and time.monotonic() - began >= args.click_after[clicks_sent]:
-                    screenshot = "before-click.png" if clicks_sent == 0 else f"before-click-{clicks_sent + 1}.png"
+                if inputs_sent < len(scheduled) and time.monotonic() - began >= scheduled[inputs_sent][0]:
+                    at, kind, number, key = scheduled[inputs_sent]
+                    screenshot = f"before-{kind}.png" if number == 1 else f"before-{kind}-{number}.png"
                     subprocess.run(["import", "-window", "root", str(output / screenshot)], env=env, check=True, timeout=10)
-                    event = {"scheduled_at_seconds": args.click_after[clicks_sent],
+                    event = {"scheduled_at_seconds": at,
                              "requested_at_seconds": round(time.monotonic() - began, 3), "status": "requested",
-                             "position": args.click_position,
-                             "mouse_capture_requested": args.relative_mouse and clicks_sent == 0}
+                             "input_kind": kind, "key": key}
                     report["input_events"].append(event)
-                    event.update(private_click(env, game.pid, args.click_position,
-                                               args.relative_mouse,
-                                               args.click_button, observe_press,
-                                               args.relative_motion), status="sent")
-                    clicks_sent += 1
+                    observe = lambda: observe_press(kind, number)
+                    if kind == "click":
+                        event.update(private_click(env, game.pid, args.click_position,
+                                                   args.relative_mouse,
+                                                   args.click_button, observe,
+                                                   args.relative_motion), status="sent")
+                    else:
+                        event.update(private_key(env, game.pid, key, observe), status="sent")
+                    inputs_sent += 1
             subprocess.run(["import", "-window", "root", str(output / "screen.png")], env=env, check=True, timeout=10)
             report["outcome"] = "observed_profile" if any(s["status"] == "profile_bound" for s in report["samples"]) else "no_bound_profile_observed"
     except BaseException as error:
@@ -394,6 +423,8 @@ def main():
     parser.add_argument("--cycles", type=int, default=30000)
     parser.add_argument("--click-after", type=positive_seconds, action="append", default=[],
                         help="send a click at this elapsed time; repeat in increasing order")
+    parser.add_argument("--key-after", nargs=2, action="append", default=[], metavar=("SECONDS", "KEY"),
+                        help=f"private keypress; repeat in increasing order; keys: {', '.join(PRIVATE_KEYS)}")
     parser.add_argument("--click-button", type=int, choices=(1, 3), default=1,
                         help="X11 button: 1 is primary, 3 is secondary")
     parser.add_argument("--click-position", type=int, nargs=2, metavar=("X", "Y"),
@@ -404,6 +435,18 @@ def main():
                         help="enable autolock and verify a private capture click before the first input")
     parser.add_argument("--game-args", default="AMR S162227 EMS WRIC:\\cblood\\")
     args = parser.parse_args()
+    try:
+        args.key_after = [(positive_seconds(at), key) for at, key in args.key_after]
+    except (ValueError, argparse.ArgumentTypeError) as error:
+        parser.error(str(error))
+    if any(key not in PRIVATE_KEYS for _, key in args.key_after):
+        parser.error(f"key-after requires one of {', '.join(PRIVATE_KEYS)}")
+    if any(at >= args.seconds for at, _ in args.key_after):
+        parser.error("each key-after must occur before the capture ends")
+    if any(left[0] >= right[0] for left, right in zip(args.key_after, args.key_after[1:])):
+        parser.error("key-after times must be strictly increasing")
+    if set(args.click_after) & {at for at, _ in args.key_after}:
+        parser.error("click and key events must have distinct scheduled times")
     if args.cycles <= 0:
         parser.error("cycles must be positive")
     if args.relative_mouse and not args.click_after:

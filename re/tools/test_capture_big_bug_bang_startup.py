@@ -143,6 +143,43 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.private_click({"DISPLAY": ":123"}, 789)
             run.assert_not_called()
 
+    def test_private_key_observes_and_releases_on_only_the_private_display(self):
+        env = {"DISPLAY": ":123"}
+        calls = []
+        def observe():
+            calls.append("observe")
+            return {"profile": 1}
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n") as search, \
+                mock.patch.object(capture.subprocess, "run", side_effect=lambda command, **kwargs: calls.append(command)) as run, \
+                mock.patch.object(capture.time, "sleep"):
+            event = capture.private_key(env, 789, "F7", observe)
+        self.assertEqual(calls, [["xdotool", "windowfocus", "--sync", "456"],
+                                 ["xdotool", "keydown", "F7"], "observe", ["xdotool", "keyup", "F7"]])
+        self.assertEqual(search.call_args.kwargs["env"], env)
+        self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
+        self.assertEqual(event["during_press"], {"profile": 1})
+        self.assertEqual(event["key"], "F7")
+        self.assertFalse(event["guest_memory_written"])
+
+    def test_failed_key_observation_still_releases_key(self):
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
+            with self.assertRaisesRegex(ValueError, "observation failed"):
+                capture.private_key({"DISPLAY": ":123"}, 789, "F7",
+                                    mock.Mock(side_effect=ValueError("observation failed")))
+        self.assertEqual(run.call_args.args[0], ["xdotool", "keyup", "F7"])
+
+    def test_private_key_rejects_ambiguous_window_and_unlisted_keys(self):
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n457\n") as search, \
+                mock.patch.object(capture.subprocess, "run") as run:
+            for key in ("F12", "a", "--window", "ctrl+F7"):
+                with self.assertRaises(ValueError):
+                    capture.private_key({"DISPLAY": ":123"}, 789, key)
+            search.assert_not_called()
+            with self.assertRaises(RuntimeError):
+                capture.private_key({"DISPLAY": ":123"}, 789, "F7")
+            run.assert_not_called()
+
     def test_secondary_click_is_recorded_and_released_on_the_private_display(self):
         env = {"DISPLAY": ":123"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
@@ -296,6 +333,28 @@ class StartupCaptureTests(unittest.TestCase):
         self.assertEqual(stopped.exception.code, 0)
         self.assertEqual(run.call_args.args[0].relative_motion, [-300, 20])
         self.assertTrue(run.call_args.args[0].relative_mouse)
+
+    def test_cli_preserves_key_schedule(self):
+        argv = ["capture", "disc", "output", "--key-after", "30", "F7", "--key-after", "45", "Return"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].key_after, [(30.0, "F7"), (45.0, "Return")])
+
+    def test_cli_rejects_invalid_key_schedule(self):
+        for options in (["60", "F7"], ["nan", "F7"], ["inf", "F7"], ["0", "F7"],
+                        ["bad", "F7"], ["20", "F12"], ["20", "F7", "--key-after", "20", "Return"],
+                        ["20", "F7", "--key-after", "10", "Return"],
+                        ["20", "F7", "--click-after", "20"]):
+            with self.subTest(options=options), \
+                    mock.patch.object(sys, "argv", ["capture", "disc", "output", "--key-after", *options]), \
+                    mock.patch.object(sys, "stderr", new_callable=io.StringIO), \
+                    mock.patch.object(capture, "capture") as run:
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
 
     def test_cli_rejects_unusable_relative_motion(self):
         for options in (["--relative-motion", "1", "0"],

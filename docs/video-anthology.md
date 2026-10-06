@@ -207,6 +207,18 @@ unobserved site reached, equivalent in visuals, or globally unreachable.
 The ledger preserves recorded sequence runs without claiming source-frame or
 caption completeness. It deliberately remains `render_ready: false`.
 
+The original BBB startup diagnostic now accepts bounded `--key-after SECONDS KEY`
+events on its own isolated X display. Each event identifies the child window,
+records a read-only held-key observation, and releases the key even when that
+observation fails. Only `F7`, `Return`, `Escape`, and `space` are accepted; no
+guest-memory writes or desktop input are added. All 35 capture-tool tests pass.
+`startup-capture-24` pressed F7 while the television was open;
+`startup-capture-25` first closed it with an ordinary click, then pressed F7.
+Both remain at profile zero. These diagnostics neither resolve the numeric
+chatter blocker nor establish a normal original-game route beyond startup.
+The native F7 handler's profile request is gated to current profiles above one;
+it cannot be assumed to bypass the initial profile.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure
