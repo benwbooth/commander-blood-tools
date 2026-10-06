@@ -6,7 +6,7 @@ import tempfile
 import struct
 import unittest
 
-from native_game_flow import (FlowRecorder, normal_actions, route_source, saved_checkpoints,
+from native_game_flow import (ActionRecorder, FlowRecorder, normal_actions, route_source, saved_checkpoints,
                              scene_state, revealed_text_sites, verified_predecessor,
                              verify_route_completion)
 from video_anthology import digest
@@ -37,6 +37,53 @@ def frame(number=0):
 
 
 class FlowTests(unittest.TestCase):
+    def test_action_snapshot_references_preserve_clocks_and_resolve_without_chains(self):
+        output = io.StringIO()
+        recorder = ActionRecorder(output)
+        source = frame()
+        source.update(action="move 100 50", action_index=12, phase="after", steps=100,
+                      completion_clock=dict(steps=42), semantic_observation_deferred=True)
+        original = copy.deepcopy(source)
+        recorder.record(source)
+        self.assertEqual(source, original)
+        source.update(action="key 72", action_index=13, completion_clock=dict(steps=43))
+        recorder.record(source)
+        source.update(action="key 1", action_index=14, completion_clock=dict(steps=100),
+                      semantic_observation_deferred=False)
+        recorder.record(source)
+        records = [json.loads(line) for line in output.getvalue().splitlines()]
+        self.assertEqual(len(records), 3)
+        self.assertIn("scene", records[0])
+        for index in (1, 2):
+            self.assertEqual(records[index]["snapshot_ref"], dict(record_index=0))
+            self.assertNotIn("scene", records[index])
+            self.assertEqual(records[index]["schema"], 2)
+            self.assertEqual(records[index]["action_index"], 12 + index)
+        self.assertEqual(records[1]["completion_clock"], dict(steps=43))
+        self.assertEqual(records[2]["completion_clock"], dict(steps=100))
+        self.assertFalse(records[2]["semantic_observation_deferred"])
+        self.assertEqual(records[0]["scene"], scene_state(original["semantic"]))
+
+    def test_action_snapshot_references_never_hide_state_scene_or_bridge_changes(self):
+        output = io.StringIO()
+        recorder = ActionRecorder(output)
+        source = frame()
+        recorder.record(source)
+        source["semantic"]["persistent"]["state_array_hash"] = "changed"
+        recorder.record(source)
+        source["semantic"]["presentation"]["bridge_frame"] = 45
+        recorder.record(source)
+        source["semantic"]["presentation"]["rendered_word_choices"] = ["yes"]
+        recorder.record(source)
+        recorder.record(source)
+        records = [json.loads(line) for line in output.getvalue().splitlines()]
+        for record in records[:4]:
+            self.assertIn("scene", record)
+            self.assertNotIn("snapshot_ref", record)
+        self.assertEqual(records[4]["snapshot_ref"], dict(record_index=3))
+        self.assertEqual(records[0]["state_array_hash"], "a")
+        self.assertEqual(records[3]["scene"]["choices"], ["yes"])
+
     def test_global_deltas_are_lossless_without_unchanged_frame_churn(self):
         output = io.StringIO()
         recorder = FlowRecorder(output)

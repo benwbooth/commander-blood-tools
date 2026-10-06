@@ -57,6 +57,13 @@ Inputs completed inside a synchronous minigame are queued until a bridge
 snapshot is available. Each retains its actual completion clock and explicitly
 marks a deferred semantic observation; those snapshots are not minigame-frame
 state evidence.
+Action trace schema 2 retains each input and its clocks, but replaces an exactly
+repeated `scene`, `bridge`, and `state_array_hash` snapshot with `snapshot_ref`.
+Its `record_index` is a zero-based JSONL record index pointing directly to the
+full snapshot, never another reference. Resolve those three fields from that
+record; all other fields belong to the current input. Unchanged deferred
+minigame observations therefore do not duplicate a full bridge snapshot for
+every flight input.
 
 `--resume-from path/to/flow.json --slot 0` permits one normal UI load from a
 recorded predecessor. The preceding run must have witnessed a successful save
@@ -367,6 +374,12 @@ four `splatch` selections, then `teleport` and `bye_bye`
 (`cb-amigo-splatch-v3`). It saves with Splatch aboard and Amigo at Trashlando.
 The earlier attempts either stopped at the last Splatch reply or omitted the
 explicit goodbye; neither is a continuation parent.
+Returning through the prison guard and teleporting Splatch to Eviscerator
+(`cb-eviscerator-splatch-v1`) earns Tumul's coordinates and saves with `D1 = 2`.
+Revisiting the guard then visiting Eden's bar (`cb-eviscerator-aftermath-v1`)
+shows the escape aftermath and actually decodes `explo3.hnm`. The final save
+has `D1 = 4`, Eviscerator and Scruter Mac at Trashlando, and Scruter K at Magnus.
+The Scruter body is not yet aboard at this checkpoint.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

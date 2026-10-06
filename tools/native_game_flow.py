@@ -10,6 +10,7 @@ Unknown branches stay uncovered; loaded media are distinct from played media.
 """
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -408,6 +409,34 @@ def verify_route_completion(actions, completed, returncode, final_state, ending_
                 completed_actions=len(completed), interrupted_final_wait=interrupted_wait)
 
 
+class ActionRecorder:
+    """Retain each input and clock, with exact repeated snapshots stored once."""
+
+    def __init__(self, output):
+        self.output = output
+        self.records = 0
+        self.snapshot = None
+        self.snapshot_record = None
+
+    def record(self, source):
+        item = dict(source)
+        semantic = item.pop("semantic")
+        snapshot = dict(state_array_hash=semantic["persistent"]["state_array_hash"],
+                        scene=scene_state(semantic),
+                        bridge={key: semantic["presentation"].get(key) for key in
+                                ("bridge_frame", "bridge_presentation_mode", "bridge_actor_slots")})
+        item["schema"] = 2
+        if snapshot == self.snapshot:
+            item["snapshot_ref"] = dict(record_index=self.snapshot_record)
+        else:
+            item.update(snapshot)
+            self.snapshot = copy.deepcopy(snapshot)
+            self.snapshot_record = self.records
+        self.output.write(json.dumps(item, separators=(",", ":")) + "\n")
+        self.output.flush()
+        self.records += 1
+
+
 def consume_process(command, env, directory, recorder, actions, timeout, ending_offset=None):
     """Drain both native trace streams concurrently; never persist per-frame JSON."""
     selector = selectors.DefaultSelector()
@@ -422,6 +451,7 @@ def consume_process(command, env, directory, recorder, actions, timeout, ending_
             streams[fd] = dict(kind=kind, buffer=b"")
             selector.register(fd, selectors.EVENT_READ)
         with (directory / "game.log").open("w") as log, (directory / "actions.jsonl").open("w") as output:
+            action_recorder = ActionRecorder(output)
             process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT,
                                        start_new_session=True)
             deadline = time.monotonic() + timeout
@@ -437,14 +467,7 @@ def consume_process(command, env, directory, recorder, actions, timeout, ending_
                         if stream["kind"] == "live":
                             recorder.record(item)
                         else:
-                            semantic = item.pop("semantic")
-                            item["state_array_hash"] = semantic["persistent"]["state_array_hash"]
-                            item["scene"] = scene_state(semantic)
-                            item["bridge"] = {key: semantic["presentation"].get(key) for key in
-                                              ("bridge_frame", "bridge_presentation_mode",
-                                               "bridge_actor_slots")}
-                            output.write(json.dumps(item, separators=(",", ":")) + "\n")
-                            output.flush()
+                            action_recorder.record(item)
                             if item["phase"] == "after":
                                 completed.append(item["action"])
                     if len(stream["buffer"]) > 10_000_000:
