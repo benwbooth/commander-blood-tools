@@ -191,6 +191,11 @@ arrival, opens the camera, and enters through the left control at `(25,145)`.
 The previous `(60,130)` coordinate overlaps chapter four's Ekato chart marker
 and selects that planet instead. The successful saved checkpoint is in
 SCRIPT5 with the chapter's normal passenger roster and three bionium.
+`cb-rondo-homecoming-v1` teleports Yoko and Maxxon home, visits both locally,
+and wakes Hom after their departure. Hom moves to Kortex. Following him and
+providing the requested mouse print completes his exam briefing. The saved
+endpoint has `G1=1`, Hom at Kortex, Yoko at the observatory, Maxxon on Rondo,
+and Kran Dobu's call pending; the U.R.O.U.T. diploma has not yet been earned.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

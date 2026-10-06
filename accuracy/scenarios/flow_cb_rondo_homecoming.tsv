@@ -1,0 +1,53 @@
+# Return Yoko and Maxxon to Rondo; Yoko is fourth in the ten-entry cryobox.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 281 40
+wait 40
+click 250 125
+wait 300
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+choose teleport
+wait 700
+# Visit both returned passengers locally.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+choose bye_bye
+wait 700
+click 216 72
+wait 180
+click 80 88
+wait 900
+# Hom is now third in the eight-entry roster.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+wait 1000
+# Follow him to Kortex and receive the U.R.O.U.T. exam lead.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 59 36
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+choose click
+wait 1000
