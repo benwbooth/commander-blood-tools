@@ -545,6 +545,13 @@ the local camera, and accepts his writing sale. The ordinary save confirms
 Mega's evolution 110, writing aboard, and credits reduced from five to four.
 It observes 12 decoded resources and 12 fully revealed sites. The first attempt
 used the wrong cancel-row position and has no valid continuation checkpoint.
+`bbb-writing-mutation-v2` declines the discounted nuclear offer and gives
+that writing to Emasculator. The normal save confirms `A93=1`, `B9=1`,
+Eviscerator on Waveland, and Outrageor on Island. It observes 15 resources and
+11 fully revealed sites. Its later phone clicks missed the handset because
+the bridge faced the wrong direction: `C11` remains zero, so this is a mutation
+checkpoint, not a completed distress-call route. The reusable gift fragment
+now ends before those ineffective clicks.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
