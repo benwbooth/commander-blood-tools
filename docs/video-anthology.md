@@ -250,6 +250,11 @@ requested credit, and chooses `don't_cheat` at the password prompt. Trump's
 spy warning then completes. The saved checkpoint has `C7=5`, `B82=0`,
 `A86=2`, and seven credits. The earlier v1 stopped at the password prompt and
 has no new saved checkpoint; it is not used as a predecessor.
+`bbb-trump-spy-v1` follows that warning to Golgoland and solves Trump's
+three-letter identification puzzle. The next Internet call declines the
+optional password shortcut again and hears Tequila's invitation. The saved
+endpoint has `A86=3`, `A87=1`, `A73=1`, and `B95=0`; the later presidential
+conversation and war have not yet occurred.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

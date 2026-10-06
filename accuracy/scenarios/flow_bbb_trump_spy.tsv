@@ -1,0 +1,29 @@
+# Follow Trump's warning and identify Tequila through the letter puzzle.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 201 33
+wait 40
+click 250 125
+wait 300
+click 80 104
+choose t
+choose e
+choose q
+wait 900
+# Hear Tequila's invitation without enabling the optional password shortcut.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1200
