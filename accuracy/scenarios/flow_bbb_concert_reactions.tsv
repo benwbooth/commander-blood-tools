@@ -1,0 +1,54 @@
+# Fourteen earned guests, ordered by their records in the normal cryobox.
+# Eviscerator.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 23
+wait 500
+# Outrageor.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 34
+wait 500
+# Rotator.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 45
+wait 300
+# Trump, Tramp, and Super Tromp, including their broadcasts.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 56
+wait 500
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 67
+wait 500
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+wait 500
+# Marakas and Izwalito. Stop at eight distinct reactions before the ending.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 89
+wait 350
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 100
+wait 350

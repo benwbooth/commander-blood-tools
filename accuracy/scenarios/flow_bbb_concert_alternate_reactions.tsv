@@ -1,0 +1,48 @@
+# Continue independently from the post-concert save, before any reactions.
+# Daddy, Mamy, Papy, Smile, and Gluk occupy rows ten through fourteen.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 122
+wait 350
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 133
+wait 350
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 144
+wait 350
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 155
+wait 350
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 166
+wait 350
+# The world update moved Emasculator to Malusland.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 220 92
+wait 40
+click 250 125
+wait 700

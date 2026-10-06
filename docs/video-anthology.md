@@ -652,6 +652,26 @@ visits, then selects the fourth visit's visible `blow_it_up` choice. All five
 counter boundaries. It saves after the broadcast, observing 14 resources and
 20 fully revealed sites. This is a legitimate alternative to `leave_it`, not
 a prepared sequence-channel capture.
+`bbb-concert-reactions-v1` contacts Eviscerator, Outrageor, Rotator, Trump,
+Tramp, Super Tromp, Marakas, and Izwalito through the ordinary cryobox. Eight
+distinct reactions advance `A13` from zero to 24 before a normal save. It
+observes 64 resources and 33 fully revealed sites. Both `12concrool` passes
+match the authored ten-clip order; all three `34contromp` passes match its
+eight-clip order. Every non-startup sequence counter reaches the source's last
+decoded-frame boundary. Repeated broadcasts are shared material for assembly.
+`bbb-concert-alternate-reactions-v1` independently loads the post-concert save
+and contacts Daddy, Mamy, Papy, Smile, and Gluk aboard, then visits Emasculator
+on Malusland. Its six distinct reactions produce `A13=18` and a witnessed save,
+with 22 resources and 21 fully revealed sites. The direct `match02` and `star2`
+clips also reach their source counter boundaries. This branch preserves the
+reactions omitted by the main route's ninth-contact ending threshold.
+`bbb-rotator-money-v2` loads the earned third-visit checkpoint, returns to Kult,
+and selects the fourth encounter's `want` choice. It plays the complete
+11-entry `39argent` broadcast at boundaries 2864--3216, including all nine
+consecutive `PION` entries, then saves normally. It observes 11 resources and
+five fully revealed sites. V1 was rejected before gameplay because its
+predecessor used an older binary; v2 explicitly records the already-verified
+runtime repairs while preserving the exact earned save and source hashes.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
