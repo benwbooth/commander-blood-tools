@@ -209,6 +209,10 @@ with active flags 5 and population 14. The next route visits Ben's illness
 scene, then buys another dose from Papy on his third visit
 (`bbb-ben-request-medicine-v1`). It saves with medicine aboard, seven credits,
 `A54 = 2`, and `A38 = 0`; the treatment itself is not yet counted as complete.
+The following Ben visit gives the medicine, selects `shocked`, and accepts the
+guitar purchase (`bbb-ben-treatment-guitar-v1`). The witnessed save has medicine
+held by Ben, guitar aboard, six credits, `A38 = 1`, and `A54 = 4`; both treatment
+and purchase finish through the actual gift-menu Cancel row.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -291,6 +295,11 @@ first question with `no`, and returns to the bridge automatically
 (`cb-tina-first-v2`). Its checkpoint has `E1 = 1` and a pending Kran Dobu call
 after timer 10 expires. The earlier phone click preceded that call, so this
 fragment does not claim to have answered it or begun the race.
+The next continuation answers that pending call and visits Kraner's newly
+revealed chart marker (`cb-kran-race-v1`). Kran presents the guitar wager,
+reveals Troma, starts the race with `krando20.hnm`, and closes normally. Its
+witnessed checkpoint retains the guitar with Kran; winning or repairing the
+ship has not yet been claimed.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
