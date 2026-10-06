@@ -1,0 +1,7 @@
+# Watch the first authored channel at the earned chapter checkpoint.
+park 4 90
+wait 25
+click 160 160
+wait 400
+click 160 160
+wait 120

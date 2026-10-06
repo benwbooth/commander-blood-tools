@@ -323,6 +323,11 @@ six chapter-five channels. The trace contains complete ordered first passes of
 and `present`, followed by a normal close and save. It observes 43 decoded
 resources. The recorded extra loops and partial second passes are not additional
 anthology chapters. Decoder counters are not used as presentation durations.
+`cb-investigation-tv-v1` returns to the earned SCRIPT3 customs checkpoint and
+watches its first channel. The complete `microkid` sequence runs in authored
+order (`oollee01`, `bbar`, `oollee10`) before a normal close and save. The saved
+game hash is unchanged from the predecessor. Its duplicate loop is retained
+as evidence, not another distinct scene.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
