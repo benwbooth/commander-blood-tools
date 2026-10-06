@@ -347,6 +347,11 @@ with ten decoded resources and eight fully revealed sites. The BAS source's
 `arch01.hnm` request does not decode on this route, and no matching imported
 asset exists. This absence is recorded rather than replaced with another Ark
 clip or called globally unreachable.
+`cb-briefing-no-v2` repeats the fresh-game briefing alternative with the current
+runtime. The observed Ark sequence remains `aarche10`, `aarche30`, `aarche40`,
+each closing normally; `aarche20` is still absent. The run observes 17 resources
+and 51 fully revealed sites. Static request listings alone must not add the
+missing clip to that route.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -519,6 +524,11 @@ pointer click on the duplicate-label menu, declining destruction, and Honk's
 joke. The new-race gift sets `A100=1` and `B8=1`; the saved world places Mega,
 Sebasto, and Inter Paul on Ponyland at evolution 100. Its 13 decoded resources
 and 44 fully revealed sites precede their first meeting.
+`bbb-jo-paul-resupply-v2` replays a newly planned two-to-six-dose collection
+through ordinary Jo entry. The live Amer minigame presents 55,802 frames and
+returns `vbio=6`, confirmed by the normal save. No inventory was granted by
+the planner. Its predecessor is the verified Cyberquizz route, not the failed
+zero-start-plan attempt.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
