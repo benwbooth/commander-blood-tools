@@ -1,0 +1,50 @@
+# Alternate exam route from the pre-diploma Rondo homecoming checkpoint.
+# Wrong visible answers keep the authored exam running through all 32 questions.
+park 4 45
+wait 25
+click 125 118
+wait 800
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 77 86
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+choose Jeph_DUlikan
+choose gluxx
+choose Cybernator
+choose Sat
+choose eviscerator
+choose izwal
+choose eviscerator
+choose pagos_tagos
+choose lord_krater
+choose two
+choose qx20
+choose strum
+choose klakos
+choose erazor
+choose vivisection
+choose Big_bang
+choose tina_burner
+choose inquisitor
+choose los_demonios
+choose van_ish
+choose lord_raptor
+choose sebasto_paul
+choose joy_stica
+choose space_maker
+choose otto_von_smile
+choose torka
+choose frozen_migrita
+choose nobody
+choose rondo
+choose pterra
+choose ex897
+choose five
+wait 1000

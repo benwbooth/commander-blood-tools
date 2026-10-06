@@ -259,6 +259,13 @@ The earlier v1 reached the same natural exit but lacked this CB-specific
 completion check and remains a failed recording, not a rewritten witness.
 This completes the observed main CB story route, not every distinct alternative
 and not original-executable rendering/timing parity. Rendering is still deferred.
+`cb-urout-failed-exam-v1` is a separate legitimate alternative from the Rondo
+homecoming checkpoint. It selects a wrong visible answer for every one of the
+32 questions, presents the full failure response, and returns to the bridge.
+Its normal save confirms `quest=0`, `Bof=0`, and the diploma still held by
+Cyberquizz. The run observes 17 decoded resources and 117 fully revealed text
+sites. The later correct-answer responses need separate witnesses because five
+correct answers terminate the exam; they are not implied by this failed attempt.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
