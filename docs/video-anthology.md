@@ -494,6 +494,15 @@ events, and twelve decoded resources. Save zero at boundary 7630 has SHA-256
 `10b4fe7b2b11491607e1ba2371885aaaad14ea7fbec0dcf89f42dfd84bdc4820`;
 Bob's saved encounter count is six and aggressiveness is 25. V1 used a missing
 asset-directory path and failed before launching the game; it is not evidence.
+`cb-bob-early-thresholds-v1` branches from the same earned Corpo-delivery save,
+asks about the mission, Kanary, cloning, and the cottage, then recontacts Bob
+twice to repeat the cottage topic. It witnesses the aggressiveness-10 and -15
+BAS replies at 19477 and 19499 on subsequent contacts, with `bobh.hnm` and
+`bobi.hnm`. It saves at aggressiveness 20 after contact three; that is not yet
+evidence of the threshold-20 reply. All forty fully shown sites match source
+wording, and all five saved-lineage manifests validate. The run records 11,455
+frames, 1,005 events, and fifteen decoded resources. Save zero at boundary 11319
+has SHA-256 `998923338229238b71d0bcf972231343d79d3c11291f7b681498de3c1ae57a40`.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

@@ -1,0 +1,51 @@
+# Topic order earns Bob's threshold states without assigning aggressiveness.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose mission
+choose mission
+choose mission
+choose mission
+choose mission
+choose Kanary
+choose clones
+choose clones
+choose clones
+choose clones
+choose clones
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+wait 100
+choose bye_bye
+wait 250
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+wait 100
+choose bye_bye
+wait 250
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+wait 100
+choose bye_bye
+wait 250
