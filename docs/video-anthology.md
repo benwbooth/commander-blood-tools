@@ -611,6 +611,21 @@ pass reaches counter 1257 and closes at boundary 10232 after the complete
 These passive runs continue into attract-mode repetition; retain only the first
 complete opening pass, not the later loops or reload startup excerpts. The
 boundaries identify recorded evidence and are not video timestamps.
+`cb-microkid-tv-v1` opens the first TV channel from the earned Amigo checkpoint.
+Its first complete pass is `oollee01`, `bbar`, `oollee10` at native boundaries
+2192--2972, with counters 39, 702, and 39. Later channel loops and the partial
+last loop are excluded from the intended video. It returns to the bridge and
+saves normally; the earlier short first-channel probe is not the full broadcast.
+
+`bbb-super-tromp-guitar-v3` collects the third guitar, buys Super Tromp's formula,
+gives him the guitar and spare supplies, and saves with `B86=3`, `A64=1`, two
+credits, and two bionium doses. The Ark retains only Tequila, Cyberquizz, Blue
+Wave, and the credit/bionium tokens. It observes 20 resources and 77 fully
+revealed sites. V1 requested a credit token that had already left the menu;
+v2 clicked after the empty inventory had automatically closed, reopening the
+encounter and preventing a save. Only v3 is used as a predecessor. The remaining
+balances must be spent on separate visits because those tokens return between
+encounters, not between gift selections.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

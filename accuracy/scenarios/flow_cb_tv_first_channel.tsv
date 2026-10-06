@@ -2,6 +2,6 @@
 park 4 90
 wait 25
 click 160 160
-wait 400
+wait 2000
 click 160 160
 wait 120

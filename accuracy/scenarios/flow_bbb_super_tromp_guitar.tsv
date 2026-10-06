@@ -1,0 +1,34 @@
+# Collect another guitar, then visit the recovered Super Tromp on Corpo.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1000
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 292 86
+wait 40
+click 250 125
+frames 600
+choose accept
+choose guitar
+# Clear spare supplies before the guest transfers fill the 16-entry roster.
+# Credit and bionium tokens return only after leaving the encounter.
+choose bionium
+choose picture
+choose food
+choose energy
+choose ship
+# Giving the last available item ends the encounter automatically.
+frames 700
