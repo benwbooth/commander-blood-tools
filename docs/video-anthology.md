@@ -359,6 +359,13 @@ The normal save confirms optics, guitar, perfume, and food aboard, five
 credits, and `A74=1`. The failed v1 used Ben's pre-load Tumul location; the
 live loaded state instead places him at Magnus. Super Zen is now at Cyberland,
 so later navigation must again use the current simulation state.
+`bbb-crown-time-door-v2` makes the follow-up Internet calls, chooses `yes` to
+identify Cassandre's warning, and declines the optional password shortcut.
+The four-senses clue and time-door announcement both play; the normal saved
+endpoint has `C9=1`, `A74=3`, five credits, and Outrageor at Edenland.
+Super Zen remains at Cyberland with eight encounters. The run observes eight
+decoded resources and 56 fully revealed sites. V1 omitted the new yes/no
+question and is excluded; its planned waits were not evidence of progression.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

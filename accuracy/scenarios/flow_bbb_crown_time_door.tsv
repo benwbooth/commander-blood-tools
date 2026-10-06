@@ -1,0 +1,23 @@
+# Identify Cassandre, receive the four-senses hint, then open the time door.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+choose yes
+wait 1000
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1500
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1000
