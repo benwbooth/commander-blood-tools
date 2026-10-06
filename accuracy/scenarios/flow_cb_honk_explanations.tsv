@@ -1,0 +1,41 @@
+# Ordinary bridge conversation; the first talk choice opens explanations.
+park 4 45
+wait 25
+click 230 88
+choose talk
+choose blood
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Honk
+choose Ark
+choose Ark
+choose Ark
+choose Ark
+choose Ark
+choose Ma
+choose Ma
+choose Ma
+choose Ma
+choose Ma
+choose Orxx
+choose Orxx
+choose Orxx
+choose Orxx
+choose Orxx
+choose Olga
+choose Olga
+choose Olga
+choose Olga
+choose Olga
+choose Olga
+choose Big_Bang
+choose Big_Bang
+choose Big_Bang
+choose Black_holes
+choose Black_holes
+choose Black_holes
+choose Black_holes
+choose bye_bye
+wait 300

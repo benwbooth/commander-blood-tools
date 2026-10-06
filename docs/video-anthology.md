@@ -245,6 +245,28 @@ sites, and 3,064 other unobserved/dynamic sites. BBB's counts are unchanged.
 All 59 flow/catalog/coverage tests pass. Rendering remains disabled; these
 counts still describe source sites, not distinct scenes or complete coverage.
 
+`cb-hom-izwals-v3` branches from the earned early chapter-five arrival, while
+Yoko is still aboard. The ordinary third cryobox contact opens Hom's race
+menu. Five intelligence selections present all five Izwal intelligence lines;
+the science submenu then presents its own topics and the retained Izwal
+parent's two `info` responses. The trace contains 19 matching Hom BAS sites
+and three COD introduction sites, with no attribution rejections. The slot-zero
+save at boundary 6,020 has SHA-256
+`9183a017f25b1df647ca73b90264ac2ef15436cf3761559e7cdebc52dc79eccb`.
+The v1 launch failed before producing a trace because it lacked the Nix graphics
+environment. V2 was stopped when its next `science` input was not in the newly
+opened submenu; it is not a completed witness. These attempts do not establish
+that the Izwal-specific science lines are globally unreachable.
+
+`cb-honk-explanations-v1` opens the ordinary bridge Honk conversation from
+`cb-corpo-delivery-v1`. Its explanations cover Blood, Bob, Honk, the Ark, Ma,
+Orxx, Olga, the Big Bang, and black holes, with 34 matching BAS sites and four
+chapter-two COD sites. The slot-zero save at boundary 7,409 has SHA-256
+`32e382adea1dde043bc39b67e6c47fb1953afc06b9371af56cb2823d78c9f5ad`.
+The targeted audit validates both new witnesses and their combined 69-manifest
+lineage, with every fully revealed site matching source text. Counts here omit
+the two repeated startup COD sites. No media was rendered.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure
