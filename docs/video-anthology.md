@@ -534,6 +534,11 @@ zero-start-plan attempt.
 clairvoyance explanation completes with `A100=6` and `vbio=3`. The saved
 checkpoint keeps Mega Paul on Ponyland at evolution 100; it observes 25
 decoded resources and 50 fully revealed sites.
+`bbb-paul-writing-v2` gives Cyberquizz's present to Mega Paul, returns through
+the local camera, and accepts his writing sale. The ordinary save confirms
+Mega's evolution 110, writing aboard, and credits reduced from five to four.
+It observes 12 decoded resources and 12 fully revealed sites. The first attempt
+used the wrong cancel-row position and has no valid continuation checkpoint.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

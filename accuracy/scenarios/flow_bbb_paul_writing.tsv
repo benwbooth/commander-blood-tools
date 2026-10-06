@@ -1,0 +1,36 @@
+# Revisit Ponyland and offer Cyberquizz's gift through the item menu.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 75 31
+wait 40
+click 250 125
+wait 300
+click 80 104
+choose gifts
+wait 250
+# Six remaining giftable items; use the ordinary cancel row.
+click 200 133
+wait 250
+# Reopen the local camera with the normal chart and return to Mega Paul.
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 150 150
+wait 150
+click 80 104
+choose accept
+wait 300
+# Writing replaces the spent credit token: six giftable items remain.
+click 200 133
+wait 250
