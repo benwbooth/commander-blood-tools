@@ -1,0 +1,31 @@
+# Clear Jerry's waiting update and take Betakam to Maziok's suggested planet.
+park 4 45
+wait 25
+click 125 118
+wait 700
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 269 11
+wait 40
+click 250 125
+wait 300
+# Betakam is the first of ten aboard entries after loading.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 45
+choose teleport
+wait 700
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+wait 800

@@ -171,6 +171,9 @@ coordinates. The saved endpoint has `ek=1` and Maziok at Trashlando.
 `cb-betakam-recruit-v1` visits Attrox, accepts Beauregard's participation,
 gives Betakam the Mind Scrambler, and accepts his transport. The saved endpoint
 has Betakam aboard and the scrambler held by him.
+`cb-betakam-sat-v1` answers Jerry's pending update, travels to Sat, deploys
+Betakam from the cryobox, and recontacts him locally. His five-line account of
+life on Sat is presented; the saved state places Betakam on that planet.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -210,6 +213,9 @@ aboard in the saved endpoint, with two credits remaining.
 those two credits. Both affirmative dialogue choices and the low-credit
 exchange complete normally. The saved checkpoint has the ship aboard, `A4=0`,
 and `A34=2`; no credit or inventory state was supplied externally.
+`bbb-trump-colony-v1` watches Trump's origin film, returns for the migration
+instructions, and gives him the optics, ship, and remaining bionium. The saved
+endpoint has `B26=2`, `vbio=0`, and Tramp's newly active Magnusland colony.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

@@ -1,0 +1,32 @@
+# Watch Trump's origin film, then supply his requested migration equipment.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 201 33
+wait 60
+click 250 125
+wait 300
+click 80 104
+choose yes
+wait 1200
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+choose see
+choose optics
+choose ship
+choose bionium
+wait 700
+click 200 141
+wait 900
