@@ -143,6 +143,10 @@ the sole known outgoing phone contact in the resulting earned save.
 timer, receives her successful-theft call, and recovers both the portrait and
 Anna through two teleport choices. Both are aboard in the saved endpoint, and
 Super Zen has returned to Crazystone. The curse is still active at this point.
+`cb-zen-lifts-curse-v1` delivers the recovered portrait to Super Zen and plays
+the curse-removal ceremony. Its ordinary saved checkpoint confirms
+`maledict=0` and the painting held by Super Zen; it is a verified chapter-four
+continuation, not the end of the chapter or game.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
