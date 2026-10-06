@@ -456,6 +456,11 @@ teleports the mummy and cursed Beauregard aboard. Its save has `beau = 6`,
 `maledict = 1`, and both aboard; `fion` remains zero until his aboard contact.
 The final Gladis reply needs one more topic click to leave the list. The failed
 v1 omitted that click and never reached the expedition.
+Beauregard's normal cryobox contact plays the curse sequence and sets
+`fion = 1`. The same continuation (`cb-beauregard-rondo-v1`) sends Morning
+to protect Yoko, revisits Rondo, and hears his telescope discovery. Morning
+remains at the observatory and Jerry has not arrived yet; the pending Cyberion
+call must be answered before proceeding with the investigation.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
