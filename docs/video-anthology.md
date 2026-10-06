@@ -317,6 +317,12 @@ Hom's reminder, and Maxxon's transport request are observed. After reaching
 Rondo, both visible `refuse` choices are selected; the save retains all three
 passengers aboard with `G1=0`. It observes 30 decoded resources and 21 fully
 revealed sites, without advancing the homecoming/exam route.
+`cb-party-tv-v1` opens the bridge television and advances normally through all
+six chapter-five channels. The trace contains complete ordered first passes of
+`match`, `ppit`, `hatetv`, `venus` (eight consecutive clips), `scrut` (six clips),
+and `present`, followed by a normal close and save. It observes 43 decoded
+resources. The recorded extra loops and partial second passes are not additional
+anthology chapters. Decoder counters are not used as presentation durations.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -471,6 +477,11 @@ order. It lets Daddy finish and accepts Papy's demand through the displayed
 choices. The normal save confirms `A61=6`; the general strike has not yet
 been triggered. The run observes three decoded resources and 83 fully
 revealed sites across the phone conversations.
+`bbb-general-strike-v1` visits Daddy on Troma, refuses the pay increase, and
+answers Chigraxx's ensuing call. The complete `cliptoot.hnm` strike sequence
+closes before the call. The normal save confirms `A61=7`, `A68=1`, and `A65=2`,
+with eight decoded resources and 28 fully revealed sites. Cyberquizz's invitation
+and the later strike resolution are not implied by this checkpoint.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

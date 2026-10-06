@@ -1,0 +1,25 @@
+# Visit Daddy at his current Troma settlement and decline the pay increase.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 50 110
+wait 40
+click 250 125
+wait 300
+click 80 104
+choose no
+wait 700
+# Answer the ensuing Chigraxx call and ask why he is humiliated.
+park 4 45
+wait 25
+click 125 118
+choose yes
+wait 1000

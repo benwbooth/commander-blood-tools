@@ -1,0 +1,23 @@
+# Watch each chapter-five TV channel through the normal bridge panel.
+park 4 90
+wait 25
+click 160 160
+# Match: twelve clips, followed by an ordinary channel-change click.
+wait 150
+click 200 100
+# Petit-Piteux: seventeen clips.
+wait 300
+click 200 100
+# Hate TV: eight clips.
+wait 100
+click 200 100
+# Venusia advert: eight authored repeats.
+wait 320
+click 200 100
+# Scrut: the authored six-clip loop.
+wait 90
+click 200 100
+# Presentation: the complete cliptoot source.
+wait 350
+click 160 160
+wait 120
