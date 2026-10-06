@@ -97,7 +97,7 @@ pub struct ScriptDispatchState {
     pending_active_line_write: Option<u16>,
     /// One-shot write consumed by the lifecycle without overwriting later UI changes.
     pub(crate) pending_vm_execution_write: Option<bool>,
-    /// BLOOD2 GS:6B8D handoff-lock write consumed before the post-frame actor scan.
+    /// CB GS:67B7 / BBB GS:6B8D write consumed before the post-frame actor scan.
     pending_start_lock_write: Option<bool>,
 }
 
@@ -506,11 +506,14 @@ impl<Host: ScriptDispatchHost> DecodedScriptFrameHost for Dispatcher<'_, Host> {
                         execution.outcome == super::TextHandlerOutcome::SubtitlePublished,
                     );
                 }
-                if self.code.dialect() == commander_blood_formats::code::ScriptDialect::BigBugBang
-                    && execution.flow != ScriptFrameFlow::Continue
-                {
-                    self.dispatch.pending_vm_execution_write = Some(false);
+                if execution.flow != ScriptFrameFlow::Continue {
+                    // Both outer interpreters lock BAS handoff on a text yield.
                     self.dispatch.pending_start_lock_write = Some(true);
+                    if self.code.dialect()
+                        == commander_blood_formats::code::ScriptDialect::BigBugBang
+                    {
+                        self.dispatch.pending_vm_execution_write = Some(false);
+                    }
                 }
                 return Ok(step_with_flow(token.end_offset(), execution.flow));
             }
@@ -963,6 +966,7 @@ mod tests {
         subtitle: Option<Box<[u8]>>,
         subtitle_calls: Vec<ScriptCodeOffset>,
         post_scan_write: Option<(commander_blood_formats::script::ScriptStateWord, u16)>,
+        state_at_scan: Vec<u8>,
     }
 
     #[test]
@@ -1338,6 +1342,7 @@ mod tests {
             &mut self,
             context: ScriptPostScanContext<'_>,
         ) -> Result<(), Self::Error> {
+            self.state_at_scan = context.state.encode();
             self.scans += 1;
             if let Some((word, value)) = self.post_scan_write {
                 assert!(context.state.set_word(word, value));
@@ -1945,6 +1950,129 @@ mod tests {
             count += 1;
         }
         assert_eq!(count, 224);
+    }
+
+    #[test]
+    fn commander_text_yields_match_original_handoff_lock_and_vm_enable() {
+        use commander_blood_formats::bas::decode_script_bas;
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        use commander_blood_formats::instruction::decode_complete_script_instruction;
+        use commander_blood_formats::script::{
+            decode_script_dictionary, decode_script_directory, decode_script_state_for_dialect,
+        };
+        #[derive(serde::Deserialize)]
+        struct Vector {
+            name: String,
+            subtitle: bool,
+            gate: String,
+            locked_before: bool,
+            cod: String,
+            var: String,
+            deb: String,
+            dic: String,
+            var_after: String,
+            start_locked: bool,
+            vm: bool,
+            yield_signals: Vec<u8>,
+            cursor: usize,
+        }
+        let hex = |value: &str| {
+            value
+                .as_bytes()
+                .chunks_exact(2)
+                .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                .collect::<Vec<_>>()
+        };
+        let vectors: Vec<Vector> =
+            include_str!("../../../../../re/tools/oracle_vectors/commander_vm_yield.jsonl")
+                .lines()
+                .map(|line| serde_json::from_str(line).unwrap())
+                .collect();
+        assert_eq!(vectors.len(), 24);
+        for vector in vectors {
+            let dialect = ScriptDialect::CommanderBlood;
+            let directory = decode_script_directory(&hex(&vector.deb)).unwrap();
+            let dictionary = decode_script_dictionary(&hex(&vector.dic)).unwrap();
+            let mut state =
+                decode_script_state_for_dialect(&hex(&vector.var), &directory, dialect).unwrap();
+            let code = decode_script_code_for_dialect(&hex(&vector.cod), dialect).unwrap();
+            let dialogue = decode_script_bas(&[0xff], &dictionary).unwrap();
+            let instructions = code
+                .tokens()
+                .iter()
+                .map(|token| {
+                    decode_complete_script_instruction(token, &state, &directory, &dictionary)
+                        .unwrap()
+                })
+                .collect::<Vec<_>>();
+            let builtins = ScriptProfileBuiltins {
+                player: directory.find_active_object(b"blood"),
+                ..Default::default()
+            };
+            let mut records =
+                ScriptProfileRecordState::recover(&[], &state, &dictionary, builtins).unwrap();
+            let mut presentation = ScriptPresentationScanState {
+                start_locked: vector.locked_before,
+                ..Default::default()
+            };
+            let mut dispatch = ScriptDispatchState::default();
+            dispatch.text_presentation.subtitle_word_list_mode = vector.subtitle;
+            dispatch.text_presentation.subtitle_display_active = vector.gate == "subtitle";
+            dispatch.text_presentation.menu_deferred = vector.gate == "menu";
+            let mut runtime = ScriptRuntime::default();
+            let mut host = TraversalHost::default();
+            let mut procedures = super::super::ScriptProcedureStates::default();
+            let mut selector = ScriptSelectorState::default();
+            let mut sequence_slots = super::super::ScriptSequenceSlots::default();
+            let mut dispatcher = Dispatcher {
+                code: &code,
+                instructions: &instructions,
+                dialogue: &dialogue,
+                state: &mut state,
+                dictionary: &dictionary,
+                directory: &directory,
+                builtins,
+                procedures: &mut procedures,
+                selector: &mut selector,
+                sequence_slots: &mut sequence_slots,
+                records: &mut records,
+                dispatch: &mut dispatch,
+                host: &mut host,
+            };
+            let outcome = execute_decoded_script_frame(
+                &code,
+                &instructions,
+                true,
+                &mut runtime,
+                &mut dispatcher,
+            )
+            .unwrap();
+            dispatch.export_presentation_scan_state(&mut presentation);
+            assert_eq!(
+                presentation.start_locked, vector.start_locked,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                dispatch.pending_vm_execution_write.unwrap_or(true),
+                vector.vm,
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.presentation_yields,
+                vector.yield_signals.iter().filter(|&&v| v != 0).count(),
+                "{}",
+                vector.name
+            );
+            assert_eq!(
+                outcome.next_instruction,
+                Some(ScriptCodeOffset::new(vector.cursor)),
+                "{}",
+                vector.name
+            );
+            assert_eq!(host.state_at_scan, hex(&vector.var_after), "{}", vector.name);
+        }
     }
 
     #[test]
