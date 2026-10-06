@@ -1,0 +1,17 @@
+# Deliver the purchased batteries and bring Morning Oil aboard.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 270 49
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+choose teleport
+wait 500

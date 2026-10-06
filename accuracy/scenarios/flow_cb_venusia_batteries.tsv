@@ -1,0 +1,24 @@
+# Purchase Morning Oil's batteries with the earned credit.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 83 11
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose yes
+choose handywork
+choose robotics
+choose batteries
+choose buy
+choose department
+choose teleport
+wait 500
+choose bye_bye
+wait 300

@@ -1,0 +1,29 @@
+# Buy the perfume for Scruter Mac using the shop's returned credit.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 83 11
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose yes
+# The first return completes the battery purchase's pending goodbye.
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose yes
+choose beauty
+choose perfume
+choose motoroil
+choose buy
+choose department
+wait 300

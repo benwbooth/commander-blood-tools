@@ -125,6 +125,26 @@ threshold. Giving the earned energy and medicine raises energy to 1000,
 population to 387, and evolution to 120. The offer then appears; accepting it
 buys the treaty, and the ordinary Cancel row permits a completed save with the
 treaty aboard (`bbb-izwalito-treaty-v4`).
+Delivering that treaty to Smile raises evolution to 200 and population to 562,
+and sets aggressiveness to zero, but does not clear the existing war flag
+(`bbb-smile-treaty-v2`). Perfume remains interrupted on that branch.
+Ordinary bridge waiting after loading advances other colonies, but the guitar
+has disabled Smile's attack pass. The decompiled source's legacy simulation
+mnemonics are reversed: `population_growth` encodes D4, which the original-code
+oracle and typed runtime identify as conflict; `population_conflict` encodes D6,
+the growth handler. Read the decoded operations, not these mnemonic names, when
+reasoning about B54/B55. No source-byte changes or invented peace flags are used
+to bypass this state. A pre-guitar wait witnesses real conflict completion and
+possible immediate reacquisition, so a later conversation still needs its own
+endpoint validation.
+The successful continuation instead waits briefly from the fourth-visit save,
+then gives the guitar while no conflict is active
+(`bbb-smile-peaceful-guitar-v2`). Its endpoint has evolution 150, population 558,
+and flags 21 (war bit 8 clear). The subsequent perfume visit finishes all gift
+dialogue, leaves population 961 and aggressiveness 100, and makes Bug Deluxe
+known (`bbb-smile-perfume-peaceful-v1`). Both conversations close normally and
+have witnessed saves. This progression uses ordinary waiting and choices; it
+does not alter simulation flags directly.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -142,6 +162,14 @@ The following Magnus visit completes Morning Oil's battery request with one
 goodbye selection. Answering queued calls then plays Scruter K's final warning,
 Scruter Mac's first coded message, and Bug Deluxe's full Venusia commercial.
 The commercial enables the supermarket destination through normal game logic.
+The normal battery purchase also observes Venusia's replacement-credit offer;
+the completed endpoint has both batteries and credit aboard
+(`cb-venusia-batteries-v4`). Returning to Magnus delivers the batteries to
+Morning Oil and recruits him aboard (`cb-morning-recruit-v1`).
+On the next Venusia visit the previous purchase's goodbye completes first.
+Recontacting the shop then buys Motoroil perfume with the replacement credit;
+`OB\\parf1_2.hnm` plays, perfume is aboard, and credit is held by Bug Deluxe
+(`cb-venusia-perfume-v3`). The shop closes itself after the department selection.
 CB's separate earned-save alternatives include Izwalito's secret refusal and
 Scruter Jo's rejected code, with `explo3.hnm` played and Jo still on Pterra.
 These are route endpoints, not whole-game completion.

@@ -1,0 +1,8 @@
+# First onboard conversation with Morning Oil; authorize Honk's inspection.
+park 316 45
+wait 20
+click 230 124
+wait 40
+click 100 77
+choose yes
+wait 400

@@ -1,0 +1,20 @@
+# Give Smile the purchased peace treaty, then leave after its feedback.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 35 90
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose treaty
+wait 250
+click 200 115
+wait 150
