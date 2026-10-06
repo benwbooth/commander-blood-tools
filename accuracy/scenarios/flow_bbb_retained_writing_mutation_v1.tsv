@@ -1,0 +1,17 @@
+# With nuclear already aboard, encounter eight goes directly to GIVE.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 235 117
+wait 40
+click 250 125
+choose writing
+wait 700

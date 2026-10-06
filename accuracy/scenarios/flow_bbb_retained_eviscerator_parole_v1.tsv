@@ -1,0 +1,22 @@
+# Eviscerator is first in the fifteen-entry cryobox with four retained rare items.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 17
+choose keep
+frames 200
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 17
+choose no_no
+frames 600
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 17
+choose on_parole
+frames 1000

@@ -1,0 +1,21 @@
+# Continue the arrest/parole encounter with travel already enabled.
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 220 19
+wait 40
+click 250 125
+wait 300
+click 80 104
+choose yes
+frames 900
+park 4 45
+wait 25
+click 125 118
+frames 1400
+park 4 45
+wait 25
+click 125 118
+frames 1400

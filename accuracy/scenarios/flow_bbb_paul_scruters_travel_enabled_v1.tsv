@@ -1,0 +1,12 @@
+# Continue the commando report with travel already enabled.
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 75 31
+wait 40
+click 250 125
+wait 300
+click 80 104
+frames 1800

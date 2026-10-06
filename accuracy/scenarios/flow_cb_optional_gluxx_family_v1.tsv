@@ -1,0 +1,29 @@
+# SCRIPT2 Gluxx recontact from the earned Morning history checkpoint.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 76 125
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 120
+choose family
+wait 80
+choose talk
+wait 80
+choose family
+wait 80
+choose children
+wait 80
+choose village
+wait 80
+choose village
+wait 80
+choose bye_bye
+wait 300

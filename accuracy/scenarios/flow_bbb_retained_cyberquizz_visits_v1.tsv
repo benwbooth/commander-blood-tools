@@ -1,0 +1,31 @@
+# The first visit adds presents: Cyberquizz is second of fifteen aboard records.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 28
+wait 600
+# The third visit presents duplicate yes labels; select the first displayed row.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 28
+wait 180
+click 176 90
+choose no
+wait 200
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 28
+choose leave_it
+wait 200
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 28
+choose yes
+wait 700

@@ -1070,6 +1070,28 @@ not the requested wartime response: simulation clears Mamy's war bit at
 frame 2499, with population ten, immediately before contact at frame 2500.
 COD 23415 remains unobserved, not declared unreachable.
 
+Two Metagluk alternatives use the earned optics-rejection save, before Super
+Zen exists. `bbb-optional-metagluk-other-command-v1` buys the displayed
+`bionium` command, adding SCRIPT2 COD 16224/16238/16254/16266. Its 5,018
+frames and 155 events match 13 sites and leave one credit. The independent
+`bbb-optional-metagluk-wrong-syllable-v1` selects `geranium`, `run`, the
+correct number `4`, and the wrong syllable `OL`. Its 5,612 frames and 254
+events match 27 sites, adding COD 16799/16815/16827, and leave two credits.
+Both close without creating Zen, changing the zero-bionium balance, or
+transferring the carried inventory. `bbb-optional-metagluk-audit-v1/accepted-two.json`
+checks four lineage manifests, current inputs, full text, actual choices,
+state effects, and the two witnessed slot-zero saves.
+
+The separate wrong-number diagnostic does not witness COD 16695/16711/16723.
+Normal-input DOS `startup-capture-52` loads the same earned save and selects
+`1`; the original also skips the number-error speech and waits at the
+syllable menu until an explicit `OL` click. The native diagnostic likewise
+waits at that menu: a later intended save-control click instead selects its
+last syllable. `original-number-review.json` binds the original screenshots,
+RAM observations, executable, inputs, and two predecessor manifests. This
+resolves that apparent native discrepancy, but does not establish the
+number-error sites as globally unreachable or count them as observed.
+
 `output/game-flows/audit-v12` accepts 334 witnesses and excludes 137 failed,
 running, or legacy attempts. It includes the Oil greetings, both decoder
 decisions, the fifth Mamy slice, and the wrong-Venusia route. Successful
@@ -1140,6 +1162,23 @@ visible menus, and closed slot-zero saves. The reported globals and compact
 object fields are unchanged; those fields do not include Bob's aggression
 or BAS shown flags, so this is not a claim that the complete state is unchanged.
 These leaves do not establish the separate Kanary topic's availability.
+
+`cb-optional-bob-good-root-guard-v2` separately selects the displayed root
+`good_` four times and leaves normally. Its 7,109 frames, 549 events, and
+eight matching sites add no wording; the hidden response is not counted.
+Three SCRIPT2 Gluxx alternatives then use `cb-morning-history-v1`, reaching
+his actual menu on Ekatomb. `cb-optional-gluxx-family-v1` follows family,
+children, and village; `cb-optional-gluxx-slimers-v1` follows Slimers and
+origin; `cb-optional-gluxx-great-yolk-v1` follows Great Yolk and history.
+Their ordinary repeated topic selections and `bye_bye` exits record
+9,343/8,977/9,343 frames, 421/383/418 events, and 11/10/11 matching sites.
+Together they add 19 sites and 17 distinct wordings. Gluxx moves from Ekatomb
+to Trashlando, `secret` clears, `ti` becomes one, and Ulikan's call is queued
+but unanswered; no inventory transfer is made. BAS 19628 remains shadowed
+by COD 35194 in these leaves, not classified globally unreachable.
+`cb-optional-gluxx-audit-v1/parent-review.json` independently validates all
+four leaves through 55 lineage manifests, current input/source hashes,
+full text pixels, actual menus, authored effects, and closed saved endpoints.
 
 The six `bbb-optional-status-*-v1` leaves use naturally earned balances of
 zero, four, five, six, seven, and eight credits. One common input fragment
@@ -1666,6 +1705,31 @@ five credits, and two bionium. The ordinary save at frame 29754 has SHA-256
 and the current leaf sources, inputs, text, inventory, and closed endpoint.
 These are prerequisites for later inventory reactions, not proof that all
 later gifts or an ending continuation have been recorded.
+
+Four further ordinary continuations preserve that earned inventory through
+Elvis. `bbb-retained-cyberquizz-resupply-v1` obtains gifts, completes Jo's
+normal input game, and saves with five credits and six bionium. Its 18,918
+frames, 924 events, and 64 matching sites add no new wording.
+`bbb-retained-paul-writing-v1` gives the gifts to Mega Paul and takes the
+writing aboard, recording 16,662 frames, 2,125 events, and 62 sites.
+`bbb-retained-mutation-calls-v2` delivers that writing to Emasculator and
+answers the ensuing calls; its 12,711 frames, 338 events, and 23 sites also
+add no wording. Both endpoints retain four credits and three bionium.
+
+`bbb-retained-elvis-v1` arrests Eviscerator, chooses `keep` and `no_no`,
+then makes a new cryobox contact and chooses `on_parole` before the commando,
+Paul/Scruter, concert, and Elvis scenes. The conversation after `keep`
+continues directly; intervening inert clicks are not counted as new contacts.
+Its 31,823 frames, 13,582 compact events, 60 resources, and 194 sites add
+SCRIPT2 COD 33618/33628/33640/35821/35841/35865/35887. The closed save has
+three credits, three bionium, `B94=1`, guitar aboard, Jo on Trashlando, and
+the earlier rare inventory aboard. Slot zero at frame 31687 has SHA-256
+`b7cca7d9b7174b694ce98f23777495d1b1729fe249c3efdbc414b97f6f0887af`.
+`bbb-retained-story-audit-v1/accepted-through-elvis-v2.json` checks all four
+leaves through 83 lineage manifests, current inputs/sources, full text,
+actual menus, inventory effects, source-closed scenes, and saved bytes.
+Later inventory reactions and the ending continuation remain unrecorded
+on this route; these witnesses are not a completed game flow.
 
 `bbb-blue-wave-early-ring-with-mummy-v3` takes the separate one-bionium route
 through Betakam, offers the ring before the mummy, and then gives the mummy.

@@ -1,0 +1,7 @@
+# Jo is third of fifteen aboard records after Cyberquizz's gifts.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 39
+await-alien

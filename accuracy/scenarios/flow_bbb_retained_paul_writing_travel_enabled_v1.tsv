@@ -1,0 +1,29 @@
+# Continue the first Mega Paul visit with travel already enabled.
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 75 31
+wait 40
+click 250 125
+wait 300
+click 80 104
+choose gifts
+wait 250
+# Four retained rare items increase the remaining gift menu from six to ten.
+click 200 151
+wait 250
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 150 150
+wait 150
+click 80 104
+choose accept
+wait 300
+# Writing replaces the offered credit token; ten items remain.
+click 200 151
+wait 250
