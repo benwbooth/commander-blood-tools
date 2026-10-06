@@ -260,6 +260,11 @@ three-letter identification puzzle. The next Internet call declines the
 optional password shortcut again and hears Tequila's invitation. The saved
 endpoint has `A86=3`, `A87=1`, `A73=1`, and `B95=0`; the later presidential
 conversation and war have not yet occurred.
+`bbb-jo-spy-resupply-v1` returns to Jo through the cryobox and replays the
+`navigate:12` input plan through the normal flight. The live invocation records
+102,368 presented input frames and a completed return; the subsequent dialogue
+and ordinary saved checkpoint confirm `vbio=12`. This is an earned resupply,
+not the offline planner's result substituted for native gameplay.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
