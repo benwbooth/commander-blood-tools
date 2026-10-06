@@ -980,6 +980,15 @@ strike witnesses, so neither claims that sentence; a separate full-line
 follow-up remains necessary. The source/earned-save assessment also leaves
 the other listed guards open rather than declaring them unreachable.
 
+`bbb-optional-mamy-strike-no-v2` supplies that full-line follow-up with an
+uninterrupted arrival and the ordinary `no` answer. COD 21685 is completely
+drawn at seven retained event frames, including 3217 and 3232, with all 597
+expected pixels matching. The closed save retains five credits, `A61=8`,
+`A68=1`, `A65=0`, and no ending. Its 5,353 frames, 298 events, and 16 matched
+sites add that one sentence; slot zero at frame 5217 has SHA-256
+`04becfd47eac3ffb42c58f445a2ff6df2d4c90874099b5f4e6c99f82a2ef5940`.
+The original two strike witnesses and their reports remain unchanged.
+
 `output/game-flows/audit-v12` accepts 334 witnesses and excludes 137 failed,
 running, or legacy attempts. It includes the Oil greetings, both decoder
 decisions, the fifth Mamy slice, and the wrong-Venusia route. Successful
@@ -1020,6 +1029,24 @@ unobserved wordings, SCRIPT2 COD 21969, 21991, and 22658. Slot zero at frame
 lineage manifests, source/input hashes, text, menus, all six item transfers,
 and closed saved endpoints. The two failed recovery attempts stay excluded;
 these alternatives do not establish a full ending continuation or DOS parity.
+
+`cb-optional-hom-root-politics-v1` follows the actual SCRIPT5 Hom menu through
+art, consumption, politics, peace, and Izwal. Art and consumption add BAS
+12452/12470; the remaining selected topics reproduce known wording.
+`cb-optional-hom-television-v1` follows television, its three info responses,
+consumption, politics, joke, and laugh, adding no further distinct wording.
+The leaves record 5,562/5,728 frames, 189/231 events, and 11/12 matched sites.
+Both return to closed saves with all objects and globals unchanged from the
+earned predecessor. Their slot-zero hashes are
+`6325f31cb9679635effda993443402d8be34b1978fa25175e286dce9f405b567`
+and `1cf8cea585ac052d338191440b1bef1dc00003ca6ac994d2f9da10b1223dd04f`.
+The Hom report leaves 45 SCRIPT5 BAS sites unobserved; hidden or shadowed
+choices are not counted merely because they exist in the source.
+`branch-review-v15/report.json` independently rechecks these Hom leaves,
+the repaired Mamy sentence, and the early-ring leaf below across 152 distinct
+lineage manifests, current leaf input/source hashes, text, menus, transfers,
+and saved endpoints. Historical combined input files remain hash-checked;
+this does not assert that every old external scenario fragment is unchanged.
 
 `output/game-flows/audit-v13` accepts 349 witnesses and excludes 141 failed,
 running, or legacy attempts. The successful lineages remain 72 CB and 99 BBB
@@ -1500,6 +1527,21 @@ The failed v1 composition toggled travel on at frame 1736 and back off at
 explicitly retains enabled travel after Betakam. This is an input-script
 correction, not a runtime change or an assertion that the later robot gifts
 are already reachable.
+
+`bbb-blue-wave-early-ring-with-mummy-v3` takes the separate one-bionium route
+through Betakam, offers the ring before the mummy, and then gives the mummy.
+The earlier ring remains flagged after being returned; the mummy encounter
+therefore produces the insufficient-gifts response without another ring
+selection. SCRIPT10 COD 2508, 2548, 2600, 2630, 2642, 2682, and 2700 are new
+relative to audit-v14. All five mummy-sequence clips close normally.
+Blue Wave stays on Waveland with the mummy; the ring and all eight other
+original items are aboard with cleared gift flags. `A26=1`, `B79=1`, five
+credits, and two bionium are preserved. The run records 15,069 frames,
+1,696 events, 27 resources, and 51 matched sites. Slot zero at frame 14933
+has SHA-256 `26adef519f9089cb4bed4211dc7da298e561d980fe225d343f6a028030d89fcd`.
+The independent review above checks each ring/mummy ownership transition,
+all five source-closed sequence runs, and the closed endpoint. Earlier input
+diagnostics are retained separately, not substituted for this leaf.
 
 `bbb-blue-wave-credit-ship-hint-v1` is a separate alternative from the third
 visit. It offers credit, ship, and the ring before obtaining the mummy, then

@@ -1,0 +1,14 @@
+# SCRIPT5 Hom: select remaining visible root topics before Rondo homecoming.
+# The earned checkpoint retains Hom and Yoko aboard; no item exchanges.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 67
+choose art
+choose consumption
+choose politics
+choose peace
+choose izwal
+choose bye_bye
+wait 500

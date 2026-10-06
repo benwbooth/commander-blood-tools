@@ -1,0 +1,18 @@
+# Continue from Betakam with travel enabled and only one prior bionium gift.
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 37 50
+wait 40
+click 250 125
+wait 300
+click 80 104
+choose ring
+choose mummy
+# The still-flagged earlier ring triggers the insufficient-gifts response.
+wait 900
+# The ring is returned; the nine original items remain available.
+click 200 145
+wait 300

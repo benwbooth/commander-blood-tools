@@ -1,0 +1,18 @@
+# SCRIPT5 Hom: one television visit and one joke visit from the earned contact menu.
+# Three info selections bound the two authored responses, including the chance line.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 67
+choose politics
+choose television
+choose info
+choose info
+choose info
+choose consumption
+choose politics
+choose joke
+choose laugh
+choose bye_bye
+wait 500
