@@ -491,6 +491,11 @@ answers Chigraxx's ensuing call. The complete `cliptoot.hnm` strike sequence
 closes before the call. The normal save confirms `A61=7`, `A68=1`, and `A65=2`,
 with eight decoded resources and 28 fully revealed sites. Cyberquizz's invitation
 and the later strike resolution are not implied by this checkpoint.
+`bbb-cyberquizz-invitation-v1` makes both Internet calls, affirms Honk's
+existence, and answers the disguised caller. The ordinary save confirms
+Cyberquizz aboard with no prior encounters, `A90=1`, and `A55=1`. The run
+observes three decoded resources and 48 fully revealed sites. His aboard
+conversations have not occurred at this checkpoint.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

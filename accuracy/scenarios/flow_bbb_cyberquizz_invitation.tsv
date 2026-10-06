@@ -1,0 +1,21 @@
+# Follow the two Internet messages after Blue Wave has come aboard.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1400
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+choose true
+wait 1200
+# Answer the disguised caller's invitation and await the actual transfer.
+park 4 45
+wait 25
+click 125 118
+wait 1000
