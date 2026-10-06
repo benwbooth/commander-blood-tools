@@ -156,6 +156,11 @@ plays `pubgren1.hnm`, and sends Bug back to Trashlando
 plays `lentille.hnm`, leaves optics aboard, raises his evolution to 250, and
 unlocks the next destination group (`bbb-smile-technology-v1`). Each of these
 continuations has a witnessed normal save; none is the game's ending.
+Supplying earned energy and medicine on the next Smile visit, then leaving
+through the actual Cancel row, completes the gift loop and enables descendant
+settlement (`bbb-smile-support-v5`). Gluk subsequently occupies Cyberland.
+His first normal visit there completes the ship-price and weapons-demand
+conversation (`bbb-gluk-first-v2`); both continuations have new witnessed saves.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -195,6 +200,20 @@ The native run (`cb-morning-sleep-after-call-v2`) reveals the garbage-recovery
 dialogue, closes the conversation, and saves normally. No timer or quest-state
 patch was needed. The recorder now retains the pending call and actual drawn
 choice-row positions, including Cancel, to distinguish these states explicitly.
+The next cryobox visits assign the recovered memories to TV two and return
+Morning to the Ark (`cb-morning-memories-v3`). Opening TV and choosing channel
+two actually decodes all twelve `match01` through `match12` clips. The panel
+then closes normally and the route saves with Morning located at Ark.
+
+This continuation exposed a separate native text defect: dictionary offset 1
+is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
+it as BBB's live-number marker. The assembler now distinguishes the dialects.
+`re/tools/commander_subtitle_oracle.py` executes the unmodified CB assembler
+on the exact `0x6FF6` Morning line and three offset-one edge cases; all four
+match the Rust regression. The existing 45 BBB signed-number/cursor cases
+remain covered. All 1,112 enabled game-library tests pass (78 explicitly
+ignored asset-dependent tests). The successful continuation records the new
+binary hash and the repair reason while retaining its exact predecessor save.
 
 That original comparison first exposed a DOS harness defect: INT 21h/AH=0Eh
 returned a drive count without changing the current drive. The harness now

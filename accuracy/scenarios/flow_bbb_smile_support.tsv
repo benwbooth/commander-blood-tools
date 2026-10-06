@@ -1,0 +1,16 @@
+# Recontact Smile after the optics exchange, supplying earned energy and medicine.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+choose energy
+choose medicine
+wait 400
+# Three inventory items remain; Cancel is drawn at (190, 111).
+click 200 116
+wait 300

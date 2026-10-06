@@ -1,0 +1,18 @@
+# Continue the earned recovery, then watch the recovered memories on TV two.
+click 230 124
+wait 40
+click 100 77
+wait 400
+click 230 124
+wait 40
+click 100 77
+wait 600
+park 316 90
+move 160 100
+wait 20
+click 165 158
+wait 40
+click 160 100
+wait 400
+click 165 158
+wait 40

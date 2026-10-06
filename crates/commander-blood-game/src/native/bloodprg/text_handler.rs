@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use commander_blood_formats::code::ScriptCodeOffset;
+use commander_blood_formats::code::{ScriptCodeOffset, ScriptDialect};
 use commander_blood_formats::instruction::{ScriptText, ScriptTextWord};
 use commander_blood_formats::script::{
     ScriptDictionary, ScriptObjectKind, ScriptState, ScriptWordId,
@@ -606,7 +606,8 @@ fn handle_text_instruction_with_inventory(
     let subtitle_mode = presentation.subtitle_word_list_mode || condition_effects.spoken_word_mode;
     let subtitle = subtitle_mode
         .then(|| {
-            assemble_subtitle(&text.words, dictionary, |offset| {
+            let dialect = state.map_or(ScriptDialect::CommanderBlood, ScriptState::dialect);
+            assemble_subtitle(&text.words, dictionary, dialect, |offset| {
                 let state = state?;
                 state.word(state.resolve_word_source_offset(offset)?)
             })
@@ -688,6 +689,7 @@ fn text_handler_gate(
 fn assemble_subtitle(
     words: &[ScriptTextWord],
     dictionary: &ScriptDictionary,
+    dialect: ScriptDialect,
     mut number: impl FnMut(u16) -> Option<u16>,
 ) -> Result<Box<[u8]>, TextHandlerError> {
     let mut encoded = Vec::new();
@@ -709,7 +711,7 @@ fn assemble_subtitle(
     while encoded[cursor] != 0 {
         let offset = encoded[cursor];
         cursor += 1;
-        if offset == 1 {
+        if offset == 1 && dialect == ScriptDialect::BigBugBang {
             // Native 0x6D5F leaves the cursor on the VAR operand: lookahead and
             // the next iteration also interpret it as a dictionary position.
             let field = encoded[cursor];
@@ -797,14 +799,47 @@ mod tests {
                 cursor += 1;
             }
             let state = bytes("state");
-            let output = assemble_subtitle(&words, &dictionary, |offset| {
-                let offset = usize::from(offset);
-                Some(u16::from_le_bytes(
-                    state.get(offset..offset + 2)?.try_into().ok()?,
-                ))
-            })
-            .unwrap();
+            let output =
+                assemble_subtitle(&words, &dictionary, ScriptDialect::BigBugBang, |offset| {
+                    let offset = usize::from(offset);
+                    Some(u16::from_le_bytes(
+                        state.get(offset..offset + 2)?.try_into().ok()?,
+                    ))
+                })
+                .unwrap();
             assert_eq!(output.as_ref(), bytes("output"), "{}", case["name"]);
+        }
+    }
+
+    #[test]
+    fn commander_dictionary_one_matches_original_subtitle_assembler() {
+        let vectors: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/commander_subtitle.json"
+        ))
+        .unwrap();
+        let raw_dictionary: Vec<u8> =
+            serde_json::from_value(vectors["dictionary"].clone()).unwrap();
+        let dictionary = decode_script_dictionary(&raw_dictionary).unwrap();
+        for case in vectors["cases"].as_array().unwrap() {
+            let raw: Vec<u16> = serde_json::from_value(case["words"].clone()).unwrap();
+            let words = raw
+                .into_iter()
+                .take_while(|offset| *offset != 0)
+                .map(|offset| {
+                    if offset == u16::MAX {
+                        ScriptTextWord::SectionSeparator
+                    } else {
+                        dictionary_word(&dictionary, offset)
+                    }
+                })
+                .collect::<Vec<_>>();
+            let output =
+                assemble_subtitle(&words, &dictionary, ScriptDialect::CommanderBlood, |_| {
+                    panic!("CB does not interpret spoken state numbers")
+                })
+                .unwrap();
+            let expected: Vec<u8> = serde_json::from_value(case["output"].clone()).unwrap();
+            assert_eq!(output.as_ref(), expected, "{}", case["name"]);
         }
     }
 
