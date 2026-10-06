@@ -295,6 +295,11 @@ The illness montage plays, and the witnessed save has `A34 = 1`, `A35 = 1`,
 nine bionium, Migrator's population at five, and medicine still aboard. The
 earlier inventory-placement-only anthology chapters are not substitutes for
 this ordinary-playthrough evidence.
+Migrator's treatment continuation (`bbb-migrator-treatment-v2`) transfers the
+medicine, chooses `ship`, and closes the remaining GIVE menu. The actual reward
+is Emasculator's address, not a ship: `A35 = 3`, `A37 = 1`, and `B5 = 1`, with
+both medicine and ship held by Migrator. Emasculator and Rotator are at
+Attroxcity. The failed v1 omitted the final Cancel click and is not a parent.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
