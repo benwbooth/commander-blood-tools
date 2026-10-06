@@ -463,6 +463,35 @@ matching text, menu selections, real transfers, quantities, and saved endpoints.
 These three leaves add 21 sites beyond `audit-v11`; robot gifts and sales are
 still not complete.
 
+`bbb-toolbox-no-credit-v1` continues the accepted-decoder checkpoint. Giving
+the remaining credit, decoder, ship, and painting through the displayed menus
+spends the last credit, raises Toolbox's evolution 130 to 190 and population
+120 to 320, and leaves the three objects with Toolbox. Returning the decoder
+reopens its sale with the actual no-credit response at SCRIPT8 COD 1869.
+The bionium stock remains two; the exhausted credit token moves to `internet`.
+The run has 5,907 frames, 1,802 events, and thirteen matched sites, five new
+against `audit-v12`. Slot zero at frame 5771 has SHA-256
+`35c341562fa5b611ee60260dfb44a6b72fd0368dfa945e5df311514497a26f0d`.
+
+`bbb-jerry-bionium-accept-v1` and `bbb-morning-bionium-accept-v1` branch from
+the earned `bbb-concert-funded-v1` save, explicitly recording the runtime
+update. Each uses one of two bionium units, raising the contacted robot's
+evolution 100 to 130 and population 20 to 120, then accepts the immediate
+one-credit offer. Both save with one credit and one bionium unit remaining.
+Jerry's technology offer and caption actually transfer `decodeur`, leaving
+`technologie` with Cyberquizz, exactly as the recovered script instructs.
+Morning's decoder caption instead accompanies the real `cadeaux` transfer.
+These authored inconsistencies are preserved, not corrected in the flow.
+Jerry records 4,801 frames/1,636 events and saves at frame 4665, SHA-256
+`b479660bacdcbe6d90db36313d296443b6b6c3544c5863f9fa94772123fad7a0`;
+Morning records 4,891 frames/1,654 events and saves at frame 4755, SHA-256
+`1645b2480e131ed3c92fc2aa3367db2e632bc14f2c5d3dfbdf441cb997c22703`.
+Each has twelve matched sites, seven new. The three-leaf audit in
+`bbb-sales-followup-audit-v1/report.json` rechecks 101 distinct lineage
+manifests, current source/input hashes, text pixels, actual menu rows,
+transfers, stock changes, and closed saved endpoints. It adds nineteen sites
+against `audit-v12`, without rendering or claiming complete robot coverage.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control
@@ -860,6 +889,18 @@ population 105 by 200 to zero, followed by ordinary growth to six. Weapons
 adds 100 aggression and sets `B21=1`. All four leave Mamy on Loviland and
 save with no active ending. Crown/mummy v1's misplaced Cancel clicks remain
 failed and excluded; no stat changes were injected to reach these branches.
+
+The sixth Mamy slice adds guitar, optics-study, ring, and writing v1. Each
+adds one new source-matched wording, at SCRIPT3 COD 24803, 25423, 25527,
+and 25697 respectively. Guitar and ring each add ten evolution and 300
+population, lowering aggression by 150 and 200 respectively. Optics adds
+twenty evolution and increments `B20`/sets `B21`; writing adds fifty evolution.
+Guitar's subsequent ordinary simulation reduces population to 198 and energy
+to zero; these later changes are not attributed to the gift response.
+Independent review in `bbb-optional-mamy-gifts-audit-v4/parent-review.json`
+rechecks 82 distinct lineage manifests, current source/input hashes, all
+displayed text, transfers and effects, and the four closed slot-zero saves.
+No ending is active, and each gifted item remains with Mamy on Loviland.
 
 `output/game-flows/audit-v12` accepts 334 witnesses and excludes 137 failed,
 running, or legacy attempts. It includes the Oil greetings, both decoder

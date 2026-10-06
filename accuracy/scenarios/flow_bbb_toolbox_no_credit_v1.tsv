@@ -1,0 +1,27 @@
+# The accepted decoder save has one credit and the bought decoder aboard.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 38 135
+wait 40
+click 250 125
+choose credit
+wait 100
+choose decoder
+# Returning the decoder reopens its offer, now with no credits left.
+wait 140
+choose ship
+wait 100
+choose painting
+wait 100
+# Only the unspent bionium token remains in the current menu.
+click 200 101
+wait 200
