@@ -168,6 +168,9 @@ for passage. Its saved endpoint confirms the Ondoyant aboard.
 `cb-maziok-sat-v1` wakes the Ondoyant for the aboard conversation, then returns
 to Maziok after the curse removal. It presents the Ekato explanation and Sat
 coordinates. The saved endpoint has `ek=1` and Maziok at Trashlando.
+`cb-betakam-recruit-v1` visits Attrox, accepts Beauregard's participation,
+gives Betakam the Mind Scrambler, and accepts his transport. The saved endpoint
+has Betakam aboard and the scrambler held by him.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
