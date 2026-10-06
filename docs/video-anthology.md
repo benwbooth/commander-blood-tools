@@ -352,6 +352,12 @@ runtime. The observed Ark sequence remains `aarche10`, `aarche30`, `aarche40`,
 each closing normally; `aarche20` is still absent. The run observes 17 resources
 and 51 fully revealed sites. Static request listings alone must not add the
 missing clip to that route.
+`cb-bob-revelation-v2` follows the self-history topic to the offered revelation
+and saves with `reve=1`. `cb-bob-revelation-return-v3` recontacts him normally,
+presents the identity-revelation dialogue, leaves through the farewell, and
+saves with `reve=0` and `revelat=1`. The second run observes 12 decoded resources
+and 21 fully revealed sites. Its v2 predecessor attempt presented the revelation
+but remained in Bob's menu and did not save; only v3 is a saved continuation.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

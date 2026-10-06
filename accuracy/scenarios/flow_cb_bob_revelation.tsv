@@ -1,0 +1,15 @@
+# Follow Bob's self-history topic through its revelation offer.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 45
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose revelation
+choose bye_bye
+wait 250
