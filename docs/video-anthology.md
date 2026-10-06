@@ -266,6 +266,15 @@ Its normal save confirms `quest=0`, `Bof=0`, and the diploma still held by
 Cyberquizz. The run observes 17 decoded resources and 117 fully revealed text
 sites. The later correct-answer responses need separate witnesses because five
 correct answers terminate the exam; they are not implied by this failed attempt.
+`cb-exam-answers-06-10-v1` delays those five correct answers until questions
+6-10, then accepts the diploma. Its normal save confirms the diploma aboard,
+`Bof=5`, and `quest=10`; 18 decoded resources and 53 fully revealed sites are
+observed. This is a distinct answer path from the same earned Rondo checkpoint.
+`cb-party-crew-v2` separately visits Bronko, Anna Haf, Beauregard, and the
+receiver from the Big Band arrival checkpoint. Bronko's wedding exchange and
+the three short responses are observed, with all four still aboard at the
+normal save. The run has 24 decoded resources and 21 fully revealed sites.
+The earlier v1 used the wrong cryobox hit location and is excluded.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

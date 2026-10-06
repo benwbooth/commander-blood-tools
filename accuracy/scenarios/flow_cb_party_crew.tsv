@@ -1,0 +1,25 @@
+# Optional SCRIPT5 crew scenes from the Big Band arrival checkpoint (eight aboard).
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+wait 1800
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 100
+wait 400
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 111
+wait 400
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 67
+wait 400
