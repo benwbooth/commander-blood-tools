@@ -5899,6 +5899,22 @@ impl<'window> ModernGameServices<'window> {
         );
         snapshot["dialogue_selector_root"] =
             serde_json::json!(self.scripts.selector_root().map(|site| site.index()));
+        snapshot["dialogue_selector"] = profile
+            .map(|profile| {
+                let selector = profile.selector_state();
+                let encode = |word: Option<commander_blood_formats::script::ScriptWordId>| {
+                    word.and_then(|word| profile.dictionary().source_offset(word))
+                };
+                serde_json::json!({
+                    "selected_concept": encode(profile.runtime().selected_concept()),
+                    "current_control": encode(selector.current_control()),
+                    "parent_control": encode(selector.parent_control()),
+                    "current_body": selector.current_branch().map(|branch| branch.body.index()),
+                    "parent_body": selector.parent_branch().map(|branch| branch.body.index()),
+                    "history": selector.history().entries().iter().map(|word| encode(*word)).collect::<Vec<_>>(),
+                })
+            })
+            .unwrap_or(serde_json::Value::Null);
         snapshot["cod_text_publications"] =
             serde_json::json!(self.scripts.backend().text_publications());
         snapshot["contact_transition"] = self

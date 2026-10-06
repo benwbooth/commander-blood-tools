@@ -1,0 +1,10 @@
+# Observe the ordinary Kanary selection, then leave without injecting state.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 45
+choose kanary
+wait 150
+choose bye_bye
+wait 250

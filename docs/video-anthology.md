@@ -402,6 +402,17 @@ presents the identity-revelation dialogue, leaves through the farewell, and
 saves with `reve=0` and `revelat=1`. The second run observes 12 decoded resources
 and 21 fully revealed sites. Its v2 predecessor attempt presented the revelation
 but remained in Bob's menu and did not save; only v3 is a saved continuation.
+`cb-bob-kanary-probe-v1` records a remaining nested-menu blocker. The ordinary
+click selects dictionary offset 11703 (`kanary`) at boundary 2490, commits its
+BAS body 5503 at 2491, then returns the control value to 1 (`talk`) at 2492.
+The main menu reopens at 2494 without presenting the employee submenu. The
+probe leaves normally and saves with `emplo=0` and `emp=0`; it is not employee
+dialogue coverage. Read-only trace fields now retain the selector root, current
+and parent controls/bodies, pending concept, and eight-entry concept history.
+No gameplay behavior was changed. All 28 existing original `0x56FE`/`0x5791`
+selector oracle cases pass, as do 1,115 game-library tests (78 ignored) and 40
+focused flow tests. These results do not resolve the surrounding-frame behavior
+or establish that the submenu is unreachable in the original game.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

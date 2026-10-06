@@ -127,6 +127,16 @@ class FlowTests(unittest.TestCase):
         presentation["retained_word_choice"]["rows"][0]["matching_text_pixels"] = 7
         self.assertEqual(scene_state(semantic), state)
 
+    def test_scene_retains_read_only_selector_diagnostics(self):
+        semantic = frame()["semantic"]
+        semantic["dialogue_selector_root"] = 4328
+        semantic["dialogue_selector"] = dict(selected_concept=11703, current_control=1,
+            parent_control=None, current_body=4332, parent_body=None, history=[None] * 8)
+        state = scene_state(semantic)
+        self.assertEqual(state["dialogue_selector_root"], 4328)
+        self.assertEqual(state["dialogue_selector"], semantic["dialogue_selector"])
+        self.assertIsNone(scene_state(frame()["semantic"])["dialogue_selector"])
+
     def ending_state(self):
         return dict(profile=1, active_video=None, video_open=False, ending=dict(
             ending_active=True, last_assignment=dict(code_offset=40724, query_mode=False)))

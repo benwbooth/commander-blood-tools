@@ -104,6 +104,8 @@ def scene_state(s):
                                 "word_buffer_nonempty", "text_menu_pending", "sequence_active")},
                 active_video=v["active_resource"], video_open=v["source_open_or_draining"],
                 displayed_line=vm["displayed_line"], descript=s["descript"],
+                dialogue_selector_root=s.get("dialogue_selector_root"),
+                dialogue_selector=s.get("dialogue_selector"),
                 sequence_caption=s.get("sequence_caption"),
                 save_load=s.get("save_load"),
                 navigation=s["navigation"].get("target"),
