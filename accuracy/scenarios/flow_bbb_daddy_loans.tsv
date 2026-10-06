@@ -1,0 +1,23 @@
+# Fourth visit consumes the food during the cooking demonstration.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 50 110
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose yes
+choose yes
+wait 400
+click 200 116
+choose refuse
+choose lend
+wait 400

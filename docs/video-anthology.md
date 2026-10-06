@@ -164,7 +164,12 @@ conversation (`bbb-gluk-first-v2`); both continuations have new witnessed saves.
 A third Marakas visit includes his nightmare dialogue and buys replacement
 food, then exits through Cancel and saves with food aboard
 (`bbb-marakas-food-again-v2`). Daddy's ensuing weapons trade is still being
-reconstructed; the food purchase alone does not prove that trade.
+reconstructed; the food purchase alone does not prove that trade. His fourth
+visit uses the food in its cooking demonstration and returns it to Daddy before
+the gift menu. The normal continuation therefore answers the recipe and
+weapons questions, leaves through Cancel, refuses the first loan, and accepts
+the second (`bbb-daddy-loans-v1`). The conversation closes and saves with
+`A4 = 0`, `A17 = 3`, and `A43 = 1`. It has not acquired replacement weapons.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -212,6 +217,12 @@ Selecting Ark from the local Venusia menu and asking about Mastachok reveals
 its chart marker and completes Morning's follow-up in the same contact
 (`cb-morning-mastachok-v3`). The saved state has `B1 = 8` and `C1 = 1`.
 There is no additional goodbye choice on this witnessed path.
+The ensuing Mastachok visit first runs the guard's password scene even with
+perfume aboard. Choosing `djerk` completes the rejection and explosion, after
+which a normal recontact offers `teleport` (`cb-mastachok-perfume-v2`). That
+conversation transfers the perfume to Scruter Mac and closes with `C1 = 6`.
+The witnessed save retains that result, and the bridge queues Scruter K's
+customs call. This route changes no inventory or quest state outside game input.
 
 This continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
