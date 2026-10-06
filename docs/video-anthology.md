@@ -182,6 +182,14 @@ successfully obtains replacement weapons (`bbb-daddy-food-weapons-v3`). Both
 visits include their scripted nightmare scenes. Leaving Daddy's gift menu also
 triggers another repayment after the food purchase lowered the balance below
 ten; the witnessed endpoint has weapons aboard and nineteen credits.
+Gluk's next Cyberland visit accepts the Gluxx explanation and escalating ship
+price (`bbb-gluk-buy-ship-v1`). The ship really transfers aboard and its object
+clip decodes. The normal checkpoint has `A4 = 0`, `A27 = 2`, and `A58 = 2`;
+the weapons remain aboard. This continuation records 37 fully revealed sites
+with active actor attribution, rather than counting stale navigation captions.
+One subsequent Daddy contact and the four-item inventory's Cancel row complete
+another repayment (`bbb-daddy-post-ship-v2`). The saved endpoint retains the
+ship and ten credits, with `A17 = 6`; no extra loan dialogue is required.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
