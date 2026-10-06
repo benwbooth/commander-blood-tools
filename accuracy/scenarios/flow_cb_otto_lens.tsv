@@ -1,0 +1,30 @@
+# Ask about a transplant, provide the Slimer planet, then collect the earned lens.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 125 16
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose transplant
+wait 500
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose Ekatomb
+wait 500
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+wait 500

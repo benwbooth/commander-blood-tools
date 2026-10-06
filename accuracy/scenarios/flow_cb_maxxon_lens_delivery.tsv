@@ -1,0 +1,16 @@
+# Select the middle observatory row at Rondo and deliver Otto's earned lens.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 281 40
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 94
+choose teleport
+wait 500

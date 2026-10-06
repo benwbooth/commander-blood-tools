@@ -1,0 +1,38 @@
+# Visit the newly created Slimer colony on Foxx, preserving visit order.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 35 90
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose yes
+wait 300
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+choose brushed
+wait 400
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+choose funny
+wait 600
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+wait 500

@@ -109,6 +109,11 @@ The following Internet calls pass the authored busy-network and fourth-call
 selector before re-earning the optics. A normal Tempest visit buys Papy's
 medicine and gives him those optics; `venthig.hnm` plays and the returned
 world state contains Otto Von Smile's new Foxx colony.
+His first four visits then play the medicine, joke, and credit scenes. The
+fifth-visit `doom` alternative reaches the explosion ending assignment at
+`0x9EF3` and exits cleanly. A separate perfume attempt transfers the item but
+is interrupted by a war dialogue before its quest flags are set; that attempt
+is not a completed perfume quest.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -119,6 +124,9 @@ separate refusal leaves Bronko there and presents four distinct dialogue sites.
 The Rondo route follows Yoko's Slimer discussion to the Ekatomb coordinates
 and Maxxon's first telescope conversation. Daddy Gluxx's subsequent treatment
 discussion reveals Erazor.
+Otto's transplant/Ekatomb route earns the lens, and the normal observatory
+selection delivers it to Maxxon. His youth-treatment and surgery alternatives
+leave the lens with Otto and add ten distinct fully shown dialogue sites.
 CB's separate earned-save alternatives include Izwalito's secret refusal and
 Scruter Jo's rejected code, with `explo3.hnm` played and Jo still on Pterra.
 These are route endpoints, not whole-game completion.

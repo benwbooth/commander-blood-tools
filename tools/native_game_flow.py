@@ -324,7 +324,7 @@ def flow_markdown(directory, status):
     if status.get("observed_ending"):
         ending = status["observed_ending"]
         lines[3:3] = [
-            f"Observed the expected SCRIPT2 ending opcode at 0x{ending['code_offset']:04X} "
+            f"Observed the expected SCRIPT2 ending sequence assignment at 0x{ending['code_offset']:04X} "
             "and a clean native process exit. This does not classify the ending as a story success.", ""]
     previous = None
     with (directory / "events.jsonl").open() as source:
@@ -378,7 +378,7 @@ def verify_route_completion(actions, completed, returncode, final_state, ending_
     if ((final_state or {}).get("profile") != 1 or not ending.get("ending_active")
             or assignment.get("code_offset") != ending_offset
             or assignment.get("query_mode") is not False):
-        raise ValueError("native exit did not reach the expected SCRIPT2 ending opcode")
+        raise ValueError("native exit did not reach the expected SCRIPT2 ending sequence assignment")
     if (final_state.get("video_open") is not False or "active_video" not in final_state
             or final_state["active_video"] is not None):
         raise ValueError("native exit left ending video open")
@@ -551,7 +551,7 @@ def main():
     parser.add_argument("--runtime-update", metavar="REASON",
                         help="explicitly record a binary update while retaining exact save/script/asset checks")
     parser.add_argument("--expect-bbb-ending", type=lambda value: int(value, 0), metavar="OFFSET",
-                        help="require clean exit through this SCRIPT2 ending opcode; allow the last wait to stop early")
+                        help="require clean exit with this SCRIPT2 ending sequence assignment; allow the last wait to stop early")
     parser.add_argument("--slot", type=int, choices=range(10), default=0,
                         help="witnessed predecessor save slot; default 0")
     parser.add_argument("--assets", required=True, type=Path)
