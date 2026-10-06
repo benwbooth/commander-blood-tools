@@ -1,0 +1,16 @@
+# Earned repaired Mamy strike save: A61=8 and A68=1.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 16 110
+wait 60
+click 250 125
+# Automatic general-strike response closes without an inventory menu.
+wait 500

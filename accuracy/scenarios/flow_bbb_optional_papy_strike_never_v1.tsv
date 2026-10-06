@@ -1,0 +1,17 @@
+# Independent refusal from the same earned strike-calls save.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 16 110
+wait 60
+click 250 125
+wait 200
+choose never
+wait 600

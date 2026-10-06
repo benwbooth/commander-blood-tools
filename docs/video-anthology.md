@@ -989,6 +989,37 @@ sites add that one sentence; slot zero at frame 5217 has SHA-256
 `04becfd47eac3ffb42c58f445a2ff6df2d4c90874099b5f4e6c99f82a2ef5940`.
 The original two strike witnesses and their reports remain unchanged.
 
+`bbb-optional-papy-strike-never-v1` declines Papy's one-credit request from
+the earned strike-call save. The six matching SCRIPT3 sites include the
+uninterrupted question, the displayed `ok`/`never` choice, and the refusal.
+`cliptoot.hnm` closes before the normal save; `A61=7`, `A68=1`, `A65=0`,
+and all five credits remain. The run has 6,336 frames and 217 compact events;
+slot zero at frame 6200 has SHA-256
+`8f9d048214d5b50d47fba9b5fcce805ad13458030a5b4602d31c08a6b5b5f226`.
+`bbb-optional-papy-general-strike-v1` visits from Mamy's repaired strike save,
+recording three matching sites in 4,980 frames and 149 events. It preserves
+the five credits and `A61=8`; slot zero at frame 4844 has SHA-256
+`d12bec8b55819cd7eeb97348059c35c0964bd73baa5bbb8864fed982b0ce5e04`.
+Their nine sites include eight previously unwitnessed wordings. Independent
+`bbb-optional-papy-strike-audit-v1/parent-review.json` checks 79 lineage
+manifests, current leaf source/input hashes, text, menu guards, unchanged
+inventory ownership/flags and credit balance, and both closed endpoints.
+
+Papy's `ok` route is retained as a separate unresolved diagnostic, not an
+accepted continuation. COD 15570's `skip_next=1` guards only transfer 15586;
+the subtraction at 15593 is unguarded on selector-resume scans. Isolated
+original-executable block tests reproduce repeated subtraction and wrap.
+The normal-input DOS capture `startup-capture-51` additionally loads the
+earned save, selects the actual `OK` row, plays the whole strike scene, and
+returns to the bridge with `A61=7`, `A65=1`, and `A68=1`. Its balance changes
+five to minus twelve, 17 deductions; the native English recording changes
+five to minus 48, 53 deductions. `original-scene-review.json` binds the
+capture, executable, screenshots, RAM observations, and 76 predecessor
+manifests. The French-original/English-native scheduling difference is not
+explained by this evidence. No single-debit fix is justified, and the native
+payment save is not used as a predecessor. This is an original scene check
+after loading an earned native save, not a complete original playthrough.
+
 `bbb-optional-mamy-optics-rejection-v1` uses an earned optics item before
 Otto's mutation bit is set. It observes SCRIPT3 COD 25275, 25313, and 25347,
 then returns the optics aboard and raises Mamy's aggression 250 to 400,
