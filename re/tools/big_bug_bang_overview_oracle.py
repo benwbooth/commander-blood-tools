@@ -187,7 +187,7 @@ def run(executable, name, inputs, actors=None):
         write_word(state, actor_offset + 2, actor["flags"])
         write_word(state, actor_offset + 20, actor["group"])
         write_word(state, actor_offset + 22, actor["quantity"])
-        write_word(state, actor_offset + 24, holder_offset)
+        write_word(state, actor_offset + 24, 0xFFFF if actor.get("aboard") else holder_offset)
         write_word(state, actor_offset + 52, actor["balance"])
         opponent = actor.get("opponent")
         write_word(state, actor_offset + 72,
@@ -311,6 +311,10 @@ def cases(executable):
                    "available_count": count, "pointer": [319, 199]})
     no_available = [{**actor, "holder_flags": 1} for actor in default_actors()]
     yield run(executable, "open_empty", {"secondary": 1, "press_pending": 3}, no_available)
+    for flags in (5, 21):
+        actors = default_actors()
+        actors[0] = {**actors[0], "aboard": True, "flags": flags}
+        yield run(executable, f"open_aboard_flags{flags}", {"secondary": 1}, actors)
 
 
 def main():

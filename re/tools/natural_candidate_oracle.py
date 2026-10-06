@@ -59979,6 +59979,17 @@ def subtitle_reveal_pump_vectors() -> list[dict[str, object]]:
             "cursor": 0x0E1E,
             "hold_complete": 1,
         },
+        {
+            "name": "empty_text_starts_line_hold",
+            "active": 1,
+            "empty_text": True,
+        },
+        {
+            "name": "empty_text_ship_gate_blocks_line_hold",
+            "active": 1,
+            "empty_text": True,
+            "ship_flags": 4,
+        },
     ]
 
     data_segment = 0x2000
@@ -60057,7 +60068,8 @@ def subtitle_reveal_pump_vectors() -> list[dict[str, object]]:
         data_before[0x5B56] = 0x56
         put_word(data_before, 0x5E5C, 10)
         put_word(data_before, 0x5E5E, 8)
-        data_before[text_offset : text_offset + 7] = b"AB\rCD\r\0"
+        subtitle = b"\0\r\0" if case.get("empty_text") else b"AB\rCD\r\0"
+        data_before[text_offset : text_offset + len(subtitle)] = subtitle
 
         put_record(stack_before, primary_table, 0, 11, 22, 33)
         put_record(stack_before, primary_table + 8, 1, 44, 55, 66)
@@ -60119,12 +60131,9 @@ def subtitle_reveal_pump_vectors() -> list[dict[str, object]]:
                     data_expected[0x0CFB] = 0
                     put_word(data_expected, 0x0B35, text_speed << 2)
                     data_expected[0x67BB] = 1
-                expected_calls.extend(
-                    [
-                        ("draw", (text_offset, 10, 8)),
-                        ("draw", (text_offset + 3, 10, 16)),
-                    ]
-                )
+                expected_calls.append(("draw", (text_offset, 10, 8)))
+                if not case.get("empty_text"):
+                    expected_calls.append(("draw", (text_offset + 3, 10, 16)))
 
         initial = {
             "eax": 0xA1A11234,
@@ -60276,6 +60285,7 @@ def subtitle_reveal_pump_vectors() -> list[dict[str, object]]:
                 "delay": delay,
                 "ship_flags": ship_flags,
                 "hold_complete": hold_complete,
+                **({"empty_text": True} if case.get("empty_text") else {}),
                 "calls": calls,
                 "data_sha256": hashlib.sha256(data_expected).hexdigest(),
                 "registers_after": {

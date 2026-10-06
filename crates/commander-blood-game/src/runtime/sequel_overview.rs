@@ -122,6 +122,9 @@ fn decode_actors(runtime: &OriginalGameRuntime) -> Result<Vec<SequelOverviewActo
         {
             continue;
         }
+        if record_word(object.bytes(), ACTOR_HOLDER_OFFSET, object.id)? == u16::MAX {
+            continue;
+        }
         let holder = object_reference(profile.state(), object.id, ACTOR_HOLDER_OFFSET)?;
         let holder_in_play = object_has_flag(profile.state(), holder, ScriptObjectFlag::InPlay)
             .with_context(|| {
@@ -366,12 +369,16 @@ mod tests {
                         0,
                         "Daddy aboard must not participate in the map"
                     );
-                    assert!(profile.state_mut().set_word(flags, before | 4));
-                    let error = decode_actors(&runtime).unwrap_err();
-                    assert!(
-                        error.to_string().contains("sentinel relation at byte 24"),
-                        "{error:#}"
-                    );
+                    for additional_flags in [4, 4 | 16] {
+                        assert!(
+                            runtime
+                                .current_profile_mut()
+                                .unwrap()
+                                .state_mut()
+                                .set_word(flags, before | additional_flags)
+                        );
+                        assert_eq!(decode_actors(&runtime).unwrap().len(), actors.len());
+                    }
                     assert!(
                         runtime
                             .current_profile_mut()

@@ -142,8 +142,6 @@ pub enum SubtitleRevealOutcome {
 /// Invalid flat subtitle state that the native pointer walk could not bound.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SubtitleRevealError {
-    /// Text presentation reached its drawing phase without authored text.
-    EmptyText,
     /// One line has no carriage-return delimiter.
     MissingLineDelimiter {
         /// Start of the malformed line.
@@ -281,7 +279,8 @@ pub fn update_subtitle_reveal<Renderer: SubtitleRevealRenderer>(
 
 fn subtitle_line_ranges(text: &[u8]) -> Result<Vec<Range<usize>>, SubtitleRevealError> {
     if text.is_empty() {
-        return Err(SubtitleRevealError::EmptyText);
+        // Authored blank captions retain the frame and terminal-text hold.
+        return Ok(vec![0..0]);
     }
 
     let mut ranges = Vec::new();
@@ -342,6 +341,8 @@ mod tests {
         delay: u16,
         ship_flags: u16,
         hold_complete: u8,
+        #[serde(default)]
+        empty_text: bool,
         calls: Vec<OracleCall>,
     }
 
@@ -400,7 +401,7 @@ mod tests {
         .collect();
         verify_reveal_oracles(
             commander,
-            11,
+            13,
             COMMANDER_TEXT_OFFSET,
             COMMANDER_SUBTITLE_OWNER,
         );
@@ -431,7 +432,11 @@ mod tests {
                 subtitle_reveal_cursor: cursor,
                 dialogue_hold_countdown: 13_621,
                 dialogue_hold_complete: vector.hold_complete & 1 != u8::MIN,
-                subtitle_text: Box::from(SUBTITLE_TEXT),
+                subtitle_text: Box::from(if vector.empty_text {
+                    b""
+                } else {
+                    SUBTITLE_TEXT
+                }),
                 ..TextPresentationState::default()
             };
             let mut state = SubtitleRevealState {
@@ -524,10 +529,12 @@ mod tests {
                     assert_eq!(Some(*reveal_cursor), final_reveal_cursor, "{}", vector.name);
                     assert_eq!(
                         text.as_ref(),
-                        if *byte_offset == usize::MIN {
-                            b"AB"
+                        if vector.empty_text {
+                            b"".as_slice()
+                        } else if *byte_offset == usize::MIN {
+                            b"AB".as_slice()
                         } else {
-                            b"CD"
+                            b"CD".as_slice()
                         },
                         "{}",
                         vector.name
@@ -549,7 +556,12 @@ mod tests {
         let entered = vector.mode & 2 != u8::MIN
             || vector.active & 1 != u8::MIN
             || (vector.hold_ready & 1 != u8::MIN && vector.owner == native_subtitle_owner);
-        let completion_armed = native_cursor == native_text_offset + SUBTITLE_TEXT.len()
+        let text_len = if vector.empty_text {
+            0
+        } else {
+            SUBTITLE_TEXT.len()
+        };
+        let completion_armed = native_cursor == native_text_offset + text_len
             && vector.ship_flags & 4 == u16::MIN
             && vector.hold_complete & 1 == u8::MIN
             && vector.hold_ready & 1 == u8::MIN;
@@ -576,8 +588,10 @@ mod tests {
             }
         } else {
             SubtitleRevealOutcome::TextFrame {
-                line_count: 2,
-                reveal_advanced: native_cursor == native_text_offset && vector.delay == u16::MIN,
+                line_count: if vector.empty_text { 1 } else { 2 },
+                reveal_advanced: !vector.empty_text
+                    && native_cursor == native_text_offset
+                    && vector.delay == u16::MIN,
                 completion_armed,
             }
         };
@@ -634,7 +648,10 @@ mod tests {
                 "{}",
                 vector.name
             ),
-            _ if native_cursor == native_text_offset && vector.delay == u16::MIN => {
+            _ if !vector.empty_text
+                && native_cursor == native_text_offset
+                && vector.delay == u16::MIN =>
+            {
                 assert_eq!(
                     presentation.subtitle_reveal_cursor,
                     Some(1),
@@ -648,7 +665,7 @@ mod tests {
                     vector.name
                 );
             }
-            _ if native_cursor == native_text_offset + SUBTITLE_TEXT.len() => {
+            _ if native_cursor == native_text_offset + text_len => {
                 assert_eq!(
                     presentation.dialogue_hold_complete,
                     completion_armed || vector.hold_complete & 1 != u8::MIN,

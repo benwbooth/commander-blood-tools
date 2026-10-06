@@ -112,6 +112,23 @@ The port's added A9 skip test failed before the repair; afterward the game
 library passed 1,115 tests (78 ignored), the format library passed 118 tests
 (10 ignored), and all 21 token-advance oracle vectors matched.
 
+Two later normal-route failures exposed presentation edge cases. BBB's map
+must exclude aboard actors even when their simulation flags include 4 or 16;
+the original `BLOOD2PG.EXE` roster builders exclude both cases before using the
+holder. The overview oracle now executes 34 cases, including both aboard
+variants and an opponent whose position resolves to the Ark. The initialized
+profile regression failed before the runtime adapter was repaired.
+
+CB's Big Band location deliberately has an empty DESCRIPT caption. Two added
+`BLOODPRG.EXE` `0x93F5` probes show that terminal empty text retains the frame
+and arms the ordinary hold unless the ship gate is set. The native subtitle
+test reproduced `EmptyText` before the fix; an empty caption now emits an
+empty line with that timing, without adding text or skipping the frame.
+All 13 CB and 12 BBB reveal vectors pass. The game library passes 1,115 tests
+(78 ignored), both asset-backed overview tests pass, and the flow-recorder
+suite passes 21 tests. These repairs do not establish that either complete
+route or its alternatives have finished.
+
 BBB endings can terminate the executable during the final passive wait.
 `--expect-bbb-ending 0x9f14`, for example, requires the native SCRIPT2 ending
 assignment at that exact code offset, a drained video source, a clean process
@@ -723,10 +740,12 @@ Scruter Jo's rejected code, with `explo3.hnm` played and Jo still on Pterra.
 These are route endpoints, not whole-game completion.
 The detailed witnesses live under `output/game-flows`.
 
-One additional runtime limitation was exposed while buying Izwalito's treaty:
+An earlier runtime limitation was exposed while buying Izwalito's treaty:
 F7 from the GIVE menu fails with `SubtitleRevealError::EmptyText` before saving
 (`bbb-izwalito-treaty-v3`). That run is rejected as a checkpoint. The route uses
-the visible Cancel control instead; the F7 failure remains unresolved.
+the visible Cancel control instead. The shared empty-caption failure is now
+repaired as described above; this exact historical F7 interaction has not been
+replayed and is not claimed as verified.
 
 ### Source Progression Gates
 

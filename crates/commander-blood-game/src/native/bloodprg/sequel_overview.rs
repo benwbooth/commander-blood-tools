@@ -565,6 +565,8 @@ mod tests {
         opponent: Option<usize>,
         #[serde(default)]
         excluded_holder: bool,
+        #[serde(default)]
+        aboard: bool,
     }
 
     const fn in_play_state() -> u16 {
@@ -608,10 +610,16 @@ mod tests {
                     quantity: actor.quantity,
                     balance: actor.balance,
                     holder_active: actor.holder_flags & 1 != 0,
-                    holder_in_play: actor.holder_flags & 2 != 0,
+                    holder_in_play: !actor.aboard && actor.holder_flags & 2 != 0,
                     holder_excluded: actor.excluded_holder,
                     position: actor.position,
-                    opponent_position: actor.opponent.map(|index| case.actors[index].position),
+                    opponent_position: actor.opponent.map(|index| {
+                        if case.actors[index].aboard {
+                            [100, 110]
+                        } else {
+                            case.actors[index].position
+                        }
+                    }),
                 })
                 .collect::<Vec<_>>();
             let mut control = SequelOverviewControl {
