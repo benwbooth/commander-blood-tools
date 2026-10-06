@@ -139,6 +139,10 @@ they are not evidence of the subsequent tomb conversation.
 the local camera, then selects Vista. The game enters the tomb and presents
 Anna's three lines directly, without repeating Super Tromp's topics. Anna is
 the sole known outgoing phone contact in the resulting earned save.
+`cb-anna-painting-v1` answers Jerry, calls Anna at Vista, waits for her authored
+timer, receives her successful-theft call, and recovers both the portrait and
+Anna through two teleport choices. Both are aboard in the saved endpoint, and
+Super Zen has returned to Crazystone. The curse is still active at this point.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

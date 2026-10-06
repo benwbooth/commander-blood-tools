@@ -1,0 +1,26 @@
+# Answer Jerry, then call the sole known phone contact, Anna Haf.
+park 4 45
+wait 25
+click 125 118
+wait 600
+click 230 104
+wait 40
+click 100 90
+wait 1600
+park 4 45
+wait 25
+click 125 118
+wait 700
+# Restore the local destination view and recover the painting and Anna.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+choose teleport
+choose teleport
+wait 700
