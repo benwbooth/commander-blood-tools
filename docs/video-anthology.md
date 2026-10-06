@@ -124,6 +124,13 @@ All current manifests deliberately retain `full_game_complete: false` and
 flows. Successful endings and alternate-branch coverage still have to be
 established before producing the new final videos.
 
+The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
+asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
+Sinox's candle offer. The trace verifies Sinox's full presentation and departure
+to Trashlando, `yo=1`, and the saved checkpoint. The final fifth `yolk` selection
+advances the exhausted topic back into the scripted tomb transition; choosing
+`bye_bye` instead leaves the encounter without that transition.
+
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
 and `bobg.hnm`), the normal Corpo jump, and Izwalito's first two conversations.

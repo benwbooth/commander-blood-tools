@@ -1,0 +1,27 @@
+# Ask about the portrait and Great Yolk before entering the tomb.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 75 31
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose painting
+choose painting
+choose painting
+choose culture
+choose culture
+choose culture
+choose yolk
+choose yolk
+choose yolk
+choose yolk
+choose yolk
+choose accept
+wait 900
