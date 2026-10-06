@@ -1,0 +1,9 @@
+# Take the distinct post-concert refusal ending through the ordinary menu.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+choose strike
+wait 4000

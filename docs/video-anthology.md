@@ -709,6 +709,19 @@ concert before saving. The combined 24 sequence entries match `47robinv` then
 Cyberland, unlike the main route's fully supplied invitation result. This is
 an alternative credit-retaining predecessor, not a replacement for the verified
 successful route and its separately recorded Gluk reaction.
+`bbb-concert-internet-v3` loads that credit-retaining checkpoint, selects
+`don't_cheat`, and declines Ulikan's post-concert strike. The conversation
+closes and saves normally with `A4=2`, `A13=0`, `A68=2`, and `A74=6`.
+It presents 49 fully revealed sites, including the continuation after refusing
+the strike. No new sequence movie plays on this branch. The earlier zero-credit
+attempts could not reach this choice and are not predecessors.
+`bbb-concert-internet-strike-v2` independently takes the visible `strike`
+choice from the same earned checkpoint. It sets `A68=3`, selects the ending
+at `0x9F14`, and plays all five `28bob` entries in source order at native
+boundaries 2635--2901. Every counter reaches the source's last decoded-frame
+boundary. The process exits cleanly at boundary 2902, interrupting only the
+final passive wait. It observes eight resources and 17 fully revealed sites;
+this is the distinct dismissal ending, not successful story completion.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

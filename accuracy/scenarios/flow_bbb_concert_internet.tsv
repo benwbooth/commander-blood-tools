@@ -1,0 +1,9 @@
+# Decline the post-concert strike when Ulikan answers Internet.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+choose no_strike
+wait 1000
