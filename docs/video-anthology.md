@@ -153,6 +153,9 @@ hiding place. The earned D.O.R.K. diploma recruits Hom. The saved endpoint has
 Hom and the picture aboard, the diploma with Hom, and the decoder with Bratakas.
 The two earlier attempts stopped on unavailable or unselected topic rows;
 only v3 is a completed route witness.
+`cb-fifi-picture-hat-v1` gives Fifi that picture and revisits him after the
+curse has been lifted. The second encounter receives the hat. The saved state
+confirms the picture with Fifi, the hat aboard, and Super Zen back at Crazystone.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
