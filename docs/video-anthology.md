@@ -235,6 +235,11 @@ The normal save confirms `exp=1`, `bok=1`, and the unchanged eight-entry aboard
 roster. This run observes 29 decoded video resources and 63 fully revealed
 text sites. The failed v1 blank-caption attempt is excluded; v2 records the
 original-backed caption repair. Bob's explanation is not the concert ending.
+`cb-wedding-ring-v1` follows Tina to Migrator's first bar conversation, receives
+the wedding-ring request, and wakes Ondoyant through the ordinary cryobox.
+Her handover is observed, and the normal save confirms the ring aboard, Yoko
+at Bigbang, Tina at bar2, and `bok=1`. Its 27 decoded resources and 40 fully
+revealed sites precede the wedding concert; they do not establish its ending.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

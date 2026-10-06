@@ -1,0 +1,19 @@
+# Reopen the local Big Band destination after loading the earned checkpoint.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+# Tina sends us to Migrator, who asks for the wedding ring.
+wait 2200
+# Ondoyant is fourth of the eight aboard entries before she gives the ring.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 89
+wait 1200
