@@ -1,0 +1,8 @@
+# Refuse Honk's first request to switch Morning off; follow the authored reply.
+park 316 45
+wait 20
+click 230 124
+wait 40
+click 100 77
+choose no
+wait 400

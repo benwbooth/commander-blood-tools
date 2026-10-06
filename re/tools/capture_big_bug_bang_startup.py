@@ -346,7 +346,8 @@ def private_steer(env, pid, target, observe, limit=48):
         state = observe()
         bridge = state.get("bridge") or {}
         frame, arc = bridge.get("frame"), bridge.get("mouse_arc")
-        if (state.get("status") != "profile_bound" or type(frame) is not int or not 0 <= frame < 180
+        if (state.get("status") != "profile_bound" or type(state.get("profile")) is not int
+                or not 0 <= state["profile"] < 17 or type(frame) is not int or not 0 <= frame < 180
                 or type(arc) is not int or not 0 <= arc < 360):
             raise RuntimeError("private steering requires a bound original bridge observation")
         if profile is None:
@@ -366,6 +367,50 @@ def private_steer(env, pid, target, observe, limit=48):
             break
         dx = max(-240, min(240, correction * 4))
         row["motion"] = private_move(env, pid, [dx, 0], steps=max(1, (abs(dx) + 7) // 8))
+    return result
+
+
+def private_bridge_point(env, pid, target, observe, limit=32):
+    """Move within the current bridge view without clicking or changing it."""
+    if len(target) != 2 or any(type(v) is not int for v in target) or not 0 <= target[0] < 320 or not 0 <= target[1] < 200:
+        raise ValueError("bridge pointer target must be inside the logical 320x200 view")
+    if type(limit) is not int or not 1 <= limit <= 32:
+        raise ValueError("bridge pointer limit must be from 1 to 32")
+    if not private_mouse_locked(pid):
+        raise RuntimeError("private bridge pointer requires confirmed mouse capture")
+    result = {"kind": "private_x11_bridge_pointer", "target_position": target,
+              "display": env["DISPLAY"], "iterations": [], "target_verified": False,
+              "guest_memory_written": False}
+    identity = None
+    for index in range(limit + 1):
+        state = observe()
+        bridge, mouse = state.get("bridge") or {}, state.get("mouse_poll") or {}
+        frame, arc, bias, y = (bridge.get("frame"), bridge.get("mouse_arc"),
+                               bridge.get("frame_angle_bias"), mouse.get("y"))
+        if (state.get("status") != "profile_bound" or type(state.get("profile")) is not int
+                or not 0 <= state["profile"] < 17 or type(frame) is not int or not 0 <= frame < 180
+                or type(arc) is not int or not 0 <= arc < 360 or type(bias) is not int
+                or not 0 <= bias < 65536
+                or type(y) is not int or not 0 <= y < 200):
+            raise RuntimeError("private bridge pointer requires a bound original bridge observation")
+        current_identity = (state["profile"], frame)
+        if identity is None:
+            identity = current_identity
+        if current_identity != identity:
+            raise RuntimeError("private bridge pointer stopped at a changed profile or camera")
+        signed_bias = bias - 65536 if bias >= 32768 else bias
+        x = (arc * 4 - signed_bias) % 1440
+        row = {key: state.get(key) for key in ("elapsed_seconds", "profile", "bridge", "mouse_poll", "host_mouse")}
+        row["logical_pointer"] = [x, y]
+        result["iterations"].append(row)
+        error = [target[0] - x, target[1] - y]
+        if max(map(abs, error)) <= 3:
+            result["target_verified"] = True
+            break
+        if index == limit:
+            break
+        motion = [max(-48, min(48, error[0] * 2)), max(-48, min(48, error[1] * 3))]
+        row["motion"] = private_move(env, pid, motion, steps=max(1, (max(map(abs, motion)) + 7) // 8))
     return result
 
 
@@ -474,11 +519,13 @@ def capture(args):
         if any(char in str(path) for char in ('"', '\n', '\r')):
             raise ValueError("DOS mount path contains command syntax")
     output.mkdir(parents=True, exist_ok=False)
+    recorder_source = Path(__file__).read_bytes()
+    (output / "recorder.py").write_bytes(recorder_source)
     drive = output / "cdrive"
     (drive / "cblood").mkdir(parents=True)
     xvfb = game = None
     report = {"scope": "read-only periodic original-game allocation observations; inputs recorded separately",
-              "recorder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+              "recorder_sha256": hashlib.sha256(recorder_source).hexdigest(),
               "executable_sha256": EXECUTABLE_SHA256, "disc": str(disc),
               "launch_arguments": args.game_args, "launch_arguments_provenance": "explicit capture setting, not recovered installer output",
               "sdl_override": sdl_override,
@@ -519,6 +566,7 @@ def capture(args):
                 [(at, "key", i + 1, key) for i, (at, key) in enumerate(args.key_after)] +
                 [(at, "move", i + 1, motion) for i, (at, motion) in enumerate(args.move_after)] +
                 [(at, "steer", i + 1, target) for i, (at, target) in enumerate(args.steer_after)] +
+                [(at, "point", i + 1, target) for i, (at, target) in enumerate(args.point_after)] +
                 [(at, "recapture", i + 1, position)
                  for i, (at, position) in enumerate(args.recapture_after)])
 
@@ -590,6 +638,11 @@ def capture(args):
                         event["after_steer"] = observe()
                         if not event["target_verified"]:
                             raise RuntimeError("private steering did not reach and center its target")
+                    elif kind == "point":
+                        event.update(private_bridge_point(env, game.pid, value, lambda: observe_guest()[0]), status="sent")
+                        event["after_point"] = observe()
+                        if not event["target_verified"]:
+                            raise RuntimeError("private bridge pointer did not reach its target")
                     else:
                         event.update(private_recapture(env, game.pid, value, observe), status="sent")
                     inputs_sent += 1
@@ -629,6 +682,8 @@ def main():
                         help="split each move-after into 1..128 relative packets, separated by 20 ms")
     parser.add_argument("--steer-after", nargs=2, action="append", default=[], metavar=("SECONDS", "FRAME"),
                         help="bounded ordinary-input steering to an observed bridge frame, with read-only feedback")
+    parser.add_argument("--point-after", nargs=3, action="append", default=[], metavar=("SECONDS", "X", "Y"),
+                        help="bounded relative movement to a logical bridge coordinate, without clicking")
     parser.add_argument("--recapture-after", nargs=3, action="append", default=[], metavar=("SECONDS", "X", "Y"),
                         help="release capture, place the private root pointer, and recapture through Ctrl-F10")
     parser.add_argument("--click-button", type=int, choices=(1, 3), default=1,
@@ -649,6 +704,7 @@ def main():
         args.key_after = [(positive_seconds(at), key) for at, key in args.key_after]
         args.move_after = [(positive_seconds(at), [int(dx), int(dy)]) for at, dx, dy in args.move_after]
         args.steer_after = [(positive_seconds(at), int(target)) for at, target in args.steer_after]
+        args.point_after = [(positive_seconds(at), [int(x), int(y)]) for at, x, y in args.point_after]
         args.recapture_after = [(positive_seconds(at), [int(x), int(y)])
                                 for at, x, y in args.recapture_after]
     except (ValueError, argparse.ArgumentTypeError) as error:
@@ -661,6 +717,18 @@ def main():
         parser.error("key-after times must be strictly increasing")
     if set(args.click_after) & {at for at, _ in args.key_after}:
         parser.error("click and key events must have distinct scheduled times")
+    if args.point_after:
+        if (not args.relative_mouse or not args.click_after
+                or args.click_after[0] >= args.point_after[0][0]):
+            parser.error("point-after requires relative-mouse and an earlier captured click")
+        if any(at >= args.seconds or not 0 <= position[0] < 320 or not 0 <= position[1] < 200
+               for at, position in args.point_after):
+            parser.error("point-after requires a time before capture end and logical bridge coordinates")
+        if any(left[0] >= right[0] for left, right in zip(args.point_after, args.point_after[1:])):
+            parser.error("point-after times must be strictly increasing")
+        other_times = set(args.click_after) | {at for at, _ in args.key_after + args.move_after + args.recapture_after + args.steer_after}
+        if {at for at, _ in args.point_after} & other_times:
+            parser.error("pointer events must have distinct scheduled times")
     if args.steer_after:
         if (not args.relative_mouse or not args.click_after
                 or args.click_after[0] >= args.steer_after[0][0]):

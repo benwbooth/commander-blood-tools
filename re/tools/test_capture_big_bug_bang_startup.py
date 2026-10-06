@@ -272,6 +272,60 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.private_steer({"DISPLAY": ":123"}, 789, 45, observe)
             move.assert_called_once()
 
+    def test_private_bridge_pointer_moves_without_clicking_or_changing_view(self):
+        observe = mock.Mock(side_effect=[
+            {"status": "profile_bound", "profile": 0,
+             "bridge": {"frame": 45, "mouse_arc": arc, "frame_angle_bias": 200},
+             "mouse_poll": {"x": 2000, "y": y}} for arc, y in ((89, 150), (83, 128), (81, 119))])
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move", return_value={}) as move:
+            result = capture.private_bridge_point({"DISPLAY": ":123"}, 789, [125, 118], observe)
+        self.assertTrue(result["target_verified"])
+        self.assertFalse(result["guest_memory_written"])
+        self.assertEqual(result["iterations"][-1]["logical_pointer"], [124, 119])
+        self.assertEqual([call.args[2] for call in move.call_args_list], [[-48, -48], [-14, -30]])
+
+    def test_private_bridge_pointer_decodes_wrapped_negative_bias(self):
+        observe = mock.Mock(return_value={"status": "profile_bound", "profile": 0,
+                                          "bridge": {"frame": 0, "mouse_arc": 0, "frame_angle_bias": 65376},
+                                          "mouse_poll": {"x": 2160, "y": 100}})
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move") as move:
+            result = capture.private_bridge_point({"DISPLAY": ":123"}, 789, [160, 100], observe)
+        self.assertTrue(result["target_verified"])
+        move.assert_not_called()
+
+    def test_private_bridge_pointer_rejects_invalid_request_or_unbound_feedback(self):
+        with mock.patch.object(capture, "private_mouse_locked") as locked:
+            for target in ([], [1], [1, 2, 3], [-1, 0], [320, 0], [0, 200], [1.0, 0], [True, 0]):
+                with self.assertRaises(ValueError):
+                    capture.private_bridge_point({"DISPLAY": ":123"}, 789, target, mock.Mock())
+            for limit in (0, 33, True):
+                with self.assertRaises(ValueError):
+                    capture.private_bridge_point({"DISPLAY": ":123"}, 789, [160, 100], mock.Mock(), limit)
+            locked.assert_not_called()
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move") as move:
+            with self.assertRaisesRegex(RuntimeError, "bound original bridge"):
+                capture.private_bridge_point({"DISPLAY": ":123"}, 789, [160, 100], lambda: {})
+            move.assert_not_called()
+
+    def test_private_bridge_pointer_is_bounded_and_rejects_camera_changes(self):
+        state = {"status": "profile_bound", "profile": 0,
+                 "bridge": {"frame": 45, "mouse_arc": 89, "frame_angle_bias": 200},
+                 "mouse_poll": {"y": 150}}
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move", return_value={}) as move:
+            result = capture.private_bridge_point({"DISPLAY": ":123"}, 789, [125, 118], lambda: state, limit=1)
+        self.assertFalse(result["target_verified"])
+        move.assert_called_once()
+        changed = dict(state, bridge=dict(state["bridge"], frame=46))
+        with mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture, "private_move", return_value={}) as move:
+            with self.assertRaisesRegex(RuntimeError, "changed profile or camera"):
+                capture.private_bridge_point({"DISPLAY": ":123"}, 789, [125, 118], mock.Mock(side_effect=[state, changed]))
+            move.assert_called_once()
+
     def test_private_recapture_releases_moves_and_recaptures_without_clicking(self):
         env = {"DISPLAY": ":123"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
@@ -564,6 +618,31 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.main()
         self.assertEqual(stopped.exception.code, 0)
         self.assertEqual(run.call_args.args[0].steer_after, [(35.0, 45)])
+
+    def test_cli_preserves_pointer_schedule(self):
+        argv = ["capture", "disc", "output", "--relative-mouse", "--click-after", "30",
+                "--point-after", "35", "125", "118"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].point_after, [(35.0, [125, 118])])
+
+    def test_cli_rejects_invalid_pointer_schedule(self):
+        cases = [["--point-after", "35", "125", "118"],
+                 ["--relative-mouse", "--click-after", "40", "--point-after", "35", "125", "118"],
+                 ["--relative-mouse", "--click-after", "30", "--point-after", "35", "320", "118"],
+                 ["--relative-mouse", "--click-after", "30", "--point-after", "60", "125", "118"],
+                 ["--relative-mouse", "--click-after", "30", "--point-after", "35", "125", "118", "--point-after", "34", "125", "118"],
+                 ["--relative-mouse", "--click-after", "30", "--point-after", "35", "125", "118", "--steer-after", "35", "45"]]
+        for arguments in cases:
+            with self.subTest(arguments=arguments), \
+                    mock.patch.object(sys, "argv", ["capture", "disc", "output", *arguments]), \
+                    mock.patch.object(capture, "capture") as run, mock.patch.object(sys, "stderr", io.StringIO()):
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
 
     def test_cli_rejects_invalid_steering_schedule(self):
         cases = [["--steer-after", "35", "45"],

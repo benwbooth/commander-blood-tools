@@ -279,6 +279,18 @@ feedback, changed profiles, or an exhausted iteration limit cannot report
 success. All 65 capture-tool tests pass. This is still startup input evidence,
 not a later original-game route or a resolution of numeric chatter.
 
+Capture 39 uses bounded `--point-after` relative movements within the current
+bridge view, then ordinary clicks on the console and Honk row. Its final
+screenshot shows the original `JOUER / EXPLICATIONS` menu. Capture 40 follows
+that route and clicks `JOUER`: the original executable changes from profile
+zero to profile one (SCRIPT2) at the 109.601-second observation. The diagnostic
+does not write guest memory or count as anthology coverage. The `time` address
+still resolves to the first word of the live DEB allocation, not VAR; numeric
+chatter remains unresolved. Pointer feedback rejects changed camera/profile
+identity, invalid observations, and exhausted bounds. All 71 capture-tool
+tests pass. Captures now preserve the exact hashed recorder source at startup;
+capture 39 also retains its hash-matching recorder snapshot.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control
@@ -473,6 +485,18 @@ The first attempt used the wrong later Corpo checkpoint; the second asked for
 an unavailable main-menu `talk` row. Both remain failed attempts. The successful
 route selects only offered rows and does not take the secret/Rondo branch.
 This addition is after `audit-v7` and is not included in that report's totals.
+
+`cb-morning-no-perfume-v1` branches from Morning's earned recruitment before
+buying perfume. It chooses `no` at Honk's switch-off request, follows the
+authored recovery and TV-memory sequence, and learns Mastachok normally. All
+48 displayed sites match source, including 41 Morning COD sites, and the
+17-manifest save lineage passes. The slot-zero save at boundary 22,064 has
+SHA-256 `e6405b6b128ee559cfb1b505b0e296335878a489c26bc62fc9c5cc9919706a89`.
+This is also after `audit-v7`. Carrying perfume already selects the guard's
+gift response; merely avoiding its inventory inspection does not retain the
+code-topic path. The no-perfume route instead opens the direct code menu,
+without the dance-password prelude. Those observed entry differences are
+kept distinct from the still-running guard-topic replay.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
