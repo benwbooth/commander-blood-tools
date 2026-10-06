@@ -1,0 +1,8 @@
+# Second Izwalito contact: accept the offered delivery credit, then leave.
+park 4 0
+wait 25
+click 216 72
+wait 120
+click 80 88
+choose teleport
+wait 300

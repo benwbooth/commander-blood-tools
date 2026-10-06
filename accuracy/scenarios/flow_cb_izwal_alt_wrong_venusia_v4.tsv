@@ -1,0 +1,68 @@
+# Clear the pending Scruter K warning while still legitimately on Corpo.
+# At this boundary the phone spans x=127..163, y=102..131.
+park 316 45
+wait 20
+click 145 118
+wait 200
+# Meet Morning Oil on the already revealed Magnus.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 270 49
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose bye_bye
+wait 250
+# Answer Scruter Mac's coded message, then Bug Deluxe's advertisement.
+# After Morning Oil the observed phone spans x=102..139, y=102..132.
+park 316 45
+wait 20
+click 130 118
+wait 200
+click 130 118
+wait 200
+# Travel to the advertised Venusia and buy the offered joint of murffalo.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 83 11
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose yes
+choose food
+choose murffalo
+choose joint
+choose buy
+# The observed post-purchase murffalo selection closes the shop dialogue.
+choose murffalo
+wait 250
+# Return normally to Corpo and offer the purchased meat when asked.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 292 86
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+wait 300

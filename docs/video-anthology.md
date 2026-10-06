@@ -810,6 +810,22 @@ sites. These are site counts, not unique conversations or video durations.
 Kortland v4/v5 text witnesses included in this census still do not prove numeric
 audio correctness, as explained above.
 
+`cb-izwal-alt-wrong-venusia-v5` independently replays the fresh-game Commander
+Blood identity and credit request, clears the actual queued phone calls,
+buys the wrong joint of meat on Venusia, and delivers it to Izwalito. Three
+ordinary return visits then cover `corbis`, `corter`, and `corqua` with the
+credit still spent, including the observed chance-based credit hint. All 183
+displayed sites match source; 34 sites and 28 wordings are new versus
+`audit-v11`. `cb-izwal-alt-audit-v3/parent-review.json` independently verifies
+the fresh-game witness, all six source and scenario hashes, endpoint, and
+saves. Slot zero at frame 41873 has SHA-256
+`5a435aef16a87e675a55dd275c7ad6e7363b1a991696447630b6ee873a5a0061`.
+The run has 42,009 frames and 2,962 events, ending with `A11=3`, `trak4=1`,
+`zob1=0`, credit held by Bug Deluxe, and the purchased meat held by Izwalito.
+V4 failed after the purchase because the next requested shop category was no
+longer offered; it remains excluded. Recovery, Bossanova, and an ending
+continuation for this branch are still open.
+
 The fourth Mamy gift slice adds energy/bionium v2 and medicine/technology v1.
 The first pair loads Jo's earned resupply save; the second loads the prior
 picture-gift save. Independent `bbb-optional-mamy-gifts-audit-v2/parent-review.json`
@@ -831,6 +847,27 @@ normal-route sites, with 2,563 unobserved-wording/dynamic sites, 442 unobserved
 duplicate-wording sites, and 599 unobserved control sites. CB is unchanged.
 Neither unique conversations nor complete alternative ending continuations
 are inferred from those site counts; rendering and completeness remain false.
+
+The fifth Mamy slice, nuclear/weapons v1 and crown/mummy v2, adds six new
+SCRIPT3 sites and six wordings. Independent review in
+`bbb-optional-mamy-gifts-audit-v3/parent-review.json` validates 81 distinct
+lineage manifests, source/input hashes, displayed text, transfers, effects,
+and normal saves with zero rejected presentations. Nuclear changes evolution
+310 to 510, halves the current population, and adds 200 aggression, but does
+not take the high-evolution reply in the same gift. Crown adds 200 energy and
+aggression; `B21` is set and later cleared. Mummy adds 100 energy and divides
+population 105 by 200 to zero, followed by ordinary growth to six. Weapons
+adds 100 aggression and sets `B21=1`. All four leave Mamy on Loviland and
+save with no active ending. Crown/mummy v1's misplaced Cancel clicks remain
+failed and excluded; no stat changes were injected to reach these branches.
+
+`output/game-flows/audit-v12` accepts 334 witnesses and excludes 137 failed,
+running, or legacy attempts. It includes the Oil greetings, both decoder
+decisions, the fifth Mamy slice, and the wrong-Venusia route. Successful
+lineages remain 72 CB and 99 BBB segments. CB has 1,569 successful-route and
+1,289 other normal-route sites; BBB has 3,013 and 331. Other unobserved/dynamic
+sites remain 1,542 CB and 2,542 BBB, in addition to duplicate-wording/control
+sites. Both completeness flags remain false; no new movies were rendered.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
