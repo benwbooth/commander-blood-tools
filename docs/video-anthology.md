@@ -518,6 +518,15 @@ sites with witnessed wording, 125 empty/control sites, and 1,763 other unresolve
 sites. BBB's counts remain unchanged. Source attribution and every save lineage
 are rechecked, but both flows remain incomplete and `render_ready` stays false.
 
+After that audit, `cb-bronko-topics-v1` branches from the earned Pterra save
+and revisits Moskito before recruiting Bronko. It explores weapons, robots,
+intelligence, energy, technology, retirement, creds, purchases, and murffalos
+through their offered menus. All 34 displayed sites match source, including
+28 Bronko BAS sites; its seven-manifest lineage passes. Slot zero at boundary
+8,143 has SHA-256
+`6bf1684f270cbc5b1630d9ef8e24e725fcea8343f8081d4ef6386ad1143b4684`.
+This witness is not yet included in `audit-v8` totals.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure
