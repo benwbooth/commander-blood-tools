@@ -161,6 +161,10 @@ through the actual Cancel row, completes the gift loop and enables descendant
 settlement (`bbb-smile-support-v5`). Gluk subsequently occupies Cyberland.
 His first normal visit there completes the ship-price and weapons-demand
 conversation (`bbb-gluk-first-v2`); both continuations have new witnessed saves.
+A third Marakas visit includes his nightmare dialogue and buys replacement
+food, then exits through Cancel and saves with food aboard
+(`bbb-marakas-food-again-v2`). Daddy's ensuing weapons trade is still being
+reconstructed; the food purchase alone does not prove that trade.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -204,6 +208,10 @@ The next cryobox visits assign the recovered memories to TV two and return
 Morning to the Ark (`cb-morning-memories-v3`). Opening TV and choosing channel
 two actually decodes all twelve `match01` through `match12` clips. The panel
 then closes normally and the route saves with Morning located at Ark.
+Selecting Ark from the local Venusia menu and asking about Mastachok reveals
+its chart marker and completes Morning's follow-up in the same contact
+(`cb-morning-mastachok-v3`). The saved state has `B1 = 8` and `C1 = 1`.
+There is no additional goodbye choice on this witnessed path.
 
 This continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

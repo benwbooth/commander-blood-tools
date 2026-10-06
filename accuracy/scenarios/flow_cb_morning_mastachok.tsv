@@ -1,0 +1,9 @@
+# Select Ark from Venusia's local destination menu, then ask Morning for directions.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 99
+choose mastachok
+# The follow-up repair notice closes this same contact after directions are known.
+wait 500
