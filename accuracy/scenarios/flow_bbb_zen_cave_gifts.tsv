@@ -1,0 +1,22 @@
+# Seventh visit: obtain the clue and return the astronomy/harmony objects.
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+choose zen
+choose primate
+choose optics
+choose guitar
+choose bionium
+# The third object opens the letter puzzle in this same encounter.
+choose i
+choose d
+choose e
+choose a
+choose s
+wait 900
+park 4 45
+wait 25
+click 125 118
+wait 700

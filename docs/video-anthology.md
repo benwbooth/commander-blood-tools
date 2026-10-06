@@ -159,6 +159,17 @@ the original interpreter and authored Honk block, not a whole DOS playthrough;
 its input hashes and register-boundary observations are retained under
 `output/game-flows/oracles/bbb-honk-cave-pass-v8.json`.
 
+`bbb-zen-cave-gifts-v3` returns the optics, guitar, and one bionium to Super Zen,
+solves the letter puzzle in that same encounter, and receives Izwalito's call.
+Its saved endpoint has `A80=3`, `A81=6`, and Marakas aboard. The earlier v2
+attempt crashed in the native growth selector after the rescue and is not a
+valid predecessor. The original selector at `0x70b0` skips actors at the aboard
+sentinel; two added original-executable vectors reproduce that behavior and
+failed against the old implementation. The repaired selector passes all 128
+growth vectors and the full game-library suite (1,115 passed, 78 ignored).
+The successful replay records the binary transition explicitly; its save,
+scripts, assets, and earlier lineage remain hash-checked.
+
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
 and `bobg.hnm`), the normal Corpo jump, and Izwalito's first two conversations.

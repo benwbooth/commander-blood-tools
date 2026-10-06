@@ -135,6 +135,7 @@ def vectors(executable):
         for index, (field, value) in enumerate([
             (FLAGS, 0), (FLAGS, 1), (FLAGS, 4), (FLAGS, 13),
             (GROUP, 2), (GROUP, 0), (LOCATION, LOCATION_OFFSETS[1]),
+            (LOCATION, 0xFFFF),
         ]):
             state, directory = fixture()
             word(state, ACTOR_OFFSETS[1] + field, value)

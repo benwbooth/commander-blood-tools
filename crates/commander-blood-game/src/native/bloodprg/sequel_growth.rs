@@ -659,9 +659,12 @@ fn select_actors(
             continue;
         }
         let field = field(state, object.id, LOCATION_FIELD)?;
-        let Some(ScriptStateObjectReference::Object(location)) = state.object_reference(field)
-        else {
-            return Err(SequelGrowthError::InvalidLocation { actor: object.id });
+        let location = match state.object_reference(field) {
+            Some(ScriptStateObjectReference::Object(location)) => location,
+            // Original 0x70B0 rejects aboard: FFFF + 2 wraps to the zero high
+            // kind byte of the first VAR record, so its in-play test is false.
+            Some(ScriptStateObjectReference::Sentinel) => continue,
+            _ => return Err(SequelGrowthError::InvalidLocation { actor: object.id }),
         };
         if location != excluded_location && read(state, location, FLAGS_FIELD)? & IN_PLAY_FLAG != 0
         {
@@ -1104,7 +1107,7 @@ mod tests {
             assert_eq!(state.encode(), vector.state_after, "{}", vector.name);
             cases += 1;
         }
-        assert_eq!(cases, 126);
+        assert_eq!(cases, 128);
         assert_eq!(divide_errors, 18);
     }
 }
