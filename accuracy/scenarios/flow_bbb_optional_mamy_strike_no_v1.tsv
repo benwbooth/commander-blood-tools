@@ -1,0 +1,25 @@
+# Earned strike-calls parent: A61=6, A4=5, Mamy on Loviland.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose no
+wait 300
+# Revisit through the current destination to observe the A68=1 strike response.
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+wait 400

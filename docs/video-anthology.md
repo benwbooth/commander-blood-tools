@@ -947,6 +947,39 @@ menu, pixel, transfer, and effect evidence; independent parent review is in
 `branch-review-v13/report.json`. This closes the previously untested ordinary
 repurchase route, without calling other Mamy branches complete.
 
+The remaining-Mamy batch captures four distinct source cases:
+
+- `bbb-optional-mamy-nuclear-low-v1` gives the earned nuclear item at evolution
+  70. SCRIPT3 COD 24164/24196 precede the source-driven `A13=1` ending, not
+  the middle- or high-evolution gift responses. All seven ordered resources
+  in `31explonebul` play through the final `ppit08.hnm` closure, followed by
+  a clean native exit at SCRIPT2 COD 40691. The run records 4,832 frames,
+  321 events, and ten matched sites; it does not fabricate a terminal save.
+- `bbb-optional-mamy-strike-no-v1` declines insistence during the `A61=6`
+  negotiation, then revisits for the general-strike reply. Its closed save
+  has `A61=8`, `A68=1`, and all five credits retained. It records 8,009
+  frames, 348 events, and 19 matched sites. Slot zero at frame 7873 has
+  SHA-256 `8fb1b254188646635470ade674f4b531f26dc618de257bb5dd676e6eecb34106`.
+- `bbb-optional-mamy-strike-insist-v1` takes the other displayed answer,
+  triggering the strike at `A61=7`, `A68=1`, and `A65=1`, without spending
+  credits. It records 6,623 frames, 310 events, and 18 matched sites. Slot
+  zero at frame 6487 has SHA-256
+  `956436d4d315114c642c661e31c032df463f10d0fce3265f549476edc94750e0`.
+- `bbb-optional-mamy-perfume-no-credit-v1` visits from the earned second-ship
+  save with no credits or perfume. Choosing the stroll exposes COD 23537,
+  without acquiring perfume or changing the zero balance. It records 5,448
+  frames, 300 events, and 11 matched sites. Slot zero at frame 5312 has
+  SHA-256 `c1f3c4e3c7cce8d18532231fb83fd4aa24e95de258528978156c4dc13d9e71bd`.
+
+`bbb-optional-mamy-remaining-audit-v1/final.json` and the independent
+`parent-review.json` validate 83 distinct lineage manifests, current
+source/input hashes, matching text, actual effects, saved endpoints, and the
+ordered failure sequence. Their union adds 26 sites and 25 distinct wordings.
+The pre-menu click interrupts shared strike sentence COD 21685 in both
+strike witnesses, so neither claims that sentence; a separate full-line
+follow-up remains necessary. The source/earned-save assessment also leaves
+the other listed guards open rather than declaring them unreachable.
+
 `output/game-flows/audit-v12` accepts 334 witnesses and excludes 137 failed,
 running, or legacy attempts. It includes the Oil greetings, both decoder
 decisions, the fifth Mamy slice, and the wrong-Venusia route. Successful
@@ -995,6 +1028,15 @@ BBB has 3,013 and 380. Other unobserved/dynamic sites remain 1,535 CB and
 2,515 BBB, in addition to duplicate-wording/control sites. Both completeness
 flags remain false. This snapshot includes the first inventory-preserving
 Blue Wave gift below, but not its ongoing later-visit continuations.
+
+`output/game-flows/audit-v14` accepts 359 witnesses and excludes 143 failed,
+running, or legacy attempts. CB has 1,569 successful-route and 1,299 other
+normal-route sites; BBB has 3,013 and 423. Other unobserved/dynamic sites
+remain 1,532 CB and 2,472 BBB, separate from duplicate-wording/control sites.
+Both completeness flags remain false. This snapshot includes all five Blue
+Wave bionium visits, the credit/ship/hint alternative, both CB recovery
+leaves, and the nuclear-low and strike Mamy leaves. It predates the no-credit
+perfume leaf and the ongoing retained-ring and early-ring continuations.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

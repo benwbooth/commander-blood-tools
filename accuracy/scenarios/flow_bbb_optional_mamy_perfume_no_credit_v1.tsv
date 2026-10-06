@@ -1,0 +1,21 @@
+# Earned second-ship parent: A4=0, perfume absent, Mamy visit two.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose stroll
+wait 200
+# Ten inventory items; stroll does not add the writing ticket.
+click 200 151
+wait 200

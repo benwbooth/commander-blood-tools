@@ -1,0 +1,22 @@
+# Earned ring-gift parent: Mamy evolution 70, nuclear aboard, fifth visit.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose refuse
+choose nuclear
+wait 200
+# Seven remaining items: close GIVE, then allow the source-driven A13=1 ending.
+click 200 134
+wait 2000
