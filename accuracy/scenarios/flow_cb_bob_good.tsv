@@ -1,0 +1,12 @@
+# Bob is first in the ten-entry chapter-four cryobox.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 45
+choose good_
+choose good_
+choose good_
+choose good_
+choose bye_bye
+wait 300

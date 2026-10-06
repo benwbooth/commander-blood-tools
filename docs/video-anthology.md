@@ -82,6 +82,11 @@ not grant any doses or change the game runtime. Planning is not a normal-flow
 witness or original-executable parity
 proof: replay the emitted actions through ordinary Jo entry and inspect the
 resulting dialogue, global `vbio`, inventory, and saved checkpoint.
+The planner's timing argument must match the witnessed starting `vbio` value.
+Reusing a zero-start plan at two doses caused an early minigame exit in
+`bbb-jo-paul-resupply-v1`; that interrupted attempt is excluded. Always check the
+planner's actual returned total, which can be below its requested target, before
+replaying the generated inputs.
 
 ```sh
 target/release/alien-first-frame-trace amer \
@@ -336,6 +341,12 @@ scene for assembly. No curse or channel state was assigned externally.
 then leaves through the displayed farewell. The authored `brouil.hnm` request
 decodes and closes normally. The run saves with 11 decoded resources and 21
 fully revealed sites; it is the distinct alternative to the main route's refusal.
+`cb-bob-good-v2` follows Bob's chapter-four `good_` topic through four ordinary
+selections and leaves normally. It presents the Ark-status and flattery lines,
+with ten decoded resources and eight fully revealed sites. The BAS source's
+`arch01.hnm` request does not decode on this route, and no matching imported
+asset exists. This absence is recorded rather than replaced with another Ark
+clip or called globally unreachable.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
