@@ -169,6 +169,9 @@ failed against the old implementation. The repaired selector passes all 128
 growth vectors and the full game-library suite (1,115 passed, 78 ignored).
 The successful replay records the binary transition explicitly; its save,
 scripts, assets, and earlier lineage remain hash-checked.
+`bbb-marakas-rondo-v1` then selects Marakas from the cryobox, sends him to the
+unoccupied Rondoland, and visits him there. The `force` response presents his
+gratitude exchange. The saved result confirms Marakas at Rondoland and `A81=7`.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

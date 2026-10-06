@@ -1,0 +1,23 @@
+# Marakas is first in the nine-entry cryobox after the cave rescue.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 47
+choose Rondo
+wait 800
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 281 40
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+choose force
+wait 700
