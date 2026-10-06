@@ -1,0 +1,19 @@
+# SCRIPT3: hear Bronko's airport lead, then visit the Gluxx family.
+click 230 124
+wait 40
+click 100 88
+wait 400
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 76 125
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 500

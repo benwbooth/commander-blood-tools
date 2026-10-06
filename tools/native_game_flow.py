@@ -104,6 +104,15 @@ def scene_state(s):
                                ("completed_overlays", "invocations", "loaded_scene_resource")})
 
 
+def revealed_text_sites(state):
+    # Navigation text may retain the previous COD offset after its actor closes.
+    if (state["profile"] is None or not state["actor"]
+            or not state["lifecycle"]["active"] or not state["text"]["complete"]):
+        return set()
+    return {(state["profile"], domain, state[f"{domain}_site"])
+            for domain in ("cod", "bas") if state[f"{domain}_site"] is not None}
+
+
 class FlowRecorder:
     def __init__(self, output, checkpoint=None, writable=None):
         self.output = output
@@ -164,8 +173,7 @@ class FlowRecorder:
             if profile is not None and site is not None:
                 key = (profile, domain, site)
                 self.published_sites.add(key)
-                if state["text"]["complete"]:
-                    self.revealed_sites.add(key)
+        self.revealed_sites.update(revealed_text_sites(state))
         video = state["active_video"]
         decoded = s["video"]["decoded_frame_count"]
         # A retained/loaded name is not evidence that a source frame was decoded.
@@ -202,6 +210,7 @@ class FlowRecorder:
                     decoded_video_resources=sorted(self.played),
                     published_sites=sites(self.published_sites),
                     fully_revealed_sites=sites(self.revealed_sites),
+                    text_site_attribution="fully rasterized text with an active actor presentation",
                     completed_saves=self.completed_saves,
                     loaded_checkpoint=self.loaded_checkpoint,
                     final_state=self.previous, final_objects=list(self.objects.values()))

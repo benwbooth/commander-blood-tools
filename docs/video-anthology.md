@@ -77,7 +77,11 @@ expectation, incomplete action lists remain errors.
 
 The flow keeps subtitle and inline-menu text separate. A fully revealed text
 site requires the native glyph-raster audit to match, not just a published VM
-offset. Loaded DESCRIPT bindings and videos with observed decoded frames are
+offset. It also requires a live actor presentation: navigation captions can
+retain an old COD offset after the dialogue closes. Older manifests without
+`text_site_attribution` predate that guard; their raw events must be re-audited
+before using the summary counts for coverage, without rewriting their hashed
+lineage. Loaded DESCRIPT bindings and videos with observed decoded frames are
 separate evidence. Frame boundaries and wall-clock observation times are not
 video presentation timestamps. A native route witness is not a DOS-parity proof.
 Route-exit credits do not establish that the story ending was reached.
@@ -173,6 +177,11 @@ the second (`bbb-daddy-loans-v1`). The conversation closes and saves with
 The fifth visit answers `good`, plays the exercise clip, and leaves the gift
 menu to receive the scripted repayment (`bbb-daddy-repayment-v1`). Its new
 checkpoint has ten credits (`A4 = 10`) and `A17 = 6`.
+Buying food on Marakas's fourth visit and giving it to Daddy on his sixth
+successfully obtains replacement weapons (`bbb-daddy-food-weapons-v3`). Both
+visits include their scripted nightmare scenes. Leaving Daddy's gift menu also
+triggers another repayment after the food purchase lowered the balance below
+ten; the witnessed endpoint has weapons aboard and nineteen credits.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -230,6 +239,10 @@ Answering that call completes the customs dialogue and the normal SCRIPT3
 transition (`cb-scrut-customs-v1`). The new checkpoint is genuinely in SCRIPT3;
 Bronko and Scruter Jo are aboard, Morning is on the Ark, and the next quest
 stage has not been substituted by a prepared chapter state.
+The following cryobox contact completes Bronko's airport lead and first
+aboard conversation. Travelling to Ekatomb then presents the Gluxx children's
+kidnapping report and returns to the bridge (`cb-bronko-gluxx-news-v1`), with
+another normal save. This is the start of SCRIPT3's investigations, not its end.
 
 This continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

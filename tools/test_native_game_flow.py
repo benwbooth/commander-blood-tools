@@ -7,7 +7,8 @@ import struct
 import unittest
 
 from native_game_flow import (FlowRecorder, normal_actions, route_source, saved_checkpoints,
-                             scene_state, verified_predecessor, verify_route_completion)
+                             scene_state, revealed_text_sites, verified_predecessor,
+                             verify_route_completion)
 from video_anthology import digest
 
 
@@ -236,6 +237,37 @@ class FlowTests(unittest.TestCase):
         item["semantic"]["video"]["decoded_frame_count"] = 1
         recorder.record(item)
         self.assertEqual(recorder.summary()["decoded_video_resources"], ["BOB.HNM"])
+
+    def test_navigation_caption_cannot_complete_the_retained_dialogue_site(self):
+        recorder = FlowRecorder(io.StringIO())
+        item = frame()
+        recorder.record(item)
+        item["frame"] = 1
+        semantic = item["semantic"]
+        semantic["presentation"].update(active_actor_presentation=None, active=0)
+        semantic["subtitle_bytes"] = list(b"planet ekatomb")
+        semantic["presentation"]["text_state"]["subtitle_reveal_cursor"] = 14
+        recorder.record(item)
+        self.assertTrue(recorder.previous["text"]["complete"])
+        self.assertEqual(recorder.summary()["published_sites"],
+                         [dict(profile=1, domain="cod", offset=42)])
+        self.assertEqual(recorder.summary()["fully_revealed_sites"], [])
+
+    def test_revealed_site_attribution_requires_actor_activity_profile_and_completion(self):
+        item = frame()
+        item["semantic"]["presentation"]["text_state"]["subtitle_reveal_cursor"] = 5
+        active = scene_state(item["semantic"])
+        for mutate in (lambda s: s.update(actor=None),
+                       lambda s: s["lifecycle"].update(active=0),
+                       lambda s: s.update(profile=None),
+                       lambda s: s["text"].update(complete=False)):
+            state = copy.deepcopy(active)
+            mutate(state)
+            with self.subTest(state=state):
+                self.assertEqual(revealed_text_sites(state), set())
+        self.assertEqual(revealed_text_sites(active), {(0, "cod", 42)})
+        active.update(cod_site=None, bas_site=100)
+        self.assertEqual(revealed_text_sites(active), {(0, "bas", 100)})
 
     def test_inline_dialogue_is_not_replaced_by_the_stale_subtitle_buffer(self):
         recorder = FlowRecorder(io.StringIO())
