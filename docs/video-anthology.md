@@ -592,6 +592,10 @@ broadcast before saving. The witnessed checkpoint has `A63=8`, `B94=1`, three
 credits, and the guitar aboard, with 13 decoded resources and 86 fully revealed
 sites. V1 stalled on an unnecessary second call; v2 reached the reward but sent
 its save inputs during dialogue and has no checkpoint. Neither is a predecessor.
+`bbb-trump-guitar-v1` visits Crazyland, declines the repeat painting offer, and
+gives Trump the earned guitar. The ordinary save confirms the guitar with Trump
+and `B86=1`, with 12 decoded resources and 20 fully revealed sites. The arrival
+opens his encounter automatically; no extra actor click is sent during dialogue.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
