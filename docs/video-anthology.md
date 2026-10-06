@@ -317,6 +317,12 @@ gives the purchased nuclear item, and gives the guitar. The ship transfers
 aboard and the save has `A45 = 2`, `B50 = 1`, `B52 = 1`, and `B96 = 1`.
 Migrator has population 352 and evolution 340. Mig Burner remains at Loneland;
 the settlement flag is not counted as proof of a new colony.
+Emasculator's third and fourth visits (`bbb-emasculator-settlement-v2`)
+give writing, energy, and two separately earned bionium units. The fourth
+visit also earns optics. The saved endpoint has seven bionium remaining,
+Emasculator at population 320 and evolution 350, and `B35 = 1`. Rotator still
+shares Attroxcity and has not acquired the settlement participation flag;
+the fragment name is not evidence that a new colony exists.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
@@ -478,6 +484,12 @@ The normal Cyberock exam (`cb-cyberquizz-dork-v1`) answers the first five
 questions correctly and teleports the diploma aboard. Its save retains the
 DORK item aboard and the five-answer score; later exam questions and failed
 exam branches remain separate coverage work.
+Returning to Hom with the diploma (`cb-hom-oddland-v1`) earns the scrambler
+and completes Jerry's black-hole call, followed by Cyberion's third message.
+The save has `G1 = 2`, the scrambler aboard, and the Ark's location at Oddland.
+However, the observed profiles remain SCRIPT1/2/3: arrival has not triggered
+SCRIPT4, and the camera reports an unsupported black-hole target. This is a
+partial route checkpoint, not a verified chapter crossing.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

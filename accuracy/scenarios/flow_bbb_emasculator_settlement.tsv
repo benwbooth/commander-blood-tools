@@ -1,0 +1,37 @@
+# Supply Emasculator's colony through the third ordinary Attrox visit.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 235 117
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose reading
+choose ship
+choose writing
+choose bionium
+choose energy
+wait 500
+# Four items remain; bionium returns to the cryobox only on the bridge.
+click 200 120
+wait 500
+# Fourth visit: hear the scene and give another genuinely earned bionium.
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+choose didn't_see
+choose bionium
+wait 500
+# Keep the optics reward and close the five-item list.
+click 200 125
+wait 700

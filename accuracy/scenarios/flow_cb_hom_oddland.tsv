@@ -1,0 +1,33 @@
+# Return with the earned DORK diploma and collect Hom's brain scrambler.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 59 36
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose click
+choose teleport
+wait 600
+# Hear Jerry's black-hole coordinates and any queued Cyberion message.
+park 4 45
+wait 20
+click 125 118
+wait 700
+click 125 118
+wait 500
+# Cross the newly revealed Oddland black hole.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 132 34
+wait 40
+click 250 125
+wait 1200
