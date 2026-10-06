@@ -1,0 +1,66 @@
+# Optional SCRIPT5 aftermath conversations from the Big Band crew checkpoint.
+# Ekatomb: Daddy and his rescued children.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 76 125
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 600
+# Corpo: Izwalito prepares to leave for the party.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 292 86
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 500
+# Moskito: Emasculator closes the shop.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 38 135
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 500
+# Eden: Amigo remains at the closed bar.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 16 46
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 500
+# Kult: Scruter Mac controls access to the renamed planet.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 222 108
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 900

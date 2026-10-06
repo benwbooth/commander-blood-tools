@@ -292,6 +292,12 @@ receiver from the Big Band arrival checkpoint. Bronko's wedding exchange and
 the three short responses are observed, with all four still aboard at the
 normal save. The run has 24 decoded resources and 21 fully revealed sites.
 The earlier v1 used the wrong cryobox hit location and is excluded.
+`cb-party-planets-v1` follows with ordinary visits to Ekatomb, Corpo, Moskito,
+Eden, and Kult. Daddy's family thanks, Izwalito's departure, Emasculator's shop
+closure, Amigo's closed-bar conversation, and Scruter Mac's pilgrimage/history
+dialogue are all observed. The saved checkpoint has Daddy, Izwalito, and
+Emasculator at Trashlando, Amigo still at the bar, and Scruter Mac at Kult.
+The run has 34 decoded resources and 33 fully revealed text sites.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
