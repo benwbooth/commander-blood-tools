@@ -1,0 +1,23 @@
+# Visit Erazor and send Bronko from the fourth of nine aboard entries.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 125 16
+wait 40
+click 250 125
+wait 300
+park 4 45
+wait 20
+click 230 124
+wait 40
+click 100 82
+choose YES
+wait 500
+# Meet Bronko locally so he becomes an ordinary phone contact.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 500

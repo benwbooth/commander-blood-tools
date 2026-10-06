@@ -1,0 +1,18 @@
+# Contact Bronko on Erazor through the restored destination view.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 500
+# Answer the pending Cyberion call; this removes Ulikan from the phone list.
+park 4 45
+wait 20
+click 125 118
+wait 500
+# The known phone contacts are now Bug Deluxe and Bronko.
+click 230 104
+wait 40
+click 100 99
+choose teleport
+wait 500

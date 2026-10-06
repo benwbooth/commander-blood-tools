@@ -288,6 +288,13 @@ argument, and chooses `take_offer` (`bbb-gluk-bionium-delivery-v1`). The game
 plays both `flitutr.hnm` and `explbleu.hnm`, consumes the ten bionium, and saves
 with `A29 = 2`, `A31 = 1`, and `B11 = 1`. Migrator and Mig Burner are now
 actually located at Loneland; their later quests remain to be played.
+Another ordinary Jo visit (`bbb-jo-resupply-v1`) earns ten fresh bionium after
+Gluk consumed the first supply. Migrator's first Lone visit then gives one unit
+and answers `yes` to Honk's conscience question (`bbb-migrator-bionium-v1`).
+The illness montage plays, and the witnessed save has `A34 = 1`, `A35 = 1`,
+nine bionium, Migrator's population at five, and medicine still aboard. The
+earlier inventory-placement-only anthology chapters are not substitutes for
+this ordinary-playthrough evidence.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
@@ -415,6 +422,17 @@ and then recovering Scruter Mac's body (`cb-scruter-recovery-v2`). Both finish
 normally and the save retains Anna and the body aboard. The second local menu
 row is Ark, not a second character: the failed v1 selected that row and is not
 used as a predecessor.
+At Erazor, the fourth cryobox row offers Bronko's mission. Accepting `YES`
+(`cb-bronko-erazor-v1`) saves with Bronko on Erazor and `brk = 1`. The surface
+clicks later in that fragment did not start a contact: the destination sprite
+was inactive after the cryobox conversation. They are not counted as a visit.
+The next normal-load continuation (`cb-bronko-transmitter-v1`) enters Erazor,
+hears Bronko's local report, answers the pending Cyberion call, then calls
+Bronko from the phone list and gives him the transmitter. The save retains
+the transmitter with Bronko and `trak1 = 1`; `fish` and `vari` remain zero.
+The restored destination sprite is active after loading. This still needs a
+continuous final-build replay and original-runtime comparison before treating
+the earlier inactive-sprite behavior as normal gameplay.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
