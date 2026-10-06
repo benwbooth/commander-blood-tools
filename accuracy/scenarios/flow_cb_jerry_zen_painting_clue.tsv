@@ -1,0 +1,35 @@
+# Answer Jerry's post-crossing call, then visit the Shark.
+park 4 45
+wait 25
+click 125 118
+wait 600
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 236 11
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 700
+# Ask Super Zen to remove the curse; he requests the Great Yolk's portrait.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 179 81
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose hope
+wait 800

@@ -343,6 +343,11 @@ The next local contact (`bbb-izwalito-technology-v1`) completes Izwalito's
 technology sale. The witnessed save has the technology aboard, `A60 = 5`,
 five credits, and seven bionium. No gift-menu exit or extra choice is required
 on this particular quest conversation.
+The next Super Zen visit (`bbb-zen-second-telepathy-v2`) chooses `no` in his
+word game and completes both technology-assisted visions. The save has
+`A53 = 4`, `A60 = 5`, and two bionium: the authored five-unit cost is observed.
+The first attempt appended a Honk contact that closed before its expected
+dialogue; that failed attempt is not used as a predecessor.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
@@ -522,6 +527,11 @@ topics. The full Crazystone coordinates are presented, `zen = 1`, and the
 conversation closes to a witnessed save. The curse is still active. Earlier
 attempts switched away from the temporary sorcerer topic or selected it once
 too often; those failed attempts are not predecessor checkpoints.
+Answering Jerry's call and visiting the Shark
+(`cb-jerry-zen-painting-clue-v1`) presents the Vistar lead. The subsequent
+Crazystone visit chooses `hope` and completes Super Zen's portrait request,
+revealing Vista. The save has Super Zen at Trashlando, awaiting the painting;
+the curse remains active and the portrait has not yet been obtained.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

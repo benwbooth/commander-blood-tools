@@ -1,0 +1,20 @@
+# Return with the purchased technology and seven earned bionium.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 179 81
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose no
+wait 900
