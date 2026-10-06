@@ -433,6 +433,10 @@ The saved checkpoint verifies all five transfers, `B79=5`, Blue Wave's first
 encounter and 1,000 energy, with the ring still aboard. The run observes
 29 decoded resources and 51 fully revealed sites; awakening Blue Wave still
 requires the mummy and ring sequence.
+`bbb-kam-mummy-v1` visits Betakam on Bonus and accepts his ordinary offer.
+The saved endpoint has the mummy aboard, five credits, and the ring still
+available. Its 11 decoded resources and seven fully revealed sites are a
+verified continuation from the five-gift checkpoint.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
