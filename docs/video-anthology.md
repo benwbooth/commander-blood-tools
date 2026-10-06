@@ -335,6 +335,10 @@ future/Plato explanation plays, and he leaves for Trashlando. Super Zen's
 fourth Crazyland visit then accepts the word game and completes the telepathic
 montage. The saved endpoint has `A53 = 2`, `A60 = 0`, seven bionium, and
 Marakas at Trashlando, enabling the disappearance investigation.
+The next three Izwalito contacts choose `yes`, then `lie`, and finish the
+investigation dialogue (`bbb-izwalito-missing-marakas-v1`). Answering Super
+Zen's resulting call advances `A60` to four while `A53` remains two. The normal
+save retains six credits and seven bionium; technology has not yet been bought.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.

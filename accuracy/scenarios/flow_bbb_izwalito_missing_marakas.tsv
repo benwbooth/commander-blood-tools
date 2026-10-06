@@ -1,0 +1,37 @@
+# Visit Izwalito after the first telepathic vision removes Marakas.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 35 110
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose yes
+wait 600
+# Next visit: hear the full lie response and his drinking scene.
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+choose lie
+wait 600
+# Third visit advances the investigation and queues Super Zen.
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+wait 600
+park 4 45
+wait 25
+click 125 118
+wait 600
