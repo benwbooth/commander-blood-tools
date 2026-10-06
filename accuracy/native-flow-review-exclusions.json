@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "exclusions": [
+    {
+      "manifest_sha256": "b6ac2360cdf86287289ea747bd70073384411f2a4051cd4f963abb9698b26ced",
+      "reason": "Papy strike OK debits 53 credits versus 17 in the original whole-scene review; excluded from normal-route coverage and checkpoint ancestry.",
+      "review": {
+        "path": "output/game-flows/bbb-optional-papy-strike-audit-v1/original-scene-review.json",
+        "sha256": "85abe0fcf4136fa8a6779c22411582c64b04ee1bf02700743dc11effbc9c3094"
+      }
+    }
+  ]
+}

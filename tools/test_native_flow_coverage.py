@@ -1,18 +1,152 @@
 import copy
+import hashlib
 import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from native_flow_coverage import (check_lineages, inline_template, join_sites, lineage_segments,
+import native_flow_coverage
+import native_game_flow
+from native_flow_coverage import (build, check_lineages, inline_template, join_sites, lineage_segments,
                                   matches_text, read_witness, report_markdown, safe_child, scan_events, wording)
 from native_game_flow import FlowRecorder
-from test_native_game_flow import frame
+from test_native_game_flow import frame, write_review_policy
 from video_anthology import digest
 
 
 class CoverageTests(unittest.TestCase):
+    def reviewed_fixture(self, root):
+        flows, catalog = root / "flows", root / "catalog"
+        flows.mkdir()
+        catalog.mkdir()
+        (catalog / "catalog.json").write_text("{}\n")
+        rows, names, sites = {}, {}, {}
+        definitions = [("base", None, "cb", None), ("excluded", "base", "cb", None),
+                       ("descendant", "excluded", "cb", "cb_concert"),
+                       ("sibling", "base", "cb", None), ("cb_success", "base", "cb", "cb_concert"),
+                       ("bbb_success", None, "bbb", "bbb_success")]
+        for offset, (name, parent, game, ending) in enumerate(definitions):
+            path = flows / name / "flow.json"
+            path.parent.mkdir()
+            manifest = dict(schema=1, fixture=name, game=game,
+                            status="observed_ending" if ending else "observed_route",
+                            provenance=dict(binary_sha256="binary", asset_manifest_sha256="assets", sources={}),
+                            observations=dict(final_state=dict(lifecycle={}), observed_frames=40,
+                                              loaded_checkpoint=bool(parent), decoded_video_resources=[]),
+                            checkpoints=[dict(slot=0, saved_at_frame=20)])
+            if parent:
+                manifest["predecessor"] = dict(manifest=str(names[parent]),
+                                               manifest_sha256=rows[names[parent]]["sha256"], slot=0)
+            path.write_text(json.dumps(manifest))
+            rows[path] = dict(path=path, sha256=digest(path), manifest=manifest,
+                              ending=dict(kind=ending) if ending else None,
+                              evidence=dict(loads=[dict(frame=10, slot=0)] if parent else [],
+                                            full={(1, "cod", offset): [dict(frame=12, text=name)]}))
+            names[name] = path
+            sites[game, 1, "cod", offset] = dict(game=game, profile=1, domain="cod", offset=offset,
+                record=None, text=name, inline_text=name, dynamic=False, witnesses=[], rejected_presentations=[])
+        # Identical wording must not leak coverage from a rejected witness either.
+        sites["cb", 1, "cod", 99] = dict(game="cb", profile=1, domain="cod", offset=99, record=None,
+            text="excluded", inline_text="excluded", dynamic=False, witnesses=[], rejected_presentations=[])
+        registry = root / "reviews.json"
+        policy = write_review_policy(registry, [rows[names["excluded"]]["sha256"]])
+        return flows, catalog, names, rows, sites, registry, policy
+
+    def test_review_lineages_propagate_without_changing_integrity_or_runtime_checks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            _, _, names, rows, _, _, policy = self.reviewed_fixture(Path(directory))
+            rejected = check_lineages(rows, policy)
+            self.assertEqual(set(rejected), {names["excluded"], names["descendant"]})
+            self.assertEqual(rejected[names["descendant"]]["reason"], "review_excluded_ancestor")
+            self.assertEqual(rejected[names["descendant"]]["exclusion"],
+                             rejected[names["excluded"]]["exclusion"])
+            manifest = rows[names["descendant"]]["manifest"]
+            manifest["provenance"]["binary_sha256"] = "new"
+            with self.assertRaisesRegex(ValueError, "runtime"):
+                check_lineages(rows, policy)
+            manifest["predecessor"]["runtime_update"] = dict(reason="verified repair",
+                previous_binary_sha256="binary", current_binary_sha256="new")
+            self.assertEqual(check_lineages(rows, policy), rejected)
+            manifest["predecessor"]["manifest_sha256"] = "tampered"
+            with self.assertRaisesRegex(ValueError, "manifest changed"):
+                check_lineages(rows, policy)
+
+    def test_review_filter_has_zero_contribution_preserves_siblings_and_binds_provenance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            flows, catalog, names, rows, sites, registry, policy = self.reviewed_fixture(root)
+            # Same raw manifest at another path must remain excluded.
+            renamed = flows / "renamed/flow.json"
+            renamed.parent.mkdir()
+            renamed.write_bytes(names["excluded"].read_bytes())
+            rows[renamed] = {**rows[names["excluded"]], "path": renamed}
+            before = {p: digest(p) for p in root.rglob("*") if p.is_file()}
+            with patch.object(native_game_flow, "REVIEW_EXCLUSIONS_PATH", registry), \
+                    patch.object(native_flow_coverage, "load_catalog", return_value=({}, sites, {})), \
+                    patch.object(native_flow_coverage, "read_witness", side_effect=lambda p, _: rows[p]):
+                result = build(flows, catalog, {"cb": names["cb_success"], "bbb": names["bbb_success"]},
+                               root / "audit")
+            denied = {names["excluded"], names["descendant"], renamed}
+            self.assertEqual({Path(row["path"]) for row in result["excluded"]}, denied)
+            self.assertEqual({Path(row["path"]) for row in result["witnesses"]}, set(rows) - denied)
+            self.assertFalse(any(Path(w["witness"]) in denied for site in result["sites"]
+                                 for w in site["witnesses"]))
+            for key in (("cb", 1, "cod", 1), ("cb", 1, "cod", 2), ("cb", 1, "cod", 99)):
+                self.assertEqual(sites[key]["status"], "unobserved_wording_or_dynamic_site")
+                self.assertEqual(sites[key]["witnesses"], [])
+            self.assertEqual(sites["cb", 1, "cod", 3]["status"], "witnessed_on_other_normal_route")
+            self.assertEqual(result["review_policy"], policy["provenance"])
+            self.assertEqual(hashlib.sha256(result["review_policy"]["snapshot"].encode()).hexdigest(),
+                             result["review_policy"]["sha256"])
+            self.assertEqual(result["recorder_sha256"], digest(native_game_flow.__file__))
+            self.assertEqual(result["auditor_sha256"], digest(native_flow_coverage.__file__))
+            self.assertEqual(before, {p: digest(p) for p in before})
+
+    def test_review_excluded_selected_success_fails_explicitly_before_output(self):
+        for selected in ("excluded", "descendant"):
+            with self.subTest(selected=selected), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                flows, catalog, names, rows, sites, registry, _ = self.reviewed_fixture(root)
+                with patch.object(native_game_flow, "REVIEW_EXCLUSIONS_PATH", registry), \
+                        patch.object(native_flow_coverage, "load_catalog", return_value=({}, sites, {})), \
+                        patch.object(native_flow_coverage, "read_witness", side_effect=lambda p, _: rows[p]):
+                    with self.assertRaisesRegex(ValueError, "selected successful leaf is review-excluded"):
+                        build(flows, catalog, {"cb": names[selected], "bbb": names["bbb_success"]}, root / "audit")
+                self.assertFalse((root / "audit").exists())
+
+    def test_coverage_entry_points_fail_closed_without_valid_review_registry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            registry = root / "reviews.json"
+            with patch.object(native_game_flow, "REVIEW_EXCLUSIONS_PATH", registry):
+                for content in (None, "{}", '{"schema":1,"exclusions":[{}]}'):
+                    if content is not None:
+                        registry.write_text(content)
+                    with self.subTest(content=content):
+                        with self.assertRaisesRegex(ValueError, "registry|entry"):
+                            check_lineages({})
+                        with self.assertRaisesRegex(ValueError, "registry|entry"):
+                            build(root, root, {}, root / "audit")
+                    self.assertFalse((root / "audit").exists())
+
+    def test_review_registry_change_during_audit_prevents_publication(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            flows, catalog, names, rows, sites, registry, _ = self.reviewed_fixture(root)
+
+            def read(path, _sources):
+                registry.write_text('{"schema":1,"exclusions":[]}')
+                return rows[path]
+
+            with patch.object(native_game_flow, "REVIEW_EXCLUSIONS_PATH", registry), \
+                    patch.object(native_flow_coverage, "load_catalog", return_value=({}, sites, {})), \
+                    patch.object(native_flow_coverage, "read_witness", side_effect=read):
+                with self.assertRaisesRegex(ValueError, "registry changed during audit"):
+                    build(flows, catalog, {"cb": names["cb_success"], "bbb": names["bbb_success"]}, root / "audit")
+            self.assertFalse((root / "audit").exists())
+
     def events(self, records):
         output = io.StringIO()
         recorder = FlowRecorder(output)

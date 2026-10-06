@@ -38,6 +38,19 @@ asset manifest, recorder, scripts, and output evidence. Actual assets are checke
 against the import manifest before the run. A failed route stays failed; there
 is no fallback to forced contacts or prepared inventory.
 
+Recorded completion is not itself semantic acceptance.
+`accuracy/native-flow-review-exclusions.json` binds reviewed exclusions to raw
+manifest SHA-256 values, with a reason and supporting review hash. The recorder
+rejects those predecessors and their descendants; the coverage builder removes
+their contributions before joining sites, including duplicate-wording credit.
+Renaming a capture or declaring a runtime update cannot bypass the exclusion.
+Missing or malformed policy fails closed. New records/audits embed the exact
+policy snapshot and hash separately from game-source provenance; coverage also
+hashes its imported recorder helper. Historic manifests and saves are untouched.
+The initial entry excludes the independently reviewed Papy strike-payment
+diagnostic, not unrelated branches. The 53 recorder/coverage tests and 104
+parameterized subtests pass, including unaffected siblings and immutable inputs.
+
 Normal-flow scenarios reject `contact`, `teleport`, and `alien` injection commands.
 They also reject observed save loads without predecessor validation and the CB
 script cheat menu. `choose LABEL` waits for a uniquely matching, rendered,

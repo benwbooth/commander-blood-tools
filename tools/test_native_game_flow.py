@@ -1,16 +1,33 @@
 import copy
+from contextlib import nullcontext
+import hashlib
 import io
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import struct
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
+import native_game_flow
 from native_game_flow import (ActionRecorder, BBB_SUCCESS_ENDING_OFFSET, BBB_SUCCESS_SEQUENCES,
                              CB_CONCERT_SEQUENCES, FlowRecorder, normal_actions, route_source, saved_checkpoints,
                              scene_state, revealed_text_sites, verified_predecessor,
-                             verify_route_completion)
+                             verify_route_completion, load_review_exclusions, record_route)
 from video_anthology import digest
+
+
+def review_entry(manifest_hash):
+    return dict(manifest_sha256=manifest_hash, reason="reviewed fixture anomaly",
+                review=dict(path="fixture-review.json", sha256="a" * 64))
+
+
+def write_review_policy(path, hashes):
+    path.write_text(json.dumps(dict(schema=1, exclusions=[review_entry(value) for value in hashes]),
+                               indent=2) + "\n")
+    return load_review_exclusions(path)
 
 
 def frame(number=0):
@@ -38,6 +55,141 @@ def frame(number=0):
 
 
 class FlowTests(unittest.TestCase):
+    def test_review_registry_is_hash_bound_and_has_a_standalone_snapshot(self):
+        policy = load_review_exclusions()
+        self.assertEqual(list(policy["entries"]), [
+            "b6ac2360cdf86287289ea747bd70073384411f2a4051cd4f963abb9698b26ced"])
+        entry = next(iter(policy["entries"].values()))
+        self.assertEqual(entry["review"], dict(
+            path="output/game-flows/bbb-optional-papy-strike-audit-v1/original-scene-review.json",
+            sha256="85abe0fcf4136fa8a6779c22411582c64b04ee1bf02700743dc11effbc9c3094"))
+        provenance = policy["provenance"]
+        self.assertEqual(hashlib.sha256(provenance["snapshot"].encode()).hexdigest(), provenance["sha256"])
+        self.assertEqual(digest(provenance["path"]), provenance["sha256"])
+
+    def test_review_registry_rejects_missing_malformed_and_invalid_digests(self):
+        valid = dict(schema=1, exclusions=[review_entry("b" * 64)])
+        invalid = ["{", "null", "[]", json.dumps(dict(schema=True, exclusions=[])),
+                   '{"schema":2,"schema":1,"exclusions":[]}',
+                   '{"schema":1,"exclusions":[],"exclusions":[]}',
+                   json.dumps(dict(schema=2, exclusions=[])), json.dumps(dict(schema=1)),
+                   json.dumps(dict(schema=1, exclusions={})),
+                   json.dumps(dict(schema=1, exclusions=[valid["exclusions"][0]] * 2))]
+        for value in (None, 1, "", "a" * 63, "g" * 64, "A" * 64):
+            for field in ("manifest", "review"):
+                changed = copy.deepcopy(valid)
+                entry = changed["exclusions"][0]
+                if field == "manifest":
+                    entry["manifest_sha256"] = value
+                else:
+                    entry["review"]["sha256"] = value
+                invalid.append(json.dumps(changed))
+        for change in (dict(reason=" "), dict(review={}), dict(review=None), dict(extra=True)):
+            changed = copy.deepcopy(valid)
+            changed["exclusions"][0].update(change)
+            invalid.append(json.dumps(changed))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "reviews.json"
+            with self.assertRaisesRegex(ValueError, "registry"):
+                load_review_exclusions(path)
+            for content in invalid:
+                with self.subTest(content=content):
+                    path.write_text(content)
+                    with self.assertRaises(ValueError):
+                        load_review_exclusions(path)
+            path.write_bytes(b"\xff")
+            with self.assertRaisesRegex(ValueError, "registry"):
+                load_review_exclusions(path)
+
+    def test_recorder_entry_points_fail_closed_without_a_valid_registry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "reviews.json"
+            with patch.object(native_game_flow, "REVIEW_EXCLUSIONS_PATH", path):
+                for content in (None, "{}"):
+                    if content is not None:
+                        path.write_text(content)
+                    with self.subTest(content=content):
+                        with self.assertRaisesRegex(ValueError, "registry"):
+                            verified_predecessor(Path(directory) / "flow.json", 0, "cb", {})
+                        with self.assertRaisesRegex(ValueError, "registry"):
+                            record_route(SimpleNamespace())
+
+    def test_review_exclusions_reject_copies_descendants_and_runtime_updates_without_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base, provenance, _ = self.checkpoint_fixture(root / "base")
+            rejected, _, status = self.checkpoint_fixture(root / "rejected")
+            status.update(predecessor=dict(manifest=str(base), manifest_sha256=digest(base), slot=0),
+                          observations=dict(loaded_checkpoint=True))
+            rejected.write_text(json.dumps(status))
+            descendant, _, child = self.checkpoint_fixture(root / "descendant")
+            child.update(predecessor=dict(manifest=str(rejected), manifest_sha256=digest(rejected), slot=0),
+                         observations=dict(loaded_checkpoint=True))
+            descendant.write_text(json.dumps(child))
+            grandchild, _, last = self.checkpoint_fixture(root / "grandchild")
+            last.update(predecessor=dict(manifest=str(descendant), manifest_sha256=digest(descendant), slot=0),
+                        observations=dict(loaded_checkpoint=True))
+            grandchild.write_text(json.dumps(last))
+            sibling, _, status = self.checkpoint_fixture(root / "sibling")
+            status.update(predecessor=dict(manifest=str(base), manifest_sha256=digest(base), slot=0),
+                          observations=dict(loaded_checkpoint=True), sibling_fixture=True)
+            sibling.write_text(json.dumps(status))
+            unrelated, _, _ = self.checkpoint_fixture(root / "unrelated")
+            shutil.copytree(rejected.parent, root / "renamed")
+            renamed = root / "renamed/flow.json"
+            policy = write_review_policy(root / "reviews.json", [digest(rejected)])
+            before = {p: digest(p) for p in root.rglob("*") if p.is_file()}
+            current = {**provenance, "review_policy": policy["provenance"]}
+            for path in (rejected, descendant, grandchild, renamed):
+                for update in (None, "verified runtime repair"):
+                    with self.subTest(path=path.parent.name, runtime_update=update):
+                        requested = {**current, "binary_sha256": "new-binary"} if update else current
+                        with self.assertRaisesRegex(ValueError, "review-excluded predecessor"):
+                            verified_predecessor(path, 0, "cb", requested,
+                                                 runtime_update=update, review_policy=policy)
+            for path in (base, sibling, unrelated):
+                with self.subTest(unaffected=path.parent.name):
+                    verified_predecessor(path, 0, "cb", current, review_policy=policy)
+            self.assertEqual(before, {p: digest(p) for p in before})
+
+    def test_recording_keeps_policy_provenance_separate_from_game_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = root / "re/vm/profiles/script1.blood"
+            script.parent.mkdir(parents=True)
+            script.write_text("fixture script")
+            descript = root / "re/descript/DESCRIPT.descript"
+            descript.parent.mkdir()
+            descript.write_text("fixture description")
+            scenario = root / "scenario.tsv"
+            scenario.write_text("wait 1\n")
+            binary = root / native_game_flow.GAMES["cb"]
+            binary.write_bytes(b"fixture binary, never executed")
+            registry = root / "reviews.json"
+            policy = write_review_policy(registry, ["b" * 64])
+            args = SimpleNamespace(runtime_update=None, resume_from=None, expect_bbb_ending=None,
+                                   expect_cb_ending=False, game="cb", scenario=scenario, then=[],
+                                   bin_dir=root, assets=root, packed_second=39, out=root / "recorded",
+                                   timeout=1)
+
+            def consume(_command, _env, output, recorder, *_args):
+                recorder.record(frame())
+                for name in ("actions.jsonl", "game.log"):
+                    (output / name).write_text("fixture\n")
+
+            with patch.object(native_game_flow, "ROOT", root), \
+                    patch.object(native_game_flow, "REVIEW_EXCLUSIONS_PATH", registry), \
+                    patch.object(native_game_flow, "inventory", return_value=(None, "assets")), \
+                    patch.object(native_game_flow, "display_environment", return_value=nullcontext({})), \
+                    patch.object(native_game_flow, "consume_process", side_effect=consume), \
+                    patch.object(native_game_flow, "flow_markdown", return_value="fixture"):
+                record_route(args)
+            provenance = json.loads((args.out / "flow.json").read_text())["provenance"]
+            self.assertEqual(provenance["review_policy"], policy["provenance"])
+            self.assertEqual(provenance["recorder_sha256"], digest(native_game_flow.__file__))
+            self.assertEqual(provenance["sources"], {str(p.relative_to(root)): digest(p)
+                                                    for p in (script, descript)})
+
     def test_numeric_chatter_hash_inputs_survive_event_compaction(self):
         output = io.StringIO()
         recorder = FlowRecorder(output)

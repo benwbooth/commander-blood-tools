@@ -16,8 +16,9 @@ import json
 from pathlib import Path
 import re
 
+import native_game_flow
 from native_game_flow import (normal_actions, revealed_text_sites, saved_checkpoints,
-                              verify_route_completion)
+                              verify_route_completion, load_review_exclusions, review_exclusion)
 from video_anthology import digest, save_json
 
 OBSERVED = {"observed_route", "observed_ending"}
@@ -206,8 +207,10 @@ def read_witness(path, source_hashes):
                 evidence=evidence, ending=verified_ending)
 
 
-def check_lineages(witnesses):
+def check_lineages(witnesses, review_policy=None):
+    review_policy = load_review_exclusions() if review_policy is None else review_policy
     done, active = set(), set()
+    rejected = {}
 
     def visit(path):
         if path in done:
@@ -242,11 +245,18 @@ def check_lineages(witnesses):
                         and update.get("current_binary_sha256") == new, "unrecorded runtime change")
             else:
                 require(update is None, "spurious runtime change")
+        exclusion = review_exclusion(row["sha256"], review_policy)
+        if exclusion:
+            rejected[path] = dict(reason="review_excluded", exclusion=exclusion)
+        elif parent and parent_path in rejected:
+            rejected[path] = dict(reason="review_excluded_ancestor",
+                                  exclusion=rejected[parent_path]["exclusion"])
         active.remove(path)
         done.add(path)
 
     for path in witnesses:
         visit(path)
+    return rejected
 
 
 def lineage_segments(leaf, witnesses):
@@ -306,6 +316,8 @@ def join_sites(sites, witnesses, main_routes):
 
 
 def build(flow_root, catalog, successes, output):
+    review_policy = load_review_exclusions()
+    recorder_hash = digest(Path(native_game_flow.__file__))
     require(not output.exists(), "audit output must be new")
     index, sites, sources = load_catalog(catalog)
     witnesses, excluded = {}, []
@@ -323,10 +335,18 @@ def build(flow_root, catalog, successes, output):
         print(f"Auditing {path.parent.name}", flush=True)
         row = read_witness(path, sources)
         witnesses[path.resolve()] = row
-    check_lineages(witnesses)
+    rejected = check_lineages(witnesses, review_policy)
+    for path, rejection in rejected.items():
+        row = witnesses.pop(path)
+        excluded.append(dict(path=str(path), sha256=row["sha256"],
+                             status=row["manifest"]["status"], **rejection))
     main_routes = {}
     for game, path in successes.items():
         path = path.resolve()
+        if path in rejected:
+            exclusion = rejected[path]["exclusion"]
+            raise ValueError(f"selected successful leaf is review-excluded: {path}; "
+                             f"origin {exclusion['manifest_sha256']}: {exclusion['reason']}")
         require(path in witnesses and witnesses[path]["manifest"]["game"] == game, "missing successful leaf")
         ending = witnesses[path]["ending"] or {}
         require(ending.get("kind") == {"cb": "cb_concert", "bbb": "bbb_success"}[game],
@@ -351,8 +371,12 @@ def build(flow_root, catalog, successes, output):
                   sequence_scope="recorded sequence runs, not a proof of full source frame or caption coverage",
                   all_normal_branches_complete=False, render_ready=False,
                   catalog_sha256=digest(catalog / "catalog.json"), auditor_sha256=digest(Path(__file__)),
+                  recorder_sha256=recorder_hash, review_policy=review_policy["provenance"],
                   counts=counts, successful_routes=main_routes, witnesses=records, excluded=excluded,
                   sites=[sites[key] for key in sorted(sites)])
+    require(digest(review_policy["provenance"]["path"]) == review_policy["provenance"]["sha256"],
+            "review exclusion registry changed during audit")
+    require(digest(Path(native_game_flow.__file__)) == recorder_hash, "imported recorder changed during audit")
     output.mkdir(parents=True)
     save_json(output / "coverage.json", result)
     for game in main_routes:

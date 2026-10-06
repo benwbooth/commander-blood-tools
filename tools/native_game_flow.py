@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import selectors
 import signal
 import shutil
@@ -26,6 +27,7 @@ from video_anthology import GAMES, ROOT, digest, display_environment, inventory,
 
 NORMAL_ACTIONS = {"move", "motion", "click", "sclick", "frameclick", "key", "wait",
                   "frames", "park", "choose", "alien-drive", "await-alien"}
+REVIEW_EXCLUSIONS_PATH = ROOT / "accuracy/native-flow-review-exclusions.json"
 
 # SCRIPT5 finalmen: sequence requests, including the interleaved Bob/Honk dialogue.
 CB_CONCERT_SEQUENCES = [
@@ -41,6 +43,49 @@ CB_CONCERT_SEQUENCES = [
 
 BBB_SUCCESS_ENDING_OFFSET = 0x9F2E
 BBB_SUCCESS_SEQUENCES = ["bobb.hnm"] + [f"fin{number}.hnm" for number in range(1, 15)]
+
+
+def load_review_exclusions(path=None):
+    def unique_fields(pairs):
+        fields = {}
+        for key, value in pairs:
+            if key in fields:
+                raise ValueError(f"duplicate review exclusion field: {key}")
+            fields[key] = value
+        return fields
+
+    path = REVIEW_EXCLUSIONS_PATH if path is None else Path(path)
+    try:
+        raw = path.read_bytes()
+        snapshot = raw.decode("utf-8")
+        policy = json.loads(snapshot, object_pairs_hook=unique_fields)
+    except (OSError, ValueError) as error:
+        raise ValueError(f"cannot read review exclusion registry: {path}") from error
+    if (not isinstance(policy, dict) or set(policy) != {"schema", "exclusions"}
+            or type(policy["schema"]) is not int or policy["schema"] != 1
+            or not isinstance(policy["exclusions"], list)):
+        raise ValueError("malformed review exclusion registry")
+    entries = {}
+    for entry in policy["exclusions"]:
+        if (not isinstance(entry, dict) or set(entry) != {"manifest_sha256", "reason", "review"}
+                or not isinstance(entry["reason"], str) or not entry["reason"].strip()
+                or not isinstance(entry["review"], dict)
+                or set(entry["review"]) != {"path", "sha256"}
+                or not isinstance(entry["review"]["path"], str) or not entry["review"]["path"].strip()):
+            raise ValueError("malformed review exclusion entry")
+        for value in (entry["manifest_sha256"], entry["review"]["sha256"]):
+            if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("invalid SHA-256 in review exclusion registry")
+        if entry["manifest_sha256"] in entries:
+            raise ValueError("duplicate manifest in review exclusion registry")
+        entries[entry["manifest_sha256"]] = entry
+    # Retain exact bytes as UTF-8 text so standalone outputs can verify the raw digest.
+    return dict(entries=entries, provenance=dict(path=str(path.resolve()),
+                sha256=hashlib.sha256(raw).hexdigest(), snapshot=snapshot))
+
+
+def review_exclusion(manifest_hash, policy):
+    return policy["entries"].get(manifest_hash)
 
 
 def normal_actions(source):
@@ -291,7 +336,9 @@ def saved_checkpoints(writable, saved_slots):
     return checkpoints
 
 
-def verified_predecessor(manifest, slot, game, provenance, visited=None, runtime_update=None):
+def verified_predecessor(manifest, slot, game, provenance, visited=None, runtime_update=None,
+                         review_policy=None):
+    review_policy = load_review_exclusions() if review_policy is None else review_policy
     if runtime_update is not None:
         reason = runtime_update.get("reason") if isinstance(runtime_update, dict) else runtime_update
         if not isinstance(reason, str) or not reason.strip():
@@ -303,6 +350,9 @@ def verified_predecessor(manifest, slot, game, provenance, visited=None, runtime
     visited.add(manifest)
     manifest_bytes = manifest.read_bytes()
     manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()
+    exclusion = review_exclusion(manifest_hash, review_policy)
+    if exclusion:
+        raise ValueError(f"review-excluded predecessor: {manifest} ({manifest_hash}): {exclusion['reason']}")
     status = json.loads(manifest_bytes)
     if (status.get("schema") != 1 or status.get("game") != game
             or status.get("status") != "observed_route" or status.get("state_injection") is not False):
@@ -332,7 +382,7 @@ def verified_predecessor(manifest, slot, game, provenance, visited=None, runtime
             raise ValueError("earlier lineage manifest changed")
         # Validate each historical continuation against the runtime it actually used.
         verified_predecessor(Path(parent["manifest"]), parent["slot"], game,
-                             status["provenance"], visited, parent.get("runtime_update"))
+                             status["provenance"], visited, parent.get("runtime_update"), review_policy)
     checkpoint = next((item for item in status.get("checkpoints", []) if item["slot"] == slot), None)
     if checkpoint is None:
         raise ValueError("predecessor has no witnessed save in the requested slot")
@@ -584,6 +634,7 @@ def consume_process(command, env, directory, recorder, actions, timeout, ending_
 
 
 def record_route(args):
+    review_policy = load_review_exclusions()
     if args.runtime_update is not None and (not args.resume_from or not args.runtime_update.strip()):
         raise ValueError("--runtime-update requires a predecessor and a nonempty reason")
     if args.expect_bbb_ending is not None and (args.game != "bbb"
@@ -601,6 +652,7 @@ def record_route(args):
                                           else "big-bug-bang/DESCRIPT.descript"))
     provenance = dict(binary_sha256=digest(binary), asset_manifest_sha256=manifest_hash,
                       recorder_sha256=digest(__file__),
+                      review_policy=review_policy["provenance"],
                       scenario_sha256=hashlib.sha256(source.encode()).hexdigest(),
                       scenario_sources=scenario_sources,
                       sources={str(path.relative_to(ROOT)): digest(path) for path in sources},
@@ -609,7 +661,8 @@ def record_route(args):
     checkpoint, predecessor = (None, None)
     if args.resume_from:
         checkpoint, predecessor = verified_predecessor(
-            args.resume_from, args.slot, args.game, provenance, runtime_update=args.runtime_update)
+            args.resume_from, args.slot, args.game, provenance, runtime_update=args.runtime_update,
+            review_policy=review_policy)
     directory.mkdir(parents=True, exist_ok=False)
     writable = directory / "writable"
     writable.mkdir()
@@ -655,6 +708,8 @@ def record_route(args):
                 raise ValueError(f"script source changed during recording: {path}")
         if digest(binary) != provenance["binary_sha256"]:
             raise ValueError("native binary changed during recording")
+        if digest(review_policy["provenance"]["path"]) != review_policy["provenance"]["sha256"]:
+            raise ValueError("review exclusion registry changed during recording")
         (directory / "flow.md").write_text(flow_markdown(directory, status))
         status["files"] = {name: digest(directory / name)
                            for name in ("events.jsonl", "actions.jsonl", "scenario.tsv", "game.log", "flow.md")}
