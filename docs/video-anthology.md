@@ -447,6 +447,13 @@ intercuts play. The normal save has `A26=1`, `B79=5`, Blue Wave and her energy
 aboard, the picture returned, and both mummy and ring held by Blue Wave.
 Its 24 decoded resources and 47 fully revealed sites precede the aboard show
 and strike storyline; `A61`, `A64`, and `A96` are still zero.
+`bbb-blue-wave-show-v1` selects the show, alternate camera, and extended view,
+then declines another performance. All nine authored refusal-chain sequences
+are observed to close. The saved endpoint has `A96=2`, `A61=1`, and Smile's
+complaint queued, with 34 decoded resources and 59 fully revealed sites.
+`bbb-blue-wave-refuse-v1` separately declines the initial offer and saves at
+`A96=1`, `A61=1`, with the same queued caller. It observes 20 resources and
+19 fully revealed sites; shared sequence material should not be rendered twice.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

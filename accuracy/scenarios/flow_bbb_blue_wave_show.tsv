@@ -1,0 +1,11 @@
+# Blue Wave is third in the earned eight-entry cryobox roster.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+choose yes
+choose peek
+choose racier
+choose no
+wait 900
