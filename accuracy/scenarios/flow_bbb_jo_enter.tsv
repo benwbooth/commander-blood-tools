@@ -1,0 +1,7 @@
+# Normal cryobox entry to Jo after Gluk's treatment gifts: first of eight rows.
+park 4 45
+wait 20
+click 230 124
+wait 40
+click 100 56
+await-alien

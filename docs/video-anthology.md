@@ -276,6 +276,13 @@ Replaying from `bbb-gluk-followup-v1` with that repair yields
 finish normally with `A27 = 5`, `A28 = 2`, `A29 = 1`, zero bionium, six credits,
 and the food/medicine/energy items aboard. This replaces v2/v3 as route evidence;
 those older traces remain diagnostic artifacts and are not continuation parents.
+The subsequent ordinary Jo cryobox entry and planned flight replay
+(`bbb-jo-bionium-v3`) completes 60,563 AMER input/presentation frames and 97 sound
+callbacks. Jo's success dialogue actually appears; the native save has
+`vbio = 10`, `A12 = 1`, and bionium aboard. The minigame returns and releases its
+resources normally. All 60,562 planned flight actions remain in the compact
+31 MiB action trace, with their original completion clocks. This is an earned
+native checkpoint, not an assigned score or injected inventory item.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
