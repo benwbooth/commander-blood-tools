@@ -1,0 +1,22 @@
+# Return to Attrox with the money repaid by Daddy.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 235 117
+wait 60
+click 250 125
+wait 200
+click 80 104
+# Hear the second-visit joke, then buy the ten-credit atomique.
+choose no
+choose accept
+wait 600
+click 200 147
+wait 500

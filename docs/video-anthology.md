@@ -308,6 +308,10 @@ Daddy's eighth ordinary visit and GIVE-menu exit
 (`bbb-daddy-nuclear-budget-v1`) trigger the existing loan repayment. The saved
 balance rises from six to sixteen credits, with `A17 = 6`; this is money granted
 by the running script, not a prepared purchase balance.
+The second Emasculator visit (`bbb-emasculator-nuclear-v1`) answers `no` to
+his joke and accepts the purchase. The save has the nuclear item aboard,
+six credits remaining, and Emasculator's encounter count at two. Migrator's
+ship is still with him at this checkpoint.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
