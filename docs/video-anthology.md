@@ -160,8 +160,52 @@ Route-exit credits do not establish that the story ending was reached.
 
 All current manifests deliberately retain `full_game_complete: false` and
 `all_normal_branches_complete: false`. Initial route probes are not the complete
-flows. Successful endings and alternate-branch coverage still have to be
-established before producing the new final videos.
+flows. Both successful endings are now witnessed below; alternate-branch
+coverage remains incomplete, so the new final videos have not been rendered.
+
+`tools/native_flow_coverage.py` consolidates those witnesses without replaying
+games or generating media. It hashes every included flow artifact, checks
+ordinary action completion, validates predecessor manifests, saves, assets,
+scripts, and explicit runtime changes, and rechecks the successful-ending gates.
+It reads the compact events again rather than trusting old text-site totals.
+Full dialogue evidence requires a live actor, lifecycle activity, matching glyph
+pixels, and rendered text matching the source site's spoken text. Inline text
+uses the actual dictionary-token spacing; English numeric markers may match
+displayed integers, but that match does not verify their values against DOS.
+
+```sh
+uv run tools/native_flow_coverage.py \
+  --flows output/game-flows \
+  --catalog output/anthology/static-dialogue-en-v2 \
+  --cb-success output/game-flows/cb-wedding-concert-v2/flow.json \
+  --bbb-success output/game-flows/bbb-concert-ending-v2/flow.json \
+  --out output/game-flows/audit-v2
+```
+
+The output directory must be new. Its `coverage.json`, `cb.md`, and `bbb.md`
+retain 254 audited witnesses and order the successful lineages into 72 CB and
+99 BBB segments. Each continuation starts at its observed normal load; a parent
+segment stops at the exact save used by the child, excluding later actions.
+These are evidence boundaries, not movie timestamps or duration estimates.
+Nine early probes lack the lifecycle/load observations needed by this audit
+and are listed separately, as are 94 failed or unfinished attempts.
+
+| Text-site evidence in `audit-v2` | CB | BBB |
+| --- | ---: | ---: |
+| Witnessed on the successful route | 1,569 | 3,013 |
+| Witnessed on other normal routes | 267 | 175 |
+| Unobserved site with identical witnessed wording | 404 | 421 |
+| Unobserved empty/control text | 129 | 610 |
+| Other unobserved wording or dynamic site | 3,167 | 2,702 |
+
+Counts include UI/control text and repeated wording; they are not unique spoken
+scene counts. The audit rejects two retained-offset misattributions: BBB
+SCRIPT4 COD 8426 displayed the answer labels instead of the attributed sentence,
+and CB SCRIPT5 COD 4285 displayed a different waiting message. Their original
+hashed witnesses remain unchanged. Equal wording elsewhere never marks an
+unobserved site reached, equivalent in visuals, or globally unreachable.
+The ledger preserves recorded sequence runs without claiming source-frame or
+caption completeness. It deliberately remains `render_ready: false`.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
