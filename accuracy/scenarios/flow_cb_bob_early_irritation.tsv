@@ -1,0 +1,15 @@
+# Bob's earned aggressiveness is 19 after the early topics and revelation.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose Kanary
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+wait 100
+choose bye_bye
+wait 250

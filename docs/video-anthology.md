@@ -463,6 +463,15 @@ Its 6,590 frames retain 509 events, 13 decoded resources, and 26 fully revealed
 sites. A targeted source/wording/checkpoint/lineage audit accepts all sites in
 both runs without any rejected attribution. These are chapter-two alternatives;
 the later chapter-four revelation remains separately witnessed.
+`cb-bob-early-irritation-v1` is a normally saved fourth contact, despite its
+provisional probe name. It fully presents the probabilistic Kanary empire line,
+five repeated cottage replies, and the fourth-visit introduction and farewell.
+Its saved aggressiveness is 24, not either authored irritation threshold, so
+neither irritation reply is claimed. All eleven fully shown sites pass the
+source-wording audit and all eight predecessor manifests/checkpoints validate.
+It records 4,761 frames, 261 events, and eleven decoded resources; save zero is
+at boundary 4625 with SHA-256
+`90b0b04610cdcffa683d57de1daff4b48ac7558c2f75053db912bf8795384957`.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
