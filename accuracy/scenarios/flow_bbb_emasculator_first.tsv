@@ -1,0 +1,22 @@
+# Visit the newly revealed Attrox city and meet Emasculator.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 235 117
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose name
+choose male
+wait 600
+# No purchase is offered with only six credits; close the eight-item list.
+click 200 144
+wait 500

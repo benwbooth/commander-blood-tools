@@ -300,6 +300,10 @@ medicine, chooses `ship`, and closes the remaining GIVE menu. The actual reward
 is Emasculator's address, not a ship: `A35 = 3`, `A37 = 1`, and `B5 = 1`, with
 both medicine and ship held by Migrator. Emasculator and Rotator are at
 Attroxcity. The failed v1 omitted the final Cancel click and is not a parent.
+The first Attrox visit (`bbb-emasculator-first-v1`) introduces Emasculator,
+chooses `name` and `male`, and witnesses the ten-credit offer with only six
+credits available. The conversation closes through the eight-item GIVE menu;
+no atomique is acquired or credited at this checkpoint.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
@@ -442,6 +446,12 @@ Returning to Erazor, teleporting Bronko aboard, then contacting Bronko and the
 receiver in the cryobox (`cb-bronko-return-v1`) completes the recovery. Its
 save has `fish = 1`, `vari = 1`, Bronko aboard, and a new supply of Splatch
 aboard. The receiver conversation is observed, not inferred from the timer.
+The Tumul expedition (`cb-tumul-tomb-v2`) gives Scruter Mac's body to
+Beauregard, follows the Patagos/Betakam/Gladis topics, gives Splatch, and
+teleports the mummy and cursed Beauregard aboard. Its save has `beau = 6`,
+`maledict = 1`, and both aboard; `fion` remains zero until his aboard contact.
+The final Gladis reply needs one more topic click to leave the list. The failed
+v1 omitted that click and never reached the expedition.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

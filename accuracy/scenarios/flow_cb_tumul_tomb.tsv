@@ -1,0 +1,30 @@
+# Give the recovered body to Beauregard and follow his tomb expedition.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 230 83
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+choose patagos
+choose patagos
+choose patagos
+choose patagos
+choose betakam
+choose betakam
+choose Gladis
+choose Gladis
+choose Gladis
+choose Gladis
+choose Gladis
+choose teleport
+choose teleport
+choose teleport
+wait 600
