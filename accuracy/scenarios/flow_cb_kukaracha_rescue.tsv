@@ -1,0 +1,20 @@
+# Follow Eviscerator's coordinates after Jerry has sent Yoko to the prison ship.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 176 58
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+wait 800
+park 4 45
+wait 25
+click 125 118
+wait 900

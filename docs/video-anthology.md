@@ -178,6 +178,9 @@ life on Sat is presented; the saved state places Betakam on that planet.
 treasure inside the mummy. It waits for Eviscerator's surrender call and answers
 Jerry's subsequent call. The saved state has the mummy with Outrageor,
 Eviscerator at the machine, and Yoko dispatched to Kukaracha.
+`cb-kukaracha-rescue-v1` visits the prison ship, plays the two rescue sequences,
+and teleports Yoko and Maxxon aboard. Jerry's subsequent call reveals Oddland.
+Both rescued passengers are aboard in the saved checkpoint.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
