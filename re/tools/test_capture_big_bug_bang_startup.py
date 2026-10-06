@@ -156,6 +156,52 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.private_move({"DISPLAY": ":123"}, 789, [-480, 0])
             self.assertEqual(len(run.call_args_list), 1)
 
+    def test_private_recapture_releases_moves_and_recaptures_without_clicking(self):
+        env = {"DISPLAY": ":123"}
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_mouse_locked", side_effect=[True, False, True]), \
+                mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
+            event = capture.private_recapture(env, 789, [400, 316], lambda: {"profile": 0})
+        self.assertEqual([call.args[0] for call in run.call_args_list], [
+            ["xdotool", "windowfocus", "--sync", "456"],
+            ["xdotool", "keydown", "ctrl+F10"],
+            ["xdotool", "keyup", "ctrl+F10"],
+            ["xdotool", "mousemove", "400", "316"],
+            ["xdotool", "keydown", "ctrl+F10"],
+            ["xdotool", "keyup", "ctrl+F10"]])
+        self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
+        self.assertEqual(event["after_recapture"], {"profile": 0})
+        self.assertTrue(event["release_verified"] and event["mouse_capture_verified"])
+        self.assertFalse(event["guest_memory_written"])
+
+    def test_private_recapture_restores_capture_after_failed_motion(self):
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_mouse_locked", side_effect=[True, False, True]), \
+                mock.patch.object(capture.subprocess, "run", side_effect=[None, None, None, ValueError("move"), None, None]) as run, \
+                mock.patch.object(capture.time, "sleep"):
+            with self.assertRaisesRegex(ValueError, "move"):
+                capture.private_recapture({"DISPLAY": ":123"}, 789, [400, 316])
+        self.assertEqual(run.call_args.args[0], ["xdotool", "keyup", "ctrl+F10"])
+
+    def test_private_recapture_requires_each_lock_transition(self):
+        for states, expected_calls in (([False], 1), ([True, True], 3), ([True, False, False], 6)):
+            with self.subTest(states=states), \
+                    mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                    mock.patch.object(capture, "private_mouse_locked", side_effect=states), \
+                    mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
+                observe = mock.Mock()
+                with self.assertRaises(RuntimeError):
+                    capture.private_recapture({"DISPLAY": ":123"}, 789, [400, 316], observe)
+                self.assertEqual(run.call_count, expected_calls)
+                observe.assert_not_called()
+
+    def test_private_recapture_rejects_invalid_position_before_input(self):
+        with mock.patch.object(capture.subprocess, "run") as run:
+            for position in ([], [1], [1, 2, 3], [-1, 0], [800, 0], [0, 600], [1.0, 0], [True, 0]):
+                with self.assertRaises(ValueError):
+                    capture.private_recapture({"DISPLAY": ":123"}, 789, position)
+            run.assert_not_called()
+
     def test_private_click_uses_supplied_display_without_pointer_motion(self):
         env = {"DISPLAY": ":123", "SDL_VIDEODRIVER": "x11"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n") as search, \
@@ -440,6 +486,38 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.main()
         self.assertEqual(stopped.exception.code, 0)
         self.assertEqual(run.call_args.args[0].move_after, [(40.0, [-480, 0]), (50.0, [0, -90])])
+
+    def test_cli_preserves_recapture_schedule(self):
+        argv = ["capture", "disc", "output", "--relative-mouse", "--click-after", "30",
+                "--recapture-after", "40", "400", "316", "--recapture-after", "50", "330", "352"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].recapture_after, [(40.0, [400, 316]), (50.0, [330, 352])])
+
+    def test_cli_rejects_unusable_recapture_schedule(self):
+        prefix = ["--relative-mouse", "--click-after", "30"]
+        for options in (["--recapture-after", "40", "400", "316"],
+                        [*prefix, "--recapture-after", "20", "400", "316"],
+                        [*prefix, "--recapture-after", "30", "400", "316"],
+                        [*prefix, "--recapture-after", "60", "400", "316"],
+                        [*prefix, "--recapture-after", "40", "800", "316"],
+                        [*prefix, "--recapture-after", "40", "400", "600"],
+                        [*prefix, "--recapture-after", "40", "-1", "316"],
+                        [*prefix, "--recapture-after", "40", "1.5", "316"],
+                        [*prefix, "--recapture-after", "nan", "400", "316"],
+                        [*prefix, "--recapture-after", "40", "400", "316", "--recapture-after", "39", "400", "316"],
+                        [*prefix, "--recapture-after", "40", "400", "316", "--key-after", "40", "F7"],
+                        [*prefix, "--recapture-after", "40", "400", "316", "--move-after", "40", "1", "0"]):
+            with self.subTest(options=options), \
+                    mock.patch.object(sys, "argv", ["capture", "disc", "output", *options]), \
+                    mock.patch.object(sys, "stderr", new_callable=io.StringIO), \
+                    mock.patch.object(capture, "capture") as run:
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
 
     def test_cli_rejects_unusable_movement_schedule(self):
         for options in (["--move-after", "40", "0", "0"],

@@ -238,6 +238,17 @@ reached only frame 79. This localizes the input problem without establishing
 its cause. The tool records its own hash, accepts the library/mouse-mode
 overrides explicitly, and passes all 45 focused tests.
 
+The optional `--recapture-after SECONDS X Y` diagnostic uses DOSBox's normal
+Ctrl-F10 shortcut to release capture, move the pointer on the private display,
+and recapture. It checks each lock transition, restores capture if pointer
+movement fails, and never writes guest memory. Captures 32 and 33 both stopped
+because mouse release was not confirmed, before recentering or later inputs.
+Capture 33 held the shortcut for 150 ms rather than sending an instantaneous
+key sequence; neither attempt progressed beyond profile zero. The exact
+earlier recorder is retained in `startup-capture-32/recorder.py`. All 51
+capture-tool tests pass, but the live recapture capability remains unverified.
+This does not resolve the numeric-chatter issue.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control

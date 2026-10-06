@@ -285,6 +285,40 @@ def private_move(env, pid, motion, observe=None):
             "after_move": observe() if observe is not None else None, "guest_memory_written": False}
 
 
+def private_recapture(env, pid, position, observe=None):
+    """Recenter through DOSBox's normal host capture shortcut, not guest writes."""
+    if (len(position) != 2 or any(type(value) is not int for value in position)
+            or not 0 <= position[0] < 800 or not 0 <= position[1] < 600):
+        raise ValueError("recapture position must be inside the private 800x600 display")
+    window = private_window(env, pid)
+    if not private_mouse_locked(pid):
+        raise RuntimeError("private recapture requires an existing mouse capture")
+
+    def toggle():
+        subprocess.run(["xdotool", "keydown", "ctrl+F10"], env=env, check=True, timeout=5)
+        try:
+            time.sleep(0.15)
+        finally:
+            subprocess.run(["xdotool", "keyup", "ctrl+F10"], env=env, check=True, timeout=5)
+        time.sleep(0.15)
+
+    toggle()
+    if private_mouse_locked(pid):
+        raise RuntimeError("private DOSBox mouse release was not confirmed")
+    try:
+        subprocess.run(["xdotool", "mousemove", *map(str, position)],
+                       env=env, check=True, timeout=5)
+        time.sleep(0.15)
+    finally:
+        toggle()
+        if not private_mouse_locked(pid):
+            raise RuntimeError("private DOSBox mouse recapture was not confirmed")
+    return {"kind": "private_x11_mouse_recapture", "position_requested": position,
+            "window": window, "display": env["DISPLAY"], "release_verified": True,
+            "mouse_capture_verified": True, "after_recapture": observe() if observe else None,
+            "guest_memory_written": False}
+
+
 def private_click(env, pid, position=None, capture_mouse=False, button=1, observe_press=None,
                   relative_motion=None):
     """Click on the private display, optionally acquiring mouse capture first."""
@@ -397,7 +431,9 @@ def capture(args):
             scheduled = sorted(
                 [(at, "click", i + 1, None) for i, at in enumerate(args.click_after)] +
                 [(at, "key", i + 1, key) for i, (at, key) in enumerate(args.key_after)] +
-                [(at, "move", i + 1, motion) for i, (at, motion) in enumerate(args.move_after)])
+                [(at, "move", i + 1, motion) for i, (at, motion) in enumerate(args.move_after)] +
+                [(at, "recapture", i + 1, position)
+                 for i, (at, position) in enumerate(args.recapture_after)])
 
             def observe_guest():
                 nonlocal symbols
@@ -460,8 +496,10 @@ def capture(args):
                                                    args.relative_motion), status="sent")
                     elif kind == "key":
                         event.update(private_key(env, game.pid, value, observe), status="sent")
-                    else:
+                    elif kind == "move":
                         event.update(private_move(env, game.pid, value, observe), status="sent")
+                    else:
+                        event.update(private_recapture(env, game.pid, value, observe), status="sent")
                     inputs_sent += 1
             subprocess.run(["import", "-window", "root", str(output / "screen.png")], env=env, check=True, timeout=10)
             report["outcome"] = "observed_profile" if any(s["status"] == "profile_bound" for s in report["samples"]) else "no_bound_profile_observed"
@@ -495,6 +533,8 @@ def main():
                         help=f"private keypress; repeat in increasing order; keys: {', '.join(PRIVATE_KEYS)}")
     parser.add_argument("--move-after", nargs=3, action="append", default=[], metavar=("SECONDS", "DX", "DY"),
                         help="relative mouse movement after a captured click; times must increase")
+    parser.add_argument("--recapture-after", nargs=3, action="append", default=[], metavar=("SECONDS", "X", "Y"),
+                        help="release capture, place the private root pointer, and recapture through Ctrl-F10")
     parser.add_argument("--click-button", type=int, choices=(1, 3), default=1,
                         help="X11 button: 1 is primary, 3 is secondary")
     parser.add_argument("--click-position", type=int, nargs=2, metavar=("X", "Y"),
@@ -510,6 +550,8 @@ def main():
     try:
         args.key_after = [(positive_seconds(at), key) for at, key in args.key_after]
         args.move_after = [(positive_seconds(at), [int(dx), int(dy)]) for at, dx, dy in args.move_after]
+        args.recapture_after = [(positive_seconds(at), [int(x), int(y)])
+                                for at, x, y in args.recapture_after]
     except (ValueError, argparse.ArgumentTypeError) as error:
         parser.error(str(error))
     if any(key not in PRIVATE_KEYS for _, key in args.key_after):
@@ -530,6 +572,18 @@ def main():
             parser.error("move-after times must be strictly increasing")
         if {at for at, _ in args.move_after} & (set(args.click_after) | {at for at, _ in args.key_after}):
             parser.error("move events must have distinct scheduled times")
+    if args.recapture_after:
+        if (not args.relative_mouse or not args.click_after
+                or args.click_after[0] >= args.recapture_after[0][0]):
+            parser.error("recapture-after requires relative-mouse and an earlier captured click")
+        if any(at >= args.seconds or not 0 <= position[0] < 800 or not 0 <= position[1] < 600
+               for at, position in args.recapture_after):
+            parser.error("recapture-after requires a time before capture end and private display coordinates")
+        if any(left[0] >= right[0] for left, right in zip(args.recapture_after, args.recapture_after[1:])):
+            parser.error("recapture-after times must be strictly increasing")
+        other_times = set(args.click_after) | {at for at, _ in args.key_after + args.move_after}
+        if {at for at, _ in args.recapture_after} & other_times:
+            parser.error("recapture events must have distinct scheduled times")
     if args.cycles <= 0:
         parser.error("cycles must be positive")
     if args.relative_mouse and not args.click_after:
