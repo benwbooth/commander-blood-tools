@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from native_flow_coverage import (check_lineages, inline_template, join_sites, lineage_segments,
-                                  matches_text, read_witness, safe_child, scan_events, wording)
+                                  matches_text, read_witness, report_markdown, safe_child, scan_events, wording)
 from native_game_flow import FlowRecorder
 from test_native_game_flow import frame
 from video_anthology import digest
@@ -179,6 +179,35 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(sites[key]["status"], "unobserved_wording_or_dynamic_site")
         self.assertEqual(sites[key]["witnesses"], [])
         self.assertEqual(len(sites[key]["rejected_presentations"]), 1)
+
+    def test_unresolved_report_groups_keep_evidence_categories_separate(self):
+        def site(actor, status, game="cb", profile=2):
+            return dict(game=game, profile=profile, record=actor, domain="bas", status=status)
+
+        result = dict(witnesses=[], successful_routes={"cb": []}, counts={"cb": {}}, sites=[
+            site("Yoko", "unobserved_wording_or_dynamic_site"),
+            site("Yoko", "unobserved_wording_or_dynamic_site"),
+            site("Yoko", "unobserved_site_with_witnessed_wording"),
+            site("Yoko", "unobserved_empty_or_control_text"),
+            site("Yoko", "witnessed_on_successful_route"),
+            site("Honk", "unobserved_wording_or_dynamic_site"),
+            site(None, "unobserved_empty_or_control_text", profile=1),
+            site("Other game", "unobserved_wording_or_dynamic_site", game="bbb")])
+        report = report_markdown(result, "cb")
+        yoko = "| SCRIPT2 | Yoko | BAS | 2 | 1 | 1 |"
+        honk = "| SCRIPT2 | Honk | BAS | 1 | 0 | 0 |"
+        self.assertIn(yoko, report)
+        self.assertIn(honk, report)
+        self.assertLess(report.index(yoko), report.index(honk))
+        self.assertIn("| SCRIPT1 | Unattributed | BAS | 0 | 0 | 1 |", report)
+        self.assertNotIn("Other game", report)
+        self.assertIn("not distinct clips, feasible branches, or duration estimates", report)
+
+    def test_empty_unresolved_report_does_not_claim_scene_completeness(self):
+        result = dict(witnesses=[], successful_routes={"cb": []}, counts={"cb": {}}, sites=[])
+        report = report_markdown(result, "cb")
+        self.assertIn("this alone is not full scene-coverage proof", report)
+        self.assertIn("Not complete or render-ready", report)
 
     def witness_fixture(self, root):
         events, summary = self.events([frame()])

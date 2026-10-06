@@ -1,0 +1,94 @@
+# Reach nested replies during Yoko's first visit, from the Bronko checkpoint.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 281 40
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose talk
+choose race
+choose Izwal
+choose race
+choose Izwal
+choose race
+choose Izwal
+choose race
+choose Izwal
+choose peace
+choose talk
+choose race
+choose Izwal
+choose peace
+choose talk
+choose race
+choose Izwal
+choose peace
+choose talk
+choose race
+choose Izwal
+choose peace
+choose talk
+choose race
+choose Izwal
+choose peace
+choose talk
+choose race
+choose Croolis
+choose war
+choose talk
+choose race
+choose Croolis
+choose war
+choose talk
+choose race
+choose Croolis
+choose war
+choose talk
+choose race
+choose ondoyant
+choose race
+choose ondoyant
+choose race
+choose Tubular_brain
+choose talk
+choose race
+choose Tubular_brain
+choose talk
+choose art
+choose reproduction
+choose talk
+choose art
+choose reproduction
+choose talk
+choose art
+choose reproduction
+choose talk
+choose politics
+choose peace
+choose talk
+choose politics
+choose war
+choose talk
+choose politics
+choose war
+choose talk
+choose politics
+choose war
+choose talk
+choose politics
+choose war
+choose talk
+choose science
+choose talk
+choose science
+choose talk
+choose science
+choose bye_bye
+wait 200

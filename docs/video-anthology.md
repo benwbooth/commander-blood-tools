@@ -248,6 +248,10 @@ key sequence; neither attempt progressed beyond profile zero. The exact
 earlier recorder is retained in `startup-capture-32/recorder.py`. All 51
 capture-tool tests pass, but the live recapture capability remains unverified.
 This does not resolve the numeric-chatter issue.
+Capture 34 repeats the held-shortcut diagnostic with the explicitly hashed
+classic SDL2 2.30.6 override. It also fails to confirm release before any
+recenter operation and remains at profile zero. The library change is not a
+solution or evidence of an original normal-playthrough continuation.
 
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
@@ -352,6 +356,48 @@ The refreshed `output/game-flows/audit-v5` validates 276 witnesses and excludes
 654 other normal-route sites, 687 unobserved sites with witnessed wording,
 128 empty/control sites, and 2,498 other unobserved/dynamic sites. BBB's counts
 are unchanged. The audit remains explicitly incomplete and not render-ready.
+
+`cb-yoko-topics-v1` branches from the earned Bronko recruitment save and opens
+Yoko's first Rondo conversation. Its offered topics cover Izwals, Croolis,
+Tromps, Migrax, ondoyants, tubular brains, art, reproduction, politics, and
+science before the ordinary farewell takes the ship to the observatory. All
+93 fully displayed sites match source text, including 77 Yoko BAS sites;
+the eight-manifest save lineage passes. The slot-zero save is at boundary
+10,524, SHA-256
+`32d23b6b3c64fa33242e2587c3af26ea60bf14fdeaac0fd82d7bffb0fd67be44`.
+The subsequent `cb-yoko-nested-topics-v1` attempt from that observatory save
+does not reach the requested conversation and has no completed checkpoint.
+It remains a failed attempt, not a witness or an unreachability proof.
+`cb-yoko-nested-topics-v2` instead branches from the same earned pre-Rondo save
+as the first witness. Reentering the offered parent menus reaches the Izwal
+peace, Croolis war, art/reproduction, politics, and science replies. All 55
+fully displayed sites match source text, including 37 Yoko BAS sites. Its
+slot-zero save is at boundary 9,368, SHA-256
+`d769396bc93771c0d871462dc301e9c4fb3480e7f4e4e5b126655cb0a1a88c9b`.
+Together with the existing story route, Yoko now has 102 of 104 chapter-two
+BAS sites witnessed. The chance-based "You talk much" line and the plural
+`weapons` response remain unobserved; neither is declared unreachable.
+
+`cb-eviscerator-topics-v1` branches from the earned chapter-three Bronko
+family-news save and enters the prison using the offered code. The conversation
+covers television, politics, reproduction, science, consumerism, planets,
+races, peace, friends, art, war, battle, and enemies without advancing the
+treasure handover. All 90 fully displayed sites match source text, including
+73 Eviscerator BAS sites, and the 25-manifest lineage passes. The slot-zero
+save is at boundary 11,641, SHA-256
+`a82dda79e48d056d0cf1451132426c6fd482612f59b1e7ebd6acf0a1ae307efa`.
+Neither branch records a movie or PCM. The 59 flow/catalog/coverage tests pass.
+
+The refreshed `output/game-flows/audit-v6` validates 279 witnesses and excludes
+110 unfinished or legacy attempts. CB has 1,569 successful-route sites, 818
+other normal-route sites, 838 unobserved sites with witnessed wording, 127
+empty/control sites, and 2,184 other unobserved/dynamic sites. BBB's counts are
+unchanged. The generated Markdown reports now show the twenty largest
+unresolved source groups, separating new/dynamic wording, known wording, and
+empty/control text. These counts do not establish feasible branches, unique
+clips, or durations. All 61 flow/catalog/coverage tests pass, including the
+new report checks. Rendering remains disabled pending the remaining coverage
+and scene-level edit decisions.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

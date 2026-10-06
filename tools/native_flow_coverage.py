@@ -376,8 +376,28 @@ def report_markdown(result, game):
     lines += ["", "## Coverage", "", "| Evidence | Sites |", "| --- | ---: |"]
     lines += [f"| {status} | {count} |" for status, count in sorted(result["counts"][game].items())]
     lines += ["", "Counts include UI and control text. Equal wording does not imply equal visuals,",
-              "speaker, state, or reachability. Unobserved sites remain unresolved.", "",
-              "## Other Witnesses", ""]
+              "speaker, state, or reachability. Unobserved sites remain unresolved."]
+    groups = defaultdict(Counter)
+    for site in result["sites"]:
+        if site["game"] == game and site["status"].startswith("unobserved_"):
+            groups[site["profile"], site.get("record") or "Unattributed", site["domain"]][site["status"]] += 1
+    columns = ("unobserved_wording_or_dynamic_site", "unobserved_site_with_witnessed_wording",
+               "unobserved_empty_or_control_text")
+    ranked = sorted(groups, key=lambda key: (-groups[key][columns[0]], -sum(groups[key].values()), key))
+    lines += ["", "## Unresolved Groups", "",
+              "Up to twenty source groups, ordered by unobserved new or dynamic wording.",
+              "These are source-site counts, not distinct clips, feasible branches, or duration estimates.",
+              "The full per-site evidence and unresolved list remain in `coverage.json`.", "",
+              "| Profile | Source Actor | Domain | New/Dynamic | Known Wording | Empty/Control |",
+              "| --- | --- | --- | ---: | ---: | ---: |"]
+    for key in ranked[:20]:
+        profile, actor, domain = key
+        actor = actor.replace("|", "\\|")
+        values = " | ".join(str(groups[key][status]) for status in columns)
+        lines.append(f"| SCRIPT{profile} | {actor} | {domain.upper()} | {values} |")
+    if not ranked:
+        lines += ["", "No unobserved source text sites; this alone is not full scene-coverage proof."]
+    lines += ["", "## Other Witnesses", ""]
     main = {row["witness"] for row in result["successful_routes"][game]}
     contributions = defaultdict(set)
     for site in result["sites"]:
