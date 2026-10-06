@@ -135,6 +135,10 @@ advances the exhausted topic back into the scripted tomb transition; choosing
 the separate Vista assignment. His transfer to the tomb is observed. The local
 contact clicks at the end of that prefix do not reopen the destination view;
 they are not evidence of the subsequent tomb conversation.
+`cb-anna-tomb-contact-v4` opens and closes the chart after loading to restore
+the local camera, then selects Vista. The game enters the tomb and presents
+Anna's three lines directly, without repeating Super Tromp's topics. Anna is
+the sole known outgoing phone contact in the resulting earned save.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
