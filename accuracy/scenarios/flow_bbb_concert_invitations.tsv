@@ -1,0 +1,10 @@
+# Hear Trump's proposal, then Tramp's announcement that the guests are arriving.
+park 4 45
+wait 25
+click 125 118
+wait 700
+park 4 45
+wait 25
+click 125 118
+# Allow the invitation and ensuing robot broadcasts to drain before saving.
+wait 1800

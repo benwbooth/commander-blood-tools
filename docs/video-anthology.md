@@ -633,6 +633,14 @@ Blue Wave aboard. The run observes 14 resources and 19 fully revealed sites.
 The two earlier attempts left the navigation chart open and never reached the
 requested choice; they are failed attempts, not predecessors. V3 uses the
 normal destination selector even when returning to the same planet.
+`bbb-concert-invitations-v1` answers Trump and Tramp through the incoming-call
+panel. The normal save confirms `A64=3`, `A68=2`, `B98=21`, and `A13=0`.
+Fourteen guests are aboard; the world update places Emasculator on Malusland.
+The automatically selected `47robinv` broadcast contains its 11 authored clips
+in order at native boundaries 5305--5882, with every decoder counter reaching
+the source's last decoded-frame boundary. The route observes 14 resources and
+22 fully revealed sites. The invitations alone are not concert playback or an
+ending witness.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
