@@ -1,0 +1,23 @@
+# Fifth visit from recipe-no-crush-v3; offer the legitimately purchased perfume.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose perfume
+# Giving perfume reopens Mamy's purchase offer before its gift reaction.
+choose refuse
+wait 200
+# After her return response, leave the six-item inventory menu normally.
+click 200 129
+wait 200

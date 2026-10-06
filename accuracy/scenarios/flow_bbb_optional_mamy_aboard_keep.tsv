@@ -1,0 +1,10 @@
+# Same earned aboard checkpoint; accept the offered losing alternative.
+park 4 45
+wait 20
+click 230 124
+wait 100
+click 100 56
+choose keep_here
+# Only passive waits follow; the recorder must validate SCRIPT2 gamov02.
+wait 200
+wait 300

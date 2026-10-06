@@ -636,6 +636,16 @@ union adds 47 sites and 34 distinct wordings relative to `audit-v8`.
 `cb-izwal-alt-audit-v1/coverage.json` retains the detailed comparison.
 These are genuine alternative identities, not changes to the script globals.
 
+Three further fresh-game branches, `cb-izwal-alt-exterminator-v1`,
+`cb-izwal-alt-tarzoom-v1`, and `cb-izwal-alt-commander-v1`, finish the same
+ordinary credit-and-callback route with their respective offered identities.
+They have 116, 116, and 113 source-matched sites and add 15 sites and ten new
+wordings beyond the preceding identity slice. Their current script and input
+hashes pass independent review. `cb-izwal-alt-audit-v2/coverage.json` records
+the detail; these three witnesses were already included in `audit-v9`.
+The three wrong-Venusia attempts remain incomplete and excluded. They do not
+establish the wrong-delivery or spent-credit responses.
+
 The four Mamy witnesses `bbb-optional-mamy-stroll-v2`,
 `bbb-optional-mamy-recipe-no-crush-v3`, `bbb-optional-mamy-recipe-decline-v1`,
 and `bbb-optional-mamy-crush-v1` begin with the earned first-visit perfume save.
@@ -648,6 +658,24 @@ leaves Mamy in Loviland; the decline branch retains food; the crush branch
 brings her aboard through the authored response. Detailed checks and save
 hashes are in `bbb-optional-mamy-audit-v1/final.json`. Three earlier attempts
 remain excluded for a wrong Cancel row or unhandled menu/travel state.
+
+Four subsequent Mamy alternatives pass the independent source and lineage
+audit in `bbb-optional-mamy-aboard-audit-v1/parent-review.json`:
+`bbb-optional-mamy-aboard-return-v1`, `bbb-optional-mamy-aboard-keep-v1`,
+`bbb-optional-mamy-perfume-return-v1`, and `bbb-optional-mamy-decoder-gift-v1`.
+They have 14, 24, ten, and six matched sites respectively, with no rejected
+presentations across 34 distinct validated lineage manifests. Their union adds
+31 sites and 31 new wordings beyond the first Mamy slice; 27 of those sites
+were already included in `audit-v9`.
+Sending Mamy back relocates her to Cyborland and makes a normal save at
+boundary 4447. Keeping her aboard reaches the authored losing ending at
+SCRIPT2 `0x9f14` and exits cleanly; that alternative has no resumable save.
+The perfume branch declines the renewed purchase offer and witnesses the
+gift's return, leaving the perfume aboard and credits unchanged. The decoder
+branch transfers it to Mamy and raises her evolution from 60 to 110. Both
+leave the inventory menu normally and save, at boundaries 5563 and 5312.
+These are native normal-input alternatives, not DOS parity, complete Mamy
+coverage, or successful-ending continuations for every saved branch.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

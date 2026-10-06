@@ -1,0 +1,8 @@
+# From the earned crush-v1 save: Mamy is second in the nine-item cryobox.
+park 4 45
+wait 20
+click 230 124
+wait 100
+click 100 56
+choose send_back
+wait 300

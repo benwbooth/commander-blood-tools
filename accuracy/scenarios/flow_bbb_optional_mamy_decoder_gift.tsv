@@ -1,0 +1,21 @@
+# Fifth visit from recipe-no-crush-v3; give the legitimately owned decoder.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose decoder
+wait 200
+# Leave the remaining five-item inventory menu normally.
+click 200 123
+wait 200
