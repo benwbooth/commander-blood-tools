@@ -205,6 +205,12 @@ and wakes Hom after their departure. Hom moves to Kortex. Following him and
 providing the requested mouse print completes his exam briefing. The saved
 endpoint has `G1=1`, Hom at Kortex, Yoko at the observatory, Maxxon on Rondo,
 and Kran Dobu's call pending; the U.R.O.U.T. diploma has not yet been earned.
+`cb-urout-diploma-v2` answers Kran Dobu, passes Cyberquizz's first five questions
+through their visible menus, and teleports the diploma aboard. Returning to
+Hom and providing the second mouse print presents the Big Bang coordinates.
+The saved endpoint retains the diploma aboard, `Bof=5`, `quest=5`, and Hom at
+Trashlando. The failed v1 opening-line loop is excluded; v2 explicitly records
+the original-oracle-backed skipped-A9 runtime repair described above.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

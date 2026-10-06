@@ -1,0 +1,37 @@
+# Answer Kran Dobu, then take the ordinary Cyberock exam.
+park 4 45
+wait 25
+click 125 118
+wait 800
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 77 86
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+choose Yolk
+choose yolk
+choose Rotator
+choose Attrox
+choose Fifi
+choose teleport
+wait 800
+# Show Hom the earned diploma and receive the Big Bang coordinates.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 59 36
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+choose click
+wait 1000
