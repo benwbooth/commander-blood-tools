@@ -286,6 +286,11 @@ continuation plays, Tequila comes aboard, and the saved checkpoint confirms
 `A87=7`, two bionium, seven credits, and the retained perfume. The earlier v1
 failed before producing a trace because it was launched outside the graphics
 development environment; it is not a route witness.
+`bbb-presidential-call-v1` makes the two follow-up Internet calls, declines
+the password shortcut each time, and answers Chigraxx's queued call with
+`talk` and `hello`. The conversation and ensuing war activation complete;
+the saved checkpoint has `B95=3`, `B24=1`, `A73=1`, seven credits, and two
+bionium. It records the same skipped-A9 runtime update as CB's repaired exam.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

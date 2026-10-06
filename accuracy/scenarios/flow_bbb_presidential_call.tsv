@@ -1,0 +1,22 @@
+# Make the two normal Internet calls after Tequila's invitation.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1300
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1800
+# Answer the queued presidential call and finish the conversation.
+park 4 45
+wait 25
+click 125 118
+choose talk
+choose hello
+wait 1800
