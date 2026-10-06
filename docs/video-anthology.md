@@ -1017,8 +1017,37 @@ five to minus 48, 53 deductions. `original-scene-review.json` binds the
 capture, executable, screenshots, RAM observations, and 76 predecessor
 manifests. The French-original/English-native scheduling difference is not
 explained by this evidence. No single-debit fix is justified, and the native
-payment save is not used as a predecessor. This is an original scene check
-after loading an earned native save, not a complete original playthrough.
+payment save is not used as a predecessor. A separate, non-production native
+control disables only the embedded SCRIPT3 English display catalog, leaving
+executable code, scripts, and state untouched. Its French scene makes 66
+deductions, so translation length alone does not explain the difference.
+`source-text-control-review.json` binds that binary experiment and its trace;
+it is not an accepted flow or predecessor. The DOS result is an original
+scene check after loading an earned native save, not a complete original
+playthrough.
+
+Three Papy GIVE alternatives continue independently from the earned
+`bbb-gluxx-resupply-v1` save. Their actual menus offer the carried items;
+none uses a forced transfer or the strike-payment checkpoint:
+
+- `bbb-optional-papy-medicine-v2` gives medicine, declines the intervening
+  purchase offer, and receives the medicine back before cancelling GIVE.
+  It records 8,598 frames, 507 events, and 15 matching sites. The earlier
+  attempt stops at the purchase choice without saving and remains excluded.
+- `bbb-optional-papy-decoder-v2` gives the decoder, setting `B22=1`, raising
+  Papy's evolution 60 to 100 and reducing his population 130 to 30 at the
+  source effect. Its 6,792 frames and 345 events contain seven matched sites.
+- `bbb-optional-papy-picture-v2` gives the picture, raising `B96` three to
+  four, quartering population 130 to 32, and increasing energy 54 to 154
+  at the source effect. It records 6,792 frames, 340 events, and seven sites.
+
+All three endpoints close normally with eight credits, cleared gift flags,
+and a witnessed slot-zero save. Medicine remains aboard; decoder and picture
+remain with Papy. `bbb-optional-papy-give-audit-v1/final.json` and independent
+`parent-review.json` validate 62 lineage manifests, current input/source
+hashes, full text pixels, menus, state effects, and saved bytes. Their union
+adds 12 sites and ten distinct new wordings; later simulation values are
+not substituted for the immediate authored effects.
 
 `bbb-optional-mamy-optics-rejection-v1` uses an earned optics item before
 Otto's mutation bit is set. It observes SCRIPT3 COD 25275, 25313, and 25347,

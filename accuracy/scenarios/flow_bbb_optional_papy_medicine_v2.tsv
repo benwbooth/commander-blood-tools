@@ -1,0 +1,23 @@
+# Independent earned resupply checkpoint; ordinary Papy GIVE medicine.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 16 110
+wait 60
+click 250 125
+wait 200
+choose medicine
+wait 400
+# Giving medicine makes it absent aboard: refuse the visible purchase offer.
+choose refuse
+wait 400
+# Cancel the returned GIVE menu, including a possible ordinary energy gift.
+click 200 158
+wait 300
