@@ -329,6 +329,12 @@ does settle Rotator on Kultland and Mig Burner on Mastaland, both with active
 participation flags 5. The cryobox clicks in that fragment have no effect
 because the call rotated the bridge to the second band; his aboard explanation
 is not counted yet.
+The following continuation (`bbb-zen-first-telepathy-v1`) explicitly returns
+to the console and selects Bug, the second of eight cryobox records. His full
+future/Plato explanation plays, and he leaves for Trashlando. Super Zen's
+fourth Crazyland visit then accepts the word game and completes the telepathic
+montage. The saved endpoint has `A53 = 2`, `A60 = 0`, seven bionium, and
+Marakas at Trashlando, enabling the disappearance investigation.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.

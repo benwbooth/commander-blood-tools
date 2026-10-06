@@ -1,0 +1,7 @@
+# Bug's arrival rotates the bridge; return to the console first.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 67
+wait 700
