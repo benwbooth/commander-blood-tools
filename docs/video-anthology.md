@@ -328,6 +328,10 @@ watches its first channel. The complete `microkid` sequence runs in authored
 order (`oollee01`, `bbar`, `oollee10`) before a normal close and save. The saved
 game hash is unchanged from the predecessor. Its duplicate loop is retained
 as evidence, not another distinct scene.
+`cb-curse-tv-v1` uses the earned chapter-four portrait-recovery checkpoint and
+watches the curse channel through its complete `maledict.hnm` sequence. It
+returns and saves with `maledict=1`; the repeated broadcast is a single distinct
+scene for assembly. No curse or channel state was assigned externally.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -952,7 +956,10 @@ routes have already been executed:
   Their engine-mediated return to the world must be included in the flow.
 - BBB SCRIPT2 distinguishes the `A13`-controlled game-over procedures from
   `fin1`, whose source guard is Scruter Mac evolution above 900. Setting that
-  value directly is not an acceptable successful route.
+  value directly is not an acceptable route. Despite its procedure name,
+  `fin1` selects the same `28bob` dismissal sequence as the `A13=2` failure.
+  The congratulatory `48finbob` sequence instead requires `A13>25`; its
+  post-concert route is the successful-ending target.
 
 The CB tutorial exposed a production-runtime mismatch: Honk stopped after his
 first line and opened the BAS `adieu` menu, whereas the original executable
