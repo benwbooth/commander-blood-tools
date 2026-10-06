@@ -228,6 +228,13 @@ Hom and providing the second mouse print presents the Big Bang coordinates.
 The saved endpoint retains the diploma aboard, `Bof=5`, `quest=5`, and Hom at
 Trashlando. The failed v1 opening-line loop is excluded; v2 explicitly records
 the original-oracle-backed skipped-A9 runtime repair described above.
+`cb-big-band-arrival-v2` visits the closed Venusia shop, answers Hanna Scruta,
+and follows Hom's coordinates to the Big Band Club. Bug Deluxe's wedding
+announcement and Bob's complete Big Bang / Big Band explanation are presented.
+The normal save confirms `exp=1`, `bok=1`, and the unchanged eight-entry aboard
+roster. This run observes 29 decoded video resources and 63 fully revealed
+text sites. The failed v1 blank-caption attempt is excluded; v2 records the
+original-backed caption repair. Bob's explanation is not the concert ending.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

@@ -1,0 +1,37 @@
+# Visit the closed Venusia shop, then answer Hanna Scruta's call.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 83 11
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 500
+park 4 45
+wait 25
+click 125 118
+wait 700
+# Follow Hom's earned coordinates and meet Bug Deluxe at the club.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 100 100
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 1000
+# Wake Bob, first of eight cryobox entries, for the Big Bang / Big Band explanation.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 56
+wait 1400
