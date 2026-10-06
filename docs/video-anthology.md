@@ -226,6 +226,10 @@ endpoint has `B26=2`, `vbio=0`, and Tramp's newly active Magnusland colony.
 `bbb-tramp-colony-v1` visits that colony, gives Tramp the replacement guitar,
 and answers Trump's warning call. The saved checkpoint has `A86=1`, the guitar
 with Tramp, and Super Tromp's active colony at Corpoland.
+`bbb-gluxx-resupply-v1` makes two ordinary visits to Daddy to renew the existing
+loan repayment, obtains writing through Mamy's second-visit answer, buys her
+perfume, and buys medicine during Papy's fourth visit. The saved checkpoint
+has all three items aboard, the retained technology, and eight credits.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

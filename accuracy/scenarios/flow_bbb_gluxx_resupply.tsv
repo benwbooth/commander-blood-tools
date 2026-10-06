@@ -1,0 +1,62 @@
+# Daddy renews the existing loan repayment on two ordinary Troma visits.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 50 110
+wait 60
+click 250 125
+wait 300
+click 80 104
+wait 600
+click 200 134
+wait 600
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+wait 600
+click 200 134
+wait 700
+# Mamy's second visit supplies writing; buy replacement perfume as well.
+park 4 0
+wait 25
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 300
+click 80 104
+choose no_stroll
+choose accept
+wait 500
+click 200 144
+wait 700
+# Purchase medicine during Papy's fourth-visit eye-examination exchange.
+park 4 0
+wait 25
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 16 110
+wait 60
+click 250 125
+wait 300
+click 80 104
+choose accept
+wait 500
+click 200 150
+wait 700
