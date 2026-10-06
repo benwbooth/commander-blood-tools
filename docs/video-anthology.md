@@ -323,6 +323,12 @@ visit also earns optics. The saved endpoint has seven bionium remaining,
 Emasculator at population 320 and evolution 350, and `B35 = 1`. Rotator still
 shares Attroxcity and has not acquired the settlement participation flag;
 the fragment name is not evidence that a new colony exists.
+Answering Bug's pending call with `I_do` (`bbb-bug-zen-message-v1`) brings
+him aboard and sets `A53 = 1`. Once this call finishes, ordinary simulation
+does settle Rotator on Kultland and Mig Burner on Mastaland, both with active
+participation flags 5. The cryobox clicks in that fragment have no effect
+because the call rotated the bridge to the second band; his aboard explanation
+is not counted yet.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.

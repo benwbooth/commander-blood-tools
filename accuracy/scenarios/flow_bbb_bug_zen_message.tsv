@@ -1,0 +1,11 @@
+# Answer Bug's earned call and hear his new cryobox explanation.
+park 4 45
+wait 25
+click 125 118
+choose I_do
+wait 600
+# Bug precedes Jo in the actor roster.
+click 230 124
+wait 40
+click 100 56
+wait 1000
