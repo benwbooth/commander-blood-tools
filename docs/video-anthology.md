@@ -560,6 +560,11 @@ revealed sites and three decoded resources; no ambush choice occurs yet.
 `explroug`, `diplom1v`, and `venthig` sequence requests close normally, and the
 save confirms `C11=4` with Eviscerator aboard. It observes 15 decoded resources
 and 18 fully revealed sites. Prison/parole choices are subsequent contacts.
+`bbb-eviscerator-parole-v1` keeps him in the cryobox, refuses release once,
+then grants parole on the next contact. The `crazys20`, `p_cles`, and `match04`
+requests all close normally. Its ordinary save has `C11=5`, Eviscerator on
+Island, and Outrageor on Waveland, with 15 decoded resources and 16 fully
+revealed sites. These are sequential ordinary contacts, not injected alternatives.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

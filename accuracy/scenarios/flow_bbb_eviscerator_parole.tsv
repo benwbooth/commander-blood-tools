@@ -1,0 +1,24 @@
+# Eviscerator is first in the witnessed eleven-entry cryobox roster.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 39
+choose keep
+frames 200
+# Initially refuse release, allowing the entire authored time-loss clip.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 39
+choose no_no
+frames 600
+# Recontact and release him on parole through the normal choice.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 39
+choose on_parole
+frames 1000
