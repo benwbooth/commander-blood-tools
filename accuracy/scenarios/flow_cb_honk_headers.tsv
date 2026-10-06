@@ -1,0 +1,29 @@
+# Repeat the offered winning topic to observe its authored chance response.
+park 4 45
+wait 25
+click 230 88
+choose talk
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose win
+choose talk
+choose explanations
+choose bye_bye
+wait 300

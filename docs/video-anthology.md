@@ -308,6 +308,40 @@ All 29 chapter-two text sites match their source, as do the two startup sites.
 The native minigame exit is not an original-DOS rendering or physics proof.
 All 59 flow/catalog/coverage tests pass after these additions.
 
+`cb-hom-nested-races-v1` continues through offered parent menus for Croolis,
+Slimer, Sinox, Buggol, and ondoyant topics. Its bounded revisits produce 37
+matching Hom BAS sites, including the Croolis war/joke responses and Slimer
+science/politics responses missed by the first topic sweep. It saves at boundary
+10,358, SHA-256
+`3f14f20e6b1bdb3f98a1e2778ad3fa2c2e40b5dcae7d27728ea27bababcaac86`.
+`cb-honk-headers-v1` adds the chance-based winning advice and explicit
+explanations prompt, bringing the four Honk witnesses to 135 of 140 chapter-two
+BAS sites. Its save at boundary 4,848 has SHA-256
+`a8196277d069240d327572692c1dcfb4d4008e3b83a28b08e6dfe54d958aadf0`.
+Both targeted audits pass with no rejected attributions; unresolved sites are
+not silently classified as unreachable.
+
+`cb-jo-bionium-v1` loads the witnessed zero-dose save, reenters Jo normally,
+and replays a CB-specific AMER flight. CB's `AMER.XDB` has SHA-256
+`6fddeb5cc7c62fe5e638900746decc299f1637ea11612c0c51aced367dd12b31`,
+different from BBB's level. The planner requested ten doses but returned seven
+after leaving through the blue box; the actual game replay independently
+records 69,091 input/paced/presented minigame frames, 57 sound callbacks, normal
+restoration, `vbio=7`, and `compris=1`. Its success dialogue is witnessed, and
+the slot-zero save at boundary 5,188 has SHA-256
+`3a2299259b9eecc6fbdd18eec4feec3ec5a2b2620c1be77e3a3c82306ff741f1`.
+The 43 MiB witness contains no recorded movie or PCM. The generated flight
+inputs are copied into its hashed scenario; planning alone is not the witness.
+The input-plan JSON and TSV under `output/game-flows/oracles/cb-jo-input-plan-v1`
+have SHA-256 `cece072df7191ab59b827853591369162c10f2d223a7ffefb7bc41f2bf3d6b88`
+and `680698371484e95e80107d84a686fe593b3b2b3a3a30e200d6ff7b1ec067c6d3`.
+
+The refreshed `output/game-flows/audit-v5` validates 276 witnesses and excludes
+109 unfinished or legacy attempts. CB now has 1,569 successful-route sites,
+654 other normal-route sites, 687 unobserved sites with witnessed wording,
+128 empty/control sites, and 2,498 other unobserved/dynamic sites. BBB's counts
+are unchanged. The audit remains explicitly incomplete and not render-ready.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure

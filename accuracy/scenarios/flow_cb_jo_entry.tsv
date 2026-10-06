@@ -1,0 +1,7 @@
+# Jo remains second in the four-entry aboard roster after the zero-dose exit.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 89
+await-alien
