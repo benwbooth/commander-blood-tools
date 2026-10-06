@@ -1,0 +1,15 @@
+# Append after Honk's mutation option; pass the first-call TV detour normally.
+park 4 45
+wait 10
+click 230 104
+wait 40
+click 100 94
+wait 600
+park 4 45
+wait 10
+click 230 104
+wait 40
+click 100 94
+choose mutant
+choose shady
+wait 300

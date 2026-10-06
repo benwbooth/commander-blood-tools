@@ -10,10 +10,10 @@ from fractions import Fraction
 import hashlib
 import json
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
 
+from native_capture_storage import compact_chapter, open_trace, verify_optional_pcm
 from video_anthology import ROOT, command, digest, inventory, metadata_text, resource_name, save_json
 
 
@@ -143,13 +143,13 @@ def verify_chapter(path, record, manifest, exporter_hash):
     require((len(rows), duration, samples) == tuple(report["runner"][key] for key in
             ("presented_frames", "duration_ns", "audio_samples")), "runner accounting mismatch")
     require(digest(path / "endpoint.rgba") == report["endpoint_rgba_sha256"], "damaged endpoint")
-    with (path / "native-state.jsonl").open() as stream:
+    with open_trace(path / "native-state.jsonl") as stream:
         trace = validate_playlist(record, report, (json.loads(line) for line in stream),
                                   {resource_name(item["resource_name"]) for item in manifest["resources"]})
     hashes, _ = verify_media(path / "master.mkv", rows, duration)
     require(hashes["rgba_sha256"] == report["rgba_sha256"]
             and hashes["audio_sha256"] == report["audio_f32le_sha256"], "decoded report hash mismatch")
-    require(digest(path / "audio.f32le") == hashes["audio_sha256"], "damaged raw audio")
+    verify_optional_pcm(path, hashes["audio_sha256"])
     return dict(record=record["name"], path=str(path), duration_ns=duration, frames=len(rows),
                 audio_samples=samples, caption_cues=len(report["runner"]["caption_cues"]),
                 master_sha256=digest(path / "master.mkv"), **hashes, **trace)
@@ -189,7 +189,10 @@ def render(args):
                 with (args.out / (record["name"] + ".log")).open("w") as log:
                     command([args.exporter.resolve(), assets, "sequence:" + record["name"], path,
                              args.max_frames], stdout=log, stderr=subprocess.STDOUT)
-            completed.append(verify_chapter(path, record, manifest, provenance["exporter_sha256"]))
+            verified = verify_chapter(path, record, manifest, provenance["exporter_sha256"])
+            if not args.keep_intermediates:
+                compact_chapter(verified, apply=True)
+            completed.append(verified)
             print(f"  verified {completed[-1]['duration_ns'] / 1e9:.3f}s", flush=True)
         except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
             failures.append(dict(record=record["name"], error=str(error)))
@@ -301,6 +304,28 @@ def dialogue_source_order(entries):
     return sequences + [entry for _, entry in sorted(dialogue)]
 
 
+def mux_assembly(listing, metadata, output, rows):
+    packet_durations = (f"setts=duration='if(eq(N,{len(rows) - 1}),"
+                        f"{rows[-1]['duration_ns']}/(1000000000*TB),NEXT_PTS-PTS)'")
+    # Strip chapter audio timestamps through a pipe, preserving every float sample
+    # without keeping a second concatenated PCM file on disk.
+    with subprocess.Popen(["ffmpeg", "-nostdin", "-v", "error", "-f", "concat", "-safe", "0",
+                           "-i", str(listing), "-map", "0:a:0", "-c:a", "pcm_f32le", "-f", "f32le",
+                           "pipe:1"], stdout=subprocess.PIPE) as decoder:
+        try:
+            command(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "concat", "-safe", "0",
+                     "-i", listing, "-f", "f32le", "-ar", "48000", "-ac", "1", "-i", "pipe:0",
+                     "-f", "ffmetadata", "-i", metadata, "-map", "0:v:0", "-map", "1:a:0",
+                     "-map_metadata", "2", "-map_chapters", "2", "-c:v", "copy", "-bsf:v", packet_durations,
+                     "-c:a", "pcm_f32le", output], stdin=decoder.stdout)
+            decoder.stdout.close()
+            require(decoder.wait() == 0, "chapter PCM decoder failed")
+        finally:
+            if decoder.poll() is None:
+                decoder.kill()
+                decoder.wait()
+
+
 def assemble(args):
     base_path = getattr(args, "base_manifest", None)
     replacement_batches = getattr(args, "replacement_batch", None) or []
@@ -325,33 +350,24 @@ def assemble(args):
         chapters = []
         timelines = []
         offset = 0
-        with (temp / "audio.f32le").open("wb") as audio:
-            for entry in entries:
-                path = Path(entry["path"])
-                require(digest(path / "master.mkv") == entry["master_sha256"], "chapter master changed")
-                require(digest(path / "audio.f32le") == entry["audio_sha256"], "chapter PCM changed")
-                native = timeline(path / "timeline.jsonl")
-                require(native[1] == entry["duration_ns"] and len(native[0]) == entry["frames"],
-                        "chapter timing changed")
-                timelines.append(native)
-                name = str(path / "master.mkv")
-                require("\n" not in name and "\r" not in name, "newline in chapter path")
-                name = name.replace("'", "'\\''")
-                listing += [f"file '{name}'", f"duration {native[1] // 1_000_000_000}.{native[1] % 1_000_000_000:09d}"]
-                chapters.append(dict(start_ns=offset, end_ns=offset + native[1], title=entry["record"]))
-                offset += native[1]
-                with (path / "audio.f32le").open("rb") as source:
-                    shutil.copyfileobj(source, audio)
+        for entry in entries:
+            path = Path(entry["path"])
+            require(digest(path / "master.mkv") == entry["master_sha256"], "chapter master changed")
+            verify_optional_pcm(path, entry["audio_sha256"])
+            native = timeline(path / "timeline.jsonl")
+            require(native[1] == entry["duration_ns"] and len(native[0]) == entry["frames"],
+                    "chapter timing changed")
+            timelines.append(native)
+            name = str(path / "master.mkv")
+            require("\n" not in name and "\r" not in name, "newline in chapter path")
+            name = name.replace("'", "'\\''")
+            listing += [f"file '{name}'", f"duration {native[1] // 1_000_000_000}.{native[1] % 1_000_000_000:09d}"]
+            chapters.append(dict(start_ns=offset, end_ns=offset + native[1], title=entry["record"]))
+            offset += native[1]
         rows, duration, samples = concatenate_timelines(timelines)
         (temp / "concat.txt").write_text("\n".join(listing) + "\n")
         (temp / "chapters.ffmeta").write_text(metadata_text(chapters))
-        packet_durations = (f"setts=duration='if(eq(N,{len(rows) - 1}),"
-                            f"{rows[-1]['duration_ns']}/(1000000000*TB),NEXT_PTS-PTS)'")
-        command(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "concat", "-safe", "0", "-i", temp / "concat.txt",
-                 "-f", "f32le", "-ar", "48000", "-ac", "1", "-i", temp / "audio.f32le",
-                 "-f", "ffmetadata", "-i", temp / "chapters.ffmeta", "-map", "0:v:0", "-map", "1:a:0",
-                 "-map_metadata", "2", "-map_chapters", "2", "-c:v", "copy", "-bsf:v", packet_durations,
-                 "-c:a", "pcm_f32le", temp / "master.mkv"])
+        mux_assembly(temp / "concat.txt", temp / "chapters.ffmeta", temp / "master.mkv", rows)
         hashes, encoded_chapters = verify_media(temp / "master.mkv", rows, duration)
         require(len(encoded_chapters) == len(chapters), "encoded chapter count differs")
         for actual, expected in zip(encoded_chapters, chapters):
@@ -388,6 +404,8 @@ def main():
     capture.add_argument("--exporter", type=Path, default=ROOT / "target/release/offline-presentation")
     capture.add_argument("--catalog-binary", type=Path, default=ROOT / "target/release/video-catalog")
     capture.add_argument("--max-frames", type=int, default=100_000)
+    capture.add_argument("--keep-intermediates", action="store_true",
+                         help="retain redundant raw audio/video and uncompressed traces for debugging")
     capture.set_defaults(run=render)
     join = modes.add_parser("assemble")
     join.add_argument("--batch", type=Path, action="append")

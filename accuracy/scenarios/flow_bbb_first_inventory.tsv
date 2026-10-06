@@ -1,0 +1,35 @@
+# New game through Daddy's settlement and Honk's first inventory handover.
+# No save load: the state is carried from the original PLAY route.
+wait 150
+click 160 150
+wait 20
+park 316 45
+wait 10
+click 230 88
+wait 100
+choose PLAY
+wait 100
+park 4 45
+wait 20
+click 230 117
+wait 100
+click 100 94
+wait 100
+choose yes
+wait 200
+choose right
+wait 200
+choose cool
+wait 200
+choose enough
+wait 200
+choose tell_me
+wait 200
+choose Tempest
+wait 300
+key 65 0
+wait 80
+park 4 45
+wait 10
+click 230 88
+wait 320

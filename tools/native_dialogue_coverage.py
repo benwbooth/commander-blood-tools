@@ -12,6 +12,7 @@ from pathlib import Path
 
 from native_dialogue_anthology import validate_trace
 from native_sequence_anthology import read_json, require, timeline
+from native_capture_storage import open_trace, trace_digest, verify_optional_pcm
 from video_anthology import digest, save_json
 
 GAMES = {"commander_blood": "cb", "big_bug_bang": "bbb"}
@@ -102,10 +103,11 @@ def build(catalog, batches, output):
             path = Path(chapter["path"]).resolve()
             require(path not in seen, "duplicate capture path")
             seen.add(path)
-            for name, field in [("report.json", "report_sha256"),
-                                ("native-state.jsonl", "native_state_sha256"),
-                                ("master.mkv", "master_sha256"), ("audio.f32le", "audio_sha256")]:
+            for name, field in [("report.json", "report_sha256"), ("master.mkv", "master_sha256")]:
                 require(digest(path / name) == chapter[field], f"changed chapter artifact: {path / name}")
+            require(trace_digest(path / "native-state.jsonl") == chapter["native_state_sha256"],
+                    "changed chapter state trace")
+            verify_optional_pcm(path, chapter["audio_sha256"])
             report = read_json(path / "report.json")
             plan = record["plan"]
             require(report["runner"]["chapter"] == plan and report["target"] == "dialogue_chapter"
@@ -120,7 +122,7 @@ def build(catalog, batches, output):
             require((len(rows), duration, samples) ==
                     (chapter["frames"], chapter["duration_ns"], chapter["audio_samples"]),
                     "chapter timeline accounting differs")
-            with (path / "native-state.jsonl").open() as stream:
+            with open_trace(path / "native-state.jsonl") as stream:
                 evidence = validate_trace(plan, report["runner"],
                                           (json.loads(line) for line in stream), rows)
             for field in ("published_cod_sites", "state_trace_cod_sites", "ui_raster_evidence",

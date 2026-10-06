@@ -6,6 +6,146 @@ output and SDL mixer submissions. It does **not** run the DOS executable or prov
 DOS rendering/timing parity. Dialogue discovery uses a separate static script
 scan; no game process or simulated clicks are needed for that scan.
 
+## Normal-Playthrough Flow Work
+
+The requested final scope is a successful playthrough of each game plus distinct
+alternatives reached through legitimate choices. Shared material should appear
+once. This is not the Cartesian product of actors, destinations, inventory,
+visit counts, and evolution values. The existing selected-branch anthology
+masters are **not** complete normal-playthrough videos.
+
+The order of work is flow discovery and validation first, rendering second.
+`tools/native_game_flow.py` runs the production native executable with only
+ordinary input scenarios, a fresh private writable directory, and no recording
+option. It concurrently consumes the native frame and action traces through
+FIFOs, retaining compact scene changes and object-state deltas rather than
+writing raw per-frame traces, video, or PCM.
+
+```sh
+nix develop -c cargo build --release -p commander-blood-game \
+  --bin commander-blood --bin big-bug-bang
+nix develop -c uv run tools/native_game_flow.py --game cb \
+  --assets "$HOME/.local/share/commander-blood/assets-v1" \
+  --scenario accuracy/scenarios/production_bob_first_contact.tsv \
+  --out output/game-flows/cb-first-contact
+```
+
+Each attempt retains `flow.md`, `flow.json`, `events.jsonl`, `actions.jsonl`,
+the exact scenario, and the game log. The manifest hashes the native executable,
+asset manifest, recorder, scripts, and output evidence. Actual assets are checked
+against the import manifest before the run. A failed route stays failed; there
+is no fallback to forced contacts or prepared inventory.
+
+Normal-flow scenarios reject `contact`, `teleport`, and `alien` injection commands.
+They also reject observed save loads without predecessor validation and the CB
+script cheat menu. `choose LABEL` waits for a uniquely matching, rendered,
+selectable menu row and performs an ordinary pointer click on that row. It does
+not assign the script choice variable or invoke an inventory transfer directly.
+
+Use repeated `--then fragment.tsv` arguments to append input fragments in order.
+The combined scenario is replayed in one process with carried state; each
+fragment's content hash is retained. The final observation includes the actual
+object locations/inventory and bridge/VM readiness flags for endpoint checks.
+
+`--resume-from path/to/flow.json --slot 0` permits one normal UI load from a
+recorded predecessor. The preceding run must have witnessed a successful save
+in that slot. Its evidence, save-directory record, save bytes, source profiles,
+asset manifest and executable hashes must still match. Earlier lineage is
+validated recursively. Only the witnessed save and its native slot directory
+are copied into the new private writable directory; the scenario still has to
+select the correct slot through the normal load menu. Failed predecessors,
+arbitrary imported checkpoints, changed saves, different binaries, missing
+save events, and an additional unvalidated load are rejected.
+
+The flow keeps subtitle and inline-menu text separate. A fully revealed text
+site requires the native glyph-raster audit to match, not just a published VM
+offset. Loaded DESCRIPT bindings and videos with observed decoded frames are
+separate evidence. Frame boundaries and wall-clock observation times are not
+video presentation timestamps. A native route witness is not a DOS-parity proof.
+Route-exit credits do not establish that the story ending was reached.
+
+All current manifests deliberately retain `full_game_complete: false` and
+`all_normal_branches_complete: false`. Initial route probes are not the complete
+flows. Successful endings and alternate-branch coverage still have to be
+established before producing the new final videos.
+
+Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
+into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
+and `bobg.hnm`), and the normal Corpo jump. BBB's fresh-game route reaches
+Daddy's Templand settlement, Honk's six-item handover, and the writing gift that
+raises Daddy's evolution to 260. These are route endpoints, not whole-game
+completion. The detailed witnesses live under `output/game-flows`.
+
+### Source Progression Gates
+
+These are source constraints for reconstructing the routes, not claims that the
+routes have already been executed:
+
+- CB SCRIPT1 can enter SCRIPT2 through the tutorial's `game` choice or Bob's
+  mission briefing. The latter contains the Ark sequences absent from a route
+  that chooses `game` immediately. Sequence requests still have authored skip
+  conditions; their presence alone does not prove playback.
+- CB SCRIPT2's normal exit requires Kortex known, `C1 == 6`, the lens held by
+  Maxxon, and Scruter Jo and Bronko aboard. The resulting Scruter K call enters
+  SCRIPT3. The separate `CHEAT MODE` selector is excluded.
+- CB SCRIPT3 requires `fish == 1`, `fion == 1`, the scrambler held by Blood,
+  Tina Burner and Amigo at Trashlando, and `jerry == 1`. Jerry's call enables the
+  Oddland crossing that enters SCRIPT4.
+- CB SCRIPT4 requires Betakam at Sat and Maxxon, Yoko, and Ondoyant aboard.
+  Jerry's call enables the return through Oddland into SCRIPT5.
+- CB SCRIPT5's concert follows the Bigbang bar conversations and ring transfer
+  to Migrator. `finalmen` requires the Bigbang/concert/Migrator state and requests
+  the concert clips followed by `fin.hnm`; decoding a loose ending asset is not
+  evidence that these predecessors occurred.
+- BBB SCRIPT1 introduces SCRIPT2. SCRIPT2 is the world/ship dispatcher; SCRIPT3
+  through SCRIPT17 are actor modules, not successive chronological acts.
+  Their engine-mediated return to the world must be included in the flow.
+- BBB SCRIPT2 distinguishes the `A13`-controlled game-over procedures from
+  `fin1`, whose source guard is Scruter Mac evolution above 900. Setting that
+  value directly is not an acceptable successful route.
+
+The CB tutorial exposed a production-runtime mismatch: Honk stopped after his
+first line and opened the BAS `adieu` menu, whereas the original executable
+continued the tutorial automatically. The native A6 dispatcher now preserves
+CB's outer-loop handoff-lock write at `0x565B` (`GS:67B7`), independently of
+BBB's additional VM-disable write. `re/tools/commander_vm_yield_oracle.py`
+executes the unmodified original A6 and outer loop for 24 accepted/rejected
+subtitle/menu cases; the corresponding Rust regression checks the same
+pre-presentation-scan boundary. This repair does not establish whole-game parity.
+
+The authoritative guards and side effects remain in `re/vm/profiles` and
+`re/vm/big-bug-bang-profiles`. Neither a profile spine nor the static dialogue
+catalog below proves that all normal-playthrough prerequisites are satisfied.
+
+## Capture Storage
+
+New native dialogue/sequence captures compact only after their full master
+verification succeeds. The retained files are `master.mkv`, the report and
+plan/provenance, a losslessly compressed `native-state.jsonl.gz`, and a
+`storage.json` receipt. Redundant `video.mkv` and `audio.f32le` are removed only
+after checking the master against the saved verification hash and checking the
+trace's gzip round trip. `--keep-intermediates` opts out during debugging.
+Coverage and assembly verification accept either raw or compressed traces.
+
+Final assembly streams concatenated decoded PCM directly into the muxer instead
+of first creating a whole-anthology raw PCM file. The integration test verifies
+the decoded result, including mixed 46/68 ms frame spans and a one-frame chapter.
+
+Existing captures are untouched unless compaction is explicitly applied. Start
+with the read-only audit:
+
+```sh
+uv run tools/native_capture_storage.py --root output/anthology \
+  --out output/game-flows/storage-audit.json
+```
+
+`--apply` performs the verified compaction; do not run it alongside an active
+capture. Masters, final videos, source assets, and failed captures are retained.
+The initial audit found 751 candidate chapters, 40,993,221,022 bytes of duplicate
+video/PCM and 41,979,899,252 bytes of raw traces. These are candidate input sizes,
+not claimed reclaimed space or a promise about compression ratio. No existing
+capture was deleted by that audit.
+
 ## Static Dialogue Trees
 
 ```sh

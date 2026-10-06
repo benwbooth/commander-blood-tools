@@ -1,0 +1,10 @@
+# Append after the earned writing handover. Honk offers this shortcut in game.
+park 4 45
+wait 10
+click 230 88
+wait 300
+park 4 45
+wait 10
+click 230 88
+choose mutation
+wait 300

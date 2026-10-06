@@ -5044,6 +5044,10 @@ impl<'window> ModernGameServices<'window> {
                             };
                             serde_json::json!({
                                 "kind": format!("{:?}", row.kind),
+                                "item_index": match row.kind {
+                                    crate::native::bloodprg::ChoiceListRowKind::Item(index) => Some(index),
+                                    crate::native::bloodprg::ChoiceListRowKind::Cancel => None,
+                                },
                                 "position": row.position,
                                 "matching_text_pixels": rgba_color_count_in_rect(
                                     self.runtime.ui_overlay_rgba(), rect, rgba,

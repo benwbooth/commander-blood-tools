@@ -1,0 +1,19 @@
+# Normal-input prologue: keep Izwalito's explanations and Bob's mission briefing.
+# This is a route prefix, not a complete playthrough.
+wait 50
+wait 50
+wait 55
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+choose explanations
+wait 300
+click 230 88
+wait 300
+click 230 124
+wait 20
+click 100 89
+choose yes
+wait 1000

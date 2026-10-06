@@ -99,6 +99,9 @@ enum RuntimeScenarioActionKind {
         position: [i16; 2],
         procedure_offset: usize,
     },
+    ChooseVisibleWord {
+        label: String,
+    },
     Key(RuntimeScenarioKey),
     Wait {
         frames: u16,
@@ -190,6 +193,14 @@ impl RuntimeScenarioDriver {
     }
 
     pub(super) fn record_initial_boundary(&mut self, semantic: &Value) -> Result<()> {
+        if let Some(action) = self.actions.get_mut(self.action_index)
+            && let RuntimeScenarioActionKind::ChooseVisibleWord { label } = &action.kind
+            && let Some(position) = visible_choice_position(semantic, label)?
+        {
+            // Resolve only a visible row, then use the ordinary pointer click path.
+            action.kind = RuntimeScenarioActionKind::Click { position };
+            self.action_frame = u16::MIN;
+        }
         if !self.initial_trace_written {
             self.write_record(usize::MIN, "initial", None, semantic)?;
             self.initial_trace_written = true;
@@ -256,6 +267,12 @@ impl RuntimeScenarioDriver {
                 input.pointer_position = Some(*position);
                 input.primary_pressed = self.action_frame == u16::MIN;
                 self.action_frame + 1 >= CLICK_FRAME_COUNT
+            }
+            RuntimeScenarioActionKind::ChooseVisibleWord { label } => {
+                if self.action_frame >= 6000 {
+                    bail!("choose action timed out waiting for a visible selectable row {label:?}");
+                }
+                false
             }
             RuntimeScenarioActionKind::ContactClick {
                 position,
@@ -418,6 +435,14 @@ fn parse_action(line: &str, path: &Path, line_number: usize) -> Result<RuntimeSc
         Some("click" | "sclick" | "frameclick") => RuntimeScenarioActionKind::Click {
             position: position(&fields)?,
         },
+        Some("choose") => {
+            if fields.len() < 2 {
+                return Err(fail("choose action requires a displayed choice label"));
+            }
+            RuntimeScenarioActionKind::ChooseVisibleWord {
+                label: fields[1..].join(" "),
+            }
+        }
         Some("contact") => {
             if fields.len() != 4 {
                 return Err(fail(
@@ -543,9 +568,98 @@ fn decode_scenario_key(scan_code: u8, ascii: u8) -> Option<RuntimeScenarioKey> {
     }
 }
 
+fn visible_choice_position(semantic: &Value, label: &str) -> Result<Option<[i16; 2]>> {
+    let presentation = &semantic["presentation"];
+    let choice = &presentation["retained_word_choice"];
+    if choice["phase"] != "Selecting" || presentation["waiting_for_input"] != true {
+        return Ok(None);
+    }
+    let labels = presentation["rendered_word_choices"]
+        .as_array()
+        .context("selectable choice has no rendered labels")?;
+    let matches = labels
+        .iter()
+        .enumerate()
+        .filter_map(|(index, value)| (value.as_str() == Some(label)).then_some(index))
+        .collect::<Vec<_>>();
+    let index = match matches.as_slice() {
+        [] => return Ok(None),
+        [index] => *index,
+        _ => bail!("choose label is ambiguous in the current menu: {label:?}"),
+    };
+    let rows = choice["rows"]
+        .as_array()
+        .context("selectable choice has no rendered rows")?;
+    let Some(row) = rows
+        .iter()
+        .find(|row| row["item_index"].as_u64() == Some(index as u64))
+    else {
+        return Ok(None);
+    };
+    if row["matching_text_pixels"].as_u64().unwrap_or(0) == 0 {
+        return Ok(None);
+    }
+    let position = row["position"]
+        .as_array()
+        .context("choice row has no position")?;
+    let x = position
+        .first()
+        .and_then(Value::as_i64)
+        .context("choice row has no x")?
+        + 1;
+    let y = position
+        .get(1)
+        .and_then(Value::as_i64)
+        .context("choice row has no y")?
+        + 1;
+    if !(0..i64::from(LOGICAL_SCREEN_WIDTH)).contains(&x)
+        || !(0..i64::from(LOGICAL_SCREEN_HEIGHT)).contains(&y)
+    {
+        bail!("choice row is outside the logical screen");
+    }
+    Ok(Some([x as i16, y as i16]))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn semantic_choice_requires_unique_visible_selectable_label() {
+        let mut semantic = serde_json::json!({"presentation": {
+            "waiting_for_input": true,
+            "rendered_word_choices": ["yes", "no"],
+            "retained_word_choice": {"phase": "Selecting", "rows": [
+                {"item_index": 0, "position": [120, 90], "matching_text_pixels": 20},
+                {"item_index": 1, "position": [120, 100], "matching_text_pixels": 20}
+            ]}
+        }});
+        assert_eq!(
+            visible_choice_position(&semantic, "yes").unwrap(),
+            Some([121, 91])
+        );
+        assert_eq!(visible_choice_position(&semantic, "absent").unwrap(), None);
+        semantic["presentation"]["retained_word_choice"]["phase"] = serde_json::json!("Closing");
+        assert_eq!(visible_choice_position(&semantic, "yes").unwrap(), None);
+        semantic["presentation"]["retained_word_choice"]["phase"] = serde_json::json!("Selecting");
+        semantic["presentation"]["retained_word_choice"]["rows"][0]["matching_text_pixels"] =
+            serde_json::json!(0);
+        assert_eq!(visible_choice_position(&semantic, "yes").unwrap(), None);
+        semantic["presentation"]["rendered_word_choices"][1] = serde_json::json!("yes");
+        assert!(visible_choice_position(&semantic, "yes").is_err());
+    }
+
+    #[test]
+    fn semantic_choice_parser_preserves_display_label() {
+        let action = parse_action("choose Bob Morlock", Path::new("normal.tsv"), 1).unwrap();
+        assert_eq!(
+            action.kind,
+            RuntimeScenarioActionKind::ChooseVisibleWord {
+                label: "Bob Morlock".to_owned(),
+            }
+        );
+        assert!(parse_action("choose", Path::new("normal.tsv"), 1).is_err());
+    }
 
     #[test]
     fn every_checked_in_oracle_scenario_uses_the_supported_language() {

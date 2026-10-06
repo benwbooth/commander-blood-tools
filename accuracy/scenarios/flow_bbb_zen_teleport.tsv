@@ -1,0 +1,15 @@
+# Wake the normally created Super Zen, then accept his teleportation request.
+park 4 45
+wait 10
+click 230 117
+wait 40
+click 100 66
+wait 300
+park 4 45
+wait 10
+click 230 117
+wait 40
+click 100 66
+wait 300
+choose YES
+wait 300

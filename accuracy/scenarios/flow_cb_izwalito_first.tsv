@@ -1,0 +1,10 @@
+# Continue after the earned Corpo jump; open the ship panel and contact Izwalito.
+park 4 0
+wait 25
+click 216 72
+wait 120
+click 80 88
+choose commander_blood
+wait 300
+choose bye_bye
+wait 400

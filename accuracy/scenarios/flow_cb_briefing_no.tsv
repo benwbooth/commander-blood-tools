@@ -1,0 +1,18 @@
+# Legitimate alternative: decline Bob's briefing, then let his response finish.
+wait 50
+wait 50
+wait 55
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+choose explanations
+wait 300
+click 230 88
+wait 300
+click 230 124
+wait 20
+click 100 89
+choose no
+wait 1000

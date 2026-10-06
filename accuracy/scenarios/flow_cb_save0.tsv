@@ -1,0 +1,13 @@
+# Normal CB save-menu input; append after returning to the bridge.
+park 316 45
+wait 20
+click 230 160
+wait 20
+click 100 95
+wait 20
+key 33 102
+key 38 108
+key 24 111
+key 17 119
+key 28 13
+wait 30

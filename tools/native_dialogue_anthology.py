@@ -11,6 +11,7 @@ from pathlib import Path
 import subprocess
 
 from native_sequence_anthology import assemble, read_json, require, timeline, verify_media
+from native_capture_storage import compact_chapter, open_trace, trace_digest, verify_optional_pcm
 from video_anthology import ROOT, command, digest, inventory, resource_name, save_json
 
 
@@ -319,16 +320,16 @@ def verify_chapter(path, plan, manifest, exporter_hash):
     require((len(rows), duration, samples) == tuple(report["runner"][key] for key in
             ("presented_frames", "duration_ns", "audio_samples")), "runner accounting mismatch")
     require(digest(path / "endpoint.rgba") == report["endpoint_rgba_sha256"], "damaged endpoint")
-    with (path / "native-state.jsonl").open() as stream:
+    with open_trace(path / "native-state.jsonl") as stream:
         evidence = validate_trace(plan, report["runner"], (json.loads(line) for line in stream), rows)
     hashes, _ = verify_media(path / "master.mkv", rows, duration)
     require(hashes["rgba_sha256"] == report["rgba_sha256"] and
             hashes["audio_sha256"] == report["audio_f32le_sha256"], "decoded report hash mismatch")
-    require(digest(path / "audio.f32le") == hashes["audio_sha256"], "damaged raw audio")
+    verify_optional_pcm(path, hashes["audio_sha256"])
     return dict(record=plan["title"], path=str(path), duration_ns=duration, frames=len(rows),
                 audio_samples=samples, master_sha256=digest(path / "master.mkv"),
                 report_sha256=digest(path / "report.json"),
-                native_state_sha256=digest(path / "native-state.jsonl"), **hashes, **evidence)
+                native_state_sha256=trace_digest(path / "native-state.jsonl"), **hashes, **evidence)
 
 
 def chapter_plans(plan_paths, plan_set=None):
@@ -404,6 +405,8 @@ def render(args):
                                  args.max_frames], stdout=log, stderr=subprocess.STDOUT)
             if verified is None:
                 verified = verify_chapter(path, plan, manifest, provenance["exporter_sha256"])
+            if not args.keep_intermediates:
+                compact_chapter(verified, apply=True)
             completed.append(verified)
             print(f"  verified {completed[-1]['duration_ns'] / 1e9:.3f}s", flush=True)
         except (ValueError, OSError, KeyError, subprocess.CalledProcessError) as error:
@@ -428,6 +431,8 @@ def main():
                          help="reuse identical completed chapters, with full source/trace/media verification")
     capture.add_argument("--exporter", type=Path, default=ROOT / "target/release/offline-presentation")
     capture.add_argument("--max-frames", type=int, default=100_000)
+    capture.add_argument("--keep-intermediates", action="store_true",
+                         help="retain redundant raw audio/video and uncompressed traces for debugging")
     capture.set_defaults(run=render)
     join = modes.add_parser("assemble")
     join.add_argument("--batch", type=Path, action="append", required=True)

@@ -1,0 +1,13 @@
+# Normal BBB save-menu input; append after returning to the bridge.
+park 4 45
+wait 10
+click 230 152
+wait 40
+click 100 104
+wait 10
+key 33 102
+key 38 108
+key 24 111
+key 17 119
+key 28 13
+wait 30

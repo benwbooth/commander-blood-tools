@@ -1,0 +1,15 @@
+# Continue the earned Super Zen settlement through Metagluk to the Izwal branch.
+click 230 136
+wait 150
+click 200 94
+wait 200
+click 200 104
+wait 200
+click 200 94
+wait 200
+click 180 93
+wait 100
+click 180 98
+wait 200
+click 200 115
+wait 300

@@ -1,16 +1,69 @@
 import copy
 import json
+import hashlib
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
 
 from native_sequence_anthology import (assembly_entries, concatenate_timelines,
                                        dialogue_source_order, replace_travel_entries,
-                                       validate_playlist, validate_timing)
-from video_anthology import digest
+                                       validate_playlist, validate_timing, mux_assembly,
+                                       verify_media)
+from video_anthology import digest, metadata_text
 
 
 class NativeSequenceTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "requires ffmpeg/ffprobe")
+    def test_streamed_audio_assembly_preserves_mixed_cadence_and_single_frame_tail(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            listing, timelines, chapters = [], [], []
+            audio = hashlib.sha256()
+            video = hashlib.sha256()
+            offset = 0
+            for index, durations in enumerate(([46_000_000, 68_000_000], [68_000_000])):
+                duration = sum(durations)
+                path = root / f"part{index}.mkv"
+                starts = [sum(durations[:i]) for i in range(len(durations))]
+                select = "+".join(f"eq(n\\,{start // 1_000_000})" for start in starts)
+                subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-f", "lavfi", "-i",
+                                f"color=c=red:size=16x16:rate=1000:duration={duration / 1e9}",
+                                "-f", "lavfi", "-i", f"sine=frequency={440 + index}:sample_rate=48000:duration={duration / 1e9}",
+                                "-vf", f"select={select}", "-fps_mode", "vfr", "-c:v", "ffv1",
+                                "-pix_fmt", "bgra", "-c:a", "pcm_f32le", str(path)], check=True)
+                decoded = {}
+                for kind, format_name, codec, hasher in (("a", "f32le", "pcm_f32le", audio),
+                                                        ("v", "rawvideo", "rawvideo", video)):
+                    args = ["ffmpeg", "-nostdin", "-v", "error", "-i", str(path),
+                            "-map", f"0:{kind}:0", f"-c:{kind}", codec]
+                    if kind == "v":
+                        args += ["-pix_fmt", "rgba", "-fps_mode", "passthrough"]
+                    decoded[kind] = subprocess.check_output(args + ["-f", format_name, "pipe:1"])
+                    hasher.update(decoded[kind])
+                rows = [dict(start_ns=start, duration_ns=length,
+                             sample_start=start * 48000 // 1_000_000_000,
+                             sample_count=length * 48000 // 1_000_000_000)
+                        for start, length in zip(starts, durations)]
+                for frame_index, row in enumerate(rows):
+                    row["rgba_sha256"] = hashlib.sha256(decoded["v"][frame_index * 1024:(frame_index + 1) * 1024]).hexdigest()
+                    first_sample = row["sample_start"]
+                    row["audio_sha256"] = hashlib.sha256(decoded["a"][first_sample * 4:(first_sample + row["sample_count"]) * 4]).hexdigest()
+                timelines.append((rows, duration, duration * 48000 // 1_000_000_000))
+                listing += [f"file '{path}'", f"duration {duration / 1e9:.9f}"]
+                chapters.append(dict(start_ns=offset, end_ns=offset + duration, title=f"Part {index}"))
+                offset += duration
+            (root / "concat.txt").write_text("\n".join(listing) + "\n")
+            (root / "chapters.ffmeta").write_text(metadata_text(chapters))
+            rows, duration, _ = concatenate_timelines(timelines)
+            mux_assembly(root / "concat.txt", root / "chapters.ffmeta", root / "master.mkv", rows)
+            hashes, encoded_chapters = verify_media(root / "master.mkv", rows, duration, width=16, height=16)
+            self.assertEqual(hashes["audio_sha256"], audio.hexdigest())
+            self.assertEqual(hashes["rgba_sha256"], video.hexdigest())
+            self.assertEqual(len(encoded_chapters), 2)
+            self.assertFalse((root / "audio.f32le").exists())
+
     def test_travel_replacement_requires_every_original_plan_and_keeps_order(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

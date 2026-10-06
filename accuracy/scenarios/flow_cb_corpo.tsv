@@ -1,0 +1,30 @@
+# Fresh-game route through the tutorials, briefing, first warning and Corpo jump.
+wait 50
+wait 50
+wait 55
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+choose explanations
+wait 300
+click 230 88
+wait 300
+click 230 124
+wait 20
+click 100 89
+choose yes
+wait 1000
+park 316 45
+wait 20
+click 125 118
+wait 400
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 292 86
+wait 40
+click 250 125
+wait 300
