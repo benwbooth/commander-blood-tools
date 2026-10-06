@@ -147,6 +147,12 @@ Super Zen has returned to Crazystone. The curse is still active at this point.
 the curse-removal ceremony. Its ordinary saved checkpoint confirms
 `maledict=0` and the painting held by Super Zen; it is a verified chapter-four
 continuation, not the end of the chapter or game.
+`cb-bratakas-hom-v3` explores Bratakas's planet and leisure topics, trades the
+old decoder for the ondoyant picture, and follows his farewell into Hom's
+hiding place. The earned D.O.R.K. diploma recruits Hom. The saved endpoint has
+Hom and the picture aboard, the diploma with Hom, and the decoder with Bratakas.
+The two earlier attempts stopped on unavailable or unselected topic rows;
+only v3 is a completed route witness.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

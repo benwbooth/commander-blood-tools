@@ -1,0 +1,31 @@
+# Trade the old decoder on Vistar, then follow Bratakas to Hom.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 106 21
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose planet
+choose planet
+choose Vistar
+choose Vistar
+choose Vistar
+choose leisure
+choose leisure
+choose Vistar
+choose teleport
+choose teleport
+choose bye_bye
+choose bye_bye
+choose bye_bye
+choose click
+choose teleport
+choose teleport
+wait 900
