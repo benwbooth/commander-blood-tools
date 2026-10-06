@@ -1,0 +1,15 @@
+# Send Morning from the local Ark to Kran, then collect the repaired-ship reward.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 99
+choose teleport
+wait 400
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+wait 500

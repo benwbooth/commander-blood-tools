@@ -307,6 +307,10 @@ ship has not yet been claimed.
 The route then travels to Troma, answers Kran's SOS, and returns to his newly
 revealed position (`cb-kran-distress-v1`). His breakdown dialogue finishes and
 the save has `panne = 1`, Morning on Ark, and the guitar still with Kran.
+Selecting Ark from the local menu and teleporting Morning completes the repair;
+recontacting Kran then teleports the guitar aboard (`cb-kran-repair-v1`). The
+saved endpoint has `panne = 3`, Morning aboard, and guitar aboard. Morning's
+separate transmitter/receiver handover has not yet been played.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
