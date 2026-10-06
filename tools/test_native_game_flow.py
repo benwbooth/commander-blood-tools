@@ -38,6 +38,23 @@ def frame(number=0):
 
 
 class FlowTests(unittest.TestCase):
+    def test_numeric_chatter_hash_inputs_survive_event_compaction(self):
+        output = io.StringIO()
+        recorder = FlowRecorder(output)
+        record = frame()
+        recorder.record(record)
+        self.assertIsNone(recorder.summary()["final_state"]["numeric_chatter_hash"])
+        record = frame(1)
+        audit = dict(words=[[78, 111, 117, 115], [], [45, 85, 165]], seed=125)
+        record["semantic"]["audio"]["numeric_chatter_hash"] = audit
+        recorder.record(record)
+        record = copy.deepcopy(record)
+        record["frame"] = 2
+        recorder.record(record)
+        events = [json.loads(line) for line in output.getvalue().splitlines()]
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[-1]["state"]["numeric_chatter_hash"], audit)
+
     def test_action_snapshot_references_preserve_clocks_and_resolve_without_chains(self):
         output = io.StringIO()
         recorder = ActionRecorder(output)

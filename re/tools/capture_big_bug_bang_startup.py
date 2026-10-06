@@ -43,6 +43,30 @@ PRIVATE_KEYS = ("F7", "Return", "Escape", "space")
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def interactive_command(line):
+    """Accept only bounded, ordinary-input commands, never guest-state writes."""
+    if len(line) > 4096 or not line.endswith("\n"):
+        raise ValueError("interactive input must be one bounded JSON line")
+    command = json.loads(line)
+    if not isinstance(command, dict) or set(command) - {"op", "value"}:
+        raise ValueError("interactive command requires only op and optional value")
+    kind, value = command.get("op"), command.get("value")
+    if kind in ("snapshot", "finish") and value is None:
+        return kind, None
+    if kind == "click" and (value is None or type(value) is int and value in (1, 3)):
+        return kind, 1 if value is None else value
+    if kind == "key" and value in PRIVATE_KEYS:
+        return kind, value
+    if kind == "steer" and type(value) is int and 0 <= value < 180:
+        return kind, value
+    if isinstance(value, list) and len(value) == 2 and all(type(v) is int for v in value):
+        if kind == "point" and 0 <= value[0] < 320 and 0 <= value[1] < 200:
+            return kind, value
+        if kind == "move" and all(-32768 <= v <= 32767 for v in value):
+            return kind, value
+    raise ValueError("unsupported or out-of-range interactive command")
+
+
 def native_checkpoint_files(manifest, slot, asset_manifest, disc):
     """Validate an earned native save for an explicitly cross-runtime diagnostic."""
     sys.path.insert(0, str(ROOT / "tools"))
@@ -617,6 +641,7 @@ def capture(args):
               "sdl_override": sdl_override,
               "sdl_mouse_warp_requested": args.sdl_mouse_warp,
               "native_checkpoint": checkpoint_reference,
+              "interactive": args.interactive,
               "samples": [], "input_events": []}
     try:
         with (output / "xvfb.log").open("wb") as xlog, (output / "dosbox.log").open("wb") as log:
@@ -648,6 +673,7 @@ def capture(args):
             symbols = None
             last_snapshot = None
             inputs_sent = 0
+            input_ready = False
             scheduled = sorted(
                 [(at, "click", i + 1, None) for i, at in enumerate(args.click_after)] +
                 [(at, "key", i + 1, key) for i, (at, key) in enumerate(args.key_after)] +
@@ -702,19 +728,34 @@ def capture(args):
                         snapshot["guest_dump"] = name
                     print(json.dumps({key: snapshot.get(key) for key in ("elapsed_seconds", "status", "profile", "mouse_poll", "bridge", "time_storage")}), flush=True)
                     last_snapshot = signature
+                request, command_line = None, None
                 if inputs_sent < len(scheduled) and time.monotonic() - began >= scheduled[inputs_sent][0]:
-                    at, kind, number, value = scheduled[inputs_sent]
+                    request = scheduled[inputs_sent]
+                elif args.interactive and inputs_sent == len(scheduled):
+                    if not input_ready:
+                        print(json.dumps({"status": "ready_for_input"}), flush=True)
+                        input_ready = True
+                    if select.select([sys.stdin], [], [], 0)[0]:
+                        command_line = sys.stdin.readline(4097)
+                        kind, value = interactive_command(command_line)
+                        request = (None, kind, len(report["input_events"]) + 1, value)
+                if request is not None:
+                    at, kind, number, value = request
                     screenshot = f"before-{kind}.png" if number == 1 else f"before-{kind}-{number}.png"
                     subprocess.run(["import", "-window", "root", str(output / screenshot)], env=env, check=True, timeout=10)
                     event = {"scheduled_at_seconds": at,
                              "requested_at_seconds": round(time.monotonic() - began, 3), "status": "requested",
-                             "input_kind": kind, "input_value": value}
+                             "input_kind": kind, "input_value": value,
+                             "before_screenshot": screenshot,
+                             "input_source": "stdin" if command_line is not None else "scheduled"}
+                    if command_line is not None:
+                        event["command_line"] = command_line
                     report["input_events"].append(event)
                     observe = lambda: observe_press(kind, number)
                     if kind == "click":
                         event.update(private_click(env, game.pid, args.click_position,
                                                    args.relative_mouse,
-                                                   args.click_button, observe,
+                                                   args.click_button if value is None else value, observe,
                                                    args.relative_motion), status="sent")
                     elif kind == "key":
                         event.update(private_key(env, game.pid, value, observe), status="sent")
@@ -730,9 +771,17 @@ def capture(args):
                         event["after_point"] = observe()
                         if not event["target_verified"]:
                             raise RuntimeError("private bridge pointer did not reach its target")
-                    else:
+                    elif kind == "recapture":
                         event.update(private_recapture(env, game.pid, value, observe), status="sent")
-                    inputs_sent += 1
+                    else:
+                        event.update(observation=observe(), status="observed", guest_memory_written=False)
+                    if command_line is None:
+                        inputs_sent += 1
+                    else:
+                        print(json.dumps({"status": "input_completed", "input_kind": kind,
+                                          "before_screenshot": screenshot}), flush=True)
+                    if kind == "finish":
+                        break
             subprocess.run(["import", "-window", "root", str(output / "screen.png")], env=env, check=True, timeout=10)
             report["outcome"] = "observed_profile" if any(s["status"] == "profile_bound" for s in report["samples"]) else "no_bound_profile_observed"
     except BaseException as error:
@@ -781,6 +830,8 @@ def main():
                         help="captured relative mouse motion before each scheduled click")
     parser.add_argument("--relative-mouse", action="store_true",
                         help="enable autolock and verify a private capture click before the first input")
+    parser.add_argument("--interactive", action="store_true",
+                        help="after scheduled actions, accept bounded JSON input commands on a terminal until finish or seconds")
     parser.add_argument("--game-args", default="AMR S162227 EMS WRIC:\\cblood\\")
     parser.add_argument("--native-checkpoint", type=Path,
                         help="earned native flow.json; stage its verified save for ordinary original UI loading")
@@ -788,6 +839,8 @@ def main():
     parser.add_argument("--native-asset-manifest", type=Path,
                         help="import manifest matching the native lineage and original disc bytes")
     args = parser.parse_args()
+    if args.interactive and (not args.relative_mouse or not sys.stdin.isatty()):
+        parser.error("interactive mode requires relative-mouse and a terminal on stdin")
     if bool(args.native_checkpoint) != bool(args.native_asset_manifest):
         parser.error("native-checkpoint and native-asset-manifest must be supplied together")
     if args.native_slot != 0 and args.native_checkpoint is None:

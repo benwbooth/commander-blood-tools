@@ -53,6 +53,47 @@ def fixture(profile=0):
 
 
 class StartupCaptureTests(unittest.TestCase):
+    def test_interactive_commands_accept_only_bounded_ordinary_inputs(self):
+        for command, expected in (
+            ({"op": "snapshot"}, ("snapshot", None)),
+            ({"op": "finish"}, ("finish", None)),
+            ({"op": "click"}, ("click", 1)),
+            ({"op": "click", "value": 3}, ("click", 3)),
+            ({"op": "key", "value": "Escape"}, ("key", "Escape")),
+            ({"op": "steer", "value": 179}, ("steer", 179)),
+            ({"op": "point", "value": [319, 199]}, ("point", [319, 199])),
+            ({"op": "move", "value": [-32768, 32767]}, ("move", [-32768, 32767])),
+        ):
+            with self.subTest(command=command):
+                self.assertEqual(capture.interactive_command(json.dumps(command) + "\n"), expected)
+
+    def test_interactive_commands_reject_malformed_or_noninput_actions(self):
+        for command in ({"op": "write", "value": [123, 456]}, {"op": "load", "value": 1},
+                        {"op": "click", "value": True}, {"op": "click", "value": 2},
+                        {"op": "point", "value": [-1, 10]}, {"op": "point", "value": [1, 200]},
+                        {"op": "steer", "value": 180}, {"op": "steer", "value": 2.0},
+                        {"op": "move", "value": [32768, 0]}, {"op": "move", "value": [0]},
+                        {"op": "key", "value": "F12"}, {"op": "snapshot", "value": 1},
+                        {"op": "finish", "address": 12}, {}, [], "finish"):
+            with self.subTest(command=command), self.assertRaises(ValueError):
+                capture.interactive_command(json.dumps(command) + "\n")
+        for line in ("", "{", '{"op":"finish"}', " " * 4096 + "\n"):
+            with self.subTest(line=line[:20]), self.assertRaises(ValueError):
+                capture.interactive_command(line)
+
+    def test_interactive_mode_requires_terminal_and_relative_mouse(self):
+        for terminal, relative in ((False, True), (True, False)):
+            flags = ["--interactive"] + (["--relative-mouse"] if relative else [])
+            with self.subTest(terminal=terminal, relative=relative), \
+                    mock.patch.object(sys, "argv", ["capture", "disc", "out", *flags]), \
+                    mock.patch.object(sys.stdin, "isatty", return_value=terminal), \
+                    mock.patch.object(sys, "stderr", new_callable=io.StringIO), \
+                    mock.patch.object(capture, "capture") as run:
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
+
     def native_checkpoint_fixture(self, root):
         disc, writable = root / "disc", root / "writable"
         disc.mkdir()

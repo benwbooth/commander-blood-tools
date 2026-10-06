@@ -1457,6 +1457,16 @@ impl OriginalGameRuntime {
         self.profiles.current()
     }
 
+    /// Checked sequel dictionary reads into the retained original resource pool.
+    pub fn retained_dictionary_suffix(&self, offset: u16) -> Option<Box<[u8]>> {
+        let resource = self
+            .current_profile()?
+            .resources()
+            .resource(crate::native::bloodprg::ScriptProfileResourceKind::Dictionary);
+        self.resource_cache
+            .retained_suffix(resource, usize::from(offset))
+    }
+
     /// Mutably borrow the currently loaded playable profile for VM execution.
     pub fn current_profile_mut(&mut self) -> Option<&mut LoadedScriptProfile> {
         self.profiles.current_mut()

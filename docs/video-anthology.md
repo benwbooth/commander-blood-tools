@@ -304,6 +304,56 @@ fixed slots still anchor module identification. Unit pointer gain also prevents
 the menu oscillation seen in capture 43. All 81 capture-tool tests pass. The
 numeric-chatter allocation question remains unresolved.
 
+Captures 46 and 47 subsequently load the earned
+`bbb-scruter-concert-offer-v2` save through the original Options/Load menu and
+travel normally to Kortland. Both bind SCRIPT15 and reach Scruter Mac's numeric
+greeting and GIVE menu. These are cross-runtime diagnostics, not complete DOS
+playthroughs. Capture 47 also verifies the recorder's bounded terminal JSON
+commands: only ordinary pointer/key input, snapshots, and finish are accepted;
+all inputs and preceding screenshots are recorded. All 84 recorder tests pass.
+
+`re/tools/big_bug_bang_retained_pool_oracle.py` replays the original relocated
+release and allocation instructions in a private Unicorn copy of those
+captured states. Releasing the old companions in native DEB/COD/BAS/DIC order
+leaves the vacated pool tail intact. Loading SCRIPT15 DEB/COD/DIC then reproduces
+all 6,024 observed bytes from DIC+976 through DIC+6999, independently in both
+captures. The numeric operand 2908 reads `2d 55 a5 00`, retained from
+SCRIPT2.BAS offset 17484, not a zero byte beyond the current 973-byte dictionary.
+The checked fixture records source/capture hashes and the short probe.
+Controlled executions of the original audio hasher yield seed 125 with an
+empty DIC+1 number buffer and 131 with `20` in that buffer. These two oracle
+inputs establish the hash behavior, not the exact original call timing.
+
+```sh
+uv run --with unicorn python -P re/tools/big_bug_bang_retained_pool_oracle.py \
+  output/big-bug-bang/startup-capture-46 \
+  output/big-bug-bang/imported-assets/resources \
+  re/tools/oracle_vectors/big_bug_bang_retained_pool.json \
+  --before state-0067.bin --after state-0072.bin \
+  --offset 2908 --extent 7000 --numeric-sample state-0076.bin
+```
+
+The runtime now retains checked script-companion pool bytes, uses the original
+release order, and hashes the renderer's current numeric scratch only when the
+audio coordinator actually has a pending menu. Mutable COD/DEB/VAR bytes and
+unknown allocation padding cannot supply guessed values. Flat artwork-cache
+entries represent different lifetimes, including fixed original buffers, and
+must not be inserted into the script-companion pool. An intermediate generic
+cache model completed `bbb-kortland-arrival-v4` but was exposed by v5's new
+read-only hash trace: it used unrelated artwork bytes and seed 139. Neither
+intermediate run verifies the numeric audio behavior.
+
+`bbb-kortland-arrival-v6` uses the corrected pool ownership. Its recorded hash
+at boundary 2412 contains the exact original retained suffix and seed 125,
+with an empty current numeric scratch. It passes the greeting, cancels the
+offered GIVE menu normally, and saves at boundary 4694, SHA-256
+`9a3f99c3f6a53a9e93126b9465c9badb5e4552af2edd911b32fbd8b92f49c0ee`.
+The run has 4,830 frames, 1,484 events, seven decoded resources, and five
+source-matched SCRIPT15 sites. The game-library suite passes 1,119 tests
+(79 ignored); the separate original-resource loader test and 62 flow/catalog
+tests also pass. This clears the witnessed Mac greeting failure; the remaining
+numeric actors and full optional-conversation scope still require validation.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control

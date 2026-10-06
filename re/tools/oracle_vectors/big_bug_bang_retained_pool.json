@@ -1,0 +1,150 @@
+{
+  "scope": "original allocator replay of captured normal profile transition, not a playthrough",
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "capture_sha256": "2e584f582f93cfa54feb3a18a316fb68f778ba6f6775981e56f21e1e0b925130",
+  "recorder_sha256": "bd3131b00c6345e394df865586b7131e2727456be1c088fa68b1579af9d2f897",
+  "before": {
+    "sample": "state-0067.bin",
+    "sha256": "9a036876283ec1b075d53cc397f614da5e3d789ee5ef309877676e2b565bb9f6",
+    "profile": 1
+  },
+  "after": {
+    "sample": "state-0072.bin",
+    "sha256": "ad4952baf56ca51fbad92921cea815fdf7cf980e779b5212f7121abdcbe507e0",
+    "profile": 14
+  },
+  "released": [
+    {
+      "role": "deb",
+      "resource": 38,
+      "allocation_size": 11168
+    },
+    {
+      "role": "cod",
+      "resource": 39,
+      "allocation_size": 40800
+    },
+    {
+      "role": "bas",
+      "resource": 40,
+      "allocation_size": 19936
+    },
+    {
+      "role": "dic",
+      "resource": 41,
+      "allocation_size": 15376
+    }
+  ],
+  "loaded": [
+    {
+      "role": "deb",
+      "resource": 141,
+      "filename": "SCRIPT15.DEB",
+      "file_size": 8860,
+      "allocation_size": 8864,
+      "sha256": "938cc65052027b3b1d13835e7ccdb21efa309ccdb1a1a00e77ef44d5ab7679ea"
+    },
+    {
+      "role": "cod",
+      "resource": 142,
+      "filename": "SCRIPT15.COD",
+      "file_size": 5699,
+      "allocation_size": 5712,
+      "sha256": "61806e11cdef8097074620b5ce92f871b093698002f809f2c04f72056e0da5a1"
+    },
+    {
+      "role": "dic",
+      "resource": 144,
+      "filename": "SCRIPT15.DIC",
+      "file_size": 973,
+      "allocation_size": 976,
+      "sha256": "e9d9063b7f720e424d16bcd8fcca7703137dbfa5794d64c4d995a8eb3bf29b3f"
+    }
+  ],
+  "observed_profile_loader_releases": [
+    38,
+    39,
+    40,
+    41
+  ],
+  "tail": {
+    "start": 976,
+    "end": 7000,
+    "sha256": "3305733f6357f3e5dd44cf3e58a09fe81ea62c3a6d701c49e921060158c5dce0",
+    "matches": true
+  },
+  "probe": {
+    "offset": 2908,
+    "bytes": [
+      45,
+      85,
+      165,
+      0
+    ],
+    "provenance": {
+      "resource": 40,
+      "filename": "SCRIPT2.BAS",
+      "offset": 17484,
+      "sha256": "3e2b4a6d7c26aca6be2f88b3b539972b655ab1423907bbf75fb0931717bb5314"
+    }
+  },
+  "numeric": {
+    "sample": "state-0076.bin",
+    "sha256": "766882c09da41f0d17164456c7e6151c8fb902f51889364b8e7de70ef0d36110",
+    "encoded_words": [
+      265,
+      270,
+      1,
+      2908,
+      275,
+      284,
+      0
+    ],
+    "dictionary_words": [
+      [
+        78,
+        111,
+        117,
+        115
+      ],
+      [
+        130,
+        116,
+        114,
+        101
+      ],
+      [
+        115,
+        99,
+        114,
+        117,
+        116,
+        101,
+        114,
+        115
+      ],
+      [
+        105,
+        99,
+        105,
+        46,
+        46,
+        46
+      ]
+    ],
+    "cases": [
+      {
+        "scratch": [],
+        "seed": 125
+      },
+      {
+        "scratch": [
+          50,
+          48
+        ],
+        "seed": 131
+      }
+    ],
+    "scope": "controlled hash inputs; not observed call timing"
+  }
+}

@@ -117,6 +117,7 @@ def scene_state(s):
                 travel_enabled=vm.get("sequel_travel_enabled"),
                 nav_actor_blockers=p.get("nav_actor_blockers"),
                 navigation_music=s["audio"]["loaded_navigation_music"],
+                numeric_chatter_hash=s["audio"].get("numeric_chatter_hash"),
                 ending=p.get("sequel_control"),
                 alien_overlay={key: overlay.get(key) for key in
                                ("completed_overlays", "invocations", "loaded_scene_resource")})

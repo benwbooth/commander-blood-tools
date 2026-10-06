@@ -172,11 +172,69 @@ struct CachedResource {
     allocation_byte_count: usize,
 }
 
+/// Original script-companion compaction leaves the vacated tail intact. Only
+/// tracked file bytes are readable; padding and separately mutated VM data stay
+/// unknown. Native artwork caches also represent fixed DOS buffers, not extra
+/// allocations after the script companions.
+#[derive(Clone, Debug, Default)]
+struct RetainedResourcePool {
+    bytes: Vec<Option<u8>>,
+    allocations: BTreeMap<ResourceId, std::ops::Range<usize>>,
+    end: usize,
+}
+
+impl RetainedResourcePool {
+    fn allocate(&mut self, resource: ResourceId, bytes: &[u8], size: usize) {
+        let start = self.end;
+        self.end += size;
+        self.bytes.resize(self.bytes.len().max(self.end), None);
+        for (destination, source) in self.bytes[start..].iter_mut().zip(bytes) {
+            *destination = Some(*source);
+        }
+        self.allocations.insert(resource, start..self.end);
+    }
+
+    fn release(&mut self, resource: ResourceId) {
+        let Some(range) = self.allocations.remove(&resource) else {
+            return;
+        };
+        self.bytes.copy_within(range.end..self.end, range.start);
+        self.end -= range.len();
+        for remaining in self.allocations.values_mut() {
+            if remaining.start >= range.end {
+                remaining.start -= range.len();
+                remaining.end -= range.len();
+            }
+        }
+    }
+
+    fn invalidate(&mut self, resource: ResourceId, count: usize) {
+        if let Some(range) = self.allocations.get(&resource) {
+            let end = range.start + count.min(range.len());
+            self.bytes[range.start..end].fill(None);
+        }
+    }
+
+    fn suffix(&self, resource: ResourceId, offset: usize) -> Option<Box<[u8]>> {
+        let start = self.allocations.get(&resource)?.start.checked_add(offset)?;
+        let mut result = Vec::new();
+        for byte in self.bytes.get(start..)? {
+            match byte {
+                Some(0) => return Some(result.into_boxed_slice()),
+                Some(byte) => result.push(*byte),
+                None => return None,
+            }
+        }
+        None
+    }
+}
+
 /// Owned runtime resources indexed by their original stable identifiers.
 #[derive(Clone, Debug, Default)]
 pub struct OriginalResourceCache {
     entries: BTreeMap<ResourceId, CachedResource>,
     source_colors: BTreeMap<ResourceId, IndexedGamePalette>,
+    retained_pool: RetainedResourcePool,
 }
 
 impl OriginalResourceCache {
@@ -188,9 +246,9 @@ impl OriginalResourceCache {
     /// Load one catalog resource or report that its existing bytes were reused.
     ///
     /// This translates `resource_load_by_id` at BLOODPRG file offset
-    /// `0x00287B` and BLOOD2PG offset `0x002BFB`. A single owned byte allocation
-    /// replaces the native allocator, while zero-length files retain the
-    /// original failure result.
+    /// `0x00287B` and BLOOD2PG offset `0x002BFB`. Owned byte allocations replace
+    /// pointers; a checked shadow retains observable pool-tail reads. Empty
+    /// files retain the original failure result.
     pub fn load_by_id(
         &mut self,
         store: &OriginalResourceStore,
@@ -285,14 +343,36 @@ impl OriginalResourceCache {
     /// Release a loaded identifier and return whether an entry existed.
     ///
     /// This is the flat-data behavior of `resource_release` at BLOODPRG file
-    /// offset `0x005288`. Removing an owned map entry also replaces the native
-    /// `resource_free_inner` pool compaction at BLOODPRG offset `0x00529C` and
-    /// BLOOD2PG offset `0x005714`: follower bytes and allocation metadata stay
-    /// attached to independent owned entries instead of moving in a DOS segment
-    /// pool.
+    /// offset `0x005288`. Live resources remain independent owned entries. The
+    /// checked shadow also applies `resource_free_inner` compaction at BLOODPRG
+    /// offset `0x00529C` and BLOOD2PG offset `0x005714`, preserving the vacated
+    /// tail because numeric dialogue hashing can still observe it.
     pub fn release(&mut self, resource: ResourceId) -> bool {
         self.source_colors.remove(&resource);
+        self.retained_pool.release(resource);
         self.entries.remove(&resource).is_some()
+    }
+
+    /// Track a newly allocated script companion in the native profile pool.
+    /// Artwork ownership in the flat cache is not a DOS allocation witness.
+    pub fn retain_profile_allocation(&mut self, resource: ResourceId) {
+        if let Some(entry) = self.entries.get(&resource)
+            && !self.retained_pool.allocations.contains_key(&resource)
+        {
+            self.retained_pool
+                .allocate(resource, &entry.bytes, entry.allocation_byte_count);
+        }
+    }
+
+    /// Discard stale copies of bytes whose live state is owned by the VM.
+    pub fn invalidate_retained_bytes(&mut self, resource: ResourceId, count: usize) {
+        self.retained_pool.invalidate(resource, count);
+    }
+
+    /// Resolve a NUL-terminated suffix, including retained bytes beyond a file.
+    /// Unknown bytes are never replaced with zeroes or read from host memory.
+    pub fn retained_suffix(&self, resource: ResourceId, offset: usize) -> Option<Box<[u8]>> {
+        self.retained_pool.suffix(resource, offset)
     }
 
     /// Resource-local colors retained independently of subsequent scene loads.
@@ -547,6 +627,106 @@ mod tests {
     const ORIGINAL_RESOURCE_LOADED_FLAG_MASK: u16 = 3;
     const ORIGINAL_PALETTE_STORAGE_BYTE_COUNT: usize = 0x900;
     static TEMPORARY_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(u64::MIN);
+
+    #[test]
+    fn retained_pool_keeps_compacted_tail_and_unknown_padding() {
+        let mut pool = RetainedResourcePool::default();
+        let first = ResourceId::new(1);
+        let second = ResourceId::new(2);
+        let third = ResourceId::new(3);
+        pool.allocate(first, b"first\0", 16);
+        pool.allocate(second, b"retained\0", 16);
+        assert_eq!(pool.suffix(first, 16).unwrap().as_ref(), b"retained");
+        assert!(pool.suffix(first, 6).is_none());
+        pool.release(first);
+        assert_eq!(pool.suffix(second, 0).unwrap().as_ref(), b"retained");
+        assert_eq!(pool.suffix(second, 16).unwrap().as_ref(), b"retained");
+        pool.release(second);
+        pool.allocate(third, b"x\0", 16);
+        assert_eq!(pool.suffix(third, 2).unwrap().as_ref(), b"tained");
+        assert_eq!(pool.suffix(third, 16).unwrap().as_ref(), b"retained");
+        pool.invalidate(third, 16);
+        assert!(pool.suffix(third, 2).is_none());
+        assert!(pool.suffix(third, 32).is_none());
+        assert!(pool.suffix(third, usize::MAX).is_none());
+        assert!(pool.suffix(first, 0).is_none());
+    }
+
+    #[test]
+    fn retained_pool_does_not_invent_allocations_for_flat_artwork_cache() {
+        let mut cache = OriginalResourceCache::new();
+        let script = ResourceId::new(1);
+        let artwork = ResourceId::new(2);
+        cache
+            .insert(artwork, Box::from(b"artwork\0".as_slice()))
+            .unwrap();
+        assert!(cache.retained_suffix(artwork, 0).is_none());
+        cache
+            .insert(script, Box::from(b"script\0".as_slice()))
+            .unwrap();
+        cache.retain_profile_allocation(script);
+        cache.retain_profile_allocation(script);
+        assert_eq!(cache.retained_pool.end, 16);
+        assert_eq!(
+            cache.retained_suffix(script, 0).unwrap().as_ref(),
+            b"script"
+        );
+        cache.release(artwork);
+        assert_eq!(cache.retained_pool.end, 16);
+        assert_eq!(
+            cache.retained_suffix(script, 0).unwrap().as_ref(),
+            b"script"
+        );
+    }
+
+    #[test]
+    fn retained_pool_matches_original_kortland_profile_transition() {
+        let oracle: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool.json"
+        ))
+        .unwrap();
+        let number = |value: &serde_json::Value| value.as_u64().unwrap() as usize;
+        let mut pool = RetainedResourcePool::default();
+        // Keep only the observed immutable probe known. All other captured
+        // bytes are deliberately unknown, not synthetic zero-filled evidence.
+        for resource in oracle["released"].as_array().unwrap() {
+            pool.allocate(
+                ResourceId::new(number(&resource["resource"]) as u16),
+                &[],
+                number(&resource["allocation_size"]),
+            );
+        }
+        let probe = &oracle["probe"];
+        let source = ResourceId::new(number(&probe["provenance"]["resource"]) as u16);
+        let start = pool.allocations[&source].start + number(&probe["provenance"]["offset"]);
+        let bytes: Vec<u8> = probe["bytes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| number(v) as u8)
+            .collect();
+        for (index, byte) in bytes.iter().enumerate() {
+            pool.bytes[start + index] = Some(*byte);
+        }
+        for resource in oracle["released"].as_array().unwrap() {
+            pool.release(ResourceId::new(number(&resource["resource"]) as u16));
+        }
+        let mut dictionary = None;
+        for resource in oracle["loaded"].as_array().unwrap() {
+            let id = ResourceId::new(number(&resource["resource"]) as u16);
+            pool.allocate(id, &[], number(&resource["allocation_size"]));
+            if resource["role"] == "dic" {
+                dictionary = Some(id);
+            }
+        }
+        assert_eq!(
+            pool.suffix(dictionary.unwrap(), number(&probe["offset"]))
+                .unwrap()
+                .as_ref(),
+            &bytes[..bytes.len() - 1],
+        );
+        assert!(pool.suffix(dictionary.unwrap(), 1).is_none());
+    }
 
     #[derive(Deserialize)]
     struct NamedResourceOracle {

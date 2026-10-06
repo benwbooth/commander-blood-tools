@@ -652,14 +652,18 @@ impl ScriptProfileManager {
             .current
             .as_ref()
             .is_none_or(|current| current.id != profile);
+        let order = if self.catalog.dialect == ScriptDialect::BigBugBang {
+            SEQUEL_LOAD_ORDER.map(ScriptProfileResourceKind::index)
+        } else {
+            std::array::from_fn(|index| index)
+        };
         let released_resources = if profile_changed {
             self.current
                 .take()
                 .map(|current| {
-                    current
-                        .resources
-                        .all()
+                    order
                         .into_iter()
+                        .map(|index| current.resources.resources[index])
                         .filter(|resource| {
                             !retain_state
                                 || *resource
@@ -675,11 +679,6 @@ impl ScriptProfileManager {
 
         let mut resource_statuses =
             [ResourceLoadStatus::AlreadyLoaded; SCRIPT_PROFILE_RESOURCE_COUNT];
-        let order = if self.catalog.dialect == ScriptDialect::BigBugBang {
-            SEQUEL_LOAD_ORDER.map(ScriptProfileResourceKind::index)
-        } else {
-            std::array::from_fn(|index| index)
-        };
         for index in order {
             let resource = profile_resources.resources[index];
             if skip_state_resource && index == ScriptProfileResourceKind::State.index() {
@@ -708,6 +707,15 @@ impl ScriptProfileManager {
                 }
                 result => result.map_err(ScriptProfileError::Resource)?,
             };
+            cache.retain_profile_allocation(resource);
+            if matches!(index, i if i == ScriptProfileResourceKind::State.index()
+                || i == ScriptProfileResourceKind::Code.index()
+                || i == ScriptProfileResourceKind::Directory.index())
+            {
+                cache.invalidate_retained_bytes(resource, usize::MAX);
+            } else if index == ScriptProfileResourceKind::Dictionary.index() {
+                cache.invalidate_retained_bytes(resource, 8);
+            }
         }
 
         let mut loaded = decode_loaded_profile(
@@ -1548,6 +1556,57 @@ mod tests {
             Some(MUTATED_WORD)
         );
         assert_eq!(manager.current().unwrap().runtime.timer(timer), u16::MAX);
+    }
+
+    #[test]
+    #[ignore = "requires original BBB executable and imported resources"]
+    fn sequel_profile_loader_retains_original_numeric_dictionary_tail() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang");
+        let executable = std::fs::read(root.join("disc/BLOOD2PG.EXE")).unwrap();
+        let resources = OriginalResourceCatalog::decode_blood2pg(&executable).unwrap();
+        let catalog = OriginalScriptProfileCatalog::decode_blood2pg(&executable).unwrap();
+        let store =
+            OriginalResourceStore::new(root.join("imported-assets/resources"), None, [], true);
+        let mut manager = ScriptProfileManager::new(catalog);
+        let mut cache = OriginalResourceCache::new();
+        for number in [0, 1, 14] {
+            let id = ScriptProfileId::new_for_dialect(number, ScriptDialect::BigBugBang).unwrap();
+            manager.select(id, &mut cache, &store, &resources).unwrap();
+            if number == 1 {
+                // Flat artwork entries are not additional original allocations
+                // after the script resources. They must not displace the tail.
+                cache
+                    .load_by_id(&store, &resources, ResourceId::new(44))
+                    .unwrap();
+                assert!(cache.retained_suffix(ResourceId::new(44), 0).is_none());
+            }
+        }
+        let oracle: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_retained_pool.json"
+        ))
+        .unwrap();
+        let expected: Vec<u8> = oracle["probe"]["bytes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|byte| byte.as_u64().unwrap() as u8)
+            .collect();
+        let dictionary = manager
+            .current()
+            .unwrap()
+            .resources()
+            .resource(ScriptProfileResourceKind::Dictionary);
+        assert_eq!(
+            cache
+                .retained_suffix(
+                    dictionary,
+                    oracle["probe"]["offset"].as_u64().unwrap() as usize
+                )
+                .unwrap()
+                .as_ref(),
+            &expected[..expected.len() - 1]
+        );
+        assert!(cache.retained_suffix(dictionary, 1).is_none());
     }
 
     #[test]
