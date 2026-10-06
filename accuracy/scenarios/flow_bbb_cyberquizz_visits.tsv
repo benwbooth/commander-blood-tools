@@ -1,0 +1,33 @@
+# Second aboard visit; Cyberquizz is second in the eleven-entry cryobox.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 50
+wait 600
+# Third visit has two identical yes labels. Click the first rendered row.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 50
+wait 180
+click 176 90
+choose no
+wait 200
+# Decline the fourth visit's destruction suggestion.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 50
+choose leave_it
+wait 200
+# Fifth visit: let Honk answer the joke before the new-race gift.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 50
+choose yes
+wait 700

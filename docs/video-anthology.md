@@ -503,6 +503,11 @@ conversations have not occurred at this checkpoint.
 `bbb-cyberquizz-first-v1` opens his first aboard contact from that save. The
 normal gift transfer completes, with Cyberquizz at one encounter and `cadeaux`
 aboard. It observes eight decoded resources and 12 fully revealed sites.
+`bbb-cyberquizz-visits-v1` completes visits two through five, including a normal
+pointer click on the duplicate-label menu, declining destruction, and Honk's
+joke. The new-race gift sets `A100=1` and `B8=1`; the saved world places Mega,
+Sebasto, and Inter Paul on Ponyland at evolution 100. Its 13 decoded resources
+and 44 fully revealed sites precede their first meeting.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
