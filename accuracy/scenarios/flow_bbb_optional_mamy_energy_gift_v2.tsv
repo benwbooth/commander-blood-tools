@@ -1,0 +1,23 @@
+# Second visit from Jo resupply; the normal shop refusal precedes the gift.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose stroll
+choose refuse
+choose energy
+wait 200
+# The observed seven-item menu has Cancel at (190,133).
+click 200 134
+wait 200

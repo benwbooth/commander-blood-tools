@@ -1,0 +1,26 @@
+# From trump-painting-v1, these four items are already aboard.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 38 135
+wait 40
+click 250 125
+choose energy
+wait 120
+choose picture
+wait 120
+choose food
+wait 120
+choose guitar
+wait 120
+# Four items remain: painting, bionium, credit, and ship.
+click 200 117
+wait 200

@@ -391,6 +391,39 @@ timing. Slot zero at frame 10632 has SHA-256
 The intervening Lovia approach does not open Fuji's encounter, so this witness
 claims only the two observed greetings, despite its three intended stops.
 
+`bbb-fuji-deluxe-arrival-v1` separately reaches Fuji on Lovia, using the same
+earned invitations save. The arrival itself speaks; the following ordinary
+destination-region click contacts Fuji again, yielding encounter count two.
+It has 6,990 frames, 4,041 events, eight decoded resources, and five matched
+SCRIPT9 sites. Its first numeric hash at frame 2505 uses empty scratch, retained
+`j'ai`, and seed 165. Slot zero at frame 6854 has SHA-256
+`bf4165649f72439757f105a328bf3a2cb72b684314f0e18e97080a39c2adb55d`.
+
+`bbb-robot-arrivals-v1` loads the earned invitations save and visits Toolcase
+at Venusia, Jerry Khan at Kult, Mohi Khan at Magnus, and Shado Khan at Sat.
+All four actually speak, contributing twenty SCRIPT8 sites across 12,683
+frames, 6,219 events, and seventeen decoded resources. Toolcase and Mohi are
+contacted twice by the normal region click; Jerry and Shado once. The initial
+native numeric hashes are `GLUXX`/176, `x`/158, `nsons`/185, and `lubrifie`/203,
+respectively, with empty numeric scratch. These are native observations using
+the repaired retained pool, not independent DOS call-timing proofs for each
+actor. Slot zero at frame 12547 has SHA-256
+`8341e2fe6e1d64a67efa26d5985737388bcbe1200357a678cae8b5a01f806b6a`.
+
+`bbb-toolbox-gifts-v1` loads `bbb-trump-painting-v1`, explicitly recording the
+runtime update, and gives the already-owned energy, picture, food, and guitar
+through Toolbox's displayed menus. Each item moves from aboard to Toolbox
+and its gift bit clears after its response. `B41` becomes one; energy remains
+at its existing cap of 1000, and population/evolution remain 20/100. The ten
+matched sites include the four item replies and GIVE menu. The 6,087-frame,
+1,837-event run decodes twelve resources and saves at frame 5951, SHA-256
+`86e9e0f1170f17dc8f006b62ee078a5fbc0bd1a86b129aab7fbbdc108f5f8080`.
+`robot-slice-audit-v1/report.json` rechecks all three leaves, 100 distinct
+lineage manifests, current source/input hashes, numeric trace inputs,
+rendered menu rows, transfers, and saves. All 35 displayed source sites match;
+five are repeated Toolbox arrival sites. No rendering or runtime edits were
+needed for these additions.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control
@@ -737,6 +770,28 @@ sites. These are site counts, not unique conversations or video durations.
 `render_ready` and `all_normal_branches_complete` remain false. The intermediate
 Kortland v4/v5 text witnesses included in this census still do not prove numeric
 audio correctness, as explained above.
+
+The fourth Mamy gift slice adds energy/bionium v2 and medicine/technology v1.
+The first pair loads Jo's earned resupply save; the second loads the prior
+picture-gift save. Independent `bbb-optional-mamy-gifts-audit-v2/parent-review.json`
+validates 64 distinct lineage manifests, all eighteen current source hashes
+per witness, offered gift menus, actual transfers and native saves, with zero
+rejected presentations. It adds five new nonnumeric sites and wordings beyond
+the previous slices. Energy changes from 36 to 1000. Bionium takes the coughing
+branch, with Super Zen's existing flag set and `vbio=10` unchanged; it does not
+cover the genetic-code branch. Medicine raises evolution 260 to 270, population
+29 to 229 before later simulation ticks, and `B22` to one. Technology raises
+evolution 260 to 310 and `B20` to one. Mamy stays on Loviland throughout.
+All four normal saves close the conversation; energy/bionium v1 attempts remain
+failed and excluded. The frozen pre-numeric-fix binary is valid for these
+SCRIPT3-only conversations, not evidence for the numeric actors.
+
+`output/game-flows/audit-v11` adds these seven verified leaves and 35 BBB sites
+to the previous census. BBB now has 3,013 successful-route sites and 304 other
+normal-route sites, with 2,563 unobserved-wording/dynamic sites, 442 unobserved
+duplicate-wording sites, and 599 unobserved control sites. CB is unchanged.
+Neither unique conversations nor complete alternative ending continuations
+are inferred from those site counts; rendering and completeness remain false.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
