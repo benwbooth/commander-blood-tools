@@ -1,0 +1,9 @@
+# Recontact Bob after his ordinary chapter-two revelation offer.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+wait 600
+choose bye_bye
+wait 250

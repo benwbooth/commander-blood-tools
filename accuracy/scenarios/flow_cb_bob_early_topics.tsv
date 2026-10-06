@@ -1,0 +1,37 @@
+# Continue the earned early Kanary conversation branch through Bob's main topics.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose talk
+choose black_hole
+choose black_hole
+choose black_hole
+choose black_hole
+choose black_hole
+choose Big_Bang
+choose Big_Bang
+choose Big_Bang
+choose mission
+choose mission
+choose mission
+choose mission
+choose mission
+choose Corpo
+choose Corpo
+choose Good_ol_Bob
+choose Good_ol_Bob
+choose Good_ol_Bob
+choose Good_ol_Bob
+choose Good_ol_Bob
+choose Good_ol_Bob
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose revelation
+choose bye_bye
+wait 250

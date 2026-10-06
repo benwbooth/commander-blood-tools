@@ -446,6 +446,23 @@ with `emplo=1`, `emp=1`, and `BO=2` at boundary 5912, SHA-256
 `a779e61d10e0a5a882de6b24dfdef517cb5966bcfa58299c119980924d859a9e`.
 The probabilistic Kanary line and aggressiveness-dependent replies remain
 separate coverage questions, not inferred from this successful conversation.
+`cb-bob-early-topics-v2` continues that save. Returning from the saved Kanary
+submenu through `talk` exposes the black-hole, Big Bang, mission, Corpo,
+flattery, self-history, and revelation topics. Its 35 fully revealed sites all
+match their authored wording; it saves with `BO=3` and `reve=1` at boundary 6493,
+SHA-256 `bcd14052afb067544f6f42e25093a3e52f10e766efce61ff6cd79e256c10cabf`.
+The ordinary Ark-status request plays `AARCHE10.HNM` at boundaries 4061--4398,
+reaching counter 337 (the source-derived 338-frame lower bound minus one) and
+closing normally. This is the requested single clip, not the multi-part opening
+Ark sequence. The run has 6,629 frames, 629 events, and 15 decoded resources.
+`cb-bob-early-revelation-v1` recontacts him, fully presents the sixteen authored
+revelation lines and his third-visit water dialogue, then leaves normally.
+It saves with `BO=4`, `reve=0`, `revelat=1`, and `plus=1` at boundary 6454,
+SHA-256 `600aeeeaa76af74a46ca824940e866ccb5a5133d2e7f751ffcde1b1fb0cd642c`.
+Its 6,590 frames retain 509 events, 13 decoded resources, and 26 fully revealed
+sites. A targeted source/wording/checkpoint/lineage audit accepts all sites in
+both runs without any rejected attribution. These are chapter-two alternatives;
+the later chapter-four revelation remains separately witnessed.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
