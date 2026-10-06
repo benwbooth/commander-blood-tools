@@ -1,0 +1,11 @@
+# Internet and Bug Deluxe are the two known telephone contacts.
+park 4 45
+wait 10
+click 230 104
+wait 40
+click 100 99
+wait 500
+click 230 104
+wait 40
+click 100 99
+wait 500

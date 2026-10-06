@@ -2218,7 +2218,17 @@ impl Runtime {
                 }
                 self.console.push_str(&s);
             }
-            0x0e => self.m.regs.set_al(26), // set drive (DL) -> number of drives
+            0x0e => {
+                let drive = self.m.regs.dl();
+                if self
+                    .drive_roots
+                    .get(drive as usize)
+                    .is_some_and(Option::is_some)
+                {
+                    self.cur_drive = drive;
+                }
+                self.m.regs.set_al(26);
+            }
             0x19 => self.m.regs.set_al(self.cur_drive),
             0x1a => self.dta = (self.m.regs.ds, self.m.regs.dx()),
             0x25 => {
@@ -2840,6 +2850,30 @@ impl Runtime {
 
 #[cfg(test)]
 mod ems_tests {
+    #[test]
+    fn dos_drive_selection_controls_relative_paths() {
+        let mut runtime = super::Runtime::new("cdrive".into(), "disc".into());
+        for (drive, root) in [(2, "cdrive"), (3, "disc"), (2, "cdrive")] {
+            runtime.m.regs.set_ah(0x0e);
+            runtime.m.regs.set_dl(drive);
+            runtime.int21().unwrap();
+            assert_eq!(runtime.m.regs.al(), 26);
+            runtime.m.regs.set_ah(0x19);
+            runtime.int21().unwrap();
+            assert_eq!(runtime.m.regs.al(), drive);
+            assert_eq!(
+                runtime.resolve("probe.sav", true).unwrap(),
+                std::path::Path::new(root).join("probe.sav")
+            );
+        }
+        for drive in [0, 25, 26, 255] {
+            runtime.m.regs.set_ah(0x0e);
+            runtime.m.regs.set_dl(drive);
+            runtime.int21().unwrap();
+            assert_eq!(runtime.cur_drive, 2);
+        }
+    }
+
     #[test]
     fn cpu_multiplier_preserves_hardware_time() {
         let mut runtime = super::Runtime::new(".".into(), ".".into());

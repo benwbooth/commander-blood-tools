@@ -145,6 +145,17 @@ dialogue, leaves population 961 and aggressiveness 100, and makes Bug Deluxe
 known (`bbb-smile-perfume-peaceful-v1`). Both conversations close normally and
 have witnessed saves. This progression uses ordinary waiting and choices; it
 does not alter simulation flags directly.
+The resulting two Bug calls establish the rescue request
+(`bbb-bug-distress-v1`). Daddy's ordinary `more`/`lots` quiz supplies explosives
+(`bbb-daddy-explosives-v1`); choosing `throw` on Bug's next call transfers them
+to him and brings him aboard (`bbb-bug-explosives-v1`). The Ark-exterior clips
+from `20larvarc` are decoded during this continuation, not merely assigned.
+His cryobox conversation then transfers technology, brings Scruter Jo aboard,
+plays `pubgren1.hnm`, and sends Bug back to Trashlando
+(`bbb-bug-technology-v1`). Delivering that technology to Smile on Foxxland
+plays `lentille.hnm`, leaves optics aboard, raises his evolution to 250, and
+unlocks the next destination group (`bbb-smile-technology-v1`). Each of these
+continuations has a witnessed normal save; none is the game's ending.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -170,6 +181,21 @@ On the next Venusia visit the previous purchase's goodbye completes first.
 Recontacting the shop then buys Motoroil perfume with the replacement credit;
 `OB\\parf1_2.hnm` plays, perfume is aboard, and credit is held by Bug Deluxe
 (`cb-venusia-perfume-v3`). The shop closes itself after the department selection.
+Morning's first cryobox conversation completes the authorized inspection and
+closes normally (`cb-morning-wake-v1`). The next sleep-menu attempts do not
+complete the repair and have no new checkpoint. The original executable loads
+that exact earned save through its normal UI and reproduces the sleep menu
+(`cb-morning-sleep-original-v7` and `v8`). Its timer 6 remains at 10 while
+`GS:675A` retains the pending Scruter K record `0x06C2`; this is not evidence
+that the native countdown is wrong. A phone-first continuation is being tested.
+
+That original comparison first exposed a DOS harness defect: INT 21h/AH=0Eh
+returned a drive count without changing the current drive. The harness now
+honors selection of its mounted drives, with relative-path and invalid-drive
+regressions. All 41 recompiler tests pass, including 15,049 interpreter oracle
+vectors and 3,465 instruction differential checks. The repaired harness really
+opens the supplied `game1.sav`; the earlier probes that never loaded it are not
+used as gameplay evidence. This fix does not change the native game binaries.
 CB's separate earned-save alternatives include Izwalito's secret refusal and
 Scruter Jo's rejected code, with `explo3.hnm` played and Jo still on Pterra.
 These are route endpoints, not whole-game completion.

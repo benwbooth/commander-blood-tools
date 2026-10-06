@@ -1,0 +1,8 @@
+# Deliver the explosives earned from Daddy through Bug's telephone request.
+park 4 45
+wait 10
+click 230 104
+wait 40
+click 100 99
+choose throw
+wait 500

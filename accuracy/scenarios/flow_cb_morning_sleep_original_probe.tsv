@@ -1,0 +1,52 @@
+# Original-executable comparison from the witnessed Morning wake checkpoint.
+wait 50
+wait 50
+wait 55
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+wait 30
+frames 1
+frameclick 188 104
+wait 80
+frames 1
+frameclick 230 160
+wait 20
+frames 1
+frameclick 100 106
+wait 20
+frames 1
+frameclick 100 40
+wait 60
+park 316 45
+wait 20
+frames 1
+frameclick 230 124
+wait 40
+frames 1
+frameclick 100 77
+wait 20
+wait 20
+wait 20
+wait 20
+wait 20
+wait 100
+wait 100
+frames 1
+frameclick 200 94
+wait 20
+key 1
+wait 400
+frames 1
+frameclick 230 124
+wait 40
+frames 1
+frameclick 100 77
+wait 20
+wait 20
+wait 20
+wait 20
+wait 100
+wait 100

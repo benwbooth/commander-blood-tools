@@ -1,0 +1,7 @@
+# Bug is the first of five aboard records after the witnessed rescue.
+park 4 45
+wait 10
+click 230 124
+wait 40
+click 100 71
+wait 500
