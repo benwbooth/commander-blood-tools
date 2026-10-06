@@ -547,6 +547,29 @@ Its 23-manifest lineage passes, and slot zero at boundary 6,735 has SHA-256
 `ecf7259dede7433bf90afcc0f4dbc44a85c384048580bf4ffedcb871ab54c22c`.
 This addition also follows `audit-v8`; it does not close all Honk branches.
 
+`cb-bob-chapter3-topics-v2` splits Bob's black-hole, Big Bang, mission, Corpo,
+flattery, and self-history topics across ordinary cryobox calls because his
+chapter-three illness timer limits each contact. Its 30 displayed sites all
+match source, including 24 Bob BAS sites, and the 25-manifest lineage passes.
+Slot zero at boundary 9,220 has SHA-256
+`857b5c142aefc1cea3ef496c61000a18759f68bb7323a92c37b9a38bb5e6cade`.
+V1 exceeded the timer while asking about the mission and remains excluded.
+The subsequent `cb-bob-chapter3-revelation-timeout-v1` lets the requested
+revelation play until that timer interrupts it. It observes 11 revelation
+sites and Bob's illness, not the whole revelation; all 16 sites and its
+26-manifest lineage pass. Its save at boundary 3,973 has SHA-256
+`d987cbcaee3c952a527ebe8ee47cf04e4158d28708703f031ed67c605770062f`.
+
+The separate `cb-bob-chapter3-kanary-v3` branches before requesting revelation
+and covers cottage, cloning, reports, and employees over three calls. The
+company submenu persists across those recontacts; trying to select `kanary`
+again stalls, as the excluded v2 shows. All 24 sites match source, including
+18 company BAS sites; its 25-manifest lineage passes. Slot zero at boundary
+7,470 has SHA-256
+`5966b27cabfa4ecb16935204fab5a9774d250ff1f9ffb4035bb1bfa5235211b4`.
+V1 started from the pending-revelation branch and never offered its requested
+company topic. These additions are after `audit-v8`, not completeness claims.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure

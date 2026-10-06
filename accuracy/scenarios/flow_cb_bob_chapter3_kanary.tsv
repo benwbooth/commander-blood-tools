@@ -1,0 +1,41 @@
+# Company topics from the earned chapter-three save, before requesting revelation.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose kanary
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+choose bye_bye
+wait 200
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+# The company submenu is retained across this ordinary recontact.
+choose clones
+choose clones
+choose clones
+choose clones
+choose clones
+choose bye_bye
+wait 200
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose reports
+choose reports
+choose reports
+choose reports
+choose employees
+choose employees
+choose employees
+choose bye_bye
+wait 200

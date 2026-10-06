@@ -1,0 +1,55 @@
+# Wake Bob through the normal cryobox and ask the chapter-three topics.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose black_hole
+choose black_hole
+choose black_hole
+choose black_hole
+choose black_hole
+choose big_bang
+choose big_bang
+choose big_bang
+choose bye_bye
+wait 200
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose mission
+choose mission
+choose mission
+choose mission
+choose mission
+choose corpo
+choose corpo
+choose bye_bye
+wait 200
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose good_ol_bob
+choose good_ol_bob
+choose good_ol_bob
+choose good_ol_bob
+choose bye_bye
+wait 200
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose Bob_Morlock
+choose revelation
+choose bye_bye
+wait 200

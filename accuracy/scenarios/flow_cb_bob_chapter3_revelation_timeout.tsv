@@ -1,0 +1,7 @@
+# Let Bob's requested revelation run until his ordinary illness timer interrupts.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+wait 300
