@@ -1,0 +1,38 @@
+# Buy replacement optics from Otto Von Smile on Foxx.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 35 90
+wait 60
+click 250 125
+wait 300
+click 80 104
+choose accept
+wait 500
+click 200 141
+wait 700
+# Buy another guitar from the already treated Ben Zen on Tumul.
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 230 83
+wait 60
+click 250 125
+wait 300
+click 80 104
+choose ACCEPT
+wait 500
+click 200 150
+wait 700

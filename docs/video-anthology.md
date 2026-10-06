@@ -163,6 +163,8 @@ to Ron for his transport request.
 `cb-fifi-malus-v1` asks him for Malus's coordinates, transports him there, and
 recontacts him locally. Fifi's Ondoya clue is fully presented, and the saved
 endpoint places him on Malus.
+`cb-ondoyant-recruit-v1` follows that clue to Ondoya and accepts the request
+for passage. Its saved endpoint confirms the Ondoyant aboard.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -195,6 +197,9 @@ attempt recontacted Marakas instead and is excluded from the continuation.
 `bbb-rotator-nuclear-v1` visits Rotator three times, observes the two introductory
 sequences, answers his third-visit price questions, and offers the pile. Rotator
 returns it; the saved endpoint has `B96=3`, four credits, and three visits.
+`bbb-optics-guitar-again-v1` purchases replacement optics from Otto Von Smile
+on Foxx and another guitar from the treated Ben Zen on Tumul. Both objects are
+aboard in the saved endpoint, with two credits remaining.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
