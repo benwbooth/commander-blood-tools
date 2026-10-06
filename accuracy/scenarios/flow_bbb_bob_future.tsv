@@ -1,0 +1,17 @@
+# Retire Honk's one-time object-search handler after the normal profile load.
+park 4 45
+wait 25
+click 230 88
+wait 100
+# Honk recognizes the completed crown quest and announces Bob's return.
+park 4 45
+wait 25
+click 230 88
+wait 1000
+# Bob is third of twelve aboard entries, after Tequila and Scruter Jo.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 56
+wait 1400

@@ -298,6 +298,10 @@ closure, Amigo's closed-bar conversation, and Scruter Mac's pilgrimage/history
 dialogue are all observed. The saved checkpoint has Daddy, Izwalito, and
 Emasculator at Trashlando, Amigo still at the bar, and Scruter Mac at Kult.
 The run has 34 decoded resources and 33 fully revealed text sites.
+`cb-party-bad-password-v1` visits the chapter-five Mastachok guard and selects
+the displayed `galabar` answer. The refusal, laser threat, and `explo3.hnm`
+sequence play before the normal bridge save. Its 11 decoded resources and
+nine fully revealed sites are a separate alternative, not a prison-entry witness.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -410,6 +414,14 @@ illustrating sequences, returned crown, and farewell all play. Its normal save
 confirms ring and crown aboard, `A74=6`, `A72=1`, `A23=1`, and four credits;
 `B81=0` still awaits Honk's announcement and Bob's return. The run observes
 29 decoded resources and 86 fully revealed sites.
+`bbb-bob-future-v3` makes the two ordinary Honk contacts needed after loading,
+then selects Bob from the actual twelve-entry cryobox list (third, after
+Tequila and Scruter Jo). Honk's announcement and Bob's complete return/future
+explanation play. The normal save has `B81=2`, `B10=1`, `B7=1`, Blue Wave at
+Waveland, Betakam at Bonusland, and Bob and the three Zens at Trashlando.
+The run observes 22 decoded resources and 26 fully revealed sites. V1 missed
+Honk's object-search interruption; v2 completed its inputs but contacted Tequila
+instead of Bob and reached only `B81=1`. Neither establishes this quest result.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
