@@ -1,0 +1,33 @@
+# Fifi is seventh of ten aboard entries after a normal checkpoint load.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 111
+wait 800
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 220 92
+wait 40
+click 250 125
+wait 300
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 111
+choose teleport
+wait 700
+# Restore the local view and visit Fifi on Malus.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+wait 900

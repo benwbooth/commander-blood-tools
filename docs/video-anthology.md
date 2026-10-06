@@ -159,6 +159,10 @@ confirms the picture with Fifi, the hat aboard, and Super Zen back at Crazystone
 `cb-zen-hat-v1` gives the hat to Super Zen and hears his Masta identification.
 The saved endpoint has the hat with Zen, Zen at Trashlando, and Fifi returned
 to Ron for his transport request.
+`cb-fifi-transport-offer-v1` accepts that request and saves with Fifi aboard.
+`cb-fifi-malus-v1` asks him for Malus's coordinates, transports him there, and
+recontacts him locally. Fifi's Ondoya clue is fully presented, and the saved
+endpoint places him on Malus.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -188,6 +192,9 @@ gratitude exchange. The saved result confirms Marakas at Rondoland and `A81=7`.
 discounted nuclear pile, and gives it to Emasculator. He returns it. The saved
 endpoint has four credits, the pile aboard, and `B96=2`. The failed v1 chart
 attempt recontacted Marakas instead and is excluded from the continuation.
+`bbb-rotator-nuclear-v1` visits Rotator three times, observes the two introductory
+sequences, answers his third-visit price questions, and offers the pile. Rotator
+returns it; the saved endpoint has `B96=3`, four credits, and three visits.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

@@ -1,0 +1,38 @@
+# Reach Kult through the ordinary chart after loading.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 222 108
+wait 60
+click 250 125
+wait 300
+click 80 104
+wait 1200
+# The first two encounters end in their authored travel sequences.
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+wait 1200
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+choose happy
+choose meh
+choose hurts
+choose nuclear
+wait 500
+click 200 141
+wait 700
