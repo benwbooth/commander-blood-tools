@@ -1,0 +1,29 @@
+# Hear the rescued passengers before leaving chapter four.
+# The loaded ten-entry roster places Yoko fourth and Maxxon ninth.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+wait 600
+click 230 124
+wait 40
+click 100 133
+wait 600
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 132 34
+wait 40
+click 250 125
+wait 1200
+# This attempt leaves the camera closed; the saved endpoint is arrival only.
+park 4 0
+wait 40
+click 60 130
+wait 800
+park 4 45
+wait 25
+click 125 118
+wait 900

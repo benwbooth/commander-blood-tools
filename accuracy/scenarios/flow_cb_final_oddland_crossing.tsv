@@ -1,0 +1,8 @@
+# Open the camera from the saved Oddland arrival, then enter the black hole.
+# The chapter-four Ekato map marker overlaps the old (60, 130) click.
+park 4 0
+wait 40
+click 160 150
+wait 80
+click 25 145
+wait 1000

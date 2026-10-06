@@ -184,6 +184,13 @@ Eviscerator at the machine, and Yoko dispatched to Kukaracha.
 `cb-kukaracha-rescue-v1` visits the prison ship, plays the two rescue sequences,
 and teleports Yoko and Maxxon aboard. Jerry's subsequent call reveals Oddland.
 Both rescued passengers are aboard in the saved checkpoint.
+`cb-return-through-oddland-v2` hears both passengers' thanks and returns the
+Ark to Oddland. Its attempted entry leaves the camera closed; the saved
+endpoint remains in SCRIPT4. `cb-final-oddland-crossing-v2` loads that earned
+arrival, opens the camera, and enters through the left control at `(25,145)`.
+The previous `(60,130)` coordinate overlaps chapter four's Ekato chart marker
+and selects that planet instead. The successful saved checkpoint is in
+SCRIPT5 with the chapter's normal passenger roster and three bionium.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
