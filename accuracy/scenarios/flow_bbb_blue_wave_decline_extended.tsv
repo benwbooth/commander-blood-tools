@@ -1,0 +1,10 @@
+# Accept the show and alternate view but decline the extended view.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+choose yes
+choose peek
+choose no
+wait 900

@@ -460,6 +460,12 @@ complaint queued, with 34 decoded resources and 59 fully revealed sites.
 `bbb-blue-wave-refuse-v1` separately declines the initial offer and saves at
 `A96=1`, `A61=1`, with the same queued caller. It observes 20 resources and
 19 fully revealed sites; shared sequence material should not be rendered twice.
+`bbb-blue-wave-pass-v1` declines the alternate camera after the initial show;
+it saves at `A96=1`, `A61=1`, with 31 decoded resources and 46 fully revealed
+sites. `bbb-blue-wave-decline-extended-v1` accepts that camera but declines the
+extended view; it saves at `A96=0`, `A61=1`, with 33 resources and 51 fully
+revealed sites. These are one witness per distinct refusal point, not combined
+permutations of repeated shows.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

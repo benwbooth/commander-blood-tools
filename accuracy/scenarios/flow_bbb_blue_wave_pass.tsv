@@ -1,0 +1,9 @@
+# Accept the show but decline the alternate camera view.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+choose yes
+choose pass
+wait 900
