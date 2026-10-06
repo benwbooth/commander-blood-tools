@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use commander_blood_formats::code::ScriptCodeOffset;
+use commander_blood_formats::code::{ScriptCodeOffset, ScriptDecodingMode, ScriptToken};
 use commander_blood_formats::instruction::{ScriptInstruction, ScriptTimerSlot};
 use commander_blood_formats::script::ScriptWordId;
 
@@ -276,6 +276,14 @@ impl ScriptRuntime {
     /// Arm an authored number of framed instructions to skip.
     pub fn arm_skip(&mut self, count: u8) {
         self.pending_skip_count = Some(count);
+    }
+
+    /// Preserve A0/A1 descriptor mode changes while skipping, without executing
+    /// their guard-stack handlers (CB 0x62B6, BBB 0x68C8).
+    pub(crate) fn apply_skipped_token(&mut self, token: &ScriptToken) {
+        if matches!(token.opcode().byte(), 0xA0 | 0xA1) {
+            self.query_mode = token.mode_after() == ScriptDecodingMode::Query;
+        }
     }
 
     /// Consume a pending skip count when its recovered activity bits are set.

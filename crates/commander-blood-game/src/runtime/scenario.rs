@@ -129,6 +129,9 @@ struct RuntimeScenarioAction {
 struct CompletedRuntimeScenarioAction {
     index: usize,
     source: String,
+    frame_count: u64,
+    game_frame_count: u64,
+    presentation_frame_count: u64,
 }
 
 /// Drives one checked-in DOS-oracle scenario through flat logical input.
@@ -138,7 +141,7 @@ pub(super) struct RuntimeScenarioDriver {
     trace: BufWriter<File>,
     action_index: usize,
     action_frame: u16,
-    pending_trace: Option<CompletedRuntimeScenarioAction>,
+    pending_trace: Vec<CompletedRuntimeScenarioAction>,
     initial_trace_written: bool,
     frame_count: u64,
     game_frame_count: u64,
@@ -170,7 +173,7 @@ impl RuntimeScenarioDriver {
             trace,
             action_index: usize::MIN,
             action_frame: u16::MIN,
-            pending_trace: None,
+            pending_trace: Vec::new(),
             initial_trace_written: false,
             frame_count: u64::MIN,
             game_frame_count: u64::MIN,
@@ -181,15 +184,16 @@ impl RuntimeScenarioDriver {
     /// Write every state boundary that became observable before this frame.
     pub(super) fn record_due_boundaries(&mut self, semantic: &Value) -> Result<bool> {
         self.record_initial_boundary(semantic)?;
-        if let Some(completed) = self.pending_trace.take() {
+        for completed in std::mem::take(&mut self.pending_trace) {
             self.write_record(
                 completed.index + 1,
                 "after",
                 Some(&completed.source),
                 semantic,
+                Some(&completed),
             )?;
         }
-        Ok(self.action_index >= self.actions.len() && self.pending_trace.is_none())
+        Ok(self.action_index >= self.actions.len() && self.pending_trace.is_empty())
     }
 
     pub(super) fn record_initial_boundary(&mut self, semantic: &Value) -> Result<()> {
@@ -202,7 +206,7 @@ impl RuntimeScenarioDriver {
             self.action_frame = u16::MIN;
         }
         if !self.initial_trace_written {
-            self.write_record(usize::MIN, "initial", None, semantic)?;
+            self.write_record(usize::MIN, "initial", None, semantic, None)?;
             self.initial_trace_written = true;
         }
         Ok(())
@@ -334,9 +338,12 @@ impl RuntimeScenarioDriver {
         };
 
         if complete {
-            self.pending_trace = Some(CompletedRuntimeScenarioAction {
+            self.pending_trace.push(CompletedRuntimeScenarioAction {
                 index: self.action_index,
                 source: action.source.clone(),
+                frame_count: self.frame_count,
+                game_frame_count: self.game_frame_count,
+                presentation_frame_count: self.presentation_frame_count,
             });
             self.action_index += 1;
             self.action_frame = u16::MIN;
@@ -352,6 +359,7 @@ impl RuntimeScenarioDriver {
         phase: &str,
         action: Option<&str>,
         semantic: &Value,
+        completion: Option<&CompletedRuntimeScenarioAction>,
     ) -> Result<()> {
         let waiting_for_input = semantic
             .pointer("/presentation/waiting_for_input")
@@ -365,6 +373,13 @@ impl RuntimeScenarioDriver {
             "phase": phase,
             "action": action,
             "steps": self.frame_count,
+            "completion_clock": completion.map(|completed| serde_json::json!({
+                "steps": completed.frame_count,
+                "game_frame_sequence": completed.game_frame_count,
+                "presentation_frame_sequence": completed.presentation_frame_count,
+            })),
+            "semantic_observation_deferred": completion
+                .is_some_and(|completed| completed.frame_count != self.frame_count),
             "clock": {
                 "game_frame_sequence": self.game_frame_count,
                 "presentation_frame_sequence": self.presentation_frame_count,
@@ -691,7 +706,7 @@ mod tests {
             trace: BufWriter::new(File::create(&trace_path).unwrap()),
             action_index: 0,
             action_frame: 0,
-            pending_trace: None,
+            pending_trace: Vec::new(),
             initial_trace_written: false,
             frame_count: 0,
             game_frame_count: 0,
@@ -710,7 +725,7 @@ mod tests {
             );
         }
         assert_eq!(driver.action_index, 1);
-        assert!(driver.pending_trace.is_some());
+        assert!(!driver.pending_trace.is_empty());
         assert_eq!(driver.game_frame_count, 0);
         assert_eq!(
             driver.presentation_frame_count,
@@ -755,6 +770,47 @@ mod tests {
     }
 
     #[test]
+    fn synchronous_frames_retain_every_completed_action_until_state_is_observable() {
+        let trace_path = std::env::temp_dir().join(format!(
+            "commander-blood-deferred-actions-{}.jsonl",
+            std::process::id()
+        ));
+        let mut driver = RuntimeScenarioDriver {
+            scenario_path: PathBuf::from("scenario.tsv"),
+            actions: parse_scenario("move 100 80\nmove 120 90", Path::new("scenario.tsv")).unwrap(),
+            trace: BufWriter::new(File::create(&trace_path).unwrap()),
+            action_index: 0,
+            action_frame: 0,
+            pending_trace: Vec::new(),
+            initial_trace_written: false,
+            frame_count: 0,
+            game_frame_count: 0,
+            presentation_frame_count: 0,
+        };
+        let semantic = serde_json::json!({"presentation": {"waiting_for_input": false}});
+        driver.record_initial_boundary(&semantic).unwrap();
+        for _ in 0..2 {
+            driver
+                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+                .unwrap();
+        }
+        assert!(driver.record_due_boundaries(&semantic).unwrap());
+        let records: Vec<Value> = std::fs::read_to_string(&trace_path)
+            .unwrap()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        assert_eq!(records.len(), 3);
+        assert_eq!(records[1]["action"], "move 100 80");
+        assert_eq!(records[2]["action"], "move 120 90");
+        assert_eq!(records[1]["completion_clock"]["steps"], 1);
+        assert_eq!(records[2]["completion_clock"]["steps"], 2);
+        assert_eq!(records[1]["semantic_observation_deferred"], true);
+        assert_eq!(records[2]["semantic_observation_deferred"], false);
+        let _ = std::fs::remove_file(trace_path);
+    }
+
+    #[test]
     fn motion_publishes_one_signed_relative_pointer_delta() {
         let action = parse_action("motion -320 7", Path::new("scenario.tsv"), 4).unwrap();
         assert_eq!(
@@ -780,7 +836,7 @@ mod tests {
             trace: BufWriter::new(File::create(&trace_path).unwrap()),
             action_index: 0,
             action_frame: 0,
-            pending_trace: None,
+            pending_trace: Vec::new(),
             initial_trace_written: false,
             frame_count: 0,
             game_frame_count: 0,
@@ -828,7 +884,7 @@ mod tests {
             trace: BufWriter::new(File::create(&trace_path).unwrap()),
             action_index: 0,
             action_frame: 0,
-            pending_trace: None,
+            pending_trace: Vec::new(),
             initial_trace_written: false,
             frame_count: 0,
             game_frame_count: 0,
@@ -871,7 +927,7 @@ mod tests {
             trace: BufWriter::new(File::create(&trace_path).unwrap()),
             action_index: 0,
             action_frame: 0,
-            pending_trace: None,
+            pending_trace: Vec::new(),
             initial_trace_written: false,
             frame_count: 0,
             game_frame_count: 0,
@@ -893,7 +949,7 @@ mod tests {
             trace: BufWriter::new(File::create(&trace_path).unwrap()),
             action_index: 0,
             action_frame: 0,
-            pending_trace: None,
+            pending_trace: Vec::new(),
             initial_trace_written: false,
             frame_count: 0,
             game_frame_count: 0,

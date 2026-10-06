@@ -53,6 +53,10 @@ New traces also retain named script-global word changes, with source offsets
 and raw/signed values. The recorder stores only changes and the final snapshot;
 older traces without these fields do not claim global-state evidence. This is
 read-only observation of the synchronized native VAR state.
+Inputs completed inside a synchronous minigame are queued until a bridge
+snapshot is available. Each retains its actual completion clock and explicitly
+marks a deferred semantic observation; those snapshots are not minigame-frame
+state evidence.
 
 `--resume-from path/to/flow.json --slot 0` permits one normal UI load from a
 recorded predecessor. The preceding run must have witnessed a successful save
@@ -225,13 +229,29 @@ the source's post-call dialogue. The first `yes` attempt therefore fails with
 no checkpoint. Selecting the rendered `no_way` option and then `leave_him`
 reaches the ten-bionium request (`bbb-gluk-bionium-request-v2`), closes normally,
 and saves with `A27 = 2`, `A28 = 2`, `A29 = 1`, and zero bionium. The menu
-return remains an unresolved original-behavior check; it is not hidden by a
-quest-state edit or counted as the missing post-call scene.
+return was investigated rather than hidden by a quest-state edit or counted as
+the missing post-call scene.
 The instrumented repeat (`bbb-gluk-bionium-request-v3`) confirms that the normal
 load restores `A27 = 4`, then the first Gluk-contact frame changes it to `1`.
 The same visible refusal route still saves with `A29 = 1`. The executable
 change is explicit in the lineage; it adds read-only global tracing and includes
 the previously verified BC selector repair.
+The original-executable probe `big_bug_bang_gluk_skip_oracle.py` now establishes
+the cause: the rejected text at COD 15709 skips two assignments and A0, but the
+original token walker still enters query mode while skipping A0. Its following
+C0 compares `A27` instead of assigning it. The bounded probe uses unchanged DOS
+code and disc scripts with the earned save's VAR, a controlled root guard target,
+and an active earlier menu. It preserves `A27 = 4`; it is not a full DOS UI run.
+The native COD skip path now retains A0/A1 mode changes without executing their
+guard-stack operations. The 17 original CB token-walker cases were also rerun;
+the new both-dialect regression failed before the repair. All 1,115 enabled
+game-library tests pass, with 78 explicit ignores.
+Replaying from `bbb-gluk-followup-v1` with that repair yields
+`bbb-gluk-bionium-request-v4`: the treatment montage, `yes`, and `leave_him`
+finish normally with `A27 = 5`, `A28 = 2`, `A29 = 1`, zero bionium, six credits,
+and the food/medicine/energy items aboard. This replaces v2/v3 as route evidence;
+those older traces remain diagnostic artifacts and are not continuation parents.
+Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -332,6 +352,11 @@ who remains at the bar; her later recruitment is a separate step.
 The subsequent Moskito airport visit introduces `commander_blood` to Migrator
 and hears his singer request (`cb-migrator-first-v1`). He returns to rehearsing
 and the conversation closes with a witnessed save.
+The following Eden return recruits Tina with `TELEPORT`, then selects her fifth
+row in the six-entry cryobox roster twice (`cb-tina-recruit-v2`). Both aboard
+conversations finish, including her request to be dropped near the musician;
+the checkpoint retains Tina aboard. The failed v1 clicked Jo's row instead and
+is not used as a predecessor.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted

@@ -1,4 +1,4 @@
-# Refuse the price menu observed after Gluk's callback, then leave him alone.
+# Hear Gluk's post-callback treatment conversation, then leave him alone.
 click 230 152
 wait 40
 click 100 82
@@ -8,6 +8,6 @@ wait 20
 click 225 80
 wait 200
 click 80 104
-choose no_way
+choose yes
 choose leave_him
 wait 600

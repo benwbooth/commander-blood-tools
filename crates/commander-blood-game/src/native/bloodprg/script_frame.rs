@@ -392,6 +392,7 @@ fn execute_script_frame_inner<Host: FrameHost>(
                             token_at(code, cursor).ok_or(ScriptFrameError::MissingInstruction {
                                 source_offset: cursor,
                             })?;
+                        runtime.apply_skipped_token(skipped);
                         cursor = skipped.end_offset();
                         skipped_instructions += 1;
                     }
@@ -641,6 +642,31 @@ mod tests {
                         Vec::new()
                     }
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn skipped_guard_tokens_change_query_mode_without_changing_guard_targets() {
+        use commander_blood_formats::code::{ScriptDialect, decode_script_code_for_dialect};
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            for (guard, expected_query) in [(vec![0xA0, 0x04, 0x00], true), (vec![0xA1], false)] {
+                let mut bytes = vec![TEST_OPCODE];
+                bytes.extend(guard);
+                bytes.push(END_OPCODE);
+                let code = decode_script_code_for_dialect(&bytes, dialect).unwrap();
+                let mut runtime = ScriptRuntime::new();
+                let target = ScriptCodeOffset::new(100);
+                runtime.begin_root_guard(target);
+                if expected_query {
+                    runtime.end_guard();
+                }
+                let mut host = RecordingHost::with_actions([HostAction::ArmSkip(1)]);
+                let outcome = execute_script_frame(&code, true, &mut runtime, &mut host).unwrap();
+                assert_eq!(outcome.skipped_instructions, 1);
+                assert_eq!(runtime.query_mode(), expected_query, "{dialect:?}");
+                assert_eq!(runtime.guard_depth(), 1);
+                assert_eq!(runtime.current_guard_target(), Some(target));
             }
         }
     }

@@ -1,0 +1,34 @@
+{
+  "cod_sha256": "db0dc6de4db2f018640b890ce59c035743948f15f37252ea22c45571762c38c6",
+  "controlled_root_guard_target": 15761,
+  "dic_sha256": "3aeea9147215e25977fe07d04caecffedb6c887cf4af76eb8edbcefb34f5e76a",
+  "earned_save_sha256": "b3e3f490e14bb882123cb6621793e47b34de006b626cde2c85f4087d3c106ff2",
+  "entry_query_modes": [
+    0,
+    1
+  ],
+  "executable_sha256": "4b65ffca3e113a1826371e3436177861640a1b7aae24caafebb4c2f7aa467834",
+  "globals_after": {
+    "A27": 4,
+    "A28": 0,
+    "A29": 0,
+    "A34": 0
+  },
+  "globals_before": {
+    "A27": 4,
+    "A28": 0,
+    "A29": 0,
+    "A34": 0
+  },
+  "instruction_entries": [
+    15709,
+    15746
+  ],
+  "query_after": 0,
+  "scope": "bounded rejected-A6 tail with an earlier menu active; not a full DOS playthrough",
+  "state_writes": [],
+  "stopped_before": 15761,
+  "unmodified_executable": true,
+  "unmodified_scripts": true,
+  "var_sha256": "3bc7fb83952684770acc82ad26980775ab38180b3b78e585f321b4c5b3245f30"
+}
