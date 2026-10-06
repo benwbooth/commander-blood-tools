@@ -315,6 +315,13 @@ the password shortcut each time, and answers Chigraxx's queued call with
 `talk` and `hello`. The conversation and ensuing war activation complete;
 the saved checkpoint has `B95=3`, `B24=1`, `A73=1`, seven credits, and two
 bionium. It records the same skipped-A9 runtime update as CB's repaired exam.
+`bbb-zen-war-treaty-v3` accepts Izwalito's free wartime treaty, travels to
+Super Zen's observed Spiraland settlement, answers his visit-dependent word
+game with `no`, and hands over the treaty. The complete peace dialogue and
+checkpoint confirm `A73=2`, `A74=1`, `B24=0`, and seven credits. Super Zen has
+then moved to Voluptland. The failed v1 overview crash and incomplete v2
+missing-choice attempt are not checkpoints. V3 explicitly records the
+original-backed aboard-actor map repair.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
