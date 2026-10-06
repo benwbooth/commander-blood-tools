@@ -311,6 +311,12 @@ Honk's "not a never ending story" response are observed. The saved state has
 the missing-Splatch complaints. The saved state retains `D1=1`, Eviscerator in
 prison, and Splatch with Amigo. It observes 15 decoded resources and 15 fully
 revealed sites. V1 left the chart open and never reached the guard; it is excluded.
+`cb-early-party-crew-v1` returns to the earned chapter-five arrival and visits
+Bob, Hom, and Maxxon before taking Yoko and Maxxon home. Bob's urgency dialogue,
+Hom's reminder, and Maxxon's transport request are observed. After reaching
+Rondo, both visible `refuse` choices are selected; the save retains all three
+passengers aboard with `G1=0`. It observes 30 decoded resources and 21 fully
+revealed sites, without advancing the homecoming/exam route.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

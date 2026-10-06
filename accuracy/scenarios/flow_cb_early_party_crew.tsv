@@ -1,0 +1,44 @@
+# Ordinary early chapter-five contacts, before Hom or the passengers leave.
+# Ten aboard entries: Bob first, Hom third, Maxxon ninth.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 45
+wait 900
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 67
+choose bye_bye
+wait 600
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 133
+wait 600
+# Travel to Rondo and hear each passenger's refusal response.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 281 40
+wait 40
+click 250 125
+wait 300
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 78
+choose refuse
+wait 500
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 133
+choose refuse
+wait 500
