@@ -1,0 +1,13 @@
+# Recorded alternative: the war dialogue interrupts this perfume attempt.
+# The guitar gift completed but did not clear the colony's war flag.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+click 225 80
+wait 200
+click 80 104
+choose perfume
+wait 500

@@ -1,0 +1,7 @@
+# Answer two queued messages without selecting or forcing their senders.
+park 316 45
+wait 20
+click 125 118
+wait 400
+click 125 118
+wait 400

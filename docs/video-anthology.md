@@ -114,6 +114,17 @@ fifth-visit `doom` alternative reaches the explosion ending assignment at
 `0x9EF3` and exits cleanly. A separate perfume attempt transfers the item but
 is interrupted by a war dialogue before its quest flags are set; that attempt
 is not a completed perfume quest.
+The fifth-visit guitar alternative completes the explosion showcase and the
+gift feedback, raising Smile's evolution to 150 and population to 362. It does
+not clear the observed war flag. Giving perfume on the next visit still ends
+with the war interruption, so neither perfume attempt is a successful quest
+checkpoint. These are native observations, not a claim that the interruption
+has been matched against the original executable.
+At the following Izwalito visit, population has fallen below the treaty-offer
+threshold. Giving the earned energy and medicine raises energy to 1000,
+population to 387, and evolution to 120. The offer then appears; accepting it
+buys the treaty, and the ordinary Cancel row permits a completed save with the
+treaty aboard (`bbb-izwalito-treaty-v4`).
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.
 CB's continued Izwalito route obtains Rondo's coordinates through the secret
@@ -127,10 +138,19 @@ discussion reveals Erazor.
 Otto's transplant/Ekatomb route earns the lens, and the normal observatory
 selection delivers it to Maxxon. His youth-treatment and surgery alternatives
 leave the lens with Otto and add ten distinct fully shown dialogue sites.
+The following Magnus visit completes Morning Oil's battery request with one
+goodbye selection. Answering queued calls then plays Scruter K's final warning,
+Scruter Mac's first coded message, and Bug Deluxe's full Venusia commercial.
+The commercial enables the supermarket destination through normal game logic.
 CB's separate earned-save alternatives include Izwalito's secret refusal and
 Scruter Jo's rejected code, with `explo3.hnm` played and Jo still on Pterra.
 These are route endpoints, not whole-game completion.
 The detailed witnesses live under `output/game-flows`.
+
+One additional runtime limitation was exposed while buying Izwalito's treaty:
+F7 from the GIVE menu fails with `SubtitleRevealError::EmptyText` before saving
+(`bbb-izwalito-treaty-v3`). That run is rejected as a checkpoint. The route uses
+the visible Cancel control instead; the F7 failure remains unresolved.
 
 ### Source Progression Gates
 

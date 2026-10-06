@@ -1,0 +1,5 @@
+# Answer the next queued message; this predecessor first yields Scruter K.
+park 316 45
+wait 20
+click 125 118
+wait 600
