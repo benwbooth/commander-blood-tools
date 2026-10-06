@@ -424,6 +424,45 @@ rendered menu rows, transfers, and saves. All 35 displayed source sites match;
 five are repeated Toolbox arrival sites. No rendering or runtime edits were
 needed for these additions.
 
+`bbb-oil-arrivals-v1` reaches Morning Oil at Ekatomb, Midnight Oil at Erazor,
+and Evening Oil at Pterra from the earned invitations save. All three speak;
+Morning and Evening are contacted twice, Midnight once. The run has 9,975
+frames, 4,191 events, twelve decoded resources, and fifteen source-matched
+SCRIPT8 sites. Slot zero at frame 9839 has SHA-256
+`9e49e6379d88098dc3a029d966f45e2fa5bfbabfed4b417573638aaa7a542d6a`.
+Their first numeric hashes use empty scratch and retained suffixes `r`, `nt`,
+and `als`, with seeds 157, 164, and 170 at frames 2592, 6142, and 7959.
+
+`robot-slice-audit-v1/hash_variants.py` replays the original allocation code
+against captures 48/49 again, then substitutes each authored numeric operand
+in a private copy of the captured word list. The unchanged original hasher
+matches the actual native word bytes and initial seeds for all eleven checked
+SCRIPT8/9 actors: Bug, Sushi, Fuji, Toolbox, Toolcase, Jerry, Mohi, Shado,
+Morning, Midnight, and Evening. The generated `hash-variants.json` retains
+capture/tail hashes and native frame references. This is controlled arithmetic
+and retained-byte evidence, not an independently observed DOS call boundary
+or full conversation-parity proof for each actor.
+
+`bbb-toolbox-bionium-refuse-v1` and `bbb-toolbox-bionium-accept-v2` branch from
+the published four-gift save. The owned bionium raises population 20 to 120,
+evolution 100 to 130, and consumes one of three stock units. The decoder offer
+appears immediately within this conversation, not only on a later visit.
+Refusal leaves two credits and the decoder with Blue Wave. Acceptance spends
+one credit and teleports the decoder aboard. Both encounters return the
+bionium and credit inventory tokens after closing; that does not restore the
+spent quantities. The displayed post-decision menu has three items in either
+case, with different item identities. Refusal observes ten sites in 4,894
+frames and saves at 4758, SHA-256
+`66cdf8bee75c352e5b70c4d60485e323a39f70d355d55ad380d7ee086c8e2ba2`;
+acceptance observes twelve sites in 4,534 frames and saves at 4398, SHA-256
+`ce21291d443587d3564d9da182ee292428093d03f6561c94ebeaefc8dc5abd11`.
+The premature ship-choice attempt and acceptance v1's incorrect Cancel
+coordinate remain failed and excluded. `bbb-oil-toolbox-audit-v1/report.json`
+validates 101 distinct lineage manifests, current source/input hashes,
+matching text, menu selections, real transfers, quantities, and saved endpoints.
+These three leaves add 21 sites beyond `audit-v11`; robot gifts and sales are
+still not complete.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control

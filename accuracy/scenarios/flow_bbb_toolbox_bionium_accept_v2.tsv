@@ -1,0 +1,23 @@
+# Load the earned four-gift save; bionium raises evolution above 100.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 38 135
+wait 40
+click 250 125
+choose bionium
+# The offer appears immediately after the gift response.
+choose accept
+wait 80
+# Bionium and credit remain with Toolbox until this encounter ends.
+# Painting, decoder, ship: the displayed Cancel row is at y=111.
+click 200 111
+wait 200
