@@ -375,6 +375,12 @@ endpoint has `C9=1`, `A74=3`, five credits, and Outrageor at Edenland.
 Super Zen remains at Cyberland with eight encounters. The run observes eight
 decoded resources and 56 fully revealed sites. V1 omitted the new yes/no
 question and is excluded; its planned waits were not evidence of progression.
+`bbb-outrageor-crown-v1` enters Eden, gives Outrageor optics, guitar, perfume,
+and food through the normal gift menu, then accepts the one-credit crown offer.
+The saved checkpoint confirms the crown aboard, `A79=4`, `A74=5`, four credits,
+and Outrageor at Trashlando. Super Zen is still at Cyberland with eight visits.
+The 21 decoded resources and 37 fully revealed sites are observed; the ring and
+Super Zen's subsequent explanation are not yet implied by this checkpoint.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
