@@ -276,6 +276,17 @@ diploma at `quest=16` and `quest=21`, respectively, with `Bof=5`. Q11's Vista
 response is observed without awarding a point, matching the authored script.
 Their 63 and 78 fully revealed sites are separate route witnesses, not an
 enumeration of every possible answer combination.
+`cb-exam-answers-22-26-v1`, `cb-exam-answers-27-31-v1`, and
+`cb-exam-answers-32-v1` complete the remaining positive answer paths. Each
+normally teleports the diploma aboard and saves with `Bof=5`, at `quest=26`,
+`quest=31`, and `quest=32` respectively. Their fully revealed site counts are
+93, 108, and 111. Together with the earlier pass/failure routes, a join against
+the hash-matching original SCRIPT5 COD/DIC catalog observes 128 of the 129 text
+sites in procedures Q1-Q32, including every question and both answer responses.
+The remaining site, COD `0x41B6` (the question-32 wrap-up), is not published by
+either final-question route. The earlier pass/failure handlers take over once
+`quest=32`; it is kept absent, not manufactured by changing the score or guards.
+This bounded exam audit is not a claim that every other CB alternative is covered.
 `cb-party-crew-v2` separately visits Bronko, Anna Haf, Beauregard, and the
 receiver from the Big Band arrival checkpoint. Bronko's wedding exchange and
 the three short responses are observed, with all four still aboard at the
