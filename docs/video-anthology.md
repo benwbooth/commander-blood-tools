@@ -626,6 +626,13 @@ v2 clicked after the empty inventory had automatically closed, reopening the
 encounter and preventing a save. Only v3 is used as a predecessor. The remaining
 balances must be spent on separate visits because those tokens return between
 encounters, not between gift selections.
+`bbb-concert-supplies-v3` makes two further ordinary Corpo trips, buys the
+formula again on each visit, and gives the remaining bionium. Its witnessed save
+has `A4=0`, `vbio=0`, `B86=3`, and `A64=1`, with only Tequila, Cyberquizz, and
+Blue Wave aboard. The run observes 14 resources and 19 fully revealed sites.
+The two earlier attempts left the navigation chart open and never reached the
+requested choice; they are failed attempts, not predecessors. V3 uses the
+normal destination selector even when returning to the same planet.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

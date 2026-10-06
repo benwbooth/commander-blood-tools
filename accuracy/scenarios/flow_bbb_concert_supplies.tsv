@@ -1,0 +1,32 @@
+# Spend the remaining two credits and give the two remaining bionium doses.
+# The shared tokens return to the Ark between ordinary Super Tromp visits.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 292 86
+wait 40
+click 250 125
+frames 600
+choose accept
+choose bionium
+frames 1000
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 292 86
+wait 40
+click 250 125
+frames 600
+choose accept
+choose bionium
+frames 1000
