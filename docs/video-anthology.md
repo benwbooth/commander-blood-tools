@@ -414,6 +414,39 @@ selector oracle cases pass, as do 1,115 game-library tests (78 ignored) and 40
 focused flow tests. These results do not resolve the surrounding-frame behavior
 or establish that the submenu is unreachable in the original game.
 
+The follow-up `cb-bob-kanary-delayed-probe-v4` uses only a delayed ordinary
+click. It reaches the chapter-four submenu and selects `employees` (dictionary
+offset 12244), but returns to the main menu without the employee replies. It
+saves with `emplo=0`, `emp=0`, and SHA-256
+`9df77c787b2689e22ac138a725fd6ea7c37dff4b028fc4f3a2e904e7efaabe34`
+at boundary 5028. Merely observing this menu is not dialogue coverage.
+`re/tools/commander_bob_selector_probe.py` independently reproduces the reset
+with unmodified original interpreter instructions, the actual SCRIPT4 COD/BAS,
+and the earned `cb-bob-revelation-return-v3` save. It executes the `boba1` slice,
+the original selection commit, and the character scan up to its action-maintenance
+tail. Open and closed scene-gate cases agree: an open gate can publish the
+Kanary menu, but the following COD BC at 19966 writes `talk` to both the actor
+field and GS:6782. Selecting `employees` then executes the main body 4332, not
+Kanary body 5503. The checked report is
+`output/game-flows/oracles/cb-bob-selector-v3.json`; its independent rerun is
+byte-identical. The probe reports its explicitly seeded contact/frame inputs,
+checks interpreter bytes and return-stack boundaries, and allows only the
+original PRNG's five code-segment data bytes to change. It neither patches a
+handler nor proves a complete DOS playthrough or global unreachability. No
+runtime workaround was added to expose these authored but unwitnessed replies.
+
+`cb-bob-kanary-early-v3` instead starts from the earned chapter-two
+`cb-corpo-delivery-v1` checkpoint and uses the ordinary three-entry contact
+list. The actual topic here is `Kanary`, not chapter four's lowercase label.
+It witnesses all three employee lines, five cottage lines, five cloning lines,
+four balance-sheet lines, and the non-random Kanary summary. Honk's six-line
+raise request also runs normally. The result has 6,048 observed frames, 528
+retained events, 13 decoded resources, and 31 fully revealed sites. It saves
+with `emplo=1`, `emp=1`, and `BO=2` at boundary 5912, SHA-256
+`a779e61d10e0a5a882de6b24dfdef517cb5966bcfa58299c119980924d859a9e`.
+The probabilistic Kanary line and aggressiveness-dependent replies remain
+separate coverage questions, not inferred from this successful conversation.
+
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
 the puzzle, and the third explains the required objects. The saved result has

@@ -1,0 +1,13 @@
+# Delay the ordinary topic click to test the scene-gated selector handoff.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 45
+wait 120
+frames 4
+choose kanary
+choose employees
+wait 150
+choose bye_bye
+wait 250

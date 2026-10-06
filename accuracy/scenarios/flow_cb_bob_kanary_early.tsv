@@ -1,0 +1,28 @@
+# Bob is first in the three-entry passenger/item contact list here.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 83
+choose Kanary
+choose employees
+choose employees
+choose employees
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+choose cottage
+choose clones
+choose clones
+choose clones
+choose clones
+choose clones
+choose balance_sheets
+choose balance_sheets
+choose balance_sheets
+choose balance_sheets
+choose balance_sheets
+choose balance_sheets
+choose bye_bye
+wait 250
