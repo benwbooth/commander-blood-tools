@@ -1,0 +1,41 @@
+# First Ron visit: decline the scrambler to learn Magnu's coordinates.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 42 37
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose refuse
+wait 500
+# Greet Maziok correctly and ask about the curse and sorceror.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 77 49
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose ga
+choose ga
+choose curse
+choose curse
+choose medicine
+choose medicine
+choose medicine
+choose sorceror
+choose sorceror
+choose bye_bye
+wait 700

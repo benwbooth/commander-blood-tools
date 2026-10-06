@@ -516,6 +516,12 @@ saves the authored new-chapter state: Fifi on Ron, Maziok on Magnu, Hom in the
 cache, and the curse active. The first attempt omitted camera activation and
 its inactive entry control did nothing. No runtime or quest-state change was
 needed to cross.
+The first Ron/Magnu route (`cb-fifi-maziok-v4`) declines Fifi's scrambler
+request, then greets Maziok twice and follows his curse/medicine/sorcerer
+topics. The full Crazystone coordinates are presented, `zen = 1`, and the
+conversation closes to a witnessed save. The curse is still active. Earlier
+attempts switched away from the temporary sorcerer topic or selected it once
+too often; those failed attempts are not predecessor checkpoints.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
