@@ -156,6 +156,9 @@ only v3 is a completed route witness.
 `cb-fifi-picture-hat-v1` gives Fifi that picture and revisits him after the
 curse has been lifted. The second encounter receives the hat. The saved state
 confirms the picture with Fifi, the hat aboard, and Super Zen back at Crazystone.
+`cb-zen-hat-v1` gives the hat to Super Zen and hears his Masta identification.
+The saved endpoint has the hat with Zen, Zen at Trashlando, and Fifi returned
+to Ron for his transport request.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
@@ -181,6 +184,10 @@ scripts, assets, and earlier lineage remain hash-checked.
 `bbb-marakas-rondo-v1` then selects Marakas from the cryobox, sends him to the
 unoccupied Rondoland, and visits him there. The `force` response presents his
 gratitude exchange. The saved result confirms Marakas at Rondoland and `A81=7`.
+`bbb-emasculator-nuclear-return-v2` completes the fifth Attrox visit, buys the
+discounted nuclear pile, and gives it to Emasculator. He returns it. The saved
+endpoint has four credits, the pile aboard, and `B96=2`. The failed v1 chart
+attempt recontacted Marakas instead and is excluded from the continuation.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
