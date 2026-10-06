@@ -49,7 +49,7 @@ def read_exact(stream, address, size):
     return data
 
 
-def locate_symbols(pid, include_mouse_lock=False):
+def locate_symbols(pid, include_mouse_lock=False, include_mouse_state=False):
     """Resolve the actual child ELF, not a Nix shell wrapper on PATH."""
     executable = Path(f"/proc/{pid}/exe").resolve()
     header = executable.open("rb")
@@ -72,6 +72,10 @@ def locate_symbols(pid, include_mouse_lock=False):
     wanted = {"MemBase", "Segs", "cpu_regs"}
     if include_mouse_lock:
         wanted.add("mouselocked")
+    mouse_fields = {"mouselocked": 1, "user_cursor_locked": 1, "user_cursor_emulation": 4,
+                    "user_cursor_x": 4, "user_cursor_y": 4, "user_cursor_sw": 4, "user_cursor_sh": 4}
+    if include_mouse_state:
+        wanted.update(mouse_fields)
     symbols = {}
     for row in subprocess.check_output(["nm", "-P", str(executable)], text=True).splitlines():
         fields = row.split()
@@ -83,6 +87,8 @@ def locate_symbols(pid, include_mouse_lock=False):
         raise ValueError(f"unverified DOSBox-X register layout: {symbols}")
     if include_mouse_lock and symbols["mouselocked"][1] != 1:
         raise ValueError("unverified DOSBox-X mouse lock layout")
+    if include_mouse_state and any(symbols[name][1] != size for name, size in mouse_fields.items()):
+        raise ValueError("unverified DOSBox-X cursor state layout")
     return executable, symbols
 
 
@@ -93,6 +99,18 @@ def read_cpu(stream, symbols):
     for index, name in enumerate(("es", "cs", "ss", "ds", "fs", "gs")):
         state[name] = struct.unpack("<H", read_exact(stream, symbols["Segs"][0] + index * 8, 2))[0]
     return state
+
+
+def read_host_mouse(stream, symbols):
+    result = {}
+    for name in ("mouselocked", "user_cursor_locked", "user_cursor_emulation", "user_cursor_x",
+                 "user_cursor_y", "user_cursor_sw", "user_cursor_sh"):
+        address, size = symbols[name]
+        value = int.from_bytes(read_exact(stream, address, size), "little", signed=size == 4)
+        if size == 1 and value not in (0, 1):
+            raise ValueError(f"invalid DOSBox-X cursor bool: {name}")
+        result[name] = bool(value) if size == 1 else value
+    return result
 
 
 def inspect_guest(guest, executable):
@@ -324,6 +342,13 @@ def capture(args):
     executable = (disc / "BLOOD2PG.EXE").read_bytes()
     if hashlib.sha256(executable).hexdigest() != EXECUTABLE_SHA256:
         raise ValueError("unrecognized BLOOD2PG.EXE; fixed offsets are not applicable")
+    sdl_override = None
+    if args.sdl_library is not None:
+        library = args.sdl_library.resolve(strict=True)
+        library_bytes = library.read_bytes()
+        if library_bytes[:6] != b"\x7fELF\x02\x01":
+            raise ValueError("SDL override must be a little-endian ELF64 library")
+        sdl_override = {"path": str(library), "sha256": hashlib.sha256(library_bytes).hexdigest()}
     output = args.output.resolve()
     for path in (disc, output):
         if any(char in str(path) for char in ('"', '\n', '\r')):
@@ -333,8 +358,11 @@ def capture(args):
     (drive / "cblood").mkdir(parents=True)
     xvfb = game = None
     report = {"scope": "read-only periodic original-game allocation observations; inputs recorded separately",
+              "recorder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               "executable_sha256": EXECUTABLE_SHA256, "disc": str(disc),
               "launch_arguments": args.game_args, "launch_arguments_provenance": "explicit capture setting, not recovered installer output",
+              "sdl_override": sdl_override,
+              "sdl_mouse_warp_requested": args.sdl_mouse_warp,
               "samples": [], "input_events": []}
     try:
         with (output / "xvfb.log").open("wb") as xlog, (output / "dosbox.log").open("wb") as log:
@@ -347,6 +375,12 @@ def capture(args):
                 raise RuntimeError("private Xvfb startup failed")
             env = dict(os.environ, DISPLAY=f":{display}", SDL_VIDEODRIVER="x11", SDL_AUDIODRIVER="dummy")
             env.pop("WAYLAND_DISPLAY", None)
+            env.pop("SDL_DYNAMIC_API", None)
+            env.pop("SDL_MOUSE_RELATIVE_MODE_WARP", None)
+            if sdl_override is not None:
+                env["SDL_DYNAMIC_API"] = sdl_override["path"]
+            if args.sdl_mouse_warp:
+                env["SDL_MOUSE_RELATIVE_MODE_WARP"] = "1"
             command = [args.dosbox, "-conf", "/dev/null",
                        "-set", "sdl output=surface", "-set", f"sdl autolock={str(args.relative_mouse).lower()}",
                        "-set", "cpu core=normal", "-set", f"cpu cycles={args.cycles}",
@@ -369,15 +403,23 @@ def capture(args):
                 nonlocal symbols
                 with stopped_child(game):
                     if symbols is None:
-                        binary, symbols = locate_symbols(game.pid)
+                        binary, symbols = locate_symbols(game.pid, include_mouse_state=True)
                         report["emulator_elf"] = str(binary)
                         report["emulator_sha256"] = hashlib.sha256(binary.read_bytes()).hexdigest()
+                        if sdl_override is not None:
+                            mappings = [row.split(maxsplit=5)[-1] for row in
+                                        Path(f"/proc/{game.pid}/maps").read_text().splitlines()]
+                            report["sdl_override_mapping_observed"] = sdl_override["path"] in mappings
+                            if not report["sdl_override_mapping_observed"]:
+                                raise RuntimeError("requested SDL override is not mapped in capture child")
                     with open(f"/proc/{game.pid}/mem", "rb", buffering=0) as mem:
                         base = struct.unpack("<Q", read_exact(mem, symbols["MemBase"][0], 8))[0]
                         guest = read_exact(mem, base, GUEST_BYTES) if base else None
                         cpu = read_cpu(mem, symbols)
+                        host_mouse = read_host_mouse(mem, symbols)
                 snapshot = inspect_guest(guest, executable) if guest is not None else {"status": "emulator_memory_not_initialized"}
-                snapshot.update(elapsed_seconds=round(time.monotonic() - began, 3), cpu=cpu)
+                snapshot.update(elapsed_seconds=round(time.monotonic() - began, 3), cpu=cpu,
+                                host_mouse=host_mouse)
                 return snapshot, guest
 
             def observe_press(kind, number):
@@ -440,6 +482,10 @@ def main():
     parser.add_argument("disc", type=Path)
     parser.add_argument("output", type=Path, help="new directory; never overwrite a prior capture")
     parser.add_argument("--dosbox", default="dosbox-x")
+    parser.add_argument("--sdl-library", type=Path,
+                        help="optional process-local SDL2 dynamic API library; hash and mapping are recorded")
+    parser.add_argument("--sdl-mouse-warp", action="store_true",
+                        help="request classic SDL2 warp-based relative mouse mode with the explicit library override")
     parser.add_argument("--seconds", type=positive_seconds, default=60)
     parser.add_argument("--interval", type=positive_seconds, default=0.5)
     parser.add_argument("--cycles", type=int, default=30000)
@@ -459,6 +505,8 @@ def main():
                         help="enable autolock and verify a private capture click before the first input")
     parser.add_argument("--game-args", default="AMR S162227 EMS WRIC:\\cblood\\")
     args = parser.parse_args()
+    if args.sdl_mouse_warp and (args.sdl_library is None or not args.relative_mouse):
+        parser.error("sdl-mouse-warp requires sdl-library and relative-mouse")
     try:
         args.key_after = [(positive_seconds(at), key) for at, key in args.key_after]
         args.move_after = [(positive_seconds(at), [int(dx), int(dy)]) for at, dx, dy in args.move_after]

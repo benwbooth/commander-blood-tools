@@ -7,6 +7,7 @@ import io
 from pathlib import Path
 import struct
 import sys
+import tempfile
 import unittest
 from unittest import mock
 
@@ -348,6 +349,17 @@ class StartupCaptureTests(unittest.TestCase):
                 else:
                     self.assertEqual(capture.private_mouse_locked(789), bool(value))
 
+    def test_host_mouse_snapshot_keeps_capture_and_last_motion_flags_separate(self):
+        fields = ["mouselocked", "user_cursor_locked", "user_cursor_emulation", "user_cursor_x",
+                  "user_cursor_y", "user_cursor_sw", "user_cursor_sh"]
+        memory = struct.pack("<BB5i", 1, 0, 2, -10, 150, 640, 400)
+        symbols = {name: (index if index < 2 else 2 + 4 * (index - 2), 1 if index < 2 else 4)
+                   for index, name in enumerate(fields)}
+        observed = capture.read_host_mouse(io.BytesIO(memory), symbols)
+        self.assertEqual(list(observed.values()), [True, False, 2, -10, 150, 640, 400])
+        with self.assertRaisesRegex(ValueError, "cursor bool"):
+            capture.read_host_mouse(io.BytesIO(bytes([2]) + memory[1:]), symbols)
+
     def test_cli_preserves_ordered_click_schedule(self):
         argv = ["capture", "disc", "output", "--seconds", "105", "--click-after", "35",
                 "--click-after", "70", "--click-position", "400", "445"]
@@ -375,6 +387,50 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.main()
         self.assertEqual(stopped.exception.code, 0)
         self.assertEqual(run.call_args.args[0].key_after, [(30.0, "F7"), (45.0, "Return")])
+
+    def test_cli_preserves_explicit_process_local_sdl_override(self):
+        argv = ["capture", "disc", "output", "--sdl-library", "/library/libSDL2.so"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].sdl_library, Path("/library/libSDL2.so"))
+
+    def test_cli_preserves_explicit_sdl_mouse_mode(self):
+        argv = ["capture", "disc", "output", "--sdl-library", "/library/libSDL2.so",
+                "--sdl-mouse-warp", "--relative-mouse", "--click-after", "30"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertTrue(run.call_args.args[0].sdl_mouse_warp)
+
+    def test_cli_rejects_mouse_warp_without_explicit_library_and_capture(self):
+        for options in ([], ["--sdl-library", "/library/libSDL2.so"],
+                        ["--relative-mouse", "--click-after", "30"]):
+            with self.subTest(options=options), \
+                    mock.patch.object(sys, "argv", ["capture", "disc", "output", "--sdl-mouse-warp", *options]), \
+                    mock.patch.object(sys, "stderr", new_callable=io.StringIO), \
+                    mock.patch.object(capture, "capture") as run:
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
+
+    def test_sdl_override_rejects_missing_or_invalid_library_before_startup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "BLOOD2PG.EXE").write_bytes(b"fixture")
+            library = root / "SDL.so"
+            args = argparse.Namespace(disc=root, sdl_library=library)
+            with mock.patch.object(capture, "EXECUTABLE_SHA256", capture.hashlib.sha256(b"fixture").hexdigest()), \
+                    mock.patch.object(capture.subprocess, "Popen") as launch:
+                with self.assertRaises(FileNotFoundError):
+                    capture.capture(args)
+                library.write_bytes(b"not an ELF library")
+                with self.assertRaisesRegex(ValueError, "ELF64"):
+                    capture.capture(args)
+                launch.assert_not_called()
 
     def test_cli_preserves_movement_schedule(self):
         argv = ["capture", "disc", "output", "--relative-mouse", "--click-after", "30",

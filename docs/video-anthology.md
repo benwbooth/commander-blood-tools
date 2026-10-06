@@ -226,6 +226,24 @@ movement did not change frame 90; `startup-capture-27`'s smaller movements reach
 frame 79, confirmed in both guest state and the screenshot, but still profile
 zero. Neither a sent movement nor a captured-host flag proves the intended
 in-game camera position or contact was reached.
+`startup-capture-28` tested private host-pointer recentering without advancing
+the camera; that experimental option was removed. Its recorder snapshot is
+retained with the diagnostic. Captures 29 and 30 used an explicitly hashed,
+process-local classic SDL2 library, with its mapping verified and version
+2.30.6 reported by DOSBox-X. Neither normal relative mode nor requested SDL2
+warp mode progressed beyond startup. No system library was replaced.
+Capture 31 adds read-only emulator cursor fields: both capture flags were true,
+while the last motion's host X coordinate reached the window edge. The camera
+reached only frame 79. This localizes the input problem without establishing
+its cause. The tool records its own hash, accepts the library/mouse-mode
+overrides explicitly, and passes all 45 focused tests.
+
+The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
+excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
+sites, 407 unobserved sites with already witnessed wording, 129 empty/control
+sites, and 3,064 other unobserved/dynamic sites. BBB's counts are unchanged.
+All 59 flow/catalog/coverage tests pass. Rendering remains disabled; these
+counts still describe source sites, not distinct scenes or complete coverage.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
@@ -518,6 +536,12 @@ embarrassment reply. All ten fully shown sites pass the source-wording audit,
 and the six-manifest saved lineage validates. It records 5,731 frames, 351
 events, and twelve decoded resources. Save zero at boundary 5595 has SHA-256
 `522b22c03402f88d6931b34d3f14542602fda6457f87145d2f82ad088f714629`.
+The separate `cb-bob-early-timeouts-v1` probe remained in the first conversation
+despite its long waits. Later contact coordinates instead selected topics in
+that still-open menu. It was stopped at 35,648 observed frames with only 34 of
+53 actions completed, and has no valid saved checkpoint. Its retained recipe
+and events describe a failed timeout experiment, not four visits or evidence
+that the authored timed-departure dialogue is globally unreachable.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts
