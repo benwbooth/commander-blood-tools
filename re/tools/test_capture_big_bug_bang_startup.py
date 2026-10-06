@@ -121,6 +121,40 @@ class StartupCaptureTests(unittest.TestCase):
         self.assertEqual(capture.inspect_guest(guest, executable)["mouse_poll"],
                          {"x": 720, "y": 150, "buttons": 3})
 
+    def test_bridge_observation_reads_original_steering_fields(self):
+        executable, guest, globals_base, _catalog = fixture()
+        guest[globals_base + 0x2A33] = 4
+        for offset, value in ((0x2A35, 45), (0x2A37, 90), (0x2A3B, 180), (0x2A47, 360)):
+            struct.pack_into("<H", guest, globals_base + offset, value)
+        self.assertEqual(capture.inspect_guest(guest, executable)["bridge"],
+                         {"ui_flags": 4, "frame": 45, "mouse_arc": 90,
+                          "seek_target": 180, "frame_angle_bias": 360})
+
+    def test_private_move_has_no_click_and_observes_only_after_motion(self):
+        env = {"DISPLAY": ":123"}
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_mouse_locked", return_value=True), \
+                mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
+            event = capture.private_move(env, 789, [-480, 0], lambda: {"bridge": {"frame": 45}})
+        self.assertEqual([call.args[0] for call in run.call_args_list], [
+            ["xdotool", "windowfocus", "--sync", "456"],
+            ["xdotool", "mousemove_relative", "--", "-480", "0"]])
+        self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
+        self.assertEqual(event["after_move"], {"bridge": {"frame": 45}})
+        self.assertFalse(event["guest_memory_written"])
+
+    def test_private_move_requires_valid_deltas_and_capture(self):
+        with mock.patch.object(capture.subprocess, "check_output", return_value="456\n") as search, \
+                mock.patch.object(capture.subprocess, "run") as run, \
+                mock.patch.object(capture, "private_mouse_locked", return_value=False):
+            for motion in ([], [1], [1, 2, 3], [32768, 0], [0, -32769], [1.0, 0], [True, 0]):
+                with self.assertRaises(ValueError):
+                    capture.private_move({"DISPLAY": ":123"}, 789, motion)
+            search.assert_not_called()
+            with self.assertRaises(RuntimeError):
+                capture.private_move({"DISPLAY": ":123"}, 789, [-480, 0])
+            self.assertEqual(len(run.call_args_list), 1)
+
     def test_private_click_uses_supplied_display_without_pointer_motion(self):
         env = {"DISPLAY": ":123", "SDL_VIDEODRIVER": "x11"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n") as search, \
@@ -341,6 +375,36 @@ class StartupCaptureTests(unittest.TestCase):
                 capture.main()
         self.assertEqual(stopped.exception.code, 0)
         self.assertEqual(run.call_args.args[0].key_after, [(30.0, "F7"), (45.0, "Return")])
+
+    def test_cli_preserves_movement_schedule(self):
+        argv = ["capture", "disc", "output", "--relative-mouse", "--click-after", "30",
+                "--move-after", "40", "-480", "0", "--move-after", "50", "0", "-90"]
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(capture, "capture", return_value=True) as run:
+            with self.assertRaises(SystemExit) as stopped:
+                capture.main()
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(run.call_args.args[0].move_after, [(40.0, [-480, 0]), (50.0, [0, -90])])
+
+    def test_cli_rejects_unusable_movement_schedule(self):
+        for options in (["--move-after", "40", "0", "0"],
+                        ["--relative-mouse", "--click-after", "30", "--move-after", "20", "0", "0"],
+                        ["--relative-mouse", "--click-after", "30", "--move-after", "30", "0", "0"],
+                        ["--relative-mouse", "--click-after", "30", "--move-after", "60", "0", "0"],
+                        ["--relative-mouse", "--click-after", "30", "--move-after", "40", "32768", "0"],
+                        ["--relative-mouse", "--click-after", "30", "--move-after", "40", "1.5", "0"],
+                        ["--relative-mouse", "--click-after", "30", "--move-after", "nan", "0", "0"],
+                        ["--relative-mouse", "--click-after", "30", "--move-after", "40", "0", "0",
+                         "--move-after", "35", "0", "0"],
+                        ["--relative-mouse", "--click-after", "30", "--move-after", "40", "0", "0",
+                         "--key-after", "40", "F7"]):
+            with self.subTest(options=options), \
+                    mock.patch.object(sys, "argv", ["capture", "disc", "output", *options]), \
+                    mock.patch.object(sys, "stderr", new_callable=io.StringIO), \
+                    mock.patch.object(capture, "capture") as run:
+                with self.assertRaises(SystemExit) as stopped:
+                    capture.main()
+                self.assertEqual(stopped.exception.code, 2)
+                run.assert_not_called()
 
     def test_cli_rejects_invalid_key_schedule(self):
         for options in (["60", "F7"], ["nan", "F7"], ["inf", "F7"], ["0", "F7"],

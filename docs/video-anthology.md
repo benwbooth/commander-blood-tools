@@ -218,6 +218,14 @@ Both remain at profile zero. These diagnostics neither resolve the numeric
 chatter blocker nor establish a normal original-game route beyond startup.
 The native F7 handler's profile request is gated to current profiles above one;
 it cannot be assumed to bypass the initial profile.
+The follow-up movement support records `--move-after SECONDS DX DY` separately
+from clicks and requires a confirmed private mouse capture. Read-only snapshots
+include the original bridge steering fields checked by the existing `0xADF5`
+oracle. All forty capture-tool tests pass. `startup-capture-26`'s single large
+movement did not change frame 90; `startup-capture-27`'s smaller movements reached
+frame 79, confirmed in both guest state and the screenshot, but still profile
+zero. Neither a sent movement nor a captured-host flag proves the intended
+in-game camera position or contact was reached.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

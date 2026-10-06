@@ -146,6 +146,11 @@ def inspect_guest(guest, executable):
     # code can adjust these shared slots, so this is not a driver event trace.
     mouse_x, mouse_y, buttons = struct.unpack_from("<3H", guest, global_base + 0xC22)
     state["mouse_poll"] = {"x": mouse_x, "y": mouse_y, "buttons": buttons}
+    # BLOOD2PG bridge_steer_update, 0xADF5, independently checked by its oracle.
+    state["bridge"] = {"ui_flags": guest[global_base + 0x2A33],
+                       **{name: struct.unpack_from("<H", guest, global_base + offset)[0]
+                          for name, offset in (("frame", 0x2A35), ("mouse_arc", 0x2A37),
+                                               ("seek_target", 0x2A3B), ("frame_angle_bias", 0x2A47))}}
     if not 0 <= profile < 17:
         return state
     expected = struct.unpack_from("<5H", executable, PROFILE_TABLE_FILE + profile * 10)
@@ -248,6 +253,20 @@ def private_key(env, pid, key, observe_press=None):
             "display": env["DISPLAY"], "during_press": observation, "guest_memory_written": False}
 
 
+def private_move(env, pid, motion, observe=None):
+    if len(motion) != 2 or any(type(value) is not int or not -32768 <= value <= 32767 for value in motion):
+        raise ValueError("relative motion must contain two signed 16-bit integer deltas")
+    window = private_window(env, pid)
+    if not private_mouse_locked(pid):
+        raise RuntimeError("private relative movement requires confirmed mouse capture")
+    subprocess.run(["xdotool", "mousemove_relative", "--", *map(str, motion)],
+                   env=env, check=True, timeout=5)
+    time.sleep(0.15)
+    return {"kind": "private_x11_relative_move", "relative_motion_requested": motion,
+            "window": window, "display": env["DISPLAY"], "mouse_capture_verified": True,
+            "after_move": observe() if observe is not None else None, "guest_memory_written": False}
+
+
 def private_click(env, pid, position=None, capture_mouse=False, button=1, observe_press=None,
                   relative_motion=None):
     """Click on the private display, optionally acquiring mouse capture first."""
@@ -343,7 +362,8 @@ def capture(args):
             inputs_sent = 0
             scheduled = sorted(
                 [(at, "click", i + 1, None) for i, at in enumerate(args.click_after)] +
-                [(at, "key", i + 1, key) for i, (at, key) in enumerate(args.key_after)])
+                [(at, "key", i + 1, key) for i, (at, key) in enumerate(args.key_after)] +
+                [(at, "move", i + 1, motion) for i, (at, motion) in enumerate(args.move_after)])
 
             def observe_guest():
                 nonlocal symbols
@@ -380,15 +400,15 @@ def capture(args):
                     if guest is not None:
                         (output / name).write_bytes(guest)
                         snapshot["guest_dump"] = name
-                    print(json.dumps({key: snapshot.get(key) for key in ("elapsed_seconds", "status", "profile", "mouse_poll", "time_storage")}), flush=True)
+                    print(json.dumps({key: snapshot.get(key) for key in ("elapsed_seconds", "status", "profile", "mouse_poll", "bridge", "time_storage")}), flush=True)
                     last_snapshot = signature
                 if inputs_sent < len(scheduled) and time.monotonic() - began >= scheduled[inputs_sent][0]:
-                    at, kind, number, key = scheduled[inputs_sent]
+                    at, kind, number, value = scheduled[inputs_sent]
                     screenshot = f"before-{kind}.png" if number == 1 else f"before-{kind}-{number}.png"
                     subprocess.run(["import", "-window", "root", str(output / screenshot)], env=env, check=True, timeout=10)
                     event = {"scheduled_at_seconds": at,
                              "requested_at_seconds": round(time.monotonic() - began, 3), "status": "requested",
-                             "input_kind": kind, "key": key}
+                             "input_kind": kind, "input_value": value}
                     report["input_events"].append(event)
                     observe = lambda: observe_press(kind, number)
                     if kind == "click":
@@ -396,8 +416,10 @@ def capture(args):
                                                    args.relative_mouse,
                                                    args.click_button, observe,
                                                    args.relative_motion), status="sent")
+                    elif kind == "key":
+                        event.update(private_key(env, game.pid, value, observe), status="sent")
                     else:
-                        event.update(private_key(env, game.pid, key, observe), status="sent")
+                        event.update(private_move(env, game.pid, value, observe), status="sent")
                     inputs_sent += 1
             subprocess.run(["import", "-window", "root", str(output / "screen.png")], env=env, check=True, timeout=10)
             report["outcome"] = "observed_profile" if any(s["status"] == "profile_bound" for s in report["samples"]) else "no_bound_profile_observed"
@@ -425,6 +447,8 @@ def main():
                         help="send a click at this elapsed time; repeat in increasing order")
     parser.add_argument("--key-after", nargs=2, action="append", default=[], metavar=("SECONDS", "KEY"),
                         help=f"private keypress; repeat in increasing order; keys: {', '.join(PRIVATE_KEYS)}")
+    parser.add_argument("--move-after", nargs=3, action="append", default=[], metavar=("SECONDS", "DX", "DY"),
+                        help="relative mouse movement after a captured click; times must increase")
     parser.add_argument("--click-button", type=int, choices=(1, 3), default=1,
                         help="X11 button: 1 is primary, 3 is secondary")
     parser.add_argument("--click-position", type=int, nargs=2, metavar=("X", "Y"),
@@ -437,6 +461,7 @@ def main():
     args = parser.parse_args()
     try:
         args.key_after = [(positive_seconds(at), key) for at, key in args.key_after]
+        args.move_after = [(positive_seconds(at), [int(dx), int(dy)]) for at, dx, dy in args.move_after]
     except (ValueError, argparse.ArgumentTypeError) as error:
         parser.error(str(error))
     if any(key not in PRIVATE_KEYS for _, key in args.key_after):
@@ -447,6 +472,16 @@ def main():
         parser.error("key-after times must be strictly increasing")
     if set(args.click_after) & {at for at, _ in args.key_after}:
         parser.error("click and key events must have distinct scheduled times")
+    if args.move_after:
+        if not args.relative_mouse or not args.click_after or args.click_after[0] >= args.move_after[0][0]:
+            parser.error("move-after requires relative-mouse and an earlier captured click")
+        if any(at >= args.seconds or any(not -32768 <= value <= 32767 for value in motion)
+               for at, motion in args.move_after):
+            parser.error("move-after requires a time before capture end and signed 16-bit deltas")
+        if any(left[0] >= right[0] for left, right in zip(args.move_after, args.move_after[1:])):
+            parser.error("move-after times must be strictly increasing")
+        if {at for at, _ in args.move_after} & (set(args.click_after) | {at for at, _ in args.key_after}):
+            parser.error("move events must have distinct scheduled times")
     if args.cycles <= 0:
         parser.error("cycles must be positive")
     if args.relative_mouse and not args.click_after:
