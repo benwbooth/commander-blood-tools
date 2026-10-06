@@ -700,6 +700,15 @@ balance and selects `don't_cheat`. Bob's money hint preempts the later boss
 menu and ends the call; the ordinary save records 16 fully revealed sites.
 Attempts that waited for `no_strike` or `strike` on this same balance never
 reached those choices and are rejected, not treated as boss-choice witnesses.
+`bbb-concert-funded-v1` independently continues the earned third-guitar save
+without spending its remaining two credits and two bionium doses. It answers
+both invitation calls, watches the robot broadcast, calls Honk, and watches the
+concert before saving. The combined 24 sequence entries match `47robinv` then
+`2concert` exactly and reach their source counter boundaries. Its endpoint has
+`A13=0`, `A64=3`, and `A68=2`. Thirteen guests are aboard; Gluk remains on
+Cyberland, unlike the main route's fully supplied invitation result. This is
+an alternative credit-retaining predecessor, not a replacement for the verified
+successful route and its separately recorded Gluk reaction.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
