@@ -1,0 +1,24 @@
+# Emptying the earned inventory closes the encounter without a Cancel click.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 269 11
+wait 40
+click 250 125
+choose energy
+choose picture
+choose food
+choose guitar
+choose painting
+choose ship
+choose bionium
+choose credit
+wait 200

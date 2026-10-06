@@ -1,0 +1,21 @@
+# Decline the offer after one earned bionium gift; both credits remain unspent.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 76 125
+wait 40
+click 250 125
+choose bionium
+choose refuse
+wait 120
+# The credit token is the only item still offered during the encounter.
+click 200 101
+wait 200

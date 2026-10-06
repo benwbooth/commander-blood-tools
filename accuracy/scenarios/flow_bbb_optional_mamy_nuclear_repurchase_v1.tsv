@@ -1,0 +1,27 @@
+# From the earned Mamy nuclear-middle checkpoint: Emasculator visits six and seven.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 235 117
+wait 60
+click 250 125
+wait 200
+click 80 104
+# Visit six ends the presentation before the shop.
+wait 600
+# Revisit the current destination through its normal bridge hit region.
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+choose yes
+# Visit seven closes through its own decoder/TV sequence after the purchase.
+wait 600

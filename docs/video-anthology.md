@@ -492,6 +492,33 @@ manifests, current source/input hashes, text pixels, actual menu rows,
 transfers, stock changes, and closed saved endpoints. It adds nineteen sites
 against `audit-v12`, without rendering or claiming complete robot coverage.
 
+`bbb-jerry-bionium-refuse-v1` and `bbb-morning-bionium-refuse-v1` capture the
+other displayed choice from the same funded predecessor. Each still spends
+one bionium unit but keeps both credits; the decoder/presents stay with
+Cyberquizz. Each reveals ten source-matched sites, all already present in
+the respective accepted path, rather than adding distinct wording. Their
+closed slot-zero saves at frames 4665/4755 have SHA-256
+`356d69c718326df0f7d0957150ec61ad314b2486b3a793dd50730c1460f1d17f`
+and `2f9204b3d0c01f8796c30b21f33b1ab6a2bce85db487a43e18da16323931c82e`.
+
+`bbb-shado-gifts-v2` and `bbb-evening-gifts-v2` each give the eight items
+already aboard in `bbb-trump-painting-v1`: energy, picture, food, guitar,
+painting, ship, bionium, and credit. All transfers and cleared gift flags
+are observed; six items stay with the recipient and the two shared tokens
+return aboard, with one credit and two bionium units remaining. Evolution
+rises 100 to 180. Bionium initially raises population 20 to 120; subsequent
+simulation grows it to 144, then relocates Shado to Rondoland or Evening to
+Malusland with population twelve. The audit keeps these later events separate
+from the immediate gift effects. The runs record 4,967/5,063 frames and
+1,616/1,595 events, fourteen matched sites each, eighteen new sites together.
+`bbb-two-robot-gifts-audit-v1/report.json` validates 94 distinct lineage
+manifests, current source/input hashes, menu rows, transfers, and saves.
+Slot zero at frames 4831/4927 has SHA-256
+`4f2395d486acf5ec7fda9a83066c4f703ff233f847861912cad5ac11fdff5809`
+and `f9ed292388c8136e96218f8741e1f8f5f065d229255c34f001a84f9a800bce72`.
+The eight-gift menu closes automatically when empty. V1's unnecessary Cancel
+click reopened the encounter, so those failed attempts remain excluded.
+
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
 sites, 407 unobserved sites with already witnessed wording, 129 empty/control
@@ -902,6 +929,24 @@ rechecks 82 distinct lineage manifests, current source/input hashes, all
 displayed text, transfers and effects, and the four closed slot-zero saves.
 No ending is active, and each gifted item remains with Mamy on Loviland.
 
+`bbb-optional-mamy-nuclear-repurchase-v1` continues the evolution-510 save,
+visits Emasculator twice, and buys the nuclear item on encounter seven using
+his actual `yes`/`no` offer. Encounter six's earlier departure is retained.
+The price is one credit, leaving seven, and the nuclear item returns aboard.
+`bbb-optional-mamy-nuclear-repurchase-high-v1` then gives it to Mamy again,
+observing the high-evolution response at SCRIPT3 COD 24327. The immediate
+effect raises evolution 510 to 710, energy 370 to 770, and `B96` by one;
+population 41 and aggression 650 do not change at that gift boundary.
+Later normal simulation produces population 47 and energy 788 at the save.
+The two runs add six sites, five at Emasculator and one at Mamy, with no
+active ending. Slot-zero saves at frames 9842/5312 have SHA-256
+`5f734c09debedc464e85fcaa0f1c8c91e14705f2f9d10730fc2b722434ef1601`
+and `e3c7efaa9b359d6a44b509be21f40145edd6a34d8590899eef34b044f938a4c2`.
+`bbb-optional-mamy-nuclear-repurchase-audit-v1/final.json` retains the source,
+menu, pixel, transfer, and effect evidence; independent parent review is in
+`branch-review-v13/report.json`. This closes the previously untested ordinary
+repurchase route, without calling other Mamy branches complete.
+
 `output/game-flows/audit-v12` accepts 334 witnesses and excludes 137 failed,
 running, or legacy attempts. It includes the Oil greetings, both decoder
 decisions, the fifth Mamy slice, and the wrong-Venusia route. Successful
@@ -909,6 +954,28 @@ lineages remain 72 CB and 99 BBB segments. CB has 1,569 successful-route and
 1,289 other normal-route sites; BBB has 3,013 and 331. Other unobserved/dynamic
 sites remain 1,542 CB and 2,542 BBB, in addition to duplicate-wording/control
 sites. Both completeness flags remain false; no new movies were rendered.
+
+`cb-izwal-alt-bossanova-v1` continues the wrong-Venusia save, visits Venusia,
+and answers the pending radio call. It reveals the seven previously unseen
+Bossanova complaint sites, with nine matched sites total in 6,257 frames and
+190 compact events. The credit remains with Bug Deluxe and the wrong meat
+with Izwalito; this witness is not money recovery. Slot zero at frame 6121
+has SHA-256 `b4433bc2dda4ab0af8f45663a8070aaab7459740c5f9f3b3eb948ddf3ef18250`.
+`cb-izwal-alt-audit-v4/coverage.json` also retains two failed recovery attempts.
+The second observes recovery and the correct food delivery, but reaches an
+unexpectedly early Corpo4 Hita `yes`/`no` prompt instead of its planned
+farewell. Without a closed saved endpoint, it remains excluded.
+`branch-review-v13/report.json` independently validates the Bossanova leaf,
+both nuclear leaves, and both robot refusals through 104 distinct lineage
+manifests, current source/input hashes, matching text, effects, and saves.
+
+`output/game-flows/audit-v13` accepts 349 witnesses and excludes 141 failed,
+running, or legacy attempts. The successful lineages remain 72 CB and 99 BBB
+segments. CB has 1,569 successful-route and 1,296 other normal-route sites;
+BBB has 3,013 and 380. Other unobserved/dynamic sites remain 1,535 CB and
+2,515 BBB, in addition to duplicate-wording/control sites. Both completeness
+flags remain false. This snapshot includes the first inventory-preserving
+Blue Wave gift below, but not its ongoing later-visit continuations.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
@@ -1333,6 +1400,18 @@ The saved checkpoint verifies all five transfers, `B79=5`, Blue Wave's first
 encounter and 1,000 energy, with the ring still aboard. The run observes
 29 decoded resources and 51 fully revealed sites; awakening Blue Wave still
 requires the mummy and ring sequence.
+
+`bbb-blue-wave-bionium-first-v1` instead gives one bionium from the earned
+Bob future checkpoint. `B79` rises zero to one while the stock remains two;
+the shared token returns on closing the encounter. All nine original items
+are aboard at the normal save, including crown, decoder, weapons, ring, and
+nuclear. This is the start of an inventory-preserving alternative, not yet a
+replacement for the five-gift route. The run records 7,033 frames, 967 events,
+26 decoded resources, and 42 matched sites. Slot zero at frame 6897 has
+SHA-256 `17a13043423cae169ac605140e3cc2ae83f0d0f4e1d06e2c551b3d6f845a2e5b`.
+`bbb-blue-wave-bionium-audit-v1/first.json` rechecks 72 distinct lineage
+manifests, current source/input hashes, the rendered menu, actual transfer,
+stock, retained inventory, and the closed checkpoint.
 `bbb-kam-mummy-v1` visits Betakam on Bonus and accepts his ordinary offer.
 The saved endpoint has the mummy aboard, five credits, and the ring still
 available. Its 11 decoded resources and seven fully revealed sites are a

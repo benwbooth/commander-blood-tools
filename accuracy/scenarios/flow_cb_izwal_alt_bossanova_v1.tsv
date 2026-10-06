@@ -1,0 +1,14 @@
+# Continue the earned wrong-Venusia save with A11=3 and the credit spent.
+# Venusia arrival enables the authored Bossanova radio call.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 83 11
+wait 40
+click 250 125
+wait 300
+park 316 45
+wait 30
+click 130 118
+wait 400
