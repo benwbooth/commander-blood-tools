@@ -466,6 +466,11 @@ sites. `bbb-blue-wave-decline-extended-v1` accepts that camera but declines the
 extended view; it saves at `A96=0`, `A61=1`, with 33 resources and 51 fully
 revealed sites. These are one witness per distinct refusal point, not combined
 permutations of repeated shows.
+`bbb-strike-calls-v1` answers Smile, Gluk, Daddy, Mamy, and Papy in their queued
+order. It lets Daddy finish and accepts Papy's demand through the displayed
+choices. The normal save confirms `A61=6`; the general strike has not yet
+been triggered. The run observes three decoded resources and 83 fully
+revealed sites across the phone conversations.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

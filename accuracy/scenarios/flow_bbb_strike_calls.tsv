@@ -1,0 +1,23 @@
+# Answer the five queued calls after Blue Wave's performance.
+park 4 45
+wait 25
+click 125 118
+wait 1100
+park 4 45
+wait 25
+click 125 118
+wait 1200
+park 4 45
+wait 25
+click 125 118
+choose no
+wait 800
+park 4 45
+wait 25
+click 125 118
+wait 1200
+park 4 45
+wait 25
+click 125 118
+choose yes
+wait 1000
