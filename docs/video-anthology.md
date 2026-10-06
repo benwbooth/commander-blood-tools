@@ -174,6 +174,10 @@ has Betakam aboard and the scrambler held by him.
 `cb-betakam-sat-v1` answers Jerry's pending update, travels to Sat, deploys
 Betakam from the cryobox, and recontacts him locally. His five-line account of
 life on Sat is presented; the saved state places Betakam on that planet.
+`cb-masta-mummy-v1` passes Rotator, enters Outrageor's base, and returns the
+treasure inside the mummy. It waits for Eviscerator's surrender call and answers
+Jerry's subsequent call. The saved state has the mummy with Outrageor,
+Eviscerator at the machine, and Yoko dispatched to Kukaracha.
 
 `bbb-honk-cave-clue-v3` reaches the cave-puzzle briefing through three ordinary
 Honk calls: the first retires the one-time `objet` procedure, the second accepts

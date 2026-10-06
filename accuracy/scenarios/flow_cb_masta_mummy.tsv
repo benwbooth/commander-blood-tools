@@ -1,0 +1,25 @@
+# Follow Zen's Masta lead and surrender the treasure hidden in the mummy.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 220 19
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 800
+click 80 88
+choose teleport
+# The curse triggers Eviscerator's timed call, followed by Jerry's response.
+wait 1800
+park 4 45
+wait 25
+click 125 118
+wait 900
+click 125 118
+wait 800
