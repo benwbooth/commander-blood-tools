@@ -304,6 +304,10 @@ The first Attrox visit (`bbb-emasculator-first-v1`) introduces Emasculator,
 chooses `name` and `male`, and witnesses the ten-credit offer with only six
 credits available. The conversation closes through the eight-item GIVE menu;
 no atomique is acquired or credited at this checkpoint.
+Daddy's eighth ordinary visit and GIVE-menu exit
+(`bbb-daddy-nuclear-budget-v1`) trigger the existing loan repayment. The saved
+balance rises from six to sixteen credits, with `A17 = 6`; this is money granted
+by the running script, not a prepared purchase balance.
 Earlier prefixes still require final-build replay before a complete flow claim.
 Two earned-save alternatives, declining the help and denying the later call,
 reach the observed Bob game-over assignment at `0x9F14` and exit cleanly.

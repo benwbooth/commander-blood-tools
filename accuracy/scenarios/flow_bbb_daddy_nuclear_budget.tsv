@@ -1,0 +1,20 @@
+# Return to Daddy with the existing loan outstanding and six credits left.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 50 110
+wait 60
+click 250 125
+wait 200
+click 80 104
+wait 500
+# Close the eight-item GIVE list to reach the scripted repayment.
+click 200 144
+wait 600
