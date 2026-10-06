@@ -1,0 +1,27 @@
+# Visit the observed Magnusland colony and give Tramp Ben Zen's guitar.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 270 49
+wait 60
+click 250 125
+wait 300
+click 80 104
+choose guitar
+wait 700
+click 200 134
+wait 900
+# Tramp's introduction triggers Trump's private warning call.
+park 4 45
+wait 25
+click 125 118
+wait 700

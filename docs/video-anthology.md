@@ -216,6 +216,9 @@ and `A34=2`; no credit or inventory state was supplied externally.
 `bbb-trump-colony-v1` watches Trump's origin film, returns for the migration
 instructions, and gives him the optics, ship, and remaining bionium. The saved
 endpoint has `B26=2`, `vbio=0`, and Tramp's newly active Magnusland colony.
+`bbb-tramp-colony-v1` visits that colony, gives Tramp the replacement guitar,
+and answers Trump's warning call. The saved checkpoint has `A86=1`, the guitar
+with Tramp, and Super Tromp's active colony at Corpoland.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
