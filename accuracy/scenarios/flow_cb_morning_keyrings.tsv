@@ -1,0 +1,7 @@
+# Morning is second in the five-entry cryobox roster after Tina leaves.
+park 4 45
+wait 20
+click 230 124
+wait 40
+click 100 82
+wait 500

@@ -357,6 +357,11 @@ row in the six-entry cryobox roster twice (`cb-tina-recruit-v2`). Both aboard
 conversations finish, including her request to be dropped near the musician;
 the checkpoint retains Tina aboard. The failed v1 clicked Jo's row instead and
 is not used as a predecessor.
+The corrected airport continuation chooses lowercase `teleport`, hears Tina's
+arrival, and revisits Migrator for the rehearsal dialogue
+(`cb-migrator-tina-v2`). Both actors end at Trashlando. A subsequent normal
+cryobox contact with Morning (`cb-morning-keyrings-v1`) receives the transmitter
+and receiver aboard and saves with `B1 = 1` and `panne = 3`.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
