@@ -255,20 +255,57 @@ def private_window(env, pid):
     return windows[0]
 
 
+def private_key_sequence(env, pid, names):
+    """Resolve base-level X keycodes without xdotool's symbolic-key selection."""
+    libraries = {parts[5] for line in Path(f"/proc/{pid}/maps").read_text().splitlines()
+                 if len(parts := line.split(maxsplit=5)) == 6
+                 and Path(parts[5]).name.startswith("libX11.so.")}
+    if len(libraries) != 1:
+        raise RuntimeError(f"expected one mapped Xlib in private emulator: {sorted(libraries)}")
+    library = libraries.pop()
+    xlib = ctypes.CDLL(library)
+    xlib.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    xlib.XOpenDisplay.restype = ctypes.c_void_p
+    xlib.XCloseDisplay.argtypes = [ctypes.c_void_p]
+    xlib.XStringToKeysym.argtypes = [ctypes.c_char_p]
+    xlib.XStringToKeysym.restype = ctypes.c_ulong
+    xlib.XKeysymToKeycode.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+    xlib.XKeysymToKeycode.restype = ctypes.c_ubyte
+    xlib.XkbKeycodeToKeysym.argtypes = [ctypes.c_void_p, ctypes.c_ubyte, ctypes.c_int, ctypes.c_int]
+    xlib.XkbKeycodeToKeysym.restype = ctypes.c_ulong
+    connection = xlib.XOpenDisplay(env["DISPLAY"].encode("ascii"))
+    if not connection:
+        raise RuntimeError("cannot open private X display for key resolution")
+    codes = []
+    try:
+        for name in names:
+            symbol = xlib.XStringToKeysym(name.encode("ascii"))
+            code = xlib.XKeysymToKeycode(connection, symbol)
+            if not symbol or not 8 <= code <= 255 or xlib.XkbKeycodeToKeysym(connection, code, 0, 0) != symbol:
+                raise RuntimeError(f"private key is not an unmodified base-level key: {name}")
+            codes.append(code)
+    finally:
+        xlib.XCloseDisplay(connection)
+    return {"sequence": "+".join(map(str, codes)), "names": list(names),
+            "keycodes": codes, "xlib": library}
+
+
 def private_key(env, pid, key, observe_press=None):
     if key not in PRIVATE_KEYS:
         raise ValueError(f"unsupported private key: {key}")
     window = private_window(env, pid)
-    subprocess.run(["xdotool", "keydown", key], env=env, check=True, timeout=5)
+    resolved = private_key_sequence(env, pid, [key])
+    subprocess.run(["xdotool", "keydown", resolved["sequence"]], env=env, check=True, timeout=5)
     observation = None
     try:
         time.sleep(0.15)
         if observe_press is not None:
             observation = observe_press()
     finally:
-        subprocess.run(["xdotool", "keyup", key], env=env, check=True, timeout=5)
+        subprocess.run(["xdotool", "keyup", resolved["sequence"]], env=env, check=True, timeout=5)
     return {"kind": "private_x11_key", "key": key, "window": window,
-            "display": env["DISPLAY"], "during_press": observation, "guest_memory_written": False}
+            "display": env["DISPLAY"], "during_press": observation, "resolved_keys": resolved,
+            "guest_memory_written": False}
 
 
 def private_move(env, pid, motion, observe=None):
@@ -293,13 +330,14 @@ def private_recapture(env, pid, position, observe=None):
     window = private_window(env, pid)
     if not private_mouse_locked(pid):
         raise RuntimeError("private recapture requires an existing mouse capture")
+    resolved = private_key_sequence(env, pid, ["Control_L", "F10"])
 
     def toggle():
-        subprocess.run(["xdotool", "keydown", "ctrl+F10"], env=env, check=True, timeout=5)
+        subprocess.run(["xdotool", "keydown", resolved["sequence"]], env=env, check=True, timeout=5)
         try:
             time.sleep(0.15)
         finally:
-            subprocess.run(["xdotool", "keyup", "ctrl+F10"], env=env, check=True, timeout=5)
+            subprocess.run(["xdotool", "keyup", resolved["sequence"]], env=env, check=True, timeout=5)
         time.sleep(0.15)
 
     toggle()
@@ -315,6 +353,7 @@ def private_recapture(env, pid, position, observe=None):
             raise RuntimeError("private DOSBox mouse recapture was not confirmed")
     return {"kind": "private_x11_mouse_recapture", "position_requested": position,
             "window": window, "display": env["DISPLAY"], "release_verified": True,
+            "resolved_keys": resolved,
             "mouse_capture_verified": True, "after_recapture": observe() if observe else None,
             "guest_memory_written": False}
 

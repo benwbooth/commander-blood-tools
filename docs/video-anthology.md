@@ -248,12 +248,24 @@ because mouse release was not confirmed, before recentering or later inputs.
 Capture 33 held the shortcut for 150 ms rather than sending an instantaneous
 key sequence; neither attempt progressed beyond profile zero. The exact
 earlier recorder is retained in `startup-capture-32/recorder.py`. All 51
-capture-tool tests pass, but the live recapture capability remains unverified.
+capture-tool tests pass, but these attempts did not verify live recapture.
 This does not resolve the numeric-chatter issue.
 Capture 34 repeats the held-shortcut diagnostic with the explicitly hashed
 classic SDL2 2.30.6 override. It also fails to confirm release before any
 recenter operation and remains at profile zero. The library change is not a
 solution or evidence of an original normal-playthrough continuation.
+
+Capture 35 resolves each shortcut key to its base-level X keycode on the
+private display and verifies the keycode-to-symbol round trip before sending
+input. It uses only the Xlib mapped by the child emulator. Both scheduled
+Ctrl-F10 release/recapture operations now pass their lock-transition checks,
+using keycodes 37 and 76 on this display. The original bridge camera moves
+from frame 90 to 26 and then 1, independently visible in the final screenshot.
+This verifies the input helper, not progression: the game remains at profile
+zero, and the numeric-chatter question is unresolved. No guest memory or
+system libraries are changed. All 55 capture-tool tests pass, including
+rejection of missing/ambiguous Xlib, failed display connections, and incorrect
+keycode round trips.
 
 The refreshed `output/game-flows/audit-v4` accepts 265 witnesses and lists 107
 excluded attempts. CB has 1,569 successful-route sites, 367 other normal-route
@@ -419,6 +431,25 @@ argument with Honk are also witnessed. The five ordinary console-menu contacts
 show 44 daily-menu sites before Bronko joins; the separate recruited-Bronko
 branch shows his eight improved-menu sites. These are source-site totals,
 including repeated startup sites in each witness, not additive scene counts.
+
+`cb-morning-disconnect-v2` and `cb-morning-keep-honk-v1` branch from the same
+earned memory-recovery save. Four normal `hiding_place` selections reach the
+offered `disconnect`/`refuse` choice; the earlier three-selection attempt
+does not and remains excluded. Disconnect records all eight subsequent
+argument lines, while refuse records Morning's distinct refusal. Their 19
+and 12 fully displayed sites pass source attribution without rejections.
+The respective slot-zero saves are at boundaries 5,708 and 5,074, SHA-256
+`c25a20754170a2104ef525d2767cc303ddfd3c62b688f0f589f20118a1379bca`
+and `0f75fdf0e4bc999f1a6db518667fce54e6b6ce23a15555562c48b18a58d32f2c`.
+
+The refreshed `output/game-flows/audit-v7` validates 285 witnesses, including
+both branches above, and excludes 111 unfinished or legacy attempts. CB has
+1,569 successful-route sites, 963 other normal-route sites, 999 unobserved
+sites with witnessed wording, 127 empty/control sites, and 1,878 other
+unobserved/dynamic sites. BBB's counts remain unchanged. Every accepted
+save lineage is rechecked; these totals do not establish full scene coverage
+or running time. No new movie or PCM is recorded, and rendering remains
+disabled pending the remaining coverage and scene-level edit decisions.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts

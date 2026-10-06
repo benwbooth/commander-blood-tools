@@ -49,6 +49,52 @@ def fixture(profile=0):
 
 
 class StartupCaptureTests(unittest.TestCase):
+    def test_private_key_resolution_checks_base_level_on_explicit_display(self):
+        xlib = mock.Mock()
+        xlib.XOpenDisplay.return_value = 123
+        xlib.XStringToKeysym.side_effect = [65507, 65479]
+        xlib.XKeysymToKeycode.side_effect = [37, 76]
+        xlib.XkbKeycodeToKeysym.side_effect = [65507, 65479]
+        mappings = "0-1 r-xp 0 0 1 /lib/libX11.so.6\n1-2 r--p 0 0 1 /lib/libX11.so.6\n"
+        with mock.patch.object(capture.Path, "read_text", return_value=mappings), \
+                mock.patch.object(capture.ctypes, "CDLL", return_value=xlib):
+            resolved = capture.private_key_sequence({"DISPLAY": ":123"}, 789, ["Control_L", "F10"])
+        self.assertEqual(resolved["sequence"], "37+76")
+        self.assertEqual(resolved["keycodes"], [37, 76])
+        xlib.XOpenDisplay.assert_called_once_with(b":123")
+        xlib.XCloseDisplay.assert_called_once_with(123)
+
+    def test_private_key_resolution_rejects_wrong_symbol_and_closes_connection(self):
+        xlib = mock.Mock()
+        xlib.XOpenDisplay.return_value = 123
+        xlib.XStringToKeysym.return_value = 65479
+        xlib.XKeysymToKeycode.return_value = 64
+        xlib.XkbKeycodeToKeysym.return_value = 65513
+        with mock.patch.object(capture.Path, "read_text", return_value="0-1 r-xp 0 0 1 /lib/libX11.so.6\n"), \
+                mock.patch.object(capture.ctypes, "CDLL", return_value=xlib):
+            with self.assertRaisesRegex(RuntimeError, "base-level"):
+                capture.private_key_sequence({"DISPLAY": ":123"}, 789, ["F10"])
+        xlib.XCloseDisplay.assert_called_once_with(123)
+
+    def test_private_key_resolution_rejects_missing_or_ambiguous_xlib(self):
+        for mappings in ("", "0-1 r-xp 0 0 1 /a/libX11.so.6\n1-2 r-xp 0 0 1 /b/libX11.so.6\n"):
+            with self.subTest(mappings=mappings), \
+                    mock.patch.object(capture.Path, "read_text", return_value=mappings), \
+                    mock.patch.object(capture.ctypes, "CDLL") as loader:
+                with self.assertRaisesRegex(RuntimeError, "one mapped Xlib"):
+                    capture.private_key_sequence({"DISPLAY": ":123"}, 789, ["F10"])
+                loader.assert_not_called()
+
+    def test_private_key_resolution_does_not_use_default_display_after_open_failure(self):
+        xlib = mock.Mock()
+        xlib.XOpenDisplay.return_value = None
+        with mock.patch.object(capture.Path, "read_text", return_value="0-1 r-xp 0 0 1 /lib/libX11.so.6\n"), \
+                mock.patch.object(capture.ctypes, "CDLL", return_value=xlib):
+            with self.assertRaisesRegex(RuntimeError, "cannot open private"):
+                capture.private_key_sequence({"DISPLAY": ":123"}, 789, ["F10"])
+        xlib.XStringToKeysym.assert_not_called()
+        xlib.XCloseDisplay.assert_not_called()
+
     def test_initial_time_word_belongs_to_directory_not_var(self):
         executable, guest, _globals, _catalog = fixture()
         state = capture.inspect_guest(guest, executable)
@@ -159,16 +205,17 @@ class StartupCaptureTests(unittest.TestCase):
     def test_private_recapture_releases_moves_and_recaptures_without_clicking(self):
         env = {"DISPLAY": ":123"}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_key_sequence", return_value={"sequence": "37+76"}), \
                 mock.patch.object(capture, "private_mouse_locked", side_effect=[True, False, True]), \
                 mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
             event = capture.private_recapture(env, 789, [400, 316], lambda: {"profile": 0})
         self.assertEqual([call.args[0] for call in run.call_args_list], [
             ["xdotool", "windowfocus", "--sync", "456"],
-            ["xdotool", "keydown", "ctrl+F10"],
-            ["xdotool", "keyup", "ctrl+F10"],
+            ["xdotool", "keydown", "37+76"],
+            ["xdotool", "keyup", "37+76"],
             ["xdotool", "mousemove", "400", "316"],
-            ["xdotool", "keydown", "ctrl+F10"],
-            ["xdotool", "keyup", "ctrl+F10"]])
+            ["xdotool", "keydown", "37+76"],
+            ["xdotool", "keyup", "37+76"]])
         self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
         self.assertEqual(event["after_recapture"], {"profile": 0})
         self.assertTrue(event["release_verified"] and event["mouse_capture_verified"])
@@ -176,17 +223,19 @@ class StartupCaptureTests(unittest.TestCase):
 
     def test_private_recapture_restores_capture_after_failed_motion(self):
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_key_sequence", return_value={"sequence": "37+76"}), \
                 mock.patch.object(capture, "private_mouse_locked", side_effect=[True, False, True]), \
                 mock.patch.object(capture.subprocess, "run", side_effect=[None, None, None, ValueError("move"), None, None]) as run, \
                 mock.patch.object(capture.time, "sleep"):
             with self.assertRaisesRegex(ValueError, "move"):
                 capture.private_recapture({"DISPLAY": ":123"}, 789, [400, 316])
-        self.assertEqual(run.call_args.args[0], ["xdotool", "keyup", "ctrl+F10"])
+        self.assertEqual(run.call_args.args[0], ["xdotool", "keyup", "37+76"])
 
     def test_private_recapture_requires_each_lock_transition(self):
         for states, expected_calls in (([False], 1), ([True, True], 3), ([True, False, False], 6)):
             with self.subTest(states=states), \
                     mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                    mock.patch.object(capture, "private_key_sequence", return_value={"sequence": "37+76"}), \
                     mock.patch.object(capture, "private_mouse_locked", side_effect=states), \
                     mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
                 observe = mock.Mock()
@@ -231,11 +280,12 @@ class StartupCaptureTests(unittest.TestCase):
             calls.append("observe")
             return {"profile": 1}
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n") as search, \
+                mock.patch.object(capture, "private_key_sequence", return_value={"sequence": "73"}), \
                 mock.patch.object(capture.subprocess, "run", side_effect=lambda command, **kwargs: calls.append(command)) as run, \
                 mock.patch.object(capture.time, "sleep"):
             event = capture.private_key(env, 789, "F7", observe)
         self.assertEqual(calls, [["xdotool", "windowfocus", "--sync", "456"],
-                                 ["xdotool", "keydown", "F7"], "observe", ["xdotool", "keyup", "F7"]])
+                                 ["xdotool", "keydown", "73"], "observe", ["xdotool", "keyup", "73"]])
         self.assertEqual(search.call_args.kwargs["env"], env)
         self.assertTrue(all(call.kwargs["env"] == env for call in run.call_args_list))
         self.assertEqual(event["during_press"], {"profile": 1})
@@ -244,11 +294,12 @@ class StartupCaptureTests(unittest.TestCase):
 
     def test_failed_key_observation_still_releases_key(self):
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n"), \
+                mock.patch.object(capture, "private_key_sequence", return_value={"sequence": "73"}), \
                 mock.patch.object(capture.subprocess, "run") as run, mock.patch.object(capture.time, "sleep"):
             with self.assertRaisesRegex(ValueError, "observation failed"):
                 capture.private_key({"DISPLAY": ":123"}, 789, "F7",
                                     mock.Mock(side_effect=ValueError("observation failed")))
-        self.assertEqual(run.call_args.args[0], ["xdotool", "keyup", "F7"])
+        self.assertEqual(run.call_args.args[0], ["xdotool", "keyup", "73"])
 
     def test_private_key_rejects_ambiguous_window_and_unlisted_keys(self):
         with mock.patch.object(capture.subprocess, "check_output", return_value="456\n457\n") as search, \
