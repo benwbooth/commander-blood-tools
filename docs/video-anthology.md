@@ -570,6 +570,35 @@ again stalls, as the excluded v2 shows. All 24 sites match source, including
 V1 started from the pending-revelation branch and never offered its requested
 company topic. These additions are after `audit-v8`, not completeness claims.
 
+`cb-bob-chapter3-raise-v1` recontacts Bob after the employee topic and witnesses
+all six `augmen` raise-request lines. All nine displayed sites match source;
+its predecessor lineage validates. It completes 4,109 frames and 333 events,
+with seven decoded resources. This short dialogue witness does not make a new
+save and is not a resumable checkpoint.
+
+Four fresh-game identity branches, `cb-izwal-alt-hyper-v2`,
+`cb-izwal-alt-predatorus-v1`, `cb-izwal-alt-mousy-v1`, and
+`cb-izwal-alt-jules-v1`, follow the ordinary Corpo approach. They select the
+offered identity, accept the credit normally, and revisit Izwalito for his
+identity-specific callbacks. Jules also makes the next two return visits.
+The first three each have 116 source-matched sites, and Jules has 126; their
+union adds 47 sites and 34 distinct wordings relative to `audit-v8`.
+`cb-izwal-alt-audit-v1/coverage.json` retains the detailed comparison.
+These are genuine alternative identities, not changes to the script globals.
+
+The four Mamy witnesses `bbb-optional-mamy-stroll-v2`,
+`bbb-optional-mamy-recipe-no-crush-v3`, `bbb-optional-mamy-recipe-decline-v1`,
+and `bbb-optional-mamy-crush-v1` begin with the earned first-visit perfume save.
+They cover the second-visit stroll, both recipe answers, and both relationship
+answers on later visits. Their union adds 34 SCRIPT3 `Mamy01` sites relative to
+`audit-v8`: 32 dialogue sites, two control sites, and 31 distinct new wordings.
+All 30 distinct predecessor/current manifests validate, with zero rejected
+presentations in these four witnesses. The no-crush branch returns food and
+leaves Mamy in Loviland; the decline branch retains food; the crush branch
+brings her aboard through the authored response. Detailed checks and save
+hashes are in `bbb-optional-mamy-audit-v1/final.json`. Three earlier attempts
+remain excluded for a wrong Cancel row or unhandled menu/travel state.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure

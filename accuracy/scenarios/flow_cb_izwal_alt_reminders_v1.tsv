@@ -1,0 +1,13 @@
+# Two ordinary return visits after corbis, with the delivery credit unspent.
+park 4 0
+wait 25
+click 216 72
+wait 120
+click 80 88
+wait 200
+park 4 0
+wait 25
+click 216 72
+wait 120
+click 80 88
+wait 200

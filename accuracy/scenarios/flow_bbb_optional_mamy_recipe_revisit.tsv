@@ -1,0 +1,32 @@
+# Third visit from the earned stroll checkpoint: hear the full recipe.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+click 80 104
+choose shank
+wait 300
+# Six-item Cancel position verified in the preceding recipe attempts.
+click 200 129
+wait 200
+# Repeat the current Lovia destination through its normal bridge hit region.
+# Same-location revisit inputs are established in flow_bbb_gluxx_resupply.tsv.
+park 4 0
+wait 25
+click 225 80
+wait 180
+click 80 104
+choose no_crush
+wait 300
+click 200 129
+wait 200

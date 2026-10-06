@@ -1,0 +1,15 @@
+# Accept the offered credit and wait through the identity-specific farewell.
+park 4 0
+wait 25
+click 216 72
+wait 120
+click 80 88
+choose teleport
+wait 300
+# Return before buying meat, still carrying the legitimately received credit.
+park 4 0
+wait 25
+click 216 72
+wait 120
+click 80 88
+wait 250

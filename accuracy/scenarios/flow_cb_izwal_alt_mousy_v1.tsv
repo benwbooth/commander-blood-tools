@@ -1,0 +1,9 @@
+# Genuine first contact after the fresh-game Corpo prefix.
+park 4 0
+wait 25
+click 216 72
+wait 120
+click 80 88
+choose Mousy
+choose bye_bye
+wait 250
