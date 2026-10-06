@@ -969,6 +969,25 @@ farewell. Without a closed saved endpoint, it remains excluded.
 both nuclear leaves, and both robot refusals through 104 distinct lineage
 manifests, current source/input hashes, matching text, effects, and saves.
 
+`cb-izwal-alt-credit-recovery-v3` now closes the spent-credit recovery from
+the Bossanova save. The actual meat submenu's `murffalo` back-choice returns
+the credit from Bug Deluxe, without returning the wrong meat from Izwalito.
+Its 5,869 frames, 249 events, and ten matched sites end in a normal save at
+frame 5733, SHA-256
+`ef51d894e983594f868fea595708a83c9cd8b489bd3be54a94dedadeb0429736`.
+`cb-izwal-alt-recovery-closure-v1` then spends that recovered credit at Bronko,
+delivers the correct meat, receives the decoder and credit rewards, and
+chooses the actual Corpo4 `NO` farewell. It saves with `A1=3`, `F1=1`, and
+`trak6=0`; both meat objects remain with Izwalito and the rewards are aboard.
+Its 21,049 frames, 1,167 events, and 58 matched sites add three previously
+unobserved wordings, SCRIPT2 COD 21969, 21991, and 22658. Slot zero at frame
+20913 has SHA-256
+`15f39b74773c973648d8bbaf028e0fcab08816c7315e792fce1d67d618faa5b9`.
+`cb-izwal-alt-audit-v5/parent-review.json` independently rechecks the four
+lineage manifests, source/input hashes, text, menus, all six item transfers,
+and closed saved endpoints. The two failed recovery attempts stay excluded;
+these alternatives do not establish a full ending continuation or DOS parity.
+
 `output/game-flows/audit-v13` accepts 349 witnesses and excludes 141 failed,
 running, or legacy attempts. The successful lineages remain 72 CB and 99 BBB
 segments. CB has 1,569 successful-route and 1,296 other normal-route sites;
@@ -1412,6 +1431,31 @@ SHA-256 `17a13043423cae169ac605140e3cc2ae83f0d0f4e1d06e2c551b3d6f845a2e5b`.
 `bbb-blue-wave-bionium-audit-v1/first.json` rechecks 72 distinct lineage
 manifests, current source/input hashes, the rendered menu, actual transfer,
 stock, retained inventory, and the closed checkpoint.
+The second through fifth witnesses reuse `flow_bbb_blue_wave_bionium_repeat_v1.tsv`
+once each after an ordinary load of the preceding save. Each raises `B79`
+by one, reaching five, while preserving all nine items, four credits, and
+two bionium. Each records 5,832 frames and seven matching sites, with no new
+wording from repeating the gift. `bbb-blue-wave-bionium-audit-v1/five-visits.json`
+verifies all five leaves through 76 distinct lineage manifests. The fifth
+slot zero at frame 5696 has SHA-256
+`446833e86fedeb5c088371fd30e5b3c723fcc708c3e3391047b6952a875560c4`.
+A combined same-planet repeat attempt failed during navigation and remains
+excluded; its unsaved progress is not a predecessor. The successful visits
+establish the gift threshold only, not the later retained-inventory story.
+
+`bbb-blue-wave-credit-ship-hint-v1` is a separate alternative from the third
+visit. It offers credit, ship, and the ring before obtaining the mummy, then
+chooses `help` in the displayed `help`/`pride` menu. Blue Wave takes all four
+credits and the ship, gains ten evolution, and returns the premature ring.
+`B79` rises three to four, `B47=1`, and `A26=0`; she remains on Waveland.
+The complete `SQ/momi10.hnm` hint sequence closes. The run records 7,623
+frames, 730 events, 17 resources, and 21 matched sites, including 18 newly
+observed sites relative to audit-v13. Slot zero at frame 7487 has SHA-256
+`334915efeebf9b897b45ea1bd11b454c658c516a3fa22a8e2a4cfbc30a5046d0`.
+`bbb-blue-wave-hint-audit-v1/report.json` verifies 75 lineage manifests,
+current source/input hashes, text, visible choices, the three transfers,
+credit loss, completed hint sequence, and closed checkpoint.
+
 `bbb-kam-mummy-v1` visits Betakam on Bonus and accepts his ordinary offer.
 The saved endpoint has the mummy aboard, five credits, and the ring still
 available. Its 11 decoded resources and seven fully revealed sites are a

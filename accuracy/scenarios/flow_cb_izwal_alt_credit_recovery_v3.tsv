@@ -1,0 +1,12 @@
+# Recover the spent credit from the earned Bossanova save, then save separately.
+# The actual post-teleport meat submenu offers buy and murffalo.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose yes
+choose teleport
+wait 100
+choose murffalo
+wait 300
