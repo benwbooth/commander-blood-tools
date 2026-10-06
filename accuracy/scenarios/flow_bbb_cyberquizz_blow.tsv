@@ -1,0 +1,25 @@
+# Revisit the earned Cyberquizz checkpoint through the ordinary cryobox.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 50
+wait 600
+# The third encounter offers duplicate yes labels; choose the first row.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 50
+wait 180
+click 176 90
+choose no
+wait 200
+# Accept the fourth encounter's destruction suggestion.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 50
+choose blow_it_up
+wait 900

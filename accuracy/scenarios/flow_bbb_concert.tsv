@@ -1,0 +1,5 @@
+# Ask Honk to open the earned concert after the guests have arrived.
+park 4 45
+wait 25
+click 230 88
+wait 1800

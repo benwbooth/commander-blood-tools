@@ -641,6 +641,17 @@ in order at native boundaries 5305--5882, with every decoder counter reaching
 the source's last decoded-frame boundary. The route observes 14 resources and
 22 fully revealed sites. The invitations alone are not concert playback or an
 ending witness.
+`bbb-concert-v1` calls Honk from that checkpoint and plays all 13 `2concert`
+clips in authored order at native boundaries 1629--2505. Every counter reaches
+the source's last decoded-frame boundary. It returns to a normal save with
+`A13=0`; this is the shared predecessor for the final reactions, not yet the
+successful ending. It observes 13 resources and one fully revealed Honk site.
+`bbb-cyberquizz-blow-v1` independently repeats the second and third cryobox
+visits, then selects the fourth visit's visible `blow_it_up` choice. All five
+`5exploplane` clips play in order at boundaries 7129--7363 and reach the source
+counter boundaries. It saves after the broadcast, observing 14 resources and
+20 fully revealed sites. This is a legitimate alternative to `leave_it`, not
+a prepared sequence-channel capture.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`
