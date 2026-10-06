@@ -474,6 +474,10 @@ Answering Cyberion and Morning, visiting Hom with both fingerprint clicks,
 then returning to Rondo (`cb-hom-jerry-v1`) completes Jerry's investigation
 scene. The save has `G1 = 1`, `jerry = 1`, Jerry at the Shark, and Yoko and
 Morning at Trashlando. Cyberock's examination and Hom's reward still follow.
+The normal Cyberock exam (`cb-cyberquizz-dork-v1`) answers the first five
+questions correctly and teleports the diploma aboard. Its save retains the
+DORK item aboard and the five-answer score; later exam questions and failed
+exam branches remain separate coverage work.
 
 An earlier continuation exposed a separate native text defect: dictionary offset 1
 is the word `talk` in CB SCRIPT2, but the shared subtitle assembler interpreted
