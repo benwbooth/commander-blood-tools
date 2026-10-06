@@ -267,6 +267,47 @@ The targeted audit validates both new witnesses and their combined 69-manifest
 lineage, with every fully revealed site matching source text. Counts here omit
 the two repeated startup COD sites. No media was rendered.
 
+Hom's subsequent legitimate contacts retain Yoko aboard:
+
+| Witness | Matching Hom BAS sites | Save-zero boundary | Save SHA-256 |
+| --- | ---: | ---: | --- |
+| `cb-hom-races-v1` | 38 | 7,064 | `d28dabdbc20486d786f4b0d1f1e05abd069ad6c5ecab65c77161a0107329f572` |
+| `cb-hom-planets-v1` | 36 | 7,920 | `cfdde28315801865477a67adbefe6cf6300be6b807c7e4e92f3a701a35be4f0d` |
+| `cb-hom-nested-science-v1` | 15 | 5,950 | `c97bab9de51723460fdb51c9a1dc25d86c77a6cd1109eb1147f2cf38c12c753d` |
+
+These are per-witness totals, not additive unique-site counts. The race path
+covers the offered Croolis, Slimer, Sinox, Migrax, murffalo, ondoyant,
+reproduction, joke, and tubular-brain topics. The next contact covers the
+offered planets, politics, television, peace, war, and Izwal food. Its fifth
+food choice closes Hom's presentation; the retained departure text is not
+counted as a fully revealed actor line. Reentering science six times through
+`race` and `izwal` then reaches all five Izwal-specific science lines. This is
+an observed nested-menu route, not an injected topic selection. All three
+targeted audits pass without rejected text attributions.
+
+Honk's `cb-honk-play-v1` and `cb-honk-consultation-v1` continue from his
+explanations save. They record 52 and 50 matching BAS sites respectively,
+covering play, winning/losing, help, configuration, consultation, and the
+number exercise. The latter records `scr=1`: only one click on `one` was sent,
+not the repeated clicks that open the script-selection cheat. The saves are
+at boundaries 8,879 and 8,775, SHA-256
+`7daacbb8479d396f4253dd16d0a3fa51b97f0a79a68f8889f8eed552fda16c84`
+and `9a105a7813e8819b756425a9ef137adaf70a7507ed015d5a890df8eeaf73b8ad`.
+The three Honk witnesses cover 133 of his 140 chapter-two BAS sites. The seven
+unobserved sites remain unresolved; spelling differences in the source or
+repeatable preceding lines are not treated as global unreachability proofs.
+
+`cb-jo-exit-v1` branches from Jo's earned Pterra recruitment and opens the
+second of four aboard roster entries. It witnesses Honk's first reprogramming
+introduction, Jo's minigame instructions, and the zero-bionium failure reply.
+Escape exits the ordinary AMER overlay after two input/presented frames; the
+trace verifies graphics/audio restoration and released resources. The saved
+state has `vbio=0`, `compris=0`, with slot zero at boundary 11,068, SHA-256
+`87c3e0cb967b44ac4a790c3c54c3366d498cb6fd3c7416f5787c8539732d4145`.
+All 29 chapter-two text sites match their source, as do the two startup sites.
+The native minigame exit is not an original-DOS rendering or physics proof.
+All 59 flow/catalog/coverage tests pass after these additions.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure

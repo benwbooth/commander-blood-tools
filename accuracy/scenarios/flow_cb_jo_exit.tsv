@@ -1,0 +1,9 @@
+# Jo is second in the four-entry roster after his recruitment from Pterra.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 89
+await-alien
+key 1
+wait 1500

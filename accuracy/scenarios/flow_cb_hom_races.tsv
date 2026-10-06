@@ -1,0 +1,53 @@
+# Continue Hom's offered race topics while Yoko is still aboard.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 67
+choose race
+choose croolis
+choose info
+choose info
+choose info
+choose race
+choose slimer
+choose yolk
+choose yolk
+choose yolk
+choose yolk
+choose yolk
+choose info
+choose info
+choose info
+choose info
+choose race
+choose sinox
+choose technology
+choose info
+choose race
+choose migrax
+choose info
+choose info
+choose murffalos
+choose info
+choose consumption
+choose consumption
+choose reproduction
+choose hom
+choose race
+choose ondoyant
+choose info
+choose reproduction
+choose hom
+choose joke
+choose laugh
+choose talk
+choose race
+choose tubular_brain
+choose brain
+choose brain
+choose brain
+choose info
+choose info
+choose bye_bye
+wait 500
