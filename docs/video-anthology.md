@@ -578,6 +578,14 @@ decoded resources and 29 fully revealed sites, enabling the return to Mega Paul.
 scene. The save confirms `B88=1`, `B15=1`, Mac and K on Kortland, and Jo removed
 from the Ark. Mac is at evolution 100 with no encounters, and his call is queued.
 The run observes 18 decoded resources and 13 fully revealed sites.
+`bbb-scruter-concert-offer-v2` answers Mac, then Mig Burner, and saves with
+`A63=2`. Mac's first phone encounter itself enables the concert proposal.
+The run observes nine decoded resources and 21 fully revealed sites. V1's
+additional Kortland visit failed on numeric audio dictionary offset 2908:
+SCRIPT15.DIC is only 973 bytes. The existing audio oracle proves the original
+encoded-offset hashing only within supplied dictionary memory, not the contents
+beyond that allocation. No decimal-text, silent-audio, or zero-padding fallback
+has been substituted, and that local visit remains uncovered.
 
 Verified prefixes currently include CB's explanations/Honk/Bob-briefing route
 into SCRIPT2, Bob's `no` response (one additional fully shown site at `0x0813`

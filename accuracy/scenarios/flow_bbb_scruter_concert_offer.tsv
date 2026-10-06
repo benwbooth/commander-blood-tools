@@ -1,0 +1,10 @@
+# Answer the newly created Scruter Mac's introductory call.
+park 4 45
+wait 25
+click 125 118
+frames 1200
+# The first phone encounter queues Mig Burner's concert proposal.
+park 4 45
+wait 25
+click 125 118
+frames 1800
