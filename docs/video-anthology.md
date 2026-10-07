@@ -604,6 +604,29 @@ stored topic on the planet leaves. Bionium stays three, all inventory holders
 are preserved, and the inherited Kran call remains pending. No runtime change
 or original-scene timing claim is involved.
 
+`cb-hom-parent-topics-v1` follows the same earned contact through 75 actual
+menu choices. Its 9,995 boundaries and 986 events fully match 33 sites. Seven
+are new beyond `audit-v19`: BAS 12432, 13017, 13951, 15157, 15421, 15621 and
+15645. These cover the second root-politics response, second Izwal/Rondo
+response, second Slimer/race response, television information, and the peace,
+television and joke parent responses. The independent
+`cb-hom-parent-topics-review-v1` checks the exact current/parent selector IDs
+and recent chosen words at each of those displayed sites.
+
+`cb-hom-television-entry-v1` makes twelve ordinary television visits, with
+28 actual menu choices, and fully presents the remaining chance-based entry
+at BAS 15109. It adds one site beyond the parent-topic leaf, with eleven
+matched sites over 7,309 boundaries and 414 events. No PRNG state or clock
+is modified. Its separate `cb-hom-television-entry-review-v1` verifies the
+live television choice, selector parent and matching text pixels. Both leaves
+recheck 74 lineage manifests, 108 saved fields and 2,504 raw VAR words. Their
+normal saves at boundaries 9859 and 7173 have the same hash as the earlier
+planet-history saves; only the same encounter/topic words change. These
+captures resolve all fifteen candidates from the bounded menu-history
+planner: fourteen displayed new sites and the undrawn food departure. Its
+other 26 sites still have no path in that limited model, not a global
+unreachability proof.
+
 Honk's `cb-honk-play-v1` and `cb-honk-consultation-v1` continue from his
 explanations save. They record 52 and 50 matching BAS sites respectively,
 covering play, winning/losing, help, configuration, consultation, and the

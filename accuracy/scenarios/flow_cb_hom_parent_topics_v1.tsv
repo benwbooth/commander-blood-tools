@@ -1,0 +1,88 @@
+# Earned Hom contact with Yoko aboard; exercise retained parent-menu responses.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 67
+# Current politics response precedes the two root politics responses.
+choose politics
+choose race
+choose talk
+choose politics
+choose race
+choose talk
+choose politics
+choose race
+choose talk
+choose politics
+choose race
+choose talk
+# Reenter the race menu while preserving Slimer as its parent.
+choose race
+choose slimer
+choose race
+choose slimer
+choose race
+choose slimer
+choose race
+choose slimer
+choose race
+choose talk
+# Izwal entry has two conditional current-menu lines before the peace parent.
+choose politics
+choose peace
+choose izwal
+choose talk
+choose politics
+choose peace
+choose izwal
+choose talk
+choose politics
+choose peace
+choose izwal
+choose talk
+# Bound the chance-based television entry/info and its politics parent.
+choose politics
+choose television
+choose info
+choose info
+choose info
+choose info
+choose info
+choose info
+choose politics
+choose television
+choose politics
+choose television
+choose politics
+choose television
+choose politics
+# Reenter joke after the finite child responses have been consumed.
+choose joke
+choose talk
+choose politics
+choose joke
+choose talk
+choose politics
+choose joke
+choose talk
+choose politics
+choose joke
+choose talk
+# Repeated Rondo choices retain the Izwal parent and two-word history.
+choose race
+choose izwal
+choose planet
+choose rondo
+choose rondo
+choose rondo
+choose rondo
+choose rondo
+choose rondo
+choose rondo
+choose rondo
+choose rondo
+choose rondo
+choose talk
+choose bye_bye
+wait 500
