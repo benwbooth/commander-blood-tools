@@ -1,0 +1,19 @@
+# First Kero contact from the earned post-settlement manual checkpoint.
+# Prepend normal LOAD0. Goan's actual marker is 55,122 in this lineage.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 80
+click 55 122
+wait 100
+click 250 125
+wait 200
+choose copied
+choose yes
+wait 600

@@ -2190,8 +2190,61 @@ loan, debit, prohibited contact, ending or protected inventory loss. Continued
 Kero work must use the post-settlement manual save
 `4535ef9d1897e20e7dec5ccc73876ee30bf2b194aeec55d551994ead56fdb6b2`,
 not the automatic checkpoint. This accepts native translated-runtime evidence,
-not original-executable whole-scene parity. Kero's contact and the Internet
-medicine message still need their own normal routes.
+not original-executable whole-scene parity. At this boundary Kero's contact
+and the Internet medicine message remained pending.
+
+The next route, `bbb-medicine-prefix-kero-first-v1`, is now independently
+accepted for Kero's first Goan contact. It uses the post-settlement manual
+checkpoint, the actual Goan marker at 55,122, and the offered `copied` and
+`yes` choices. The promoted replay fragment is
+`accuracy/scenarios/flow_bbb_kero_first_goan_v1.tsv`; its ordinary actions
+exactly match the preserved diagnostic fragment named in capture provenance.
+This 9,587-boundary, 594-event capture has 53 full source sites, all already
+represented in audit v27. Its contribution is the verified medicine-route
+ancestry, not additional dialogue coverage.
+
+Two offline observer discrepancies were repaired without changing the capture,
+game, recorder or sources. The sealed timing proposal distinguishes retained
+rendered-ready events from input clocks. For `copied`, those are source event
+3253, in-interval readiness 3261, consumption 3262 and completion 3267; for
+`yes`, they are 6430, 6430, 6431 and 6436. It also derives and tests the local
+two-frame action/scene alignment used by the navigation checks. The original
+Observer, movie, growth, closure and raw-save predicates remain unchanged.
+
+The first integrated audit then stopped on exact filename spelling: the DOS
+directory retains `game1.sav`/`game10.sav`, while the native writable resources
+and checkpoint manifest use `GAME1.SAV`/`GAME10.SAV`. The separately reviewed
+42-test filename helper joins each validated ASCII basename to exactly one
+regular, non-symlink host file. It rejects aliases, ambiguous names, unsafe
+paths and mismatched manifest spelling. Exact labels, trailing spaces, all 320
+directory bytes and both checkpoint hashes still have their original gates.
+
+`bbb-medicine-stage4-kero-integrated-audit-v2` passes the complete original
+audit with only those two reviewed surfaces changed: 562 loaded events,
+one contact, two menus, fifteen closed/decoded sequences, fifty-five growth
+entries and seven lineage manifests. Both saves account for all 9,344 bytes,
+4,184 VAR words, 822 exposed fields, 128 timers, 256 opaque timer bytes,
+six sequence slots, 52 location records and 122 procedure entries. Their
+explained VAR changes number seventeen automatically and eighteen manually.
+Closure 6938 precedes autosave 6950, manual request 9396 and manual save 9451.
+Timer two is fourteen automatically and four manually; its exact hidden tick
+chronology is not exported.
+
+That audit first bound one transitive import, `tools/video_anthology.py`, only
+at completion. The gap is retained explicitly rather than retroactively
+claiming a pre-execution hash. Independent
+`bbb-medicine-stage4-kero-parent-acceptance-v1` then binds all 301 dependencies
+and review artifacts before and after one deterministic full replay. The replay
+reproduces the complete successful audit report exactly and accepts this route.
+The original failed packages and pending-review report remain unchanged.
+
+Continue from manual slot zero,
+`6e4cd5e8a80be401635b5a838366275a1d2b5d7e21022bcc999864aeaaa98869`.
+Automatic slot nine is
+`6dcce9c3706d0653973969d1365f6f92e1bdc4216c69369196165c34a85b19e8`.
+This is translated-runtime evidence, not original-executable parity. Sequence
+decode maxima are counters, not durations. The Internet medicine message and
+later treatment still require their own normal routes; rendering has not begun.
 
 `cb-bronko-fourth-visit-weapons-v1` follows the earned third-visit topics save
 and selects both weapon replies through the actual talk/weapon menus. It adds
