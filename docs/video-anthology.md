@@ -2293,6 +2293,38 @@ This is translated-runtime evidence, not original-executable parity. Sequence
 decode maxima are counters, not durations. The Internet medicine message and
 later treatment still require their own normal routes; rendering has not begun.
 
+The next ordinary continuation, `bbb-medicine-prefix-kero-optics-v1`, is now
+independently accepted. Its 45 actions revisit Kero at Goan, select the actual
+`optics` inventory row, cancel the returned inventory menu, and save normally.
+The 6,873 boundaries and 324 events contain ten full SCRIPT11 source sites.
+Optics transfers to Kero, evolution rises from 300 to 320, and `A54`/`B72`
+each become one. The ordinary simulation's intervening growth is separately
+accounted for; Ben's settlement and the Internet medicine message are not yet
+claimed by this checkpoint.
+
+The sealed integration-v3 audit corrects source-inconsistent v2 assumptions,
+without changing any captured input, observation, runtime or asset. COD 16697
+is a text-only inventory menu: `screen_active=false` is required here, while
+the actor/text remains active. Each actual six-frame click ends `Closed` with
+cleared choices and text, rather than retaining `Closing`. The source's
+one-shot greetings do not repeat after a gift; inventory commit reactivates
+only the saved inventory instruction. Boundary names are restricted to the
+writer's real `game` and `blocking_presentation` values, with only `game`
+allowed after loading. The same inventory lifecycle is independently checked
+against the earlier accepted Super Zen perfume capture.
+
+All 157 new regressions and 30 inherited cases pass. A parent-run full audit
+is byte-identical to the sealed package's report; separate parent acceptance
+binds 3,596 inputs and rechecks all eight normal-input lineage manifests.
+Both saves account for every 9,344 bytes, all 4,184 VAR words, 822 exposed
+fields and 122 procedure entries. The automatic save at frame 5159 is
+`628d9a180abba93a2781e813719d68bb09f1e6122436db4de7d96802a69d68eb`;
+continue from manual slot zero at frame 6737,
+`725c23f547a9ab0744f3af4f7225871d28a4b9da44d91cf5015dc30561a9baf0`.
+The previous audit failures and stage-four prehash caveat remain preserved.
+Hidden timer ticks, full movie durations and original-executable scene parity
+remain unproved. This accepts one route continuation, not complete-game coverage.
+
 `cb-bronko-fourth-visit-weapons-v1` follows the earned third-visit topics save
 and selects both weapon replies through the actual talk/weapon menus. It adds
 BAS 17357, with nine total full sites over 6,980 boundaries and 208 events.
@@ -4180,6 +4212,23 @@ and timer 15 change. Slot 0 at frame 5791 is
 `947ab10ead583fef136c6c17027dfa82294b9ac453853b42754bd5d8b3d8c589`.
 Exact review replay and eleven negative cases pass. These two witnesses
 postdate `audit-v29`; its frozen census is unchanged. No movies are rendered.
+
+The same accepted container checkpoint now also has independently verified
+three-, five-, and six-dose Jo continuations, `cb-jo-three-dose-v1`,
+`cb-jo-five-dose-v1`, and `cb-jo-six-dose-v1`. Their ordinary flight plans use
+15,718, 33,710, and 46,946 inputs respectively, plus each first neutral
+`await-alien` frame. Total normal action counts are 15,754, 33,746, and
+46,982. All three repeat the same 31 full
+sites, 6,544 game boundaries and 269 compact events, adding earned fuel
+states rather than dialogue coverage. Their complete 5,887-byte saves match
+the source-qualified predictions. At frame 6408 the manual hashes are
+`041d332228a7572d4fda44e3061e384783dfe6040a26ea2531e82760d3db427f`,
+`e5a757999d5a2a388672b9ec51e8c4c8ef7d60c1c796886c084ac5f73d4605b9`,
+and `601ccb9db4b03ae960ee89d8f4e9cca6e3495f579d9ff32babd798ec2738322b`.
+Each exact audit replay and all eighteen corruption checks pass. Honk's
+follow-ups require a different prediction from the two-dose case: the saved
+credit state enables `help9` above two doses, consuming three on successful
+hint publication. Those conversations are not yet counted by these Jo saves.
 
 ### Izwalito Magnus Guard
 
