@@ -1764,6 +1764,16 @@ BBB counts are unchanged. The Bronko player-flag audit correction is separately
 reviewed without changing its original failed report or replaying the game.
 All 64 focused tests pass; completeness and render readiness remain false.
 
+`output/game-flows/audit-v26` retains 509 witnesses and excludes 171 attempts,
+including the then-running Emasculator refusal and three failed predecessors.
+Thirty-five exact CB sites are new: the malfunction/sleep Morning topics,
+late Honk hints, Izwal's kidnapping news, both Beauregard contacts and Bronko's
+kitchen prerequisite. CB now has 1,569 successful-route and 1,767 other normal
+sites, with 1,088 unobserved new/dynamic, 992 repeated-wording and 120 control
+sites. BBB's accepted second-perfume prerequisite contributes no new exact
+sites; its prior counts remain unchanged. All 64 focused tests pass. Both
+completeness and render readiness remain false; no flow movies are rendered.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -2159,6 +2169,27 @@ Kero work must use the post-settlement manual save
 not the automatic checkpoint. This accepts native translated-runtime evidence,
 not original-executable whole-scene parity. Kero's contact and the Internet
 medicine message still need their own normal routes.
+
+`cb-bronko-chapter2-kitchen-v1` makes the ordinary aboard contact from the
+earned recruitment save. Its four full sites include two new SCRIPT2 sites,
+24516/24538; terminal COD 24679 is not fully presented and is not credited.
+The 5,594-boundary, 96-event capture saves manually at 5458. Independent review
+passes 298 checks across eight lineages and 118 bound inputs, comparing all
+5,887 save bytes, 2,441 VAR words, 229 exposed fields and 127 procedure records.
+Only Bronko's encounter count five-to-six and Emasculator's flags sixteen-to-
+seventeen change. Credit stays aboard, the container stays with Emasculator,
+and `vbio=0`. The normal save is
+`e1618f1c697c086b4a6b0799e5b83b1ee4ca172c4927cac3cc9d07c9c07b7a5a`.
+
+Three earlier Emasculator attempts remain failed diagnostics: missing Bronko
+prerequisite, wrong cryobox row, and a disabled planet hit region after the
+correct contact. The last trace's hash only corroborated the two predicted
+changes; it produced no new save. The separate kitchen capture now proves
+them in raw bytes. The disabled region is consistent with the scene-transition
+callback's HUD sprite updates being overwritten on return. No runtime patch
+or original-scene parity claim is made. Independent Emasculator leaves must
+normally reload the accepted kitchen save, then prove actual region recovery
+and shop admission; the kitchen checkpoint alone is not shop coverage.
 
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond

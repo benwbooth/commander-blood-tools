@@ -1,0 +1,7 @@
+# Contact Bronko through the second row of the five-entry earned roster.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 82
+wait 500
