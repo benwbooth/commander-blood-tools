@@ -1,0 +1,6 @@
+# Daddy has been visited but Erazor is unknown; help4 costs three of four doses.
+park 4 45
+wait 25
+click 230 88
+choose bye_bye
+wait 250

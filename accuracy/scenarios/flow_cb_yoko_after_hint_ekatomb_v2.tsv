@@ -1,0 +1,21 @@
+# Already at Rondo: opening then closing the chart restores the local camera.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+choose talk
+choose race
+choose Slimers
+choose information
+choose information
+choose information
+choose information
+choose information
+choose information
+choose bye_bye
+wait 500

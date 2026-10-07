@@ -1675,6 +1675,14 @@ the two remaining Hom leaves, six chapter-two follow-ups and Super Zen's
 first medicine-prefix perfume gift. All 64 flow/catalog/coverage tests pass.
 Completeness and render readiness remain false.
 
+`output/game-flows/audit-v21` retains 482 witnesses and excludes 165 failed,
+legacy or review-rejected attempts under the unchanged policy. Ten exact CB
+sites are new: six from Yoko's follow-up and four from Honk's Gluxx hint.
+CB has 1,569 successful-route and 1,689 other normal-route sites, with 1,173
+unobserved new/dynamic, 985 repeated-wording and 120 control sites. BBB's
+counts remain unchanged. The failed medicine-prefix Mamy attempt adds no
+coverage. Both completeness and render readiness remain false.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -1964,6 +1972,15 @@ Credits remain two, optics and guitar remain aboard, medicine remains with
 Bug and the ship with Cyberquizz. No Kero/Ben settlement or Internet medicine
 message is claimed yet; replacement perfume and the second gift remain work.
 
+The separate `bbb-internet-medicine-prefix-v2` attempt stops before Mamy's
+purchase menu. Its new observer incorrectly rejects removal of the runtime-only
+`time` alias during normal SCRIPT2-to-SCRIPT3 loading. All 250 serialized
+globals remain present; this is an observer failure, not a demonstrated game
+defect. The failed 2,783-boundary capture and audit are preserved, with no
+purchase, new save or second Zen visit. Parent verification checks fifteen
+sealed local files and 1,593 bound inputs. Its copied parent save is not a
+new checkpoint, and the flow remains excluded.
+
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
 `audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
@@ -2002,7 +2019,7 @@ The Yoko prefix travels normally from the seven-dose save to Rondo, leaves
 before asking about Slimers, follows Yoko's authored Maxxon visit, and returns
 to Yoko for a second goodbye. Five second-visit lines are new: COD 32248,
 32300, 32346, 32373 and 32543. Two native autosaves at 7338 and 15444 precede
-the manual save. Its fifteen VAR differences are the two actors' contacted
+the manual save. Its fifteen VAR differences are the two actors' position-match
 flags and encounter counts, Rondo's visit count, the Observatory known flag,
 navigation positions and the authored `adieu`, `H1` and `trak22` writes.
 All header, sequence, padding and procedure bytes remain unchanged. Yoko's
@@ -2015,6 +2032,41 @@ is also new. Only his encounter count, `adieu`, `vbio`, timer 15 and that
 procedure flag change; inventory remains unchanged. The final save hash is
 `4e1ad87167028f7928c58a3b74e3f4ecba3178bdeae1796791b3d8f3c1066127`.
 These native leaves do not establish whole-scene original timing parity.
+
+Three more leaves use the same independent chapter-two reviewer. Yoko's
+`cb-yoko-after-hint-ekatomb-v2` opens and closes the chart at the current Rondo
+position, then enters his offered Slimers/information branch. Six new COD
+sites display fully: 32400, 32436, 32464, 32500, 32658 and 32692. The last two
+are the newly eligible third-visit introduction; Yoko has not moved to
+Trashlando. The first attempt left the same-planet chart open and failed
+before entering the conversation. V2 has 9,229 boundaries, 397 events and
+22 matched sites. Its six VAR changes are Yoko's encounter/topic, Rondo's
+visit count, Ekatomb's known flag, `adieu` and `trak21`. Autosave 6726 and
+manual save 9093 are identical:
+`cfbcc487fbaeec5017faece27d0b28fdd708f673f4592316bbf06aaf0ff296f9`.
+
+`cb-gluxx-before-erazor-hint-v1` then makes Daddy Gluxx's first Ekatomb visit
+and leaves without requesting his coordinates. This prerequisite adds no new
+text sites: all fourteen match existing coverage. Its 9,628 boundaries and
+281 events change thirteen VAR words: location-match flags, Daddy's encounter,
+Ekatomb's visit count, ship/world positions and the authored `J1`/`trak24`
+flags. Bionium remains four and Erazor remains unknown. Autosave 7052 and
+manual save 9492 are identical:
+`55308e2551f928a1b010cf036a664027864723b09f76b519719b0fcb9172cdce`.
+Both leaves preserve every header, sequence, padding and procedure byte.
+
+`cb-honk-chapter2-gluxx-hint-v1` fully displays the eligible `help4` hint at
+COD 3799. Exactly one debit at boundary 2834 changes four bionium to one;
+the three one-dose warnings at 3144/3172/3200 also display fully. The following
+service line at 3838 is never published, and `help4` remains enabled in the
+save; neither that line nor a completed procedure is claimed. Eleven sites
+match source over 5,032 boundaries and 120 events. Only Honk's encounter,
+`vbio` and `adieu` VAR words change; all other saved bytes remain unchanged.
+The normal save at 4896 is
+`3e8e3ceffd3e826d946ddf8ff2817ef5384eff949d3d96ac32d9aaebeabfb955`.
+All three leaves recheck their eleven/twelve/thirteen-manifest lineages,
+229 exposed saved fields and all 2,441 VAR words. These are native route
+observations, not original whole-scene parity claims.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites
