@@ -4014,9 +4014,60 @@ review also checks 204 exposed fields and native VAR/sequence hashes.
 Automatic/manual saves at 6580/8976 are identical:
 `80c3736702ba38e19286678dce9816329800a47d35aab039421c1c2839212fb4`.
 
+`cb-tina-before-migrator-v2` independently revisits Tina after giving her the
+guitar but before meeting Migrator. The exact earned parent is already at Eden;
+the corrected six-action body enters its surface directly, without opening the
+chart. V1 attempted to select the current planet, remained on the chart and
+failed its save-menu rotation. It has no new saves or credited Tina dialogue.
+
+V2 records 6,244 boundaries, 149 events and six full sites. Amigo's actual hall
+entry redirects to Tina at the bar; the false Migrator-encounter guard selects
+COD 16387/16409, adding two exact sites. The sealed independent review and
+parent replay pass 1,306 checks over 509 bound inputs, 31 earned lineages and
+15 in-memory rejection tests. Each complete save matches the pre-capture
+prediction across all 6,308 bytes: only Amigo and Tina encounters two-to-three,
+and Eden access four-to-six change. Headers, padding, all 166 procedures,
+all fifty globals and all 27 inventory holders/flags are preserved; 204
+save-time fields and both native hashes agree. Automatic/manual saves at
+4364/6108 are identical:
+`324c7fafd84a48df6c062acf73632d5095ed1299ab189ed0afbcbeadc0ca5b3f`.
+The actual capture binds the immutable diagnostic `direct-eden.tsv`; the
+checked-in v2 recipe retains those same six ordinary actions. Terminal COD
+16427 later has complete matching pixels with no actor and is retained as
+evidence, but receives no credit under the unchanged actor-bound rule.
+
 The subsequent Moskito airport visit introduces `commander_blood` to Migrator
 and hears his singer request (`cb-migrator-first-v1`). He returns to rehearsing
 and the conversation closes with a witnessed save.
+
+Five independent `cb-migrator-first-{princy,ziggie,michael,jimmy,billy}-v1`
+leaves take the other actual introduction-menu rows from that same earned
+Tina guitar-gift parent. Each has 8,615 boundaries and eleven source/pixel-
+matched full sites, including two bootstrap lines. Together they add ten
+exact sites, not separate combinations of later story decisions:
+
+| Name | New COD Sites | Events | Matching Raster Samples | Automatic Save |
+| --- | --- | ---: | ---: | ---: |
+| princy | 17103, 17123 | 262 | 98 | 6540 |
+| ziggie | 17157, 17177 | 259 | 95 | 6554 |
+| michael | 17215, 17235 | 260 | 96 | 6534 |
+| jimmy | 17267, 17287 | 259 | 95 | 6554 |
+| billy | 17325, 17345 | 260 | 96 | 6554 |
+
+The source-bound preflight and closed reviews verify each 31-manifest lineage,
+all 44 completed normal actions, the actual Moskito/airport selection and
+Migrator's six-row COD 17002 menu. Every one of the ten 6,308-byte saves matches
+the independently computed endpoint, also identical to the original
+`commander_blood` result. Only fourteen source-derived VAR words change for
+travel, positions, entry counters, `K1=1` and `trak10=1`; `migrator1` disables.
+All headers, padding, other procedures, inventory and the inherited Ulikan
+call are preserved. Each save checks 204 exposed fields and whole-VAR/sequence
+hashes. Manual saves occur at 8479; every automatic and manual SHA-256 is
+`7cbb9a995074eaf706b28d3ab9879ff25fba388b27eb6b946ce34fc11136768a`.
+The reviewer was corrected to validate repeated ready-menu snapshots within
+the one choice action, not require exactly one compact event. The initial
+review failure is retained. Terminal COD 17549 receives no full-site credit;
+these captures do not establish original-executable scene parity.
 
 `cb-tina-recruit-refusal-v1` independently resumes that introduction, returns
 to Eden and selects `REFUSE` from the actual COD 16136 recruitment menu.
