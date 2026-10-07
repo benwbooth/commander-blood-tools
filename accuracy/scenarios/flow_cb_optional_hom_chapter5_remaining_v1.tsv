@@ -1,0 +1,26 @@
+# Early SCRIPT5 earned roster: Hom and Yoko remain aboard.
+park 4 45
+wait 25
+click 230 124
+frames 600
+click 100 67
+# Two deterministic science entries: child line, then root fallback candidate.
+choose science
+choose talk
+choose science
+choose talk
+# Two authored Migrax talk responses, not random-wording repetition.
+choose race
+choose migrax
+choose talk
+choose race
+choose migrax
+choose talk
+# One distinct murffalos planet selection; no chance-line retry.
+choose race
+choose migrax
+choose murffalos
+choose planet
+choose talk
+choose bye_bye
+frames 900

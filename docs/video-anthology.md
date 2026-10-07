@@ -1667,6 +1667,24 @@ unchanged, and no call remains pending. Holiday and other time-of-day branches
 were not presented; no clock was modified. The later timer-driven calls and
 original scene timing remain separate work.
 
+`cb-optional-hom-chapter5-remaining-v1` continues the earned television-topic
+save. The actual third cryobox row names Hom, record nine, with Yoko still
+aboard. Sixteen verified menu choices add four fully displayed BAS sites:
+12376 (science), 14335/14355 (Migrax talk), and 14587 (Moskito's frozen
+murffallos). This is a bounded topic recipe, not repeated random sampling.
+All fifteen full sites match source and pixels. The route has 6,085 boundaries
+and 304 events, with a frame-5949 save of
+`b2f01e37ef0cf7218307b218585cdef55c2b2e0ea6550e8db761a33f86cf51d0`.
+The independent `cb-hom-chapter5-parent-review-v1` rechecks 786 frozen inputs,
+143 closed artifacts, 74 policy-clean manifests, all sixteen actual menus,
+and 108 serialized actor/inventory/global fields. The candidate's wider save
+audit checks 177 fields across all record kinds. Comparing all 2,504 SCRIPT5
+VAR words finds only Hom's encounter count changing six to seven and his
+last topic changing from joke to talk. Inventory and globals are unchanged.
+COD 10200 is published after closure with no full raster and is not counted.
+This adds four sites beyond `audit-v17`; it does not close the remaining Hom
+tree or establish original timing. Rendering has not started.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure
