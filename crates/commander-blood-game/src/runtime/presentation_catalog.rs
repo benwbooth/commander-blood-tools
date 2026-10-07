@@ -22,6 +22,7 @@ const CHARACTER_TALK_PRESENTATION_LINE_COUNT: usize = 32;
 const CHARACTER_RIGHT_PRESENTATION_LINE: usize = 39;
 const CHARACTER_LEFT_PRESENTATION_LINE: usize = 40;
 const OBJECT_PRESENTATION_LINE: usize = 43;
+const GAMEPLAY_PRESENTATION_TICK_THRESHOLD: u8 = 12;
 
 const SEQUENCE_RESOURCE_DIRECTORY: &[u8] = b"SQ\\";
 const LOCATION_RESOURCE_DIRECTORY: &[u8] = b"PL\\";
@@ -73,6 +74,12 @@ impl RuntimePresentationCatalog {
             variants: std::array::from_fn(|line| initial.lines()[line].variant()),
             unclamped_line_ids: *initial.unclamped_line_ids(),
         }
+    }
+
+    /// Apply the startup panel's global resource-delay write to future loads.
+    pub fn finish_startup_presentation(&mut self) {
+        // BLOODPRG 0x7C72 and BLOOD2PG 0x8D46 replace the initial delay of 16.
+        self.variants.fill(GAMEPLAY_PRESENTATION_TICK_THRESHOLD);
     }
 
     /// Apply filename slots written by one DESCRIPT record.

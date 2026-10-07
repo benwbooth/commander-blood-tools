@@ -76,6 +76,11 @@ impl RuntimePresentationPlayer {
         }
     }
 
+    /// Restore the gameplay delay without retiming an already active stream.
+    pub fn finish_startup_presentation(&mut self) {
+        self.catalog.finish_startup_presentation();
+    }
+
     /// Apply mutable location, object, and character names from one DESCRIPT record.
     pub fn apply_descript_assets(&mut self, assets: &DescriptPresentationAssets) -> Result<()> {
         self.catalog.apply_descript_assets(assets)?;

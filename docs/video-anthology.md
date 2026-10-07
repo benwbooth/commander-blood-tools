@@ -1064,6 +1064,46 @@ bytes match the earlier accepted witnesses. All four close to witnessed saves,
 with frozen input, source, recorder, and binary hashes.
 The payment controls remain diagnostics outside normal-route coverage.
 
+A subsequent original writer watch identifies an independent queue-timing
+defect. `output/diagnostics/papy-writer-watch-v1/review.json` binds 53 observed
+writes, their decoded original instructions, RAM snapshots, and 77 lineage
+manifests. The original completes the first caption before releasing its queue;
+the earlier native control releases the queue while that caption is incomplete.
+Host hardware write watches leave guest state/code untouched and restore the
+host debug registers, but can perturb timing. This is bounded writer-order
+evidence, not an uninstrumented scene-duration or debit-count measurement.
+
+`clock-alias.json` executes 36 original clock cases and four startup-finalization
+branches across both executables. The queue's threshold byte is the resource
+flag word's high byte: CB `0x0D77`, BBB `0x0FC5`. Reverse startup finalization
+writes the global resource delay from 16 to 12; non-reverse closure does not.
+The original Papy snapshots contain 12 in both the global and queue threshold.
+The native sequence loader now mirrors this alias, including switch-error
+state, and startup completion changes future catalog requests to 12 without
+retiming an active stream. Previously the queue clock retained its zero default
+and the catalog never consumed the startup completion write.
+
+The three targeted regressions fail before the repair and pass afterward.
+All 1,124 enabled library tests and 43 asset-dependent sequel tests pass; both
+production binaries build. The independent five-file review found no actionable
+defect, while noting untested end-to-end natural-startup and CB consumption
+paths. `output/diagnostics/queue-clock-alias-v1` retains those test logs, original
+binary copies, and fixed-conversation controls. The old startup fragment now
+fails before LOAD because its click dismisses the splash rather than the later
+TV panel. `flow_bbb_load0_v2.tsv` dismisses each separately through ordinary input;
+the conversation and save fragments remain unchanged.
+
+`control-summary-v3.json` checks 81 lineages, full source-matched text, closed
+endpoints, saved progression words, and 86 saved actor/item records per control.
+The repaired English payment makes 12 deductions rather than 53. A diagnostic
+copy changing only the SCRIPT3 display-catalog hash in read-only data makes 15
+deductions with French source text; all executable instructions and game assets
+are unchanged. The original French capture made 17. The remaining difference
+is unresolved: neither payment control is accepted coverage or a predecessor,
+and no whole-scene parity is claimed. Refusal still retains five credits and
+all six lines; Metagluk's wrong-syllable control retains two credits and all
+27 lines, with unchanged item ownership/flags relative to the earlier controls.
+
 Three Papy GIVE alternatives continue independently from the earned
 `bbb-gluxx-resupply-v1` save. Their actual menus offer the carried items;
 none uses a forced transfer or the strike-payment checkpoint:

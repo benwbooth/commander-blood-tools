@@ -172,7 +172,10 @@ where
             render_update_flags: context.render_update_flags,
             provider: context.provider,
         },
-    )?;
+    );
+    // Native 0x0D77 (BBB 0x0FC5) is the high byte of the resource flag word.
+    context.clock.tick_threshold = stream.flags.to_le_bytes()[1];
+    let resource_switch = resource_switch?;
     let initial_entry = load_initial_presentation_entry(
         stream.source.as_mut(),
         context.queue,
@@ -455,6 +458,12 @@ mod tests {
                 &mut stream,
                 PresentationResourceId::new(vector.resource_id),
                 &mut context,
+            );
+            assert_eq!(
+                clock.tick_threshold,
+                stream.flags.to_le_bytes()[1],
+                "{}: the queue clock aliases the resource flag word's high byte",
+                vector.name
             );
 
             match vector.name.as_str() {

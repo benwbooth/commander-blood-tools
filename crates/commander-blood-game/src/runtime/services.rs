@@ -3019,6 +3019,7 @@ impl<'window> ModernGameServices<'window> {
                 .restart(Manu3AnimationSelector::PresentationChoice);
         }
         if startup_mode_completed {
+            self.presentation_player.finish_startup_presentation();
             state.presentation_mode = false;
         }
         publish_sequel_scene_execution(
@@ -7343,6 +7344,17 @@ mod tests {
         assert!(!services.presentation_screen_state().unwrap().active());
         assert!(!services.presentation_screen_state().unwrap().reverse());
         assert!(!lifecycle.presentation_mode);
+        for line in 0..45 {
+            assert_eq!(
+                services
+                    .presentation_catalog()
+                    .request(PresentationResourceId::new(line))
+                    .unwrap()
+                    .variant,
+                12,
+                "startup completion must restore the runtime delay for line {line}"
+            );
+        }
     }
 
     #[test]

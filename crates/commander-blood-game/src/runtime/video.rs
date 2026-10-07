@@ -35,7 +35,7 @@ pub struct RuntimePresentationRequest {
     pub resource_name: BloodResourceName,
     /// Low-byte descriptor flags recovered from the calling presentation scene.
     pub descriptor_flags: u8,
-    /// Runtime variant stored in the descriptor flag word's high byte.
+    /// Software-timer threshold stored in the descriptor flag word's high byte.
     pub variant: u8,
     /// Sound and immediate/deferred decode gates for queue-entry activation.
     pub entry_policy: PresentationEntryPolicy,
@@ -1079,6 +1079,48 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    #[ignore = "requires the original Big Bug Bang assets"]
+    fn sequel_object_queue_waits_for_the_authored_timer_threshold() {
+        let root =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/imported-assets");
+        let data = OriginalGameData::load_with_writable_root(
+            OriginalGameDataPaths::from_root(root).unwrap(),
+            std::env::temp_dir(),
+        )
+        .unwrap();
+        let mut runtime = OriginalGameRuntime::new(data);
+        let mut request =
+            RuntimePresentationRequest::new(BloodResourceName::new(b"OB\\pion.hnm").unwrap());
+        request.variant = 12;
+        let (mut stream, _) =
+            RuntimePresentationStream::load(&mut runtime, request, 1000, false).unwrap();
+        let initial_count = stream.presented_frame_count();
+        for (timer_tick, due) in [
+            (1000, false),
+            (1008, false),
+            (1012, true),
+            (1020, false),
+            (1024, true),
+        ] {
+            let outcome = stream
+                .service_frame(
+                    &mut runtime,
+                    0,
+                    timer_tick,
+                    PresentationQueueClockGates::default(),
+                    false,
+                )
+                .unwrap();
+            assert_eq!(
+                queue_presented_frame(&outcome.queue),
+                due,
+                "tick {timer_tick}"
+            );
+        }
+        assert_eq!(stream.presented_frame_count(), initial_count + 2);
     }
 
     #[test]
