@@ -1,0 +1,6 @@
+# A long earned recap exhausts Honk's timer; allow its authored automatic close.
+park 4 45
+wait 25
+click 230 88
+choose remember
+wait 3000

@@ -1182,6 +1182,28 @@ frames are not equated with guest ticks. Trace SHA-256 is
 This remains diagnostic evidence: no fixed debit target, runtime repair,
 payment acceptance, promoted save, or exclusion removal follows.
 
+The subsequent native-boundary experiments remain stopped diagnostics. V1's
+archived-control identity check failed. The read-only v2 comparison retains
+the current control's caption-count and `time`-alias differences; matching
+saves do not remove them. V3 then ran one fresh uninstrumented control with
+the exact same French ELF, SHA-256
+`153448ab78bfe38bc4ba3ec104658c2067a82c2242c9ef8b4b17853dd63eb0e8`.
+It failed its preregistered control comparison, so no instrumented run was
+executed. Its budget was zero builds, one OFF run, zero ON runs, zero retries
+and zero original runs. All three diagnostic roots remain sealed.
+
+`papy-current-control-parent-review-v3/report.json` independently verifies
+262 artifact hashes, 6,999 input hashes and eight preregistration entries,
+then reconstructs all 6,326 frames directly from both raw event streams.
+The first retained-state difference is caption state at frame 336; frame 394
+also differs in active startup video. From frame 395 through 6325, the sole
+retained state/object/global difference is `remaining_scene_lines`, eleven
+in the reference and twelve in fresh OFF. Objects and globals match at every
+frame, but raw event counts, action samples, captions and sequence boundaries
+do not. The matching saves are not a control pass. No internal boundary trace,
+observer-neutrality result, causal explanation or new original-parity claim
+follows. Papy payment remains excluded from coverage and save ancestry.
+
 The shared Commander Blood control replays the exact Hom root-politics and
 save fragments from the earned science checkpoint. `flow_cb_load0_v2.tsv`
 waits until after the observed studio-logo completion before dismissing the
@@ -1642,6 +1664,17 @@ before-Bob and retained-ring-request prefixes, without counting their repeated
 lines as new. All 64 flow/catalog/coverage tests pass. Both completeness flags
 remain false; no flow-based movies have been rendered.
 
+`output/game-flows/audit-v20` retains 479 witnesses under the same three-entry
+review policy. Its 165 exclusions include the then-running second Yoko
+re-entry attempt, as well as failed, legacy and review-rejected evidence.
+Thirty exact sites are newly observed: 24 CB and six BBB. CB has 1,569
+successful-route and 1,679 other normal-route sites; BBB has 3,013 and 602.
+Unobserved new/dynamic counts are 1,179 CB and 2,210 BBB, separate from
+989/511 repeated-wording sites and 120/585 controls. The new slice includes
+the two remaining Hom leaves, six chapter-two follow-ups and Super Zen's
+first medicine-prefix perfume gift. All 64 flow/catalog/coverage tests pass.
+Completeness and render readiness remain false.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -1906,6 +1939,82 @@ tick, match the enabled source procedures. Saved timers and procedure patches
 are unchanged; only sequence slot five becomes `43internet`. V1's no-capture
 guard rejection is preserved. This is normal-flow evidence from the frozen
 translated runtime, not a new original-executable parity test.
+
+`bbb-medicine-prefix-zen-perfume-v1` begins a separate ordinary prerequisite
+for Internet's medicine message, from the policy-clean `bbb-zen-teleport-v2`
+save. Super Zen's third visit offers `yes`, `yes`, then the carried perfume.
+The actual inventory Cancel row closes the contact. Its 8,525 boundaries and
+489 events contain 24 fully source-matched sites, including six new SCRIPT11
+sites 9833, 9871, 9909, 9937, 9975 and 9991. At frame 4674 the gift increases
+population 39 to 489 and evolution 100 to 200, decreases aggression 500 to
+400, and increments `B23` and `B25` once. Later native growth is separately
+accounted for; the final population is 692 and energy 862.
+
+The original driver stopped after incorrectly requiring exactly one save.
+Its error and first failed offline audit are retained, without replaying the
+capture. Independent `bbb-medicine-first-gift-parent-review-v1` accepts only
+this completed visit after verifying 16 sealed artifacts, 1,345 inputs, four
+lineages, all chronological object/global changes and 36 exact growth updates.
+Both native saves have 822 checked fields, all 4,184 VAR words and 122
+unchanged procedure records. The automatic slot-nine save at 6355 captures
+timer 2 at 14; the manual slot-zero save at 8389 has an unchanged header.
+Intermediate timer ticks are not independently reconstructed. The manual
+save is `740d7dae801f48679cfc0cb671ec522d922e4177972722c0e88e52c8bec0487a`.
+Credits remain two, optics and guitar remain aboard, medicine remains with
+Bug and the ship with Cyberquizz. No Kero/Ben settlement or Internet medicine
+message is claimed yet; replacement perfume and the second gift remain work.
+
+Six chapter-two follow-ups are independently reviewed under
+`cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
+`audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
+checks its complete policy-clean lineage, source-matched nonempty rasters,
+actual offered choices, all 2,441 VAR words, 229 exposed saved fields, all
+header/timer/sequence bytes, padding and 127 procedure records.
+
+| Witness | Boundaries | Events | Full Sites | Save Boundary |
+| --- | ---: | ---: | ---: | ---: |
+| `cb-honk-chapter2-secret-v1` | 5,275 | 147 | 15 | 5139 |
+| `cb-honk-chapter2-wrong-food-v1` | 5,699 | 165 | 18 | 5563 |
+| `cb-honk-chapter2-seven-bionium-v1` | 5,595 | 162 | 18 | 5459 |
+| `cb-honk-chapter2-ulikan-v2` | 17,239 | 205 | 28 | 17103 |
+| `cb-yoko-two-visits-before-ekatomb-v1` | 17,945 | 536 | 24 | 17809 |
+| `cb-honk-chapter2-yoko-hint-v1` | 4,800 | 110 | 9 | 4664 |
+
+The secret and wrong-food leaves use their earned Bob-revelation and
+Bossanova saves. Honk presents the two `plus=1` responses (2882/2924), or the
+three `trak4`/`trak5` recap responses (5376/5420/5471). The seven-dose leaf
+starts from the actual Jo minigame reward and adds COD 3464. These three
+leaves change only Honk's encounter and topic VAR words, with their actual
+timer changes retained. Inventory, globals and procedure flags stay unchanged.
+
+The Ulikan leaf presents COD 5788/5832 from the earned first pirate call.
+Its long recap closes automatically after fully drawn COD 6617, at frame
+5288. COD 4805 is published without a complete raster and receives no credit.
+The recap procedure `miss` remains enabled because its disabling tail was
+not reached; this is not a complete-recap claim. V1 wrongly waited for another
+goodbye menu and failed. V2 replaces that input with an ordinary passive wait
+and closes to a witnessed save, without changing the runtime or checkpoint.
+All inventory and globals stay unchanged. The only VAR change is Honk's
+encounter count; timer 12 decreases 1,117 to 523, and the `miss` procedure
+flag changes zero to one.
+
+The Yoko prefix travels normally from the seven-dose save to Rondo, leaves
+before asking about Slimers, follows Yoko's authored Maxxon visit, and returns
+to Yoko for a second goodbye. Five second-visit lines are new: COD 32248,
+32300, 32346, 32373 and 32543. Two native autosaves at 7338 and 15444 precede
+the manual save. Its fifteen VAR differences are the two actors' contacted
+flags and encounter counts, Rondo's visit count, the Observatory known flag,
+navigation positions and the authored `adieu`, `H1` and `trak22` writes.
+All header, sequence, padding and procedure bytes remain unchanged. Yoko's
+count is two, Ekatomb remains unknown and all seven bionium doses remain.
+
+The hint child therefore enters `help3` naturally. COD 3688/3723 are fully
+drawn; one source-authored debit at frame 2836 changes seven doses to four,
+and procedure 3658 disables itself. Honk's four-dose announcement at 3353
+is also new. Only his encounter count, `adieu`, `vbio`, timer 15 and that
+procedure flag change; inventory remains unchanged. The final save hash is
+`4e1ad87167028f7928c58a3b74e3f4ecba3178bdeae1796791b3d8f3c1066127`.
+These native leaves do not establish whole-scene original timing parity.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites

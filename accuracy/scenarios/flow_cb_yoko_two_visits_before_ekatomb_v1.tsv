@@ -1,0 +1,29 @@
+# From the earned seven-dose Jo save, visit Yoko without requesting coordinates.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 281 40
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose bye_bye
+# Her first farewell routes to Maxxon's ordinary lens request.
+wait 1400
+# Reopen and close the chart to restore the local Rondo destination selector.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+choose bye_bye
+wait 500

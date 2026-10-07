@@ -1,0 +1,6 @@
+# The earned two-visit Yoko save enables help3 without revealing Ekatomb.
+park 4 45
+wait 25
+click 230 88
+choose bye_bye
+wait 250

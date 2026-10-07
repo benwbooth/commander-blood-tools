@@ -1,0 +1,24 @@
+# Stage 1 only: ordinary third Super Zen visit, one perfume, exit, then SAVE.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 80
+click 179 81
+wait 100
+click 250 125
+wait 200
+choose yes
+wait 40
+choose yes
+wait 40
+choose perfume
+wait 400
+# Five remaining objects; observer must verify the actual Cancel row first.
+click 200 128
+wait 400
