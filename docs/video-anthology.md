@@ -2278,6 +2278,36 @@ all previously witnessed. Manual zero at 6408 is
 This is a refueled branch parent, not a chapter advance: `C1=0`, the lens stays
 with Otto and the inherited inactive Scruter K identity does not prove a call.
 
+`cb-emasculator-fuel-{refusal,sale}-v1` independently reload that same Jo save,
+recover the actual active Moskito region, and select `refuse` or `teleport`
+from Emasculator's COD 25444 menu. Each records 6,914 boundaries and eleven
+fully revealed sites; their union adds five exact sites after the preceding
+Emasculator branches: 25426, 25444, 25475, 25510 and 25565. Refusal has 194
+events and 90 matching rasters; sale has 190 events and 88 matching rasters.
+
+The sealed pair review and parent replay pass 555 checks over 283 bound inputs
+and eleven earned lineages per branch. All four 5,887-byte saves match their
+source-computed copies, including all 2,441 VAR words, 229 exposed fields,
+headers, padding, 127 procedure records and native VAR/sequence hashes.
+Both branches increment Emasculator's encounter one-to-two and Moskito access
+six-to-seven. Only sale changes fuel, `vbio` seven-to-one. Container and credit
+holders remain unchanged. Automatic/manual saves are byte-identical within
+each branch: refusal at 4414/6778 is
+`e68b4a6a547113f40527e40e34d29afe8a73a0534393efcccdc14f8f36db4343`;
+sale at 4480/6778 is
+`da063d0345260ed723b9a9cc6d35785989014db701575e7d23e7d0063fcc4863`.
+
+Sale actually decodes `SQ\\star2.hnm`, closes its source at 4358 without
+intervening input, and starts the authored COD 25510 follow-up at 4359.
+The original strict auditor incorrectly required its observed counter to
+reach the 61-frame source census. The separate corrected review preserves
+and reproduces that failure: the exposed active-stream counter reaches 60
+and resets on source release, which may share the terminal-frame tick.
+This proves decoding and uninterrupted closure, not 61 directly observed
+frames, video duration or original-executable scene parity. Both branches
+remain in SCRIPT2; STAR2 is not a chapter advance. Terminal 25542/25614 receive
+no coverage, and customs blockers and the inherited pending call are unchanged.
+
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
 `audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
@@ -3956,9 +3986,10 @@ Their timer-ten values remain 68 and 147 respectively, so no Kran call is yet
 queued or answered. The frozen runtime change is explicitly recorded; the
 earned parent, scripts and assets were not prepared or altered.
 
-The next continuation answers that pending call and visits Kraner's newly
-revealed chart marker (`cb-kran-race-v1`). Kran presents the guitar wager,
-reveals Troma, starts the race with `krando20.hnm`, and closes normally. Its
+On the original `no` branch, the next continuation answers its pending call
+and visits Kraner's newly revealed chart marker (`cb-kran-race-v1`). Kran
+presents the guitar wager, reveals Troma, starts the race with `krando20.hnm`,
+and closes normally. Its
 witnessed checkpoint retains the guitar with Kran; winning or repairing the
 ship has not yet been claimed.
 The route then travels to Troma, answers Kran's SOS, and returns to his newly
@@ -3971,9 +4002,32 @@ separate transmitter/receiver handover has not yet been played.
 Returning to Eden and selecting `teleport` gives Tina that guitar
 (`cb-tina-guitar-v1`). The conversation closes with the guitar held by Tina,
 who remains at the bar; her later recruitment is a separate step.
+
+The independent `cb-tina-guitar-refusal-v1` instead loads the earned repair
+save, returns through Amigo and selects the actual guitar menu's `refuse`.
+It records 9,112 boundaries, 254 events, twelve full sites and 92 matching
+rasters. COD 15695/15849 are new; the following menu pointer is not credited.
+All 6,308 bytes of both saves match source-computed navigation, actor-entry
+and position changes. The guitar remains aboard, Tina stays at the bar and
+`E1=1`; headers and all 166 procedures are unchanged. The thirty-lineage
+review also checks 204 exposed fields and native VAR/sequence hashes.
+Automatic/manual saves at 6580/8976 are identical:
+`80c3736702ba38e19286678dce9816329800a47d35aab039421c1c2839212fb4`.
+
 The subsequent Moskito airport visit introduces `commander_blood` to Migrator
 and hears his singer request (`cb-migrator-first-v1`). He returns to rehearsing
 and the conversation closes with a witnessed save.
+
+`cb-tina-recruit-refusal-v1` independently resumes that introduction, returns
+to Eden and selects `REFUSE` from the actual COD 16136 recruitment menu.
+It records 9,124 boundaries, 298 events, fourteen full sites and 121 matching
+rasters, adding six exact sites: 16203, 16221, 16263, 16285, 16313 and 16337.
+The thirty-two-lineage review checks both entire saves and the same 204 fields,
+unchanged headers/procedures and native hashes. Tina remains at the bar with
+the guitar and `E1=2`; no recruitment is inferred from the conversation.
+Automatic/manual saves at 6938/8988 are identical:
+`5d113d5a07a7b138ef511c5dbcd6101f2d070fff30c1f75aa25cacff49c474c8`.
+
 The following Eden return recruits Tina with `TELEPORT`, then selects her fifth
 row in the six-entry cryobox roster twice (`cb-tina-recruit-v2`). Both aboard
 conversations finish, including her request to be dropped near the musician;

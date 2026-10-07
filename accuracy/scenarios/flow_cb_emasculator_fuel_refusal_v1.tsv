@@ -1,0 +1,9 @@
+# Independently load the accepted post-container Jo save, with vbio=7.
+# Moskito's normal surface menu leads to Emasculator's teleport/refuse offer.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose refuse
+wait 500

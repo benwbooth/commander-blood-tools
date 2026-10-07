@@ -1,0 +1,9 @@
+# Independently load the same accepted post-container Jo save, with vbio=7.
+# The fuel sale requests STAR2; it does not itself advance the chapter.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+wait 500
