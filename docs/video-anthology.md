@@ -67,16 +67,26 @@ Reply-menu lines (b4&0x10) over the bridge (Honk/menu) hold until the native
 word-choice rows are open and drawn, and the verifier checks those rows against
 the authored reply section; no row is selected.
 
-Known open failures after the full run (14 sites, all retained in each batch's
-`coverage.json`): 6 BBB Honk/menu reply menus (SCRIPT1 COD 0x727, 0xD67, SCRIPT2
-COD 0x2223, 0x24C1, 0x2D3A, 0x383C) never open their rows within the frame cap
-(BBB's word-choice path needs further decoding); BBB SCRIPT10 COD 0x189E fails
-measuring an inline-menu word through the recovered draw routine; 6 CB lines fail
-as described below.
+Final ledger (`output/anthology/static-text-batches/ledger-v1.json`, built by
+`tools/static_text_ledger.py`, plans v10): all 12,457 sites have exactly one
+status. 12,002 are `verified_prepared_scene` (CB 5,326, BBB 6,676), 22 are
+`failed`, and 433 are deferred. Prepared scenes are never gameplay coverage.
 
-Still deferred, with reasons in `planning.json` (491 of 12,457 after plans v9):
-4 record-field conditions, 58 numeric templates, 46 generated inventory menus,
-33 control-only sites, and 350 contact-scene `reply_choice_menu` lines (b4&0x10). Their reply rows
+Failures, each retained with its error:
+- 15 BBB numeric menu/subtitle lines (SCRIPT8, 9, 15) fail resolving the numeric
+  chatter dictionary slot (`resolve_audio_dictionary_words`): the retained DIC
+  suffix for the number is only written by earlier play, so the source default
+  has none.
+- BBB SCRIPT10 COD 0x189E: the authored text contains `-&!2`, and the font draw
+  rejects glyph index 255 for character 38.
+- 6 CB lines (the Honk cheat-mode lines at SCRIPT2 COD 0x1229..0x1291, BAS 0x1539,
+  SCRIPT5 BAS 0x2D8A): menu text arms dialogue chatter, and CB's HONK choice
+  loads no streamed bank.
+
+Still deferred, with reasons in `planning.json` (433 of 12,457 after plans v10):
+4 record-field conditions, 46 generated inventory menus (they list the player's
+aboard objects), 33 control-only sites (no words, so nothing to show), and 350
+contact-scene `reply_choice_menu` lines (b4&0x10). Their reply rows
 belong to the word-choice interface, which `run_frame_tail` only advances on
 presented frames; a contact scene held at its deferred-actor boundary keeps the
 C2 gate set and reports none, so the rows are never drawn. Six CB Honk
