@@ -1,0 +1,47 @@
+# Recontact Amigo from the ordinary customer/topic endpoint on Eden.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+choose Eviscerator
+choose galabar
+# The third talk selection is a separate repeatable reply.
+choose Eviscerator
+choose talk
+choose Eviscerator
+choose talk
+choose Eviscerator
+choose talk
+choose Eviscerator
+choose meteorut
+# Fifth visible chemistry row, recorded at (175,116); retain its original label.
+click 180 122
+wait 400
+choose acidium
+choose talk
+choose Eviscerator
+choose meteorut
+choose acidium
+choose pentium
+choose splatch
+choose splatch
+choose splatch
+choose splatch
+choose refuse
+wait 700
+# The remaining offered password, followed by a normal submenu exit.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose Eviscerator
+choose Mastachok
+choose Eviscerator
+choose bye_bye
+wait 700

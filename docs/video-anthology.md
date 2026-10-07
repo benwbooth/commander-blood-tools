@@ -1104,6 +1104,21 @@ and no whole-scene parity is claimed. Refusal still retains five credits and
 all six lines; Metagluk's wrong-syllable control retains two credits and all
 27 lines, with unchanged item ownership/flags relative to the earlier controls.
 
+The bounded read-only `papy-payment-clock-residual-v1` review verifies 101
+input hashes and separates the original net seventeen-debit endpoint from
+the earlier stopped watch, which observed only the first two A4 stores.
+The original frame wait is a minimum eight PIT ticks; inline glyph work can
+consume additional ticks. Scripted native frames use exactly eight ticks
+and do not advance the PIT per glyph. This identifies an uncalibrated
+cadence comparison, not an isolated residual semantic defect or proof that
+timing fully explains the count. Report SHA-256 is
+`6bd909cdb5b631d6d4e8806ea703ca0d37a1f01191ea7b3184f9fe883a2a07f9`.
+One proposed diagnostic traces original guest-clock boundaries from first
+accepted COD 15620 through COD 15690, before `cliptoot`, without repeated
+host debugger stops. It has not been executed. No fixed debit count, new
+runtime repair, payment acceptance, or exclusion removal follows from this
+read-only review.
+
 The shared Commander Blood control replays the exact Hom root-politics and
 save fragments from the earned science checkpoint. `flow_cb_load0_v2.tsv`
 waits until after the observed studio-logo completion before dismissing the
@@ -1413,6 +1428,20 @@ menu and checks all 947/914/912/1124 expected text pixels. These four
 closed-actor lines are not included in the fourteen attributed-site count.
 The other passwords, remaining topic responses, and Splatch refusal are
 not implied by this leaf.
+
+`cb-optional-amigo-remaining-topics-v1` observes both remaining passwords,
+the third talk reply, the later meteorut/acidium replies, and the offered
+Splatch refusal. Its 17,116 frames, 694 events, and 25 matched sites add nine
+sites beyond `audit-v16`, seven beyond the preceding Amigo leaf. The ordinary
+second contact clears `secret` after its earlier zero-to-one transition;
+the final globals and all objects equal the parent, with Splatch still held
+by Amigo. Slot zero at frame 16980 has SHA-256
+`7adaa52dbe635227204e69140841d3fc7c76bfa3fa31ad274462b76fdff93865`.
+`cb-menu-contract-review-v1/amigo-remaining-v1.json` checks 36 lineages,
+139 saved fields, all 25 named choices, and unchanged item ownership even
+during the refusal. The coordinate click after the first meteorut choice
+occurs before the new chemistry menu is ready; it is not credited as a
+selection of the fifth chemistry row or as evidence for its missing reply.
 
 `cb-optional-bob-good-root-guard-v2` separately selects the displayed root
 `good_` four times and leaves normally. Its 7,109 frames, 549 events, and
@@ -2773,6 +2802,20 @@ from two to three, with navigation moved to Cyberock. Slot zero at frame
 leaf and 58 distinct lineage manifests across the two reviewed leaves.
 This completes the first exam's negative replies, not its remaining
 positive replies or every possible answer combination.
+
+`cb-dork-answers-06-10-v2` and `cb-dork-answers-11-15-v1` normally retry that
+failed exam and defer their five correct answers until the named questions.
+Their 12,275/13,219 frames, 445/556 events, and 44/59 full matching sites
+verify ten further distinct positive replies. Each teleports the diploma
+aboard and saves `Bof=5`, at `quest=10` or `quest=15`, with no other object
+or global change. Slot-zero hashes are
+`37420be61db30b393743ffaa1bfb934353006be67821c49bd8c87a0f422f22e5`
+and `22663a12121c3f604e4700e55275e178d00ac627878d30f90d0b238c9f3c8906`.
+`cb-dork-positive-review-v1` checks every question and selected response,
+absence of the opposite response, actual menus, 46 lineages, and 139 saved
+fields per leaf. SCRIPT3's Vista answer awards a point, unlike SCRIPT5's
+separate exam. The first 06-10 launch failed to initialize its graphics
+backend before producing any trace; it remains failed evidence, not a route.
 
 Returning to Hom with the diploma (`cb-hom-oddland-v1`) earns the scrambler
 and completes Jerry's black-hole call, followed by Cyberion's third message.

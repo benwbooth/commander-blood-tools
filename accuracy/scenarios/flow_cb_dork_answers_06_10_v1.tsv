@@ -1,0 +1,23 @@
+# Normal local recontact after failing the first DORK exam.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+# Delay the five correct answers until questions 6-10.
+choose proxima
+choose gluxx
+choose two
+choose emasculator
+choose beauregard
+choose migrax
+choose tina_burner
+choose black_larsen
+choose yolk
+choose thirteen
+choose teleport
+wait 800
