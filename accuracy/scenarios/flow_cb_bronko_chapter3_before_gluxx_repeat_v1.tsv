@@ -1,0 +1,14 @@
+# Exact earned customs checkpoint: four aboard entries, Bronko second.
+# First contact describes the family; second contact asks to visit Daddy.
+park 4 45
+wait 20
+click 230 124
+wait 40
+click 100 88
+wait 1200
+park 4 45
+wait 20
+click 230 124
+wait 40
+click 100 88
+wait 1200

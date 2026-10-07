@@ -1728,6 +1728,14 @@ after the separate corrected audit. The interrupted Bronko capture is excluded;
 its completed direct-recorder replacement contributes only fully rendered text.
 All 64 focused tests pass. Completeness and render readiness remain false.
 
+`output/game-flows/audit-v25` retains 500 witnesses and excludes 167 attempts.
+The first-password retries and before-Gluxx Bronko follow-up add eight exact
+CB sites. CB now has 1,569 successful-route and 1,732 other normal-route sites,
+with 1,138 unobserved new/dynamic, 977 repeated-wording and 120 control sites.
+BBB counts are unchanged. The Bronko player-flag audit correction is separately
+reviewed without changing its original failed report or replaying the game.
+All 64 focused tests pass; completeness and render readiness remain false.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -2214,6 +2222,20 @@ only ship navigation, local actor-position flags, timer 12 and the corresponding
 radio procedure flags change. Inventory is unchanged. These are native route
 witnesses, not original whole-scene parity claims.
 
+`cb-scruter-mac-first-code-retries-v1` loads the earned no-perfume checkpoint,
+travels normally to Mastachok, answers `3` twice, then answers `code` and
+`bye_bye` on the third visit. The two wrong answers retain `C1=1`; the correct
+third answer advances it to two. COD 29901/29944 reveal the second- and
+third-attempt warnings, and 30179/30203/30229 add the rejection's exact sites.
+Seventeen full sites match across 15,647 boundaries and 468 events. The audit
+checks eighteen lineages, 229 exposed fields, all 2,441 VAR words and every
+header/procedure byte. Three native autosaves precede manual slot zero at 15511:
+`2a18f13d11ed7acb415e18fea632e14b37785498b054db8dcbbbac109d981c54`.
+Besides guard counters/topic and ship/local-position changes, ordinary timer
+twelve expiry at 10723 increments `ti`, resets the timer to 1200, marks Ulikan
+known and queues his call. That call remains unanswered. Inventory and all
+procedure bytes remain unchanged; no state or clock override was used.
+
 `cb-scruter-mac-second-wrong-code-v1` selects the actually offered `125`
 on the second password visit. It fully reveals COD 30443/30467/30509/30545,
 four additional exact sites, then closes with `C1` still two. Eight full sites
@@ -2295,6 +2317,22 @@ slot-zero save at 8585 is
 `0ff05bfc0d57b986d684ca45d21c0f7801237a0924a3b113903307d0dd8eda26`.
 This establishes one normal follow-up, not the missing topic-menu admission
 or original whole-scene parity.
+
+`cb-bronko-chapter3-before-gluxx-repeat-v1` makes two ordinary aboard contacts
+from the customs save, before speaking with Daddy Gluxx. The actual four-row
+roster places Bronko second. COD 4202/4244/4276 fully display on the repeat
+visit; twenty total full sites are observed across 14,404 boundaries and 263
+events. Manual slot zero at 14268 is
+`80213055b208b5b248fe767508cb5d7799f1794b26cd565d591f621f4152fed7`.
+The initial audit rejected one unanticipated word: player flags at VAR42
+change from one to 32769. Separate source review identifies the Player-owned
+presentation dispatch setting `PresentationBlocked` (0x8000); actor-only
+normalization does not clear Player flags. This is not attributed to the
+pending telephone call. Replaying the entire audit with only that expected
+word added passes, while preserving the failed report and its 1,333-input,
+145-artifact seal. Only that flag, Bronko's encounter count zero-to-two and
+the airport's known flag change. All header and 166 procedure records remain
+exact; 204 exposed saved fields match. Daddy remains uncontacted and pending.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites

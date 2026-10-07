@@ -1,0 +1,32 @@
+# Earned morning-no-perfume checkpoint, before the first Mac encounter.
+# Two ordinary wrong answers retain C1=1 and expose the retry dialogue.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 149 20
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose 3
+wait 400
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose 3
+wait 400
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose code
+choose bye_bye
+wait 400
