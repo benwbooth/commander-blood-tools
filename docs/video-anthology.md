@@ -2175,6 +2175,27 @@ only ship navigation, local actor-position flags, timer 12 and the corresponding
 radio procedure flags change. Inventory is unchanged. These are native route
 witnesses, not original whole-scene parity claims.
 
+`cb-scruter-mac-second-wrong-code-v1` selects the actually offered `125`
+on the second password visit. It fully reveals COD 30443/30467/30509/30545,
+four additional exact sites, then closes with `C1` still two. Eight full sites
+match over 6,233 boundaries and 157 events. Only Mac's and Mastachok's
+encounter counters increase; all globals, inventory, headers and procedure
+bytes are unchanged. Autosave nine and manual slot zero are identical:
+`077ebb016965dab77607945e96e5dfef1e510f0221a33ee612a566381c58cd47`.
+
+`cb-scruter-mac-third-wrong-code-v1` continues that earned save, supplies
+the correct second code and exits the offered topic menu, then recontacts Mac
+and selects the offered wrong third value `1`. The correct response earns
+`PP1=1` and `C1=3`; the subsequent rejection leaves that stage unchanged.
+COD 30778/30802/30854/30888 add four exact sites. Twelve full sites match over
+8,659 boundaries and 224 events. The independent reviewer checks 19/20-manifest
+lineages, all 2,441 VAR words, 229 exposed fields and every header/procedure
+byte for the two routes. Only the two encounter counters, Mac's topic, `PP1`
+and `C1` change in the latter; inventory remains unchanged. Its final save is
+`f26ce5dfaf94df139890bb71b79dce5f9232e275f3b40dfb4acc4f4b694b1e09`.
+These are distinct authored rejection branches, not all numerical permutations.
+They are accepted after audit-v23 and are not yet included in its totals.
+
 The sealed read-only `cb-bug-chapter3-access-plan-v1` finds no admitted SCRIPT3
 shop parent among 80 inspected checkpoints: credit is held by Izwalito and
 `PP1`, `ach`, and the global named `-1` are zero. Current chapter-handoff source

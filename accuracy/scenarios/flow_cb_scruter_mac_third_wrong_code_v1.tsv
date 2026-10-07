@@ -1,0 +1,18 @@
+# Continue the earned wrong-second-code save; C1 still equals2.
+# Correct that code and leave through the observed happy-topic farewell.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose code
+choose bye_bye
+wait 200
+# C1 now equals3: take one offered wrong code from the distinct third menu.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose 1
+wait 400

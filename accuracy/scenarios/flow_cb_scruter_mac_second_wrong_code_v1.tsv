@@ -1,0 +1,9 @@
+# Earned no-perfume guard-topic checkpoint: C1=2, already at Mastachok.
+# One offered incorrect code represents this branch; no numeric permutations.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose 125
+wait 400
