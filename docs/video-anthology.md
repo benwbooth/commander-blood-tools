@@ -1787,6 +1787,39 @@ actual menus, inventory effects, source-closed scenes, and saved bytes.
 Later inventory reactions and the ending continuation remain unrecorded
 on this route; these witnesses are not a completed game flow.
 
+Three clean guitar continuations now preserve all ten rare items and the
+three aboard actors. `bbb-retained-trump-guitar-v2` refuses the painting,
+gives only the guitar, and closes the actual ten-item GIVE menu. It records
+4,421 frames, 1,075 events, and 20 matching sites, including all six guitar
+lines. Its save has `B86=1`, three credits, and three bionium. The failed v1
+did not enable travel after LOAD: the predecessor's endpoint toggle is not
+restored by the save. Its missing menu is not accepted coverage.
+
+`bbb-retained-tramp-guitar-v1` obtains Internet's earned replacement guitar,
+visits Tramp, and gives that guitar only. Its 9,969 frames, 5,207 events, and
+63 matching sites include both reward lines and all six Tramp guitar lines.
+It closes the ten-item menu and saves at `B86=2`, still with three credits
+and three bionium. `bbb-retained-super-tromp-guitar-v1` obtains the next
+replacement, accepts the offered formula, and gives only the third guitar.
+Its 9,537 frames, 4,932 events, and 67 matching sites include the complete
+formula and guitar dialogue. Exactly one credit is deducted at frame 8042;
+the guitar raises evolution `470 -> 520 -> 570` at frames 8222 and 8292.
+The actual nine-item Cancel row is at `[190,144]`; the temporarily transferred
+credit returns aboard after closure. Its save has `B86=3`, `A64=1`, two
+credits, three bionium, and Trump's invitation queued but unanswered.
+
+`bbb-retained-guitars-audit-v1/three-guitars-review.json` checks 86 lineage
+manifests, current script/input hashes, every fully revealed line, actual
+menus, closed endpoints, and saved item-holder/flag and progression bytes.
+`source-effects.json` separately verifies the stepwise guitar and credit
+changes. Slot-zero save hashes, in the above order, are
+`3366dabd1b46106f5888ab2c66d5e7bdd3b139f811ceb4618d17502039a4eb5d`,
+`d1c2e1cd8657c19acece86718c9f3febcbdc4f9d0fcf5921d7b21ca923d618bc`,
+and `567aa4ef2f9371de893d923a0f9de4eb605e2e7b04a008dd3806753567a5f420`.
+These are preserved prerequisites for independent optional item responses,
+not evidence that those responses or the invitation/concert continuation
+are complete. No movie has been rendered from them.
+
 `bbb-blue-wave-early-ring-with-mummy-v3` takes the separate one-bionium route
 through Betakam, offers the ring before the mummy, and then gives the mummy.
 The earlier ring remains flagged after being returned; the mummy encounter
