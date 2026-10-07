@@ -1809,6 +1809,13 @@ graphics-initialization failure and the failed local Maxxon navigation attempt.
 All 53 recorder/coverage tests pass. Completeness and render readiness remain
 false; no movies are rendered from these flows.
 
+`output/game-flows/audit-v29` retains 538 witnesses and excludes the same 173
+attempts. The earned Emasculator recap adds two exact CB sites, COD 6045/6091.
+CB now has 1,569 successful-route and 1,838 other normal-route sites, with
+1,012 unobserved new/dynamic, 997 repeated-wording and 120 control sites. BBB
+counts and the review policy remain unchanged. Completeness and render
+readiness are still false.
+
 The separate `output/diagnostics/cb-dormant-procedure-proof-v1` package closes
 five source-reachability questions within the current hash-bound typed runtime:
 
@@ -4067,6 +4074,57 @@ the same final save bytes and reproduce the same twelve full sites. Neither
 adds coverage or displays 34181. The startup clock choice is recorded, not a
 save mutation; these absences do not establish that the missing line is
 unreachable. Source-condition analysis remains necessary before further replay.
+
+`output/diagnostics/cb-maxxon-chance34181-source-v1` now supplies that narrow
+source analysis. The production compiler matches all five SCRIPT2 resources;
+the typed instruction and handler show that 34181 is active, random-gated
+spoken text without a history condition, rejection skip or resume target.
+Seven offline handler cases prove publication with an accepting PRNG state,
+rejection with a nonaccepting state and five gates that consume no draw. They
+are unit constructions, not injected gameplay states or route witnesses.
+
+The same shared RNG also serves short voice reactions and name-area animation.
+Its production-generated mixer cycle has 512 phases; at 43 phases, no valid
+packed-second byte accepts the next modulo-five draw. The compact traces omit
+the mixer and category counters, so neither an exact winning seed nor a dwell
+duration follows from the three missing-line captures. A proposed ordinary
+1,024-frame wait before selecting TELEPORT is a controlled phase probe only.
+The runtime already exports RNG/effect fields that a separate diagnostic can
+retain without changing the frozen runtime or compact recorder. No such probe
+has been executed or accepted at this checkpoint.
+
+Independent replay checks 1,420 inputs, regenerates identical mechanical and
+trace evidence, and passes 47 production tests with one explicit unrelated
+BBB fixture omission. The 27-file seal has SHA-256
+`dc2e77f39bf4c4f4be91dd5640936fe2807a4288c9184514ccba5af19071292a`.
+This proves neither original-executable parity nor ordinary reachability of
+34181; the line remains open.
+
+### Earned Emasculator Recap
+
+`cb-honk-emasculator-recap-v1` loads the accepted fuel-sale manual save, opens
+Honk, selects `remember`, then selects `bye_bye` from the returned BAS root
+menu. Its 6,035 boundaries and 183 events contain 22 fully presented sites,
+including both Emasculator recollections at COD 6045/6091. Their matching
+native glyph rasters contain 2,268 and 1,559 pixels respectively. The return
+menu's empty inline text is not misrepresented as a full subtitle raster.
+
+The parent-owned review in `output/diagnostics/cb-honk-emasculator-recap-v1`
+binds 1,814 inputs and twelve earned lineage manifests. It verifies the exact
+35-action recipe, actual menus, six-frame clicks, source wording, all 229
+exposed saved fields and all 5,887 save bytes. Only Honk's encounter/topic
+words change from zero to one and timer15 changes from disabled to 100.
+All other timers, sequence slots, procedure bytes and VAR words are preserved.
+Manual slot0 at frame5899 is
+`84d1015fc25aa0416ee40567eb6326bc0d781c34d9c818a7e0b0e13e33da1c8e`.
+
+Contact and save action intervals independently derive their trace alignment;
+the intervening idle interval has differing sparse VAR samples and carries no
+VAR-correspondence claim. Load completion has no queued call, then Scruter K
+reappears on the next observed tick and remains queued. Three initial audit
+assumption failures are preserved, along with their bounded repairs. Exact
+review replay and thirteen in-memory negative cases pass. No original scene
+parity, new movie duration, or complete-game claim is made.
 
 The following Magnus visit completes Morning Oil's battery request with one
 goodbye selection. Answering queued calls then plays Scruter K's final warning,
