@@ -4069,6 +4069,27 @@ the one choice action, not require exactly one compact event. The initial
 review failure is retained. Terminal COD 17549 receives no full-site credit;
 these captures do not establish original-executable scene parity.
 
+`cb-migrator-before-tina-v1` resumes the verified Princy introduction and
+revisits the current Moskito airport before recruiting Tina. Its six-action
+body uses the ordinary current-planet selector; the actual airport row and
+Migrator record 20 are witnessed. All 35 load/body/save actions complete,
+with 6,244 boundaries, 149 events and six full sites. Four exact sites are
+new: COD 17612, 17638, 17656 and 17688.
+
+The sealed independent review and parent reproduction pass 1,089 checks over
+381 inputs, 32 earned lineages and eighteen in-memory rejection tests. Both
+complete 6,308-byte saves match the pre-capture prediction: only Migrator's
+encounter counter one-to-two and Moskito's access counter two-to-three change.
+All headers, padding, 166 procedure entries, fifty globals, 27 inventory
+holders/flags and 204 exposed save-time fields agree. Automatic/manual saves
+at 4326/6108 are identical:
+`772c6d50b26ea56f497159e648839d006efd7083f4749f65c46e88dbea298d62`.
+Tina remains at the bar with the guitar; Ulikan's call remains pending.
+Terminal COD 17722 has complete matching pixels only after actor clear and
+is not credited. The first line completes over `aamig.hnm`, while its authored
+`migc_tr.hnm` selector is not observed decoding. This text/save result does not
+establish talk-clip fidelity or original-executable scene parity.
+
 `cb-tina-recruit-refusal-v1` independently resumes that introduction, returns
 to Eden and selects `REFUSE` from the actual COD 16136 recruitment menu.
 It records 9,124 boundaries, 298 events, fourteen full sites and 121 matching

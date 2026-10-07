@@ -1,0 +1,7 @@
+# Revisit the current Moskito airport before recruiting Tina.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 99
+wait 500
