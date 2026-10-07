@@ -1,0 +1,4 @@
+# The first farewell consumes the help branch's second untagged response.
+# Select the actual root farewell again after that response has finished.
+choose bye_bye
+wait 200

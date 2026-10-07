@@ -1,0 +1,15 @@
+# Earned Internet contact three, then the fourth-call alternate selector.
+park 4 45
+wait 10
+click 230 104
+wait 40
+click 100 94
+wait 250
+park 4 45
+wait 10
+click 230 104
+wait 40
+click 100 94
+choose ERO
+choose no
+wait 650

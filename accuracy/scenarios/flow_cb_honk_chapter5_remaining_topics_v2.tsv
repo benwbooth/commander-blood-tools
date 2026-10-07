@@ -1,0 +1,49 @@
+# Ordinary SCRIPT5 Honk topics, ending before the unresolved long-line draw.
+park 4 45
+wait 25
+click 230 88
+choose play
+choose click
+choose click
+choose click
+choose click
+choose click
+choose dialog
+choose talk
+choose optimization
+choose keyboard
+choose talk
+choose consultation
+choose therapy
+choose under_ego
+choose libido
+choose libido
+choose talk
+choose calm_down
+# One selection of each number; no repeated-one cheat sequence.
+choose one
+choose two
+choose three
+choose four
+choose five
+choose six
+choose seven
+choose eight
+choose nine
+choose talk
+choose explanations
+choose Ark
+choose Ark
+choose Ark
+choose Ark
+choose Orxx
+choose Orxx
+choose Orxx
+choose Orxx
+choose Black_holes
+choose talk
+choose help
+choose disjoncter
+choose talk
+choose bye_bye
+wait 200

@@ -1681,6 +1681,25 @@ linear addressing. Other font drawing paths are unchanged. The three failed
 captures remain failed; this primitive-level proof does not itself complete
 their topic flow or establish whole-scene timing parity.
 
+`cb-honk-chapter5-remaining-topics-v5` completes the ordinary topic recipe
+from the earned final-Oddland checkpoint. Its 44 actual menu choices include
+clicking, dialogue, keyboard optimization, therapy, counting one through nine,
+Ark/Orxx/black-hole explanations and help. All 48 full sites match source and
+pixels: two startup sites, eight COD sites already covered by the Hom hint,
+and 38 BAS sites. BAS 8086 now matches the original-backed edge raster.
+The first farewell presents the help branch's second untagged response and
+returns to the nine-row root menu. A second real farewell closes it. V4 ended
+at that menu without saving and is not a checkpoint; v5 saves at frame 8435
+of 8,571, with 502 events and SHA-256
+`77aabb63d97bb2b07644e525951baef037345c40171c59a7c366ed1c01ac5050`.
+The `cb-honk-chapter5-topics-review-v1` review checks 68 manifests, all 44
+menus, 108 summarized save fields and all 2,504 raw VAR words. Its only four
+changed words are the normal player presentation flag, Honk's first encounter,
+his `talk` topic and the single three-bionium hint debit. Inventory holders
+are unchanged. The route-specific menu review carries sparse state through
+idle waits; no runtime or timing change was needed. This does not claim all
+remaining Honk branches or original whole-scene parity.
+
 The ERO `no` alternative also exposed a normal-LOAD defect: BBB's apparent
 `time` scalar at byte 8368 is a read-only alias of the adjacent SCRIPT2.DEB
 prefix (`24930`), not wall-clock time. Replacing VAR state from a SAV had
@@ -1689,7 +1708,36 @@ replacement now share a directory-derived rebinding helper. It clears stale
 aliases, checks the exact BBB PLAY profile/layout, and leaves the save bytes
 unchanged. All fourteen profile tests, including original-resource SAVE/LOAD,
 profile-switch and transactional-failure checks, pass. The failed
-`bbb-optional-internet-ero-no-v1` remains failed pending a new ordinary replay.
+`bbb-optional-internet-ero-no-v1` remains failed; it is not an ancestor of
+the repaired replay below.
+
+`bbb-optional-internet-ero-yes-v1` and `bbb-optional-internet-ero-no-v2` each
+start from the same earned `bbb-izwalito-love-v1` save. Two ordinary Internet
+contacts advance its encounter count from two to four. Actual menu rows
+select `ERO`, then respectively `yes` or `no`. The yes branch displays the
+loading/closed-server joke; no displays the source's bedtime warning and
+farewell, with the restored read-only alias intact. No clock is modified.
+They fully match 21 and ten SCRIPT2 sites, adding eighteen distinct sites
+between them beyond `audit-v17`, not 21 independent additions. Closing
+markers 20398, 23577 and 23233 are published without a full attributed draw
+and are not counted. Both conversations close and produce normal saves:
+
+| ERO Choice | Boundaries | Events | Save Boundary | Save SHA-256 |
+| --- | ---: | ---: | ---: | --- |
+| Yes | 6,374 | 292 | 6238 | `2dd00355417ff1d2e89deb691550d526d6745d652491994b4c2bb2b986ab1027` |
+| No | 6,365 | 174 | 6229 | `0c189d064e2880ef82cfaf174035b6479e46343bfc40e937dd4d453852383024` |
+
+The sealed `bbb-internet-ero-yes-review-v1` sidecar and independent
+`bbb-internet-ero-parent-review-v1` check the actual menus, ten combined
+lineages, 822 exposed save fields per leaf and all 4,184 serialized VAR
+words. Each leaf has nineteen changed words: Internet's two encounters,
+ordinary population/energy updates, Tequila's relocation/flags, Goanland's
+location fields and C23's existing simulation progress. All 250 globals,
+181 object records and inventory holders are checked; this is not a claim
+that simulation state stayed unchanged. Procedure patches and saved timers
+are unchanged. Only the yes path changes sequence slot five from `33tinabar`
+to `43internet`. Historical yes and repaired no binaries are separately
+bound. No whole-scene original timing claim is made.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites
@@ -1731,7 +1779,19 @@ no call remains pending. The capture has 34,845 boundaries, 112 events, and
 twelve matched sites including startup; the frame-34709 save is
 `9a74f8127691c93a4ba363106f4b850745eadc303dba374bd869f3ff6451a657`.
 The separate contract and review are in `cb-ulikan-chapter2-review-v1`.
-Fourth and fifth calls and original scene timing remain unverified.
+Later calls and original scene timing are separate checks.
+
+`cb-ulikan-chapter2-fourth-call-v1` follows that third save with another
+30,000 ordinary frames and the same actual phone input. Thirteen SCRIPT2
+sites are fully shown, including the 128,000-baud connection, Bronko's chef
+message and evening signoff at 15067. The call queues at frame 30173 after
+the saved timer-12 value of 1,117 expires, with no timer or clock injection.
+The separate contract checks 26 manifests, 164 saved fields and all 2,441
+VAR words; only `ti` and Ulikan's encounter count change three to four.
+The 34,845-boundary capture has 124 events and fifteen full sites including
+startup. Its closed frame-34709 save is
+`d1d0c4a20b0ebf549d0cc2de1e87b84d9ef88e6837a2ab591b195f48060732bf`.
+The fifth call and original whole-scene timing remain unverified.
 
 `cb-optional-hom-chapter5-remaining-v1` continues the earned television-topic
 save. The actual third cryobox row names Hom, record nine, with Yoko still
