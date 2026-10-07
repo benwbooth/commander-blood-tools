@@ -180,7 +180,9 @@ pub(super) fn validate_plain_text(text: &ScriptText) -> Result<()> {
     for word in &text.words {
         match word {
             ScriptTextWord::Dictionary(_) => {}
-            ScriptTextWord::StateNumber(_) => bail!("unsupported_static_text: state_number"),
+            // Numbers read the profile's source-default VAR; the verifier checks the
+            // displayed value is numeric and the report keeps the final VAR hash.
+            ScriptTextWord::StateNumber(_) => {}
             ScriptTextWord::InventoryChoices => bail!("unsupported_static_text: inventory_choices"),
             ScriptTextWord::SectionSeparator
                 if text.control.uses_history_condition() || text.control.arms_resume() => {}
@@ -474,10 +476,12 @@ mod tests {
         for bits in [4, 0x40] {
             assert!(validate_plain_text(&plain(bits)).is_err(), "{bits:#x}");
         }
+        let mut numeric = plain(0);
+        numeric.words = vec![ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(100))].into_boxed_slice();
+        validate_plain_text(&numeric).unwrap();
         for word in [
             ScriptTextWord::SectionSeparator,
             ScriptTextWord::InventoryChoices,
-            ScriptTextWord::StateNumber(ScriptTextStateNumber::decode(100)),
         ] {
             let mut text = plain(0);
             text.words = vec![word].into_boxed_slice();

@@ -12,6 +12,7 @@ identical inputs. A successful batch is not complete-game coverage.
 
 import argparse
 import hashlib
+import re
 import json
 import os
 from pathlib import Path
@@ -41,6 +42,23 @@ def validate_report(plan, report, exporter_hash):
             and publication.get("bas", False) == (plan["source"] == "bas"), "wrong source publication")
     require(runner["authored"]["source"] == plan["source"]
             and runner["authored"]["text_site"] == plan["text_site"], "wrong authored instruction")
+
+
+STATE_NUMBER = re.compile(r"<state:\d+>")
+
+
+def words_match(shown, expected):
+    """Compare displayed words with expected ones; a <state:N> placeholder is the
+    source-default number the native handler read from VAR."""
+    return len(shown) == len(expected) and all(
+        (word.isdigit() or word.lstrip("-").isdigit()) if STATE_NUMBER.fullmatch(want) else word == want
+        for word, want in zip(shown, expected))
+
+
+def subtitle_matches(shown, expected):
+    pattern = "".join(r"-?\d+" if STATE_NUMBER.fullmatch(part) else re.escape(part)
+                      for part in re.split(r"(<state:\d+>)", expected))
+    return re.fullmatch(pattern, shown) is not None
 
 
 def expected_menu_words(authored):
@@ -94,12 +112,13 @@ def validate_states(plan, states, rows, expected_text, expected_words, expected_
             shown = bytes(state["subtitle_bytes"]).decode("utf-8", errors="replace")
             cursor = presentation["text_state"]["subtitle_reveal_cursor"]
             full = cursor is not None and cursor >= len(state["subtitle_bytes"])
-            require(" ".join(shown.split()) == expected_text, "displayed subtitle differs from static inventory")
+            require(subtitle_matches(" ".join(shown.split()), expected_text),
+                    "displayed subtitle differs from static inventory")
         else:
             # Inline menus lay out one dictionary word per slot, so compare the authored word sequence.
             menu = presentation["inline_menu"]
             full = bool(menu["display_words"]) and menu["reveal_count"] >= len(menu["display_words"])
-            require(list(menu["display_words"]) == expected_words,
+            require(words_match(list(menu["display_words"]), expected_words),
                     "displayed menu words differ from static inventory")
         raster = state["subtitle_raster" if subtitle else "inline_menu_raster"]
         if raster and raster["expected_pixel_count"]:

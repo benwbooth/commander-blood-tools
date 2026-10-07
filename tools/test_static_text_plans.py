@@ -116,8 +116,17 @@ class StaticTextPlanTests(unittest.TestCase):
         self.descriptions["cb.descript.0001"] = dict(authored=dict(kind="Sequence", name="Ulikan"))
         self.assertEqual(candidate(self.site, self.descriptions), (None, "no_direct_character_description"))
 
+    def test_state_numbers_use_source_defaults_and_say_so(self):
+        self.site["content_kind"] = "symbolic_text"
+        self.site["authored"]["sections"][0].append(dict(kind="state_number", operand=7922))
+        plan, reason = candidate(self.site, self.descriptions)
+        self.assertIsNone(reason)
+        self.assertIn("source-default numbers", plan["title"])
+        self.site["authored"]["sections"][0].append(dict(kind="inventory_choices"))
+        self.assertEqual(candidate(self.site, self.descriptions), (None, "non_plain_word_list"))
+
     def test_symbolic_inventory_and_control_remain_explicit(self):
-        for kind in ("symbolic_text", "inventory_menu", "control_only", "text_and_choices"):
+        for kind in ("inventory_menu", "control_only", "text_and_choices"):
             self.site["content_kind"] = kind
             self.assertEqual(candidate(self.site, self.descriptions), (None, kind))
 

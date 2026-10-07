@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from static_text_render import expected_menu_words, expected_reply_words, validate_report, validate_states
+from static_text_render import subtitle_matches, words_match, expected_menu_words, expected_reply_words, validate_report, validate_states
 
 
 class PreparedReportTests(unittest.TestCase):
@@ -71,6 +71,17 @@ class ExpectedMenuWordTests(unittest.TestCase):
                         display=dict(sections=["Hi", "hello", "PLAY INSTRUCTIONS"]))
         self.assertEqual(expected_reply_words(authored), ["PLAY", "INSTRUCTIONS"])
         self.assertIsNone(expected_reply_words(dict(flags_b4=0x20, sections=[[]])))
+
+
+class StateNumberTests(unittest.TestCase):
+    def test_placeholder_matches_only_a_number(self):
+        expected = ["You", "have", "<state:8362>", "BIONIUM..."]
+        self.assertTrue(words_match(["You", "have", "12", "BIONIUM..."], expected))
+        self.assertFalse(words_match(["You", "have", "many", "BIONIUM..."], expected))
+        self.assertFalse(words_match(["You", "have", "12"], expected))
+        self.assertTrue(subtitle_matches("You have 0 BIONIUM...", "You have <state:8362> BIONIUM..."))
+        self.assertFalse(subtitle_matches("You have BIONIUM...", "You have <state:8362> BIONIUM..."))
+        self.assertTrue(subtitle_matches("Plain.", "Plain."))
 
 
 class PreparedTraceTests(unittest.TestCase):

@@ -31,7 +31,7 @@ def candidate(site, descriptions):
     # Section 0 is always the displayed text.
     history, resume = bool(flags & 0x40), bool(flags & 0x10)
     sections = 1 + history + resume
-    if site["content_kind"] not in ("text", "text_and_choices") or (
+    if site["content_kind"] not in ("text", "text_and_choices", "symbolic_text") or (
             site["content_kind"] == "text_and_choices" and sections == 1):
         return None, site["content_kind"]
     # Record-field conditions stay deferred. The b4&0x02 random gate is prepared by
@@ -40,7 +40,7 @@ def candidate(site, descriptions):
     # discards. The native binder independently checks the typed instruction.
     if flags & 0x04:
         return None, "conditional_or_continuation_control"
-    if site["content_kind"] == "text" and (history or resume):
+    if site["content_kind"] in ("text", "symbolic_text") and (history or resume):
         return None, "non_plain_word_list"
     if not authored["flags_b5"] & 0x80:
         return None, "inactive_source_request"
@@ -48,8 +48,11 @@ def candidate(site, descriptions):
     # The graph retains the serialized byte; the native decoder reads signed i8.
     if selector != 255 and not -1 <= selector <= 31:
         return None, "non_character_presentation_selector"
+    # state_number words read the source-default VAR (the verifier checks they display
+    # as numbers); generated inventory choices stay deferred.
     if len(authored["sections"]) != sections or any(
-            word["kind"] != "dictionary" for section in authored["sections"] for word in section):
+            word["kind"] not in ("dictionary", "state_number")
+            for section in authored["sections"] for word in section):
         return None, "non_plain_word_list"
     console = CONSOLE_RECORDS.get(authored.get("record_name"))
     if console is None and not site["direct_description_candidates"]:
@@ -99,6 +102,8 @@ def candidate(site, descriptions):
         plan["bas_sha256"] = hashes["bas_sha256"]
     if flags & 0x02:
         plan["title"] = plan["title"][:-1] + ", random draw]"
+    if site["content_kind"] == "symbolic_text":
+        plan["title"] = plan["title"][:-1] + ", source-default numbers]"
     return plan, None
 
 
