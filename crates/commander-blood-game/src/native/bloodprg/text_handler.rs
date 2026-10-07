@@ -23,7 +23,8 @@ const CONDITION_YIELD_SIGNAL: u8 = 1;
 const TEXT_REQUEST_PENDING: u8 = 1;
 const SECONDARY_PRESENTATION_REQUEST_PENDING: u8 = 2;
 const CHARACTER_LENGTH_INCREMENT: u8 = 1;
-const TEXT_RANDOM_MODULUS: u16 = 5;
+/// Modulus of the A6 b4&0x02 random gate; the line passes on a zero draw.
+pub const TEXT_RANDOM_MODULUS: u16 = 5;
 const LINE_FLAGS_BYTE_OFFSET: usize = std::mem::size_of::<u16>();
 const LINE_ALREADY_SHOWN_FLAG: u16 = 0x8000;
 const RECORD_SELECTOR_SHIFT: u32 = 1;

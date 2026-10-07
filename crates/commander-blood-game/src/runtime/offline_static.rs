@@ -143,8 +143,10 @@ pub(super) fn validate_plain_text(text: &ScriptText) -> Result<()> {
         !text.words.is_empty(),
         "unsupported_static_text: control_only"
     );
+    // The b4&0x02 random gate is prepared by discarding PRNG draws (reported);
+    // record-field conditions would need a rewritten VAR field and stay unsupported.
     ensure!(
-        !text.control.uses_random_gate() && !text.control.uses_record_condition(),
+        !text.control.uses_record_condition(),
         "unsupported_static_text: conditional_gate"
     );
     // A6 b4&0x40 (vm_op_a6_text 0x660C) compares section 1 against the concept
@@ -405,6 +407,19 @@ pub(super) fn prepare_static_actor(
     state_delta(&before, &after)
 }
 
+/// Discard draws until the A6 random gate (`vm_condition_5`, rand(5) == 0) would
+/// pass on the next draw. Returns the number of discarded draws.
+pub(super) fn prepare_random_gate(random: &mut crate::native::random::BloodPrng) -> Result<u32> {
+    use crate::native::bloodprg::TEXT_RANDOM_MODULUS;
+    for discarded in 0..256 {
+        if random.clone().next(TEXT_RANDOM_MODULUS) == 0 {
+            return Ok(discarded);
+        }
+        random.next(TEXT_RANDOM_MODULUS);
+    }
+    bail!("static random gate never passes within 256 draws")
+}
+
 pub(super) fn state_delta(before: &[u8], after: &[u8]) -> Result<Value> {
     ensure!(
         before.len() == after.len(),
@@ -454,7 +469,7 @@ mod tests {
 
     #[test]
     fn static_unsupported_controls_fail_closed() {
-        for bits in [2, 4, 0x10, 0x40] {
+        for bits in [4, 0x10, 0x40] {
             assert!(validate_plain_text(&plain(bits)).is_err(), "{bits:#x}");
         }
         for word in [
@@ -542,6 +557,21 @@ mod tests {
         let mut bad = plan;
         bad["context"]["kind"] = json!("snapshot");
         assert!(serde_json::from_value::<OfflineStaticTextPlan>(bad).is_err());
+    }
+
+    #[test]
+    fn static_random_gate_preparation_only_discards_draws() {
+        use crate::native::bloodprg::TEXT_RANDOM_MODULUS;
+        let mut random = crate::native::random::BloodPrng::default();
+        let mut reference = random;
+        let discarded = prepare_random_gate(&mut random).unwrap();
+        for _ in 0..discarded {
+            assert_ne!(reference.next(TEXT_RANDOM_MODULUS), 0);
+        }
+        assert_eq!(random, reference);
+        assert_eq!(random.next(TEXT_RANDOM_MODULUS), 0);
+        assert!(validate_plain_text(&plain(0x8002)).is_ok());
+        assert!(validate_plain_text(&plain(0x8004)).is_err());
     }
 
     #[test]

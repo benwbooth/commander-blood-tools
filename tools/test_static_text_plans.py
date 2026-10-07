@@ -34,7 +34,7 @@ class StaticTextPlanTests(unittest.TestCase):
             candidate(self.site, self.descriptions)
 
     def test_all_gate_bits_are_deferred_without_modifying_source(self):
-        for bit, reason in ((2, "conditional_or_continuation_control"), (4, "conditional_or_continuation_control"),
+        for bit, reason in ((4, "conditional_or_continuation_control"),
                             (16, "reply_choice_menu"), (64, "non_plain_word_list")):
             with self.subTest(bit=bit):
                 source = copy.deepcopy(self.site)
@@ -42,6 +42,14 @@ class StaticTextPlanTests(unittest.TestCase):
                 before = copy.deepcopy(source)
                 self.assertEqual(candidate(source, self.descriptions), (None, reason))
                 self.assertEqual(source, before)
+
+    def test_random_gate_is_prepared_not_rewritten(self):
+        self.site["authored"]["flags_b4"] |= 0x02
+        before = copy.deepcopy(self.site)
+        plan, reason = candidate(self.site, self.descriptions)
+        self.assertIsNone(reason)
+        self.assertIn("random draw", plan["title"])
+        self.assertEqual(self.site, before)
 
     def test_resume_line_reply_menu_stays_deferred(self):
         # CB SCRIPT1 COD 0x7E2: "Do you want me to explain..." | yes no.
@@ -71,7 +79,7 @@ class StaticTextPlanTests(unittest.TestCase):
         self.assertEqual(candidate(self.site, self.descriptions)[0]["context"]["history_concepts"], [6, 6])
         authored["flags_b5"] &= ~0x07
         self.assertIn("concept history", plan["title"])
-        for bits in (0x42, 0x44, 0x50):  # random, record, reply menu
+        for bits in (0x44, 0x50):  # record, reply menu
             authored["flags_b4"] = bits
             with self.subTest(bits=bits):
                 self.assertIsNotNone(candidate(self.site, self.descriptions)[1])

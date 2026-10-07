@@ -59,9 +59,13 @@ An actor with no direct DESCRIPT record (CB Ulikan) cannot be reached by contact
 its lines use `choice: radio_call`, the C4 deferral `nav_actor_handler_4` (0x81FB)
 performs for an answered call, which also reloads the radio bank.
 
-Still deferred, with reasons in `planning.json` (204 of 12,457 after plans v7):
-random/record conditions, numeric templates, generated inventory menus,
-control-only sites, and 368 `reply_choice_menu` lines (b4&0x10). Their reply rows
+The b4&0x02 random gate (`vm_condition_5`: the line passes on rand(5) == 0) is
+prepared by discarding PRNG draws until the next one passes; the count is
+reported as `random_gate_discarded_draws` and the title says `random draw`.
+
+Still deferred, with reasons in `planning.json` (509 of 12,457 after plans v8):
+4 record-field conditions, 58 numeric templates, 46 generated inventory menus,
+33 control-only sites, and 368 `reply_choice_menu` lines (b4&0x10). Their reply rows
 belong to the word-choice interface, which `run_frame_tail` only advances on
 presented scene frames; the frozen static scene reports none
 (`frame_presented` stays false), so the rows are never drawn. Six CB Honk

@@ -34,10 +34,11 @@ def candidate(site, descriptions):
     if site["content_kind"] not in ("text", "text_and_choices") or (
             site["content_kind"] == "text_and_choices" and sections == 1):
         return None, site["content_kind"]
-    # Random and record conditions stay deferred. b4&0x08 only arms the rejection
-    # skip (vm_skip_count DS:0x67AB), which a presented line discards. The native
-    # binder independently checks the typed source instruction.
-    if flags & 0x06:
+    # Record-field conditions stay deferred. The b4&0x02 random gate is prepared by
+    # the exporter discarding PRNG draws until rand(5) == 0 (reported). b4&0x08 only
+    # arms the rejection skip (vm_skip_count DS:0x67AB), which a presented line
+    # discards. The native binder independently checks the typed instruction.
+    if flags & 0x04:
         return None, "conditional_or_continuation_control"
     if resume:
         # The reply rows need the word-choice interface, which only advances on
@@ -90,10 +91,13 @@ def candidate(site, descriptions):
         candidates = [word["offset"] for word in authored["sections"][1]]
         required = authored["flags_b5"] & 0x07  # detail & 7 required matches
         plan["context"]["history_concepts"] = candidates * max(1, -(-required // len(candidates)))
-        plan["title"] = plan["title"].replace("[prepared source-default]", "[prepared concept history]")
+        plan["title"] = (plan["title"][:-1] + ", concept history]" if console
+                         else plan["title"].replace("[prepared source-default]", "[prepared concept history]"))
     if site["kind"] == "bas":
         require(hashes.get("bas_sha256"), "BAS candidate is missing its source hash")
         plan["bas_sha256"] = hashes["bas_sha256"]
+    if flags & 0x02:
+        plan["title"] = plan["title"][:-1] + ", random draw]"
     return plan, None
 
 

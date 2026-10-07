@@ -230,6 +230,13 @@ impl RuntimeScriptSystem {
         activation.push_top_level(actor, TextInstructionState::new(text));
         activate_object_text(parts.state, actor, &mut activation)?;
         let mut instruction_state = activation.top_level()[0].state();
+        let random_gate_discarded_draws = if text.control.uses_random_gate() {
+            Some(super::offline_static::prepare_random_gate(
+                &mut self.dispatch.random,
+            )?)
+        } else {
+            None
+        };
         let request_before = self.dispatch.text_presentation.request_flags.bits();
         let execution = execute_text_instruction(
             text,
@@ -291,6 +298,7 @@ impl RuntimeScriptSystem {
             "request_flags_after": self.dispatch.text_presentation.request_flags.bits(),
             "instruction_active_after": instruction_state.is_active(),
             "rejection_skip_discarded_after_presentation": rejection_skip_discarded,
+            "random_gate_discarded_draws": random_gate_discarded_draws,
         });
         self.finish_lifecycle_frame(lifecycle)?;
         Ok(report)
