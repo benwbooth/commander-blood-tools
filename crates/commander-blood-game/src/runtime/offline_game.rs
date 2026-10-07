@@ -1281,7 +1281,10 @@ pub(super) fn capture_static_text(
             let replies = &snapshot["presentation"]["selector_word_choices"];
             let replies_open = !bound.text.control.arms_resume()
                 || replies.as_array().is_some_and(|words| !words.is_empty())
-                    && snapshot["presentation"]["rendered_word_choices"] == *replies
+                    // BBB draws localized labels for the same selector rows.
+                    && snapshot["presentation"]["rendered_word_choices"]
+                        .as_array()
+                        .is_some_and(|rows| Some(rows.len()) == replies.as_array().map(Vec::len))
                     && snapshot["presentation"]["retained_word_choice"]["phase"] == "Selecting";
             text_held |= first_full_ui_ns.is_some() && lifecycle.presentation.hold_ready;
             if text_held && replies_open && bound.text.control.arms_resume() {
@@ -1319,7 +1322,9 @@ pub(super) fn capture_static_text(
                             "scene_policy": if console_choice.is_some() { "bridge console record presented over the bridge without a contact transition; reciprocal C4 installed non-actionably; no object code or story continuation" } else { "native contact transition held at deferred-actor boundary; reciprocal C4 installed non-actionably; no object code or story continuation" },
                         },
                         "reply_choices": if bound.text.control.arms_resume() {
-                            serde_json::json!({"words": replies, "first_open_ns": first_replies_ns,
+                            serde_json::json!({"selector_words": replies,
+                                "rendered_rows": snapshot["presentation"]["rendered_word_choices"],
+                                "first_open_ns": first_replies_ns,
                                 "selection": "none; resume cursor armed but story dispatch frozen"})
                         } else { Value::Null },
                         "ui_raster_evidence": {"first_full_ui_ns": first_full_ui_ns,
