@@ -4100,6 +4100,25 @@ BBB fixture omission. The 27-file seal has SHA-256
 This proves neither original-executable parity nor ordinary reachability of
 34181; the line remains open.
 
+The subsequent `output/diagnostics/cb-maxxon-raw-rng-capture-v1` executes that
+one dwell proposal through the frozen native binary's direct file-trace
+outputs. Its separate driver binds 2,568 inputs; the existing compact recorder
+and accepted flows are unchanged. All 7,274 native frames and original action
+records are retained. Independent replay reproduces both compact streams and
+the final summary, verifies the original loaded VAR/sequence hashes and both
+complete saves, and finds no new coverage. Both saves match the accepted reward
+bytes exactly; this package remains a diagnostic, not a promoted flow.
+
+The live TELEPORT menu spans frames 4391..4583 with the same RNG state throughout.
+Name-area animation is inactive there; every recorded name-area draw occurred
+before the save load. The later frames 4772 and 4859 each contain exactly one
+script RNG draw and no other RNG consumer. The actual pre-draw mixer phases
+287 and 288 both reject the target for packed second 39. Counter bytes alone
+would identify the wrong phases; all three mixer fields are required. This
+rules out the proposed menu-dwell phase control for this route. It does not
+prove the line unreachable or predict a successful alternative startup seed,
+and does not justify a further menu-wait sweep.
+
 ### Earned Emasculator Recap
 
 `cb-honk-emasculator-recap-v1` loads the accepted fuel-sale manual save, opens
