@@ -1,0 +1,40 @@
+# Independent R leaf from accepted retained Trump P1; earn the normal guitar.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1000
+# LOAD does not preserve the transient travel toggle.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 191 44
+wait 40
+click 250 125
+frames 600
+# Exact R order: nuclear after decoder, before weapons and ship.
+choose guitar
+choose picture
+choose crown
+choose bionium
+choose credit
+choose decoder
+# Decoder makes the authored evolution >400 formula offer eligible.
+choose refuse
+choose nuclear
+choose food
+choose weapons
+choose energy
+choose ship
+# The final item empties GIVE; audit actual automatic closure before SAVE.
+frames 700

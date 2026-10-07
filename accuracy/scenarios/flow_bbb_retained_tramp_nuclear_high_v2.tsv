@@ -1,0 +1,37 @@
+# Independent R high-response leaf from retained Trump P1.
+# Prepend the separately confirmed ordinary startup/LOAD fragment.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1000
+# LOAD does not preserve the transient travel toggle.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 191 44
+wait 40
+click 250 125
+frames 600
+# One ordinary gift each: evolution 320/360/370/470/520/720.
+choose guitar
+choose bionium
+choose decoder
+choose refuse
+choose ship
+choose nuclear
+frames 700
+# Six items should remain; review the actual Cancel row before accepting.
+click 200 133
+frames 200
+# Normal SAVE follows; accept the leaf only after closed-endpoint review.

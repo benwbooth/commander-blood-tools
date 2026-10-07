@@ -1,0 +1,34 @@
+# Independent S high-response leaf from retained Tramp P2.
+# Prepend the separately confirmed ordinary startup/LOAD fragment.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1000
+# Keep the earned replacement guitar aboard; do not answer invitations.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 292 86
+wait 40
+click 250 125
+frames 600
+choose refuse
+# Decoder first: evolution 470/570/590, nuclear energy 0/200.
+choose decoder
+choose nuclear
+frames 700
+# Nine items should remain; review the actual Cancel row before accepting.
+click 200 149
+frames 200
+# Normal SAVE follows; accept the leaf only after closed-endpoint review.

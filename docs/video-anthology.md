@@ -1333,6 +1333,17 @@ from the wartime-preempted visit. It predates treaty completion and the
 retained-inventory show/call continuation. Both completeness flags remain
 false, and no movies have been rendered from these flows.
 
+`output/game-flows/audit-v16` mechanically rechecks 408 retained witnesses and
+excludes 152 failed, legacy, or review-rejected attempts. It binds the current
+three-entry exclusion policy; Papy payment and both unverified Mamy loans
+contribute no sites. CB has 1,569 successful-route and 1,334 other normal-route
+sites; BBB has 3,013 and 535. Other unobserved/dynamic sites remain 1,499 CB and
+2,273 BBB, separate from duplicate wording and control text. This includes the
+retained guitar/reaction leaves and the separate Tramp/Super Tromp high nuclear
+responses below. It is a native observation ledger, not a claim that every
+unobserved site is reachable or that every scene matches original timing.
+Both completeness flags remain false; rendering has not started.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure
@@ -1875,6 +1886,61 @@ and `567aa4ef2f9371de893d923a0f9de4eb605e2e7b04a008dd3806753567a5f420`.
 These are preserved prerequisites for independent optional item responses,
 not evidence that those responses or the invitation/concert continuation
 are complete. No movie has been rendered from them.
+
+Three independent retained-item leaves now record the other selected gift
+responses before invitation cleanup. `bbb-retained-trump-reactions-v2` records
+6,181 frames, 1,414 events, and 32 matching sites, including all 12 targeted
+responses. `bbb-retained-tramp-reactions-v2` records 12,323 frames, 5,861 events,
+and 85 sites, including 19 targeted responses. `bbb-retained-super-tromp-reactions-v1`
+records 9,617 frames, 4,932 events, and 62 sites, including five targeted responses.
+All are closed normal-input branches with ordinary saves; they consume gifts
+and are not the retained main-progression checkpoints.
+
+The latter two originally failed a combined middle-plus-high nuclear contract.
+Only the middle response is observed, raising evolution `470 -> 570`. Original
+A6 handler/yield vectors explain why source-level fallthrough arithmetic was
+insufficient: accepting the middle line sets presentation/shown state; rejecting
+the subsequent high line skips its three effects. The gift bit has already
+cleared. This is corroborated local semantics, not an exact original nuclear
+scene capture, and does not establish a runtime bug. The failed reports are
+preserved. `bbb-retained-reactions-parent-review-v1/report.json` independently
+accepts the actual 12/19/5 responses, checks 88 lineage manifests and 150 saved
+words, and claims neither the absent high lines nor current timing parity.
+Their slot-zero hashes are, respectively,
+`cc6077c484e14d1bdd0cfa4d928408ec0e76546cbd2d88a16fec957cda65a6e5`,
+`567f2c03701a6b927d5ddfa7bab451e57f70f3e6d8223570f7b72bd4626914fa`,
+and `3fd75624bdcb2ef4be1d5436e13917e1dd5224975e8a91b3ee677b5ea42111f8`.
+
+Separate ordinary gift orders observe the two high alternatives on the repaired
+queue-clock binary. `bbb-retained-tramp-nuclear-high-v2` starts from the clean
+Trump guitar save, earns Internet's replacement, then gives guitar, bionium,
+decoder, ship, and nuclear technology, refusing the newly offered formula.
+Evolution follows `320 -> 360 -> 370 -> 470 -> 520 -> 720`; COD 8964 is fully
+shown. The ship gift adds 50 and returns to a nonempty GIVE menu. This avoids
+the strict `evolution > 500` guard's equality boundary without repeat farming.
+Its 12,469 frames and 5,275 events contain 76 matching sites. Actual six-item
+Cancel is at `[190,128]`; the closed save retains three credits, two bionium,
+`B86=2`, and `A64=0`. R v1 failed before any native frame because of graphics
+initialization and remains excluded.
+
+`bbb-retained-super-tromp-nuclear-high-v1` starts from the clean Tramp guitar
+save, earns but retains the next guitar, refuses the formula, then gives decoder
+before nuclear technology. Evolution follows `470 -> 570 -> 590`, energy rises
+by 200, and COD 12476 is fully shown without the middle or guitar responses.
+Its 9,177 frames and 4,767 events contain 59 matching sites. It closes the actual
+nine-item Cancel at `[190,144]` and retains three credits, three bionium,
+`B86=2`, and `A64=0`. Neither branch answers the invitations or transfers the
+three aboard passengers.
+
+`bbb-retained-nuclear-high-audit-v1` verifies the choices, source-closed decoder
+movies, immediate effects, gift flags, remaining inventory, and closed saves.
+Its independent `parent-review.json` rechecks 87 lineages, source text, the
+evolution transitions, and 100 saved words. The R/S slot-zero hashes are
+`5f5327678c5ec536a4580e7f6e2366f7b42df3d54dd006ca5edaa01bdcb1578b`
+and `a76d63ebea3c91ddf2b36dea1fd6b8b9ca19ab61173c680aa5cc0b3c5f435414`.
+These optional consumed-item branches are not used to replace the preserved
+main route. Trump high nuclear and broader residual coverage remain separate
+questions; this stage does not establish complete-game or original-scene parity.
 
 `bbb-blue-wave-early-ring-with-mummy-v3` takes the separate one-bionium route
 through Betakam, offers the ring before the mummy, and then gives the mummy.

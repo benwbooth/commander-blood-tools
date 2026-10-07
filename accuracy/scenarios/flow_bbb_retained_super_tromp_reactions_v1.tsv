@@ -1,0 +1,35 @@
+# Independent S leaf from accepted retained Tramp P2; earn but do not GIVE guitar.
+park 4 45
+wait 25
+click 230 104
+wait 40
+click 100 94
+choose don't_cheat
+wait 1000
+# Enable travel through the ordinary console after LOAD.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 292 86
+wait 40
+click 250 125
+frames 600
+choose refuse
+# Exact S order; nuclear before any evolution-changing gift.
+choose nuclear
+choose crown
+choose credit
+choose decoder
+choose weapons
+frames 700
+# Six items remain, including the unselected guitar. Verify actual Cancel row.
+click 200 133
+frames 200
