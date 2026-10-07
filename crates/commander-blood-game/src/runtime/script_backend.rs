@@ -257,9 +257,14 @@ impl RuntimeScriptSystem {
             "static A6 did not publish: {:?}",
             execution.outcome
         );
+        let expected_flow = if text.control.arms_resume() {
+            crate::native::bloodprg::ScriptFrameFlow::SaveResumeCursor
+        } else {
+            crate::native::bloodprg::ScriptFrameFlow::ContinueAfterPresentation
+        };
         anyhow::ensure!(
-            execution.flow == crate::native::bloodprg::ScriptFrameFlow::ContinueAfterPresentation,
-            "static A6 did not continue after presentation: {:?}",
+            execution.flow == expected_flow,
+            "static A6 flow differs from its authored control: {:?}",
             execution.flow
         );
         // vm_run_wrapper (0x55A4) discards an armed rejection skip once a line presents.

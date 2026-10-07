@@ -1227,6 +1227,8 @@ pub(super) fn capture_static_text(
         let mut first_full_ui_ns = None;
         let mut fully_revealed_ui_frames = 0u64;
         let mut max_matching_glyph_pixels = 0u64;
+        let mut text_held = false;
+        let mut first_replies_ns = None;
         for frame in 1..=max_frames {
             ensure!(
                 run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
@@ -1274,7 +1276,20 @@ pub(super) fn capture_static_text(
                 first_full_ui_ns
                     .get_or_insert(host.platform().elapsed_ns - host.platform().capture_origin_ns);
             }
-            if first_full_ui_ns.is_some() && lifecycle.presentation.hold_ready {
+            // A resume-armed line hands its reply section to the native word-choice
+            // interface; hold until those rows are open, never selecting one.
+            let replies = &snapshot["presentation"]["selector_word_choices"];
+            let replies_open = !bound.text.control.arms_resume()
+                || replies.as_array().is_some_and(|words| !words.is_empty())
+                    && snapshot["presentation"]["rendered_word_choices"] == *replies
+                    && snapshot["presentation"]["retained_word_choice"]["phase"] == "Selecting";
+            text_held |= first_full_ui_ns.is_some() && lifecycle.presentation.hold_ready;
+            if text_held && replies_open && bound.text.control.arms_resume() {
+                first_replies_ns.get_or_insert(
+                    host.platform().elapsed_ns - host.platform().capture_origin_ns,
+                );
+            }
+            if text_held && replies_open {
                 let driver = host.platform();
                 let final_var = host
                     .services()
@@ -1303,6 +1318,10 @@ pub(super) fn capture_static_text(
                             "before": before_preparation, "after": after_preparation,
                             "scene_policy": if console_choice.is_some() { "bridge console record presented over the bridge without a contact transition; reciprocal C4 installed non-actionably; no object code or story continuation" } else { "native contact transition held at deferred-actor boundary; reciprocal C4 installed non-actionably; no object code or story continuation" },
                         },
+                        "reply_choices": if bound.text.control.arms_resume() {
+                            serde_json::json!({"words": replies, "first_open_ns": first_replies_ns,
+                                "selection": "none; resume cursor armed but story dispatch frozen"})
+                        } else { Value::Null },
                         "ui_raster_evidence": {"first_full_ui_ns": first_full_ui_ns,
                             "fully_revealed_ui_frames": fully_revealed_ui_frames,
                             "max_matching_glyph_pixels": max_matching_glyph_pixels,

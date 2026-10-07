@@ -40,10 +40,6 @@ def candidate(site, descriptions):
     # discards. The native binder independently checks the typed instruction.
     if flags & 0x04:
         return None, "conditional_or_continuation_control"
-    if resume:
-        # The reply rows need the word-choice interface, which only advances on
-        # presented scene frames; a frozen static scene reports none.
-        return None, "reply_choice_menu"
     if site["content_kind"] == "text" and (history or resume):
         return None, "non_plain_word_list"
     if not authored["flags_b5"] & 0x80:
@@ -61,6 +57,11 @@ def candidate(site, descriptions):
         # none can only reach the bridge as an answered radio call
         # (nav_actor_handler_4 0x81FB). The binder rejects non-actor owners.
         console = "radio_call"
+    if resume and console is None:
+        # The reply rows need the word-choice interface, which only advances on
+        # presented frames; a contact scene held at its deferred-actor boundary
+        # keeps the C2 presentation gate set, so it reports none.
+        return None, "reply_choice_menu"
     matches = [descriptions[identity] for identity in site["direct_description_candidates"]]
     if console:
         record = dict(name=authored.get("record_name", ""))

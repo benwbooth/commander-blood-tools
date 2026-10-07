@@ -63,12 +63,16 @@ The b4&0x02 random gate (`vm_condition_5`: the line passes on rand(5) == 0) is
 prepared by discarding PRNG draws until the next one passes; the count is
 reported as `random_gate_discarded_draws` and the title says `random draw`.
 
-Still deferred, with reasons in `planning.json` (509 of 12,457 after plans v8):
+Reply-menu lines (b4&0x10) over the bridge (Honk/menu) hold until the native
+word-choice rows are open and drawn, and the verifier checks those rows against
+the authored reply section; no row is selected.
+
+Still deferred, with reasons in `planning.json` (491 of 12,457 after plans v9):
 4 record-field conditions, 58 numeric templates, 46 generated inventory menus,
-33 control-only sites, and 368 `reply_choice_menu` lines (b4&0x10). Their reply rows
+33 control-only sites, and 350 contact-scene `reply_choice_menu` lines (b4&0x10). Their reply rows
 belong to the word-choice interface, which `run_frame_tail` only advances on
-presented scene frames; the frozen static scene reports none
-(`frame_presented` stays false), so the rows are never drawn. Six CB Honk
+presented frames; a contact scene held at its deferred-actor boundary keeps the
+C2 gate set and reports none, so the rows are never drawn. Six CB Honk
 inline-menu lines (including the cheat-mode lines at SCRIPT2 COD 0x1229..0x1291)
 fail closed: menu text arms dialogue chatter, and CB's HONK choice loads no
 streamed bank, so which bank is resident depends on earlier play. The verifier compares

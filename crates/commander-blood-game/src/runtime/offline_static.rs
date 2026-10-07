@@ -175,13 +175,8 @@ pub(super) fn validate_plain_text(text: &ScriptText) -> Result<()> {
     // b4&0x08 only arms vm_skip_count (DS:0x67AB) in vm_op_a6_text (0x660C); vm_run_wrapper
     // (0x55A4) consumes it only when the line was rejected, so a published line ignores it.
     // b4&0x10 arms a resume cursor and hands the next section to the word-choice
-    // interface (vm_op_a6_text 0x660C). That interface only advances on presented
-    // scene frames, which a frozen static scene never reports, so the reply rows
-    // would never be drawn: keep these lines unsupported.
-    ensure!(
-        !text.control.arms_resume(),
-        "unsupported_static_text: reply_choice_menu"
-    );
+    // interface (vm_op_a6_text 0x660C); frozen story dispatch never resumes it.
+    // The binder only accepts it where that interface can open (see bind).
     for word in &text.words {
         match word {
             ScriptTextWord::Dictionary(_) => {}
@@ -282,6 +277,13 @@ pub(super) fn bind_static_text(
     ensure!(
         text.line_record.byte_offset() == actor.source_offset(),
         "unsupported_static_text: line_owner_differs_from_presentation_actor"
+    );
+    // The word-choice rows only advance on presented frames (run_frame_tail), and a
+    // contact scene held at its deferred-actor boundary keeps the C2 presentation
+    // gate set, so frame_presented never rises there; bridge records have no gate.
+    ensure!(
+        !text.control.arms_resume() || plan.context.console_choice().is_some(),
+        "unsupported_static_text: contact_reply_choice_menu"
     );
     if let Some(choice) = plan.context.console_choice() {
         let builtins = profile.builtins();
@@ -469,7 +471,7 @@ mod tests {
 
     #[test]
     fn static_unsupported_controls_fail_closed() {
-        for bits in [4, 0x10, 0x40] {
+        for bits in [4, 0x40] {
             assert!(validate_plain_text(&plain(bits)).is_err(), "{bits:#x}");
         }
         for word in [
@@ -520,9 +522,11 @@ mod tests {
             text.words = words.into_boxed_slice();
             assert!(validate_plain_text(&text).is_err());
         }
-        // Reply-menu lines (CB SCRIPT1 COD 0x7E2: question | yes no) stay unsupported.
+        // Reply-menu shape (CB SCRIPT2 COD 0x11B8: question | talk remember bye_bye).
         let mut question = plain(0x8010);
         question.words = vec![word(0), ScriptTextWord::SectionSeparator, word(6), word(12)].into_boxed_slice();
+        validate_plain_text(&question).unwrap();
+        question.words = vec![word(0)].into_boxed_slice();
         assert!(validate_plain_text(&question).is_err());
         // Without the history bit, separators remain unsupported.
         let mut sections = plain(0x8000);

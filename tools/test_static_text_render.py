@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from static_text_render import expected_menu_words, validate_report, validate_states
+from static_text_render import expected_menu_words, expected_reply_words, validate_report, validate_states
 
 
 class PreparedReportTests(unittest.TestCase):
@@ -60,6 +60,17 @@ class ExpectedMenuWordTests(unittest.TestCase):
         self.assertEqual(expected_menu_words(authored), ["Hello", "friend"])
         del authored["display"]
         self.assertEqual(expected_menu_words(authored), ["Hello", "friend"])
+
+
+    def test_reply_rows_come_from_the_section_after_text_and_history(self):
+        # CB SCRIPT2 COD 0x11B8 (Honk): question | talk remember bye_bye.
+        authored = dict(flags_b4=0x30, sections=[[dict(text="What")], [dict(text="talk"), dict(text="bye_bye")]])
+        self.assertEqual(expected_menu_words(authored), ["What"])
+        self.assertEqual(expected_reply_words(authored), ["talk", "bye_bye"])
+        authored = dict(flags_b4=0x50, sections=[[dict(text="Hi")], [dict(text="hello")], [dict(text="yes")]],
+                        display=dict(sections=["Hi", "hello", "PLAY INSTRUCTIONS"]))
+        self.assertEqual(expected_reply_words(authored), ["PLAY", "INSTRUCTIONS"])
+        self.assertIsNone(expected_reply_words(dict(flags_b4=0x20, sections=[[]])))
 
 
 class PreparedTraceTests(unittest.TestCase):
@@ -129,6 +140,18 @@ class PreparedTraceTests(unittest.TestCase):
         self.state["presentation"]["text_state"]["hold_ready"] = False
         with self.assertRaisesRegex(ValueError, "hold did not complete"):
             validate_states(self.plan, self.states, self.rows, "Hello world", ["Hello", "world"])
+
+    def test_reply_rows_must_open_and_match(self):
+        presentation = self.state["presentation"]
+        presentation["rendered_word_choices"] = ["yes", "no"]
+        presentation["retained_word_choice"] = dict(phase="Selecting")
+        evidence = validate_states(self.plan, self.states, self.rows, "Hello world", ["Hello", "world"], ["yes", "no"])
+        self.assertEqual(evidence["reply_rows"], ["yes", "no"])
+        with self.assertRaisesRegex(ValueError, "reply rows differ"):
+            validate_states(self.plan, self.states, self.rows, "Hello world", ["Hello", "world"], ["no"])
+        presentation["retained_word_choice"] = dict(phase="Opening")
+        with self.assertRaisesRegex(ValueError, "never opened"):
+            validate_states(self.plan, self.states, self.rows, "Hello world", ["Hello", "world"], ["yes", "no"])
 
     def test_pointer_input_is_rejected(self):
         self.state["input"]["press_pending"] = 1

@@ -35,7 +35,7 @@ class StaticTextPlanTests(unittest.TestCase):
 
     def test_all_gate_bits_are_deferred_without_modifying_source(self):
         for bit, reason in ((4, "conditional_or_continuation_control"),
-                            (16, "reply_choice_menu"), (64, "non_plain_word_list")):
+                            (16, "non_plain_word_list"), (64, "non_plain_word_list")):
             with self.subTest(bit=bit):
                 source = copy.deepcopy(self.site)
                 source["authored"]["flags_b4"] |= bit
@@ -58,6 +58,11 @@ class StaticTextPlanTests(unittest.TestCase):
         self.site["authored"]["sections"].append([dict(kind="dictionary", offset=6, text="yes"),
                                                   dict(kind="dictionary", offset=9, text="no")])
         self.assertEqual(candidate(self.site, self.descriptions), (None, "reply_choice_menu"))
+        # Over the bridge (CB SCRIPT2 COD 0x11B8, Honk) the reply rows can open.
+        self.site["authored"]["record_name"] = "Honk"
+        plan, reason = candidate(self.site, self.descriptions)
+        self.assertIsNone(reason)
+        self.assertEqual(plan["context"]["choice"], "horn")
 
     def test_rejection_skip_does_not_gate_a_presented_line(self):
         self.site["authored"]["flags_b4"] |= 0x08

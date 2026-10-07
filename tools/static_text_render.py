@@ -46,14 +46,26 @@ def validate_report(plan, report, exporter_hash):
 def expected_menu_words(authored):
     # A localized display (BBB English) is laid out by whitespace-separated words;
     # otherwise each slot is one original dictionary word.
-    # A history-gated line displays only section 0; section 1 is its trigger list.
-    count = 1 if authored["flags_b4"] & 0x40 else None
+    # History (b4&0x40) and reply (b4&0x10) lines display only section 0; the later
+    # sections are the trigger list and the reply rows.
+    count = 1 if authored["flags_b4"] & 0x50 else None
     if "display" in authored:
         return " ".join(authored["display"]["sections"][:count]).split()
     return [word["text"] for section in authored["sections"][:count] for word in section]
 
 
-def validate_states(plan, states, rows, expected_text, expected_words):
+def expected_reply_words(authored):
+    """Reply rows of a resume-armed (b4&0x10) line: the section after the text and
+    any history candidates; BBB shows its English display labels."""
+    if not authored["flags_b4"] & 0x10:
+        return None
+    index = 2 if authored["flags_b4"] & 0x40 else 1
+    if "display" in authored:
+        return authored["display"]["sections"][index].split()
+    return [word["text"] for word in authored["sections"][index]]
+
+
+def validate_states(plan, states, rows, expected_text, expected_words, expected_replies=None):
     frame_times = {row["start_ns"] for row in rows}
     duration = rows[-1]["start_ns"] + rows[-1]["duration_ns"]
     expected_text = " ".join(expected_text.split())
@@ -62,6 +74,7 @@ def validate_states(plan, states, rows, expected_text, expected_words):
     count = 0
     held = False
     glyphs = 0
+    replies_open = False
     for entry in states:
         time = entry["time_ns"]
         require(previous <= time <= duration, "nonmonotonic/out-of-range prepared trace")
@@ -97,10 +110,17 @@ def validate_states(plan, states, rows, expected_text, expected_words):
                 count += 1
                 glyphs = max(glyphs, raster["matching_pixel_count"])
         held |= presentation["text_state"]["hold_ready"]
+        if expected_replies is not None and presentation["rendered_word_choices"]:
+            require(presentation["rendered_word_choices"] == expected_replies,
+                    "reply rows differ from the authored reply section")
+            replies_open |= (held and time in frame_times
+                             and presentation["retained_word_choice"]["phase"] == "Selecting")
     require(first_full is not None and count and glyphs, "no fully revealed native UI frame before encoded endpoint")
     require(held, "native text hold did not complete")
+    require(expected_replies is None or replies_open, "reply rows never opened before the encoded endpoint")
     return dict(first_full_ui_ns=first_full, fully_revealed_ui_frames=count,
                 max_matching_glyph_pixels=glyphs, native_hold_completed=held,
+                reply_rows=expected_replies,
                 scope="native UI raster with encoded intervals; not per-glyph encoded-pixel comparison")
 
 
@@ -134,7 +154,7 @@ def verify_capture(path, plan, site, manifest, assets, exporter_hash):
     text = original.get("display", original)["text"]
     with open_trace(path / "native-state.jsonl") as stream:
         evidence = validate_states(plan, (json.loads(line) for line in stream), rows, text,
-                                   expected_menu_words(original))
+                                   expected_menu_words(original), expected_reply_words(original))
     hashes, _ = verify_media(path / "master.mkv", rows, duration)
     require(hashes["rgba_sha256"] == report["rgba_sha256"]
             and hashes["audio_sha256"] == report["audio_f32le_sha256"], "prepared media report differs")
