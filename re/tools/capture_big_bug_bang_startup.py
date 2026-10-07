@@ -104,7 +104,9 @@ def native_checkpoint_files(manifest, slot, asset_manifest, disc):
         if parent is None:
             break
         current = Path(parent["manifest"]).resolve()
-    audit.check_lineages(rows)
+    rejected = audit.check_lineages(rows)
+    if rejected:
+        raise ValueError(f"native checkpoint lineage is review-excluded: {rejected}")
     row = rows[manifest]
     if row["manifest"]["provenance"]["asset_manifest_sha256"] != digest(asset_manifest):
         raise ValueError("native checkpoint asset manifest differs")

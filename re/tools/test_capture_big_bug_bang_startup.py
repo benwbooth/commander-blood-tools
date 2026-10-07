@@ -148,6 +148,33 @@ class StartupCaptureTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "bad evidence"):
                     capture.native_checkpoint_files(manifest, 0, assets, disc)
 
+    def test_native_checkpoint_rejects_review_exclusions_before_reading_save_bytes(self):
+        for target in ("manifest", "ancestor"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:
+                manifest, assets, disc, row = self.native_checkpoint_fixture(Path(directory))
+                rows = {manifest: row}
+                rejected_path = manifest
+                if target == "ancestor":
+                    rejected_path = manifest.with_name("ancestor.json")
+                    row["manifest"]["predecessor"] = dict(manifest=str(rejected_path))
+                    rows[rejected_path] = dict(path=rejected_path, sha256="ancestor-manifest-hash",
+                                               manifest=dict(game="bbb", status="observed_route"))
+                exclusion = dict(manifest_sha256=rows[rejected_path]["sha256"],
+                                 reason="review exclusion: unverified text transition")
+                rejected = {rejected_path: dict(reason="review_excluded", exclusion=exclusion)}
+                with mock.patch.object(flow_audit, "read_witness",
+                                       side_effect=lambda path, sources: rows[path]) as read, \
+                        mock.patch.object(flow_audit, "check_lineages", return_value=rejected) as check, \
+                        mock.patch.object(flow_audit, "safe_child", wraps=flow_audit.safe_child) as saved_file:
+                    with self.assertRaisesRegex(ValueError, "exclu") as stopped:
+                        capture.native_checkpoint_files(manifest, 0, assets, disc)
+                    check.assert_called_once_with(rows)
+                    self.assertEqual([call.args[0] for call in read.call_args_list], list(rows))
+                    saved_file.assert_not_called()
+                self.assertIn(str(rejected_path), str(stopped.exception))
+                self.assertIn(exclusion["manifest_sha256"], str(stopped.exception))
+                self.assertIn(exclusion["reason"], str(stopped.exception))
+
     def test_native_checkpoint_rejects_wrong_game_ending_assets_and_unwitnessed_slot(self):
         for mode in ("game", "ending", "assets", "slot"):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
