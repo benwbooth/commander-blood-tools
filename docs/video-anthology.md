@@ -3982,8 +3982,42 @@ automatic at 6660 and manual at 7884, are
 `a1d35b24d08d993b4f64fcb521f7d932505c3feed2fe90cafc09aac2b5393876`.
 Only thirteen VAR words and timer seven change in the purchase; all procedure
 entries, sequence slots and other save bytes are preserved. These prefixes
-establish the spent-credit prerequisite, not yet Maxxon's reward conversation
-or original-executable parity.
+establish the spent-credit prerequisite, not original-executable parity.
+
+`cb-maxxon-spent-lens-v1` continues that fork with the ordinary Rondo
+observatory selection and lens teleport. All fifteen explained VAR changes
+match the source; every header, timer and procedure byte is preserved. Lens
+is held by Maxxon, `lent=2`, `PP1=1` and `trak23=1`, while credit remains with
+Bug. Maxxon and Yoko therefore stay at the observatory and pavilion. The
+8,692-boundary, 330-event route has fifteen full sites and no new coverage.
+Both saves, automatic at 6750 and manual at 8556, are
+`b09b09224d6e465d10c847ddb76ddbd1b57db1ad613519017c5e34bde4803829`.
+
+The accepted revisit is `cb-maxxon-credit-reward-v2`, using
+`accuracy/scenarios/flow_cb_maxxon_credit_reward_v1.tsv`. Its earlier v1
+attempt incorrectly tried to select the current planet in the map, never
+entered the observatory, and timed out without a save; it remains failed.
+The corrected recipe opens the current planet's local destinations, selects
+the observatory and takes the actual one-row `teleport` reward menu.
+
+The reward route adds ten full COD sites: 33860, 33882, 33898, 33938, 34012,
+34040, 34084, 34113, 34137 and 34215. The chance-gated "Very nice technology"
+line is included; chance site 34181 is not observed and remains open. There
+are twelve total full sites over 7,082 boundaries and 228 events. Independent
+review binds 196 inputs and seventeen lineages, checks all 229 exposed fields
+and all 5,887 saved bytes. Only seven VAR words change: the credit returns
+aboard, Maxxon and Yoko move to Trashlando and lose their current-scene flags,
+and Maxxon's encounter/Rondo's access each advance once. `pi` changes to one
+at 3888 and back to zero at 4407; the reward and relocation occur at 4406.
+Both saves, automatic at 4704 and manual at 6946, are
+`befdfc29bc4b2ca13d525db5b222938c09919219fff91d7b4891a6b47e486212`.
+
+The reward capture decodes nine actual video resources. Its first full line
+is observed over the retained entrance scene, without a decoded
+`maxf_tr.hnm` event despite that source selector. This preserves actual native
+evidence, not a claim that every source talk clip played or that this scene
+matches the original executable. Terminal COD 34247 is not credited as fully
+presented after actor closure.
 
 The following Magnus visit completes Morning Oil's battery request with one
 goodbye selection. Answering queued calls then plays Scruter K's final warning,

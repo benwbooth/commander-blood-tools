@@ -1,0 +1,8 @@
+# Revisit the current Rondo observatory after delivering the lens with credit spent.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 94
+choose teleport
+wait 500
