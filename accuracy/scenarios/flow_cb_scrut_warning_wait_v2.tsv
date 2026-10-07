@@ -1,0 +1,20 @@
+# Fresh game with a longer ordinary pause before answering the first Scrut call.
+wait 285
+click 160 170
+wait 25
+park 316 45
+wait 25
+click 125 118
+choose explanations
+wait 300
+click 230 88
+wait 300
+click 230 124
+wait 20
+click 100 89
+choose yes
+wait 1000
+park 316 45
+wait 120
+click 125 118
+wait 400

@@ -1710,6 +1710,14 @@ and 120 control sites. BBB's counts are unchanged. The extra exclusion is
 a graphics-initialization failure before any native trace. This remains an
 incomplete route ledger, with rendering disabled.
 
+`output/game-flows/audit-v23` retains 489 witnesses and excludes 166 attempts.
+The two additional Scruter Mac radio messages add fourteen exact CB sites;
+the two fresh first-warning runs add none. CB now has 1,569 successful-route,
+1,705 other normal-route, 1,161 unobserved new/dynamic, 981 repeated-wording,
+and 120 control sites. BBB's counts remain unchanged. Both completeness and
+render readiness remain false. All 64 focused recorder/catalog/coverage tests
+pass after this slice.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -2008,6 +2016,18 @@ purchase, new save or second Zen visit. Parent verification checks fifteen
 sealed local files and 1,593 bound inputs. Its copied parent save is not a
 new checkpoint, and the flow remains excluded.
 
+The sealed offline `bbb-internet-medicine-driver-preflight-v3` corrects only
+the observer's profile-specific alias rule. It leaves all 250 serialized
+globals protected and source-checks the exact first-purchase and second-gift
+menus, inventory transfers, closure, save ordering and settlement bounds.
+Independent `bbb-internet-medicine-driver-parent-review-v3` verifies 2,396
+bound inputs, 24 artifacts and 37 literal source excerpts, reviews all 89
+assertions, and reruns all 80 tests successfully. Archived replay reports and
+explicitly synthetic fixtures reproduce exactly. Twelve assertions not reached
+by historical archives remain identified as source/fixture-only checks.
+No game or build ran in either preflight review. This accepts the offline
+observer, not a new purchase, gift, settlement, save or coverage witness.
+
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
 `audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
@@ -2127,6 +2147,53 @@ The same independent reviewer rechecks all 2,441 VAR words, 229 exposed
 fields and every header/procedure byte against each exact parent, with
 two/three/four-manifest policy-clean lineages. Only the two hint sites add
 coverage; recruitment, instruction and status lines were already witnessed.
+
+Two fresh opening runs, `cb-scrut-warning-v1` and
+`cb-scrut-warning-wait-v2`, finish the tutorial and briefing, then answer the
+first Scrut warning. The second run adds 100 ordinary wait units before
+answering; neither changes the default clock seed or injects state. Both
+select `SS=1` and fully display the same 63 source-matched sites. Their
+11,758/12,208 boundaries and 509 events end in identical native saves,
+`b06fb4e9aea41cf4ff044253533cb60f4f1bfa21a6c2fefff7b38ef5fe13912c`.
+`cb-scrut-warning-review-v1` verifies their normal actions, provenance,
+229 exposed saved fields and 127 procedure records. Timing-only retries stop
+here; variants two through five remain unwitnessed, not ruled out.
+
+`cb-scruter-mac-moskito-radio-v1` loads the earned first-Ulikan-call save,
+travels to Moskito and answers the actual queued Mac call without a surface
+contact. Its six SCRIPT2 COD sites, 12646-12764, all display fully; `CO` changes
+once from one to two. Eight total sites match over 7,045 boundaries and
+184 events. Slot zero at 6909 is
+`26ed7422b38a299ad58d29e4b06a42fc3a92a7922817f39896be7c2fa8e57172`.
+`cb-scruter-mac-corpo-radio-v1` continues that save to Corpo. Its eight radio
+sites, 12863-13063, all display and `CO` changes from two to three. Ten total
+sites match over 7,270 boundaries and 196 events. Slot zero at 7134 is
+`34644aa3efe5b9583b1cba538c6f9c68b4a337b9f3a3ffa9cee8a9b886e5ce03`.
+The common independent reviewer checks 24/25-manifest lineages, all 2,441 VAR
+words, 229 exposed fields and every header/procedure byte. Besides `CO`,
+only ship navigation, local actor-position flags, timer 12 and the corresponding
+radio procedure flags change. Inventory is unchanged. These are native route
+witnesses, not original whole-scene parity claims.
+
+The sealed read-only `cb-bug-chapter3-access-plan-v1` finds no admitted SCRIPT3
+shop parent among 80 inspected checkpoints: credit is held by Izwalito and
+`PP1`, `ach`, and the global named `-1` are zero. Current chapter-handoff source
+reloads VAR, including credit and topics. The sole authored credit acquisition
+needs `PP1=1`, but SCRIPT3 supplies no assignment that sets it. The earlier
+`cb-optional-bug-dispatch-guard-v1` actually reached the SCRIPT2 department
+menu; it was not a SCRIPT3 admission test. Conditional graph paths cover
+82 of the 98 shop BAS sites only if admission is independently established;
+the other sixteen belong to the unoffered makeup component.
+
+`cb-bug-chapter3-access-parent-review-v1` independently rechecks all eighty
+target saves, 222 instruction prefixes and the 59-node menu graph. The
+original 1,365-input seal is not wholly unchanged: it accidentally included
+the then-running Moskito radio manifest, which later finalized. That exact
+before/after hash discrepancy is preserved; its accepted final trace remains
+entirely in SCRIPT1/2 and supplies no SCRIPT3 checkpoint. The other 1,364
+inputs and all eight sealed artifacts remain exact. The bounded shop analysis
+is accepted with this explicit integrity exception, not as proof of global
+original-game unreachability. It authorizes no shop capture and adds no sites.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites
