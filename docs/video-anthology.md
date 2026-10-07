@@ -4230,6 +4230,58 @@ follow-ups require a different prediction from the two-dose case: the saved
 credit state enables `help9` above two doses, consuming three on successful
 hint publication. Those conversations are not yet counted by these Jo saves.
 
+The separately captured Honk children now verify that hint behavior. Each uses
+the same 35 ordinary load/contact/`remember`/`bye_bye`/save actions, checks both
+rendered menus and actual six-frame clicks, and validates eleven lineage
+manifests, all 229 exposed fields, and every one of the 5,887 saved bytes.
+All post-load globals are unchanged except the single `vbio -= 3` at the
+first successful credit hint, COD 4223.
+
+| Honk Child | Boundaries / Events | Full Sites | Status and Hint Order |
+| --- | --- | --- | --- |
+| `cb-honk-three-dose-v1` | 6,215 / 197 | 25 | 3316, 4223, 3035, 3061, 3079, 3105 |
+| `cb-honk-five-dose-v1` | 6,087 / 187 | 23 | 3390, 4223, 3247, 3273 |
+| `cb-honk-six-dose-v1` | 6,087 / 187 | 23 | 3427, 4223, 3316, 4256 |
+
+The three-dose route ends with zero fuel and the full no-bionium warning;
+five ends with two and its reminder. Six ends with three, allowing the
+second hint text, COD 4256, and disabling `help9`. At lower fuel levels its
+next-pass guard fails, leaving that text unspoken and the procedure enabled.
+The corresponding manual saves are at frames 6079, 5951, and 5951, with hashes
+`67857b89fd6e49fd8fcd13f361ce86c05943f422950bac531e95089ef3624a56`,
+`947ab10ead583fef136c6c17027dfa82294b9ac453853b42754bd5d8b3d8c589`,
+and `36b45eafac3e70b81a86d433253fcabbaa8860ada87e7b81eab5673aa224570c`.
+Each exact audit replay and eleven menu/timing corruption checks pass.
+Together with the earlier two-dose child, these observe seven exact sites
+absent from audit-v29; the individual reports compare against that frozen
+baseline, so their per-route new-site counts must not be added together.
+
+### Honk Residual Menus
+
+The source-only `cb-honk-bas-residual-proof-v1` resolves five remaining
+SCRIPT2 Honk BAS sites under the frozen production semantics. BAS 596
+requires `faiplay`, but the menu offers `fair_play`; 2312 requires `message`
+instead of offered `messages`; 4935 requires `MA` instead of offered `Ma`.
+These are distinct original dictionary identities. Exhaustive production
+condition evaluation over all 3,458 words accepts only each required identity;
+the complete 3,271-COD/1,106-BAS-token supplier census offers none of the three.
+
+BAS 1846/1872 share the latest-`break` predicate and presentation gates of
+earlier repeatable BAS 1748. Every legitimate Help-body entry encounters that
+still-active blocker first. Publication blocks the later texts in the same
+scan; a common gate or history rejection blocks all three. The full selector
+entry census, 110 current/parent control combinations, 512 gate/history cases,
+and COD/BAS skip-ownership analysis exclude the proposed alternate entries.
+Foreign history, deliberately omitted blockers, and injected pending skips
+serve only as positive controls, never as playable routes.
+
+Parent verification reproduces all three mechanical outputs and four accepted
+trace analyses, with 71 production tests passing and eight explicit unrelated
+ignores. The seal is
+`d20d6540fb1b925a9811759ab12badc9ce266500e7e2cc6b201c741d4ed71ce4`,
+binding 37 files and 1,279 unchanged inputs. This is neither a new native
+capture nor original-executable proof. Coverage and review policy are unchanged.
+
 ### Izwalito Magnus Guard
 
 `output/diagnostics/cb-izwal-magnus-self-guard-v1` resolves the missing SCRIPT2
