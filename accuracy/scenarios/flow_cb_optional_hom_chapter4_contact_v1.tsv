@@ -1,0 +1,9 @@
+# SCRIPT4 Hom aboard; start at the earned Fifi transport-offer checkpoint.
+# The private review driver verifies the interactive roster before this click.
+park 4 45
+wait 25
+click 230 124
+frames 600
+click 100 67
+# Exact ordinary-game-loop observation bound, not converted oracle wait units.
+frames 900

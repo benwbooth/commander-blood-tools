@@ -1590,6 +1590,44 @@ service-with-a-smile lines are not published in these routes; final farewell
 pointers are published without an attributed full draw and are not counted.
 Other hints, bionium thresholds, and original timing remain separate work.
 
+Four more independent SCRIPT3 hints use the same ordinary contact scenario:
+`cb-honk-chapter3-{eviscerator,bronko,magnus,hom}-hint-v1`. Their earned parents
+are respectively `cb-eviscerator-topics-v1`, the Amigo customers-topic leaf,
+`cb-amigo-splatch-v3`, and `cb-bronko-return-v1`. Source-ordered saved guards
+select Eviscerator's rescue (29693/29733), Bronko's splatch (30108/30136/30168),
+Magnus and Anna (30809/30845), and the first Hom visit (30946/30974).
+These are nine additional exact sites beyond the five hints above, not the
+sum of each leaf's overlapping status lines. All spend exactly three bionium
+once, retain observed inventory, close normally, and save at frame 8422 of
+8,558. Bronko has eleven fully matched sites and 111 events; the others have
+ten sites and 106 events. Independent reviews verify 139 saved fields and
+26/36/36/42-manifest lineages. The following service lines remain unpublished,
+and the shared final farewell remains published without a full draw.
+
+| SCRIPT3 Hint | Save SHA-256 |
+| --- | --- |
+| Eviscerator | `39779dacb22629d52aec43211d7ea2b658dfc335176b02ed324331cf799db1b7` |
+| Bronko | `f1ad385479757442a8cc44f2eb0863109a00806295fbbb256a5463cf11ba17cc` |
+| Magnus | `60fe8a920358e39e517143fb97b0e8d421767ff21069db1a8bc756c53250a0b5` |
+| Hom | `11fcf09f620f48b773e0f34a3e9f3492d185ab6ce0d66940ecde58623721f316` |
+
+`cb-optional-hom-chapter4-contact-v1` separately loads the earned Fifi
+transport-offer checkpoint and selects Hom from the actual cryobox roster.
+The third row was verified at frame 2740 before clicking; the subsequent
+900 ordinary game-loop frames reveal COD 7780 and 7792 fully, with matching
+source text and pixels. COD 7814 is published at frame 3623 after the actor
+has closed, without a complete raster; it is not counted. No Hom BAS or
+word-choice menu appears, so this does not establish the SCRIPT4 BAS tree's
+reachability. The route has 4,664 boundaries, 87 events, and four fully matched
+sites including two startup lines. Its frame-4528 slot-zero save is
+`15d1b0a2c273eb64819752252480f4572f1e7297b4d6cfcab8bba29e9a1c34f7`.
+The independent `cb-hom-chapter4-parent-review-v1` binds all 605 frozen inputs,
+144 closed artifact files, 59 policy-clean manifests, and 121 saved fields.
+Comparing all 2,714 SCRIPT4 VAR words finds only Hom's ordinary encounter
+increment at offset 992, from one to two. Hom remains aboard. These two
+additional sites do not resolve his undrawn farewell or establish original
+timing parity; no movies have been rendered from these flows.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure
