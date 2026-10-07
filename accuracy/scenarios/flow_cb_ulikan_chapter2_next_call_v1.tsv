@@ -1,0 +1,5 @@
+# Let the native timer queue the next call; no timer or game-state edits.
+park 316 45
+frames 30000
+click 125 118
+wait 400

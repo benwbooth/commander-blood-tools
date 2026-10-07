@@ -1113,11 +1113,28 @@ and do not advance the PIT per glyph. This identifies an uncalibrated
 cadence comparison, not an isolated residual semantic defect or proof that
 timing fully explains the count. Report SHA-256 is
 `6bd909cdb5b631d6d4e8806ea703ca0d37a1f01191ea7b3184f9fe883a2a07f9`.
-One proposed diagnostic traces original guest-clock boundaries from first
-accepted COD 15620 through COD 15690, before `cliptoot`, without repeated
-host debugger stops. It has not been executed. No fixed debit count, new
-runtime repair, payment acceptance, or exclusion removal follows from this
-read-only review.
+The subsequent `papy-passive-original-window-v1` executes that single bounded
+original diagnostic, from first accepted COD 15620 through COD 15690 before
+`cliptoot`. Its 16,873 ordered records span 1,853 guest PIT increments, with no
+overflow or dropped records. All 223 read-only setup stops precede the visible
+OK click; an irreversible launcher seccomp gate disables further ptrace,
+process-memory access, and stopping signals before that click. Only passive
+host-file polling follows until the footer. Both owned processes are reaped.
+
+The independent `papy-passive-original-parent-review-v1` passes 1,720 checks,
+rehashing 780 bound inputs and 435 artifacts plus both sealed manifests. It
+verifies every retained source byte and ten original A4 store/completion pairs.
+The first debit occurs at tick 14700 with caption hold still pending; ready is
+published at 14704. The French native control instead reaches hold-ready before
+its first debit. At the four source anchors the original makes 3/4/3 debits
+and the native control 1/4/3. This localizes an ordering difference, but their
+observation phases and queue/timer inputs are not equivalent. Only one of 599
+font calls crosses a PIT increment, so glyph cost alone is not an established
+explanation. No whole-scene balance was measured in this new window, and native
+frames are not equated with guest ticks. Trace SHA-256 is
+`ec1987918e40942deee220a2ff43b1d42a5c25e769584fbc701cdc340439add0`.
+This remains diagnostic evidence: no fixed debit target, runtime repair,
+payment acceptance, promoted save, or exclusion removal follows.
 
 The shared Commander Blood control replays the exact Hom root-politics and
 save fragments from the earned science checkpoint. `flow_cb_load0_v2.tsv`
@@ -1666,6 +1683,20 @@ request change, plus `trak1` from zero to one. `ti` remains one, inventory is
 unchanged, and no call remains pending. Holiday and other time-of-day branches
 were not presented; no clock was modified. The later timer-driven calls and
 original scene timing remain separate work.
+
+`cb-ulikan-chapter2-second-call-v1` waits 30,000 ordinary game-loop frames
+from that first-call save, then answers the actual queued phone call. The
+saved timer-12 value is 1,117; `ti` changes from one to two and Ulikan queues at
+frame 30173, exactly 27,925 frames after LOAD at 2248. No timer or clock is
+injected. Thirteen SCRIPT2 sites are fully matched, including the 24,000-baud
+connection, Yoko/Smile/Gluxx/Slim message and evening signoff at 14189.
+The independent review binds the real phone hit region, 24 manifests, 164
+saved fields and all 2,441 VAR words. Only `ti` and Ulikan's encounter count
+change one to two; no inventory changes or pending call remain. Its 34,845
+boundaries and 126 events end with the frame-34709 slot-zero save
+`4e699625af7c2dc284238dfd2afe0085b6a743e5d1c0092099c8f642bdc0538e`.
+The fifteen matched sites include two startup lines; thirteen are additional
+exact sites beyond `audit-v17`. Later calls and original timing remain open.
 
 `cb-optional-hom-chapter5-remaining-v1` continues the earned television-topic
 save. The actual third cryobox row names Hom, record nine, with Yoko still
