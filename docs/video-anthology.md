@@ -1443,6 +1443,19 @@ during the refusal. The coordinate click after the first meteorut choice
 occurs before the new chemistry menu is ready; it is not credited as a
 selection of the fifth chemistry row or as evidence for its missing reply.
 
+`cb-optional-amigo-chemistry-row-v1` separately waits for the actual menu,
+selects its fifth row, and leaves normally. The row carries dictionary ID
+20914 (the accented menu label), while BAS 15017's response requires ID
+21012 (`glycerium`). At frame 7494 the selected concept is 20914; the same
+menu returns at 7505 with empty text, and no BAS 15017 publication occurs.
+The row audit binds the original BAS/DIC bytes, current graph, real menu,
+selection, and return. Its 12,881 frames, 529 events, and ten matched sites
+add no distinct site beyond the preceding Amigo leaves. Final globals and
+objects equal the parent; the slot-zero save at frame 12745 is
+`4edcfa2e28838595a9d04a58d768cef54c215ab5d1fca3a8dcb61f809c284e8a`.
+This documents an offered-row no-response path, not a substituted spelling,
+data repair, original whole-scene parity, or global unreachability proof.
+
 `cb-optional-bob-good-root-guard-v2` separately selects the displayed root
 `good_` four times and leaves normally. Its 7,109 frames, 549 events, and
 eight matching sites add no wording; the hidden response is not counted.
@@ -2134,6 +2147,27 @@ bionium, `B86=1`, `A64=0`, and all three passengers aboard. Failed v2's wrong
 Cancel click remains excluded. The earlier retry-bionium branch, invitation
 cleanup, and original whole-scene parity are not claimed by this fork.
 
+The separate `bbb-trump-bionium-retry-v1/v2` fork starts from the earlier
+Bernie checkpoint, with `A86=2`, zero bionium, and Jo aboard. V1 plays one
+normal Jo resupply session and earns twelve bionium. The retained overlay
+has 102,368 presented/input frames, distinct from the recorder's 4,387
+outer game boundaries. V2 visits Trump on Golgoland and chooses `s/e/q`,
+leaving one wrong answer and two correct ones, `A88=1/A89=2`. One bionium
+gift displays COD 5066/5080/5106 and `star2.hnm`, resets both answer counters,
+consumes one bionium, and changes population/aggression/evolution by
+`+100/+100/+50` without changing energy. The actual eight-item Cancel row
+closes the encounter. Final `A4=7`, `A86=2`, `vbio=11`, Trump evolution 330,
+and Jo remains aboard; no invitation or further retry is followed.
+V1/V2 have 124/502 compact events and 8/24 matching sites; V2 has 6,757
+outer boundaries. Their union adds nine sites beyond `audit-v16`, including
+one control site. Slot-zero saves are
+`c829359db3e87df9c30c423b3bb8b426e183d92c168c623d79c51c9c667fe11e`
+and `0f4956c1a564bf99007ad24402dbcaba1029979edd25e4f570144066c7077997`.
+`bbb-trump-bionium-retry-parent-review-v1` independently checks 63 lineage
+manifests, 727 saved words per stage, source text/pixels, exact retry effects,
+and the closed capture's frozen inputs. This does not replace the main
+progression or establish original whole-scene parity.
+
 `bbb-blue-wave-early-ring-with-mummy-v3` takes the separate one-bionium route
 through Betakam, offers the ring before the mummy, and then gives the mummy.
 The earlier ring remains flagged after being returned; the mummy encounter
@@ -2816,6 +2850,14 @@ absence of the opposite response, actual menus, 46 lineages, and 139 saved
 fields per leaf. SCRIPT3's Vista answer awards a point, unlike SCRIPT5's
 separate exam. The first 06-10 launch failed to initialize its graphics
 backend before producing any trace; it remains failed evidence, not a route.
+
+The same verified retry approach covers questions 16-20 and 21-25 in
+`cb-dork-answers-16-20-v1` and `cb-dork-answers-21-25-v1`. They record
+14,211/15,075 frames, 678/785 events, and 74/89 matched sites. The same
+source/menu/save checks pass; only the diploma's holder, `Bof=5`, and
+`quest=20/25` differ from the failed-exam parent. Their slot-zero hashes are
+`8372cd011caf197e4988a443201175282540fd5d8be9e800c4676cdef155bfa1`
+and `dea1542dfe9c57c1abb7ebe7c7a71df4673dd1c1d56b3c02c3519566d8faf69b`.
 
 Returning to Hom with the diploma (`cb-hom-oddland-v1`) earns the scrambler
 and completes Jerry's black-hole call, followed by Cyberion's third message.

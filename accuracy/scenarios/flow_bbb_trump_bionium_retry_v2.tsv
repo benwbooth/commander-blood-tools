@@ -1,0 +1,27 @@
+# Continue only the reviewed v1 normal save: vbio=12, A86=2, A88=A89=0.
+# Visit Trump at Golgoland without contacting Internet or accepting invitations.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 201 33
+wait 40
+click 250 125
+frames 600
+# Exactly one wrong answer, then the two correct remaining letters.
+choose s
+choose e
+choose q
+# Pay in this same encounter, before any exit could start another puzzle.
+choose bionium
+frames 2600
+# Eight retained entries: Cancel at (190,139); audit the actual live row.
+click 200 144
+frames 300

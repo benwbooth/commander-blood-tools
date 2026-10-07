@@ -1,0 +1,20 @@
+# Reopen the chemistry menu and wait for its fifth row to become selectable.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+choose Eviscerator
+choose croolas
+choose Eviscerator
+choose meteorut
+wait 400
+# Exact observed fifth chemistry row at (175,116), including its original label.
+click 180 122
+wait 400
+choose bye_bye
+wait 700
