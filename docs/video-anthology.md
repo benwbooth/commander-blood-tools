@@ -581,6 +581,29 @@ counted as a fully revealed actor line. Reentering science six times through
 an observed nested-menu route, not an injected topic selection. All three
 targeted audits pass without rejected text attributions.
 
+The later `cb-hom-planet-history-v1` and `v2` leaves both start from the earned
+`cb-yoko-before-rondo-v1` save. Their actual third cryobox row opens Hom while
+Yoko remains aboard. Returning through `race`, `izwal` or `croolis` and then
+`planet` retains the race parent menu. Repeated offered Rondo and Mastachok
+choices satisfy the source's two-recent-word predicate. V1 fully presents
+nineteen sites, five new beyond `audit-v18`: BAS 12394, 12967, 12993, 13403
+and 13431. V2 makes one additional selection per planet and presents 21 sites,
+adding 13457. These are six new sites in total, not eleven. Rondo 13017 remains
+unobserved; later selections instead present the repeatable current-menu line.
+The normal saves at boundaries 7409 and 7507 have identical SHA-256
+`0fc85eb521965493801c3a4c55a4ec764dfb6b0681fe0f56cb77e1b0df6a3f88`.
+
+The separate `cb-hom-food-farewell-v1` repeats five offered food choices from
+the same parent. It adds no site: departure BAS 12808 is retained only after
+the actor closes, without a complete draw. Its frame-6369 save is
+`03d37cf8aa344682f40ccc0fd578e8a8e8196707579f6f90c57adfcebc45935d`.
+The independent `cb-hom-menu-history-review-v1` checks all real menus, source
+text and pixels, 74 lineage manifests per leaf, 108 exposed save fields and
+all 2,504 VAR words. Only Hom's encounter count changes five to six, plus his
+stored topic on the planet leaves. Bionium stays three, all inventory holders
+are preserved, and the inherited Kran call remains pending. No runtime change
+or original-scene timing claim is involved.
+
 Honk's `cb-honk-play-v1` and `cb-honk-consultation-v1` continue from his
 explanations save. They record 52 and 50 matching BAS sites respectively,
 covering play, winning/losing, help, configuration, consultation, and the
@@ -1584,6 +1607,18 @@ witnesses are not promoted to save checkpoints. Both completeness flags stay
 false; this is a native observation ledger, not original whole-scene parity
 or a completed edit list. All 64 flow/catalog/coverage tests pass.
 
+`output/game-flows/audit-v19` rechecks 470 retained witnesses and excludes
+162 failed, legacy or review-rejected attempts under the unchanged policy.
+CB has 1,569 successful-route and 1,655 other normal-route sites; BBB has
+3,013 and 596. Other unobserved/dynamic sites remain 1,241 CB and 2,215 BBB,
+separate from 951/512 repeated-wording sites and 120/585 control sites.
+The eighteen newly observed sites since v18 are nine per game: the remaining
+chapter-five mission hints, Honk's explanation fallback, Hom's menu-history
+responses, and the Internet resistance message. This includes the now-complete
+before-Bob and retained-ring-request prefixes, without counting their repeated
+lines as new. All 64 flow/catalog/coverage tests pass. Both completeness flags
+remain false; no flow-based movies have been rendered.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -1825,6 +1860,29 @@ that simulation state stayed unchanged. Procedure patches and saved timers
 are unchanged. Only the yes path changes sequence slot five from `33tinabar`
 to `43internet`. Historical yes and repaired no binaries are separately
 bound. No whole-scene original timing claim is made.
+
+`bbb-optional-internet-resistance-v2` starts from `bbb-zen-teleport-v2` with
+the resistance guards already earned. Three ordinary Internet contacts advance
+its count two to five: the third-contact introduction, the fourth-contact
+six-row menu with `ZERO`, and finally the resistance transmission. Each contact
+closes before the next, including all seven authored count-four scene runs.
+The 16,562-boundary, 334-event trace fully matches thirty SCRIPT2 COD sites,
+adding the nine resistance sites 23630, 23642, 23668, 23684, 23714, 23730,
+23764, 23788 and 23800 beyond `audit-v18`. Published closing controls 20398,
+23089 and 39381 are not counted. The normal save at boundary 16426 has SHA-256
+`ffec1e2803b3ef5387a61bea12c2325c95c5ffadc7cfbd08cf80881b5c7902bd`.
+
+The sealed `bbb-internet-resistance-prefix-v2` evidence and independent
+`bbb-internet-resistance-parent-review-v1` verify four lineage manifests,
+3,557 frozen inputs, 245 sealed files, 164 nonempty subtitle rasters, all
+822 exposed saved fields and 4,184 VAR words. All 250 serialized globals and
+the runtime-only `time` alias stay unchanged, as do inventory holders and
+flags. Nine VAR words change: Internet's encounter count and four actors'
+population/energy pairs. All 140 ordinary growth updates, including the load
+tick, match the enabled source procedures. Saved timers and procedure patches
+are unchanged; only sequence slot five becomes `43internet`. V1's no-capture
+guard rejection is preserved. This is normal-flow evidence from the frozen
+translated runtime, not a new original-executable parity test.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites

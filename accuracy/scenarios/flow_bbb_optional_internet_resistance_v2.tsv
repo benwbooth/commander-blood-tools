@@ -1,0 +1,21 @@
+# Ordinary contacts 3, 4 (ZERO), and 5 from accepted zen-teleport slot 0.
+park 4 45
+wait 10
+click 230 104
+frames 600
+click 100 94
+frames 1800
+park 4 45
+wait 10
+click 230 104
+frames 600
+click 100 94
+frames 1200
+choose ZERO
+frames 6000
+park 4 45
+wait 10
+click 230 104
+frames 600
+click 100 94
+frames 4000
