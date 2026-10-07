@@ -1,0 +1,18 @@
+# Earned Bronko family-news checkpoint, before the first chapter-three guard visit.
+# The offered wrong code still admits the player; leave the prisoner normally.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 149 20
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose 1
+choose bye_bye
+wait 400

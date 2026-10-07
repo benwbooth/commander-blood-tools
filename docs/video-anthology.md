@@ -760,6 +760,19 @@ The final goodbye is handled by COD; this does not claim the unobserved BAS
 `Hello` reply or random broken-down chatter. These ten sites are accepted
 after audit-v25, not included in that inventory.
 
+`cb-morning-sleep-topics-v1` answers the queued Scruter K call before the
+timed cryobox visit, then selects `dream`, `nightmare`, and `snore` before
+the established wait-and-`sleep` recovery. All three additional BAS sites
+7556/7584/7602 fully display. Twelve total sites match over 9,052 boundaries
+and 283 events; the reviewer checks nineteen lineages, 229 saved fields and
+every saved byte. `B1` advances four-to-five, inventory and holders remain
+unchanged, and all VAR/procedure bytes exactly equal the original phone-first
+recovery checkpoint. Only running timers seven and twelve are thirteen ticks
+lower than that baseline; exact elapsed PIT-tick replay is not claimed.
+Manual zero at 8916 is
+`63ff0e6f15e35d98e13a32b55595da139402bd61c5e89ab15dbe9542c7467e24`.
+These three sites are also accepted after audit-v25.
+
 `cb-morning-disconnect-v2` and `cb-morning-keep-honk-v1` branch from the same
 earned memory-recovery save. Four normal `hiding_place` selections reach the
 offered `disconnect`/`refuse` choice; the earlier three-selection attempt
@@ -2103,6 +2116,16 @@ accepted Mamy save and original 47 ordinary actions remain exact. These are
 offline checks, not evidence of a second gift, settlement or hidden save fields;
 the next capture still requires its complete raw-save and presentation audit.
 
+The direct second-gift capture, `bbb-medicine-prefix-zen-second-perfume-v3`,
+completed all 47 normal actions but remains **unaccepted**. Its first offline
+wrapper incorrectly counted the initial null-action record; a separate review
+corrected only that enumeration. The unchanged observer then rejected Kero's
+population change from fourteen to sixteen at frame 8123, where its recurrence
+expected fifteen. Both failed reports and the capture are retained unchanged.
+The source of that discrepancy is under investigation; the full raw-save audit
+has not run, neither save is approved for continuation, and no coverage or
+settlement-completion claim is made from this candidate.
+
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
 `audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
@@ -2373,6 +2396,23 @@ Only timer twelve counts down in the header, 1359 to 879. Slot zero at 14268 is
 The separate parent review repeats all 32 semantic checks, reproduces all
 generated JSON exactly, and verifies the 1,335-input/145-artifact seal.
 This one additional exact site is accepted after audit-v25's inventory.
+
+`cb-scruter-mac-chapter3-wrong-code-v1` loads that earned family-news save,
+travels to Mastachok, selects the offered wrong value `1`, and leaves
+Eviscerator with `bye_bye`. Mac's alternative COD 19369 displays with all 259
+expected pixels. Seventeen total sites match over 9,114 boundaries and 302
+events. The wrong answer still earns admission: `C1=1`, while `D1=0` and all
+other globals and inventory remain unchanged. All 2,600 VAR words follow the
+source-derived navigation, encounter and actor-position changes; all 166
+procedure records and 204 exposed fields match. The initial checker rejected
+an ordinary navigation autosave because it expected one save. Separate parent
+review preserves that report and verifies autosave nine at 6982 plus manual
+zero at 8978. Both saves have identical VAR/procedure/sequence bytes; only
+timer twelve decreases from 1170 to 1090. Exact elapsed timer ticks are not
+replayed. Manual zero is
+`2a1b39073ca188cab58923d24bcbc89306f3a9c667417092671917d4d1bdd0d0`.
+The one new site is accepted after audit-v25; no additional game replay or
+runtime change was needed for the corrected audit.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites

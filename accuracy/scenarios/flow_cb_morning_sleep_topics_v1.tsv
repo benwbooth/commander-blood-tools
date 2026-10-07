@@ -1,0 +1,15 @@
+# Earned first cryobox inspection checkpoint.
+# Clear the pending call, then hear each offered sleep response before recovery.
+park 316 45
+wait 20
+click 125 118
+wait 400
+click 230 124
+wait 40
+click 100 77
+choose dream
+choose nightmare
+choose snore
+wait 500
+choose sleep
+wait 300
