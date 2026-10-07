@@ -1,0 +1,12 @@
+# From the earned third-visit topics save, while Bronko still works at usine.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose talk
+choose weapons
+choose talk
+choose weapons
+choose bye_bye
+wait 500

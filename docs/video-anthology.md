@@ -2184,6 +2184,26 @@ not the automatic checkpoint. This accepts native translated-runtime evidence,
 not original-executable whole-scene parity. Kero's contact and the Internet
 medicine message still need their own normal routes.
 
+`cb-bronko-fourth-visit-weapons-v1` follows the earned third-visit topics save
+and selects both weapon replies through the actual talk/weapon menus. It adds
+BAS 17357, with nine total full sites over 6,980 boundaries and 208 events.
+The unchanged C2 reviewer checks eight lineages, 229 exposed fields and 83
+matching rasters. Both saves, automatic at 4412 and manual at 6844, are
+`fcaf5de3700a483adcb6fb752dbd1d84cd869dc76691829d1d3520ebb66d4d1e`.
+All 5,887 bytes match the source contract: Bronko becomes known, encounter
+three-to-four, persisted topic murffalos-to-weapons, Moskito access three-to-four,
+and `Brorad` becomes enabled. The transient goodbye global returns to zero.
+
+`cb-bronko-radio-v1` then uses the actual one-entry Navigation chooser, not
+the aboard Contacts list. Its four new COD sites 24385/24409/24445/24463 appear
+over 5,594 boundaries and 88 events. Review checks nine lineages, 229 fields,
+eighteen rasters and every saved byte. Only Bronko's known bit clears and his
+encounter advances four-to-five; he remains at usine. Slot zero at 5458 is
+`6ec93be3eab6dd3a74de26ce56e67ec963329735dbd6b80614947e0f9337730b`.
+Both reviews additionally match complete VAR/sequence hashes to each save's
+event. The five combined sites follow audit-v26; terminal radio COD 24479 is
+not credited. Neither witness claims original-executable scene parity.
+
 `cb-bronko-chapter2-kitchen-v1` makes the ordinary aboard contact from the
 earned recruitment save. Its four full sites include two new SCRIPT2 sites,
 24516/24538; terminal COD 24679 is not fully presented and is not credited.
