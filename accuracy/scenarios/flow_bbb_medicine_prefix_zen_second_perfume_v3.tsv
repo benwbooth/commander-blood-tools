@@ -1,0 +1,24 @@
+# Accepted stage 3 from the separately earned Mamy perfume manual save.
+# Fourth Super Zen contact; exactly one yes/no prompt precedes inventory.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 80
+click 179 81
+wait 100
+click 250 125
+wait 200
+choose yes
+wait 40
+choose perfume
+wait 400
+# Actual five-item inventory places Cancel at y122..132.
+click 200 128
+# Allow the ordinary settlement/notification before the manual save.
+wait 600

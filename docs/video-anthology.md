@@ -2117,7 +2117,7 @@ offline checks, not evidence of a second gift, settlement or hidden save fields;
 the next capture still requires its complete raw-save and presentation audit.
 
 The direct second-gift capture, `bbb-medicine-prefix-zen-second-perfume-v3`,
-completed all 47 normal actions but remains **unaccepted**. Its first offline
+completed all 47 normal actions and is now independently accepted. Its first offline
 wrapper incorrectly counted the initial null-action record; a separate review
 corrected only that enumeration. The unchanged observer then rejected Kero's
 population change from fourteen to sixteen at frame 8123, where its recurrence
@@ -2129,9 +2129,36 @@ D6 growth; `population_growth` emits D4 conflict. At population fourteen and
 energy 1,000, the unchanged D6 arithmetic adds two at rate fifteen. Both rates
 add one at populations ten through thirteen, concealing the earlier mistake.
 The diagnosis checks 110 assertions, including 26 original-handler emulator
-cases, without changing the game or replaying the candidate. A separate revised
-observer review is in progress; neither save is approved for continuation, and
-no coverage or settlement-completion claim is made from this candidate yet.
+cases, without changing the game or replaying the candidate.
+
+The separate `bbb-medicine-stage3-rate-review-v2` preserves all eighty inherited
+and 462 original focused expectations, adds 39 rate cases, and passes one whole
+481-event observer replay. Its complete audit passes 118,163 checks. Independent
+`bbb-medicine-stage3-parent-acceptance-v1` adds 4,823 checks of the closed inputs,
+source excerpts, exact action tape, raw changes, all 822 exported fields and all
+184 record identities at each save. Both whole-VAR and sequence hashes match
+their own save events. The review seal remains exact: 34 local artifacts,
+453 bound inputs and 228 candidate files. Failed wrappers and earlier reports
+remain preserved; the game, helper and capture were not changed for acceptance.
+
+The automatic slot nine at 6219 precedes settlement and has 25 explained VAR
+changes; manual slot zero at 9139 follows settlement and has 32. All 9,344 bytes
+are accounted for, including all 4,184 VAR words, 128 timer words, 256 opaque
+timer bytes, six sequence slots and 122 preserved procedure records. Only
+timer two differs outside VAR: fifteen automatically, five manually. Exact
+hidden per-tick timer timing is not exported. Goanland's hidden occupant is
+Kero after the normal position pass rebuilds occupancy; inactive Ben does not
+overwrite it. Gift, closure, automatic save, settlement/notification and manual
+save occur at 4569, 6207, 6219, 6573 and 9139 respectively.
+
+The route supplies 21 full sites, 185 full presentations and 309 matching
+nonempty rasters, with all three actual decision menus verified. It has no
+loan, debit, prohibited contact, ending or protected inventory loss. Continued
+Kero work must use the post-settlement manual save
+`4535ef9d1897e20e7dec5ccc73876ee30bf2b194aeec55d551994ead56fdb6b2`,
+not the automatic checkpoint. This accepts native translated-runtime evidence,
+not original-executable whole-scene parity. Kero's contact and the Internet
+medicine message still need their own normal routes.
 
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
