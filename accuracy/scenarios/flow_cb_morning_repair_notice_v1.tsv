@@ -1,0 +1,8 @@
+# Earned no-perfume save: B1=8, Morning at Ark, Mastachok known.
+# Magnus/Ark local selector places Ark second; no topic selection is required.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 99
+wait 500

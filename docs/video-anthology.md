@@ -773,6 +773,20 @@ Manual zero at 8916 is
 `63ff0e6f15e35d98e13a32b55595da139402bd61c5e89ab15dbe9542c7467e24`.
 These three sites are also accepted after audit-v25.
 
+`cb-morning-repair-notice-v1` returns to the actual Ark row from the earned
+no-perfume save, with `B1=8` and Mastachok already known. It fully presents
+COD 29096/29136/29160/29196, four new sites after audit-v26. Terminal 29216
+remains incomplete and is not counted. The 6,244-boundary, 145-event witness
+passes the unchanged chapter-two reviewer over eighteen lineages, with 44
+matching raster samples. An additional all-save audit checks every byte of
+both checkpoints and all 229 exported fields against each save's own event,
+including complete VAR and sequence-block hashes. Only Morning's encounter
+seven-to-eight, ship access counter two-to-three and timer twelve change.
+The timer descends from 339 to 265 at automatic save 4112, then 185 at manual
+save 6108; exact hidden tick timing is not claimed. The manual checkpoint is
+`3c76e710fe940cb82624eab9f98db00de02241bc2b44b7e0500d1ce88e2c4e95`.
+No globals, inventory, holders, padding or procedure records change.
+
 `cb-morning-disconnect-v2` and `cb-morning-keep-honk-v1` branch from the same
 earned memory-recovery save. Four normal `hiding_place` selections reach the
 offered `disconnect`/`refuse` choice; the earlier three-selection attempt
