@@ -2259,6 +2259,25 @@ container at 5002/7318 is
 Terminal 25138/25614 are not credited as full presentations. This is not a fuel
 sale, promotion of earlier failures, or original-executable scene-parity proof.
 
+`cb-jo-after-container-bionium-v1` now earns fuel from that accepted container
+save. The actual Contacts roster is `[3,13,27,99,115]`; its Jo row at `100,94`
+enters the normal AMER game. All 69,126 ordinary actions are complete, including
+69,090 planned flight inputs. Their contiguous nested completion clocks prove
+69,091 input, paced and presented AMER frames, with one completion and full
+SceneImage restoration. The plan targeted ten doses but gameplay returned
+seven; no target amount is substituted for the result.
+
+The sealed independent audit and parent replay pass 603 checks over 231 bound
+inputs and ten earned lineages. All 5,887 saved bytes match the source contract:
+Jo encounter one-to-two, `compris` zero-to-one, `vbio` zero-to-seven and only the
+`scrub` procedure disabled. Headers, padding, holders and other procedures are
+unchanged; all 229 exposed fields and native VAR/sequence hashes agree. The
+6,544-boundary, 269-event route supplies 31 full sites and 162 matching rasters,
+all previously witnessed. Manual zero at 6408 is
+`74ef300bf2609a9049573c538033a7d09f4f1f0f00a167861c06c56574e8be06`.
+This is a refueled branch parent, not a chapter advance: `C1=0`, the lens stays
+with Otto and the inherited inactive Scruter K identity does not prove a call.
+
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
 `audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
@@ -3918,6 +3937,25 @@ first question with `no`, and returns to the bridge automatically
 (`cb-tina-first-v2`). Its checkpoint has `E1 = 1` and a pending Kran Dobu call
 after timer 10 expires. The earlier phone click preceded that call, so this
 fragment does not claim to have answered it or begun the race.
+
+The independent `cb-tina-first-yes-v1` returns to that same earned Eden-access
+parent, selects the actual `yes/no` menu's `yes`, and does not click the phone.
+It records 9,781 boundaries, 358 events, 18 full sites and 166 matching rasters,
+adding only COD 15116. The farewell menu and terminal text are not credited.
+`cb-tina-first-yes-review-v1` verifies 26 lineages and 258 inputs, computes all
+fourteen VAR changes from source-defined travel, actor entry, position flags
+and `E1=1`, and checks every byte of both 6,308-byte saves. All 204 exposed
+fields, 2,599 VAR words, two padding bytes, 166 procedure records and native
+VAR/sequence hashes agree. Only `t10` disables; timer ten counts down from the
+authored 200 and timer twelve continues its existing countdown. Exact hidden
+per-tick timer timing is not claimed. Manual zero at 9645 is
+`9678bead3e9ba8862d4257906b0c603a092fd58b1466cc101dacda141def0957`;
+automatic nine at 7670 is
+`cdeb6402afe34d312ecb1d3430d09eb7c4baf2a5981e1e8970282e8b6c6fa2fa`.
+Their timer-ten values remain 68 and 147 respectively, so no Kran call is yet
+queued or answered. The frozen runtime change is explicitly recorded; the
+earned parent, scripts and assets were not prepared or altered.
+
 The next continuation answers that pending call and visits Kraner's newly
 revealed chart marker (`cb-kran-race-v1`). Kran presents the guitar wager,
 reveals Troma, starts the race with `krando20.hnm`, and closes normally. Its

@@ -1,0 +1,8 @@
+# Earned container save: Bob, Bronko, Jo, decoder, bionium in the aboard roster.
+# Jo is the third row, with hit interval y89..99.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 94
+await-alien
