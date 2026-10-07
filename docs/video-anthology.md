@@ -1357,6 +1357,27 @@ expected pixels of the repeat refusal. The shared checker excludes these
 closed-actor attributions, so they are not added to the fourteen new-site
 total. Neither review changes that rule or claims original scene parity.
 
+`cb-optional-bratakas-race-croolis-v2` visits Vistar from the earned
+curse-lifted checkpoint and selects both race replies and all three Croolis
+replies before leaving. BAS 1359/1387/1420/1442/1480 are five additional
+sites beyond `audit-v16`; all eleven attributed full sites match source.
+Its 9,342 frames and 303 events close with slot zero at frame 9206, SHA-256
+`e6bdf7c41015574433df2faf74704b9207133677b6f4cc4ab1fec25789b5e23b`.
+`cb-menu-contract-review-v1/bratakas-v2.json` and its hashed reviewer check
+55 lineage manifests, 121 saved fields, and six actual menu selections.
+No global or actor/item changes occur: `decodeur=planete=0`, the decoder
+stays aboard, and the picture stays with Bratakas. The earlier v1 stops
+after one reply per topic and has the identical save; its two-site subset
+is not treated as five-reply coverage or as additional unique scenes.
+
+The read-only `output/diagnostics/closed-actor-text-audit-v1` scan of all
+408 `audit-v16` witnesses finds 103 CB source sites whose inline words and
+full raster match after a same-profile, same-source-actor closure. These
+include 52 unobserved-wording sites, 31 already-observed-wording sites, and
+20 control sites. It rejects navigation subtitle bytes and does not alter
+the shared coverage counts. These candidates identify attribution limits,
+not new runtime captures, instruction-provenance proof, or original parity.
+
 `cb-optional-bob-good-root-guard-v2` separately selects the displayed root
 `good_` four times and leaves normally. Its 7,109 frames, 549 events, and
 eight matching sites add no wording; the hidden response is not counted.

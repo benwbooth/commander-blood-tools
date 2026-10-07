@@ -1,0 +1,21 @@
+# Select every distinct race/Croolis reply before any decoder-trade topics.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 106 21
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose race
+choose race
+choose croolis
+choose croolis
+choose croolis
+choose bye_bye
+wait 500
