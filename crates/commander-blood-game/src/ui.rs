@@ -274,11 +274,7 @@ impl DialogueUiAssets {
             let x = i32::from(line.position[0]).saturating_add(
                 i32::try_from(position.saturating_mul(SUBTITLE_GLYPH_SIZE)).unwrap_or(i32::MAX),
             );
-            overlay.blit_image(
-                &glyph[style],
-                [SUBTITLE_GLYPH_SIZE; 2],
-                [x, i32::from(line.position[1])],
-            );
+            overlay.blit_subtitle_glyph(&glyph[style], [x, i32::from(line.position[1])]);
         }
         Ok(())
     }
@@ -535,6 +531,27 @@ impl RgbaUiOverlay {
         self.blit_image(overlay.pixels(), [overlay.width, overlay.height], [0, 0]);
     }
 
+    fn blit_subtitle_glyph(&mut self, rgba: &[u8], origin: [i32; 2]) {
+        // The original planar subtitle writer does not clip at column 320.
+        for y in 0..SUBTITLE_GLYPH_SIZE {
+            for x in 0..SUBTITLE_GLYPH_SIZE {
+                let source = (y * SUBTITLE_GLYPH_SIZE + x) * RGBA_COMPONENTS;
+                if rgba[source + RGBA_COMPONENTS - 1] == TRANSPARENT {
+                    continue;
+                }
+                let dx = i64::from(origin[0]) + x as i64;
+                let dy = i64::from(origin[1]) + y as i64;
+                let pixel = dy * self.width as i64 + dx;
+                if dx < 0 || dy < 0 || !(0..(self.width * self.height) as i64).contains(&pixel) {
+                    continue;
+                }
+                let destination = pixel as usize * RGBA_COMPONENTS;
+                self.pixels[destination..destination + RGBA_COMPONENTS]
+                    .copy_from_slice(&rgba[source..source + RGBA_COMPONENTS]);
+            }
+        }
+    }
+
     fn blit_image(&mut self, rgba: &[u8], size: [usize; 2], origin: [i32; 2]) {
         for y in 0..size[1] {
             for x in 0..size[0] {
@@ -626,6 +643,119 @@ mod tests {
         )
         .unwrap();
         assert_dialogue_font_rasters(&fonts);
+    }
+
+    #[derive(serde::Deserialize)]
+    struct SubtitleEdgeCase {
+        game: String,
+        name: String,
+        text: Vec<u8>,
+        origin: [u16; 2],
+        reveal_cursor: usize,
+        indexed_pixels_sha256: String,
+        executable_sha256: String,
+        clipping_matches_original: bool,
+    }
+
+    #[test]
+    fn subtitle_edges_match_original_commander_routine() {
+        assert_original_subtitle_edges(
+            "cb",
+            crate::game::GameVariant::CommanderBlood,
+            include_bytes!("../../../re/bin/BLOODPRG.EXE"),
+        );
+    }
+
+    #[test]
+    #[ignore = "requires original Big Bug Bang disc executable"]
+    fn subtitle_edges_match_original_sequel_routine() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/disc/BLOOD2PG.EXE");
+        let executable = std::fs::read(path).unwrap();
+        assert_original_subtitle_edges("bbb", crate::game::GameVariant::BigBugBang, &executable);
+    }
+
+    fn assert_original_subtitle_edges(
+        game: &str,
+        variant: crate::game::GameVariant,
+        executable: &[u8],
+    ) {
+        use crate::native::bloodprg::{FontPoint, draw_subtitle_reveal_line};
+        use sha2::{Digest, Sha256};
+
+        #[derive(serde::Deserialize)]
+        struct Fixture {
+            cases: Vec<SubtitleEdgeCase>,
+        }
+
+        let fixture: Fixture = serde_json::from_str(include_str!(
+            "../../../re/tools/oracle_vectors/commander_subtitle_edge.json"
+        ))
+        .unwrap();
+        let fonts = variant.decode_fonts(executable).unwrap();
+        let mut colors = [[0; 3]; 256];
+        colors[255] = [63, 63, 63];
+        colors[254] = [40, 30, 20];
+        colors[253] = [10, 20, 30];
+        let assets = DialogueUiAssets::import(&fonts, &colors).unwrap();
+        let cases: Vec<_> = fixture
+            .cases
+            .iter()
+            .filter(|case| case.game == game)
+            .collect();
+        assert_eq!(cases.len(), 9);
+        assert_eq!(
+            cases
+                .iter()
+                .filter(|case| !case.clipping_matches_original)
+                .count(),
+            7
+        );
+        for case in cases {
+            assert_eq!(
+                format!("{:x}", Sha256::digest(executable)),
+                case.executable_sha256
+            );
+            assert_eq!(case.text.last(), Some(&b'\r'));
+            let mut indexed = vec![0; 320 * 200];
+            draw_subtitle_reveal_line(
+                &mut indexed,
+                &fonts,
+                &case.text,
+                FontPoint {
+                    x: i32::from(case.origin[0]),
+                    y: i32::from(case.origin[1]),
+                },
+                case.reveal_cursor as i32,
+            )
+            .unwrap();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&indexed)),
+                case.indexed_pixels_sha256,
+                "{}",
+                case.name
+            );
+            let mut overlay = RgbaUiOverlay::new(320, 200);
+            assets
+                .draw_line(
+                    &mut overlay,
+                    SubtitleRevealLine {
+                        text: &case.text[..case.text.len() - 1],
+                        byte_offset: 7,
+                        reveal_cursor: case.reveal_cursor + 7,
+                        position: case.origin,
+                    },
+                )
+                .unwrap();
+            for (&index, pixel) in indexed.iter().zip(overlay.pixels().chunks_exact(4)) {
+                let expected = if index == 0 {
+                    [0; 4]
+                } else {
+                    assets.color(index).unwrap()
+                };
+                assert_eq!(pixel, expected, "{}", case.name);
+            }
+        }
     }
 
     fn assert_dialogue_font_rasters(fonts: &BloodprgFontResources) {

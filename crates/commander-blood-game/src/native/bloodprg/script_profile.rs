@@ -533,8 +533,9 @@ impl LoadedScriptProfile {
     /// Replace VAR bytes and transactionally rebuild every derived record store.
     pub fn replace_state(
         &mut self,
-        state: ScriptState,
+        mut state: ScriptState,
     ) -> Result<(), ScriptProfileRecordStateError> {
+        bind_profile_state_aliases(self.id, self.code.dialect(), &self.directory, &mut state);
         let record_state = ScriptProfileRecordState::recover(
             &self.instructions,
             &state,
@@ -838,6 +839,29 @@ impl Error for ScriptProfileError {
     }
 }
 
+fn bind_profile_state_aliases(
+    profile: ScriptProfileId,
+    dialect: ScriptDialect,
+    directory: &ScriptDirectory,
+    state: &mut ScriptState,
+) {
+    state.clear_read_only_word_aliases();
+    // Native PLAY places SCRIPT2.DEB after retained SCRIPT1.VAR. COD 0x5A97
+    // reads that prefix, so SAVE/LOAD must rebind it without extending VAR.
+    if dialect == ScriptDialect::BigBugBang
+        && state.dialect() == dialect
+        && profile.value() == 1
+        && state.encode().len() == usize::from(SEQUEL_RETAINED_VAR_BYTES)
+        && let Some(prefix) = directory.encode().first_chunk::<2>()
+    {
+        let bound = state.bind_read_only_word_alias(SEQUEL_RETAINED_VAR_BYTES, *prefix);
+        debug_assert!(
+            bound,
+            "aligned directory prefix must be outside retained VAR"
+        );
+    }
+}
+
 fn decode_loaded_profile(
     profile: ScriptProfileId,
     resources: ScriptProfileResources,
@@ -911,20 +935,7 @@ fn decode_loaded_profile(
             source,
         })?
     };
-    state.clear_read_only_word_aliases();
-    // Native PLAY captures place SCRIPT2.DEB immediately after retained SCRIPT1.VAR.
-    // COD's scalar read at 0x5A97 addresses that directory prefix, not a VAR word.
-    if dialect == ScriptDialect::BigBugBang
-        && profile.value() == 1
-        && state.encode().len() == usize::from(SEQUEL_RETAINED_VAR_BYTES)
-        && let Some(prefix) = directory_bytes.first_chunk::<2>()
-    {
-        let bound = state.bind_read_only_word_alias(SEQUEL_RETAINED_VAR_BYTES, *prefix);
-        debug_assert!(
-            bound,
-            "aligned directory prefix must be outside retained VAR"
-        );
-    }
+    bind_profile_state_aliases(profile, dialect, &directory, &mut state);
     let instructions = code
         .tokens()
         .iter()
@@ -1167,8 +1178,94 @@ mod tests {
     }
 
     #[test]
+    fn profile_state_aliases_require_the_matching_bbb_play_layout() {
+        let mut directory_bytes = [0; 20];
+        directory_bytes[..2].copy_from_slice(b"ba");
+        let directory = decode_script_directory(&directory_bytes).unwrap();
+        let retained_size = usize::from(SEQUEL_RETAINED_VAR_BYTES);
+        const STALE_OFFSET: u16 = 0xFFFC;
+        for dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+            for state_dialect in [ScriptDialect::CommanderBlood, ScriptDialect::BigBugBang] {
+                for profile in [FIRST_PROFILE, SECOND_PROFILE, ScriptProfileId(2)] {
+                    for size in [retained_size - 2, retained_size, retained_size + 2] {
+                        let bytes = vec![0; size];
+                        let mut state =
+                            decode_script_state_for_dialect(&bytes, &directory, state_dialect)
+                                .unwrap();
+                        assert!(state.bind_read_only_word_alias(STALE_OFFSET, *b"zz"));
+                        if size <= retained_size {
+                            assert!(
+                                state.bind_read_only_word_alias(SEQUEL_RETAINED_VAR_BYTES, *b"zz")
+                            );
+                        }
+                        bind_profile_state_aliases(profile, dialect, &directory, &mut state);
+                        let field = state.resolve_word_source_offset(SEQUEL_RETAINED_VAR_BYTES);
+                        let expected_alias = dialect == ScriptDialect::BigBugBang
+                            && state_dialect == dialect
+                            && profile == SECOND_PROFILE
+                            && size == retained_size;
+                        assert_eq!(
+                            field.is_some_and(|field| field.is_read_only_alias()),
+                            expected_alias,
+                            "{dialect:?} {state_dialect:?} {profile:?} {size}"
+                        );
+                        assert!(state.resolve_word_source_offset(STALE_OFFSET).is_none());
+                        if expected_alias {
+                            let field = field.unwrap();
+                            assert_eq!(state.word(field), Some(24930));
+                            assert!(!state.set_word(field, 0));
+                            assert!(
+                                state
+                                    .resolve_byte_source_offset(SEQUEL_RETAINED_VAR_BYTES)
+                                    .is_none()
+                            );
+                        }
+                        assert_eq!(state.encode(), bytes);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn profile_state_aliases_use_raw_directory_prefix_and_clear_missing_prefix() {
+        let mut directory_bytes = [0; 20];
+        directory_bytes[..2].copy_from_slice(&[0, 0x7F]);
+        let directory = decode_script_directory(&directory_bytes).unwrap();
+        assert!(directory.entries()[0].name().is_empty());
+        let bytes = vec![0; usize::from(SEQUEL_RETAINED_VAR_BYTES)];
+        let mut state =
+            decode_script_state_for_dialect(&bytes, &directory, ScriptDialect::BigBugBang).unwrap();
+        bind_profile_state_aliases(
+            SECOND_PROFILE,
+            ScriptDialect::BigBugBang,
+            &directory,
+            &mut state,
+        );
+        let field = state
+            .resolve_word_source_offset(SEQUEL_RETAINED_VAR_BYTES)
+            .unwrap();
+        assert_eq!(state.word(field), Some(0x7F00));
+        let empty_directory = decode_script_directory(&[]).unwrap();
+        bind_profile_state_aliases(
+            SECOND_PROFILE,
+            ScriptDialect::BigBugBang,
+            &empty_directory,
+            &mut state,
+        );
+        assert!(state.word(field).is_none());
+        assert!(
+            state
+                .resolve_word_source_offset(SEQUEL_RETAINED_VAR_BYTES)
+                .is_none()
+        );
+        assert_eq!(state.encode(), bytes);
+    }
+
+    #[test]
     #[ignore = "requires original Big Bug Bang disc resources"]
     fn sequel_play_profile_binds_native_directory_read_without_extending_var() {
+        use super::super::{OriginalSaveGame, original_save_state_block_byte_count};
         use commander_blood_formats::instruction::{ScriptStateOperand, ScriptStateOperator};
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../output/big-bug-bang/disc");
         let executable = std::fs::read(root.join("BLOOD2PG.EXE")).unwrap();
@@ -1222,6 +1319,74 @@ mod tests {
         );
         assert!(!profile.state.set_word(field, 0));
         assert_eq!(profile.state.encode(), before);
+        let save_bytes = OriginalSaveGame::capture(profile).unwrap().encode();
+        let save = OriginalSaveGame::decode_for_dialect(
+            &save_bytes,
+            original_save_state_block_byte_count(profile).unwrap(),
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        assert_eq!(save.state_block(), before);
+        save.restore_into(profile).unwrap();
+        assert_eq!(profile.state.word(field), Some(24930));
+        runtime.begin_root_guard(ScriptCodeOffset::new(0));
+        assert_eq!(
+            super::super::apply_shared_state_operation(operation, &mut profile.state, &mut runtime)
+                .unwrap(),
+            super::super::ScriptControl::Continue
+        );
+        assert!(!profile.state.set_word(field, 0));
+        assert_eq!(profile.state.encode(), before);
+        assert_eq!(
+            OriginalSaveGame::capture(profile).unwrap().encode(),
+            save_bytes
+        );
+
+        let mut replacement =
+            decode_script_state_for_dialect(&before, &profile.directory, ScriptDialect::BigBugBang)
+                .unwrap();
+        assert!(replacement.bind_read_only_word_alias(SEQUEL_RETAINED_VAR_BYTES, *b"zz"));
+        assert!(replacement.bind_read_only_word_alias(0xFFFC, *b"zz"));
+        profile.replace_state(replacement).unwrap();
+        assert_eq!(profile.state.word(field), Some(24930));
+        assert!(profile.state.resolve_word_source_offset(0xFFFC).is_none());
+        assert_eq!(
+            OriginalSaveGame::capture(profile).unwrap().encode(),
+            save_bytes
+        );
+
+        let previous_state = profile.state.clone();
+        let previous_records = profile.record_state.clone();
+        let invalid_state = decode_script_state_for_dialect(
+            &vec![0; usize::from(SEQUEL_RETAINED_VAR_BYTES)],
+            &decode_script_directory(&[]).unwrap(),
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        assert!(profile.replace_state(invalid_state).is_err());
+        assert_eq!(profile.state, previous_state);
+        assert_eq!(profile.record_state, previous_records);
+        assert_eq!(
+            OriginalSaveGame::capture(profile).unwrap().encode(),
+            save_bytes
+        );
+
+        let mut malformed_save = save_bytes.clone();
+        let state_start = super::super::ORIGINAL_SAVE_FIXED_HEADER_BYTE_COUNT;
+        malformed_save[state_start..state_start + 2].copy_from_slice(&u16::MAX.to_le_bytes());
+        let malformed = OriginalSaveGame::decode_for_dialect(
+            &malformed_save,
+            original_save_state_block_byte_count(profile).unwrap(),
+            ScriptDialect::BigBugBang,
+        )
+        .unwrap();
+        assert!(malformed.restore_into(profile).is_err());
+        assert_eq!(profile.state, previous_state);
+        assert_eq!(profile.record_state, previous_records);
+        assert_eq!(
+            OriginalSaveGame::capture(profile).unwrap().encode(),
+            save_bytes
+        );
         manager
             .select(SECOND_PROFILE, &mut cache, &store, &resources)
             .unwrap();

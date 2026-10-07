@@ -1669,6 +1669,28 @@ checkpoint. The initial Yoko v1 run was stopped when this omission was found;
 its incomplete inputs are retained as failed evidence. Neither is a v2
 predecessor. Remaining hints still require different naturally earned states.
 
+The later `cb-honk-chapter5-remaining-topics-v1/v2/v3` attempts exposed a
+subtitle drawing defect at BAS 8086, not an unavailable normal topic. Its
+authored line extends beyond column 319. `commander_subtitle_edge_oracle.py`
+executes both original drawing routines with their real fonts and VGA plane
+masks: pixels carry into the next framebuffer row instead of being clipped.
+The 18 committed vectors cover the captured line, all four starting planes,
+and a 256-character length-byte wrap; fourteen distinguish clipping from the
+original. Native raster checking and the RGBA subtitle writer now use that
+linear addressing. Other font drawing paths are unchanged. The three failed
+captures remain failed; this primitive-level proof does not itself complete
+their topic flow or establish whole-scene timing parity.
+
+The ERO `no` alternative also exposed a normal-LOAD defect: BBB's apparent
+`time` scalar at byte 8368 is a read-only alias of the adjacent SCRIPT2.DEB
+prefix (`24930`), not wall-clock time. Replacing VAR state from a SAV had
+dropped that nonserialized binding. Initial profile loading and restored-state
+replacement now share a directory-derived rebinding helper. It clears stale
+aliases, checks the exact BBB PLAY profile/layout, and leaves the save bytes
+unchanged. All fourteen profile tests, including original-resource SAVE/LOAD,
+profile-switch and transactional-failure checks, pass. The failed
+`bbb-optional-internet-ero-no-v1` remains failed pending a new ordinary replay.
+
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites
 include the connection sequence, Morning-Oil and battery advice, and the
@@ -1697,6 +1719,19 @@ boundaries and 126 events end with the frame-34709 slot-zero save
 `4e699625af7c2dc284238dfd2afe0085b6a743e5d1c0092099c8f642bdc0538e`.
 The fifteen matched sites include two startup lines; thirteen are additional
 exact sites beyond `audit-v17`. Later calls and original timing remain open.
+
+`cb-ulikan-chapter2-third-call-v1` continues that second-call save with the
+same ordinary 30,000-frame wait and the real phone hit target. The call queues
+at frame 30173 after the saved timer-12 countdown, with no injected clock or
+timer. Ten SCRIPT2 sites are fully shown: the 64,000-baud connection, Maxxon's
+lens message, and evening signoff at 14602. The review binds 25 manifests,
+164 saved fields, all 2,441 VAR words, and the actual phone action. Only `ti`
+and Ulikan's encounter count change two to three; inventory is unchanged and
+no call remains pending. The capture has 34,845 boundaries, 112 events, and
+twelve matched sites including startup; the frame-34709 save is
+`9a74f8127691c93a4ba363106f4b850745eadc303dba374bd869f3ff6451a657`.
+The separate contract and review are in `cb-ulikan-chapter2-review-v1`.
+Fourth and fifth calls and original scene timing remain unverified.
 
 `cb-optional-hom-chapter5-remaining-v1` continues the earned television-topic
 save. The actual third cryobox row names Hom, record nine, with Yoko still

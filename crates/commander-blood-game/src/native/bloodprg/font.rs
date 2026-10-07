@@ -585,6 +585,7 @@ pub fn draw_planar_dialogue_text(
 /// This translates `subtitle_reveal_draw_wrapper` at BLOODPRG offset `0x003630`.
 /// It retains eight-pixel cells, high-bit glyph skipping, the reveal-position
 /// gate, low-byte distance colors 255/254/253, and carriage-return framing.
+/// The planar address carries across the right edge into the following row.
 /// A relative reveal index and direct flat pixels replace near-pointer
 /// subtraction, planar map masks, and segment-offset wrapping.
 pub fn draw_subtitle_reveal_line(
@@ -629,10 +630,9 @@ pub fn draw_subtitle_reveal_line(
                     character,
                     glyph_index,
                 })?;
-            collect_byte_glyph_writes(
+            collect_subtitle_glyph_writes(
                 &mut writes,
                 glyph,
-                SUBTITLE_FONT_GLYPH_WIDTH as usize,
                 FontPoint {
                     x: origin
                         .x
@@ -786,6 +786,30 @@ fn mapped_glyph(
             character,
         },
     )
+}
+
+fn collect_subtitle_glyph_writes(
+    writes: &mut Vec<(usize, u8)>,
+    glyph: &[u8],
+    origin: FontPoint,
+    position: usize,
+    color: u8,
+) -> Result<(), GameFontDrawError> {
+    for (row, bits) in glyph.iter().copied().enumerate() {
+        for column in 0..SUBTITLE_FONT_GLYPH_WIDTH {
+            if bits & (HIGHEST_BYTE_BIT >> column as u32) == 0 {
+                continue;
+            }
+            let x = origin.x.saturating_add(column);
+            let y = origin.y.saturating_add(row as i32);
+            let pixel = i64::from(y) * LOGICAL_FRAMEBUFFER_WIDTH as i64 + i64::from(x);
+            if x < 0 || y < 0 || !(0..LOGICAL_FRAMEBUFFER_PIXEL_COUNT as i64).contains(&pixel) {
+                return Err(GameFontDrawError::PixelOutsideDisplay { position, x, y });
+            }
+            writes.push((pixel as usize, color));
+        }
+    }
+    Ok(())
 }
 
 fn collect_byte_glyph_writes(
@@ -1467,6 +1491,13 @@ mod tests {
                     vector.name
                 );
                 exact_hashes += COUNT_INCREMENT;
+            } else if vector.name == "line_length_low_byte_zero_processes_256_characters" {
+                // This legacy hash conflates VGA planes; ui's edge oracle checks
+                // the actual per-plane pixels after overlapping row carries.
+                let outcome = result.unwrap();
+                assert_eq!(outcome.processed_characters, vector.characters_processed);
+                assert_eq!(outcome.drawn_glyphs, vector.glyphs_drawn);
+                assert_eq!(outcome.stopped_at_reveal, vector.stopped_at_reveal);
             } else if vector.name == "inherited_backward_source_direction" {
                 let outcome = result.unwrap();
                 assert_ne!(
