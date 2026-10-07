@@ -745,6 +745,21 @@ show 44 daily-menu sites before Bronko joins; the separate recruited-Bronko
 branch shows his eight improved-menu sites. These are source-site totals,
 including repeated startup sites in each witness, not additive scene counts.
 
+`cb-morning-broken-down-topics-v1` revisits the earned first-Magnus route
+before buying batteries. Ten offered malfunction replies, followed by the
+ordinary goodbye, add exact BAS sites 7368/7382/7396/7410/7424/7438/7452/
+7466/7480/7508. Nineteen total sites match source and pixels across 9,518
+boundaries and 381 events. The unchanged chapter-two reviewer checks twelve
+lineages, 229 exposed fields, all 2,441 VAR words and every header/procedure
+byte. The only quest changes are the ordinary battery diagnosis, queued Mac
+message and advertisement preparation; inventory stays unchanged. The prior
+Scruter K call remains unanswered. Autosave nine at 6912 and manual zero at
+9382 both exactly equal the original battery-request checkpoint:
+`50318c7eb8179a1f19652c2640f9f855026b5b31e50988b8b791071b4d2a66bd`.
+The final goodbye is handled by COD; this does not claim the unobserved BAS
+`Hello` reply or random broken-down chatter. These ten sites are accepted
+after audit-v25, not included in that inventory.
+
 `cb-morning-disconnect-v2` and `cb-morning-keep-honk-v1` branch from the same
 earned memory-recovery save. Four normal `hiding_place` selections reach the
 offered `disconnect`/`refuse` choice; the earlier three-selection attempt

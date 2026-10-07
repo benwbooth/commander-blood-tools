@@ -1,0 +1,27 @@
+# Earned first-Magnus route, before Morning Oil's battery diagnosis.
+# Select the offered malfunction replies before the ordinary goodbye.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 270 49
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose on
+choose off
+choose hello
+choose yes
+choose no
+choose great
+choose in
+choose out
+choose more
+choose less
+choose bye_bye
+wait 500
