@@ -1,0 +1,6 @@
+# The earned chapter-three contact starts Honk's scripted help automatically.
+# No BAS word menu is offered on this branch.
+park 4 45
+wait 25
+click 230 88
+wait 1200

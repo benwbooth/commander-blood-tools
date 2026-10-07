@@ -1554,6 +1554,42 @@ fresh funded Mamy loan and interest, and Trump bionium retry. It does not
 promote excluded diagnostics or count closed-actor stale-pointer text.
 Both completeness flags remain false, and rendering has not started.
 
+The subsequent Honk hint slice uses earned saves with three bionium and
+ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
+presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
+The three-bionium announcement precedes the single debit to zero; all four
+zero-bionium warning lines follow. Ten full sites match source and pixels,
+eight new exact sites beyond `audit-v17`. No inventory holders change.
+The first attempt incorrectly awaited a `help` word menu after this automatic
+contact; it timed out and remains failed evidence. V2 requests no such choice.
+Its normal slot-zero save is
+`d348d538159208a84ef8369cafa4dd89c2dc256c60207af5e9692b9f210559da`.
+
+Four independent SCRIPT4 leaves, `cb-honk-chapter4-{anna,hat,picture,fifi}-hint-v1`,
+start respectively from the painting-clue, picture-and-hat, Bratakas-and-Hom,
+and Fifi-transport-offer saves. Raw saved source guards select COD 19424,
+19531, 19734, and 19829: Anna at Vista, Super Zen and the hat, Fifi's picture,
+and his Malus journey. Each has nine fully matched sites, spends exactly
+three bionium, retains inventory, and saves with no active presentation.
+Their union adds ten exact sites beyond `audit-v17`, including six shared
+Honk status lines, not 28 independent additions. Slot-zero hashes are:
+
+| Hint | Save SHA-256 |
+| --- | --- |
+| Anna | `d6a15cba88dab8278f3c1d1207b3a85b1d33c01573a1b3e90044b8f36edf8b64` |
+| Hat | `cd423e5941563ce2cc144550a439d039559d0bc02380583838d88f3019908e51` |
+| Picture | `d277e2dd5f96c147f6ec65d6d8839b77605828dad7b65e8286d63954f89c18ff` |
+| Fifi | `98ea8c20b9f009088d376587fa2cedafd90f1274ae07b357b2b087edd8d18a6e` |
+
+All five routes have 8,558 boundaries and save at frame 8422; the chapter-three
+leaf has 106 events and the SCRIPT4 leaves 101/101/101/102. Independent
+`cb-honk-hints-batch-v1` and `cb-menu-contract-review-v1` checks bind current
+inputs, actual contact actions, source text/pixels, recursive lineage, the
+single debit, and 139 saved fields for SCRIPT3 or 121 for SCRIPT4. Following
+service-with-a-smile lines are not published in these routes; final farewell
+pointers are published without an attributed full draw and are not counted.
+Other hints, bionium thresholds, and original timing remain separate work.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure
