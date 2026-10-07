@@ -22,6 +22,7 @@ mod navigation_status;
 mod offline;
 pub mod offline_export;
 mod offline_game;
+mod offline_static;
 mod offline_video;
 mod palette_transition;
 mod platform;

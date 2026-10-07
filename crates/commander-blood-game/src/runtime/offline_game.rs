@@ -1008,6 +1008,326 @@ pub(super) fn capture_dialogue_chapter(
     }
 }
 
+/// Isolated A6 presentation. The scene and clocks run; story dispatch remains frozen.
+pub(super) fn capture_static_text(
+    services: ModernGameServices<'_>,
+    plan: &super::offline_static::OfflineStaticTextPlan,
+    max_frames: u64,
+    sink: &mut dyn OfflineGameSink,
+) -> Result<(Value, Vec<u8>)> {
+    use super::offline_static::{bind_static_text, prepare_static_actor, sha256, state_delta};
+    use crate::native::bloodprg::{
+        SceneTransitionPhase, ScriptProfileId, ScriptProfileResourceKind,
+    };
+    use commander_blood_formats::script::decode_script_state_for_dialect;
+
+    ensure!(
+        services.runtime().data().game() == plan.game,
+        "static text game mismatch"
+    );
+    let requested =
+        ScriptProfileId::new_for_dialect(plan.initial_profile, plan.game.script_dialect())
+            .context("invalid static text profile")?;
+    let mut host = RuntimeGameLifecycleHost::with_platform(
+        services,
+        OfflineGamePlatform::new(max_frames, sink),
+        None,
+        39,
+        script_clock,
+        None,
+    );
+    let mut lifecycle = GameLifecycleState::default();
+    let mut session = GameSession::default();
+    let capture = (|| {
+        ensure!(
+            initialize_game_runtime(&mut lifecycle, &mut host, &mut session)?.is_none(),
+            "native initialization exited before static text"
+        );
+        ensure!(
+            run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+            "native first frame exited before static text"
+        );
+        ensure!(
+            !host.services().presentation_screen_state()?.active(),
+            "startup panel opened before static selection"
+        );
+        let removed_sequences = host
+            .services()
+            .runtime()
+            .current_profile()
+            .context("startup profile missing")?
+            .sequence_slots()
+            .encode_save_block();
+        host.services_mut()
+            .runtime_mut()
+            .current_profile_mut()
+            .unwrap()
+            .sequence_slots_mut()
+            .restore_save_block(&[0; SCRIPT_SEQUENCE_SAVE_BLOCK_BYTE_COUNT])?;
+        let mut closing = false;
+        let mut closed = false;
+        for _ in 0..max_frames {
+            ensure!(
+                run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                "native lifecycle exited during static bootstrap"
+            );
+            if host.services().presentation_screen_state()?.active() && !closing {
+                closing = host
+                    .services_mut()
+                    .begin_presentation_panel_close_if_open()?;
+            }
+            if closing
+                && !host.services().presentation_screen_state()?.active()
+                && !lifecycle.presentation_mode
+                && !lifecycle.navigation_rebuild_pending
+            {
+                closed = true;
+                break;
+            }
+        }
+        ensure!(closed, "static bootstrap panel did not close");
+        host.services_mut().freeze_for_static_text();
+        if plan.initial_profile != 0 {
+            host.services_mut().request_script_profile(requested);
+            let mut selected = false;
+            for _ in 0..max_frames {
+                ensure!(
+                    run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                    "native lifecycle exited during static profile selection"
+                );
+                if host
+                    .services()
+                    .runtime()
+                    .current_profile()
+                    .map(LoadedScriptProfile::id)
+                    == Some(requested)
+                    && lifecycle.pending_profile.is_none()
+                    && !lifecycle.navigation_rebuild_pending
+                {
+                    selected = true;
+                    break;
+                }
+            }
+            ensure!(selected, "static profile selection did not finish");
+        }
+        let profile = host
+            .services()
+            .runtime()
+            .current_profile()
+            .context("static profile missing")?;
+        let bound = bind_static_text(plan, profile)?;
+        let var_resource = profile
+            .resources()
+            .resource(ScriptProfileResourceKind::State);
+        let var_name = host
+            .services()
+            .runtime()
+            .data()
+            .resource_catalog()
+            .name(var_resource)
+            .context("static VAR resource has no name")?
+            .as_bytes()
+            .to_vec();
+        let source_var = host
+            .services()
+            .runtime()
+            .data()
+            .load_named_resource(&var_name)?;
+        let bootstrap_var = profile.synchronized_state()?.encode();
+        let source_state = decode_script_state_for_dialect(
+            &source_var,
+            profile.directory(),
+            plan.game.script_dialect(),
+        )?;
+        host.services_mut()
+            .runtime_mut()
+            .current_profile_mut()
+            .unwrap()
+            .replace_state(source_state)?;
+        let reset_var = host
+            .services()
+            .runtime()
+            .current_profile()
+            .unwrap()
+            .synchronized_state()?
+            .encode();
+        let reset_report = state_delta(&bootstrap_var, &reset_var)?;
+        let console_choice = plan.context.console_choice();
+        if let Some(choice) = console_choice {
+            // activate_horn_choice / activate_radio_choice: the radio bank reloads for
+            // the radio record, and for Honk only in the sequel.
+            if choice == super::offline_static::StaticConsoleChoice::Radio
+                || plan.game == crate::game::GameVariant::BigBugBang
+            {
+                host.services_mut().load_radio_sound_bank()?;
+            }
+        } else {
+            host.services_mut().request_scene_transition(bound.actor)?;
+        }
+        let mut scene_ready = console_choice.is_some();
+        for _ in 0..if scene_ready { 0 } else { max_frames } {
+            ensure!(
+                run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                "native lifecycle exited while preparing static contact scene"
+            );
+            let scene = host.services().runtime_scene_transition()?.state();
+            if scene.phase == SceneTransitionPhase::Bridge
+                && scene.bridge_blocked
+                && !lifecycle.presentation.c2_presentation_gate
+            {
+                scene_ready = true;
+                break;
+            }
+        }
+        ensure!(
+            scene_ready,
+            "static contact scene did not reach its deferred-actor boundary"
+        );
+        let before_preparation = host.services().semantic_trace_snapshot(&lifecycle)?;
+        for name in plan.context.descriptions() {
+            ensure!(
+                host.services_mut()
+                    .apply_presentation_description(name.as_bytes())?
+                    .is_some(),
+                "static DESCRIPT record is absent: {name}"
+            );
+        }
+        let actor_preparation = prepare_static_actor(
+            host.services_mut()
+                .runtime_mut()
+                .current_profile_mut()
+                .unwrap(),
+            bound.actor,
+        )?;
+        lifecycle.presentation.active = true;
+        lifecycle.presentation.start_locked = true;
+        lifecycle.presentation.hold_ready = false;
+        lifecycle.presentation.dialogue_hold_complete = false;
+        lifecycle.presentation.word_choice_active = false;
+        lifecycle.presentation.subtitle_display_active = false;
+        lifecycle.presentation.menu_deferred = false;
+        host.services_mut()
+            .prepare_frame_tail_presentation(&lifecycle);
+        host.services_mut()
+            .script_backend_mut()
+            .observe_text_publications();
+        let a6 = host
+            .services_mut()
+            .publish_static_text(&mut lifecycle, plan, &bound)?;
+        let after_preparation = host.services().semantic_trace_snapshot(&lifecycle)?;
+        let expected_publications = host
+            .services_mut()
+            .script_backend_mut()
+            .take_text_publications();
+        ensure!(
+            expected_publications.len() == 1,
+            "static publication accounting mismatch"
+        );
+        host.platform_mut().begin_capture();
+        let mut first_full_ui_ns = None;
+        let mut fully_revealed_ui_frames = 0u64;
+        let mut max_matching_glyph_pixels = 0u64;
+        for frame in 1..=max_frames {
+            ensure!(
+                run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                "native lifecycle exited before isolated text hold completed"
+            );
+            ensure!(
+                host.services_mut()
+                    .script_backend_mut()
+                    .take_text_publications()
+                    .is_empty(),
+                "unexpected story publication during static capture"
+            );
+            let snapshot = host.services().semantic_trace_snapshot(&lifecycle)?;
+            ensure!(
+                snapshot["vm"]["resource_profile"].as_u64()
+                    == Some(u64::from(plan.initial_profile)),
+                "profile changed during static capture"
+            );
+            let text = host.services().text_presentation();
+            let subtitle = text.subtitle_display_active;
+            let raster = &snapshot[if subtitle {
+                "subtitle_raster"
+            } else {
+                "inline_menu_raster"
+            }];
+            let expected = raster["expected_pixel_count"].as_u64().unwrap_or(0);
+            let matching = raster["matching_pixel_count"].as_u64().unwrap_or(0);
+            let full = if subtitle {
+                text.subtitle_reveal_cursor
+                    .is_some_and(|cursor| cursor >= text.subtitle_text.len())
+            } else {
+                let menu = &snapshot["presentation"]["inline_menu"];
+                menu["display_words"].as_array().is_some_and(|words| {
+                    !words.is_empty()
+                        && menu["reveal_count"].as_u64().unwrap_or(0) >= words.len() as u64
+                })
+            };
+            if full && expected > 0 {
+                ensure!(
+                    expected == matching,
+                    "static text native glyph raster mismatch"
+                );
+                fully_revealed_ui_frames += 1;
+                max_matching_glyph_pixels = max_matching_glyph_pixels.max(matching);
+                first_full_ui_ns
+                    .get_or_insert(host.platform().elapsed_ns - host.platform().capture_origin_ns);
+            }
+            if first_full_ui_ns.is_some() && lifecycle.presentation.hold_ready {
+                let driver = host.platform();
+                let final_var = host
+                    .services()
+                    .runtime()
+                    .current_profile()
+                    .unwrap()
+                    .synchronized_state()?
+                    .encode();
+                return Ok((
+                    serde_json::json!({
+                        "plan": plan, "authored": bound.authored,
+                        "completion": "isolated_text_hold_completed", "story_execution": "frozen",
+                        "gameplay_reachability": "not_assessed", "natural_chapter_close": false,
+                        "presented_frames": driver.captured_waits,
+                        "duration_ns": driver.elapsed_ns - driver.capture_origin_ns,
+                        "audio_samples": driver.sample_cursor - driver.capture_origin_sample,
+                        "main_loop_frames": frame, "bootstrap_duration_ns": driver.capture_origin_ns,
+                        "total_timer_ticks": driver.timer_ticks,
+                        "publication": expected_publications[0],
+                        "publication_timing": "prepared immediately before first captured main-loop frame",
+                        "preparation": {
+                            "source_var_resource": String::from_utf8_lossy(&var_name),
+                            "source_var_sha256": sha256(&source_var), "source_default_reset": reset_report,
+                            "actor_records": actor_preparation, "a6": a6,
+                            "removed_startup_sequence_slots": removed_sequences.as_slice(),
+                            "before": before_preparation, "after": after_preparation,
+                            "scene_policy": if console_choice.is_some() { "bridge console record presented over the bridge without a contact transition; reciprocal C4 installed non-actionably; no object code or story continuation" } else { "native contact transition held at deferred-actor boundary; reciprocal C4 installed non-actionably; no object code or story continuation" },
+                        },
+                        "ui_raster_evidence": {"first_full_ui_ns": first_full_ui_ns,
+                            "fully_revealed_ui_frames": fully_revealed_ui_frames,
+                            "max_matching_glyph_pixels": max_matching_glyph_pixels,
+                            "scope": "native UI buffer; encoded visibility requires separate final-frame inspection"},
+                        "final_var_sha256": sha256(&final_var),
+                    }),
+                    host.services().read_offline_rgba()?,
+                ));
+            }
+        }
+        bail!(
+            "isolated static text exceeded frame cap before full reveal and native hold completion"
+        )
+    })();
+    host.platform_mut().capturing = false;
+    let cleanup = shutdown_game(&mut lifecycle, &mut host, session, false);
+    match (capture, cleanup) {
+        (Ok(capture), Ok(())) => Ok(capture),
+        (Err(error), Ok(())) | (Ok(_), Err(error)) => Err(error),
+        (Err(error), Err(cleanup)) => {
+            Err(error.context(format!("cleanup also failed: {cleanup:#}")))
+        }
+    }
+}
+
 #[derive(Serialize)]
 pub(super) struct OfflineStartupReport {
     pub presented_frames: u64,

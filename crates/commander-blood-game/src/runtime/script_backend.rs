@@ -108,6 +108,7 @@ pub struct RuntimeScriptSystem {
     service: ScriptExecutionService<RuntimeScriptBackend>,
     presentation_word_buffer_nonempty: bool,
     presentation_inventory_line_pending: bool,
+    static_execution_frozen: bool,
 }
 
 impl RuntimeScriptSystem {
@@ -118,6 +119,7 @@ impl RuntimeScriptSystem {
             service: ScriptExecutionService::new(RuntimeScriptBackend::new(data, clock)),
             presentation_word_buffer_nonempty: false,
             presentation_inventory_line_pending: false,
+            static_execution_frozen: false,
         }
     }
 
@@ -162,6 +164,16 @@ impl RuntimeScriptSystem {
         runtime: &mut OriginalGameRuntime,
         enabled: bool,
     ) -> Result<ScriptFrameOutcome> {
+        if self.static_execution_frozen {
+            // The exporter deliberately omits even BBB's disabled-frame actor preparation.
+            return Ok(ScriptFrameOutcome {
+                end: ScriptFrameEnd::ExecutionDisabled,
+                next_instruction: None,
+                executed_instructions: 0,
+                skipped_instructions: 0,
+                presentation_yields: 0,
+            });
+        }
         let outcome = execute_loaded_script_frame(
             runtime
                 .current_profile_mut()
@@ -179,6 +191,109 @@ impl RuntimeScriptSystem {
         self.presentation_word_buffer_nonempty = selector.has_pending_presentation_choices();
         self.presentation_inventory_line_pending = selector.inventory().saved_line().is_some();
         Ok(outcome)
+    }
+
+    pub(super) fn freeze_for_static_text(&mut self) {
+        self.static_execution_frozen = true;
+    }
+
+    /// Publish one unchanged A6 into the same state consumed by live text renderers.
+    pub(super) fn publish_static_text(
+        &mut self,
+        runtime: &mut OriginalGameRuntime,
+        lifecycle: &mut GameLifecycleState,
+        source: super::offline_static::StaticTextSource,
+        site: ScriptCodeOffset,
+        text: &commander_blood_formats::instruction::ScriptText,
+        actor: ScriptObjectId,
+        history: &[ScriptWordId],
+    ) -> Result<serde_json::Value> {
+        use crate::native::bloodprg::{
+            ScriptTextActivationRegistry, TextHandlerOutcome, TextInstructionState,
+            activate_object_text, execute_text_instruction,
+        };
+        anyhow::ensure!(
+            self.static_execution_frozen,
+            "static publication requires frozen story execution"
+        );
+        super::offline_static::validate_plain_text(text)?;
+        self.prepare_lifecycle_frame(lifecycle);
+        let profile = runtime
+            .current_profile_mut()
+            .context("static publication has no profile")?;
+        let parts = profile.execution_parts();
+        // Prepared state: the concepts a player selection would have committed.
+        for concept in history {
+            parts.selector_state.history_mut().push(*concept);
+        }
+        let mut activation = ScriptTextActivationRegistry::default();
+        activation.push_top_level(actor, TextInstructionState::new(text));
+        activate_object_text(parts.state, actor, &mut activation)?;
+        let mut instruction_state = activation.top_level()[0].state();
+        let request_before = self.dispatch.text_presentation.request_flags.bits();
+        let execution = execute_text_instruction(
+            text,
+            &mut instruction_state,
+            parts.dictionary,
+            parts.state,
+            parts.selector_state,
+            parts.runtime,
+            &mut self.dispatch.random,
+            &mut self.dispatch.text_presentation,
+            None,
+        )?;
+        anyhow::ensure!(
+            matches!(
+                execution.outcome,
+                TextHandlerOutcome::SubtitlePublished | TextHandlerOutcome::MenuPublished
+            ),
+            "static A6 did not publish: {:?}",
+            execution.outcome
+        );
+        anyhow::ensure!(
+            execution.flow == crate::native::bloodprg::ScriptFrameFlow::ContinueAfterPresentation,
+            "static A6 did not continue after presentation: {:?}",
+            execution.flow
+        );
+        // vm_run_wrapper (0x55A4) discards an armed rejection skip once a line presents.
+        let rejection_skip_discarded = parts.runtime.pending_skip_count();
+        parts.runtime.clear_pending_skip_count();
+        let subtitle = execution.outcome == TextHandlerOutcome::SubtitlePublished;
+        let backend = self.service.backend_mut();
+        match source {
+            super::offline_static::StaticTextSource::Cod => {
+                self.dispatch.published_text_site = Some(site);
+                self.dispatch.published_bas_text_site = None;
+                if subtitle
+                    && let Some(display) = backend.subtitle_display_override(site, parts.state)?
+                {
+                    self.dispatch.text_presentation.subtitle_text = display;
+                }
+                backend.text_published(site, subtitle);
+            }
+            super::offline_static::StaticTextSource::Bas => {
+                self.dispatch.published_text_site = None;
+                self.dispatch.published_bas_text_site = Some(site);
+                backend.bas_text_published(site, subtitle);
+            }
+        }
+        self.presentation_word_buffer_nonempty =
+            parts.selector_state.has_pending_presentation_choices();
+        self.presentation_inventory_line_pending =
+            parts.selector_state.inventory().saved_line().is_some();
+        self.service.presentation_state_mut().start_locked = true;
+        let report = serde_json::json!({
+            "outcome": format!("{:?}", execution.outcome),
+            "flow": format!("{:?}", execution.flow),
+            "authored_control_bits": text.control.bits(),
+            "activation": "native activate_object_text on isolated mutable instruction state",
+            "request_flags_before": request_before,
+            "request_flags_after": self.dispatch.text_presentation.request_flags.bits(),
+            "instruction_active_after": instruction_state.is_active(),
+            "rejection_skip_discarded_after_presentation": rejection_skip_discarded,
+        });
+        self.finish_lifecycle_frame(lifecycle)?;
+        Ok(report)
     }
 
     /// Import the ship-owned half of globals aliased into BloodScript state.
@@ -1983,6 +2098,45 @@ mod tests {
                 ]
             );
             assert!(scripts.backend_mut().take_text_publications().is_empty());
+        }
+    }
+
+    #[test]
+    #[ignore = "requires both imported game asset stores"]
+    fn static_text_freeze_preserves_state_even_when_vm_is_enabled() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        for paths in [
+            original_data_paths().expect("CB assets required"),
+            OriginalGameDataPaths::from_root(root.join("output/big-bug-bang/imported-assets"))
+                .unwrap(),
+        ] {
+            let writable = TemporaryRoot::create();
+            let data = OriginalGameData::load_with_writable_root(paths, &writable.0).unwrap();
+            let mut runtime = OriginalGameRuntime::new(data);
+            let mut scripts = RuntimeScriptSystem::new(runtime.data(), TEST_CLOCK);
+            assert!(!scripts.static_execution_frozen);
+            scripts
+                .load_profile(&mut runtime, ScriptProfileId::INITIAL)
+                .unwrap();
+            scripts.backend_mut().observe_text_publications();
+            scripts.freeze_for_static_text();
+            let before = OriginalSaveGame::capture(runtime.current_profile().unwrap())
+                .unwrap()
+                .encode();
+            let dispatch = scripts.dispatch.clone();
+            for enabled in [false, true, true, false] {
+                let outcome = scripts.execute_frame(&mut runtime, enabled).unwrap();
+                assert_eq!(outcome.end, ScriptFrameEnd::ExecutionDisabled);
+                assert_eq!(outcome.executed_instructions, 0);
+                assert_eq!(scripts.dispatch, dispatch);
+                assert_eq!(
+                    OriginalSaveGame::capture(runtime.current_profile().unwrap())
+                        .unwrap()
+                        .encode(),
+                    before
+                );
+                assert!(scripts.backend_mut().take_text_publications().is_empty());
+            }
         }
     }
 

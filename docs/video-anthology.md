@@ -6,9 +6,65 @@ output and SDL mixer submissions. It does **not** run the DOS executable or prov
 DOS rendering/timing parity. Dialogue discovery uses a separate static script
 scan; no game process or simulated clicks are needed for that scan.
 
-## Normal-Playthrough Flow Work
+## Static Content Anthology (Current Direction)
 
-The requested final scope is a successful playthrough of each game plus distinct
+The current request uses the complete static content inventory to drive native
+rendering. Exhaustive normal-playthrough route verification is no longer a
+prerequisite for presenting a branch. Prepared-state chapters must be identified
+as such; they do not become normal-flow witnesses or prove gameplay reachability.
+The existing accepted flow evidence and earlier verified masters are retained.
+
+The inventory keeps each of the 22 active profiles' authored COD/BAS text sites,
+including repeated strings, menu generators, and symbolic state-number operands.
+DESCRIPT records retain every command in application order, including subtitle
+frame thresholds, background bindings, layout, video, and sound selections.
+Exact request fingerprints are only possible reuse candidates: equal wording
+does not prove equal presentation context, audio, timing, or script behavior.
+The original normal-flow coverage ledger remains separate and unchanged.
+
+`video-catalog` retains its existing reference/caption fields and additionally
+exports ordered typed commands with original name/text bytes and DESCRIPT source
+hashes. `tools/static_content_inventory.py` joins fresh full media catalogs to the
+hashed dialogue graphs, checks all catalog artifacts and original DESCRIPT bytes,
+and refuses to overwrite a prior inventory. A static entry is not a completed
+render. Dynamic values stay symbolic until a rendering context supplies explicit
+state provenance; failed or unsupported entries stay visible.
+
+### Prepared static text scenes
+
+`offline-presentation ASSETS static-text:PLAN.json OUT MAX_FRAMES` presents one
+source-bound A6 site through the native scene, reveal, animation and audio paths
+with story dispatch frozen. Reports say `static_text_site`,
+`prepared_source_site` and `complete_native_presentation=false`; they are never
+gameplay coverage. `tools/static_text_plans.py` emits plans from the inventory and
+`tools/static_text_render.py` renders and independently verifies resumable batches.
+
+Accepted authored controls, without rewriting them:
+
+- plain lines (no gate bits);
+- b4&0x08 rejection skip: `vm_op_a6_text` (0x660C) only arms `vm_skip_count`
+  (DS:0x67AB), which `vm_run_wrapper` (0x55A4) discards once the line presents;
+- b4&0x40 history lines with exactly two sections and no resume menu: the plan's
+  `history_concepts` must equal section 1 (the binder rejects anything else) and
+  are pushed into the cleared concept history before the A6 executes. The title
+  says `[prepared concept history]`.
+
+Lines owned by the built-in `Honk` or `menu` records use a `bridge_console`
+context: the console's immediate HONK/MENU choices (`nav_choice_handler_0`
+0x8713, `nav_choice_handler_3` 0x8848) queue them over the bridge without a
+contact transition, so the exporter loads the radio bank where those handlers do
+and requests no scene. The binder checks the owner against the profile built-in.
+
+Still deferred, with reasons in `planning.json`: random/record conditions, resume
+(reply-menu) lines, numeric templates, generated inventory menus, control-only
+sites and the remaining lines without a direct Character DESCRIPT record (Ulikan's
+radio calls). The verifier compares
+inline-menu words slot by slot (BBB against its English display words) and
+subtitles by normalized text.
+
+## Normal-Playthrough Flow Work (Prior Direction)
+
+The previous requested scope was a successful playthrough of each game plus distinct
 alternatives reached through legitimate choices, including every optional
 conversation topic reachable through normal play. Shared material should appear
 once; optional dialogue must not be silently dropped to meet a duration target.
@@ -16,7 +72,7 @@ The final runtime remains to be measured. This is not the Cartesian product of
 actors, destinations, inventory, visit counts, and evolution values. The existing
 selected-branch anthology masters are **not** complete normal-playthrough videos.
 
-The order of work is flow discovery and validation first, rendering second.
+That workflow used flow discovery and validation first, rendering second.
 `tools/native_game_flow.py` runs the production native executable with only
 ordinary input scenarios, a fresh private writable directory, and no recording
 option. It concurrently consumes the native frame and action traces through

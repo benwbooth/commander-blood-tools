@@ -95,6 +95,10 @@ def catalog(args):
                     if resource_name(item["resource_name"]) == "DESCRIPT.DES")
     database = json.loads(command([args.catalog_binary.resolve(), asset_path(root, descript["path"])],
                                   capture_output=True, text=True).stdout)
+    if "descript_sha256" in database:
+        if (database["descript_sha256"] != descript["sha256"]
+                or database["descript_byte_count"] != descript["byte_count"]):
+            raise ValueError("description decoder source differs from imported resource")
     references = defaultdict(list)
     for record in database["records"]:
         for reference in record["references"]:
@@ -113,6 +117,9 @@ def catalog(args):
     result = {"schema": 1, "game": manifest.get("game", "commander_blood"),
               "assets": str(root), "manifest_sha256": manifest_hash,
               "catalog_binary_sha256": digest(args.catalog_binary),
+              "descript": dict(sha256=descript["sha256"], byte_count=descript["byte_count"],
+                               path=descript["path"],
+                               ordered_commands_exported="descript_sha256" in database),
               "classification": "DESCRIPT references and directory hints; not reachability proof",
               "videos": videos, "records": database["records"],
               "category_counts": dict(Counter(c for v in videos for c in v["categories"]))}

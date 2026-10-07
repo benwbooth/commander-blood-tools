@@ -3525,6 +3525,32 @@ impl<'window> ModernGameServices<'window> {
         Ok(outcome)
     }
 
+    pub(super) fn freeze_for_static_text(&mut self) {
+        self.scripts.freeze_for_static_text();
+    }
+
+    pub(super) fn publish_static_text(
+        &mut self,
+        lifecycle: &mut GameLifecycleState,
+        plan: &super::offline_static::OfflineStaticTextPlan,
+        bound: &super::offline_static::BoundStaticText,
+    ) -> Result<serde_json::Value> {
+        self.scripts.import_random_state(self.random);
+        let before = self.random.counter;
+        let result = self.scripts.publish_static_text(
+            &mut self.runtime,
+            lifecycle,
+            plan.source,
+            commander_blood_formats::code::ScriptCodeOffset::new(plan.text_site),
+            &bound.text,
+            bound.actor,
+            &bound.history,
+        );
+        self.random = self.scripts.random_state();
+        self.random_draws.script += random_draw_delta(before, self.random.counter);
+        result
+    }
+
     /// Execute one translated script frame and apply every ordered host command it emitted.
     pub fn execute_and_apply_script_frame(&mut self, enabled: bool) -> Result<ScriptFrameOutcome> {
         let outcome = self.execute_script_frame(enabled)?;

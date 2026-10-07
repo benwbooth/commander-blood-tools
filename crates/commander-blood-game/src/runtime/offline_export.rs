@@ -13,7 +13,9 @@ use sha2::{Digest, Sha256};
 use super::game_lifecycle::native_scene_link_target;
 use super::offline_game::{
     OfflineDialogueChapter, OfflineGameSink, capture_dialogue_chapter, capture_startup_cinematic,
+    capture_static_text,
 };
+use super::offline_static::OfflineStaticTextPlan;
 use super::offline_video::OfflineVideoWriter;
 use super::{
     ModernGameServices, OfflinePresentationInterval, OfflinePresentationSink, OriginalGameData,
@@ -31,6 +33,7 @@ enum ExportTarget {
     StartupCinematic,
     Sequence(String),
     Dialogue(OfflineDialogueChapter),
+    StaticText(OfflineStaticTextPlan),
 }
 
 /// Export one complete native opening or credits sequence to a new directory.
@@ -72,6 +75,17 @@ pub fn export_dialogue(assets: &Path, plan: &Path, output: &Path, max_frames: u6
     export(assets, ExportTarget::Dialogue(chapter), output, max_frames)
 }
 
+/// Export an isolated, prepared source site, not a naturally completed dialogue chapter.
+pub fn export_static_text(
+    assets: &Path,
+    plan: &Path,
+    output: &Path,
+    max_frames: u64,
+) -> Result<()> {
+    let plan = serde_json::from_slice(&fs::read(plan)?).context("reading the static text plan")?;
+    export(assets, ExportTarget::StaticText(plan), output, max_frames)
+}
+
 fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -> Result<()> {
     ensure!(max_frames > 0, "offline frame cap must be nonzero");
     ensure!(
@@ -107,7 +121,12 @@ fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -
         },
     )?;
     let mut sink = FileSink::new(&stage)?;
+    let isolated_static = matches!(&target, ExportTarget::StaticText(_));
     let (report, endpoint, target_name, line) = match target {
+        ExportTarget::StaticText(plan) => {
+            let (report, endpoint) = capture_static_text(services, &plan, max_frames, &mut sink)?;
+            (report, endpoint, "static_text_site", None)
+        }
         ExportTarget::Dialogue(chapter) => {
             let (report, endpoint) =
                 capture_dialogue_chapter(services, &chapter, max_frames, &mut sink)?;
@@ -197,7 +216,8 @@ fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -
         stage.join("report.json"),
         serde_json::to_vec_pretty(&json!({
             "schema": 2, "game": manifest.game, "presentation_line": line, "target": target_name,
-            "complete_native_presentation": true, "complete_game": false,
+            "complete_native_presentation": !isolated_static, "complete_game": false,
+            "completion": if isolated_static { "isolated_text_hold_completed" } else { "natural_presentation_completed" },
             "runner": report, "width": WIDTH, "height": HEIGHT,
             "video_codec": "lossless VP9 profile 1, full-range RGB",
             "frame_intervals": "Native game/presentation waits; see timeline.jsonl",
@@ -209,7 +229,7 @@ fn export(assets: &Path, target: ExportTarget, output: &Path, max_frames: u64) -
             "video_timestamps_verified": true,
             "timing": "Production 46ms/68ms waits and shared PIT accumulator, without render-only interpolation",
             "endpoint_policy": "Half-open capture; final flip retained separately without invented hold",
-            "evidence_scope": "Native Rust presentation path, not whole-game DOS parity",
+            "evidence_scope": if isolated_static { "prepared_source_site" } else { "Native Rust presentation path, not whole-game DOS parity" },
             "initial_scene_link": "Initial", "script_clock": { "hour": 12, "day": 2, "month": 1 },
             "packed_clock_seed": if line.is_none() { Some(39) } else { None }
         }))?,
