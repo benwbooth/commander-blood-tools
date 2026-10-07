@@ -1,0 +1,8 @@
+# Jo is second in the earned two-entry roster: Bob and Jo, then Cancel.
+# Native list origin80 + text inset4 + second-row pitch11 places Jo at95.
+park 4 45
+wait 25
+click 230 124
+wait 40
+click 100 100
+await-alien

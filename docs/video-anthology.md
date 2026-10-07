@@ -1204,6 +1204,25 @@ do not. The matching saves are not a control pass. No internal boundary trace,
 observer-neutrality result, causal explanation or new original-parity claim
 follows. Papy payment remains excluded from coverage and save ancestry.
 
+The sealed read-only `papy-startup-control-analysis-v4` traces the startup
+difference to unequal progress through the same ordered `present` playlist,
+not an evidenced random clip selector. Caption state first diverges at 336;
+only the reference reaches `ppit09` before both close. Source review finds an
+asynchronous SDL audio-progress input to presentation pacing, but the actual
+historical queue inputs were not retained, so no pair-specific cause is
+established. The eleven/twelve remaining-line counts come from a retained
+private panel cursor. The getter is trace-only, but its backing storage has
+active-panel uses; the analysis does not declare all startup remnants unused.
+
+Independent `papy-startup-control-parent-review-v4` checks 34 artifacts,
+7,265 bound inputs, all sixty literal source excerpts and all 6,326 expanded
+frames. It confirms the panel is inactive at retained frame tails 402-6325,
+the exact five differing paths, and both observed elapsed-time intervals.
+The review accepts the bounded analysis, not control parity or observer
+neutrality. No build or runtime execution occurred in v4. Its finite future
+measurement proposal is unexecuted; all failed gates and payment exclusions
+remain unchanged.
+
 The shared Commander Blood control replays the exact Hom root-politics and
 save fragments from the earned science checkpoint. `flow_cb_load0_v2.tsv`
 waits until after the observed studio-logo completion before dismissing the
@@ -1683,6 +1702,14 @@ unobserved new/dynamic, 985 repeated-wording and 120 control sites. BBB's
 counts remain unchanged. The failed medicine-prefix Mamy attempt adds no
 coverage. Both completeness and render readiness remain false.
 
+`output/game-flows/audit-v22` retains 485 witnesses and excludes 166 attempts
+under the same review policy. The early Izwalito hint adds two CB sites:
+1,569 successful-route and 1,691 other normal-route sites are now witnessed.
+CB's remaining categories are 1,172 unobserved new/dynamic, 984 repeated-wording
+and 120 control sites. BBB's counts are unchanged. The extra exclusion is
+a graphics-initialization failure before any native trace. This remains an
+incomplete route ledger, with rendering disabled.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -2067,6 +2094,39 @@ The normal save at 4896 is
 All three leaves recheck their eleven/twelve/thirteen-manifest lineages,
 229 exposed saved fields and all 2,441 VAR words. These are native route
 observations, not original whole-scene parity claims.
+
+The early-Izwalito hint uses a separate earned branch before Rondo is known.
+`cb-pterra-before-rondo-v2` starts from the first Izwalito save, travels to
+Pterra and chooses the offered `exxos` and `teleport` rows. Nine sites match
+source over 9,117 boundaries and 251 events. Its normal autosave at 6492 and
+manual save at 8981 are identical:
+`7d58ea6ee5dca5bae6cab2af491ea5f9489d9c6275389377ef0d30e569ce0c1e`.
+V1 failed graphics initialization outside the Nix graphics environment and
+produced no native trace. V2 changes twelve VAR words for Jo's recruitment,
+encounter, actor position flags and navigation; only sequence slot four
+changes in the header, to `scrut`. No globals or procedure flags change.
+
+`cb-jo-before-rondo-bionium-v1` uses the actual two-entry Bob/Jo cryobox menu;
+Jo's second row is at y=95, not the later four-entry menu position. The same
+hashed AMER input plan and asset used in `cb-jo-bionium-v1` yield seven doses
+again, with exactly 69,091 input/paced/presented overlay frames, 57 sound
+callbacks and matching restoration/release records. Its 6,544 recorder
+boundaries exclude those nested minigame frames. All 31 displayed sites
+match source. Only Jo's encounter count, `compris`, `vbio` and the `scrub`
+procedure flag change. The save at 6408 is
+`6d3ca22a532c9cb5a7078b928d3e86228f5bd1d852bc379bc996d79330e12de5`.
+
+`cb-honk-early-izwalito-hint-v1` therefore enters `help2` through its ordinary
+guards: Izwalito visited, Rondo unknown and seven earned doses. COD 3582/3617
+both display fully. One debit at boundary 2836 changes seven doses to four,
+and saved procedure record 3552 disables itself. Ten sites match over 4,904
+boundaries and 115 events. Only Honk's encounter, bionium, timer 15 and that
+procedure flag change; inventory is unchanged. The normal save at 4768 is
+`4b2006312256110274d124d9f4c53baa0890313c411cf291b0dcd7559324a7ec`.
+The same independent reviewer rechecks all 2,441 VAR words, 229 exposed
+fields and every header/procedure byte against each exact parent, with
+two/three/four-manifest policy-clean lineages. Only the two hint sites add
+coverage; recruitment, instruction and status lines were already witnessed.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites
